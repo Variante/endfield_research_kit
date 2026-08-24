@@ -99,8 +99,10 @@
       "parameterContract": {
         "parameterCount": 29,
         "leadingSingleCount": 5,
-        "nativeArrayCount": 24,
-        "lastParameter": "lengthPtr NativeArray<int>"
+        "directInvokeNativeArrayParameterCount": 24,
+        "sourceJobNativeArrayFieldCount": 23,
+        "sourceJobNativeReferenceFieldCount": 1,
+        "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)"
       },
       "status": "unique_abi_candidate_identity_unresolved",
       "candidates": [
@@ -194,7 +196,9 @@
             "xmm3",
             "xmm4"
           ],
-          "nativeArrayCount": 24,
+          "directInvokeNativeArrayParameterCount": 24,
+          "sourceJobNativeArrayFieldCount": 23,
+          "sourceJobNativeReferenceFieldCount": 1,
           "stackInputLoads": [
             {
               "instructionOffset": "0x1b",
@@ -1010,7 +1014,9 @@
             "parameterCount": 29,
             "leadingScalarCount": 5,
             "containerArgumentCount": 24,
-            "nativeArrayCount": 24,
+            "directInvokeNativeArrayParameterCount": 24,
+            "sourceJobNativeArrayFieldCount": 23,
+            "sourceJobNativeReferenceFieldCount": 1,
             "lengthPointerArgumentIndex": 28,
             "lengthPointerType": "NativeArray<int>",
             "boundary": "Burst direct-invoke ABI spelling; the corresponding managed job field is NativeReference<int>"
@@ -1336,10 +1342,13 @@
       "directInvokeVa": "0x18675b0cc",
       "parameterContract": {
         "parameterCount": 6,
-        "nativeArrayCount": 6,
-        "stackNativeArrayCount": 2
+        "directInvokeNativeArrayParameterCount": 6,
+        "sourceJobNativeArrayFieldCount": 5,
+        "sourceJobNativeReferenceFieldCount": 1,
+        "stackDirectInvokeNativeArrayParameterCount": 2,
+        "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)"
       },
-      "status": "bounded_candidate_set",
+      "status": "abi_shape_filter_incomplete_no_semantic_survivor",
       "candidates": [
         {
           "hash": "5d15fdfe5676d33316f2415a1f41d523",
@@ -1414,7 +1423,7 @@
       ],
       "exclusionReason": "09829f... loads the second stack argument into rdx and 1adf3a... into r9, clobbering incoming target GPRs; 89666f... uses displaced stack slots. The surviving r10 forms preserve rcx/rdx/r8/r9.",
       "candidateAudit": {
-        "status": "two_abi_compatible_candidates_static_non_discriminating",
+        "status": "abi_shape_filter_incomplete_no_semantic_survivor",
         "parameterContract": {
           "methodIndex": 385317,
           "method": "Invoke",
@@ -1585,6 +1594,7 @@
         },
         "comparison": {
           "candidateCount": 2,
+          "semanticCompatibleCandidateCount": 0,
           "sameWrapperCfg": true,
           "sameParameterForwarding": true,
           "sameNativeArrayParameterOrder": true,
@@ -1594,7 +1604,7 @@
           "wrapperSlotsDistinct": true,
           "runtimeSelectedPointerObserved": false,
           "externalInitializerRequiresRuntimeCallback": true,
-          "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window"
+          "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window; the current ABI-shape filter has no semantic survivor"
         },
         "candidates": [
           {
@@ -1679,6 +1689,24 @@
                   "sourceRegister": "rax",
                   "widthBytes": 8,
                   "parameter": "oldRotations"
+                }
+              ]
+            },
+            "semanticCompatibility": {
+              "status": "incompatible_with_canonical_job_element_strides",
+              "reason": "The core indexes position rows at 12 bytes and copies float3 plus quaternion; canonical now/old positions are double3 at 24 bytes.",
+              "coreVariants": [
+                {
+                  "architecture": "AVX2",
+                  "rva": "0x24d8d0",
+                  "spanBytes": 97,
+                  "bodySha256": "2c13d41676b518db37f84558a675726189ca29ffc4fadb757af6f8ef921bc0e1"
+                },
+                {
+                  "architecture": "SSE2",
+                  "rva": "0xb2e80",
+                  "spanBytes": 95,
+                  "bodySha256": "fa0774f9c385ab162d8e03093ee29d2bbd3af70ab544b99fd943f447bd8c25e6"
                 }
               ]
             },
@@ -2078,6 +2106,24 @@
                 }
               ]
             },
+            "semanticCompatibility": {
+              "status": "incompatible_with_direct_invoke_container_abi",
+              "reason": "The core treats the first incoming lane as a scalar count and operates on 184-byte records, rather than consuming six container pointers.",
+              "coreVariants": [
+                {
+                  "architecture": "AVX2",
+                  "rva": "0x2a0670",
+                  "spanBytes": 573,
+                  "bodySha256": "ed1dfada261fad7c4a7a63f9987d11e4edf34f99a99290e278d6c457a5eff9c9"
+                },
+                {
+                  "architecture": "SSE2",
+                  "rva": "0x117860",
+                  "spanBytes": 718,
+                  "bodySha256": "166dda52f397ef0c4d56d544bf30a1f3d0345153a9494d30447b4c63e3177a86"
+                }
+              ]
+            },
             "runtimeFunctionPointerSlot": {
               "targetVa": "0x1803c6880",
               "targetRva": "0x3c6880",
@@ -2471,7 +2517,7 @@
           }
         ],
         "nonClaims": [
-          "The two candidate hashes are not assigned to EndSimulationStepRangeKernel by this static audit.",
+          "Neither retained ABI-shape candidate is compatible with EndSimulationStepRangeKernel semantics; the static filter is incomplete.",
           "Resolver/static initializer slot writes do not prove which returned pointer was selected or called at runtime.",
           "Managed now/old position and rotation writebacks do not distinguish a wrapper that contains no job-field accesses."
         ]

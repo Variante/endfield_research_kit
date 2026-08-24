@@ -59,10 +59,16 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         end = payload["targets"]["colliderEndRange"]
         self.assertEqual(simulation["directInvokeMethodIndex"], 385570)
         self.assertEqual(simulation["parameterContract"]["parameterCount"], 29)
+        self.assertEqual(simulation["parameterContract"]["directInvokeNativeArrayParameterCount"], 24)
+        self.assertEqual(simulation["parameterContract"]["sourceJobNativeArrayFieldCount"], 23)
+        self.assertEqual(simulation["parameterContract"]["sourceJobNativeReferenceFieldCount"], 1)
         self.assertEqual((start["directInvokeMethodIndex"], start["directInvokeVa"]), (385416, "0x186762cc0"))
         self.assertEqual((end["directInvokeMethodIndex"], end["directInvokeVa"]), (385317, "0x18675b0cc"))
         self.assertEqual(start["parameterContract"]["parameterCount"], 17)
         self.assertEqual(end["parameterContract"]["parameterCount"], 6)
+        self.assertEqual(end["parameterContract"]["directInvokeNativeArrayParameterCount"], 6)
+        self.assertEqual(end["parameterContract"]["sourceJobNativeArrayFieldCount"], 5)
+        self.assertEqual(end["parameterContract"]["sourceJobNativeReferenceFieldCount"], 1)
 
     def test_simulation_semantic_fingerprint_is_closed_at_runtime_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
@@ -71,7 +77,9 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(fingerprint["candidateHash"], "c7e2be088565d3ff7a6e7ba86d23fd51")
         self.assertEqual(fingerprint["export"]["rva"], "0x3616e0")
         self.assertEqual(fingerprint["export"]["bodySha256"], "38e122699775a7bc42cb1277028ece1430c467c9112510aa29948ee8d3f2e45d")
-        self.assertEqual(fingerprint["abi"]["nativeArrayCount"], 24)
+        self.assertEqual(fingerprint["abi"]["directInvokeNativeArrayParameterCount"], 24)
+        self.assertEqual(fingerprint["abi"]["sourceJobNativeArrayFieldCount"], 23)
+        self.assertEqual(fingerprint["abi"]["sourceJobNativeReferenceFieldCount"], 1)
         self.assertEqual(len(fingerprint["abi"]["stackInputLoads"]), 25)
         self.assertEqual(len(fingerprint["abi"]["stackOutputStores"]), 25)
         self.assertEqual(fingerprint["abi"]["directCalls"], [])
@@ -99,17 +107,25 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(managed["nativeReferenceArgumentIndexes"], [28])
         self.assertEqual(managed["nativeReferenceFields"][0]["name"], "_indexCount")
         direct = managed["managedDirectInvokeContract"]
-        self.assertEqual((direct["parameterCount"], direct["nativeArrayCount"], direct["lengthPointerArgumentIndex"]), (29, 24, 28))
+        self.assertEqual(
+            (direct["parameterCount"], direct["directInvokeNativeArrayParameterCount"],
+             direct["sourceJobNativeArrayFieldCount"],
+             direct["sourceJobNativeReferenceFieldCount"],
+             direct["lengthPointerArgumentIndex"]),
+            (29, 24, 23, 1, 28),
+        )
         self.assertIn("corresponding managed job field is NativeReference", direct["boundary"])
         end = managed["endSimulation"]
         self.assertEqual((end["fieldCount"], end["nativeArrayCount"], end["nativeReferenceCount"]), (17, 15, 1))
         self.assertEqual(end["nativeReferenceFields"][0]["name"], "_indexCount")
 
-    def test_collider_end_static_audit_keeps_both_hashes_unresolved(self) -> None:
+    def test_collider_end_static_audit_rejects_both_abi_shape_candidates(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         audit = payload["targets"]["colliderEndRange"]["candidateAudit"]
-        self.assertEqual(audit["status"], "two_abi_compatible_candidates_static_non_discriminating")
+        self.assertEqual(payload["targets"]["colliderEndRange"]["status"], "abi_shape_filter_incomplete_no_semantic_survivor")
+        self.assertEqual(audit["status"], "abi_shape_filter_incomplete_no_semantic_survivor")
         self.assertEqual(audit["comparison"]["candidateCount"], 2)
+        self.assertEqual(audit["comparison"]["semanticCompatibleCandidateCount"], 0)
         self.assertTrue(audit["comparison"]["sameWrapperCfg"])
         self.assertTrue(audit["comparison"]["sameParameterForwarding"])
         self.assertFalse(audit["comparison"]["fieldOffsetsPresentInCandidateThunk"])
@@ -145,6 +161,14 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
                 self.assertGreater(row["resolverCallCount"], 0)
             for row in candidate["runtimeFunctionPointerSlot"]["initializers"]["statics"]:
                 self.assertEqual(row["candidateWrapperSlotStoreMatches"], [])
+        semantics = {row["hash"]: row["semanticCompatibility"] for row in audit["candidates"]}
+        self.assertEqual(semantics["5d15fdfe5676d33316f2415a1f41d523"]["status"], "incompatible_with_canonical_job_element_strides")
+        self.assertEqual(semantics["e6aec003f0525fe127cd9c0ccb59b1e2"]["status"], "incompatible_with_direct_invoke_container_abi")
+        self.assertEqual(
+            [variant["bodySha256"] for variant in semantics["5d15fdfe5676d33316f2415a1f41d523"]["coreVariants"]],
+            ["2c13d41676b518db37f84558a675726189ca29ffc4fadb757af6f8ef921bc0e1",
+             "fa0774f9c385ab162d8e03093ee29d2bbd3af70ab544b99fd943f447bd8c25e6"],
+        )
         for row in payload["targets"]["simulationStartRange"]["semanticFingerprint"]["initializerExports"]:
             if row["initializerRole"] == "statics":
                 self.assertEqual((row["sharedMemoryKey"], row["sharedMemorySizeBytes"], row["sharedMemoryAlignmentBytes"]), ("0xedfccb8b263b8f83", "0x80000", 16))
