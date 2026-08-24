@@ -334,7 +334,13 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                     float dissolveCarrier = sample2.r;
                 #endif
 
-                float3 untinted = mainColor * _TintColor.rgb * _TintColorIntensity;
+                // The recovered ForwardOnly fragments multiply the sampled
+                // carrier by particle vertex RGB before authored tint and
+                // intensity. Dropping this term made color-over-lifetime
+                // systems (notably Endminf's guangyun rings) render as flat
+                // brown discs even though their serialized material was exact.
+                float3 untinted = mainColor * input.color.rgb *
+                    _TintColor.rgb * _TintColorIntensity;
                 untinted += blendCarrier * _BlendTint.rgb * saturate(_UseBlend);
 
                 // Exact identity-gated serialized specialization of the
@@ -355,11 +361,13 @@ Shader "Endfield/Recovered/VFXBaseV2SampleStack"
                     dissolveEdge);
                 untinted = lerp(untinted, dissolveColor, dissolveEnabled);
 
-                float exposureDivisor = lerp(
+                // Exact 0139 multiplies by the reciprocal-exposure carrier;
+                // it does not divide by that already-reciprocal value.
+                float exposureMultiplier = lerp(
                     1.0,
-                    max(_ExposureWithMiscParams.y, 0.0001),
+                    _ExposureWithMiscParams.y,
                     saturate(_IgnorePostExposure));
-                float3 color = untinted / exposureDivisor;
+                float3 color = untinted * exposureMultiplier;
 #if defined(_USE_FRESNEL)
                 // Exact recovered VFXBaseV2 Fresnel branch: powered biased
                 // N.V, optional flip, color interpolation, and authored

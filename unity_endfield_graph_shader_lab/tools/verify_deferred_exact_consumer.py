@@ -46,6 +46,15 @@ READBACK_RE = re.compile(
     r"retailPass0=(?P<pass0>true|false)\.",
     re.IGNORECASE,
 )
+HLSL_COMPARISON_RE = re.compile(
+    r"Recovered deferred pass-0 HLSL vs exact DXBC comparison:\s*"
+    r"camera=(?P<camera>[^,]+),\s*size=(?P<width>\d+)x(?P<height>\d+),\s*"
+    r"floatCount=(?P<count>\d+),\s*maxAbs=(?P<max_abs>[^,]+),\s*"
+    r"rmse=(?P<rmse>[^,]+),\s*over1e-6=(?P<over_1e6>\d+),\s*"
+    r"over1e-4=(?P<over_1e4>\d+),\s*over1e-3=(?P<over_1e3>\d+),\s*"
+    r"presented=(?P<presented>true|false)\.",
+    re.IGNORECASE,
+)
 EXPECTED_RESOURCE_MASK = (1 << 26) - 1
 
 
@@ -65,8 +74,10 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
     require("shader_compile_errors", "Shader error in" in text, False)
     submitted_matches = list(SUBMITTED_RE.finditer(text))
     readback_matches = list(READBACK_RE.finditer(text))
+    comparison_matches = list(HLSL_COMPARISON_RE.finditer(text))
     require("submitted_record_count", len(submitted_matches) > 0, True)
     require("readback_record_count", len(readback_matches) > 0, True)
+    require("hlsl_comparison_record_count", len(comparison_matches) > 0, True)
 
     submitted: dict[str, object] = {}
     submitted_main_matches = [
@@ -148,12 +159,39 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         require("readback_presented", readback["presented"], False)
         require("readback_retail_pass0", readback["retailPass0"], False)
 
+    comparison: dict[str, object] = {}
+    comparison_main_matches = [
+        match for match in comparison_matches
+        if int(match["width"]) == 640 and int(match["height"]) == 720
+    ]
+    require("main_camera_hlsl_comparison_count", len(comparison_main_matches) > 0, True)
+    if comparison_main_matches:
+        match = comparison_main_matches[-1]
+        comparison = {
+            "camera": match["camera"],
+            "width": int(match["width"]),
+            "height": int(match["height"]),
+            "floatCount": int(match["count"]),
+            "maxAbs": float(match["max_abs"]),
+            "rmse": float(match["rmse"]),
+            "over1e-6": int(match["over_1e6"]),
+            "over1e-4": int(match["over_1e4"]),
+            "over1e-3": int(match["over_1e3"]),
+            "presented": match["presented"].lower() == "true",
+        }
+        require("hlsl_comparison_camera", comparison["camera"], "MainCamera")
+        require("hlsl_comparison_float_count", comparison["floatCount"], 640 * 720 * 4)
+        require("hlsl_comparison_max_abs_within_one_ulp", comparison["maxAbs"] <= 1.1920929e-7, True)
+        require("hlsl_comparison_over_1e6", comparison["over1e-6"], 0)
+        require("hlsl_comparison_presented", comparison["presented"], False)
+
     return {
         "schema": "endfield-recovered-deferred-exact-consumer-validation-v1",
         "valid": not failures,
         "defaultOff": True,
         "submitted": submitted,
         "readback": readback,
+        "hlslComparison": comparison,
         "failures": failures,
     }
 

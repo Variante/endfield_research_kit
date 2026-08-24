@@ -1,6 +1,7 @@
 @echo off
 setlocal
 set "PROJECT_DIR=%~dp0"
+set "PROJECT_PATH=%PROJECT_DIR:~0,-1%"
 set "UNITY_EXE=D:\Program Files\2022.3.62f3\Editor\Unity.exe"
 
 if not exist "%UNITY_EXE%" (
@@ -8,17 +9,27 @@ if not exist "%UNITY_EXE%" (
   exit /b 1
 )
 
-if /i "%~1"=="--endminf-reproduction" (
+if /i "%~1"=="--lab" goto open_lab
+if "%~1"=="" goto open_endminf
+if /i "%~1"=="--endminf-reproduction" goto open_endminf
+
+echo Unknown option: %~1
+echo Use no option for the Endminf reference reproduction, or --lab for the general viewer.
+exit /b 2
+
+:open_endminf
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1"
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1"
+  set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1"
+  set "ENDFIELD_RECOVERED_VISIBILITY_SH=1"
   set "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1"
   set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
   echo Opening Endminf visual reproduction with explicitly approximate compatibility layers.
-  "%UNITY_EXE%" -projectPath "%PROJECT_DIR%" -force-d3d12 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
+  "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d12 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
-)
 
-"%UNITY_EXE%" -projectPath "%PROJECT_DIR%"
+:open_lab
+"%UNITY_EXE%" -projectPath "%PROJECT_PATH%"

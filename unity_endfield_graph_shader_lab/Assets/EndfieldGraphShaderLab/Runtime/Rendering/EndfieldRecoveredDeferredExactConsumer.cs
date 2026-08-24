@@ -44,7 +44,9 @@ namespace EndfieldGraphShaderLab
 
         private readonly bool requested;
         private Material material;
+        private Material recoveredHlslMaterial;
         private RenderTexture output;
+        private RenderTexture recoveredHlslOutput;
         private Texture2D fallback2D;
         private Texture2DArray fallbackArray;
         private Texture3D fallback3D;
@@ -55,6 +57,10 @@ namespace EndfieldGraphShaderLab
         private int allocatedHeight;
         private bool loggedFailure;
         private bool readbackRequested;
+        private bool recoveredHlslReadbackRequested;
+        private float[] exactReadbackFloats;
+        private float[] recoveredHlslReadbackFloats;
+        private bool comparisonLogged;
         private bool nativeEventPending;
         private bool disposed;
 
@@ -215,6 +221,16 @@ namespace EndfieldGraphShaderLab
                     return FailClosed("exact consumer native t0 buffer pointer is unavailable");
 
                 Native.SetDiagnosticTexturePointers(pointers, TextureSlotCount);
+                command.SetRenderTarget(recoveredHlslOutput);
+                command.ClearRenderTarget(false, true, Color.clear);
+                command.SetViewport(new Rect(0.0f, 0.0f, width, height));
+                command.DrawProcedural(
+                    Matrix4x4.identity,
+                    recoveredHlslMaterial,
+                    0,
+                    MeshTopology.Triangles,
+                    3,
+                    1);
                 command.SetRenderTarget(output);
                 command.ClearRenderTarget(false, true, Color.clear);
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
@@ -237,6 +253,8 @@ namespace EndfieldGraphShaderLab
                 command.IssuePluginEvent(renderEvent, 3);
                 command.IssuePluginEvent(renderEvent, 0);
                 RequestReadback(command, camera.name, width, height);
+                RequestRecoveredHlslReadback(
+                    command, camera.name, width, height);
                 command.IssuePluginEvent(renderEvent, 1);
                 // The native event clears armed state and pointer ownership on
                 // the render thread after the exact draw/readback copy. Do not
@@ -269,6 +287,7 @@ namespace EndfieldGraphShaderLab
                     "retailPass0=false, screenContentValid=false.");
                 Debug.Log(
                     "Recovered exact deferred resolver source texture closures: " +
+                    "b6=HDPLS:zero-local-fallback," +
                     "t8=HDPLS:white-inactive-fallback," +
                     "t9=CSMRamp:black-null-fallback," +
                     $"t10=multiscattering:{(multiscatteringLut != null ? "ready" : "absent")}," +
@@ -319,6 +338,7 @@ namespace EndfieldGraphShaderLab
             DisposeUnityObject(integratedFogFallback);
             DisposeUnityObject(multiscatteringLut);
             DisposeUnityObject(material);
+            DisposeUnityObject(recoveredHlslMaterial);
             if (zeroHdplsBuffer != null)
             {
                 zeroHdplsBuffer.Release();
@@ -330,6 +350,7 @@ namespace EndfieldGraphShaderLab
             integratedFogFallback = null;
             multiscatteringLut = null;
             material = null;
+            recoveredHlslMaterial = null;
         }
 
         private bool TryBuildConstantBuffers(
@@ -360,9 +381,10 @@ namespace EndfieldGraphShaderLab
             {
                 if (buffers[slot] == null || !buffers[slot].IsValid())
                 {
-                    failure =
-                        "exact consumer b" + slot +
-                        " source-backed constant buffer is unavailable";
+                    failure = slot == 6
+                        ? "exact consumer b6 local HDPLS zero fallback allocation is unavailable"
+                        : "exact consumer b" + slot +
+                          " source-backed constant buffer is unavailable";
                     return false;
                 }
             }
@@ -417,7 +439,7 @@ namespace EndfieldGraphShaderLab
         private bool TryResolveMaterial(out string failure)
         {
             failure = string.Empty;
-            if (material != null)
+            if (material != null && recoveredHlslMaterial != null)
                 return true;
             Shader shader = Shader.Find(ShaderName);
             if (shader == null || !shader.isSupported)
@@ -428,6 +450,20 @@ namespace EndfieldGraphShaderLab
             material = new Material(shader)
             {
                 name = "Recovered exact deferred resolver shell",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            Shader recoveredHlslShader = Shader.Find(
+                "Hidden/Endfield/Recovered/DeferredPass0CompileDiagnostic");
+            if (recoveredHlslShader == null || !recoveredHlslShader.isSupported)
+            {
+                failure = "recovered deferred pass-0 HLSL shader is unavailable; ";
+                DisposeUnityObject(material);
+                material = null;
+                return false;
+            }
+            recoveredHlslMaterial = new Material(recoveredHlslShader)
+            {
+                name = "Recovered deferred pass-0 HLSL sidecar",
                 hideFlags = HideFlags.HideAndDontSave,
             };
             return true;
@@ -513,9 +549,20 @@ namespace EndfieldGraphShaderLab
                 }
                 if (multiscatteringLut == null)
                 {
-                    multiscatteringLut =
-                        EndfieldRecoveredGachaM02ExactEnvironmentClosures
-                            .CreateMultiscatteringLut();
+                    multiscatteringLut = new Texture2D(
+                        1,
+                        1,
+                        TextureFormat.RGBAFloat,
+                        false,
+                        true)
+                    {
+                        name = "Recovered exact resolver neutral multiscattering LUT",
+                        filterMode = FilterMode.Point,
+                        wrapMode = TextureWrapMode.Clamp,
+                        hideFlags = HideFlags.HideAndDontSave,
+                    };
+                    multiscatteringLut.SetPixel(0, 0, Color.clear);
+                    multiscatteringLut.Apply(false, true);
                 }
                 return true;
             }
@@ -531,7 +578,7 @@ namespace EndfieldGraphShaderLab
         {
             failure = string.Empty;
             if (output != null && allocatedWidth == width &&
-                allocatedHeight == height)
+                allocatedHeight == height && recoveredHlslOutput != null)
                 return true;
             ReleaseOutput();
             if (!SystemInfo.IsFormatSupported(
@@ -563,6 +610,19 @@ namespace EndfieldGraphShaderLab
                 if (!output.Create())
                 {
                     failure = "exact resolver output creation failed; ";
+                    ReleaseOutput();
+                    return false;
+                }
+                recoveredHlslOutput = new RenderTexture(output.descriptor)
+                {
+                    name = "Recovered deferred pass-0 HLSL output",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                if (!recoveredHlslOutput.Create())
+                {
+                    failure = "recovered HLSL resolver output creation failed; ";
                     ReleaseOutput();
                     return false;
                 }
@@ -607,6 +667,7 @@ namespace EndfieldGraphShaderLab
                 data.CopyTo(byteCopy);
                 string sha256 = Hash(byteCopy);
                 NativeArray<float> floats = request.GetData<float>();
+                exactReadbackFloats = floats.ToArray();
                 int finiteFloats = 0;
                 int nonFiniteFloats = 0;
                 float minimum = float.PositiveInfinity;
@@ -639,7 +700,90 @@ namespace EndfieldGraphShaderLab
                     $"max={maximum.ToString("R", CultureInfo.InvariantCulture)}, " +
                     $"failureCount={Native.GetFailureCount()}, " +
                     "presented=false, retailPass0=false.");
+                TryLogHlslComparison(cameraName, width, height);
             });
+        }
+
+        private void RequestRecoveredHlslReadback(
+            CommandBuffer command,
+            string cameraName,
+            int width,
+            int height)
+        {
+            if (recoveredHlslReadbackRequested ||
+                !SystemInfo.supportsAsyncGPUReadback)
+                return;
+            recoveredHlslReadbackRequested = true;
+            command.RequestAsyncReadback(recoveredHlslOutput, 0, request =>
+            {
+                if (request.hasError)
+                {
+                    Debug.LogWarning(
+                        "Recovered deferred pass-0 HLSL sidecar readback failed closed.");
+                    return;
+                }
+                NativeArray<float> floats = request.GetData<float>();
+                recoveredHlslReadbackFloats = floats.ToArray();
+                int nonFinite = 0;
+                for (int index = 0; index < floats.Length; index++)
+                {
+                    if (float.IsNaN(floats[index]) || float.IsInfinity(floats[index]))
+                        nonFinite++;
+                }
+                byte[] bytes = new byte[request.GetData<byte>().Length];
+                request.GetData<byte>().CopyTo(bytes);
+                Debug.Log(
+                    "Recovered deferred pass-0 HLSL sidecar readback: " +
+                    $"camera={cameraName}, size={width}x{height}, " +
+                    $"rgbaFloatSha256={Hash(bytes)}, " +
+                    $"finiteFloats={floats.Length - nonFinite}, " +
+                    $"nonFiniteFloats={nonFinite}, presented=false.");
+                TryLogHlslComparison(cameraName, width, height);
+            });
+        }
+
+        private void TryLogHlslComparison(
+            string cameraName,
+            int width,
+            int height)
+        {
+            if (comparisonLogged || exactReadbackFloats == null ||
+                recoveredHlslReadbackFloats == null)
+                return;
+            comparisonLogged = true;
+            if (exactReadbackFloats.Length != recoveredHlslReadbackFloats.Length)
+            {
+                Debug.LogWarning(
+                    "Recovered deferred pass-0 HLSL comparison failed closed: " +
+                    "readback lengths differ.");
+                return;
+            }
+
+            double squaredError = 0.0;
+            float maximumAbsoluteError = 0.0f;
+            int over1e6 = 0;
+            int over1e4 = 0;
+            int over1e3 = 0;
+            for (int index = 0; index < exactReadbackFloats.Length; index++)
+            {
+                float error = Mathf.Abs(
+                    exactReadbackFloats[index] - recoveredHlslReadbackFloats[index]);
+                maximumAbsoluteError = Mathf.Max(maximumAbsoluteError, error);
+                squaredError += (double)error * error;
+                if (error > 1.0e-6f) over1e6++;
+                if (error > 1.0e-4f) over1e4++;
+                if (error > 1.0e-3f) over1e3++;
+            }
+            double rmse = Math.Sqrt(
+                squaredError / Math.Max(1, exactReadbackFloats.Length));
+            Debug.Log(
+                "Recovered deferred pass-0 HLSL vs exact DXBC comparison: " +
+                $"camera={cameraName}, size={width}x{height}, " +
+                $"floatCount={exactReadbackFloats.Length}, " +
+                $"maxAbs={maximumAbsoluteError.ToString("R", CultureInfo.InvariantCulture)}, " +
+                $"rmse={rmse.ToString("R", CultureInfo.InvariantCulture)}, " +
+                $"over1e-6={over1e6}, over1e-4={over1e4}, over1e-3={over1e3}, " +
+                "presented=false.");
         }
 
         private bool FailClosed(string failure)
@@ -777,12 +921,20 @@ namespace EndfieldGraphShaderLab
 
         private void ReleaseOutput()
         {
-            if (output == null)
-                return;
-            if (output.IsCreated())
-                output.Release();
-            DisposeUnityObject(output);
+            if (output != null)
+            {
+                if (output.IsCreated())
+                    output.Release();
+                DisposeUnityObject(output);
+            }
+            if (recoveredHlslOutput != null)
+            {
+                if (recoveredHlslOutput.IsCreated())
+                    recoveredHlslOutput.Release();
+                DisposeUnityObject(recoveredHlslOutput);
+            }
             output = null;
+            recoveredHlslOutput = null;
             allocatedWidth = 0;
             allocatedHeight = 0;
         }

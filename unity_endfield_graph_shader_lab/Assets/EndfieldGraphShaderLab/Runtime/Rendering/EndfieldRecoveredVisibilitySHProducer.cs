@@ -392,6 +392,7 @@ namespace EndfieldGraphShaderLab
                     1.0f / Mathf.Max(1, fullHeight),
                     fullWidth,
                     fullHeight));
+            bool receiverFrameResourcesReady = true;
             if (EndfieldRecoveredVisibilitySHConstantsContract.TryBuild(
                     fullWidth,
                     fullHeight,
@@ -414,6 +415,7 @@ namespace EndfieldGraphShaderLab
                 // Fail closed: without the exact constants the receiver must
                 // keep its neutral zero-occlusion endpoint.
                 canonicalFrameResourcesReady = false;
+                receiverFrameResourcesReady = false;
                 Debug.LogWarning(
                     "Recovered VisibilitySH consumer constants unavailable, so " +
                     "the ShadowReceiver capsule term stays disabled: " +
@@ -422,7 +424,7 @@ namespace EndfieldGraphShaderLab
             }
             commandBuffer.SetGlobalFloat(
                 ReadyId,
-                canonicalFrameResourcesReady ? 1.0f : 0.0f);
+                receiverFrameResourcesReady ? 1.0f : 0.0f);
             RequestOneShotReadback(
                 commandBuffer,
                 resources.color,
@@ -447,6 +449,8 @@ namespace EndfieldGraphShaderLab
                     "retail defaults interval=0.8/range=5/half-resolution, " +
                     "canonicalPublication=" +
                     (canonicalFrameResourcesReady ? "ready" : "fail-closed") +
+                    ", receiverPublication=" +
+                    (receiverFrameResourcesReady ? "ready" : "fail-closed") +
                     (debugOutput
                         ? relaxedDebugState
                             ? ", DEBUG solid output with relaxed depth/cull."

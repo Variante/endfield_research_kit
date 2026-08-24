@@ -8,8 +8,9 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Source-backed, isolated reconstruction of the original overview
-    /// punctual-shadow producer. It intentionally owns only Wulfa/Zhuangfy
-    /// RimLight_2 (5), and publishes no cache slot unless every recovered
+    /// punctual-shadow producer. It intentionally owns only the validated
+    /// Wulfa/Zhuangfy target and Endminf RimLight_2/RimLight_2 (1) rows, and
+    /// publishes no cache slot unless every recovered
     /// identity, resource, projection, atlas, and caster condition is valid.
     /// </summary>
     internal sealed class EndfieldRecoveredPunctualShadowProducer : IDisposable
@@ -28,7 +29,10 @@ namespace EndfieldGraphShaderLab
         internal const float RasterSlopeBias = 1.0f;
         internal const float Pcf3x3BiasMultiplier = 1.5f;
 
-        private const int MaxOperatorLights = 8;
+        // Keep this identical to EndfieldHGOperatorLightRig.MaxLights. Endminf's
+        // source RimLight_2 (1) is packed after eight earlier descriptors, so
+        // the original eight-row compatibility buffer could not publish it.
+        private const int MaxOperatorLights = 16;
         private const int OpaqueQueueMaximum = (int)RenderQueue.GeometryLast;
         private const string ClearShaderName =
             "Hidden/Endfield/Recovered/PunctualShadowClear";
@@ -148,6 +152,20 @@ namespace EndfieldGraphShaderLab
             {
                 return Fail(context, failure);
             }
+            EndfieldHGIsolatedPunctualShadowTarget secondaryTarget = default;
+            int targetCount = 1;
+            if (string.Equals(target.actorKey, "endminf", StringComparison.Ordinal))
+            {
+                if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
+                        camera,
+                        out secondaryTarget,
+                        out failure,
+                        3))
+                {
+                    return Fail(context, failure);
+                }
+                targetCount = 2;
+            }
             if (!BuildCasterList(target, camera, out failure))
                 return Fail(context, failure);
 
@@ -160,9 +178,24 @@ namespace EndfieldGraphShaderLab
                 return Fail(context, failure);
             }
 
-            int faceCount = target.light.spot ? 1 : 6;
-            if (!BuildShadowData(target, faceCount, out failure))
+            ClearShadowData();
+            int primaryFaceCount = target.light.spot ? 1 : 6;
+            if (!BuildShadowData(target, primaryFaceCount, 0, 0, out failure))
                 return Fail(context, failure);
+            int secondaryFaceCount = 0;
+            if (targetCount == 2)
+            {
+                secondaryFaceCount = secondaryTarget.light.spot ? 1 : 6;
+                if (!BuildShadowData(
+                        secondaryTarget,
+                        secondaryFaceCount,
+                        primaryFaceCount,
+                        primaryFaceCount,
+                        out failure))
+                {
+                    return Fail(context, failure);
+                }
+            }
 
             CommandBuffer commandBuffer = new CommandBuffer
             {
@@ -171,13 +204,6 @@ namespace EndfieldGraphShaderLab
             try
             {
                 commandBuffer.SetRenderTarget(atlas);
-                commandBuffer.SetGlobalVector(
-                    WorldSpaceLightPositionId,
-                    new Vector4(
-                        target.worldPosition.x,
-                        target.worldPosition.y,
-                        target.worldPosition.z,
-                        1.0f));
                 commandBuffer.SetGlobalVector(UnityLightShadowBiasId, Vector4.zero);
 
                 if (atlasWasCreated)
@@ -192,35 +218,53 @@ namespace EndfieldGraphShaderLab
                 }
 
                 commandBuffer.EnableShaderKeyword(CasterKeyword);
-                for (int face = 0; face < faceCount; face++)
+                int matrixOffset = 0;
+                for (int targetIndex = 0; targetIndex < targetCount; targetIndex++)
                 {
-                    Rect rect = casterRects[face];
-                    commandBuffer.SetViewport(rect);
-                    commandBuffer.EnableScissorRect(new Rect(
-                        rect.x + TileScissorInset,
-                        rect.y + TileScissorInset,
-                        rect.width - TileScissorInset * 2,
-                        rect.height - TileScissorInset * 2));
-                    DrawDepthZero(commandBuffer);
-                    commandBuffer.SetGlobalMatrix(
-                        CharacterShadowPassVpId,
-                        casterMatrices[face]);
-                    commandBuffer.SetGlobalDepthBias(
-                        RasterConstantBiasScale * target.light.shadowBias,
-                        RasterSlopeBias);
-
-                    for (int drawIndex = 0; drawIndex < casterDraws.Count; drawIndex++)
+                    EndfieldHGIsolatedPunctualShadowTarget activeTarget =
+                        targetIndex == 0 ? target : secondaryTarget;
+                    int activeFaceCount = targetIndex == 0
+                        ? primaryFaceCount
+                        : secondaryFaceCount;
+                    commandBuffer.SetGlobalVector(
+                        WorldSpaceLightPositionId,
+                        new Vector4(
+                            activeTarget.worldPosition.x,
+                            activeTarget.worldPosition.y,
+                            activeTarget.worldPosition.z,
+                            1.0f));
+                    for (int face = 0; face < activeFaceCount; face++)
                     {
-                        CasterDraw draw = casterDraws[drawIndex];
-                        commandBuffer.DrawRenderer(
-                            draw.renderer,
-                            draw.material,
-                            draw.submesh,
-                            draw.pass);
-                    }
+                        int matrixIndex = matrixOffset + face;
+                        Rect rect = casterRects[matrixIndex];
+                        commandBuffer.SetViewport(rect);
+                        commandBuffer.EnableScissorRect(new Rect(
+                            rect.x + TileScissorInset,
+                            rect.y + TileScissorInset,
+                            rect.width - TileScissorInset * 2,
+                            rect.height - TileScissorInset * 2));
+                        DrawDepthZero(commandBuffer);
+                        commandBuffer.SetGlobalMatrix(
+                            CharacterShadowPassVpId,
+                            casterMatrices[matrixIndex]);
+                        commandBuffer.SetGlobalDepthBias(
+                            RasterConstantBiasScale * activeTarget.light.shadowBias,
+                            RasterSlopeBias);
 
-                    commandBuffer.DisableScissorRect();
-                    commandBuffer.SetGlobalDepthBias(0.0f, 0.0f);
+                        for (int drawIndex = 0; drawIndex < casterDraws.Count; drawIndex++)
+                        {
+                            CasterDraw draw = casterDraws[drawIndex];
+                            commandBuffer.DrawRenderer(
+                                draw.renderer,
+                                draw.material,
+                                draw.submesh,
+                                draw.pass);
+                        }
+
+                        commandBuffer.DisableScissorRect();
+                        commandBuffer.SetGlobalDepthBias(0.0f, 0.0f);
+                    }
+                    matrixOffset += activeFaceCount;
                 }
                 commandBuffer.DisableShaderKeyword(CasterKeyword);
 
@@ -254,8 +298,12 @@ namespace EndfieldGraphShaderLab
 
             lastFailure = string.Empty;
             string activeDescription =
-                $"{target.actorKey}: row {target.sourceIndex}, packed light {target.packedIndex}, " +
-                $"slots 40..{39 + faceCount}, B={atlasTileResolution}, " +
+                $"{target.actorKey}: rows " +
+                (targetCount == 2
+                    ? $"{secondaryTarget.sourceIndex}/{target.sourceIndex}, packed lights " +
+                      $"{secondaryTarget.packedIndex}/{target.packedIndex}"
+                    : $"{target.sourceIndex}, packed light {target.packedIndex}") +
+                $", slots 40..{39 + primaryFaceCount + secondaryFaceCount}, B={atlasTileResolution}, " +
                 $"atlas={atlasWidth}x{atlasHeight}, D16, casters={casterDraws.Count}";
             if (!string.Equals(
                     activeDescription,
@@ -305,17 +353,23 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
-        private bool BuildShadowData(
-            EndfieldHGIsolatedPunctualShadowTarget target,
-            int faceCount,
-            out string failure)
+        private void ClearShadowData()
         {
-            failure = string.Empty;
             Array.Clear(worldToShadow, 0, worldToShadow.Length);
             Array.Clear(shadowParams, 0, shadowParams.Length);
             Array.Clear(shadowRects, 0, shadowRects.Length);
             for (int index = 0; index < lightShadowData.Length; index++)
                 lightShadowData[index] = new Vector4(-1.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+        private bool BuildShadowData(
+            EndfieldHGIsolatedPunctualShadowTarget target,
+            int faceCount,
+            int slotOffset,
+            int matrixOffset,
+            out string failure)
+        {
+            failure = string.Empty;
 
             float fieldOfView = target.light.spot
                 ? Mathf.Clamp(
@@ -347,7 +401,7 @@ namespace EndfieldGraphShaderLab
 
             for (int face = 0; face < faceCount; face++)
             {
-                int slot = DynamicCacheBase + face;
+                int slot = DynamicCacheBase + slotOffset + face;
                 int dynamicIndex = slot - DynamicCacheBase;
                 int tileX = StaticAtlasTileColumns + dynamicIndex / AtlasTileRows;
                 int tileY = dynamicIndex & (AtlasTileRows - 1);
@@ -372,8 +426,8 @@ namespace EndfieldGraphShaderLab
                     return false;
                 }
 
-                casterMatrices[face] = casterMatrix;
-                casterRects[face] = rect;
+                casterMatrices[matrixOffset + face] = casterMatrix;
+                casterRects[matrixOffset + face] = rect;
                 worldToShadow[slot] = receiverMatrix;
                 shadowParams[slot] = receiverParams;
                 shadowRects[slot] = new Vector4(
@@ -384,7 +438,7 @@ namespace EndfieldGraphShaderLab
             }
 
             lightShadowData[target.packedIndex] = new Vector4(
-                DynamicCacheBase,
+                DynamicCacheBase + slotOffset,
                 faceCount,
                 target.sourceIndex,
                 1.0f);

@@ -841,12 +841,25 @@
       "HGRendererListUtils.DrawDeferredLightingWriteAlpha"
     ]
   },
+  "recovered_pass0_hlsl_port": {
+    "status": "executable-non-presented",
+    "shader": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/Diagnostics/EndfieldDeferredPass0CompileDiagnostic.shader",
+    "fragment_source": "Assets/EndfieldGraphShaderLab/Shaders/Recovered/Diagnostics/EndfieldDeferredPass0Decompiled.hlsl",
+    "compile_verifier": "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldDeferredPass0CompileVerifier.cs",
+    "runtime_consumer": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredExactConsumer.cs",
+    "unity_d3d11_compile": {"messages": 0, "supported": true},
+    "neutral_fixture": {"exact_dxbc": [0, 0, 0, 1], "hlsl": [0, 0, 0, 1], "tolerance": 1e-6},
+    "same_camera_wulfa_fixture": {"width": 640, "height": 720, "float_count": 1843200, "non_finite": 0, "max_abs_error": 1.1920929e-7, "rmse": 4.801808638578287e-9, "values_over_1e_6": 0},
+    "beauty_safety": {"width": 3840, "height": 2160, "sidecars_on_vs_ordinary_pixel_identical": true},
+    "presented": false,
+    "boundary": "This closes executable program portability and numerical equivalence for the recovered fixture inputs. It does not recover retail settled frame resources, physical render-graph alias lifetime, or proof that the selected pass was submitted in the original CharInfo frame."
+  },
   "unresolved_exact_contract": [
     "A future/network-patched CharInfo result of InitDeferredLightingRenderParams. The current installed Persistent target table is exact and excludes InitDeferredLightingRenderParams plus the 0x19c/0x19d feature-switch accessors, but a later delivered table could replace them.",
     "Retail render-graph physical resource identity, alias lifetime, and settled contents. The lab now closes the source-camera 640x720 logical five-MRT plus D32S8 producer route and its cross-API bytes, but the non-presented sidecar is not evidence of physical render-graph equivalence.",
     "All selected ShaderVariablesGlobal value producers are source-closed. Its default-off canonical/EndfieldCB1 publisher now reads back 800/800 and 628/628 words exactly on D3D11/D3D12, preserves raw c28 integer offsets, zeroes every unselected row, activates in the same Wulfa frame, and fails closed without canonical prerequisites while leaving D3D12 beauty unchanged. Pass 0 remains disabled pending remaining texture/pixel inputs and a binding-compatible resolve. Exact c3.y=0.1, c30=(0,0,1,1), c31.x=7, c135..c137, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
-    "Frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, and wetness bindings, including exact neutral bindings for disabled features.",
-    "Canonical promotion plus a resource-binding-compatible pass-0 lighting implementation in the lab SRP. The simple resource-free WriteAlpha program and its three exact render-state variants are ported and D3D12-validated, but correctly remain unsubmitted for the source-closed RenderWithAlpha=false selected Gacha route; the recovered pass-0 lighting dump still contains bytecode/disassembly rather than directly importable ShaderLab source for Unity's current binding model."
+    "Retail settled frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, wetness, general-scene light, and shadow contents. Disabled-feature neutral bindings and the recovered fixture inputs are closed, but they are not evidence of the original frame's physical resources.",
+    "Canonical presentation and physical render-graph equivalence. The selected pass-0 program is now a resource-binding-compatible executable Unity HLSL sidecar and matches the original DXBC within one float ULP on the recovered 640x720 fixture, but both outputs remain deliberately non-presented until original-client draw-event, attachment, stencil, alias-lifetime, and settled-resource evidence exists."
   ],
   "required_next_capture": {
     "target": "one settled original-client CharInfo frame with SphereOutside visible",

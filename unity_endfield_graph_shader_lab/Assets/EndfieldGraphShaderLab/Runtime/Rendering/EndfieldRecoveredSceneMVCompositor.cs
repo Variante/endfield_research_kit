@@ -1072,7 +1072,7 @@ namespace EndfieldGraphShaderLab
                 sceneMV,
                 depth,
                 depthFormat,
-                new RenderQueueRange(3000, 3000),
+                new RenderQueueRange(2999, 3000),
                 MainTransparentPasses,
                 true,
                 RemoveWorldUILayer(layerMask),
@@ -1084,7 +1084,6 @@ namespace EndfieldGraphShaderLab
                 out output,
                 out failure);
         }
-
         internal bool CompositeDistortion(
             ScriptableRenderContext context,
             Camera camera,

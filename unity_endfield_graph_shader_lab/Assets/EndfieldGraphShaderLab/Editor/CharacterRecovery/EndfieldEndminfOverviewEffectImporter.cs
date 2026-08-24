@@ -31,23 +31,26 @@ namespace EndfieldGraphShaderLabEditor
         private static readonly long[] LitEffectCompatibilityMaterials = {
             0x5A6341E8A834E421L,
             unchecked((long)0xAFCE491DD7BC5724UL),
+            // P_fxui_endminm003_overview_02/all/suikuai (2).
+            unchecked((long)0xA531A88850690EB8UL),
         };
-        // The two source VFXRefract identities execute no visible pixels through
-        // the existing renderer/material-specific Zhuangfy MRT admission gate.
-        // The generic fallback is explicitly prohibited, so the admitted set is
-        // empty until an Endminf-specific exact branch is recovered.
-        // M_fx_endminm_gfx_28 (pBF7FEE87831B48FB) was previously admitted
-        // through the Zhuangfy MRT branch. A focused same-state isolate proved
-        // that branch draws an opaque torus because the Endminf scene-color /
-        // distortion composition producer is not recovered. Both source users
-        // therefore remain explicitly fail-closed until that producer, target
-        // formats and blend PSO are source-closed.
+        // M28 uses the selected VFXRefract MRT ABI. Native
+        // DistortionPassConstructor evidence confirms retail clones/copies
+        // scene color, binds color+SceneMV+depth, then draws the distortion
+        // renderer lists. The recovered compositor now supplies that topology;
+        // Endminf admission remains explicit until its direct-frame gate passes.
         private const long EndminfRefract28Material = unchecked((long)0xBF7FEE87831B48FBUL);
         private const string VisualCompatibilityEnvironment =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
         private static readonly long[] AdmittedRefractMaterials =
             IsVisualCompatibilityRequested()
-                ? new[] { EndminfRefract28Material }
+                ? new[] {
+                    EndminfRefract28Material,
+                    // P_fxui_endminm003_overview_02/all/suikuai (1).
+                    // This source renderer is authored enabled and uses the
+                    // same recovered Refract shader ABI as M28.
+                    0x19E6A2A7AE736DA5L,
+                }
                 : Array.Empty<long>();
         // Exact source identities selected by the focused Endminf BaseV2
         // variant audit. Each row is revalidated against name, shader PathID,
@@ -230,7 +233,15 @@ namespace EndfieldGraphShaderLabEditor
                     bool admitted = meshIds.All(context.meshes.ContainsKey) && materialIds.Length > 0 &&
                         materialIds.All(context.materials.ContainsKey);
                     if (meshIds.Length > 0 && meshIds.All(context.meshes.ContainsKey))
+                    {
                         renderer.SetMeshes(meshIds.Select(id => context.meshes[id]).ToArray(), meshIds.Length);
+                        // SetMeshes only fills the mesh slots; it does not
+                        // switch Unity's renderer out of Billboard mode. The
+                        // source m_Mesh PathIDs are direct evidence that these
+                        // nodes use mesh particles (including Endminf's four
+                        // authored source-stone variants).
+                        renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                    }
                     renderer.sharedMaterials = admitted
                         ? materialIds.Select(id => context.materials[id]).ToArray()
                         : Array.Empty<Material>();
@@ -360,16 +371,12 @@ namespace EndfieldGraphShaderLabEditor
         {
             var context = new EndfieldZhuangfyParticleEffectImporter.Context();
             bool visualCompatibility = IsVisualCompatibilityRequested();
-            Shader shader = Shader.Find(visualCompatibility
-                ? "Hidden/Endfield/VisualCompatibility/VFXRefract28"
-                : "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT");
-            L.Require(shader != null, visualCompatibility
-                ? "Opt-in Endminf visual-compatibility refraction shader is missing"
-                : "Exact recovered VFXRefract shader is missing");
+            Shader shader = Shader.Find(
+                "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT");
+            L.Require(shader != null, "Exact recovered VFXRefract shader is missing");
             if (visualCompatibility)
-                Debug.LogWarning("ENDFIELD VISUAL COMPATIBILITY ACTIVE: Endminf material " +
-                    "M_fx_endminm_gfx_28 uses an approximate scene-color refraction. " +
-                    "This is not source-exact and is never enabled by default.");
+                Debug.Log("Endminf M_fx_endminm_gfx_28 admitted through the recovered " +
+                    "Distortion MRT scene-color clone path for direct-frame validation.");
             Shader baseV2Shader = Shader.Find("Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT");
             L.Require(baseV2Shader != null, "Exact recovered VFXBaseV2 shader is missing");
             bool litEffectCompatibility = string.Equals(
@@ -387,9 +394,20 @@ namespace EndfieldGraphShaderLabEditor
             string meshSourceRoot = Path.Combine(repo,
                 "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh");
             long[] admittedMeshIds = {
+                // P_fxui_endminm003_overview_02/all/kuosan. This exact
+                // Plane059 mesh is the expanding-ring producer paired with
+                // M_fx_endminm_gfx_18; omitting it fail-closes the renderer.
+                468687656999008020L,
                 9180196635748412994L, 6551658390352545759L,
                 2869508565256554463L, 4104586682243008479L,
-                5519914799358855135L };
+                5519914799358855135L,
+                // Four authored shitou (1) mesh variants.
+                1706495650298738979L,
+                unchecked((long)0xAAF0B443C46F3923UL),
+                unchecked((long)0xA53E934EA8413923UL),
+                // overview_04 exact Loft003 and Sphere001 mesh payloads.
+                unchecked((long)0x890E4AE43F826188UL),
+                0x203E31C3FB31152FL };
             if (litEffectCompatibility)
                 admittedMeshIds = admittedMeshIds.Concat(new[] {
                     unchecked((long)0x8EC9950E5461C8D9UL) }).ToArray();
@@ -503,6 +521,28 @@ namespace EndfieldGraphShaderLabEditor
                 if (material == null) { material = new Material(selectedShader); AssetDatabase.CreateAsset(material, asset); }
                 material.shader = selectedShader; material.name = name;
                 EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(material, row, context);
+                if (AdmittedBaseV2Materials.ContainsKey(id))
+                {
+                    Dictionary<string, object> saved = L.Dict(row["m_SavedProperties"]);
+                    Dictionary<string, object> colors = L.Dict(saved["m_Colors"]);
+                    L.Require(colors.TryGetValue("_TintColor", out object rawTintValue),
+                        "Selected Endminf BaseV2 material lost raw _TintColor " + name);
+                    Dictionary<string, object> rawTintRow = L.Dict(rawTintValue);
+                    Color rawTint = new Color(
+                        L.Float(rawTintRow, "r"),
+                        L.Float(rawTintRow, "g"),
+                        L.Float(rawTintRow, "b"),
+                        L.Float(rawTintRow, "a"));
+                    material.SetFloat("_UseRecoveredRawTintColor", 1f);
+                    material.SetVector("_RecoveredRawTintColor",
+                        new Vector4(rawTint.r, rawTint.g, rawTint.b, rawTint.a));
+                    Vector4 recoveredRawTint = material.GetVector("_RecoveredRawTintColor");
+                    L.Require(
+                        Mathf.Abs(material.GetFloat("_UseRecoveredRawTintColor") - 1f) <= 1.0e-6f &&
+                        Vector4.Distance(recoveredRawTint,
+                            new Vector4(rawTint.r, rawTint.g, rawTint.b, rawTint.a)) <= 1.0e-6f,
+                        "Selected Endminf BaseV2 raw tint transport drifted " + name);
+                }
                 if (visualCompatibility && id == EndminfRefract28Material)
                 {
                     Texture dissolveTexture = material.GetTexture("_DissolveTex");

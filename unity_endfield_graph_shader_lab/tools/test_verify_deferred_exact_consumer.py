@@ -19,6 +19,7 @@ GOOD_LOG = """
 Exiting batchmode successfully now!
 Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
 Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
+Recovered deferred pass-0 HLSL vs exact DXBC comparison: camera=MainCamera, size=640x720, floatCount=1843200, maxAbs=1.1920929E-07, rmse=4.8E-09, over1e-6=0, over1e-4=0, over1e-3=0, presented=false.
 """
 
 
@@ -61,6 +62,17 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         self.assertFalse(report["valid"])
         self.assertTrue(
             any("readback_resource_mask_all_t0_t25" in failure
+                for failure in report["failures"])
+        )
+
+    def test_reports_hlsl_numeric_drift(self):
+        report = validate_log(
+            GOOD_LOG.replace("over1e-6=0", "over1e-6=7"),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(
+            any("hlsl_comparison_over_1e6" in failure
                 for failure in report["failures"])
         )
 

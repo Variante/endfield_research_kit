@@ -408,7 +408,8 @@ namespace EndfieldGraphShaderLab
         internal bool TryGetIsolatedPunctualSoftShadowTarget(
             Camera camera,
             out EndfieldHGIsolatedPunctualShadowTarget target,
-            out string failure)
+            out string failure,
+            int endminfSourceIndex = 11)
         {
             target = default;
             failure = string.Empty;
@@ -443,10 +444,12 @@ namespace EndfieldGraphShaderLab
 
             string actorKey;
             int expectedLightCount;
+            int sourceIndex;
             if (string.Equals(actorRoot.name, "Wulfa", StringComparison.OrdinalIgnoreCase))
             {
                 actorKey = "wulfa";
                 expectedLightCount = 8;
+                sourceIndex = 4;
             }
             else if (string.Equals(
                          actorRoot.name,
@@ -455,11 +458,26 @@ namespace EndfieldGraphShaderLab
             {
                 actorKey = "zhuangfy";
                 expectedLightCount = 6;
+                sourceIndex = 4;
+            }
+            else if (string.Equals(
+                         actorRoot.name,
+                         "Endminf",
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                actorKey = "endminf";
+                expectedLightCount = 12;
+                if (endminfSourceIndex != 3 && endminfSourceIndex != 11)
+                {
+                    failure = $"unsupported Endminf soft-rim source row {endminfSourceIndex}";
+                    return false;
+                }
+                sourceIndex = endminfSourceIndex;
             }
             else
             {
                 failure =
-                    $"actor identity '{actorRoot.name}' is not the isolated Wulfa/Zhuangfy contract";
+                    $"actor identity '{actorRoot.name}' is not an isolated punctual-shadow contract";
                 return false;
             }
 
@@ -472,9 +490,12 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
-            const int sourceIndex = 4;
             EndfieldHGOperatorLightData row = lights[sourceIndex];
-            if (!MatchesIsolatedPunctualSoftShadowContract(actorKey, row, out failure))
+            if (!MatchesIsolatedPunctualSoftShadowContract(
+                    actorKey,
+                    sourceIndex,
+                    row,
+                    out failure))
                 return false;
 
             int packedIndex = -1;
@@ -488,7 +509,7 @@ namespace EndfieldGraphShaderLab
             }
             if (packedIndex < 0)
             {
-                failure = $"{actorKey} RimLight_2 (5) is absent from the prepared light order";
+                failure = $"{actorKey} {row.sourceName} is absent from the prepared light order";
                 return false;
             }
 
@@ -496,7 +517,7 @@ namespace EndfieldGraphShaderLab
             Quaternion worldRotation = resolvedWorldRotations[sourceIndex];
             if (!IsFinite(worldPosition) || !TryNormalizeQuaternion(worldRotation, out worldRotation))
             {
-                failure = $"{actorKey} RimLight_2 (5) resolved to a non-finite transform";
+                failure = $"{actorKey} {row.sourceName} resolved to a non-finite transform";
                 return false;
             }
 
@@ -515,19 +536,26 @@ namespace EndfieldGraphShaderLab
 
         private static bool MatchesIsolatedPunctualSoftShadowContract(
             string actorKey,
+            int sourceIndex,
             EndfieldHGOperatorLightData row,
             out string failure)
         {
             failure = string.Empty;
+            string expectedName = actorKey == "endminf"
+                ? sourceIndex == 3 ? "RimLight_2" : "RimLight_2 (1)"
+                : "RimLight_2 (5)";
+            float expectedFarPlane = actorKey == "endminf"
+                ? sourceIndex == 3 ? 0.7f : 0.55f
+                : 0.76f;
             bool common =
-                string.Equals(row.sourceName, "RimLight_2 (5)", StringComparison.Ordinal) &&
+                string.Equals(row.sourceName, expectedName, StringComparison.Ordinal) &&
                 row.enabled && row.characterOnly && row.nprType == 3 && row.shadowType == 2 &&
                 !row.shadowOnly && !row.enableObbCullingBox && !row.hasCookie &&
                 !row.flickerEnabled && !row.useColorTemperature && !row.useCullingDistance &&
                 SameFloat(row.linearLightLength, -1.0f) &&
                 SameFloat(row.softSourceRadius, 0.0f) &&
                 SameFloat(row.shadowNearPlane, 0.2f) &&
-                SameFloat(row.shadowFarPlane, 0.76f) &&
+                SameFloat(row.shadowFarPlane, expectedFarPlane) &&
                 SameFloat(row.shadowBias, 0.05f) &&
                 SameFloat(row.shadowNormalBias, 0.4f) &&
                 SameFloat(row.shadowStrength, 1.0f) &&
@@ -539,7 +567,7 @@ namespace EndfieldGraphShaderLab
                 SameFloat(row.nprData.z, 0.0f) && SameFloat(row.nprData.w, 0.0f);
             if (!common)
             {
-                failure = $"{actorKey} row 4 no longer matches the serialized soft Rim contract";
+                failure = $"{actorKey} rim row no longer matches the serialized soft Rim contract";
                 return false;
             }
 
@@ -564,7 +592,7 @@ namespace EndfieldGraphShaderLab
                     return false;
                 }
             }
-            else
+            else if (actorKey == "zhuangfy")
             {
                 bool zhuangfy =
                     !row.spot && SameFloat(row.range, 0.5296414f) &&
@@ -577,6 +605,31 @@ namespace EndfieldGraphShaderLab
                 if (!zhuangfy)
                 {
                     failure = "Zhuangfy row 4 point-light identity no longer matches installed data";
+                    return false;
+                }
+            }
+            else
+            {
+                bool endminf = sourceIndex == 3
+                    ? row.spot && SameFloat(row.range, 0.7f) &&
+                      SameFloat(row.outerSpotAngle, 85.20261f) &&
+                      SameVector4(row.nprData, new Vector4(0.3f, 0.4f, 0.0f, 0.0f)) &&
+                      SameVector3(row.position, new Vector3(-0.593f, 0.943f, 0.422f)) &&
+                      SameQuaternion(
+                          row.rotation,
+                          new Quaternion(0.0f, 0.76840407f, 0.0f, 0.63996506f)) &&
+                      !row.hasFollower
+                    : row.spot && SameFloat(row.range, 0.55f) &&
+                      SameFloat(row.outerSpotAngle, 166.96637f) &&
+                      SameVector4(row.nprData, new Vector4(0.569f, 0.5f, 0.0f, 0.0f)) &&
+                      SameVector3(row.position, new Vector3(-0.424f, 1.684f, -0.136f)) &&
+                      SameQuaternion(
+                          row.rotation,
+                          new Quaternion(0.10568979f, 0.67250973f, -0.17864475f, 0.7103847f)) &&
+                      !row.hasFollower;
+                if (!endminf)
+                {
+                    failure = $"Endminf row {sourceIndex} light identity no longer matches installed data";
                     return false;
                 }
             }
