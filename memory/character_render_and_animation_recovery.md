@@ -60,8 +60,8 @@ archetypes remain labeled source kits rather than finished characters.
   `S_rock_small_1_017_02_lod2` mesh. Direct references are validated against
   pinned asset hashes, the default remains disabled/fail-closed, and only
   `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Capture schema
-  v4 proves 66 admitted entrance renderers and exactly four separately blocked
-  rows (one secondary LitEffect and three VFXRefract). This restores the amber
+  v4 proves 67 admitted entrance renderers and exactly three separately blocked
+  rows (one secondary LitEffect and two M28 VFXRefract rows). This restores the amber
   faceted stone/chunks but remains a non-exact forward LitEffect compatibility
   layer; do not treat its emission, lighting, or whole-frame MAE as retail
   HGBuffer parity. Both references support the existing spawn, 1.5-second
@@ -254,21 +254,21 @@ archetypes remain labeled source kits rather than finished characters.
   live in `reports/assets/character_recovery/endminf_post_stage_m13_delta.json`.
   This is Unity-path attribution only and does not establish a retail mismatch.
 - The frame-generation-off recording visibly confirms additional faceted
-  fragments around the raised hand, but the two blocked `overview_02/all/suikuai`
-  rows are not safe substitutes for M21. Both source renderers are authored
+  fragments around the raised hand. Both `overview_02/all/suikuai` source rows are authored
   enabled, nonlooping, GPU-instanced mesh bursts at 4.49 seconds; an importer
   marker bug formerly mislabeled blocked rows as source-disabled and is now
-  corrected. The Refract row selects the distinct `_USE_BLEND +
+  corrected. The `suikuai (1)` Refract row selects the distinct `_USE_BLEND +
   _USE_RBOFFSET + _USE_RGBOFFSET` fragment, including BlendTex alpha and a
-  three-tap RGB split, plus the original particle-instance vertex transport;
-  the M28 consumer implements only `_USE_RBOFFSET`. The LitEffect row disables
-  ForwardOnly and selects the five-MRT deferred HGBuffer program, while the
-  compatibility shader is a one-target ForwardOnly stand-in. A 60 Hz focused
-  probe at the authored burst boundary still produced oversized chromatic
-  triangles from the incomplete Refract program. Both rows therefore remain
-  fail-closed and outside the M01/M38/M28 compatibility sets. Recover their
-  exact fragment/deferred consumers before publishing either row; do not
-  compensate by resizing, brightening, retiming, or disabling M21.
+  three-tap RGB split, plus the original particle-instance vertex transport.
+  Its exact branch and `T_fx_mask_138_M` payload are now hash-pinned and admitted:
+  an exact-versus-control 60 Hz run changes no pixels before 4.50 seconds, peaks
+  at 3,260 bounded pixels near the hand, and decays/moves outward without the
+  former oversized chromatic triangles. The generated sequence now reports 67
+  admitted renderers. `suikuai (2)` remains separately fail-closed: its
+  LitEffect material disables ForwardOnly and selects the five-MRT deferred
+  HGBuffer program, while the compatibility shader is a one-target ForwardOnly
+  stand-in. Recover that deferred consumer for the remaining physical fragments;
+  do not compensate by resizing, brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
