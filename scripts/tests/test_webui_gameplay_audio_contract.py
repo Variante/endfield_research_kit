@@ -111,6 +111,17 @@ assert.equal(validSoundEffectsPayload({{schemaVersion: 5, characters: {{}}}}), f
             source,
         )
 
+    def test_sound_effect_sidecar_failure_is_visible_on_owned_items(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        labels = (ROOT / "webui" / "src" / "features" / "gameplay" / "labels.js").read_text(encoding="utf-8")
+        self.assertIn('result.error && !["assets", "projectileAudio"].includes(result.kind)', source)
+        self.assertIn('gameplayIntegrationError("soundEffects")', source)
+        self.assertGreaterEqual(
+            source.count('if (!STATE.integration.soundEffects) return renderSoundEffectsUnavailable();'),
+            2,
+        )
+        self.assertIn("soundEffectsUnavailable", labels)
+
     def test_projectile_audio_sidecar_joins_by_id_field_and_unsigned_hash(self) -> None:
         source = GAMEPLAY.read_text(encoding="utf-8")
         projectile_helpers = source.split("  function projectileEventHash", 1)[1].split(
