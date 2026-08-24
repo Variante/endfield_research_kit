@@ -257,6 +257,14 @@ all-character pass:
   `quaternion` with 1/12/16-byte strides and exact unpatched bidirectional
   assignments; all 38 array-like payload rows are therefore typed while their
   original serialized bytes remain preserved.
+  The four selected simulation/collider job structs now also have a closed
+  inner payload ABI: 59 `NativeArray<T>` slots and four
+  `NativeReference<int>` slots are exactly 16 bytes in those jobs. Combined
+  with the pinned accessor bodies, `NativeArray` is pointer/length/allocator at
+  `0x0/0x8/0xc`; `NativeReference` is pointer/allocator at `0x0/0x8` with four
+  bytes of unclaimed-value trailing padding. This is intentionally scoped to
+  the selected closed job instances and does not claim a universal open-generic
+  IL2CPP size.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with

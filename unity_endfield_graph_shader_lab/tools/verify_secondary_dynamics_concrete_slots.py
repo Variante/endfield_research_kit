@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Verify concrete secondary-dynamics generic slots without closing generics.
+"""Verify the exact selected-job generic payload ABI without closing open generics.
 
 The job contract measures each closed NativeArray/NativeReference field slot
 from the pinned MetadataRegistration field offsets and the native-size tail.
-The inner contract only supplies accessor offsets and lower bounds for the open
-generic definitions.  This verifier joins those two boundaries and refuses to
-promote the concrete 16-byte job slot to a generic type-size claim.
+The inner contract joins those exact slot spans to accessor field offsets. This
+verifier requires the selected job instances to close at 16 bytes while still
+refusing to promote that fact to an open-generic type-size claim.
 """
 
 from __future__ import annotations
@@ -64,27 +64,32 @@ def _validate_combined(job: dict[str, Any], inner: dict[str, Any]) -> dict[str, 
     if basis.get("abiAlignmentBytes") != job_builder.NATIVE_ABI_ALIGNMENT_BYTES:
         raise ContractError("job ABI alignment evidence drift")
 
-    if inner.get("status") != "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved":
-        raise ContractError("inner contract is not at its fail-closed size boundary")
+    if inner.get("status") != "selected_job_inner_payload_layout_closed_burst_mapping_unresolved":
+        raise ContractError("inner contract is not at its selected-job payload boundary")
     if not inner.get("inner_payload_offsets_recovered"):
         raise ContractError("inner contract lacks recovered accessor offsets")
-    if inner.get("inner_payload_layout_recovered"):
-        raise ContractError("inner contract incorrectly claims generic size recovery")
-    if inner.get("job_payload_layout_recovered"):
-        raise ContractError("inner contract incorrectly claims job payload recovery")
+    if inner.get("inner_payload_layout_recovered") is not True:
+        raise ContractError("inner contract lacks selected-instance payload recovery")
+    if inner.get("job_payload_layout_recovered") is not True:
+        raise ContractError("inner contract lacks selected job payload recovery")
 
-    lower_bounds: dict[str, int] = {}
+    payload_bytes: dict[str, int] = {}
     for kind, key in (("NativeArray", "nativeArray"), ("NativeReference", "nativeReference")):
         record = inner.get(key)
         if not isinstance(record, dict) or record.get("nativeSizeBytes") is not None:
-            raise ContractError(f"{kind} generic native size is unexpectedly closed")
+            raise ContractError(f"{kind} open-generic native size is unexpectedly claimed")
+        if record.get("selectedJobInstanceSizeBytes") != 16:
+            raise ContractError(f"{kind} selected job instance size drift")
         evidence = record.get("nativeSizeEvidence", {})
-        if evidence.get("status") != "lower_bound_only":
-            raise ContractError(f"{kind} generic size evidence boundary drift")
-        lower_bound = evidence.get("lowerBoundBytes")
-        if not isinstance(lower_bound, int) or lower_bound <= 0:
-            raise ContractError(f"{kind} generic lower bound is invalid")
-        lower_bounds[kind] = lower_bound
+        if (evidence.get("status") != "closed_for_selected_job_instances" or
+                evidence.get("sizeBytes") != 16):
+            raise ContractError(f"{kind} selected-instance size evidence drift")
+        value_bytes = 16 if kind == "NativeArray" else 12
+        if kind == "NativeReference" and (
+                evidence.get("trailingPaddingBytes") != 4 or
+                evidence.get("paddingValueClaimed") is not False):
+            raise ContractError("NativeReference selected-instance padding boundary drift")
+        payload_bytes[kind] = value_bytes
 
     counts = {"NativeArray": 0, "NativeReference": 0}
     widths: dict[str, set[int]] = {"NativeArray": set(), "NativeReference": set()}
@@ -107,10 +112,9 @@ def _validate_combined(job: dict[str, Any], inner: dict[str, Any]) -> dict[str, 
                 raise ContractError(f"{job_row.get('type')} {field.get('name')} width/span drift")
             if evidence.get("genericTypeSizeClaimed") is not False:
                 raise ContractError(f"{job_row.get('type')} {field.get('name')} claims generic size")
-            if width < lower_bounds[kind]:
+            if width != 16:
                 raise ContractError(
-                    f"{job_row.get('type')} {field.get('name')} concrete slot {width} "
-                    f"is below inner {kind} lower bound {lower_bounds[kind]}"
+                    f"{job_row.get('type')} {field.get('name')} selected slot is not 16 bytes"
                 )
             widths[kind].add(width)
 
@@ -127,9 +131,9 @@ def _validate_combined(job: dict[str, Any], inner: dict[str, Any]) -> dict[str, 
     return {
         "status": "validated",
         "concreteSlotWidthsBytes": {kind: 16 for kind in widths},
-        "genericSizeStatus": "unresolved_lower_bound_only",
+        "genericSizeStatus": "open_generic_not_claimed_selected_job_instances_closed",
         "fieldCounts": counts,
-        "genericLowerBoundsBytes": lower_bounds,
+        "selectedPayloadBytes": payload_bytes,
     }
 
 

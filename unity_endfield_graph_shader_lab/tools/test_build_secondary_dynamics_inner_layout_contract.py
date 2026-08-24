@@ -19,23 +19,37 @@ import build_secondary_dynamics_inner_layout_contract as builder
 
 
 class SecondaryDynamicsInnerLayoutTests(unittest.TestCase):
-    def test_published_contract_is_explicitly_fail_closed_at_burst_boundary(self) -> None:
+    def test_published_contract_closes_selected_job_payload_and_fails_at_burst_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
-        self.assertEqual(payload["status"], "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved")
-        self.assertFalse(payload["inner_payload_layout_recovered"])
+        self.assertEqual(payload["schema"], "endfield.charinfo.secondary-dynamics-inner-layout.v2")
+        self.assertEqual(payload["status"], "selected_job_inner_payload_layout_closed_burst_mapping_unresolved")
+        self.assertTrue(payload["inner_payload_layout_recovered"])
         self.assertTrue(payload["inner_payload_offsets_recovered"])
-        self.assertFalse(payload["job_payload_layout_recovered"])
+        self.assertTrue(payload["job_payload_layout_recovered"])
         self.assertIsNone(payload["nativeArray"]["nativeSizeBytes"])
-        self.assertEqual(payload["nativeArray"]["nativeSizeEvidence"]["lowerBoundBytes"], 16)
+        self.assertEqual(payload["nativeArray"]["selectedJobInstanceSizeBytes"], 16)
+        self.assertEqual(payload["nativeArray"]["nativeSizeEvidence"]["selectedClosedSlotCount"], 59)
         self.assertEqual(payload["nativeArray"]["fields"]["m_Buffer"]["offset"], "0x0")
         self.assertEqual(payload["nativeArray"]["fields"]["m_Length"]["offset"], "0x8")
         self.assertEqual(payload["nativeArray"]["fields"]["m_AllocatorLabel"]["offset"], "0xc")
         self.assertEqual(payload["nativeReference"]["fields"]["m_Data"]["offset"], "0x0")
         self.assertEqual(payload["nativeReference"]["fields"]["m_AllocatorLabel"]["offset"], "0x8")
         self.assertIsNone(payload["nativeReference"]["nativeSizeBytes"])
-        self.assertEqual(payload["nativeReference"]["nativeSizeEvidence"]["lowerBoundBytes"], 12)
+        self.assertEqual(payload["nativeReference"]["selectedJobInstanceSizeBytes"], 16)
+        self.assertEqual(payload["nativeReference"]["nativeSizeEvidence"]["payloadBytes"], 12)
+        self.assertEqual(payload["nativeReference"]["nativeSizeEvidence"]["trailingPaddingBytes"], 4)
+        self.assertFalse(payload["nativeReference"]["nativeSizeEvidence"]["paddingValueClaimed"])
         self.assertNotIn("padding", payload["nativeReference"]["fields"])
+        self.assertEqual(
+            payload["selectedJobSlotEvidence"]["closedSlotCounts"],
+            {"NativeArray": 59, "NativeReference": 4},
+        )
         self.assertEqual(payload["burstExports"]["mappingStatus"], "unresolved_wrapper_to_hashed_export")
+
+    def test_job_slot_contract_hash_drift_fails_closed(self) -> None:
+        with patch.object(builder, "EXPECTED_JOB_LAYOUT_SHA256", "0" * 64):
+            with self.assertRaisesRegex(builder.ContractError, "outer job layout contract hash drift"):
+                builder._closed_job_slot_evidence()
 
     def test_evidence_rejects_pattern_drift(self) -> None:
         class FakePe:

@@ -29,8 +29,11 @@ class SecondaryDynamicsConcreteSlotTests(unittest.TestCase):
             "NativeArray": 16,
             "NativeReference": 16,
         })
-        self.assertEqual(result["genericSizeStatus"], "unresolved_lower_bound_only")
-        self.assertEqual(result["genericLowerBoundsBytes"], {
+        self.assertEqual(
+            result["genericSizeStatus"],
+            "open_generic_not_claimed_selected_job_instances_closed",
+        )
+        self.assertEqual(result["selectedPayloadBytes"], {
             "NativeArray": 16,
             "NativeReference": 12,
         })
@@ -53,11 +56,11 @@ class SecondaryDynamicsConcreteSlotTests(unittest.TestCase):
         with self.assertRaisesRegex(verifier.ContractError, "coverage drift"):
             verifier._validate_combined(drifted, inner)
 
-    def test_generic_size_claim_is_rejected(self) -> None:
+    def test_open_generic_size_claim_is_rejected(self) -> None:
         job, inner = self._contracts()
         drifted = copy.deepcopy(inner)
         drifted["nativeArray"]["nativeSizeBytes"] = 16
-        with self.assertRaisesRegex(verifier.ContractError, "generic native size is unexpectedly closed"):
+        with self.assertRaisesRegex(verifier.ContractError, "open-generic native size is unexpectedly claimed"):
             verifier._validate_combined(job, drifted)
 
 

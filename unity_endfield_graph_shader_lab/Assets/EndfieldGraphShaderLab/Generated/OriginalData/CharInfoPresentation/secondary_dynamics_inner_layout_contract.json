@@ -1,9 +1,9 @@
 {
-  "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v1",
-  "status": "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved",
-  "inner_payload_layout_recovered": false,
+  "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v2",
+  "status": "selected_job_inner_payload_layout_closed_burst_mapping_unresolved",
+  "inner_payload_layout_recovered": true,
   "inner_payload_offsets_recovered": true,
-  "job_payload_layout_recovered": false,
+  "job_payload_layout_recovered": true,
   "secondary_dynamics_verified": false,
   "native_gate": {
     "gameAssembly": {
@@ -29,10 +29,12 @@
   "nativeArray": {
     "definitionTypeIndex": 50690,
     "nativeSizeBytes": null,
+    "selectedJobInstanceSizeBytes": 16,
     "nativeSizeEvidence": {
-      "status": "lower_bound_only",
-      "lowerBoundBytes": 16,
-      "reason": "Allocate writes the three recovered fields through byte 0x0f, but no closed generic type-size record proves that trailing padding is absent."
+      "status": "closed_for_selected_job_instances",
+      "sizeBytes": 16,
+      "selectedClosedSlotCount": 59,
+      "basis": "inner field writes through byte 0x0f plus exact 16-byte outer-job slot spans"
     },
     "fields": {
       "m_Buffer": {
@@ -90,10 +92,15 @@
   "nativeReference": {
     "definitionTypeIndex": 60806,
     "nativeSizeBytes": null,
+    "selectedJobInstanceSizeBytes": 16,
     "nativeSizeEvidence": {
-      "status": "lower_bound_only",
-      "lowerBoundBytes": 12,
-      "reason": "Allocate writes the recovered allocator field through byte 0x0b; neither this body nor a closed generic type-size record proves bytes 0x0c-0x0f or the absence of trailing padding."
+      "status": "closed_for_selected_job_instances",
+      "sizeBytes": 16,
+      "payloadBytes": 12,
+      "trailingPaddingBytes": 4,
+      "selectedClosedSlotCount": 4,
+      "basis": "inner fields through byte 0x0b plus exact 16-byte outer-job native-size tail spans",
+      "paddingValueClaimed": false
     },
     "fields": {
       "m_Data": {
@@ -153,6 +160,493 @@
       }
     }
   },
+  "selectedJobSlotEvidence": {
+    "source": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_job_layout_contract.json",
+      "size": 110435,
+      "sha256": "f8720afa5a0c6715475df119d22e139fcdc0515ad5b461928d51e0596ad2487d"
+    },
+    "schema": "endfield.charinfo.secondary-dynamics-job-layout.v1",
+    "status": "outer_job_layout_closed",
+    "selectedJobCount": 4,
+    "closedSlotCounts": {
+      "NativeArray": 59,
+      "NativeReference": 4
+    },
+    "slotWidthBytes": 16,
+    "jobs": [
+      {
+        "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJob",
+        "nativeSizeBytes": 272,
+        "selectedSlotCount": 17,
+        "selectedSlots": [
+          {
+            "field": "jobColliderIndexList",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x10",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "centerDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x20",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamIdArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x30",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "flagArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x40",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "sizeArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x50",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "framePositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x60",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "frameRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x70",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "frameScales",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x80",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldFramePositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x90",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldFrameRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xa0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nowPositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xb0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nowRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xc0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldPositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xd0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xe0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "workDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xf0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "_indexCount",
+            "kind": "NativeReference",
+            "nativePayloadOffset": "0x100",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "native_size_tail"
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.ColliderManager+EndSimulationStepJob",
+        "nativeSizeBytes": 96,
+        "selectedSlotCount": 6,
+        "selectedSlots": [
+          {
+            "field": "jobColliderIndexList",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x0",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nowPositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x10",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nowRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x20",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldPositions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x30",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldRotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x40",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "_indexCount",
+            "kind": "NativeReference",
+            "nativePayloadOffset": "0x50",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "native_size_tail"
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.SimulationManager+StartSimulationStepJob",
+        "nativeSizeBytes": 408,
+        "selectedSlotCount": 24,
+        "selectedSlots": [
+          {
+            "field": "stepParticleIndexArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x18",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "attributes",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x28",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "depthArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x38",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "positions",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x48",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "rotations",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x58",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "vertexRootIndices",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x68",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x78",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "parameterArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x88",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "centerDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x98",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamWindArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xa8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "windDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xb8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamIdArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xc8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xd8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nextPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xe8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "basePosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xf8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "velocityArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x108",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "baseRotArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x118",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldPositionArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x128",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldRotationArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x138",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "velocityPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x148",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "frictionArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x158",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "stepBasicPositionArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x168",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "stepBasicRotationArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x178",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "_indexCount",
+            "kind": "NativeReference",
+            "nativePayloadOffset": "0x188",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "native_size_tail"
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.SimulationManager+EndSimulationStepJob",
+        "nativeSizeBytes": 264,
+        "selectedSlotCount": 16,
+        "selectedSlots": [
+          {
+            "field": "stepParticleIndexArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x18",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "parameterArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x28",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "centerDataArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x38",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "attributes",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x48",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "vertexDepths",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x58",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "teamIdArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x68",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "nextPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x78",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "oldPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x88",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "velocityPosArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0x98",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "velocityArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xa8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "realVelocityArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xb8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "frictionArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xc8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "staticFrictionArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xd8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "collisionNormalArray",
+            "kind": "NativeArray",
+            "nativePayloadOffset": "0xe8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "next_field_native_offset"
+          },
+          {
+            "field": "_indexCount",
+            "kind": "NativeReference",
+            "nativePayloadOffset": "0xf8",
+            "slotWidthBytes": 16,
+            "slotWidthBasis": "native_size_tail"
+          }
+        ]
+      }
+    ],
+    "proof": "Each selected closed generic occupies a 16-byte outer-job slot bounded by the next field offset or the independently recovered job native-size tail."
+  },
   "burstExports": {
     "hashedExportCount": 628,
     "hashedExportNamesSha256": "3575fa430f691be98c1f2b6cadfb71e74854f422eed7fce767215d974ac332c9",
@@ -160,6 +654,6 @@
   },
   "unresolved": [
     "BurstDirectCall GetFunctionPointer/Discard wrappers are not statically joined to a specific hashed lib_burst_generated.dll export.",
-    "No Execute/UnsafeDo semantic or solver contract is claimed."
+    "The selected job payload ABI is closed, but the exact Burst solver implementation and runtime export selection remain unresolved."
   ]
 }

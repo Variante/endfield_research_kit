@@ -29,6 +29,8 @@ EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b98
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 EXPECTED_LIB_BURST_SHA256 = "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
 DEFAULT_OUTPUT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_inner_layout_contract.json"
+JOB_LAYOUT_CONTRACT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_job_layout_contract.json"
+EXPECTED_JOB_LAYOUT_SHA256 = "f8720afa5a0c6715475df119d22e139fcdc0515ad5b461928d51e0596ad2487d"
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -205,6 +207,73 @@ def _exports(path: Path) -> dict[str, Any]:
             "mappingStatus": "unresolved_wrapper_to_hashed_export"}
 
 
+def _closed_job_slot_evidence() -> dict[str, Any]:
+    if not JOB_LAYOUT_CONTRACT.is_file():
+        raise ContractError(f"missing outer job layout contract: {JOB_LAYOUT_CONTRACT}")
+    actual_hash = _sha256(JOB_LAYOUT_CONTRACT)
+    if actual_hash != EXPECTED_JOB_LAYOUT_SHA256:
+        raise ContractError(
+            "outer job layout contract hash drift: "
+            f"{actual_hash} != {EXPECTED_JOB_LAYOUT_SHA256}"
+        )
+    payload = json.loads(JOB_LAYOUT_CONTRACT.read_text(encoding="utf-8"))
+    if (payload.get("schema") != "endfield.charinfo.secondary-dynamics-job-layout.v1" or
+            payload.get("status") != "outer_job_layout_closed" or
+            payload.get("outer_job_layout_recovered") is not True or
+            payload.get("job_payload_layout_recovered") is not False):
+        raise ContractError("outer job layout contract boundary drift")
+    jobs = payload.get("jobs")
+    if not isinstance(jobs, list) or len(jobs) != 4:
+        raise ContractError("outer job layout census drift")
+    expected_definitions = {"NativeArray": 50690, "NativeReference": 60806}
+    counts = {kind: 0 for kind in expected_definitions}
+    job_rows: list[dict[str, Any]] = []
+    for job in jobs:
+        fields = job.get("fields")
+        if not isinstance(fields, list):
+            raise ContractError(f"invalid outer job fields: {job.get('type')}")
+        selected = []
+        for field in fields:
+            kind = field.get("kind")
+            if kind not in expected_definitions:
+                continue
+            context = field.get("genericContext") or {}
+            slot = field.get("slotWidthEvidence") or {}
+            if (context.get("genericDefinitionTypeIndex") != expected_definitions[kind] or
+                    field.get("slotWidthBytes") != 16 or
+                    slot.get("status") != "closed" or
+                    slot.get("slotSpanBytes") != 16 or
+                    slot.get("abiAlignmentBytes") != 8 or
+                    slot.get("abiAligned") is not True):
+                raise ContractError(
+                    f"{job.get('type')}.{field.get('name')} generic slot evidence drift"
+                )
+            counts[kind] += 1
+            selected.append({
+                "field": field["name"], "kind": kind,
+                "nativePayloadOffset": field["nativePayloadOffset"],
+                "slotWidthBytes": field["slotWidthBytes"],
+                "slotWidthBasis": slot["basis"],
+            })
+        job_rows.append({
+            "type": job.get("type"), "nativeSizeBytes": job.get("nativeSizeBytes"),
+            "selectedSlotCount": len(selected), "selectedSlots": selected,
+        })
+    if counts != {"NativeArray": 59, "NativeReference": 4}:
+        raise ContractError(f"closed generic job slot census drift: {counts}")
+    return {
+        "source": _file(JOB_LAYOUT_CONTRACT, actual_hash),
+        "schema": payload["schema"], "status": payload["status"],
+        "selectedJobCount": len(jobs), "closedSlotCounts": counts,
+        "slotWidthBytes": 16, "jobs": job_rows,
+        "proof": (
+            "Each selected closed generic occupies a 16-byte outer-job slot "
+            "bounded by the next field offset or the independently recovered "
+            "job native-size tail."
+        ),
+    }
+
+
 def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                    metadata: Path | None = DEFAULT_METADATA) -> dict[str, Any]:
     gate = _native_gate(game_assembly, metadata)
@@ -245,10 +314,15 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     nr_value = _pointer(generic, native, 477518, generic_type_index, generic_type_name)
     nr_set = _pointer(generic, native, 477519, generic_type_index, generic_type_name)
     nr_created = _pointer(generic, native, 477520, generic_type_index, generic_type_name)
+    closed_slots = _closed_job_slot_evidence()
     native_array = {
         "definitionTypeIndex": 50690, "nativeSizeBytes": None,
-        "nativeSizeEvidence": {"status": "lower_bound_only", "lowerBoundBytes": 16,
-                                "reason": "Allocate writes the three recovered fields through byte 0x0f, but no closed generic type-size record proves that trailing padding is absent."},
+        "selectedJobInstanceSizeBytes": 16,
+        "nativeSizeEvidence": {
+            "status": "closed_for_selected_job_instances", "sizeBytes": 16,
+            "selectedClosedSlotCount": closed_slots["closedSlotCounts"]["NativeArray"],
+            "basis": "inner field writes through byte 0x0f plus exact 16-byte outer-job slot spans",
+        },
         "fields": {"m_Buffer": {"offset": "0x0", "widthBytes": 8},
                    "m_Length": {"offset": "0x8", "widthBytes": 4},
                    "m_AllocatorLabel": {"offset": "0xc", "widthBytes": 4}},
@@ -266,8 +340,14 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     }
     native_reference = {
         "definitionTypeIndex": 60806, "nativeSizeBytes": None,
-        "nativeSizeEvidence": {"status": "lower_bound_only", "lowerBoundBytes": 12,
-                                "reason": "Allocate writes the recovered allocator field through byte 0x0b; neither this body nor a closed generic type-size record proves bytes 0x0c-0x0f or the absence of trailing padding."},
+        "selectedJobInstanceSizeBytes": 16,
+        "nativeSizeEvidence": {
+            "status": "closed_for_selected_job_instances", "sizeBytes": 16,
+            "payloadBytes": 12, "trailingPaddingBytes": 4,
+            "selectedClosedSlotCount": closed_slots["closedSlotCounts"]["NativeReference"],
+            "basis": "inner fields through byte 0x0b plus exact 16-byte outer-job native-size tail spans",
+            "paddingValueClaimed": False,
+        },
         "fields": {"m_Data": {"offset": "0x0", "widthBytes": 8},
                    "m_AllocatorLabel": {"offset": "0x8", "widthBytes": 4}},
         "evidence": {
@@ -283,21 +363,22 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         },
     }
     return {
-        "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v1",
-        "status": "inner_payload_offsets_closed_size_unresolved_burst_mapping_unresolved",
-        "inner_payload_layout_recovered": False,
+        "schema": "endfield.charinfo.secondary-dynamics-inner-layout.v2",
+        "status": "selected_job_inner_payload_layout_closed_burst_mapping_unresolved",
+        "inner_payload_layout_recovered": True,
         "inner_payload_offsets_recovered": True,
-        "job_payload_layout_recovered": False,
+        "job_payload_layout_recovered": True,
         "secondary_dynamics_verified": False,
         "native_gate": gate,
         "metadataRegistration": {"codeRegistrationVa": f"0x{code_registration:x}",
                                   "metadataRegistrationVa": f"0x{metadata_registration:x}"},
         "nativeArray": native_array,
         "nativeReference": native_reference,
+        "selectedJobSlotEvidence": closed_slots,
         "burstExports": _exports(Path(gate["libBurstGenerated"]["path"])),
         "unresolved": [
             "BurstDirectCall GetFunctionPointer/Discard wrappers are not statically joined to a specific hashed lib_burst_generated.dll export.",
-            "No Execute/UnsafeDo semantic or solver contract is claimed.",
+            "The selected job payload ABI is closed, but the exact Burst solver implementation and runtime export selection remain unresolved.",
         ],
     }
 
