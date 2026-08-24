@@ -218,6 +218,9 @@ details show GameObject, hierarchy, and world position only when the existing
 placement fields are exact. These labels describe authored serialized fields,
 not callback execution or Event posting, and generated coverage counts remain
 in Audio data rather than this memory topic.
+Exact AudioMapData trigger/lifecycle/room-tone fields use the same visible
+context surface only after their complete serialized schema validates; numeric
+matches from incomplete lookalike components remain absent.
 
 Streaming-instance sidecars retain exact entity/name/transform and bounded raw
 ECS evidence, but the currently validated InitChunkData columns expose no known

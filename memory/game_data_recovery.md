@@ -221,7 +221,10 @@ AnimeStudio AssetMap object root in one bounded streaming pass and uses exact
 AssetMap `Source` + `PathID` identities when joining authored objects. Prefab-
 local containment and scene-asset candidates are retained as separate evidence;
 only unique containment with an authoritative scene ID is promoted to scene
-ownership. Missing, malformed, or unreadable AssetMap input fails closed.
+ownership. Missing, malformed, or unreadable AssetMap input fails closed per
+VFS source. An independently validated source may publish a partial catalog
+with an explicit diagnostic; no identity, containment, or ownership edge is
+joined across an unavailable source.
 `AudioMapData._sceneNames`, `AudioLevel` rows, scene-emitter component fields,
 and `MissionRuntimeAsset.acceptMode.levelId` still describe authored source
 data. The current scene-emitter evidence is therefore a source prefab
@@ -272,6 +275,9 @@ narrow authored role: sound spawn/finish, hit/start/rotation/enable callbacks,
 animation-state audio config, particle and water fields, or the generic
 serialized-field boundary (with an audio-key hint). `componentLayout`, component
 type, and exact existing GameObject placement are separate evidence fields.
+The same collector accepts AudioMapData trigger-enter/exit, level lifecycle,
+and outdoor-room-tone Event hashes only when the complete serialized
+AudioMapData schema is present; incomplete lookalike schemas remain excluded.
 These projections do not imply component execution, Event posting, selected
 Wwise media, or audibility; generated stats carry role/layout/Event coverage.
 Character audio naming is a second exact ownership boundary. A delimited
@@ -288,6 +294,11 @@ an Event to the exact clips and character/enemy owner recorded by the callback
 context. The Event and clip names need not match. AnimatorController membership
 is retained when recovered, but execution, callback timing, Wwise selection,
 audibility, and SFX category remain separate evidence.
+AnimatorOverrideController substitutions become exact when the AssetMap
+uniquely identifies the override Source+PathID and both controller and
+effective-clip PPtrs are local (`m_FileID=0`) to that serialized file. Other
+PathID-only joins remain separately corpus-unique or unresolved; no mapping
+claims live override activation.
 The callback identity surface is built from a fail-closed CharacterTable,
 EnemyTable, and EnemyTemplateTable overlay. Persistent rows are authoritative;
 a malformed Persistent layer does not fall back to the StreamingAssets identity
