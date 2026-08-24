@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_fx_common_teleport_03
+  m_Shader: {fileID: 4800000, guid: 859517413d62d304394125526ad82624, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _USE_BLEND
+  - _USE_RBOFFSET
+  - _USE_RGBOFFSET
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties:
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BlendTex:
+        m_Texture: {fileID: 2800000, guid: d432a9c67c0fdf447ac7b0893145a037, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DissolveTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RefractTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaDstBlend: 10
+    - _AlphaSrcBlend: 1
+    - _Bi_Refract: 1
+    - _BlendSwitchUV: 0
+    - _BlendTexUVRotate: 0
+    - _BlendTexUseRefract: 0
+    - _CullMode: 0
+    - _DisableZTest: 1
+    - _DissolveAffectBlend: 0
+    - _DissolveEdgeSharp: 1.07
+    - _DissolveScheduleOffset: 0
+    - _DissolveUVRotate: 0
+    - _DstBlend: 10
+    - _EnableTransparentMV: 0
+    - _GOffset: -2
+    - _Intensity: 0.028
+    - _MVDstColorBlend: 6
+    - _MVSrcColorBlend: 3
+    - _NearCameraFadeDistanceEnd: 10
+    - _NearCameraFadeDistanceEnd2: 100
+    - _NearCameraFadeDistanceStart: 0.001
+    - _NearCameraFadeDistanceStart2: 120
+    - _ProcedureAlpha: 1
+    - _RBIntensity: 1
+    - _RefractIsNormal: 1
+    - _RefractSwitchUV: 0
+    - _RefractTexUVRotate: 0
+    - _RefractUseRBOffset: 0
+    - _RenderTransparentAfterDOF: 0
+    - _SrcBlend: 5
+    - _SurfaceType: 1
+    - _TintColorAlpha: 1
+    - _UseBlend: 1
+    - _UseBlendTexAsAlpha: 1
+    - _UseDissolve: 0
+    - _UseMainTexAsMask: 0
+    - _UseNearCameraFade: 0
+    - _UseRBOffset: 1
+    - _UseRGBOffset: 1
+    - _ZTest: 8
+    - _ZWrite: 0
+    m_Colors:
+    - _BlendColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BlendTexUVSpeed: {r: 0.94, g: 0, b: 0, a: 0}
+    - _DissolveUVSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _RBMainColorMask: {r: 1, g: 0, b: 0, a: 1}
+    - _RBOffset: {r: 2.58, g: 1.94, b: 0, a: 0}
+    - _RBOffset1ColorMask: {r: 0, g: 1, b: 0, a: 1}
+    - _RBOffset2ColorMask: {r: 0, g: 0, b: 1, a: 1}
+    - _RBOffsetColorMask: {r: 0, g: 1, b: 1, a: 1}
+    - _RecoveredLODFade: {r: 1000, g: 0, b: 0, a: 0}
+    - _RefractDir: {r: 1, g: 1, b: 0, a: 0}
+    - _RefractUVSpeed: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []
