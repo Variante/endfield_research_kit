@@ -640,6 +640,161 @@ def project_enemy_namespace_gameplay_audio(
     }
 
 
+def project_enemy_native_voice_response_audio(
+    event_rows: Iterable[dict[str, Any]],
+    enemy_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Project exact native voice-response routes onto current enemy items.
+
+    The native context already proves the current-build response callsite and
+    AudioDialog Event identity.  This projection adds an enemy owner only when
+    the Event id starts with exactly one longest current EnemyTable id plus a
+    delimiter.  It does not turn the static response route into observed
+    playback or a selected voice/media leaf.
+    """
+
+    enemy_id_by_key: dict[str, str] = {}
+    duplicate_keys: set[str] = set()
+    for value in enemy_ids:
+        enemy_id = str(value or "").strip()
+        if not enemy_id:
+            continue
+        key = enemy_id.casefold()
+        if key in enemy_id_by_key and enemy_id_by_key[key] != enemy_id:
+            duplicate_keys.add(key)
+        else:
+            enemy_id_by_key[key] = enemy_id
+    for key in duplicate_keys:
+        enemy_id_by_key.pop(key, None)
+
+    enemies: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen_trigger_ids: set[str] = set()
+    unique_events: set[str] = set()
+    unique_media: set[tuple[str, str]] = set()
+    unmatched_contexts = 0
+    ambiguous_contexts = 0
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        event_key = event_id.casefold()
+        native_contexts = [
+            context for context in event.get("contexts") or ()
+            if isinstance(context, dict)
+            and context.get("kind") == "nativeVoiceTriggerCallsite"
+        ]
+        if not event_id or not native_contexts:
+            continue
+        matches = [
+            key for key in enemy_id_by_key
+            if event_key.startswith(f"{key}_")
+        ]
+        if not matches:
+            unmatched_contexts += 1
+            continue
+        longest = max(map(len, matches))
+        owners = sorted(key for key in matches if len(key) == longest)
+        if len(owners) != 1:
+            ambiguous_contexts += 1
+            continue
+        owner_id = enemy_id_by_key[owners[0]]
+        media_refs = [
+            {
+                key: media[key]
+                for key in (
+                    "mediaId", "src", "rel", "format", "duration",
+                    "contentSha256", "audioCategory", "audioScope",
+                    "sourceLanguage",
+                )
+                if media.get(key) not in (None, "", [])
+            }
+            for media in event.get("media") or ()
+            if isinstance(media, dict) and media.get("src")
+        ]
+        for context in native_contexts:
+            trigger_key = str(context.get("triggerKey") or "").strip()
+            trigger_role = str(context.get("triggerRole") or "").strip()
+            trigger_id = f"nativeVoiceTrigger:{trigger_key}:{event_id}"
+            if trigger_id in seen_trigger_ids:
+                continue
+            row = {
+                "id": event_id,
+                "category": str(event.get("category") or "voice"),
+                "foundInWwise": bool(event.get("foundInWwise")),
+                "possibleMediaCount": int(event.get("possibleMediaCount") or 0),
+                "mediaRefs": media_refs,
+                "triggerId": trigger_id,
+                "triggerRole": trigger_role,
+                "triggerKey": trigger_key,
+                "consumerType": str(context.get("consumerType") or ""),
+                "consumerMethod": str(context.get("consumerMethod") or ""),
+                "targetBinding": str(context.get("targetBinding") or ""),
+                "runtimeRoute": str(context.get("runtimeRoute") or ""),
+                "triggerBindingStatus": str(
+                    context.get("triggerBindingStatus") or ""
+                ),
+                "runtimeSelectionStatus": str(
+                    context.get("runtimeSelectionStatus") or ""
+                ),
+                "triggerRequestEvidence": list(
+                    context.get("triggerRequestEvidence") or ()
+                ),
+                "nativeMappingId": str(context.get("nativeMappingId") or ""),
+                "methodVa": str(context.get("methodVa") or ""),
+                "literalLoadVa": str(context.get("literalLoadVa") or ""),
+                "playbackInvocationVa": str(
+                    context.get("playbackInvocationVa") or ""
+                ),
+                "ownerId": owner_id,
+                "ownerBindingStatus": (
+                    "exactCurrentEnemyTableIdPrefixInNativeVoiceEvent"
+                ),
+                "runtimeActivationStatus": (
+                    context.get("runtimeActivationStatus")
+                    or "nativeBranchAndLiveResponseSelectionUnobserved"
+                ),
+            }
+            enemies[owner_id].append(row)
+            seen_trigger_ids.add(trigger_id)
+            unique_events.add(event_key)
+            for media in media_refs:
+                unique_media.add((
+                    str(media.get("src") or ""),
+                    str(media.get("mediaId") or ""),
+                ))
+
+    for rows in enemies.values():
+        rows.sort(key=lambda row: (
+            str(row.get("triggerRole") or "").casefold(),
+            str(row.get("id") or "").casefold(),
+        ))
+    return {
+        "schemaVersion": 1,
+        "enemies": dict(sorted(enemies.items())),
+        "counts": {
+            "enemies": len(enemies),
+            "uniqueEvents": len(unique_events),
+            "triggerContexts": sum(len(rows) for rows in enemies.values()),
+            "playableMediaRefs": sum(
+                len(row.get("mediaRefs") or ())
+                for rows in enemies.values()
+                for row in rows
+            ),
+            "uniquePlayableMedia": len(unique_media),
+            "unmatchedContexts": unmatched_contexts,
+            "ambiguousContexts": ambiguous_contexts,
+        },
+        "evidenceBoundary": (
+            "Each row preserves a fingerprint-gated current-build native voice "
+            "response callsite and exact AudioDialog Event identity, then maps it "
+            "to one current EnemyTable item only when that complete enemy id is the "
+            "unique longest delimited Event prefix. The static response route is "
+            "exact; branch execution, speaker/cooldown/probability choice, selected "
+            "Wwise media, playback, and audibility remain unobserved."
+        ),
+    }
+
+
 def _load_overlay_table(
     export_root: Path,
     relatives: tuple[str, ...],

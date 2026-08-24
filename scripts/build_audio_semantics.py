@@ -14749,16 +14749,29 @@ def build_audio_semantic_data(
                 gameplay_enemies.keys(),
             )
         )
+        enemy_native_voice_responses = (
+            media_ownership.project_enemy_native_voice_response_audio(
+                events,
+                gameplay_enemies.keys(),
+            )
+        )
         for gameplay_enemy in gameplay_enemies.values():
             if isinstance(gameplay_enemy, dict):
                 gameplay_enemy.pop("authoredNamespaceEvents", None)
+                gameplay_enemy.pop("nativeVoiceResponseEvents", None)
         for enemy_id, namespace_events in (
             enemy_namespace_gameplay.get("enemies") or {}
         ).items():
             gameplay_enemies.setdefault(enemy_id, {})[
                 "authoredNamespaceEvents"
             ] = namespace_events
-        gameplay_sound_effects["schemaVersion"] = 7
+        for enemy_id, response_events in (
+            enemy_native_voice_responses.get("enemies") or {}
+        ).items():
+            gameplay_enemies.setdefault(enemy_id, {})[
+                "nativeVoiceResponseEvents"
+            ] = response_events
+        gameplay_sound_effects["schemaVersion"] = 8
         gameplay_sound_effects["characterNamespaceAudio"] = {
             "schemaVersion": character_namespace_gameplay.get("schemaVersion"),
             "counts": character_namespace_gameplay.get("counts") or {},
@@ -14771,11 +14784,20 @@ def build_audio_semantic_data(
             "counts": enemy_namespace_gameplay.get("counts") or {},
             "evidenceBoundary": enemy_namespace_gameplay.get("evidenceBoundary") or "",
         }
+        gameplay_sound_effects["enemyNativeVoiceResponses"] = {
+            "schemaVersion": enemy_native_voice_responses.get("schemaVersion"),
+            "counts": enemy_native_voice_responses.get("counts") or {},
+            "evidenceBoundary": (
+                enemy_native_voice_responses.get("evidenceBoundary") or ""
+            ),
+        }
         gameplay_counts = gameplay_sound_effects.setdefault("counts", {})
         for key, value in (character_namespace_gameplay.get("counts") or {}).items():
             gameplay_counts[f"characterNamespace{key[0].upper()}{key[1:]}"] = value
         for key, value in (enemy_namespace_gameplay.get("counts") or {}).items():
             gameplay_counts[f"enemyNamespace{key[0].upper()}{key[1:]}"] = value
+        for key, value in (enemy_native_voice_responses.get("counts") or {}).items():
+            gameplay_counts[f"enemyNativeVoice{key[0].upper()}{key[1:]}"] = value
         json_dump(gameplay_sound_effects_path, gameplay_sound_effects)
     json_dump(out_root / "index.json", payload)
     return payload

@@ -209,6 +209,77 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertEqual(projected["counts"]["uniqueEvents"], 0)
         self.assertEqual(projected["counts"]["enemies"], 0)
 
+    def test_native_voice_response_projection_requires_unique_longest_enemy_prefix(self):
+        context = {
+            "kind": "nativeVoiceTriggerCallsite",
+            "triggerKey": "combat_dead",
+            "triggerRole": "temporarySpeakerDeathResponse",
+            "consumerType": "Beyond.Gameplay.Audio.VoiceTempSpeakerProcessor",
+            "consumerMethod": "ResponseDeath",
+            "targetBinding": "temporarySpeakerEntityAndSpeakerType",
+            "triggerBindingStatus": (
+                "exactCurrentBuildLiteralArgumentAndAudioDialogEventSuffix"
+            ),
+            "runtimeActivationStatus": (
+                "nativeBranchAndLiveResponseSelectionUnobserved"
+            ),
+            "runtimeSelectionStatus": (
+                "speakerCooldownProbabilityToneAndLiveChoiceUnobserved"
+            ),
+            "triggerRequestEvidence": [
+                "exactNativeLiteralLoadIntoTriggerArgument",
+                "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+            ],
+            "nativeMappingId": "current-build-test",
+            "methodVa": "0x1000",
+            "literalLoadVa": "0x1010",
+            "playbackInvocationVa": "0x1020",
+        }
+        projected = media_ownership.project_enemy_native_voice_response_audio(
+            [
+                {
+                    "id": "eny_0053_hsmob_tx01_combat_dead_sv",
+                    "category": "voice",
+                    "foundInWwise": True,
+                    "possibleMediaCount": 1,
+                    "contexts": [context],
+                    "media": [{
+                        "mediaId": 7,
+                        "src": "/export/audio/7.flac",
+                        "duration": 1.5,
+                    }],
+                },
+                {
+                    "id": "eny_0053_hsmob2_combat_dead_sv",
+                    "contexts": [context],
+                    "media": [],
+                },
+                {
+                    "id": "eny_generic_combat_dead_sv",
+                    "contexts": [context],
+                    "media": [],
+                },
+            ],
+            ["eny_0053_hsmob", "eny_0053_hsmob_tx01"],
+        )
+
+        rows = projected["enemies"]["eny_0053_hsmob_tx01"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["id"], "eny_0053_hsmob_tx01_combat_dead_sv")
+        self.assertEqual(rows[0]["triggerKey"], "combat_dead")
+        self.assertEqual(rows[0]["mediaRefs"][0]["mediaId"], 7)
+        self.assertEqual(
+            rows[0]["ownerBindingStatus"],
+            "exactCurrentEnemyTableIdPrefixInNativeVoiceEvent",
+        )
+        self.assertEqual(
+            rows[0]["runtimeActivationStatus"],
+            "nativeBranchAndLiveResponseSelectionUnobserved",
+        )
+        self.assertEqual(projected["counts"]["triggerContexts"], 1)
+        self.assertEqual(projected["counts"]["unmatchedContexts"], 2)
+        self.assertNotIn("eny_0053_hsmob", projected["enemies"])
+
     def test_animation_callback_link_preserves_non_matching_clip_and_owner(self):
         events = [
             {

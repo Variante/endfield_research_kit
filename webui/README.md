@@ -455,6 +455,11 @@ from bounded grammar/hash recovery rather than a recovered consumer.
 Leading `au_monster_<token>_*` names are shown only when the token has one exact
 current EnemyTable owner; this remains identity-only, not runtime or playback
 evidence.
+Enemy cards also expose a separate native-response group when a fingerprint-
+locked current-build voice callsite requests an exact AudioDialog Event whose
+longest delimited prefix identifies that enemy. The group preserves response
+role and playable candidates, but not live speaker choice, Wwise selection, or
+audibility.
 All supported AnimationClip audio callbacks are shown separately from the
 same-name action classification. Event/media details expose the exact clips,
 callback functions, owners, reachability, and recovered AnimatorController

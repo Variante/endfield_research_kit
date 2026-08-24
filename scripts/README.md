@@ -661,6 +661,10 @@ skill and animation audio.
 The same projection accepts a leading `au_monster_<token>_*` Event only when
 that token maps to one exact current `EnemyTable` id; it remains separate from
 full `au_eny_<id>_*` matches and is identity-only.
+Native voice-response callsites are published separately when their exact
+AudioDialog Event has one longest delimited current EnemyTable prefix. They
+retain response role and media candidates without claiming live selection or
+playback.
 The same publisher projects recovered grammar-derived `au_` names to an enemy
 only when the full current EnemyTable id prefix plus delimiter matches exactly.
 That `enemyNamespaceAudio` projection is identity-only and is not a trigger or
