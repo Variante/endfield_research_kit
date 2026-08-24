@@ -74,8 +74,8 @@ archetypes remain labeled source kits rather than finished characters.
   recovers the selected HGBuffer fragment's 576-byte `UnityPerMaterial` table
   and exact offsets for all 17 parallax fields used through the 496-byte b3
   prefix (including `_ParallaxColor` at byte 464 and its dark color at 480).
-  This closes the selected physical b3 slice, not visual admission. Live b1
-  VFX globals, b2 per-draw history/LOD state, the selected b4 value,
+  This closes the selected physical b3 slice, not visual admission. Selected-
+  frame b1 VFX globals, b2 per-draw history/LOD state, the selected b4 value,
   `ParserBindChannels`, complete HGBuffer frame publication, and the visibly
   over-bright raised-hand glow remain fail-closed; do not tune the non-exact
   compatibility shader against the video.
@@ -233,13 +233,25 @@ archetypes remain labeled source kits rather than finished characters.
   source subprogram 19 with `HG_ENABLE_MV,_PARALLAX_MAP`; its retained particle
   streams already match Position/Normal/Color/UV/UV2/Custom1XYZW. The first
   valid pipeline change is an M27-PathID-only five-MRT owner before deferred
-  resolve, never global `GBuffer` admission. It remains fail-closed because live
-  AnchorWaveBright, per-draw/instance history, terrain profile, and a presented
-  content-valid deferred consumer are not yet closed. The current-build terrain
+  resolve, never global `GBuffer` admission. It remains fail-closed because the
+  selected-frame AnchorWaveBright value, per-draw/instance history, terrain
+  profile value, and a presented content-valid deferred consumer are not yet
+  closed. Current-build native evidence now proves that AnchorWaveBright c105
+  is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
+  verbatim to the global constant buffer; its zero construction default is not
+  a selected-frame fact. The current-build terrain
   profile producer is now bounded further: a reserved zero-key dictionary maps
   to float(index + 1), with zero meaning no registered terrain profile. Its
   CharInfo selected-frame value remains unobserved, so canonical M27 still must
   not assume zero.
+- The two remaining M28 `VFXRefract` rows stay fail-closed even though the
+  Distortion SceneColor/SceneMV/depth compositor topology is available. Their
+  verifier currently pins only vertex programs, the selected-build material
+  JSON and exact four-root renderer tuples are absent, and the old visual probe
+  covers only one terminal overview_02 frame. Admission requires a complete
+  VS+PS `_USE_DISSOLVE` pair, exact unrounded tuples for both overview_02 and
+  overview_03, and two fixed-control 60 Hz windows; M21, exact `suikuai (1)`,
+  and M27 must remain unchanged throughout.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
