@@ -100,9 +100,9 @@ assert.equal(merged[0].possibleMediaCount, 2);
             f"""
 const assert = require("node:assert/strict");
 {function_source}
-const current = {{schemaVersion: 5, characters: {{}}, enemies: {{}}}};
+const current = {{schemaVersion: 6, characters: {{}}, enemies: {{}}}};
 assert.equal(validSoundEffectsPayload(current), true);
-assert.equal(validSoundEffectsPayload({{schemaVersion: 6, characters: {{}}, enemies: {{}}}}), false);
+assert.equal(validSoundEffectsPayload({{schemaVersion: 7, characters: {{}}, enemies: {{}}}}), false);
 assert.equal(validSoundEffectsPayload({{schemaVersion: 5, characters: {{}}}}), false);
 """
         )
@@ -239,6 +239,23 @@ assert.deepEqual(rows[0].audio, []);
         labels = (ROOT / "webui" / "src" / "features" / "gameplay" / "labels.js").read_text(encoding="utf-8")
         self.assertIn("possible media associations", labels)
         self.assertIn("unique decoded files", labels)
+
+
+    def test_character_namespace_audio_is_a_distinct_non_skill_surface(self) -> None:
+        source = GAMEPLAY.read_text(encoding="utf-8")
+        renderer = source.split("  function renderCharacterSoundEffects", 1)[1].split(
+            "\n  function renderCharacterProjectileCompact", 1
+        )[0]
+        evidence = source.split("  function renderGameplaySoundEvidence", 1)[1].split(
+            "\n  function renderGameplaySoundCandidateList", 1
+        )[0]
+        labels = (ROOT / "webui" / "src" / "features" / "gameplay" / "labels.js").read_text(encoding="utf-8")
+        self.assertIn("authoredNamespaceEvents", renderer)
+        self.assertIn('label: text("authoredNamespaceAudio")', renderer)
+        self.assertNotIn("gameplaySoundHasExactSkillTrigger", renderer)
+        self.assertIn("exactCharacterTableNamespaceIdentity", evidence)
+        self.assertIn("soundAuthoredNamespaceEvidence", evidence)
+        self.assertIn("It does not prove an action, skill, Event post", labels)
 
 
 if __name__ == "__main__":

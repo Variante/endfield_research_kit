@@ -391,6 +391,123 @@ def annotate_event_character_audio_identity(
     }
 
 
+CHARACTER_NAMESPACE_GAMEPLAY_EVENT_FIELDS = (
+    "id",
+    "category",
+    "foundInWwise",
+    "possibleMediaCount",
+    "playableCandidates",
+    "playRootCount",
+    "playRootActionIds",
+    "mediaRelationTypes",
+    "selectionContainerTypes",
+    "traversalStatus",
+    "unresolvedNodeCount",
+    "runtimeSelection",
+    "characterAudioIdentityStatus",
+    "characterAudioNameMatchEvidence",
+    "characterAudioContextOwnerIds",
+    "characterAudioContextRelationshipStatus",
+)
+
+
+def project_character_namespace_gameplay_audio(
+    event_rows: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Project exact authored character namespaces onto Gameplay owners.
+
+    This is deliberately distinct from Gameplay trigger ownership.  An exact
+    CharacterTable token in a Wwise Event name identifies the authored
+    character namespace, but does not prove an action, skill, callback, Event
+    posting, selected leaf, or playback.
+    """
+
+    characters: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    media_associations = 0
+    playable_event_associations = 0
+    unique_event_ids: set[str] = set()
+    unique_media: set[tuple[str, str]] = set()
+    for event in event_rows:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        owner_ids = sorted({
+            str(owner_id).strip()
+            for owner_id in event.get("characterAudioOwnerIds") or ()
+            if str(owner_id).strip()
+        })
+        if not event_id or not owner_ids:
+            continue
+        audio: list[dict[str, Any]] = []
+        for media in event.get("media") or ():
+            if not isinstance(media, dict) or not media.get("src"):
+                continue
+            compact_media = {
+                key: media[key]
+                for key in (
+                    "mediaId", "src", "duration", "format", "contentSha256",
+                )
+                if media.get(key) not in (None, "", [])
+            }
+            compact_evidence = [
+                {
+                    key: evidence[key]
+                    for key in (
+                        "rootActionIds", "soundObjectCount", "relationTypes",
+                    )
+                    if evidence.get(key) not in (None, "", [])
+                }
+                for evidence in media.get("wwiseMediaEvidence") or ()
+                if isinstance(evidence, dict)
+            ]
+            if compact_evidence:
+                compact_media["wwiseMediaEvidence"] = compact_evidence
+            audio.append(compact_media)
+        compact = {
+            key: event[key]
+            for key in CHARACTER_NAMESPACE_GAMEPLAY_EVENT_FIELDS
+            if event.get(key) not in (None, "", [])
+        }
+        compact["audio"] = audio
+        compact["authoredNamespaceOwnershipStatus"] = (
+            "exactCharacterTableNamespaceIdentity"
+        )
+        compact["runtimeActivationStatus"] = "unobserved"
+        unique_event_ids.add(event_id.casefold())
+        for media in audio:
+            unique_media.add((
+                str(media.get("src") or ""),
+                str(media.get("mediaId") or ""),
+            ))
+        for owner_id in owner_ids:
+            characters[owner_id].append(dict(compact))
+            media_associations += len(audio)
+            if audio or int(event.get("possibleMediaCount") or 0):
+                playable_event_associations += 1
+
+    for rows in characters.values():
+        rows.sort(key=lambda row: str(row.get("id") or "").casefold())
+    return {
+        "schemaVersion": 1,
+        "characters": dict(sorted(characters.items())),
+        "counts": {
+            "characters": len(characters),
+            "uniqueEvents": len(unique_event_ids),
+            "eventOwnerAssociations": sum(len(rows) for rows in characters.values()),
+            "playableEventOwnerAssociations": playable_event_associations,
+            "mediaOwnerAssociations": media_associations,
+            "uniquePlayableMedia": len(unique_media),
+        },
+        "evidenceBoundary": (
+            "Each row has one exact CharacterTable owner recovered from a delimited "
+            "full key, a current-table-unique four-digit chr namespace, or a unique "
+            "Event-leading internal character token. This is authored namespace "
+            "identity only: no action execution, skill ownership, callback, Event "
+            "posting, Wwise branch selection, playback, or audibility is claimed."
+        ),
+    }
+
+
 def _load_overlay_table(
     export_root: Path,
     relatives: tuple[str, ...],

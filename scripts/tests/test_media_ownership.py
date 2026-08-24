@@ -89,6 +89,46 @@ class MediaOwnershipTests(unittest.TestCase):
         self.assertNotIn("characterAudioOwnerIds", events[4])
         self.assertEqual(counts["eventsWithCharacterAudioIdentity"], 4)
 
+    def test_character_namespace_gameplay_projection_keeps_identity_separate(self):
+        projected = media_ownership.project_character_namespace_gameplay_audio([
+            {
+                "id": "au_actor_wulfa_ui_open",
+                "category": "ui",
+                "foundInWwise": True,
+                "possibleMediaCount": 1,
+                "playRootCount": 1,
+                "characterAudioIdentityStatus": "uniqueCharacterTableTokenPrefix",
+                "characterAudioOwnerIds": ["chr_0028_wulfa"],
+                "characterAudioNameMatchEvidence": (
+                    "uniqueCharacterTableTokenAtWwiseEventPrefix"
+                ),
+                "media": [{
+                    "mediaId": 7,
+                    "src": "/export/audio/7.flac",
+                    "duration": 1.25,
+                    "contentSha256": "abc",
+                }],
+            },
+            {
+                "id": "au_unowned",
+                "possibleMediaCount": 1,
+                "media": [{"mediaId": 8, "src": "/export/audio/8.flac"}],
+            },
+        ])
+
+        rows = projected["characters"]["chr_0028_wulfa"]
+        self.assertEqual([row["id"] for row in rows], ["au_actor_wulfa_ui_open"])
+        self.assertEqual(rows[0]["audio"][0]["mediaId"], 7)
+        self.assertEqual(
+            rows[0]["authoredNamespaceOwnershipStatus"],
+            "exactCharacterTableNamespaceIdentity",
+        )
+        self.assertEqual(rows[0]["runtimeActivationStatus"], "unobserved")
+        self.assertNotIn("triggerBindingStatus", rows[0])
+        self.assertNotIn("sourceSkillIds", rows[0])
+        self.assertEqual(projected["counts"]["uniqueEvents"], 1)
+        self.assertEqual(projected["counts"]["mediaOwnerAssociations"], 1)
+
     def test_animation_callback_link_preserves_non_matching_clip_and_owner(self):
         events = [
             {
