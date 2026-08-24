@@ -50,7 +50,7 @@ const UI_TEXTS = {
     storyIssueInferredOptionResponse: "\u9009\u9879\u56de\u5e94\u4e3a\u63a8\u6d4b",
     storyIssueDuplicateTimestamps: "\u65f6\u95f4\u6233\u91cd\u590d",
     storyIssueTimelineTimestampRegression: "Timeline \u65f6\u95f4\u56de\u9000",
-    storyIssueOverrided: "\u5df2\u624b\u52a8\u8986\u76d6",
+    storyIssueOverrided: "\u9009\u9879\u5df2\u624b\u52a8\u8986\u76d6",
     storyIssueNotOverrided: "\u4ecd\u9700\u624b\u52a8\u8986\u76d6",
     recoveryMethodLinePrefix: "\u884c\u987a\u5e8f",
     recoveryMethodOptionPrefix: "\u9009\u9879",
@@ -481,7 +481,7 @@ const UI_TEXTS = {
     storyIssueInferredOptionResponse: "Inferred reply",
     storyIssueDuplicateTimestamps: "Duplicate timestamps",
     storyIssueTimelineTimestampRegression: "Timeline regression",
-    storyIssueOverrided: "Manual override",
+    storyIssueOverrided: "Option manually overridden",
     storyIssueNotOverrided: "Needs manual override",
     recoveryMethodLinePrefix: "Line order",
     recoveryMethodOptionPrefix: "Option",
@@ -1389,6 +1389,7 @@ const STORY_ISSUE_ORDER = [
   "keyedOptionLayout",
   "inferredOptionLayout",
   "inferredOptionResponse",
+  "overrided",
   "notOverrided",
 ];
 

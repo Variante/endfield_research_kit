@@ -87,6 +87,9 @@ data.
   page and normalizes the URL.
 - Story issue and recovery-method filters remain visible; raw source blocks,
   Timeline evidence, cutscene diagnostics, and order tools remain debug-only.
+- Manual option coverage adds its own filterable Story tag while preserving
+  generated option-evidence classifications and counts, including
+  unregistered table-only placement.
 - Mission Pipeline CallServer rows retain exact preceding-Story path context
   and rejection diagnostics. Only a unique linear Story -> CallServer ->
   callback -> Story closure may enter the source-order graph; the current

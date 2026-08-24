@@ -384,6 +384,7 @@ class PreviewInputTests(unittest.TestCase):
         )
         self.assertTrue(elevation[0] == elevation[1] == elevation[2])
         self.assertEqual(surface[:4], bytes((120, 80, 40, 255)))
+        self.assertEqual(surface[7], 0)
         self.assertEqual(points[:3], bytes((120, 80, 40)))
 
     def test_explicit_roof_instance_is_omitted_before_depth_raster(self):
@@ -542,13 +543,25 @@ class SurfaceRasterTests(unittest.TestCase):
             mesh.parent.mkdir(parents=True)
             # OBJ X is mirrored by AnimeStudio; after undoing that mirror this
             # is a 4x4 right triangle in Unity world X/Z.
-            mesh.write_text("v 0 2 0\nv -4 6 0\nv 0 2 4\nf 1 2 3\n", encoding="utf-8")
+            mesh.write_text(
+                "v 0 2 0\nv -4 6 0\nv 0 2 4\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n",
+                encoding="utf-8",
+            )
             streaming = [{
                 "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
                 "meshes": [{"obj": "export_full/recovered/mesh.obj", "pathId": 1}],
             }]
             bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
-            with mock.patch.object(builder, "ROOT", root):
+            texture = {
+                "width": 1, "height": 1, "pixels": bytes((31, 127, 223, 255)),
+                "scale": (1.0, 1.0), "offset": (0.0, 0.0),
+                "tint": (1.0, 1.0, 1.0, 1.0), "alphaMode": "opaque",
+                "textureRel": "StreamingAssets/Texture2D/exact.png",
+            }
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "_texture_render_source", return_value=texture
+            ):
                 sparse = render_streaming_surface_samples(
                     "sparse", streaming, bounds, 8, 8, root / "out", 0.25, {}
                 )
@@ -561,6 +574,29 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(dense["sourceSampleCount"], 10)
         self.assertEqual(sparse["densityPerSquareMeter"], 0.25)
         self.assertEqual(sparse["spacingMeters"], 2.0)
+        self.assertEqual(sparse["baseColorTextures"], ["StreamingAssets/Texture2D/exact.png"])
+
+    def test_surface_points_without_exact_texture_remain_unpublished(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh = root / "export_full/recovered/mesh.obj"
+            mesh.parent.mkdir(parents=True)
+            mesh.write_text(
+                "v 0 2 0\nv -4 2 0\nv 0 2 4\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n",
+                encoding="utf-8",
+            )
+            streaming = [{
+                "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                "meshes": [{"obj": "export_full/recovered/mesh.obj", "pathId": 1}],
+            }]
+            bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
+            with mock.patch.object(builder, "ROOT", root):
+                result = render_streaming_surface_samples(
+                    "untextured", streaming, bounds, 8, 8, root / "out", 1.0, {}
+                )
+
+        self.assertIsNone(result)
 
     def test_exact_surface_sampling_excludes_floor_and_ceiling_surfaces(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -613,6 +649,66 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(raster["triangles"], 1)
         self.assertEqual(raster["excludedDetailTriangles"], 1)
 
+    @unittest.skipIf(builder._raster_triangle_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_numba_streaming_raster_matches_stdlib_pixels_and_depth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mesh = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/triangle.obj"
+            mesh.parent.mkdir(parents=True)
+            mesh.write_text(
+                "v 0 2 0\nv -4 3 0\nv 0 4 4\nvt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n",
+                encoding="utf-8",
+            )
+            texture = root / "texture.png"
+            material = root / "material.json"
+            builder.write_png(texture, 1, 1, [bytes((128, 64, 32, 255))])
+            material.write_text(json.dumps({
+                "m_SavedProperties": {"m_Colors": {"_BaseColor": {"r": 0.5, "g": 0.25, "b": 2.0}}},
+            }), encoding="utf-8")
+            cover = mesh.with_name("cover.obj")
+            cover.write_text("v 0 12 0\nv -4 13 0\nv 0 14 4\nf 1 2 3\n", encoding="utf-8")
+            streaming = [{
+                "entityBase": "P_prop_test_001",
+                "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                "meshes": [{
+                    "name": "S_prop_test_lod0",
+                    "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/triangle.obj",
+                    "pathId": 1,
+                }],
+            }, {
+                "entityBase": "P_prop_untextured_cover",
+                "matrixColumnMajor": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                "meshes": [{
+                    "name": "S_prop_untextured_cover_lod0",
+                    "obj": "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/cover.obj",
+                    "pathId": 2,
+                }],
+            }]
+            bounds = {"minX": 0.0, "maxX": 4.0, "minZ": 0.0, "maxZ": 4.0}
+            bindings = {"StreamingAssets/Mesh/triangle.obj": {
+                "slot": "_BaseColorMap", "textureRel": "texture.png", "texturePath": texture,
+                "materialRel": "material.json", "materialPath": material,
+            }}
+            builder._MATERIAL_PARAMS.clear()
+            with mock.patch.object(builder, "ROOT", root):
+                accelerated = builder.rasterise_streaming_depth(streaming, bounds, 32, 32, bindings)
+                with mock.patch.object(builder, "_raster_triangle_numba", None):
+                    stdlib = builder.rasterise_streaming_depth(streaming, bounds, 32, 32, bindings)
+
+        self.assertEqual(accelerated["rasterBackend"], "numpy_numba")
+        self.assertEqual(stdlib["rasterBackend"], "stdlib_python")
+        self.assertEqual(accelerated["depth"], stdlib["depth"])
+        self.assertEqual(accelerated["detailDepth"], stdlib["detailDepth"])
+        self.assertEqual(accelerated["albedo"], stdlib["albedo"])
+        self.assertEqual(accelerated["detailAlbedo"], stdlib["detailAlbedo"])
+        colors = {
+            bytes(accelerated["albedo"][index:index + 4])
+            for index in range(0, len(accelerated["albedo"]), 4)
+            if accelerated["albedo"][index + 3]
+        }
+        self.assertEqual(colors, {bytes((92, 30, 47, 255))})
+        self.assertGreater(max(accelerated["depth"]), 10.0)
+
     def test_streaming_obj_preserves_triangle_uv_indices(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = self._cluster_obj(
@@ -662,6 +758,27 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(exact[7]["mappingMethod"], "exact_hlod_level_lod_signed_suffix_to_generated_material")
         self.assertEqual(wrong_level, {})
 
+    def test_asset_map_hlod_diffuse_fallback_selects_only_exact_exported_texture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            texture = root / "T_auto_generated_HLOD0_indie_dg002_art_9_D_p2A.png"
+            builder.write_png(texture, 1, 1, [bytes((220, 230, 250, 255))])
+            index = {"hlodDiffuseBindings": [{
+                "level": "indie_dg002", "lod": 0, "hash": -7,
+                "texturePathId": 42, "textureName": "T_auto_generated_HLOD0_indie_dg002_art_9_D",
+                "container": "assets/indie_dg002/material.mat",
+            }]}
+            with mock.patch.object(builder, "_TEXTURE_BINDINGS", {}), mock.patch.object(
+                builder, "_HLOD_TEXTURE_BINDINGS", {}
+            ):
+                installed = builder.install_asset_map_hlod_diffuse_bindings(index, {"2A": texture})
+                binding = builder._HLOD_TEXTURE_BINDINGS[("indie_dg002", 0, -7)]
+
+        self.assertEqual(installed, 1)
+        self.assertEqual(binding["texturePath"], texture)
+        self.assertTrue(binding["textureRel"].endswith("_D_p2A.png"))
+        self.assertEqual(binding["mappingMethod"], "exact_assetmap_material_container_baked_diffuse")
+
     def test_hlod_depth_samples_exact_bound_base_color(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}
@@ -693,6 +810,39 @@ class SurfaceRasterTests(unittest.TestCase):
         colored = [bytes(colors[index:index + 4]) for index in range(0, len(colors), 4) if colors[index + 3]]
         self.assertTrue(colored)
         self.assertEqual(set(colored), {bytes((120, 80, 40, 255))})
+
+    def test_hlod_depth_applies_material_tint_in_linear_light(self):
+        bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
+        fit = {"originX": 0.0, "originZ": 0.0}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self._cluster_obj(
+                tmp,
+                "v 60 5 -60\nv -60 5 -60\nv -60 5 60\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n",
+            )
+            texture = root / "texture.png"
+            material = root / "material.json"
+            builder.write_png(texture, 1, 1, [bytes((128, 128, 128, 255))])
+            material.write_text(json.dumps({
+                "m_SavedProperties": {"m_Colors": {"_BaseColor": {"r": 0.5, "g": 0.5, "b": 0.5}}},
+            }), encoding="utf-8")
+            colors = bytearray(16 * 16 * 4)
+            builder._MATERIAL_PARAMS.clear()
+            _depth, _used, _triangles = rasterise_depth(
+                [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}],
+                1, fit, bounds, {"1": path}, 16, 16,
+                bindings={1: {
+                    "slot": "_BaseColorMap", "textureRel": "texture.png",
+                    "texturePath": texture, "materialRel": "material.json",
+                    "materialPath": material,
+                }},
+                material_colors=colors,
+            )
+
+        colored = [bytes(colors[index:index + 4]) for index in range(0, len(colors), 4) if colors[index + 3]]
+        self.assertTrue(colored)
+        self.assertEqual(set(colored), {bytes((92, 92, 92, 255))})
 
     def test_hlod_duplicate_material_key_fails_closed_even_if_one_texture_is_missing(self):
         with tempfile.TemporaryDirectory(dir=builder.ROOT / "tmp") as tmp:
@@ -762,6 +912,27 @@ class SurfaceRasterTests(unittest.TestCase):
             builder._MATERIAL_PARAMS.clear()
             transparent = builder._material_render_params(binding)
             self.assertEqual(builder._sample_texture({**texture, **transparent}, 0.0, 0.0), (20, 40, 60, 0))
+
+    def test_material_tint_is_applied_in_linear_light(self):
+        texture = {
+            "width": 1, "height": 1, "pixels": bytes((128, 64, 32, 255)),
+            "tint": (0.5, 0.25, 2.0), "alphaMode": "opaque", "cutoff": 0.05,
+        }
+
+        sampled = builder._sample_texture(texture, 0.0, 0.0)
+
+        # Direct multiplication of the PNG bytes would yield (64, 16, 64).
+        # Unity decodes the base-color texture to linear light, multiplies the
+        # serialized tint there, then the preview PNG encodes back to sRGB.
+        self.assertEqual(sampled, (92, 30, 47, 255))
+
+    def test_white_material_tint_preserves_exported_texture_bytes(self):
+        texture = {
+            "width": 1, "height": 1, "pixels": bytes((17, 93, 241, 255)),
+            "tint": (1.0, 1.0, 1.0), "alphaMode": "opaque", "cutoff": 0.05,
+        }
+
+        self.assertEqual(builder._sample_texture(texture, 0.0, 0.0), (17, 93, 241, 255))
 
     def test_exported_rgba_png_preview_round_trips_color(self):
         with tempfile.TemporaryDirectory() as tmp:

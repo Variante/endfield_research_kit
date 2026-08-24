@@ -1612,10 +1612,13 @@ function applyOptionOverrideFlagsToEntries(payload, entries = STATE.entries) {
         issues.push(code);
         continue;
       }
+      // Keep the generated evidence-boundary issue intact. A runtime WebUI
+      // override corrects presentation, but it does not turn an unregistered
+      // table row or inferred anchor into authored game evidence.
+      issues.push(code);
       if (optionRecoveryIssueIsCovered(entry, overrideScene, code)) {
         hasCoveredOptionRecoveryIssue = true;
       } else {
-        issues.push(code);
         hasUncoveredOptionRecoveryIssue = true;
       }
     }

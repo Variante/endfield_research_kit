@@ -25,6 +25,18 @@
     }
   },
   "scenes": {
+    "dlg_a1m11_3": {
+      "positions": {
+        "after": {
+          "dlg_a1m11_3_001": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "One-line table-only prompt; both immediate choices answer line 001."
+      }
+    },
     "dlg_a1m7_2": {
       "positions": {
         "after": {
@@ -343,6 +355,58 @@
       },
       "notes": {
         "1": "Repeat-race table-only scene; branch layout follows sibling semantic pattern from dlg_gm01m25_1 and dlg_gm01m26_5."
+      }
+    },
+    "dlg_gm01m27_1": {
+      "positions": {
+        "after": {
+          "dlg_gm01m27_1_001": [
+            "1"
+          ],
+          "dlg_gm01m27_1_002": [
+            "2"
+          ],
+          "dlg_gm01m27_1_005": [
+            "5"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The first follow-up directly answers line 001.",
+        "2": "The second follow-up directly answers line 002.",
+        "5": "The acceptance choice follows the request in line 005."
+      }
+    },
+    "dlg_gm01m27_2": {
+      "positions": {
+        "after": {
+          "dlg_gm01m27_2_002": [
+            "2"
+          ],
+          "dlg_gm01m27_2_003": [
+            "3"
+          ]
+        }
+      },
+      "notes": {
+        "2": "The Snowfield question directly answers line 002.",
+        "3": "The refusal and thanks follow the offer in line 003."
+      }
+    },
+    "dlg_gm01m27_3": {
+      "positions": {
+        "after": {
+          "dlg_gm01m27_3_002": [
+            "2"
+          ],
+          "dlg_gm01m27_3_003": [
+            "3"
+          ]
+        }
+      },
+      "notes": {
+        "2": "The Snowfield question directly answers line 002.",
+        "3": "The Valley deduction follows the condition described in line 003."
       }
     },
     "dlg_gm02m2_1": {
