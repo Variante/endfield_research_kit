@@ -26,6 +26,12 @@ namespace EndfieldGraphShaderLabEditor
         private const float SimulationFps = 60f;
         private const float Fps = 4f;
         private const int VideoFrameCount = 600;
+        // The supplied retail recording keeps the pointer at the lower-right
+        // during Endminf's entrance. These normalized coordinates are measured
+        // from that 1920x1080 capture and select the already recovered live
+        // cursor-input path; they are not static game-data defaults.
+        private const string RecordingGyroscopeInputX = "0.989";
+        private const string RecordingGyroscopeInputY = "-0.874";
         // RestartOverviewFromSelection is invoked on an editor update edge;
         // the body Animation has advanced by two 60-Hz simulation ticks before
         // the first renderable sample. Offset later requested timestamps so
@@ -70,6 +76,9 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
             public bool observedRotationOnlyRootMotion;
+            public string gyroscopeMode;
+            public string gyroscopeInputX;
+            public string gyroscopeInputY;
             public FrameRow[] frames;
         }
 
@@ -227,6 +236,27 @@ namespace EndfieldGraphShaderLabEditor
             };
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(flag, "1");
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable,
+                    "recorded-input");
+            }
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputXEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputXEnvironmentVariable,
+                    RecordingGyroscopeInputX);
+            }
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable,
+                    RecordingGyroscopeInputY);
+            }
             EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
             Frames.Clear();
             captureFailure = null;
@@ -519,6 +549,12 @@ namespace EndfieldGraphShaderLabEditor
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
                 observedRotationOnlyRootMotion = observedRotationOnlyRootMotion,
+                gyroscopeMode = Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.ModeEnvironmentVariable),
+                gyroscopeInputX = Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputXEnvironmentVariable),
+                gyroscopeInputY = Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable),
                 frames = Frames.ToArray()
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
