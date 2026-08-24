@@ -215,7 +215,7 @@ namespace EndfieldGraphShaderLabEditor
                 PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64, false);
                 PlayerSettings.SetGraphicsAPIs(
                     BuildTarget.StandaloneWindows64,
-                    new[] { GraphicsDeviceType.Direct3D12 });
+                    new[] { GraphicsDeviceType.Direct3D11 });
 
                 var options = new BuildPlayerOptions
                 {
@@ -236,7 +236,7 @@ namespace EndfieldGraphShaderLabEditor
                 Debug.Log(
                     $"Standalone capture probe built: mode={probeLabel}, path={playerPath}, " +
                     $"size={report.summary.totalSize} bytes, " +
-                    $"time={report.summary.totalTime.TotalSeconds:0.0}s, api=D3D12.");
+                    $"time={report.summary.totalTime.TotalSeconds:0.0}s, api=D3D11.");
             }
             finally
             {

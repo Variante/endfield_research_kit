@@ -52,6 +52,8 @@ namespace EndfieldGraphShaderLabEditor
             "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38";
         private const string Suikuai1DiagnosticEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ADMIT_SUIKUAI1";
+        private const string OutputEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_OUTPUT";
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
@@ -84,6 +86,7 @@ namespace EndfieldGraphShaderLabEditor
             public int width = Width;
             public int height = Height;
             public float fps;
+            public string graphicsDeviceType;
             public string scene = Scene;
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
             public bool actorOnlyCapture = false;
@@ -269,11 +272,11 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void Run()
         {
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D12)
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 throw new InvalidOperationException(
-                    "Endminf Viewer capture requires -force-d3d12; repeated " +
-                    "manual SRP Camera.Render calls crash Unity 2022.3's " +
-                    "D3D11 geometry path with an outVertices assertion.");
+                    "Endminf Viewer capture requires the project's authoritative " +
+                    "Direct3D11 backend; actual=" +
+                    SystemInfo.graphicsDeviceType + ".");
             // Exercise the same explicit reproduction profile as
             // open_character_recovery_lab.bat. Batch validation must not
             // silently fall back to the preserved gacha-room presentation
@@ -360,8 +363,11 @@ namespace EndfieldGraphShaderLabEditor
                     ? "full"
                     : "excluded_" + excludedMaterial;
             captureFps = videoExport ? SimulationFps : Fps;
-            output = Path.GetFullPath(Path.Combine(Application.dataPath,
-                capturePrePostHdr
+            string requestedOutput = Environment.GetEnvironmentVariable(
+                OutputEnvironment);
+            output = string.IsNullOrWhiteSpace(requestedOutput)
+                ? Path.GetFullPath(Path.Combine(Application.dataPath,
+                    capturePrePostHdr
                     ? "../scratch/character_recovery/endminf_viewer_prepost_hdr/" +
                         SafePathComponent(prePostHdrRun)
                     : capturePostStages
@@ -371,7 +377,8 @@ namespace EndfieldGraphShaderLabEditor
                     ? "../exports/endminf_overview/frames"
                     : fineWindow
                         ? "../scratch/character_recovery/endminf_viewer_playmode_fine_window"
-                        : "../scratch/character_recovery/endminf_viewer_playmode_sequence"));
+                        : "../scratch/character_recovery/endminf_viewer_playmode_sequence"))
+                : Path.GetFullPath(requestedOutput);
             requestedTimes = capturePostStages
                 ? new[] { 4.40f, 4.4333334f, 4.4666667f, 4.50f, 4.55f }
                 : capturePrePostHdr
@@ -775,6 +782,7 @@ namespace EndfieldGraphShaderLabEditor
                     ? "overview_02/all/suikuai (1)"
                     : string.Empty,
                 fps = captureFps,
+                graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
                 renderPipeline = GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName,

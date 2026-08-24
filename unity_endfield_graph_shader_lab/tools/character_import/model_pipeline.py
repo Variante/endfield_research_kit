@@ -72,7 +72,7 @@ def _invoke_unity(unity_exe: Path, work_root: Path) -> dict[str, Any]:
         "-quit",
         "-projectPath",
         str(PROJECT_ROOT),
-        "-force-d3d12",
+        "-force-d3d11",
         "-executeMethod",
         UNITY_BUILD_METHOD,
         "-logFile",

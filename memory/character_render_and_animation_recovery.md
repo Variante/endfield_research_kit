@@ -27,6 +27,14 @@ archetypes remain labeled source kits rather than finished characters.
 - Playable post-models, LOD0 mesh bindings, materials, textures, cameras,
   profiles, lights, portraits, and selected Overview animation sources are
   recovered.
+- The Unity lab's authoritative Windows backend is Direct3D11, matching the
+  recovered retail shader binaries. Project settings disable automatic API
+  selection and normal Editor, batch, import, sweep, capture, and standalone
+  workflows explicitly request D3D11. Historical D3D12 probes remain labeled
+  evidence snapshots rather than active defaults. A full 41-frame D3D11
+  Endminf capture passes the transition, settled-loop, entrance cleanup,
+  rotation-only root-motion, 67-renderer admission, and exact three-row
+  fail-closed gates, and regenerates both maintained reference comparisons.
 - Every canonical non-playable post-model identity has a dependency-safe
   static prefab baseline. These prove identity and admitted dependencies, not
   full runtime assembly or behavior.
@@ -125,7 +133,7 @@ archetypes remain labeled source kits rather than finished characters.
 - The focused Endminf comparison now anchors its first saved Unity frame
   directly to retail frame 1110, the first visible body frame. The former map
   added the already-advanced 0.0509083-second body phase a second time and put
-  every retail sample three frames late. The latest D3D12 capture maps frames
+  every retail sample three frames late. The canonical D3D11 capture maps frames
   1110 through 1512 with less than 0.000046 source-frame residue; the corrected
   central comparison improves 24 of 28 pairs over the old three-frame-late map.
 - The reference recording enters Endminf through a same-page Wolfgd character
@@ -515,7 +523,7 @@ another per-material shader approximation. The missing boundary includes:
 - confirmation of the final source camera and presentation bindings.
 - ten still-blocked rock-family renderer identities awaiting the bounded live
   global/per-draw/subsurface values and the complete deferred frame resources;
-- exact retail D3D12 presentation binding after the now-closed Effect-02
+- exact retail D3D11 presentation binding after the now-closed Effect-02
   combined Uber source, bloom, LUT, and output-tail contract;
 - the full TAA producer/consumer chain beyond the now-complete actor SceneMV
   MRT coverage, recorded blank-frame history boundary, and recovered Dilation
@@ -524,7 +532,7 @@ another per-material shader approximation. The missing boundary includes:
   Streamline DLAA velocity-combine dispatch. The pinned retail helper has no
   credible stock Unity/PDB equivalent, and its later `0x2d` virtual-call
   argument has no statically recoverable enum domain. Keep the native proxy
-  disabled until a D3D12/PIX/RenderDoc resource descriptor proves the format.
+  disabled until a D3D11/RenderDoc resource descriptor proves the format.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The exact deferred program is no longer a blocker.
