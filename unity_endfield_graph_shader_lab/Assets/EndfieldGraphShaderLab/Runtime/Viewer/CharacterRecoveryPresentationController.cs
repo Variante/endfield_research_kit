@@ -121,6 +121,10 @@ namespace EndfieldGraphShaderLab
                 viewerCamera.nearClipPlane = profile.nearClip;
                 viewerCamera.farClipPlane = profile.farClip;
             }
+            EndfieldRecoveredCharInfoGyroscopeCameraState.TryConfigureRuntimeOverview(
+                viewerCamera,
+                profile.rootName,
+                actorRoot.TransformPoint(profile.lookAtPosition));
 
             ApplyCharacterLighting(profile);
             ApplyOperatorLights(profile, actorRoot);

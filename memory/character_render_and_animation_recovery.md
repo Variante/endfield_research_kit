@@ -58,6 +58,14 @@ archetypes remain labeled source kits rather than finished characters.
   every retail sample three frames late. The latest D3D12 capture maps frames
   1110 through 1512 with less than 0.000046 source-frame residue; the corrected
   central comparison improves 24 of 28 pairs over the old three-frame-late map.
+- The reference recording enters Endminf through a same-page Wolfgd character
+  replacement, so the authored `weapon_overview` dolly is correctly excluded.
+  Its visible lower-right pointer selects the otherwise external gyroscope
+  endpoint. The live Viewer now runs the exact serialized-entry-to-input,
+  two-second OutQuad camera correction on selection; the UI-free 28-frame RGB
+  MAE falls from 27.6752 to 24.0733, with frame 1 falling from 56.156 to 30.986.
+  This endpoint remains explicitly recording-specific rather than a roster
+  default. Retail motion-vector blur and TAA history are still unresolved.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
