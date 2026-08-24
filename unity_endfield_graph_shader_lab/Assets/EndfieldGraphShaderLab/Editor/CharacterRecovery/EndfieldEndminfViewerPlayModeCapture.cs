@@ -50,6 +50,10 @@ namespace EndfieldGraphShaderLabEditor
         private const int FrameCount = 41;
         private const string LitEffectCompatibilityShader =
             "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38";
+        private const string Suikuai1DiagnosticEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_ADMIT_SUIKUAI1";
+        private const string Suikuai1Material =
+            "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
             "/all/Particle System (9) | ",
             "/all/suikuai (1) | ",
@@ -88,6 +92,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool prePostHdrDiagnostic;
             public bool postStageDiagnostic;
             public string excludedMaterial;
+            public string diagnosticAdmittedRenderer;
             public bool recoveredLinearUnormFinalTargetRequested;
             public string renderPipeline;
             public string cameraClearFlags;
@@ -556,6 +561,30 @@ namespace EndfieldGraphShaderLabEditor
                     renderer.enabled = false;
                 }
             }
+            bool admitSuikuai1 = string.Equals(
+                Environment.GetEnvironmentVariable(Suikuai1DiagnosticEnvironment),
+                "1",
+                StringComparison.Ordinal);
+            if (admitSuikuai1)
+            {
+                ParticleSystemRenderer[] candidates = renderers.Where(value =>
+                    value.transform.parent != null &&
+                    value.transform.parent.name == "all" &&
+                    value.name == "suikuai (1)").ToArray();
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(
+                    Suikuai1Material);
+                if (candidates.Length != 1 || material == null ||
+                    material.shader == null ||
+                    material.shader.name !=
+                        "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT" ||
+                    candidates[0].meshCount != 4)
+                {
+                    throw new InvalidOperationException(
+                        "Focused suikuai (1) diagnostic source binding drifted.");
+                }
+                candidates[0].sharedMaterial = material;
+                candidates[0].enabled = true;
+            }
             if (capturePrePostHdr && next == 18)
             {
                 prePostHdrOutput = Path.Combine(output, "prepost_hdr");
@@ -741,6 +770,10 @@ namespace EndfieldGraphShaderLabEditor
                 postStageDiagnostic = capturePostStages,
                 excludedMaterial = Environment.GetEnvironmentVariable(
                     "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL") ?? string.Empty,
+                diagnosticAdmittedRenderer = Environment.GetEnvironmentVariable(
+                    Suikuai1DiagnosticEnvironment) == "1"
+                    ? "overview_02/all/suikuai (1)"
+                    : string.Empty,
                 fps = captureFps,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),

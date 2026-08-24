@@ -31,9 +31,12 @@ namespace EndfieldGraphShaderLabEditor
         private static readonly long[] LitEffectCompatibilityMaterials = {
             0x5A6341E8A834E421L,
             unchecked((long)0xAFCE491DD7BC5724UL),
-            // P_fxui_endminm003_overview_02/all/suikuai (2).
-            unchecked((long)0xA531A88850690EB8UL),
         };
+        // Do not add overview_02/all/suikuai (2), material
+        // pA531A88850690EB8, to the forward compatibility list. Its source
+        // material disables ForwardOnly and selects the five-MRT HGBuffer
+        // _PARALLAX_MAP program; the compatibility shader cannot publish its
+        // GBuffer/SceneMV/depth contract.
         // M28 uses the selected VFXRefract MRT ABI. Native
         // DistortionPassConstructor evidence confirms retail clones/copies
         // scene color, binds color+SceneMV+depth, then draws the distortion
@@ -46,12 +49,13 @@ namespace EndfieldGraphShaderLabEditor
             IsVisualCompatibilityRequested()
                 ? new[] {
                     EndminfRefract28Material,
-                    // P_fxui_endminm003_overview_02/all/suikuai (1).
-                    // This source renderer is authored enabled and uses the
-                    // same recovered Refract shader ABI as M28.
-                    0x19E6A2A7AE736DA5L,
                 }
                 : Array.Empty<long>();
+        // overview_02/all/suikuai (1), material p19E6A2A7AE736DA5,
+        // requires both the original GPU-instanced particle vertex ABI and
+        // the distinct _USE_BLEND + _USE_RBOFFSET + _USE_RGBOFFSET fragment.
+        // M28's selected _USE_RBOFFSET fragment lacks the source BlendTex
+        // alpha and three-tap RGB-offset contract, so it is not admissible.
         // Exact source identities selected by the focused Endminf BaseV2
         // variant audit. Each row is revalidated against name, shader PathID,
         // queue and ordered local keywords before any renderer is enabled.
@@ -253,16 +257,19 @@ namespace EndfieldGraphShaderLabEditor
                         // authored source-stone variants).
                         renderer.renderMode = ParticleSystemRenderMode.Mesh;
                     }
+                    bool sourceRendererEnabled =
+                        L.Bool(rendererRow.Value, "m_Enabled");
                     renderer.sharedMaterials = admitted
                         ? materialIds.Select(id => context.materials[id]).ToArray()
                         : Array.Empty<Material>();
-                    renderer.enabled = admitted && L.Bool(rendererRow.Value, "m_Enabled");
+                    renderer.enabled = admitted && sourceRendererEnabled;
                     var markerNode = new EndfieldRecoveredParticleNodeSource {
                         gameObjectPathId = goId, transformPathId = transformId,
                         particleSystemPathId = pair.Key, particleRendererPathId = rendererRow.Key,
                         materialPathIds = materialIds,
                         meshPathIds = meshIds,
-                        sourceRendererEnabled = renderer.enabled, nativeParticlePayloadApplied = true,
+                        sourceRendererEnabled = sourceRendererEnabled,
+                        nativeParticlePayloadApplied = true,
                         nativeRendererPayloadApplied = true,
                         rendererFailClosedForUnrecoveredShader = !admitted };
                     markerNodes.Add(markerNode); markerByHost[host] = markerNode;

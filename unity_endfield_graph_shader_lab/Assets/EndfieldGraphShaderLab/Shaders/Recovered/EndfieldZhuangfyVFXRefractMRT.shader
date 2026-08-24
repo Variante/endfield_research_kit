@@ -75,9 +75,12 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT"
             #pragma target 5.0
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options procedural:vertInstancingSetup
             #pragma shader_feature_local_fragment _USE_DISSOLVE
             #pragma shader_feature_local_fragment _USE_RBOFFSET
             #include "UnityCG.cginc"
+            #include "UnityStandardParticleInstancing.cginc"
 
             sampler2D _RefractTex;
             sampler2D _DissolveTex;
@@ -122,6 +125,7 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT"
                 float4 color : COLOR;
                 float4 uv0 : TEXCOORD0;
                 float4 custom : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -158,10 +162,30 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT"
 
             Varyings Vert(Attributes input)
             {
+                UNITY_SETUP_INSTANCE_ID(input);
                 Varyings output;
                 output.positionCS = UnityObjectToClipPos(input.vertex);
                 output.uv = input.uv0.xy;
-                output.color = input.color;
+                #if defined(UNITY_PARTICLE_INSTANCING_ENABLED)
+                    // The original selected VS reads the per-particle
+                    // transform through _VertexSkinMatrices and multiplies
+                    // the packed particle color into mesh COLOR. Public
+                    // Unity exposes the equivalent procedural particle
+                    // transform through vertInstancingSetup and its packed
+                    // RGBA8 carrier here.
+                    UNITY_PARTICLE_INSTANCE_DATA particleInstance =
+                        unity_ParticleInstanceData[unity_InstanceID];
+                    uint packedParticleColor = particleInstance.color;
+                    float4 particleInstanceColor = float4(
+                        packedParticleColor & 255u,
+                        (packedParticleColor >> 8u) & 255u,
+                        (packedParticleColor >> 16u) & 255u,
+                        (packedParticleColor >> 24u) & 255u) *
+                        (1.0 / 255.0);
+                    output.color = input.color * particleInstanceColor;
+                #else
+                    output.color = input.color;
+                #endif
                 output.custom = input.custom;
                 output.screenPos = ComputeScreenPos(output.positionCS);
                 output.positionWS = mul(unity_ObjectToWorld, input.vertex).xyz;
