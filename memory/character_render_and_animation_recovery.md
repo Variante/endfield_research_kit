@@ -235,7 +235,11 @@ archetypes remain labeled source kits rather than finished characters.
   valid pipeline change is an M27-PathID-only five-MRT owner before deferred
   resolve, never global `GBuffer` admission. It remains fail-closed because live
   AnchorWaveBright, per-draw/instance history, terrain profile, and a presented
-  content-valid deferred consumer are not yet closed.
+  content-valid deferred consumer are not yet closed. The current-build terrain
+  profile producer is now bounded further: a reserved zero-key dictionary maps
+  to float(index + 1), with zero meaning no registered terrain profile. Its
+  CharInfo selected-frame value remains unobserved, so canonical M27 still must
+  not assume zero.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
