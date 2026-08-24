@@ -99,16 +99,59 @@ namespace EndfieldGraphShaderLab
             {
                 return false;
             }
-            if (target.sourceIndex != 4 ||
-                !string.Equals(
-                    target.light.sourceName,
-                    "RimLight_2 (5)",
-                    StringComparison.Ordinal) ||
-                target.light.shadowType != 2)
+            int activeSlotCount;
+            if (string.Equals(
+                    target.actorKey,
+                    "endminf",
+                    StringComparison.Ordinal))
             {
-                failure =
-                    "isolated shadow target no longer matches source row 4 RimLight_2 (5)";
-                return false;
+                if (target.sourceIndex != 11 ||
+                    !target.light.spot ||
+                    !string.Equals(
+                        target.light.sourceName,
+                        "RimLight_2 (1)",
+                        StringComparison.Ordinal) ||
+                    target.light.shadowType != 2)
+                {
+                    failure =
+                        "Endminf primary isolated shadow target no longer matches source row 11 RimLight_2 (1)";
+                    return false;
+                }
+                if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
+                        camera,
+                        out EndfieldHGIsolatedPunctualShadowTarget secondary,
+                        out failure,
+                        3))
+                {
+                    return false;
+                }
+                if (!secondary.light.spot ||
+                    !string.Equals(
+                        secondary.light.sourceName,
+                        "RimLight_2",
+                        StringComparison.Ordinal) ||
+                    secondary.light.shadowType != 2)
+                {
+                    failure =
+                        "Endminf secondary isolated shadow target no longer matches source row 3 RimLight_2";
+                    return false;
+                }
+                activeSlotCount = 2;
+            }
+            else
+            {
+                if (target.sourceIndex != 4 ||
+                    !string.Equals(
+                        target.light.sourceName,
+                        "RimLight_2 (5)",
+                        StringComparison.Ordinal) ||
+                    target.light.shadowType != 2)
+                {
+                    failure =
+                        "isolated shadow target no longer matches source row 4 RimLight_2 (5)";
+                    return false;
+                }
+                activeSlotCount = target.light.spot ? 1 : 6;
             }
 
             if (!punctualShadowProducer.TryGetCurrentPublication(
@@ -135,7 +178,6 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
-            int faceCount = target.light.spot ? 1 : 6;
             if (!EndfieldRecoveredDeferredShadowDataContract
                     .TryBuildSelectedPunctualSubset(
                         worldToShadow,
@@ -143,7 +185,7 @@ namespace EndfieldGraphShaderLab
                         shadowRects,
                         texelSize,
                         tileResolution,
-                        faceCount,
+                        activeSlotCount,
                         vectors,
                         out failure))
             {

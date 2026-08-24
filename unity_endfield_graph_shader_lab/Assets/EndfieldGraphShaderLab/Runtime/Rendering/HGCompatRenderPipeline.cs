@@ -564,6 +564,7 @@ namespace EndfieldGraphShaderLab
             recoveredScreenDirectAudit;
         private readonly EndfieldRecoveredSceneMVCompositor
             recoveredSceneMVCompositor;
+        private RenderTexture recoveredExactCameraDepth;
         private sealed class RecoveredTemporalCameraState
         {
             internal RenderTexture history;
@@ -805,6 +806,8 @@ namespace EndfieldGraphShaderLab
             recoveredLightBinning?.Dispose();
             recoveredColorGradingLut?.Dispose();
             recoveredSceneMVCompositor?.Dispose();
+            ReleaseRecoveredPrimarySceneDepth(recoveredExactCameraDepth);
+            recoveredExactCameraDepth = null;
             foreach (RecoveredTemporalCameraState state in recoveredTemporalStates.Values)
                 ReleaseRecoveredTemporalHistory(state);
             recoveredTemporalStates.Clear();
@@ -1103,6 +1106,7 @@ namespace EndfieldGraphShaderLab
                 operatorLightRig.sourceBackedClusteredNprLightLoop &&
                 !useRecoveredPostUberWorldUi &&
                 !useRecoveredSceneMV;
+            RenderTexture physicalRecoveredCameraDepth = null;
             EndfieldRecoveredCharInfoAutoExposureCameraState liveAutoExposureState =
                 PrepareRecoveredLiveCharInfoAutoExposure(
                     camera,
@@ -1150,14 +1154,23 @@ namespace EndfieldGraphShaderLab
                         msaaSamples = 1,
                         sRGB = false
                     };
-                    commandBuffer.GetTemporaryRT(
-                        RecoveredCameraDepthTextureId,
-                        cameraDepthDescriptor,
-                        // The selected HGRP/UI/Default variant binds _SceneDepth
-                        // through its LinearRepeat sampler. This lab texture is
-                        // still a character-only substitute, but its in-range
-                        // sampling must retain the original linear filter.
-                        FilterMode.Bilinear);
+                    if (recoveredDeferredExactConsumer.Requested)
+                    {
+                        physicalRecoveredCameraDepth =
+                            EnsureRecoveredExactCameraDepth(
+                                cameraDepthDescriptor);
+                    }
+                    else
+                    {
+                        commandBuffer.GetTemporaryRT(
+                            RecoveredCameraDepthTextureId,
+                            cameraDepthDescriptor,
+                            // The selected HGRP/UI/Default variant binds _SceneDepth
+                            // through its LinearRepeat sampler. This lab texture is
+                            // still a character-only substitute, but its in-range
+                            // sampling must retain the original linear filter.
+                            FilterMode.Bilinear);
+                    }
                 }
             }
             commandBuffer.SetGlobalFloat(RecoveredCameraDepthReadyId, 0.0f);
@@ -1589,7 +1602,7 @@ namespace EndfieldGraphShaderLab
                         Debug.Log(
                             "Recovered selected deferred ShadowData b34 " +
                             "punctual section and matching D16 atlas are " +
-                            "active for the isolated Wulfa/Zhuangfy fixture; " +
+                            "active for the validated isolated actor fixture; " +
                             "pass0=disabled.");
                         loggedRecoveredDeferredShadowDataActivation = true;
                     }
@@ -1609,7 +1622,12 @@ namespace EndfieldGraphShaderLab
                     context,
                     camera,
                     renderWidth,
-                    renderHeight);
+                    renderHeight,
+                    physicalRecoveredCameraDepth != null
+                        ? new RenderTargetIdentifier(
+                            physicalRecoveredCameraDepth)
+                        : new RenderTargetIdentifier(
+                            RecoveredCameraDepthTextureId));
             }
 
             RenderTargetIdentifier canonicalColorTarget = applyPostProcess
@@ -1720,6 +1738,7 @@ namespace EndfieldGraphShaderLab
                         renderWidth,
                         renderHeight,
                         useRecoveredCameraDepth,
+                        physicalRecoveredCameraDepth,
                         recoveredLightBinning,
                         recoveredReflectionProbeFallback,
                         recoveredPunctualShadowProducer,
@@ -2195,7 +2214,11 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalTexture(
                     RecoveredCameraDepthTextureId,
                     Texture2D.blackTexture);
-                commandBuffer.ReleaseTemporaryRT(RecoveredCameraDepthTextureId);
+                if (physicalRecoveredCameraDepth == null)
+                {
+                    commandBuffer.ReleaseTemporaryRT(
+                        RecoveredCameraDepthTextureId);
+                }
                 context.ExecuteCommandBuffer(commandBuffer);
                 commandBuffer.Release();
             }
@@ -2592,18 +2615,50 @@ namespace EndfieldGraphShaderLab
                 Object.DestroyImmediate(texture);
         }
 
+        private RenderTexture EnsureRecoveredExactCameraDepth(
+            RenderTextureDescriptor descriptor)
+        {
+            if (recoveredExactCameraDepth != null &&
+                recoveredExactCameraDepth.IsCreated() &&
+                recoveredExactCameraDepth.width == descriptor.width &&
+                recoveredExactCameraDepth.height == descriptor.height &&
+                recoveredExactCameraDepth.graphicsFormat ==
+                    descriptor.graphicsFormat)
+            {
+                return recoveredExactCameraDepth;
+            }
+            ReleaseRecoveredPrimarySceneDepth(recoveredExactCameraDepth);
+            recoveredExactCameraDepth = new RenderTexture(descriptor)
+            {
+                name = "Recovered exact-consumer camera depth",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Repeat,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            if (!recoveredExactCameraDepth.Create())
+            {
+                ReleaseRecoveredPrimarySceneDepth(
+                    recoveredExactCameraDepth);
+                recoveredExactCameraDepth = null;
+                throw new System.InvalidOperationException(
+                    "Could not allocate the exact-consumer camera depth texture.");
+            }
+            return recoveredExactCameraDepth;
+        }
+
         private static void RenderRecoveredCameraDepth(
             ScriptableRenderContext context,
             Camera camera,
             int width,
-            int height)
+            int height,
+            RenderTargetIdentifier cameraDepthTarget)
         {
             CommandBuffer commandBuffer = new CommandBuffer
             {
                 name = "Recovered CharInfo camera depth prepass"
             };
             commandBuffer.SetRenderTarget(
-                new RenderTargetIdentifier(RecoveredCameraDepthTextureId),
+                cameraDepthTarget,
                 new RenderTargetIdentifier(CameraColorId));
             float farDepth = SystemInfo.usesReversedZBuffer ? 0.0f : 1.0f;
             commandBuffer.ClearRenderTarget(
@@ -2622,7 +2677,7 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetRenderTarget(CameraColorId);
             commandBuffer.SetGlobalTexture(
                 RecoveredCameraDepthTextureId,
-                new RenderTargetIdentifier(RecoveredCameraDepthTextureId));
+                cameraDepthTarget);
             commandBuffer.SetGlobalVector(
                 RecoveredCameraDepthTextureTexelSizeId,
                 new Vector4(1.0f / width, 1.0f / height, width, height));

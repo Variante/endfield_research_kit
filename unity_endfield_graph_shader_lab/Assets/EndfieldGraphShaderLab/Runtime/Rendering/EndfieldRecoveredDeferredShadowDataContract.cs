@@ -32,7 +32,7 @@ namespace EndfieldGraphShaderLab
             Vector4[] shadowRects,
             Vector4 texelSize,
             int tileResolution,
-            int faceCount,
+            int activeSlotCount,
             Vector4[] destination,
             out string failure)
         {
@@ -58,9 +58,12 @@ namespace EndfieldGraphShaderLab
                 failure = "source tile resolution must be exactly 512 or 1024";
                 return false;
             }
-            if (faceCount != 1 && faceCount != 6)
+            if (activeSlotCount != 1 &&
+                activeSlotCount != 2 &&
+                activeSlotCount != 6)
             {
-                failure = "isolated punctual face count must be exactly 1 or 6";
+                failure =
+                    "isolated punctual active slot count must be exactly 1, 2, or 6";
                 return false;
             }
 
@@ -84,7 +87,7 @@ namespace EndfieldGraphShaderLab
             for (int slot = 0; slot < PunctualSlotCount; slot++)
             {
                 bool active = slot >= DynamicCacheBase &&
-                    slot < DynamicCacheBase + faceCount;
+                    slot < DynamicCacheBase + activeSlotCount;
                 if (!active)
                 {
                     if (!MatrixExactlyZero(worldToShadow[slot]) ||

@@ -50,6 +50,7 @@ namespace EndfieldGraphShaderLab
         internal struct ResourceFrame
         {
             internal bool cameraDepthReady;
+            internal RenderTexture t1CameraDepth;
             internal ComputeBuffer t0Binning;
             internal RenderTexture t5Reflection;
             internal RenderTexture t6PunctualShadow;
@@ -58,6 +59,10 @@ namespace EndfieldGraphShaderLab
             internal Texture2D t14LogSh;
             internal RenderTexture t15VisibilitySh;
 
+            internal bool T1Ready =>
+                cameraDepthReady;
+            internal bool T1PhysicalReady =>
+                t1CameraDepth != null && t1CameraDepth.IsCreated();
             internal bool T0Ready =>
                 t0Binning != null && t0Binning.IsValid();
             internal bool T5Ready =>
@@ -74,14 +79,14 @@ namespace EndfieldGraphShaderLab
                 t15VisibilitySh != null && t15VisibilitySh.IsCreated();
 
             internal bool AllPhysical =>
-                cameraDepthReady && T0Ready && T5Ready && T6Ready &&
+                T1PhysicalReady && T0Ready && T5Ready && T6Ready &&
                 T7Ready && T11Ready;
 
             internal string BuildStatusToken()
             {
                 return
                     $"t0={(T0Ready ? "ready" : "absent")}," +
-                    $"t1={(cameraDepthReady ? "ready" : "absent")}," +
+                    $"t1={(T1PhysicalReady ? "ready" : T1Ready ? "nonphysical" : "absent")}," +
                     $"t5={(T5Ready ? "ready" : "absent")}," +
                     $"t6={(T6Ready ? "ready" : "absent")}," +
                     $"t7={(T7Ready ? "ready" : "absent")}," +
@@ -91,7 +96,7 @@ namespace EndfieldGraphShaderLab
             internal string BuildShapeToken(int width, int height)
             {
                 return
-                    $"t1={width}x{height}," +
+                    $"t1={Describe(t1CameraDepth)}," +
                     $"t5={Describe(t5Reflection)}," +
                     $"t6={Describe(t6PunctualShadow)}," +
                     $"t7={Describe(t7LowResShadow)}," +
@@ -121,6 +126,7 @@ namespace EndfieldGraphShaderLab
             int width,
             int height,
             bool cameraDepthReady,
+            RenderTexture cameraDepth,
             EndfieldRecoveredLightBinning lightBinning,
             EndfieldRecoveredReflectionProbeFallback reflection,
             EndfieldRecoveredPunctualShadowProducer punctual,
@@ -130,7 +136,8 @@ namespace EndfieldGraphShaderLab
         {
             ResourceFrame frame = new ResourceFrame
             {
-                cameraDepthReady = cameraDepthReady
+                cameraDepthReady = cameraDepthReady,
+                t1CameraDepth = cameraDepth
             };
             if (lightBinning != null)
             {
@@ -260,7 +267,7 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             if (!resourceFrame.T0Ready ||
-                !resourceFrame.cameraDepthReady ||
+                !resourceFrame.T1Ready ||
                 !resourceFrame.T5Ready ||
                 !resourceFrame.T6Ready)
             {
