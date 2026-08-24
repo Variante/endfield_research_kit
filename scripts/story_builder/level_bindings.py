@@ -1928,6 +1928,7 @@ def _levelscript_native_control_paths_to_record(
         decoded_cache = {}
     next_starts = context.get("nextStarts") or {}
     downstream_cache = context.setdefault("downstreamControlPaths", {})
+    compact_step_cache = context.setdefault("compactControlSteps", {})
     target_local_id = target_record.get("localId")
     if not isinstance(target_local_id, int):
         return []
@@ -2030,6 +2031,19 @@ def _levelscript_native_control_paths_to_record(
         return result
 
     def compact_step(record: dict, edge: str) -> dict:
+        # Everything below the ``edge`` key is a pure function of the physical
+        # record, and one file's records are walked by every Story-bearing
+        # action in it, so the body is memoized on the shared prepared context
+        # exactly like ``downstreamControlPaths``. ``start`` is the record's
+        # byte offset, the same identity ``decodedByStart`` keys on.
+        body_key = int(record.get("start") or 0)
+        cached_body = compact_step_cache.get(body_key)
+        if cached_body is not None:
+            return (
+                {"edge": edge, **cached_body}
+                if edge not in ("", None, [], {})
+                else dict(cached_body)
+            )
         code = int(record.get("code") or 0)
         kind = int(record.get("kind") or 0)
         pair = levelscript_record_semantic_key(record)
@@ -2152,10 +2166,9 @@ def _levelscript_native_control_paths_to_record(
                 "payloadHexPrefix": detail.get("payloadHexPrefix") or "",
             }
 
-        return {
+        body = {
             key: value
             for key, value in {
-                "edge": edge,
                 "localId": record.get("localId"),
                 "opcode": f"0x{code:04x}/0x{kind:02x}",
                 "unionTag": (
@@ -2222,6 +2235,12 @@ def _levelscript_native_control_paths_to_record(
             }.items()
             if value not in ("", None, [], {})
         }
+        compact_step_cache[body_key] = body
+        return (
+            {"edge": edge, **body}
+            if edge not in ("", None, [], {})
+            else dict(body)
+        )
 
     def downstream_control_paths(record: dict) -> list[list[dict]]:
         """Return bounded exact paths from one action to every reachable action.

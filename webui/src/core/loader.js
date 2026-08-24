@@ -134,7 +134,22 @@
     delete opts.onProgress;
 
     const res = await fetch(url, opts);
-    if (!onProgress || !res.ok || !res.body || typeof ReadableStream === "undefined") {
+    if (!onProgress || !res.ok || typeof ReadableStream === "undefined") {
+      return res;
+    }
+
+    // Some responses (notably 304 Not Modified under conditional caching) may
+    // have an empty body and would otherwise produce unexpected JSON parse
+    // errors on callers that expect JSON. Force a no-store refresh in that case.
+    if (!res.body && res.status === 304) {
+      const reload = await fetch(url, {
+        ...opts,
+        cache: "no-store",
+      });
+      return reload;
+    }
+
+    if (!res.body) {
       return res;
     }
 
@@ -146,8 +161,13 @@
     let loaded = 0;
     const reader = res.body.getReader();
 
+    let failed = false;
     const stream = new ReadableStream({
       async pull(controller) {
+        // Once the consumer errors the stream (e.g. response.json() gives up on
+        // an oversized body) the controller rejects close()/enqueue(); that
+        // DOMException would otherwise mask the real failure.
+        if (failed) return;
         try {
           const { done, value } = await reader.read();
           if (done) {
@@ -161,10 +181,16 @@
           onProgress(total ? loaded / total : null, loaded, total);
           controller.enqueue(value);
         } catch (error) {
-          controller.error(error);
+          failed = true;
+          try {
+            controller.error(error);
+          } catch (_ignored) {
+            // The controller was already errored/closed by the consumer.
+          }
         }
       },
       cancel(reason) {
+        failed = true;
         reader.cancel(reason);
       },
     });

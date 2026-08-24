@@ -36,6 +36,7 @@ import sys
 import zlib
 from collections import Counter
 from collections.abc import Iterable
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -5610,6 +5611,53 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
     return payloads
 
 
+def _build_all_shard(payload: tuple[str, tuple[str, ...]]) -> list[dict]:
+    """Build one interleaved slice of the level catalog in a worker process."""
+    language, levels = payload
+    return build_all(language, set(levels))
+
+
+def _buildable_level_ids() -> list[str]:
+    """The level ids ``build_all`` would consider, without building any of them.
+
+    This mirrors the union ``build_all`` forms from the level catalog and the
+    exact-trigger frontier. Levels that own no evidence are still listed here;
+    ``build_all`` drops them cheaply inside the shard.
+    """
+    catalog = set(_level_catalog())
+    catalog |= set(_exact_story_trigger_level_ids())
+    return sorted(catalog)
+
+
+def build_all_parallel(language: str, jobs: int) -> list[dict]:
+    """Build every level across ``jobs`` processes.
+
+    Each level's payload is derived only from read-only generated inputs, so
+    the per-level loop is embarrassingly parallel. Shards re-derive the shared
+    setup (registry, reading receivers) once per worker rather than shipping it
+    through a pickle, which is both simpler and cheaper than passing the built
+    indexes. Levels are dealt round-robin because per-level cost varies by more
+    than an order of magnitude and contiguous blocks would leave one worker
+    holding every expensive LevelScript.
+    """
+    levels = _buildable_level_ids()
+    jobs = max(1, min(jobs, len(levels)))
+    if jobs == 1:
+        return build_all(language, None)
+    shards = [tuple(levels[index::jobs]) for index in range(jobs)]
+    payloads: list[dict] = []
+    with ProcessPoolExecutor(max_workers=jobs) as pool:
+        for shard_payloads in pool.map(
+            _build_all_shard,
+            [(language, shard) for shard in shards],
+        ):
+            payloads.extend(shard_payloads)
+    # Serial `build_all` emits levels in catalog order; restore it so the
+    # generated action-binding report and index stay independent of sharding.
+    payloads.sort(key=lambda row: str(row.get("levelId") or ""))
+    return payloads
+
+
 def _expand_index_variants(entries: Iterable[dict]) -> list[dict]:
     """Return physical level rows from either the old or grouped index shape."""
     expanded = []
@@ -5650,14 +5698,80 @@ def _collapse_index_variants(entries: Iterable[dict]) -> list[dict]:
     return collapsed
 
 
+def refresh_render_backgrounds(levels: set[str] | None = None) -> int:
+    """Attach current preview manifests without rebuilding map evidence.
+
+    Preview generation consumes marker coordinates from the published map
+    payloads, so it necessarily follows the main data build.  Only the
+    ``renderBackground`` field consumes the resulting preview manifests;
+    refreshing that field directly avoids repeating the expensive evidence
+    scans and per-level reconstruction.
+    """
+    maps = OUT / "maps"
+    refreshed = 0
+    for path in sorted(maps.glob("*.json")):
+        payload = _load_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        level_id = str(payload.get("levelId") or payload.get("id") or path.stem)
+        if levels and level_id not in levels and path.stem not in levels:
+            continue
+        background = _render_background(level_id)
+        if payload.get("renderBackground") == background:
+            continue
+        payload["renderBackground"] = background
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+        refreshed += 1
+    print(f"map recovery: refreshed {refreshed} preview-backed map payloads")
+    return refreshed
+
+
+def build_previews_and_refresh(levels: list[str]) -> int:
+    """Generate previews from current maps, then publish their manifests."""
+    from scripts import build_map_recovery_preview
+
+    preview_args = [argument for level in levels for argument in ("--level", level)]
+    returncode = int(build_map_recovery_preview.main(preview_args) or 0)
+    if returncode:
+        return returncode
+    refresh_render_backgrounds(set(levels) if levels else None)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", default="CN")
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="processes for the per-level build (default 1). Ignored with --level.",
+    )
+    preview_mode = parser.add_mutually_exclusive_group()
+    preview_mode.add_argument(
+        "--with-preview",
+        action="store_true",
+        help="build map data, generate previews, then attach them without rebuilding data",
+    )
+    preview_mode.add_argument(
+        "--preview-only",
+        action="store_true",
+        help="generate previews from existing map data and refresh only renderBackground",
+    )
     args = parser.parse_args()
     language = args.language.upper()
 
-    payloads = build_all(language, set(args.level) if args.level else None)
+    if args.preview_only:
+        return build_previews_and_refresh(args.level)
+
+    if args.level:
+        payloads = build_all(language, set(args.level))
+    else:
+        payloads = build_all_parallel(language, args.jobs)
     maps = OUT / "maps"
     maps.mkdir(parents=True, exist_ok=True)
     existing_index = _load_json(OUT / "index.json", {}) if args.level else {}
@@ -5741,6 +5855,8 @@ def main() -> int:
         f"{sum(row['questPointCount'] for row in entries)} quest points, "
         f"{sum(row['storyKeyCount'] for row in entries)} pinned story keys"
     )
+    if args.with_preview:
+        return build_previews_and_refresh(args.level)
     return 0
 
 

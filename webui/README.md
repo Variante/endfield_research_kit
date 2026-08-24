@@ -750,9 +750,11 @@ python scripts\build_map_recovery_data.py
 python scripts\build_map_recovery_data.py --level LEVEL
 ```
 
-Run the preview builder before the data builder so map payloads embed the
-current render manifests. Focused `--level` runs preserve unrelated generated
-maps; full runs remove stale map JSON and minimap composites.
+Use `build_map_recovery_data.py --with-preview` to publish map data, render
+previews, and attach the current render manifests without a second evidence
+build. `--preview-only` reuses current map payloads. Focused `--level` runs
+preserve unrelated generated maps; full runs remove stale map JSON and minimap
+composites.
 ## Updates
 
 Updates displays changes produced by comparing two complete export roots. The
@@ -775,6 +777,18 @@ Use the smallest relevant root workflow:
 .\export_assets.bat
 python scripts\pack_webui.py
 ```
+
+`export_assets.bat` assumes generated Story and Story evidence are current. It
+rebuilds every downstream semantic view: Mission Pipeline, map recovery,
+Characters, Gameplay/projectiles, Assets/audio, the curated source graph, and
+debug-only combat relationships. Use `--from-game` to refresh decoded assets
+and audio first only when the structured Story/Table export already matches
+that installed build; asset-only extraction never advances structured-data
+freshness provenance.
+
+`--mission-pipeline-data-only` validates the current protocol registry and
+rebuilds Mission Pipeline/map JSON, but deliberately skips Story gap-evidence
+refresh and map preview rendering.
 
 Before reading an existing extraction, run
 `python scripts\verify_export_freshness.py` unless freshness is already known.

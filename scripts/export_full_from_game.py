@@ -2468,6 +2468,30 @@ def load_previous_summary(primary_path: Path, legacy_path: Path) -> dict[str, An
     return {}
 
 
+def structured_freshness_source_sizes(
+    *,
+    skip_structured: bool,
+    selected_sources: tuple[str, ...],
+    current_source_sizes: dict[str, dict[str, Any]],
+    previous_summary: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """Return the source fingerprints that actually produced structured data.
+
+    Asset-only exports intentionally leave structured Story/Table outputs
+    untouched. Publishing current installed-game fingerprints as their
+    freshness authority would make old structured data appear current after a
+    client update, so a skipped structured stage preserves its previous
+    per-source fingerprints and fails closed when none exist.
+    """
+    if not skip_structured:
+        return current_source_sizes
+    previous_sizes = previous_summary.get("source_sizes") or {}
+    return {
+        source: dict(previous_sizes.get(source) or {})
+        for source in selected_sources
+    }
+
+
 def parse_world_scene_chunks(values: list[str] | tuple[str, ...]) -> tuple[tuple[str, int, int], ...]:
     chunks: list[tuple[str, int, int]] = []
     seen: set[tuple[str, int, int]] = set()
@@ -5833,6 +5857,12 @@ def main() -> int:
     if args.report_only and not summary_commands:
         summary_commands = previous_summary.get("commands", [])
 
+    structured_source_sizes = structured_freshness_source_sizes(
+        skip_structured=args.skip_structured,
+        selected_sources=selected_sources,
+        current_source_sizes=source_sizes,
+        previous_summary=previous_summary,
+    )
     summary = {
         "game_root": str(game_root),
         "output_root": str(output_root),
@@ -5840,7 +5870,12 @@ def main() -> int:
         "reports_run_root": str(reports_dir),
         "report_run_id": report_run_id,
         "sources_selected": list(selected_sources),
-        "source_sizes": source_sizes,
+        # `source_sizes` is the freshness authority for structured Story/Table
+        # outputs. Asset-only runs expose their current scan separately without
+        # claiming that untouched structured data came from the current build.
+        "source_sizes": structured_source_sizes,
+        "current_source_sizes": source_sizes,
+        "structured_source_sizes_preserved": bool(args.skip_structured),
         "inventory": inventory_summary,
         "commands": summary_commands,
         "vfs_index": vfs_index_summary,

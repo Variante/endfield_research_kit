@@ -962,7 +962,17 @@ def audio_rel_with_extension(rel: str | Path, extension: str) -> str:
 
 def json_dump(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.stem}.", suffix=".tmp", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        with open(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+            handle.flush()
+        tmp_path.replace(path)
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 def load_json(path: Path, fallback: Any) -> Any:

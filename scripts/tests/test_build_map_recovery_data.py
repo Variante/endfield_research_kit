@@ -16,6 +16,59 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         builder._NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE.clear()
         builder._ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE.clear()
 
+    def test_refresh_render_backgrounds_only_rewrites_preview_field(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output = root / "webui/data/map_recovery"
+            maps = output / "maps"
+            maps.mkdir(parents=True)
+            path = maps / "test_level.json"
+            path.write_text(
+                json.dumps({
+                    "id": "test_level",
+                    "levelId": "test_level",
+                    "markers": [{"id": "marker"}],
+                    "renderBackground": {"status": "old"},
+                }),
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.object(builder, "OUT", output),
+                mock.patch.object(
+                    builder,
+                    "_render_background",
+                    return_value={"status": "current", "src": "render/test.png"},
+                ),
+            ):
+                self.assertEqual(builder.refresh_render_backgrounds(), 1)
+                self.assertEqual(builder.refresh_render_backgrounds(), 0)
+
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["markers"], [{"id": "marker"}])
+            self.assertEqual(
+                payload["renderBackground"],
+                {"status": "current", "src": "render/test.png"},
+            )
+
+    def test_build_previews_refreshes_only_after_success(self):
+        with (
+            mock.patch(
+                "scripts.build_map_recovery_preview.main",
+                return_value=0,
+            ) as preview,
+            mock.patch.object(builder, "refresh_render_backgrounds") as refresh,
+        ):
+            self.assertEqual(builder.build_previews_and_refresh(["lv_a"]), 0)
+            preview.assert_called_once_with(["--level", "lv_a"])
+            refresh.assert_called_once_with({"lv_a"})
+
+        with (
+            mock.patch("scripts.build_map_recovery_preview.main", return_value=7),
+            mock.patch.object(builder, "refresh_render_backgrounds") as refresh,
+        ):
+            self.assertEqual(builder.build_previews_and_refresh([]), 7)
+            refresh.assert_not_called()
+
     def test_npc_proxy_ex_story_index_requires_unique_casefold_story_and_exact_transform(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

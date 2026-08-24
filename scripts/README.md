@@ -14,8 +14,8 @@ focused development or validation.
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` |
 | Story/Mission recovery loop | `.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference` |
 | Mission Pipeline JSON only | `.\export.bat --mission-pipeline-data-only` |
-| Reindex assets and CN audio | `.\export_assets.bat` |
-| Refresh assets and CN audio | `.\export_assets.bat --from-game` |
+| Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
+| Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
 | Serve or package | `python serve.py` / `python scripts\pack_webui.py` |
 
@@ -37,8 +37,14 @@ Useful shared flags:
 - `--asset-jobs N` caps AnimeStudio workers; `--webui-jobs N` caps independent
   post-Story builders.
 - `--game-root PATH` overrides the configured client for one run.
-- `--story-only`, `--mission-pipeline-only`, and
-  `--mission-pipeline-data-only` stop after their named scope.
+- The configured `ENDFIELD_EXPORT_ROOT` is passed to installed-game extraction
+  as `--output` and to downstream builders as `--export-root`; both halves of
+  a run therefore use the same tree.
+- `--story-only`, `--mission-pipeline-only`,
+  `--mission-pipeline-data-only`, and `--assets-only` select the build scope;
+  at most one may be given. `--assets-only` skips Story evidence, Story, and
+  Text Tables, and implies `--with-assets`; `export_assets.bat` is a thin
+  wrapper that adds it.
 - `--full-source-graph` adds exhaustive Unity-object/PathID graph work. The
   default graph contains only source rows consumed by WebUI edges.
 
@@ -61,7 +67,7 @@ a degraded reason instead of using them as direct evidence.
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline | `build_mission_pipeline_data.py` | `webui/data/mission_pipeline/` |
-| Map | `build_map_recovery_preview.py [--surface-point-density N]` renders current minimap/model/point/water layers (`N` is exact-surface samples/m2, default `0.25`); `build_map_recovery_data.py` publishes the map index and payloads; `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
+| Map | `build_map_recovery_data.py --with-preview` publishes map data, renders previews, then refreshes only the preview-backed payload field; `--preview-only` reuses current map data. `build_map_recovery_preview.py [--surface-point-density N]` remains the direct renderer (`N` is exact-surface samples/m2, default `0.25`). `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
@@ -247,9 +253,21 @@ message IDs, and field offsets have one mutable source of truth.
 ## Assets and audio
 
 Prefer `export.bat --from-game --with-assets` when both Story and assets need a
-fresh extraction. Use `export_assets.bat --from-game` when Story is already
-current, or plain `export_assets.bat` to rebuild indexes and relink existing
-decoded assets.
+fresh extraction. When generated Story is already current,
+`export_assets.bat --from-game` refreshes assets/audio and rebuilds Mission
+Pipeline, map recovery, Characters, Gameplay/projectiles, the curated source
+graph, and combat relationships. Plain `export_assets.bat` rebuilds the same
+post-Story views while reusing existing decoded assets and audio.
+
+`export_assets.bat` is a thin wrapper around `export.bat --assets-only`, so it
+shares one option parser, runs `verify_export_freshness.py`, and writes a
+benchmark under `reports/export/benchmarks/` with an `export_assets_` label.
+The shared data-only Mission Pipeline plan validates the protocol registry and
+rebuilds Mission Pipeline/map JSON without refreshing Story gap evidence or
+rendering map previews. Asset-only installed-game extraction leaves structured
+Story/Table outputs untouched and preserves their previous source fingerprints;
+its current asset scan is recorded separately, so it cannot make stale Story
+data pass the freshness guard after a client update.
 
 `build_audio.py` writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
