@@ -1833,8 +1833,11 @@
 
   function renderCharacterSoundEffects(entry) {
     if (!STATE.integration.soundEffects) return renderSoundEffectsUnavailable();
+    const namespaceOwnerId = isEndministrator(entry)
+      ? ENDADMINISTRATOR_VARIANTS.find((variant) => variant.gender === currentCharacterGender())?.characterId
+      : entry?.id;
     const namespaceEvents = filterEndministratorVariant(
-      STATE.integration.soundEffects?.characters?.[entry?.id]?.authoredNamespaceEvents,
+      STATE.integration.soundEffects?.characters?.[namespaceOwnerId]?.authoredNamespaceEvents,
       entry,
       (event) => event?.id,
     );
