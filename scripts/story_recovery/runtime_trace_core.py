@@ -28,6 +28,26 @@ class CaptureConfigurationError(RuntimeError):
     """Raised when a local build or hook configuration is unsafe."""
 
 
+def describe_attach_refusal(process_name: str, pid: int, error: Exception) -> str:
+    """Return a bounded, actionable explanation for a failed normal attach."""
+
+    detail = str(error).strip() or type(error).__name__
+    lowered = detail.casefold()
+    if "0x00000005" in lowered or "access is denied" in lowered:
+        reason = (
+            "Windows denied the requested process-memory operation (error 0x00000005). "
+            "No hooks were installed and this is not a manifest, module-hash, or hook-RVA failure. "
+            "Use a capture environment that permits normal debug attachment, or import an "
+            "externally recorded event-v1 JSONL trace; do not treat this denial as runtime evidence."
+        )
+    else:
+        reason = (
+            "No hooks were installed. Inspect the adjacent diagnostics JSONL for the original "
+            "attach error; an externally recorded event-v1 JSONL trace can be imported instead."
+        )
+    return f"normal Frida attach was refused for {process_name} PID {pid}: {detail}. {reason}"
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
