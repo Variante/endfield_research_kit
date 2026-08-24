@@ -1786,14 +1786,23 @@
     const sounds = STATE.integration.soundEffects?.enemies?.[entry?.id] || {};
     const playableEvents = gameplayResolvedSoundEvents(mergeGameplaySoundEvents([...(sounds.events || []), ...(sounds.animationEvents || [])]))
       .filter((event) => (event.audio || []).some((candidate) => candidate?.src) || Number(event.possibleMediaCount || event.playableCandidates || 0) > 0);
-    if (!playableEvents.length) return "";
+    const namespaceEvents = filterEndministratorVariant(
+      sounds.authoredNamespaceEvents,
+      entry,
+      (event) => event?.id,
+    );
+    const namespaceGroup = renderGameplaySoundGroup(namespaceEvents, {
+      label: text("authoredEnemyNamespaceAudio"),
+      note: text("authoredEnemyNamespaceAudioNote"),
+    });
+    if (!playableEvents.length) return namespaceGroup;
     const confidence = integrationConfidence(
       sounds.ownershipConfidence === "inferred" || sounds.animationOwnershipConfidence === "inferred" ? "inferred" : "direct",
     );
     const notes = [text("soundRuntimeNote")];
     if ((sounds.animationEvents || []).length) notes.push(text("animationSoundNote"));
     const playableAudio = playableEvents.reduce((total, event) => total + (event.audio || []).filter((candidate) => candidate?.src).length, 0);
-    return `<div class="gameplay-enemy-sfx-meta"><strong>${escapeHtml(gameplaySoundCountText(playableEvents))}</strong>${confidence}</div><p class="gameplay-enemy-sfx-note">${escapeHtml(notes.join(" "))}</p>${renderGameplaySoundEventList(playableEvents, playableAudio, { flattenGroups: true })}`;
+    return `${namespaceGroup}<div class="gameplay-enemy-sfx-meta"><strong>${escapeHtml(gameplaySoundCountText(playableEvents))}</strong>${confidence}</div><p class="gameplay-enemy-sfx-note">${escapeHtml(notes.join(" "))}</p>${renderGameplaySoundEventList(playableEvents, playableAudio, { flattenGroups: true })}`;
   }
 
   function renderCharacterAnimationSounds(entry) {
@@ -4187,7 +4196,7 @@
   function validSoundEffectsPayload(payload) {
     return Boolean(
       payload
-      && [1, 2, 3, 4, 5, 6].includes(payload.schemaVersion)
+      && [1, 2, 3, 4, 5, 6, 7].includes(payload.schemaVersion)
       && payload.characters
       && payload.enemies
     );
