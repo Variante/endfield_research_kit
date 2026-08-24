@@ -277,6 +277,19 @@ archetypes remain labeled source kits rather than finished characters.
   GPU-instancing state, registry ownership, and the one-particle batch are not
   substitutes. Admission still requires that capture plus both fixed-control
   60 Hz windows; M21, exact `suikuai (1)`, and M27 must remain unchanged.
+  Recovery is now intentionally bounded to offline evidence: no retail client
+  launch, attachment, or injection is permitted. A local Endminf-specific
+  D3D11 standalone and RenderDoc census proves that the `_03` M28 source is
+  instantiated and alive at `particleTime=0.320262` with one particle while
+  its fail-closed renderer remains disabled and material-less. The fixed M21
+  crystal and exact `suikuai (1)` controls remain enabled with their expected
+  materials, and M27 remains unchanged and fail-closed. This local capture is
+  not retail draw evidence: its shared CharEffect, physical-HDR/SceneMV,
+  post-Uber world-UI, and ShadowPlane target paths are incomplete. Static
+  binaries, serialized assets, recovered programs, video, and this local draw
+  therefore exhaust the allowed evidence. Retail pair selection, per-instance
+  publication, live descriptors/attachments/PSO, and selected M28 pixels are
+  the irreducible boundary; M28 must remain blocked rather than inferred.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha

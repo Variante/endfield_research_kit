@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Linq;
 using EndfieldGraphShaderLab;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace EndfieldGraphShaderLabEditor
 {
@@ -19,6 +22,100 @@ namespace EndfieldGraphShaderLabEditor
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Audio/925835917.flac";
 
         public static void OpenVisualReproductionInPlayMode()
+        {
+            PrepareVisualReproductionScene();
+            EditorApplication.EnterPlaymode();
+        }
+
+        public static void BuildD3D11CapturePlayer()
+        {
+            PrepareVisualReproductionScene();
+            EnsureEndminfSceneInstanceForStandalone();
+            EditorSceneManager.SaveScene(
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene(),
+                ViewerScene);
+            string playerPath = Path.GetFullPath(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Builds/EndminfOverviewCapture/EndminfOverviewCapture.exe"));
+            Directory.CreateDirectory(Path.GetDirectoryName(playerPath) ?? ".");
+
+            GraphicsDeviceType[] previousGraphicsApis =
+                PlayerSettings.GetGraphicsAPIs(BuildTarget.StandaloneWindows64);
+            bool previousUseDefaultGraphicsApis =
+                PlayerSettings.GetUseDefaultGraphicsAPIs(BuildTarget.StandaloneWindows64);
+            try
+            {
+                PlayerSettings.SetUseDefaultGraphicsAPIs(
+                    BuildTarget.StandaloneWindows64,
+                    false);
+                PlayerSettings.SetGraphicsAPIs(
+                    BuildTarget.StandaloneWindows64,
+                    new[] { GraphicsDeviceType.Direct3D11 });
+                var options = new BuildPlayerOptions
+                {
+                    scenes = new[] { ViewerScene },
+                    locationPathName = playerPath,
+                    target = BuildTarget.StandaloneWindows64,
+                    options = BuildOptions.Development,
+                };
+                BuildReport report = BuildPipeline.BuildPlayer(options);
+                if (report.summary.result != BuildResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Endminf D3D11 capture-player build failed: " +
+                        $"result={report.summary.result}, " +
+                        $"errors={report.summary.totalErrors}, " +
+                        $"warnings={report.summary.totalWarnings}.");
+                }
+                Debug.Log(
+                    "Endminf D3D11 capture player built: " +
+                    $"path={playerPath}, size={report.summary.totalSize} bytes, " +
+                    $"time={report.summary.totalTime.TotalSeconds:0.0}s.");
+            }
+            finally
+            {
+                PlayerSettings.SetUseDefaultGraphicsAPIs(
+                    BuildTarget.StandaloneWindows64,
+                    previousUseDefaultGraphicsApis);
+                if (!previousUseDefaultGraphicsApis &&
+                    previousGraphicsApis != null &&
+                    previousGraphicsApis.Length != 0)
+                {
+                    PlayerSettings.SetGraphicsAPIs(
+                        BuildTarget.StandaloneWindows64,
+                        previousGraphicsApis);
+                }
+            }
+        }
+
+        private static void EnsureEndminfSceneInstanceForStandalone()
+        {
+            CharacterRecoveryRig existing = UnityEngine.Object
+                .FindObjectsOfType<CharacterRecoveryRig>(true)
+                .FirstOrDefault(value => value != null &&
+                    value.name.Equals("Endminf", StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+                return;
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Actor);
+            if (prefab == null)
+                throw new FileNotFoundException(
+                    "Endminf standalone capture prefab is missing.", Actor);
+            GameObject instance = PrefabUtility.InstantiatePrefab(
+                prefab,
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene()) as GameObject;
+            if (instance == null)
+                throw new InvalidOperationException(
+                    "Could not serialize Endminf into the standalone capture scene.");
+            instance.name = "Endminf";
+            instance.SetActive(false);
+            EditorUtility.SetDirty(instance);
+            Debug.Log(
+                "Serialized Endminf directly into the standalone capture scene; " +
+                "runtime selection no longer depends on editor-only AssetDatabase loading.");
+        }
+
+        private static void PrepareVisualReproductionScene()
         {
             Environment.SetEnvironmentVariable(
                 EndfieldEndminfVisualCompatibilityClock.EnvironmentVariable,
@@ -105,7 +202,6 @@ namespace EndfieldGraphShaderLabEditor
             }
             EditorSceneManager.SaveScene(
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ViewerScene);
-            EditorApplication.EnterPlaymode();
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Bind Endminf Overview Effects")]

@@ -24,6 +24,10 @@ ACTIVE_D3D11_FILES = (
 )
 ACTIVE_D3D11_RUNTIME_FILES = (
     LAB / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRenderDocAutoCapture.cs",
+    LAB / (
+        "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+        "EndfieldEndminfOverviewEffectBindingBuilder.cs"
+    ),
 )
 
 

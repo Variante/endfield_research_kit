@@ -30,7 +30,11 @@
     },
     {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRenderDocAutoCapture.cs",
-      "sha256": "37ef4ad82dbf51591be60a2be3043253e29f4fc0d7b022d60982ee127261ff86"
+      "sha256": "238f34c7706ee87633f6c8a8b242f71221de4cf469b4a90a8da58ce1f4334316"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfOverviewEffectBindingBuilder.cs",
+      "sha256": "9cfd783b2a96593d73dc649a63cc1552302f38b6e35c930057ef1644e0c8f567"
     }
   ],
   "canonicalCapture": {
