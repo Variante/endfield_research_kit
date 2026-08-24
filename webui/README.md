@@ -189,6 +189,9 @@ Manual inputs:
   remain unresolved and unmarked. This evidence badge is separate from the
   user-managed `possiblyUnused` Story-order override.
 - `overrides/options.json` stores manual option placement/response recovery.
+  Story keeps the generated option-evidence issue and its count unchanged;
+  manual coverage adds a separate filterable override tag instead of replacing
+  source-state classifications such as unregistered table-only placement.
 - `overrides/narrative_videos.json` controls inline video attachment,
   suppression, and optional audio inheritance.
 

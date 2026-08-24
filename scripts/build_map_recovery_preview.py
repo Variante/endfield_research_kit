@@ -28,6 +28,7 @@ A level whose fit is under-determined publishes no background at all.
 from __future__ import annotations
 
 import argparse
+import functools
 import io
 import json
 import math
@@ -43,6 +44,13 @@ try:  # Optional: only the PNG unfilter loop below is accelerated by it.
 except ImportError:  # pragma: no cover - exercised by the stdlib fallback path
     _PILImage = None
 
+try:  # Optional acceleration for the depth-tested triangle hot loop.
+    import numpy as _np
+    from numba import njit as _numba_njit
+except ImportError:  # pragma: no cover - the maintained stdlib path remains valid
+    _np = None
+    _numba_njit = None
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -53,6 +61,7 @@ from scripts.map_recovery_sources import isolated_art_source, projection_streami
 DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
 MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 TEXTURE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+MATERIAL_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
@@ -119,6 +128,14 @@ HLOD_MATERIAL_REL_RE = re.compile(
     r"/Material/M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)_p[0-9A-F]+[.]json$",
     re.IGNORECASE,
 )
+HLOD_MATERIAL_NAME_RE = re.compile(
+    r"^M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)$",
+    re.IGNORECASE,
+)
+HLOD_DIFFUSE_NAME_RE = re.compile(
+    r"^T_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_-?\d+_D$",
+    re.IGNORECASE,
+)
 TEXTURE_PREVIEW_EDGE = 96
 WATER_SECTOR_SIZE = 128.0
 DETAIL_HORIZONTAL_NORMAL_Y = 0.985
@@ -140,11 +157,101 @@ _TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
 _MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
 
 
+def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
+    unsigned = path_id & ((1 << 64) - 1)
+    return index.get(f"{unsigned:016X}") or index.get(f"{unsigned:X}")
+
+
+if _numba_njit is not None:
+    @_numba_njit(cache=False)
+    def _raster_triangle_numba(
+        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo, width,
+        x0, x1, y0, y1, row_w0, row_w1, w0_dx, w0_dy, w1_dx, w1_dy,
+        y_a, y_b, y_c, detail_face, has_texture, uv_values, texture_pixels,
+        texture_width, texture_height, scale_u, scale_v, offset_u, offset_v,
+        cutoff_alpha, tint_lut, edge_epsilon,
+    ):
+        """Compiled equivalent of the streaming rasterizer's per-pixel loop."""
+        textured_hit = False
+        for pixel_y in range(y0, y1 + 1):
+            base = pixel_y * width
+            w0 = row_w0
+            w1 = row_w1
+            for pixel_x in range(x0, x1 + 1):
+                w2 = 1.0 - w0 - w1
+                if w0 >= -edge_epsilon and w1 >= -edge_epsilon and w2 >= -edge_epsilon:
+                    elevation = w0 * y_a + w1 * y_b + w2 * y_c
+                    index = base + pixel_x
+                    wins_full = elevation > depth[index]
+                    wins_detail = detail_face and elevation > detail_depth[index]
+                    wins_color = has_texture and elevation > color_depth[index]
+                    wins_detail_color = has_texture and detail_face and elevation > detail_color_depth[index]
+                    if wins_full or wins_detail or wins_color or wins_detail_color:
+                        visible = True
+                        red = green = blue = alpha = 0
+                        if has_texture:
+                            u = (w0 * uv_values[0, 0] + w1 * uv_values[1, 0] + w2 * uv_values[2, 0]) * scale_u + offset_u
+                            v = (w0 * uv_values[0, 1] + w1 * uv_values[1, 1] + w2 * uv_values[2, 1]) * scale_v + offset_v
+                            texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
+                            texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
+                            alpha = texture_pixels[texture_y, texture_x, 3]
+                            if alpha < cutoff_alpha:
+                                visible = False
+                            else:
+                                red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
+                                green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
+                                blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
+                        if visible:
+                            if wins_full:
+                                depth[index] = elevation
+                            if wins_color:
+                                color_depth[index] = elevation
+                                albedo[index, 0] = red
+                                albedo[index, 1] = green
+                                albedo[index, 2] = blue
+                                albedo[index, 3] = alpha
+                                textured_hit = True
+                            if wins_detail:
+                                detail_depth[index] = elevation
+                            if wins_detail_color:
+                                detail_color_depth[index] = elevation
+                                detail_albedo[index, 0] = red
+                                detail_albedo[index, 1] = green
+                                detail_albedo[index, 2] = blue
+                                detail_albedo[index, 3] = alpha
+                w0 += w0_dx
+                w1 += w1_dx
+            row_w0 += w0_dy
+            row_w1 += w1_dy
+        return textured_hit
+else:
+    _raster_triangle_numba = None
+
+
 def build_hlod_index(asset_map: Path) -> dict:
     """One streaming pass over the asset map, grouped by level and LOD."""
     levels: dict[str, dict[str, list]] = {}
     water_sectors: dict[str, list[dict]] = {}
+    material_containers: dict[str, dict[str, list[dict]]] = {}
     for entry in iter_asset_entries(asset_map):
+        container = str(entry.get("Container", "")).replace("\\", "/")
+        material_match = HLOD_MATERIAL_NAME_RE.fullmatch(str(entry.get("Name", "")))
+        diffuse_match = HLOD_DIFFUSE_NAME_RE.fullmatch(str(entry.get("Name", "")))
+        if material_match and entry.get("Type") == "Material":
+            material_containers.setdefault(container, {"materials": [], "diffuse": []})["materials"].append({
+                "level": material_match.group("level").lower(),
+                "lod": int(material_match.group("lod")),
+                "hash": int(material_match.group("hash")),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
+        elif diffuse_match and entry.get("Type") == "Texture2D":
+            material_containers.setdefault(container, {"materials": [], "diffuse": []})["diffuse"].append({
+                "level": diffuse_match.group("level").lower(),
+                "lod": int(diffuse_match.group("lod")),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
         water = WATER_SECTOR_RE.search(str(entry.get("Container", "")))
         if (water and entry.get("Type") == "Texture2D"
                 and str(entry.get("Name", "")).lower().startswith("t_water_sector_flowmap_")):
@@ -168,19 +275,36 @@ def build_hlod_index(asset_map: Path) -> dict:
             "pathId": entry.get("PathID"),
             "name": entry.get("Name"),
         })
+    diffuse_bindings = []
+    for container, rows in material_containers.items():
+        # A generated HLOD material container normally owns one material and
+        # its baked D/N atlases. Fail closed if either side is ambiguous and
+        # select only the authored `_D` diffuse atlas, never the blue normal.
+        if len(rows["materials"]) != 1 or len(rows["diffuse"]) != 1:
+            continue
+        material, diffuse = rows["materials"][0], rows["diffuse"][0]
+        if (material["level"], material["lod"]) != (diffuse["level"], diffuse["lod"]):
+            continue
+        diffuse_bindings.append({
+            **material,
+            "texturePathId": diffuse["pathId"],
+            "textureName": diffuse["name"],
+            "container": container,
+        })
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "assetMap": str(asset_map),
         "assetMapSha256": sha256_file(asset_map),
         "levels": levels,
         "waterSectors": water_sectors,
+        "hlodDiffuseBindings": diffuse_bindings,
     }
 
 
 def load_hlod_index(asset_map: Path, cache: Path, refresh: bool) -> dict:
     if not refresh and cache.exists():
         cached = json.loads(cache.read_text(encoding="utf-8"))
-        if cached.get("schemaVersion") == 2 and cached.get("assetMapSha256") == sha256_file(asset_map):
+        if cached.get("schemaVersion") == 3 and cached.get("assetMapSha256") == sha256_file(asset_map):
             return cached
     index = build_hlod_index(asset_map)
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -568,6 +692,81 @@ def hlod_texture_bindings(level_id: str, lod: int, clusters: list[dict]) -> dict
     return result
 
 
+def install_asset_map_hlod_diffuse_bindings(index: dict, texture_files: dict[str, Path]) -> int:
+    """Fill missing generated-HLOD relations from exact AssetMap containers."""
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS
+    installed = 0
+    for row in index.get("hlodDiffuseBindings") or []:
+        path_id = row.get("texturePathId")
+        if not isinstance(path_id, int):
+            continue
+        texture_path = _path_id_file(texture_files, path_id)
+        if texture_path is None:
+            continue
+        key = (str(row["level"]).lower(), int(row["lod"]), int(row["hash"]))
+        if available.get(key):
+            continue
+        available[key] = {
+            "slot": "_BakedHlodDiffuse",
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": row["container"],
+            "materialPath": ROOT / "__asset_map_baked_hlod_material__",
+            "mappingMethod": "exact_assetmap_material_container_baked_diffuse",
+        }
+        installed += 1
+    return installed
+
+
+def install_hlod_material_json_bindings(material_root: Path, texture_files: dict[str, Path]) -> tuple[int, int]:
+    """Install exact HLOD Material `_BaseColorMap` PPtr bindings.
+
+    These serialized references are the complete authority for generated HLOD
+    atlas ownership. No filename similarity, nearest material, or presentation
+    color is accepted as a substitute.
+    """
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS
+    installed = unresolved = 0
+    if not material_root.is_dir():
+        return installed, unresolved
+    for material_path in material_root.glob("M_auto_generated_HLOD*_*.json"):
+        stem = material_path.stem.rsplit("_p", 1)[0]
+        matched = HLOD_MATERIAL_NAME_RE.fullmatch(stem)
+        if not matched:
+            continue
+        try:
+            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            env = ((payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}).get("_BaseColorMap") or {}
+            path_id = (env.get("m_Texture") or {}).get("m_PathID")
+        except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+            unresolved += 1
+            continue
+        if not isinstance(path_id, int):
+            unresolved += 1
+            continue
+        texture_path = _path_id_file(texture_files, path_id)
+        if texture_path is None:
+            unresolved += 1
+            continue
+        key = (
+            matched.group("level").lower(),
+            int(matched.group("lod")),
+            int(matched.group("hash")),
+        )
+        available[key] = {
+            "slot": "_BaseColorMap",
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialPath": material_path,
+            "mappingMethod": "exact_serialized_hlod_material_base_color_pptr",
+        }
+        installed += 1
+    return installed, unresolved
+
+
 def _material_render_params(binding: dict) -> dict:
     key = (Path(binding["materialPath"]), str(binding["slot"]))
     if key in _MATERIAL_PARAMS:
@@ -612,8 +811,35 @@ def _texture_render_source(binding: dict | None) -> dict | None:
     if not preview:
         return None
     width, height, pixels = preview
-    return {**_material_render_params(binding), "width": width, "height": height, "pixels": pixels,
+    params = _material_render_params(binding)
+    tint_lut = tuple(
+        bytes(_tint_srgb_channel(encoded, tint) for encoded in range(256))
+        for tint in params["tint"]
+    )
+    return {**params, "width": width, "height": height, "pixels": pixels, "tintLut": tint_lut,
             "textureRel": binding["textureRel"], "materialRel": binding["materialRel"]}
+
+
+def _srgb_to_linear(value: float) -> float:
+    return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+
+def _linear_to_srgb(value: float) -> float:
+    value = max(0.0, value)
+    return value * 12.92 if value <= 0.0031308 else 1.055 * value ** (1.0 / 2.4) - 0.055
+
+
+@functools.lru_cache(maxsize=65_536)
+def _tint_srgb_channel(encoded: int, linear_tint: float) -> int:
+    """Apply a Unity material tint without multiplying gamma-encoded bytes.
+
+    Base-color PNGs are sRGB display data, while serialized material colors are
+    shader values used after the texture sample has been decoded to linear
+    light. The recovered preview is itself an sRGB PNG, so reproduce that
+    decode/multiply/encode sequence here.
+    """
+    linear = _srgb_to_linear(encoded / 255.0) * max(0.0, linear_tint)
+    return min(255, round(_linear_to_srgb(linear) * 255.0))
 
 
 def _sample_texture(texture: dict, u: float, v: float) -> tuple[int, int, int, int] | None:
@@ -625,11 +851,17 @@ def _sample_texture(texture: dict, u: float, v: float) -> tuple[int, int, int, i
     alpha_mode = texture.get("alphaMode", "opaque")
     if alpha_mode == "cutout" and alpha / 255 < texture["cutoff"]:
         return None
-    tint = texture["tint"]
+    tint_lut = texture.get("tintLut")
+    if tint_lut is None:
+        tint = texture["tint"]
+        tint_lut = tuple(
+            bytes(_tint_srgb_channel(encoded, channel) for encoded in range(256))
+            for channel in tint
+        )
     return (
-        min(255, round(source[offset] * tint[0])),
-        min(255, round(source[offset + 1] * tint[1])),
-        min(255, round(source[offset + 2] * tint[2])),
+        tint_lut[0][source[offset]],
+        tint_lut[1][source[offset + 1]],
+        tint_lut[2][source[offset + 2]],
         alpha if alpha_mode == "transparent" else 255,
     )
 
@@ -850,7 +1082,7 @@ def render_point_cloud(
                             albedo[color_offset + 2],
                             albedo[color_offset + 3],
                         ))
-                    else:
+                    elif not textured_pixels:
                         base = elevation_color(tint)
                         light = 0.72 + 0.24 * (1.0 - tint)
                         base = tuple(min(255, round(channel * light)) for channel in base)
@@ -978,6 +1210,7 @@ def render_point_cloud(
             "texturedInstanceCount": textured_instances,
             "texturedTriangleCount": textured_triangles,
             "texturedPixelCount": textured_pixels,
+            "rasterBackend": raster.get("rasterBackend") if rendered_instances else None,
             "detailTriangleCount": detail_triangles,
             "excludedDetailTriangleCount": excluded_detail_triangles,
             "detailRule": (
@@ -1005,8 +1238,9 @@ def render_point_cloud(
             f"InitChunkData 4x4 matrices ({rendered_triangles} triangles and {rendered_vertex_samples} "
             f"legacy vertex samples). The point layer retains {detail_triangles} detail triangles and "
             f"exclude {excluded_detail_triangles} broad structural/slab triangles. {textured_pixels} visible pixels sample {len(used_textures)} exact "
-            "single-material base-color texture bindings through exported OBJ UVs; unresolved or multi-material "
-            f"meshes retain colored elevation shading. {len(overhead_covers)} explicitly named roof/ceiling instances are "
+            "single-material base-color texture bindings through exported OBJ UVs; when any exact color is recovered, "
+            "unresolved or multi-material surface pixels remain transparent and their geometry stays available only on "
+            f"the separate grayscale elevation layer. {len(overhead_covers)} explicitly named roof/ceiling instances are "
             "omitted so capped interiors remain readable; no height-based structural culling is applied. The remaining "
             f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots."
             if rendered_instances else
@@ -1141,8 +1375,7 @@ def _scene_meshes(
             path_id = int(cluster.get("pathId"))
         except (TypeError, ValueError):
             continue
-        suffix = f"{path_id & ((1 << 64) - 1):X}"
-        path = mesh_files.get(suffix)
+        path = _path_id_file(mesh_files, path_id)
         if path is None:
             continue
         try:
@@ -1282,8 +1515,7 @@ def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
     vertex_count = 0
     size = cell_size(lod)
     for cluster in clusters:
-        suffix = f"{int(cluster['pathId']) & ((1 << 64) - 1):X}"
-        path = mesh_files.get(suffix)
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
         if path is None:
             continue
         parsed = _read_cluster(path)
@@ -1344,8 +1576,7 @@ def render_hlod_point_samples(
         rows.append((world_y, color))
 
     for cluster in clusters:
-        suffix = f"{int(cluster['pathId']) & ((1 << 64) - 1):X}"
-        path = mesh_files.get(suffix)
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
         if path is None:
             continue
         texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
@@ -1451,10 +1682,24 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
     """Rasterize exact static instances, sampling proven material base textures."""
     span_x = bounds["maxX"] - bounds["minX"]
     span_z = bounds["maxZ"] - bounds["minZ"]
-    depth = [NO_HIT] * (width * height)
-    detail_depth = [NO_HIT] * (width * height)
-    albedo = bytearray(width * height * 4)
-    detail_albedo = bytearray(width * height * 4)
+    accelerated = _raster_triangle_numba is not None
+    if accelerated:
+        depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
+        detail_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
+        color_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
+        detail_color_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
+        albedo = _np.zeros((width * height, 4), dtype=_np.uint8)
+        detail_albedo = _np.zeros((width * height, 4), dtype=_np.uint8)
+        empty_uvs = _np.zeros((3, 2), dtype=_np.float64)
+        empty_texture = _np.zeros((1, 1, 4), dtype=_np.uint8)
+        identity_lut = _np.vstack([_np.arange(256, dtype=_np.uint8)] * 3)
+    else:
+        depth = [NO_HIT] * (width * height)
+        detail_depth = [NO_HIT] * (width * height)
+        color_depth = [NO_HIT] * (width * height)
+        detail_color_depth = [NO_HIT] * (width * height)
+        albedo = bytearray(width * height * 4)
+        detail_albedo = bytearray(width * height * 4)
     cache: dict[Path, tuple[list, list, list] | None] = {}
     used_instances = 0
     textured_instances = 0
@@ -1535,59 +1780,104 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
                 if uvs is not None:
                     textured_triangles += 1
                     used_textures.add(texture["textureRel"])
-                for pixel_y in range(y0, y1 + 1):
-                    sample_y = pixel_y + 0.5
-                    base = pixel_y * width
-                    for pixel_x in range(x0, x1 + 1):
-                        sample_x = pixel_x + 0.5
-                        w0 = ((screen_y[1] - screen_y[2]) * (sample_x - screen_x[2])
-                              + (screen_x[2] - screen_x[1]) * (sample_y - screen_y[2])) / area
-                        w1 = ((screen_y[2] - screen_y[0]) * (sample_x - screen_x[2])
-                              + (screen_x[0] - screen_x[2]) * (sample_y - screen_y[2])) / area
-                        w2 = 1.0 - w0 - w1
-                        if min(w0, w1, w2) < -EDGE_EPSILON:
-                            continue
-                        elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
-                        index = base + pixel_x
-                        wins_full = elevation > depth[index]
-                        wins_detail = detail_face and elevation > detail_depth[index]
-                        if not wins_full and not wins_detail:
-                            continue
-                        sampled = None
-                        if uvs is not None:
-                            scale_u, scale_v = texture["scale"]
-                            offset_u, offset_v = texture["offset"]
-                            u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
-                            v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
-                            texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
-                            texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
-                            texture_offset = (texture_y * texture["width"] + texture_x) * 4
-                            source = texture["pixels"]
-                            alpha = source[texture_offset + 3]
-                            if alpha / 255 < texture["cutoff"]:
-                                continue
-                            tint = texture["tint"]
-                            sampled = (
-                                min(255, round(source[texture_offset] * tint[0])),
-                                min(255, round(source[texture_offset + 1] * tint[1])),
-                                min(255, round(source[texture_offset + 2] * tint[2])),
-                                alpha,
+                inv_area = 1.0 / area
+                w0_dx = (screen_y[1] - screen_y[2]) * inv_area
+                w0_dy = (screen_x[2] - screen_x[1]) * inv_area
+                w1_dx = (screen_y[2] - screen_y[0]) * inv_area
+                w1_dy = (screen_x[0] - screen_x[2]) * inv_area
+                first_x = x0 + 0.5
+                first_y = y0 + 0.5
+                row_w0 = (((screen_y[1] - screen_y[2]) * (first_x - screen_x[2])
+                           + (screen_x[2] - screen_x[1]) * (first_y - screen_y[2])) * inv_area)
+                row_w1 = (((screen_y[2] - screen_y[0]) * (first_x - screen_x[2])
+                           + (screen_x[0] - screen_x[2]) * (first_y - screen_y[2])) * inv_area)
+                if accelerated:
+                    if uvs is not None:
+                        if "_npPixels" not in texture:
+                            texture["_npPixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
+                                texture["height"], texture["width"], 4
                             )
-                        if wins_full:
-                            depth[index] = elevation
-                            color_offset = index * 4
-                            if sampled:
-                                albedo[color_offset:color_offset + 4] = bytes(sampled)
-                                instance_textured = True
-                            else:
-                                albedo[color_offset:color_offset + 4] = b"\0\0\0\0"
-                        if wins_detail:
-                            detail_depth[index] = elevation
-                            color_offset = index * 4
-                            if sampled:
-                                detail_albedo[color_offset:color_offset + 4] = bytes(sampled)
-                            else:
-                                detail_albedo[color_offset:color_offset + 4] = b"\0\0\0\0"
+                            texture["_npTintLut"] = _np.frombuffer(
+                                b"".join(texture["tintLut"]), dtype=_np.uint8
+                            ).reshape(3, 256)
+                        uv_values = _np.asarray(uvs, dtype=_np.float64)
+                        texture_pixels = texture["_npPixels"]
+                        tint_lut = texture["_npTintLut"]
+                        scale_u, scale_v = texture["scale"]
+                        offset_u, offset_v = texture["offset"]
+                        cutoff_alpha = texture["cutoff"] * 255.0
+                        texture_width, texture_height = texture["width"], texture["height"]
+                        has_texture = True
+                    else:
+                        uv_values = empty_uvs
+                        texture_pixels = empty_texture
+                        tint_lut = identity_lut
+                        scale_u = scale_v = 1.0
+                        offset_u = offset_v = cutoff_alpha = 0.0
+                        texture_width = texture_height = 1
+                        has_texture = False
+                    instance_textured = bool(_raster_triangle_numba(
+                        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo, width,
+                        x0, x1, y0, y1, row_w0, row_w1, w0_dx, w0_dy, w1_dx, w1_dy,
+                        points[0][1], points[1][1], points[2][1], detail_face,
+                        has_texture, uv_values, texture_pixels, texture_width, texture_height,
+                        scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, EDGE_EPSILON,
+                    )) or instance_textured
+                    continue
+                for pixel_y in range(y0, y1 + 1):
+                    base = pixel_y * width
+                    w0 = row_w0
+                    w1 = row_w1
+                    for pixel_x in range(x0, x1 + 1):
+                        w2 = 1.0 - w0 - w1
+                        if min(w0, w1, w2) >= -EDGE_EPSILON:
+                            elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                            index = base + pixel_x
+                            wins_full = elevation > depth[index]
+                            wins_detail = detail_face and elevation > detail_depth[index]
+                            wins_color = uvs is not None and elevation > color_depth[index]
+                            wins_detail_color = uvs is not None and detail_face and elevation > detail_color_depth[index]
+                            if wins_full or wins_detail or wins_color or wins_detail_color:
+                                sampled = None
+                                sample_visible = True
+                                if uvs is not None:
+                                    scale_u, scale_v = texture["scale"]
+                                    offset_u, offset_v = texture["offset"]
+                                    u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                                    v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                                    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                                    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                                    texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                                    source = texture["pixels"]
+                                    alpha = source[texture_offset + 3]
+                                    if alpha / 255 < texture["cutoff"]:
+                                        sample_visible = False
+                                    else:
+                                        tint_lut = texture["tintLut"]
+                                        sampled = (
+                                            tint_lut[0][source[texture_offset]],
+                                            tint_lut[1][source[texture_offset + 1]],
+                                            tint_lut[2][source[texture_offset + 2]],
+                                            alpha,
+                                        )
+                                if sample_visible:
+                                    if wins_full:
+                                        depth[index] = elevation
+                                    if wins_color and sampled:
+                                        color_depth[index] = elevation
+                                        color_offset = index * 4
+                                        albedo[color_offset:color_offset + 4] = bytes(sampled)
+                                        instance_textured = True
+                                    if wins_detail:
+                                        detail_depth[index] = elevation
+                                    if wins_detail_color and sampled:
+                                        detail_color_depth[index] = elevation
+                                        color_offset = index * 4
+                                        detail_albedo[color_offset:color_offset + 4] = bytes(sampled)
+                        w0 += w0_dx
+                        w1 += w1_dx
+                    row_w0 += w0_dy
+                    row_w1 += w1_dy
             if drawn:
                 instance_drawn = True
                 triangles += drawn
@@ -1595,7 +1885,14 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
             used_instances += 1
         if instance_textured:
             textured_instances += 1
-    textured_pixels = sum(1 for index in range(3, len(albedo), 4) if albedo[index])
+    if accelerated:
+        textured_pixels = int(_np.count_nonzero(albedo[:, 3]))
+        depth = depth.tolist()
+        detail_depth = detail_depth.tolist()
+        albedo = bytearray(albedo.tobytes())
+        detail_albedo = bytearray(detail_albedo.tobytes())
+    else:
+        textured_pixels = sum(1 for index in range(3, len(albedo), 4) if albedo[index])
     return {
         "depth": depth,
         "detailDepth": detail_depth,
@@ -1610,6 +1907,7 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
         "vertexSamples": vertex_samples,
         "texturedPixels": textured_pixels,
         "usedTextures": sorted(used_textures),
+        "rasterBackend": "numpy_numba" if accelerated else "stdlib_python",
     }
 
 
@@ -1633,8 +1931,7 @@ def rasterise_depth(
     size = cell_size(lod)
 
     for cluster in clusters:
-        suffix = f"{int(cluster['pathId']) & ((1 << 64) - 1):X}"
-        path = mesh_files.get(suffix)
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
         if path is None:
             continue
         texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
@@ -1675,55 +1972,64 @@ def rasterise_depth(
             if abs(area) < 1e-12:
                 continue
             drawn += 1
+            inv_area = 1.0 / area
+            w0_dx = (screen_y[1] - screen_y[2]) * inv_area
+            w0_dy = (screen_x[2] - screen_x[1]) * inv_area
+            w1_dx = (screen_y[2] - screen_y[0]) * inv_area
+            w1_dy = (screen_x[0] - screen_x[2]) * inv_area
+            first_x = x0 + 0.5
+            first_y = y0 + 0.5
+            row_w0 = (((screen_y[1] - screen_y[2]) * (first_x - screen_x[2])
+                       + (screen_x[2] - screen_x[1]) * (first_y - screen_y[2])) * inv_area)
+            row_w1 = (((screen_y[2] - screen_y[0]) * (first_x - screen_x[2])
+                       + (screen_x[0] - screen_x[2]) * (first_y - screen_y[2])) * inv_area)
             for pixel_y in range(y0, y1 + 1):
-                sample_y = pixel_y + 0.5
                 base = pixel_y * width
+                w0 = row_w0
+                w1 = row_w1
                 for pixel_x in range(x0, x1 + 1):
-                    sample_x = pixel_x + 0.5
-                    w0 = ((screen_y[1] - screen_y[2]) * (sample_x - screen_x[2])
-                          + (screen_x[2] - screen_x[1]) * (sample_y - screen_y[2])) / area
-                    if w0 < -EDGE_EPSILON:
-                        continue
-                    w1 = ((screen_y[2] - screen_y[0]) * (sample_x - screen_x[2])
-                          + (screen_x[0] - screen_x[2]) * (sample_y - screen_y[2])) / area
-                    if w1 < -EDGE_EPSILON:
-                        continue
                     w2 = 1.0 - w0 - w1
-                    if w2 < -EDGE_EPSILON:
-                        continue
-                    elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
-                    index = base + pixel_x
-                    if elevation > depth[index]:
-                        sampled = None
-                        texture_face = texture_faces[face_index]
-                        if texture and min(texture_face) >= 0:
-                            try:
-                                uvs = [texcoords[uv_index] for uv_index in texture_face]
-                            except IndexError:
-                                uvs = None
-                            if uvs:
-                                scale_u, scale_v = texture["scale"]
-                                offset_u, offset_v = texture["offset"]
-                                u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
-                                v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
-                                texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
-                                texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
-                                texture_offset = (texture_y * texture["width"] + texture_x) * 4
-                                source = texture["pixels"]
-                                alpha = source[texture_offset + 3]
-                                if alpha / 255 < texture["cutoff"]:
-                                    continue
-                                tint = texture["tint"]
-                                sampled = (
-                                    min(255, round(source[texture_offset] * tint[0])),
-                                    min(255, round(source[texture_offset + 1] * tint[1])),
-                                    min(255, round(source[texture_offset + 2] * tint[2])),
-                                    alpha,
-                                )
-                        depth[index] = elevation
-                        if material_colors is not None:
-                            color_offset = index * 4
-                            material_colors[color_offset:color_offset + 4] = bytes(sampled or (0, 0, 0, 0))
+                    if w0 >= -EDGE_EPSILON and w1 >= -EDGE_EPSILON and w2 >= -EDGE_EPSILON:
+                        elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                        index = base + pixel_x
+                        if elevation > depth[index]:
+                            sampled = None
+                            sample_visible = True
+                            texture_face = texture_faces[face_index]
+                            if texture and min(texture_face) >= 0:
+                                try:
+                                    uvs = [texcoords[uv_index] for uv_index in texture_face]
+                                except IndexError:
+                                    uvs = None
+                                if uvs:
+                                    scale_u, scale_v = texture["scale"]
+                                    offset_u, offset_v = texture["offset"]
+                                    u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                                    v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                                    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                                    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                                    texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                                    source = texture["pixels"]
+                                    alpha = source[texture_offset + 3]
+                                    if alpha / 255 < texture["cutoff"]:
+                                        sample_visible = False
+                                    else:
+                                        tint_lut = texture["tintLut"]
+                                        sampled = (
+                                            tint_lut[0][source[texture_offset]],
+                                            tint_lut[1][source[texture_offset + 1]],
+                                            tint_lut[2][source[texture_offset + 2]],
+                                            alpha,
+                                        )
+                            if sample_visible:
+                                depth[index] = elevation
+                                if material_colors is not None:
+                                    color_offset = index * 4
+                                    material_colors[color_offset:color_offset + 4] = bytes(sampled or (0, 0, 0, 0))
+                    w0 += w0_dx
+                    w1 += w1_dx
+                row_w0 += w0_dy
+                row_w1 += w1_dy
         if drawn:
             triangles += drawn
             used.append({
@@ -2396,6 +2702,7 @@ def render_streaming_surface_samples(
     used_textures: set[str] = set()
     sampled_triangles = source_samples = 0
     excluded_structural_triangles = excluded_horizontal_triangles = 0
+    unresolved_material_triangles = unresolved_uv_triangles = 0
     epsilon = 1e-4
     export_root = (ROOT / "export_full").resolve()
 
@@ -2446,6 +2753,9 @@ def render_streaming_surface_samples(
                 if not authored_detail_prop and _is_large_horizontal_triangle(points):
                     excluded_horizontal_triangles += 1
                     continue
+                if texture is None:
+                    unresolved_material_triangles += 1
+                    continue
                 x0, x1, x2 = (point[0] for point in points)
                 z0, z1, z2 = (point[2] for point in points)
                 area = (z1 - z2) * (x0 - x2) + (x2 - x1) * (z0 - z2)
@@ -2462,6 +2772,9 @@ def render_streaming_surface_samples(
                         uvs = [texcoords[index] for index in texture_face]
                     except IndexError:
                         uvs = None
+                if uvs is None:
+                    unresolved_uv_triangles += 1
+                    continue
                 for kz in range(min_kz, max_kz + 1):
                     world_z = (kz + 0.5) * spacing
                     if not bounds["minZ"] <= world_z <= bounds["maxZ"]:
@@ -2480,16 +2793,14 @@ def render_streaming_surface_samples(
                         py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
                         if not (0 <= px < width and 0 <= py < height):
                             continue
-                        color = None
-                        if uvs is not None:
-                            scale_u, scale_v = texture["scale"]
-                            offset_u, offset_v = texture["offset"]
-                            u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
-                            v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
-                            color = _sample_texture(texture, u, v)
-                            if color is None:
-                                continue
-                            used_textures.add(texture["textureRel"])
+                        scale_u, scale_v = texture["scale"]
+                        offset_u, offset_v = texture["offset"]
+                        u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                        v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                        color = _sample_texture(texture, u, v)
+                        if color is None:
+                            continue
+                        used_textures.add(texture["textureRel"])
                         add(py * width + px, world_y, color)
                         source_samples += 1
                         landed = True
@@ -2500,24 +2811,19 @@ def render_streaming_surface_samples(
     if not all_heights:
         return None
     low, high = min(all_heights), max(all_heights)
-    y_span = max(high - low, 1.0)
     top_depth = [NO_HIT] * (width * height)
     top_colors = bytearray(width * height * 4)
     records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
     record_count = 0
     for index in sorted(samples):
         ordered = sorted(samples[index], key=lambda row: row[0])
-        for world_y, recovered_color in ordered:
-            tint = (world_y - low) / y_span
-            color = recovered_color or (*[max(18, round(channel * 0.68)) for channel in elevation_color(tint)], 225)
+        for world_y, color in ordered:
             records.extend(struct.pack("<IfBBBB", index, world_y, *color))
             record_count += 1
         top_y, top_color = ordered[-1]
-        tint = (top_y - low) / y_span
-        color = top_color or (*[max(18, round(channel * 0.68)) for channel in elevation_color(tint)], 225)
         top_depth[index] = top_y
         offset = index * 4
-        top_colors[offset:offset + 4] = bytes((*color[:3], 225))
+        top_colors[offset:offset + 4] = bytes(top_color)
 
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_streaming_surface_points.png"
@@ -2541,6 +2847,8 @@ def render_streaming_surface_samples(
         "sampledTriangleCount": sampled_triangles,
         "excludedStructuralTriangleCount": excluded_structural_triangles,
         "excludedHorizontalTriangleCount": excluded_horizontal_triangles,
+        "unresolvedMaterialTriangleCount": unresolved_material_triangles,
+        "unresolvedUvTriangleCount": unresolved_uv_triangles,
         "heightMask": height_mask,
         "sampleSet": {
             "src": f"render/{sample_name}",
@@ -2555,6 +2863,8 @@ def render_streaming_surface_samples(
         "baseColorTextures": sorted(used_textures),
         "boundary": (
             "Deterministic world-space X/Z lattice samples on exact matrix-transformed detail triangle surfaces. "
+            "Every visible point samples its exact exported base-color texture through the triangle UVs; "
+            "triangles without one unambiguous material binding and usable UVs remain transparent. "
             "Named floor/roof/ceiling/ground/terrain geometry and broad near-horizontal non-prop slabs are excluded. "
             "The density changes presentation only; it does not change transforms, bounds, or alignment."
         ),
@@ -2642,7 +2952,20 @@ def main(argv: list[str] | None = None) -> int:
     if not args.asset_map.is_file():
         print(f"map previews: HLOD skipped - AssetMap not found: {args.asset_map}")
     mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
-    texture_files = texture_file_index(args.texture_root) if index.get("waterSectors") else {}
+    texture_files = texture_file_index(args.texture_root) if (
+        index.get("waterSectors") or index.get("hlodDiffuseBindings")
+    ) else {}
+    installed_diffuse_bindings = install_asset_map_hlod_diffuse_bindings(index, texture_files)
+    if installed_diffuse_bindings:
+        print(f"map previews: recovered {installed_diffuse_bindings} baked HLOD diffuse bindings from AssetMap containers")
+    installed_material_bindings, unresolved_material_bindings = install_hlod_material_json_bindings(
+        MATERIAL_ROOT, texture_files,
+    )
+    if installed_material_bindings or unresolved_material_bindings:
+        print(
+            f"map previews: recovered {installed_material_bindings} serialized HLOD material diffuse bindings"
+            f"; {unresolved_material_bindings} unresolved"
+        )
     only = set(args.level)
     if args.water_only:
         if not args.level:
