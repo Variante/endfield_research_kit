@@ -445,6 +445,37 @@ def _rva_file_offset(pe: dict[str, Any], rva: int, size: int = 1) -> int:
     raise ContractError(f"PE RVA 0x{rva:x} is outside sections")
 
 
+def _exact_rva_span(
+    pe: dict[str, Any],
+    rva: int,
+    size: int,
+    expected_sha256: str,
+) -> tuple[bytes, list[Any]]:
+    """Read and continuously disassemble one hash-pinned PE code span."""
+    if Cs is None:
+        raise ContractError(f"Capstone unavailable: {_CAPSTONE_IMPORT_ERROR}")
+    offset = _rva_file_offset(pe, rva, size)
+    body = pe["data"][offset:offset + size]
+    actual_sha256 = hashlib.sha256(body).hexdigest()
+    if actual_sha256 != expected_sha256:
+        raise ContractError(
+            f"exact Burst span 0x{rva:x} hash drift: {actual_sha256}"
+        )
+    decoder = Cs(CS_ARCH_X86, CS_MODE_64)
+    decoder.detail = True
+    instructions = list(decoder.disasm(body, pe["imageBase"] + rva))
+    if not instructions:
+        raise ContractError(f"exact Burst span 0x{rva:x} did not disassemble")
+    cursor = pe["imageBase"] + rva
+    for ins in instructions:
+        if ins.address != cursor:
+            raise ContractError(f"exact Burst span decode gap at 0x{cursor:x}")
+        cursor += ins.size
+    if cursor != pe["imageBase"] + rva + size:
+        raise ContractError(f"exact Burst span 0x{rva:x} decode ended early")
+    return body, instructions
+
+
 def _named_export_body(pe: dict[str, Any], export: dict[str, Any]) -> tuple[bytes, list[Any]]:
     """Decode one named initializer through its first real ret.
 
@@ -637,6 +668,183 @@ def _candidate_initializer_evidence(
     return variants
 
 
+def _collider_end_exact_export_identity(
+    pe: dict[str, Any],
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Close the hash/slot/core graph for Collider End on the pinned DLL."""
+    candidate_hash = "b44b8d6a5416f62541c69d9812961578"
+    export_row = next((row for row in rows if row["hash"] == candidate_hash), None)
+    if export_row is None:
+        raise ContractError(f"missing exact Collider End export {candidate_hash}")
+    expected_export = {
+        "rva": "0x358a20",
+        "bodyBytes": 30,
+        "bodySha256": "73942dc01488235175d3a865b0fcf1224444f595672b1d9bd569cd488c1b7998",
+    }
+    if any(export_row.get(key) != value for key, value in expected_export.items()):
+        raise ContractError("exact Collider End export row drift")
+    export = next(
+        (row for row in pe["hashed"] if row["name"] == candidate_hash), None
+    )
+    if export is None:
+        raise ContractError("exact Collider End named export is absent")
+    export_body, export_instructions = _named_export_body(pe, export)
+    if hashlib.sha256(export_body).hexdigest() != expected_export["bodySha256"]:
+        raise ContractError("exact Collider End export body drift")
+    export_calls = [
+        _rip_memory_target(pe, ins)
+        for ins in export_instructions
+        if ins.mnemonic == "call"
+    ]
+    slot_va = pe["imageBase"] + 0x3C6060
+    if export_calls != [slot_va]:
+        raise ContractError(f"exact Collider End export slot drift: {export_calls}")
+
+    variants = []
+    specifications = (
+        {
+            "cpuVariant": "x64_sse2",
+            "initializerRva": 0x35FD5A,
+            "initializerSha256": "167ef99ed3801301d660b9b0043e5ee94494cd4aa257d4d109f7a09bc0c3d462",
+            "entryRva": 0xAE190,
+            "entryBytes": 29,
+            "entrySha256": "9296e922d0ad7deda2a97fcd64f672ee6c9a1d012ddf882fc63b226c436eb7d7",
+            "coreRva": 0xAE300,
+            "coreBytes": 113,
+            "coreSha256": "dc805b6764831250c6ea08d93c17f002c826abd8c8bd23b8a3362f150175a100",
+        },
+        {
+            "cpuVariant": "avx2",
+            "initializerRva": 0x35BB23,
+            "initializerSha256": "a63c0d4c8d859c1a4ea8aab1b71900e9236944239086cb17784ea9ea6aee8fa7",
+            "entryRva": 0x24A030,
+            "entryBytes": 29,
+            "entrySha256": "9296e922d0ad7deda2a97fcd64f672ee6c9a1d012ddf882fc63b226c436eb7d7",
+            "coreRva": 0x24A1A0,
+            "coreBytes": 117,
+            "coreSha256": "fe354aabb5d9e1763b597a9f72608fe0a9ee62ab962ef451ea6515cf6137d97c",
+        },
+    )
+    for spec in specifications:
+        init_body, init_instructions = _exact_rva_span(
+            pe, spec["initializerRva"], 14, spec["initializerSha256"]
+        )
+        if [ins.mnemonic for ins in init_instructions] != ["lea", "mov"]:
+            raise ContractError("Collider End burst.initialize assignment shape drift")
+        init_targets = [
+            _rip_memory_target(pe, ins) for ins in init_instructions
+        ]
+        expected_targets = [
+            pe["imageBase"] + spec["entryRva"], slot_va
+        ]
+        if init_targets != expected_targets:
+            raise ContractError(
+                f"Collider End {spec['cpuVariant']} initializer target drift: "
+                f"{init_targets}"
+            )
+
+        _entry_body, entry_instructions = _exact_rva_span(
+            pe, spec["entryRva"], spec["entryBytes"], spec["entrySha256"]
+        )
+        direct_calls = [
+            _direct_target(ins, pe["imageBase"])
+            for ins in entry_instructions
+            if ins.mnemonic == "call"
+        ]
+        if direct_calls != [spec["coreRva"]]:
+            raise ContractError(
+                f"Collider End {spec['cpuVariant']} entry-to-core edge drift"
+            )
+
+        _core_body, core_instructions = _exact_rva_span(
+            pe, spec["coreRva"], spec["coreBytes"], spec["coreSha256"]
+        )
+        core_by_offset = {
+            ins.address - pe["imageBase"] - spec["coreRva"]: ins
+            for ins in core_instructions
+        }
+        expected_sites = {
+            0x05: ("mov", "rax, qword ptr [rcx + 0x50]"),
+            0x0F: ("mov", "rdx, qword ptr [rcx]"),
+            0x12: ("mov", "r8, qword ptr [rcx + 0x10]"),
+            0x16: ("mov", "r9, qword ptr [rcx + 0x30]"),
+            0x1A: ("mov", "r10, qword ptr [rcx + 0x20]"),
+            0x1E: ("mov", "rcx, qword ptr [rcx + 0x40]"),
+        }
+        for offset, expected in expected_sites.items():
+            ins = core_by_offset.get(offset)
+            if ins is None or (ins.mnemonic, ins.op_str) != expected:
+                raise ContractError(
+                    f"Collider End {spec['cpuVariant']} payload site 0x{offset:x} drift"
+                )
+        # The SSE2 and AVX2 encodings differ only by VEX prefixes here. Pin
+        # the index arithmetic and the source/destination operands by suffix.
+        text = [f"{ins.mnemonic} {ins.op_str}" for ins in core_instructions]
+        required_suffixes = (
+            "rsi, [rsi + rsi*2]",
+            "xmmword ptr [r8 + rsi]",
+            "qword ptr [r8 + rsi + 0x10]",
+            "qword ptr [r9 + rsi + 0x10], xmm1",
+            "xmmword ptr [r9 + rsi], xmm0",
+            "r11, 4",
+            "xmmword ptr [r10 + r11]",
+            "xmmword ptr [rcx + r11], xmm0",
+        )
+        for suffix in required_suffixes:
+            if not any(row.endswith(suffix) for row in text):
+                raise ContractError(
+                    f"Collider End {spec['cpuVariant']} semantic site missing: {suffix}"
+                )
+        variants.append({
+            "cpuVariant": spec["cpuVariant"],
+            "burstInitializeAssignment": {
+                "rva": f"0x{spec['initializerRva']:x}",
+                "bytes": len(init_body),
+                "sha256": spec["initializerSha256"],
+                "entryRva": f"0x{spec['entryRva']:x}",
+                "functionPointerSlotRva": "0x3c6060",
+            },
+            "entry": {
+                "rva": f"0x{spec['entryRva']:x}",
+                "bytes": spec["entryBytes"],
+                "sha256": spec["entrySha256"],
+            },
+            "core": {
+                "rva": f"0x{spec['coreRva']:x}",
+                "bytes": spec["coreBytes"],
+                "sha256": spec["coreSha256"],
+            },
+        })
+    return {
+        "status": "static_export_slot_and_dual_cpu_core_identity_closed",
+        "hash": candidate_hash,
+        "ordinal": export_row["ordinal"],
+        "export": {
+            "rva": export_row["rva"],
+            "bodyBytes": export_row["bodyBytes"],
+            "bodySha256": export_row["bodySha256"],
+            "functionPointerSlotRva": "0x3c6060",
+        },
+        "variants": variants,
+        "payload": {
+            "jobColliderIndexListOffset": "0x0",
+            "nowPositionsOffset": "0x10",
+            "nowRotationsOffset": "0x20",
+            "oldPositionsOffset": "0x30",
+            "oldRotationsOffset": "0x40",
+            "indexCountOffset": "0x50",
+            "positionStrideBytes": 24,
+            "rotationStrideBytes": 16,
+            "operation": [
+                "oldPositions[index] = nowPositions[index]",
+                "oldRotations[index] = nowRotations[index]",
+            ],
+        },
+        "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved",
+    }
+
+
 def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dict[str, Any]) -> dict[str, Any]:
     """Compare both end-range candidates against the known managed fallback.
 
@@ -648,6 +856,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     """
 
     candidate_hashes = ("5d15fdfe5676d33316f2415a1f41d523", "e6aec003f0525fe127cd9c0ccb59b1e2")
+    exact_identity = _collider_end_exact_export_identity(pe, rows)
     solver_path = DEFAULT_OUTPUT.parent / "secondary_dynamics_solver_static_contract.json"
     job_path = DEFAULT_OUTPUT.parent / "secondary_dynamics_job_layout_contract.json"
     solver_provenance = _rebuild_sibling_contract(
@@ -850,7 +1059,7 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     stack_forwarding_equal = all(c["wrapper"]["stackParameterForwarding"] == candidates[0]["wrapper"]["stackParameterForwarding"] and c["wrapper"]["outgoingStackForwarding"] == candidates[0]["wrapper"]["outgoingStackForwarding"] for c in candidates)
     slot_rvas = [c["runtimeFunctionPointerSlot"]["targetRva"] for c in candidates]
     return {
-        "status": "abi_shape_filter_incomplete_no_semantic_survivor",
+        "status": "static_semantic_export_identity_closed_managed_wrapper_route_unobserved",
         "parameterContract": {
             "methodIndex": 385317,
             "method": "Invoke",
@@ -895,24 +1104,25 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             ],
         },
         "provenance": {"solver": solver_provenance, "jobLayout": job_provenance},
+        "exactSemanticExport": exact_identity,
         "comparison": {
             "candidateCount": len(candidates),
-            "semanticCompatibleCandidateCount": 0,
+            "semanticCompatibleCandidateCount": 1,
             "sameWrapperCfg": all(c["wrapper"]["branchCount"] == candidates[0]["wrapper"]["branchCount"] and c["wrapper"]["indirectCall"]["kind"] == candidates[0]["wrapper"]["indirectCall"]["kind"] for c in candidates),
             "sameParameterForwarding": wrapper_forwarding_equal and stack_forwarding_equal,
             "sameNativeArrayParameterOrder": all(c["wrapper"]["decodedForwardingParameterNames"] == [field.get("name") for field in job_fields] for c in candidates),
             "fieldOffsetsPresentInCandidateThunk": any(c["wrapper"]["payloadDereferenceCount"] for c in candidates),
             "nowOldWritebackDiscriminates": len({c["wrapper"]["payloadWritebackCount"] for c in candidates}) > 1,
-            "staticInitializerSlotIdentityDiscriminates": False,
+            "staticInitializerSlotIdentityDiscriminates": True,
             "wrapperSlotsDistinct": len(set(slot_rvas)) > 1,
             "runtimeSelectedPointerObserved": False,
             "externalInitializerRequiresRuntimeCallback": any(bool(c["runtimeFunctionPointerSlot"]["initializers"].get("externals")) for c in candidates),
-            "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window; the current ABI-shape filter has no semantic survivor",
+            "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace only to close managed BurstDirectCall wrapper-to-hash selection; export b44b8d6a5416f62541c69d9812961578 and both CPU cores are already statically closed",
         },
         "candidates": candidates,
         "nonClaims": [
             "Neither retained ABI-shape candidate is compatible with EndSimulationStepRangeKernel semantics; the static filter is incomplete.",
-            "Resolver/static initializer slot writes do not prove which returned pointer was selected or called at runtime.",
+            "The monolithic burst.initialize assignment closes the exact hashed export slot and dual-CPU cores, but does not prove that managed BurstDirectCall selected the hash at runtime.",
             "Managed now/old position and rotation writebacks do not distinguish a wrapper that contains no job-field accesses.",
         ],
     }
@@ -972,10 +1182,11 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dic
                 "stackDirectInvokeNativeArrayParameterCount": 2,
                 "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)",
             },
-            "status": "abi_shape_filter_incomplete_no_semantic_survivor",
-            "candidates": [brief(row) for row in end_preserved],
+            "status": "static_semantic_export_identity_closed_managed_wrapper_route_unobserved",
+            "candidates": [brief(by_hash["b44b8d6a5416f62541c69d9812961578"])],
+            "abiShapeFalseCandidates": [brief(row) for row in end_preserved],
             "nearCandidatesExcluded": [brief(row) for row in end_all if row not in end_preserved],
-            "exclusionReason": "09829f... loads the second stack argument into rdx and 1adf3a... into r9, clobbering incoming target GPRs; 89666f... uses displaced stack slots. The surviving r10 forms preserve rcx/rdx/r8/r9.",
+            "exclusionReason": "The old six-parameter thunk filter omitted the real struct-payload export b44b8d6a... and retained two false candidates whose cores violate the canonical job layout. Whole-DLL semantic scanning plus burst.initialize slot assignment closes b44b8d6a... instead.",
             "candidateAudit": end_audit,
         },
     }

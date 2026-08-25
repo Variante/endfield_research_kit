@@ -43,6 +43,10 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         )
         self.assertEqual(
             [row["hash"] for row in payload["targets"]["colliderEndRange"]["candidates"]],
+            ["b44b8d6a5416f62541c69d9812961578"],
+        )
+        self.assertEqual(
+            [row["hash"] for row in payload["targets"]["colliderEndRange"]["abiShapeFalseCandidates"]],
             [
                 "5d15fdfe5676d33316f2415a1f41d523",
                 "e6aec003f0525fe127cd9c0ccb59b1e2",
@@ -119,17 +123,17 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual((end["fieldCount"], end["nativeArrayCount"], end["nativeReferenceCount"]), (17, 15, 1))
         self.assertEqual(end["nativeReferenceFields"][0]["name"], "_indexCount")
 
-    def test_collider_end_static_audit_rejects_both_abi_shape_candidates(self) -> None:
+    def test_collider_end_static_audit_closes_exact_export_and_rejects_false_candidates(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         audit = payload["targets"]["colliderEndRange"]["candidateAudit"]
-        self.assertEqual(payload["targets"]["colliderEndRange"]["status"], "abi_shape_filter_incomplete_no_semantic_survivor")
-        self.assertEqual(audit["status"], "abi_shape_filter_incomplete_no_semantic_survivor")
+        self.assertEqual(payload["targets"]["colliderEndRange"]["status"], "static_semantic_export_identity_closed_managed_wrapper_route_unobserved")
+        self.assertEqual(audit["status"], "static_semantic_export_identity_closed_managed_wrapper_route_unobserved")
         self.assertEqual(audit["comparison"]["candidateCount"], 2)
-        self.assertEqual(audit["comparison"]["semanticCompatibleCandidateCount"], 0)
+        self.assertEqual(audit["comparison"]["semanticCompatibleCandidateCount"], 1)
         self.assertTrue(audit["comparison"]["sameWrapperCfg"])
         self.assertTrue(audit["comparison"]["sameParameterForwarding"])
         self.assertFalse(audit["comparison"]["fieldOffsetsPresentInCandidateThunk"])
-        self.assertFalse(audit["comparison"]["staticInitializerSlotIdentityDiscriminates"])
+        self.assertTrue(audit["comparison"]["staticInitializerSlotIdentityDiscriminates"])
         self.assertTrue(audit["comparison"]["wrapperSlotsDistinct"])
         self.assertFalse(audit["comparison"]["runtimeSelectedPointerObserved"])
         self.assertEqual(
@@ -163,6 +167,19 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
                 },
             ],
         )
+        exact = audit["exactSemanticExport"]
+        self.assertEqual(exact["status"], "static_export_slot_and_dual_cpu_core_identity_closed")
+        self.assertEqual(exact["hash"], "b44b8d6a5416f62541c69d9812961578")
+        self.assertEqual(exact["ordinal"], 421)
+        self.assertEqual(exact["export"]["rva"], "0x358a20")
+        self.assertEqual(exact["export"]["functionPointerSlotRva"], "0x3c6060")
+        variants = {row["cpuVariant"]: row for row in exact["variants"]}
+        self.assertEqual(variants["x64_sse2"]["entry"]["rva"], "0xae190")
+        self.assertEqual(variants["x64_sse2"]["core"]["rva"], "0xae300")
+        self.assertEqual(variants["avx2"]["entry"]["rva"], "0x24a030")
+        self.assertEqual(variants["avx2"]["core"]["rva"], "0x24a1a0")
+        self.assertEqual(exact["payload"]["positionStrideBytes"], 24)
+        self.assertEqual(exact["payload"]["rotationStrideBytes"], 16)
         for candidate in audit["candidates"]:
             self.assertEqual(candidate["wrapper"]["branchCount"], 0)
             self.assertEqual(candidate["wrapper"]["incomingGprPreserved"], ["rcx", "rdx", "r8", "r9"])
