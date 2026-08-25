@@ -72,6 +72,7 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             moduleSizeMatch=True,
             verifiedFiles=files,
             hookStates={name: "attached" for name in manifest["hooks"]},
+            callTargetHookStates={target["id"]: "attached" for target in manifest["targets"]},
             kernel32ModuleName=manifest["kernel32ModuleName"],
             resolverModuleName=manifest["resolverModuleName"],
             resolverModuleIdentity=identity,
@@ -166,6 +167,51 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         self.assertTrue(result["claims"]["gameAssemblyCallerBacktraceObserved"])
         self.assertFalse(result["claims"]["resolverExportMappingProven"])
         self.assertFalse(result["claims"]["gameStateWritten"])
+
+    def test_all_live_call_targets_map_to_enumerated_resolver_export(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            identity = rows[1]["resolverModuleIdentity"]
+            insert_at = next(index for index, row in enumerate(rows) if row["kind"] == "capture_stop_ack")
+            pointer_events = []
+            for target in manifest["targets"]:
+                pointer_events.append({
+                    "schema": telemetry.EVENT_SCHEMA,
+                    "sessionId": "burst-test-session",
+                    "seq": 0,
+                    "monotonicMs": 0.0,
+                    "utc": "2026-08-20T00:00:00.000Z",
+                    "kind": "burst_function_pointer",
+                    "targetId": target["id"],
+                    "targetMethodIndex": target["methodIndex"],
+                    "targetMethodName": target["methodName"],
+                    "targetFullName": target["fullName"],
+                    "callTargetProbe": target["callTargetProbe"],
+                    "returnPointer": "0x7000",
+                    "resolvedAddress": "0x7000",
+                    "resolvedModuleName": manifest["resolverModuleName"],
+                    "resolvedModulePath": identity["path"],
+                    "resolvedModuleBase": "0x5000",
+                    "resolvedModuleSize": manifest["files"]["resolver"]["bytes"],
+                    "resolvedModuleOffset": "0x2000",
+                    "resolvedExportName": "0123456789abcdef0123456789abcdef",
+                    "resolvedExportStatus": "enumerated",
+                    "threadId": 42,
+                })
+            rows[insert_at:insert_at] = pointer_events
+            next(row for row in rows if row["kind"] == "capture_stop_ack")["eventCount"] = 6
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+                row["monotonicMs"] = float(seq)
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            result = validator.validate_trace(path)
+        self.assertEqual(result["burstFunctionPointerEventCount"], 5)
+        self.assertTrue(result["claims"]["liveBurstCallTargetsObserved"])
+        self.assertTrue(result["claims"]["resolverExportMappingProven"])
+        self.assertTrue(all(result["burstFunctionPointerMappings"].values()))
 
     def test_all_target_windows_are_counted_without_execution_claim(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

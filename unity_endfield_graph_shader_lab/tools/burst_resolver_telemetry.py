@@ -2,8 +2,9 @@
 
 The probe reuses the shared runtime-trace process, hash gate, EventWriter, and
 Frida loading infrastructure used by ``character_dynamics_telemetry.py``.
-It only observes ``kernel32!LoadLibraryW`` and ``kernel32!GetProcAddress``;
-it never calls a returned pointer or changes game state.
+It observes ``kernel32!LoadLibraryW``, ``kernel32!GetProcAddress``, and the
+returns from five pinned ``BurstDirectCall.GetFunctionPointer`` wrappers.  It
+never calls a returned pointer or changes game state.
 
 Examples from the repository root::
 
@@ -22,6 +23,7 @@ import argparse
 import hashlib
 import json
 import re
+import struct
 import sys
 import threading
 import time
@@ -51,7 +53,7 @@ TARGET_IDS = {
     "collider_start_simulation_step_range_kernel",
     "collider_end_simulation_step_range_kernel",
 }
-TARGETS_SHA256 = "a8d85d9ee9a45af95d109622f9e7e2d613e7353a93a7802cbffda0c369231cd9"
+TARGETS_SHA256 = "423d9df619cdb3215764b0cbe893579139984aa0306f622352804c0893951f4a"
 TARGET_WINDOW_ROLES = {
     "constructor",
     "static_constructor",
@@ -96,6 +98,59 @@ def verified_file_facts(verified: dict[str, Path]) -> dict[str, dict[str, Any]]:
         }
         for name, path in verified.items()
     }
+
+
+def verify_call_target_probes(gameassembly: Path, manifest: dict[str, Any]) -> None:
+    """Verify each observed wrapper body and indirect-call encoding in the pinned PE."""
+
+    with gameassembly.open("rb") as stream:
+        dos = stream.read(64)
+        if len(dos) != 64 or dos[:2] != b"MZ":
+            raise CaptureConfigurationError("GameAssembly.dll is not a PE image")
+        pe_offset = struct.unpack_from("<I", dos, 0x3C)[0]
+        stream.seek(pe_offset)
+        header = stream.read(24)
+        if len(header) != 24 or header[:4] != b"PE\0\0":
+            raise CaptureConfigurationError("GameAssembly.dll has no PE signature")
+        section_count = struct.unpack_from("<H", header, 6)[0]
+        optional_size = struct.unpack_from("<H", header, 20)[0]
+        stream.seek(pe_offset + 24 + optional_size)
+        sections = []
+        for _ in range(section_count):
+            section = stream.read(40)
+            if len(section) != 40:
+                raise CaptureConfigurationError("GameAssembly.dll section table is truncated")
+            virtual_size, virtual_address, raw_size, raw_offset = struct.unpack_from("<IIII", section, 8)
+            sections.append((virtual_address, max(virtual_size, raw_size), raw_offset, raw_size))
+
+        def bytes_at_rva(rva: int, size: int) -> bytes:
+            for virtual_address, mapped_size, raw_offset, raw_size in sections:
+                relative = rva - virtual_address
+                if 0 <= relative and relative + size <= mapped_size and relative + size <= raw_size:
+                    stream.seek(raw_offset + relative)
+                    value = stream.read(size)
+                    if len(value) == size:
+                        return value
+            raise CaptureConfigurationError(
+                f"GameAssembly.dll RVA 0x{rva:x}+0x{size:x} is outside backed PE sections"
+            )
+
+        for target in manifest["targets"]:
+            probe = target["callTargetProbe"]
+            start = int(probe["invokeStartOffset"], 16)
+            end = int(probe["invokeEndOffsetExclusive"], 16)
+            body = bytes_at_rva(start, end - start)
+            actual_hash = hashlib.sha256(body).hexdigest()
+            if actual_hash != probe["invokeBodySha256"]:
+                raise CaptureConfigurationError(
+                    f"target {target['id']} invoke body hash drifted: {actual_hash}"
+                )
+            call_relative = int(probe["indirectCallOffset"], 16) - start
+            expected_instruction = bytes.fromhex(probe["instructionBytes"])
+            if body[call_relative:call_relative + len(expected_instruction)] != expected_instruction:
+                raise CaptureConfigurationError(
+                    f"target {target['id']} indirect-call instruction bytes drifted"
+                )
 
 
 def default_output_path() -> Path:
@@ -186,6 +241,30 @@ def load_manifest(path: Path) -> dict[str, Any]:
         for key in ("methodName", "fullName"):
             if not isinstance(target.get(key), str) or not target[key].strip():
                 raise CaptureConfigurationError(f"target {target_id} {key} is invalid")
+        probe = target.get("callTargetProbe")
+        expected_probe_keys = {
+            "getFunctionPointerMethodIndex", "getFunctionPointerOffset",
+            "invokeMethodIndex", "invokeStartOffset", "invokeEndOffsetExclusive",
+            "invokeBodySha256", "indirectCallOffset", "targetRegister",
+            "instructionBytes",
+        }
+        if not isinstance(probe, dict) or set(probe) != expected_probe_keys:
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe is incomplete")
+        for key in ("getFunctionPointerMethodIndex", "invokeMethodIndex"):
+            if isinstance(probe[key], bool) or not isinstance(probe[key], int) or probe[key] <= 0:
+                raise CaptureConfigurationError(f"target {target_id} callTargetProbe {key} is invalid")
+        for key in (
+            "getFunctionPointerOffset", "invokeStartOffset",
+            "invokeEndOffsetExclusive", "indirectCallOffset",
+        ):
+            if not isinstance(probe[key], str) or not re.fullmatch(r"0x[0-9a-fA-F]+", probe[key]):
+                raise CaptureConfigurationError(f"target {target_id} callTargetProbe {key} is invalid")
+        if not isinstance(probe["invokeBodySha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", probe["invokeBodySha256"]):
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe invokeBodySha256 is invalid")
+        if probe["targetRegister"] not in {"rax", "rdx", "r10"}:
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe targetRegister is invalid")
+        if not isinstance(probe["instructionBytes"], str) or not re.fullmatch(r"[0-9a-f]{4,6}", probe["instructionBytes"]):
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe instructionBytes is invalid")
         windows = target.get("windows")
         if not isinstance(windows, list) or {window.get("role") for window in windows if isinstance(window, dict)} != TARGET_WINDOW_ROLES:
             raise CaptureConfigurationError(f"target {target_id} must contain exactly the pinned wrapper/initializer windows")
@@ -205,6 +284,23 @@ def load_manifest(path: Path) -> dict[str, Any]:
                     raise CaptureConfigurationError(f"target {target_id} {role} {key} is invalid")
             if int(window["startOffset"], 16) >= int(window["endOffsetExclusive"], 16):
                 raise CaptureConfigurationError(f"target {target_id} {role} window is empty or inverted")
+        by_role = {window["role"]: window for window in windows}
+        get_pointer = by_role["get_function_pointer"]
+        invoke = by_role["invoke"]
+        if (
+            probe["getFunctionPointerMethodIndex"] != get_pointer["methodIndex"]
+            or probe["getFunctionPointerOffset"] != get_pointer["startOffset"]
+        ):
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe GetFunctionPointer drifted from its window")
+        if (
+            probe["invokeMethodIndex"] != invoke["methodIndex"]
+            or probe["invokeStartOffset"] != invoke["startOffset"]
+            or probe["invokeEndOffsetExclusive"] != invoke["endOffsetExclusive"]
+        ):
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe invoke body drifted from its window")
+        call_offset = int(probe["indirectCallOffset"], 16)
+        if not int(probe["invokeStartOffset"], 16) <= call_offset < int(probe["invokeEndOffsetExclusive"], 16):
+            raise CaptureConfigurationError(f"target {target_id} callTargetProbe indirect call is outside invoke body")
     boundary = manifest.get("evidenceBoundary")
     if not isinstance(boundary, dict) or not isinstance(boundary.get("nonClaims"), list) or not boundary["nonClaims"]:
         raise CaptureConfigurationError("manifest evidenceBoundary.nonClaims must be non-empty")
@@ -438,17 +534,23 @@ def run_capture(
         if ready_payload.get("resolverModuleName", "").casefold() != manifest["resolverModuleName"].casefold():
             raise RuntimeError("agent did not confirm the expected Burst resolver module name")
         hooks = ready_payload.get("hooks")
+        call_target_hooks = ready_payload.get("callTargetHooks")
         failed = ready_payload.get("failed") or []
         if not isinstance(hooks, dict) or set(hooks) != set(manifest["hooks"]):
             raise RuntimeError(f"agent hook handshake is incomplete: {hooks}")
         if failed or any(value != "attached" for value in hooks.values()):
             raise RuntimeError(f"one or more Burst resolver hooks failed to attach: {failed or hooks}")
+        if not isinstance(call_target_hooks, dict) or set(call_target_hooks) != TARGET_IDS:
+            raise RuntimeError(f"agent call-target hook handshake is incomplete: {call_target_hooks}")
+        if any(value != "attached" for value in call_target_hooks.values()):
+            raise RuntimeError(f"one or more Burst call-target hooks failed to attach: {call_target_hooks}")
         writer.emit(
             "native_module_verified",
             {
                 **module_facts,
                 "verifiedFiles": file_facts,
                 "hookStates": hooks,
+                "callTargetHookStates": call_target_hooks,
                 "kernel32ModuleName": ready_payload["kernel32ModuleName"],
                 "resolverModuleName": ready_payload["resolverModuleName"],
                 "resolverModuleIdentity": ready_payload.get("resolverModuleIdentity"),
@@ -543,6 +645,7 @@ def main(argv: list[str] | None = None) -> int:
         game_root = args.game_root.resolve()
         verify_pinned_native_gate(game_root, manifest)
         verified = core.verify_game_files(game_root, manifest)
+        verify_call_target_probes(verified["gameAssembly"], manifest)
         agent_source = render_agent_source(
             args.agent.resolve(), manifest, verified["resolver"]
         )

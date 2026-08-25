@@ -263,7 +263,7 @@ def validate_trace(
         },
         "native_module_verified": {
             "expectedModulePath", "expectedModuleSize", "attachedModulePath", "attachedModuleSize",
-            "modulePathMatch", "moduleSizeMatch", "verifiedFiles", "hookStates",
+            "modulePathMatch", "moduleSizeMatch", "verifiedFiles", "hookStates", "callTargetHookStates",
             "kernel32ModuleName", "resolverModuleName", "resolverModuleIdentity",
             "resolverExpectedPath", "resolverExpectedSize", "gameAssemblyModuleName",
             "gameAssemblyModuleBase", "gameAssemblyModuleSize", "targets",
@@ -281,6 +281,12 @@ def validate_trace(
             "resolvedExportName", "resolvedExportStatus", "caller", "callerBacktrace",
             "callerBacktraceStatus", "gameAssemblyCallerBacktrace", "backtraceStatus",
             "targetWindowMatches", "targetAttributionStatus", "targetAttributionTargets", "threadId",
+        },
+        "burst_function_pointer": {
+            "targetId", "targetMethodIndex", "targetMethodName", "targetFullName",
+            "callTargetProbe", "returnPointer", "resolvedAddress", "resolvedModuleName",
+            "resolvedModulePath", "resolvedModuleBase", "resolvedModuleSize",
+            "resolvedModuleOffset", "resolvedExportName", "resolvedExportStatus", "threadId",
         },
         "capture_stop_ack": {"eventCount", "captureStarted", "terminalState", "resolverModuleIdentity"},
         "session_end": {"captureStarted", "stopAck", "terminalFailure"},
@@ -304,8 +310,8 @@ def validate_trace(
     if rows[-2].get("kind") != "capture_stop_ack" or rows[-1].get("kind") != "session_end":
         _fail("trace event order must end capture_stop_ack -> session_end")
     middle_kinds = [row.get("kind") for row in rows[3:-2]]
-    if any(kind not in {"resolver_module_loaded", "get_proc_address"} for kind in middle_kinds):
-        _fail("resolver/proc events are only valid between capture_started and capture_stop_ack")
+    if any(kind not in {"resolver_module_loaded", "get_proc_address", "burst_function_pointer"} for kind in middle_kinds):
+        _fail("resolver/proc/call-target events are only valid between capture_started and capture_stop_ack")
 
     starts = [row for row in rows if row.get("kind") == "session_start"]
     ends = [row for row in rows if row.get("kind") == "session_end"]
@@ -356,6 +362,11 @@ def validate_trace(
         _fail("native module handshake does not list both resolver hooks")
     if any(value != "attached" for value in hook_states.values()):
         _fail("native module handshake does not prove every resolver hook attached")
+    call_target_hook_states = handshake.get("callTargetHookStates")
+    if not isinstance(call_target_hook_states, dict) or set(call_target_hook_states) != telemetry.TARGET_IDS:
+        _fail("native module handshake does not list all five call-target hooks")
+    if any(value != "attached" for value in call_target_hook_states.values()):
+        _fail("native module handshake does not prove every call-target hook attached")
     resolver_identity = handshake.get("resolverModuleIdentity")
     if not isinstance(resolver_identity, dict):
         _fail("native module handshake has no resolver module identity")
@@ -404,6 +415,7 @@ def validate_trace(
 
     resolver_events = [row for row in rows if row.get("kind") == "resolver_module_loaded"]
     proc_events = [row for row in rows if row.get("kind") == "get_proc_address"]
+    pointer_events = [row for row in rows if row.get("kind") == "burst_function_pointer"]
     observed_handles: set[str] = set()
     if isinstance(identity_handle, str) and identity_handle:
         observed_handles.add(identity_handle.casefold())
@@ -623,6 +635,64 @@ def validate_trace(
     if request_ordinals != list(range(len(request_ordinals))):
         _fail("get_proc_address requestOrdinal values are not contiguous from zero")
 
+    targets_by_id = {target["id"]: target for target in manifest["targets"]}
+    pointer_mappings: dict[str, list[dict[str, Any]]] = {
+        target_id: [] for target_id in targets_by_id
+    }
+    seen_pointer_observations: set[tuple[str, str]] = set()
+    for index, row in enumerate(pointer_events):
+        label = f"burst_function_pointer {index}"
+        target_id = row.get("targetId")
+        target = targets_by_id.get(target_id)
+        if target is None:
+            _fail(f"{label}.targetId is unknown")
+        expected_target_fields = {
+            "targetMethodIndex": target["methodIndex"],
+            "targetMethodName": target["methodName"],
+            "targetFullName": target["fullName"],
+        }
+        for key, expected in expected_target_fields.items():
+            if row.get(key) != expected:
+                _fail(f"{label}.{key} drifted from the pinned target")
+        if row.get("callTargetProbe") != target["callTargetProbe"]:
+            _fail(f"{label}.callTargetProbe drifted from the pinned wrapper body")
+        return_pointer = row.get("returnPointer")
+        _check_pointer(return_pointer, f"{label}.returnPointer", allow_null=True)
+        _resolved_fields(row, label)
+        dedupe_key = (target_id, str(return_pointer).casefold())
+        if dedupe_key in seen_pointer_observations:
+            _fail(f"{label} duplicates a target/pointer observation")
+        seen_pointer_observations.add(dedupe_key)
+        thread_id = row.get("threadId")
+        if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id <= 0:
+            _fail(f"{label}.threadId is invalid")
+        if return_pointer not in {None, "0x0", "0x0000000000000000"}:
+            resolved_name = _module_name(row.get("resolvedModuleName"), f"{label}.resolvedModuleName")
+            if resolved_name == manifest["resolverModuleName"].casefold():
+                if _module_path(row.get("resolvedModulePath"), f"{label}.resolvedModulePath") != expected_resolver_path:
+                    _fail(f"{label} resolved to a different resolver path")
+                if row.get("resolvedModuleSize") != manifest["files"]["resolver"]["bytes"]:
+                    _fail(f"{label}.resolvedModuleSize differs from the pinned resolver")
+                if identity_handle is not None and str(row.get("resolvedModuleBase")).casefold() != str(identity_handle).casefold():
+                    _fail(f"{label}.resolvedModuleBase differs from the observed resolver HMODULE")
+            if row.get("resolvedExportStatus") == "enumerated":
+                export_name = row.get("resolvedExportName")
+                if resolved_name != manifest["resolverModuleName"].casefold():
+                    _fail(f"{label} claims a resolver export outside the resolver module")
+                if not isinstance(export_name, str) or not re.fullmatch(r"[0-9a-f]{32}", export_name):
+                    _fail(f"{label} enumerated export name is not a 32-hex Burst export")
+        pointer_mappings[target_id].append(
+            {
+                "returnPointer": return_pointer,
+                "resolvedModuleName": row.get("resolvedModuleName"),
+                "resolvedModulePath": row.get("resolvedModulePath"),
+                "resolvedModuleBase": row.get("resolvedModuleBase"),
+                "resolvedModuleOffset": row.get("resolvedModuleOffset"),
+                "resolvedExportName": row.get("resolvedExportName"),
+                "resolvedExportStatus": row.get("resolvedExportStatus"),
+            }
+        )
+
     terminal_kinds = {
         "capture_fatal",
         "capture_capped",
@@ -647,10 +717,10 @@ def validate_trace(
         if stop_ack.get("terminalState") not in {"fatal", "capped", "detached", "start_rejected"}:
             _fail("capture_stop_ack has an unrecognized terminalState")
         _fail("capture_stop_ack confirms a non-clean terminal state")
-    expected_event_count = len(resolver_events) + len(proc_events)
+    expected_event_count = len(resolver_events) + len(proc_events) + len(pointer_events)
     if stop_ack.get("eventCount") != expected_event_count:
         _fail(
-            "capture_stop_ack eventCount differs from resolver/proc event count: "
+            "capture_stop_ack eventCount differs from resolver/proc/call-target event count: "
             f"expected {expected_event_count}, got {stop_ack.get('eventCount')}"
         )
     stop_identity = stop_ack.get("resolverModuleIdentity")
@@ -662,7 +732,7 @@ def validate_trace(
     )
     if ends[0].get("stopAck") is not True or ends[0].get("terminalFailure") is not False:
         _fail("session_end does not confirm a clean stop acknowledgement")
-    if len(resolver_events) + len(proc_events) > manifest["capture"]["maxEvents"]:
+    if expected_event_count > manifest["capture"]["maxEvents"]:
         _fail("trace exceeds configured event cap")
 
     return {
@@ -676,6 +746,8 @@ def validate_trace(
         "rowCount": len(rows),
         "resolverModuleEventCount": len(resolver_events),
         "getProcAddressEventCount": len(proc_events),
+        "burstFunctionPointerEventCount": len(pointer_events),
+        "burstFunctionPointerMappings": pointer_mappings,
         "hashedExportRequestCount": observed_hashed_events,
         "hashedExportRequestsWithTargetAttribution": attributed_hashed_events,
         "targetWindowObservations": target_observations,
@@ -684,6 +756,7 @@ def validate_trace(
             "readOnlyHookEvents": True,
             "resolverModuleIdentityObserved": bool(observed_handles),
             "getProcAddressResolutionObserved": bool(proc_events),
+            "liveBurstCallTargetsObserved": all(pointer_mappings.values()),
             "hashedExportRequestsObserved": bool(observed_hashed_events),
             "hashedExportRequestsAttributedToTargetWindows": (
                 observed_hashed_events > 0 and attributed_hashed_events == observed_hashed_events
@@ -693,7 +766,14 @@ def validate_trace(
                 row.get("backtraceStatus") == "gameassembly_frames" and row.get("gameAssemblyCallerBacktrace")
                 for row in proc_events
             ),
-            "resolverExportMappingProven": False,
+            "resolverExportMappingProven": all(
+                any(
+                    mapping["resolvedExportStatus"] == "enumerated"
+                    and mapping["resolvedExportName"] is not None
+                    for mapping in mappings
+                )
+                for mappings in pointer_mappings.values()
+            ),
             "gameStateWritten": False,
         },
         "evidenceBoundary": manifest["evidenceBoundary"],
@@ -722,6 +802,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": result["status"],
                 "resolverModuleEventCount": result["resolverModuleEventCount"],
                 "getProcAddressEventCount": result["getProcAddressEventCount"],
+                "burstFunctionPointerEventCount": result["burstFunctionPointerEventCount"],
             },
             ensure_ascii=False,
         )
