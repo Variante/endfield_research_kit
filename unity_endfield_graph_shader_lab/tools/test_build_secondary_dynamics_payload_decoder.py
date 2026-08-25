@@ -35,9 +35,9 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         self.assertFalse(published["implementation_boundary"]["transforms_modified"])
         self.assertFalse(published["implementation_boundary"]["secondary_dynamics_verified"])
         self.assertFalse(published["implementation_boundary"]["solver_implemented"])
-        self.assertFalse(published["source"]["hashes_match"])
+        self.assertTrue(published["source"]["hashes_match"])
         self.assertTrue(published["source"]["hash_checks"]["chen"]["hierarchy_name_map"]["matches"])
-        self.assertFalse(published["source"]["hash_checks"]["chen"]["target_filter"]["exists"])
+        self.assertTrue(published["source"]["hash_checks"]["chen"]["target_filter"]["exists"])
         self.assertEqual(
             {name: len(actor["cloths"]) for name, actor in published["actors"].items()},
             {"endminf": 4, "pelica": 7, "chen": 6},
@@ -207,8 +207,9 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
 
     def test_default_build_is_strict_and_diagnostic_mode_remains_explicit(self) -> None:
-        with self.assertRaisesRegex(decoder.PayloadDecodeError, "source hash mismatch"):
-            decoder.build_report()
+        report = decoder.build_report()
+        self.assertEqual(report["status"], "decoded_typed_proxy_payload")
+        self.assertTrue(report["source"]["hashes_match"])
         mismatched = decoder._source_hash_checks(self.payload)
         mismatched["chen"]["hierarchy_name_map"]["matches"] = False
         with self.assertRaisesRegex(decoder.PayloadDecodeError, "source hash mismatch"):
@@ -218,12 +219,15 @@ class SecondaryDynamicsPayloadDecoderTests(unittest.TestCase):
             )
 
         before = decoder.OUTPUT.read_bytes()
-        self.assertEqual(decoder.main([]), 1)
+        with mock.patch.object(decoder, "_source_hash_checks", return_value=mismatched):
+            self.assertEqual(decoder.main([]), 1)
         self.assertEqual(decoder.OUTPUT.read_bytes(), before)
 
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "diagnostic.json"
-            with mock.patch.object(decoder, "OUTPUT", output):
+            with mock.patch.object(decoder, "OUTPUT", output), mock.patch.object(
+                decoder, "_source_hash_checks", return_value=mismatched
+            ):
                 self.assertEqual(decoder.main(["--allow-source-hash-mismatch"]), 0)
                 generated = json.loads(output.read_text(encoding="utf-8"))
                 self.assertEqual(generated["status"], "decoded_typed_proxy_payload_source_hash_mismatch")

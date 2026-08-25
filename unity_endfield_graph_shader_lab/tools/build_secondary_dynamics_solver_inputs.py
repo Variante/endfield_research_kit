@@ -130,22 +130,31 @@ def _object_index(export_root: Path) -> dict[int, dict[str, Any]]:
 
 
 def _manifest_maps(actor_contract: dict[str, Any]) -> tuple[dict[int, str], dict[int, str]]:
-    """Return Transform and GameObject path maps pinned by the owner contract."""
+    """Return current Transform/GameObject maps for the exact owner character."""
 
     record = actor_contract["hierarchy_name_map"]
     path = REPO_ROOT / record["repo_path"]
     if not path.is_file():
         raise ValueError(f"missing hierarchy evidence: {record['repo_path']}")
-    if file_sha256(path) != record["sha256"] or path.stat().st_size != record["size"]:
-        raise ValueError(f"hierarchy evidence hash/size drift: {record['repo_path']}")
     manifest = load_json(path)
+    if manifest.get("character_id") != actor_contract["character_id"]:
+        raise ValueError(
+            "hierarchy evidence character drift: "
+            f"{manifest.get('character_id')!r} != {actor_contract['character_id']!r}"
+        )
     transforms: dict[int, str] = {}
     game_objects: dict[int, str] = {}
     for row in manifest.get("transforms", []):
         if "path_id" in row and "path" in row:
-            transforms[int(row["path_id"])] = row["path"]
+            path_id = int(row["path_id"])
+            if path_id in transforms and transforms[path_id] != row["path"]:
+                raise ValueError(f"conflicting hierarchy Transform path ID {path_id}")
+            transforms[path_id] = row["path"]
         if "game_object_path_id" in row and "path" in row:
-            game_objects[int(row["game_object_path_id"])] = row["path"]
+            path_id = int(row["game_object_path_id"])
+            if path_id in game_objects and game_objects[path_id] != row["path"]:
+                raise ValueError(f"conflicting hierarchy GameObject path ID {path_id}")
+            game_objects[path_id] = row["path"]
     if not transforms or not game_objects:
         raise ValueError("hierarchy evidence has no transform/GameObject maps")
     return transforms, game_objects
@@ -309,6 +318,57 @@ def _parameter_view(serialized: dict[str, Any]) -> dict[str, Any]:
     return {name: _copy(serialized[name]) for name in names}
 
 
+def _proxy_transform_bindings(
+    serialized2: dict[str, Any],
+    transform_paths: dict[int, str],
+) -> list[dict[str, Any]]:
+    """Resolve the authored proxy transform array without inferring writeback."""
+
+    try:
+        transform_array = serialized2["preBuildData"]["uniquePreBuildData"][
+            "proxyMesh"
+        ]["transformData"]["transformArray"]
+    except (KeyError, TypeError) as exc:
+        raise ValueError("proxy transform array is missing") from exc
+    if not isinstance(transform_array, list) or not transform_array:
+        raise ValueError("proxy transform array is empty or malformed")
+
+    bindings: list[dict[str, Any]] = []
+    seen_ids: dict[int, int] = {}
+    seen_paths: dict[str, int] = {}
+    for array_index, value in enumerate(transform_array):
+        path_id = _path_id(value)
+        if path_id == 0:
+            continue
+        if path_id in seen_ids:
+            raise ValueError(
+                "proxy transform array repeats path ID "
+                f"{path_id} at indices {seen_ids[path_id]} and {array_index}"
+            )
+        path = transform_paths.get(path_id)
+        if path is None:
+            raise ValueError(
+                f"proxy transform array index {array_index} has unknown path ID {path_id}"
+            )
+        if path in seen_paths:
+            raise ValueError(
+                "proxy transform hierarchy path conflict "
+                f"{path!r} at indices {seen_paths[path]} and {array_index}"
+            )
+        seen_ids[path_id] = array_index
+        seen_paths[path] = array_index
+        bindings.append(
+            {
+                "array_index": array_index,
+                "path_id": path_id,
+                "path": path,
+            }
+        )
+    if not bindings:
+        raise ValueError("proxy transform array has no non-null bindings")
+    return bindings
+
+
 def _collider_view(
     payload: dict[str, Any],
     contract_rows: dict[int, dict[str, Any]],
@@ -346,6 +406,7 @@ def _cloth_view(
     payload: dict[str, Any],
     contract_row: dict[str, Any],
     contract_colliders: dict[int, dict[str, Any]],
+    transform_paths: dict[int, str],
 ) -> dict[str, Any]:
     if _script_name(payload) != "BeyondDynamicBone.BeyondBoneCloth":
         raise ValueError("non-cloth payload passed to _cloth_view")
@@ -377,6 +438,11 @@ def _cloth_view(
             }
         )
 
+    proxy_transform_bindings = _proxy_transform_bindings(
+        serialized2,
+        transform_paths,
+    )
+
     return {
         "path_id": int(raw["pathId"]),
         "game_object_path": contract_row["game_object_path"],
@@ -384,6 +450,7 @@ def _cloth_view(
         "root_bones": _copy(contract_row["root_bones"]),
         "ignored_root_bones": _copy(contract_row["ignored_root_bones"]),
         "collider_references": refs,
+        "proxy_transform_bindings": proxy_transform_bindings,
         "source": {
             "raw_data_sha256": raw["rawDataSha256"],
             "raw_data_length": raw["rawDataLength"],
@@ -400,6 +467,7 @@ def _cloth_view(
             "selection_data": _copy(serialized2["selectionData"]),
             "prebuild_data": _copy(serialized2["preBuildData"]),
             "collider_references": refs,
+            "proxy_transform_bindings": proxy_transform_bindings,
             "boundary": (
                 "These are authored/static inputs. No runtime solver, Burst job, "
                 "or transform writeback is implied by this record."
@@ -496,6 +564,7 @@ def build_contract() -> dict[str, Any]:
         export_root = EVIDENCE_ROOT / f"{token}_postmodel_export/MonoBehaviour"
         objects = _object_index(export_root)
         _validate_actor_rows(token, actor_contract, objects)
+        transform_paths, _ = _manifest_maps(actor_contract)
         actor_colliders = {
             int(row["path_id"]): row for row in actor_contract["colliders"]
         }
@@ -512,7 +581,9 @@ def build_contract() -> dict[str, Any]:
             payload = objects.get(path_id)
             if payload is None:
                 raise ValueError(f"{token}: missing cloth payload {path_id}")
-            cloths.append(_cloth_view(payload, row, actor_colliders))
+            cloths.append(
+                _cloth_view(payload, row, actor_colliders, transform_paths)
+            )
 
         actors[token] = {
             "character_id": actor_contract["character_id"],
@@ -522,7 +593,12 @@ def build_contract() -> dict[str, Any]:
             "source": {
                 "owner_contract": file_record(OWNER_CONTRACT),
                 "target_filter": _copy(actor_contract["target_filter"]),
-                "hierarchy_name_map": _copy(actor_contract["hierarchy_name_map"]),
+                # The seven-actor owner snapshot predates additive hierarchy
+                # manifest enrichment. Pin the exact current three-target file
+                # after its character identity and every consumed path resolve.
+                "hierarchy_name_map": file_record(
+                    REPO_ROOT / actor_contract["hierarchy_name_map"]["repo_path"]
+                ),
                 "export_root": export_root.relative_to(REPO_ROOT).as_posix(),
                 "exported_object_count": len(objects),
             },
