@@ -37,7 +37,7 @@
     "bytes": 521,
     "sha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
   },
-  "harnessSha256": "3028684c2f91d0afcbb76e0583fd6698e5951c2e276e87da35e71200c6117977",
+  "harnessSha256": "b8daf9563c397de3cf0f53f7bd579fa47d0088f00eaffcd742d0fcfa45b71a70",
   "vectors": [
     {
       "name": "restoration_only_aligned",
@@ -1357,7 +1357,9 @@
       "friction_mobility"
     ],
     "sourceTranscriptionCallsPinnedNativeSincos": true,
-    "standaloneSincosTranscriptionComplete": false,
-    "unityPortExecuted": false
+    "standaloneSincosTranscriptionComplete": true,
+    "standaloneSincosContract": "secondary_dynamics_float_sincos_golden_vectors.json",
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"
   }
 }

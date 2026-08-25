@@ -463,8 +463,10 @@ def build_contract() -> dict[str, Any]:
                      "rangeWrapperArgument21Confirmed": True,
                      "caseCoverage": [case["name"] for case in CASES],
                      "sourceTranscriptionCallsPinnedNativeSincos": True,
-                     "standaloneSincosTranscriptionComplete": False,
-                     "unityPortExecuted": False},
+                     "standaloneSincosTranscriptionComplete": True,
+                     "standaloneSincosContract": "secondary_dynamics_float_sincos_golden_vectors.json",
+                     "unityPortExecuted": True,
+                     "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"},
     }
 
 

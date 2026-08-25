@@ -46,12 +46,53 @@ namespace EndfieldGraphShaderLabEditor
         [MenuItem("Endfield/Character Recovery/Verify Secondary Dynamics Kernel Golden Vectors")]
         public static void VerifyMenu()
         {
+            VerifyFloatSinCosGoldenVectors();
             VerifyTetherGoldenVectors();
             VerifyDistanceGoldenVectors();
             VerifyPointCollisionGoldenVectors();
+            VerifyAngleGoldenVectors();
             VerifyBasicPostureGoldenVectors();
             VerifySimulationEndGoldenVectors();
-            Debug.Log("Verified tether, Distance, Point-capsule, BasicPosture, and Simulation End native AVX2 vectors exactly.");
+            Debug.Log("Verified float sincos, Angle, tether, Distance, Point-capsule, BasicPosture, and Simulation End native AVX2 vectors exactly.");
+        }
+
+        public static void VerifyFloatSinCosGoldenVectors()
+        {
+            string[,] cases =
+            {
+                { "positive_zero", "00000000", "00000000", "0000803f" },
+                { "negative_zero", "00000080", "00000080", "0000803f" },
+                { "smallest_subnormal", "01000000", "01000000", "0000803f" },
+                { "negative_smallest_subnormal", "01000080", "01000080", "0000803f" },
+                { "one", "0000803f", "a46a573f", "40510a3f" },
+                { "minus_one", "000080bf", "a46a57bf", "40510a3f" },
+                { "pi_over_four", "db0f493f", "f404353f", "f304353f" },
+                { "small_below_125", "fffff942", "38b51dbf", "5aa7493f" },
+                { "small_at_125", "0000fa42", "d4b41dbf", "a8a7493f" },
+                { "small_above_125", "0100fa42", "6fb41dbf", "f8a7493f" },
+                { "negative_125", "0000fac2", "d4b41d3f", "a8a7493f" },
+                { "medium_below_39000", "ff571847", "520b863e", "2812773f" },
+                { "large_at_39000", "00581847", "33f9873e", "a6ce763f" },
+                { "large_above_39000", "01581847", "8ce6893e", "2e8a763f" },
+                { "negative_39000", "005818c7", "33f987be", "a6ce763f" },
+                { "large_power", "0000004f", "c9a778bf", "1786733e" },
+                { "very_large", "caf24971", "b0894abf", "21921cbf" },
+                { "maximum_finite", "ffff7f7f", "b39905bf", "965f5a3f" },
+                { "negative_maximum_finite", "ffff7fff", "b399053f", "965f5a3f" },
+                { "positive_infinity", "0000807f", "0000c07f", "0000c07f" },
+                { "negative_infinity", "000080ff", "0000c07f", "0000c07f" },
+                { "quiet_nan_payload", "4523c17f", "0000c07f", "0000c07f" },
+                { "negative_quiet_nan", "2143c5ff", "0000c07f", "0000c07f" },
+                { "signaling_nan_payload", "4523a17f", "0000c07f", "0000c07f" },
+            };
+            for (int index = 0; index < cases.GetLength(0); index++)
+            {
+                float input = FloatFromLittleEndianHex(cases[index, 1]);
+                EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FloatSinCosBinary32(
+                    input, out float sine, out float cosine);
+                RequireFloatBits(cases[index, 0] + " sine", sine, cases[index, 2]);
+                RequireFloatBits(cases[index, 0] + " cosine", cosine, cases[index, 3]);
+            }
         }
 
         public static void VerifyTetherGoldenVectors()
@@ -249,6 +290,129 @@ namespace EndfieldGraphShaderLabEditor
                 .Replace("-", "").ToLowerInvariant();
             if (!string.Equals(bits, expected, StringComparison.Ordinal))
                 throw new InvalidOperationException(label + " differs: " + bits + " != " + expected);
+        }
+
+        private static float FloatFromLittleEndianHex(string value)
+        {
+            byte[] bytes = new byte[4];
+            for (int index = 0; index < bytes.Length; index++)
+                bytes[index] = Convert.ToByte(value.Substring(index * 2, 2), 16);
+            return BitConverter.ToSingle(bytes, 0);
+        }
+
+        public static void VerifyAngleGoldenVectors()
+        {
+            string[] zeroDouble3 = { "0000000000000000", "0000000000000000", "0000000000000000" };
+            VerifyAngleCase("restoration_only_aligned", 1, 0, false, 10, 1, true, 1, 0.6f, 0, 0, 0,
+                zeroDouble3, new[] { "000000f4ffffef3f", "0000000000000000", "0000000000000000" },
+                new[] { "000000e0cccc4cbe", "0000000000000000", "0000000000000000" },
+                new[] { "00000000", "00000000", "00000000", "0000803f" }, "00000000",
+                new[] { "00000000", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "00000000" },
+                new[] { "0000803f", "00000000", "00000000" });
+            VerifyAngleCase("restoration_only_bent", 0, 1, false, 10, 1, true, 0.35f, 0.6f, 0, 0, 0,
+                zeroDouble3, new[] { "46a6e58e362be83f", "4671f0f23815e33f", "0000000000000000" },
+                new[] { "2cf302f2a700dd3f", "d46103344400cfbf", "0000000000000000" },
+                new[] { "00000000", "00000000", "00000000", "0000803f" }, "00000000",
+                new[] { "00000000", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "00000000" },
+                new[] { "0000803f", "00000000", "00000000" });
+            VerifyAngleCase("hair_limit_inside_cone", 1, 0.08, true, 10, 1, false, 1, 0.6f, 0, 0, 0,
+                zeroDouble3, new[] { "7a0e75150000f03f", "3e312563e17ab43f", "0000000000000000" },
+                new[] { "9c600432c04f733e", "b2271d3e00b8383e", "0000000000000000" },
+                new[] { "00000000", "00000000", "ca72233d", "cdcb7f3f" }, "b168803f",
+                new[] { "0000803f", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "0000803f" },
+                new[] { "00000000", "00000000", "00000000" });
+            VerifyAngleCase("hair_limit_outside_cone", 0, 1, true, 10, 1, false, 1, 0.6f, 0, 0, 0,
+                zeroDouble3, new[] { "3aca53f5a096ec3f", "e67f4677324ece3f", "0000000000000000" },
+                new[] { "d2288f04c4bae93f", "dec1649b34fbe5bf", "0000000000000000" },
+                new[] { "00000000", "00000000", "a844043e", "fcda7d3f" }, "0000803f",
+                new[] { "0000803f", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "0000803f" },
+                new[] { "00000000", "00000000", "00000000" });
+            VerifyAngleCase("combined_limit_then_restoration", 0, 1, true, 10, 1, true, 0.125f, 0.6f, 0, 0, 0,
+                zeroDouble3, new[] { "f26f70206710ed3f", "505d3c28b6f0c93f", "0000000000000000" },
+                new[] { "005aec963eaee93f", "6aaf8512e61fe6bf", "0000000000000000" },
+                new[] { "00000000", "00000000", "fb3def3d", "4d3f7e3f" }, "0000803f",
+                new[] { "0000803f", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "0000803f" },
+                new[] { "0000803f", "00000000", "00000000" });
+            VerifyAngleCase("active_parent_writeback", 0, 1, false, 10, 1, true, 0.125f, 0, 2, 0, 0,
+                new[] { "00f65a623082c1bf", "80d2680518d1a83f", "0000000000000000" },
+                new[] { "778748113ff6d63f", "e1c272446658ed3f", "0000000000000000" },
+                zeroDouble3, new[] { "00000000", "00000000", "00000000", "0000803f" }, "00000000",
+                new[] { "00000000", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "00000000" },
+                new[] { "0000803f", "00000000", "00000000" });
+            VerifyAngleCase("friction_mobility", 0, 1, false, 10, 1, true, 0.35f, 0, 0, 0.25f, 0.75f,
+                zeroDouble3, new[] { "f30f6c02e307e03f", "9d3fc6f9f9dfe83f", "0000000000000000" },
+                zeroDouble3, new[] { "00000000", "00000000", "00000000", "0000803f" }, "00000000",
+                new[] { "00000000", "00000000", "00000000" },
+                new[] { "00000000", "00000000", "00000000", "00000000" },
+                new[] { "0000803f", "00000000", "00000000" });
+        }
+
+        private static void VerifyAngleCase(
+            string name, double childX, double childY,
+            bool limit, float limitDegrees, float limitStiffness,
+            bool restoration, float restorationStrength, float restorationVelocityAttenuation,
+            byte parentAttribute, float parentFriction, float childFriction,
+            string[] parentNextBits, string[] childNextBits, string[] childVelocityBits,
+            string[] childRotationBits, string childLengthBits, string[] childLocalPositionBits,
+            string[] childLocalRotationBits, string[] childRestorationBits)
+        {
+            var zero = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(0, 0, 0);
+            var identity = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1);
+            var next = new[] { zero, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(childX, childY, 0) };
+            var velocity = new[] { zero, zero };
+            var rotations = new[] { default(EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4), default(EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4) };
+            var lengths = new float[2];
+            var localPositions = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[2];
+            var localRotations = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[2];
+            var restorationVectors = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[2];
+            float[] restorationCurve = ConstantCurve(restorationStrength);
+            float[] limitCurve = ConstantCurve(limitDegrees);
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ProjectAngle(
+                new byte[] { parentAttribute, 2 }, new[] { 0.0f, 0.37f },
+                new[] { parentFriction, childFriction },
+                new[] { zero, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(1, 0, 0) },
+                new[] { identity, identity }, next, velocity,
+                restoration, restorationCurve, restorationVelocityAttenuation, 0,
+                limit, limitCurve, limitStiffness, 1, 1,
+                rotations, lengths, localPositions, localRotations, restorationVectors);
+
+            RequireBits(name + " next parent", next[0], parentNextBits);
+            RequireBits(name + " next child", next[1], childNextBits);
+            RequireBits(name + " velocity parent", velocity[0], new[] { "0000000000000000", "0000000000000000", "0000000000000000" });
+            RequireBits(name + " velocity child", velocity[1], childVelocityBits);
+            RequireFloat4Bits(name + " rotation parent", rotations[0], new[] { "00000000", "00000000", "00000000", "0000803f" });
+            RequireFloat4Bits(name + " rotation child", rotations[1], childRotationBits);
+            RequireFloatBits(name + " length parent", lengths[0], "00000000");
+            RequireFloatBits(name + " length child", lengths[1], childLengthBits);
+            RequireFloat3Bits(name + " local position parent", localPositions[0], new[] { "00000000", "00000000", "00000000" });
+            RequireFloat3Bits(name + " local position child", localPositions[1], childLocalPositionBits);
+            RequireFloat4Bits(name + " local rotation parent", localRotations[0], new[] { "00000000", "00000000", "00000000", "00000000" });
+            RequireFloat4Bits(name + " local rotation child", localRotations[1], childLocalRotationBits);
+            RequireFloat3Bits(name + " restoration parent", restorationVectors[0], new[] { "00000000", "00000000", "00000000" });
+            RequireFloat3Bits(name + " restoration child", restorationVectors[1], childRestorationBits);
+        }
+
+        private static float[] ConstantCurve(float value)
+        {
+            var result = new float[16];
+            for (int index = 0; index < result.Length; index++)
+                result[index] = value;
+            return result;
+        }
+
+        private static void RequireFloat4Bits(string label,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 value, string[] expected)
+        {
+            RequireFloatBits(label + ".x", value.x, expected[0]);
+            RequireFloatBits(label + ".y", value.y, expected[1]);
+            RequireFloatBits(label + ".z", value.z, expected[2]);
+            RequireFloatBits(label + ".w", value.w, expected[3]);
         }
 
         public static void VerifyBasicPostureGoldenVectors()

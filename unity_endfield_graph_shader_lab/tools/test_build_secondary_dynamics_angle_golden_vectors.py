@@ -34,7 +34,11 @@ class AngleGoldenVectorTests(unittest.TestCase):
         self.assertTrue(boundary["nativeCoreExecuted"])
         self.assertTrue(boundary["sourceTranscriptionAllWrittenBitsMatched"])
         self.assertTrue(boundary["sourceTranscriptionCallsPinnedNativeSincos"])
-        self.assertFalse(boundary["standaloneSincosTranscriptionComplete"])
+        self.assertTrue(boundary["standaloneSincosTranscriptionComplete"])
+        self.assertEqual(
+            boundary["standaloneSincosContract"],
+            "secondary_dynamics_float_sincos_golden_vectors.json")
+        self.assertTrue(boundary["unityPortExecuted"])
         self.assertEqual(len(self.contract["vectors"]), 7)
 
     def test_requested_case_coverage(self):
