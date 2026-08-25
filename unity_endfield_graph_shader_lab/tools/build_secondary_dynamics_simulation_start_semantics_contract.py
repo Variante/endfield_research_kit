@@ -27,6 +27,15 @@ COS_SHA256 = "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f"
 LARGE_TRIG_REDUCER_RVA = 0x23C760
 LARGE_TRIG_REDUCER_BYTES = 1147
 LARGE_TRIG_REDUCER_SHA256 = "f03b3aa47f3d19ed6aa8cf1f7f997d7e4deabf1da6b9184f641a9fc31d4943a6"
+WIND_RVA = 0x247190
+WIND_BYTES = 627
+WIND_SHA256 = "67991305cc9562791e3f2c16e226fba315ca69676f36f467d7566965090d6888"
+ZONE_WIND_BLEND_RVA = 0x245B00
+ZONE_WIND_BLEND_BYTES = 5775
+ZONE_WIND_BLEND_SHA256 = "7f960de4319f8f3e45c346df422a948d01707730ff237152a2d077e7d29f9b1a"
+MOVING_WIND_BLEND_RVA = 0x244470
+MOVING_WIND_BLEND_BYTES = 5775
+MOVING_WIND_BLEND_SHA256 = "2e62f20b610ca318ac514798a34d95121842838eb6dae8057126b9abbfebeef7"
 
 
 def _instruction(rows: dict[int, Any], rva: int, mnemonic: str, operand: str) -> Any:
@@ -66,6 +75,13 @@ def build_contract() -> dict[str, Any]:
         LARGE_TRIG_REDUCER_RVA,
         LARGE_TRIG_REDUCER_BYTES,
         LARGE_TRIG_REDUCER_SHA256,
+    )
+    burst._exact_rva_span(pe, WIND_RVA, WIND_BYTES, WIND_SHA256)
+    burst._exact_rva_span(
+        pe, ZONE_WIND_BLEND_RVA, ZONE_WIND_BLEND_BYTES, ZONE_WIND_BLEND_SHA256
+    )
+    burst._exact_rva_span(
+        pe, MOVING_WIND_BLEND_RVA, MOVING_WIND_BLEND_BYTES, MOVING_WIND_BLEND_SHA256
     )
     rows = {ins.address - pe["imageBase"]: ins for ins in instructions}
 
@@ -117,7 +133,7 @@ def build_contract() -> dict[str, Any]:
 
     return {
         "schema": "endfield.charinfo.secondary-dynamics-simulation-start-semantics.v1",
-        "status": "main_integration_and_spring_distance_noise_semantics_closed_two_nested_helpers_open",
+        "status": "main_integration_wind_and_spring_distance_noise_semantics_closed_normal_cone_inline_equation_open",
         "native_gate": gate,
         "core": {
             "cpuVariant": "avx2",
@@ -204,7 +220,31 @@ def build_contract() -> dict[str, Any]:
             },
         ],
         "nested_helpers": {
-            "wind": {"rva": "0x247190", "status": "call_abi_bounded_equations_open"},
+            "wind": {
+                "rva": "0x247190",
+                "bytes": WIND_BYTES,
+                "sha256": WIND_SHA256,
+                "status": "outer_and_wind_force_blend_equations_closed_inlined_math_bodies_hash_pinned",
+                "equations": [
+                    "seed = 4.1923065185546875*(teamId+1) + 100*0.002396299969404936*rootIndex*(1-synchronization)",
+                    "sum = each TeamWindInfo contribution plus movingWind when ordered(movingWind > 0.01)",
+                    "depthScale = 1 + (depth*depth - 1) * depthWeight",
+                    "result = sum * (1-friction[pindex]) * influence * depthScale",
+                    "WindForceBlend noise = lerp(sin(windPos.xy + time*10), 2.299999952316284*cnoise_pair(windPos.xy + time*2.313199996948242), blend)",
+                    "angles = sourceTurbulence*turbulence*radians(45)*float3(noise.x, noise.y*(0.4*blend+0.1), 0)",
+                    "direction = rotate(AxisQuaternion(info.direction) * EulerZXY(angles), +Z)",
+                    "magnitude = main * (1 - clamp01(1-main/7.5) * sourceTurbulence*turbulence * (noise.x+1)*0.5)",
+                ],
+                "zoneBlend": {
+                    "rva": "0x245b00", "bytes": ZONE_WIND_BLEND_BYTES,
+                    "sha256": ZONE_WIND_BLEND_SHA256,
+                },
+                "movingBlend": {
+                    "rva": "0x244470", "bytes": MOVING_WIND_BLEND_BYTES,
+                    "sha256": MOVING_WIND_BLEND_SHA256,
+                },
+                "bitIdentityBoundary": "inlined sine, cnoise, AxisToEuler, EulerZXY, quaternion and normalization bodies are pinned but their machine-level coefficients are not individually transcribed",
+            },
             "normalConeCos": {
                 "rva": "0x23c1c0",
                 "bytes": COS_BYTES,
@@ -230,7 +270,7 @@ def build_contract() -> dict[str, Any]:
                 "inertia", "damping", "gravity", "impact_force_dispatch",
                 "semi_implicit_prediction", "spring_distance", "spring_noise", "writeback_layout",
             ],
-            "blocked": ["wind helper equations", "normal-cone inline angle/correction equation", "later constraint/collision stages"],
+            "blocked": ["normal-cone inline angle/correction equation", "bit-identical transcription of inlined wind math", "later constraint/collision stages"],
         },
     }
 

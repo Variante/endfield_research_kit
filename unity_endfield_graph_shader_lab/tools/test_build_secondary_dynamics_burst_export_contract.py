@@ -129,6 +129,14 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
             update["parameterContract"]["managedFallbackElementStridesBytes"],
             [4, 464, 1, 4, 12, 16, 2, 2, 2, 24, 16, 24, 16, 4],
         )
+        self.assertEqual(
+            update["parameterContract"]["burstCoreObservedElementStridesBytes"],
+            [4, 464, 1, 4, 12, 16, 2, 2, 2, 12, 16, 12, 16, 4],
+        )
+        self.assertIn(
+            "packed 12-byte float3",
+            update["parameterContract"]["representationBoundary"],
+        )
         update_exact = update["exactCoreIdentity"]
         self.assertEqual(update_exact["functionPointerSlotRva"], "0x3c5ed0")
         update_variants = {row["cpuVariant"]: row for row in update_exact["variants"]}

@@ -31,8 +31,9 @@ class SimulationStartSemanticsContractTests(unittest.TestCase):
         self.assertFalse(self.contract["implementation_boundary"]["solverImplemented"])
         self.assertEqual(
             self.contract["nested_helpers"]["wind"]["status"],
-            "call_abi_bounded_equations_open",
+            "outer_and_wind_force_blend_equations_closed_inlined_math_bodies_hash_pinned",
         )
+        self.assertEqual(self.contract["nested_helpers"]["wind"]["bytes"], 627)
         self.assertEqual(
             self.contract["nested_helpers"]["normalConeCos"]["status"],
             "exact_scalar_binary64_cosine_implementation_closed",
