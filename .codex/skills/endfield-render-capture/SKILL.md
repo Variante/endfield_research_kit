@@ -34,8 +34,8 @@ renderer-path evidence.
   executable, validate process/module path, size, SHA-256, architecture, and
   creation identity, then make at most one ordinary attachment attempt.
 - Do not add public PID attachment, process suspension, rapid anti-cheat timing,
-  privilege escalation, retry, fallback injection, or process-wide hook
-  removal.
+  hidden privilege escalation, retry, fallback injection, or process-wide hook
+  removal. The guided wrapper's visible UAC relaunch is the sole elevation path.
 - Keep graphics, audio, network, and recording results independent. Failure or
   queue loss in one provider must fail that evidence domain closed without
   reclassifying another.
@@ -58,17 +58,24 @@ renderer-path evidence.
    tools\EndfieldCapture\StartCapture.bat all
    ```
 
-   The wrapper enforces prelaunch ordering, builds Release x64, runs `check`,
-   starts `arm` in a separate capture console, and then automatically launches
+   Accept the wrapper's Windows UAC prompt. The installed client denies the
+   thread/VM rights required for capture-DLL attachment at normal user
+   integrity. The elevated wrapper enforces prelaunch ordering, builds Release
+   x64, runs `check`, starts `arm` in a separate capture console, and then automatically launches
    `Endfield.exe -force-d3d11` only after the prelaunch marker and capture-host
    PID liveness check. It resolves the executable from `ENDFIELD_GAME_EXE` or
    the research kit's
    `endfield_paths.bat`.
    After retaining the exact process identity, the host makes one attachment
-   attempt. The injected runtime waits boundedly for `GameAssembly.dll` and
-   `AkSoundEngine.dll`, then validates their loaded paths, sizes, and hashes
-   from inside the target before installing hooks. This does not retry the
-   attachment attempt.
+   attempt. The `graphics` profile uses the dedicated self-bootstrapping
+   `EndfieldCaptureD3D11.dll` and uses a tiny private WARP swap chain only to
+   discover and hook the shared DXGI `Present` method. The provider becomes
+   attached only after a real game `Present`, then hooks that device's draw and
+   shader-creation methods; capture buffers allocate only
+   after an attached Numpad 1 request.
+   Profiles containing audio use the general runtime, which waits boundedly
+   for exact `GameAssembly.dll` and `AkSoundEngine.dll` identities before
+   installing audio hooks. Neither path retries attachment.
    With no profile argument the wrapper selects all three injected providers.
    After a valid arm, its topmost click-through desktop overlay binds
    `Numpad 1` to one graphics-frame request, `Numpad 2` to one bounded
