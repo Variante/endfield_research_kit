@@ -67,6 +67,11 @@ class CapturedSecondaryDynamicsOracleTests(unittest.TestCase):
         self.assertAlmostEqual(rotation, 90.0)
         self.assertLess(MODULE.orthonormality_error(current), 1e-12)
 
+    def test_reference_alignment_preserves_presented_frame_delta(self):
+        self.assertEqual(MODULE.reference_source_frame(1887), 117)
+        self.assertEqual(MODULE.reference_source_frame(1905), 135)
+        self.assertEqual(MODULE.reference_source_frame(2561), 791)
+
 
 if __name__ == "__main__":
     unittest.main()

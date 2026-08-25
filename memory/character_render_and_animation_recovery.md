@@ -106,6 +106,11 @@ complete frame without a client fault.
   comparisons with a worst delta below `5.7e-8`; the worst orthonormality error
   is below `2.2e-5`. The owner-tagged trajectories and changing coverage live in
   `reports/assets/character_recovery/endminf_captured_secondary_dynamics_oracle.json`.
+  Decoding all 40 captured 4K backbuffers closes their sequence-time join to
+  the no-frame-generation reference: presented frame 1887 maps to source frame
+  117 within one frame, and every later checkpoint preserves the presented-frame
+  delta through source frame 791. This makes the oracle suitable for direct
+  Unity-vs-retail hair/cape trajectory comparisons without guessing a phase.
   This closes the retail hair/cape shape oracle for the captured sequence, but
   does not by itself certify the recovered solver. Deterministic Unity capture
   also hash-binds the owner contract and verifies Endminf's 4 cloth owners, 18
