@@ -954,6 +954,12 @@ or shaders rather than hand-editing generated prefabs.
    those fields. One new targeted automatic graphics sequence through
    `ui_overview_start` and the settled loop is still required to join those
    ranges to each frame's captured palette payload.
+   `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
+   performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
+   hair LOD0 index/bindpose counts. Its tests pin those counts to the generated
+   Unity meshes, accept repeated passes only when their b2 ranges agree, and
+   reject the old `20260825T150404Z` package because it has no range-bearing
+   Endminf draw record.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
