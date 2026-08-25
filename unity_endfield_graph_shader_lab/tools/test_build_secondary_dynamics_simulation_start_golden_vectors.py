@@ -52,6 +52,7 @@ class SimulationStartGoldenVectorTests(unittest.TestCase):
         self.assertEqual(target["postmodelWindZoneCount"], 0)
         self.assertEqual(target["characterInfoEnvironmentWindZoneCount"], 0)
         self.assertFalse(target["targetRequiresNonzeroWind"])
+        self.assertTrue(self.payload["boundary"]["endminfOverviewTargetCoverageComplete"])
 
     def test_helpers_are_explicitly_pinned(self) -> None:
         for name, helper in self.payload["directHelpers"].items():

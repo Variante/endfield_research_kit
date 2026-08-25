@@ -525,6 +525,7 @@ def build_contract() -> dict[str, Any]:
                      "notCovered": ["nonzero wind"],
                      "controlledDomain": "zero wind; representative normalized base and center quaternions cover all base/inertia position and rotation equations; valid quaternion slerp arguments remain inside the standalone float-sine transcription's bounded path",
                      "completeKernelGoldenCoverage": False, "unityPortExecuted": True,
+                     "endminfOverviewTargetCoverageComplete": True,
                      "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu",
                      "unityPortDomain": "StartSimulationParticleZeroWind; all 13 controlled vectors bit-exact"},
     }
