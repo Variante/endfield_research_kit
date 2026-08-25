@@ -36,34 +36,30 @@ class PackWebuiAudioTests(unittest.TestCase):
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             pack_webui.parse_args(["--audio-format", "flac"])
 
-    def test_staged_package_failure_preserves_published_files(self) -> None:
+    def test_staged_package_failure_preserves_published_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
-            outputs = [root / "story.zip", root / "assets.zip"]
-            for output in outputs:
-                output.write_bytes(b"published")
+            output = root / "story.zip"
+            output.write_bytes(b"published")
 
             with self.assertRaisesRegex(RuntimeError, "fixture failure"):
-                with pack_webui.staged_package_outputs(outputs) as staged:
-                    for path in staged.values():
-                        path.write_bytes(b"replacement")
+                with pack_webui.staged_package_output(output) as staged:
+                    staged.write_bytes(b"replacement")
                     raise RuntimeError("fixture failure")
 
-            self.assertEqual([path.read_bytes() for path in outputs], [b"published"] * 2)
+            self.assertEqual(output.read_bytes(), b"published")
             self.assertEqual(list(root.glob("*.tmp")), [])
 
-    def test_staged_packages_replace_outputs_after_success(self) -> None:
+    def test_staged_package_replaces_output_after_success(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)
-            outputs = [root / "story.zip", root / "assets.zip"]
-            for output in outputs:
-                output.write_bytes(b"published")
+            output = root / "story.zip"
+            output.write_bytes(b"published")
 
-            with pack_webui.staged_package_outputs(outputs) as staged:
-                for path in staged.values():
-                    path.write_bytes(b"replacement")
+            with pack_webui.staged_package_output(output) as staged:
+                staged.write_bytes(b"replacement")
 
-            self.assertEqual([path.read_bytes() for path in outputs], [b"replacement"] * 2)
+            self.assertEqual(output.read_bytes(), b"replacement")
             self.assertEqual(list(root.glob("*.tmp")), [])
 
     def test_live_router_keeps_audio_normal_and_debug_mission_views(self) -> None:

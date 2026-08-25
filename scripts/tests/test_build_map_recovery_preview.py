@@ -68,6 +68,47 @@ class CellSizeTests(unittest.TestCase):
 
 
 class PreviewInputTests(unittest.TestCase):
+    def test_renderer_binding_recovers_unloaded_external_ptrs_from_unique_asset_map_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asset_map = root / "assets.json"
+            renderer_index = root / "renderers.jsonl"
+            materials = root / "materials"
+            textures = root / "textures"
+            materials.mkdir()
+            textures.mkdir()
+            asset_map.write_text(json.dumps({"AssetEntries": [
+                {"Name": "MeshA", "Source": "mesh.chk", "PathID": 101, "Type": "Mesh"},
+                {"Name": "MatA", "Source": "material.chk", "PathID": 202, "Type": "Material"},
+            ]}), encoding="utf-8")
+            renderer_index.write_text("\n".join([
+                json.dumps({
+                    "kind": "renderer",
+                    "mesh": {"pathId": 101, "status": "external_target_unloaded", "target": None},
+                    "materials": [{"pathId": 202, "status": "external_target_unloaded", "target": None}],
+                }),
+                json.dumps({"kind": "summary", "complete": True}),
+            ]) + "\n", encoding="utf-8")
+            (materials / "MatA_p00000000000000CA.json").write_text(json.dumps({
+                "m_SavedProperties": {"m_TexEnvs": {"_BaseColorMap": {
+                    "m_Texture": {"m_PathID": 303},
+                }}},
+            }), encoding="utf-8")
+            (textures / "TexA_p000000000000012F.png").write_bytes(b"png")
+
+            with mock.patch.object(builder, "DEFAULT_ASSET_MAP", asset_map), \
+                    mock.patch.object(builder, "RENDERER_INDEX", renderer_index), \
+                    mock.patch.object(builder, "MATERIAL_ROOT", materials), \
+                    mock.patch.object(builder, "TEXTURE_ROOT", textures), \
+                    mock.patch.object(builder, "_RENDERER_TEXTURE_BINDINGS", None):
+                bindings = builder.renderer_texture_bindings()
+
+        self.assertIn(("mesha", 101), bindings)
+        self.assertEqual(
+            bindings[("mesha", 101)]["mappingMethod"],
+            "exact_renderer_mesh_single_material_base_color_pptr",
+        )
+
     def test_streaming_hlod_uses_exact_level_lod_hash_material_binding(self):
         binding = {"slot": "_BaseColorMap"}
         instances = [{"meshes": [{
@@ -224,7 +265,7 @@ class PreviewInputTests(unittest.TestCase):
                 [(-10.0, -2.0, 20.0), (30.0, 12.0, -40.0)],
                 Path(tmp),
             )
-            self.assertEqual(manifest["status"], "exact_registry_transform_point_cloud")
+            self.assertEqual(manifest["status"], "exact_registry_transform_elevation_only")
             self.assertEqual(manifest["render"]["pointCount"], 2)
             self.assertEqual(manifest["render"]["elevationRange"], {"min": -2.0, "max": 12.0})
             self.assertIn("Evidence-only", manifest["boundary"])
@@ -233,7 +274,8 @@ class PreviewInputTests(unittest.TestCase):
                 "exact_registry_transform_grayscale_elevation_points",
             )
             self.assertIn("no growth", manifest["elevationUnderlay"]["boundary"])
-            self.assertEqual(manifest["pointCloudOverlay"]["heightMask"]["elevationRange"], {"min": -2.0, "max": 12.0})
+            self.assertIsNone(manifest["pointCloudOverlay"])
+            self.assertEqual(manifest["src"], manifest["elevationUnderlay"]["src"])
             self.assertTrue(Path(tmp, "test_level_registry_height_mask.png").is_file())
             self.assertTrue(Path(tmp, "test_level_registry_elevation_points.png").is_file())
             image = Path(tmp, "test_level_registry_point_cloud.png")
@@ -295,9 +337,9 @@ class PreviewInputTests(unittest.TestCase):
         ):
             manifest = render_point_cloud("test_level", [(0.0, 100.0, 0.0)], Path(tmp), payload)
 
-        self.assertEqual(manifest["status"], "exact_registry_transform_point_cloud")
-        self.assertEqual(manifest["pointCloudOverlay"]["heightMask"]["elevationRange"], {"min": 100.0, "max": 100.0})
-        self.assertGreater(manifest["pointCloudOverlay"]["heightMask"]["pointPixelCount"], 0)
+        self.assertEqual(manifest["status"], "exact_registry_transform_elevation_only")
+        self.assertIsNone(manifest["pointCloudOverlay"])
+        self.assertEqual(manifest["src"], manifest["elevationUnderlay"]["src"])
 
     def test_exact_hlod_elevation_keeps_floor_but_omits_ceiling(self):
         matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
@@ -375,7 +417,7 @@ class PreviewInputTests(unittest.TestCase):
         self.assertEqual(manifest["render"]["method"], "exact_streaming_matrix_obj_uv_material_texture_depth_pass")
         self.assertEqual(manifest["render"]["baseColorTextureCount"], 1)
         self.assertEqual(manifest["elevationUnderlay"]["method"], "orthographic_depth_pass_grayscale_hillshade")
-        self.assertEqual(manifest["pointCloudOverlay"]["method"], "orthographic_exact_depth_material_color_or_elevation_palette_points")
+        self.assertEqual(manifest["pointCloudOverlay"]["method"], "orthographic_exact_depth_texture_color_points")
         bounds = manifest["worldBounds"]
         self.assertAlmostEqual(
             _width / _height,
@@ -717,7 +759,20 @@ class SurfaceRasterTests(unittest.TestCase):
             vertices, texcoords, faces = _read_textured_mesh(path)
         self.assertEqual(len(vertices), 3)
         self.assertEqual(texcoords[1], (0.8, 0.2))
-        self.assertEqual(faces, [((0, 1, 2), (0, 1, 2))])
+        self.assertEqual(faces, [((0, 1, 2), (0, 1, 2), None)])
+
+    def test_streaming_obj_preserves_submesh_material_indices(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._cluster_obj(
+                tmp,
+                "g mesh\n"
+                "v 0 1 0\nv 1 1 0\nv 0 1 1\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\n"
+                "g mesh_0\nf 1/1 2/2 3/3\n"
+                "g mesh_2\nf 1/1 3/3 2/2\n",
+            )
+            _vertices, _texcoords, faces = _read_textured_mesh(path)
+        self.assertEqual([face[2] for face in faces], [0, 2])
 
     def test_hlod_binding_requires_exact_level_lod_and_signed_suffix(self):
         with tempfile.TemporaryDirectory(dir=builder.ROOT / "tmp") as tmp:
@@ -778,6 +833,46 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(binding["texturePath"], texture)
         self.assertTrue(binding["textureRel"].endswith("_D_p2A.png"))
         self.assertEqual(binding["mappingMethod"], "exact_assetmap_material_container_baked_diffuse")
+
+    def test_hashed_hlod_material_uses_exact_assetmap_container_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asset_map = root / "assets.json"
+            material_root = root / "Material"
+            texture_root = root / "Texture2D"
+            material_root.mkdir()
+            texture_root.mkdir()
+            material_path_id = -7
+            material_hex = f"{material_path_id & ((1 << 64) - 1):016X}"
+            texture_path_id = 42
+            texture_hex = f"{texture_path_id:016X}"
+            material = material_root / f"c94247f7d2a63a5c_p{material_hex}.json"
+            texture = texture_root / f"diffuse_p{texture_hex}.png"
+            material.write_text(json.dumps({
+                "m_SavedProperties": {"m_TexEnvs": {
+                    "_BaseColorMap": {"m_Texture": {"m_PathID": texture_path_id}},
+                }},
+            }), encoding="utf-8")
+            builder.write_png(texture, 1, 1, [bytes((210, 220, 240, 255))])
+            asset_map.write_text(json.dumps({"AssetEntries": [{
+                "Type": "Material", "Name": "c94247f7d2a63a5c", "PathID": material_path_id,
+                "Container": (
+                    "assets/beyond/scenes/mainstory/map01/lv003/map01_lv003_art/hlod_v2/pc/hlod0/"
+                    "material/m_auto_generated_hlod0_map01_lv003_art_-532848094.mat"
+                ),
+            }]}), encoding="utf-8")
+            index = builder.build_hlod_index(asset_map)
+            with mock.patch.object(builder, "_TEXTURE_BINDINGS", {}), mock.patch.object(
+                builder, "_HLOD_TEXTURE_BINDINGS", {}
+            ):
+                installed, unresolved = builder.install_hlod_material_json_bindings(
+                    material_root, {texture_hex: texture}, index,
+                )
+                binding = builder._HLOD_TEXTURE_BINDINGS[("map01_lv003", 0, -532848094)]
+
+        self.assertEqual((installed, unresolved), (1, 0))
+        self.assertEqual(binding["materialPath"], material)
+        self.assertEqual(binding["texturePath"], texture)
 
     def test_hlod_depth_samples_exact_bound_base_color(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
@@ -992,7 +1087,7 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual((used, triangles), ([], 0))
         self.assertTrue(all(value <= NO_HIT for value in depth))
 
-    def test_hlod_preview_publishes_black_point_density(self):
+    def test_hlod_preview_without_texture_publishes_no_colored_point_layer(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
@@ -1005,13 +1100,12 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(manifest["render"]["method"], "orthographic_hlod_depth_black_point_density")
         self.assertEqual(manifest["render"]["pointDensity"], 8 / 11)
         self.assertEqual(manifest["render"]["coveredPixelRatio"], manifest["render"]["realPixelRatio"])
-        self.assertEqual(manifest["src"], "render/test_hlod_surface.png")
-        self.assertEqual(manifest["pointCloudOverlay"]["src"], "render/test_hlod_vertex_points.png")
-        self.assertEqual(manifest["pointCloudOverlay"]["sampleSet"]["encoding"],
-                         "mrps_v1_le_u32_pixel_f32_height_rgba8")
+        self.assertEqual(manifest["src"], "render/test_hlod_grid_inferred.png")
+        self.assertIsNone(manifest["pointCloudOverlay"])
+        self.assertIsNone(manifest["surfaceRender"])
         self.assertIsNotNone(manifest["elevationUnderlay"])
 
-    def test_layered_point_samples_reveal_a_lower_coprojecting_vertex(self):
+    def test_layered_point_samples_fail_closed_without_texture(self):
         bounds = {"minX": -1.0, "maxX": 1.0, "minZ": -1.0, "maxZ": 1.0}
         fit = {"originX": 0.0, "originZ": 0.0}
         with tempfile.TemporaryDirectory() as tmp:
@@ -1020,18 +1114,9 @@ class SurfaceRasterTests(unittest.TestCase):
             overlay = builder.render_hlod_point_samples(
                 "stacked", clusters, 1, fit, bounds, {"1": path}, 8, 8, Path(tmp)
             )
-            payload = (Path(tmp) / "stacked_hlod_vertex_points.samples").read_bytes()
 
-        self.assertEqual(payload[:4], b"MRPS")
-        version, record_size, width, height = struct.unpack_from("<HHII", payload, 4)
-        self.assertEqual((version, record_size, width, height), (1, 12, 8, 8))
-        records = [struct.unpack_from("<IfBBBB", payload, offset)
-                   for offset in range(16, len(payload), record_size)]
-        self.assertEqual(len(records), 2)
-        self.assertEqual(records[0][0], records[1][0])
-        self.assertEqual([row[1] for row in records], [10.0, 20.0])
-        self.assertEqual(overlay["sampleSet"]["recordCount"], 2)
-        self.assertEqual(overlay["sampleSet"]["pixelCount"], 1)
+        self.assertIsNone(overlay)
+        self.assertFalse((Path(tmp) / "stacked_hlod_vertex_points.samples").exists())
 
     def test_dg002_uses_irregular_mesh_vertex_scan_without_coordinate_echo(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}

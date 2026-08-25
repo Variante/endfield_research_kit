@@ -86,7 +86,9 @@ Packaging emits three matching archives: the main Story archive owns Story,
 Text, Updates, Mission Pipeline, shared WebUI code, and compact Audio semantics;
 the assets archive owns Map, Characters, Gameplay, and exported image/video
 payloads; the audio archive owns FLAC media and raw audio indexes. The retired
-Asset Browser and 3D model payloads are intentionally excluded.
+Asset Browser and 3D model payloads are intentionally excluded. Archives are
+built and atomically published one at a time in Story, assets, then audio order,
+so each completed archive is available while the next archive is still building.
 
 `build_gameplay.py` owns every Gameplay dataset. Behavior-focused stages live
 in `gameplay_builder/`; its `asset-refs` stage calls the public
@@ -765,6 +767,24 @@ re-exports, or broad `ImportError` import fallbacks.
 For the remaining live source-state/sourceInfo-to-open-handle, optional
 decoder-callback, and unobserved-codec-descriptor joins,
 the read-only runtime probe is prepared with the repo-local Frida environment:
+
+The experimental native fallback under `tools/audio-runtime-capture/` is a
+Stage 0 identity/transport scaffold only. It verifies that a separately staged
+read-only DLL can load and match the selected process, `GameAssembly.dll`, and
+`AkSoundEngine.dll`; it does not install audio hooks or publish runtime audio
+observations yet. Validate its single manifest and payload contract before any
+authorized staging:
+
+```bat
+python -m scripts.story_recovery.runtime_trace_audio_native_capture --check-only --native-library PATH\AudioCapture.dll
+```
+
+The launcher copies the verified x64 DLL into a private package directory,
+writes its adjacent `audio_capture.session.json`, makes at most one ordinary
+LoadLibrary injection attempt when explicitly requested, and requires an
+importer-compatible, fully hash-matched `session_start` handshake before it
+reports the Stage 0 session armed. A denial or incomplete module gate stops
+without retry or fallback.
 
 ```bat
 tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio --check-only

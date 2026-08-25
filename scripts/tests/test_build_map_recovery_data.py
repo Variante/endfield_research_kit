@@ -2608,6 +2608,33 @@ class LevelGeneralizationTests(unittest.TestCase):
         self.assertEqual(row["sceneKeys"], [])
         self.assertEqual(row["missions"], [])
 
+    def test_native_action_target_preserves_enemy_kind_and_name(self):
+        entities = {
+            "world": [],
+            "script": [
+                ({"scriptIdGlobal": "21000000009", "slotId": "30001"},
+                 {"entityType": 16, "detailId": "eny_0051_rodin",
+                  "position": {"x": 1, "y": 2, "z": 3}}),
+            ],
+            "npc": [],
+        }
+        targets = {"21000000009:30001": [{
+            "status": "exact_registered_script_action_target",
+            "actionName": "SetEntityPosition",
+            "fieldName": "_target",
+            "sourceFile": "21000000009.json",
+            "controlTriggers": [],
+        }]}
+        row = builder._registry_markers(
+            entities, "dung01_bdg001", "CN", {}, {}, {}, {}, targets
+        )[0]
+
+        self.assertEqual(row["kind"], "enemy")
+        self.assertEqual(row["subKind"], "enemy")
+        self.assertNotEqual(row["label"], "SetEntityPosition")
+        self.assertEqual(row["interactionStatus"], "not_user_interactive")
+        self.assertEqual(row["actions"][0]["fieldName"], "_target")
+
     def test_exact_world_action_target_preserves_entity_kind_and_name(self):
         entities = {
             "world": [
