@@ -44,7 +44,7 @@
     ],
     "trailingValue": "rangeIndex int32"
   },
-  "harnessSha256": "fd0e000d79323656f94590411c413b72aed61a16467623c719562c0f3bba3285",
+  "harnessSha256": "9b21bab73e1bfe3ceab9073e26ab952fd2ee95aa396e997f7993b130700f0082",
   "vectors": [
     {
       "name": "inactive_bypass",
@@ -726,6 +726,7 @@
     ],
     "notCovered": [],
     "completeKernelGoldenCoverage": true,
-    "unityPortExecuted": false
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"
   }
 }

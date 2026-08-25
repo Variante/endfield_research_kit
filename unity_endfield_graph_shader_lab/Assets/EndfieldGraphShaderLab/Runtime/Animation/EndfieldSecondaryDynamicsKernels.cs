@@ -450,6 +450,150 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        public static void FinishSimulationParticle(
+            bool active,
+            float deltaTime,
+            float scaleRatio,
+            float velocityWeight,
+            float particleSpeedLimit,
+            float centrifugalAcceleration,
+            float dynamicFriction,
+            float staticFrictionParameter,
+            float depth,
+            Double3 centerPosition,
+            float centerAngularVelocity,
+            Float3 centerRotationAxis,
+            ref Double3 nextPosition,
+            Double3 previousPosition,
+            ref Double3 velocityPosition,
+            ref Float3 velocity,
+            ref Float3 realVelocity,
+            ref float friction,
+            ref float staticFriction,
+            Float3 collisionNormal)
+        {
+            double dt = deltaTime;
+            Double3 corrected = nextPosition;
+            if (!active)
+            {
+                velocity = new Float3(0.0f, 0.0f, 0.0f);
+            }
+            else
+            {
+                Double3 correctedVelocityPosition = velocityPosition;
+                float normalSquared = DotFloat3Binary32(collisionNormal, collisionNormal);
+                float threshold = MultiplyBinary32(scaleRatio, staticFrictionParameter);
+                double accumulatedStaticFriction = staticFriction;
+                if (normalSquared > 1.0e-8f && friction > 0.0f && threshold > 0.0f)
+                {
+                    Double3 delta = SubtractDouble3(nextPosition, previousPosition);
+                    double normalDistance = DotFloatDouble3(collisionNormal, delta);
+                    Double3 tangent = new Double3(
+                        delta.x - collisionNormal.x * normalDistance,
+                        delta.y - collisionNormal.y * normalDistance,
+                        delta.z - collisionNormal.z * normalDistance);
+                    double tangentSpeed = LengthDouble3(tangent) / dt;
+                    if (threshold > tangentSpeed)
+                        accumulatedStaticFriction += 0.03999999910593033;
+                    else
+                        accumulatedStaticFriction -= Math.Max(
+                            (tangentSpeed - threshold) / 0.20000000298023224,
+                            0.05000000074505806);
+                    accumulatedStaticFriction = Math.Min(Math.Max(accumulatedStaticFriction, 0.0), 1.0);
+                    Double3 correction = MultiplyDouble3(tangent, accumulatedStaticFriction);
+                    corrected = SubtractDouble3(nextPosition, correction);
+                    correctedVelocityPosition = SubtractDouble3(velocityPosition, correction);
+                }
+                else
+                {
+                    accumulatedStaticFriction = Math.Min(
+                        Math.Max(accumulatedStaticFriction - 0.05000000074505806, 0.0), 1.0);
+                }
+                staticFriction = (float)accumulatedStaticFriction;
+
+                Double3 velocity0 = MultiplyDouble3(
+                    SubtractDouble3(corrected, correctedVelocityPosition), 1.0 / dt);
+                double speed0Squared = DotDouble3(velocity0, velocity0);
+                Float3 direction0 = speed0Squared > 1.0e-8
+                    ? NormalizeDouble3ToFloatBinary32(velocity0)
+                    : new Float3(0.0f, 0.0f, 0.0f);
+                Double3 velocity1 = velocity0;
+                if (friction > 1.0e-8f && normalSquared > 1.0e-8f &&
+                    dynamicFriction > 0.0f && speed0Squared >= 1.0e-8)
+                {
+                    float hemisphere = AddBinary32(
+                        MultiplyBinary32(DotFloat3Binary32(collisionNormal, direction0), 0.5f), 0.5f);
+                    float directionalLoss = SubtractBinary32(
+                        1.0f, MultiplyBinary32(hemisphere, hemisphere));
+                    float strength = Math.Min(Math.Max(
+                        MultiplyBinary32(dynamicFriction, friction), 0.0f), 1.0f);
+                    float attenuation = MultiplyBinary32(strength, directionalLoss);
+                    velocity1 = new Double3(
+                        velocity0.x - velocity0.x * attenuation,
+                        velocity0.y - velocity0.y * attenuation,
+                        velocity0.z - velocity0.z * attenuation);
+                }
+
+                Double3 velocity2 = velocity1;
+                if (particleSpeedLimit >= 0.0f)
+                {
+                    float scaledLimit = MultiplyBinary32(particleSpeedLimit, scaleRatio);
+                    double speed = LengthDouble3(velocity1);
+                    if (!(speed <= scaledLimit || speed <= 9.999999717180685e-10))
+                        velocity2 = MultiplyDouble3(velocity1, scaledLimit / speed);
+                }
+
+                Double3 finalVelocity = velocity2;
+                if (centerAngularVelocity > 1.0e-8f && centrifugalAcceleration > 1.0e-8f &&
+                    speed0Squared >= 1.0e-8)
+                {
+                    Double3 radialInput = new Double3(
+                        (float)(corrected.x - centerPosition.x),
+                        (float)(corrected.y - centerPosition.y),
+                        (float)(corrected.z - centerPosition.z));
+                    double axial = DotFloatDouble3(centerRotationAxis, radialInput);
+                    Double3 radial = new Double3(
+                        radialInput.x - centerRotationAxis.x * axial,
+                        radialInput.y - centerRotationAxis.y * axial,
+                        radialInput.z - centerRotationAxis.z * axial);
+                    double radialLength = LengthDouble3(radial);
+                    if (radialLength > 1.0e-8)
+                    {
+                        Double3 radialDirection = MultiplyDouble3(radial, 1.0 / radialLength);
+                        Double3 tangentCross = new Double3(
+                            centerRotationAxis.y * radialDirection.z - centerRotationAxis.z * radialDirection.y,
+                            centerRotationAxis.z * radialDirection.x - centerRotationAxis.x * radialDirection.z,
+                            centerRotationAxis.x * radialDirection.y - centerRotationAxis.y * radialDirection.x);
+                        Double3 tangent = MultiplyDouble3(tangentCross, 1.0 / LengthDouble3(tangentCross));
+                        double alignment = Math.Min(Math.Max(
+                            tangent.x * direction0.x + tangent.y * direction0.y + tangent.z * direction0.z,
+                            0.0), 1.0);
+                        float depthFactor = AddBinary32(SubtractBinary32(1.0f, depth), 1.0f);
+                        float angularTerm = MultiplyBinary32(
+                            MultiplyBinary32(centerAngularVelocity, depthFactor), centerAngularVelocity);
+                        double magnitude = radialLength * angularTerm * alignment;
+                        magnitude *= centrifugalAcceleration * 0.019999999552965164;
+                        finalVelocity = new Double3(
+                            velocity2.x + radialDirection.x * magnitude,
+                            velocity2.y + radialDirection.y * magnitude,
+                            velocity2.z + radialDirection.z * magnitude);
+                    }
+                }
+
+                velocity = new Float3(
+                    (float)(finalVelocity.x * velocityWeight),
+                    (float)(finalVelocity.y * velocityWeight),
+                    (float)(finalVelocity.z * velocityWeight));
+                friction = MultiplyBinary32(friction, 0.6000000238418579f);
+            }
+
+            realVelocity = new Float3(
+                (float)((corrected.x - previousPosition.x) / dt),
+                (float)((corrected.y - previousPosition.y) / dt),
+                (float)((corrected.z - previousPosition.z) / dt));
+            nextPosition = corrected;
+        }
+
         private static Float4 SlerpQuaternionBinary32(Float4 a, Float4 b, float t)
         {
             float dot = DotFloat4Binary32(a, b);
@@ -581,6 +725,48 @@ namespace EndfieldGraphShaderLab
                 MultiplyBinary32(value.x, inverse),
                 MultiplyBinary32(value.y, inverse),
                 MultiplyBinary32(value.z, inverse));
+        }
+
+        private static float DotFloat3Binary32(Float3 a, Float3 b)
+        {
+            return AddBinary32(
+                AddBinary32(MultiplyBinary32(a.x, b.x), MultiplyBinary32(a.y, b.y)),
+                MultiplyBinary32(a.z, b.z));
+        }
+
+        private static Float3 NormalizeDouble3ToFloatBinary32(Double3 value)
+        {
+            Float3 rounded = new Float3((float)value.x, (float)value.y, (float)value.z);
+            float inverse = DivideBinary32(1.0f, SqrtBinary32(DotFloat3Binary32(rounded, rounded)));
+            return new Float3(
+                MultiplyBinary32(rounded.x, inverse),
+                MultiplyBinary32(rounded.y, inverse),
+                MultiplyBinary32(rounded.z, inverse));
+        }
+
+        private static double DotFloatDouble3(Float3 a, Double3 b)
+        {
+            return (a.x * b.x + a.y * b.y) + a.z * b.z;
+        }
+
+        private static double DotDouble3(Double3 a, Double3 b)
+        {
+            return (a.x * b.x + a.y * b.y) + a.z * b.z;
+        }
+
+        private static double LengthDouble3(Double3 value)
+        {
+            return Math.Sqrt(DotDouble3(value, value));
+        }
+
+        private static Double3 SubtractDouble3(Double3 a, Double3 b)
+        {
+            return new Double3(a.x - b.x, a.y - b.y, a.z - b.z);
+        }
+
+        private static Double3 MultiplyDouble3(Double3 value, double scalar)
+        {
+            return new Double3(value.x * scalar, value.y * scalar, value.z * scalar);
         }
 
         private static float DistanceWeight(

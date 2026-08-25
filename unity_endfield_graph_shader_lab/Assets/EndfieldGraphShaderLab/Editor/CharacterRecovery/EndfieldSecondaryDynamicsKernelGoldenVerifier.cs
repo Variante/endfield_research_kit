@@ -50,7 +50,8 @@ namespace EndfieldGraphShaderLabEditor
             VerifyDistanceGoldenVectors();
             VerifyPointCollisionGoldenVectors();
             VerifyBasicPostureGoldenVectors();
-            Debug.Log("Verified tether, Distance, Point-capsule, and BasicPosture native AVX2 vectors exactly.");
+            VerifySimulationEndGoldenVectors();
+            Debug.Log("Verified tether, Distance, Point-capsule, BasicPosture, and Simulation End native AVX2 vectors exactly.");
         }
 
         public static void VerifyTetherGoldenVectors()
@@ -349,6 +350,87 @@ namespace EndfieldGraphShaderLabEditor
             for (int i = 0; i < result.Length; i++)
                 result[i] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(values[i * 4], values[i * 4 + 1], values[i * 4 + 2], values[i * 4 + 3]);
             return result;
+        }
+
+        public static void VerifySimulationEndGoldenVectors()
+        {
+            VerifySimulationEndCase("inactive_bypass", false, -1, 0, 0, 0,
+                D3(2, 3, 4), D3(1, 1, 1), D3(1, 1, 1), 0, 0, F3v(0, 0, 0),
+                new[] { "00000000", "00000000", "00000000" }, new[] { "00000040", "00008040", "0000c040" },
+                new[] { "0000000000000040", "0000000000000840", "0000000000001040" }, "00000000", "00000000");
+            VerifySimulationEndCase("active_unlimited", true, -1, 0, 0, 0,
+                D3(2, 3, 4), D3(1, 1, 1), D3(1, 1, 1), 0, 0, F3v(0, 0, 0),
+                new[] { "00000040", "00008040", "0000c040" }, new[] { "00000040", "00008040", "0000c040" },
+                new[] { "0000000000000040", "0000000000000840", "0000000000001040" }, "00000000", "00000000");
+            VerifySimulationEndCase("active_speed_limit", true, 2, 0, 0, 0,
+                D3(2, 3, 4), D3(1, 1, 1), D3(1, 1, 1), 0, 0, F3v(0, 0, 0),
+                new[] { "77d6083f", "77d6883f", "b341cd3f" }, new[] { "00000040", "00008040", "0000c040" },
+                new[] { "0000000000000040", "0000000000000840", "0000000000001040" }, "00000000", "00000000");
+            VerifySimulationEndCase("static_friction_accumulation", true, -1, 0, 0.5f, 0,
+                D3(0.01, 0, 0), D3(0, 0, 0), D3(-0.5, 0, 0), 0.75f, 0.25f, F3v(0, 1, 0),
+                new[] { "5c8f823f", "00000000", "00000000" }, new[] { "1ea7683c", "00000000", "00000000" },
+                new[] { "d7a370bde3147d3f", "0000000000000000", "0000000000000000" }, "6766e63e", "e17a943e");
+            VerifySimulationEndCase("static_friction_release", true, -1, 0, 0.1f, 0,
+                D3(0.075, 0, 0), D3(0, 0, 0), D3(-0.5, 0, 0), 0.75f, 0.7f, F3v(0, 1, 0),
+                new[] { "3333933f", "00000000", "00000000" }, new[] { "c3f5a83d", "00000000", "00000000" },
+                new[] { "67666652b81ea53f", "0000000000000000", "0000000000000000" }, "6766e63e", "6666e63e");
+            VerifySimulationEndCase("static_friction_no_contact_decay", true, -1, 0, 0.5f, 0,
+                D3(2, 3, 4), D3(1, 1, 1), D3(1, 1, 1), 0.75f, 0.4f, F3v(0, 0, 0),
+                new[] { "00000040", "00008040", "0000c040" }, new[] { "00000040", "00008040", "0000c040" },
+                new[] { "0000000000000040", "0000000000000840", "0000000000001040" }, "6766e63e", "3333b33e");
+            VerifySimulationEndCase("dynamic_friction_attenuation", true, -1, 0.8f, 0, 0,
+                D3(1, 0, 0), D3(0, 0, 0), D3(0, 0, 0), 0.5f, 0, F3v(0, 1, 0),
+                new[] { "3333b33f", "00000000", "00000000" }, new[] { "00000040", "00000000", "00000000" },
+                new[] { "000000000000f03f", "0000000000000000", "0000000000000000" }, "9a99993e", "00000000");
+            VerifySimulationEndCase("center_centrifugal_response", true, -1, 0, 0, 0.5f,
+                D3(2, 0, 0), D3(1, 0, 0), D3(2, 0, 1), 0, 0, F3v(0, 0, 0),
+                new[] { "295c0f3e", "00000000", "000000c0" }, new[] { "00000040", "00000000", "00000000" },
+                new[] { "0000000000000040", "0000000000000000", "0000000000000000" }, "00000000", "00000000",
+                2, F3v(0, 1, 0));
+        }
+
+        private static void VerifySimulationEndCase(string name, bool active, float speedLimit,
+            float dynamicFriction, float staticFrictionParameter, float centrifugalAcceleration,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 next,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 previous,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 velocityPosition,
+            float friction, float staticFriction,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 collisionNormal,
+            string[] velocityBits, string[] realVelocityBits, string[] correctedBits,
+            string frictionBits, string staticFrictionBits, float angularVelocity = 0,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 axis = default)
+        {
+            var velocity = F3v(99, 99, 99);
+            var realVelocity = F3v(99, 99, 99);
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FinishSimulationParticle(
+                active, 0.5f, 1, 1, speedLimit, centrifugalAcceleration, dynamicFriction,
+                staticFrictionParameter, 0.25f, D3(0, 0, 0), angularVelocity,
+                angularVelocity == 0 ? F3v(0, 1, 0) : axis, ref next, previous,
+                ref velocityPosition, ref velocity, ref realVelocity, ref friction,
+                ref staticFriction, collisionNormal);
+            RequireFloat3Bits(name + " velocity", velocity, velocityBits);
+            RequireFloat3Bits(name + " realVelocity", realVelocity, realVelocityBits);
+            RequireBits(name + " corrected", next, correctedBits);
+            RequireFloatBits(name + " friction", friction, frictionBits);
+            RequireFloatBits(name + " staticFriction", staticFriction, staticFrictionBits);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 D3(double x, double y, double z)
+        {
+            return new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(x, y, z);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 F3v(float x, float y, float z)
+        {
+            return new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(x, y, z);
+        }
+
+        private static void RequireFloat3Bits(string label,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 value, string[] expected)
+        {
+            RequireFloatBits(label + ".x", value.x, expected[0]);
+            RequireFloatBits(label + ".y", value.y, expected[1]);
+            RequireFloatBits(label + ".z", value.z, expected[2]);
         }
 
         private static void RequireBits(
