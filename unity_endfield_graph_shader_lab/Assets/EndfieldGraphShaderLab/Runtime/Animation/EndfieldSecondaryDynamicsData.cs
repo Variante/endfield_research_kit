@@ -79,6 +79,11 @@ namespace EndfieldGraphShaderLab
             public float radiusValue;
             public bool radiusUsesCurve;
 
+            public float worldInertia;
+            public float movementInertiaSmoothing;
+            public float localInertia;
+            public float localMovementSpeedLimit;
+            public float localRotationSpeedLimit;
             public float inertiaDepth;
             public bool particleSpeedLimitEnabled;
             public float particleSpeedLimit;

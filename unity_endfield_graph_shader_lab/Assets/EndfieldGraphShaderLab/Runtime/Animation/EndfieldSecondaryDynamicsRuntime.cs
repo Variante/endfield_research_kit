@@ -223,6 +223,12 @@ namespace EndfieldGraphShaderLab
                 }
                 if (FloatBits(inputs.tetherStretchLimit) != 0x3cf5c28fU ||
                     FloatBits(inputs.distanceVelocityAttenuation) != 0x3e99999aU ||
+                    !Finite(inputs.worldInertia) ||
+                    !Finite(inputs.movementInertiaSmoothing) ||
+                    !Finite(inputs.localInertia) ||
+                    !Finite(inputs.localMovementSpeedLimit) ||
+                    !Finite(inputs.localRotationSpeedLimit) ||
+                    inputs.localInertia < 0f || inputs.localInertia > 1f ||
                     !Finite(inputs.colliderDynamicFriction) ||
                     FloatBits(inputs.colliderStaticFriction) !=
                     FloatBits(inputs.colliderDynamicFriction))
