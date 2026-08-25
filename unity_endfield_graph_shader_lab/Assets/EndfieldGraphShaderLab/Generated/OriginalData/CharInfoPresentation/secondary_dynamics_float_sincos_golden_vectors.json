@@ -1,0 +1,417 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-float-sincos-golden-vectors.v1",
+  "status": "native_helper_and_source_only_transcription_exact_for_controlled_and_boundary_cases",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "helper": {
+    "rva": "0x1e5d30",
+    "bytes": 521,
+    "sha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+  },
+  "largeReducer": {
+    "rva": "0x1de840",
+    "bytes": 1134,
+    "sha256": "4e59a40ed0e7702288ddad778c7048e66844dd9f29e024b920961257c082537a"
+  },
+  "reducerTable": {
+    "rva": "0x3c3980",
+    "bytes": 1664,
+    "sha256": "32c2b51dce4fabf449ef59072cfc786c4112f20722d69c7136bb005dd3d8a4ef",
+    "words": 416
+  },
+  "operationContract": {
+    "reductionBranches": [
+      "abs(x) < 125",
+      "125 <= abs(x) < 39000",
+      "finite abs(x) >= 39000",
+      "infinity or NaN -> canonical quiet NaN"
+    ],
+    "smallSplitBits": [
+      "bfc90e00",
+      "b86d5000",
+      "b0885a31"
+    ],
+    "mediumSplitBits": [
+      "bfc90000",
+      "b9fd8000",
+      "b4a88000",
+      "ae85a309"
+    ],
+    "sinePolynomialBits": [
+      "b94ca65b",
+      "3c08839a",
+      "be2aaaa2"
+    ],
+    "cosinePolynomialBits": [
+      "b491ed89",
+      "37d0078b",
+      "bab60b58",
+      "3d2aaaaa",
+      "bf000000",
+      "3f800000"
+    ],
+    "quadrant": "n low bits swap sine/cosine and XOR sign bits; cosine sign uses n+1",
+    "specialCases": "negative zero preserves sine sign; infinities and all NaNs return canonical qNaN lanes",
+    "sourceCallsNativeHelper": false,
+    "sourceReadsNativeReducerTable": false
+  },
+  "harnessSha256": "671fe2f40a7301a2dbb00e88c23a3b273af482e86c2f6980d1f585c2fa720b86",
+  "vectors": [
+    {
+      "name": "positive_zero",
+      "input": {
+        "float32": 0.0,
+        "bitsLe": "00000000"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": 0.0,
+        "sinBitsLe": "00000000",
+        "cosFloat32": 1.0,
+        "cosBitsLe": "0000803f"
+      }
+    },
+    {
+      "name": "negative_zero",
+      "input": {
+        "float32": -0.0,
+        "bitsLe": "00000080"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": -0.0,
+        "sinBitsLe": "00000080",
+        "cosFloat32": 1.0,
+        "cosBitsLe": "0000803f"
+      }
+    },
+    {
+      "name": "smallest_subnormal",
+      "input": {
+        "float32": 1.401298464324817e-45,
+        "bitsLe": "01000000"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": 1.401298464324817e-45,
+        "sinBitsLe": "01000000",
+        "cosFloat32": 1.0,
+        "cosBitsLe": "0000803f"
+      }
+    },
+    {
+      "name": "negative_smallest_subnormal",
+      "input": {
+        "float32": -1.401298464324817e-45,
+        "bitsLe": "01000080"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": -1.401298464324817e-45,
+        "sinBitsLe": "01000080",
+        "cosFloat32": 1.0,
+        "cosBitsLe": "0000803f"
+      }
+    },
+    {
+      "name": "one",
+      "input": {
+        "float32": 1.0,
+        "bitsLe": "0000803f"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": 0.8414709568023682,
+        "sinBitsLe": "a46a573f",
+        "cosFloat32": 0.5403022766113281,
+        "cosBitsLe": "40510a3f"
+      }
+    },
+    {
+      "name": "minus_one",
+      "input": {
+        "float32": -1.0,
+        "bitsLe": "000080bf"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": -0.8414709568023682,
+        "sinBitsLe": "a46a57bf",
+        "cosFloat32": 0.5403022766113281,
+        "cosBitsLe": "40510a3f"
+      }
+    },
+    {
+      "name": "pi_over_four",
+      "input": {
+        "float32": 0.7853981852531433,
+        "bitsLe": "db0f493f"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": 0.7071068286895752,
+        "sinBitsLe": "f404353f",
+        "cosFloat32": 0.7071067690849304,
+        "cosBitsLe": "f304353f"
+      }
+    },
+    {
+      "name": "small_below_125",
+      "input": {
+        "float32": 124.99999237060547,
+        "bitsLe": "fffff942"
+      },
+      "path": "small_split_pi_over_2",
+      "output": {
+        "sinFloat32": -0.6160464286804199,
+        "sinBitsLe": "38b51dbf",
+        "cosFloat32": 0.7877098321914673,
+        "cosBitsLe": "5aa7493f"
+      }
+    },
+    {
+      "name": "small_at_125",
+      "input": {
+        "float32": 125.0,
+        "bitsLe": "0000fa42"
+      },
+      "path": "medium_split_pi_over_2",
+      "output": {
+        "sinFloat32": -0.6160404682159424,
+        "sinBitsLe": "d4b41dbf",
+        "cosFloat32": 0.7877144813537598,
+        "cosBitsLe": "a8a7493f"
+      }
+    },
+    {
+      "name": "small_above_125",
+      "input": {
+        "float32": 125.00000762939453,
+        "bitsLe": "0100fa42"
+      },
+      "path": "medium_split_pi_over_2",
+      "output": {
+        "sinFloat32": -0.6160344481468201,
+        "sinBitsLe": "6fb41dbf",
+        "cosFloat32": 0.7877192497253418,
+        "cosBitsLe": "f8a7493f"
+      }
+    },
+    {
+      "name": "negative_125",
+      "input": {
+        "float32": -125.0,
+        "bitsLe": "0000fac2"
+      },
+      "path": "medium_split_pi_over_2",
+      "output": {
+        "sinFloat32": 0.6160404682159424,
+        "sinBitsLe": "d4b41d3f",
+        "cosFloat32": 0.7877144813537598,
+        "cosBitsLe": "a8a7493f"
+      }
+    },
+    {
+      "name": "medium_below_39000",
+      "input": {
+        "float32": 38999.99609375,
+        "bitsLe": "ff571847"
+      },
+      "path": "medium_split_pi_over_2",
+      "output": {
+        "sinFloat32": 0.26180511713027954,
+        "sinBitsLe": "520b863e",
+        "cosFloat32": 0.965120792388916,
+        "cosBitsLe": "2812773f"
+      }
+    },
+    {
+      "name": "large_at_39000",
+      "input": {
+        "float32": 39000.0,
+        "bitsLe": "00581847"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": 0.265573114156723,
+        "sinBitsLe": "33f9873e",
+        "cosFloat32": 0.9640907049179077,
+        "cosBitsLe": "a6ce763f"
+      }
+    },
+    {
+      "name": "large_above_39000",
+      "input": {
+        "float32": 39000.00390625,
+        "bitsLe": "01581847"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": 0.2693370580673218,
+        "sinBitsLe": "8ce6893e",
+        "cosFloat32": 0.9630459547042847,
+        "cosBitsLe": "2e8a763f"
+      }
+    },
+    {
+      "name": "negative_39000",
+      "input": {
+        "float32": -39000.0,
+        "bitsLe": "005818c7"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": -0.265573114156723,
+        "sinBitsLe": "33f987be",
+        "cosFloat32": 0.9640907049179077,
+        "cosBitsLe": "a6ce763f"
+      }
+    },
+    {
+      "name": "large_power",
+      "input": {
+        "float32": 2147483648.0,
+        "bitsLe": "0000004f"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": -0.9713101983070374,
+        "sinBitsLe": "c9a778bf",
+        "cosFloat32": 0.2378161996603012,
+        "cosBitsLe": "1786733e"
+      }
+    },
+    {
+      "name": "very_large",
+      "input": {
+        "float32": 1.0000000150474662e+30,
+        "bitsLe": "caf24971"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": -0.791163444519043,
+        "sinBitsLe": "b0894abf",
+        "cosFloat32": -0.6116047501564026,
+        "cosBitsLe": "21921cbf"
+      }
+    },
+    {
+      "name": "maximum_finite",
+      "input": {
+        "float32": 3.4028234663852886e+38,
+        "bitsLe": "ffff7f7f"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": -0.5218765139579773,
+        "sinBitsLe": "b39905bf",
+        "cosFloat32": 0.8530210256576538,
+        "cosBitsLe": "965f5a3f"
+      }
+    },
+    {
+      "name": "negative_maximum_finite",
+      "input": {
+        "float32": -3.4028234663852886e+38,
+        "bitsLe": "ffff7fff"
+      },
+      "path": "large_table_reducer",
+      "output": {
+        "sinFloat32": 0.5218765139579773,
+        "sinBitsLe": "b399053f",
+        "cosFloat32": 0.8530210256576538,
+        "cosBitsLe": "965f5a3f"
+      }
+    },
+    {
+      "name": "positive_infinity",
+      "input": {
+        "float32": Infinity,
+        "bitsLe": "0000807f"
+      },
+      "path": "nonfinite_canonical_nan",
+      "output": {
+        "sinFloat32": NaN,
+        "sinBitsLe": "0000c07f",
+        "cosFloat32": NaN,
+        "cosBitsLe": "0000c07f"
+      }
+    },
+    {
+      "name": "negative_infinity",
+      "input": {
+        "float32": -Infinity,
+        "bitsLe": "000080ff"
+      },
+      "path": "nonfinite_canonical_nan",
+      "output": {
+        "sinFloat32": NaN,
+        "sinBitsLe": "0000c07f",
+        "cosFloat32": NaN,
+        "cosBitsLe": "0000c07f"
+      }
+    },
+    {
+      "name": "quiet_nan_payload",
+      "input": {
+        "float32": NaN,
+        "bitsLe": "4523c17f"
+      },
+      "path": "nonfinite_canonical_nan",
+      "output": {
+        "sinFloat32": NaN,
+        "sinBitsLe": "0000c07f",
+        "cosFloat32": NaN,
+        "cosBitsLe": "0000c07f"
+      }
+    },
+    {
+      "name": "negative_quiet_nan",
+      "input": {
+        "float32": NaN,
+        "bitsLe": "2143c5ff"
+      },
+      "path": "nonfinite_canonical_nan",
+      "output": {
+        "sinFloat32": NaN,
+        "sinBitsLe": "0000c07f",
+        "cosFloat32": NaN,
+        "cosBitsLe": "0000c07f"
+      }
+    },
+    {
+      "name": "signaling_nan_payload",
+      "input": {
+        "float32": NaN,
+        "bitsLe": "4523a17f"
+      },
+      "path": "nonfinite_canonical_nan",
+      "output": {
+        "sinFloat32": NaN,
+        "sinBitsLe": "0000c07f",
+        "cosFloat32": NaN,
+        "cosBitsLe": "0000c07f"
+      }
+    }
+  ],
+  "boundary": {
+    "nativeHelperExecuted": true,
+    "sourceOnlyTranscriptionMatchedBitForBit": true,
+    "caseCount": 24
+  }
+}
