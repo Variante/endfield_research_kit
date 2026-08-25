@@ -151,17 +151,19 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             if (data.solverInputs == null || data.payloadDecode == null ||
-                data.ownerRecovery == null ||
+                data.ownerRecovery == null || data.curveSamples == null ||
                 string.IsNullOrEmpty(data.solverInputsSha256) ||
                 string.IsNullOrEmpty(data.payloadDecodeSha256) ||
-                string.IsNullOrEmpty(data.ownerRecoverySha256))
+                string.IsNullOrEmpty(data.ownerRecoverySha256) ||
+                string.IsNullOrEmpty(data.curveSamplesSha256))
             {
                 failure = "source contract references or hashes are missing";
                 return false;
             }
             if (!HashMatches(data.solverInputs, data.solverInputsSha256) ||
                 !HashMatches(data.payloadDecode, data.payloadDecodeSha256) ||
-                !HashMatches(data.ownerRecovery, data.ownerRecoverySha256))
+                !HashMatches(data.ownerRecovery, data.ownerRecoverySha256) ||
+                !HashMatches(data.curveSamples, data.curveSamplesSha256))
             {
                 failure = "source contract hash differs from generated binding data";
                 return false;
@@ -193,6 +195,17 @@ namespace EndfieldGraphShaderLab
             var unique = new HashSet<string>(StringComparer.Ordinal);
             foreach (EndfieldSecondaryDynamicsData.Owner owner in data.owners)
             {
+                EndfieldSecondaryDynamicsData.SolverInputs inputs = owner.solverInputs;
+                if (!inputs.compiledCurveSamplesRecovered ||
+                    !HasCurve(inputs.dampingCurveData) ||
+                    !HasCurve(inputs.radiusCurveData) ||
+                    !HasCurve(inputs.distanceRestorationStiffness) ||
+                    !HasCurve(inputs.angleRestorationStiffness) ||
+                    !HasCurve(inputs.angleLimit))
+                {
+                    failure = "compiled curve samples differ for " + owner.ownerPath;
+                    return false;
+                }
                 if (transform.Find(owner.ownerPath) == null ||
                     transform.Find(owner.centerTransformPath) == null)
                 {
@@ -234,6 +247,10 @@ namespace EndfieldGraphShaderLab
             failure = "";
             return true;
         }
+
+        private static bool HasCurve(float[] values) =>
+            values != null && values.Length == 16 &&
+            values.All(value => !float.IsNaN(value) && !float.IsInfinity(value));
 
         private static void InstallPlayerLoop()
         {
