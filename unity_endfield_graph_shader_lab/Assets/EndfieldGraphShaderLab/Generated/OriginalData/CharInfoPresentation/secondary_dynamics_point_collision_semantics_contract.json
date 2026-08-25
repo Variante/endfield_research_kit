@@ -180,7 +180,7 @@
   "implementationBoundary": {
     "equationsClosed": true,
     "helperGap": false,
-    "goldenVectorsCaptured": false,
+    "goldenVectorsCaptured": true,
     "solverImplemented": false,
     "retailEquivalent": false
   }
