@@ -915,64 +915,30 @@ seconds, matching the authored 2000/s emission window. Continue from the exact
 soft-depth/particle-vertex/presentation ABI rather than retiming the system or
 attenuating its source properties.
 
-The exact-build secondary-dynamics session at
-`scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
-`UseCrossFrameJob=true` and exclusively false `useRelativeTransform` reads,
-but does not identify the four Endminf TeamData owners; its own summary records
-`endminfFourOwnerCertification=false`. A 770-frame diagnostic run of the
-recovered four-owner solver/coordinator and source-ordered TransformAccess
-publication proved bounded execution but failed visible retail-shape review:
-during the entrance it inflated the cape into a broad rigid sheet and degraded
-hanging-strip/hair silhouettes. Solver writeback is therefore diagnostic-only,
-default-off, and session-uncertified until an owner-identity join and a
-phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
-the authored baseline; entrance VFX, cleanup, and rotation-only root motion
-remain active.
+Exact-build session
+`scratch/reverse_engineering/endfield_capture/20260825T230225Z` is the complete
+replacement secondary-dynamics capture. Its finalized, lossless ten-second
+window records 598 readable `ClothUpdate` calls with
+`UseCrossFrameJob=true`, 598 matching direct-array scans, and all 184 live
+TeamData rows on every scan. All 110,032 `useRelativeTransform` reads are false,
+with zero unreadable scans, overflow, dropped events, or invalid records. The
+strict session builder verifies the exact game build, collector inventory and
+hashes, shutdown cleanup, full row/call cadence, and bounded universal coverage;
+the generated contract is therefore target-certified for
+`useRelativeTransform=false`, `UseCrossFrameJob=true`, ordinary Transform reads,
+and TransformAccess writeback. EndfieldCapture's retained-row bound is 256 and
+its exact 171-row regression plus the complete 14-test Release suite pass.
 
-The exact-build dynamics sessions at
-`scratch/reverse_engineering/endfield_capture/20260825T220029Z` and
-`scratch/reverse_engineering/endfield_capture/20260825T221253Z` are complete
-and lossless and independently observe 584 and 641 stable
-`UseCrossFrameJob=true` calls. Neither is a TeamData-value result. The first
-records zero rows because settled `AlwaysTeamUpdate` can skip the hooked
-`GetTeamDataRef`; the second reports all 641 direct-array scans unreadable and
-therefore correctly fails bounded certification. Pinned `AlwaysTeamUpdate` and
-`GetTeamDataRef` machine code resolve the second instrumentation defect:
-manager `+0x10` is an `ExNativeArray<TeamData>` object reference, not an inline
-`NativeArray`; its payload pointer is wrapper `+0x10` and its logical count is
-wrapper `+0x28`. EndfieldCapture now follows that two-level layout after every
-exact `AlwaysTeamUpdate`, using the closed 464-byte TeamData stride and
-`useRelativeTransform` offset `+0x9c`. A synthetic layout test covers the exact
-manager/wrapper/payload/count chain, and all 14 tests pass. One replacement
-dynamics window is still required before enabling writeback.
-
-Session `20260825T224730Z` validates that repaired pointer chain across 740
-readable scans and exposes 171 live TeamData rows per scan. Every one of the
-128 retained rows stays false for all 740 samples and `UseCrossFrameJob` stays
-true, but the former 128-row telemetry bound drops the last 43 rows on every
-scan (`relativeSlotOverflow=31820`), so the package correctly remains
-uncertified. The recorder bound is now 256 and a 171-unique-row regression test
-passes with zero overflow; the complete 14-test Release suite passes. A final
-replacement window is required because the omitted rows in the old package
-cannot be reconstructed.
-
-The captured skinning oracle now supplies the phase-sequenced retail shape
-target, and the deterministic owner-path comparison confirms that the authored
-baseline is already close in the settled loop but diverges substantially during
-the entrance. The recovered solver still fails closed because neither existing
-session certifies the four Endminf TeamData identities. The remaining admission
-evidence is one bounded Endminf `Numpad 5` dynamics window with the repaired
-direct-array collector, recording bounded universal coverage while confirming
-the maintained cross-frame route.
-The native contract already closes ordinary Transform reads and TransformAccess
-writes; do not bypass the session gate or enable writeback from the graphics
-oracle alone. The session-contract builder now accepts an explicit capture root
-and derives direct-isolation, bounded-universal-false, or unresolved status from
-the collected window instead of hard-coding the old session result. Run
-`build_secondary_dynamics_session_certification_contract.py` with the explicit
-`--session-root` and `--require-certified`; it verifies the exact build,
-collector/hash integrity, stable cross-frame value, all relative-transform
-observations, and four-lane cadence before publishing.
+Certification closes the retail settings route, not the recovered solver's
+numeric behavior. A prior 770-frame diagnostic run inflated the entrance cape
+into a broad rigid sheet and degraded hanging-strip and hair silhouettes. The
+captured skinning oracle shows that the authored baseline is already close in
+the settled loop but diverges during the entrance. Solver writeback therefore
+remains default-off until a phase-paired run passes the retail shape gate;
+normal actor/VFX reproduction retains the authored baseline. Regenerate the
+session contract with an explicit `--session-root` and `--require-certified`;
+the builder supports the current direct-array full-scan evidence and rejects
+partial rows or incomplete collection.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,

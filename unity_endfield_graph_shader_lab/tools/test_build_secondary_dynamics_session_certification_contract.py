@@ -36,7 +36,8 @@ class SessionCertificationContractTests(unittest.TestCase):
         self.assertEqual(contract["window"]["relativeTrueCalls"], 0)
         self.assertFalse(contract["boundary"]["endminfFourOwnerCertification"])
 
-    def build_synthetic_session(self, certified=True, team_count=5):
+    def build_synthetic_session(self, certified=True, team_count=5,
+                                direct_array=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name) / "20260825T200000Z"
@@ -75,7 +76,6 @@ class SessionCertificationContractTests(unittest.TestCase):
             "crossFrameUnreadableCalls": 0,
             "crossFrameStable": True,
             "crossFrameValue": True,
-            "teamDataGetterCalls": 40,
             "relativeSlotOverflow": 0,
             "teamCount": team_count,
             "allObservedRelativeFalse": True,
@@ -91,6 +91,14 @@ class SessionCertificationContractTests(unittest.TestCase):
             "endminfCoveredByUniversalFalse": certified,
             "endminfFourOwnerCertification": certified,
         }
+        if direct_array:
+            window["teamDataArrayScans"] = 10
+            window["teamDataArrayUnreadableScans"] = 0
+            window["teamDataSampleCalls"] = 10 * team_count
+            for row in window["observations"]:
+                row["falseCalls"] = 10
+        else:
+            window["teamDataGetterCalls"] = 40
         paths = {
             "session.json": session,
             "collected/summary.json": writer,
@@ -135,6 +143,29 @@ class SessionCertificationContractTests(unittest.TestCase):
             contract["boundary"]["certificationMode"],
             "direct_four_owner_isolation",
         )
+
+    def test_direct_array_window_requires_complete_all_row_cadence(self):
+        root, _ = self.build_synthetic_session(
+            team_count=173, direct_array=True)
+        contract = MODULE.build(root, require_certified=True)
+        self.assertEqual(contract["window"]["observationMode"],
+                         "direct_array_full_scan")
+        self.assertEqual(contract["window"]["teamDataArrayScans"], 10)
+        self.assertEqual(contract["window"]["teamDataSampleCalls"], 1730)
+        self.assertEqual(contract["window"]["activeTeamLanesPerSettledCall"],
+                         173)
+        self.assertEqual(contract["window"]["warmupClothUpdateCalls"], 0)
+
+    def test_direct_array_window_rejects_one_missing_row_sample(self):
+        root, window = self.build_synthetic_session(
+            team_count=173, direct_array=True)
+        window["observations"][-1]["falseCalls"] = 9
+        window["teamDataSampleCalls"] -= 1
+        (root / "secondary-dynamics/windows.jsonl").write_text(
+            json.dumps(window) + "\n", encoding="utf-8"
+        )
+        with self.assertRaisesRegex(ValueError, "cover every retained row"):
+            MODULE.build(root, require_certified=True)
 
     def test_require_certified_rejects_old_window_semantics(self):
         root, _ = self.build_synthetic_session(certified=False)

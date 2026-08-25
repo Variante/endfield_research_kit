@@ -338,6 +338,28 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Refresh Endminf Secondary Dynamics Binding")]
+        public static void RefreshGeneratedEndminfBinding()
+        {
+            GameObject root = PrefabUtility.LoadPrefabContents(EndminfPrefabPath);
+            try
+            {
+                const string generatedRoot =
+                    "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf";
+                Configure(root, "Endminf", generatedRoot);
+                PrefabUtility.SaveAsPrefabAsset(root, EndminfPrefabPath);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            VerifyGeneratedEndminfBinding();
+            Debug.Log("Refreshed the certified, default-off Endminf secondary-dynamics binding.");
+        }
+
         [MenuItem("Endfield/Character Recovery Lab/Verify Endminf Secondary Dynamics Binding")]
         public static void VerifyGeneratedEndminfBinding()
         {
@@ -347,12 +369,12 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldSecondaryDynamicsRuntime runtime =
                 prefab.GetComponent<EndfieldSecondaryDynamicsRuntime>();
             if (runtime == null || runtime.data == null || runtime.SolverWritebackEnabled ||
-                runtime.data.sessionCertified || runtime.data.sessionUseRelativeTransform ||
+                !runtime.data.sessionCertified || runtime.data.sessionUseRelativeTransform ||
                 !runtime.data.sessionUseCrossFrameJob || runtime.data.sessionUseAnimatorTransform ||
                 !string.Equals(runtime.data.sessionWritebackRoute, "TransformAccess",
                     StringComparison.Ordinal))
                 throw new InvalidDataException(
-                    "Generated Endminf secondary-dynamics coordinator is missing or not fail-closed.");
+                    "Generated Endminf secondary-dynamics coordinator is missing, uncertified, or not default-off.");
             EndfieldSecondaryDynamicsOwnerContract.BindingAudit audit =
                 EndfieldSecondaryDynamicsOwnerContract.Verify(prefab, "Endminf", SolverInputsPath);
             if (!audit.owner_binding_verified ||
@@ -368,8 +390,8 @@ namespace EndfieldGraphShaderLabEditor
 
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
-                "100 unique transforms, 26 overlaps, and fail-closed runtime; " +
-                "the live capture does not certify the four owner identities.");
+                "100 unique transforms, 26 overlaps, a certified retail settings route, " +
+                "and default-off solver writeback.");
         }
 
         private static Dictionary<string, object> ActorRow(string json, string actorKey)
