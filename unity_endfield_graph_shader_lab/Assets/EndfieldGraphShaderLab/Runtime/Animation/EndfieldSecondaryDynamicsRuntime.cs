@@ -196,7 +196,8 @@ namespace EndfieldGraphShaderLab
             foreach (EndfieldSecondaryDynamicsData.Owner owner in data.owners)
             {
                 EndfieldSecondaryDynamicsData.SolverInputs inputs = owner.solverInputs;
-                if (!inputs.compiledCurveSamplesRecovered ||
+                if (!inputs.authoredScalarsRecovered ||
+                    !inputs.compiledCurveSamplesRecovered ||
                     !HasCurve(inputs.dampingCurveData) ||
                     !HasCurve(inputs.radiusCurveData) ||
                     !HasCurve(inputs.distanceRestorationStiffness) ||
@@ -204,6 +205,16 @@ namespace EndfieldGraphShaderLab
                     !HasCurve(inputs.angleLimit))
                 {
                     failure = "compiled curve samples differ for " + owner.ownerPath;
+                    return false;
+                }
+                if (FloatBits(inputs.tetherStretchLimit) != 0x3cf5c28fU ||
+                    FloatBits(inputs.distanceVelocityAttenuation) != 0x3e99999aU ||
+                    !Finite(inputs.colliderDynamicFriction) ||
+                    FloatBits(inputs.colliderStaticFriction) !=
+                    FloatBits(inputs.colliderDynamicFriction))
+                {
+                    failure = "retail GetClothParameters scalar packing differs for " +
+                        owner.ownerPath;
                     return false;
                 }
                 if (transform.Find(owner.ownerPath) == null ||
@@ -251,6 +262,12 @@ namespace EndfieldGraphShaderLab
         private static bool HasCurve(float[] values) =>
             values != null && values.Length == 16 &&
             values.All(value => !float.IsNaN(value) && !float.IsInfinity(value));
+
+        private static bool Finite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
+
+        private static uint FloatBits(float value) =>
+            BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
 
         private static void InstallPlayerLoop()
         {
