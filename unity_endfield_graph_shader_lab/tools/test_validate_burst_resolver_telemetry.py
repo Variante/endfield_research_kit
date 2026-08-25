@@ -167,7 +167,7 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         self.assertFalse(result["claims"]["resolverExportMappingProven"])
         self.assertFalse(result["claims"]["gameStateWritten"])
 
-    def test_all_three_target_windows_are_counted_without_execution_claim(self) -> None:
+    def test_all_target_windows_are_counted_without_execution_claim(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "trace.jsonl"
             self._write_trace(path)
@@ -204,19 +204,21 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             get_index = next(index for index, row in enumerate(rows) if row["kind"] == "get_proc_address")
             rows[get_index:get_index + 1] = [first, *extra_events]
             stop_ack = next(row for row in rows if row["kind"] == "capture_stop_ack")
-            stop_ack["eventCount"] = 3
+            stop_ack["eventCount"] = len(manifest["targets"])
             for seq, row in enumerate(rows):
                 row["seq"] = seq
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             result = validator.validate_trace(path)
-        self.assertEqual(result["hashedExportRequestCount"], 3)
-        self.assertEqual(result["hashedExportRequestsWithTargetAttribution"], 3)
+        self.assertEqual(result["hashedExportRequestCount"], 5)
+        self.assertEqual(result["hashedExportRequestsWithTargetAttribution"], 5)
         self.assertEqual(
             result["targetWindowObservations"],
             {
                 "start_simulation_step_range_kernel": 1,
                 "update_step_basic_poture_range_kernel": 1,
                 "end_simulation_step_range_kernel": 1,
+                "collider_start_simulation_step_range_kernel": 1,
+                "collider_end_simulation_step_range_kernel": 1,
             },
         )
         self.assertTrue(result["claims"]["allThreeTargetWindowsObserved"])
