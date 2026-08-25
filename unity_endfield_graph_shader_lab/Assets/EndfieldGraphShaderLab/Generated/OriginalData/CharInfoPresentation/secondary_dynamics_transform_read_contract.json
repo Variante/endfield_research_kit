@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-transform-read.v1",
-  "status": "endminf_transform_read_and_base_input_publication_closed_with_relative_route_boundary",
+  "status": "endminf_transform_read_closed_with_live_relative_and_cross_frame_boundaries",
   "nativeGate": {
     "status": "validated",
     "gameAssembly": {
@@ -85,8 +85,119 @@
         "fileOffset": "0x67462ec",
         "bytes": 1760,
         "sha256": "23a1856ddf09c6ff6e71af8d07b983e76af5a7ddf9ff32a7ba042f46341cee33"
+      },
+      {
+        "name": "MagicaManager..cctor through static defaults",
+        "methodIndex": 385109,
+        "va": "0x184cf53d0",
+        "fileOffset": "0x4cf39d0",
+        "bytes": 171,
+        "sha256": "20a1f98600d1dd19a0d48fb654d54887f535a629f661b5df0a374c34ada7155b"
+      },
+      {
+        "name": "BeyondBoneCloth.get_bUseRelativeTransform",
+        "methodIndex": 383548,
+        "va": "0x184d86f90",
+        "fileOffset": "0x4d85590",
+        "bytes": 5,
+        "sha256": "dd59d7db8b7cc28acba8b73658d8a5d3ff5c6184e1209c8a81e6e6c41512b249"
+      },
+      {
+        "name": "TeamData.get_bUseRelativeTransform active body",
+        "methodIndex": 384682,
+        "va": "0x18673e0d4",
+        "fileOffset": "0x673c6d4",
+        "bytes": 41,
+        "sha256": "18acb47564555c60fcb1b34f31d94567a25dc24314cb839e9c5a7937ada6b4c4"
+      },
+      {
+        "name": "TeamManager.AlwaysTeamUpdate primary relative propagation",
+        "methodIndex": 384596,
+        "va": "0x1835bf8f0",
+        "fileOffset": "0x35bdef0",
+        "bytes": 51,
+        "sha256": "9d02ec2876a1f13b0c401cdfa78c94a437770f02c1d897cd9eb5142d3f7e87b8"
+      },
+      {
+        "name": "TeamManager.AlwaysTeamUpdate synchronized relative propagation",
+        "methodIndex": 384596,
+        "va": "0x1835bfc85",
+        "fileOffset": "0x35be285",
+        "bytes": 53,
+        "sha256": "859c08440b5cd1a269056b6adf60a7528812f2a66e891eee393a2d004d74f8c0"
+      },
+      {
+        "name": "DynamicBoneTransformManager.CopyDoubleBuffer active body",
+        "methodIndex": 384479,
+        "va": "0x183d42300",
+        "fileOffset": "0x3d40900",
+        "bytes": 335,
+        "sha256": "cda347050a942ff4ccc2aaa35d7d064b36a4087f06b4c9b17e9eeef9f1f98e18"
+      },
+      {
+        "name": "ClothManager.ClothUpdate transform-input branch region",
+        "methodIndex": 384441,
+        "va": "0x182f91cc9",
+        "fileOffset": "0x2f902c9",
+        "bytes": 772,
+        "sha256": "c13f2c0c6e0f90e21026902783f404ec7c4bc9a4247ee125a5c7c58cd1e4d017"
       }
     ],
+    "routeAudit": {
+      "directCalls": {
+        "CopyDoubleBuffer": {
+          "targetVa": "0x183d42300",
+          "directCallCount": 0,
+          "sourceVas": []
+        },
+        "ReadTransform": {
+          "targetVa": "0x183b127d0",
+          "directCallCount": 2,
+          "sourceVas": [
+            "0x182f91d47",
+            "0x182f91ffb"
+          ]
+        },
+        "ReadAnimatorBufferData": {
+          "targetVa": "0x186725e4c",
+          "directCallCount": 1,
+          "sourceVas": [
+            "0x182f91e60"
+          ]
+        },
+        "BeyondBoneCloth.SetRelativeTransform": {
+          "targetVa": "0x18668ce7c",
+          "directCallCount": 4,
+          "sourceVas": [
+            "0x186c647ab",
+            "0x186c6487f",
+            "0x18742c7f5",
+            "0x18742cf34"
+          ]
+        },
+        "MagicaManager.SetUseCrossFrameJob": {
+          "targetVa": "0x186750314",
+          "directCallCount": 3,
+          "sourceVas": [
+            "0x186da2e5b",
+            "0x186dbfe79",
+            "0x186dc0040"
+          ]
+        }
+      },
+      "magicaManagerStaticFields": {
+        "typeInfoSlotVa": "0x18e396218",
+        "cctorDefaults": {
+          "EnableTick": true,
+          "UseCrossFrameJob": true,
+          "UseAnimatorTransform": false
+        },
+        "useAnimatorTransformCompiledWriterVas": [
+          "0x184cf5449"
+        ],
+        "useAnimatorTransformWriterBoundary": "the sole compiled writer is MagicaManager..cctor; no managed setter exists in pinned metadata"
+      }
+    },
     "ifix": {
       "readTransformJobPatchId": "0x34e",
       "route": "unpatched native body only",
@@ -4110,6 +4221,12 @@
       "lastlocalPositionArray = copy(localPositionArray)",
       "lastlocalRotationArray = copy(localRotationArray)"
     ],
+    "copyDoubleBufferCadence": {
+      "publicMethodDirectCallCountInPinnedImage": 0,
+      "callsPerClothUpdate": 0,
+      "activeRoute": "not called by ClothManager.ClothUpdate; CopyDoubleBufferJob is therefore not scheduled by the statically closed target pipeline",
+      "boundary": "the copy equations describe the dormant public method, not an invented per-frame current-to-last transition"
+    },
     "readTransformJobGates": [
       "TransformAccess is valid",
       "(flag & 0x10) != 0",
@@ -4133,15 +4250,61 @@
       "rotationArray[i]": "quaternion(transform.rotation) when useRelativeTransform == 0; relative-space transformed rotation otherwise",
       "lastArrays": "not written by ReadTransformJob"
     },
+    "sourceStaticBranch": {
+      "UseAnimatorTransform": {
+        "value": false,
+        "proof": "MagicaManager..cctor writes static_fields+0x0a = 0; an exhaustive compiled TypeInfo writer audit finds no other writer and pinned metadata exposes no setter",
+        "selectedRoute": "ordinary TransformAccess ReadTransform route; ReadAnimatorBufferData is skipped"
+      },
+      "UseCrossFrameJob": {
+        "cctorDefault": true,
+        "defaultRoute": "the second ReadTransform call at ClothUpdate+0x75b is skipped",
+        "targetLiveValueClosed": false,
+        "boundary": "SetUseCrossFrameJob has three compiled callers in cinematic/main-stream timeline managers; static evidence does not prove whether one ran before ui_overview_start/loop"
+      }
+    },
     "perFrameOrdering": [
       "ReadTransform call site 1191",
       "WriteDoubleBufferTransform call site 1232",
-      "optional animator-buffer read",
-      "ReadTransform call site 1883",
+      "ReadAnimatorBufferData skipped because UseAnimatorTransform is false",
+      "second ReadTransform call site 1883 only when live UseCrossFrameJob is false",
       "PreProxyMeshUpdate",
       "SimulationStepUpdate"
     ],
-    "orderingBoundary": "The two ReadTransform call sites and intervening WriteDoubleBufferTransform are exact. Static evidence does not select the Endminf animator branch or prove a per-frame caller of public CopyDoubleBuffer; its exact copy equation is retained without inventing a call site."
+    "orderingBoundary": "The animator-buffer branch is source-statically closed off. The cctor-default cross-frame route skips the second ReadTransform, but the target-live cross-frame value remains unproved because compiled timeline callers can change it. Public CopyDoubleBuffer has zero direct call sites and zero calls in ClothUpdate."
+  },
+  "teamRelativeTransform": {
+    "clothBackingField": "BeyondBoneCloth.<bUseRelativeTransform>k__BackingField at object+0x78",
+    "initialValue": false,
+    "initialValueBasis": "the backing field is absent from all four Endminf serialized type trees and is zero-initialized; serialized relativeTransformPos/Rot do not enable it",
+    "teamPropagation": "AlwaysTeamUpdate writes TeamData.useRelativeTransform at native payload+0x9c from (cloth object+0x78 != 0) on both primary and synchronized routes",
+    "teamBooleanEquation": "TeamData.bUseRelativeTransform = (useRelativeTransform > 0)",
+    "compiledMutators": [
+      {
+        "method": "CharacterAnimationComponent.SetClothTransformPreTeleport",
+        "callSites": [
+          "0x186c647ab",
+          "0x186c6487f"
+        ],
+        "value": true
+      },
+      {
+        "method": "NPC.Animation.ClothCalculator.ResetCloth",
+        "callSites": [
+          "0x18742c7f5"
+        ],
+        "value": false
+      },
+      {
+        "method": "NPC.Animation.ClothCalculator.TeleportClothUseRelativeTransform",
+        "callSites": [
+          "0x18742cf34"
+        ],
+        "value": true
+      }
+    ],
+    "targetLiveValueClosed": false,
+    "boundary": "static assets prove the initial false value and native code proves the compiled mutator call sites plus propagation equation, but not which teleport/reset calls occurred before or during the captured UI sequence"
   },
   "baseInputPublication": {
     "managerInput": "ReadTransformJob localToWorldMatrixArray for every active 0/1/2 attribute",
@@ -4166,15 +4329,19 @@
     "allSixTransformReadChannelsClosed": true,
     "managerInitializationClosed": true,
     "copyDoubleBufferEquationsClosed": true,
+    "copyDoubleBufferActiveCadenceClosed": true,
     "readTransformCurrentArrayEquationsClosed": true,
     "endminfOneBoneProxyMappingClosed": true,
     "duplicateEntryMappingClosed": true,
+    "animatorBufferBranchClosed": true,
+    "useRelativeTransformInitialValueClosed": true,
+    "useRelativeTransformTargetLiveValueClosed": false,
+    "useCrossFrameJobTargetLiveValueClosed": false,
     "targetReady": false,
-    "targetReadySubset": "the active, unpatched, non-relative owner-solver input route is complete when actual Unity Transform samples and exact team state are supplied",
+    "targetReadySubset": "the unpatched ordinary TransformAccess route, dormant CopyDoubleBuffer cadence, and animator-buffer exclusion are closed; live relative/cross-frame state still requires target-session evidence",
     "unresolved": [
-      "live Endminf TeamData.useRelativeTransform value and the general relative-space numeric branch",
-      "which conditional ClothUpdate ReadTransform/animator-buffer branch executes for the target session",
-      "a concrete per-frame call site for public CopyDoubleBuffer",
+      "live Endminf TeamData.useRelativeTransform after possible character teleport/reset calls",
+      "live MagicaManager.UseCrossFrameJob after possible cinematic/main-stream timeline calls (determines whether the second ReadTransform executes)",
       "IFix-patched ReadTransformJob execution",
       "duplicate transform write winner (read entries themselves remain exact and distinct)"
     ],
