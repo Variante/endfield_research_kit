@@ -58,6 +58,37 @@ class ColliderStartGoldenVectorTests(unittest.TestCase):
         self.assertNotIn("ctypes", names)
         self.assertFalse(self.payload["verification"]["sourceInvokesNativeHelpers"])
 
+    def test_unity_inputs_preserve_binary32_bits(self) -> None:
+        for vector in self.payload["vectors"]:
+            unity = vector["unityInputs"]
+            self.assertEqual(unity["flag"], vector["inputs"]["flag"])
+            self.assertEqual(len(unity["sizeBits"]), 3)
+            self.assertEqual(len(unity["frameRotationBits"]), 4)
+            self.assertEqual(len(unity["oldRotationBits"]), 4)
+            for name, values in unity.items():
+                if name == "flag":
+                    continue
+                for bits in values if isinstance(values, list) else [values]:
+                    self.assertEqual(len(bits), 8, (vector["name"], name))
+
+    def test_work_data_layout_is_complete_and_typed(self) -> None:
+        layout = self.payload["workDataLayout"]
+        self.assertEqual(layout["logicalBytes"], 184)
+        self.assertFalse(layout["rawBlobApi"])
+        fields = layout["typedFields"]
+        self.assertEqual(fields["aabbMin"], {"offset": 0, "type": "double3", "bytes": 24})
+        self.assertEqual(fields["rotation"], {"offset": 168, "type": "float4", "bytes": 16})
+        covered = set()
+        for field in fields.values():
+            covered.update(range(field["offset"], field["offset"] + field["bytes"]))
+        self.assertEqual(covered, set(range(184)))
+
+    def test_unity_port_domain_is_fail_closed(self) -> None:
+        verification = self.payload["verification"]
+        self.assertTrue(verification["unityPortExecuted"])
+        self.assertIn("branches 2-6", verification["unityPortDomain"])
+        self.assertIn("sphere/plane fail closed", verification["unityPortDomain"])
+
     def test_checked_in_json_matches(self) -> None:
         expected = json.dumps(self.payload, indent=2, ensure_ascii=False) + "\n"
         self.assertEqual(target.OUTPUT.read_text(encoding="utf-8"), expected)

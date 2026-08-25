@@ -94,6 +94,62 @@
       "clamped_zero"
     ]
   },
+  "workDataLayout": {
+    "logicalBytes": 184,
+    "typedFields": {
+      "aabbMin": {
+        "offset": 0,
+        "type": "double3",
+        "bytes": 24
+      },
+      "aabbMax": {
+        "offset": 24,
+        "type": "double3",
+        "bytes": 24
+      },
+      "radius0": {
+        "offset": 48,
+        "type": "float",
+        "bytes": 4
+      },
+      "radius1": {
+        "offset": 52,
+        "type": "float",
+        "bytes": 4
+      },
+      "old0": {
+        "offset": 56,
+        "type": "double3",
+        "bytes": 24
+      },
+      "old1": {
+        "offset": 80,
+        "type": "double3",
+        "bytes": 24
+      },
+      "next0": {
+        "offset": 104,
+        "type": "double3",
+        "bytes": 24
+      },
+      "next1": {
+        "offset": 128,
+        "type": "double3",
+        "bytes": 24
+      },
+      "inverseOldRotation": {
+        "offset": 152,
+        "type": "float4",
+        "bytes": 16
+      },
+      "rotation": {
+        "offset": 168,
+        "type": "float4",
+        "bytes": 16
+      }
+    },
+    "rawBlobApi": false
+  },
   "vectors": [
     {
       "name": "disabled_flag_bypass",
@@ -147,6 +203,55 @@
         "frameInterpolation": 1.0,
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
+      },
+      "unityInputs": {
+        "flag": 0,
+        "sizeBits": [
+          "0ad7a33d",
+          "cdcccc3d",
+          "0000003f"
+        ],
+        "framePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
       },
       "outputs": {
         "nowPositions": "a5a5a5a5a5a5a5a5a5a5a5a5",
@@ -223,6 +328,55 @@
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
       },
+      "unityInputs": {
+        "flag": 34,
+        "sizeBits": [
+          "0ad7a33d",
+          "cdcccc3d",
+          "0000003f"
+        ],
+        "framePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
+      },
       "outputs": {
         "nowPositions": "a5a5a5a5a5a5a5a5a5a5a5a5",
         "nowRotations": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
@@ -297,6 +451,55 @@
         "frameInterpolation": 1.0,
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
+      },
+      "unityInputs": {
+        "flag": 50,
+        "sizeBits": [
+          "0ad7a33d",
+          "8fc2f53d",
+          "6666263f"
+        ],
+        "framePositionBits": [
+          "0000803e",
+          "0000803f",
+          "000000bf"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "0000803e",
+          "0000803f",
+          "000000bf"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "0000803e",
+          "0000803f",
+          "000000bf"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
       },
       "outputs": {
         "nowPositions": "0000803e0000803f000000bf",
@@ -373,6 +576,55 @@
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
       },
+      "unityInputs": {
+        "flag": 52,
+        "sizeBits": [
+          "3d0ad73d",
+          "8716d93d",
+          "6210983e"
+        ],
+        "framePositionBits": [
+          "cdccccbd",
+          "cdcc4c3f",
+          "cdcc4c3e"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "cdccccbd",
+          "cdcc4c3f",
+          "cdcc4c3e"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "cdccccbd",
+          "cdcc4c3f",
+          "cdcc4c3e"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
+      },
       "outputs": {
         "nowPositions": "cdccccbdcdcc4c3fcdcc4c3e",
         "nowRotations": "0000000000000000000000000000803f",
@@ -447,6 +699,55 @@
         "frameInterpolation": 0.625,
         "centerMoveRatio": 0.44999998807907104,
         "centerRotationRatio": 0.550000011920929
+      },
+      "unityInputs": {
+        "flag": 51,
+        "sizeBits": [
+          "2db29d3d",
+          "b6f3fd3c",
+          "355efa3e"
+        ],
+        "framePositionBits": [
+          "3333b33f",
+          "000080be",
+          "66660640"
+        ],
+        "frameRotationBits": [
+          "f96f4b3e",
+          "00000000",
+          "00000000",
+          "a5e57a3f"
+        ],
+        "frameScaleBits": [
+          "0000a03f",
+          "0000403f",
+          "0000c03f"
+        ],
+        "oldFramePositionBits": [
+          "cdcc4c3f",
+          "333333bf",
+          "cdcccc3f"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "a9a805be",
+          "55cf7d3f"
+        ],
+        "oldPositionBits": [
+          "cdcc0c3f",
+          "666666bf",
+          "6666a63f"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "ee83843e",
+          "00000000",
+          "ea46773f"
+        ],
+        "frameInterpolationBits": "0000203f",
+        "centerMoveRatioBits": "6666e63e",
+        "centerRotationRatioBits": "cdcc0c3f"
       },
       "outputs": {
         "nowPositions": "6666963f6666d6beccccf43f",
@@ -523,6 +824,55 @@
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
       },
+      "unityInputs": {
+        "flag": 178,
+        "sizeBits": [
+          "8fc2753d",
+          "ae47e13d",
+          "0000003f"
+        ],
+        "framePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "15efc33e",
+          "00000000",
+          "5e836c3f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "15efc33e",
+          "00000000",
+          "5e836c3f"
+        ],
+        "oldPositionBits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "15efc33e",
+          "00000000",
+          "5e836c3f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
+      },
       "outputs": {
         "nowPositions": "000000000000000000000000",
         "nowRotations": "0000000015efc33e000000005e836c3f",
@@ -597,6 +947,55 @@
         "frameInterpolation": 1.0,
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
+      },
+      "unityInputs": {
+        "flag": 51,
+        "sizeBits": [
+          "ec51b83d",
+          "0ad7233d",
+          "3d0ad73e"
+        ],
+        "framePositionBits": [
+          "0000003f",
+          "000080be",
+          "0000403f"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "ee83843e",
+          "ea46773f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "cdccccbf",
+          "cdcc4c3f"
+        ],
+        "oldFramePositionBits": [
+          "0000003f",
+          "000080be",
+          "0000403f"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "ee83843e",
+          "ea46773f"
+        ],
+        "oldPositionBits": [
+          "0000003f",
+          "000080be",
+          "0000403f"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "ee83843e",
+          "ea46773f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
       },
       "outputs": {
         "nowPositions": "0000003f000080be0000403f",
@@ -673,6 +1072,55 @@
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
       },
+      "unityInputs": {
+        "flag": 50,
+        "sizeBits": [
+          "52b89e3e",
+          "e17a943e",
+          "cdcccc3e"
+        ],
+        "framePositionBits": [
+          "000000bf",
+          "0000803e",
+          "0000803f"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "000000bf",
+          "0000803e",
+          "0000803f"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "000000bf",
+          "0000803e",
+          "0000803f"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
+      },
       "outputs": {
         "nowPositions": "000000bf0000803e0000803f",
         "nowRotations": "0000000000000000000000000000803f",
@@ -747,6 +1195,55 @@
         "frameInterpolation": 1.0,
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
+      },
+      "unityInputs": {
+        "flag": 53,
+        "sizeBits": [
+          "0ad7a33d",
+          "8fc2f53d",
+          "3333333f"
+        ],
+        "framePositionBits": [
+          "cdcccc3d",
+          "cdcc4cbe",
+          "9a99993e"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "0000003f",
+          "d7b35d3f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "cdcccc3d",
+          "cdcc4cbe",
+          "9a99993e"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "0000003f",
+          "d7b35d3f"
+        ],
+        "oldPositionBits": [
+          "cdcccc3d",
+          "cdcc4cbe",
+          "9a99993e"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "0000003f",
+          "d7b35d3f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
       },
       "outputs": {
         "nowPositions": "cdcccc3dcdcc4cbe9a99993e",
@@ -823,6 +1320,55 @@
         "centerMoveRatio": 1.0,
         "centerRotationRatio": 1.0
       },
+      "unityInputs": {
+        "flag": 54,
+        "sizeBits": [
+          "0000803e",
+          "ae47613e",
+          "3333b33e"
+        ],
+        "framePositionBits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a9919bf"
+        ],
+        "frameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameScaleBits": [
+          "0000803f",
+          "0000803f",
+          "0000803f"
+        ],
+        "oldFramePositionBits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a9919bf"
+        ],
+        "oldFrameRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "oldPositionBits": [
+          "cdcc4c3e",
+          "cdcccc3e",
+          "9a9919bf"
+        ],
+        "oldRotationBits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        "frameInterpolationBits": "0000803f",
+        "centerMoveRatioBits": "0000803f",
+        "centerRotationRatioBits": "0000803f"
+      },
       "outputs": {
         "nowPositions": "cdcc4c3ecdcccc3e9a9919bf",
         "nowRotations": "0000000000000000000000000000803f",
@@ -857,7 +1403,9 @@
       "workData": 184
     },
     "nativeCoreExecuted": true,
-    "sourceInvokesNativeHelpers": false
+    "sourceInvokesNativeHelpers": false,
+    "unityPortExecuted": true,
+    "unityPortDomain": "active capsule branches 2-6 plus inactive bypass; sphere/plane fail closed"
   },
   "boundary": [
     "Export selection is the unique static canonical-signature and managed-fallback semantic match in the pinned contract; no retail runtime resolver telemetry is claimed.",

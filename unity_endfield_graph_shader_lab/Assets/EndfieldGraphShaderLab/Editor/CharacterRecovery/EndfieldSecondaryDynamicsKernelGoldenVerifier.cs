@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,6 +7,86 @@ namespace EndfieldGraphShaderLabEditor
 {
     public static class EndfieldSecondaryDynamicsKernelGoldenVerifier
     {
+        [Serializable]
+        private sealed class AngleGoldenContract
+        {
+            public AngleBaselineVector[] unityBaselineVectors;
+        }
+
+        [Serializable]
+        private sealed class AngleBaselineVector
+        {
+            public string name;
+            public string cloth;
+            public int baselineIndex;
+            public int[] sourceVertexIndices;
+            public byte[] attributes;
+            public int[] parents;
+            public float[] depths;
+            public float[] frictions;
+            public double[] basicPositions;
+            public string[] basicPositionBits;
+            public float[] basicRotations;
+            public string[] basicRotationBits;
+            public double[] nextPositions;
+            public string[] nextInputBits;
+            public double[] velocityPositions;
+            public string[] velocityInputBits;
+            public float[] restorationCurve;
+            public float restorationVelocityAttenuation;
+            public float restorationGravityFalloff;
+            public float simulationPowerW;
+            public float gravityDot;
+            public string[] nextBits;
+            public string[] velocityBits;
+            public string[] rotationBits;
+            public string[] lengthBits;
+            public string[] localPositionBits;
+            public string[] localRotationBits;
+            public string[] restorationVectorBits;
+        }
+
+        [Serializable]
+        private sealed class ColliderStartGoldenContract
+        {
+            public ColliderStartGoldenVector[] vectors;
+        }
+
+        [Serializable]
+        private sealed class ColliderStartGoldenVector
+        {
+            public string name;
+            public ColliderStartUnityInputs unityInputs;
+            public ColliderStartOutputs outputs;
+        }
+
+        [Serializable]
+        private sealed class ColliderStartUnityInputs
+        {
+            public int flag;
+            public string[] sizeBits;
+            public string[] framePositionBits;
+            public string[] frameRotationBits;
+            public string[] frameScaleBits;
+            public string[] oldFramePositionBits;
+            public string[] oldFrameRotationBits;
+            public string[] oldPositionBits;
+            public string[] oldRotationBits;
+            public string frameInterpolationBits;
+            public string centerMoveRatioBits;
+            public string centerRotationRatioBits;
+        }
+
+        [Serializable]
+        private sealed class ColliderStartOutputs
+        {
+            public string nowPositions;
+            public string nowRotations;
+            public string oldPositions;
+            public string oldRotations;
+            public string workData;
+        }
+
         private readonly struct Case
         {
             public readonly string name;
@@ -22,6 +103,49 @@ namespace EndfieldGraphShaderLabEditor
                 this.nextBits = nextBits;
                 this.velocityBits = velocityBits;
             }
+        }
+
+        private sealed class SimulationStartCase
+        {
+            public string name;
+            public float simulationPowerZ = 1.0f;
+            public float dt = 0.5f;
+            public byte attribute = 2;
+            public float depth;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 position;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 rotation = F4v(0, 0, 0, 1);
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 oldTransformPosition;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 oldTransformRotation = F4v(0, 0, 0, 1);
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 oldPosition;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 velocity;
+            public float frameInterpolation = 1.0f;
+            public float teamTime;
+            public int teamFlag;
+            public float gravityRatio = 1.0f;
+            public float scaleRatio = 1.0f;
+            public float velocityWeight = 1.0f;
+            public int forceMode;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 impactForce;
+            public float gravity;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 gravityDirection = F3v(0, -1, 0);
+            public float damping;
+            public int normalAxis;
+            public float inertiaDepth;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 centerOldWorldPosition;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 centerStepVector;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 centerStepRotation = F4v(0, 0, 0, 1);
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 centerInertiaVector;
+            public EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 centerInertiaRotation = F4v(0, 0, 0, 1);
+            public float springPower;
+            public float springLimitDistance = 1.0f;
+            public float springNormalLimitRatio = 1.0f;
+            public float springNoise;
+            public string[] basePositionBits;
+            public string[] baseRotationBits;
+            public string[] stepPositionBits;
+            public string[] stepRotationBits;
+            public string[] velocityPositionBits;
+            public string[] nextPositionBits;
         }
 
         private static readonly Case[] Cases =
@@ -49,11 +173,14 @@ namespace EndfieldGraphShaderLabEditor
             VerifyFloatSinCosGoldenVectors();
             VerifyTetherGoldenVectors();
             VerifyDistanceGoldenVectors();
+            VerifyColliderStartGoldenVectors();
             VerifyPointCollisionGoldenVectors();
             VerifyAngleGoldenVectors();
             VerifyBasicPostureGoldenVectors();
+            VerifySimulationStartTrigGoldenVectors();
+            VerifySimulationStartGoldenVectors();
             VerifySimulationEndGoldenVectors();
-            Debug.Log("Verified float sincos, Angle, tether, Distance, Point-capsule, BasicPosture, and Simulation End native AVX2 vectors exactly.");
+            Debug.Log("Verified float sincos, Angle, tether, Distance, Collider Start, Point-capsule, BasicPosture, Simulation Start, and Simulation End native AVX2 vectors exactly.");
         }
 
         public static void VerifyFloatSinCosGoldenVectors()
@@ -213,6 +340,153 @@ namespace EndfieldGraphShaderLabEditor
             return result;
         }
 
+        public static void VerifyColliderStartGoldenVectors()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+                "secondary_dynamics_collider_start_golden_vectors.json");
+            var contract = JsonUtility.FromJson<ColliderStartGoldenContract>(File.ReadAllText(path));
+            if (contract == null || contract.vectors == null || contract.vectors.Length != 10)
+                throw new InvalidOperationException("Expected all 10 Collider Start golden vectors.");
+
+            foreach (ColliderStartGoldenVector row in contract.vectors)
+            {
+                ColliderStartUnityInputs bits = row.unityInputs;
+                var input = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartInput
+                {
+                    flag = checked((byte)bits.flag),
+                    size = Float3FromBits(bits.sizeBits),
+                    framePosition = Float3FromBits(bits.framePositionBits),
+                    frameRotation = Float4FromBits(bits.frameRotationBits),
+                    frameScale = Float3FromBits(bits.frameScaleBits),
+                    oldFramePosition = Float3FromBits(bits.oldFramePositionBits),
+                    oldFrameRotation = Float4FromBits(bits.oldFrameRotationBits),
+                    frameInterpolation = FloatFromLittleEndianHex(bits.frameInterpolationBits),
+                    centerMoveRatio = FloatFromLittleEndianHex(bits.centerMoveRatioBits),
+                    centerRotationRatio = FloatFromLittleEndianHex(bits.centerRotationRatioBits),
+                };
+                var state = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartState
+                {
+                    nowPosition = PoisonFloat3(),
+                    nowRotation = PoisonFloat4(),
+                    oldPosition = Float3FromBits(bits.oldPositionBits),
+                    oldRotation = Float4FromBits(bits.oldRotationBits),
+                    workData = PoisonColliderStartWorkData(),
+                };
+                bool executed = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.StartCapsuleCollider(
+                    input, ref state);
+                bool expectedExecuted = ((~bits.flag) & 0x30) == 0;
+                if (executed != expectedExecuted)
+                    throw new InvalidOperationException(row.name + " active result differs.");
+
+                RequireFloat3Bits(row.name + " nowPosition", state.nowPosition,
+                    FloatBitsAt(row.outputs.nowPositions, 0, 3));
+                RequireFloat4Bits(row.name + " nowRotation", state.nowRotation,
+                    FloatBitsAt(row.outputs.nowRotations, 0, 4));
+                RequireFloat3Bits(row.name + " oldPosition", state.oldPosition,
+                    FloatBitsAt(row.outputs.oldPositions, 0, 3));
+                RequireFloat4Bits(row.name + " oldRotation", state.oldRotation,
+                    FloatBitsAt(row.outputs.oldRotations, 0, 4));
+                VerifyColliderStartWorkData(row.name, state.workData, row.outputs.workData);
+            }
+
+            RequireUnsupportedColliderStartType(0);
+            RequireUnsupportedColliderStartType(1);
+            RequireUnsupportedColliderStartType(7);
+        }
+
+        private static void RequireUnsupportedColliderStartType(int type)
+        {
+            var input = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartInput
+            {
+                flag = checked((byte)(0x30 | type)),
+            };
+            var state = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartState();
+            try
+            {
+                EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.StartCapsuleCollider(
+                    input, ref state);
+            }
+            catch (NotSupportedException)
+            {
+                return;
+            }
+            throw new InvalidOperationException("Collider Start type " + type + " did not fail closed.");
+        }
+
+        private static void VerifyColliderStartWorkData(string name,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartWorkData value,
+            string expected)
+        {
+            RequireBits(name + " work.aabbMin", value.aabbMin, DoubleBitsAt(expected, 0x00, 3));
+            RequireBits(name + " work.aabbMax", value.aabbMax, DoubleBitsAt(expected, 0x18, 3));
+            RequireFloatBits(name + " work.radius0", value.radius0, FloatBitsAt(expected, 0x30, 1)[0]);
+            RequireFloatBits(name + " work.radius1", value.radius1, FloatBitsAt(expected, 0x34, 1)[0]);
+            RequireBits(name + " work.old0", value.old0, DoubleBitsAt(expected, 0x38, 3));
+            RequireBits(name + " work.old1", value.old1, DoubleBitsAt(expected, 0x50, 3));
+            RequireBits(name + " work.next0", value.next0, DoubleBitsAt(expected, 0x68, 3));
+            RequireBits(name + " work.next1", value.next1, DoubleBitsAt(expected, 0x80, 3));
+            RequireFloat4Bits(name + " work.inverseOldRotation", value.inverseOldRotation,
+                FloatBitsAt(expected, 0x98, 4));
+            RequireFloat4Bits(name + " work.rotation", value.rotation,
+                FloatBitsAt(expected, 0xA8, 4));
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartWorkData PoisonColliderStartWorkData()
+        {
+            double d = DoubleFromLittleEndianHex("a5a5a5a5a5a5a5a5");
+            float f = FloatFromLittleEndianHex("a5a5a5a5");
+            var d3 = D3(d, d, d);
+            var f4 = F4v(f, f, f, f);
+            return new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ColliderStartWorkData
+            {
+                aabbMin = d3, aabbMax = d3, radius0 = f, radius1 = f,
+                old0 = d3, old1 = d3, next0 = d3, next1 = d3,
+                inverseOldRotation = f4, rotation = f4,
+            };
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 PoisonFloat3()
+        {
+            float value = FloatFromLittleEndianHex("a5a5a5a5");
+            return F3v(value, value, value);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 PoisonFloat4()
+        {
+            float value = FloatFromLittleEndianHex("a5a5a5a5");
+            return F4v(value, value, value, value);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 Float3FromBits(string[] bits)
+        {
+            return F3v(FloatFromLittleEndianHex(bits[0]), FloatFromLittleEndianHex(bits[1]),
+                FloatFromLittleEndianHex(bits[2]));
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 Float4FromBits(string[] bits)
+        {
+            return F4v(FloatFromLittleEndianHex(bits[0]), FloatFromLittleEndianHex(bits[1]),
+                FloatFromLittleEndianHex(bits[2]), FloatFromLittleEndianHex(bits[3]));
+        }
+
+        private static string[] FloatBitsAt(string buffer, int byteOffset, int count)
+        {
+            var values = new string[count];
+            for (int index = 0; index < count; index++)
+                values[index] = buffer.Substring((byteOffset + index * 4) * 2, 8);
+            return values;
+        }
+
+        private static string[] DoubleBitsAt(string buffer, int byteOffset, int count)
+        {
+            var values = new string[count];
+            for (int index = 0; index < count; index++)
+                values[index] = buffer.Substring((byteOffset + index * 8) * 2, 16);
+            return values;
+        }
+
         public static void VerifyPointCollisionGoldenVectors()
         {
             VerifyPointCase("static_capsule_penetration", 0.2, 0, 0,
@@ -300,6 +574,22 @@ namespace EndfieldGraphShaderLabEditor
             return BitConverter.ToSingle(bytes, 0);
         }
 
+        private static double DoubleFromLittleEndianHex(string value)
+        {
+            byte[] bytes = new byte[8];
+            for (int index = 0; index < bytes.Length; index++)
+                bytes[index] = Convert.ToByte(value.Substring(index * 2, 2), 16);
+            return BitConverter.ToDouble(bytes, 0);
+        }
+
+        private static void RequireDoubleBits(string label, double value, string expected)
+        {
+            string bits = BitConverter.ToString(BitConverter.GetBytes(value))
+                .Replace("-", "").ToLowerInvariant();
+            if (!string.Equals(bits, expected, StringComparison.Ordinal))
+                throw new InvalidOperationException(label + " differs: " + bits + " != " + expected);
+        }
+
         public static void VerifyAngleGoldenVectors()
         {
             string[] zeroDouble3 = { "0000000000000000", "0000000000000000", "0000000000000000" };
@@ -351,6 +641,88 @@ namespace EndfieldGraphShaderLabEditor
                 new[] { "00000000", "00000000", "00000000" },
                 new[] { "00000000", "00000000", "00000000", "00000000" },
                 new[] { "0000803f", "00000000", "00000000" });
+            VerifyEndminfAngleBaselines();
+        }
+
+        private static void VerifyEndminfAngleBaselines()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+                "secondary_dynamics_angle_golden_vectors.json");
+            var contract = JsonUtility.FromJson<AngleGoldenContract>(File.ReadAllText(path));
+            if (contract == null || contract.unityBaselineVectors == null ||
+                contract.unityBaselineVectors.Length != 18)
+                throw new InvalidOperationException("Expected all 18 Endminf Angle baseline vectors.");
+            int minimumCount = int.MaxValue;
+            int maximumCount = 0;
+            foreach (AngleBaselineVector row in contract.unityBaselineVectors)
+            {
+                int count = row.attributes.Length;
+                minimumCount = Math.Min(minimumCount, count);
+                maximumCount = Math.Max(maximumCount, count);
+                if (row.parents.Length != count || row.sourceVertexIndices.Length != count)
+                    throw new InvalidOperationException(row.name + " topology array length differs.");
+                var basic = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[count];
+                var basicRotations = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[count];
+                var next = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[count];
+                var velocity = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[count];
+                for (int index = 0; index < count; index++)
+                {
+                    basic[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(
+                        DoubleFromLittleEndianHex(row.basicPositionBits[index * 3]),
+                        DoubleFromLittleEndianHex(row.basicPositionBits[index * 3 + 1]),
+                        DoubleFromLittleEndianHex(row.basicPositionBits[index * 3 + 2]));
+                    basicRotations[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(
+                        FloatFromLittleEndianHex(row.basicRotationBits[index * 4]),
+                        FloatFromLittleEndianHex(row.basicRotationBits[index * 4 + 1]),
+                        FloatFromLittleEndianHex(row.basicRotationBits[index * 4 + 2]),
+                        FloatFromLittleEndianHex(row.basicRotationBits[index * 4 + 3]));
+                    next[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(
+                        DoubleFromLittleEndianHex(row.nextInputBits[index * 3]),
+                        DoubleFromLittleEndianHex(row.nextInputBits[index * 3 + 1]),
+                        DoubleFromLittleEndianHex(row.nextInputBits[index * 3 + 2]));
+                    velocity[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(
+                        DoubleFromLittleEndianHex(row.velocityInputBits[index * 3]),
+                        DoubleFromLittleEndianHex(row.velocityInputBits[index * 3 + 1]),
+                        DoubleFromLittleEndianHex(row.velocityInputBits[index * 3 + 2]));
+                }
+                var rotations = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[count];
+                var lengths = new float[count];
+                var localPositions = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[count];
+                var localRotations = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[count];
+                var restorationVectors = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[count];
+                EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ProjectAngle(
+                    row.attributes, row.parents, row.depths, row.frictions, basic, basicRotations,
+                    next, velocity, true, row.restorationCurve,
+                    row.restorationVelocityAttenuation, row.restorationGravityFalloff,
+                    false, null, 0.0f, row.simulationPowerW, row.gravityDot,
+                    rotations, lengths, localPositions, localRotations, restorationVectors);
+                for (int index = 0; index < count; index++)
+                {
+                    string label = row.name + " particle " + index;
+                    RequireBits(label + " next", next[index], Slice(row.nextBits, index * 3, 3));
+                    RequireBits(label + " velocity", velocity[index], Slice(row.velocityBits, index * 3, 3));
+                    RequireFloat4Bits(label + " rotation", rotations[index], Slice(row.rotationBits, index * 4, 4));
+                    RequireFloatBits(label + " length", lengths[index], row.lengthBits[index]);
+                    RequireFloat3Bits(label + " local position", localPositions[index],
+                        Slice(row.localPositionBits, index * 3, 3));
+                    RequireFloat4Bits(label + " local rotation", localRotations[index],
+                        Slice(row.localRotationBits, index * 4, 4));
+                    RequireFloat3Bits(label + " restoration", restorationVectors[index],
+                        Slice(row.restorationVectorBits, index * 3, 3));
+                }
+            }
+            if (minimumCount != 3 || maximumCount != 9)
+                throw new InvalidOperationException(
+                    "Endminf Angle baseline particle range differs: " + minimumCount + ".." + maximumCount);
+        }
+
+        private static string[] Slice(string[] values, int start, int count)
+        {
+            var result = new string[count];
+            Array.Copy(values, start, result, 0, count);
+            return result;
         }
 
         private static void VerifyAngleCase(
@@ -374,7 +746,7 @@ namespace EndfieldGraphShaderLabEditor
             float[] restorationCurve = ConstantCurve(restorationStrength);
             float[] limitCurve = ConstantCurve(limitDegrees);
             EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ProjectAngle(
-                new byte[] { parentAttribute, 2 }, new[] { 0.0f, 0.37f },
+                new byte[] { parentAttribute, 2 }, new[] { -1, 0 }, new[] { 0.0f, 0.37f },
                 new[] { parentFriction, childFriction },
                 new[] { zero, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(1, 0, 0) },
                 new[] { identity, identity }, next, velocity,
@@ -516,6 +888,214 @@ namespace EndfieldGraphShaderLabEditor
             return result;
         }
 
+        public static void VerifySimulationStartTrigGoldenVectors()
+        {
+            string[,] cases =
+            {
+                { "negative_zero", "0000000000000080", "0000000000000080", "000000000000f03f" },
+                { "one", "000000000000f03f", "ee0c098f54edea3f", "8c06b50f284ae13f" },
+                { "small_at_15", "0000000000002e40", "e9c2ce7128cfe43f", "f3a49c065d4fe8bf" },
+                { "medium_below_1e14", "ffff8f1ec4bcd642", "a9a156146dd8c8bf", "fe06d1d73164efbf" },
+                { "large_at_1e14", "0000901ec4bcd642", "e79e1a34e4cdcabf", "6ab6bd8c5e4aefbf" },
+                { "maximum_finite", "ffffffffffffef7f", "964eb398fc52743f", "76abcf2ee6ffefbf" },
+                { "positive_infinity", "000000000000f07f", "000000000000f87f", "000000000000f87f" },
+            };
+            for (int index = 0; index < cases.GetLength(0); index++)
+            {
+                double input = DoubleFromLittleEndianHex(cases[index, 1]);
+                EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.SimulationStartSinCosBinary64(
+                    input, out double sine, out double cosine);
+                RequireDoubleBits(cases[index, 0] + " sine", sine, cases[index, 2]);
+                RequireDoubleBits(cases[index, 0] + " cosine", cosine, cases[index, 3]);
+            }
+        }
+
+        public static void VerifySimulationStartGoldenVectors()
+        {
+            SimulationStartCase row = StartExpected("inactive_bypass",
+                B64("000000000000f83f", "000000000000f03f", "000000000000e0bf"), IdentityBits(),
+                B64("000000000000f83f", "000000000000f03f", "000000000000e0bf"),
+                B64("000000000000f83f", "000000000000f03f", "000000000000e0bf"));
+            row.attribute = 0;
+            row.position = D3(3, -2, 1);
+            row.oldTransformPosition = D3(1, 2, -1);
+            row.frameInterpolation = 0.25f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("base_transform_interpolation",
+                B64("000000000000f03f", "000000000000f03f", "000000000000f0bf"), IdentityBits(),
+                B64("000000000000f03f", "000000000000f03f", "000000000000f0bf"),
+                B64("000000000000f03f", "000000000000f03f", "000000000000f0bf"));
+            row.attribute = 0;
+            row.position = D3(4, -2, 2);
+            row.oldTransformPosition = D3(0, 2, -2);
+            row.frameInterpolation = 0.25f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("base_transform_rotation_slerp", Zero64(),
+                B32("e28a033f", "00000000", "7bd0953e", "20734e3f"), Zero64(), Zero64());
+            row.attribute = 0;
+            row.rotation = F4v(0, 0, 0.7071067811865476f, 0.7071067811865476f);
+            row.oldTransformRotation = F4v(0.7071067811865476f, 0, 0, 0.7071067811865476f);
+            row.frameInterpolation = 0.35f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("base_transform_rotation_nlerp", Zero64(),
+                B32("00000000", "2811833b", "00000000", "7aff7f3f"), Zero64(), Zero64());
+            row.attribute = 0;
+            row.rotation = F4v(0, 0.009999499987500624f, 0, 0.9999499987499375f);
+            row.frameInterpolation = 0.4f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("base_transform_rotation_shortest_arc_sign_flip", Zero64(),
+                B32("e28a033f", "00000000", "7bd0953e", "20734e3f"), Zero64(), Zero64());
+            row.attribute = 0;
+            row.rotation = F4v(0, 0, -0.7071067811865476f, -0.7071067811865476f);
+            row.oldTransformRotation = F4v(0.7071067811865476f, 0, 0, 0.7071067811865476f);
+            row.frameInterpolation = 0.35f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("inertia_translation_and_velocity", Zero64(), IdentityBits(),
+                B64("0000000000000440", "000000000000e03f", "0000000000000000"),
+                B64("0000000000000840", "000000000000f83f", "0000000000000000"));
+            row.depth = 0.5f;
+            row.inertiaDepth = 1;
+            row.oldPosition = D3(1, 0, 0);
+            row.velocity = F3v(2, 4, 0);
+            row.velocityWeight = 0.5f;
+            row.centerStepVector = F3v(2, 0, 0);
+            row.centerInertiaVector = F3v(0, 2, 0);
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("inertia_position_and_velocity_rotation", Zero64(), IdentityBits(),
+                B64("0000003064ee0740", "000000609dd5f03f", "00000000a2c5f53f"),
+                B64("000000a873470e40", "000000dc438cf23f", "000000b8294af13f"));
+            row.depth = 0.5f;
+            row.inertiaDepth = 0.8f;
+            row.oldPosition = D3(2, -1, 3);
+            row.velocity = F3v(1.5f, -2, 0.75f);
+            row.velocityWeight = 0.65f;
+            row.centerOldWorldPosition = D3(0.5, -0.25, 1);
+            row.centerStepVector = F3v(0.75f, -0.5f, 0.25f);
+            row.centerInertiaVector = F3v(-0.25f, 0.5f, -0.75f);
+            row.centerStepRotation = F4v(0, 0, 0.7071067811865476f, 0.7071067811865476f);
+            row.centerInertiaRotation = F4v(0, 0.7071067811865476f, 0, 0.7071067811865476f);
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("damping_and_gravity_prediction", Zero64(), IdentityBits(), Zero64(),
+                B64("000000a09999e93f", "000000000000c0bf", "0000000000000000"));
+            row.dt = 0.25f;
+            row.simulationPowerZ = 0.8f;
+            row.velocity = F3v(4, 0, 0);
+            row.damping = 0.25f;
+            row.gravity = 2;
+            row.gravityRatio = 0.5f;
+            row.scaleRatio = 2;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("force_mode_1_depth_attenuated", Zero64(), IdentityBits(), Zero64(),
+                B64("000000605555c53f", "000000605555b5bf", "0000000000000000"));
+            row.dt = 0.25f;
+            row.depth = 0.5f;
+            row.forceMode = 1;
+            row.impactForce = F3v(6, -3, 0);
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("force_mode_10_unattenuated", Zero64(), IdentityBits(), Zero64(),
+                B64("000000000000d83f", "000000000000c8bf", "0000000000000000"));
+            row.dt = 0.25f;
+            row.depth = 0.5f;
+            row.forceMode = 10;
+            row.impactForce = F3v(6, -3, 0);
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("spring_distance_clamp", Zero64(), IdentityBits(), Zero64(),
+                B64("000000000000f03f", "0000000000000000", "0000000000000000"));
+            row.dt = 1;
+            row.attribute = 3;
+            row.teamFlag = 0x2000;
+            row.velocity = F3v(2, 0, 0);
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("spring_noise", Zero64(), IdentityBits(), Zero64(),
+                B64("878bc67eebd8d53f", "0000000000000000", "0000000000000000"));
+            row.dt = 1;
+            row.attribute = 3;
+            row.teamFlag = 0x2000;
+            row.velocity = F3v(0.5f, 0, 0);
+            row.teamTime = 0.25f;
+            row.springPower = 0.25f;
+            row.springLimitDistance = 2;
+            row.springNoise = 0.5f;
+            VerifySimulationStartCase(row);
+
+            row = StartExpected("normal_cone_restriction", Zero64(), IdentityBits(), Zero64(),
+                B64("d03b7f669ea0c63f", "cc3b7f669ea0e63f", "0000000000000000"));
+            row.dt = 1;
+            row.attribute = 3;
+            row.teamFlag = 0x2000;
+            row.velocity = F3v(0.8f, 0.8f, 0);
+            row.springNormalLimitRatio = 0.25f;
+            VerifySimulationStartCase(row);
+        }
+
+        private static SimulationStartCase StartExpected(
+            string name, string[] basePosition, string[] baseRotation,
+            string[] velocityPosition, string[] nextPosition)
+        {
+            return new SimulationStartCase
+            {
+                name = name,
+                basePositionBits = basePosition,
+                baseRotationBits = baseRotation,
+                stepPositionBits = basePosition,
+                stepRotationBits = baseRotation,
+                velocityPositionBits = velocityPosition,
+                nextPositionBits = nextPosition,
+            };
+        }
+
+        private static void VerifySimulationStartCase(SimulationStartCase row)
+        {
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.StartSimulationParticleZeroWind(
+                row.simulationPowerZ, row.dt, row.attribute, row.depth, row.position, row.rotation,
+                row.oldTransformPosition, row.oldTransformRotation, row.oldPosition, row.velocity,
+                row.frameInterpolation, row.teamTime, row.teamFlag, row.gravityRatio, row.scaleRatio,
+                row.velocityWeight, row.forceMode, row.impactForce, row.gravity, row.gravityDirection,
+                ConstantCurve(row.damping), row.normalAxis, row.inertiaDepth, row.centerOldWorldPosition,
+                row.centerStepVector, row.centerStepRotation, row.centerInertiaVector,
+                row.centerInertiaRotation, row.springPower, row.springLimitDistance,
+                row.springNormalLimitRatio, row.springNoise, out var basePosition,
+                out var baseRotation, out var stepPosition, out var stepRotation,
+                out var velocityPosition, out var nextPosition);
+            RequireBits(row.name + " basePosition", basePosition, row.basePositionBits);
+            RequireFloat4Bits(row.name + " baseRotation", baseRotation, row.baseRotationBits);
+            RequireBits(row.name + " stepBasicPosition", stepPosition, row.stepPositionBits);
+            RequireFloat4Bits(row.name + " stepBasicRotation", stepRotation, row.stepRotationBits);
+            RequireBits(row.name + " velocityPosition", velocityPosition, row.velocityPositionBits);
+            RequireBits(row.name + " nextPosition", nextPosition, row.nextPositionBits);
+        }
+
+        private static string[] B64(string x, string y, string z)
+        {
+            return new[] { x, y, z };
+        }
+
+        private static string[] B32(string x, string y, string z, string w)
+        {
+            return new[] { x, y, z, w };
+        }
+
+        private static string[] Zero64()
+        {
+            return B64("0000000000000000", "0000000000000000", "0000000000000000");
+        }
+
+        private static string[] IdentityBits()
+        {
+            return B32("00000000", "00000000", "00000000", "0000803f");
+        }
+
         public static void VerifySimulationEndGoldenVectors()
         {
             VerifySimulationEndCase("inactive_bypass", false, -1, 0, 0, 0,
@@ -587,6 +1167,12 @@ namespace EndfieldGraphShaderLabEditor
         private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 F3v(float x, float y, float z)
         {
             return new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(x, y, z);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 F4v(
+            float x, float y, float z, float w)
+        {
+            return new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(x, y, z, w);
         }
 
         private static void RequireFloat3Bits(string label,
