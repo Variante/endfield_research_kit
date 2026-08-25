@@ -114,7 +114,8 @@ renderer-path evidence.
    tool README. Review provider
    completeness, dropped-event counts, module facts, actual observed graphics
    API/device facts, and capture limits before opening large resources.
-   `Numpad 1` requests the next Present boundary, `Numpad 2` marks a bounded
+   `Numpad 1` requests the next Present boundary once per session; repeated
+   presses are ignored, and another frame requires a new session. `Numpad 2` marks a bounded
    audio evidence window, `Numpad 3` toggles the external recorder, `Numpad 4`
    marks a bounded network window, and `Numpad 0` toggles the panel. Keep
    `status` for provider/completeness facts and `stop` for orderly shutdown. A
