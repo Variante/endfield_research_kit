@@ -196,7 +196,10 @@ namespace EndfieldGraphShaderLab
 
         private void OnAfterEarlyUpdate()
         {
-            // Reserved for prior cross-frame completion and transform restore.
+            // RestoreTransformJob consumes the immutable AddTransform-time
+            // local buffers for every source entry carrying flag 0x08.
+            if (BindingValid && transformPublicationAdapter != null)
+                transformPublicationAdapter.RestoreInitialLocals();
         }
 
         private void OnAfterFixedUpdate()

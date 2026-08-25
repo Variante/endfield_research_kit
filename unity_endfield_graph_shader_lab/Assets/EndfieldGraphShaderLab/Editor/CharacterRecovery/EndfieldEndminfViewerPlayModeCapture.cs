@@ -19,6 +19,10 @@ namespace EndfieldGraphShaderLabEditor
         private const string Scene = "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity";
         private const int Width = 1920;
         private const int Height = 1080;
+        // This deliverable isolates the selected actor and her spawned visual
+        // effects. CharInfo's portrait, compatibility backdrop, physical-room
+        // subset, and screen UI are reference-only evidence, not output.
+        private const bool ActorOnlyCapture = true;
         // The pinned retail recording is 1920x1080 at exactly 60 fps. Keep the
         // Play-mode simulation on that clock and only thin the written PNGs
         // to 4 fps. Driving Time.captureDeltaTime at 4 fps changed particle
@@ -26,7 +30,9 @@ namespace EndfieldGraphShaderLabEditor
         // so the old side-by-side frames were not equivalent observations.
         private const float SimulationFps = 60f;
         private const float Fps = 4f;
-        private const int VideoFrameCount = 600;
+        // Match the complete no-frame-generation retail segment through the
+        // sustained loop tail, rather than stopping at the former 10 s export.
+        private const int VideoFrameCount = 770;
         // The supplied retail recording keeps the pointer at the lower-right
         // during Endminf's entrance. These normalized coordinates are measured
         // from that 1920x1080 capture and select the already recovered live
@@ -95,7 +101,7 @@ namespace EndfieldGraphShaderLabEditor
             public string graphicsDeviceType;
             public string scene = Scene;
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
-            public bool actorOnlyCapture = false;
+            public bool actorOnlyCapture = ActorOnlyCapture;
             public bool postProcessingExplicitlyDisabled = false;
             public bool prePostHdrDiagnostic;
             public bool postStageDiagnostic;
@@ -298,23 +304,33 @@ namespace EndfieldGraphShaderLabEditor
             string[] reproductionFlags = {
                 "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY",
                 "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT",
-                "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY",
-                "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
                 "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE",
                 "ENDFIELD_RECOVERED_VISIBILITY_SH",
                 "ENDFIELD_RECOVERED_PREGBUFFER_DEPTH_OWNER",
-                "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET",
-                "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT"
+                "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET"
             };
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(flag, "1");
+            if (ActorOnlyCapture)
+            {
+                Environment.SetEnvironmentVariable(
+                    "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY", "0");
+                Environment.SetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC", "0");
+                Environment.SetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT", "0");
+            }
             EndfieldRecoveredCharInfoPresentation.RefreshStandaloneSelection();
-            // The exact source stage is disposable and may be absent between
-            // recovery batches. Rebind the ten retained primary rock rows from
-            // their pinned PathIDs and direct tracked assets before the scene
-            // instantiates its actor prefab. This remains opt-in and does not
-            // broaden the four separately blocked non-primary effect rows.
-            EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate();
+            // Character refreshes rebuild the source actor prefab and can
+            // remove its generated overview-effect requests/spawner. Restore
+            // the complete source-retained entrance-effect contract before the
+            // scene instantiates the actor. The exact source stage is
+            // disposable and may be absent between recovery batches, so the
+            // binding builder preserves the existing effect prefabs and then
+            // repairs the ten certified primary-rock material rows from their
+            // pinned PathIDs and direct tracked assets. This remains opt-in and
+            // does not broaden the four separately blocked non-primary rows.
+            EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                     EndfieldEndminfVisualCompatibilityClock.PreRollSecondsEnvironmentVariable)))
             {

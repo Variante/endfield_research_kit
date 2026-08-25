@@ -379,7 +379,11 @@ namespace EndfieldGraphShaderLabEditor
                 MethodInfo runBoundary = typeof(EndfieldSecondaryDynamicsRuntime).GetMethod(
                     "RunWholeClothPipelineBoundary",
                     BindingFlags.Instance | BindingFlags.NonPublic);
-                if (live == null || onEnable == null || runBoundary == null)
+                MethodInfo afterEarlyUpdate = typeof(EndfieldSecondaryDynamicsRuntime).GetMethod(
+                    "OnAfterEarlyUpdate",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (live == null || onEnable == null || runBoundary == null ||
+                    afterEarlyUpdate == null)
                     throw new InvalidDataException(
                         "Generated Endminf live coordinator entry point is missing.");
                 onEnable.Invoke(live, null);
@@ -389,6 +393,20 @@ namespace EndfieldGraphShaderLabEditor
                     throw new InvalidDataException(
                         "Generated Endminf live read/coordinator boundary did not initialize: " +
                         live.BindingFailure);
+                Transform restoreProbe = instance.transform.Find(
+                    live.data.owners[0].proxyTransformPaths[1]);
+                if (restoreProbe == null || live.data.owners[0].attributes[1] != 2)
+                    throw new InvalidDataException(
+                        "Generated Endminf restore probe binding differs.");
+                Vector3 initialLocalPosition = restoreProbe.localPosition;
+                Quaternion initialLocalRotation = restoreProbe.localRotation;
+                restoreProbe.localPosition += new Vector3(1f, 2f, 3f);
+                restoreProbe.localRotation = Quaternion.AngleAxis(45f, Vector3.up);
+                afterEarlyUpdate.Invoke(live, null);
+                if (restoreProbe.localPosition != initialLocalPosition ||
+                    restoreProbe.localRotation != initialLocalRotation)
+                    throw new InvalidDataException(
+                        "RestoreTransform did not consume immutable initial locals.");
                 runBoundary.Invoke(live, null);
                 if (!live.BindingValid || live.LastSimulationSubsteps == null ||
                     live.LastSimulationSubsteps.Length != 4 ||

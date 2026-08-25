@@ -14,6 +14,8 @@ namespace EndfieldGraphShaderLab
     {
         private readonly EndfieldSecondaryDynamicsData _data;
         private readonly Transform[][] _transforms;
+        private readonly Vector3[][] _initialLocalPositions;
+        private readonly Quaternion[][] _initialLocalRotations;
 
         public EndfieldSecondaryDynamicsTransformPublicationAdapter(
             Transform actorRoot,
@@ -24,6 +26,8 @@ namespace EndfieldGraphShaderLab
                 throw new ArgumentException("Exactly four Endminf owners are required.", nameof(data));
             _data = data;
             _transforms = new Transform[F.OwnerCount][];
+            _initialLocalPositions = new Vector3[F.OwnerCount][];
+            _initialLocalRotations = new Quaternion[F.OwnerCount][];
             for (int owner = 0; owner < F.OwnerCount; owner++)
             {
                 EndfieldSecondaryDynamicsData.Owner source = data.owners[owner];
@@ -31,6 +35,8 @@ namespace EndfieldGraphShaderLab
                     source.proxyTransformPaths.Length != source.proxyVertexCount)
                     throw new ArgumentException("Owner publication topology differs at " + owner + ".");
                 _transforms[owner] = new Transform[source.proxyVertexCount];
+                _initialLocalPositions[owner] = new Vector3[source.proxyVertexCount];
+                _initialLocalRotations[owner] = new Quaternion[source.proxyVertexCount];
                 for (int vertex = 0; vertex < source.proxyVertexCount; vertex++)
                 {
                     Transform target = actorRoot.Find(source.proxyTransformPaths[vertex]);
@@ -38,6 +44,24 @@ namespace EndfieldGraphShaderLab
                         throw new ArgumentException("Publication transform does not resolve: " +
                             source.proxyTransformPaths[vertex]);
                     _transforms[owner][vertex] = target;
+                    _initialLocalPositions[owner][vertex] = target.localPosition;
+                    _initialLocalRotations[owner][vertex] = target.localRotation;
+                }
+            }
+        }
+
+        public void RestoreInitialLocals()
+        {
+            for (int owner = 0; owner < F.OwnerCount; owner++)
+            {
+                EndfieldSecondaryDynamicsData.Owner source = _data.owners[owner];
+                for (int vertex = 0; vertex < source.proxyVertexCount; vertex++)
+                {
+                    if ((Flags(source.attributes[vertex]) & T.TransformFlags.Restore) == 0)
+                        continue;
+                    Transform target = _transforms[owner][vertex];
+                    target.localPosition = _initialLocalPositions[owner][vertex];
+                    target.localRotation = _initialLocalRotations[owner][vertex];
                 }
             }
         }
