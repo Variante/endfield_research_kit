@@ -612,6 +612,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredLiveCharInfoAutoExposureDispatchFailure;
         private bool loggedRecoveredPostUberWorldUi;
         private bool loggedRecoveredPostUberWorldUiFailure;
+        private bool loggedRecoveredPreGBufferDepthOwnerFailure;
         private bool loggedRecoveredSceneMV;
         private bool loggedRecoveredSceneMVFailure;
         private bool loggedRecoveredVFXGlobalsFailure;
@@ -1079,8 +1080,39 @@ namespace EndfieldGraphShaderLab
                     $"camera '{camera.name}': {recoveredSceneMVFailure}.");
                 loggedRecoveredSceneMVFailure = true;
             }
+            bool useRecoveredPreGBufferDepthOwner = false;
+            if (recoveredPreGBufferDepthOwner.Requested)
+            {
+                string recoveredPreGBufferDepthAllocationFailure = null;
+                bool depthReady = recoveredPrimarySceneDepth != null ||
+                    TryCreateRecoveredPrimarySceneDepth(
+                        renderWidth,
+                        renderHeight,
+                        out recoveredPrimarySceneDepth,
+                        out recoveredPrimarySceneDepthFormat,
+                        out recoveredPreGBufferDepthAllocationFailure);
+                bool sceneMVReady = recoveredSceneMV != null ||
+                    recoveredSceneMVCompositor.TryCreateSceneMV(
+                        renderWidth,
+                        renderHeight,
+                        out recoveredSceneMV,
+                        out recoveredPreGBufferDepthAllocationFailure);
+                if (depthReady && sceneMVReady)
+                {
+                    useRecoveredPreGBufferDepthOwner = true;
+                }
+                else if (!loggedRecoveredPreGBufferDepthOwnerFailure)
+                {
+                    Debug.LogWarning(
+                        "Recovered canonical CharacterPrePass depth owner failed " +
+                        $"closed for camera '{camera.name}': " +
+                        recoveredPreGBufferDepthAllocationFailure + ".");
+                    loggedRecoveredPreGBufferDepthOwnerFailure = true;
+                }
+            }
             if (!useRecoveredSceneMV &&
                 !useRecoveredPostUberWorldUi &&
+                !useRecoveredPreGBufferDepthOwner &&
                 recoveredPrimarySceneDepth != null)
             {
                 ReleaseRecoveredPrimarySceneDepth(recoveredPrimarySceneDepth);
@@ -1088,7 +1120,9 @@ namespace EndfieldGraphShaderLab
                 recoveredPrimarySceneDepthFormat = GraphicsFormat.None;
             }
             bool useSeparatePrimaryDepth =
-                useRecoveredPostUberWorldUi || useRecoveredSceneMV;
+                useRecoveredPostUberWorldUi ||
+                useRecoveredSceneMV ||
+                useRecoveredPreGBufferDepthOwner;
             if (recoveredPostUberWorldUiRequested &&
                 !useRecoveredPostUberWorldUi &&
                 !loggedRecoveredPostUberWorldUiFailure)
@@ -1709,7 +1743,7 @@ namespace EndfieldGraphShaderLab
                 renderWidth,
                 renderHeight,
                 canonicalColorTarget,
-                useRecoveredSceneMV ? recoveredSceneMV : null,
+                recoveredSceneMV,
                 canonicalDepthTarget,
                 useSeparatePrimaryDepth,
                 useSeparatePrimaryDepth
@@ -2296,6 +2330,24 @@ namespace EndfieldGraphShaderLab
                 context.ExecuteCommandBuffer(commandBuffer);
                 commandBuffer.Release();
             }
+            // The canonical CharacterPrePass and Forward lists leave the
+            // separately owned CameraDepthStencil bound. D3D11 rejects a
+            // RenderTexture.Release while that texture is still the active
+            // depth surface; repeated viewer captures then exhaust the
+            // deferred-destroy cohort and later allocations report
+            // GraphicsFormat.None. Return ownership to the camera target and
+            // submit that unbind before releasing the explicit depth object.
+            if (recoveredPrimarySceneDepth != null)
+            {
+                commandBuffer = new CommandBuffer
+                {
+                    name = "Unbind recovered primary scene depth"
+                };
+                commandBuffer.SetRenderTarget(
+                    BuiltinRenderTextureType.CameraTarget);
+                context.ExecuteCommandBuffer(commandBuffer);
+                commandBuffer.Release();
+            }
             context.Submit();
             recoveredSceneMVCompositor.FinalizeRendererIdSidecarAfterSubmit();
             EndfieldRecoveredSceneMVCompositor.ReleaseRenderTexture(
@@ -2628,10 +2680,15 @@ namespace EndfieldGraphShaderLab
                 return;
             if (texture.IsCreated())
                 texture.Release();
-            if (Application.isPlaying)
-                Object.Destroy(texture);
-            else
-                Object.DestroyImmediate(texture);
+#if UNITY_EDITOR
+            // Editor validation drives many explicit Camera.Render calls
+            // before the next player-loop destruction sweep. Every GPU use of
+            // this transient owner has already been submitted and explicitly
+            // unbound above, so do not accumulate deferred-destroy instances.
+            Object.DestroyImmediate(texture);
+#else
+            Object.Destroy(texture);
+#endif
         }
 
         private RenderTexture EnsureRecoveredExactCameraDepth(

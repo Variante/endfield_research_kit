@@ -128,6 +128,8 @@ complete frame without a client fault.
   v4 proves 68 admitted entrance renderers and exactly two separately blocked
   non-LitEffect rows. Frames 19-22 now contain M27's dark/amber faceted debris;
   its default-off Unity ABI probe still proves an empty material/mesh binding.
+  A same-seed M27-excluded differential isolates only that small late fragment
+  cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer; its exact
   five-MRT HGBuffer publication and deferred consumer remain fail-closed. No
   crystal retiming, scale change, or bloom tuning was admitted.
@@ -439,6 +441,13 @@ complete frame without a client fault.
   only after owner submission. A 41-frame D3D11 capture observes that owner in
   every frame and improves 28-pair no-framegen reference PSNR from 13.3608 to
   13.3886 dB; the three crystal-clean settled samples are effectively neutral.
+  Actor-only frames must allocate and retain both the exact D32S8 depth owner
+  and neutral A2B10G10R10 SceneMV attachment for this request even after all
+  selected transparent SceneMV consumers have expired. The validated
+  `endminf_canonical_attachments_fix` run keeps both readiness gates true over
+  all 41 frames; the previous consumer-derived lifetime dropped them for the
+  final 17 frames. D3D11 teardown explicitly unbinds the depth target before
+  release so repeated manual camera renders do not retain an active surface.
   The editor harness also refreshes its
   cached standalone selectors after installing the bounded Endminf profile, so
   an earlier process-wide cache no longer deactivates the selected source
