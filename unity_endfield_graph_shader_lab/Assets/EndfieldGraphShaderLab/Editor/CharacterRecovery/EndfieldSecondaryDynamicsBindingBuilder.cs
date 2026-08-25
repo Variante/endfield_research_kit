@@ -386,6 +386,7 @@ namespace EndfieldGraphShaderLabEditor
                     afterEarlyUpdate == null)
                     throw new InvalidDataException(
                         "Generated Endminf live coordinator entry point is missing.");
+                live.enableUnverifiedSolverWriteback = true;
                 onEnable.Invoke(live, null);
                 if (live == null || !live.BindingValid ||
                     !live.TransformSnapshotReadEnabled || !live.SolverCoordinatorEnabled ||
