@@ -839,9 +839,12 @@ settled Endminf TeamData lanes with `UseRelativeTransform=false`,
 `UseCrossFrameJob=true`, and animator update disabled. Unity now runs the
 recovered four-owner solver/coordinator and source-ordered TransformAccess
 publication, including the retail `RestoreTransform` lifecycle from immutable
-AddTransform-time local buffers. The actor-only 770-frame D3D11 overview-start
-through loop gate passes with entrance VFX, cleanup, rotation-only root motion,
-and no late cloth/hair accumulation.
+AddTransform-time local buffers. A 770-frame run proved bounded execution but
+failed visible retail-shape review: during the entrance it inflated the cape
+into a broad rigid sheet and degraded hanging-strip/hair silhouettes. Solver
+writeback is therefore diagnostic-only and default-off until a phase-paired
+retail shape gate passes; normal actor/VFX reproduction retains the authored
+baseline. Entrance VFX, cleanup, and rotation-only root motion remain active.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,

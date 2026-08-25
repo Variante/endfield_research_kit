@@ -31,6 +31,11 @@ namespace EndfieldGraphShaderLab
 
         public EndfieldSecondaryDynamicsData data;
 
+        [Tooltip("Diagnostic only. The recovered scheduling/writeback route is " +
+                 "certified, but visible hair/cape shape equivalence is not. " +
+                 "Keep disabled in reproduction output until a retail-shape gate passes.")]
+        public bool enableUnverifiedSolverWriteback;
+
         public bool BindingValid { get; private set; }
         public string BindingFailure { get; private set; } = "not validated";
         public float TargetWeight { get; private set; }
@@ -64,6 +69,15 @@ namespace EndfieldGraphShaderLab
 
         private void OnEnable()
         {
+            if (!enableUnverifiedSolverWriteback)
+            {
+                BindingValid = false;
+                BindingFailure =
+                    "solver writeback remains diagnostic-only: retail hair/cape " +
+                    "shape equivalence has not passed";
+                return;
+            }
+
             BindingValid = ValidateBindings(out string failure);
             BindingFailure = failure;
             if (!BindingValid)
