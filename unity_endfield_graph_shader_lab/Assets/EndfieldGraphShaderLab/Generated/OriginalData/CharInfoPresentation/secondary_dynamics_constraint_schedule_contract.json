@@ -1,0 +1,249 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-constraint-schedule.v1",
+  "status": "managed_projection_and_collider_call_order_closed_endminf_requirements_source_bound",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "source": {
+    "simulationStepUpdate": {
+      "va": "0x182f8f430",
+      "bytes": 5968,
+      "sha256": "5106aa8354dfe1d73e8a4ecb6a693cf8586938da5d456f7fc748267e08743335"
+    },
+    "solverInputs": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
+      "sha256": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
+    }
+  },
+  "orderedCalls": [
+    {
+      "order": 1,
+      "callOffset": "0x7dc",
+      "targetVa": "0x182f8e710",
+      "method": "BeyondDynamicBone.ColliderManager.CreateUpdateColliderList",
+      "simulationManagerObjectOffset": null
+    },
+    {
+      "order": 2,
+      "callOffset": "0x813",
+      "targetVa": "0x183a95170",
+      "method": "BeyondDynamicBone.ColliderManager.StartSimulationStep",
+      "simulationManagerObjectOffset": null
+    },
+    {
+      "order": 3,
+      "callOffset": "0xfb8",
+      "targetVa": "0x182f8df00",
+      "method": "BeyondDynamicBone.TetherConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0x98"
+    },
+    {
+      "order": 4,
+      "callOffset": "0xfe2",
+      "targetVa": "0x182f90c60",
+      "method": "BeyondDynamicBone.DistanceConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0x88"
+    },
+    {
+      "order": 5,
+      "callOffset": "0x100c",
+      "targetVa": "0x1830a2120",
+      "method": "BeyondDynamicBone.AngleConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0xa0"
+    },
+    {
+      "order": 6,
+      "callOffset": "0x1036",
+      "targetVa": "0x182f8ed70",
+      "method": "BeyondDynamicBone.TriangleBendingConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0x90"
+    },
+    {
+      "order": 7,
+      "callOffset": "0x1060",
+      "targetVa": "0x182f8ef20",
+      "method": "BeyondDynamicBone.ColliderCollisionConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0xb0"
+    },
+    {
+      "order": 8,
+      "callOffset": "0x108a",
+      "targetVa": "0x182f90c60",
+      "method": "BeyondDynamicBone.DistanceConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0x88"
+    },
+    {
+      "order": 9,
+      "callOffset": "0x10b4",
+      "targetVa": "0x182f8da50",
+      "method": "BeyondDynamicBone.MotionConstraint.SolverConstraint",
+      "simulationManagerObjectOffset": "0xb8"
+    },
+    {
+      "order": 10,
+      "callOffset": "0x111f",
+      "targetVa": "0x182f91300",
+      "method": "BeyondDynamicBone.SelfCollisionConstraint.SolverRuntimeSelfCollision",
+      "simulationManagerObjectOffset": "0xc0"
+    },
+    {
+      "order": 11,
+      "callOffset": "0x113c",
+      "targetVa": "0x182f91240",
+      "method": "BeyondDynamicBone.SelfCollisionConstraint.SolveIntersect",
+      "simulationManagerObjectOffset": "0xc0"
+    },
+    {
+      "order": 12,
+      "callOffset": "0x14a4",
+      "targetVa": "0x182f8ea60",
+      "method": "BeyondDynamicBone.ColliderManager.EndSimulationStep",
+      "simulationManagerObjectOffset": null
+    }
+  ],
+  "projectionOrder": [
+    "Tether",
+    "Distance pass 1",
+    "Angle",
+    "Triangle Bending",
+    "Collider Collision",
+    "Distance pass 2",
+    "Motion",
+    "Self Collision runtime",
+    "Self Collision intersection"
+  ],
+  "distancePassCount": 2,
+  "endminfOwners": [
+    {
+      "owner": "MC_Ribbon2",
+      "proxyBindingCount": 7,
+      "colliderReferenceCount": 2,
+      "activeFamilies": {
+        "tether": true,
+        "distance": true,
+        "angle": true,
+        "triangleBending": true,
+        "colliderCollision": true,
+        "motion": false,
+        "selfCollision": false,
+        "springPrediction": true
+      }
+    },
+    {
+      "owner": "MC_Hair",
+      "proxyBindingCount": 31,
+      "colliderReferenceCount": 0,
+      "activeFamilies": {
+        "tether": true,
+        "distance": true,
+        "angle": true,
+        "triangleBending": true,
+        "colliderCollision": false,
+        "motion": false,
+        "selfCollision": false,
+        "springPrediction": true
+      }
+    },
+    {
+      "owner": "MC_Ribbon",
+      "proxyBindingCount": 21,
+      "colliderReferenceCount": 4,
+      "activeFamilies": {
+        "tether": true,
+        "distance": true,
+        "angle": true,
+        "triangleBending": true,
+        "colliderCollision": true,
+        "motion": false,
+        "selfCollision": false,
+        "springPrediction": true
+      }
+    },
+    {
+      "owner": "MC_Coat",
+      "proxyBindingCount": 71,
+      "colliderReferenceCount": 4,
+      "activeFamilies": {
+        "tether": true,
+        "distance": true,
+        "angle": true,
+        "triangleBending": true,
+        "colliderCollision": true,
+        "motion": false,
+        "selfCollision": false,
+        "springPrediction": true
+      }
+    }
+  ],
+  "endminfRequiredOwnersByFamily": {
+    "tether": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "distance": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "angle": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "triangleBending": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "colliderCollision": [
+      "MC_Ribbon2",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "motion": [],
+    "selfCollision": [],
+    "springPrediction": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ]
+  },
+  "endminfBoundary": {
+    "requiredForAllOwners": [
+      "tether",
+      "distance",
+      "angle",
+      "triangleBending",
+      "springPrediction"
+    ],
+    "requiredForOwnersWithColliderReferences": "colliderCollision",
+    "authoredNoOpFamilies": [
+      "motion",
+      "selfCollision"
+    ],
+    "hairAngleLimitEnabled": true
+  },
+  "implementationBoundary": {
+    "managedCallOrderClosed": true,
+    "endminfAuthoredActivationClosed": true,
+    "constraintBurstNumericsClosed": false,
+    "colliderContactNumericsClosed": false,
+    "solverImplemented": false,
+    "retailEquivalent": false
+  }
+}
