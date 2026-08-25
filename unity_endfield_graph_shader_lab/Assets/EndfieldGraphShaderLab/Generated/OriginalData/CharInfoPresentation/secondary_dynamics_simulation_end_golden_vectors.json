@@ -1,0 +1,162 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-simulation-end-golden-vectors.v1",
+  "status": "native_avx2_bypass_base_velocity_and_speed_limit_vectors_exact",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "core": {
+    "rva": "0x24fa60",
+    "bytes": 1745,
+    "sha256": "f623b3ca9c367210ca74998645797c72cefa6d393d708f8665788b85aba41780"
+  },
+  "harnessSha256": "13f51c8a6514ac1622da88d3a6d1845c2ccd2ffe5cd6a5268cb092b7930fc572",
+  "vectors": [
+    {
+      "name": "inactive_bypass",
+      "input": {
+        "active": false,
+        "particleSpeedLimitFloat32": -1.0
+      },
+      "output": {
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "velocityBinary32Le": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "realVelocity": [
+          2.0,
+          4.0,
+          6.0
+        ],
+        "realVelocityBinary32Le": [
+          "00000040",
+          "00008040",
+          "0000c040"
+        ],
+        "oldPos": [
+          2.0,
+          3.0,
+          4.0
+        ],
+        "oldPosBinary64Le": [
+          "0000000000000040",
+          "0000000000000840",
+          "0000000000001040"
+        ]
+      }
+    },
+    {
+      "name": "active_unlimited",
+      "input": {
+        "active": true,
+        "particleSpeedLimitFloat32": -1.0
+      },
+      "output": {
+        "velocity": [
+          2.0,
+          4.0,
+          6.0
+        ],
+        "velocityBinary32Le": [
+          "00000040",
+          "00008040",
+          "0000c040"
+        ],
+        "realVelocity": [
+          2.0,
+          4.0,
+          6.0
+        ],
+        "realVelocityBinary32Le": [
+          "00000040",
+          "00008040",
+          "0000c040"
+        ],
+        "oldPos": [
+          2.0,
+          3.0,
+          4.0
+        ],
+        "oldPosBinary64Le": [
+          "0000000000000040",
+          "0000000000000840",
+          "0000000000001040"
+        ]
+      }
+    },
+    {
+      "name": "active_speed_limit",
+      "input": {
+        "active": true,
+        "particleSpeedLimitFloat32": 2.0
+      },
+      "output": {
+        "velocity": [
+          0.5345224738121033,
+          1.0690449476242065,
+          1.6035674810409546
+        ],
+        "velocityBinary32Le": [
+          "77d6083f",
+          "77d6883f",
+          "b341cd3f"
+        ],
+        "realVelocity": [
+          2.0,
+          4.0,
+          6.0
+        ],
+        "realVelocityBinary32Le": [
+          "00000040",
+          "00008040",
+          "0000c040"
+        ],
+        "oldPos": [
+          2.0,
+          3.0,
+          4.0
+        ],
+        "oldPosBinary64Le": [
+          "0000000000000040",
+          "0000000000000840",
+          "0000000000001040"
+        ]
+      }
+    }
+  ],
+  "boundary": {
+    "nativeCoreExecuted": true,
+    "sourceTranscriptionMatched": true,
+    "covered": [
+      "inactive bypass",
+      "active base velocity",
+      "particle speed limit"
+    ],
+    "notCovered": [
+      "static friction",
+      "dynamic friction",
+      "centrifugal response"
+    ],
+    "completeKernelGoldenCoverage": false,
+    "unityPortExecuted": false
+  }
+}

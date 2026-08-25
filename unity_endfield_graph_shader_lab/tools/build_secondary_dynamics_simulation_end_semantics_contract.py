@@ -171,6 +171,7 @@ def build_contract() -> dict[str, Any]:
             "equationsClosed": True,
             "helperGap": False,
             "goldenVectorsCaptured": False,
+            "boundedGoldenVectorCoverage": ["inactive bypass", "active base velocity", "particle speed limit"],
             "requiresExactFloatDoubleConversionOrder": True,
             "requiresBurstMinMaxNaNBehavior": True,
             "upstreamStagesRequired": ["constraint projection", "collider contact generation"],
