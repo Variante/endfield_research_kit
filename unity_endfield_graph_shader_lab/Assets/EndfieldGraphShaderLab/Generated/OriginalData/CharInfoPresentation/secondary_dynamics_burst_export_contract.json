@@ -2730,6 +2730,417 @@
           "Managed now/old position and rotation writebacks do not distinguish a wrapper that contains no job-field accesses."
         ]
       }
+    },
+    "simulationUpdateBasicPostureRange": {
+      "managedMethodIndex": 385602,
+      "managedFallbackMethodIndex": 385704,
+      "directInvokeMethodIndex": 385624,
+      "directInvokeVa": "0x18677a0f8",
+      "status": "static_semantic_export_identity_and_dual_cpu_cores_closed_managed_wrapper_route_unobserved",
+      "parameterContract": {
+        "parameterCount": 14,
+        "nativeArrayParameterCount": 14,
+        "parameterNames": [
+          "stepBaseLineIndexArray",
+          "teamDataArray",
+          "attributes",
+          "vertexParentIndices",
+          "vertexLocalPositions",
+          "vertexLocalRotations",
+          "baseLineStartDataIndices",
+          "baseLineDataCounts",
+          "baseLineData",
+          "basePosArray",
+          "baseRotArray",
+          "stepBasicPositionArray",
+          "stepBasicRotationArray",
+          "lengthPtr"
+        ],
+        "managedFallbackElementStridesBytes": [
+          4,
+          464,
+          1,
+          4,
+          12,
+          16,
+          2,
+          2,
+          2,
+          24,
+          16,
+          24,
+          16,
+          4
+        ]
+      },
+      "candidates": [
+        {
+          "hash": "a8df0cddc9889e0c46f8bec650d8b959",
+          "rva": "0x358620",
+          "spanBytes": 160,
+          "bodyBytes": 159,
+          "bodySha256": "c3ebd5a4e3643b7708af1b923e040f695bcad1ae580f2338abec2ea19a681f91",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": []
+        }
+      ],
+      "abiShapeFalseCandidates": [
+        {
+          "hash": "56d6e448a273fb14345051fc02058afe",
+          "rva": "0x3563e0",
+          "spanBytes": 160,
+          "bodyBytes": 159,
+          "bodySha256": "6870ac1d989b96457581e1ad3796fba4d68636f61c2c36aeea72ea2ee97ea632",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": []
+        },
+        {
+          "hash": "6a5470d135bde394bed7e7182cdf7c65",
+          "rva": "0x356d80",
+          "spanBytes": 160,
+          "bodyBytes": 159,
+          "bodySha256": "75c85b4054080534f00540c55ad11def04b67afb2bf35d432e251f14e82d0a73",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": []
+        }
+      ],
+      "semanticDiscriminator": {
+        "argument3": "attributes: one-byte VertexAttribute access",
+        "argument4": "vertexParentIndices: four-byte parent-index access",
+        "output12": "stepBasicPositionArray: 24-byte double3 write",
+        "output13": "stepBasicRotationArray: 16-byte quaternion write",
+        "rejectedReason": "the other ten-qword ABI thunks do not preserve this ordered element-width and output-write signature"
+      },
+      "exactCoreIdentity": {
+        "status": "static_slot_entry_range_and_dual_cpu_solver_core_closed",
+        "functionPointerSlotRva": "0x3c5ed0",
+        "variants": [
+          {
+            "cpuVariant": "x64_sse2",
+            "burstInitializeAssignment": {
+              "rva": "0x35fcce",
+              "bytes": 14,
+              "sha256": "015186e4e1513dac60f12687e5bf91c3aed52cf8912cec5196dd410d8443cad9",
+              "functionPointerSlotRva": "0x3c5ed0"
+            },
+            "entry": {
+              "rva": "0xa5480",
+              "bytes": 158,
+              "sha256": "03cc2fe4f7ee9387ac221a8414b24e82a664a215dca2701b3636fe8e857d9cdb"
+            },
+            "rangeLoop": {
+              "rva": "0xa5e70",
+              "bytes": 209,
+              "sha256": "2ddfaceb503da6f3903825a526d035fc108d7f5626b1e82e1d92a99d68be7028"
+            },
+            "solverCore": {
+              "rva": "0xa5670",
+              "bytes": 2042,
+              "sha256": "79b31799e8c6e534f5be4d7ee39eaaa2384afbf2f3b4ded99b727709c0b8a47a"
+            }
+          },
+          {
+            "cpuVariant": "avx2",
+            "burstInitializeAssignment": {
+              "rva": "0x35ba97",
+              "bytes": 14,
+              "sha256": "5b4d0e6388f7b0602ead80c66fa72cc3bea7f4c46b18c1f7f29500f4417baf2d",
+              "functionPointerSlotRva": "0x3c5ed0"
+            },
+            "entry": {
+              "rva": "0x241910",
+              "bytes": 58,
+              "sha256": "f5d035f3bfc4f52f9740b9011d068f34792ad437e4fb2049de09457be818888d"
+            },
+            "rangeLoop": {
+              "rva": "0x2421b0",
+              "bytes": 209,
+              "sha256": "d9700e11acecd958bc1dd4bc35c0738431166df99c1d0411b9bfb461fa969939"
+            },
+            "solverCore": {
+              "rva": "0x241aa0",
+              "bytes": 1804,
+              "sha256": "1a83498696a2e50778d1aed396decdafacbae129c3ae4196daa9391497eaae98"
+            }
+          }
+        ],
+        "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved",
+        "decodeBoundary": "kernel identity and ordered payload-width semantics are closed; complete numeric equations remain to be decoded before Unity implementation"
+      }
+    },
+    "simulationEndRange": {
+      "managedMethodIndex": 385626,
+      "directInvokeMethodIndex": 385648,
+      "directInvokeVa": "0x1867701d4",
+      "status": "static_semantic_export_identity_and_dual_cpu_cores_closed_managed_wrapper_route_unobserved",
+      "parameterContract": {
+        "parameterCount": 17,
+        "leadingScalar": "simulationDeltaTime System.Single",
+        "nativeArrayParameterCount": 16,
+        "leadingRegisterMap": {
+          "xmm0": "simulationDeltaTime",
+          "rdx": "stepParticleIndexArray",
+          "r8": "teamDataArray",
+          "r9": "parameterArray"
+        },
+        "canonicalStructureStridesBytes": {
+          "TeamData": 464,
+          "ClothParameters": 808,
+          "CenterData": 696
+        }
+      },
+      "candidates": [
+        {
+          "hash": "41ab6c9cba7b13c1177cc44fe548d030",
+          "rva": "0x355800",
+          "spanBytes": 208,
+          "bodyBytes": 207,
+          "bodySha256": "fff7b13fba6e0ee146b124afc533577eacb259689682b130939f3a0ed10f5e49",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68",
+            "0x70",
+            "0x78",
+            "0x80"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": [
+            "rcx"
+          ]
+        }
+      ],
+      "abiShapeFalseCandidates": [
+        {
+          "hash": "226261a75cb450326f01659bdc8cb2d5",
+          "rva": "0x354c90",
+          "spanBytes": 208,
+          "bodyBytes": 207,
+          "bodySha256": "1f82946f60704dafd8aaccccc11691d3528ed3eab9c73aafcc4f0beb65bbd060",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68",
+            "0x70",
+            "0x78",
+            "0x80"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": []
+        },
+        {
+          "hash": "62061c35abfe0d5ed4fb4b9019361071",
+          "rva": "0x356a10",
+          "spanBytes": 208,
+          "bodyBytes": 207,
+          "bodySha256": "e471c4a7b7435aa48d27b65802ec703fcaee70317682d661705f3b8e2662ad3f",
+          "stackWriteOffsets": [
+            "0x20",
+            "0x28",
+            "0x30",
+            "0x38",
+            "0x40",
+            "0x48",
+            "0x50",
+            "0x58",
+            "0x60",
+            "0x68",
+            "0x70",
+            "0x78",
+            "0x80"
+          ],
+          "stackWriteWidths": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "incomingGprClobbers": []
+        }
+      ],
+      "semanticDiscriminator": {
+        "rdx": "stepParticleIndexArray: four-byte indexed load",
+        "r8": "teamDataArray: 464-byte stride",
+        "r9": "parameterArray: 808-byte stride",
+        "stackArgument5": "centerDataArray: 696-byte stride",
+        "rejectedReason": "the other thirteen-qword ABI thunks violate the positional register map or omit the CenterData stride"
+      },
+      "exactCoreIdentity": {
+        "status": "static_slot_entry_range_and_dual_cpu_solver_core_closed",
+        "functionPointerSlotRva": "0x3c4fb0",
+        "variants": [
+          {
+            "cpuVariant": "x64_sse2",
+            "burstInitializeAssignment": {
+              "rva": "0x360262",
+              "bytes": 14,
+              "sha256": "5cf3a4d01005931ec8a84e7d592ac71b4792755c87260c950459abe807602d3b",
+              "functionPointerSlotRva": "0x3c4fb0"
+            },
+            "entry": {
+              "rva": "0xcc240",
+              "bytes": 206,
+              "sha256": "d7045e48d623ac0c63b08e75d63b79ef3798028f91ead37a2430dca186292b36"
+            },
+            "rangeLoop": {
+              "rva": "0xcc460",
+              "bytes": 271,
+              "sha256": "c491b70db4ac1c32d848bae948047395a77ce88373ae7c93fe9b9eef02807206"
+            },
+            "solverCore": {
+              "rva": "0xb5450",
+              "bytes": 2404,
+              "sha256": "499b919ffc7d68fa900c7987eec4f3d4c79b6c4292ead9506825b223137d88eb"
+            }
+          },
+          {
+            "cpuVariant": "avx2",
+            "burstInitializeAssignment": {
+              "rva": "0x35c02b",
+              "bytes": 14,
+              "sha256": "4c76a4bcf3eedd55fb2553b7cc787dd082e2b081201b6595cbbb173c10e1257a",
+              "functionPointerSlotRva": "0x3c4fb0"
+            },
+            "entry": {
+              "rva": "0x2630a0",
+              "bytes": 85,
+              "sha256": "b788fada9551c876a9827cb1bf509f8747dd522d95c931a78e4cdfb897d5850c"
+            },
+            "rangeLoop": {
+              "rva": "0x263250",
+              "bytes": 289,
+              "sha256": "e4f636c9add417eecc6fb1097a8618505fd6f2e308ad0b8a8a6d772d6be4c7a4"
+            },
+            "solverCore": {
+              "rva": "0x24fa60",
+              "bytes": 1745,
+              "sha256": "f623b3ca9c367210ca74998645797c72cefa6d393d708f8665788b85aba41780"
+            }
+          }
+        ],
+        "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved",
+        "decodeBoundary": "kernel identity and ordered payload-width semantics are closed; complete numeric equations remain to be decoded before Unity implementation"
+      }
     }
   },
   "exports": [
@@ -23841,7 +24252,7 @@
   },
   "unresolved": [
     "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll; static export-table analysis cannot join a managed BurstDirectCall to a hash.",
-    "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove managed BurstDirectCall wrapper-to-hash selection; it is no longer required to identify the statically closed Simulation Start and Collider End export cores.",
+    "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove managed BurstDirectCall wrapper-to-hash selection; it is no longer required to identify the statically closed Simulation Start, Simulation Update Basic Posture, Simulation End, or Collider End export cores.",
     "Hash-pinned solver bodies are evidence of original numerics, not a Unity solver implementation or secondary-dynamics equivalence claim; complete equation decoding and runtime integration remain open."
   ]
 }

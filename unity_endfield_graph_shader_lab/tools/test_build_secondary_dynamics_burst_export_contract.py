@@ -113,6 +113,44 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(fingerprint["sourcePins"]["libBurstGeneratedSha256"], builder.EXPECTED_LIB_BURST_SHA256)
         self.assertEqual(payload["contractComparison"]["burstWrapperProvenance"]["fileSha256"], builder._sha256(builder.REPO_ROOT / payload["contractComparison"]["burstWrapperProvenance"]["path"]))
 
+    def test_simulation_update_and_end_exact_dual_cpu_core_graphs_are_closed(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        update = payload["targets"]["simulationUpdateBasicPostureRange"]
+        self.assertEqual(
+            update["status"],
+            "static_semantic_export_identity_and_dual_cpu_cores_closed_managed_wrapper_route_unobserved",
+        )
+        self.assertEqual(update["candidates"][0]["hash"], "a8df0cddc9889e0c46f8bec650d8b959")
+        self.assertEqual(
+            [row["hash"] for row in update["abiShapeFalseCandidates"]],
+            ["56d6e448a273fb14345051fc02058afe", "6a5470d135bde394bed7e7182cdf7c65"],
+        )
+        self.assertEqual(
+            update["parameterContract"]["managedFallbackElementStridesBytes"],
+            [4, 464, 1, 4, 12, 16, 2, 2, 2, 24, 16, 24, 16, 4],
+        )
+        update_exact = update["exactCoreIdentity"]
+        self.assertEqual(update_exact["functionPointerSlotRva"], "0x3c5ed0")
+        update_variants = {row["cpuVariant"]: row for row in update_exact["variants"]}
+        self.assertEqual(update_variants["x64_sse2"]["solverCore"]["rva"], "0xa5670")
+        self.assertEqual(update_variants["avx2"]["solverCore"]["rva"], "0x241aa0")
+
+        end = payload["targets"]["simulationEndRange"]
+        self.assertEqual(end["candidates"][0]["hash"], "41ab6c9cba7b13c1177cc44fe548d030")
+        self.assertEqual(
+            [row["hash"] for row in end["abiShapeFalseCandidates"]],
+            ["226261a75cb450326f01659bdc8cb2d5", "62061c35abfe0d5ed4fb4b9019361071"],
+        )
+        self.assertEqual(
+            end["parameterContract"]["canonicalStructureStridesBytes"],
+            {"TeamData": 464, "ClothParameters": 808, "CenterData": 696},
+        )
+        end_exact = end["exactCoreIdentity"]
+        self.assertEqual(end_exact["functionPointerSlotRva"], "0x3c4fb0")
+        end_variants = {row["cpuVariant"]: row for row in end_exact["variants"]}
+        self.assertEqual(end_variants["x64_sse2"]["solverCore"]["rva"], "0xb5450")
+        self.assertEqual(end_variants["avx2"]["solverCore"]["rva"], "0x24fa60")
+
     def test_managed_cross_check_preserves_native_reference_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         managed = payload["targets"]["simulationStartRange"]["semanticFingerprint"]["managedCrossCheck"]
