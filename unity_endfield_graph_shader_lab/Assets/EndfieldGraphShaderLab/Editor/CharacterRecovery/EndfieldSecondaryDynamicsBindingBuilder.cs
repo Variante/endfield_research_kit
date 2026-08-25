@@ -416,6 +416,10 @@ namespace EndfieldGraphShaderLabEditor
                 constraints, "inertiaConstraint", ownerPath);
             Dictionary<string, object> particleSpeed = Child(
                 inertia, "particleSpeedLimit", ownerPath + ".inertiaConstraint");
+            Dictionary<string, object> localMovementSpeed = Child(
+                inertia, "localMovementSpeedLimit", ownerPath + ".inertiaConstraint");
+            Dictionary<string, object> localRotationSpeed = Child(
+                inertia, "localRotationSpeedLimit", ownerPath + ".inertiaConstraint");
             Dictionary<string, object> tether = Child(
                 constraints, "tetherConstraint", ownerPath);
             Dictionary<string, object> distance = Child(
@@ -461,6 +465,14 @@ namespace EndfieldGraphShaderLabEditor
                 dampingUsesCurve = Toggle(damping, "useCurve", ownerPath),
                 radiusValue = Float(radius, "value", ownerPath),
                 radiusUsesCurve = Toggle(radius, "useCurve", ownerPath),
+                worldInertia = Float(inertia, "worldInertia", ownerPath),
+                movementInertiaSmoothing = Float(
+                    inertia, "movementInertiaSmoothing", ownerPath),
+                localInertia = Float(inertia, "localInertia", ownerPath),
+                localMovementSpeedLimit = Toggle(localMovementSpeed, "use", ownerPath)
+                    ? Float(localMovementSpeed, "value", ownerPath) : -1f,
+                localRotationSpeedLimit = Toggle(localRotationSpeed, "use", ownerPath)
+                    ? Float(localRotationSpeed, "value", ownerPath) : -1f,
                 inertiaDepth = Float(inertia, "depthInertia", ownerPath),
                 particleSpeedLimitEnabled = Toggle(particleSpeed, "use", ownerPath),
                 particleSpeedLimit = Float(particleSpeed, "value", ownerPath),
