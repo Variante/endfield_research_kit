@@ -1832,7 +1832,13 @@ namespace EndfieldGraphShaderLab
                     SortingCriteria.CommonOpaque);
             }
             DrawManualPassFallback(context, camera);
-            DrawRecoveredAuxiliaryPasses(context, camera, "CHARACTER_OUTLINE");
+            DrawRecoveredAuxiliaryPasses(
+                context,
+                camera,
+                "CHARACTER_OUTLINE",
+                canonicalColorTarget,
+                useRecoveredSceneMV ? recoveredSceneMV : null,
+                useRecoveredSceneMV ? recoveredPrimarySceneDepth : null);
 
             if (asset.drawSkybox || drawRecoveredCharInfoSky)
                 context.DrawSkybox(camera);
@@ -5405,10 +5411,38 @@ namespace EndfieldGraphShaderLab
             Camera camera,
             string passName)
         {
+            DrawRecoveredAuxiliaryPasses(
+                context,
+                camera,
+                passName,
+                default(RenderTargetIdentifier),
+                null,
+                null);
+        }
+
+        private static void DrawRecoveredAuxiliaryPasses(
+            ScriptableRenderContext context,
+            Camera camera,
+            string passName,
+            RenderTargetIdentifier colorTarget,
+            RenderTexture sceneMV,
+            RenderTexture depth)
+        {
             CommandBuffer commandBuffer = new CommandBuffer
             {
                 name = "HGCompat Recovered " + passName
             };
+            bool bindSceneMVMrt = sceneMV != null && depth != null;
+            if (bindSceneMVMrt)
+            {
+                commandBuffer.SetRenderTarget(
+                    new[]
+                    {
+                        colorTarget,
+                        new RenderTargetIdentifier(sceneMV)
+                    },
+                    new RenderTargetIdentifier(depth));
+            }
             Renderer[] renderers = Object.FindObjectsOfType<Renderer>();
 
             foreach (Renderer renderer in renderers)
@@ -5431,6 +5465,9 @@ namespace EndfieldGraphShaderLab
                         commandBuffer.DrawRenderer(renderer, material, submesh, pass);
                 }
             }
+
+            if (bindSceneMVMrt)
+                commandBuffer.SetRenderTarget(colorTarget, depth);
 
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();

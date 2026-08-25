@@ -252,44 +252,22 @@ archetypes remain labeled source kits rather than finished characters.
   to float(index + 1), with zero meaning no registered terrain profile. Its
   CharInfo selected-frame value remains unobserved, so canonical M27 still must
   not assume zero.
-- The two remaining M28 `VFXRefract` rows stay fail-closed even though the
-  Distortion SceneColor/SceneMV/depth compositor topology is available. Exact
-  current-build recovery now closes the material and both unrounded
-  GameObject/Transform/ParticleSystem/Renderer tuples, including source-enabled
-  state, Sphere001, GPU instancing, and streams `[0,1,3,4,5,34]`. Both complete
-  D3D11 program pairs (0090/0091 non-instanced and 0624/0625 SRP-instanced) are
-  hash-, signature-, resource-, instruction-, and two-MRT-equation-pinned.
-  Four compatibility-fragment differences collapse for this exact material's
-  fixed values, but that does not select the retail pair or prove the engine
-  BLEND/TEXCOORD4/instance publisher, LOD/time/frame resources, descriptors,
-  attachments, or PSO. Current-build `UnityPlayer.dll` now proves
-  `SRP_INSTANCING_ON` is HyperGryph built-in keyword ordinal 30, and the exact
-  instanced pair directly indexes 256-byte records for instance IDs 0-255 with
-  no shader-side base. The body-hashed native registry/accessor path seeds only
-  stereo built-ins 35/33/36/37 by default; it does not seed ordinal 30. An
-  apparent `bts ..., 0x1e` site is instead mutually exclusive high-bit encoding
-  of a dynamic keyword ID, not a built-in keyword-set write. The sole audited
-  default-set caller closes the actual keyword storage as an inline-or-heap
-  bitset at owner offsets `0x100`/`0x118`; names are first resolved to internal
-  16-bit IDs, so immediate ordinal-30 or `0x40000000` searches cannot identify
-  the draw publisher. The ordinal table is registration-only. Selection and
-  the per-instance publisher therefore require a live D3D11 draw capture;
-  GPU-instancing state, registry ownership, and the one-particle batch are not
-  substitutes. Admission still requires that capture plus both fixed-control
-  60 Hz windows; M21, exact `suikuai (1)`, and M27 must remain unchanged.
-  Recovery is now intentionally bounded to offline evidence: no retail client
-  launch, attachment, or injection is permitted. A local Endminf-specific
-  D3D11 standalone and RenderDoc census proves that the `_03` M28 source is
-  instantiated and alive at `particleTime=0.320262` with one particle while
-  its fail-closed renderer remains disabled and material-less. The fixed M21
-  crystal and exact `suikuai (1)` controls remain enabled with their expected
-  materials, and M27 remains unchanged and fail-closed. This local capture is
-  not retail draw evidence: its shared CharEffect, physical-HDR/SceneMV,
-  post-Uber world-UI, and ShadowPlane target paths are incomplete. Static
-  binaries, serialized assets, recovered programs, video, and this local draw
-  therefore exhaust the allowed evidence. Retail pair selection, per-instance
-  publication, live descriptors/attachments/PSO, and selected M28 pixels are
-  the irreducible boundary; M28 must remain blocked rather than inferred.
+- The two remaining M28 `VFXRefract` rows stay fail-closed, but the four new
+  neutral forced-D3D11 frame analyses reopen their recovery path. All four
+  record the exact SRP-instanced 0624/0625 program pair; the newest capture's
+  event 127 is a one-instance, 1,764-index draw with the source two-MRT
+  topology: 4K `R11G11B10_FLOAT` SceneColor,
+  `R10G10B10A2_UNORM` SceneMV, and D32S8 depth. It also records the input
+  layout, vertex/instance buffers, constant-buffer bindings, two material
+  textures, pre-distortion SceneColor, and state-object handles. This closes
+  the former shader-pair-selection and attachment-format gaps for that draw.
+  Admission still requires an exact join from event 127 to one of the two M28
+  hierarchy rows, decoding the selected constant-buffer ranges and instance
+  record, recovering the blend/depth/raster descriptors behind the captured
+  handles, identifying or capturing the other authored live window, and
+  focused 60 Hz exact-versus-disabled validation for both rows. The capture is
+  forced-D3D11 renderer-path evidence and does not by itself authorize enabling
+  either renderer. M21, exact `suikuai (1)`, and M27 remain unchanged.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -328,8 +306,11 @@ archetypes remain labeled source kits rather than finished characters.
   admitted renderers. `suikuai (2)` remains separately fail-closed: its
   LitEffect material disables ForwardOnly and selects the five-MRT deferred
   HGBuffer program, while the compatibility shader is a one-target ForwardOnly
-  stand-in. Recover that deferred consumer for the remaining physical fragments;
-  do not compensate by resizing, brightening, retiming, or disabling M21.
+  stand-in. None of the four new frame analyses contains the selected M27
+  HGBuffer pair, so its live constants, particle-instance ABI, five attachments,
+  and presented deferred consumer remain open. Capture that row in its authored
+  approximately 4.49-second burst window before restarting live admission; do
+  not compensate by resizing, brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
@@ -577,6 +558,20 @@ resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
 downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.
 
+The four August 24 observer captures also close Endminf's post-Forward
+CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
+cloth-01, cloth-04, cloth-03, and hair), omitting eyebrow and iris. Exact
+exported shader joins recover `Cull Front`, `ZTest Less`, `ZWrite Off`, black
+target-0 blend, packed SceneMV target 1, Skin/generic stencil ref 36, and Hair's
+stencil-16 exclusion. The Unity owner now uses the recovered core clip-space
+depth/FOV/aspect width law and publishes SceneMV in the same frame; the packed
+average-normal attribute path and exact source Z-offset remain open sub-pass
+branches. Its 41-frame D3D11 gate passes. Whole-frame no-frame-generation PSNR
+decreases from 13.3886
+to 13.3268 dB because the former bright edge accidentally agreed with the
+still-mismatched presentation/exposure; retain the source-exact state and fix
+the downstream frame instead of tuning the outline back toward that metric.
+
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,
 presentation scene, and render pipeline must remain reusable for the eventual
@@ -588,7 +583,8 @@ The blocking gap is the complete CharInfo physical presentation frame, not
 another per-material shader approximation. The missing boundary includes:
 
 - the real `SphereOutside` and `ShadowPlane` scene participation;
-- the exact character stencil writer and receiver integration;
+- the downstream character stencil receiver integration beyond the now-closed
+  PreG/Forward/CharacterOutline writer states;
 - render-graph/subpass state and frame-produced lighting resources;
 - confirmation of the final source camera and presentation bindings.
 - ten still-blocked rock-family renderer identities awaiting the bounded live
