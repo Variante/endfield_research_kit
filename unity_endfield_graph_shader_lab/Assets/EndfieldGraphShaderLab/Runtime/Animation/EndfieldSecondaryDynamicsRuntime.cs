@@ -17,8 +17,13 @@ namespace EndfieldGraphShaderLab
         IEndfieldOverviewParameterConsumer,
         IEndfieldOverviewParameterResetConsumer
     {
+        private struct AfterEarlyUpdate { }
+        private struct AfterScriptRunBehaviourFixedUpdate { }
+        private struct AfterScriptRunDelayedTasks { }
         private struct BeforeScriptRunBehaviourLateUpdate { }
         private struct AfterScriptRunBehaviourLateUpdate { }
+        private struct AfterScriptRunDelayedDynamicFrameRate { }
+        private struct AfterFinishFrameRendering { }
 
         private static readonly List<EndfieldSecondaryDynamicsRuntime> Active =
             new List<EndfieldSecondaryDynamicsRuntime>();
@@ -31,6 +36,11 @@ namespace EndfieldGraphShaderLab
         public float TargetWeight { get; private set; }
         public float CurrentWeight { get; private set; }
         public bool SolverWritebackEnabled => false;
+        public int UpdateLocation => updateLocation;
+
+        [SerializeField, Range(0, 1)]
+        private int updateLocation;
+        private int fixedUpdateCount;
 
         private const float EnableRate = 8.0f;
         private const float DisableRate = 6.0f;
@@ -75,7 +85,7 @@ namespace EndfieldGraphShaderLab
             TargetWeight = 0.0f;
         }
 
-        private void BeforeLateUpdate()
+        private void RunWholeClothPipelineBoundary()
         {
             float rate = TargetWeight > CurrentWeight ? EnableRate : DisableRate;
             float next = Mathf.MoveTowards(CurrentWeight, TargetWeight, rate * Time.deltaTime);
@@ -83,15 +93,49 @@ namespace EndfieldGraphShaderLab
                 Mathf.Approximately(next, TargetWeight))
                 CurrentWeight = next;
 
-            // Intentionally no transform writes here. This phase is the exact
-            // recovered scheduling boundary reserved for the translated Start,
-            // constraint, and Update Basic Posture kernels.
+            // Intentionally no transform writes here. The original executes
+            // the complete read/simulate/write ClothUpdate pipeline on exactly
+            // one selected side of ScriptRunBehaviourLateUpdate. It does not
+            // split Start and End across the two callbacks.
         }
 
-        private void AfterLateUpdate()
+        private void OnAfterEarlyUpdate()
         {
-            // Intentionally no transform writes here. This phase is reserved
-            // for the translated End kernel and centralized transform manager.
+            // Reserved for prior cross-frame completion and transform restore.
+        }
+
+        private void OnAfterFixedUpdate()
+        {
+            // The original callback increments only this counter; it never
+            // invokes ClothUpdate from FixedUpdate.
+            fixedUpdateCount++;
+        }
+
+        private void OnAfterUpdate()
+        {
+            // Reserved for animator cross-frame completion and monitoring.
+        }
+
+        private void OnBeforeLateUpdate()
+        {
+            if (updateLocation == 1)
+                RunWholeClothPipelineBoundary();
+        }
+
+        private void OnAfterLateUpdate()
+        {
+            if (updateLocation == 0)
+                RunWholeClothPipelineBoundary();
+        }
+
+        private void OnPreRenderingUpdate()
+        {
+            // Reserved for render-mesh publication.
+        }
+
+        private void OnAfterRendering()
+        {
+            fixedUpdateCount = 0;
         }
 
         private bool ValidateBindings(out string failure)
@@ -167,32 +211,39 @@ namespace EndfieldGraphShaderLab
         private static void InstallPlayerLoop()
         {
             PlayerLoopSystem root = PlayerLoop.GetCurrentPlayerLoop();
-            if (playerLoopInstalled && ContainsRecoveredPhase(root))
+            if (playerLoopInstalled && CountRecoveredPhases(root) == 7)
                 return;
-            if (ContainsRecoveredPhase(root))
+            if (CountRecoveredPhases(root) == 7)
             {
                 playerLoopInstalled = true;
                 return;
             }
             if (!InsertRecoveredPhases(ref root))
                 throw new InvalidOperationException(
-                    "PreLateUpdate.ScriptRunBehaviourLateUpdate was not found in the PlayerLoop.");
+                    "One or more recovered secondary-dynamics PlayerLoop anchors were not found.");
             PlayerLoop.SetPlayerLoop(root);
             playerLoopInstalled = true;
         }
 
-        private static bool ContainsRecoveredPhase(PlayerLoopSystem system)
+        private static int CountRecoveredPhases(PlayerLoopSystem system)
         {
-            if (system.type == typeof(BeforeScriptRunBehaviourLateUpdate))
-                return true;
+            int count = IsRecoveredPhase(system.type) ? 1 : 0;
             if (system.subSystemList == null)
-                return false;
+                return count;
             foreach (PlayerLoopSystem child in system.subSystemList)
-            {
-                if (ContainsRecoveredPhase(child))
-                    return true;
-            }
-            return false;
+                count += CountRecoveredPhases(child);
+            return count;
+        }
+
+        private static bool IsRecoveredPhase(Type type)
+        {
+            return type == typeof(AfterEarlyUpdate) ||
+                type == typeof(AfterScriptRunBehaviourFixedUpdate) ||
+                type == typeof(AfterScriptRunDelayedTasks) ||
+                type == typeof(BeforeScriptRunBehaviourLateUpdate) ||
+                type == typeof(AfterScriptRunBehaviourLateUpdate) ||
+                type == typeof(AfterScriptRunDelayedDynamicFrameRate) ||
+                type == typeof(AfterFinishFrameRendering);
         }
 
         private static bool HashMatches(TextAsset asset, string expected)
@@ -207,28 +258,70 @@ namespace EndfieldGraphShaderLab
 
         private static bool InsertRecoveredPhases(ref PlayerLoopSystem system)
         {
+            bool early = AppendToCategory(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.EarlyUpdate),
+                typeof(AfterEarlyUpdate),
+                RunAfterEarlyUpdate);
+            bool fixedUpdate = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.FixedUpdate.ScriptRunBehaviourFixedUpdate),
+                false,
+                typeof(AfterScriptRunBehaviourFixedUpdate),
+                RunAfterFixedUpdate);
+            bool update = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.Update.ScriptRunDelayedTasks),
+                false,
+                typeof(AfterScriptRunDelayedTasks),
+                RunAfterUpdate);
+            bool beforeLate = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.PreLateUpdate.ScriptRunBehaviourLateUpdate),
+                true,
+                typeof(BeforeScriptRunBehaviourLateUpdate),
+                RunBeforeLateUpdate);
+            bool afterLate = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.PreLateUpdate.ScriptRunBehaviourLateUpdate),
+                false,
+                typeof(AfterScriptRunBehaviourLateUpdate),
+                RunAfterLateUpdate);
+            bool preRendering = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.PostLateUpdate.ScriptRunDelayedDynamicFrameRate),
+                false,
+                typeof(AfterScriptRunDelayedDynamicFrameRate),
+                RunPreRenderingUpdate);
+            bool afterRendering = InsertRelativeTo(
+                ref system,
+                typeof(UnityEngine.PlayerLoop.PostLateUpdate.FinishFrameRendering),
+                false,
+                typeof(AfterFinishFrameRendering),
+                RunAfterRendering);
+            return early && fixedUpdate && update && beforeLate && afterLate &&
+                preRendering && afterRendering;
+        }
+
+        private static bool AppendToCategory(
+            ref PlayerLoopSystem system,
+            Type category,
+            Type phase,
+            PlayerLoopSystem.UpdateFunction update)
+        {
+            if (system.type == category)
+            {
+                var list = (system.subSystemList ?? Array.Empty<PlayerLoopSystem>()).ToList();
+                list.Add(new PlayerLoopSystem { type = phase, updateDelegate = update });
+                system.subSystemList = list.ToArray();
+                return true;
+            }
             if (system.subSystemList == null)
                 return false;
             for (int index = 0; index < system.subSystemList.Length; index++)
             {
                 PlayerLoopSystem child = system.subSystemList[index];
-                if (child.type == typeof(UnityEngine.PlayerLoop.PreLateUpdate.ScriptRunBehaviourLateUpdate))
-                {
-                    var list = system.subSystemList.ToList();
-                    list.Insert(index, new PlayerLoopSystem
-                    {
-                        type = typeof(BeforeScriptRunBehaviourLateUpdate),
-                        updateDelegate = RunBeforeLateUpdate,
-                    });
-                    list.Insert(index + 2, new PlayerLoopSystem
-                    {
-                        type = typeof(AfterScriptRunBehaviourLateUpdate),
-                        updateDelegate = RunAfterLateUpdate,
-                    });
-                    system.subSystemList = list.ToArray();
-                    return true;
-                }
-                if (InsertRecoveredPhases(ref child))
+                if (AppendToCategory(ref child, category, phase, update))
                 {
                     system.subSystemList[index] = child;
                     return true;
@@ -237,7 +330,47 @@ namespace EndfieldGraphShaderLab
             return false;
         }
 
-        private static void RunBeforeLateUpdate()
+        private static bool InsertRelativeTo(
+            ref PlayerLoopSystem system,
+            Type anchor,
+            bool before,
+            Type phase,
+            PlayerLoopSystem.UpdateFunction update)
+        {
+            if (system.subSystemList == null)
+                return false;
+            for (int index = 0; index < system.subSystemList.Length; index++)
+            {
+                PlayerLoopSystem child = system.subSystemList[index];
+                if (child.type == anchor)
+                {
+                    var list = system.subSystemList.ToList();
+                    list.Insert(before ? index : index + 1, new PlayerLoopSystem
+                    {
+                        type = phase,
+                        updateDelegate = update,
+                    });
+                    system.subSystemList = list.ToArray();
+                    return true;
+                }
+                if (InsertRelativeTo(ref child, anchor, before, phase, update))
+                {
+                    system.subSystemList[index] = child;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static void RunAfterEarlyUpdate() => RunActive(runtime => runtime.OnAfterEarlyUpdate());
+        private static void RunAfterFixedUpdate() => RunActive(runtime => runtime.OnAfterFixedUpdate());
+        private static void RunAfterUpdate() => RunActive(runtime => runtime.OnAfterUpdate());
+        private static void RunBeforeLateUpdate() => RunActive(runtime => runtime.OnBeforeLateUpdate());
+        private static void RunAfterLateUpdate() => RunActive(runtime => runtime.OnAfterLateUpdate());
+        private static void RunPreRenderingUpdate() => RunActive(runtime => runtime.OnPreRenderingUpdate());
+        private static void RunAfterRendering() => RunActive(runtime => runtime.OnAfterRendering());
+
+        private static void RunActive(Action<EndfieldSecondaryDynamicsRuntime> action)
         {
             for (int index = Active.Count - 1; index >= 0; index--)
             {
@@ -245,20 +378,9 @@ namespace EndfieldGraphShaderLab
                 if (runtime == null)
                     Active.RemoveAt(index);
                 else if (runtime.isActiveAndEnabled && runtime.BindingValid)
-                    runtime.BeforeLateUpdate();
+                    action(runtime);
             }
         }
 
-        private static void RunAfterLateUpdate()
-        {
-            for (int index = Active.Count - 1; index >= 0; index--)
-            {
-                EndfieldSecondaryDynamicsRuntime runtime = Active[index];
-                if (runtime == null)
-                    Active.RemoveAt(index);
-                else if (runtime.isActiveAndEnabled && runtime.BindingValid)
-                    runtime.AfterLateUpdate();
-            }
-        }
     }
 }

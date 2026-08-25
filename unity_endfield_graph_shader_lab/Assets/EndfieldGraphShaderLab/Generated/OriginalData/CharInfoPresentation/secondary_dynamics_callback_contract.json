@@ -61,74 +61,191 @@
       "version": 29
     }
   },
-  "callback": {
-    "delegateSlot": "0x18",
-    "playerLoopOrdinal": 2,
-    "playerLoopCategory": "FixedUpdate",
-    "playerLoopSystem": "ScriptRunBehaviourFixedUpdate",
-    "nativeCallOffset": 988,
-    "nativeCallVa": "0x183323a5c",
-    "insertion": {
-      "last": false,
-      "before": false
+  "callbacks": [
+    {
+      "ordinal": 1,
+      "delegateSlot": "0x10",
+      "playerLoopCategory": "EarlyUpdate",
+      "playerLoopSystem": null,
+      "nativeCallOffset": 674,
+      "nativeCallVa": "0x183323922",
+      "insertion": {
+        "last": true,
+        "before": false
+      },
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_0",
+        "methodIndex": 385117,
+        "methodPointerVa": "0x1832345d0",
+        "fileOffset": "0x3232bd0",
+        "bytes": 112,
+        "sha256": "d6e076b13a0325aa29400b27a243628c69af182cb3e4ececd67b85c0858ecf8c",
+        "nativeBodySha256": "d6e076b13a0325aa29400b27a243628c69af182cb3e4ececd67b85c0858ecf8c",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+      },
+      "subscriber": "ClothManager.OnEarlyClothUpdate",
+      "role": "complete prior cross-frame work and restore non-animator transforms"
     },
-    "method": {
-      "type": "BeyondDynamicBone.MagicaManager+<>c",
-      "method": "<SetCustomGameLoop>b__40_1",
-      "methodIndex": 385118,
-      "methodPointerVa": "0x183234640",
-      "fileOffset": "0x3232c40",
-      "bytes": 1040,
-      "sha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
-      "nativeBodySha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
-      "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+    {
+      "ordinal": 2,
+      "delegateSlot": "0x18",
+      "playerLoopCategory": "FixedUpdate",
+      "playerLoopSystem": "ScriptRunBehaviourFixedUpdate",
+      "nativeCallOffset": 988,
+      "nativeCallVa": "0x183323a5c",
+      "insertion": {
+        "last": false,
+        "before": false
+      },
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_1",
+        "methodIndex": 385118,
+        "methodPointerVa": "0x183234640",
+        "fileOffset": "0x3232c40",
+        "bytes": 1040,
+        "sha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
+        "nativeBodySha256": "f728905b0a95d7fc8fb142a63d572937e31368ca9a69e91d7dc6d2e72312d163",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+      },
+      "subscriber": "TimeManager.AfterFixedUpdate",
+      "role": "increment FixedUpdateCount only"
     },
-    "calls": [
-      {
-        "offset": 394,
-        "targetVa": "0x182f95240",
-        "type": "BeyondDynamicBone.MagicaManager",
-        "method": "get_Time"
+    {
+      "ordinal": 3,
+      "delegateSlot": "0x20",
+      "playerLoopCategory": "Update",
+      "playerLoopSystem": "ScriptRunDelayedTasks",
+      "nativeCallOffset": 1302,
+      "nativeCallVa": "0x183323b96",
+      "insertion": {
+        "last": false,
+        "before": false
       },
-      {
-        "offset": 419,
-        "targetVa": "0x182f918a0",
-        "type": "BeyondDynamicBone.ClothManager",
-        "method": "ClothUpdate",
-        "abiRegisterWrites": {
-          "rcx": "rbp",
-          "rdx": "0"
-        }
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_2",
+        "methodIndex": 385119,
+        "methodPointerVa": "0x1832340d0",
+        "fileOffset": "0x32326d0",
+        "bytes": 176,
+        "sha256": "b2fdc5eb3b92f8a5d7c7d5431e1a9c0ef0ddf931f9959a48e890c7096b7adce4",
+        "nativeBodySha256": "b2fdc5eb3b92f8a5d7c7d5431e1a9c0ef0ddf931f9959a48e890c7096b7adce4",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
       },
-      {
-        "offset": 493,
-        "targetVa": "0x1835bcab0",
-        "type": "BeyondDynamicBone.TeamManager",
-        "method": "MonitoringProcess",
-        "abiRegisterWrites": {
-          "rcx": "rbp",
-          "rdx": "0",
-          "r8": "0"
-        }
+      "subscriber": "ClothManager.OnAfterUpdate",
+      "role": "complete animator cross-frame work and monitoring"
+    },
+    {
+      "ordinal": 4,
+      "delegateSlot": "0x28",
+      "playerLoopCategory": "PreLateUpdate",
+      "playerLoopSystem": "ScriptRunBehaviourLateUpdate",
+      "nativeCallOffset": 1616,
+      "nativeCallVa": "0x183323cd0",
+      "insertion": {
+        "last": false,
+        "before": true
       },
-      {
-        "offset": 790,
-        "targetVa": "0x182f95240",
-        "type": "BeyondDynamicBone.MagicaManager",
-        "method": "get_Time"
-      }
-    ],
-    "argumentContract": {
-      "ClothUpdate": {
-        "rcx": "rbp",
-        "rdx": "0"
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_3",
+        "methodIndex": 385120,
+        "methodPointerVa": "0x1832341f0",
+        "fileOffset": "0x32327f0",
+        "bytes": 112,
+        "sha256": "da7f960259486eee07894c1438657ccdb7a2aa6cf45834d9e7ed802c48f6c849",
+        "nativeBodySha256": "da7f960259486eee07894c1438657ccdb7a2aa6cf45834d9e7ed802c48f6c849",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
       },
-      "MonitoringProcess": {
-        "rcx": "rbp",
-        "rdx": "0",
-        "r8": "0"
-      }
+      "subscriber": "ClothManager.OnBeforeLateUpdate",
+      "role": "run the whole ClothUpdate pipeline only when updateLocation == 1"
+    },
+    {
+      "ordinal": 5,
+      "delegateSlot": "0x30",
+      "playerLoopCategory": "PreLateUpdate",
+      "playerLoopSystem": "ScriptRunBehaviourLateUpdate",
+      "nativeCallOffset": 1930,
+      "nativeCallVa": "0x183323e0a",
+      "insertion": {
+        "last": false,
+        "before": false
+      },
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_4",
+        "methodIndex": 385121,
+        "methodPointerVa": "0x183234260",
+        "fileOffset": "0x3232860",
+        "bytes": 112,
+        "sha256": "ee6e3c173c6110107a09846435b3e9420e11c51e43af0f656067a3dd9886ea40",
+        "nativeBodySha256": "ee6e3c173c6110107a09846435b3e9420e11c51e43af0f656067a3dd9886ea40",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+      },
+      "subscriber": "ClothManager.OnAfterLateUpdate",
+      "role": "run the whole ClothUpdate pipeline only when updateLocation == 0"
+    },
+    {
+      "ordinal": 6,
+      "delegateSlot": "0x38",
+      "playerLoopCategory": "PostLateUpdate",
+      "playerLoopSystem": "ScriptRunDelayedDynamicFrameRate",
+      "nativeCallOffset": 2244,
+      "nativeCallVa": "0x183323f44",
+      "insertion": {
+        "last": false,
+        "before": false
+      },
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_5",
+        "methodIndex": 385122,
+        "methodPointerVa": "0x1832342d0",
+        "fileOffset": "0x32328d0",
+        "bytes": 112,
+        "sha256": "dc300297110f1840c3c4ab10903531731cd660915651db8956aca782fa30dd42",
+        "nativeBodySha256": "dc300297110f1840c3c4ab10903531731cd660915651db8956aca782fa30dd42",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+      },
+      "subscriber": "RenderManager.PreRenderingUpdate",
+      "role": "publish render meshes"
+    },
+    {
+      "ordinal": 7,
+      "delegateSlot": "0x40",
+      "playerLoopCategory": "PostLateUpdate",
+      "playerLoopSystem": "FinishFrameRendering",
+      "nativeCallOffset": 2558,
+      "nativeCallVa": "0x18332407e",
+      "insertion": {
+        "last": false,
+        "before": false
+      },
+      "method": {
+        "type": "BeyondDynamicBone.MagicaManager+<>c",
+        "method": "<SetCustomGameLoop>b__40_6",
+        "methodIndex": 385123,
+        "methodPointerVa": "0x183234340",
+        "fileOffset": "0x3232940",
+        "bytes": 112,
+        "sha256": "20dce8c0eb8efee4159a46130b2d63fa1fcdf973ed7078ac54c0e56227d110b1",
+        "nativeBodySha256": "20dce8c0eb8efee4159a46130b2d63fa1fcdf973ed7078ac54c0e56227d110b1",
+        "hashSource": "pinned GameAssembly.dll fileOffset + scanBytes"
+      },
+      "subscriber": "TimeManager.AfterRenderring",
+      "role": "reset FixedUpdateCount"
     }
+  ],
+  "simulationSelectors": {
+    "beforeLateUpdateOrdinal": 4,
+    "beforeLateUpdateGate": "updateLocation == 1",
+    "afterLateUpdateOrdinal": 5,
+    "afterLateUpdateGate": "updateLocation == 0",
+    "mutuallyExclusiveWholePipeline": true,
+    "fixedUpdateRunsClothUpdate": false,
+    "boundary": "The complete ClothUpdate pipeline runs on one selected side of ScriptRunBehaviourLateUpdate; the callbacks are not split Start/End phases."
   },
   "writeback": {
     "method": {
@@ -372,6 +489,8 @@
   },
   "execution_boundary": {
     "native_callback_closed": true,
+    "seven_callback_roles_closed": true,
+    "active_update_location_observed": false,
     "transform_writeback_route_closed": true,
     "burst_constraint_numerics_recovered": false,
     "job_payload_layout_recovered": false,

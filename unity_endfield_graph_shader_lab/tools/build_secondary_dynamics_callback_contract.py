@@ -52,33 +52,27 @@ EXPECTED_BONE_ASSEMBLY_SHA256 = "025c209c7f0b9ee927891421c74b42bdd16ff224f16f9c1
 EXPECTED_CODE_REGISTRATION = "0x18b9217d0"
 
 CALLBACK_TYPE = "BeyondDynamicBone.MagicaManager+<>c"
-CALLBACK_METHOD = "<SetCustomGameLoop>b__40_1"
-CALLBACK_METHOD_INDEX = 385118
-CALLBACK_VA = "0x183234640"
-CALLBACK_DELEGATE_SLOT = "0x18"
-CALLBACK_PLAYER_LOOP_ORDINAL = 2
-CALLBACK_PLAYER_LOOP_CALL_OFFSET = 988
-CALLBACK_PLAYER_LOOP_CALL_VA = "0x183323a5c"
+CALLBACKS = (
+    (1, "<SetCustomGameLoop>b__40_0", 385117, "0x1832345d0", "0x10", "EarlyUpdate", None, True, False,
+     "ClothManager.OnEarlyClothUpdate", "complete prior cross-frame work and restore non-animator transforms"),
+    (2, "<SetCustomGameLoop>b__40_1", 385118, "0x183234640", "0x18", "FixedUpdate", "ScriptRunBehaviourFixedUpdate", False, False,
+     "TimeManager.AfterFixedUpdate", "increment FixedUpdateCount only"),
+    (3, "<SetCustomGameLoop>b__40_2", 385119, "0x1832340d0", "0x20", "Update", "ScriptRunDelayedTasks", False, False,
+     "ClothManager.OnAfterUpdate", "complete animator cross-frame work and monitoring"),
+    (4, "<SetCustomGameLoop>b__40_3", 385120, "0x1832341f0", "0x28", "PreLateUpdate", "ScriptRunBehaviourLateUpdate", False, True,
+     "ClothManager.OnBeforeLateUpdate", "run the whole ClothUpdate pipeline only when updateLocation == 1"),
+    (5, "<SetCustomGameLoop>b__40_4", 385121, "0x183234260", "0x30", "PreLateUpdate", "ScriptRunBehaviourLateUpdate", False, False,
+     "ClothManager.OnAfterLateUpdate", "run the whole ClothUpdate pipeline only when updateLocation == 0"),
+    (6, "<SetCustomGameLoop>b__40_5", 385122, "0x1832342d0", "0x38", "PostLateUpdate", "ScriptRunDelayedDynamicFrameRate", False, False,
+     "RenderManager.PreRenderingUpdate", "publish render meshes"),
+    (7, "<SetCustomGameLoop>b__40_6", 385123, "0x183234340", "0x40", "PostLateUpdate", "FinishFrameRendering", False, False,
+     "TimeManager.AfterRenderring", "reset FixedUpdateCount"),
+)
 
 CLOTH_MANAGER_TYPE = "BeyondDynamicBone.ClothManager"
 CLOTH_UPDATE_METHOD = "ClothUpdate"
 CLOTH_UPDATE_METHOD_INDEX = 384441
 CLOTH_UPDATE_VA = "0x182f918a0"
-
-# These are deliberately narrow: they are the named calls that establish the
-# scheduling/read/write boundary.  The full native body remains in the pinned
-# evidence map and is not copied into the generated WebUI-facing contract.
-CALLBACK_CALLS = (
-    (394, "0x182f95240", "BeyondDynamicBone.MagicaManager", "get_Time"),
-    (419, CLOTH_UPDATE_VA, CLOTH_MANAGER_TYPE, CLOTH_UPDATE_METHOD),
-    (493, "0x1835bcab0", "BeyondDynamicBone.TeamManager", "MonitoringProcess"),
-    (790, "0x182f95240", "BeyondDynamicBone.MagicaManager", "get_Time"),
-)
-
-CALLBACK_ABI = {
-    419: {"rcx": "rbp", "rdx": "0"},
-    493: {"rcx": "rbp", "rdx": "0", "r8": "0"},
-}
 
 CRITICAL_CALLS = (
     (447, "0x1834460c0", "BeyondDynamicBone.TimeManager", "FrameUpdate"),
@@ -412,35 +406,35 @@ def _verify_player_loop(solver: dict[str, Any], player_loop: dict[str, Any]) -> 
     if (player_loop.get("sourceHashes") or {}).get("global-metadata.dat") != EXPECTED_METADATA_SHA256:
         raise ContractError("PlayerLoop metadata hash drift")
     rows = player_loop.get("insertions") or []
-    if len(rows) != 7 or rows[1].get("ordinal") != CALLBACK_PLAYER_LOOP_ORDINAL:
-        raise ContractError("PlayerLoop callback ordinal drift")
-    row = rows[1]
-    if row.get("categoryName", {}).get("value") != "FixedUpdate":
-        raise ContractError("PlayerLoop callback category drift")
-    if row.get("systemName", {}).get("value") != "ScriptRunBehaviourFixedUpdate":
-        raise ContractError("PlayerLoop callback system drift")
-    if row.get("last") is not False or row.get("before") is not False:
-        raise ContractError("PlayerLoop callback insertion flags drift")
-    if row.get("nativeCallOffset") != CALLBACK_PLAYER_LOOP_CALL_OFFSET:
-        raise ContractError("PlayerLoop callback native call offset drift")
-    if row.get("nativeCallVa") != CALLBACK_PLAYER_LOOP_CALL_VA:
-        raise ContractError("PlayerLoop callback native call VA drift")
+    if len(rows) != len(CALLBACKS):
+        raise ContractError("PlayerLoop callback count drift")
     if solver.get("native_lifecycle", {}).get("player_loop", {}).get("status") != player_loop.get("status"):
         raise ContractError("solver-input PlayerLoop status drift")
-    registration = next(
-        (
-            callback
-            for callback in solver.get("native_lifecycle", {}).get("manager", {}).get("callbacks", [])
-            if callback.get("method") == CALLBACK_METHOD
-        ),
-        None,
-    )
-    if not registration:
-        raise ContractError("solver-input callback registration is missing")
-    if registration.get("va") != CALLBACK_VA:
-        raise ContractError("solver-input callback registration VA drift")
-    if registration.get("delegate_slot") != CALLBACK_DELEGATE_SLOT:
-        raise ContractError("solver-input callback delegate slot drift")
+    registrations = {
+        row.get("method"): row
+        for row in solver.get("native_lifecycle", {}).get("manager", {}).get("callbacks", [])
+    }
+    for expected, row in zip(CALLBACKS, rows):
+        ordinal, method, _, va, slot, category, system, last, before, _, _ = expected
+        if row.get("ordinal") != ordinal:
+            raise ContractError("PlayerLoop callback ordinal drift")
+        if row.get("categoryName", {}).get("value") != category:
+            raise ContractError("PlayerLoop callback category drift")
+        observed_system = row.get("systemName", {}).get("value")
+        if system is None:
+            if row.get("systemName", {}).get("status") != "unresolved_initialized_static_field":
+                raise ContractError("PlayerLoop first system boundary drift")
+        elif observed_system != system:
+            raise ContractError("PlayerLoop callback system drift")
+        if row.get("last") is not last or row.get("before") is not before:
+            raise ContractError("PlayerLoop callback insertion flags drift")
+        registration = registrations.get(method)
+        if not registration:
+            raise ContractError(f"solver-input callback registration is missing: {method}")
+        if registration.get("va") != va:
+            raise ContractError("solver-input callback registration VA drift")
+        if registration.get("delegate_slot") != slot:
+            raise ContractError("solver-input callback delegate slot drift")
 
 
 def build_contract(
@@ -467,28 +461,33 @@ def build_contract(
             Path(native_gate["globalMetadata"]["path"]),
         )
 
-        callback_body = _body_target(native, CALLBACK_TYPE, CALLBACK_METHOD)
         cloth_body = _body_target(native, CLOTH_MANAGER_TYPE, CLOTH_UPDATE_METHOD)
-        callback_identity = _method_identity(
-            solver["native_lifecycle"], native, CALLBACK_TYPE, CALLBACK_METHOD,
-            Path(native_gate["gameAssembly"]["path"]),
-        )
+        callback_rows = []
+        for ordinal, method, method_index, va, slot, category, system, last, before, subscriber, role in CALLBACKS:
+            identity = _method_identity(
+                solver["native_lifecycle"], native, CALLBACK_TYPE, method,
+                Path(native_gate["gameAssembly"]["path"]),
+            )
+            if identity["methodIndex"] != method_index or identity["methodPointerVa"] != va:
+                raise ContractError(f"callback identity drift: {method}")
+            insertion = loop["insertions"][ordinal - 1]
+            callback_rows.append({
+                "ordinal": ordinal,
+                "delegateSlot": slot,
+                "playerLoopCategory": category,
+                "playerLoopSystem": system,
+                "nativeCallOffset": insertion["nativeCallOffset"],
+                "nativeCallVa": insertion["nativeCallVa"],
+                "insertion": {"last": last, "before": before},
+                "method": identity,
+                "subscriber": subscriber,
+                "role": role,
+            })
         cloth_identity = _method_identity(
             solver["native_lifecycle"], native, CLOTH_MANAGER_TYPE, CLOTH_UPDATE_METHOD,
             Path(native_gate["gameAssembly"]["path"]),
         )
 
-        callback_calls = [
-            _call_record(
-                callback_body,
-                offset,
-                target,
-                typ,
-                method,
-                abi=CALLBACK_ABI.get(offset),
-            )
-            for offset, target, typ, method in CALLBACK_CALLS
-        ]
         critical_calls = [
             _call_record(
                 cloth_body,
@@ -500,15 +499,6 @@ def build_contract(
             )
             for offset, target, typ, method in CRITICAL_CALLS
         ]
-        callback_direct = [
-            row
-            for row in callback_body.get("directCalls", [])
-            if int(row.get("offset", -1)) in {item[0] for item in CALLBACK_CALLS}
-        ]
-        if len(callback_direct) != len(CALLBACK_CALLS):
-            raise ContractError("callback direct-call set is incomplete")
-        if callback_body.get("methodBodySummary", {}).get("unknownInstructionCount") != 0:
-            raise ContractError("callback body contains unknown decoded instructions")
         # The long ClothUpdate body contains decoder ``db`` fragments around
         # control-flow recovery (the pinned map reports 367 unknown bytes), so
         # the contract closes only the independently resolved critical call
@@ -535,20 +525,15 @@ def build_contract(
                     "version": catalog.get("metadata", {}).get("version"),
                 },
             },
-            "callback": {
-                "delegateSlot": CALLBACK_DELEGATE_SLOT,
-                "playerLoopOrdinal": CALLBACK_PLAYER_LOOP_ORDINAL,
-                "playerLoopCategory": "FixedUpdate",
-                "playerLoopSystem": "ScriptRunBehaviourFixedUpdate",
-                "nativeCallOffset": CALLBACK_PLAYER_LOOP_CALL_OFFSET,
-                "nativeCallVa": CALLBACK_PLAYER_LOOP_CALL_VA,
-                "insertion": {"last": False, "before": False},
-                "method": callback_identity,
-                "calls": callback_calls,
-                "argumentContract": {
-                    "ClothUpdate": {"rcx": "rbp", "rdx": "0"},
-                    "MonitoringProcess": {"rcx": "rbp", "rdx": "0", "r8": "0"},
-                },
+            "callbacks": callback_rows,
+            "simulationSelectors": {
+                "beforeLateUpdateOrdinal": 4,
+                "beforeLateUpdateGate": "updateLocation == 1",
+                "afterLateUpdateOrdinal": 5,
+                "afterLateUpdateGate": "updateLocation == 0",
+                "mutuallyExclusiveWholePipeline": True,
+                "fixedUpdateRunsClothUpdate": False,
+                "boundary": "The complete ClothUpdate pipeline runs on one selected side of ScriptRunBehaviourLateUpdate; the callbacks are not split Start/End phases.",
             },
             "writeback": {
                 "method": cloth_identity,
@@ -574,6 +559,8 @@ def build_contract(
             },
             "execution_boundary": {
                 "native_callback_closed": True,
+                "seven_callback_roles_closed": True,
+                "active_update_location_observed": False,
                 "transform_writeback_route_closed": True,
                 "burst_constraint_numerics_recovered": False,
                 "job_payload_layout_recovered": False,
