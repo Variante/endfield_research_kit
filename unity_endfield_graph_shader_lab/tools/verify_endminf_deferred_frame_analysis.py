@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shlex
@@ -12,6 +13,23 @@ from pathlib import Path
 
 VS_HASH = "7012cccc7727b990"
 PS_HASH = "37eacbc3c84bb392"
+LITEFFECT_VS_HASH = "40426f24c41b60b9"
+LITEFFECT_PS_HASH = "ff0499fede675ad7"
+LITEFFECT_EXPECTED_DRAWS = {
+    "FrameAnalysis-2026-08-24-182534": [],
+    "FrameAnalysis-2026-08-24-182646": [47, 48, 49, 50, 51, 52],
+    "FrameAnalysis-2026-08-24-182744": [51, 52, 53, 54, 55, 56],
+    "FrameAnalysis-2026-08-24-182819": [52, 53, 54, 55, 56, 57],
+    "FrameAnalysis-2026-08-24-182850": [52],
+}
+LITEFFECT_TEXTURE_HASHES = {
+    "t0": ("_ParallaxNoiseMap", "4e770fc3"),
+    "t1": ("_ParallaxMaskMap", "30ff729f"),
+    "t2": ("_ParallaxMap", "0091dfae"),
+    "t3": ("_NormalMap", "7fe21e44"),
+    "t4": ("_MROMap", "bb5905b2"),
+    "t5": ("_BaseColorMap", "bb5905b2"),
+}
 FRAME_NAMES = (
     "FrameAnalysis-2026-08-24-182534",
     "FrameAnalysis-2026-08-24-182646",
@@ -26,6 +44,13 @@ TARGET_DSC_RE = re.compile(
 ANY_DSC_RE = re.compile(
     r"^(?P<draw>\d{6})-.+?-vs=(?P<vs>[0-9a-f]{16})-"
     r"ps=(?P<ps>[0-9a-f]{16})\.dsc$"
+)
+LITEFFECT_DSC_RE = re.compile(
+    rf"^(?P<draw>\d{{6}})-.+-vs={LITEFFECT_VS_HASH}-ps={LITEFFECT_PS_HASH}\.dsc$"
+)
+LITEFFECT_TEXTURE_DSC_RE = re.compile(
+    rf"^(?P<draw>\d{{6}})-ps-(?P<slot>t[0-5])=(?P<resource>[0-9a-f]+)-"
+    rf"vs={LITEFFECT_VS_HASH}-ps={LITEFFECT_PS_HASH}\.dsc$"
 )
 RESOURCE_RE = re.compile(
     r"^\s+(?P<slot>\d+): .* hash=(?P<hash>[0-9a-f]+)(?:\s|$)"
@@ -73,6 +98,8 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
     target_files: list[tuple[Path, re.Match[str]]] = []
     target_text_files: list[Path] = []
     neighboring_pairs: dict[int, tuple[str, str]] = {}
+    liteffect_draws: set[int] = set()
+    liteffect_textures: dict[int, dict[str, str]] = {}
     for path in frame_dir.iterdir():
         if not path.is_file():
             continue
@@ -83,6 +110,14 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
             target_text_files.append(path)
         if path.suffix.lower() != ".dsc":
             continue
+        liteffect_match = LITEFFECT_DSC_RE.match(path.name)
+        if liteffect_match is not None:
+            liteffect_draws.add(int(liteffect_match["draw"]))
+        texture_match = LITEFFECT_TEXTURE_DSC_RE.match(path.name)
+        if texture_match is not None:
+            liteffect_textures.setdefault(int(texture_match["draw"]), {})[
+                texture_match["slot"]
+            ] = texture_match["resource"]
         match = TARGET_DSC_RE.match(path.name)
         if match is not None:
             target_files.append((path, match))
@@ -94,11 +129,32 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
             )
 
     draws = sorted({match["draw"] for _, match in target_files})
+    expected_liteffect_draws = LITEFFECT_EXPECTED_DRAWS.get(frame_dir.name)
+    if expected_liteffect_draws is not None and sorted(liteffect_draws) != expected_liteffect_draws:
+        failures.append(
+            f"capture={frame_dir.name}; check=liteffect_instanced_parallax_draws; "
+            f"expected={expected_liteffect_draws}; actual={sorted(liteffect_draws)}"
+        )
+    expected_texture_hashes = {
+        slot: row[1] for slot, row in LITEFFECT_TEXTURE_HASHES.items()
+    }
+    for liteffect_draw in sorted(liteffect_draws):
+        actual_textures = liteffect_textures.get(liteffect_draw, {})
+        if actual_textures != expected_texture_hashes:
+            failures.append(
+                f"capture={frame_dir.name}; draw={liteffect_draw:06d}; "
+                f"check=liteffect_texture_resources; expected={expected_texture_hashes}; "
+                f"actual={actual_textures}"
+            )
     if len(draws) != 1:
         failures.append(
             f"capture={frame_dir.name}; check=exact_draw_count; expected=1; actual={len(draws)}"
         )
-        return {"frame": frame_dir.name, "exactDraws": draws}, failures
+        return {
+            "frame": frame_dir.name,
+            "exactDraws": draws,
+            "litEffectInstancedParallaxDraws": sorted(liteffect_draws),
+        }, failures
 
     draw = draws[0]
     bindings: dict[str, dict[str, object]] = {}
@@ -184,11 +240,13 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
         ],
         "constantBufferDumps": constant_buffer_dumps,
         "neighborShaderSequence": neighbors,
+        "litEffectInstancedParallaxDraws": sorted(liteffect_draws),
     }, failures
 
 
 def build_report(
-    frame_dirs: list[Path], vs_blob: Path, ps_blob: Path, shader_source: Path
+    frame_dirs: list[Path], vs_blob: Path, ps_blob: Path, shader_source: Path,
+    liteffect_vs_blob: Path, liteffect_ps_blob: Path,
 ) -> dict[str, object]:
     failures: list[str] = []
     blobs = []
@@ -229,6 +287,43 @@ def build_report(
         captures.append(capture)
         failures.extend(capture_failures)
 
+    liteffect_blobs = []
+    for stage, path, expected_hash, expected_sha256 in (
+        ("vertex", liteffect_vs_blob, LITEFFECT_VS_HASH,
+         "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c"),
+        ("fragment", liteffect_ps_blob, LITEFFECT_PS_HASH,
+         "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e"),
+    ):
+        data = path.read_bytes()
+        actual_hash = fnv1_64(data)
+        actual_sha256 = hashlib.sha256(data).hexdigest()
+        if actual_hash != expected_hash or actual_sha256 != expected_sha256:
+            failures.append(
+                f"liteffect={stage}; check=blob_identity; expected_hash={expected_hash}; "
+                f"actual_hash={actual_hash}; expected_sha256={expected_sha256}; "
+                f"actual_sha256={actual_sha256}"
+            )
+        metadata = json.loads(path.with_name(path.name + ".metadata.json").read_text(encoding="utf-8"))
+        expected_keywords = ["HG_ENABLE_MV", "SRP_INSTANCING_ON", "_PARALLAX_MAP"]
+        if (metadata.get("SourcePassName") != "HGBuffer" or
+                metadata.get("SourceSubProgramIndex") != 113 or
+                metadata.get("DecodedProgramStage") != stage or
+                metadata.get("SourceCompiledKeywords") != expected_keywords):
+            failures.append(
+                f"liteffect={stage}; check=metadata_variant_identity; "
+                f"pass={metadata.get('SourcePassName')}; "
+                f"subprogram={metadata.get('SourceSubProgramIndex')}; "
+                f"decoded_stage={metadata.get('DecodedProgramStage')}; "
+                f"keywords={metadata.get('SourceCompiledKeywords')}"
+            )
+        liteffect_blobs.append({
+            "stage": stage,
+            "path": path.as_posix(),
+            "bytes": len(data),
+            "sha256": actual_sha256,
+            "unseededFnv1": actual_hash,
+        })
+
     return {
         "status": "ok" if not failures else "failed",
         "contract": "endminf_ui_overview_exact_deferred_pass0_frame_analysis_v1",
@@ -240,18 +335,36 @@ def build_report(
             "requiredVariantMarkers": list(source_markers),
         },
         "captures": captures,
+        "litEffectInstancedParallax": {
+            "shader": "HGRP/LitEffect",
+            "pass": "HGBuffer",
+            "subProgramIndex": 113,
+            "keywords": ["HG_ENABLE_MV", "SRP_INSTANCING_ON", "_PARALLAX_MAP"],
+            "blobs": liteffect_blobs,
+            "captureDrawCounts": {
+                row["frame"]: len(row["litEffectInstancedParallaxDraws"])
+                for row in captures
+            },
+            "textureResources": {
+                slot: {"logicalName": row[0], "resourceHash": row[1]}
+                for slot, row in LITEFFECT_TEXTURE_HASHES.items()
+            },
+            "interpretation": "The active small rock/crystal geometry uses the GPU-instanced parallax variant, not representative non-instanced subprogram 19.",
+        },
         "evidenceBoundary": {
             "proves": [
                 "the exact deferred pass-0 VS/PS pair was submitted once in each captured Endminf overview frame",
                 "the production draw is a fullscreen three-vertex DrawInstanced call",
                 "the draw binds ten pixel constant-buffer views and t0 through t27",
                 "output/depth and dumpable texture descriptors identify retail dimensions and formats",
+                "the captured rock/crystal draw family resolves byte-exactly to HGRP/LitEffect HGBuffer subprogram 113 with SRP_INSTANCING_ON and _PARALLAX_MAP",
             ],
             "doesNotProve": [
                 "pFirstConstant offsets or the active ranges within the shared 4 MiB dynamic constant-buffer ring",
                 "binary content for skipped Texture3D slots t15 and t18 through t23",
                 "b2 skin-palette active ranges or BeyondBoneCloth deformation state",
                 "that the current Unity exact consumer should be presented as final screen color",
+                "the unresolved active constant-buffer ranges or the numeric parallax/deferred equations of LitEffect subprogram 113",
             ],
         },
         "failures": failures,
@@ -291,6 +404,18 @@ def main() -> int:
         "--shader-source", type=Path,
         default=shader_root / "Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader",
     )
+    liteffect_root = (
+        repo_root / "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/"
+        "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode"
+    )
+    parser.add_argument(
+        "--liteffect-vs-blob", type=Path,
+        default=liteffect_root / "0678_endfield_dxbc_0.dxbc",
+    )
+    parser.add_argument(
+        "--liteffect-ps-blob", type=Path,
+        default=liteffect_root / "0679_endfield_dxbc_1.dxbc",
+    )
     args = parser.parse_args()
 
     frame_dirs = [args.capture_root / name for name in FRAME_NAMES]
@@ -299,7 +424,10 @@ def main() -> int:
         for path in missing:
             print(f"missing capture: {path}")
         return 1
-    report = build_report(frame_dirs, args.vs_blob, args.ps_blob, args.shader_source)
+    report = build_report(
+        frame_dirs, args.vs_blob, args.ps_blob, args.shader_source,
+        args.liteffect_vs_blob, args.liteffect_ps_blob,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"{report['status']}: {args.output}")

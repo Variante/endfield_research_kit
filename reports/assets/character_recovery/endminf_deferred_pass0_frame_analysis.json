@@ -228,7 +228,8 @@
           "vs": "1479b2b594b9c91a",
           "ps": "e9ccfc0d0d3c7746"
         }
-      ]
+      ],
+      "litEffectInstancedParallaxDraws": []
     },
     {
       "frame": "FrameAnalysis-2026-08-24-182646",
@@ -429,6 +430,14 @@
           "vs": "1479b2b594b9c91a",
           "ps": "e9ccfc0d0d3c7746"
         }
+      ],
+      "litEffectInstancedParallaxDraws": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
       ]
     },
     {
@@ -630,6 +639,14 @@
           "vs": "1479b2b594b9c91a",
           "ps": "e9ccfc0d0d3c7746"
         }
+      ],
+      "litEffectInstancedParallaxDraws": [
+        51,
+        52,
+        53,
+        54,
+        55,
+        56
       ]
     },
     {
@@ -831,6 +848,14 @@
           "vs": "1479b2b594b9c91a",
           "ps": "e9ccfc0d0d3c7746"
         }
+      ],
+      "litEffectInstancedParallaxDraws": [
+        52,
+        53,
+        54,
+        55,
+        56,
+        57
       ]
     },
     {
@@ -1032,21 +1057,86 @@
           "vs": "1479b2b594b9c91a",
           "ps": "e9ccfc0d0d3c7746"
         }
+      ],
+      "litEffectInstancedParallaxDraws": [
+        52
       ]
     }
   ],
+  "litEffectInstancedParallax": {
+    "shader": "HGRP/LitEffect",
+    "pass": "HGBuffer",
+    "subProgramIndex": 113,
+    "keywords": [
+      "HG_ENABLE_MV",
+      "SRP_INSTANCING_ON",
+      "_PARALLAX_MAP"
+    ],
+    "blobs": [
+      {
+        "stage": "vertex",
+        "path": "D:/fluffy-dump/scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0678_endfield_dxbc_0.dxbc",
+        "bytes": 8148,
+        "sha256": "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+        "unseededFnv1": "40426f24c41b60b9"
+      },
+      {
+        "stage": "fragment",
+        "path": "D:/fluffy-dump/scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0679_endfield_dxbc_1.dxbc",
+        "bytes": 8200,
+        "sha256": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+        "unseededFnv1": "ff0499fede675ad7"
+      }
+    ],
+    "captureDrawCounts": {
+      "FrameAnalysis-2026-08-24-182534": 0,
+      "FrameAnalysis-2026-08-24-182646": 6,
+      "FrameAnalysis-2026-08-24-182744": 6,
+      "FrameAnalysis-2026-08-24-182819": 6,
+      "FrameAnalysis-2026-08-24-182850": 1
+    },
+    "textureResources": {
+      "t0": {
+        "logicalName": "_ParallaxNoiseMap",
+        "resourceHash": "4e770fc3"
+      },
+      "t1": {
+        "logicalName": "_ParallaxMaskMap",
+        "resourceHash": "30ff729f"
+      },
+      "t2": {
+        "logicalName": "_ParallaxMap",
+        "resourceHash": "0091dfae"
+      },
+      "t3": {
+        "logicalName": "_NormalMap",
+        "resourceHash": "7fe21e44"
+      },
+      "t4": {
+        "logicalName": "_MROMap",
+        "resourceHash": "bb5905b2"
+      },
+      "t5": {
+        "logicalName": "_BaseColorMap",
+        "resourceHash": "bb5905b2"
+      }
+    },
+    "interpretation": "The active small rock/crystal geometry uses the GPU-instanced parallax variant, not representative non-instanced subprogram 19."
+  },
   "evidenceBoundary": {
     "proves": [
       "the exact deferred pass-0 VS/PS pair was submitted once in each captured Endminf overview frame",
       "the production draw is a fullscreen three-vertex DrawInstanced call",
       "the draw binds ten pixel constant-buffer views and t0 through t27",
-      "output/depth and dumpable texture descriptors identify retail dimensions and formats"
+      "output/depth and dumpable texture descriptors identify retail dimensions and formats",
+      "the captured rock/crystal draw family resolves byte-exactly to HGRP/LitEffect HGBuffer subprogram 113 with SRP_INSTANCING_ON and _PARALLAX_MAP"
     ],
     "doesNotProve": [
       "pFirstConstant offsets or the active ranges within the shared 4 MiB dynamic constant-buffer ring",
       "binary content for skipped Texture3D slots t15 and t18 through t23",
       "b2 skin-palette active ranges or BeyondBoneCloth deformation state",
-      "that the current Unity exact consumer should be presented as final screen color"
+      "that the current Unity exact consumer should be presented as final screen color",
+      "the unresolved active constant-buffer ranges or the numeric parallax/deferred equations of LitEffect subprogram 113"
     ]
   },
   "failures": []
