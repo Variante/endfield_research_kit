@@ -1,0 +1,87 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-collider-end-semantics.v1",
+  "status": "collider_transform_snapshot_equations_closed_not_contact_solver",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "export": "b44b8d6a5416f62541c69d9812961578",
+  "functionPointerSlotRva": "0x3c6060",
+  "core": {
+    "cpuVariant": "avx2",
+    "entryRva": "0x24a030",
+    "rva": "0x24a1a0",
+    "bytes": 117,
+    "sha256": "fe354aabb5d9e1763b597a9f72608fe0a9ee62ab962ef451ea6515cf6137d97c",
+    "fileOffset": "0x2495a0"
+  },
+  "payload": [
+    {
+      "offset": "0x0",
+      "field": "jobColliderIndexList",
+      "element": "int32",
+      "strideBytes": 4
+    },
+    {
+      "offset": "0x10",
+      "field": "nowPositions",
+      "element": "double3",
+      "strideBytes": 24
+    },
+    {
+      "offset": "0x20",
+      "field": "nowRotations",
+      "element": "quaternion",
+      "strideBytes": 16
+    },
+    {
+      "offset": "0x30",
+      "field": "oldPositions",
+      "element": "double3",
+      "strideBytes": 24
+    },
+    {
+      "offset": "0x40",
+      "field": "oldRotations",
+      "element": "quaternion",
+      "strideBytes": 16
+    },
+    {
+      "offset": "0x50",
+      "field": "_indexCount",
+      "element": "int32 pointer",
+      "strideBytes": null
+    }
+  ],
+  "equations": [
+    "count = *_indexCount; return when count <= 0",
+    "for each k in [0,count): colliderIndex = jobColliderIndexList[k]",
+    "oldPositions[colliderIndex] = nowPositions[colliderIndex]",
+    "oldRotations[colliderIndex] = nowRotations[colliderIndex]"
+  ],
+  "nonAccesses": [
+    "particle nextPos/oldPos/velocityPos",
+    "friction/staticFriction",
+    "collisionNormal",
+    "collider type or shape data"
+  ],
+  "implementationBoundary": {
+    "equationsClosed": true,
+    "contactProducer": false,
+    "contactProducerStage": "ColliderCollisionConstraint.SolverConstraint at SimulationStepUpdate+0x1060",
+    "runtimeResolverObserved": false
+  }
+}
