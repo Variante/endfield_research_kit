@@ -38,6 +38,13 @@ evidence until the host records a consumed provider request. Staged capture-only
 3DMigoto remains the retail-tested fallback until EndfieldCapture produces its
 first complete collected original-client session.
 
+Native D3D11 COM hooks must use the exact Windows SDK vtable order. Shader
+creation occupies `ID3D11Device` slots 12-18 (with stream-output geometry at
+14); slots 20-26 are state/query methods with incompatible ABIs. The native
+wrapper now keeps those methods untouched in its lifecycle regression test,
+but remains uncertified until a new retail session captures and collects one
+complete frame without a client fault.
+
 ## Stable conclusions
 
 - Playable post-models, LOD0 mesh bindings, materials, textures, cameras,
