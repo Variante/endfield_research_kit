@@ -1,0 +1,160 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-simulation-start-semantics.v1",
+  "status": "main_integration_and_spring_distance_noise_semantics_closed_two_nested_helpers_open",
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "core": {
+    "cpuVariant": "avx2",
+    "rva": "0x25e830",
+    "bytes": 5074,
+    "sha256": "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc",
+    "dispatch": [
+      "0x26a370 entry",
+      "0x26a440 range",
+      "0x25e830 core"
+    ]
+  },
+  "consumedScalars": [
+    "simulationPower.z",
+    "simulationDeltaTime"
+  ],
+  "constants": {
+    "quaternionNlerpThreshold": 0.9994999766349792,
+    "curveSampleMaximum": 15.0,
+    "impactDepthAttenuation": 5.0,
+    "springIndexPhase": 49.61980056762695,
+    "springTimePhase": 2.451200008392334,
+    "springNoiseAmplitude": 0.6000000238418579
+  },
+  "stages": [
+    {
+      "name": "selection",
+      "range": "0x25e8b1..0x25ea31",
+      "equations": [
+        "particleIndex = stepParticleIndexArray[rangeIndex]",
+        "teamId = teamIdArray[particleIndex]",
+        "derivedVertex = particleIndex - teamData.particleChunk.startIndex + teamData.proxyCommonChunk.startIndex"
+      ]
+    },
+    {
+      "name": "base_transform_interpolation",
+      "range": "0x25ec1a..0x25ef1a",
+      "equations": [
+        "basePosition = oldPosition + frameInterpolation * (authoredPosition - oldPosition)",
+        "baseRotation = shortest_arc_slerp(oldRotation, authoredRotation, frameInterpolation, nlerp_threshold=0.9995)"
+      ],
+      "writebacks": [
+        "basePos",
+        "baseRot",
+        "stepBasicPosition",
+        "stepBasicRotation"
+      ]
+    },
+    {
+      "name": "simulation_bypass",
+      "range": "0x25ef20..0x25ef39",
+      "equations": [
+        "if !(attribute & 2) and !(teamFlag1 & 0x20): velocityPos = nextPos = basePosition"
+      ]
+    },
+    {
+      "name": "inertia",
+      "range": "0x25f0f1..0x25f449",
+      "equations": [
+        "k = (1 - depth * depth) * parameters.inertiaDepth",
+        "translation = lerp(center.inertiaVector, center.stepVector, k)",
+        "qInertia = shortest_arc_slerp(center.inertiaRotation, center.stepRotation, k)",
+        "inertiaPosition = center.oldWorldPosition + rotate(qInertia, oldPos - center.oldWorldPosition) + translation",
+        "inertiaVelocity = rotate(qInertia, velocity) * team.velocityWeight"
+      ]
+    },
+    {
+      "name": "damping_forces_prediction",
+      "range": "0x25f457..0x25f757",
+      "equations": [
+        "curve = sample16(parameters.dampingCurveData, clamp01(depth))",
+        "dampedVelocity = inertiaVelocity * clamp01(1 - curve * simulationPower.z)",
+        "gravityAcceleration = parameters.worldGravityDirection * parameters.gravity * team.gravityRatio",
+        "forceMode 1/2 attenuates impactForce by 1 + 5 * (1-depth)^2; 10/11 preserves it; other modes contribute zero",
+        "newVelocity = dampedVelocity + simulationDeltaTime * team.scaleRatio * (gravityAcceleration + impactForce + windForce)",
+        "predictedPosition = inertiaPosition + simulationDeltaTime * newVelocity"
+      ]
+    },
+    {
+      "name": "spring_distance_and_noise",
+      "range": "0x25f760..0x25f8c2",
+      "gate": "(teamFlag1 & 0x20) && (attribute & 1)",
+      "equations": [
+        "constrainedDelta = clamp_length(predictedPosition - basePosition, team.scaleRatio * spring.limitDistance)",
+        "phase = sum(predictedPosition.xyz) + 2.4512 * (team.time + 49.6198 * rangeIndex)",
+        "springFactor = max(0, springPower * (1 + 0.6 * springNoise * sin(phase)))",
+        "nextPosition = basePosition + constrainedDelta * (1 - springFactor)"
+      ]
+    },
+    {
+      "name": "normal_cone_restriction",
+      "range": "0x25f9c3..0x25fbfd",
+      "status": "operands_and_control_flow_closed_helper_algebra_open",
+      "nestedHelperRva": "0x23c1c0"
+    },
+    {
+      "name": "writeback",
+      "range": "0x25f8c6..0x25f8ea",
+      "equations": [
+        "velocityPosArray[particleIndex] = inertiaPosition",
+        "nextPosArray[particleIndex] = springAdjustedPredictedPosition"
+      ]
+    }
+  ],
+  "nested_helpers": {
+    "wind": {
+      "rva": "0x247190",
+      "status": "call_abi_bounded_equations_open"
+    },
+    "normalConeTrig": {
+      "rva": "0x23c1c0",
+      "status": "call_site_bounded_equations_open"
+    },
+    "springNoiseSin": {
+      "rva": "0x23c490",
+      "status": "scalar_sine_role_closed"
+    }
+  },
+  "implementation_boundary": {
+    "solverImplemented": false,
+    "retailEquivalent": false,
+    "safeToImplement": [
+      "selection",
+      "base_transform_interpolation",
+      "simulation_bypass",
+      "inertia",
+      "damping",
+      "gravity",
+      "impact_force_dispatch",
+      "semi_implicit_prediction",
+      "spring_distance",
+      "spring_noise",
+      "writeback_layout"
+    ],
+    "blocked": [
+      "wind helper equations",
+      "normal-cone helper equation",
+      "later constraint/collision stages"
+    ]
+  }
+}

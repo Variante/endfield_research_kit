@@ -6260,6 +6260,8 @@ namespace EndfieldGraphShaderLabEditor
             AddOriginalF5FullPoseFixture(root, rootName, actorGeneratedRoot, clips);
             ConfigureAnimation(root, clips, displayName, previewPreference);
             ConfigureRecoveredOverviewPlayback(root, manifest, actorGeneratedRoot);
+            EndfieldSecondaryDynamicsBindingBuilder.Configure(
+                root, rootName, actorGeneratedRoot);
             if (configureSourceCharacterSemantics)
                 ConfigureRecoveredSkeletalMorphBasePose(root, manifest);
             ConfigureClipMetadata(

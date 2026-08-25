@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using EndfieldGraphShaderLab;
 using UnityEngine;
 
 namespace EndfieldGraphShaderLabEditor
@@ -28,6 +29,12 @@ namespace EndfieldGraphShaderLabEditor
             public int collider_owners_resolved;
             public int root_bones_expected;
             public int root_bones_resolved;
+            public int proxy_bindings_expected;
+            public int proxy_bindings_resolved;
+            public int unique_proxy_bindings;
+            public int overlapping_proxy_bindings;
+            public bool actor_runtime_coordinator_observed;
+            public bool solver_writeback_enabled;
             public bool owner_binding_verified;
             public bool runtime_solver_observed;
             public string[] runtime_solver_components = Array.Empty<string>();
@@ -76,6 +83,7 @@ namespace EndfieldGraphShaderLabEditor
                 cloth_owners_expected = cloths.Count,
                 collider_owners_expected = colliders.Count,
             };
+            var proxyPaths = new List<string>();
 
             for (int index = 0; index < cloths.Count; index++)
             {
@@ -102,6 +110,30 @@ namespace EndfieldGraphShaderLabEditor
                         "cloth root bone");
                     audit.root_bones_resolved++;
                 }
+
+                string ownerPath = String(cloth, "game_object_path");
+                List<object> proxyBindings = List(
+                    Required(cloth, "proxy_transform_bindings"),
+                    actorKey + ".cloths[" + index + "].proxy_transform_bindings");
+                for (int bindingIndex = 0; bindingIndex < proxyBindings.Count; bindingIndex++)
+                {
+                    Dictionary<string, object> binding = Dict(
+                        proxyBindings[bindingIndex],
+                        actorKey + ".cloths[" + index + "].proxy_transform_bindings[" +
+                        bindingIndex + "]");
+                    int arrayIndex = Convert.ToInt32(
+                        Required(binding, "array_index"), CultureInfo.InvariantCulture);
+                    if (arrayIndex != bindingIndex)
+                        throw new InvalidDataException(
+                            "Secondary-dynamics proxy binding order drifted for " + ownerPath + ".");
+                    string path = String(binding, "path");
+                    if (string.Equals(path, ownerPath, StringComparison.Ordinal))
+                        continue;
+                    audit.proxy_bindings_expected++;
+                    ResolveRequiredPath(actor.transform, path, "proxy transform");
+                    audit.proxy_bindings_resolved++;
+                    proxyPaths.Add(path);
+                }
             }
 
             for (int index = 0; index < colliders.Count; index++)
@@ -126,15 +158,39 @@ namespace EndfieldGraphShaderLabEditor
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray();
             audit.runtime_solver_observed = audit.runtime_solver_components.Length > 0;
+            audit.unique_proxy_bindings = proxyPaths.Distinct(StringComparer.Ordinal).Count();
+            audit.overlapping_proxy_bindings =
+                audit.proxy_bindings_expected - audit.unique_proxy_bindings;
+            EndfieldSecondaryDynamicsRuntime coordinator =
+                actor.GetComponent<EndfieldSecondaryDynamicsRuntime>();
+            audit.actor_runtime_coordinator_observed = coordinator != null;
+            audit.solver_writeback_enabled =
+                coordinator != null && coordinator.SolverWritebackEnabled;
+            if (actorKey == "endminf" &&
+                (audit.proxy_bindings_expected != 126 ||
+                 audit.unique_proxy_bindings != 100 ||
+                 audit.overlapping_proxy_bindings != 26))
+            {
+                throw new InvalidDataException(
+                    "Endminf secondary-dynamics proxy overlap contract drifted.");
+            }
             audit.owner_binding_verified =
                 audit.cloth_owners_resolved == audit.cloth_owners_expected &&
                 audit.collider_owners_resolved == audit.collider_owners_expected &&
-                audit.root_bones_resolved == audit.root_bones_expected;
+                audit.root_bones_resolved == audit.root_bones_expected &&
+                audit.proxy_bindings_resolved == audit.proxy_bindings_expected;
             if (!audit.owner_binding_verified)
                 throw new InvalidDataException("Secondary-dynamics owner binding is incomplete.");
-            audit.status = audit.runtime_solver_observed
-                ? "owner_hierarchy_verified_runtime_solver_component_observed_unverified"
-                : "owner_hierarchy_verified_solver_absent";
+            audit.status = audit.solver_writeback_enabled
+                ? "owner_and_proxy_hierarchy_verified_solver_writeback_unverified"
+                : audit.actor_runtime_coordinator_observed
+                    ? "owner_and_proxy_hierarchy_verified_coordinator_fail_closed"
+                    : audit.runtime_solver_observed
+                        ? "owner_and_proxy_hierarchy_verified_runtime_solver_component_observed_unverified"
+                        : "owner_and_proxy_hierarchy_verified_solver_absent";
+            audit.evidence_boundary = audit.solver_writeback_enabled
+                ? "owner/proxy hierarchy verified; solver writeback present but retail equivalence unverified"
+                : "owner/proxy hierarchy and overlap verified; no solver transform writeback enabled";
             return audit;
         }
 
