@@ -7,7 +7,8 @@ description: Prepare, capture, and review Endfield character-render evidence wit
 
 Prefer the native `tools/EndfieldCapture/` project. Its prelaunch host,
 build/module gates, synthetic injection lifecycle, audio hooks, forced-D3D11
-hooks, bounded writer, and collector are implemented. Retail capture remains
+hooks, bounded network metadata observation, host-side recording, bounded
+writer, and collector are implemented. Retail capture remains
 experimental until a session passes provider summaries and collection.
 EndfieldCapture is prelaunch-only: start `arm` before Endfield. Never add
 generic attach-by-PID or attach it to an already-running process. The normal
@@ -35,9 +36,9 @@ renderer-path evidence.
 - Do not add public PID attachment, process suspension, rapid anti-cheat timing,
   privilege escalation, retry, fallback injection, or process-wide hook
   removal.
-- Keep graphics and audio provider results independent. Failure or queue loss
-  in one provider must fail that evidence domain closed without reclassifying
-  the other.
+- Keep graphics, audio, network, and recording results independent. Failure or
+  queue loss in one provider must fail that evidence domain closed without
+  reclassifying another.
 
 ## EndfieldCapture workflow
 
@@ -52,24 +53,33 @@ renderer-path evidence.
    tools\EndfieldCapture\StartCapture.bat
    tools\EndfieldCapture\StartCapture.bat graphics
    tools\EndfieldCapture\StartCapture.bat audio
+   tools\EndfieldCapture\StartCapture.bat network
    tools\EndfieldCapture\StartCapture.bat both
+   tools\EndfieldCapture\StartCapture.bat all
    ```
 
    The wrapper enforces prelaunch ordering, builds Release x64, runs `check`,
    starts `arm` in a separate capture console, and then automatically launches
    `Endfield.exe -force-d3d11` only after the prelaunch marker and capture-host
-   PID liveness check. It
-   resolves the executable from `ENDFIELD_GAME_EXE` or the research kit's
+   PID liveness check. It resolves the executable from `ENDFIELD_GAME_EXE` or
+   the research kit's
    `endfield_paths.bat`.
-   With no profile argument the wrapper selects both providers. After a valid
-   arm, its topmost click-through desktop overlay binds `Numpad 1` to one
-   graphics-frame request, `Numpad 2` to one bounded audio-evidence marker, and
-   `Numpad 0` to hide or reveal the panel. These keys signal versioned,
-   provider-specific control events and must report provider-not-ready instead
-   of claiming capture when the host event is absent. The overlay is guidance
-   and control only; it is not injected game UI or a capture-success signal.
+   With no profile argument the wrapper selects all three injected providers.
+   After a valid arm, its topmost click-through desktop overlay binds
+   `Numpad 1` to one graphics-frame request, `Numpad 2` to one bounded
+   audio-evidence marker, `Numpad 3` to toggle one bounded host-side
+   Endfield-window frame sequence
+   plus process-tree WAV, `Numpad 4` to request one bounded network-metadata
+   window, and `Numpad 0` to hide or reveal the panel. These keys signal
+   versioned, provider-specific control events and must report
+   provider-not-ready instead of claiming capture when the host event is
+   absent. The overlay is guidance and control only; it is not injected game UI
+   or a capture-success signal.
    The audio marker contract is two seconds of lookback plus five seconds after
-   the request and records runtime relationships, not PCM.
+   the request and records runtime relationships, not PCM. The network window
+   is two seconds of queued lookback plus eight seconds of follow-up. It stores
+   socket lifecycle, endpoint, size, and completion metadata only--never
+   payload bytes, TLS plaintext, credentials, replay, or traffic changes.
 3. For development or test work, build and test from the submodule:
 
    ```bat
@@ -86,16 +96,18 @@ renderer-path evidence.
    `runtime.status.json` must later show `graphicsAttached=true`, proving a real
    Present supplied the game device/context/swap chain. An earlier request
    stays pending until an actual Present boundary.
-6. For a combined session, request one bounded graphics frame and one
-   identified audio window, type `stop`, then run the collector command in the
+6. For an all-provider session, request one bounded graphics frame, one
+   identified audio window, and one network window. Optionally record one
+   short gameplay take, type `stop`, then run the collector command in the
    tool README. Review provider
    completeness, dropped-event counts, module facts, actual observed graphics
    API/device facts, and capture limits before opening large resources.
    `Numpad 1` requests the next Present boundary, `Numpad 2` marks a bounded
-   audio evidence window, and `Numpad 0` toggles the panel. Keep `status` for
-   provider/completeness facts and `stop` for orderly shutdown. A hotkey signal
-   is only a request; require the provider event and session summary before
-   treating it as evidence.
+   audio evidence window, `Numpad 3` toggles the external recorder, `Numpad 4`
+   marks a bounded network window, and `Numpad 0` toggles the panel. Keep
+   `status` for provider/completeness facts and `stop` for orderly shutdown. A
+   hotkey signal is only a request; require the provider event and session
+   summary before treating it as evidence.
 
 ## EndfieldCapture session storage
 
@@ -110,6 +122,10 @@ renderer-path evidence.
   `graphics/frames/<frame-id>/`; put audio-provider sidecars under `audio/`.
   Audio runtime capture records relationships and bounded facts, not PCM or
   copies of opened files.
+- Put metadata-only socket observations under `network/`. Put optional
+  host-recorded `video/frame-*.bmp`, `audio.wav`, and status/summary files under
+  `recording/`. The compatibility recorder is not MP4 and must fail closed if
+  frames or process-loopback audio are absent after a request.
 - Never write raw captures inside `tools/EndfieldCapture/`, the installed game,
   `export_full/`, `webui/`, or `reports/`.
 - Keep a successful or diagnostically valuable raw session in `scratch/`.
