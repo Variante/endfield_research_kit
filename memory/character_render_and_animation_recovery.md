@@ -792,6 +792,9 @@ and `videos/2026-08-24_06-37-22.mkv` retained as its 4K, user-confirmed
 frame-generation-off companion reference.
 Current work should compare camera, timing, pose, materials, effects, lighting,
 background, shadows, and final post-processing against those recordings.
+For the current Endminf deliverable, retail UI and CharInfo presentation layers
+are reference-only evidence: Unity renders the main character and her spawned
+visual effects against a plain clear target.
 
 The maintained video-to-frame workflow is
 `unity_endfield_graph_shader_lab/scripts/reference_video/`. Its config records
@@ -829,6 +832,16 @@ The maintained comparison
 resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
 downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.
+
+The exact-build secondary-dynamics session at
+`scratch/reverse_engineering/endfield_capture/20260825T125815Z` certifies four
+settled Endminf TeamData lanes with `UseRelativeTransform=false`,
+`UseCrossFrameJob=true`, and animator update disabled. Unity now runs the
+recovered four-owner solver/coordinator and source-ordered TransformAccess
+publication, including the retail `RestoreTransform` lifecycle from immutable
+AddTransform-time local buffers. The actor-only 770-frame D3D11 overview-start
+through loop gate passes with entrance VFX, cleanup, rotation-only root motion,
+and no late cloth/hair accumulation.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
@@ -886,8 +899,9 @@ its absence no longer pauses the Unity reproduction work.
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
-root-motion routing, broader Avatar transport, grounding and IK, facial
-emotion/lip sync, gaze, secondary motion, cloth/hair dynamics,
+root-motion routing beyond the certified Endminf path, broader Avatar
+transport, grounding and IK, facial emotion/lip sync, gaze, secondary motion
+outside the certified positive-scale stationary Endminf subset,
 remaining item/deco/FX lifecycle, gacha timing, and non-playable runtime
 assembly.
 
@@ -914,9 +928,9 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Add bounded post-`AlwaysTeamUpdate` sampling of the four Endminf TeamData
-   lanes plus the maintained transition watch, then collect a certified
-   secondary-dynamics session.
+1. Compare the actor/VFX-only 770-frame Endminf output against the
+   no-frame-generation recording with retail UI masked out, then close the
+   remaining camera, effect-shape, and material differences.
 2. Reproduce the complete Endminf Character Info frame against the reference
    video, closing the presentation scene before further isolated shader work.
 3. Generalize Endminf's proven Animator path from source contracts, close the
