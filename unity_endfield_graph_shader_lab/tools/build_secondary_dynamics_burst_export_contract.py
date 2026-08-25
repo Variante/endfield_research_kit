@@ -1302,6 +1302,14 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dic
                 "managedFallbackElementStridesBytes": [
                     4, 464, 1, 4, 12, 16, 2, 2, 2, 24, 16, 24, 16, 4,
                 ],
+                "burstCoreObservedElementStridesBytes": [
+                    4, 464, 1, 4, 12, 16, 2, 2, 2, 12, 16, 12, 16, 4,
+                ],
+                "representationBoundary": (
+                    "managed fallback metadata/access evidence identifies basePos and "
+                    "stepBasicPosition as 24-byte double3, while both pinned Burst cores "
+                    "index and write those two arrays as packed 12-byte float3"
+                ),
             },
             "candidates": [brief(by_hash[update_exact])],
             "abiShapeFalseCandidates": [
@@ -1310,7 +1318,8 @@ def _target_candidates(pe: dict[str, Any], rows: list[dict[str, Any]], gate: dic
             "semanticDiscriminator": {
                 "argument3": "attributes: one-byte VertexAttribute access",
                 "argument4": "vertexParentIndices: four-byte parent-index access",
-                "output12": "stepBasicPositionArray: 24-byte double3 write",
+                "argument10": "basePosArray: packed 12-byte float3 access in both Burst cores",
+                "output12": "stepBasicPositionArray: packed 12-byte float3 write in both Burst cores",
                 "output13": "stepBasicRotationArray: 16-byte quaternion write",
                 "rejectedReason": "the other ten-qword ABI thunks do not preserve this ordered element-width and output-write signature",
             },

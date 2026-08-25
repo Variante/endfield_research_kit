@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-simulation-start-semantics.v1",
-  "status": "main_integration_and_spring_distance_noise_semantics_closed_two_nested_helpers_open",
+  "status": "main_integration_wind_and_spring_distance_noise_semantics_closed_normal_cone_inline_equation_open",
   "native_gate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -124,7 +124,30 @@
   "nested_helpers": {
     "wind": {
       "rva": "0x247190",
-      "status": "call_abi_bounded_equations_open"
+      "bytes": 627,
+      "sha256": "67991305cc9562791e3f2c16e226fba315ca69676f36f467d7566965090d6888",
+      "status": "outer_and_wind_force_blend_equations_closed_inlined_math_bodies_hash_pinned",
+      "equations": [
+        "seed = 4.1923065185546875*(teamId+1) + 100*0.002396299969404936*rootIndex*(1-synchronization)",
+        "sum = each TeamWindInfo contribution plus movingWind when ordered(movingWind > 0.01)",
+        "depthScale = 1 + (depth*depth - 1) * depthWeight",
+        "result = sum * (1-friction[pindex]) * influence * depthScale",
+        "WindForceBlend noise = lerp(sin(windPos.xy + time*10), 2.299999952316284*cnoise_pair(windPos.xy + time*2.313199996948242), blend)",
+        "angles = sourceTurbulence*turbulence*radians(45)*float3(noise.x, noise.y*(0.4*blend+0.1), 0)",
+        "direction = rotate(AxisQuaternion(info.direction) * EulerZXY(angles), +Z)",
+        "magnitude = main * (1 - clamp01(1-main/7.5) * sourceTurbulence*turbulence * (noise.x+1)*0.5)"
+      ],
+      "zoneBlend": {
+        "rva": "0x245b00",
+        "bytes": 5775,
+        "sha256": "7f960de4319f8f3e45c346df422a948d01707730ff237152a2d077e7d29f9b1a"
+      },
+      "movingBlend": {
+        "rva": "0x244470",
+        "bytes": 5775,
+        "sha256": "2e62f20b610ca318ac514798a34d95121842838eb6dae8057126b9abbfebeef7"
+      },
+      "bitIdentityBoundary": "inlined sine, cnoise, AxisToEuler, EulerZXY, quaternion and normalization bodies are pinned but their machine-level coefficients are not individually transcribed"
     },
     "normalConeCos": {
       "rva": "0x23c1c0",
@@ -163,8 +186,8 @@
       "writeback_layout"
     ],
     "blocked": [
-      "wind helper equations",
       "normal-cone inline angle/correction equation",
+      "bit-identical transcription of inlined wind math",
       "later constraint/collision stages"
     ]
   }
