@@ -69,6 +69,21 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
             binning,
         )
 
+    def test_exact_consumer_keeps_a_physical_depth_copy_with_world_ui(self):
+        pipeline = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "HGCompatRenderPipeline.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "((!useRecoveredPostUberWorldUi && !useRecoveredSceneMV) ||\n"
+            "                 recoveredDeferredExactConsumer.Requested)",
+            pipeline,
+        )
+
     def test_accepts_exact_non_presented_frame(self):
         report = validate_log(GOOD_LOG, Path("fixture.log"))
         self.assertTrue(report["valid"], report["failures"])
