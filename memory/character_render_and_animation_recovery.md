@@ -886,6 +886,21 @@ remaining gap assigned to M29 particle/custom-data or BaseV2 output semantics,
 not missing texture identity, and do not hide it by disabling the source-live
 renderer.
 
+The same audit found 20 additional dangling generated texture slots across
+M18, M20, M28, M32, M35, M42, M46, and `M_ui_wind_901`. One targeted
+AnimeStudio pass recovered their exact source-local flow maps; the maintained
+repair now hash-gates seven decoded PathIDs and restores 29 bindings across ten
+materials (including the earlier M13/M29 closure). Two source-local assets are
+both named `T_fx_flow_902_M`, so M35 `_OffsetTex` is explicitly pinned to the
+cloudy `p8CA0E6F6DA6348A5` payload rather than the unrelated triangular
+`pC983DCCB52F1F83F` payload. Unity batch import passes and the generated
+Overview material census has zero unresolved texture GUIDs. Phase-matched
+4.2167/4.4667/4.7167-second renders remove the white-fallback shapes but retain
+the stronger M13 ring and dotted trails against the actor-only black clear;
+the aligned retail reference composites those layers over the bright CharInfo
+scene, and existing exact-owner evidence says M13 owns the large ring. Do not
+apply an arbitrary material attenuation from that cross-background contrast.
+
 The exact-build secondary-dynamics session at
 `scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
 `UseCrossFrameJob=true` and exclusively false `useRelativeTransform` reads,

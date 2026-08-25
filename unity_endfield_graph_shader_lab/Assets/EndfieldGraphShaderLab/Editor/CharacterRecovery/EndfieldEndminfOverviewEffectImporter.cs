@@ -526,122 +526,108 @@ namespace EndfieldGraphShaderLabEditor
             const long m29MainPathId = unchecked((long)0xE9BD526F8E515836UL);
             const long sample1PathId = unchecked((long)0xE924975F4B2F54A4UL);
             const long sample3PathId = unchecked((long)0xD7AB7F885B7BC330UL);
-            const string m29MainSha256 =
-                "28406becfc0f0eaf58cd234a3e590fbc2823975d307bfe990d19fa2af28ed8fb";
-            const string sample1Sha256 =
-                "fd335206b2de7d4578b941ceb2bcec79e56541017f07b3eb9f6655ad76450939";
-            const string sample3Sha256 =
-                "737f73ecb27a3484199f58b2a4eb9e54b8760bf48f7ef43d252539f86edec402";
+            const long flow104PathId = 0x12184F574C05B26CL;
+            const long flow119PathId = unchecked((long)0xA8553DE7AAFDF5D7UL);
+            const long flow121PathId = 0x60BC4C6374C4832AL;
+            const long flow902PathId = unchecked((long)0x8CA0E6F6DA6348A5UL);
+
+            var sourceHashes = new Dictionary<long, string> {
+                { m29MainPathId, "28406becfc0f0eaf58cd234a3e590fbc2823975d307bfe990d19fa2af28ed8fb" },
+                { sample1PathId, "fd335206b2de7d4578b941ceb2bcec79e56541017f07b3eb9f6655ad76450939" },
+                { sample3PathId, "737f73ecb27a3484199f58b2a4eb9e54b8760bf48f7ef43d252539f86edec402" },
+                { flow104PathId, "c27bd552137387cabc56d3c84c53840af1561a0fce7dc61431fa921bd59055c6" },
+                { flow119PathId, "9883b65537e965f99c9cf1a11b247ba709a47451e9442a9718ed8ee1452472d6" },
+                { flow121PathId, "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb" },
+                { flow902PathId, "73f6f366f546cf360225a4bc85254ddd03b77c6b1e478e8c5d44144db9952813" },
+            };
 
             string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
             string textureSourceRoot = Path.Combine(repo,
                 "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D");
-            string m29MainSource = RequireDecodedTextureSource(
-                textureSourceRoot, m29MainPathId, m29MainSha256);
-            string sample1Source = RequireDecodedTextureSource(
-                textureSourceRoot, sample1PathId, sample1Sha256);
-            string sample3Source = RequireDecodedTextureSource(
-                textureSourceRoot, sample3PathId, sample3Sha256);
-
             L.EnsureFolder(GeneratedRoot);
             L.EnsureFolder(TextureRoot);
-            string m29MainAsset = BuildExactEndminfDecodedTexture(
-                m29MainPathId, textureSourceRoot);
-            string sample1Asset = BuildExactEndminfDecodedTexture(
-                sample1PathId, textureSourceRoot);
-            string sample3Asset = BuildExactEndminfDecodedTexture(
-                sample3PathId, textureSourceRoot);
-            Texture2D sample1 = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                sample1Asset);
-            Texture2D sample3 = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                sample3Asset);
-            Texture2D m29Main = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                m29MainAsset);
-            string materialAsset = MaterialRoot +
-                "/M_fx_endminm_gfx_13_p57A25F1386F7012F.mat";
-            Material material = AssetDatabase.LoadAssetAtPath<Material>(
-                materialAsset);
-            string m29MaterialAsset = MaterialRoot +
-                "/M_fx_endminm_gfx_29_p7BCC4552203800A8.mat";
-            Material m29Material = AssetDatabase.LoadAssetAtPath<Material>(
-                m29MaterialAsset);
-            L.Require(material != null && m29Material != null &&
-                sample1 != null && sample3 != null && m29Main != null,
-                "Generated Endminf M13/M29 materials or decoded textures are missing");
+            var textures = new Dictionary<long, Texture2D>();
+            foreach (KeyValuePair<long, string> source in sourceHashes)
+            {
+                RequireDecodedTextureSource(
+                    textureSourceRoot, source.Key, source.Value);
+                string asset = BuildExactEndminfDecodedTexture(
+                    source.Key, textureSourceRoot);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(asset);
+                L.Require(texture != null,
+                    "Generated Endminf decoded texture is missing: p" +
+                    unchecked((ulong)source.Key).ToString("X16", CultureInfo.InvariantCulture));
+                textures[source.Key] = texture;
+            }
 
-            string[] sample1Properties = { "_DisturbTex2", "_SampleTex1" };
-            string[] sample3Properties = { "_DissolveTex", "_SampleTex3" };
-            foreach (string property in sample1Properties)
-            {
-                L.Require(material.HasProperty(property),
-                    "Generated Endminf M13 material lost " + property);
-                material.SetTexture(property, sample1);
-            }
-            foreach (string property in sample3Properties)
-            {
-                L.Require(material.HasProperty(property),
-                    "Generated Endminf M13 material lost " + property);
-                material.SetTexture(property, sample3);
-            }
+            Material m13 = RequireOverviewMaterial("M_fx_endminm_gfx_13_p57A25F1386F7012F.mat");
+            Material m18 = RequireOverviewMaterial("M_fx_endminm_gfx_18_p7010821E75C0A247.mat");
+            Material m20 = RequireOverviewMaterial("M_fx_endminm_gfx_20_pEE9E2589EB9513AE.mat");
+            Material m28 = RequireOverviewMaterial("M_fx_endminm_gfx_28_pBF7FEE87831B48FB.mat");
+            Material m29 = RequireOverviewMaterial("M_fx_endminm_gfx_29_p7BCC4552203800A8.mat");
+            Material m32 = RequireOverviewMaterial("M_fx_endminm_gfx_32_p75A3068776F01BCF.mat");
+            Material m35 = RequireOverviewMaterial("M_fx_endminm_gfx_35_p75854801AE9519E8.mat");
+            Material m42 = RequireOverviewMaterial("M_fx_endminm_gfx_42_p49DDD5599C166F6B.mat");
+            Material m46 = RequireOverviewMaterial("M_fx_endminm_gfx_46_p5D8517046749BD84.mat");
+            Material wind901 = RequireOverviewMaterial("M_ui_wind_901_pA55BF26D14F133FE.mat");
+
+            BindExactTexture(m13, textures[sample1PathId], "_DisturbTex2", "_SampleTex1");
+            BindExactTexture(m13, textures[sample3PathId], "_DissolveTex", "_SampleTex3");
+            BindExactTexture(m18, textures[sample1PathId], "_DisturbTex1", "_SampleTex0");
+            BindExactTexture(m18, textures[sample3PathId], "_DissolveTex", "_SampleTex3");
+            BindExactTexture(m20, textures[sample1PathId], "_DisturbTex1", "_SampleTex0");
+            BindExactTexture(m20, textures[flow121PathId], "_DissolveTex", "_SampleTex1");
+            BindExactTexture(m28, textures[flow121PathId], "_RefractTex");
             // The source M29 row uses T_fx_flow_17_M for Main and reuses
             // T_fx_flow_01_M for all four secondary carriers. Stale generated
             // GUIDs made every route sample Unity's white fallback, producing
             // an opaque palm disc absent from phase-paired retail frame 367.
-            L.Require(m29Material.HasProperty("_MainTex"),
-                "Generated Endminf M29 material lost _MainTex");
-            m29Material.SetTexture("_MainTex", m29Main);
-            string[] m29Sample1Properties = {
-                "_DisturbTex1", "_MaskTex", "_SampleTex0", "_SampleTex1" };
-            foreach (string property in m29Sample1Properties)
-            {
-                L.Require(m29Material.HasProperty(property),
-                    "Generated Endminf M29 material lost " + property);
-                m29Material.SetTexture(property, sample1);
-            }
-            EditorUtility.SetDirty(material);
-            EditorUtility.SetDirty(m29Material);
+            BindExactTexture(m29, textures[m29MainPathId], "_MainTex");
+            BindExactTexture(m29, textures[sample1PathId],
+                "_DisturbTex1", "_MaskTex", "_SampleTex0", "_SampleTex1");
+            BindExactTexture(m32, textures[flow119PathId], "_MaskTex", "_SampleTex0");
+            BindExactTexture(m35, textures[sample1PathId], "_DisturbTex1", "_SampleTex0");
+            // Two source-local assets share the display name T_fx_flow_902_M.
+            // M35's signed PathID selects the cloudy p8CA0 texture, never the
+            // unrelated triangular pC983 payload.
+            BindExactTexture(m35, textures[flow902PathId], "_OffsetTex");
+            BindExactTexture(m42, textures[flow104PathId], "_MaskTex", "_SampleTex0");
+            BindExactTexture(m46, textures[sample1PathId], "_DisturbTex1", "_SampleTex0");
+            BindExactTexture(wind901, textures[sample3PathId], "_DissolveTex", "_SampleTex1");
             AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Repaired 29 exact decoded Endminf overview texture bindings " +
+                "across M13/M18/M20/M28/M29/M32/M35/M42/M46/wind901.");
+        }
 
-            foreach (string property in sample1Properties.Concat(sample3Properties))
+        private static Material RequireOverviewMaterial(string fileName)
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(
+                MaterialRoot + "/" + fileName);
+            L.Require(material != null,
+                "Generated Endminf overview material is missing: " + fileName);
+            return material;
+        }
+
+        private static void BindExactTexture(
+            Material material, Texture2D texture, params string[] properties)
+        {
+            L.Require(material != null && texture != null,
+                "Cannot bind a missing Endminf overview material or texture");
+            foreach (string property in properties)
             {
+                L.Require(material.HasProperty(property),
+                    material.name + " lost source texture property " + property);
+                material.SetTexture(property, texture);
                 Texture bound = material.GetTexture(property);
                 string boundPath = bound == null
                     ? null
                     : AssetDatabase.GetAssetPath(bound);
-                L.Require(bound != null && !string.IsNullOrEmpty(boundPath) &&
+                L.Require(bound == texture && !string.IsNullOrEmpty(boundPath) &&
                     File.Exists(L.ProjectAbsolute(boundPath)),
-                    "Generated Endminf M13 retained a missing texture binding: " +
-                    property);
+                    material.name + " retained a missing texture binding: " + property);
             }
-            foreach (string property in m29Sample1Properties)
-            {
-                Texture bound = m29Material.GetTexture(property);
-                string boundPath = bound == null
-                    ? null
-                    : AssetDatabase.GetAssetPath(bound);
-                L.Require(bound == sample1 && !string.IsNullOrEmpty(boundPath) &&
-                    File.Exists(L.ProjectAbsolute(boundPath)),
-                    "Generated Endminf M29 retained a missing texture binding: " +
-                    property);
-            }
-            L.Require(m29Material.GetTexture("_MainTex") == m29Main,
-                "Generated Endminf M29 retained a missing _MainTex binding");
-            L.Require(
-                File.Exists(m29MainSource) && File.Exists(sample1Source) &&
-                File.Exists(sample3Source) &&
-                material.GetTexture("_DisturbTex2") == sample1 &&
-                material.GetTexture("_SampleTex1") == sample1 &&
-                material.GetTexture("_DissolveTex") == sample3 &&
-                material.GetTexture("_SampleTex3") == sample3 &&
-                m29Material.GetTexture("_MainTex") == m29Main &&
-                m29Sample1Properties.All(property =>
-                    m29Material.GetTexture(property) == sample1),
-                "Generated Endminf M13/M29 texture identity validation failed");
-            Debug.Log(
-                "Repaired exact decoded Endminf M13/M29 texture bindings: " +
-                "M29Main=pE9BD526F8E515836, " +
-                "Sample1/Disturb2=pE924975F4B2F54A4, " +
-                "Sample3/Dissolve=pD7AB7F885B7BC330.");
+            EditorUtility.SetDirty(material);
         }
 
         private static string RequireDecodedTextureSource(
