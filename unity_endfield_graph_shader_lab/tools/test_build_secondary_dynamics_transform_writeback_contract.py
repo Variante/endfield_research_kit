@@ -22,7 +22,7 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         cls.payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
 
     def test_report_is_pinned_and_rebuilds(self) -> None:
-        self.assertEqual(self.payload["status"], "transform_writeback_call_edges_closed")
+        self.assertEqual(self.payload["status"], builder.CONTRACT_STATUS)
         self.assertEqual(
             self.payload["native_gate"]["gameAssembly"]["sha256"],
             builder.EXPECTED_GAME_ASSEMBLY_SHA256,
@@ -60,11 +60,51 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         read = signatures[(builder.READ_JOB, 384537)]
         self.assertEqual([row["metadataTypeName"] for row in read["parameters"]], ["System.Int32", "UnityEngine.Jobs.TransformAccess"])
 
-    def test_pointer_provenance_and_solver_remain_open(self) -> None:
+    def test_publication_provenance_schedule_and_equations_are_closed(self) -> None:
         boundary = self.payload["execution_boundary"]
-        self.assertFalse(boundary["result_array_pointer_provenance_closed"])
-        self.assertFalse(boundary["array_ownership_closed"])
-        self.assertFalse(boundary["schedule_closed"])
+        self.assertTrue(boundary["result_array_pointer_provenance_closed"])
+        self.assertTrue(boundary["array_ownership_closed"])
+        self.assertTrue(boundary["schedule_closed"])
+        self.assertTrue(boundary["world_publication_equations_closed"])
+        self.assertTrue(boundary["local_publication_equations_closed"])
+        provenance = self.payload["writeback"]["arrayProvenance"]
+        self.assertEqual(provenance["positionsPostSolver"]["managerOffset"], "0x118")
+        self.assertEqual(provenance["worldPositionOutput"]["managerOffset"], "0x28")
+        self.assertIn("not publication sources", provenance["finalJobBinding"])
+
+    def test_exact_publication_equations_and_schedule_are_retained(self) -> None:
+        writeback = self.payload["writeback"]
+        self.assertEqual(writeback["publicationSchedule"]["postProxyOrder"][-2:], ["WriteTransformData", "WriteTransformLocalData"])
+        self.assertIn(
+            "transformRotationArray[dst] = hamilton_f32(rotationsPostSolver[v], correction)",
+            writeback["worldPublication"]["equations"],
+        )
+        self.assertIn(
+            "localRotation[child].value = relative.value * team.negativeScaleQuaternionValue.value  # componentwise",
+            writeback["localPublication"]["equations"],
+        )
+        spans = {row["name"]: row for row in self.payload["native"]["pinnedEquationSpans"]}
+        self.assertEqual(spans["WriteTransformDataRangeKernel"]["sha256"], "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923")
+        self.assertEqual(spans["WriteTransformJob.Execute.hot"]["bytes"], 2003)
+
+    def test_final_job_flags_weight_and_branch_precedence(self) -> None:
+        job = self.payload["writeback"]["finalTransformJob"]
+        self.assertEqual(job["flags"]["0x10"], "enable")
+        self.assertEqual(job["branchPrecedence"], "world branch when (flags & 0x02) != 0; otherwise local branch when (flags & 0x04) != 0")
+        self.assertIn("clothSimulateWeight(+0xf0)", job["weightEquation"])
+        self.assertIn("clothLodFadeWeight(+0xf4)", job["weightEquation"])
+        self.assertIn("+0x104", job["unusedWeightField"])
+
+    def test_endminf_duplicate_winner_remains_fail_closed(self) -> None:
+        duplicate = self.payload["writeback"]["endminfBindingBoundary"]
+        self.assertEqual((duplicate["bindingEntries"], duplicate["uniqueTransforms"], duplicate["duplicateEntries"]), (126, 100, 26))
+        self.assertEqual(sum(row["duplicateEntries"] for row in duplicate["overlaps"]), 26)
+        self.assertFalse(duplicate["addTransformDeduplicates"])
+        self.assertIsNone(duplicate["winner"])
+        self.assertFalse(self.payload["execution_boundary"]["duplicate_transform_winner_closed"])
+
+    def test_solver_and_runtime_remain_outside_this_contract(self) -> None:
+        boundary = self.payload["execution_boundary"]
         self.assertFalse(boundary["solver_numerics_recovered"])
         self.assertFalse(boundary["unity_runtime_executed"])
 
