@@ -34,7 +34,6 @@ namespace EndfieldGraphShaderLabEditor
             var solver = new Solver(
                 HairOwner(),
                 pose,
-                new Solver.ExplicitSolverScalars(0.1f, 0.7f, 0f),
                 team,
                 trace);
 
@@ -178,12 +177,15 @@ namespace EndfieldGraphShaderLabEditor
                     animationPoseRatio = 1f,
                     inertiaDepth = 0f,
                     tetherDistanceCompression = 0.1f,
+                    tetherStretchLimit = BitConverter.Int32BitsToSingle(unchecked((int)0x3cf5c28f)),
+                    distanceVelocityAttenuation = BitConverter.Int32BitsToSingle(unchecked((int)0x3e99999a)),
                     angleRestorationEnabled = true,
                     angleRestorationVelocityAttenuation = 0f,
                     angleRestorationGravityFalloff = 0f,
                     angleLimitEnabled = false,
                     particleSpeedLimitEnabled = false,
                     colliderDynamicFriction = 0f,
+                    colliderStaticFriction = 0f,
                     springPower = 0f,
                     springLimitDistance = 1f,
                     springNormalLimitRatio = 1f,

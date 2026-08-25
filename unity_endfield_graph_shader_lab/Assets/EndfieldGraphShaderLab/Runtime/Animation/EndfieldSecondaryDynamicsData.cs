@@ -85,8 +85,10 @@ namespace EndfieldGraphShaderLab
             public float centrifugalAcceleration;
 
             public float tetherDistanceCompression;
+            public float tetherStretchLimit;
             public float distanceStiffnessValue;
             public bool distanceStiffnessUsesCurve;
+            public float distanceVelocityAttenuation;
 
             public bool angleRestorationEnabled;
             public float angleRestorationStiffnessValue;
@@ -99,6 +101,7 @@ namespace EndfieldGraphShaderLab
             public float angleLimitStiffness;
 
             public float colliderDynamicFriction;
+            public float colliderStaticFriction;
             public bool springEnabled;
             public float springPower;
             public float springLimitDistance;

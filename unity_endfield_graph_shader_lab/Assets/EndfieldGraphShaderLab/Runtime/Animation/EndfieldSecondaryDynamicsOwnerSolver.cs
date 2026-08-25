@@ -29,23 +29,6 @@ namespace EndfieldGraphShaderLab
             void OnStage(Stage stage, int substepIndex, int sourceIndex);
         }
 
-        public readonly struct ExplicitSolverScalars
-        {
-            public readonly float TetherStretchLimit;
-            public readonly float DistanceVelocityAttenuation;
-            public readonly float StaticFriction;
-
-            public ExplicitSolverScalars(
-                float tetherStretchLimit,
-                float distanceVelocityAttenuation,
-                float staticFriction)
-            {
-                TetherStretchLimit = tetherStretchLimit;
-                DistanceVelocityAttenuation = distanceVelocityAttenuation;
-                StaticFriction = staticFriction;
-            }
-        }
-
         public sealed class BaseTransformFrame
         {
             public K.Double3[] CurrentPositions;
@@ -143,7 +126,6 @@ namespace EndfieldGraphShaderLab
         }
 
         private readonly EndfieldSecondaryDynamicsData.Owner _owner;
-        private readonly ExplicitSolverScalars _explicitScalars;
         private readonly T.TimeManagerScalars _timeManager;
         private readonly Baseline[] _baselines;
         private readonly IStageObserver _observer;
@@ -166,16 +148,14 @@ namespace EndfieldGraphShaderLab
         public EndfieldSecondaryDynamicsOwnerSolver(
             EndfieldSecondaryDynamicsData.Owner owner,
             BaseTransformFrame initialBaseTransforms,
-            ExplicitSolverScalars explicitScalars,
             T.TeamState initialTeamState,
             IStageObserver observer = null)
         {
             _owner = CloneOwner(owner);
-            _explicitScalars = explicitScalars;
             _timeManager = T.CreateRetailDefault();
             _team = initialTeamState;
             _observer = observer;
-            ValidateOwner(_owner, _explicitScalars);
+            ValidateOwner(_owner);
             ValidateBaseFrame(initialBaseTransforms, _owner.proxyVertexCount);
             _baselines = BuildBaselines(_owner);
             AllocateAndInitialize(initialBaseTransforms.CurrentPositions, initialBaseTransforms.CurrentRotations);
@@ -340,7 +320,7 @@ namespace EndfieldGraphShaderLab
                     state.StepBasicPositions[root],
                     state.StepBasicPositions[particle],
                     _owner.solverInputs.tetherDistanceCompression,
-                    _explicitScalars.TetherStretchLimit,
+                    _owner.solverInputs.tetherStretchLimit,
                     ref state.VelocityPositions[particle]);
             }
 
@@ -387,7 +367,7 @@ namespace EndfieldGraphShaderLab
                     speedLimit,
                     _owner.solverInputs.centrifugalAcceleration,
                     _owner.solverInputs.colliderDynamicFriction,
-                    _explicitScalars.StaticFriction,
+                    _owner.solverInputs.colliderStaticFriction,
                     _owner.vertexDepths[particle],
                     input.CenterPosition,
                     input.CenterAngularVelocity,
@@ -435,7 +415,7 @@ namespace EndfieldGraphShaderLab
                     rest,
                     _timeManager.SimulationPower.Y,
                     _owner.solverInputs.distanceRestorationStiffness,
-                    _explicitScalars.DistanceVelocityAttenuation,
+                    _owner.solverInputs.distanceVelocityAttenuation,
                     _owner.solverInputs.animationPoseRatio,
                     input.InitialScale.x,
                     input.ScaleRatio,
@@ -602,9 +582,7 @@ namespace EndfieldGraphShaderLab
             return result;
         }
 
-        private static void ValidateOwner(
-            EndfieldSecondaryDynamicsData.Owner owner,
-            ExplicitSolverScalars explicitScalars)
+        private static void ValidateOwner(EndfieldSecondaryDynamicsData.Owner owner)
         {
             int count = owner.proxyVertexCount;
             if (count <= 0 || owner.proxyTransformPaths == null || owner.proxyTransformPaths.Length != count)
@@ -642,9 +620,17 @@ namespace EndfieldGraphShaderLab
                 throw new NotSupportedException("Every Endminf owner requires a recovered active Angle family.");
             if (owner.solverInputs.normalAxis < 0 || owner.solverInputs.normalAxis > 5)
                 throw new NotSupportedException("The recovered normal axis must be in the exact 0-5 domain.");
-            RequireFinite(explicitScalars.TetherStretchLimit, "tether stretch limit");
-            RequireFinite(explicitScalars.DistanceVelocityAttenuation, "distance velocity attenuation");
-            RequireFinite(explicitScalars.StaticFriction, "static friction");
+            RequireFinite(owner.solverInputs.tetherStretchLimit, "tether stretch limit");
+            RequireFinite(owner.solverInputs.distanceVelocityAttenuation, "distance velocity attenuation");
+            RequireFinite(owner.solverInputs.colliderStaticFriction, "static friction");
+            if (Bits(owner.solverInputs.tetherStretchLimit) != 0x3cf5c28fU ||
+                Bits(owner.solverInputs.distanceVelocityAttenuation) != 0x3e99999aU)
+                throw new NotSupportedException(
+                    "The recovered GetClothParameters solver constants differ from the pinned retail body.");
+            if (Bits(owner.solverInputs.colliderStaticFriction) !=
+                Bits(owner.solverInputs.colliderDynamicFriction))
+                throw new NotSupportedException(
+                    "Endminf requires the authored collider friction copied to both dynamic and static fields.");
             for (int particle = 0; particle < count; particle++)
             {
                 int root = owner.vertexRootIndices[particle];
@@ -841,6 +827,9 @@ namespace EndfieldGraphShaderLab
                 double.IsNaN(value.z) || double.IsInfinity(value.z))
                 throw new ArgumentOutOfRangeException(name, "A finite binary64 vector is required.");
         }
+
+        private static uint Bits(float value) =>
+            BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
 
         private static K.Float3 ToFloat3(UnityEngine.Vector3 value) =>
             new K.Float3(value.x, value.y, value.z);
