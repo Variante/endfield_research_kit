@@ -8,26 +8,34 @@
     "shaderPathId": 6428594484694422749,
     "materials": [
       "M_fx_endminm_gfx_01",
+      "M_fx_endminm_gfx_27",
       "M_fx_endminm_gfx_38"
     ],
     "mesh": "S_rock_small_1_017_02_lod2",
-    "expectedRendererCount": 10,
+    "expectedRendererCount": 11,
     "materialRendererCounts": {
       "M_fx_endminm_gfx_01": 7,
+      "M_fx_endminm_gfx_27": 1,
       "M_fx_endminm_gfx_38": 3
     }
   },
   "assetEvidence": {
     "M01": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
-      "sha256": "59909a2b8dd43a2fcebdc9267a5c25f5761ffd4629cbe4fabd94a1ae128bab81",
-      "expectedSha256": "59909a2b8dd43a2fcebdc9267a5c25f5761ffd4629cbe4fabd94a1ae128bab81",
+      "sha256": "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
+      "expectedSha256": "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
       "validated": true
     },
     "M38": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
-      "sha256": "664521fc66d6d33789250eb500dc8f821239c4c902d761fc2ff633afa8c4308c",
-      "expectedSha256": "664521fc66d6d33789250eb500dc8f821239c4c902d761fc2ff633afa8c4308c",
+      "sha256": "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+      "expectedSha256": "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+      "validated": true
+    },
+    "M27": {
+      "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
+      "sha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
+      "expectedSha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
       "validated": true
     },
     "rockMesh": {
@@ -39,15 +47,15 @@
   },
   "runtimeBinding": {
     "schema": "endfield.endminf-liteffect-runtime-binding.v1",
-    "policy": "ten direct renderer/material/mesh references; no runtime hierarchy/name search",
+    "policy": "eleven direct renderer/material/mesh references across two prefabs; no runtime hierarchy/name search",
     "default": "renderers remain disabled with empty material arrays"
   },
   "canonicalCapture": {
-    "path": "unity_endfield_graph_shader_lab\\scratch\\character_recovery\\endminf_viewer_playmode_sequence\\report.json",
+    "path": "unity_endfield_graph_shader_lab\\scratch\\character_recovery\\endminf_actor_only_m27_crystal_41\\report.json",
     "validated": true,
-    "admittedRenderersDuringEntrance": 66,
-    "remainingBlockedRendererCount": 4,
-    "remainingBoundary": "one secondary LitEffect and three VFXRefract renderers remain separate"
+    "admittedRenderersDuringEntrance": 68,
+    "remainingBlockedRendererCount": 2,
+    "remainingBoundary": "two non-LitEffect renderers remain separate"
   },
   "sourceInputsUsed": [
     "material identities",

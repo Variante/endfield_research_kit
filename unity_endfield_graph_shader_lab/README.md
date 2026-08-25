@@ -90,8 +90,9 @@ the completed result can later rebuild all characters.
 - The rock-family `HGRP/LitEffect` physical constant buffers, named base
   `UnityPerMaterial` prefix, and five-MRT deferred consumer are identified.
   The `_PARALLAX_MAP` layout extension and complete live frame-resource
-  publication remain unresolved; the ten affected renderers therefore stay
-  blocked by default.
+  publication remain unresolved. Eleven source-identified rock/crystal
+  renderers stay blocked by default and are available only through the
+  explicitly non-exact LitEffect visual-compatibility switch.
 - Selected CharacterNPR, eye, hair, shadow, GBuffer, lighting, particle, and
   post-process contracts are source-backed and fail closed where inputs are
   unknown.

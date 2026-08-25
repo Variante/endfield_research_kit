@@ -10,16 +10,21 @@ SHADER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/S
 RUNTIME = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfLitEffectCompatibilityBinding.cs"
 BUILDER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfLitEffectCompatibilityBindingBuilder.cs"
 CAPTURE_SOURCE = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfViewerPlayModeCapture.cs"
-CAPTURE_REPORT = ROOT / "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_viewer_playmode_sequence/report.json"
+SETUP_SOURCE = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs"
+CAPTURE_REPORT = ROOT / "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_actor_only_m27_crystal_41/report.json"
 OUT = ROOT / "reports/assets/character_recovery/endminf_liteffect_visual_compatibility.json"
 ASSETS = {
     "M01": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
-        "2eedcde1c67336cc77b011334d4eb2879c666dc053c662210920cdcf23ba4117",
+        "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
     ),
     "M38": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
-        "0840a85415e10ee11cec6789715f7be86fb2a363ed4d4ebb250cf7832171e73e",
+        "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+    ),
+    "M27": (
+        ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
+        "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
     ),
     "rockMesh": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Meshes/S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.obj",
@@ -36,15 +41,17 @@ def main() -> int:
     runtime = RUNTIME.read_text(encoding="utf-8")
     builder = BUILDER.read_text(encoding="utf-8")
     capture_source = CAPTURE_SOURCE.read_text(encoding="utf-8")
+    setup_source = SETUP_SOURCE.read_text(encoding="utf-8")
     required_importer = [
         'ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT',
-        '0x5A6341E8A834E421L', '0xAFCE491DD7BC5724UL',
+        '0x5A6341E8A834E421L', '0xA531A88850690EB8UL',
+        '0xAFCE491DD7BC5724UL',
         'LitEffectShaderPathId = 6428594484694422749L',
         'keywords.SequenceEqual(new[] { "_PARALLAX_MAP" })',
         'L.Int(row, "m_CustomRenderQueue") == 2000',
     ]
     required_shader = [
-        'Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38',
+        'Hidden/Endfield/Compatibility/Endminf/LitEffectParallax',
         'VISUAL COMPATIBILITY ONLY', '"LightMode"="ForwardOnly"',
         '_BaseColorMap', '_MROMap', '_NormalMap', '_ParallaxMap', '_ParallaxColor',
     ]
@@ -59,6 +66,7 @@ def main() -> int:
     ]
     required_builder = [
         "Material01PathId = 0x5A6341E8A834E421L",
+        "0xA531A88850690EB8UL",
         "0xAFCE491DD7BC5724UL",
         "0x8EC9950E5461C8D9UL",
         "rows.Count == 10 && material01Count == 7 && material38Count == 3",
@@ -67,8 +75,8 @@ def main() -> int:
     ]
     failures += ["runtime binding missing " + value for value in required_runtime if value not in runtime]
     failures += ["binding builder missing " + value for value in required_builder if value not in builder]
-    failures += ["capture gate missing binding builder invocation"
-                 for _ in [0] if "EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate()" not in capture_source]
+    failures += ["focused rebuild missing binding builder invocation"
+                 for _ in [0] if "EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate()" not in setup_source]
     asset_evidence = {}
     for name, (path, expected) in ASSETS.items():
         actual = sha256(path)
@@ -84,11 +92,11 @@ def main() -> int:
         capture.get("schema") == "endfield.endminf-viewer-playmode-sequence.v4"
         and capture.get("status") == "ok"
         and capture.get("observedPrimaryRockCompatibilityBinding") is True
-        and first.get("admittedRenderers") == 66
-        and len(blocked) == 4
+        and first.get("admittedRenderers") == 68
+        and len(blocked) == 2
     )
     if not capture_valid:
-        failures.append("canonical capture did not validate the ten-row binding/four-row boundary")
+        failures.append("canonical capture did not validate the eleven-row binding/two-row boundary")
     report = {
         "schema": "endfield.endminf-liteffect-visual-compatibility.v2",
         "status": "verified_non_exact" if not failures else "failed",
@@ -96,15 +104,17 @@ def main() -> int:
         "defaultMode": "disabled_fail_closed",
         "optInEnvironment": "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1",
         "scope": {"shaderPathId": 6428594484694422749,
-                  "materials": ["M_fx_endminm_gfx_01", "M_fx_endminm_gfx_38"],
+                  "materials": ["M_fx_endminm_gfx_01", "M_fx_endminm_gfx_27",
+                                "M_fx_endminm_gfx_38"],
                   "mesh": "S_rock_small_1_017_02_lod2",
-                  "expectedRendererCount": 10,
+                  "expectedRendererCount": 11,
                   "materialRendererCounts": {"M_fx_endminm_gfx_01": 7,
+                                             "M_fx_endminm_gfx_27": 1,
                                              "M_fx_endminm_gfx_38": 3}},
         "assetEvidence": asset_evidence,
         "runtimeBinding": {
             "schema": "endfield.endminf-liteffect-runtime-binding.v1",
-            "policy": "ten direct renderer/material/mesh references; no runtime hierarchy/name search",
+            "policy": "eleven direct renderer/material/mesh references across two prefabs; no runtime hierarchy/name search",
             "default": "renderers remain disabled with empty material arrays",
         },
         "canonicalCapture": {
@@ -112,7 +122,7 @@ def main() -> int:
             "validated": capture_valid,
             "admittedRenderersDuringEntrance": first.get("admittedRenderers"),
             "remainingBlockedRendererCount": len(blocked),
-            "remainingBoundary": "one secondary LitEffect and three VFXRefract renderers remain separate",
+            "remainingBoundary": "two non-LitEffect renderers remain separate",
         },
         "sourceInputsUsed": ["material identities", "_PARALLAX_MAP keyword", "queue 2000",
                              "recovered texture identities", "serialized colors/floats"],
