@@ -1,0 +1,81 @@
+{
+  "schema": "endfield.endminf-character-outline-recovery.v1",
+  "status": "ok",
+  "capture": "scratch/character_recovery/3dmigoto-dev-v1.0.0/package/FrameAnalysis-2026-08-24-182850",
+  "drawCount": 6,
+  "draws": [
+    {
+      "event": 87,
+      "family": "skin",
+      "indexCount": 9000,
+      "vertexShader": "ea3b0461ae572be3",
+      "fragmentShader": "e4ab05ea62d6a525"
+    },
+    {
+      "event": 88,
+      "family": "skin",
+      "indexCount": 16524,
+      "vertexShader": "784f11ae11c97112",
+      "fragmentShader": "2f079737a005dcf6"
+    },
+    {
+      "event": 89,
+      "family": "generic",
+      "indexCount": 101994,
+      "vertexShader": "303f45d5266d0369",
+      "fragmentShader": "d72788f1180db1fb"
+    },
+    {
+      "event": 90,
+      "family": "generic",
+      "indexCount": 20577,
+      "vertexShader": "303f45d5266d0369",
+      "fragmentShader": "d72788f1180db1fb"
+    },
+    {
+      "event": 91,
+      "family": "generic",
+      "indexCount": 4524,
+      "vertexShader": "303f45d5266d0369",
+      "fragmentShader": "d72788f1180db1fb"
+    },
+    {
+      "event": 92,
+      "family": "hair",
+      "indexCount": 27615,
+      "vertexShader": "f3b955247775c7bf",
+      "fragmentShader": "fadc3687dd18e11c"
+    }
+  ],
+  "sourceShaderSha256": {
+    "skin": "91f3255a631b067f7942756ce96857c5f5d4a3f65f648faa2ccf11b61b75c0b8",
+    "generic": "2d848a8c34959a7551135b1d24ed5f522d6cfaacfb8a26f3cff78cb69b1f0316",
+    "hair": "3105e54c77021710dd8a8cd5eceaf0a38dafb2e71cc69832cc3f5dee967f6087"
+  },
+  "renderState": {
+    "color0Blend": "Zero Zero, Zero Zero",
+    "sceneMVBlend": "One Zero",
+    "depthTest": "Less",
+    "depthWrite": false,
+    "cull": "Front"
+  },
+  "unity": {
+    "captureStatus": "ok",
+    "frames": 41,
+    "graphicsDeviceType": "Direct3D11",
+    "sceneMVPublishedByOutline": true,
+    "clipSpaceWidthRecovery": true,
+    "openVertexBranches": [
+      "packed average-normal attribute",
+      "exact source Z-offset"
+    ]
+  },
+  "comparison": {
+    "noFramegenPairs": 28,
+    "beforeAveragePsnrDb": 13.388621,
+    "afterAveragePsnrDb": 13.326791,
+    "beforeCrystalCleanPsnrDb": 14.121807,
+    "afterCrystalCleanPsnrDb": 14.06931,
+    "interpretation": "The source-exact black edge lowers whole-frame PSNR while the larger presentation/exposure mismatch remains. Source/capture state, not accidental metric agreement from the former bright approximation, owns this pass."
+  }
+}
