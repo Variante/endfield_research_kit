@@ -1348,8 +1348,24 @@
         "stackDirectInvokeNativeArrayParameterCount": 2,
         "lastParameter": "lengthPtr NativeArray<int> (direct ABI) / _indexCount NativeReference<int> (source job)"
       },
-      "status": "abi_shape_filter_incomplete_no_semantic_survivor",
+      "status": "static_semantic_export_identity_closed_managed_wrapper_route_unobserved",
       "candidates": [
+        {
+          "hash": "b44b8d6a5416f62541c69d9812961578",
+          "rva": "0x358a20",
+          "spanBytes": 32,
+          "bodyBytes": 30,
+          "bodySha256": "73942dc01488235175d3a865b0fcf1224444f595672b1d9bd569cd488c1b7998",
+          "stackWriteOffsets": [
+            "0x20"
+          ],
+          "stackWriteWidths": [
+            4
+          ],
+          "incomingGprClobbers": []
+        }
+      ],
+      "abiShapeFalseCandidates": [
         {
           "hash": "5d15fdfe5676d33316f2415a1f41d523",
           "rva": "0x356670",
@@ -1421,9 +1437,9 @@
           ]
         }
       ],
-      "exclusionReason": "09829f... loads the second stack argument into rdx and 1adf3a... into r9, clobbering incoming target GPRs; 89666f... uses displaced stack slots. The surviving r10 forms preserve rcx/rdx/r8/r9.",
+      "exclusionReason": "The old six-parameter thunk filter omitted the real struct-payload export b44b8d6a... and retained two false candidates whose cores violate the canonical job layout. Whole-DLL semantic scanning plus burst.initialize slot assignment closes b44b8d6a... instead.",
       "candidateAudit": {
-        "status": "abi_shape_filter_incomplete_no_semantic_survivor",
+        "status": "static_semantic_export_identity_closed_managed_wrapper_route_unobserved",
         "parameterContract": {
           "methodIndex": 385317,
           "method": "Invoke",
@@ -1606,19 +1622,87 @@
             "status": "outer_job_layout_closed"
           }
         },
+        "exactSemanticExport": {
+          "status": "static_export_slot_and_dual_cpu_core_identity_closed",
+          "hash": "b44b8d6a5416f62541c69d9812961578",
+          "ordinal": 421,
+          "export": {
+            "rva": "0x358a20",
+            "bodyBytes": 30,
+            "bodySha256": "73942dc01488235175d3a865b0fcf1224444f595672b1d9bd569cd488c1b7998",
+            "functionPointerSlotRva": "0x3c6060"
+          },
+          "variants": [
+            {
+              "cpuVariant": "x64_sse2",
+              "burstInitializeAssignment": {
+                "rva": "0x35fd5a",
+                "bytes": 14,
+                "sha256": "167ef99ed3801301d660b9b0043e5ee94494cd4aa257d4d109f7a09bc0c3d462",
+                "entryRva": "0xae190",
+                "functionPointerSlotRva": "0x3c6060"
+              },
+              "entry": {
+                "rva": "0xae190",
+                "bytes": 29,
+                "sha256": "9296e922d0ad7deda2a97fcd64f672ee6c9a1d012ddf882fc63b226c436eb7d7"
+              },
+              "core": {
+                "rva": "0xae300",
+                "bytes": 113,
+                "sha256": "dc805b6764831250c6ea08d93c17f002c826abd8c8bd23b8a3362f150175a100"
+              }
+            },
+            {
+              "cpuVariant": "avx2",
+              "burstInitializeAssignment": {
+                "rva": "0x35bb23",
+                "bytes": 14,
+                "sha256": "a63c0d4c8d859c1a4ea8aab1b71900e9236944239086cb17784ea9ea6aee8fa7",
+                "entryRva": "0x24a030",
+                "functionPointerSlotRva": "0x3c6060"
+              },
+              "entry": {
+                "rva": "0x24a030",
+                "bytes": 29,
+                "sha256": "9296e922d0ad7deda2a97fcd64f672ee6c9a1d012ddf882fc63b226c436eb7d7"
+              },
+              "core": {
+                "rva": "0x24a1a0",
+                "bytes": 117,
+                "sha256": "fe354aabb5d9e1763b597a9f72608fe0a9ee62ab962ef451ea6515cf6137d97c"
+              }
+            }
+          ],
+          "payload": {
+            "jobColliderIndexListOffset": "0x0",
+            "nowPositionsOffset": "0x10",
+            "nowRotationsOffset": "0x20",
+            "oldPositionsOffset": "0x30",
+            "oldRotationsOffset": "0x40",
+            "indexCountOffset": "0x50",
+            "positionStrideBytes": 24,
+            "rotationStrideBytes": 16,
+            "operation": [
+              "oldPositions[index] = nowPositions[index]",
+              "oldRotations[index] = nowRotations[index]"
+            ]
+          },
+          "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved"
+        },
         "comparison": {
           "candidateCount": 2,
-          "semanticCompatibleCandidateCount": 0,
+          "semanticCompatibleCandidateCount": 1,
           "sameWrapperCfg": true,
           "sameParameterForwarding": true,
           "sameNativeArrayParameterOrder": true,
           "fieldOffsetsPresentInCandidateThunk": false,
           "nowOldWritebackDiscriminates": false,
-          "staticInitializerSlotIdentityDiscriminates": false,
+          "staticInitializerSlotIdentityDiscriminates": true,
           "wrapperSlotsDistinct": true,
           "runtimeSelectedPointerObserved": false,
           "externalInitializerRequiresRuntimeCallback": true,
-          "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace for this exact lib_burst_generated.dll HMODULE and EndSimulationStep wrapper caller window; the current ABI-shape filter has no semantic survivor"
+          "requiredNextEvidence": "runtime GetProcAddress/resolver callback trace only to close managed BurstDirectCall wrapper-to-hash selection; export b44b8d6a5416f62541c69d9812961578 and both CPU cores are already statically closed"
         },
         "candidates": [
           {
@@ -2532,7 +2616,7 @@
         ],
         "nonClaims": [
           "Neither retained ABI-shape candidate is compatible with EndSimulationStepRangeKernel semantics; the static filter is incomplete.",
-          "Resolver/static initializer slot writes do not prove which returned pointer was selected or called at runtime.",
+          "The monolithic burst.initialize assignment closes the exact hashed export slot and dual-CPU cores, but does not prove that managed BurstDirectCall selected the hash at runtime.",
           "Managed now/old position and rotation writebacks do not distinguish a wrapper that contains no job-field accesses."
         ]
       }
