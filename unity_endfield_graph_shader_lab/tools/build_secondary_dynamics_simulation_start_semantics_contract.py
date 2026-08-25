@@ -21,6 +21,12 @@ OUTPUT = LAB_ROOT / (
 CORE_RVA = 0x25E830
 CORE_BYTES = 5074
 CORE_SHA256 = "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc"
+COS_RVA = 0x23C1C0
+COS_BYTES = 718
+COS_SHA256 = "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f"
+LARGE_TRIG_REDUCER_RVA = 0x23C760
+LARGE_TRIG_REDUCER_BYTES = 1147
+LARGE_TRIG_REDUCER_SHA256 = "f03b3aa47f3d19ed6aa8cf1f7f997d7e4deabf1da6b9184f641a9fc31d4943a6"
 
 
 def _instruction(rows: dict[int, Any], rva: int, mnemonic: str, operand: str) -> Any:
@@ -54,6 +60,13 @@ def build_contract() -> dict[str, Any]:
     gate = burst._native_gate(None, None)
     pe = burst._pe_exports(Path(gate["libBurstGenerated"]["path"]))
     _, instructions = burst._exact_rva_span(pe, CORE_RVA, CORE_BYTES, CORE_SHA256)
+    burst._exact_rva_span(pe, COS_RVA, COS_BYTES, COS_SHA256)
+    burst._exact_rva_span(
+        pe,
+        LARGE_TRIG_REDUCER_RVA,
+        LARGE_TRIG_REDUCER_BYTES,
+        LARGE_TRIG_REDUCER_SHA256,
+    )
     rows = {ins.address - pe["imageBase"]: ins for ins in instructions}
 
     pins = [
@@ -178,7 +191,7 @@ def build_contract() -> dict[str, Any]:
             {
                 "name": "normal_cone_restriction",
                 "range": "0x25f9c3..0x25fbfd",
-                "status": "operands_and_control_flow_closed_helper_algebra_open",
+                "status": "operands_control_flow_and_cosine_helper_closed_inline_angle_equation_open",
                 "nestedHelperRva": "0x23c1c0",
             },
             {
@@ -192,7 +205,21 @@ def build_contract() -> dict[str, Any]:
         ],
         "nested_helpers": {
             "wind": {"rva": "0x247190", "status": "call_abi_bounded_equations_open"},
-            "normalConeTrig": {"rva": "0x23c1c0", "status": "call_site_bounded_equations_open"},
+            "normalConeCos": {
+                "rva": "0x23c1c0",
+                "bytes": COS_BYTES,
+                "sha256": COS_SHA256,
+                "abi": "xmm0 double input -> xmm0 cos(input)",
+                "status": "exact_scalar_binary64_cosine_implementation_closed",
+                "argumentReduction": {
+                    "smallThreshold": 15.0,
+                    "largeThreshold": 100000000000000.0,
+                    "largeReducerRva": "0x23c760",
+                    "largeReducerBytes": LARGE_TRIG_REDUCER_BYTES,
+                    "largeReducerSha256": LARGE_TRIG_REDUCER_SHA256,
+                },
+                "specialCases": "positive/negative zero -> 1; infinity and NaN -> canonical quiet NaN",
+            },
             "springNoiseSin": {"rva": "0x23c490", "status": "scalar_sine_role_closed"},
         },
         "implementation_boundary": {
@@ -203,7 +230,7 @@ def build_contract() -> dict[str, Any]:
                 "inertia", "damping", "gravity", "impact_force_dispatch",
                 "semi_implicit_prediction", "spring_distance", "spring_noise", "writeback_layout",
             ],
-            "blocked": ["wind helper equations", "normal-cone helper equation", "later constraint/collision stages"],
+            "blocked": ["wind helper equations", "normal-cone inline angle/correction equation", "later constraint/collision stages"],
         },
     }
 
