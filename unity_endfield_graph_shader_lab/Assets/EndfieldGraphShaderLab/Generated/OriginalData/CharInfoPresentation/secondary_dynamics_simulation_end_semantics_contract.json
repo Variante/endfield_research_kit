@@ -1,0 +1,169 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-simulation-end-semantics.v1",
+  "status": "friction_speed_limit_centrifugal_and_state_write_equations_closed",
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "core": {
+    "cpuVariant": "avx2",
+    "rva": "0x24fa60",
+    "bytes": 1745,
+    "sha256": "f623b3ca9c367210ca74998645797c72cefa6d393d708f8665788b85aba41780",
+    "fileOffset": "0x24ee60",
+    "dispatch": [
+      "0x2630a0 entry",
+      "0x263250 range",
+      "0x24fa60 core"
+    ],
+    "directCallCount": 0
+  },
+  "argumentElementStridesBytes": [
+    4,
+    464,
+    808,
+    696,
+    1,
+    4,
+    2,
+    24,
+    24,
+    12,
+    12,
+    24,
+    4,
+    4,
+    12
+  ],
+  "constants": {
+    "contactAndAngularEpsilon": 9.99999993922529e-09,
+    "speedLimitNormalizationEpsilon": 9.999999717180685e-10,
+    "staticReleaseDivisor": 0.2,
+    "staticMinimumLoss": 0.05,
+    "staticNoContactDecay": 0.05,
+    "staticAccumulation": 0.04,
+    "dynamicHemisphereRemap": 0.5,
+    "dynamicMemoryRetention": 0.6000000238418579,
+    "centrifugalCoefficient": 0.019999999552965164
+  },
+  "selection": {
+    "range": "0x24fade..0x24fb7a",
+    "equations": [
+      "particle = stepParticleIndexArray[rangeIndex]",
+      "teamId = teamIdArray[particle]",
+      "proxyVertex = particle - team.particleChunk.startIndex + team.proxyCommonChunk.startIndex",
+      "attribute = attributes[proxyVertex]",
+      "depth = vertexDepths[proxyVertex]"
+    ]
+  },
+  "stages": [
+    {
+      "name": "inactive_bypass",
+      "range": "0x24fbae..0x2500e7",
+      "gate": "(attribute & 2) == 0 and (team.flag & 0x2000) == 0",
+      "equations": [
+        "realVelocity[particle] = float3((nextPos[particle] - oldPos[particle]) / dt)",
+        "oldPos[particle] = nextPos[particle]"
+      ],
+      "nonWrites": [
+        "velocity",
+        "friction",
+        "staticFriction",
+        "nextPos",
+        "velocityPos",
+        "collisionNormal"
+      ]
+    },
+    {
+      "name": "static_friction",
+      "range": "0x24fbfc..0x24fd80",
+      "gate": "dot(N,N) > 1e-8 and friction > 0 and team.scaleRatio * parameters.staticFriction > 0",
+      "equations": [
+        "delta = P - O; tangent = delta - N * dot(N, delta)",
+        "tangentSpeed = length(tangent) / dt",
+        "threshold = team.scaleRatio * parameters.staticFriction",
+        "if threshold > tangentSpeed: sf += 0.04",
+        "else: sf -= max((tangentSpeed - threshold) / 0.2, 0.05)",
+        "if the contact gate fails: sf -= 0.05",
+        "sf = clamp(sf, 0, 1)",
+        "Pprime = P - tangent * sf; VPprime = VP - tangent * sf",
+        "staticFriction[particle] = float(sf)"
+      ],
+      "normalBoundary": "N is assumed normalized; the core neither normalizes it nor divides by dot(N,N)"
+    },
+    {
+      "name": "initial_velocity_and_dynamic_friction",
+      "range": "0x24fd86..0x24fe8d",
+      "equations": [
+        "v0 = (Pprime - VPprime) / dt; speed0Squared = dot(v0,v0)",
+        "direction0 = speed0Squared > 1e-8 ? normalize(float3(v0)) : 0",
+        "when friction > 1e-8 and dot(N,N) > 1e-8 and parameters.dynamicFriction > 0 and speed0Squared >= 1e-8: hemisphere=0.5*dot(N,direction0)+0.5; strength=clamp(parameters.dynamicFriction*friction,0,1); v1=v0*(1-strength*(1-hemisphere*hemisphere))",
+        "otherwise v1 = v0",
+        "friction[particle] = friction * 0.6000000238418579"
+      ],
+      "precisionBoundary": "direction0 is normalized after float3 conversion and remains the pre-friction direction for centrifugal alignment"
+    },
+    {
+      "name": "particle_speed_limit",
+      "range": "0x24fe93..0x24fefb",
+      "gate": "parameters.particleSpeedLimit >= 0",
+      "equations": [
+        "limit = parameters.particleSpeedLimit * team.scaleRatio",
+        "if length(v1) > limit and length(v1) > 9.999999717180685e-10: v2 = v1 * limit / length(v1); else v2 = v1"
+      ]
+    },
+    {
+      "name": "center_centrifugal_effect",
+      "range": "0x24ff06..0x250086",
+      "gate": "center.angularVelocity > 1e-8 and parameters.centrifualAcceleration > 1e-8 and speed0Squared >= 1e-8",
+      "equations": [
+        "radial = (Pprime-center.nowWorldPosition) - axis*dot(axis,Pprime-center.nowWorldPosition)",
+        "when length(radial) > 1e-8: radialDirection=radial/length(radial); rotationTangent=normalize(cross(axis,radialDirection)); alignment=clamp(dot(rotationTangent,direction0),0,1)",
+        "angularMagnitude = length(radial) * center.angularVelocity^2 * (2-depth) * alignment * parameters.centrifualAcceleration * 0.019999999552965164",
+        "vFinal = v2 + radialDirection * angularMagnitude"
+      ],
+      "axisBoundary": "center.rotationAxis is assumed normalized; no denominator or normalization is applied"
+    },
+    {
+      "name": "final_state_writeback",
+      "range": "0x25008f..0x2500e7",
+      "equations": [
+        "active only: velocity[particle] = float3(vFinal * team.velocityWeight)",
+        "both paths: realVelocity[particle] = float3((Pprime - O) / dt)",
+        "both paths: oldPos[particle] = Pprime"
+      ],
+      "nonWrites": [
+        "nextPos",
+        "velocityPos",
+        "collisionNormal"
+      ]
+    }
+  ],
+  "implementation_boundary": {
+    "solverImplemented": false,
+    "retailEquivalent": false,
+    "equationsClosed": true,
+    "helperGap": false,
+    "goldenVectorsCaptured": false,
+    "requiresExactFloatDoubleConversionOrder": true,
+    "requiresBurstMinMaxNaNBehavior": true,
+    "upstreamStagesRequired": [
+      "constraint projection",
+      "collider contact generation"
+    ],
+    "downstreamStageRequired": "central transform writeback"
+  }
+}
