@@ -32,17 +32,19 @@ def main() -> int:
         fail(f"unexpected contract status: {expected.get('status')!r}")
     if expected.get("secondary_dynamics_verified") is not False:
         fail("secondary_dynamics_verified must remain false until visual verification")
-    callback = expected.get("callback") or {}
-    if callback.get("playerLoopCategory") != "FixedUpdate":
-        fail("callback is not pinned to FixedUpdate")
-    calls = callback.get("calls") or []
-    if not any(row.get("method") == "ClothUpdate" for row in calls):
-        fail("callback has no exact ClothUpdate edge")
+    callbacks = expected.get("callbacks") or []
+    if len(callbacks) != 7:
+        fail("seven callback wrappers are not pinned")
+    selectors = expected.get("simulationSelectors") or {}
+    if selectors.get("fixedUpdateRunsClothUpdate") is not False:
+        fail("FixedUpdate must not be classified as a ClothUpdate callback")
+    if selectors.get("mutuallyExclusiveWholePipeline") is not True:
+        fail("PreLate callbacks are not classified as mutually exclusive whole-pipeline selectors")
     writeback = expected.get("writeback") or {}
     stages = writeback.get("stages") or {}
     if stages.get("transformWriteback") != [3004, 4277]:
         fail("transform writeback offsets drifted")
-    print(json.dumps({"status": expected["status"], "callback": callback["method"], "writebackOffsets": stages["transformWriteback"]}, ensure_ascii=False))
+    print(json.dumps({"status": expected["status"], "callbacks": len(callbacks), "writebackOffsets": stages["transformWriteback"]}, ensure_ascii=False))
     return 0
 
 

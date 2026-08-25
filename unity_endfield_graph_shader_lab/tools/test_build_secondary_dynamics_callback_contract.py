@@ -25,11 +25,11 @@ class SecondaryDynamicsCallbackContractTests(unittest.TestCase):
         self.assertEqual(observed, payload)
         self.assertEqual(payload["status"], "native_callback_writeback_closed")
         self.assertFalse(payload["secondary_dynamics_verified"])
-        self.assertEqual(payload["callback"]["playerLoopOrdinal"], 2)
-        self.assertEqual(
-            [row["method"] for row in payload["callback"]["calls"]],
-            ["get_Time", "ClothUpdate", "MonitoringProcess", "get_Time"],
-        )
+        self.assertEqual(len(payload["callbacks"]), 7)
+        self.assertEqual(payload["callbacks"][3]["playerLoopCategory"], "PreLateUpdate")
+        self.assertEqual(payload["callbacks"][4]["playerLoopCategory"], "PreLateUpdate")
+        self.assertFalse(payload["simulationSelectors"]["fixedUpdateRunsClothUpdate"])
+        self.assertTrue(payload["simulationSelectors"]["mutuallyExclusiveWholePipeline"])
         self.assertEqual(payload["writeback"]["stages"]["transformWriteback"], [3004, 4277])
         self.assertLess(
             payload["writeback"]["orderingGates"][0]["before"],
@@ -87,13 +87,13 @@ class SecondaryDynamicsCallbackContractTests(unittest.TestCase):
     def test_player_loop_native_call_identity_drift_is_rejected(self) -> None:
         solver = json.loads(builder.SOLVER_INPUTS.read_text(encoding="utf-8"))
         player_loop = json.loads(builder.PLAYER_LOOP_CONTRACT.read_text(encoding="utf-8"))
-        player_loop["insertions"][1]["nativeCallOffset"] = 987
-        with self.assertRaisesRegex(builder.ContractError, "native call offset drift"):
+        player_loop["insertions"][1]["categoryName"]["value"] = "Update"
+        with self.assertRaisesRegex(builder.ContractError, "category drift"):
             builder._verify_player_loop(solver, player_loop)
 
         player_loop = json.loads(builder.PLAYER_LOOP_CONTRACT.read_text(encoding="utf-8"))
-        player_loop["insertions"][1]["nativeCallVa"] = "0xdeadbeef"
-        with self.assertRaisesRegex(builder.ContractError, "native call VA drift"):
+        player_loop["insertions"][4]["before"] = True
+        with self.assertRaisesRegex(builder.ContractError, "insertion flags drift"):
             builder._verify_player_loop(solver, player_loop)
 
     def test_player_loop_delegate_slot_drift_is_rejected(self) -> None:
@@ -102,7 +102,7 @@ class SecondaryDynamicsCallbackContractTests(unittest.TestCase):
         registration = next(
             row
             for row in solver["native_lifecycle"]["manager"]["callbacks"]
-            if row["method"] == builder.CALLBACK_METHOD
+            if row["method"] == builder.CALLBACKS[1][1]
         )
         registration["delegate_slot"] = "0x20"
         with self.assertRaisesRegex(builder.ContractError, "delegate slot drift"):
@@ -162,23 +162,12 @@ class SecondaryDynamicsCallbackContractTests(unittest.TestCase):
             with self.assertRaisesRegex(builder.ContractError, "native body sha256 drift"):
                 builder._method_identity(lifecycle, native, "T", "M", path)
 
-    def test_callback_target_drift_is_rejected(self) -> None:
-        native = json.loads(builder.DEFAULT_NATIVE.read_text(encoding="utf-8"))
-        row = next(
-            row
-            for row in native["bodyTargets"]
-            if row["type"] == builder.CALLBACK_TYPE and row["method"] == builder.CALLBACK_METHOD
+    def test_all_wrapper_identities_are_source_pinned(self) -> None:
+        payload = builder.build_contract()
+        self.assertEqual(
+            [row["method"]["methodIndex"] for row in payload["callbacks"]],
+            list(range(385117, 385124)),
         )
-        call = next(call for call in row["directCalls"] if call["offset"] == 419)
-        call["targetVa"] = "0xdeadbeef"
-        with self.assertRaisesRegex(builder.ContractError, "target drift"):
-            builder._call_record(
-                row,
-                419,
-                builder.CLOTH_UPDATE_VA,
-                builder.CLOTH_MANAGER_TYPE,
-                builder.CLOTH_UPDATE_METHOD,
-            )
 
 
 if __name__ == "__main__":
