@@ -388,6 +388,61 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        /// <summary>
+        /// Exact Collider End snapshot stage: selected colliders publish their
+        /// current transform as the previous transform for the next step.
+        /// Validation is completed before publication so malformed managed
+        /// inputs cannot produce a partial snapshot.
+        /// </summary>
+        public static void FinishColliderSnapshots(
+            int[] jobColliderIndexList,
+            Double3[] nowPositions,
+            Float4[] nowRotations,
+            Double3[] oldPositions,
+            Float4[] oldRotations,
+            int indexCount)
+        {
+            // The native job dereferences no array when *_indexCount <= 0.
+            if (indexCount <= 0)
+                return;
+
+            if (jobColliderIndexList == null)
+                throw new ArgumentNullException(nameof(jobColliderIndexList));
+            if (nowPositions == null)
+                throw new ArgumentNullException(nameof(nowPositions));
+            if (nowRotations == null)
+                throw new ArgumentNullException(nameof(nowRotations));
+            if (oldPositions == null)
+                throw new ArgumentNullException(nameof(oldPositions));
+            if (oldRotations == null)
+                throw new ArgumentNullException(nameof(oldRotations));
+            if (indexCount > jobColliderIndexList.Length)
+                throw new ArgumentOutOfRangeException(nameof(indexCount));
+
+            // Validate the complete selected range before the first write.
+            for (int offset = 0; offset < indexCount; offset++)
+            {
+                int colliderIndex = jobColliderIndexList[offset];
+                if (colliderIndex < 0 ||
+                    colliderIndex >= nowPositions.Length ||
+                    colliderIndex >= nowRotations.Length ||
+                    colliderIndex >= oldPositions.Length ||
+                    colliderIndex >= oldRotations.Length)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(jobColliderIndexList),
+                        "Collider End selected an index outside one or more transform arrays.");
+                }
+            }
+
+            for (int offset = 0; offset < indexCount; offset++)
+            {
+                int colliderIndex = jobColliderIndexList[offset];
+                oldPositions[colliderIndex] = nowPositions[colliderIndex];
+                oldRotations[colliderIndex] = nowRotations[colliderIndex];
+            }
+        }
+
         public static bool ProjectTether(
             Double3 rootNext,
             ref Double3 childNext,

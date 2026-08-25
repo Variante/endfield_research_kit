@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace EndfieldGraphShaderLabEditor
 {
-    internal static class EndfieldSecondaryDynamicsBindingBuilder
+    public static class EndfieldSecondaryDynamicsBindingBuilder
     {
         private const string EndminfPrefabPath =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Prefabs/Endminf.prefab";
@@ -21,6 +21,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string PayloadDecodePath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_payload_decode.json";
+        private const string OwnerRecoveryPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+            "secondary_dynamics_owner_recovery.json";
 
         internal static void Configure(
             GameObject actor,
@@ -34,12 +37,20 @@ namespace EndfieldGraphShaderLabEditor
 
             TextAsset solverInputs = AssetDatabase.LoadAssetAtPath<TextAsset>(SolverInputsPath);
             TextAsset payloadDecode = AssetDatabase.LoadAssetAtPath<TextAsset>(PayloadDecodePath);
-            if (solverInputs == null || payloadDecode == null)
+            TextAsset ownerRecovery = AssetDatabase.LoadAssetAtPath<TextAsset>(OwnerRecoveryPath);
+            if (solverInputs == null || payloadDecode == null || ownerRecovery == null)
                 throw new FileNotFoundException(
                     "Endminf secondary-dynamics source contracts are missing.");
 
             Dictionary<string, object> solverActor = ActorRow(solverInputs.text, "endminf");
             Dictionary<string, object> payloadActor = ActorRow(payloadDecode.text, "endminf");
+            Dictionary<string, object> recoveryActor = ActorRow(ownerRecovery.text, "endminf");
+            EndfieldSecondaryDynamicsData.CapsuleCollider[] colliders =
+                DecodeCapsuleColliders(recoveryActor);
+            var colliderIndexByPath = colliders
+                .Select((value, index) => new { value.transformPath, index })
+                .ToDictionary(value => value.transformPath, value => value.index,
+                    StringComparer.Ordinal);
             List<object> solverCloths = Array(solverActor, "cloths");
             List<object> payloadCloths = Array(payloadActor, "cloths");
             if (solverCloths.Count != 4 || payloadCloths.Count != 4)
@@ -131,6 +142,18 @@ namespace EndfieldGraphShaderLabEditor
                     distanceIndices,
                     distanceParticles,
                     distanceRestLengths);
+                int[] colliderIndices = Array(solverCloth, "collider_references")
+                    .Select((entry, index) =>
+                    {
+                        string path = Text(Object(entry,
+                            ownerPath + ".collider_references[" + index + "]"),
+                            "game_object_path");
+                        if (!colliderIndexByPath.TryGetValue(path, out int colliderIndex))
+                            throw new InvalidDataException(
+                                ownerPath + " references unknown collider " + path + ".");
+                        return colliderIndex;
+                    })
+                    .ToArray();
 
                 owners.Add(new EndfieldSecondaryDynamicsData.Owner
                 {
@@ -162,6 +185,7 @@ namespace EndfieldGraphShaderLabEditor
                     distanceConstraintIndexArray = distanceIndices,
                     distanceConstraintDataArray = distanceParticles,
                     distanceConstraintRestLengths = distanceRestLengths,
+                    colliderIndices = colliderIndices,
                     solverInputs = DecodeSolverInputs(solverInput, ownerPath),
                 });
             }
@@ -193,7 +217,10 @@ namespace EndfieldGraphShaderLabEditor
             data.solverInputsSha256 = Sha256(SolverInputsPath);
             data.payloadDecode = payloadDecode;
             data.payloadDecodeSha256 = Sha256(PayloadDecodePath);
+            data.ownerRecovery = ownerRecovery;
+            data.ownerRecoverySha256 = Sha256(OwnerRecoveryPath);
             data.owners = owners.ToArray();
+            data.colliders = colliders;
             data.expectedBindingCount = bindingCount;
             data.expectedUniqueBindingCount = uniqueCount;
             data.expectedOverlappingBindingCount = bindingCount - uniqueCount;
@@ -216,7 +243,8 @@ namespace EndfieldGraphShaderLabEditor
                 Configure(probe, "Endminf", string.Empty, false);
                 Debug.Log(
                     "Verified Endminf secondary-dynamics source data: exact topology, " +
-                    "distance constraints, and authored solver scalars are well-formed; " +
+                    "distance constraints, capsule bindings, and authored solver scalars " +
+                    "are well-formed; " +
                     "no asset or runtime writeback was created.");
             }
             finally
@@ -265,6 +293,42 @@ namespace EndfieldGraphShaderLabEditor
 
         private static int Count(Dictionary<string, object> value) =>
             Convert.ToInt32(Required(value, "count"), CultureInfo.InvariantCulture);
+
+        private static EndfieldSecondaryDynamicsData.CapsuleCollider[] DecodeCapsuleColliders(
+            Dictionary<string, object> recoveryActor)
+        {
+            List<object> rows = Array(recoveryActor, "colliders");
+            if (rows.Count != 10)
+                throw new InvalidDataException(
+                    "Endminf must contain exactly ten recovered capsule colliders.");
+            var result = new EndfieldSecondaryDynamicsData.CapsuleCollider[rows.Count];
+            var paths = new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0; index < rows.Count; index++)
+            {
+                Dictionary<string, object> row = Object(rows[index], "colliders[" + index + "]");
+                string type = Text(row, "type");
+                if (!string.Equals(type, "BeyondDynamicBone.BeyondBoneCapsuleCollider",
+                        StringComparison.Ordinal))
+                    throw new InvalidDataException("Endminf collider is not a capsule: " + type + ".");
+                string path = Text(row, "game_object_path");
+                if (!paths.Add(path))
+                    throw new InvalidDataException("Duplicate Endminf collider path " + path + ".");
+                int direction = Integer(row, "direction", path);
+                if (direction < 0 || direction > 2)
+                    throw new InvalidDataException(path + " has invalid capsule direction.");
+                result[index] = new EndfieldSecondaryDynamicsData.CapsuleCollider
+                {
+                    transformPath = path,
+                    center = Vector3Value(Child(row, "center", path), path + ".center"),
+                    size = Vector3Value(Child(row, "size", path), path + ".size"),
+                    direction = direction,
+                    reverseDirection = Integer(row, "reverse_direction", path) != 0,
+                    radiusSeparation = Integer(row, "radius_separation", path) != 0,
+                    alignedOnCenter = Integer(row, "aligned_on_center", path) != 0,
+                };
+            }
+            return result;
+        }
 
         private static object Required(Dictionary<string, object> row, string key)
         {
