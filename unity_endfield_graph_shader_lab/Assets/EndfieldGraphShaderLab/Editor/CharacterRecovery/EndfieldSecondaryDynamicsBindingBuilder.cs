@@ -434,10 +434,14 @@ namespace EndfieldGraphShaderLabEditor
                     inertia, "centrifualAcceleration", ownerPath),
                 tetherDistanceCompression = Float(
                     tether, "distanceCompression", ownerPath),
+                tetherStretchLimit = BitConverter.Int32BitsToSingle(
+                    unchecked((int)0x3cf5c28f)),
                 distanceStiffnessValue = Float(
                     distanceStiffness, "value", ownerPath),
                 distanceStiffnessUsesCurve = Toggle(
                     distanceStiffness, "useCurve", ownerPath),
+                distanceVelocityAttenuation = BitConverter.Int32BitsToSingle(
+                    unchecked((int)0x3e99999a)),
                 angleRestorationEnabled = Toggle(
                     restoration, "useAngleRestoration", ownerPath),
                 angleRestorationStiffnessValue = Float(
@@ -453,6 +457,7 @@ namespace EndfieldGraphShaderLabEditor
                 angleLimitUsesCurve = Toggle(limitAngle, "useCurve", ownerPath),
                 angleLimitStiffness = Float(limit, "stiffness", ownerPath),
                 colliderDynamicFriction = Float(collision, "friction", ownerPath),
+                colliderStaticFriction = Float(collision, "friction", ownerPath),
                 springEnabled = Toggle(spring, "useSpring", ownerPath),
                 springPower = Float(spring, "springPower", ownerPath),
                 springLimitDistance = Float(spring, "limitDistance", ownerPath),
