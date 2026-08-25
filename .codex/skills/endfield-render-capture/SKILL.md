@@ -64,6 +64,9 @@ renderer-path evidence.
    PID liveness check. It resolves the executable from `ENDFIELD_GAME_EXE` or
    the research kit's
    `endfield_paths.bat`.
+   After retaining the exact process identity, the host waits boundedly for
+   `GameAssembly.dll` and `AkSoundEngine.dll` at their exact manifest paths.
+   This happens before, and does not retry, the single attachment attempt.
    With no profile argument the wrapper selects all three injected providers.
    After a valid arm, its topmost click-through desktop overlay binds
    `Numpad 1` to one graphics-frame request, `Numpad 2` to one bounded
