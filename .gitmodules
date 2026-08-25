@@ -2,3 +2,7 @@
 	path = tools/AnimeStudio
 	url = https://github.com/Variante/AnimeStudio.git
 	branch = master
+[submodule "tools/EndfieldCapture"]
+	path = tools/EndfieldCapture
+	url = https://github.com/Variante/EndfieldCapture.git
+	branch = main
