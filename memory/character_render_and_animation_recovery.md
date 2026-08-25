@@ -946,6 +946,16 @@ exact `AlwaysTeamUpdate`, using the closed 464-byte TeamData stride and
 manager/wrapper/payload/count chain, and all 14 tests pass. One replacement
 dynamics window is still required before enabling writeback.
 
+Session `20260825T224730Z` validates that repaired pointer chain across 740
+readable scans and exposes 171 live TeamData rows per scan. Every one of the
+128 retained rows stays false for all 740 samples and `UseCrossFrameJob` stays
+true, but the former 128-row telemetry bound drops the last 43 rows on every
+scan (`relativeSlotOverflow=31820`), so the package correctly remains
+uncertified. The recorder bound is now 256 and a 171-unique-row regression test
+passes with zero overflow; the complete 14-test Release suite passes. A final
+replacement window is required because the omitted rows in the old package
+cannot be reconstructed.
+
 The captured skinning oracle now supplies the phase-sequenced retail shape
 target, and the deterministic owner-path comparison confirms that the authored
 baseline is already close in the settled loop but diverges substantially during
