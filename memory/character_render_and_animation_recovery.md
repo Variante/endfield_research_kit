@@ -95,20 +95,21 @@ complete frame without a client fault.
   stride-two preview reduces the retail-to-Unity early-turn affine correction
   from 2.29 degrees/1.22 percent scale to 1.20 degrees/0.09 percent without
   eliminating the cloth silhouette gap. Rock cadence and peak burst timing are
-  also substantially aligned, while temporal VFX shape remains open. Captured Forward vertex
-  streams are undeformed and duplicated; retail skinning remains in structured
-  SRV `vs-t0`, whose descriptor is present but whose bytes were not preserved.
-  Decompiled CharacterNPR Skin PreGBuffer vertex code closes its layout: each
-  bone is three `float4` rows, the effective b2 instance-word-5 x base drives
-  current position, and y drives previous-frame motion vectors. A selective
-  decoder now validates and compares those palettes. The observer-only
-  range-logging 3DMigoto build records the previously omitted vertex and pixel
-  `pFirstConstant`/`pNumConstants` values and requests binary buffers, allowing
-  the decoder to recover both palette bases from b2 instance word 5 without a
-  guessed ring-buffer offset on the next neutral capture. Deterministic Unity
-  capture also hash-binds the owner contract and verifies Endminf's 4 cloth
-  owners, 18 root references, and 10 collider owners against the instantiated
-  prefab without adding a runtime solver or writing transforms.
+  also substantially aligned, while temporal VFX shape remains open. Captured
+  Forward vertex streams are undeformed and duplicated; retail skinning lives
+  in structured SRV `vs-t0`. Decompiled CharacterNPR Skin PreGBuffer vertex
+  code closes its layout: each bone is three `float4` rows, while b2
+  instance-word-5 x/y select current/previous palettes. EndfieldCapture session
+  `20260825T191720Z` now joins those values at draw time for 40 complete frames
+  of body, cloth-01, cloth-04, and hair. Reconstructing root-space bone matrices
+  through the generated Unity bind poses produces 800 cross-renderer shared-bone
+  comparisons with a worst delta below `5.7e-8`; the worst orthonormality error
+  is below `2.2e-5`. The owner-tagged trajectories and changing coverage live in
+  `reports/assets/character_recovery/endminf_captured_secondary_dynamics_oracle.json`.
+  This closes the retail hair/cape shape oracle for the captured sequence, but
+  does not by itself certify the recovered solver. Deterministic Unity capture
+  also hash-binds the owner contract and verifies Endminf's 4 cloth owners, 18
+  root references, and 10 collider owners against the instantiated prefab.
   The refreshed three-actor static solver-input contract now maps all 333
   non-null authored proxy-transform PPtrs to current hierarchy paths while
   preserving transform-array indices (Endminf: 7/31/21/71); this closes the
@@ -850,6 +851,11 @@ phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
 the authored baseline; entrance VFX, cleanup, and rotation-only root motion
 remain active.
 
+The captured skinning oracle now supplies the missing phase-sequenced retail
+shape target. The next solver step is a deterministic owner-path comparison
+against those reconstructed matrices; do not enable writeback merely because
+the capture is internally valid.
+
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
 cloth-01, cloth-04, cloth-03, and hair), omitting eyebrow and iris. Exact
@@ -940,48 +946,21 @@ or shaders rather than hand-editing generated prefabs.
    remaining camera, effect-shape, and material differences.
 2. Reproduce the complete Endminf Character Info frame against the reference
    video, closing the presentation scene before further isolated shader work.
-3. Close Endminf secondary motion only from joined target evidence: capture
-   either owner-tagged transform trajectories for all four BeyondBoneCloth
-   owners across consecutive frames, or the hair/cape draw palette SRV
-   base/range together with that frame's palette payload. Existing 3DMigoto
-   captures identify the draws but lost the palette payload, while
-   `20260825T150404Z` captured the palette without the per-draw range. Keep
-   solver writeback fail-closed until one joined source passes phase-paired
-   retail-shape review. EndfieldCapture `33ca8ef` added the required
-   `DrawIndexedInstanced` arguments and cached VS b2
-   `first_constant`/`num_constants` range, but retail session
-   `20260825T181918Z` faulted in `EndfieldCaptureD3D11.dll` as the first
-   automatic frame became active. `55b3850` removes provider work from that
-   hot draw detour: it retains at most 32 fixed-size candidates and publishes
-   them only at the closing Present, bounds lock acquisition on the render
-   thread, clears the added trampoline pointers during uninstall, and guards
-   hook-target capacity. Retail session `20260825T185008Z` then completed 42
-   targeted packages with zero dropped/incomplete/failed frames and quiescent
-   cleanup, closing the crash regression, but every package retained zero
-   draws. The cache had treated the provider snapshot's combined
-   armed-or-active flag as an active collection window, so it flushed at the
-   opening boundary and never enabled collection. `ffb4ccc` now gates the
-   cache on the provider's exact active-frame state and makes Release proxy
-   metadata checks fail by return code instead of relying on disabled
-   `assert` calls. All 14 tests and 20 consecutive two-capture stress runs pass.
-   Retail session `20260825T185639Z` then completed 41 targeted packages with
-   32 retained indexed-instanced draws apiece, no dropped/incomplete/failed
-   frames, and quiescent cleanup. It closes the draw/range collection gate but
-   not the palette join: the correct 4 MiB DYNAMIC VS b2 ring had already been
-   reused by later draws before its Present-time readback, so its saved bytes
-   do not describe the earlier retained draw ranges. `8e65872` now copies only
-   the exact 16-byte b2 metadata row consumed by each retained draw into a
-   bounded 512-byte GPU snapshot and reads it at the closing Present. The
-   Release proxy gate passes all 14 tests plus 30 consecutive multi-capture
-   stress runs; no retail run has yet validated the new snapshot. One new
-   targeted automatic graphics sequence through `ui_overview_start` and the
-   settled loop is required.
+3. Close Endminf secondary motion against the joined retail shape oracle from
+   EndfieldCapture session `20260825T191720Z`. Its 40 complete frames each
+   contain 32 valid draw-time b2 snapshots with no dropped/incomplete/failed
+   package. `8e65872` preserves the exact 16-byte row consumed by each retained
+   draw in a bounded 512-byte GPU copy; all 14 Release tests and 30 consecutive
+   multi-capture stress runs pass. Confirmed skinning draws bind all 4096 b2
+   constants; same-index-count 16-constant passes are separate non-skin
+   submissions and must remain excluded.
    `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
    performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
-   hair LOD0 index/bindpose counts. It now accepts repeated retail passes only
-   when their draw-time current/previous palette pair agrees, rather than
-   requiring one shared b2 range, and fails closed on older packages without
-   the draw-time snapshot.
+   hair LOD0 index/bindpose counts. It accepts repeated 4096-constant skinning
+   passes only when their draw-time current/previous palette pair agrees and
+   fails closed on older packages without the snapshot. The resulting
+   owner-tagged trajectory oracle is now the phase-paired comparison target for
+   the default-off solver; no additional graphics capture is currently needed.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
