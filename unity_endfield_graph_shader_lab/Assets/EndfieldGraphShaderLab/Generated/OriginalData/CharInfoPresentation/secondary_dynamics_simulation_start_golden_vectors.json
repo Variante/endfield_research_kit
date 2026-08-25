@@ -89,7 +89,7 @@
     "movingWindZeroed": true,
     "result": "zero; inlined wind blend/noise helpers not entered"
   },
-  "harnessSha256": "b809d40f0caabb7b1bb5ea9cc1044392b4cd8f523b271fc326654737c2f16821",
+  "harnessSha256": "b40e6ef40bcc4b934535b8f292c77eb1aada50e81ade8adea39ea30f55938e6e",
   "vectors": [
     {
       "name": "inactive_bypass",
@@ -2483,6 +2483,8 @@
     ],
     "controlledDomain": "zero wind; representative normalized base and center quaternions cover all base/inertia position and rotation equations; valid quaternion slerp arguments remain inside the standalone float-sine transcription's bounded path",
     "completeKernelGoldenCoverage": false,
-    "unityPortExecuted": false
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu",
+    "unityPortDomain": "StartSimulationParticleZeroWind; all 13 controlled vectors bit-exact"
   }
 }
