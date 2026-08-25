@@ -36,7 +36,7 @@
     "sha256": "bca4c3f13dff30f5de4cdc982372849514c7a3cd21641e82cf0ecca536764a1c",
     "argument15": "int32 rangeIndex value"
   },
-  "harnessSha256": "421f946e2db5242a385f9a7e29f08c12c99f1797f275a22f7751a1966bbe4c85",
+  "harnessSha256": "ca5a1066e184801bbf0a4b9a72315d767435d09e3fa79f87d0bd509b9915a90d",
   "vectors": [
     {
       "name": "single_constraint_stretch",
@@ -926,6 +926,7 @@
       "degenerate no-write",
       "empty packed range no-write"
     ],
-    "unityPortExecuted": false
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyDistanceGoldenVectors"
   }
 }

@@ -386,7 +386,8 @@ def build_contract() -> dict[str, Any]:
                 "fractional curve stiffness and asymmetric weights", "animation-pose blend",
                 "multi-constraint averaging", "degenerate no-write", "empty packed range no-write",
             ],
-            "unityPortExecuted": False,
+            "unityPortExecuted": True,
+            "unityVerifier": "EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyDistanceGoldenVectors",
         },
     }
 

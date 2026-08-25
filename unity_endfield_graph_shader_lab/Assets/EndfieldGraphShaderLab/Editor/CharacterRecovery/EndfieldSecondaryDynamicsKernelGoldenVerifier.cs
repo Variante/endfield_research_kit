@@ -47,7 +47,8 @@ namespace EndfieldGraphShaderLabEditor
         public static void VerifyMenu()
         {
             VerifyTetherGoldenVectors();
-            Debug.Log("Verified five native AVX2 tether golden vectors exactly.");
+            VerifyDistanceGoldenVectors();
+            Debug.Log("Verified five tether and eight Distance native AVX2 golden vectors exactly.");
         }
 
         public static void VerifyTetherGoldenVectors()
@@ -62,6 +63,110 @@ namespace EndfieldGraphShaderLabEditor
                 RequireBits(row.name + " next", next, row.nextBits);
                 RequireBits(row.name + " velocityPos", velocity, row.velocityBits);
             }
+        }
+
+        public static void VerifyDistanceGoldenVectors()
+        {
+            float[] oneCurve = new float[16];
+            for (int index = 0; index < oneCurve.Length; index++)
+                oneCurve[index] = 1.0f;
+            float[] depthCurve = new float[16];
+            for (int index = 0; index < depthCurve.Length; index++)
+                depthCurve[index] = index / 15.0f;
+
+            VerifyDistanceCase("single_constraint_stretch",
+                D3(0, 0, 0, 2, 0, 0), D3(0, 0, 0, 1, 0, 0),
+                D3(0, 0, 0, 2, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                new ushort[] { 1 }, new float[] { 1 }, 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000e03f", "0000000000000000", "0000000000000000" },
+                new[] { "000000606666d63f", "0000000000000000", "0000000000000000" }, 1);
+            VerifyDistanceCase("single_constraint_compression",
+                D3(0, 0, 0, 0.5, 0, 0), D3(0, 0, 0, 1, 0, 0),
+                D3(0, 0, 0, 0.5, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                new ushort[] { 1 }, new float[] { 1 }, 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000d0bf", "0000000000000000", "0000000000000000" },
+                new[] { "000000606666c6bf", "0000000000000000", "0000000000000000" }, 1);
+            VerifyDistanceCase("negative_signed_rest_half_stiffness",
+                D3(0, 0, 0, 2, 0, 0), D3(0, 0, 0, 1, 0, 0),
+                D3(0, 0, 0, 2, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                new ushort[] { 1 }, new float[] { -1 }, 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000d03f", "0000000000000000", "0000000000000000" },
+                new[] { "000000606666c63f", "0000000000000000", "0000000000000000" }, 1);
+            VerifyDistanceCase("fractional_curve_stiffness",
+                D3(0, 0, 0, 2, 1, -0.5), D3(0, 0, 0, 1, 0.5, -0.25),
+                D3(0, 0, 0, 2, 1, -0.5), new byte[] { 2, 2 },
+                new float[] { 0.37f, 0.62f }, new float[] { 0.2f, 0.4f },
+                new ushort[] { 1 }, new float[] { 1 }, 0.8f, depthCurve, 0.65f, 0,
+                new[] { "bfca09869e2dc33f", "bfca09869e2db33f", "bfca09869e2da3bf" },
+                new[] { "8dd5813881eeb83f", "8dd5813881eea83f", "8dd5813881ee98bf" }, 1);
+            VerifyDistanceCase("animation_pose_blend",
+                D3(0, 0, 0, 2, 0, 0), D3(0, 0, 0, 1.5, 0, 0),
+                D3(0, 0, 0, 2, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                new ushort[] { 1 }, new float[] { 1 }, 1, oneCurve, 0.7f, 0.25f,
+                new[] { "000000000000dc3f", "0000000000000000", "0000000000000000" },
+                new[] { "000000949999d33f", "0000000000000000", "0000000000000000" }, 1);
+            VerifyDistanceCase("two_constraint_mean",
+                D3(0, 0, 0, 2, 0, 0, 0, 2, 0), D3(0, 0, 0, 1, 0, 0, 0, 1, 0),
+                D3(0, 0, 0, 2, 0, 0, 0, 2, 0), new byte[] { 2, 2, 2 },
+                new float[] { 0, 0, 0 }, new float[] { 0, 0, 0 },
+                new ushort[] { 1, 2 }, new float[] { 1, 1 }, 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000d03f", "000000000000d03f", "0000000000000000" },
+                new[] { "000000606666c63f", "000000606666c63f", "0000000000000000" }, 2);
+            VerifyDistanceCase("degenerate_constraint_no_write",
+                D3(0.125, -0.25, 0.5, 0.125, -0.25, 0.5), D3(0, 0, 0, 1, 0, 0),
+                D3(3, 4, 5, 0, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                new ushort[] { 1 }, new float[] { 1 }, 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000c03f", "000000000000d0bf", "000000000000e03f" },
+                new[] { "0000000000000840", "0000000000001040", "0000000000001440" }, 0);
+            VerifyDistanceCase("empty_packed_range_no_write",
+                D3(-0.75, 0.5, 1.25, 2, 0, 0), D3(0, 0, 0, 1, 0, 0),
+                D3(-2, 7, 0.25, 0, 0, 0), new byte[] { 2, 2 },
+                new float[] { 0, 0 }, new float[] { 0, 0 },
+                Array.Empty<ushort>(), Array.Empty<float>(), 1, oneCurve, 0.7f, 0,
+                new[] { "000000000000e8bf", "000000000000e03f", "000000000000f43f" },
+                new[] { "00000000000000c0", "0000000000001c40", "000000000000d03f" }, 0);
+        }
+
+        private static void VerifyDistanceCase(
+            string name,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] next,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] basic,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] velocity,
+            byte[] attributes,
+            float[] depths,
+            float[] friction,
+            ushort[] neighbors,
+            float[] rest,
+            float simulationPower,
+            float[] curve,
+            float velocityAttenuation,
+            float animationPoseRatio,
+            string[] nextBits,
+            string[] velocityBits,
+            int expectedAccepted)
+        {
+            int accepted = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ProjectDistance(
+                0, next, basic, velocity, attributes, depths, friction, neighbors, rest,
+                simulationPower, curve, velocityAttenuation, animationPoseRatio, 1, 1, 0);
+            if (accepted != expectedAccepted)
+                throw new InvalidOperationException(name + " accepted count differs.");
+            RequireBits(name + " next", next[0], nextBits);
+            RequireBits(name + " velocityPos", velocity[0], velocityBits);
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] D3(
+            params double[] values)
+        {
+            var result = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[values.Length / 3];
+            for (int index = 0; index < result.Length; index++)
+                result[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(
+                    values[index * 3], values[index * 3 + 1], values[index * 3 + 2]);
+            return result;
         }
 
         private static void RequireBits(

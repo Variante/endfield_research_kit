@@ -144,7 +144,8 @@ def build_contract() -> dict[str, Any]:
             "nativeCoreExecuted": True,
             "sourceTranscriptionBinary64Matched": True,
             "caseCoverage": ["full stretch", "full compression", "dead zone", "partial activation", "oblique normalization"],
-            "unityPortExecuted": False,
+            "unityPortExecuted": True,
+            "unityVerifier": "EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyTetherGoldenVectors",
         },
     }
 
