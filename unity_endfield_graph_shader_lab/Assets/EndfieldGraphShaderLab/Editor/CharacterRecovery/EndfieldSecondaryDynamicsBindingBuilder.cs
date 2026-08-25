@@ -33,6 +33,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string CenterUpdatePath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_center_update_contract.json";
+        private const string DuplicateWritePath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+            "secondary_dynamics_duplicate_write_contract.json";
 
         internal static void Configure(
             GameObject actor,
@@ -51,8 +54,10 @@ namespace EndfieldGraphShaderLabEditor
             TextAsset solverScalarPacking =
                 AssetDatabase.LoadAssetAtPath<TextAsset>(SolverScalarPackingPath);
             TextAsset centerUpdate = AssetDatabase.LoadAssetAtPath<TextAsset>(CenterUpdatePath);
+            TextAsset duplicateWrite = AssetDatabase.LoadAssetAtPath<TextAsset>(DuplicateWritePath);
             if (solverInputs == null || payloadDecode == null || ownerRecovery == null ||
-                curveSamples == null || solverScalarPacking == null || centerUpdate == null)
+                curveSamples == null || solverScalarPacking == null || centerUpdate == null ||
+                duplicateWrite == null)
                 throw new FileNotFoundException(
                     "Endminf secondary-dynamics source contracts are missing.");
 
@@ -246,6 +251,8 @@ namespace EndfieldGraphShaderLabEditor
             data.solverScalarPackingSha256 = Sha256(SolverScalarPackingPath);
             data.centerUpdate = centerUpdate;
             data.centerUpdateSha256 = Sha256(CenterUpdatePath);
+            data.duplicateWrite = duplicateWrite;
+            data.duplicateWriteSha256 = Sha256(DuplicateWritePath);
             data.owners = owners.ToArray();
             data.colliders = colliders;
             data.expectedBindingCount = bindingCount;
