@@ -60,24 +60,61 @@ NATIVE_SPANS = (
     ("TeamManager.AlwaysTeamUpdate synchronized relative propagation", 384596, "0x1835bfc85", 0x35BE285, 53, "859c08440b5cd1a269056b6adf60a7528812f2a66e891eee393a2d004d74f8c0"),
     ("DynamicBoneTransformManager.CopyDoubleBuffer active body", 384479, "0x183d42300", 0x3D40900, 335, "cda347050a942ff4ccc2aaa35d7d064b36a4087f06b4c9b17e9eeef9f1f98e18"),
     ("ClothManager.ClothUpdate transform-input branch region", 384441, "0x182f91cc9", 0x2F902C9, 772, "c13f2c0c6e0f90e21026902783f404ec7c4bc9a4247ee125a5c7c58cd1e4d017"),
+    ("ClothManager.ClothUpdate complete selector body", 384441, "0x182f918a0", 0x2F8FEA0, 6256, "a1065dd5aaa62d715dc756e8ce87a4630d629d303494df34fb9d949b2231d077"),
+    ("BeyondBoneCloth.set_bUseRelativeTransform", 383549, "0x184d86fa0", 0x4D855A0, 16, "4fe4a69cef9b16817af29745e9cee3e8d6b5b734848871512eb9f11740f143d8"),
+    ("BeyondBoneCloth.SetRelativeTransform", 383550, "0x18668ce7c", 0x668B47C, 620, "b40f228e52934995785d67a87a44bbc507b46f09e8c1f45cdf8ab6e3a6252eee"),
+    ("CharacterAnimationComponent.SetClothTransformPreTeleport", 51183, "0x186c644b4", 0x6C62AB4, 1288, "64ba58dcced9abfcdc734bb7d34b8a77781ff155f598747ed250874edd51a237"),
+    ("ClothCalculator.TeleportClothUseRelativeTransform", 2026, "0x18742cdc4", 0x742B3C4, 580, "6e2b937c43470da003d5144dddf76e4bca4b94fc664bf4e320b5462a2bfccec4"),
+    ("ClothCalculator.ResetCloth", 2027, "0x18742c5f0", 0x742ABF0, 712, "e80c6cd6ad47541624371ebf15dfd5b8dfa5d723b5a6a42e1ff54fae4ac79fd8"),
+    ("MagicaManager.SetUseCrossFrameJob", 385092, "0x186750314", 0x674E914, 152, "7f8177e11c6bae26c38cb5905ccf9333f34c28268979c0d284695370058e27ce"),
+    ("CinematicTimelineManagerBase.SquadMemberVisible", 60810, "0x186da2d7c", 0x6DA137C, 300, "4f8ad2b37d7f611a39f6a61bb026855a73cfe5c3684ebc6fb068d6a5845f40a7"),
+    ("MainStreamTimelineManagerBase.PrepareToPlayMainTimeline", 61287, "0x186dbfd48", 0x6DBE348, 368, "9628cacf3df5cf75434e4fcde9a8deba92471372d1640c649a6a055be2076945"),
+    ("MainStreamTimelineManagerBase.RecoverMainTimeline", 61284, "0x186dbff54", 0x6DBE554, 304, "809f5829b731d3645a5cb56a2cb3715bc34fdfe2f5b6351f28d1c18b376ead08"),
+    ("PhysicsClothQuality.Apply", 478837, "0x18ac426f4", 0xAC40CF4, 176, "3421131db5f08226318cc5849e9efdad3154e6042cc4efc4f1a833b85783e051"),
 )
 
 IMAGE_BASE = 0x180000000
 MAGICA_MANAGER_TYPEINFO_SLOT_VA = 0x18E396218
 EXPECTED_USE_ANIMATOR_WRITERS = (0x184CF5449,)
+EXPECTED_USE_CROSS_FRAME_WRITERS = (0x184CF5437, 0x186750378, 0x18AC42772)
 DIRECT_CALL_TARGETS = {
     "CopyDoubleBuffer": (0x183D42300, ()),
     "ReadTransform": (0x183B127D0, (0x182F91D47, 0x182F91FFB)),
     "ReadAnimatorBufferData": (0x186725E4C, (0x182F91E60,)),
+    "WriteTransform": (0x18672641C, (0x182F9245C,)),
+    "WriteAnimatorBufferData": (0x186726158, (0x182F92955, 0x186718171)),
+    "BeyondBoneCloth.set_bUseRelativeTransform": (0x184D86FA0, ()),
+    "CharacterAnimationComponent.SetClothTransformPreTeleport": (0x186C644B4, ()),
     "BeyondBoneCloth.SetRelativeTransform": (
         0x18668CE7C,
         (0x186C647AB, 0x186C6487F, 0x18742C7F5, 0x18742CF34),
     ),
+    "ClothCalculator.TeleportClothUseRelativeTransform": (
+        0x18742CDC4, (0x186DE3D4B, 0x1874A3431)),
+    "ClothCalculator.ResetCloth": (0x18742C5F0, (0x186DDFBFE, 0x1874A0906)),
+    "NPCCPUAnimator.TeleportClothUseRelativeTransform": (0x1874A31F0, (0x186A9F4B6,)),
+    "NPCCPUAnimator.ResetCloth": (0x1874A08C4, (0x186A9F4D3,)),
+    "ScriptAnimationJobSyncMono.ResetCloth": (0x186DDF9A8, (0x18B34F2F9,)),
     "MagicaManager.SetUseCrossFrameJob": (
         0x186750314,
         (0x186DA2E5B, 0x186DBFE79, 0x186DC0040),
     ),
 }
+
+PINNED_INSTRUCTIONS = (
+    ("SetRelativeTransform true-to-false store", "0x18668cf04", 0x668B504, "40887778"),
+    ("SetRelativeTransform enable store", "0x18668d025", 0x668B625, "c6477801"),
+    ("property setter backing-field store", "0x184d86fa0", 0x4D855A0, "885178c3"),
+    ("SetUseCrossFrameJob live store", "0x186750378", 0x674E978, "88590948"),
+    ("cctor UseCrossFrameJob=true", "0x184cf5437", 0x4CF3A37, "c6410901"),
+    ("cctor UseAnimatorTransform=false", "0x184cf5449", 0x4CF3A49, "4488510a"),
+    ("SquadMemberVisible restore true", "0x186da2e57", 0x6DA1457, "33d2b101e8b4d49aff"),
+    ("PrepareToPlayMainTimeline set false", "0x186dbfe75", 0x6DBE475, "33d233c9e8960499ff"),
+    ("RecoverMainTimeline restore true", "0x186dc003c", 0x6DBE63C, "33d2b101e8cf0299ff"),
+    ("PhysicsClothQuality.Apply configured store", "0x18ac42764", 0xAC40D64, "488b05ad3a7503488b88b8000000885909"),
+    ("ClothUpdate UseCrossFrameJob selector", "0x182f92425", 0x2F90A25, "488b81b8000000807809007534"),
+    ("ClothUpdate UseAnimatorTransform selector", "0x182f9247b", 0x2F90A7B, "488b81b800000080780a000f85"),
+)
 
 OWNER_ORDER = ("MC_Ribbon2", "MC_Hair", "MC_Ribbon", "MC_Coat")
 FLAG_BY_ATTRIBUTE = {0: 0x01, 1: 0x0B, 2: 0x0D}
@@ -147,6 +184,23 @@ def _pin_native_spans(game_assembly: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _pin_native_instructions(game_assembly: Path) -> list[dict[str, Any]]:
+    image = game_assembly.read_bytes()
+    rows = []
+    for name, va, offset, expected_hex in PINNED_INSTRUCTIONS:
+        expected = bytes.fromhex(expected_hex)
+        actual = image[offset:offset + len(expected)]
+        if actual != expected:
+            raise ContractError(f"native instruction drift for {name}: {actual.hex()}")
+        rows.append({
+            "name": name,
+            "va": va,
+            "fileOffset": f"0x{offset:x}",
+            "instructionBytes": actual.hex(" "),
+        })
+    return rows
+
+
 def _executable_sections(image: bytes) -> list[tuple[int, int, int]]:
     """Return (file offset, byte size, VA) for executable PE sections."""
     if image[:2] != b"MZ":
@@ -189,12 +243,38 @@ def _direct_call_xrefs(image: bytes, sections: list[tuple[int, int, int]], targe
     return tuple(result)
 
 
+def _direct_call_xrefs_many(
+    image: bytes,
+    sections: list[tuple[int, int, int]],
+    target_vas: set[int],
+) -> dict[int, tuple[int, ...]]:
+    """Resolve all selected rel32 call targets in one executable-section pass."""
+    result: dict[int, list[int]] = {target: [] for target in target_vas}
+    for raw_offset, raw_size, section_va in sections:
+        payload = image[raw_offset:raw_offset + raw_size]
+        cursor = 0
+        while True:
+            cursor = payload.find(b"\xe8", cursor)
+            if cursor < 0:
+                break
+            if cursor + 5 <= len(payload):
+                source_va = section_va + cursor
+                displacement = struct.unpack_from("<i", payload, cursor + 1)[0]
+                target_va = source_va + 5 + displacement
+                if target_va in result:
+                    result[target_va].append(source_va)
+            cursor += 1
+    return {target: tuple(rows) for target, rows in result.items()}
+
+
 def _audit_native_routes(game_assembly: Path) -> dict[str, Any]:
     image = game_assembly.read_bytes()
     sections = _executable_sections(image)
+    xrefs_by_target = _direct_call_xrefs_many(
+        image, sections, {target for target, _ in DIRECT_CALL_TARGETS.values()})
     call_rows = {}
     for name, (target, expected_xrefs) in DIRECT_CALL_TARGETS.items():
-        actual = _direct_call_xrefs(image, sections, target)
+        actual = xrefs_by_target[target]
         if actual != expected_xrefs:
             raise ContractError(f"direct-call xrefs drift for {name}: {actual!r}")
         call_rows[name] = {
@@ -209,7 +289,7 @@ def _audit_native_routes(game_assembly: Path) -> dict[str, Any]:
     # treating the cctor default as a live invariant if another method writes it.
     decoder = Cs(CS_ARCH_X86, CS_MODE_64)
     decoder.detail = True
-    writer_vas: set[int] = set()
+    writer_vas: dict[int, set[int]] = {0x09: set(), 0x0A: set()}
     rip_load_pattern = re.compile(rb"[\x48-\x4f][\x8b\x8d].{5}", re.DOTALL)
     for raw_offset, raw_size, section_va in sections:
         payload = image[raw_offset:raw_offset + raw_size]
@@ -238,19 +318,25 @@ def _audit_native_routes(game_assembly: Path) -> dict[str, Any]:
                 if static_register is None:
                     continue
                 for operand_index, operand in enumerate(operands):
-                    if operand.type != CS_OP_MEM or operand.mem.base != static_register or operand.mem.disp != 0x0A:
+                    if (operand.type != CS_OP_MEM or operand.mem.base != static_register
+                            or operand.mem.disp not in writer_vas):
                         continue
                     if operand_index == 0 and instruction.mnemonic.startswith("mov"):
-                        writer_vas.add(instruction.address)
-    actual_writers = tuple(sorted(writer_vas))
-    if actual_writers != EXPECTED_USE_ANIMATOR_WRITERS:
-        raise ContractError(f"UseAnimatorTransform writer audit drift: {actual_writers!r}")
+                        writer_vas[operand.mem.disp].add(instruction.address)
+    actual_cross_writers = tuple(sorted(writer_vas[0x09]))
+    actual_animator_writers = tuple(sorted(writer_vas[0x0A]))
+    if actual_cross_writers != EXPECTED_USE_CROSS_FRAME_WRITERS:
+        raise ContractError(f"UseCrossFrameJob writer audit drift: {actual_cross_writers!r}")
+    if actual_animator_writers != EXPECTED_USE_ANIMATOR_WRITERS:
+        raise ContractError(f"UseAnimatorTransform writer audit drift: {actual_animator_writers!r}")
     return {
         "directCalls": call_rows,
         "magicaManagerStaticFields": {
             "typeInfoSlotVa": f"0x{MAGICA_MANAGER_TYPEINFO_SLOT_VA:x}",
             "cctorDefaults": {"EnableTick": True, "UseCrossFrameJob": True, "UseAnimatorTransform": False},
-            "useAnimatorTransformCompiledWriterVas": [f"0x{value:x}" for value in actual_writers],
+            "useCrossFrameJobCompiledWriterVas": [f"0x{value:x}" for value in actual_cross_writers],
+            "useCrossFrameJobWriterBoundary": "the cctor, SetUseCrossFrameJob, and PhysicsClothQuality.Apply are the complete compiled static-field writer set",
+            "useAnimatorTransformCompiledWriterVas": [f"0x{value:x}" for value in actual_animator_writers],
             "useAnimatorTransformWriterBoundary": "the sole compiled writer is MagicaManager..cctor; no managed setter exists in pinned metadata",
         },
     }
@@ -366,11 +452,13 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
     native_routes = _audit_native_routes(ga)
     return {
         "schema": "endfield.charinfo.secondary-dynamics-transform-read.v1",
-        "status": "endminf_transform_read_closed_with_live_relative_and_cross_frame_boundaries",
+        "status": "endminf_transform_read_callback_closed_relative_and_cross_frame_telemetry_required",
         "nativeGate": native_gate,
         "sources": {"payload": payload_source, "transformWriteback": writeback_source,
                     "callback": callback_source, "schedule": schedule_source},
-        "native": {"pinnedSpans": _pin_native_spans(ga), "routeAudit": native_routes, "ifix": {
+        "native": {"pinnedSpans": _pin_native_spans(ga),
+                   "pinnedInstructions": _pin_native_instructions(ga),
+                   "routeAudit": native_routes, "ifix": {
             "readTransformJobPatchId": "0x34e", "route": "unpatched native body only",
             "patchedRouteRecovered": False}},
         "flags": {
@@ -426,16 +514,42 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
                 },
                 "UseCrossFrameJob": {
                     "cctorDefault": True,
-                    "defaultRoute": "the second ReadTransform call at ClothUpdate+0x75b is skipped",
+                    "targetValue": None,
                     "targetLiveValueClosed": False,
-                    "boundary": "SetUseCrossFrameJob has three compiled callers in cinematic/main-stream timeline managers; static evidence does not prove whether one ran before ui_overview_start/loop",
+                    "routes": {"true": "skip the second ReadTransform at ClothUpdate+0x75b", "false": "execute the second ReadTransform"},
+                    "writerAudit": "the cctor, SetUseCrossFrameJob, and PhysicsClothQuality.Apply are the complete compiled writers of MagicaManager static_fields+0x09",
+                    "qualityProfileWriter": {
+                        "type": "Beyond.Scripts.Quality.Components.PhysicsClothQuality",
+                        "field": "UseCrossFrameJob at object+0x19",
+                        "applyEquation": "MagicaManager.UseCrossFrameJob = PhysicsClothQuality.UseCrossFrameJob",
+                        "targetAuthoredValueClosed": False,
+                    },
+                    "transitions": [
+                        "PhysicsClothQuality.Apply stores its authored UseCrossFrameJob byte from object+0x19 directly, after the cctor and without calling SetUseCrossFrameJob",
+                        "PrepareToPlayMainTimeline conditionally stores false and records its return in timeline+0x188",
+                        "RecoverMainTimeline restores true only when timeline+0x188 is set",
+                        "CinematicTimelineManagerBase.SquadMemberVisible restores true when its +0x188 flag is set, then clears that flag",
+                    ],
+                    "targetBoundary": "ordinary Character Info playback excludes the main-stream/cinematic temporary transitions, but no accepted serialized quality-profile evidence pins PhysicsClothQuality.UseCrossFrameJob for the captured session",
                 },
             },
             "perFrameOrdering": ["ReadTransform call site 1191", "WriteDoubleBufferTransform call site 1232",
                                  "ReadAnimatorBufferData skipped because UseAnimatorTransform is false",
                                  "second ReadTransform call site 1883 only when live UseCrossFrameJob is false",
                                  "PreProxyMeshUpdate", "SimulationStepUpdate"],
-            "orderingBoundary": "The animator-buffer branch is source-statically closed off. The cctor-default cross-frame route skips the second ReadTransform, but the target-live cross-frame value remains unproved because compiled timeline callers can change it. Public CopyDoubleBuffer has zero direct call sites and zero calls in ClothUpdate.",
+            "orderingBoundary": "The animator-buffer branch is source-statically closed off. The quality-profile writer leaves the target-live cross-frame value open, so execution of the second ReadTransform needs one runtime byte. Public CopyDoubleBuffer has zero direct call sites and zero calls in ClothUpdate.",
+        },
+        "callbackWritebackSelector": {
+            "selectorField": "MagicaManager.UseAnimatorTransform at static_fields+0x0a",
+            "targetValue": False,
+            "targetValueClosed": True,
+            "writerAudit": "the cctor false store is the sole compiled writer; pinned metadata has no managed setter",
+            "clothUpdateBranch": "after the UseCrossFrameJob branch, false selects the TransformAccess WriteTransform implementation; true selects WriteAnimatorBufferData",
+            "targetRoute": "TransformAccess WriteTransform",
+            "writeTransformDirectCallSite": "0x182f9245c",
+            "writeAnimatorBufferDataDirectCallSite": "0x182f92955",
+            "animatorBufferWritebackSelected": False,
+            "runtimeTelemetryRequired": False,
         },
         "teamRelativeTransform": {
             "clothBackingField": "BeyondBoneCloth.<bUseRelativeTransform>k__BackingField at object+0x78",
@@ -443,13 +557,42 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "initialValueBasis": "the backing field is absent from all four Endminf serialized type trees and is zero-initialized; serialized relativeTransformPos/Rot do not enable it",
             "teamPropagation": "AlwaysTeamUpdate writes TeamData.useRelativeTransform at native payload+0x9c from (cloth object+0x78 != 0) on both primary and synchronized routes",
             "teamBooleanEquation": "TeamData.bUseRelativeTransform = (useRelativeTransform > 0)",
+            "writerAudit": {
+                "propertySetter": "set_bUseRelativeTransform is a direct object+0x78 store and has zero direct callers in the pinned executable",
+                "statefulWriter": "SetRelativeTransform contains the only source-visible stateful backing-field writes and has exactly four direct callers",
+                "characterPreTeleportCallerBoundary": "CharacterAnimationComponent.SetClothTransformPreTeleport has zero direct callers; source-static evidence cannot exclude reflection, a delegate/function-pointer invocation, or a call before the accepted capture interval",
+            },
+            "stateMachine": {
+                "enableFromFalse": "SetRelativeTransform(true,newPos,newRot): store newPos/newRot, then bUseRelativeTransform=true",
+                "updateWhileTrue": "SetRelativeTransform(true,newPos,newRot): compose the existing relative frame with the new frame, then preserve true",
+                "disableFromTrue": "SetRelativeTransform(false,...): store false and reset relativeTransformPos/Rot to the native zero/identity defaults",
+                "falseWhileAlreadyFalse": "the body would initialize the supplied frame and set true; recovered reset callers rely on the active-relative precondition rather than treating false as an idempotent setter",
+            },
             "compiledMutators": [
-                {"method": "CharacterAnimationComponent.SetClothTransformPreTeleport", "callSites": ["0x186c647ab", "0x186c6487f"], "value": True},
-                {"method": "NPC.Animation.ClothCalculator.ResetCloth", "callSites": ["0x18742c7f5"], "value": False},
-                {"method": "NPC.Animation.ClothCalculator.TeleportClothUseRelativeTransform", "callSites": ["0x18742cf34"], "value": True},
+                {"method": "CharacterAnimationComponent.SetClothTransformPreTeleport", "callSites": ["0x186c647ab", "0x186c6487f"], "argument": True, "effect": "enable or update relative frame for both dynamic and static cloth lists"},
+                {"method": "NPC.Animation.ClothCalculator.ResetCloth", "callSites": ["0x18742c7f5"], "argument": False, "effect": "disable after hard reset, or after soft reset when keepPose is false"},
+                {"method": "NPC.Animation.ClothCalculator.TeleportClothUseRelativeTransform", "callSites": ["0x18742cf34"], "argument": True, "effect": "enable or update relative frame"},
+            ],
+            "resetTeleportCallGraph": [
+                "ScriptAnimationJobSyncMono._UpdateClothRelativeTransform and NPCCPUAnimator.TeleportClothUseRelativeTransform feed ClothCalculator.TeleportClothUseRelativeTransform(true)",
+                "ScriptAnimationJobSyncMono.ResetCloth and NPCCPUAnimator.ResetCloth feed ClothCalculator.ResetCloth",
+                "NPCAbility.TeleportToImmediate invokes the NPCCPUAnimator teleport wrapper followed by its reset wrapper",
+                "CharacterAnimationComponent.SetClothTransformPreTeleport is source-static dormant (zero direct call sites), but its public nonvirtual body remains a possible external/delegate entry before capture",
             ],
             "targetLiveValueClosed": False,
-            "boundary": "static assets prove the initial false value and native code proves the compiled mutator call sites plus propagation equation, but not which teleport/reset calls occurred before or during the captured UI sequence",
+            "boundary": "stationary root motion proves no frame-to-frame root delta, but does not prove whether model placement enabled a persistent relative frame before the first captured ClothUpdate",
+            "minimumRuntimeTelemetry": {
+                "initialSample": "for MC_Ribbon2, MC_Hair, MC_Ribbon, and MC_Coat, read TeamData.useRelativeTransform at payload+0x9c after AlwaysTeamUpdate and before the first ReadTransform of the maintained 770-frame sequence",
+                "transitionWatch": "record SetRelativeTransform entry rcx and useRelativeTransform (dl) during the same sequence; zero calls proves the four initial samples remain constant",
+                "alternative": "sample the four BeyondBoneCloth backing bytes at object+0x78 before every ReadTransform; this replaces the entry watch but is not smaller",
+                "notRequired": ["UseAnimatorTransform", "callback route"],
+            },
+        },
+        "minimumSessionTelemetry": {
+            "crossFrame": "sample MagicaManager static_fields+0x09 immediately before each ClothUpdate in the maintained 770-frame sequence; one byte selects whether the second ReadTransform executes and also covers quality reapplication",
+            "relativeInitial": "sample TeamData.useRelativeTransform at payload+0x9c for MC_Ribbon2, MC_Hair, MC_Ribbon, and MC_Coat after AlwaysTeamUpdate and before their first ReadTransform",
+            "relativeTransitions": "record SetRelativeTransform entry rcx/dl during the sequence, or resample the four TeamData lanes every frame",
+            "callbackSelector": "no telemetry: UseAnimatorTransform=false and TransformAccess WriteTransform are source-statically closed",
         },
         "baseInputPublication": {
             "managerInput": "ReadTransformJob localToWorldMatrixArray for every active 0/1/2 attribute",
@@ -479,11 +622,12 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "useRelativeTransformInitialValueClosed": True,
             "useRelativeTransformTargetLiveValueClosed": False,
             "useCrossFrameJobTargetLiveValueClosed": False,
+            "callbackWritebackSelectorClosed": True,
             "targetReady": False,
-            "targetReadySubset": "the unpatched ordinary TransformAccess route, dormant CopyDoubleBuffer cadence, and animator-buffer exclusion are closed; live relative/cross-frame state still requires target-session evidence",
+            "targetReadySubset": "the unpatched ordinary TransformAccess callback route, dormant CopyDoubleBuffer cadence, and animator-buffer exclusion are closed; one cross-frame byte plus four relative-transform lanes require target-session evidence",
             "unresolved": [
-                "live Endminf TeamData.useRelativeTransform after possible character teleport/reset calls",
-                "live MagicaManager.UseCrossFrameJob after possible cinematic/main-stream timeline calls (determines whether the second ReadTransform executes)",
+                "four live Endminf TeamData.useRelativeTransform values after possible pre-capture model placement",
+                "live MagicaManager.UseCrossFrameJob after PhysicsClothQuality.Apply",
                 "IFix-patched ReadTransformJob execution",
                 "duplicate transform write winner (read entries themselves remain exact and distinct)",
             ],
