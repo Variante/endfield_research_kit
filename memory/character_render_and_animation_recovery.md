@@ -947,7 +947,13 @@ or shaders rather than hand-editing generated prefabs.
    captures identify the draws but lost the palette payload, while
    `20260825T150404Z` captured the palette without the per-draw range. Keep
    solver writeback fail-closed until one joined source passes phase-paired
-   retail-shape review.
+   retail-shape review. EndfieldCapture `33ca8ef` now records bounded
+   `DrawIndexedInstanced` arguments and the cached VS b2
+   `first_constant`/`num_constants` range without calling D3D11 state getters
+   from the draw detour; its proxy/WARP lifecycle test closes publication of
+   those fields. One new targeted automatic graphics sequence through
+   `ui_overview_start` and the settled loop is still required to join those
+   ranges to each frame's captured palette payload.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
