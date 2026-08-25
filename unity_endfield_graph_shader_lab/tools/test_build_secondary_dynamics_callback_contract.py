@@ -108,6 +108,28 @@ class SecondaryDynamicsCallbackContractTests(unittest.TestCase):
         with self.assertRaisesRegex(builder.ContractError, "delegate slot drift"):
             builder._verify_player_loop(solver, player_loop)
 
+    def test_regenerated_evidence_bytes_are_accepted_but_provenance_drift_is_rejected(self) -> None:
+        solver = json.loads(builder.SOLVER_INPUTS.read_text(encoding="utf-8"))
+        native = json.loads(builder.DEFAULT_NATIVE.read_text(encoding="utf-8"))
+        catalog = json.loads(builder.DEFAULT_METADATA_CATALOG.read_text(encoding="utf-8"))
+        builder._verify_solver_sources(
+            solver,
+            native,
+            catalog,
+            builder.DEFAULT_NATIVE,
+            builder.DEFAULT_METADATA_CATALOG,
+        )
+
+        native["metadata"]["gameAssemblySha256"] = "00" * 32
+        with self.assertRaisesRegex(builder.ContractError, "GameAssembly hash drift"):
+            builder._verify_solver_sources(
+                solver,
+                native,
+                catalog,
+                builder.DEFAULT_NATIVE,
+                builder.DEFAULT_METADATA_CATALOG,
+            )
+
     def test_method_identity_recomputes_native_body_hash(self) -> None:
         body = b"nativebody"
         lifecycle = {

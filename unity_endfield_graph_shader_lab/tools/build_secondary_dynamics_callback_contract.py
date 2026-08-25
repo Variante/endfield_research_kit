@@ -361,7 +361,13 @@ def _native_gate(
     }
 
 
-def _verify_solver_sources(solver: dict[str, Any], native_path: Path, catalog_path: Path) -> None:
+def _verify_solver_sources(
+    solver: dict[str, Any],
+    native: dict[str, Any],
+    catalog: dict[str, Any],
+    native_path: Path,
+    catalog_path: Path,
+) -> None:
     source_build = solver.get("source_build") or {}
     if source_build.get("game_assembly", {}).get("sha256") != EXPECTED_GAME_ASSEMBLY_SHA256:
         raise ContractError("solver-input GameAssembly hash drift")
@@ -372,8 +378,28 @@ def _verify_solver_sources(solver: dict[str, Any], native_path: Path, catalog_pa
         record = evidence.get(label) or {}
         if record.get("repo_path") != _repo_path(path):
             raise ContractError(f"solver-input {label} source path drift")
-        if record.get("size") != path.stat().st_size or record.get("sha256") != sha256(path):
-            raise ContractError(f"solver-input {label} evidence hash/size drift")
+
+    # The ignored maps are deterministic evidence projections, but their JSON
+    # bytes legitimately change when the bounded catalog filters or decoder
+    # reporting improve.  Gate their semantic provenance here; the exact
+    # callback/ClothUpdate identities, native body hashes, calls and ABIs are
+    # independently rechecked below against the installed PE.
+    native_metadata = native.get("metadata") or {}
+    if str(native_metadata.get("gameAssemblySha256", "")).lower() != EXPECTED_GAME_ASSEMBLY_SHA256:
+        raise ContractError("native evidence GameAssembly hash drift")
+    if str(native_metadata.get("metadataSha256", "")).lower() != EXPECTED_METADATA_SHA256:
+        raise ContractError("native evidence metadata hash drift")
+    if str(catalog.get("metadata", {}).get("sha256", "")).lower() != EXPECTED_METADATA_SHA256:
+        raise ContractError("metadata catalog hash drift")
+    code_registration = native.get("codeRegistration") or {}
+    if str(code_registration.get("va", "")).lower() != EXPECTED_CODE_REGISTRATION:
+        raise ContractError("native evidence code registration drift")
+    summary = native.get("summary") or {}
+    if int(summary.get("mappedTargetCount", -1)) != int(summary.get("catalogBodyTargetCount", -2)):
+        raise ContractError("native evidence contains unresolved body targets")
+    catalog_source = str(native_metadata.get("catalog", "")).replace("\\", "/")
+    if _repo_path(catalog_path) not in catalog_source:
+        raise ContractError("native evidence metadata catalog source path drift")
 
 
 def _verify_player_loop(solver: dict[str, Any], player_loop: dict[str, Any]) -> None:
@@ -433,7 +459,7 @@ def build_contract(
         native = load_json(native_evidence)
         catalog = load_json(metadata_catalog)
         loop = load_json(player_loop)
-        _verify_solver_sources(solver, native_evidence, metadata_catalog)
+        _verify_solver_sources(solver, native, catalog, native_evidence, metadata_catalog)
         _verify_player_loop(solver, loop)
         dummy = _dummy_generation_record(
             dummy_generation,
