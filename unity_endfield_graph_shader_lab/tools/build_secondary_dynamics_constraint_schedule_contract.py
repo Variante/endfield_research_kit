@@ -81,6 +81,7 @@ def _endminf_requirements() -> list[dict[str, Any]]:
         angle_limit = data["angleLimitConstraint"]
         motion = data["motionConstraint"]
         self_collision = data["selfCollisionConstraint"]
+        collision_mode = data["colliderCollisionConstraint"]["mode"]
         colliders = cloth["collider_references"]
         arrays = decoded_by_owner[cloth["game_object_path"]]["proxy_mesh_arrays"]
         vertex_count = arrays["referenceIndices"]["count"]
@@ -93,14 +94,15 @@ def _endminf_requirements() -> list[dict[str, Any]]:
             "simulatedVertexCount": vertex_count,
             "lineCount": line_count,
             "triangleCount": triangle_count,
+            "colliderCollisionMode": collision_mode,
             "authoredTriangleBendingStiffness": data["triangleBendingConstraint"]["stiffness"],
             "activeFamilies": {
                 "tether": data["tetherConstraint"]["distanceCompression"] > 0,
                 "distance": data["distanceConstraint"]["stiffness"]["value"] > 0,
                 "angle": bool(angle["useAngleRestoration"] or angle_limit["useAngleLimit"]),
                 "triangleBending": data["triangleBendingConstraint"]["stiffness"] > 0 and triangle_count > 0,
-                "colliderCollision": bool(data["colliderCollisionConstraint"]["mode"] and colliders),
-                "edgeColliderCollision": bool(data["colliderCollisionConstraint"]["mode"] and colliders and line_count > 0),
+                "colliderCollision": bool(collision_mode == 1 and colliders),
+                "edgeColliderCollision": bool(collision_mode == 2 and colliders and line_count > 0),
                 "motion": bool(motion["useMaxDistance"] or motion["useBackstop"]),
                 "selfCollision": self_collision["selfMode"] != 0,
                 "springPrediction": bool(data["springConstraint"]["useSpring"]),
@@ -193,7 +195,8 @@ def build_contract() -> dict[str, Any]:
             "requiredForAllOwners": ["tether", "distance", "angle", "springPrediction"],
             "requiredForOwnersWithColliderReferences": "colliderCollision",
             "authoredOrTopologyNoOpFamilies": ["triangleBending", "motion", "selfCollision"],
-            "edgeColliderBoundary": "three colliding owners have line edges; retain edge-collider support until processingStepEdgeCollision is proven empty",
+            "colliderModeBoundary": "all four owners author Point mode 1; three owners have capsule references, Hair has none",
+            "edgeColliderBoundary": "Edge requires mode 2, so Endminf line-edge topology does not activate the Edge collision kernel",
             "hairAngleLimitEnabled": owners[1]["activeFamilies"]["angle"],
         },
         "implementationBoundary": {

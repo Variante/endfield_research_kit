@@ -200,6 +200,7 @@
       "simulatedVertexCount": 6,
       "lineCount": 5,
       "triangleCount": 0,
+      "colliderCollisionMode": 1,
       "authoredTriangleBendingStiffness": 0.241,
       "activeFamilies": {
         "tether": true,
@@ -207,7 +208,7 @@
         "angle": true,
         "triangleBending": false,
         "colliderCollision": true,
-        "edgeColliderCollision": true,
+        "edgeColliderCollision": false,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -220,6 +221,7 @@
       "simulatedVertexCount": 30,
       "lineCount": 22,
       "triangleCount": 0,
+      "colliderCollisionMode": 1,
       "authoredTriangleBendingStiffness": 1.0,
       "activeFamilies": {
         "tether": true,
@@ -240,6 +242,7 @@
       "simulatedVertexCount": 20,
       "lineCount": 16,
       "triangleCount": 0,
+      "colliderCollisionMode": 1,
       "authoredTriangleBendingStiffness": 0.241,
       "activeFamilies": {
         "tether": true,
@@ -247,7 +250,7 @@
         "angle": true,
         "triangleBending": false,
         "colliderCollision": true,
-        "edgeColliderCollision": true,
+        "edgeColliderCollision": false,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -260,6 +263,7 @@
       "simulatedVertexCount": 70,
       "lineCount": 65,
       "triangleCount": 0,
+      "colliderCollisionMode": 1,
       "authoredTriangleBendingStiffness": 1.0,
       "activeFamilies": {
         "tether": true,
@@ -267,7 +271,7 @@
         "angle": true,
         "triangleBending": false,
         "colliderCollision": true,
-        "edgeColliderCollision": true,
+        "edgeColliderCollision": false,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -299,11 +303,7 @@
       "MC_Ribbon",
       "MC_Coat"
     ],
-    "edgeColliderCollision": [
-      "MC_Ribbon2",
-      "MC_Ribbon",
-      "MC_Coat"
-    ],
+    "edgeColliderCollision": [],
     "motion": [],
     "selfCollision": [],
     "springPrediction": [
@@ -326,7 +326,8 @@
       "motion",
       "selfCollision"
     ],
-    "edgeColliderBoundary": "three colliding owners have line edges; retain edge-collider support until processingStepEdgeCollision is proven empty",
+    "colliderModeBoundary": "all four owners author Point mode 1; three owners have capsule references, Hair has none",
+    "edgeColliderBoundary": "Edge requires mode 2, so Endminf line-edge topology does not activate the Edge collision kernel",
     "hairAngleLimitEnabled": true
   },
   "implementationBoundary": {
