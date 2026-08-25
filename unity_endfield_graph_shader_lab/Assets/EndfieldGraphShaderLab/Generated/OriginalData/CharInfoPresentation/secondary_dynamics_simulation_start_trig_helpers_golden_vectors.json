@@ -1,0 +1,252 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-simulation-start-trig-helpers-golden-vectors.v1",
+  "status": "native_helpers_and_standalone_source_transcriptions_bit_exact",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "helpers": {
+    "springSine": {
+      "rva": "0x23c490",
+      "bytes": 720,
+      "sha256": "4b74ab7e0a799b053d616b14cf3380c3124a112d3756786a6df6c17f3d0521e4",
+      "abi": "double -> double"
+    },
+    "coneCosine": {
+      "rva": "0x23c1c0",
+      "bytes": 718,
+      "sha256": "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f",
+      "abi": "double -> double"
+    }
+  },
+  "sharedReducer": {
+    "rva": "0x23c760",
+    "bytes": 1147,
+    "sha256": "f03b3aa47f3d19ed6aa8cf1f7f997d7e4deabf1da6b9184f641a9fc31d4943a6"
+  },
+  "reducerTable": {
+    "rva": "0x3bc040",
+    "bytes": 31008,
+    "doubleWords": 3876,
+    "sha256": "f76922848d66989df9746d647c9a012a90ff827eb83ca3c30c7c6c647271c1dc",
+    "sourceOwnedCompressedEmbedding": true
+  },
+  "sourceIndependenceProof": {
+    "functionsChecked": [
+      "_abs",
+      "_add",
+      "_bits",
+      "_from_bits",
+      "_large_reduce",
+      "_mul",
+      "_sin_poly",
+      "_source_cos_detail",
+      "_source_sin_detail",
+      "_sub",
+      "_trunc_double",
+      "_xor_sign",
+      "source_cos",
+      "source_sin"
+    ],
+    "forbiddenReferences": [
+      "CDLL",
+      "CFUNCTYPE",
+      "WinDLL",
+      "_exact_rva_span",
+      "_native_functions",
+      "_native_gate",
+      "_pe_exports",
+      "ctypes",
+      "dll",
+      "module"
+    ],
+    "violations": [],
+    "sourceCallsNativeCode": false,
+    "sourceReadsNativeDllTable": false,
+    "nativeExecutionConfinedToAuditHarness": true
+  },
+  "coverage": {
+    "stratifiedFiniteInputs": 20470,
+    "deterministicFiniteInputs": 25000,
+    "controlledBoundaryVectors": 23,
+    "finiteExponentFieldsCovered": 2047,
+    "mantissasPerSignAndExponent": 5
+  },
+  "vectors": [
+    {
+      "name": "positive_zero",
+      "inputBitsLe": "0000000000000000",
+      "path": "small_split_pi",
+      "sinBitsLe": "0000000000000000",
+      "cosBitsLe": "000000000000f03f"
+    },
+    {
+      "name": "negative_zero",
+      "inputBitsLe": "0000000000000080",
+      "path": "small_split_pi",
+      "sinBitsLe": "0000000000000080",
+      "cosBitsLe": "000000000000f03f"
+    },
+    {
+      "name": "smallest_subnormal",
+      "inputBitsLe": "0100000000000000",
+      "path": "small_split_pi",
+      "sinBitsLe": "0100000000000000",
+      "cosBitsLe": "000000000000f03f"
+    },
+    {
+      "name": "negative_smallest_subnormal",
+      "inputBitsLe": "0100000000000080",
+      "path": "small_split_pi",
+      "sinBitsLe": "0100000000000080",
+      "cosBitsLe": "000000000000f03f"
+    },
+    {
+      "name": "one",
+      "inputBitsLe": "000000000000f03f",
+      "path": "small_split_pi",
+      "sinBitsLe": "ee0c098f54edea3f",
+      "cosBitsLe": "8c06b50f284ae13f"
+    },
+    {
+      "name": "minus_one",
+      "inputBitsLe": "000000000000f0bf",
+      "path": "small_split_pi",
+      "sinBitsLe": "ee0c098f54edeabf",
+      "cosBitsLe": "8c06b50f284ae13f"
+    },
+    {
+      "name": "small_below_15",
+      "inputBitsLe": "ffffffffffff2d40",
+      "path": "small_split_pi",
+      "sinBitsLe": "f5c2ce7128cfe43f",
+      "cosBitsLe": "e8a49c065d4fe8bf"
+    },
+    {
+      "name": "small_at_15",
+      "inputBitsLe": "0000000000002e40",
+      "path": "medium_split_pi",
+      "sinBitsLe": "e9c2ce7128cfe43f",
+      "cosBitsLe": "f3a49c065d4fe8bf"
+    },
+    {
+      "name": "small_above_15",
+      "inputBitsLe": "0100000000002e40",
+      "path": "medium_split_pi",
+      "sinBitsLe": "ddc2ce7128cfe43f",
+      "cosBitsLe": "fda49c065d4fe8bf"
+    },
+    {
+      "name": "negative_15",
+      "inputBitsLe": "0000000000002ec0",
+      "path": "medium_split_pi",
+      "sinBitsLe": "e9c2ce7128cfe4bf",
+      "cosBitsLe": "f3a49c065d4fe8bf"
+    },
+    {
+      "name": "medium_below_1e14",
+      "inputBitsLe": "ffff8f1ec4bcd642",
+      "path": "medium_split_pi",
+      "sinBitsLe": "a9a156146dd8c8bf",
+      "cosBitsLe": "fe06d1d73164efbf"
+    },
+    {
+      "name": "large_at_1e14",
+      "inputBitsLe": "0000901ec4bcd642",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "e79e1a34e4cdcabf",
+      "cosBitsLe": "6ab6bd8c5e4aefbf"
+    },
+    {
+      "name": "large_above_1e14",
+      "inputBitsLe": "0100901ec4bcd642",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "4e2cd777aec1ccbf",
+      "cosBitsLe": "78205d9e962eefbf"
+    },
+    {
+      "name": "negative_1e14",
+      "inputBitsLe": "0000901ec4bcd6c2",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "e79e1a34e4cdca3f",
+      "cosBitsLe": "6ab6bd8c5e4aefbf"
+    },
+    {
+      "name": "large_power",
+      "inputBitsLe": "000000000000f05f",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "5e7eb903d2b2ef3f",
+      "cosBitsLe": "b2d084926987c13f"
+    },
+    {
+      "name": "very_large",
+      "inputBitsLe": "9c7500883ce4377e",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "86e310b0162ceabf",
+      "cosBitsLe": "c1c4ad229069e2bf"
+    },
+    {
+      "name": "maximum_finite",
+      "inputBitsLe": "ffffffffffffef7f",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "964eb398fc52743f",
+      "cosBitsLe": "76abcf2ee6ffefbf"
+    },
+    {
+      "name": "negative_maximum_finite",
+      "inputBitsLe": "ffffffffffffefff",
+      "path": "large_shared_table_reducer",
+      "sinBitsLe": "964eb398fc5274bf",
+      "cosBitsLe": "76abcf2ee6ffefbf"
+    },
+    {
+      "name": "positive_infinity",
+      "inputBitsLe": "000000000000f07f",
+      "path": "nonfinite_canonical_nan",
+      "sinBitsLe": "000000000000f87f",
+      "cosBitsLe": "000000000000f87f"
+    },
+    {
+      "name": "negative_infinity",
+      "inputBitsLe": "000000000000f0ff",
+      "path": "nonfinite_canonical_nan",
+      "sinBitsLe": "000000000000f87f",
+      "cosBitsLe": "000000000000f87f"
+    },
+    {
+      "name": "quiet_nan_payload",
+      "inputBitsLe": "bc9a78563412f87f",
+      "path": "nonfinite_canonical_nan",
+      "sinBitsLe": "000000000000f87f",
+      "cosBitsLe": "000000000000f87f"
+    },
+    {
+      "name": "negative_quiet_nan",
+      "inputBitsLe": "452301efcdabf8ff",
+      "path": "nonfinite_canonical_nan",
+      "sinBitsLe": "000000000000f87f",
+      "cosBitsLe": "000000000000f87f"
+    },
+    {
+      "name": "signaling_nan_payload",
+      "inputBitsLe": "bc9a78563412f07f",
+      "path": "nonfinite_canonical_nan",
+      "sinBitsLe": "000000000000f87f",
+      "cosBitsLe": "000000000000f87f"
+    }
+  ],
+  "harnessSha256": "20d38eb57109c51d4cbffe58d6c2bf85ea25cf38fd0f9a1d7a0a008c7ef6ab86"
+}
