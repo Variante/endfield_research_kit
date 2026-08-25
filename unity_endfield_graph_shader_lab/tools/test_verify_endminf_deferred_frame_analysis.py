@@ -49,6 +49,20 @@ class EndminfDeferredFrameAnalysisTests(unittest.TestCase):
         self.assertEqual(resources["t0"], "00000000")
         self.assertEqual(resources["t27"], "0000001b")
 
+    def test_parses_single_instance_expanded_particle_draw(self):
+        line = (
+            "000052 DrawIndexedInstanced(IndexCountPerInstance:1080, "
+            "InstanceCount:1, StartIndexLocation:0, BaseVertexLocation:58, "
+            "StartInstanceLocation:0)"
+        )
+        match = MODULE.DRAW_INDEXED_INSTANCED_RE.match(line)
+        self.assertIsNotNone(match)
+        values = {key: int(value) for key, value in match.groupdict().items()}
+        self.assertEqual(values["draw"], 52)
+        self.assertEqual(values["index_count"] // 72, 15)
+        self.assertEqual(values["instance_count"], 1)
+        self.assertEqual(values["start_instance"], 0)
+
     def test_liteffect_instanced_parallax_draws_are_deduplicated(self):
         with tempfile.TemporaryDirectory() as temp:
             frame = Path(temp) / "FrameAnalysis-2026-08-24-182646"

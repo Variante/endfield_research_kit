@@ -1,17 +1,51 @@
 {
-  "schema": "endfield.endminf-m27-particle-abi.v1",
-  "status": "fail_closed_physical_particle_instance_publisher_unresolved",
+  "schema": "endfield.endminf-m27-particle-abi.v2",
+  "status": "fail_closed_active_cb_ranges_and_deferred_publication_unresolved",
   "scope": "P_fxui_endminm003_overview_02/all/suikuai (2) only",
-  "selectedProgram": {
-    "vertexDxbcSha256": "b38d5e7661abdcb0d56a1c349eb673d205547fef5a30ba7d10befbe78b638253",
-    "ruriVertexPath": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_vertex.hlsl",
-    "ruriVertexSha256": "766bb181381150caf1e732abb67e885e3388f6a589e8685cc82b8435dd689d9c",
-    "ruriFragmentPath": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final/parallax_hgbuffer_fragment.hlsl",
-    "ruriFragmentSha256": "7783cc2a916242f273853b115b2b4b67dfb8736940d86220d1cdf91dfe459744",
+  "selectedRetailProgram": {
+    "shader": "HGRP/LitEffect",
+    "pass": "HGBuffer",
+    "subProgramIndex": 113,
     "compiledKeywords": [
       "HG_ENABLE_MV",
+      "SRP_INSTANCING_ON",
       "_PARALLAX_MAP"
-    ]
+    ],
+    "programs": [
+      {
+        "stage": "vertex",
+        "path": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0678_endfield_dxbc_0.dxbc",
+        "bytes": 8148,
+        "sha256": "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+        "normalizedDisassemblySha256": "541a0c7c4a876e4cf1966ba0e8a59aede16b3ef9fe7a2f2910ca5e9858649e0d"
+      },
+      {
+        "stage": "fragment",
+        "path": "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/0679_endfield_dxbc_1.dxbc",
+        "bytes": 8200,
+        "sha256": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+        "normalizedDisassemblySha256": "1f7acf87b70bc26555dee6dcde157274ac230402cb5d43951a503fece8ab45f7"
+      }
+    ],
+    "instanceRecordFloat4Count": 16,
+    "instanceRecordBytes": 256,
+    "instanceCapacity": 256,
+    "vertexDynamicCbuffer": "b2[4091]",
+    "fragmentDynamicCbuffer": "b2[4085]",
+    "vertexSkinBuffer": "t0 structured stride 16 (_VertexSkinMatrices)",
+    "instanceIndexPath": "SV_InstanceID << 4; vertex forwards the same uint through TEXCOORD7"
+  },
+  "capturedParticlePublication": {
+    "report": "reports/assets/character_recovery/endminf_deferred_pass0_frame_analysis.json",
+    "selectedSubProgram": 113,
+    "allDrawsInstanceCount": 1,
+    "allDrawsStartInstanceLocation": 0,
+    "sourceMeshIndexCount": 72,
+    "lateCaptureIndexCount": 1080,
+    "lateCaptureExpandedCopies": 15,
+    "sourceBurstCount": 15,
+    "equation": "1080 indices = 15 authored particles * 72 source-mesh indices",
+    "conclusion": "The retail particle publisher expands mesh copies into the dynamic vertex/index stream. SRP_INSTANCING_ON selects per-draw record 0; it is not evidence for UnityStandardParticleInstancing."
   },
   "exactSerializedConsumer": {
     "particlePathId": -3388700454374621710,
@@ -19,7 +53,7 @@
     "rendererPathId": 59284134265994738,
     "rendererRawSha256": "9d782b66bb7bf6375ddf80ab9c776c35bb0718af154c41a574b1c29be98aae9c",
     "renderMode": "Mesh",
-    "enableGPUInstancing": true,
+    "enableGPUInstancingSerialized": true,
     "activeVertexStreams": [
       "Position",
       "Normal",
@@ -31,63 +65,52 @@
     "meshPathId": -8157825361227167527,
     "meshJsonSha256": "55dd5a73380a0b64b8fc173cb636f58b0178e377e7fd4445362a4a6c0de2f58d",
     "meshVertexCount": 29,
-    "meshSkinRows": 0,
-    "meshBindPoses": 0,
-    "meshBoneNameHashes": 0
+    "meshIndexCount": 72,
+    "meshSkinRows": 0
   },
   "currentUnityProbe": {
     "path": "reports/assets/character_recovery/endminf_m27_particle_abi_unity_probe.json",
     "unityVersion": "2022.3.62f3",
-    "result": "serialized streams and GPU-instancing flag retained; exact imported mesh remains unskinned; renderer remains disabled with no bindings",
-    "activeVertexStreams": [
-      "Position",
-      "Normal",
-      "Color",
-      "UV",
-      "UV2",
-      "Custom1XYZW"
-    ],
-    "meshBoneWeights": 0,
-    "meshBindPoses": 0,
-    "meshInfluences": 0,
+    "status": "renderer remains disabled with no material or mesh binding",
     "standardParticleInstancingInclude": {
       "path": "D:\\Program Files\\2022.3.62f3\\Editor\\Data\\CGIncludes\\UnityStandardParticleInstancing.cginc",
       "sha256": "19ca894b59456951060791e3f79884aab16e4a7ffd64baf028a7389411c51c0f",
-      "contract": "procedural instance buffer with float3x4 transform, packed color, and animation frame; it does not define BLENDWEIGHTS/BLENDINDICES as particle instance fields"
+      "contract": "procedural float3x4 transform/color/animation-frame buffer",
+      "retailMismatch": "Retail submits one instance and expanded particle geometry, then indexes a 256-byte SRP per-draw record."
     }
   },
-  "selectedVertexDataflow": {
-    "optionalSkinGate": "UnityPerDraw c4.w bit 5 set and c4.w with bits 4/5 cleared nonzero",
-    "skinBranch": "BLENDINDICES select three-float4 matrix rows from t0 _VertexSkinMatrices; BLENDWEIGHTS blend two or four current and previous matrices",
-    "noSkinBranch": "t0, BLENDWEIGHTS, and BLENDINDICES are not read; current object position is POSITION and the alternate previous-position carrier is TEXCOORD4.xyz",
-    "currentTransform": "UnityPerDraw c0-c3 object-to-world path",
-    "previousTransform": "UnityPerDraw c6-c9 previous-object path, gated by c10.x/y motion parameters; current position is reused when those gates select no previous deformation/object motion",
-    "fragmentUse": "the selected fragment consumes UV0/UV1, world normal/tangent, current clip position, and previous clip position; it does not consume the vertex TEXCOORD4/color output"
-  },
-  "validatedConclusions": [
-    "The selected original program's BLEND inputs are matrix indices/weights for its optional t0 transform branch; they are not self-describing particle transforms.",
-    "The exact authored rock mesh and its current Unity import have no skin data, so mesh-authored BLEND payload is excluded.",
-    "The current Unity standard procedural particle path uses unity_ParticleInstanceData rather than BLEND semantics; the selected original program exposes no such resource and has no procedural-instancing keyword.",
-    "The M27 renderer retains Custom1XYZW exactly, but the original Shader ParserBindChannels table is absent, so the stream cannot be equated to the DXBC TEXCOORD4 previous-position input."
+  "closedConclusions": [
+    "The selected retail pair is subprogram 113, not representative non-instanced subprogram 19.",
+    "Every selected draw uses InstanceCount 1 and StartInstanceLocation 0.",
+    "The 1080-index late draw is exactly the authored 15-particle burst expanded from the 72-index source mesh.",
+    "UnityStandardParticleInstancing is not the retail transport and must not be enabled for this compatibility shader.",
+    "BLEND inputs remain the optional _VertexSkinMatrices path; the unskinned source mesh does not author those values."
   ],
-  "unresolvedPhysicalAbi": [
+  "remainingBlockers": [
     {
-      "input": "UnityPerDraw c4.w skin/transform flags",
-      "gap": "no selected retail draw capture proves whether Endfield sets the optional transform branch for this ParticleSystemRenderer"
+      "gate": "active constant-buffer ranges",
+      "gap": "The five frames dump whole 4 MiB ring allocations but log pointer addresses rather than numeric pFirstConstant/pNumConstants values. The active b2 record-0 bytes and material/global slices are not isolated.",
+      "required": "one range-logging frame at the M27 15-particle late window"
     },
     {
-      "input": "BLENDWEIGHTS/BLENDINDICES and t0 _VertexSkinMatrices",
-      "gap": "if Endfield repurposes the optional transform branch for particle mesh instancing, the engine-synthesized attributes, current/previous matrix-table bases, and contents remain uncaptured; current Unity public active streams do not expose internal generated attributes"
+      "gate": "optional skin branch and generated auxiliary stream",
+      "gap": "The captured input layout closes physical slots, including the 20-byte stride-zero BLEND/TANGENT buffer, but the active b2 flags that decide whether t0 is read remain outside the unresolved range.",
+      "required": "decode b2 record 0 and t0 only if the bit-5 skin gate is active"
     },
     {
-      "input": "TEXCOORD4",
-      "gap": "DXBC uses it as alternate previous local position, while the renderer serializes Custom1XYZW; missing ParserBindChannels prevents a physical semantic assignment"
+      "gate": "exact deferred publication",
+      "gap": "The current compatibility shader is a ForwardOnly approximation; retail subprogram 113 writes five HGBuffer/SceneMV targets and depth.",
+      "required": "port the hash-pinned equations and publish the exact five-MRT contract"
     }
   ],
   "implementationDecision": {
-    "diagnosticShaderCreated": false,
-    "reason": "A source-level shader could sample BLEND semantics in current Unity, but it could not recreate or observe Endfield's custom engine-side publisher and would risk turning missing attributes into an asserted retail ABI.",
-    "admissionImpact": "Do not append guessed BLEND streams, bind an identity t0 buffer, or map Custom1XYZW to TEXCOORD4. Keep M27 blocked until a selected retail draw capture or equivalent source-proven publisher closes all three physical inputs."
+    "admitted": false,
+    "reason": "Particle expansion and shader selection are closed, but numeric active constant ranges and the exact deferred target contract remain unresolved.",
+    "doNotUse": [
+      "UnityStandardParticleInstancing procedural setup",
+      "a guessed identity _VertexSkinMatrices buffer",
+      "the ForwardOnly compatibility material as an exact renderer"
+    ]
   },
-  "protectedBoundary": "M21 overview_02/all/shitou (1) was not inspected, modified, disabled, resized, retimed, or used as an M27 substitute."
+  "protectedBoundary": "M21 overview_02/all/shitou (1) and M28 overview renderers were not modified or used as M27 substitutes."
 }

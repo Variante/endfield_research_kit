@@ -22,6 +22,13 @@ LITEFFECT_EXPECTED_DRAWS = {
     "FrameAnalysis-2026-08-24-182819": [52, 53, 54, 55, 56, 57],
     "FrameAnalysis-2026-08-24-182850": [52],
 }
+LITEFFECT_EXPECTED_INDEX_COUNTS = {
+    "FrameAnalysis-2026-08-24-182534": [],
+    "FrameAnalysis-2026-08-24-182646": [72, 72, 72, 360, 360, 360],
+    "FrameAnalysis-2026-08-24-182744": [72, 72, 72, 288, 288, 288],
+    "FrameAnalysis-2026-08-24-182819": [72, 72, 72, 72, 144, 72],
+    "FrameAnalysis-2026-08-24-182850": [1080],
+}
 LITEFFECT_TEXTURE_HASHES = {
     "t0": ("_ParallaxNoiseMap", "4e770fc3"),
     "t1": ("_ParallaxMaskMap", "30ff729f"),
@@ -54,6 +61,12 @@ LITEFFECT_TEXTURE_DSC_RE = re.compile(
 )
 RESOURCE_RE = re.compile(
     r"^\s+(?P<slot>\d+): .* hash=(?P<hash>[0-9a-f]+)(?:\s|$)"
+)
+DRAW_INDEXED_INSTANCED_RE = re.compile(
+    r"^(?P<draw>\d{6}) DrawIndexedInstanced\("
+    r"IndexCountPerInstance:(?P<index_count>\d+), InstanceCount:(?P<instance_count>\d+), "
+    r"StartIndexLocation:(?P<start_index>\d+), BaseVertexLocation:(?P<base_vertex>-?\d+), "
+    r"StartInstanceLocation:(?P<start_instance>\d+)\)$"
 )
 
 
@@ -180,6 +193,38 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
 
     log_path = frame_dir / "log.txt"
     log_lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    liteffect_draw_calls = []
+    for liteffect_draw in sorted(liteffect_draws):
+        prefix = f"{liteffect_draw:06d} DrawIndexedInstanced("
+        draw_line = next((line.strip() for line in log_lines if line.startswith(prefix)), None)
+        match = DRAW_INDEXED_INSTANCED_RE.match(draw_line or "")
+        if match is None:
+            failures.append(
+                f"capture={frame_dir.name}; draw={liteffect_draw:06d}; "
+                f"check=liteffect_draw_call; actual={draw_line!r}"
+            )
+            continue
+        row = {key: int(value) for key, value in match.groupdict().items()}
+        liteffect_draw_calls.append(row)
+        if row["instance_count"] != 1 or row["start_instance"] != 0:
+            failures.append(
+                f"capture={frame_dir.name}; draw={liteffect_draw:06d}; "
+                "check=liteffect_single_instance_record0; "
+                f"instance_count={row['instance_count']}; "
+                f"start_instance={row['start_instance']}"
+            )
+        if row["index_count"] % 72 != 0:
+            failures.append(
+                f"capture={frame_dir.name}; draw={liteffect_draw:06d}; "
+                f"check=liteffect_72_index_mesh_multiple; actual={row['index_count']}"
+            )
+    actual_index_counts = [row["index_count"] for row in liteffect_draw_calls]
+    expected_index_counts = LITEFFECT_EXPECTED_INDEX_COUNTS.get(frame_dir.name)
+    if expected_index_counts is not None and actual_index_counts != expected_index_counts:
+        failures.append(
+            f"capture={frame_dir.name}; check=liteffect_index_counts; "
+            f"expected={expected_index_counts}; actual={actual_index_counts}"
+        )
     resources = _draw_resource_hashes(log_lines, draw)
     if set(resources) != {f"t{i}" for i in range(28)}:
         failures.append(
@@ -241,6 +286,10 @@ def audit_capture(frame_dir: Path) -> tuple[dict[str, object], list[str]]:
         "constantBufferDumps": constant_buffer_dumps,
         "neighborShaderSequence": neighbors,
         "litEffectInstancedParallaxDraws": sorted(liteffect_draws),
+        "litEffectDrawCalls": liteffect_draw_calls,
+        "litEffectExpandedMeshCopies": sum(
+            row["index_count"] // 72 for row in liteffect_draw_calls
+        ),
     }, failures
 
 
@@ -349,7 +398,24 @@ def build_report(
                 slot: {"logicalName": row[0], "resourceHash": row[1]}
                 for slot, row in LITEFFECT_TEXTURE_HASHES.items()
             },
-            "interpretation": "The active small rock/crystal geometry uses the GPU-instanced parallax variant, not representative non-instanced subprogram 19.",
+            "drawTopology": {
+                "allSelectedDraws": "DrawIndexedInstanced",
+                "instanceCount": 1,
+                "startInstanceLocation": 0,
+                "sourceRockIndexCount": 72,
+                "expandedMeshCopiesByCapture": {
+                    row["frame"]: row.get("litEffectExpandedMeshCopies", 0)
+                    for row in captures
+                },
+            },
+            "interpretation": (
+                "The active small rock/crystal geometry uses the SRP-instanced "
+                "parallax variant, not representative non-instanced subprogram 19. "
+                "Every selected retail draw still submits exactly one D3D instance "
+                "at instance record 0; index counts are exact multiples of the "
+                "72-index source rock, proving engine-expanded particle geometry "
+                "rather than a UnityStandardParticleInstancing transform stream."
+            ),
         },
         "evidenceBoundary": {
             "proves": [
@@ -358,6 +424,7 @@ def build_report(
                 "the draw binds ten pixel constant-buffer views and t0 through t27",
                 "output/depth and dumpable texture descriptors identify retail dimensions and formats",
                 "the captured rock/crystal draw family resolves byte-exactly to HGRP/LitEffect HGBuffer subprogram 113 with SRP_INSTANCING_ON and _PARALLAX_MAP",
+                "all captured subprogram-113 draws use InstanceCount 1, StartInstanceLocation 0, and exact multiples of the 72-index source rock",
             ],
             "doesNotProve": [
                 "pFirstConstant offsets or the active ranges within the shared 4 MiB dynamic constant-buffer ring",

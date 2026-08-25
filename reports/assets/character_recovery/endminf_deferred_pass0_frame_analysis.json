@@ -229,7 +229,9 @@
           "ps": "e9ccfc0d0d3c7746"
         }
       ],
-      "litEffectInstancedParallaxDraws": []
+      "litEffectInstancedParallaxDraws": [],
+      "litEffectDrawCalls": [],
+      "litEffectExpandedMeshCopies": 0
     },
     {
       "frame": "FrameAnalysis-2026-08-24-182646",
@@ -438,7 +440,58 @@
         50,
         51,
         52
-      ]
+      ],
+      "litEffectDrawCalls": [
+        {
+          "draw": 47,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 0,
+          "base_vertex": 0,
+          "start_instance": 0
+        },
+        {
+          "draw": 48,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 432,
+          "base_vertex": 186,
+          "start_instance": 0
+        },
+        {
+          "draw": 49,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 864,
+          "base_vertex": 406,
+          "start_instance": 0
+        },
+        {
+          "draw": 50,
+          "index_count": 360,
+          "instance_count": 1,
+          "start_index": 72,
+          "base_vertex": 33,
+          "start_instance": 0
+        },
+        {
+          "draw": 51,
+          "index_count": 360,
+          "instance_count": 1,
+          "start_index": 936,
+          "base_vertex": 493,
+          "start_instance": 0
+        },
+        {
+          "draw": 52,
+          "index_count": 360,
+          "instance_count": 1,
+          "start_index": 504,
+          "base_vertex": 283,
+          "start_instance": 0
+        }
+      ],
+      "litEffectExpandedMeshCopies": 18
     },
     {
       "frame": "FrameAnalysis-2026-08-24-182744",
@@ -647,7 +700,58 @@
         54,
         55,
         56
-      ]
+      ],
+      "litEffectDrawCalls": [
+        {
+          "draw": 51,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 0,
+          "base_vertex": 0,
+          "start_instance": 0
+        },
+        {
+          "draw": 52,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 360,
+          "base_vertex": 160,
+          "start_instance": 0
+        },
+        {
+          "draw": 53,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 720,
+          "base_vertex": 323,
+          "start_instance": 0
+        },
+        {
+          "draw": 54,
+          "index_count": 288,
+          "instance_count": 1,
+          "start_index": 72,
+          "base_vertex": 33,
+          "start_instance": 0
+        },
+        {
+          "draw": 55,
+          "index_count": 288,
+          "instance_count": 1,
+          "start_index": 432,
+          "base_vertex": 234,
+          "start_instance": 0
+        },
+        {
+          "draw": 56,
+          "index_count": 288,
+          "instance_count": 1,
+          "start_index": 792,
+          "base_vertex": 399,
+          "start_instance": 0
+        }
+      ],
+      "litEffectExpandedMeshCopies": 15
     },
     {
       "frame": "FrameAnalysis-2026-08-24-182819",
@@ -856,7 +960,58 @@
         55,
         56,
         57
-      ]
+      ],
+      "litEffectDrawCalls": [
+        {
+          "draw": 52,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 0,
+          "base_vertex": 0,
+          "start_instance": 0
+        },
+        {
+          "draw": 53,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 144,
+          "base_vertex": 64,
+          "start_instance": 0
+        },
+        {
+          "draw": 54,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 360,
+          "base_vertex": 168,
+          "start_instance": 0
+        },
+        {
+          "draw": 55,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 72,
+          "base_vertex": 43,
+          "start_instance": 0
+        },
+        {
+          "draw": 56,
+          "index_count": 144,
+          "instance_count": 1,
+          "start_index": 216,
+          "base_vertex": 116,
+          "start_instance": 0
+        },
+        {
+          "draw": 57,
+          "index_count": 72,
+          "instance_count": 1,
+          "start_index": 432,
+          "base_vertex": 234,
+          "start_instance": 0
+        }
+      ],
+      "litEffectExpandedMeshCopies": 7
     },
     {
       "frame": "FrameAnalysis-2026-08-24-182850",
@@ -1060,7 +1215,18 @@
       ],
       "litEffectInstancedParallaxDraws": [
         52
-      ]
+      ],
+      "litEffectDrawCalls": [
+        {
+          "draw": 52,
+          "index_count": 1080,
+          "instance_count": 1,
+          "start_index": 0,
+          "base_vertex": 58,
+          "start_instance": 0
+        }
+      ],
+      "litEffectExpandedMeshCopies": 15
     }
   ],
   "litEffectInstancedParallax": {
@@ -1121,7 +1287,20 @@
         "resourceHash": "bb5905b2"
       }
     },
-    "interpretation": "The active small rock/crystal geometry uses the GPU-instanced parallax variant, not representative non-instanced subprogram 19."
+    "drawTopology": {
+      "allSelectedDraws": "DrawIndexedInstanced",
+      "instanceCount": 1,
+      "startInstanceLocation": 0,
+      "sourceRockIndexCount": 72,
+      "expandedMeshCopiesByCapture": {
+        "FrameAnalysis-2026-08-24-182534": 0,
+        "FrameAnalysis-2026-08-24-182646": 18,
+        "FrameAnalysis-2026-08-24-182744": 15,
+        "FrameAnalysis-2026-08-24-182819": 7,
+        "FrameAnalysis-2026-08-24-182850": 15
+      }
+    },
+    "interpretation": "The active small rock/crystal geometry uses the SRP-instanced parallax variant, not representative non-instanced subprogram 19. Every selected retail draw still submits exactly one D3D instance at instance record 0; index counts are exact multiples of the 72-index source rock, proving engine-expanded particle geometry rather than a UnityStandardParticleInstancing transform stream."
   },
   "evidenceBoundary": {
     "proves": [
@@ -1129,7 +1308,8 @@
       "the production draw is a fullscreen three-vertex DrawInstanced call",
       "the draw binds ten pixel constant-buffer views and t0 through t27",
       "output/depth and dumpable texture descriptors identify retail dimensions and formats",
-      "the captured rock/crystal draw family resolves byte-exactly to HGRP/LitEffect HGBuffer subprogram 113 with SRP_INSTANCING_ON and _PARALLAX_MAP"
+      "the captured rock/crystal draw family resolves byte-exactly to HGRP/LitEffect HGBuffer subprogram 113 with SRP_INSTANCING_ON and _PARALLAX_MAP",
+      "all captured subprogram-113 draws use InstanceCount 1, StartInstanceLocation 0, and exact multiples of the 72-index source rock"
     ],
     "doesNotProve": [
       "pFirstConstant offsets or the active ranges within the shared 4 MiB dynamic constant-buffer ring",
