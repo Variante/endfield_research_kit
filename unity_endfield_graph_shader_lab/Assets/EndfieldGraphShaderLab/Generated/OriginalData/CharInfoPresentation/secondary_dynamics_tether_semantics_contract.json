@@ -1,0 +1,144 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-tether-semantics.v1",
+  "status": "compression_stretch_projection_and_velocity_position_writeback_closed",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "core": {
+    "export": "5f353c4e9c4136cbe284ba1795d08c96",
+    "cpuVariant": "avx2",
+    "rva": "0x29f7d0",
+    "bytes": 648,
+    "sha256": "39f9eb3cd9771cbd921c9091d3821fedd510b1efc9b86161713a9010fd2c7b4a",
+    "directCallCount": 0
+  },
+  "arguments": [
+    {
+      "index": 1,
+      "name": "stepParticleIndexArray",
+      "strideBytes": 4
+    },
+    {
+      "index": 2,
+      "name": "teamDataArray",
+      "strideBytes": 464
+    },
+    {
+      "index": 3,
+      "name": "parameterArray",
+      "strideBytes": 808
+    },
+    {
+      "index": 4,
+      "name": "centerDataArray",
+      "strideBytes": 696,
+      "accessed": false
+    },
+    {
+      "index": 5,
+      "name": "attributes",
+      "strideBytes": 1
+    },
+    {
+      "index": 6,
+      "name": "vertexDepths",
+      "strideBytes": 4,
+      "accessed": false
+    },
+    {
+      "index": 7,
+      "name": "vertexRootIndices",
+      "strideBytes": 4
+    },
+    {
+      "index": 8,
+      "name": "teamIdArray",
+      "strideBytes": 2
+    },
+    {
+      "index": 9,
+      "name": "nextPosArray",
+      "strideBytes": 24
+    },
+    {
+      "index": 10,
+      "name": "velocityPosArray",
+      "strideBytes": 24
+    },
+    {
+      "index": 11,
+      "name": "frictionArray",
+      "strideBytes": 4,
+      "accessed": false
+    },
+    {
+      "index": 12,
+      "name": "stepBasicPositionBuffer",
+      "strideBytes": 24
+    },
+    {
+      "index": 13,
+      "name": "_indexCount",
+      "strideBytes": null
+    }
+  ],
+  "fields": {
+    "teamParticleChunkStart": "TeamData+0x174",
+    "teamProxyCommonChunkStart": "TeamData+0x124",
+    "compressionLimit": "ClothParameters+0xec",
+    "stretchLimit": "ClothParameters+0xf0"
+  },
+  "constants": {
+    "lengthEpsilon": 9.99999993922529e-09,
+    "activationWidth": 0.30000001192092896,
+    "maximumActivation": 1.0,
+    "velocityPositionCorrectionRatio": 0.699999988079071
+  },
+  "selection": [
+    "particle = stepParticleIndexArray[rangeIndex]",
+    "teamId = teamIdArray[particle]",
+    "proxy = particle - team.particleChunk.startIndex + team.proxyCommonChunk.startIndex",
+    "skip unless (attributes[proxy] & 2) != 0",
+    "rootVertex = vertexRootIndices[proxy]; skip when rootVertex < 0",
+    "rootParticle = team.particleChunk.startIndex + rootVertex"
+  ],
+  "equations": [
+    "currentDelta = nextPos[rootParticle] - nextPos[particle]; currentLength = length(currentDelta); skip when currentLength < 1e-8",
+    "basicDelta = stepBasicPosition[rootParticle] - stepBasicPosition[particle]; basicLength = length(basicDelta); skip when basicLength == 0",
+    "ratio = currentLength / basicLength",
+    "compressionThreshold = 1 - parameters.compressionLimit; stretchThreshold = 1 + parameters.stretchLimit",
+    "if ratio < compressionThreshold: targetRatio=compressionThreshold; signedError=currentLength-basicLength*targetRatio; activation=clamp((targetRatio-ratio)/0.30000001192092896,0,1)",
+    "else if ratio > stretchThreshold: targetRatio=stretchThreshold; signedError=currentLength-basicLength*targetRatio; activation=clamp((ratio-targetRatio)/0.30000001192092896,0,1)",
+    "else: no writes",
+    "correction = currentDelta/currentLength * (signedError*activation)",
+    "nextPos[particle] += correction",
+    "velocityPos[particle] += correction * 0.699999988079071"
+  ],
+  "writeBoundary": {
+    "movesOnlyChildParticle": true,
+    "rootParticleUnchanged": true,
+    "nextPosAndVelocityPosUseDouble3": true,
+    "frictionUnchanged": true
+  },
+  "implementationBoundary": {
+    "equationsClosed": true,
+    "helperGap": false,
+    "goldenVectorsCaptured": false,
+    "solverImplemented": false,
+    "retailEquivalent": false
+  }
+}
