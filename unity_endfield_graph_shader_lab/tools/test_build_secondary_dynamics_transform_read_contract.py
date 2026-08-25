@@ -71,8 +71,12 @@ class TransformReadContractTests(unittest.TestCase):
         self.assertIs(branch["UseAnimatorTransform"]["value"], False)
         self.assertIn("ReadAnimatorBufferData is skipped", branch["UseAnimatorTransform"]["selectedRoute"])
         self.assertIs(branch["UseCrossFrameJob"]["cctorDefault"], True)
+        self.assertIsNone(branch["UseCrossFrameJob"]["targetValue"])
         self.assertFalse(branch["UseCrossFrameJob"]["targetLiveValueClosed"])
+        self.assertEqual(len(branch["UseCrossFrameJob"]["transitions"]), 4)
         audit = self.contract["native"]["routeAudit"]
+        self.assertEqual(audit["magicaManagerStaticFields"]["useCrossFrameJobCompiledWriterVas"],
+                         ["0x184cf5437", "0x186750378", "0x18ac42772"])
         self.assertEqual(audit["magicaManagerStaticFields"]["useAnimatorTransformCompiledWriterVas"],
                          ["0x184cf5449"])
         self.assertEqual(audit["directCalls"]["ReadAnimatorBufferData"]["sourceVas"],
@@ -84,15 +88,58 @@ class TransformReadContractTests(unittest.TestCase):
         self.assertEqual(calls["CopyDoubleBuffer"]["sourceVas"], [])
         self.assertEqual(calls["ReadTransform"]["sourceVas"], ["0x182f91d47", "0x182f91ffb"])
 
-    def test_relative_transform_initial_value_is_closed_but_live_value_is_not(self) -> None:
+    def test_relative_transform_state_machine_is_closed_but_live_value_is_not(self) -> None:
         relative = self.contract["teamRelativeTransform"]
         self.assertIs(relative["initialValue"], False)
         self.assertFalse(relative["targetLiveValueClosed"])
-        self.assertEqual([row["value"] for row in relative["compiledMutators"]], [True, False, True])
+        self.assertEqual([row["argument"] for row in relative["compiledMutators"]], [True, False, True])
+        self.assertIn("set true", relative["stateMachine"]["falseWhileAlreadyFalse"])
+        self.assertIn("zero direct callers", relative["writerAudit"]["propertySetter"])
+        self.assertEqual(relative["minimumRuntimeTelemetry"]["notRequired"],
+                         ["UseAnimatorTransform", "callback route"])
         boundary = self.contract["executionBoundary"]
         self.assertTrue(boundary["useRelativeTransformInitialValueClosed"])
         self.assertFalse(boundary["useRelativeTransformTargetLiveValueClosed"])
         self.assertFalse(boundary["useCrossFrameJobTargetLiveValueClosed"])
+
+    def test_callback_selector_closes_transform_access_route(self) -> None:
+        selector = self.contract["callbackWritebackSelector"]
+        self.assertIs(selector["targetValue"], False)
+        self.assertTrue(selector["targetValueClosed"])
+        self.assertEqual(selector["targetRoute"], "TransformAccess WriteTransform")
+        self.assertFalse(selector["animatorBufferWritebackSelected"])
+        self.assertFalse(selector["runtimeTelemetryRequired"])
+        calls = self.contract["native"]["routeAudit"]["directCalls"]
+        self.assertEqual(calls["WriteTransform"]["sourceVas"], ["0x182f9245c"])
+        self.assertEqual(calls["WriteAnimatorBufferData"]["sourceVas"],
+                         ["0x182f92955", "0x186718171"])
+
+    def test_source_static_mutator_call_graph_is_exhaustive(self) -> None:
+        calls = self.contract["native"]["routeAudit"]["directCalls"]
+        self.assertEqual(calls["BeyondBoneCloth.set_bUseRelativeTransform"]["directCallCount"], 0)
+        self.assertEqual(calls["CharacterAnimationComponent.SetClothTransformPreTeleport"]["directCallCount"], 0)
+        self.assertEqual(calls["BeyondBoneCloth.SetRelativeTransform"]["sourceVas"],
+                         ["0x186c647ab", "0x186c6487f", "0x18742c7f5", "0x18742cf34"])
+        self.assertEqual(calls["MagicaManager.SetUseCrossFrameJob"]["sourceVas"],
+                         ["0x186da2e5b", "0x186dbfe79", "0x186dc0040"])
+        self.assertEqual(calls["ClothCalculator.TeleportClothUseRelativeTransform"]["sourceVas"],
+                         ["0x186de3d4b", "0x1874a3431"])
+        self.assertEqual(calls["ClothCalculator.ResetCloth"]["sourceVas"],
+                         ["0x186ddfbfe", "0x1874a0906"])
+        self.assertEqual(calls["NPCCPUAnimator.TeleportClothUseRelativeTransform"]["sourceVas"],
+                         ["0x186a9f4b6"])
+        self.assertEqual(calls["NPCCPUAnimator.ResetCloth"]["sourceVas"], ["0x186a9f4d3"])
+        self.assertEqual(calls["ScriptAnimationJobSyncMono.ResetCloth"]["sourceVas"],
+                         ["0x18b34f2f9"])
+
+    def test_session_state_and_selector_instructions_are_pinned(self) -> None:
+        rows = {row["name"]: row for row in self.contract["native"]["pinnedInstructions"]}
+        self.assertEqual(rows["PrepareToPlayMainTimeline set false"]["instructionBytes"],
+                         "33 d2 33 c9 e8 96 04 99 ff")
+        self.assertEqual(rows["RecoverMainTimeline restore true"]["instructionBytes"],
+                         "33 d2 b1 01 e8 cf 02 99 ff")
+        self.assertEqual(rows["ClothUpdate UseAnimatorTransform selector"]["va"], "0x182f9247b")
+        self.assertIn("88 59 09", rows["PhysicsClothQuality.Apply configured store"]["instructionBytes"])
 
     def test_native_spans_are_pinned(self) -> None:
         rows = {row["methodIndex"]: row for row in self.contract["native"]["pinnedSpans"]}
