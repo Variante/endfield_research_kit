@@ -253,7 +253,8 @@ def build_contract() -> dict[str, Any]:
                                  "static-friction accumulation", "static-friction release",
                                  "static-friction no-contact decay", "dynamic-friction attenuation",
                                  "center centrifugal response"],
-                     "notCovered": [], "completeKernelGoldenCoverage": True, "unityPortExecuted": False},
+                     "notCovered": [], "completeKernelGoldenCoverage": True, "unityPortExecuted": True,
+                     "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"},
     }
 
 
