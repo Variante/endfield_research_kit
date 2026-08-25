@@ -17,8 +17,10 @@ import build_secondary_dynamics_schedule_contract as schedule
 LAB_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
 SOLVER_INPUTS = SOURCE_ROOT / "secondary_dynamics_solver_inputs.json"
+PAYLOAD_DECODE = SOURCE_ROOT / "secondary_dynamics_payload_decode.json"
 OUTPUT = SOURCE_ROOT / "secondary_dynamics_constraint_schedule_contract.json"
 SOLVER_INPUTS_SHA256 = "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
+PAYLOAD_DECODE_SHA256 = "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
 SIMULATION_STEP_VA = 0x182F8F430
 SIMULATION_STEP_BYTES = 5968
 SIMULATION_STEP_SHA256 = "5106aa8354dfe1d73e8a4ecb6a693cf8586938da5d456f7fc748267e08743335"
@@ -38,6 +40,17 @@ CALLS = (
     (0x14A4, 0x182F8EA60, "ColliderManager.EndSimulationStep", None),
 )
 
+BURST_KERNELS = (
+    ("tether", "5f353c4e9c4136cbe284ba1795d08c96", 0x29F7D0, 648, "39f9eb3cd9771cbd921c9091d3821fedd510b1efc9b86161713a9010fd2c7b4a"),
+    ("distance", "166b2138a31dc6d21b37fb45b233bcbc", 0x321EF0, 1624, "bca4c3f13dff30f5de4cdc982372849514c7a3cd21641e82cf0ecca536764a1c"),
+    ("angle", "1835a4d768d0158271d1bcd27c64126f", 0x303D40, 6480, "d3d5d8f685a57d0495d39a5068d8bae97db9fae0b247235a734293264edd2666"),
+    ("triangleBending", "542bcd5aaaa49ef7126b0d6322cf8e33", 0x2A36B0, 2019, "2f9387d6e1f0010b1958e06e3a1f71c2f0e26284156124120ad4f1d86d59d05b"),
+    ("triangleAggregate", "18a84ab1967a6a10c557a91c565be282", 0x26F010, 290, "67ac6c9cb26df5d1db9dce4c0f8e61daf0e0241eea0e808f89202698e49fbbb6"),
+    ("pointCollider", "6a5470d135bde394bed7e7182cdf7c65", 0x2FCDA0, 3660, "bead77afdd711f8049af5b48df8eed513a7deeb74285be97dcd8cdf4c9a75b1d"),
+    ("edgeCollider", "5d2de5fa1d3044afb09aaa1af2a12205", 0x307D80, 4296, "3c85d4e00fe318982d0068310719c0823c43170aefd5eed64fc8b3db0e56638f"),
+    ("motion", "506453e9c91acf679338d5b09990e7d8", 0x2FE180, 1804, "adf914f3366a63b0faed668f5fbcf7576d722bb95760571daea506fcd60d1c33"),
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -53,6 +66,14 @@ def _endminf_requirements() -> list[dict[str, Any]]:
         raise schedule.ContractError(f"solver-input drift: {actual}")
     payload = json.loads(SOLVER_INPUTS.read_text(encoding="utf-8"))
     cloths = payload["actors"]["endminf"]["cloths"]
+    payload_actual = _sha256(PAYLOAD_DECODE)
+    if payload_actual != PAYLOAD_DECODE_SHA256:
+        raise schedule.ContractError(f"payload-decode drift: {payload_actual}")
+    decoded = json.loads(PAYLOAD_DECODE.read_text(encoding="utf-8"))
+    decoded_by_owner = {
+        row["game_object_path"]: row
+        for row in decoded["actors"]["endminf"]["cloths"]
+    }
     rows = []
     for cloth in cloths:
         data = cloth["serialized_data"]
@@ -61,16 +82,25 @@ def _endminf_requirements() -> list[dict[str, Any]]:
         motion = data["motionConstraint"]
         self_collision = data["selfCollisionConstraint"]
         colliders = cloth["collider_references"]
+        arrays = decoded_by_owner[cloth["game_object_path"]]["proxy_mesh_arrays"]
+        vertex_count = arrays["referenceIndices"]["count"]
+        line_count = arrays["lines"]["count"]
+        triangle_count = arrays["triangles"]["count"]
         rows.append({
             "owner": cloth["game_object_path"],
             "proxyBindingCount": len(cloth["proxy_transform_bindings"]),
             "colliderReferenceCount": len(colliders),
+            "simulatedVertexCount": vertex_count,
+            "lineCount": line_count,
+            "triangleCount": triangle_count,
+            "authoredTriangleBendingStiffness": data["triangleBendingConstraint"]["stiffness"],
             "activeFamilies": {
                 "tether": data["tetherConstraint"]["distanceCompression"] > 0,
                 "distance": data["distanceConstraint"]["stiffness"]["value"] > 0,
                 "angle": bool(angle["useAngleRestoration"] or angle_limit["useAngleLimit"]),
-                "triangleBending": data["triangleBendingConstraint"]["stiffness"] > 0,
+                "triangleBending": data["triangleBendingConstraint"]["stiffness"] > 0 and triangle_count > 0,
                 "colliderCollision": bool(data["colliderCollisionConstraint"]["mode"] and colliders),
+                "edgeColliderCollision": bool(data["colliderCollisionConstraint"]["mode"] and colliders and line_count > 0),
                 "motion": bool(motion["useMaxDistance"] or motion["useBackstop"]),
                 "selfCollision": self_collision["selfMode"] != 0,
                 "springPrediction": bool(data["springConstraint"]["useSpring"]),
@@ -102,6 +132,23 @@ def build_contract() -> dict[str, Any]:
             "simulationManagerObjectOffset": f"0x{field_offset:x}" if field_offset is not None else None,
         })
 
+    burst_gate = schedule._load(
+        "constraint_burst_export",
+        LAB_ROOT / "tools/build_secondary_dynamics_burst_export_contract.py",
+    )
+    burst_pe = burst_gate._pe_exports(Path(burst_gate._native_gate(None, None)["libBurstGenerated"]["path"]))
+    kernel_rows = []
+    for name, export, rva, byte_count, digest in BURST_KERNELS:
+        burst_gate._exact_rva_span(burst_pe, rva, byte_count, digest)
+        kernel_rows.append({
+            "name": name,
+            "export": export,
+            "cpuVariant": "avx2",
+            "coreRva": f"0x{rva:x}",
+            "bytes": byte_count,
+            "sha256": digest,
+        })
+
     owners = _endminf_requirements()
     required = {
         family: [row["owner"] for row in owners if row["activeFamilies"][family]]
@@ -121,8 +168,13 @@ def build_contract() -> dict[str, Any]:
                 "path": SOLVER_INPUTS.relative_to(LAB_ROOT.parent).as_posix(),
                 "sha256": SOLVER_INPUTS_SHA256,
             },
+            "payloadDecode": {
+                "path": PAYLOAD_DECODE.relative_to(LAB_ROOT.parent).as_posix(),
+                "sha256": PAYLOAD_DECODE_SHA256,
+            },
         },
         "orderedCalls": call_rows,
+        "burstKernels": kernel_rows,
         "projectionOrder": [
             "Tether",
             "Distance pass 1",
@@ -138,9 +190,10 @@ def build_contract() -> dict[str, Any]:
         "endminfOwners": owners,
         "endminfRequiredOwnersByFamily": required,
         "endminfBoundary": {
-            "requiredForAllOwners": ["tether", "distance", "angle", "triangleBending", "springPrediction"],
+            "requiredForAllOwners": ["tether", "distance", "angle", "springPrediction"],
             "requiredForOwnersWithColliderReferences": "colliderCollision",
-            "authoredNoOpFamilies": ["motion", "selfCollision"],
+            "authoredOrTopologyNoOpFamilies": ["triangleBending", "motion", "selfCollision"],
+            "edgeColliderBoundary": "three colliding owners have line edges; retain edge-collider support until processingStepEdgeCollision is proven empty",
             "hairAngleLimitEnabled": owners[1]["activeFamilies"]["angle"],
         },
         "implementationBoundary": {

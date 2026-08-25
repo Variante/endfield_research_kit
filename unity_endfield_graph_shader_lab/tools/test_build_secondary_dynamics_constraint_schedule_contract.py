@@ -26,10 +26,15 @@ class ConstraintScheduleContractTests(unittest.TestCase):
     def test_endminf_requires_projection_but_not_motion_or_self_collision(self):
         boundary = self.contract["endminfBoundary"]
         self.assertEqual(len(self.contract["endminfOwners"]), 4)
-        self.assertEqual(boundary["authoredNoOpFamilies"], ["motion", "selfCollision"])
+        self.assertEqual(
+            boundary["authoredOrTopologyNoOpFamilies"],
+            ["triangleBending", "motion", "selfCollision"],
+        )
         for family in boundary["requiredForAllOwners"]:
             self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"][family]), 4)
         self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"]["colliderCollision"]), 3)
+        self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"]["triangleBending"]), 0)
+        self.assertEqual(sum(row["simulatedVertexCount"] for row in self.contract["endminfOwners"]), 126)
 
     def test_remains_fail_closed_on_numerics(self):
         boundary = self.contract["implementationBoundary"]
