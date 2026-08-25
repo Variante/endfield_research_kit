@@ -1,0 +1,565 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-point-collision-golden-vectors.v1",
+  "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_point_capsule_cases",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "abiInspection": {
+    "exportName": "6a5470d135bde394bed7e7182cdf7c65",
+    "exportRva": "0x356d80",
+    "exportBytes": 159,
+    "exportSha256": "75c85b4054080534f00540c55ad11def04b67afb2bf35d432e251f14e82d0a73",
+    "forwardedPointerArguments": 13,
+    "rangeIndexArgument": 14,
+    "rangeIndexLoadedByValue": true,
+    "teamDataStrideBytes": 464,
+    "parameterStrideBytes": 808,
+    "workDataStrideBytes": 184
+  },
+  "core": {
+    "rva": "0x2fcda0",
+    "bytes": 3660,
+    "sha256": "bead77afdd711f8049af5b48df8eed513a7deeb74285be97dcd8cdf4c9a75b1d"
+  },
+  "harnessSha256": "efe513c96c437da8853e73a0a2a09088d1ebcd133ccf5d6d1eb184fbdc073d31",
+  "vectors": [
+    {
+      "name": "static_capsule_penetration",
+      "input": {
+        "particle": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.30000001192092896,
+          0.30000001192092896
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "output": {
+        "next": [
+          0.4000000059604645,
+          0.0,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "000000a09999d93f",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "friction": 1.0,
+        "frictionBinary32Le": "0000803f",
+        "collisionNormal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "0000803f",
+          "00000000",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "9a9999999999c93f",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "no_contact_normal_zero",
+      "input": {
+        "particle": [
+          0.6,
+          0.0,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.30000001192092896,
+          0.30000001192092896
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "output": {
+        "next": [
+          0.6,
+          0.0,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "333333333333e33f",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "friction": 0.0,
+        "frictionBinary32Le": "00000000",
+        "collisionNormal": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.6,
+          0.0,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "333333333333e33f",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "translated_collider_transport",
+      "input": {
+        "particle": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.1,
+            -1.0,
+            0.0
+          ],
+          [
+            0.1,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.30000001192092896,
+          0.30000001192092896
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "output": {
+        "next": [
+          0.5000000059604645,
+          0.0,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "333333030000e03f",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "friction": 1.0,
+        "frictionBinary32Le": "0000803f",
+        "collisionNormal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "0000803f",
+          "00000000",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "9a9999999999c93f",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "rotated_collider_transport",
+      "input": {
+        "particle": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.30000001192092896,
+          0.30000001192092896
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.7071067690849304,
+          0.7071067690849304
+        ]
+      },
+      "output": {
+        "next": [
+          0.2,
+          0.4000000059604645,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "9a9999999999c93f",
+          "000000a09999d93f",
+          "0000000000000000"
+        ],
+        "friction": 1.0,
+        "frictionBinary32Le": "0000803f",
+        "collisionNormal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "00000000",
+          "0000803f",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.2,
+          0.0,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "9a9999999999c93f",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "tapered_capsule_radius",
+      "input": {
+        "particle": [
+          0.2,
+          0.5,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.20000000298023224,
+          0.4000000059604645
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "output": {
+        "next": [
+          0.45000001788139343,
+          0.5,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "000000e0ccccdc3f",
+          "000000000000e03f",
+          "0000000000000000"
+        ],
+        "friction": 1.0,
+        "frictionBinary32Le": "0000803f",
+        "collisionNormal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "0000803f",
+          "00000000",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.2,
+          0.5,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "9a9999999999c93f",
+          "000000000000e03f",
+          "0000000000000000"
+        ]
+      }
+    },
+    {
+      "name": "friction_near_contact",
+      "input": {
+        "particle": [
+          0.45,
+          0.0,
+          0.0
+        ],
+        "particleRadiusCurveFloat32": 0.10000000149011612,
+        "oldEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "newEndpoints": [
+          [
+            0.0,
+            -1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "capsuleRadiiFloat32": [
+          0.30000001192092896,
+          0.30000001192092896
+        ],
+        "inverseOldRotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "rotationFloat32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "output": {
+        "next": [
+          0.45,
+          0.0,
+          0.0
+        ],
+        "nextBinary64Le": [
+          "cdccccccccccdc3f",
+          "0000000000000000",
+          "0000000000000000"
+        ],
+        "friction": 0.5000000596046448,
+        "frictionBinary32Le": "0100003f",
+        "collisionNormal": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "collisionNormalBinary32Le": [
+          "0000803f",
+          "00000000",
+          "00000000"
+        ],
+        "velocityPos": [
+          0.45,
+          0.0,
+          0.0
+        ],
+        "velocityPosBinary64Le": [
+          "cdccccccccccdc3f",
+          "0000000000000000",
+          "0000000000000000"
+        ]
+      }
+    }
+  ],
+  "boundary": {
+    "nativeCoreExecuted": true,
+    "sourceTranscriptionExactBitsMatched": true,
+    "rangeIndexPassedByValue": true,
+    "caseCoverage": [
+      "static capsule penetration",
+      "no contact and zero normal",
+      "translated collider transport",
+      "rotated collider transport",
+      "tapered capsule radius",
+      "friction near contact"
+    ],
+    "unityPortExecuted": false
+  }
+}
