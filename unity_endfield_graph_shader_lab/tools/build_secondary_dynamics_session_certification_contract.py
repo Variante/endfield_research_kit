@@ -117,11 +117,8 @@ def build(session_root: Path, require_certified: bool = False) -> dict:
         raise ValueError("window observed useRelativeTransform=true")
 
     team_count = window.get("teamCount")
-    getter_calls = window.get("teamDataGetterCalls")
     if not isinstance(team_count, int) or team_count < 4:
         raise ValueError("window observed fewer than four TeamData addresses")
-    if not isinstance(getter_calls, int) or getter_calls <= 0:
-        raise ValueError("window has no TeamData getter observations")
     observations = window.get("observations")
     if not isinstance(observations, list) or len(observations) != team_count:
         raise ValueError("TeamData observation count differs from teamCount")
@@ -133,11 +130,41 @@ def build(session_root: Path, require_certified: bool = False) -> dict:
            for address in addresses) or len(set(addresses)) != team_count:
         raise ValueError("TeamData addresses are missing or duplicated")
     false_call_sum = sum(row["falseCalls"] for row in observations)
-    if false_call_sum != getter_calls:
-        raise ValueError("TeamData observation counts do not sum to getter calls")
-    warmup_calls = cloth_update_calls - false_call_sum // 4
-    if false_call_sum % 4 != 0 or not 0 <= warmup_calls < cloth_update_calls:
-        raise ValueError("capture does not close the four-active-team cadence")
+    getter_calls = window.get("teamDataGetterCalls")
+    array_scans = window.get("teamDataArrayScans")
+    array_unreadable_scans = window.get("teamDataArrayUnreadableScans")
+    sample_calls = window.get("teamDataSampleCalls")
+    if array_scans is not None or sample_calls is not None:
+        if not isinstance(array_scans, int) or array_scans <= 0:
+            raise ValueError("window has no TeamData direct-array scans")
+        if array_unreadable_scans != 0:
+            raise ValueError("one or more TeamData direct-array scans was unreadable")
+        if array_scans != cloth_update_calls:
+            raise ValueError("TeamData direct-array scan cadence differs from ClothUpdate")
+        if not isinstance(sample_calls, int) or sample_calls <= 0:
+            raise ValueError("window has no TeamData direct-array samples")
+        if sample_calls != false_call_sum:
+            raise ValueError("TeamData observation counts do not sum to sample calls")
+        if sample_calls != array_scans * team_count:
+            raise ValueError("TeamData direct-array samples do not cover every retained row")
+        if any(row["falseCalls"] != array_scans for row in observations):
+            raise ValueError("one or more TeamData rows was not sampled on every scan")
+        observation_mode = "direct_array_full_scan"
+        active_team_lanes = team_count
+        warmup_calls = 0
+    else:
+        if not isinstance(getter_calls, int) or getter_calls <= 0:
+            raise ValueError("window has no TeamData getter observations")
+        if false_call_sum != getter_calls:
+            raise ValueError("TeamData observation counts do not sum to getter calls")
+        warmup_calls = cloth_update_calls - false_call_sum // 4
+        if false_call_sum % 4 != 0 or not 0 <= warmup_calls < cloth_update_calls:
+            raise ValueError("capture does not close the four-active-team cadence")
+        observation_mode = "four_lane_getter"
+        active_team_lanes = 4
+        array_scans = 0
+        array_unreadable_scans = 0
+        sample_calls = 0
 
     four_owner_certified = window.get("endminfFourOwnerCertification") is True
     universal_false = window.get("endminfCoveredByUniversalFalse") is True
@@ -208,9 +235,13 @@ def build(session_root: Path, require_certified: bool = False) -> dict:
             "clothUpdateCalls": cloth_update_calls,
             "crossFrameTrueCalls": window["crossFrameTrueCalls"],
             "crossFrameUnreadableCalls": window["crossFrameUnreadableCalls"],
-            "teamDataGetterCalls": getter_calls,
+            "observationMode": observation_mode,
+            "teamDataGetterCalls": getter_calls if observation_mode == "four_lane_getter" else 0,
+            "teamDataArrayScans": array_scans,
+            "teamDataArrayUnreadableScans": array_unreadable_scans,
+            "teamDataSampleCalls": sample_calls,
             "uniqueTeamDataAddresses": team_count,
-            "activeTeamLanesPerSettledCall": 4,
+            "activeTeamLanesPerSettledCall": active_team_lanes,
             "warmupClothUpdateCalls": warmup_calls,
             "relativeTrueCalls": 0,
             "relativeFalseCalls": false_call_sum,
@@ -229,10 +260,9 @@ def build(session_root: Path, require_certified: bool = False) -> dict:
                 "MagicaManager UseCrossFrameJob=true with zero unreadable samples."
             ),
             "relativeTransform": (
-                f"After {warmup_calls} warm-up ClothUpdate calls, {false_call_sum} reads "
-                f"equal four active TeamData lanes across "
-                f"{cloth_update_calls - warmup_calls} calls. Every one of the "
-                f"{team_count} observed addresses remained false. Certification mode: "
+                f"The {observation_mode} route recorded {false_call_sum} false reads "
+                f"across {team_count} unique TeamData rows with zero true reads. "
+                f"Every required row/call cadence check passed. Certification mode: "
                 f"{certification_mode}."
             ),
             "route": (
@@ -249,6 +279,8 @@ def build(session_root: Path, require_certified: bool = False) -> dict:
             "certificationMode": certification_mode,
             "runtimeHookInstalled": True,
             "gameBehaviorModified": False,
+            "collectionFinalized": True,
+            "shutdownCleanupVerified": True,
         },
     }
 
@@ -277,7 +309,8 @@ def main() -> int:
     args = parser.parse_args()
     try:
         contract = build(
-            args.session_root.resolve(), require_certified=args.require_certified
+            args.session_root.resolve(),
+            require_certified=args.require_certified,
         )
     except (OSError, ValueError) as exc:
         print(f"error: session certification failed: {exc}")
