@@ -24,6 +24,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string OwnerRecoveryPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_owner_recovery.json";
+        private const string CurveSamplesPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+            "secondary_dynamics_curve_samples_contract.json";
 
         internal static void Configure(
             GameObject actor,
@@ -38,13 +41,18 @@ namespace EndfieldGraphShaderLabEditor
             TextAsset solverInputs = AssetDatabase.LoadAssetAtPath<TextAsset>(SolverInputsPath);
             TextAsset payloadDecode = AssetDatabase.LoadAssetAtPath<TextAsset>(PayloadDecodePath);
             TextAsset ownerRecovery = AssetDatabase.LoadAssetAtPath<TextAsset>(OwnerRecoveryPath);
-            if (solverInputs == null || payloadDecode == null || ownerRecovery == null)
+            TextAsset curveSamples = AssetDatabase.LoadAssetAtPath<TextAsset>(CurveSamplesPath);
+            if (solverInputs == null || payloadDecode == null || ownerRecovery == null ||
+                curveSamples == null)
                 throw new FileNotFoundException(
                     "Endminf secondary-dynamics source contracts are missing.");
 
             Dictionary<string, object> solverActor = ActorRow(solverInputs.text, "endminf");
             Dictionary<string, object> payloadActor = ActorRow(payloadDecode.text, "endminf");
             Dictionary<string, object> recoveryActor = ActorRow(ownerRecovery.text, "endminf");
+            Dictionary<string, object> curveOwners = Object(Required(Object(
+                ManifestMiniJson.Deserialize(curveSamples.text), "curve contract root"),
+                "owners"), "curve owners");
             EndfieldSecondaryDynamicsData.CapsuleCollider[] colliders =
                 DecodeCapsuleColliders(recoveryActor);
             var colliderIndexByPath = colliders
@@ -66,6 +74,10 @@ namespace EndfieldGraphShaderLabEditor
                 string ownerPath = Text(cloth, "game_object_path");
                 if (!solverByOwner.TryGetValue(ownerPath, out Dictionary<string, object> solverCloth))
                     throw new InvalidDataException("No solver-input cloth matches " + ownerPath + ".");
+                if (!curveOwners.TryGetValue(ownerPath, out object curveOwnerValue))
+                    throw new InvalidDataException("No curve-sample owner matches " + ownerPath + ".");
+                Dictionary<string, object> curveOwner = Object(
+                    curveOwnerValue, "curve owners." + ownerPath);
 
                 Dictionary<string, object> transformArray = Object(
                     Required(cloth, "transform_array"), ownerPath + ".transform_array");
@@ -186,7 +198,7 @@ namespace EndfieldGraphShaderLabEditor
                     distanceConstraintDataArray = distanceParticles,
                     distanceConstraintRestLengths = distanceRestLengths,
                     colliderIndices = colliderIndices,
-                    solverInputs = DecodeSolverInputs(solverInput, ownerPath),
+                    solverInputs = DecodeSolverInputs(solverInput, curveOwner, ownerPath),
                 });
             }
 
@@ -219,6 +231,8 @@ namespace EndfieldGraphShaderLabEditor
             data.payloadDecodeSha256 = Sha256(PayloadDecodePath);
             data.ownerRecovery = ownerRecovery;
             data.ownerRecoverySha256 = Sha256(OwnerRecoveryPath);
+            data.curveSamples = curveSamples;
+            data.curveSamplesSha256 = Sha256(CurveSamplesPath);
             data.owners = owners.ToArray();
             data.colliders = colliders;
             data.expectedBindingCount = bindingCount;
@@ -243,8 +257,8 @@ namespace EndfieldGraphShaderLabEditor
                 Configure(probe, "Endminf", string.Empty, false);
                 Debug.Log(
                     "Verified Endminf secondary-dynamics source data: exact topology, " +
-                    "distance constraints, capsule bindings, and authored solver scalars " +
-                    "are well-formed; " +
+                    "distance constraints, capsule bindings, authored solver scalars, and " +
+                    "all 20 compiled curve buffers are well-formed; " +
                     "no asset or runtime writeback was created.");
             }
             finally
@@ -355,6 +369,7 @@ namespace EndfieldGraphShaderLabEditor
 
         private static EndfieldSecondaryDynamicsData.SolverInputs DecodeSolverInputs(
             Dictionary<string, object> solverInput,
+            Dictionary<string, object> curveOwner,
             string ownerPath)
         {
             Dictionary<string, object> parameters = Object(
@@ -385,14 +400,22 @@ namespace EndfieldGraphShaderLabEditor
                 constraints, "colliderCollisionConstraint", ownerPath);
             Dictionary<string, object> spring = Child(
                 constraints, "springConstraint", ownerPath);
+            Dictionary<string, object> buffers = Child(curveOwner, "buffers", ownerPath);
 
             return new EndfieldSecondaryDynamicsData.SolverInputs
             {
                 authoredScalarsRecovered = true,
-                compiledCurveSamplesRecovered = false,
+                compiledCurveSamplesRecovered = true,
                 compiledCurveSamplesBoundary =
-                    "The source contracts preserve authored value/useCurve/keyframes, but do " +
-                    "not contain the compiled ClothParameters 16-float curve buffers.",
+                    "All five Endminf-required ClothParameters buffers contain the exact " +
+                    "16 binary32 lanes verified in Unity 2021 and Unity 2022.",
+                dampingCurveData = CurveSamples(buffers, "dampingCurveData", ownerPath),
+                radiusCurveData = CurveSamples(buffers, "radiusCurveData", ownerPath),
+                distanceRestorationStiffness = CurveSamples(
+                    buffers, "distanceRestorationStiffness", ownerPath),
+                angleRestorationStiffness = CurveSamples(
+                    buffers, "angleRestorationStiffness", ownerPath),
+                angleLimit = CurveSamples(buffers, "angleLimit", ownerPath),
                 normalAxis = Integer(parameters, "normalAxis", ownerPath),
                 gravity = Float(parameters, "gravity", ownerPath),
                 gravityDirection = Vector3Value(
@@ -436,6 +459,18 @@ namespace EndfieldGraphShaderLabEditor
                 springNormalLimitRatio = Float(spring, "normalLimitRatio", ownerPath),
                 springNoise = Float(spring, "springNoise", ownerPath),
             };
+        }
+
+        private static float[] CurveSamples(
+            Dictionary<string, object> buffers, string key, string ownerPath)
+        {
+            Dictionary<string, object> buffer = Child(buffers, key, ownerPath + ".buffers");
+            float[] values = DirectFloatArray(
+                buffer, "samples", ownerPath + ".buffers." + key, 16);
+            if (values.Any(value => float.IsNaN(value) || float.IsInfinity(value)))
+                throw new InvalidDataException(
+                    ownerPath + ".buffers." + key + " contains a non-finite sample.");
+            return values;
         }
 
         private static void ValidateVertexArrays(

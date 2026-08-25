@@ -62,6 +62,11 @@ namespace EndfieldGraphShaderLab
             public bool authoredScalarsRecovered;
             public bool compiledCurveSamplesRecovered;
             public string compiledCurveSamplesBoundary;
+            public float[] dampingCurveData;
+            public float[] radiusCurveData;
+            public float[] distanceRestorationStiffness;
+            public float[] angleRestorationStiffness;
+            public float[] angleLimit;
 
             public int normalAxis;
             public float gravity;
@@ -109,6 +114,8 @@ namespace EndfieldGraphShaderLab
         public string payloadDecodeSha256;
         public TextAsset ownerRecovery;
         public string ownerRecoverySha256;
+        public TextAsset curveSamples;
+        public string curveSamplesSha256;
         public Owner[] owners = Array.Empty<Owner>();
         public CapsuleCollider[] colliders = Array.Empty<CapsuleCollider>();
         public int expectedBindingCount;
