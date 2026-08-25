@@ -918,6 +918,19 @@ emission window. Continue from the exact SRP per-draw color/transform record,
 soft-depth, and presentation ABI rather than retiming the system or attenuating
 its source properties.
 
+The retained FrameAnalysis constant-buffer files contain reused backing
+allocations but not `SetConstantBuffers1`'s draw-time range arrays, so they
+cannot identify M14's selected SRP record or VS b3/c13 soundly. The dedicated
+EndfieldCapture graphics proxy now tracks draw-time VS/PS shader identities and
+b0-b4 setter ranges, copies the first 22 float4 values from every valid range
+through bounded GPU buffers, and publishes those bytes with explicit
+truncation. Exact SHA-256 priority for VS4914/PS4915 prevents M14 from being
+evicted by the retail frame's 60 larger instanced draws. The production proxy,
+provider, and WARP tests pass, including repeated same-session requests and
+known VS/PS b3 marker recovery. One targeted graphics frame during M14's live
+window remains the only capture needed for this correction; do not request
+another secondary-dynamics run.
+
 Exact-build session
 `scratch/reverse_engineering/endfield_capture/20260825T230225Z` is the complete
 replacement secondary-dynamics capture. Its finalized, lossless ten-second

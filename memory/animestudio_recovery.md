@@ -122,6 +122,15 @@ type-only loads cannot guarantee resolved cross-bundle clip/controller PPtrs.
   or playback.
 - Object-index hierarchy/world positions are exact only when their resolution
   status says so.
+- AnimeStudio output is recoverable extraction evidence, not an automatic
+  completeness claim. Validate high-value shader/animation/material rows
+  against raw serialized bytes and live/native consumers; when the exporter
+  omits a required field or container boundary, improve AnimeStudio and add a
+  fail-closed fixture instead of treating the omission as a game-data fact.
+- Prefer Everything/`es.exe` for broad Windows filename discovery when its IPC
+  client is installed. On machines where neither executable is available on
+  `PATH`, use direct known paths first and keep fallback filesystem scans
+  narrowly scoped.
 
 ## Audio
 
