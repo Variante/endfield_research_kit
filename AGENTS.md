@@ -472,6 +472,8 @@ of these workflows, open the matching `SKILL.md` before acting:
   `webui/overrides/options.json`.
 - `.codex/skills/animestudio-workflow/`: building, running, patching, and
   debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
+- `.codex/skills/endfield-render-capture/`: prelaunch EndfieldCapture and
+  staged 3DMigoto graphics-evidence capture, collection, and review boundaries.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the

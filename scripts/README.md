@@ -768,11 +768,21 @@ For the remaining live source-state/sourceInfo-to-open-handle, optional
 decoder-callback, and unobserved-codec-descriptor joins,
 the read-only runtime probe is prepared with the repo-local Frida environment:
 
-The experimental native fallback under `tools/audio-runtime-capture/` is a
-Stage 0 identity/transport scaffold only. It verifies that a separately staged
-read-only DLL can load and match the selected process, `GameAssembly.dll`, and
-`AkSoundEngine.dll`; it does not install audio hooks or publish runtime audio
-observations yet. Validate its single manifest and payload contract before any
+The maintained guided native observer is `tools\EndfieldCapture`. Close the
+game and run `tools\EndfieldCapture\StartCapture.bat`; it validates the pinned
+build, arms graphics and audio by default, launches
+`Endfield.exe -force-d3d11`, and displays the capture keys. Use the printed
+`collect` command after `stop`. Raw sessions belong under
+`scratch/reverse_engineering/endfield_capture/`; see the tool README for the
+provider and completeness contracts. The older audio-only launchers below
+remain focused diagnostics, not the normal combined workflow.
+
+The experimental native fallback under `tools/audio-runtime-capture/` verifies
+the selected process, `GameAssembly.dll`, and `AkSoundEngine.dll`, then can
+install the manifest-derived `audio_chain_v1` read-only profile. That profile
+records the managed external-source request, Wwise source-media lookup, and
+default I/O open; the descriptor-post boundary stays disabled until its ABI is
+recovered. Validate the single manifest and payload contract before any
 authorized staging:
 
 ```bat
@@ -783,8 +793,8 @@ The launcher copies the verified x64 DLL into a private package directory,
 writes its adjacent `audio_capture.session.json`, makes at most one ordinary
 LoadLibrary injection attempt when explicitly requested, and requires an
 importer-compatible, fully hash-matched `session_start` handshake before it
-reports the Stage 0 session armed. A denial or incomplete module gate stops
-without retry or fallback.
+reports the hash-matched session armed. A denial, incomplete module gate, hook
+attachment failure, or unsupported profile stops without retry or fallback.
 
 ```bat
 tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio --check-only

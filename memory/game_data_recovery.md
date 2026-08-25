@@ -1816,6 +1816,21 @@ separates true interceptor nesting from same-session adjacency, but remains
 runtime call-structure evidence rather than an asynchronous ownership, file,
 decoder, or PCM join.
 
+`tools/EndfieldCapture` is the native prelaunch host for this audio contract
+and the graphics provider. Exact executable/native-input gates, the audited
+three-hook audio adapter, bounded relationship windows, shared writing, and
+fail-closed collection are implemented and synthetically tested; no retail
+session is yet certified. Raw graphics/audio sessions use one provenance root at
+`scratch/reverse_engineering/endfield_capture/<session-id>/`. Audio runtime
+capture records bounded keys, paths, pointers, call/result relationships, and
+provider completeness under the shared event stream plus `audio/` sidecars; it
+does not dump PCM or copy opened game files. Its `Numpad 2` control
+marks a bounded relationship-evidence window with two seconds of lookback and
+five seconds after the request; the key does not imply PCM recording or a
+successful provider observation. Compact validated audio summaries
+may be generated under `reports/story/recovery/audio/`, while durable
+interpretation remains here.
+
 The same manifest now includes an optional current-build managed hook at
 `GameAssembly.dll+0x3abef40`, where `VoicePlayer._PlayVoice` enters the
 external-source preparation helper. Its ABI is statically recovered as
@@ -1902,7 +1917,9 @@ Do not copy volatile inventories into this file.
   `AkSoundEngine.PostEvent` and native playing-id/Wwise selection; authorized
   runtime source-state → provider/file/decoder/PCM correlation for one
   VoicePlayer request; and ownership/use evidence for `unknownUse` media, which
-  remains identity-only.
+  remains identity-only. The next gate is one authorized collected retail
+  session with an identified audio action, zero provider loss/unresolved pairs,
+  and exact current-build fingerprints.
 - Server-side mission/property producers and activation policy.
 - Active IFix/server combat overrides, live targets, evaluator chronology, and
   blackboard values.
