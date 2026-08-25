@@ -22,16 +22,19 @@ The canonical identities comprise 31 playables, one NPC character, one
 cutscene clone, 94 enemies, and 29 ability/prop actors. Six modular ambient-NPC
 archetypes remain labeled source kits rather than finished characters.
 
-`tools/EndfieldCapture` is the native prelaunch observer for graphics and
-audio. Exact target/runtime gates, one-attempt injection, forced-D3D11 hooks,
+`tools/EndfieldCapture` is the native prelaunch observer for graphics, audio
+relationships, and socket metadata, with an optional external gameplay
+recorder. Exact target/runtime gates, one-attempt injection, forced-D3D11 hooks,
 bounded frame/resource readback, session writing, and collection are
 implemented and synthetically tested; it has not yet produced certified retail
 evidence. Native sessions belong under
 `scratch/reverse_engineering/endfield_capture/<session-id>/`, with forced-D3D11
 graphics resources under the session's `graphics/` folder. The guided wrapper
-defaults to both providers; its external overlay reserves `Numpad 1` for one
-next-frame request and `Numpad 0` for panel visibility, but neither is evidence
-until the host records a consumed provider request. Staged capture-only
+defaults to all three injected providers; its external overlay reserves
+`Numpad 1` for one next-frame request, `Numpad 2` for an audio relationship
+window, `Numpad 3` for one bounded BMP/WAV gameplay take, `Numpad 4` for a
+metadata-only network window, and `Numpad 0` for panel visibility. None is
+evidence until the host records a consumed provider request. Staged capture-only
 3DMigoto remains the retail-tested fallback until EndfieldCapture produces its
 first complete collected original-client session.
 

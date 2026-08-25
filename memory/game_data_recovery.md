@@ -299,6 +299,12 @@ managed request can bind an Event and its exact possible-media relations for
 that build/session, but the result remains an observed request boundary. It
 does not convert static possibilities into a selected Wwise leaf or audible
 playback claim.
+EndfieldCapture's optional network domain is likewise observational metadata:
+bounded socket lifecycle, endpoint, transfer-size, and asynchronous-completion
+records can establish contacted endpoints and traffic chronology for one
+session, but never protocol semantics, request content, TLS plaintext, or
+server behavior. Payload capture, decryption, replay, and traffic modification
+remain outside the maintained recovery boundary.
 Recovered grammar/hash names can also be attached to an enemy item when their
 complete `au_` prefix matches exactly one current EnemyTable id. This is a
 separate recovered-namespace identity edge; it improves discovery but does not

@@ -770,8 +770,12 @@ the read-only runtime probe is prepared with the repo-local Frida environment:
 
 The maintained guided native observer is `tools\EndfieldCapture`. Close the
 game and run `tools\EndfieldCapture\StartCapture.bat`; it validates the pinned
-build, arms graphics and audio by default, launches
-`Endfield.exe -force-d3d11`, and displays the capture keys. Use the printed
+build, arms graphics/audio/network metadata by default, launches
+`Endfield.exe -force-d3d11`, and displays `Numpad 1` frame, `Numpad 2` audio
+relationship, `Numpad 3` bounded window/WASAPI recording, `Numpad 4` bounded
+socket-metadata, and `Numpad 0` overlay controls. Network capture never stores
+payload or TLS plaintext, and the host recording is a BMP sequence plus WAV,
+not MP4. Use the printed
 `collect` command after `stop`. Raw sessions belong under
 `scratch/reverse_engineering/endfield_capture/`; see the tool README for the
 provider and completeness contracts. The older audio-only launchers below
