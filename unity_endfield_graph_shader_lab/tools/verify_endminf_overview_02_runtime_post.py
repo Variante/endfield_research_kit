@@ -96,6 +96,19 @@ def verify() -> dict[str, object]:
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
         raise RuntimeError("retired empirical Effect-02 evaluator is still present")
 
+    spawner = (
+        LAB
+        / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+        / "EndfieldRecoveredCharEffectSpawner.cs"
+    ).read_text(encoding="utf-8")
+    require_tokens(spawner, (
+        "PlayRecoveredParticleSystems(instance, systems)",
+        "EndfieldEndminfVisualCompatibilityClock.ConfiguredPreRollSeconds",
+        "const float sourceTickSeconds = 1.0f / 60.0f",
+        "system.Simulate(step, false, restart, false)",
+        "system.Play(false)",
+    ), "overview-02 particle pre-roll")
+
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
         "float4 SampleEndminfSceneLod0(float2 uv)",
@@ -125,6 +138,7 @@ def verify() -> dict[str, object]:
             "combinedMode": 6,
             "singleMode": 3,
             "averageSteps": [0, 0],
+            "particlePreRollClock": "same nine discrete 60 Hz ticks as post owner",
         },
         "boundary": (
             "The animated values, native center/mode/power packing, source-only "
