@@ -9541,6 +9541,23 @@ namespace EndfieldGraphShaderLabEditor
                         wrapMode = loop ? WrapMode.Loop : WrapMode.Once,
                     };
                     int previewStride = Mathf.Max(1, Int(clipInfo.TryGetValue("unity_preview_stride", out object strideObj) ? strideObj : null, 1));
+                    // Endminf's captured Character Info entrance is compared at
+                    // exact 60 Hz source phases. Its older size-oriented stride
+                    // of two measurably shifts the calf and simulated-cloth input
+                    // chains at those phases, so preserve every decoded key for
+                    // the two clips that make up the authoritative reproduction.
+                    bool exactEndminfOverview = actorGeneratedRoot.EndsWith(
+                        "/Endminf", StringComparison.OrdinalIgnoreCase) &&
+                        (string.Equals(
+                            name,
+                            "A_actor_endminf_ui_overview_start",
+                            StringComparison.Ordinal) ||
+                         string.Equals(
+                            name,
+                            "A_actor_endminf_ui_overview_loop",
+                            StringComparison.Ordinal));
+                    if (exactEndminfOverview)
+                        previewStride = 1;
                     foreach (object boneObj in List(clipInfo["bones"]))
                     {
                         var bone = Dict(boneObj);
