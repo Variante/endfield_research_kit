@@ -1,0 +1,867 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-collider-start-golden-v1",
+  "status": "native_source_bit_exact",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "identity": {
+    "selectionBasis": "unique canonical 17-argument semantic candidate in the pinned source-metadata contract",
+    "exportName": "8b3d2761aaaac71a35d4a2557d570456",
+    "exportRva": "0x357ad0",
+    "exportBodyBytes": 205,
+    "exportBodySha256": "bad4ef19af75f491d1a97a73428af34b9e983eb2b5c543dace2ca3fd64bbcf83",
+    "entryRva": "0x243660",
+    "entryBytes": 83,
+    "entrySha256": "0601c7e78f544793564164d2ecbd6bbb7f28824c8f279d64ed565ef17bbe790d",
+    "coreRva": "0x243810",
+    "coreBytes": 2732,
+    "coreSha256": "a69539c847d5f68e7a1c155058f8299a6953c79004ef28e14282ccdec26d0615",
+    "sineHelperRva": "0x1de610",
+    "sineHelperBytes": 557,
+    "sineHelperSha256": "d11fc448307689e5bf1c981bf1cae17af4604d6fa0105aa2196b162048a1c6ac",
+    "physicalAbi": {
+      "pointerArguments": 16,
+      "rangeIndexArgument": 17,
+      "rangeIndexByValue": true,
+      "teamDataStrideBytes": 464,
+      "centerDataStrideBytes": 696,
+      "transformPositionStrideBytes": 12,
+      "quaternionStrideBytes": 16,
+      "workDataStrideBytes": 184
+    }
+  },
+  "sourceContracts": {
+    "semantics": {
+      "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_collider_start_semantics_contract.json",
+      "size": 113629,
+      "sha256": "ddfad015e07e9242a81db7238ea058fe3d4ef203701857ea1bb0adb1ee26e417"
+    }
+  },
+  "endminfScope": {
+    "source": {
+      "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
+      "size": 1447800,
+      "sha256": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
+    },
+    "capsuleCount": 10,
+    "directions": [
+      0,
+      2
+    ],
+    "reverseDirections": [
+      0
+    ],
+    "radiusSeparations": [
+      0.0,
+      1.0
+    ],
+    "alignedOnCenter": [
+      1
+    ]
+  },
+  "coverage": {
+    "disabledBypass": true,
+    "staticCapsule": true,
+    "translatedMovingCapsule": true,
+    "rotatedMovingCapsule": true,
+    "scaledMovingCapsule": true,
+    "directionBranches": [
+      "x",
+      "y",
+      "z"
+    ],
+    "reverseDirection": true,
+    "alignedBranches": [
+      "centered",
+      "one_sided"
+    ],
+    "radiusSeparationBranches": [
+      "positive",
+      "clamped_zero"
+    ]
+  },
+  "vectors": [
+    {
+      "name": "disabled_flag_bypass",
+      "flag": "0x00",
+      "typeBranch": "bypass",
+      "inputs": {
+        "flag": 0,
+        "size": [
+          0.07999999821186066,
+          0.10000000149011612,
+          0.5
+        ],
+        "framePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "a5a5a5a5a5a5a5a5a5a5a5a5",
+        "nowRotations": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+        "oldPositions": "000000000000000000000000",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "incomplete_active_bits_bypass",
+      "flag": "0x22",
+      "typeBranch": "bypass",
+      "inputs": {
+        "flag": 34,
+        "size": [
+          0.07999999821186066,
+          0.10000000149011612,
+          0.5
+        ],
+        "framePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "a5a5a5a5a5a5a5a5a5a5a5a5",
+        "nowRotations": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+        "oldPositions": "000000000000000000000000",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "static_aligned_x_separated_radii",
+      "flag": "0x32",
+      "typeBranch": "aligned_x",
+      "inputs": {
+        "flag": 50,
+        "size": [
+          0.07999999821186066,
+          0.11999999731779099,
+          0.6499999761581421
+        ],
+        "framePosition": [
+          0.25,
+          1.0,
+          -0.5
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.25,
+          1.0,
+          -0.5
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          0.25,
+          1.0,
+          -0.5
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "0000803e0000803f000000bf",
+        "nowRotations": "0000000000000000000000000000803f",
+        "oldPositions": "0000803e0000803f000000bf",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "000000e03233b3bf000000c0f528ec3f000000400ad7e3bf000000606666e23f0000002085ebf13f00000080eb51d8bf0ad7a33d8fc2f53d0000008014aedf3f000000000000f03f000000000000e0bf000000003e0aa73f000000000000f03f000000000000e0bf0000008014aedf3f000000000000f03f000000000000e0bf000000003e0aa73f000000000000f03f000000000000e0bf0000008000000080000000800000803f0000000000000000000000000000803f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "static_aligned_z_endminf_direction_2",
+      "flag": "0x34",
+      "typeBranch": "aligned_z",
+      "inputs": {
+        "flag": 52,
+        "size": [
+          0.10499999672174454,
+          0.10599999874830246,
+          0.296999990940094
+        ],
+        "framePosition": [
+          -0.10000000149011612,
+          0.800000011920929,
+          0.20000000298023224
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          -0.10000000149011612,
+          0.800000011920929,
+          0.20000000298023224
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          -0.10000000149011612,
+          0.800000011920929,
+          0.20000000298023224
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "cdccccbdcdcc4c3fcdcc4c3e",
+        "nowRotations": "0000000000000000000000000000803f",
+        "oldPositions": "cdccccbdcdcc4c3fcdcc4c3e",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "00000040355ecabf000000803f35e63f00000040355eaa3f000000007493783f000000c0f3fdec3f000000e0d24dd63f3d0ad73d8716d93d000000a09999b9bf000000a09999e93f00000000022bcf3f000000a09999b9bf000000a09999e93f000000c0f528c43f000000a09999b9bf000000a09999e93f00000000022bcf3f000000a09999b9bf000000a09999e93f000000c0f528c43f0000008000000080000000800000803f0000000000000000000000000000803f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "translated_rotated_scaled_moving_y",
+      "flag": "0x33",
+      "typeBranch": "aligned_y",
+      "inputs": {
+        "flag": 51,
+        "size": [
+          0.07699999958276749,
+          0.03099999949336052,
+          0.48899999260902405
+        ],
+        "framePosition": [
+          1.399999976158142,
+          -0.25,
+          2.0999999046325684
+        ],
+        "frameRotation": [
+          0.19866932928562164,
+          0.0,
+          0.0,
+          0.9800665974617004
+        ],
+        "frameScale": [
+          1.25,
+          0.75,
+          1.5
+        ],
+        "oldFramePosition": [
+          0.800000011920929,
+          -0.699999988079071,
+          1.600000023841858
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          -0.13052619993686676,
+          0.9914448857307434
+        ],
+        "oldPosition": [
+          0.550000011920929,
+          -0.8999999761581421,
+          1.2999999523162842
+        ],
+        "oldRotation": [
+          0.0,
+          0.258819043636322,
+          0.0,
+          0.9659258127212524
+        ],
+        "frameInterpolation": 0.625,
+        "centerMoveRatio": 0.44999998807907104,
+        "centerRotationRatio": 0.550000011920929
+      },
+      "outputs": {
+        "nowPositions": "6666963f6666d6beccccf43f",
+        "nowRotations": "4dc6ff3d00000000f1214abd6aae7d3f",
+        "oldPositions": "cccc543fc2f52ebf14aec93f",
+        "oldRotations": "68198e3db649f13d6598e0bca67f7d3f",
+        "workData": "000000203709e93f0000006053aeebbf000000c0a380f83f00000060abebf33f000000203bb5cebf000000e0c0020040448b6c3dc876be3c000000a04de2ea3f000000400ee5e1bf000000802479f93f00000000ee3cea3f000000a0dcefeabf00000020dfdff83f0000002020fff23f000000a0ca0cd3bf00000060f618ff3f00000040a78cf23f000000c0d556e2bf0000008042f7fd3f67198ebdb449f1bd6398e03ca47f7d3f4dc6ff3d00000000f1214abd6aae7d3f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "reverse_direction_x",
+      "flag": "0xb2",
+      "typeBranch": "aligned_x_reverse",
+      "inputs": {
+        "flag": 178,
+        "size": [
+          0.05999999865889549,
+          0.10999999940395355,
+          0.5
+        ],
+        "framePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "frameRotation": [
+          0.0,
+          0.3826834261417389,
+          0.0,
+          0.9238795042037964
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.3826834261417389,
+          0.0,
+          0.9238795042037964
+        ],
+        "oldPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "oldRotation": [
+          0.0,
+          0.3826834261417389,
+          0.0,
+          0.9238795042037964
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "000000000000000000000000",
+        "nowRotations": "0000000015efc33e000000005e836c3f",
+        "oldPositions": "000000000000000000000000",
+        "oldRotations": "0000000015efc33e000000005e836c3f",
+        "workData": "0000006078e0c8bf000000c0f528bcbf000000e058c0cabf000000c058c0ca3f000000c0f528bc3f000000a078e0c83f8fc2753dae47e13d000000c06332c1bf0000000000000000000000206432c13f00000080bb57b93f000000000000000000000000bc57b9bf000000e06332c1bf0000000000000000000000e06332c13f000000c0bb57b93f0000000000000000000000a0bb57b9bf0000008014efc3be000000805c836c3f0000000015efc33e000000005e836c3f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "negative_scale_direction_y",
+      "flag": "0x33",
+      "typeBranch": "aligned_y_negative_scale",
+      "inputs": {
+        "flag": 51,
+        "size": [
+          0.09000000357627869,
+          0.03999999910593033,
+          0.41999998688697815
+        ],
+        "framePosition": [
+          0.5,
+          -0.25,
+          0.75
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.258819043636322,
+          0.9659258127212524
+        ],
+        "frameScale": [
+          1.0,
+          -1.600000023841858,
+          0.800000011920929
+        ],
+        "oldFramePosition": [
+          0.5,
+          -0.25,
+          0.75
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.258819043636322,
+          0.9659258127212524
+        ],
+        "oldPosition": [
+          0.5,
+          -0.25,
+          0.75
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.258819043636322,
+          0.9659258127212524
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "0000003f000080be0000403f",
+        "nowRotations": "0000000000000000ee83843eea46773f",
+        "oldPositions": "0000003f000080be0000403f",
+        "oldRotations": "0000000000000000ee83843eea46773f",
+        "workData": "000000003333d33f000000c0c9ede1bf000000205a64e33f0000008014aee73f000000c0c85fa93f000000e0a59bec3fbd74133e6f12833d000000a06e12e33f000000c047a4dabf000000000000e83f00000080c64bd73f000000004c938dbf000000000000e83f000000a06e12e33f000000c047a4dabf000000000000e83f000000c0c64bd73f000000004c938dbf000000000000e83f0000008000000080ed8384bee846773f0000000000000000ee83843eea46773f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "aligned_radius_overlap_clamps_both_separations",
+      "flag": "0x32",
+      "typeBranch": "aligned_x_radius_overlap",
+      "inputs": {
+        "flag": 50,
+        "size": [
+          0.3100000023841858,
+          0.28999999165534973,
+          0.4000000059604645
+        ],
+        "framePosition": [
+          -0.5,
+          0.25,
+          1.0
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          -0.5,
+          0.25,
+          1.0
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          -0.5,
+          0.25,
+          1.0
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "000000bf0000803e0000803f",
+        "nowRotations": "0000000000000000000000000000803f",
+        "oldPositions": "000000bf0000803e0000803f",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "0000002085ebe9bf0000000052b8aebf000000e07a14e63f00000080eb51c8bf0000002085ebe13f00000080c2f5f43f52b89e3ee17a943e000000000000e0bf000000000000d03f000000000000f03f000000000000e0bf000000000000d03f000000000000f03f000000000000e0bf000000000000d03f000000000000f03f000000000000e0bf000000000000d03f000000000000f03f0000008000000080000000800000803f0000000000000000000000000000803f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "unaligned_x_radius_separation",
+      "flag": "0x35",
+      "typeBranch": "unaligned_x",
+      "inputs": {
+        "flag": 53,
+        "size": [
+          0.07999999821186066,
+          0.11999999731779099,
+          0.699999988079071
+        ],
+        "framePosition": [
+          0.10000000149011612,
+          -0.20000000298023224,
+          0.30000001192092896
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.5,
+          0.8660253882408142
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.10000000149011612,
+          -0.20000000298023224,
+          0.30000001192092896
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.5,
+          0.8660253882408142
+        ],
+        "oldPosition": [
+          0.10000000149011612,
+          -0.20000000298023224,
+          0.30000001192092896
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.5,
+          0.8660253882408142
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "cdcccc3dcdcc4cbe9a99993e",
+        "nowRotations": "00000000000000000000003fd7b35d3f",
+        "oldPositions": "cdcccc3dcdcc4cbe9a99993e",
+        "oldRotations": "00000000000000000000003fd7b35d3f",
+        "workData": "00000020ae47d1bf00000020ae18e8bf000000803d0ac73f000000803d0ac73f0000000052b8bebf000000c047e1da3f0ad7a33d8fc2f53d000000a09999b93f000000a09999c9bf000000403333d33f000000403333c3bf000000e0a341e4bf000000403333d33f000000a09999b93f000000a09999c9bf000000403333d33f000000403333c3bf000000e0a341e4bf000000403333d33f0000008000000080000000bfd7b35d3f00000000000000000000003fd7b35d3f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    },
+    {
+      "name": "unaligned_y_radius_overlap",
+      "flag": "0x36",
+      "typeBranch": "unaligned_y_radius_overlap",
+      "inputs": {
+        "flag": 54,
+        "size": [
+          0.25,
+          0.2199999988079071,
+          0.3499999940395355
+        ],
+        "framePosition": [
+          0.20000000298023224,
+          0.4000000059604645,
+          -0.6000000238418579
+        ],
+        "frameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameScale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "oldFramePosition": [
+          0.20000000298023224,
+          0.4000000059604645,
+          -0.6000000238418579
+        ],
+        "oldFrameRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "oldPosition": [
+          0.20000000298023224,
+          0.4000000059604645,
+          -0.6000000238418579
+        ],
+        "oldRotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "frameInterpolation": 1.0,
+        "centerMoveRatio": 1.0,
+        "centerRotationRatio": 1.0
+      },
+      "outputs": {
+        "nowPositions": "cdcc4c3ecdcccc3e9a9919bf",
+        "nowRotations": "0000000000000000000000000000803f",
+        "oldPositions": "cdcc4c3ecdcccc3e9a9919bf",
+        "oldRotations": "0000000000000000000000000000803f",
+        "workData": "000000809999a9bf000000403333c33f000000403333ebbf000000c0ccccdc3f000000c0cccce43f000000806666d6bf0000803eae47613e000000a09999c93f000000a09999d93f000000403333e3bf000000a09999c93f000000a09999d93f000000403333e3bf000000a09999c93f000000a09999d93f000000403333e3bf000000a09999c93f000000a09999d93f000000403333e3bf0000008000000080000000800000803f0000000000000000000000000000803f"
+      },
+      "outputByteCounts": {
+        "nowPositions": 12,
+        "nowRotations": 16,
+        "oldPositions": 12,
+        "oldRotations": 16,
+        "workData": 184
+      },
+      "nativeSourceBitExact": {
+        "nowPositions": true,
+        "nowRotations": true,
+        "oldPositions": true,
+        "oldRotations": true,
+        "workData": true
+      }
+    }
+  ],
+  "verification": {
+    "vectorCount": 10,
+    "allOutputBuffersComparedAsRawBytes": true,
+    "comparedOutputs": {
+      "nowPositions": 12,
+      "nowRotations": 16,
+      "oldPositions": 12,
+      "oldRotations": 16,
+      "workData": 184
+    },
+    "nativeCoreExecuted": true,
+    "sourceInvokesNativeHelpers": false
+  },
+  "boundary": [
+    "Export selection is the unique static canonical-signature and managed-fallback semantic match in the pinned contract; no retail runtime resolver telemetry is claimed.",
+    "The native audit executes the pinned AVX2 core and its in-module sine dependency; source_port is standalone and executes no native helper.",
+    "Capsule branches 2 through 6 are covered. Sphere and plane branches are outside Endminf's serialized collider requirement."
+  ]
+}
