@@ -69,6 +69,7 @@ Shader "Endfield/Recovered/CharacterHair"
         _EnableOutline ("Enable Outline", Float) = 1
         _OutlineWidth ("Outline Width", Float) = 0.6
         _OutlineOffsetZ ("Outline Z Offset", Float) = 0
+        _OutlineAverageNormal ("Use Packed Average Outline Normal", Float) = 1
         _OutlineColorBrightness ("Outline Brightness", Float) = 0.28
         _OutlineColorSaturation ("Outline Saturation", Float) = 1.15
         _OutlineColor ("Outline Tint", Color) = (1,1,1,1)
@@ -125,6 +126,7 @@ Shader "Endfield/Recovered/CharacterHair"
         sampler2D _HairBrowMask;
         sampler2D _EmissionMap;
         sampler2D _OutlineMask;
+        float4 _OutlineMask_ST;
 
         half4 _BaseColor;
         half4 _HairBaseTintColor;
@@ -168,6 +170,7 @@ Shader "Endfield/Recovered/CharacterHair"
         half _EnableOutline;
         half _OutlineWidth;
         half _OutlineOffsetZ;
+        half _OutlineAverageNormal;
         half _OutlineColorBrightness;
         half _OutlineColorSaturation;
         half4 _OutlineColor;
@@ -190,6 +193,7 @@ Shader "Endfield/Recovered/CharacterHair"
             float3 normal : NORMAL;
             float4 tangent : TANGENT;
             float2 uv : TEXCOORD0;
+            float4 outlineNormal : TEXCOORD2;
             float3 positionOld : TEXCOORD4;
         };
 
@@ -922,6 +926,26 @@ Shader "Endfield/Recovered/CharacterHair"
             return sign(offset) * max(abs(offset), minimumOffset);
         }
 
+        inline float3 EndfieldHGRPCharacterOutlineNormal(
+            float3 normalOS, float4 tangentOS, float2 packedNormal)
+        {
+            float3 normal = normalize(normalOS);
+            float3 tangent = normalize(tangentOS.xyz);
+            float packedZ = sqrt(1.0 - min(dot(packedNormal, packedNormal), 1.0));
+            float3 averageNormal = packedZ * normal + packedNormal.x * tangent +
+                tangentOS.w * cross(normal, tangent) * packedNormal.y;
+            return _OutlineAverageNormal > 0.5 ? averageNormal : normal;
+        }
+
+        inline float EndfieldHGRPCharacterOutlineClipZ(
+            float4 baseClipPos, float3 viewPosition, float depthOffset)
+        {
+            float4 shiftedClip = mul(
+                UNITY_MATRIX_P,
+                float4(viewPosition.xy, viewPosition.z - depthOffset, 1.0));
+            return baseClipPos.w * shiftedClip.z / max(abs(shiftedClip.w), 1e-8);
+        }
+
         struct HairOutlineVaryings
         {
             float4 pos : SV_POSITION;
@@ -934,18 +958,33 @@ Shader "Endfield/Recovered/CharacterHair"
         {
             HairOutlineVaryings o;
             float2 uv = TRANSFORM_TEX(v.uv, _BaseMap);
-            float mask = lerp(1.0, tex2Dlod(_OutlineMask, float4(uv, 0, 0)).r,
+            float2 outlineUv = TRANSFORM_TEX(v.uv, _OutlineMask);
+            float2 outlineMask = tex2Dlod(
+                _OutlineMask,
+                float4(outlineUv, 0, 0)).rg;
+            float mask = lerp(1.0, outlineMask.r,
                               saturate(_EnableOutlineMask));
             float width = EndfieldHGRPCharacterOutlineWidth(
                 _OutlineWidth * mask * saturate(_EnableOutline));
             float4 baseClipPos = UnityObjectToClipPos(v.vertex);
             float4 clipPos = baseClipPos;
-            float3 normalWS = UnityObjectToWorldNormal(v.normal);
+            float3 outlineNormalOS = EndfieldHGRPCharacterOutlineNormal(
+                v.normal,
+                v.tangent,
+                v.outlineNormal.xy);
+            float3 normalWS = UnityObjectToWorldNormal(outlineNormalOS);
             clipPos.xy += EndfieldHGRPCharacterOutlineClipOffset(
                 normalWS,
                 clipPos.w,
                 width);
-            clipPos.z += _OutlineOffsetZ * _RecoveredOutlineZScale * clipPos.w;
+            float depthOffset = 0.1 * _OutlineOffsetZ * lerp(
+                1.0,
+                outlineMask.g,
+                saturate(_EnableOutlineMask));
+            clipPos.z = EndfieldHGRPCharacterOutlineClipZ(
+                baseClipPos,
+                UnityObjectToViewPos(v.vertex),
+                depthOffset);
             float4 previousLocalPosition = lerp(
                 v.vertex,
                 float4(v.positionOld, 1.0),

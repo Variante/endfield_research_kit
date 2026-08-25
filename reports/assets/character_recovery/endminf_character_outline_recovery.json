@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-character-outline-recovery.v1",
+  "schema": "endfield.endminf-character-outline-recovery.v2",
   "status": "ok",
   "capture": "scratch/character_recovery/3dmigoto-dev-v1.0.0/package/FrameAnalysis-2026-08-24-182850",
   "drawCount": 6,
@@ -52,6 +52,14 @@
     "generic": "2d848a8c34959a7551135b1d24ed5f522d6cfaacfb8a26f3cff78cb69b1f0316",
     "hair": "3105e54c77021710dd8a8cd5eceaf0a38dafb2e71cc69832cc3f5dee967f6087"
   },
+  "sourceMeshSha256": {
+    "S_actor_endminf_face_01_lod0": "db7f84ce4eadaeb5933f658cb9e798fbeaf8f57d8867edc2d74e98707ff31840",
+    "S_actor_endminf_body_01_lod0": "e681352af401f390ce1e25aa0355a541b032f49254682fe40090896bdb84ccaa",
+    "S_actor_endminf_cloth_01_lod0": "589f53a67722fb83fa8f7c50672dd9f5263a37db776ac218d02ec26786c4a2e0",
+    "S_actor_endminf_cloth_04_lod0": "8f619a6f3da02db0e97f77816a015c487ba05bbd2cd5d95e47cde5fe754a714d",
+    "S_actor_endminf_cloth_03_lod0": "bcce916aba61aed8e2d4ad9461c545839bf0be81d965596be7c338141d5ac5fb",
+    "S_actor_endminf_hair_01_lod0": "d9cb5e99b1064245803566f946cc84a8617d009c33bfdf4af3442dc1738b056c"
+  },
   "renderState": {
     "color0Blend": "Zero Zero, Zero Zero",
     "sceneMVBlend": "One Zero",
@@ -65,17 +73,23 @@
     "graphicsDeviceType": "Direct3D11",
     "sceneMVPublishedByOutline": true,
     "clipSpaceWidthRecovery": true,
-    "openVertexBranches": [
-      "packed average-normal attribute",
-      "exact source Z-offset"
-    ]
+    "packedAverageNormalRecovery": true,
+    "sourceZOffsetRecovery": true,
+    "repeatCaptureByteIdenticalFrames": 0
   },
   "comparison": {
     "noFramegenPairs": 28,
-    "beforeAveragePsnrDb": 13.388621,
-    "afterAveragePsnrDb": 13.326791,
-    "beforeCrystalCleanPsnrDb": 14.121807,
-    "afterCrystalCleanPsnrDb": 14.06931,
-    "interpretation": "The source-exact black edge lowers whole-frame PSNR while the larger presentation/exposure mismatch remains. Source/capture state, not accidental metric agreement from the former bright approximation, owns this pass."
+    "previousAveragePsnrDb": 13.326791,
+    "repeatAveragePsnrDb": [
+      13.561907,
+      13.555405
+    ],
+    "previousCrystalCleanPsnrDb": 14.06931,
+    "repeatCrystalCleanPsnrDb": [
+      14.068424,
+      14.074417
+    ],
+    "repeatCapturePsnrDb": 31.445556,
+    "interpretation": "The packed-normal and Z recovery is source-exact, but repeated phase-identical captures are not pixel-identical. The clean-reference range contains the prior result, so cross-run PSNR movement is not attributed to this pass."
   }
 }
