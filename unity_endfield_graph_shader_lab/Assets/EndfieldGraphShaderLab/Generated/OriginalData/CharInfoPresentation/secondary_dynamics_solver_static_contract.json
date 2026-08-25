@@ -383,6 +383,241 @@
       ]
     },
     {
+      "methodIndex": 385703,
+      "type": "BeyondDynamicBone.SimulationManager+UpdateStepBasicPotureJob",
+      "method": "Execute",
+      "role": "managed_dispatch_wrapper",
+      "solverStatus": "wrapper_only",
+      "va": "0x186779004",
+      "endVaExclusive": "0x18677909c",
+      "spanBytes": 152,
+      "bodySha256": "962967f93de694d9bb1a62cb813650296e6f014f06a601320fd2180e152d52fa",
+      "nextCalls": [
+        {
+          "kind": "managed_fallback",
+          "methodIndex": 385704,
+          "va": "0x18677909c",
+          "method": "Execute(int)",
+          "instructionOffsets": [
+            "0x56"
+          ]
+        }
+      ]
+    },
+    {
+      "methodIndex": 385704,
+      "type": "BeyondDynamicBone.SimulationManager+UpdateStepBasicPotureJob",
+      "method": "Execute(int)",
+      "role": "managed_fallback",
+      "solverStatus": "managed_fallback_observed",
+      "va": "0x18677909c",
+      "endVaExclusive": "0x1867799d0",
+      "spanBytes": 2356,
+      "bodySha256": "69c31d679e618b25355e66df3427328b4429cdef0f6a8d2882d61aae60d5f1f4",
+      "nextCalls": [],
+      "bufferAccesses": [
+        {
+          "jobField": "stepBaseLineIndexArray",
+          "jobOffset": "0x0",
+          "index": "Execute(index)",
+          "strideBytes": 4,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x9a"
+          ]
+        },
+        {
+          "jobField": "teamDataArray",
+          "jobOffset": "0x10",
+          "index": "step baseline record",
+          "strideBytes": 464,
+          "elementFieldDisplacements": [
+            0,
+            16,
+            32,
+            48,
+            64,
+            80,
+            96,
+            112
+          ],
+          "instructionOffsets": [
+            "0xaa",
+            "0xb8",
+            "0xbb",
+            "0xc2",
+            "0xca",
+            "0xd2",
+            "0xda",
+            "0xe2",
+            "0xea"
+          ]
+        },
+        {
+          "jobField": "attributes",
+          "jobOffset": "0x20",
+          "index": "baseline data entry",
+          "strideBytes": 1,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x4f9"
+          ]
+        },
+        {
+          "jobField": "vertexParentIndices",
+          "jobOffset": "0x30",
+          "index": "baseline data entry",
+          "strideBytes": 4,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x4e6"
+          ]
+        },
+        {
+          "jobField": "vertexLocalPositions",
+          "jobOffset": "0x40",
+          "index": "derived parent vertex index",
+          "strideBytes": 12,
+          "elementFieldDisplacements": [
+            0,
+            8
+          ],
+          "instructionOffsets": [
+            "0x569",
+            "0x56e"
+          ]
+        },
+        {
+          "jobField": "vertexLocalRotations",
+          "jobOffset": "0x50",
+          "index": "derived vertex index",
+          "strideBytes": 16,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x59d"
+          ]
+        },
+        {
+          "jobField": "baseLineStartDataIndices",
+          "jobOffset": "0x60",
+          "index": "step baseline record",
+          "strideBytes": 2,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x473"
+          ]
+        },
+        {
+          "jobField": "baseLineDataCounts",
+          "jobOffset": "0x70",
+          "index": "step baseline record",
+          "strideBytes": 2,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x480"
+          ]
+        },
+        {
+          "jobField": "baseLineData",
+          "jobOffset": "0x80",
+          "index": "baseline range entry",
+          "strideBytes": 2,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x4cc"
+          ]
+        },
+        {
+          "jobField": "basePosArray",
+          "jobOffset": "0x90",
+          "index": "derived particle index",
+          "strideBytes": 24,
+          "elementFieldDisplacements": [
+            0,
+            16
+          ],
+          "instructionOffsets": [
+            "0x815",
+            "0x819"
+          ]
+        },
+        {
+          "jobField": "baseRotArray",
+          "jobOffset": "0xa0",
+          "index": "derived particle index",
+          "strideBytes": 16,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x802"
+          ]
+        },
+        {
+          "jobField": "stepBasicPositionArray",
+          "jobOffset": "0xb0",
+          "index": "derived particle index",
+          "strideBytes": 24,
+          "elementFieldDisplacements": [
+            0,
+            16
+          ],
+          "instructionOffsets": [
+            "0x649",
+            "0x64f"
+          ]
+        },
+        {
+          "jobField": "stepBasicRotationArray",
+          "jobOffset": "0xc0",
+          "index": "derived particle index",
+          "strideBytes": 16,
+          "elementFieldDisplacements": [
+            0
+          ],
+          "instructionOffsets": [
+            "0x563"
+          ]
+        }
+      ]
+    },
+    {
+      "methodIndex": 385705,
+      "type": "BeyondDynamicBone.SimulationManager+UpdateStepBasicPotureJob",
+      "method": "UnsafeDo",
+      "role": "burst_range_dispatch_wrapper",
+      "solverStatus": "wrapper_only_burst_solver_unresolved",
+      "va": "0x1867799d0",
+      "endVaExclusive": "0x186779b84",
+      "spanBytes": 436,
+      "bodySha256": "f75889388bc3e0b2c53e73cae95c087fb738d974e3b04c333c120b78f3388416",
+      "nextCalls": [
+        {
+          "kind": "burst_wrapper",
+          "methodIndex": 385602,
+          "va": "0x186778f04",
+          "method": "UpdateStepBasicPotureRangeKernel",
+          "instructionOffsets": [
+            "0x152"
+          ]
+        }
+      ]
+    },
+    {
       "methodIndex": 385450,
       "type": "BeyondDynamicBone.ColliderManager+StartSimulationStepJob",
       "method": "Execute",
