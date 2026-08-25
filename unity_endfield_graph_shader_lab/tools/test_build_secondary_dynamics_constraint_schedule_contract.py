@@ -33,6 +33,8 @@ class ConstraintScheduleContractTests(unittest.TestCase):
         for family in boundary["requiredForAllOwners"]:
             self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"][family]), 4)
         self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"]["colliderCollision"]), 3)
+        self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"]["edgeColliderCollision"]), 0)
+        self.assertEqual({row["colliderCollisionMode"] for row in self.contract["endminfOwners"]}, {1})
         self.assertEqual(len(self.contract["endminfRequiredOwnersByFamily"]["triangleBending"]), 0)
         self.assertEqual(sum(row["simulatedVertexCount"] for row in self.contract["endminfOwners"]), 126)
 
