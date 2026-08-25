@@ -28,7 +28,7 @@ class DistanceSemanticsContractTests(unittest.TestCase):
         self.assertTrue(self.contract["schedule"]["sameKernelAndEquations"])
         boundary = self.contract["implementationBoundary"]
         self.assertTrue(boundary["equationsClosed"])
-        self.assertFalse(boundary["goldenVectorsCaptured"])
+        self.assertTrue(boundary["goldenVectorsCaptured"])
         self.assertFalse(boundary["solverImplemented"])
 
     def test_generated_contract_matches(self):
