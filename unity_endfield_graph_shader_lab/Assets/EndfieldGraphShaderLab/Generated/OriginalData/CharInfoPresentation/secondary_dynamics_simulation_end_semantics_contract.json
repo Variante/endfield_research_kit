@@ -157,11 +157,17 @@
     "retailEquivalent": false,
     "equationsClosed": true,
     "helperGap": false,
-    "goldenVectorsCaptured": false,
+    "goldenVectorsCaptured": true,
+    "completeClosedBranchGoldenCoverage": true,
     "boundedGoldenVectorCoverage": [
       "inactive bypass",
       "active base velocity",
-      "particle speed limit"
+      "particle speed limit",
+      "static-friction accumulation",
+      "static-friction release",
+      "static-friction no-contact decay",
+      "dynamic-friction attenuation",
+      "center centrifugal response"
     ],
     "requiresExactFloatDoubleConversionOrder": true,
     "requiresBurstMinMaxNaNBehavior": true,
