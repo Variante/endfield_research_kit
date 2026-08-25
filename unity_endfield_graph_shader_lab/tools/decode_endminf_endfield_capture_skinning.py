@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Decode Endminf skin palettes from focused EndfieldCapture frame packages.
 
-The targeted capture stores the complete 4 MiB dynamic constant-buffer ring,
-the 8,413,184-byte skin-palette buffer, and the VS b2 range active at each
-bounded DrawIndexedInstanced call.  This decoder joins those three facts using
-Endminf's exact LOD0 index counts and fails closed when a mesh has no unique
-range in a frame.
+The targeted capture preserves each retained draw's two skin-palette offsets
+at draw time and stores the 8,413,184-byte skin-palette buffer at Present.
+This decoder joins those facts using Endminf's exact LOD0 index counts and
+fails closed when a mesh has no unique palette pair in a frame.
 """
 
 from __future__ import annotations
@@ -17,12 +16,9 @@ import struct
 from pathlib import Path
 
 
-CB_BYTES = 4_194_304
 PALETTE_BYTES = 8_413_184
 PALETTE_STRIDE = 16
 ROWS_PER_MATRIX = 3
-INSTANCE_CONSTANT_ROWS = 16
-PALETTE_METADATA_ROW = 5
 
 MESHES = {
     "body": (16_524, 44),
@@ -72,49 +68,58 @@ def resource_bytes(blob: bytes, row: dict) -> bytes:
 
 def unique_mesh_draw(metadata: dict, mesh: str) -> dict:
     index_count, _ = MESHES[mesh]
-    rows = [
+    matching_rows = [
         row for row in metadata.get("drawRecords", [])
         if row.get("indexedInstanced") is True
         and row.get("vsCb2RangeValid") is True
         and int(row.get("count", -1)) == index_count
     ]
-    if not rows:
+    if not matching_rows:
         raise CaptureError(f"frame has no range-bearing {mesh} draw ({index_count} indices)")
+    rows = [row for row in matching_rows if row.get("vsCb2MetadataValid") is True]
+    if not rows:
+        raise CaptureError(
+            f"frame has {len(matching_rows)} range-bearing {mesh} draw(s), but no "
+            "draw-time b2 metadata snapshot; capture again with the current EndfieldCapture build"
+        )
     keys = {
+        (
+            int(row["vsCb2CurrentPaletteRaw"]),
+            int(row["vsCb2PreviousPaletteRaw"]),
+        )
+        for row in rows
+    }
+    if len(keys) != 1:
+        raise CaptureError(f"frame has ambiguous {mesh} palette pairs: {sorted(keys)}")
+    current_raw, previous_raw = next(iter(keys))
+    ranges = sorted({
         (
             int(row["vsCb2FirstConstant"]),
             int(row["vsCb2NumConstants"]),
             int(row.get("startInstance", 0)),
         )
         for row in rows
-    }
-    if len(keys) != 1:
-        raise CaptureError(f"frame has ambiguous {mesh} VS b2 ranges: {sorted(keys)}")
-    first, count, start_instance = next(iter(keys))
+    })
     return {
         "indexCount": index_count,
         "matchingDrawRecords": len(rows),
-        "firstConstant": first,
-        "numConstants": count,
-        "startInstance": start_instance,
+        "matchingRanges": [
+            {
+                "firstConstant": first,
+                "numConstants": count,
+                "startInstance": start_instance,
+            }
+            for first, count, start_instance in ranges
+        ],
+        "currentBaseRaw": current_raw,
+        "previousBaseRaw": previous_raw,
     }
 
 
-def decode_mesh(cb: bytes, palette: bytes, draw: dict, mesh: str) -> dict:
+def decode_mesh(palette: bytes, draw: dict, mesh: str) -> dict:
     _, matrix_count = MESHES[mesh]
-    relative_row = draw["startInstance"] * INSTANCE_CONSTANT_ROWS + PALETTE_METADATA_ROW
-    if relative_row >= draw["numConstants"]:
-        raise CaptureError(
-            f"{mesh} metadata row {relative_row} exceeds b2 range "
-            f"of {draw['numConstants']} constants"
-        )
-    absolute_row = draw["firstConstant"] + relative_row
-    cb_offset = absolute_row * 16
-    if cb_offset < 0 or cb_offset + 16 > len(cb):
-        raise CaptureError(f"{mesh} b2 metadata row {absolute_row} is out of bounds")
-    current_raw, previous_raw, reserved_z, reserved_w = struct.unpack_from(
-        "<4I", cb, cb_offset
-    )
+    current_raw = draw["currentBaseRaw"]
+    previous_raw = draw["previousBaseRaw"]
     current_base = current_raw + 3
     previous_base = previous_raw + 3
     palette_rows = len(palette) // PALETTE_STRIDE
@@ -140,14 +145,8 @@ def decode_mesh(cb: bytes, palette: bytes, draw: dict, mesh: str) -> dict:
     return {
         **draw,
         "matrixCount": matrix_count,
-        "metadataRelativeRow": relative_row,
-        "metadataAbsoluteRow": absolute_row,
-        "currentBaseRaw": current_raw,
-        "previousBaseRaw": previous_raw,
         "currentEffectiveBaseRow": current_base,
         "previousEffectiveBaseRow": previous_base,
-        "reservedZ": reserved_z,
-        "reservedW": reserved_w,
         "currentMatrices3x4": matrices(current_base),
         "previousMatrices3x4": matrices(previous_base),
     }
@@ -161,13 +160,12 @@ def decode_frame(frame_dir: Path, meshes: list[str]) -> dict:
         blob = (frame_dir / metadata.get("resourcesFile", "resources.bin")).read_bytes()
     except OSError as exc:
         raise CaptureError(f"cannot read resources for {frame_dir}: {exc}") from exc
-    cb = resource_bytes(blob, select_resource(metadata, CB_BYTES))
     palette = resource_bytes(blob, select_resource(metadata, PALETTE_BYTES))
     return {
         "frame": int(metadata["frame"]),
         "frameDirectory": str(frame_dir.resolve()),
         "meshes": {
-            mesh: decode_mesh(cb, palette, unique_mesh_draw(metadata, mesh), mesh)
+            mesh: decode_mesh(palette, unique_mesh_draw(metadata, mesh), mesh)
             for mesh in meshes
         },
     }

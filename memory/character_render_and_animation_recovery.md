@@ -964,15 +964,24 @@ or shaders rather than hand-editing generated prefabs.
    cache on the provider's exact active-frame state and makes Release proxy
    metadata checks fail by return code instead of relying on disabled
    `assert` calls. All 14 tests and 20 consecutive two-capture stress runs pass.
-   One new targeted automatic graphics sequence through `ui_overview_start`
-   and the settled loop is still required to join those ranges to each
-   frame's captured palette payload.
+   Retail session `20260825T185639Z` then completed 41 targeted packages with
+   32 retained indexed-instanced draws apiece, no dropped/incomplete/failed
+   frames, and quiescent cleanup. It closes the draw/range collection gate but
+   not the palette join: the correct 4 MiB DYNAMIC VS b2 ring had already been
+   reused by later draws before its Present-time readback, so its saved bytes
+   do not describe the earlier retained draw ranges. `8e65872` now copies only
+   the exact 16-byte b2 metadata row consumed by each retained draw into a
+   bounded 512-byte GPU snapshot and reads it at the closing Present. The
+   Release proxy gate passes all 14 tests plus 30 consecutive multi-capture
+   stress runs; no retail run has yet validated the new snapshot. One new
+   targeted automatic graphics sequence through `ui_overview_start` and the
+   settled loop is required.
    `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
    performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
-   hair LOD0 index/bindpose counts. Its tests pin those counts to the generated
-   Unity meshes, accept repeated passes only when their b2 ranges agree, and
-   reject the old `20260825T150404Z` package because it has no range-bearing
-   Endminf draw record.
+   hair LOD0 index/bindpose counts. It now accepts repeated retail passes only
+   when their draw-time current/previous palette pair agrees, rather than
+   requiring one shared b2 range, and fails closed on older packages without
+   the draw-time snapshot.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
