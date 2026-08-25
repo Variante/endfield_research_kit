@@ -29,7 +29,8 @@ class DistanceSemanticsContractTests(unittest.TestCase):
         boundary = self.contract["implementationBoundary"]
         self.assertTrue(boundary["equationsClosed"])
         self.assertTrue(boundary["goldenVectorsCaptured"])
-        self.assertFalse(boundary["solverImplemented"])
+        self.assertTrue(boundary["solverImplemented"])
+        self.assertFalse(boundary["solverConnectedToRuntime"])
 
     def test_generated_contract_matches(self):
         expected = json.dumps(self.contract, indent=2) + "\n"

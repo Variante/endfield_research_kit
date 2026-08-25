@@ -137,8 +137,9 @@
   "implementationBoundary": {
     "equationsClosed": true,
     "helperGap": false,
-    "goldenVectorsCaptured": false,
-    "solverImplemented": false,
+    "goldenVectorsCaptured": true,
+    "solverImplemented": true,
+    "solverConnectedToRuntime": false,
     "retailEquivalent": false
   }
 }
