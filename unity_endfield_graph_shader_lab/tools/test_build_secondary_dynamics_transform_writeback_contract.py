@@ -101,6 +101,13 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         self.assertEqual(sum(row["duplicateEntries"] for row in duplicate["overlaps"]), 26)
         self.assertFalse(duplicate["addTransformDeduplicates"])
         self.assertIsNone(duplicate["winner"])
+        classification = duplicate["sourceAttributeClassification"]
+        self.assertEqual(classification["nonCoatDynamicVsCoatFixed"], 24)
+        self.assertEqual(classification["bothFixed"], 2)
+        self.assertEqual(
+            classification["attributePairCountsNonCoatToCoat"],
+            {"1:0": 5, "2:0": 19, "0:0": 2},
+        )
         self.assertFalse(self.payload["execution_boundary"]["duplicate_transform_winner_closed"])
 
     def test_solver_and_runtime_remain_outside_this_contract(self) -> None:
