@@ -983,6 +983,7 @@ namespace EndfieldGraphShaderLab
             ShaderTagId[] shaderPasses,
             bool dynamicBatching,
             bool gpuInstancing,
+            bool preserveExistingSceneMV,
             out string failure)
         {
             failure = string.Empty;
@@ -997,10 +998,17 @@ namespace EndfieldGraphShaderLab
                     attachments[0] = colorAttachment;
 
                     var sceneMVAttachment = new AttachmentDescriptor(SceneMVFormat);
-                    sceneMVAttachment.ConfigureClear(SceneMVNeutral);
-                    sceneMVAttachment.ConfigureTarget(sceneMV, false, true);
+                    if (preserveExistingSceneMV)
+                    {
+                        sceneMVAttachment.ConfigureTarget(sceneMV, true, true);
+                    }
+                    else
+                    {
+                        sceneMVAttachment.ConfigureClear(SceneMVNeutral);
+                        sceneMVAttachment.ConfigureTarget(sceneMV, false, true);
+                        HDRenderPipeline.ReportRecoveredSceneMVNeutralInitialization();
+                    }
                     attachments[1] = sceneMVAttachment;
-                    HDRenderPipeline.ReportRecoveredSceneMVNeutralInitialization();
 
                     var depthAttachment = new AttachmentDescriptor(depthFormat);
                     depthAttachment.ConfigureTarget(depth, true, true);

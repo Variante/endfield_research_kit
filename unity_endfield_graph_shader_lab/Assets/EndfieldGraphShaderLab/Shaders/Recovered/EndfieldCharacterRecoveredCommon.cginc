@@ -172,9 +172,10 @@ int _EndfieldRecoveredForwardRenderQueue;
     float2 name = 0.0
 #define ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_CAPTURE(name, value) \
     name = (value).xy
-#define ENDFIELD_RECOVERED_MAKE_PREGBUFFER_OUTPUT(normalWS, familyTag, materialPayload, normalTSXY) \
+#define ENDFIELD_RECOVERED_MAKE_PREGBUFFER_OUTPUT(normalWS, familyTag, materialPayload, normalTSXY, currentClipXYW, previousClipXYW) \
     EndfieldRecoveredMakePreGBufferOutput( \
-        normalWS, familyTag, materialPayload, normalTSXY, endfieldRecoveredPrimitiveId)
+        normalWS, familyTag, materialPayload, currentClipXYW, previousClipXYW, \
+        normalTSXY, endfieldRecoveredPrimitiveId)
 #define ENDFIELD_RECOVERED_FACE_IS_FRONT(name) (name)
 #define ENDFIELD_RECOVERED_FACE_VALUE(name) ((name) ? 1.0 : -1.0)
 #else
@@ -186,14 +187,24 @@ int _EndfieldRecoveredForwardRenderQueue;
 #define ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_PARAMETER
 #define ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_DECLARE(name)
 #define ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_CAPTURE(name, value)
-#define ENDFIELD_RECOVERED_MAKE_PREGBUFFER_OUTPUT(normalWS, familyTag, materialPayload, normalTSXY) \
-    EndfieldRecoveredMakePreGBufferOutput(normalWS, familyTag, materialPayload)
+#define ENDFIELD_RECOVERED_MAKE_PREGBUFFER_OUTPUT(normalWS, familyTag, materialPayload, normalTSXY, currentClipXYW, previousClipXYW) \
+    EndfieldRecoveredMakePreGBufferOutput( \
+        normalWS, familyTag, materialPayload, currentClipXYW, previousClipXYW)
 #define ENDFIELD_RECOVERED_FACE_IS_FRONT(name) ((name) >= 0.0)
 #define ENDFIELD_RECOVERED_FACE_VALUE(name) (name)
 #endif
 
 struct EndfieldRecoveredPreGBufferOutput
 {
+#if defined(ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT)
+    // The captured CharacterNPR PreGBuffer fragment writes every bound target.
+    // The standalone diagnostic deliberately retains its compact 0/1/2 layout.
+    float4 sceneColor : SV_Target0;
+    float4 sceneMotion : SV_Target1;
+    float4 selector : SV_Target2;
+    float4 normalAndFamily : SV_Target3;
+    float4 materialPayload : SV_Target4;
+#else
     float4 selector : SV_Target0;
     float4 normalAndFamily : SV_Target1;
 #if defined(ENDFIELD_RECOVERED_SAME_OWNER_AUDIT)
@@ -201,6 +212,7 @@ struct EndfieldRecoveredPreGBufferOutput
     float4 owner : SV_Target3;
 #else
     float4 materialPayload : SV_Target2;
+#endif
 #endif
 };
 
@@ -230,41 +242,6 @@ inline float2 EndfieldRecoveredEncodeYUpOctNormal(float3 normalWS)
     return saturate(oct * 0.5 + 0.5);
 }
 
-inline EndfieldRecoveredPreGBufferOutput EndfieldRecoveredMakePreGBufferOutput(
-    float3 normalWS,
-    float familyTag,
-    float4 materialPayload
-    ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_PARAMETER
-    ENDFIELD_RECOVERED_SAME_OWNER_PRIMITIVE_PARAMETER)
-{
-    EndfieldRecoveredPreGBufferOutput output;
-    output.selector = EndfieldRecoveredEncodeSelectorBits(
-        (uint)_EndfieldRecoveredPreGBufferSelectorBits);
-    output.normalAndFamily = float4(
-        EndfieldRecoveredEncodeYUpOctNormal(normalWS),
-        0.0,
-        familyTag);
-    output.materialPayload = float4(materialPayload.rgb, 1.0);
-#if defined(ENDFIELD_RECOVERED_SAME_OWNER_AUDIT)
-    // IEEE-754 binary32 represents every non-negative integer below 2^24
-    // exactly. Logical IDs are range-checked on the CPU before drawing;
-    // primitive overflow is carried as -1 and makes validation fail closed.
-    bool primitiveIdExact = primitiveId < 16777216u;
-    // Retry 10 retains the exact numeric owner pair in XY and adds the
-    // fragment's decoded tangent-space normal in ZW before any TBN/world or
-    // octahedral operation. The owner target is float-only RGBA32F.
-    output.owner = float4(
-        (float)_EndfieldRecoveredLogicalDrawId,
-        primitiveIdExact ? (float)primitiveId : -1.0,
-        normalTSXY);
-#endif
-    return output;
-}
-
-// CharacterNPR ForwardOpaque writes the current-frame packed motion target for
-// every opaque skin/cloth/hair/eye family. The selected desktop variants share
-// this fourth-root encoding; skin/cloth may select the 0.7 snow discriminator,
-// while the active Endminf materials and all hair/eye variants use 0.4.
 inline float EndfieldRecoveredCharacterMotionChannel(float value)
 {
     return 0.5 + 0.5 * sign(value) * sqrt(sqrt(abs(value)));
@@ -287,6 +264,46 @@ inline float4 EndfieldRecoveredCharacterMotionMrt(
         EndfieldRecoveredCharacterMotionChannel(halfMotion.y),
         1.0,
         snowSurfaceClass > 0.1 ? 0.7 : 0.4);
+}
+
+inline EndfieldRecoveredPreGBufferOutput EndfieldRecoveredMakePreGBufferOutput(
+    float3 normalWS,
+    float familyTag,
+    float4 materialPayload,
+    float3 currentClipXYW,
+    float3 previousClipXYW
+    ENDFIELD_RECOVERED_SAME_OWNER_TANGENT_PARAMETER
+    ENDFIELD_RECOVERED_SAME_OWNER_PRIMITIVE_PARAMETER)
+{
+    EndfieldRecoveredPreGBufferOutput output;
+#if defined(ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT)
+    output.sceneColor = 0.0;
+    output.sceneMotion = EndfieldRecoveredCharacterMotionMrt(
+        currentClipXYW,
+        previousClipXYW,
+        0.0);
+#endif
+    output.selector = EndfieldRecoveredEncodeSelectorBits(
+        (uint)_EndfieldRecoveredPreGBufferSelectorBits);
+    output.normalAndFamily = float4(
+        EndfieldRecoveredEncodeYUpOctNormal(normalWS),
+        0.0,
+        familyTag);
+    output.materialPayload = float4(materialPayload.rgb, 1.0);
+#if defined(ENDFIELD_RECOVERED_SAME_OWNER_AUDIT)
+    // IEEE-754 binary32 represents every non-negative integer below 2^24
+    // exactly. Logical IDs are range-checked on the CPU before drawing;
+    // primitive overflow is carried as -1 and makes validation fail closed.
+    bool primitiveIdExact = primitiveId < 16777216u;
+    // Retry 10 retains the exact numeric owner pair in XY and adds the
+    // fragment's decoded tangent-space normal in ZW before any TBN/world or
+    // octahedral operation. The owner target is float-only RGBA32F.
+    output.owner = float4(
+        (float)_EndfieldRecoveredLogicalDrawId,
+        primitiveIdExact ? (float)primitiveId : -1.0,
+        normalTSXY);
+#endif
+    return output;
 }
 
 #endif

@@ -113,6 +113,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredPass0InputSubsetReady;
             public bool observedDeferredGBufferFrameReady;
             public bool observedPreGBufferDepthOwnerReady;
+            public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
             public bool observedLightCookieDataReady;
             public string gyroscopeMode;
@@ -155,6 +156,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool deferredPass0InputSubsetReady;
             public bool deferredGBufferFrameReady;
             public bool preGBufferDepthOwnerReady;
+            public bool canonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerReady;
             public bool lightCookieDataReady;
             public string[] effectRoots;
@@ -711,6 +713,8 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredDeferredGBufferFrameReady") > 0.5f,
                 preGBufferDepthOwnerReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredPreGBufferDepthOwnerReady") > 0.5f,
+                canonicalCharacterPreGBufferReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredCanonicalCharacterPreGBufferReady") > 0.5f,
                 deferredExactConsumerReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredDeferredExactConsumerReady") > 0.5f,
                 lightCookieDataReady = Shader.GetGlobalFloat(
@@ -776,6 +780,8 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredGBufferFrameReady);
             bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
                 value.preGBufferDepthOwnerReady);
+            bool observedCanonicalCharacterPreGBufferReady = Frames.All(value =>
+                value.canonicalCharacterPreGBufferReady);
             bool observedDeferredExactConsumerReady = Frames.Any(value =>
                 value.deferredExactConsumerReady);
             bool observedLightCookieDataReady = Frames.All(value =>
@@ -795,6 +801,9 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedPreGBufferDepthOwnerReady)
                 missingObservations.Add(
                     "canonical CharacterPrePass depth/stencil ownership");
+            if (!observedCanonicalCharacterPreGBufferReady)
+                missingObservations.Add(
+                    "canonical five-MRT CharacterNPR A/B/C publication");
             if (string.Equals(
                     Environment.GetEnvironmentVariable(
                         "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE"),
@@ -868,6 +877,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedDeferredGBufferFrameReady,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
+                observedCanonicalCharacterPreGBufferReady =
+                    observedCanonicalCharacterPreGBufferReady,
                 observedDeferredExactConsumerReady =
                     observedDeferredExactConsumerReady,
                 observedLightCookieDataReady = observedLightCookieDataReady,

@@ -1709,9 +1709,12 @@ namespace EndfieldGraphShaderLab
                 renderWidth,
                 renderHeight,
                 canonicalColorTarget,
+                useRecoveredSceneMV ? recoveredSceneMV : null,
                 canonicalDepthTarget,
                 useSeparatePrimaryDepth,
-                canonicalForwardDepthBits,
+                useSeparatePrimaryDepth
+                    ? recoveredPrimarySceneDepthFormat
+                    : GraphicsFormat.None,
                 out recoveredPreGBufferDepthOwnerFailure);
 
             // Installed DefaultDeferred orders screen-shadow resolve after
@@ -1806,6 +1809,10 @@ namespace EndfieldGraphShaderLab
                     OpaqueShaderPasses,
                     asset.dynamicBatching,
                     asset.gpuInstancing,
+                    recoveredPreGBufferDepthOwner.HasCurrentPublication(
+                        camera,
+                        renderWidth,
+                        renderHeight),
                     out opaqueSceneMVFailure);
                 if (!useRecoveredSceneMV && !loggedRecoveredSceneMVFailure)
                 {

@@ -334,18 +334,19 @@ archetypes remain labeled source kits rather than finished characters.
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
   explicit gaps.
-- Four neutral D3D11 `ui_overview_start`/loop frame analyses pin one stable
-  five-color-target CharacterNPR draw over D32S8. Its 27,615 indices uniquely
-  match Endminf hair LOD0 submesh 0 rather than the 16,524-index body submesh;
-  captured stencil ref 36 also matches `M_actor_endminf_hair_01`'s recovered
-  `_HairStencilRef`. The build-specific VS/PS pair is therefore a
-  high-confidence opaque-hair PreG/character candidate, not a body-producer
-  proof. Attachment JPGs are cumulative snapshots and their complete actor
-  silhouette does not assign every visible pixel to this draw. The event
-  number shifts as transient setup draws vary, but the mesh-sized draw and
-  shader pair remain stable across all four captures. Do not use this evidence
-  to admit the generic HGRP/Lit resolver or guess body material packing. The
-  full event/resource matrix is in
+- Four neutral D3D11 `ui_overview_start`/loop frame analyses pin the actual
+  five-output CharacterNPR Hair PreGBuffer pair as `7b3a141f99cd9b39` /
+  `00cf31fc5c40c10d`. Its 27,615 indices, stencil ref 36, and three exact
+  BC7 inputs join to Endminf hair LOD0 and its D/HN/sw_M textures; in the
+  newest capture event 47 changes every dump-visible attachment snapshot.
+  The later `f3b955247775c7bf` / `31e969822a004ce4` draw is Hair
+  `DepthOnlyOutline`: five RTVs remain bound, but its fragment writes only a
+  zero Target0 after alpha test, and event 49 to 50 changes none of the four
+  available attachment JPGs. Those JPGs remain cumulative snapshots and do
+  not assign the complete actor silhouette to one draw. Across the four
+  captures the eight CharacterNPR PreG draw sizes match eyebrow, iris,
+  cloth-04, face, body, cloth-03, cloth-01, and hair exactly. Do not use this
+  evidence to admit the separate generic HGRP/Lit resolver. The full matrix is in
   `reports/assets/character_recovery/endminf_ui_overview_frame_analysis_20260824.md`.
 - The selected deferred resolver DXBC has a compile-valid Unity HLSL port. It
   matches the neutral fixture exactly and the recovered Wulfa fixture within
@@ -380,13 +381,18 @@ archetypes remain labeled source kits rather than finished characters.
   12-light/zero-cookie transport over the actual `ui_overview_start` to loop
   41-frame sequence. It still reports no presented deferred pass-0/shadow
   consumer, so the probe is transport evidence only; it must not be promoted
-  into the beauty path or used to admit the captured opaque-hair candidate.
+  into the beauty path or used to admit the separate HGRP/Lit resolver.
 - The maintained 41-frame D3D11 Endminf reproduction now executes a canonical
-  CharacterPrePass depth/stencil owner before Forward: seven opaque
-  DepthCharacterOnly-compatible draws plus one source-safe generic depth draw
-  populate the shared D32S8 target, and recovered source `Equal` testing is
-  activated only after that owner succeeds. The capture observes the owner and
-  active shadow plane in all 41 frames. The editor harness also refreshes its
+  CharacterPrePass owner before Forward. Endminf's eight opaque
+  DepthCharacterOnly-compatible draws write the captured Target0 zero,
+  Target1 packed motion, Target2 selector, Target3 normal/family, and Target4
+  material payload into the exact five formats over the shared D32S8 target.
+  SceneMV is neutral-cleared once before PreG, then loaded by Forward only from
+  a same-camera, same-size, same-frame publication; source `Equal` activates
+  only after owner submission. A 41-frame D3D11 capture observes that owner in
+  every frame and improves 28-pair no-framegen reference PSNR from 13.3608 to
+  13.3886 dB; the three crystal-clean settled samples are effectively neutral.
+  The editor harness also refreshes its
   cached standalone selectors after installing the bounded Endminf profile, so
   an earlier process-wide cache no longer deactivates the selected source
   hierarchy.

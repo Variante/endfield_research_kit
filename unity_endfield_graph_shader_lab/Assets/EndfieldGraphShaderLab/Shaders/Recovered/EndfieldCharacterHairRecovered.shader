@@ -1044,7 +1044,9 @@ Shader "Endfield/Recovered/CharacterHair"
                 normalWS,
                 1.0,
                 tex2D(_BaseMap, i.uv) * _BaseColor,
-                endfieldSameOwnerNormalTS);
+                endfieldSameOwnerNormalTS,
+                i.currentClipXYW,
+                i.previousClipXYW);
         }
         ENDCG
 
@@ -1069,7 +1071,7 @@ Shader "Endfield/Recovered/CharacterHair"
             #pragma target 5.0
             #pragma vertex HairVert
             #pragma fragment HairRecoveredPreGBufferDiagnosticFrag
-            #pragma multi_compile __ ENDFIELD_RECOVERED_SAME_OWNER_AUDIT
+            #pragma multi_compile __ ENDFIELD_RECOVERED_SAME_OWNER_AUDIT ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT
             ENDCG
         }
 
