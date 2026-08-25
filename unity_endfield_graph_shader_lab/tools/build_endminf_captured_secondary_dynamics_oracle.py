@@ -39,6 +39,14 @@ MESH_NAMES = {
 }
 SHARED_MATRIX_TOLERANCE = 1e-5
 ORTHONORMALITY_TOLERANCE = 5e-5
+REFERENCE_VIDEO = REPO_ROOT / "videos/2026-08-24_06-37-22.mkv"
+REFERENCE_VIDEO_SHA256 = (
+    "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39"
+)
+REFERENCE_FPS = 60.0
+FIRST_CAPTURE_PRESENTED_FRAME = 1887
+FIRST_REFERENCE_SOURCE_FRAME = 117
+REFERENCE_ANCHOR_UNCERTAINTY_FRAMES = 1
 
 
 class OracleError(ValueError):
@@ -172,6 +180,12 @@ def motion_delta(current: list[list[float]], previous: list[list[float]]) -> tup
     )
     cosine = max(-1.0, min(1.0, (trace - 1.0) * 0.5))
     return translation, math.degrees(math.acos(cosine))
+
+
+def reference_source_frame(presented_frame: int) -> int:
+    return FIRST_REFERENCE_SOURCE_FRAME + (
+        presented_frame - FIRST_CAPTURE_PRESENTED_FRAME
+    )
 
 
 def mesh_contracts(manifest: dict) -> tuple[dict, dict[str, str]]:
@@ -314,6 +328,13 @@ def build_oracle(decoded_path: Path) -> dict:
         }
 
     session_root = Path(decoded.get("sessionRoot", ""))
+    if frames[0]["presentedFrame"] != FIRST_CAPTURE_PRESENTED_FRAME:
+        raise OracleError(
+            "captured sequence start drifted from the reference-video anchor: "
+            f"{frames[0]['presentedFrame']}"
+        )
+    if not REFERENCE_VIDEO.is_file() or sha256(REFERENCE_VIDEO) != REFERENCE_VIDEO_SHA256:
+        raise OracleError("no-frame-generation reference video identity drifted")
     return {
         "schema": "endfield.charinfo.endminf-captured-secondary-dynamics-oracle.v1",
         "status": "owner_tagged_retail_skinning_trajectories_recovered",
@@ -330,11 +351,29 @@ def build_oracle(decoded_path: Path) -> dict:
                 for left, right in zip(frames, frames[1:])
             ),
         },
+        "referenceAlignment": {
+            "recording": relative(REFERENCE_VIDEO),
+            "recordingSha256": REFERENCE_VIDEO_SHA256,
+            "sourceFps": REFERENCE_FPS,
+            "firstCapturePresentedFrame": FIRST_CAPTURE_PRESENTED_FRAME,
+            "firstReferenceSourceFrame": FIRST_REFERENCE_SOURCE_FRAME,
+            "lastReferenceSourceFrame": reference_source_frame(
+                frames[-1]["presentedFrame"]
+            ),
+            "anchorUncertaintyFrames": REFERENCE_ANCHOR_UNCERTAINTY_FRAMES,
+            "mapping": "sourceFrame = 117 + (presentedFrame - 1887)",
+            "evidence": (
+                "40 decoded backbuffers follow the same start-to-loop pose "
+                "sequence; a 41-candidate grayscale-edge search over the "
+                "first 20 non-corrupt checkpoints selected source frame 117"
+            ),
+        },
         "sources": {
             relative(Path(__file__)): sha256(Path(__file__)),
             relative(decoded_path): sha256(decoded_path),
             relative(MANIFEST): sha256(MANIFEST),
             relative(SOLVER_INPUTS): sha256(SOLVER_INPUTS),
+            relative(REFERENCE_VIDEO): REFERENCE_VIDEO_SHA256,
             **mesh_hashes,
         },
         "validation": aggregate,

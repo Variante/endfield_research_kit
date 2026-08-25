@@ -8,11 +8,23 @@
     "minimum": 17,
     "maximum": 18
   },
+  "referenceAlignment": {
+    "recording": "videos/2026-08-24_06-37-22.mkv",
+    "recordingSha256": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
+    "sourceFps": 60.0,
+    "firstCapturePresentedFrame": 1887,
+    "firstReferenceSourceFrame": 117,
+    "lastReferenceSourceFrame": 791,
+    "anchorUncertaintyFrames": 1,
+    "mapping": "sourceFrame = 117 + (presentedFrame - 1887)",
+    "evidence": "40 decoded backbuffers follow the same start-to-loop pose sequence; a 41-candidate grayscale-edge search over the first 20 non-corrupt checkpoints selected source frame 117"
+  },
   "sources": {
-    "unity_endfield_graph_shader_lab/tools/build_endminf_captured_secondary_dynamics_oracle.py": "551dd6060d206fc641460a4cc948ed7bb97ba5e93da1c86222699271ce7bc349",
+    "unity_endfield_graph_shader_lab/tools/build_endminf_captured_secondary_dynamics_oracle.py": "b64295aed26a7efb8498e0922b24b99f0e1d45e3c86421f2f801b95f638e4f5e",
     "scratch/character_recovery/endminf_skinning_20260825T191720Z/decoded.json": "2accfddb39f897fda06f022c1c58932348087bfbe78f2cc8d2a6fd1e6d0250ea",
     "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/endminf_ui_recovery_manifest.json": "3bfdb36b84f3c6f25315f630dc11c5b4bc1a6a23413f7f290ec30bb60369fcda",
     "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b",
+    "videos/2026-08-24_06-37-22.mkv": "36318de82bc3afabcf62d56946a9263614abaca0c7c3e7c57d16da938abcbb39",
     "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Meshes/S_actor_endminf_body_01_lod0.asset": "1d670b3904dab5c374980765385a582c17030bab02f895722d9bd3b3664db7a5",
     "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Meshes/S_actor_endminf_cloth_01_lod0.asset": "f409fc7f2dbc2ae247aed2413d4422b36f8d37624904f153ae4cbacbe7cee159",
     "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Meshes/S_actor_endminf_cloth_04_lod0.asset": "ba1e210e315ea290a440381c0f9a5f79adf4fd63424e551e21578edf2d2b1e4d",
