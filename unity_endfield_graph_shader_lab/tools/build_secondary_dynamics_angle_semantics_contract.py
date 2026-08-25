@@ -116,8 +116,9 @@ def build_contract() -> dict[str, Any]:
         },
         "implementationBoundary": {
             "equationsClosed": True,
-            "helperGap": False,
-            "goldenVectorsCaptured": False,
+            "helperGap": True,
+            "helperGapDetail": "scalar float sincos remains native-executed and hash-pinned, not source-transcribed",
+            "goldenVectorsCaptured": True,
             "solverImplemented": False,
             "retailEquivalent": False,
         },

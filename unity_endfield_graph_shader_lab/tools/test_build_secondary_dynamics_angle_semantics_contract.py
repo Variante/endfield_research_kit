@@ -28,7 +28,8 @@ class AngleSemanticsContractTests(unittest.TestCase):
     def test_remains_runtime_gated(self):
         boundary = self.contract["implementationBoundary"]
         self.assertTrue(boundary["equationsClosed"])
-        self.assertFalse(boundary["goldenVectorsCaptured"])
+        self.assertTrue(boundary["goldenVectorsCaptured"])
+        self.assertTrue(boundary["helperGap"])
         self.assertFalse(boundary["solverImplemented"])
 
     def test_generated_contract_matches(self):
