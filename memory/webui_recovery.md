@@ -43,6 +43,15 @@ python serve.py
 python scripts\pack_webui.py
 ```
 
+The package boundary is four archives: main code/text, referenced normal-page
+images/videos, referenced normal-page audio, and the optional remainder for
+complete Audio/Assets resource browsing. Resources contains every Assets-page
+file, including JSON, OBJ, and FBX, so its asset payload intentionally overlaps
+the compact normal-page media package. Extract resources last so its complete
+asset index supersedes the compact page-media index. Each completed archive
+publishes atomically before the next begins; an explicit package selection
+controls build order.
+
 When Story bundles and evidence are already current, `export_assets.bat`
 rebuilds all downstream semantic views, including Mission Pipeline/map,
 Characters, Gameplay/projectiles, Assets/audio, the curated source graph, and

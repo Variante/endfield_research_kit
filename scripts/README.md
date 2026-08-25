@@ -82,13 +82,30 @@ a degraded reason instead of using them as direct evidence.
 | Updates | `build_updates.py` | `webui/data/updates/latest.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
-Packaging emits three matching archives: the main Story archive owns Story,
-Text, Updates, Mission Pipeline, shared WebUI code, and compact Audio semantics;
-the assets archive owns Map, Characters, Gameplay, and exported image/video
-payloads; the audio archive owns FLAC media and raw audio indexes. The retired
-Asset Browser and 3D model payloads are intentionally excluded. Archives are
-built and atomically published one at a time in Story, assets, then audio order,
-so each completed archive is available while the next archive is still building.
+Packaging emits four matching archives. The main archive owns WebUI code and
+generated text data. The `-media` archive owns images/videos referenced by
+Story, Text, Map, Characters, and Gameplay plus their compact asset index. The
+`-audio` archive owns FLAC files referenced by those pages. The optional
+`-resources` archive owns every file listed by the Assets page—including
+indexed images, videos, JSON, OBJ, and FBX files—the remaining FLAC set, and
+the complete Audio/Assets resource indexes. Assets referenced by normal pages
+are duplicated there so the Assets page works from the resources archive alone.
+With no selection the archives publish atomically in main, media, audio, then
+resources order; an explicit selection uses the caller's order.
+Already-compressed media is ZIP-stored instead of being recompressed. Each
+archive includes a UTF-8 Chinese usage note; extract resources last because its
+complete asset index replaces the compact media-only index.
+
+Select any package subset with one comma-separated positional argument; the
+given order is the build/publication order. With no positional argument all
+four are built:
+
+```bat
+.\pack_webui.bat story,audio,media,resource
+.\pack_webui.bat resource
+.\pack_webui.bat media,audio
+.\pack_webui.bat story --dry-run
+```
 
 `build_gameplay.py` owns every Gameplay dataset. Behavior-focused stages live
 in `gameplay_builder/`; its `asset-refs` stage calls the public
@@ -144,6 +161,26 @@ python scripts\build_audio.py
 python scripts\build_audio.py --skip-decode --refresh-hirc
 python scripts\pack_webui.py
 ```
+
+AnimeStudio offline recovery probes:
+
+```bat
+set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
+%ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
+%ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
+%ASCLI% audit-refs --index OBJECT_INDEX.jsonl
+%ASCLI% certify-index --index OBJECT_INDEX.jsonl
+%ASCLI% replay --index OBJECT_INDEX.jsonl --requests RECOVERY_REQUESTS.jsonl
+%ASCLI% schema-diff --left LEFT.json --right RIGHT.json
+```
+
+These are bundle-free, fail-closed diagnostics. Object indexes may be JSONL or
+`.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
+uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
+and `schema-diff` compares shape rather than values. Keep probes and request
+fixtures under `scratch/animestudio/`; promote stable results to the matching
+`reports/` topic. See `memory/animestudio_recovery.md` for the Ruri retirement
+gate and shader fixture requirements.
 
 Direct Story builds take several minutes. Allow at least 15 minutes for the
 shell command, especially for multiple languages or forced Timeline recovery.
@@ -768,18 +805,12 @@ For the remaining live source-state/sourceInfo-to-open-handle, optional
 decoder-callback, and unobserved-codec-descriptor joins,
 the read-only runtime probe is prepared with the repo-local Frida environment:
 
-The maintained guided native observer is `tools\EndfieldCapture`. Close the
-game and run `tools\EndfieldCapture\StartCapture.bat`; it validates the pinned
-build, arms graphics/audio/network metadata by default, launches
-`Endfield.exe -force-d3d11`, and displays `Numpad 1` frame, `Numpad 2` audio
-relationship, `Numpad 3` bounded window/WASAPI recording, `Numpad 4` bounded
-socket-metadata, and `Numpad 0` overlay controls. Network capture never stores
-payload or TLS plaintext, and the host recording is a BMP sequence plus WAV,
-not MP4. Use the printed
-`collect` command after `stop`. Raw sessions belong under
-`scratch/reverse_engineering/endfield_capture/`; see the tool README for the
-provider and completeness contracts. The older audio-only launchers below
-remain focused diagnostics, not the normal combined workflow.
+An optional guided native observer can provide bounded graphics/audio evidence
+alongside the independently valid staged 3DMigoto workflow. Its host recording
+is a BMP sequence plus WAV, not MP4. Raw sessions belong under the relevant
+scratch recovery topic; retain the provider and completeness summary with any
+published evidence. The older audio-only launchers below remain focused
+diagnostics, not the normal combined workflow.
 
 The experimental native fallback under `tools/audio-runtime-capture/` verifies
 the selected process, `GameAssembly.dll`, and `AkSoundEngine.dll`, then can

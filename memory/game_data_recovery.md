@@ -299,12 +299,8 @@ managed request can bind an Event and its exact possible-media relations for
 that build/session, but the result remains an observed request boundary. It
 does not convert static possibilities into a selected Wwise leaf or audible
 playback claim.
-EndfieldCapture's optional network domain is likewise observational metadata:
-bounded socket lifecycle, endpoint, transfer-size, and asynchronous-completion
-records can establish contacted endpoints and traffic chronology for one
-session, but never protocol semantics, request content, TLS plaintext, or
-server behavior. Payload capture, decryption, replay, and traffic modification
-remain outside the maintained recovery boundary.
+Native capture is intentionally limited to local graphics/audio observation;
+network tracing is outside the maintained recovery boundary.
 Recovered grammar/hash names can also be attached to an enemy item when their
 complete `au_` prefix matches exactly one current EnemyTable id. This is a
 separate recovered-namespace identity edge; it improves discovery but does not
@@ -1822,18 +1818,17 @@ separates true interceptor nesting from same-session adjacency, but remains
 runtime call-structure evidence rather than an asynchronous ownership, file,
 decoder, or PCM join.
 
-`tools/EndfieldCapture` is the native prelaunch host for this audio contract
-and the graphics provider. Exact executable/native-input gates, the audited
-three-hook audio adapter, bounded relationship windows, shared writing, and
-fail-closed collection are implemented and synthetically tested; no retail
-session is yet certified. Raw graphics/audio sessions use one provenance root at
-`scratch/reverse_engineering/endfield_capture/<session-id>/`. Audio runtime
-capture records bounded keys, paths, pointers, call/result relationships, and
-provider completeness under the shared event stream plus `audio/` sidecars; it
-does not dump PCM or copy opened game files. Its `Numpad 2` control
-marks a bounded relationship-evidence window with two seconds of lookback and
-five seconds after the request; the key does not imply PCM recording or a
-successful provider observation. Compact validated audio summaries
+The optional native capture host supports this audio contract and the graphics
+provider. Exact executable/native-input gates, the audited three-hook audio
+adapter, bounded relationship windows, shared writing, and fail-closed
+collection are implemented and synthetically tested. Raw graphics/audio
+sessions use one provenance root under the relevant scratch recovery topic.
+Audio runtime capture records bounded keys, paths, pointers, call/result
+relationships, and provider completeness under the shared event stream plus
+`audio/` sidecars; it does not dump PCM or copy opened game files. Its bounded
+relationship-evidence window uses two seconds of lookback and five seconds
+after the request; the request does not imply PCM recording or a successful
+provider observation. Compact validated audio summaries
 may be generated under `reports/story/recovery/audio/`, while durable
 interpretation remains here.
 
