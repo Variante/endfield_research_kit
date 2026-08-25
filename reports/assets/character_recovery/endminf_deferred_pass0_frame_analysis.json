@@ -1,0 +1,1053 @@
+{
+  "status": "ok",
+  "contract": "endminf_ui_overview_exact_deferred_pass0_frame_analysis_v1",
+  "observerOnly": true,
+  "shaderIdentity": {
+    "algorithm": "3DMigoto shader_hash=3dmigoto unseeded FNV-1 64-bit",
+    "blobs": [
+      {
+        "stage": "vs",
+        "path": "D:/fluffy-dump/scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0096_endfield_dxbc_0.dxbc",
+        "bytes": 496,
+        "expectedUnseededFnv1": "7012cccc7727b990",
+        "actualUnseededFnv1": "7012cccc7727b990"
+      },
+      {
+        "stage": "ps",
+        "path": "D:/fluffy-dump/scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/0103_endfield_dxbc_1.dxbc",
+        "bytes": 50296,
+        "expectedUnseededFnv1": "37eacbc3c84bb392",
+        "actualUnseededFnv1": "37eacbc3c84bb392"
+      }
+    ],
+    "source": "D:/fluffy-dump/scratch/reverse_engineering/gacha_deferred_resolver_chain/deferred_lighting_export/Shader/HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader",
+    "requiredVariantMarkers": [
+      "37eacbc3c84bb392",
+      "HG_ENABLE_SCREEN_SPACE_SHADOW_MASK",
+      "HG_USE_SUBPASS_INPUT_UNDER_ONE_PASS_DEFERRED",
+      "_SUBSURFACE_PROFILE_SIMPLE"
+    ]
+  },
+  "captures": [
+    {
+      "frame": "FrameAnalysis-2026-08-24-182534",
+      "draw": 73,
+      "drawCall": "000073 DrawInstanced(VertexCountPerInstance:3, InstanceCount:1, StartVertexLocation:0, StartInstanceLocation:0)",
+      "descriptorCount": 34,
+      "output": {
+        "resourceHash": "3315d2b5",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R11G11B10_FLOAT",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource render_target",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "depth": {
+        "resourceHash": "c5057d7e",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R32G8X24_TYPELESS",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource depth_stencil",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "resourceHashes": {
+        "t0": "de9f5bb8",
+        "t1": "dee30266",
+        "t2": "bb5905b2",
+        "t3": "bb5905b2",
+        "t4": "b7ff7a6e",
+        "t5": "3f03efb5",
+        "t6": "971957c7",
+        "t7": "d9f11fd9",
+        "t8": "b7ff7a6e",
+        "t9": "bb5905b2",
+        "t10": "727366da",
+        "t11": "57ecda07",
+        "t12": "947dd5e2",
+        "t13": "10bfdf41",
+        "t14": "b7ff7a6e",
+        "t15": "d7891304",
+        "t16": "d19e9ecb",
+        "t17": "4ce8bfab",
+        "t18": "4e62cbb3",
+        "t19": "434f7103",
+        "t20": "4e62cbb3",
+        "t21": "434f7103",
+        "t22": "4e62cbb3",
+        "t23": "434f7103",
+        "t24": "b7ff7a6e",
+        "t25": "72d2b22c",
+        "t26": "72d2b22c",
+        "t27": "5349f82a"
+      },
+      "descriptorBackedTextureSlots": [
+        "ps-t0",
+        "ps-t1",
+        "ps-t10",
+        "ps-t11",
+        "ps-t12",
+        "ps-t13",
+        "ps-t14",
+        "ps-t16",
+        "ps-t17",
+        "ps-t2",
+        "ps-t24",
+        "ps-t25",
+        "ps-t26",
+        "ps-t27",
+        "ps-t3",
+        "ps-t4",
+        "ps-t5",
+        "ps-t6",
+        "ps-t7",
+        "ps-t8",
+        "ps-t9"
+      ],
+      "descriptorUnavailableTextureSlots": [
+        "t15",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23"
+      ],
+      "constantBufferDumps": [
+        {
+          "slot": 0,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 1,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 2,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 3,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 4,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 5,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 6,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 7,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 8,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 9,
+          "resourceHash": "a517561d",
+          "bytes": 21374679,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        }
+      ],
+      "neighborShaderSequence": [
+        {
+          "draw": 70,
+          "vs": "6c04588ef885d36b",
+          "ps": "3ccd45b72b0724b5"
+        },
+        {
+          "draw": 71,
+          "vs": "7012cccc7727b990",
+          "ps": "372dcb30551c6837"
+        },
+        {
+          "draw": 72,
+          "vs": "7012cccc7727b990",
+          "ps": "5aea1748da240b54"
+        },
+        {
+          "draw": 73,
+          "vs": "7012cccc7727b990",
+          "ps": "37eacbc3c84bb392"
+        },
+        {
+          "draw": 74,
+          "vs": "7012cccc7727b990",
+          "ps": "e02f4d6993f80551"
+        },
+        {
+          "draw": 75,
+          "vs": "7012cccc7727b990",
+          "ps": "2fd35c280da6db61"
+        },
+        {
+          "draw": 76,
+          "vs": "1479b2b594b9c91a",
+          "ps": "e9ccfc0d0d3c7746"
+        }
+      ]
+    },
+    {
+      "frame": "FrameAnalysis-2026-08-24-182646",
+      "draw": 74,
+      "drawCall": "000074 DrawInstanced(VertexCountPerInstance:3, InstanceCount:1, StartVertexLocation:0, StartInstanceLocation:0)",
+      "descriptorCount": 34,
+      "output": {
+        "resourceHash": "3315d2b5",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R11G11B10_FLOAT",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource render_target",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "depth": {
+        "resourceHash": "c5057d7e",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R32G8X24_TYPELESS",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource depth_stencil",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "resourceHashes": {
+        "t0": "de9f5bb8",
+        "t1": "dee30266",
+        "t2": "bb5905b2",
+        "t3": "bb5905b2",
+        "t4": "b7ff7a6e",
+        "t5": "3f03efb5",
+        "t6": "971957c7",
+        "t7": "d9f11fd9",
+        "t8": "b7ff7a6e",
+        "t9": "bb5905b2",
+        "t10": "727366da",
+        "t11": "57ecda07",
+        "t12": "947dd5e2",
+        "t13": "10bfdf41",
+        "t14": "b7ff7a6e",
+        "t15": "d7891304",
+        "t16": "d19e9ecb",
+        "t17": "4ce8bfab",
+        "t18": "4e62cbb3",
+        "t19": "434f7103",
+        "t20": "4e62cbb3",
+        "t21": "434f7103",
+        "t22": "4e62cbb3",
+        "t23": "434f7103",
+        "t24": "b7ff7a6e",
+        "t25": "72d2b22c",
+        "t26": "72d2b22c",
+        "t27": "5349f82a"
+      },
+      "descriptorBackedTextureSlots": [
+        "ps-t0",
+        "ps-t1",
+        "ps-t10",
+        "ps-t11",
+        "ps-t12",
+        "ps-t13",
+        "ps-t14",
+        "ps-t16",
+        "ps-t17",
+        "ps-t2",
+        "ps-t24",
+        "ps-t25",
+        "ps-t26",
+        "ps-t27",
+        "ps-t3",
+        "ps-t4",
+        "ps-t5",
+        "ps-t6",
+        "ps-t7",
+        "ps-t8",
+        "ps-t9"
+      ],
+      "descriptorUnavailableTextureSlots": [
+        "t15",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23"
+      ],
+      "constantBufferDumps": [
+        {
+          "slot": 0,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 1,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 2,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 3,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 4,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 5,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 6,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 7,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 8,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 9,
+          "resourceHash": "a517561d",
+          "bytes": 21264918,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        }
+      ],
+      "neighborShaderSequence": [
+        {
+          "draw": 71,
+          "vs": "6c04588ef885d36b",
+          "ps": "3ccd45b72b0724b5"
+        },
+        {
+          "draw": 72,
+          "vs": "7012cccc7727b990",
+          "ps": "372dcb30551c6837"
+        },
+        {
+          "draw": 73,
+          "vs": "7012cccc7727b990",
+          "ps": "5aea1748da240b54"
+        },
+        {
+          "draw": 74,
+          "vs": "7012cccc7727b990",
+          "ps": "37eacbc3c84bb392"
+        },
+        {
+          "draw": 75,
+          "vs": "7012cccc7727b990",
+          "ps": "e02f4d6993f80551"
+        },
+        {
+          "draw": 76,
+          "vs": "7012cccc7727b990",
+          "ps": "2fd35c280da6db61"
+        },
+        {
+          "draw": 77,
+          "vs": "1479b2b594b9c91a",
+          "ps": "e9ccfc0d0d3c7746"
+        }
+      ]
+    },
+    {
+      "frame": "FrameAnalysis-2026-08-24-182744",
+      "draw": 78,
+      "drawCall": "000078 DrawInstanced(VertexCountPerInstance:3, InstanceCount:1, StartVertexLocation:0, StartInstanceLocation:0)",
+      "descriptorCount": 34,
+      "output": {
+        "resourceHash": "3315d2b5",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R11G11B10_FLOAT",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource render_target",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "depth": {
+        "resourceHash": "c5057d7e",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R32G8X24_TYPELESS",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource depth_stencil",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "resourceHashes": {
+        "t0": "de9f5bb8",
+        "t1": "dee30266",
+        "t2": "bb5905b2",
+        "t3": "bb5905b2",
+        "t4": "b7ff7a6e",
+        "t5": "3f03efb5",
+        "t6": "971957c7",
+        "t7": "d9f11fd9",
+        "t8": "b7ff7a6e",
+        "t9": "bb5905b2",
+        "t10": "727366da",
+        "t11": "57ecda07",
+        "t12": "947dd5e2",
+        "t13": "10bfdf41",
+        "t14": "b7ff7a6e",
+        "t15": "d7891304",
+        "t16": "d19e9ecb",
+        "t17": "4ce8bfab",
+        "t18": "4e62cbb3",
+        "t19": "434f7103",
+        "t20": "4e62cbb3",
+        "t21": "434f7103",
+        "t22": "4e62cbb3",
+        "t23": "434f7103",
+        "t24": "b7ff7a6e",
+        "t25": "72d2b22c",
+        "t26": "72d2b22c",
+        "t27": "5349f82a"
+      },
+      "descriptorBackedTextureSlots": [
+        "ps-t0",
+        "ps-t1",
+        "ps-t10",
+        "ps-t11",
+        "ps-t12",
+        "ps-t13",
+        "ps-t14",
+        "ps-t16",
+        "ps-t17",
+        "ps-t2",
+        "ps-t24",
+        "ps-t25",
+        "ps-t26",
+        "ps-t27",
+        "ps-t3",
+        "ps-t4",
+        "ps-t5",
+        "ps-t6",
+        "ps-t7",
+        "ps-t8",
+        "ps-t9"
+      ],
+      "descriptorUnavailableTextureSlots": [
+        "t15",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23"
+      ],
+      "constantBufferDumps": [
+        {
+          "slot": 0,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 1,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 2,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 3,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 4,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 5,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 6,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 7,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 8,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 9,
+          "resourceHash": "a517561d",
+          "bytes": 21359920,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        }
+      ],
+      "neighborShaderSequence": [
+        {
+          "draw": 75,
+          "vs": "6c04588ef885d36b",
+          "ps": "3ccd45b72b0724b5"
+        },
+        {
+          "draw": 76,
+          "vs": "7012cccc7727b990",
+          "ps": "372dcb30551c6837"
+        },
+        {
+          "draw": 77,
+          "vs": "7012cccc7727b990",
+          "ps": "5aea1748da240b54"
+        },
+        {
+          "draw": 78,
+          "vs": "7012cccc7727b990",
+          "ps": "37eacbc3c84bb392"
+        },
+        {
+          "draw": 79,
+          "vs": "7012cccc7727b990",
+          "ps": "e02f4d6993f80551"
+        },
+        {
+          "draw": 80,
+          "vs": "7012cccc7727b990",
+          "ps": "2fd35c280da6db61"
+        },
+        {
+          "draw": 81,
+          "vs": "1479b2b594b9c91a",
+          "ps": "e9ccfc0d0d3c7746"
+        }
+      ]
+    },
+    {
+      "frame": "FrameAnalysis-2026-08-24-182819",
+      "draw": 79,
+      "drawCall": "000079 DrawInstanced(VertexCountPerInstance:3, InstanceCount:1, StartVertexLocation:0, StartInstanceLocation:0)",
+      "descriptorCount": 34,
+      "output": {
+        "resourceHash": "3315d2b5",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R11G11B10_FLOAT",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource render_target",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "depth": {
+        "resourceHash": "c5057d7e",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R32G8X24_TYPELESS",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource depth_stencil",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "resourceHashes": {
+        "t0": "de9f5bb8",
+        "t1": "dee30266",
+        "t2": "bb5905b2",
+        "t3": "bb5905b2",
+        "t4": "b7ff7a6e",
+        "t5": "3f03efb5",
+        "t6": "971957c7",
+        "t7": "d9f11fd9",
+        "t8": "b7ff7a6e",
+        "t9": "bb5905b2",
+        "t10": "727366da",
+        "t11": "57ecda07",
+        "t12": "947dd5e2",
+        "t13": "10bfdf41",
+        "t14": "b7ff7a6e",
+        "t15": "d7891304",
+        "t16": "d19e9ecb",
+        "t17": "4ce8bfab",
+        "t18": "4e62cbb3",
+        "t19": "434f7103",
+        "t20": "4e62cbb3",
+        "t21": "434f7103",
+        "t22": "4e62cbb3",
+        "t23": "434f7103",
+        "t24": "b7ff7a6e",
+        "t25": "72d2b22c",
+        "t26": "72d2b22c",
+        "t27": "5349f82a"
+      },
+      "descriptorBackedTextureSlots": [
+        "ps-t0",
+        "ps-t1",
+        "ps-t10",
+        "ps-t11",
+        "ps-t12",
+        "ps-t13",
+        "ps-t14",
+        "ps-t16",
+        "ps-t17",
+        "ps-t2",
+        "ps-t24",
+        "ps-t25",
+        "ps-t26",
+        "ps-t27",
+        "ps-t3",
+        "ps-t4",
+        "ps-t5",
+        "ps-t6",
+        "ps-t7",
+        "ps-t8",
+        "ps-t9"
+      ],
+      "descriptorUnavailableTextureSlots": [
+        "t15",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23"
+      ],
+      "constantBufferDumps": [
+        {
+          "slot": 0,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 1,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 2,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 3,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 4,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 5,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 6,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 7,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 8,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 9,
+          "resourceHash": "a517561d",
+          "bytes": 21262632,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        }
+      ],
+      "neighborShaderSequence": [
+        {
+          "draw": 76,
+          "vs": "6c04588ef885d36b",
+          "ps": "3ccd45b72b0724b5"
+        },
+        {
+          "draw": 77,
+          "vs": "7012cccc7727b990",
+          "ps": "372dcb30551c6837"
+        },
+        {
+          "draw": 78,
+          "vs": "7012cccc7727b990",
+          "ps": "5aea1748da240b54"
+        },
+        {
+          "draw": 79,
+          "vs": "7012cccc7727b990",
+          "ps": "37eacbc3c84bb392"
+        },
+        {
+          "draw": 80,
+          "vs": "7012cccc7727b990",
+          "ps": "e02f4d6993f80551"
+        },
+        {
+          "draw": 81,
+          "vs": "7012cccc7727b990",
+          "ps": "2fd35c280da6db61"
+        },
+        {
+          "draw": 82,
+          "vs": "1479b2b594b9c91a",
+          "ps": "e9ccfc0d0d3c7746"
+        }
+      ]
+    },
+    {
+      "frame": "FrameAnalysis-2026-08-24-182850",
+      "draw": 74,
+      "drawCall": "000074 DrawInstanced(VertexCountPerInstance:3, InstanceCount:1, StartVertexLocation:0, StartInstanceLocation:0)",
+      "descriptorCount": 34,
+      "output": {
+        "resourceHash": "3315d2b5",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R11G11B10_FLOAT",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource render_target",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "depth": {
+        "resourceHash": "c5057d7e",
+        "descriptor": {
+          "type": "Texture2D",
+          "width": 3840,
+          "height": 2160,
+          "mips": 1,
+          "array": 1,
+          "format": "R32G8X24_TYPELESS",
+          "msaa": 1,
+          "msaa_quality": 0,
+          "usage": "DEFAULT",
+          "bind_flags": "shader_resource depth_stencil",
+          "cpu_access_flags": 0,
+          "misc_flags": 0
+        }
+      },
+      "resourceHashes": {
+        "t0": "de9f5bb8",
+        "t1": "dee30266",
+        "t2": "bb5905b2",
+        "t3": "bb5905b2",
+        "t4": "b7ff7a6e",
+        "t5": "3f03efb5",
+        "t6": "971957c7",
+        "t7": "d9f11fd9",
+        "t8": "b7ff7a6e",
+        "t9": "bb5905b2",
+        "t10": "727366da",
+        "t11": "57ecda07",
+        "t12": "947dd5e2",
+        "t13": "10bfdf41",
+        "t14": "b7ff7a6e",
+        "t15": "d7891304",
+        "t16": "d19e9ecb",
+        "t17": "4ce8bfab",
+        "t18": "4e62cbb3",
+        "t19": "434f7103",
+        "t20": "4e62cbb3",
+        "t21": "434f7103",
+        "t22": "4e62cbb3",
+        "t23": "434f7103",
+        "t24": "b7ff7a6e",
+        "t25": "72d2b22c",
+        "t26": "72d2b22c",
+        "t27": "5349f82a"
+      },
+      "descriptorBackedTextureSlots": [
+        "ps-t0",
+        "ps-t1",
+        "ps-t10",
+        "ps-t11",
+        "ps-t12",
+        "ps-t13",
+        "ps-t14",
+        "ps-t16",
+        "ps-t17",
+        "ps-t2",
+        "ps-t24",
+        "ps-t25",
+        "ps-t26",
+        "ps-t27",
+        "ps-t3",
+        "ps-t4",
+        "ps-t5",
+        "ps-t6",
+        "ps-t7",
+        "ps-t8",
+        "ps-t9"
+      ],
+      "descriptorUnavailableTextureSlots": [
+        "t15",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23"
+      ],
+      "constantBufferDumps": [
+        {
+          "slot": 0,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 1,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 2,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 3,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 4,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 5,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 6,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 7,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 8,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        },
+        {
+          "slot": 9,
+          "resourceHash": "a517561d",
+          "bytes": 20896006,
+          "scope": "whole 4 MiB dynamic ring buffer; duplicated slot filename does not recover pFirstConstant"
+        }
+      ],
+      "neighborShaderSequence": [
+        {
+          "draw": 71,
+          "vs": "6c04588ef885d36b",
+          "ps": "3ccd45b72b0724b5"
+        },
+        {
+          "draw": 72,
+          "vs": "7012cccc7727b990",
+          "ps": "372dcb30551c6837"
+        },
+        {
+          "draw": 73,
+          "vs": "7012cccc7727b990",
+          "ps": "5aea1748da240b54"
+        },
+        {
+          "draw": 74,
+          "vs": "7012cccc7727b990",
+          "ps": "37eacbc3c84bb392"
+        },
+        {
+          "draw": 75,
+          "vs": "7012cccc7727b990",
+          "ps": "e02f4d6993f80551"
+        },
+        {
+          "draw": 76,
+          "vs": "7012cccc7727b990",
+          "ps": "2fd35c280da6db61"
+        },
+        {
+          "draw": 77,
+          "vs": "1479b2b594b9c91a",
+          "ps": "e9ccfc0d0d3c7746"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "proves": [
+      "the exact deferred pass-0 VS/PS pair was submitted once in each captured Endminf overview frame",
+      "the production draw is a fullscreen three-vertex DrawInstanced call",
+      "the draw binds ten pixel constant-buffer views and t0 through t27",
+      "output/depth and dumpable texture descriptors identify retail dimensions and formats"
+    ],
+    "doesNotProve": [
+      "pFirstConstant offsets or the active ranges within the shared 4 MiB dynamic constant-buffer ring",
+      "binary content for skipped Texture3D slots t15 and t18 through t23",
+      "b2 skin-palette active ranges or BeyondBoneCloth deformation state",
+      "that the current Unity exact consumer should be presented as final screen color"
+    ]
+  },
+  "failures": []
+}
