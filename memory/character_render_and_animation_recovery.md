@@ -894,7 +894,13 @@ that either isolates the four owners or records the current collector's bounded
 universal-false coverage while confirming the maintained cross-frame route.
 The native contract already closes ordinary Transform reads and TransformAccess
 writes; do not bypass the session gate or enable writeback from the graphics
-oracle alone.
+oracle alone. The session-contract builder now accepts an explicit capture root
+and derives direct-isolation, bounded-universal-false, or unresolved status from
+the collected window instead of hard-coding the old session result. Run
+`build_secondary_dynamics_session_certification_contract.py` with the explicit
+`--session-root` and `--require-certified`; it verifies the exact build,
+collector/hash integrity, stable cross-frame value, all relative-transform
+observations, and four-lane cadence before publishing.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
