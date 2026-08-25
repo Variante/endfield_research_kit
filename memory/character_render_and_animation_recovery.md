@@ -22,6 +22,19 @@ The canonical identities comprise 31 playables, one NPC character, one
 cutscene clone, 94 enemies, and 29 ability/prop actors. Six modular ambient-NPC
 archetypes remain labeled source kits rather than finished characters.
 
+`tools/EndfieldCapture` is the native prelaunch observer for graphics and
+audio. Exact target/runtime gates, one-attempt injection, forced-D3D11 hooks,
+bounded frame/resource readback, session writing, and collection are
+implemented and synthetically tested; it has not yet produced certified retail
+evidence. Native sessions belong under
+`scratch/reverse_engineering/endfield_capture/<session-id>/`, with forced-D3D11
+graphics resources under the session's `graphics/` folder. The guided wrapper
+defaults to both providers; its external overlay reserves `Numpad 1` for one
+next-frame request and `Numpad 0` for panel visibility, but neither is evidence
+until the host records a consumed provider request. Staged capture-only
+3DMigoto remains the retail-tested fallback until EndfieldCapture produces its
+first complete collected original-client session.
+
 ## Stable conclusions
 
 - Playable post-models, LOD0 mesh bindings, materials, textures, cameras,
@@ -642,13 +655,16 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Reproduce the complete Endminf Character Info frame against the reference
+1. Run and certify EndfieldCapture's first retail forced-D3D11 session,
+   requiring exact gates, `graphicsAttached=true`, provider completeness, and
+   one collected bounded frame package before using it as render evidence.
+2. Reproduce the complete Endminf Character Info frame against the reference
    video, closing the presentation scene before further isolated shader work.
-2. Generalize Endminf's proven Animator path from source contracts, close the
+3. Generalize Endminf's proven Animator path from source contracts, close the
    root-motion compatibility boundary, then prioritize IK, facial systems, and
    secondary motion.
-3. Generalize the finished Endminf path and rebuild every playable character
+4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
-4. Keep changing inventories and exhaustive validation output under
+5. Keep changing inventories and exhaustive validation output under
    `reports/assets/character_recovery/`; update this file only when the durable
    conclusion or evidence boundary changes.
