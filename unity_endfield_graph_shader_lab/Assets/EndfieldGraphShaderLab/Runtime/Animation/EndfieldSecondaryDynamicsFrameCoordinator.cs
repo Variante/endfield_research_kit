@@ -41,9 +41,6 @@ namespace EndfieldGraphShaderLab
                 UseAnimatorTransform = useAnimatorTransform;
                 Writeback = writeback;
             }
-
-            public static SessionCertification EndminfOverviewTarget =>
-                new SessionCertification(true, false, true, false, WritebackRoute.TransformAccess);
         }
 
         public sealed class OwnerTransformSnapshot
