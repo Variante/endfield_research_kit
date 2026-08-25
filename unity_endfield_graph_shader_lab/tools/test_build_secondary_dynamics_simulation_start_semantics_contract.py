@@ -33,6 +33,10 @@ class SimulationStartSemanticsContractTests(unittest.TestCase):
             self.contract["nested_helpers"]["wind"]["status"],
             "call_abi_bounded_equations_open",
         )
+        self.assertEqual(
+            self.contract["nested_helpers"]["normalConeCos"]["status"],
+            "exact_scalar_binary64_cosine_implementation_closed",
+        )
 
     def test_generated_contract_matches(self):
         expected = json.dumps(self.contract, indent=2) + "\n"

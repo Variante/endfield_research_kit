@@ -109,7 +109,7 @@
     {
       "name": "normal_cone_restriction",
       "range": "0x25f9c3..0x25fbfd",
-      "status": "operands_and_control_flow_closed_helper_algebra_open",
+      "status": "operands_control_flow_and_cosine_helper_closed_inline_angle_equation_open",
       "nestedHelperRva": "0x23c1c0"
     },
     {
@@ -126,9 +126,20 @@
       "rva": "0x247190",
       "status": "call_abi_bounded_equations_open"
     },
-    "normalConeTrig": {
+    "normalConeCos": {
       "rva": "0x23c1c0",
-      "status": "call_site_bounded_equations_open"
+      "bytes": 718,
+      "sha256": "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f",
+      "abi": "xmm0 double input -> xmm0 cos(input)",
+      "status": "exact_scalar_binary64_cosine_implementation_closed",
+      "argumentReduction": {
+        "smallThreshold": 15.0,
+        "largeThreshold": 100000000000000.0,
+        "largeReducerRva": "0x23c760",
+        "largeReducerBytes": 1147,
+        "largeReducerSha256": "f03b3aa47f3d19ed6aa8cf1f7f997d7e4deabf1da6b9184f641a9fc31d4943a6"
+      },
+      "specialCases": "positive/negative zero -> 1; infinity and NaN -> canonical quiet NaN"
     },
     "springNoiseSin": {
       "rva": "0x23c490",
@@ -153,7 +164,7 @@
     ],
     "blocked": [
       "wind helper equations",
-      "normal-cone helper equation",
+      "normal-cone inline angle/correction equation",
       "later constraint/collision stages"
     ]
   }
