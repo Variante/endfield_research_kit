@@ -70,7 +70,7 @@
     "sourceCallsNativeHelper": false,
     "sourceReadsNativeReducerTable": false
   },
-  "harnessSha256": "671fe2f40a7301a2dbb00e88c23a3b273af482e86c2f6980d1f585c2fa720b86",
+  "harnessSha256": "def68983448cccb1a23959a8ce8e17c8681ec6f5785e2754d0a5c2d8fa324c17",
   "vectors": [
     {
       "name": "positive_zero",
@@ -412,6 +412,8 @@
   "boundary": {
     "nativeHelperExecuted": true,
     "sourceOnlyTranscriptionMatchedBitForBit": true,
-    "caseCount": 24
+    "caseCount": 24,
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"
   }
 }

@@ -380,7 +380,8 @@ def build_contract() -> dict[str, Any]:
         "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "vectors": vectors,
         "boundary": {"nativeHelperExecuted": True, "sourceOnlyTranscriptionMatchedBitForBit": True,
-                     "caseCount": len(vectors)},
+                     "caseCount": len(vectors), "unityPortExecuted": True,
+                     "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"},
     }
 
 

@@ -10,6 +10,62 @@ namespace EndfieldGraphShaderLab
     /// </summary>
     public static class EndfieldSecondaryDynamicsKernels
     {
+        private const string FloatSinCosReducerTableHex =
+            "83f9223e889cdc31e14fa9243ffaea170ee60b3ddf8d8db03e602da43ffaea170" +
+            "ee60b3ddf8d8db03e602da43ffaea17dc603e3bf5ddd8aed90356a2eaa3af15d" +
+            "c603e3bf5ddd8aed90356a2eaa3af15dc603e3bf5ddd8aed90356a2eaa3af15d" +
+            "c603e3bf5ddd8aed90356a2eaa3af156e83793a2a889c2d9df02721aa8fbe14" +
+            "6e83793a2a889c2d9df02721aa8fbe14dd06f339abef46adc51eb0a0ade00294" +
+            "b90d66395341642c157bc09f2d2b3891721bcc385341642c157bc09f2d2b3891" +
+            "e53618386bf5ddaa0c2a769b6f9afa0e27b7c136542a88290c2a769b6f9afa0e" +
+            "27b7c136542a88290c2a769b6f9afa0e27b7c136542a88290c2a769b6f9afa0e" +
+            "4e6e0336542a88290c2a769b6f9afa0e91935b33e14fa9243ffaea1790c8328b" +
+            "91935b33e14fa9243ffaea1790c8328b91935b33e14fa9243ffaea1790c8328b" +
+            "91935b33e14fa9243ffaea1790c8328b91935b33e14fa9243ffaea1790c8328b" +
+            "91935b33e14fa9243ffaea1790c8328b2227b732e14fa9243ffaea1790c8328b" +
+            "889cdc31e14fa9243ffaea1790c8328b889cdc31e14fa9243ffaea1790c8328b" +
+            "10393931e14fa9243ffaea1790c8328b41e46430853fa5230b2e289603775309" +
+            "41e46430853fa5230b2e28960377530983c8c92ff68035a30b2e289603775309" +
+            "0591132f14fe94220b2e2896037753092a889c2d9df02721aa8fbe14f2233288" +
+            "2a889c2d9df02721aa8fbe14f22332882a889c2d9df02721aa8fbe14f2233288" +
+            "5341642c157bc09f2d2b3891db06ee045341642c157bc09f2d2b3891db06ee04" +
+            "5341642c157bc09f2d2b3891db06ee04a582c82bac13fe1e2d2b3891db06ee04" +
+            "4a05112bac13fe1e2d2b3891db06ee04542a88290c2a769b6f9afa0e76927c81" +
+            "542a88290c2a769b6f9afa0e76927c81542a88290c2a769b6f9afa0e76927c81" +
+            "40a582270c2a769b6f9afa0e76927c8140a582270c2a769b6f9afa0e76927c81" +
+            "40a582270c2a769b6f9afa0e76927c8140a582270c2a769b6f9afa0e76927c81" +
+            "e14fa9243ffaea1790c8328b15db0600e14fa9243ffaea1790c8328b15db0600" +
+            "e14fa9243ffaea1790c8328b15db0600e14fa9243ffaea1790c8328b15db0600" +
+            "e14fa9243ffaea1790c8328b15db0600e14fa9243ffaea1790c8328b15db0600" +
+            "853fa5230b2e28960377530915db0000853fa5230b2e28960377530915db0000" +
+            "14fe94220b2e28960377530915db000014fe94220b2e28960377530915db0000" +
+            "9df02721aa8fbe14f2233288eb2400809df02721aa8fbe14f2233288eb240080" +
+            "9df02721aa8fbe14f2233288eb24008075c21f20a73efa13c98f4887eb040080" +
+            "75c21f20a73efa13c98f4887eb040080ac13fe1e2d2b3891db06ee0415000000" +
+            "ac13fe1e2d2b3891db06ee0415000000ac13fe1e2d2b3891db06ee0415000000" +
+            "58277c1e2d2b3891db06ee0415000000b04ef81d2d2b3891db06ee0415000000" +
+            "5f9d703da7a98f3027c90fa36233b596bf3ae13cb2ac60b027c90fa36233b596" +
+            "7d75423c6f9afa2e76927ca1e2c9ac14faea843b6f9afa2e76927ca1e2c9ac14" +
+            "485f1d3924b22cac96625b1e7987cd91485f1d3924b22cac96625b1e7987cd91" +
+            "485f1d3924b22cac96625b1e7987cd91485f1d3924b22cac96625b1e7987cd91" +
+            "485f1d3924b22cac96625b1e7987cd913ffaea3790c832ab96625b1e7987cd91" +
+            "3ffaea3790c832ab96625b1e7987cd913ffaea3790c832ab96625b1e7987cd91" +
+            "7df45537e06e9a2a96625b1e7987cd91fbe8ab363f224baaaa75129d1de2c910" +
+            "eaa3af3503775329ad14db1c8e77d88feaa3af3503775329ad14db1c8e77d88f" +
+            "aa8fbe34f22332a84dad939bc8219e0eaa8fbe34f22332a84dad939bc8219e0e" +
+            "a73efa33c98f48a7676a1d9a410e710da73efa33c98f48a7676a1d9a410e710d" +
+            "4d7d7433dbc05d26322bc519410e710d9afae832dbc05d26322bc519410e710d" +
+            "35f5513292fc08a53653eb98f01b6f8b6aeaa33192fc08a53653eb98f01b6f8b" +
+            "a7a98f3027c90fa36233b59684208709a7a98f3027c90fa36233b59684208709" +
+            "6f9afa2e76927ca1e2c9ac14801064076f9afa2e76927ca1e2c9ac1480106407" +
+            "6f9afa2e76927ca1e2c9ac14801064076f9afa2e76927ca1e2c9ac1480106407" +
+            "de34752e76927ca1e2c9ac1480106407bc69ea2d76927ca1e2c9ac1480106407" +
+            "77d3542d96625b1e7987cd91f30f8204eea6a92c96625b1e7987cd91f30f8204" +
+            "b89ba62b96625b1e7987cd91f30f8204b89ba62b96625b1e7987cd91f30f8204" +
+            "e06e9a2a96625b1e7987cd91f30f82040700000008000000090000000a000000";
+
+        private static readonly float[] FloatSinCosReducerTable = BuildFloatSinCosReducerTable();
+
         public struct Double3
         {
             public double x;
@@ -390,6 +446,157 @@ namespace EndfieldGraphShaderLab
             return penetratingCount;
         }
 
+        public static void ProjectAngle(
+            byte[] attributes,
+            float[] depths,
+            float[] frictions,
+            Double3[] basicPositions,
+            Float4[] basicRotations,
+            Double3[] nextPositions,
+            Double3[] velocityPositions,
+            bool restoration,
+            float[] restorationCurve,
+            float restorationVelocityAttenuation,
+            float restorationGravityFalloff,
+            bool limit,
+            float[] limitCurve,
+            float limitStiffness,
+            float simulationPowerW,
+            float gravityDot,
+            Float4[] rotations,
+            float[] lengths,
+            Float3[] localPositions,
+            Float4[] localRotations,
+            Float3[] restorationVectors)
+        {
+            if (attributes.Length != 2 || depths.Length != 2 || frictions.Length != 2 ||
+                basicPositions.Length != 2 || basicRotations.Length != 2 ||
+                nextPositions.Length != 2 || velocityPositions.Length != 2 ||
+                rotations.Length != 2 || lengths.Length != 2 || localPositions.Length != 2 ||
+                localRotations.Length != 2 || restorationVectors.Length != 2)
+                throw new ArgumentException("Controlled Angle source port requires exactly two particles.");
+            if ((restoration && (restorationCurve == null || restorationCurve.Length != 16)) ||
+                (limit && (limitCurve == null || limitCurve.Length != 16)))
+                throw new ArgumentException("Angle curves must contain 16 samples.");
+
+            rotations[0] = basicRotations[0];
+            rotations[1] = basicRotations[1];
+            if (limit)
+            {
+                lengths[1] = (float)LengthDouble3(SubtractDouble3(nextPositions[0], nextPositions[1]));
+                Double3 basicDirection = NormalizeDouble3(SubtractDouble3(basicPositions[1], basicPositions[0]));
+                Double3 local = RotateQuaternionDouble(
+                    InverseQuaternionBinary32(basicRotations[0]), basicDirection);
+                localPositions[1] = new Float3((float)local.x, (float)local.y, (float)local.z);
+                localRotations[1] = MultiplyQuaternionBinary32(
+                    InverseQuaternionBinary32(basicRotations[0]), basicRotations[1]);
+            }
+            if (restoration)
+            {
+                Double3 rest = SubtractDouble3(basicPositions[1], basicPositions[0]);
+                restorationVectors[1] = new Float3((float)rest.x, (float)rest.y, (float)rest.z);
+            }
+
+            for (int sweep = 0; sweep < 3; sweep++)
+            {
+                float t = AddBinary32(MultiplyBinary32(MultiplyBinary32(sweep, 0.5f), 0.4f), 0.1f);
+                float oneMinusT = SubtractBinary32(1.0f, t);
+                Double3 p = nextPositions[1];
+                Double3 q = nextPositions[0];
+                double childMobility = AngleMobility(frictions[1]);
+                double parentMobility = AngleMobility(frictions[0]);
+                if (limit)
+                {
+                    Double3 u = RotateQuaternionDouble(rotations[0], ToDouble3(localPositions[1]));
+                    Double3 d = SubtractDouble3(p, q);
+                    double currentLength = LengthDouble3(d);
+                    double blendLength = currentLength + 0.5 * (lengths[1] - currentLength);
+                    Double3 direction = MultiplyDouble3(d, 1.0 / currentLength);
+                    Double3 unconstrained = MultiplyDouble3(direction, blendLength);
+                    float limitRadians = MultiplyBinary32(
+                        SampleAngleCurve(depths[1], limitCurve), 0.01745329238474369f);
+                    double phi = AcosBurstDouble(Math.Min(Math.Max(
+                        DotDouble3(unconstrained, u) /
+                        (LengthDouble3(unconstrained) * LengthDouble3(u)), -1.0), 1.0));
+                    Double3 constrained = unconstrained;
+                    if (phi > limitRadians)
+                    {
+                        Double3 vn = NormalizeDouble3(unconstrained);
+                        Double3 un = NormalizeDouble3(u);
+                        double psi = AcosBurstDouble(Math.Min(Math.Max(DotDouble3(vn, un), -1.0), 1.0));
+                        double beta = phi + limitStiffness * (limitRadians - phi);
+                        if (beta < psi)
+                        {
+                            double theta = psi * ((psi - beta) / psi);
+                            constrained = RotateQuaternionDouble(
+                                RotationBetweenDouble(vn, un, theta), unconstrained);
+                        }
+                    }
+                    Double3 childTarget = AddDouble3(q, AddDouble3(
+                        MultiplyDouble3(unconstrained, 0.4000000059604645),
+                        MultiplyDouble3(constrained, 0.6000000238418579)));
+                    Double3 childCorrection = MultiplyDouble3(
+                        SubtractDouble3(childTarget, p), childMobility);
+                    nextPositions[1] = AddDouble3(p, childCorrection);
+                    velocityPositions[1] = AddDouble3(
+                        velocityPositions[1], MultiplyDouble3(childCorrection, 0.8999999761581421));
+                    if ((attributes[0] & 2) != 0)
+                    {
+                        Double3 parentCorrection = MultiplyDouble3(
+                            SubtractDouble3(unconstrained, constrained),
+                            parentMobility * 0.4000000059604645);
+                        nextPositions[0] = AddDouble3(q, parentCorrection);
+                        velocityPositions[0] = AddDouble3(
+                            velocityPositions[0], MultiplyDouble3(parentCorrection, 0.8999999761581421));
+                    }
+                    Double3 updatedDirection = SubtractDouble3(nextPositions[1], nextPositions[0]);
+                    Float4 baseRotation = MultiplyQuaternionBinary32(rotations[0], localRotations[1]);
+                    Float4 deltaRotation = RotationBetweenDouble(u, updatedDirection, null);
+                    rotations[1] = MultiplyQuaternionBinary32(deltaRotation, baseRotation);
+                }
+
+                if (restoration)
+                {
+                    p = nextPositions[1];
+                    q = nextPositions[0];
+                    Double3 d = SubtractDouble3(p, q);
+                    Double3 rest = ToDouble3(restorationVectors[1]);
+                    Double3 dn = NormalizeDouble3(d);
+                    Double3 rn = NormalizeDouble3(rest);
+                    double angle = AcosBurstDouble(Math.Min(Math.Max(DotDouble3(dn, rn), -1.0), 1.0));
+                    float strength = Math.Min(Math.Max(
+                        SampleAngleCurve(depths[1], restorationCurve), 0.0f), 1.0f);
+                    strength = Math.Min(Math.Max(
+                        MultiplyBinary32(strength, simulationPowerW), 0.0f), 1.0f);
+                    float gravityMix = AddBinary32(
+                        SubtractBinary32(1.0f, restorationGravityFalloff),
+                        MultiplyBinary32(gravityDot, restorationGravityFalloff));
+                    strength = MultiplyBinary32(strength, gravityMix);
+                    Double3 rotated = RotateQuaternionDouble(
+                        RotationBetweenDouble(dn, rn, angle * strength), d);
+                    Double3 weightedCurrent = AddDouble3(q, MultiplyDouble3(d, t));
+                    Double3 childTarget = AddDouble3(
+                        weightedCurrent, MultiplyDouble3(rotated, oneMinusT));
+                    Double3 childCorrection = MultiplyDouble3(
+                        SubtractDouble3(childTarget, p), parentMobility);
+                    nextPositions[1] = AddDouble3(p, childCorrection);
+                    velocityPositions[1] = AddDouble3(
+                        velocityPositions[1],
+                        MultiplyDouble3(childCorrection, restorationVelocityAttenuation));
+                    if ((attributes[0] & 2) != 0)
+                    {
+                        Double3 parentDelta = SubtractDouble3(
+                            SubtractDouble3(weightedCurrent, MultiplyDouble3(rotated, t)), q);
+                        Double3 parentCorrection = MultiplyDouble3(parentDelta, childMobility);
+                        nextPositions[0] = AddDouble3(q, parentCorrection);
+                        velocityPositions[0] = AddDouble3(
+                            velocityPositions[0],
+                            MultiplyDouble3(parentCorrection, restorationVelocityAttenuation));
+                    }
+                }
+            }
+        }
+
         public static void UpdateBasicPosture(
             int[] parentIndices,
             byte[] attributes,
@@ -592,6 +799,383 @@ namespace EndfieldGraphShaderLab
                 (float)((corrected.y - previousPosition.y) / dt),
                 (float)((corrected.z - previousPosition.z) / dt));
             nextPosition = corrected;
+        }
+
+        private static float SampleAngleCurve(float depth, float[] values)
+        {
+            float clamped = Math.Min(Math.Max(depth, 0.0f), 1.0f);
+            float scaled = MultiplyBinary32(clamped, 15.0f);
+            int index = (int)scaled;
+            const float step = 0.06666667014360428f;
+            float fraction = DivideBinary32(
+                SubtractBinary32(depth, MultiplyBinary32(index, step)), step);
+            int first = Math.Min(Math.Max(index, 0), 15);
+            int second = Math.Min(Math.Max(index + 1, 0), 15);
+            return AddBinary32(
+                values[first],
+                MultiplyBinary32(fraction, SubtractBinary32(values[second], values[first])));
+        }
+
+        private static float AngleMobility(float friction)
+        {
+            return DivideBinary32(1.0f, AddBinary32(1.0f, MultiplyBinary32(3.0f, friction)));
+        }
+
+        private static double AcosBurstDouble(double value)
+        {
+            double x = Math.Min(Math.Max(value, -1.0), 1.0);
+            double absolute = Math.Abs(x);
+            double asin;
+            if (absolute < 0.5)
+            {
+                asin = AsinBurstPolynomialDouble(absolute, absolute * absolute);
+            }
+            else
+            {
+                double y = (1.0 - absolute) * 0.5;
+                asin = Math.PI * 0.5 - 2.0 * AsinBurstPolynomialDouble(Math.Sqrt(y), y);
+            }
+            if (x < 0.0)
+                asin = -asin;
+            return Math.PI * 0.5 - asin;
+        }
+
+        private static double AsinBurstPolynomialDouble(double s, double y)
+        {
+            const double a0 = 0.031615876506539346;
+            const double a1 = 0.012153605255773773;
+            const double a2 = 0.019290454772679107;
+            const double a3 = 0.017359569912236146;
+            const double b0 = -0.015819182433299966;
+            const double b1 = 0.013887151845016092;
+            const double b2 = 0.006606077476277171;
+            const double b3 = 0.022371761819320483;
+            const double c0 = 0.07500000000378582;
+            const double c1 = 0.16666666666664975;
+            const double d0 = 0.030381959280381322;
+            const double d1 = 0.044642856813771024;
+            double y2 = y * y;
+            double t0 = b2 + a2 * y + y2 * (b0 + a0 * y);
+            double t1 = b3 + a3 * y + y2 * (b1 + a1 * y);
+            double p = c1 + c0 * y + y2 * (d1 + d0 * y) +
+                y2 * y2 * t1 + Math.Pow(y2, 4.0) * t0;
+            return s + s * y * p;
+        }
+
+        private static Float4 RotationBetweenDouble(
+            Double3 source, Double3 target, double? requestedAngle)
+        {
+            Double3 sourceNormal = NormalizeDouble3(source);
+            Double3 targetNormal = NormalizeDouble3(target);
+            double cosine = Math.Min(Math.Max(DotDouble3(sourceNormal, targetNormal), -1.0), 1.0);
+            double angle = requestedAngle ?? AcosBurstDouble(cosine);
+            if (Math.Abs(1.0 - cosine) < 9.999999974752427e-7)
+                return new Float4(0.0f, 0.0f, 0.0f, 1.0f);
+            Double3 axis;
+            if (Math.Abs(1.0 + cosine) < 9.999999974752427e-7)
+            {
+                Double3 helper = Math.Abs(sourceNormal.x) > Math.Abs(sourceNormal.y)
+                    ? new Double3(1.0, 1.0, 1.0)
+                    : new Double3(1.0, 0.0, 0.0);
+                axis = NormalizeDouble3(CrossDouble3(sourceNormal, helper));
+                if (!requestedAngle.HasValue)
+                    angle = 3.1415927410125732;
+            }
+            else
+            {
+                axis = NormalizeDouble3(CrossDouble3(sourceNormal, targetNormal));
+            }
+            return AxisAngleBinary32(axis, angle);
+        }
+
+        private static Float4 AxisAngleBinary32(Double3 axis, double angle)
+        {
+            float x = (float)axis.x;
+            float y = (float)axis.y;
+            float z = (float)axis.z;
+            float half = MultiplyBinary32((float)angle, 0.5f);
+            FloatSinCosBinary32(half, out float sine, out float cosine);
+            return new Float4(
+                MultiplyBinary32(x, sine),
+                MultiplyBinary32(y, sine),
+                MultiplyBinary32(z, sine),
+                cosine);
+        }
+
+        private static Float4 InverseQuaternionBinary32(Float4 value)
+        {
+            return new Float4(-value.x, -value.y, -value.z, value.w);
+        }
+
+        private static Double3 RotateQuaternionDouble(Float4 q, Double3 value)
+        {
+            Double3 xyz = new Double3(q.x, q.y, q.z);
+            Double3 t = MultiplyDouble3(CrossDouble3(xyz, value), 2.0);
+            return AddDouble3(value, AddDouble3(MultiplyDouble3(t, q.w), CrossDouble3(xyz, t)));
+        }
+
+        private static Double3 CrossDouble3(Double3 a, Double3 b)
+        {
+            return new Double3(
+                a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x);
+        }
+
+        private static Double3 NormalizeDouble3(Double3 value)
+        {
+            return MultiplyDouble3(value, 1.0 / LengthDouble3(value));
+        }
+
+        private static Double3 AddDouble3(Double3 a, Double3 b)
+        {
+            return new Double3(a.x + b.x, a.y + b.y, a.z + b.z);
+        }
+
+        private static Double3 ToDouble3(Float3 value)
+        {
+            return new Double3(value.x, value.y, value.z);
+        }
+
+        public static void FloatSinCosBinary32(float value, out float sine, out float cosine)
+        {
+            uint inputBits = FloatBits(value);
+            float absolute = FloatFromBits(inputBits & 0x7fffffffu);
+            int quadrant;
+            float reduced;
+            if (absolute < 125.0f)
+            {
+                float scaled = MultiplyBinary32(value, FloatFromBits(0x3f22f983u));
+                quadrant = (int)AddBinary32(scaled, scaled < 0.0f ? -0.5f : 0.5f);
+                float n = quadrant;
+                reduced = AddBinary32(
+                    AddBinary32(
+                        AddBinary32(value, MultiplyBinary32(n, FloatFromBits(0xbfc90e00u))),
+                        MultiplyBinary32(n, FloatFromBits(0xb86d5000u))),
+                    MultiplyBinary32(n, FloatFromBits(0xb0885a31u)));
+            }
+            else if (absolute < 39000.0f)
+            {
+                float scaled = MultiplyBinary32(value, FloatFromBits(0x3f22f983u));
+                quadrant = (int)AddBinary32(scaled, scaled < 0.0f ? -0.5f : 0.5f);
+                float n = quadrant;
+                reduced = AddBinary32(
+                    AddBinary32(
+                        AddBinary32(
+                            AddBinary32(value, MultiplyBinary32(n, FloatFromBits(0xbfc90000u))),
+                            MultiplyBinary32(n, FloatFromBits(0xb9fd8000u))),
+                        MultiplyBinary32(n, FloatFromBits(0xb4a88000u))),
+                    MultiplyBinary32(n, FloatFromBits(0xae85a309u)));
+            }
+            else if ((inputBits & 0x7f800000u) != 0x7f800000u)
+            {
+                FloatSinCosLargeReduce(inputBits, out quadrant, out float hi, out float lo);
+                reduced = AddBinary32(hi, lo);
+            }
+            else
+            {
+                quadrant = 0;
+                reduced = FloatFromBits(0x7fc00000u);
+            }
+
+            float square = MultiplyBinary32(reduced, reduced);
+            sine = FloatFromBits(0x80000000u);
+            if (inputBits != 0x80000000u)
+            {
+                float polynomial = AddBinary32(
+                    MultiplyBinary32(square, FloatFromBits(0xb94ca65bu)),
+                    FloatFromBits(0x3c08839au));
+                polynomial = AddBinary32(
+                    MultiplyBinary32(square, polynomial), FloatFromBits(0xbe2aaaa2u));
+                sine = AddBinary32(
+                    reduced, MultiplyBinary32(reduced, MultiplyBinary32(square, polynomial)));
+            }
+            float cosinePolynomial = AddBinary32(
+                MultiplyBinary32(square, FloatFromBits(0xb491ed89u)), FloatFromBits(0x37d0078bu));
+            cosinePolynomial = AddBinary32(
+                MultiplyBinary32(square, cosinePolynomial), FloatFromBits(0xbab60b58u));
+            cosinePolynomial = AddBinary32(
+                MultiplyBinary32(square, cosinePolynomial), FloatFromBits(0x3d2aaaaau));
+            cosinePolynomial = AddBinary32(MultiplyBinary32(square, cosinePolynomial), -0.5f);
+            cosine = AddBinary32(MultiplyBinary32(square, cosinePolynomial), 1.0f);
+
+            float outSine;
+            float outCosine;
+            if ((quadrant & 1) != 0)
+            {
+                outCosine = sine;
+                outSine = (quadrant & 2) != 0 ? XorFloatSign(cosine) : cosine;
+            }
+            else
+            {
+                outCosine = cosine;
+                outSine = (quadrant & 2) != 0 ? XorFloatSign(sine) : sine;
+            }
+            if (((quadrant + 1) & 2) != 0)
+                outCosine = XorFloatSign(outCosine);
+            sine = outSine;
+            cosine = outCosine;
+        }
+
+        private static void FloatSinCosLargeReduce(
+            uint inputBits, out int quadrant, out float reducedHigh, out float reducedLow)
+        {
+            int exponent = (int)((inputBits >> 23) & 0xffu);
+            uint shift = (uint)(exponent < 0xda ? 1 : 0) << 29;
+            uint normalizedBits = unchecked(shift + inputBits - 0x20000000u);
+            float x0 = FloatFromBits(normalizedBits);
+            int tableIndex = exponent >= 0x98 ? 4 * exponent - 0x260 : 0;
+
+            float tab0 = FloatSinCosReducerTable[tableIndex];
+            float xhi = FloatFromBits(normalizedBits & 0xfffff000u);
+            float xlo = SubtractBinary32(x0, xhi);
+            float tab0hi = FloatFromBits(FloatBits(tab0) & 0xfffff000u);
+            float tab0lo = SubtractBinary32(tab0, tab0hi);
+            float product0 = MultiplyBinary32(tab0, x0);
+            float error0 = SubtractBinary32(MultiplyBinary32(xhi, tab0hi), product0);
+            error0 = AddBinary32(MultiplyBinary32(xlo, tab0hi), error0);
+            error0 = AddBinary32(MultiplyBinary32(tab0lo, xhi), error0);
+            error0 = AddBinary32(MultiplyBinary32(xlo, tab0lo), error0);
+
+            float coarse = MultiplyBinary32(TruncateBinary32(MultiplyBinary32(0.0009765625f, product0)), 1024.0f);
+            float remainder0 = SubtractBinary32(product0, coarse);
+            int positive0 = product0 > 0.0f ? 1 : 0;
+            int q0 = (((positive0 + (int)MultiplyBinary32(remainder0, 8.0f) + 3) & 7) - 3) >> 1;
+            float half0 = FloatFromBits((FloatBits(product0) & 0x80000000u) | 0x3f000000u);
+            float rounded0 = MultiplyBinary32(
+                TruncateBinary32(AddBinary32(MultiplyBinary32(4.0f, remainder0), half0)), 0.25f);
+            float reduced0 = SubtractBinary32(remainder0, rounded0);
+            if (AbsoluteBinary32(reduced0) > 0.125f)
+                reduced0 = SubtractBinary32(reduced0, half0);
+            if (AbsoluteBinary32(reduced0) > 10000000000.0f)
+                reduced0 = FloatFromBits(FloatBits(reduced0) & 0x80000000u);
+            bool exact0 = AbsoluteBinary32(product0) == FloatFromBits(0x3dffffffu);
+            if (exact0)
+                reduced0 = product0;
+
+            float savedError0 = error0;
+            float sum0 = AddBinary32(error0, reduced0);
+            float tab1 = FloatSinCosReducerTable[tableIndex + 1];
+            float product1 = MultiplyBinary32(tab1, x0);
+            float sum1 = AddBinary32(product1, sum0);
+            float coarse1 = MultiplyBinary32(TruncateBinary32(MultiplyBinary32(0.0009765625f, sum1)), 1024.0f);
+            float remainder1 = SubtractBinary32(sum1, coarse1);
+            int carriedQ0 = exact0 ? 0 : q0;
+            float tab1hi = FloatFromBits(FloatBits(tab1) & 0xfffff000u);
+            int positive1 = sum1 > 0.0f ? 1 : 0;
+            float half1 = FloatFromBits((FloatBits(sum1) & 0x80000000u) | 0x3f000000u);
+            float rounded1 = MultiplyBinary32(
+                TruncateBinary32(AddBinary32(MultiplyBinary32(4.0f, remainder1), half1)), 0.25f);
+            float reduced1 = SubtractBinary32(remainder1, rounded1);
+            if (AbsoluteBinary32(reduced1) > 0.125f)
+                reduced1 = SubtractBinary32(reduced1, half1);
+            int q1 = (((positive1 + (int)MultiplyBinary32(remainder1, 8.0f) + 3) & 7) - 3) >> 1;
+            bool exact1 = AbsoluteBinary32(sum1) == FloatFromBits(0x3dffffffu);
+            if (AbsoluteBinary32(reduced1) > 10000000000.0f)
+                reduced1 = FloatFromBits(FloatBits(reduced1) & 0x80000000u);
+            if (exact1)
+                reduced1 = sum1;
+            quadrant = carriedQ0 + (exact1 ? 0 : q1);
+
+            if (AbsoluteBinary32(FloatFromBits(normalizedBits & 0x7fffffffu)) < FloatFromBits(0x3f333333u))
+            {
+                reducedHigh = x0;
+                reducedLow = 0.0f;
+                return;
+            }
+
+            float productHi = MultiplyBinary32(xhi, tab1hi);
+            float tab1lo = SubtractBinary32(tab1, tab1hi);
+            float productError = SubtractBinary32(productHi, product1);
+            productError = AddBinary32(MultiplyBinary32(xlo, tab1hi), productError);
+            productError = AddBinary32(MultiplyBinary32(tab1lo, xhi), productError);
+            float sum1Tail = SubtractBinary32(sum1, sum0);
+            float reduced0Tail = SubtractBinary32(reduced0, sum0);
+            productError = AddBinary32(MultiplyBinary32(tab1lo, xlo), productError);
+            float recoveredProduct1 = SubtractBinary32(sum1, sum1Tail);
+            reduced0Tail = AddBinary32(reduced0Tail, savedError0);
+            reduced0Tail = AddBinary32(productError, reduced0Tail);
+            float sum0Tail = SubtractBinary32(sum0, recoveredProduct1);
+            float product1Tail = SubtractBinary32(product1, sum1Tail);
+            sum0Tail = AddBinary32(product1Tail, sum0Tail);
+            reduced0Tail = AddBinary32(reduced0Tail, sum0Tail);
+            float combined = AddBinary32(reduced0Tail, reduced1);
+            float combineError = SubtractBinary32(reduced1, combined);
+            combineError = AddBinary32(reduced0Tail, combineError);
+
+            float tab2 = FloatSinCosReducerTable[tableIndex + 2];
+            float tab2hi = FloatFromBits(FloatBits(tab2) & 0xfffff000u);
+            float tab2lo = SubtractBinary32(tab2, tab2hi);
+            float product2 = MultiplyBinary32(tab2, x0);
+            float product2Error = SubtractBinary32(MultiplyBinary32(xhi, tab2hi), product2);
+            product2Error = AddBinary32(MultiplyBinary32(tab2lo, xhi), product2Error);
+            product2Error = AddBinary32(MultiplyBinary32(xlo, tab2hi), product2Error);
+            product2Error = AddBinary32(MultiplyBinary32(xlo, tab2lo), product2Error);
+            float product3 = MultiplyBinary32(x0, FloatSinCosReducerTable[tableIndex | 3]);
+            float tail = AddBinary32(AddBinary32(product3, product2Error), combineError);
+            float leading = AddBinary32(product2, combined);
+            float recoveredCombined = SubtractBinary32(leading, combined);
+            float leadingError = SubtractBinary32(product2, recoveredCombined);
+            leadingError = AddBinary32(
+                leadingError, SubtractBinary32(combined, SubtractBinary32(leading, recoveredCombined)));
+            tail = AddBinary32(tail, leadingError);
+            reducedHigh = AddBinary32(leading, tail);
+            reducedLow = AddBinary32(tail, SubtractBinary32(leading, reducedHigh));
+
+            float splitHigh = FloatFromBits(FloatBits(reducedHigh) & 0xfffff000u);
+            float splitLow = SubtractBinary32(reducedHigh, splitHigh);
+            float radiansHigh = MultiplyBinary32(reducedHigh, FloatFromBits(0x40c90fdbu));
+            float radiansError = SubtractBinary32(
+                MultiplyBinary32(splitHigh, FloatFromBits(0x40c90000u)), radiansHigh);
+            radiansError = AddBinary32(MultiplyBinary32(splitLow, FloatFromBits(0x40c90000u)), radiansError);
+            radiansError = AddBinary32(MultiplyBinary32(splitHigh, FloatFromBits(0x3afdb000u)), radiansError);
+            radiansError = AddBinary32(MultiplyBinary32(splitLow, FloatFromBits(0x3afdb000u)), radiansError);
+            radiansError = AddBinary32(MultiplyBinary32(reducedHigh, FloatFromBits(0xb43bbd2eu)), radiansError);
+            reducedLow = AddBinary32(MultiplyBinary32(reducedLow, FloatFromBits(0x40c90fdbu)), radiansError);
+            reducedHigh = radiansHigh;
+        }
+
+        private static float[] BuildFloatSinCosReducerTable()
+        {
+            var table = new float[416];
+            for (int index = 0; index < table.Length; index++)
+            {
+                int offset = index * 8;
+                uint bits = uint.Parse(
+                    FloatSinCosReducerTableHex.Substring(offset + 6, 2) +
+                    FloatSinCosReducerTableHex.Substring(offset + 4, 2) +
+                    FloatSinCosReducerTableHex.Substring(offset + 2, 2) +
+                    FloatSinCosReducerTableHex.Substring(offset, 2),
+                    System.Globalization.NumberStyles.HexNumber,
+                    System.Globalization.CultureInfo.InvariantCulture);
+                table[index] = FloatFromBits(bits);
+            }
+            return table;
+        }
+
+        private static float AbsoluteBinary32(float value)
+        {
+            return FloatFromBits(FloatBits(value) & 0x7fffffffu);
+        }
+
+        private static float XorFloatSign(float value)
+        {
+            return FloatFromBits(FloatBits(value) ^ 0x80000000u);
+        }
+
+        private static float TruncateBinary32(float value)
+        {
+            return (float)(int)value;
+        }
+
+        private static uint FloatBits(float value)
+        {
+            return BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
+        }
+
+        private static float FloatFromBits(uint bits)
+        {
+            return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
         }
 
         private static Float4 SlerpQuaternionBinary32(Float4 a, Float4 b, float t)
