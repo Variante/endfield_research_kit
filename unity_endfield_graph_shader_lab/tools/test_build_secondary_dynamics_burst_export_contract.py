@@ -146,6 +146,23 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
                 ("oldRotations", "0x40", 16),
             ],
         )
+        self.assertEqual(
+            audit["managedFallbackComparison"]["stateCarryForward"],
+            [
+                {
+                    "sourceField": "nowPositions",
+                    "destinationField": "oldPositions",
+                    "elementType": "Unity.Mathematics.double3",
+                    "widthBytes": 24,
+                },
+                {
+                    "sourceField": "nowRotations",
+                    "destinationField": "oldRotations",
+                    "elementType": "Unity.Mathematics.quaternion",
+                    "widthBytes": 16,
+                },
+            ],
+        )
         for candidate in audit["candidates"]:
             self.assertEqual(candidate["wrapper"]["branchCount"], 0)
             self.assertEqual(candidate["wrapper"]["incomingGprPreserved"], ["rcx", "rdx", "r8", "r9"])

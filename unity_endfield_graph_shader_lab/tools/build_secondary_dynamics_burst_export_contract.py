@@ -660,9 +660,29 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
     job_payload = json.loads(job_path.read_text(encoding="utf-8"))
     fallback_rows = [row for row in solver_payload.get("targets", [])
                      if row.get("methodIndex") == 385455]
-    if len(fallback_rows) != 1 or fallback_rows[0].get("solverStatus") != "managed_fallback_observed":
+    if (len(fallback_rows) != 1 or
+            fallback_rows[0].get("solverStatus") !=
+            "managed_fallback_state_carry_forward_closed"):
         raise ContractError("managed ColliderManager End Execute(int) fallback identity drift")
     fallback = fallback_rows[0]
+    expected_transitions = [
+        ("nowPositions", "oldPositions", "Unity.Mathematics.double3", 24),
+        ("nowRotations", "oldRotations", "Unity.Mathematics.quaternion", 16),
+    ]
+    actual_transitions = [
+        (
+            row.get("sourceField"),
+            row.get("destinationField"),
+            row.get("elementType"),
+            row.get("widthBytes"),
+        )
+        for row in fallback.get("stateTransitions", [])
+        if row.get("operation") == "copy"
+    ]
+    if actual_transitions != expected_transitions:
+        raise ContractError(
+            "managed ColliderManager End state carry-forward semantics drift"
+        )
     expected_accesses = {
         "nowPositions": ("0x10", 24, [0, 16]),
         "nowRotations": ("0x20", 16, [0]),
@@ -845,6 +865,16 @@ def _collider_end_candidate_audit(pe: dict[str, Any], rows: list[dict[str, Any]]
             "sourceSha256": _sha256(solver_path),
             "bodySha256": fallback.get("bodySha256"),
             "fields": managed_fields,
+            "stateCarryForward": [
+                {
+                    "sourceField": source,
+                    "destinationField": destination,
+                    "elementType": element_type,
+                    "widthBytes": width,
+                }
+                for source, destination, element_type, width
+                in actual_transitions
+            ],
             "boundary": "managed fallback accesses are evidence of the six-container job layout, not evidence that either hashed export is the fallback or Burst kernel",
         },
         "canonicalJobLayout": {
