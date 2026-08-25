@@ -126,7 +126,7 @@ def build_contract() -> dict[str, Any]:
         "implementationBoundary": {
             "equationsClosed": True,
             "helperGap": False,
-            "goldenVectorsCaptured": False,
+            "goldenVectorsCaptured": True,
             "solverImplemented": False,
             "retailEquivalent": False,
         },
