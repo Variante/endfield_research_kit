@@ -1,0 +1,4184 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-transform-read.v1",
+  "status": "endminf_transform_read_and_base_input_publication_closed_with_relative_route_boundary",
+  "nativeGate": {
+    "status": "validated",
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "sources": {
+    "payload": {
+      "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
+      "size": 1161329,
+      "sha256": "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
+    },
+    "transformWriteback": {
+      "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_transform_writeback_contract.json",
+      "size": 89645,
+      "sha256": "276db9e3faf37f8f36624358558d4d89db709825d1772409fb9a3aaabda0573c"
+    },
+    "callback": {
+      "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_callback_contract.json",
+      "size": 17561,
+      "sha256": "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65"
+    },
+    "schedule": {
+      "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_schedule_contract.json",
+      "size": 14618,
+      "sha256": "d442c5ee85e85e863923a13af5b1caf6bb696c8f4e3ecb554a47d9991357288e"
+    }
+  },
+  "native": {
+    "pinnedSpans": [
+      {
+        "name": "DynamicBoneTransformManager.AddTransform(Transform,flag,teamId)",
+        "methodIndex": 384488,
+        "va": "0x186724e0c",
+        "fileOffset": "0x672340c",
+        "bytes": 1387,
+        "sha256": "01d4bcf101841d3489809e29f1d999d8beb3d933e279902d45e90318bc3ee6b1"
+      },
+      {
+        "name": "DynamicBoneTransformManager.EnableTransform(index,sw)",
+        "methodIndex": 384493,
+        "va": "0x1833a8d60",
+        "fileOffset": "0x33a7360",
+        "bytes": 125,
+        "sha256": "c2b342a3240bc5fcc41e4f611a79348cccd4c082f332dae18eeaed59222d7ae9"
+      },
+      {
+        "name": "DynamicBoneTransformManager.CopyDoubleBufferJob.Execute",
+        "methodIndex": 384534,
+        "va": "0x186724ce8",
+        "fileOffset": "0x67232e8",
+        "bytes": 289,
+        "sha256": "8496b8577097b6a3f91c592da353c521af4c0b8f50075571e13b794352bbbbd9"
+      },
+      {
+        "name": "DynamicBoneTransformManager.ReadTransformJob.Execute",
+        "methodIndex": 384537,
+        "va": "0x186727248",
+        "fileOffset": "0x6725848",
+        "bytes": 1734,
+        "sha256": "96309abe74a2726bd30e849cb6571f0b2867f655fcb847a61ae634b610e323bf"
+      },
+      {
+        "name": "VirtualMeshManager.PreProxyMeshUpdate",
+        "methodIndex": 384784,
+        "va": "0x182f8b170",
+        "fileOffset": "0x2f89770",
+        "bytes": 2864,
+        "sha256": "6bd765d1933f0ffe83f08e6fa6c24da1ec89900f5ae688cec8c24d628b14aae0"
+      },
+      {
+        "name": "VirtualMeshManager.CalcProxyMeshSkinningJob.Execute(index)",
+        "methodIndex": 385042,
+        "va": "0x186747cec",
+        "fileOffset": "0x67462ec",
+        "bytes": 1760,
+        "sha256": "23a1856ddf09c6ff6e71af8d07b983e76af5a7ddf9ff32a7ba042f46341cee33"
+      }
+    ],
+    "ifix": {
+      "readTransformJobPatchId": "0x34e",
+      "route": "unpatched native body only",
+      "patchedRouteRecovered": false
+    }
+  },
+  "flags": {
+    "bits": {
+      "0x01": "read",
+      "0x02": "world rotation write",
+      "0x04": "local position/rotation write",
+      "0x08": "restore",
+      "0x10": "enable"
+    },
+    "attributeToSourceFlag": {
+      "0": "0x01",
+      "1": "0x0b",
+      "2": "0x0d"
+    },
+    "activeEquation": "activeManagerFlag = sourceFlag | 0x10; disabling clears only 0x10",
+    "readSelection": "all attributes carry 0x01; attribute does not select world versus local input reads"
+  },
+  "endminf": {
+    "ownerOrder": [
+      "MC_Ribbon2",
+      "MC_Hair",
+      "MC_Ribbon",
+      "MC_Coat"
+    ],
+    "owners": [
+      {
+        "owner": "MC_Ribbon2",
+        "orderedStart": 0,
+        "bindingCount": 6,
+        "serializedTransformCountIncludingOwnerRoot": 7,
+        "excludedOwnerRoot": "MC_Ribbon2",
+        "attributeCounts": {
+          "1": 1,
+          "2": 5
+        },
+        "sourceFlagCounts": {
+          "0x0b": 1,
+          "0x0d": 5
+        }
+      },
+      {
+        "owner": "MC_Hair",
+        "orderedStart": 6,
+        "bindingCount": 30,
+        "serializedTransformCountIncludingOwnerRoot": 31,
+        "excludedOwnerRoot": "MC_Hair",
+        "attributeCounts": {
+          "1": 9,
+          "2": 21
+        },
+        "sourceFlagCounts": {
+          "0x0b": 9,
+          "0x0d": 21
+        }
+      },
+      {
+        "owner": "MC_Ribbon",
+        "orderedStart": 36,
+        "bindingCount": 20,
+        "serializedTransformCountIncludingOwnerRoot": 21,
+        "excludedOwnerRoot": "MC_Ribbon",
+        "attributeCounts": {
+          "0": 2,
+          "1": 4,
+          "2": 14
+        },
+        "sourceFlagCounts": {
+          "0x01": 2,
+          "0x0b": 4,
+          "0x0d": 14
+        }
+      },
+      {
+        "owner": "MC_Coat",
+        "orderedStart": 56,
+        "bindingCount": 70,
+        "serializedTransformCountIncludingOwnerRoot": 71,
+        "excludedOwnerRoot": "MC_Coat",
+        "attributeCounts": {
+          "0": 34,
+          "1": 9,
+          "2": 27
+        },
+        "sourceFlagCounts": {
+          "0x01": 34,
+          "0x0b": 9,
+          "0x0d": 27
+        }
+      }
+    ],
+    "orderedEntries": [
+      {
+        "orderedIndex": 0,
+        "managerIndex": 0,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 0,
+        "proxyVertexIndexWithinOwner": 0,
+        "referenceIndex": 0,
+        "transformPathId": 7017106670940939464,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 1,
+        "managerIndex": 1,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 1,
+        "proxyVertexIndexWithinOwner": 1,
+        "referenceIndex": 1,
+        "transformPathId": 6700677068433941704,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 2,
+        "managerIndex": 2,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 2,
+        "proxyVertexIndexWithinOwner": 2,
+        "referenceIndex": 2,
+        "transformPathId": 1995614364809192648,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 3,
+        "managerIndex": 3,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 3,
+        "proxyVertexIndexWithinOwner": 3,
+        "referenceIndex": 3,
+        "transformPathId": -7662181229480024888,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 4,
+        "managerIndex": 4,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 4,
+        "proxyVertexIndexWithinOwner": 4,
+        "referenceIndex": 4,
+        "transformPathId": 6406460734646740168,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 5,
+        "managerIndex": 5,
+        "owner": "MC_Ribbon2",
+        "ownerLocalIndex": 5,
+        "proxyVertexIndexWithinOwner": 5,
+        "referenceIndex": 5,
+        "transformPathId": -1314328924529138488,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt/piaodai_back_L_5_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 6,
+        "managerIndex": 6,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 0,
+        "proxyVertexIndexWithinOwner": 0,
+        "referenceIndex": 0,
+        "transformPathId": -8760532267787721528,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_k_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 7,
+        "managerIndex": 7,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 1,
+        "proxyVertexIndexWithinOwner": 1,
+        "referenceIndex": 1,
+        "transformPathId": 2028035575315653832,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_k_01_jnt/hair_L_k_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 8,
+        "managerIndex": 8,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 2,
+        "proxyVertexIndexWithinOwner": 2,
+        "referenceIndex": 2,
+        "transformPathId": 1337250920033182920,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_k_01_jnt/hair_L_k_02_jnt/hair_L_k_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 9,
+        "managerIndex": 9,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 3,
+        "proxyVertexIndexWithinOwner": 3,
+        "referenceIndex": 3,
+        "transformPathId": -5159160805207415608,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 10,
+        "managerIndex": 10,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 4,
+        "proxyVertexIndexWithinOwner": 4,
+        "referenceIndex": 4,
+        "transformPathId": 4757045914010346696,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt/hair_L_j_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 11,
+        "managerIndex": 11,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 5,
+        "proxyVertexIndexWithinOwner": 5,
+        "referenceIndex": 5,
+        "transformPathId": 2094188092757075144,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt/hair_L_j_02_jnt/hair_L_j_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 12,
+        "managerIndex": 12,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 6,
+        "proxyVertexIndexWithinOwner": 6,
+        "referenceIndex": 6,
+        "transformPathId": -6367469416696093496,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt/hair_L_j_02_jnt/hair_L_j_03_jnt/hair_L_j_04_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 13,
+        "managerIndex": 13,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 7,
+        "proxyVertexIndexWithinOwner": 7,
+        "referenceIndex": 7,
+        "transformPathId": 2213217865617204424,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_i_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 14,
+        "managerIndex": 14,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 8,
+        "proxyVertexIndexWithinOwner": 8,
+        "referenceIndex": 8,
+        "transformPathId": -1872112118367230776,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_i_01_jnt/hair_L_i_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 15,
+        "managerIndex": 15,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 9,
+        "proxyVertexIndexWithinOwner": 9,
+        "referenceIndex": 9,
+        "transformPathId": 8413185776154076360,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_i_01_jnt/hair_L_i_02_jnt/hair_L_i_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 16,
+        "managerIndex": 16,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 10,
+        "proxyVertexIndexWithinOwner": 10,
+        "referenceIndex": 10,
+        "transformPathId": 7858560878500930760,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_h_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 17,
+        "managerIndex": 17,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 11,
+        "proxyVertexIndexWithinOwner": 11,
+        "referenceIndex": 11,
+        "transformPathId": 3481757773677421768,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_h_01_jnt/hair_L_h_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 18,
+        "managerIndex": 18,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 12,
+        "proxyVertexIndexWithinOwner": 12,
+        "referenceIndex": 12,
+        "transformPathId": -4933713601449597752,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_h_01_jnt/hair_L_h_02_jnt/hair_L_h_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 19,
+        "managerIndex": 19,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 13,
+        "proxyVertexIndexWithinOwner": 13,
+        "referenceIndex": 13,
+        "transformPathId": -7848421382111206200,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 20,
+        "managerIndex": 20,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 14,
+        "proxyVertexIndexWithinOwner": 14,
+        "referenceIndex": 14,
+        "transformPathId": 3201767378900837576,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 21,
+        "managerIndex": 21,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 15,
+        "proxyVertexIndexWithinOwner": 15,
+        "referenceIndex": 15,
+        "transformPathId": 601306091947320520,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt/hair_L_g_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 22,
+        "managerIndex": 22,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 16,
+        "proxyVertexIndexWithinOwner": 16,
+        "referenceIndex": 16,
+        "transformPathId": -3775754043770510136,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt/hair_L_g_03_jnt/hair_L_g_04_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 23,
+        "managerIndex": 23,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 17,
+        "proxyVertexIndexWithinOwner": 17,
+        "referenceIndex": 17,
+        "transformPathId": 1551651266610488520,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 24,
+        "managerIndex": 24,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 18,
+        "proxyVertexIndexWithinOwner": 18,
+        "referenceIndex": 18,
+        "transformPathId": 3001672963467535560,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/toushi_L_ctrl_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 25,
+        "managerIndex": 25,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 19,
+        "proxyVertexIndexWithinOwner": 19,
+        "referenceIndex": 19,
+        "transformPathId": 2286630410880640200,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 26,
+        "managerIndex": 26,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 20,
+        "proxyVertexIndexWithinOwner": 20,
+        "referenceIndex": 20,
+        "transformPathId": 454321413142635720,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 27,
+        "managerIndex": 27,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 21,
+        "proxyVertexIndexWithinOwner": 21,
+        "referenceIndex": 21,
+        "transformPathId": 4859533989737489608,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt/hair_L_f_04_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 28,
+        "managerIndex": 28,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 22,
+        "proxyVertexIndexWithinOwner": 22,
+        "referenceIndex": 22,
+        "transformPathId": -8888554091635448632,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 29,
+        "managerIndex": 29,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 23,
+        "proxyVertexIndexWithinOwner": 23,
+        "referenceIndex": 23,
+        "transformPathId": 7577814042940761288,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 30,
+        "managerIndex": 30,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 24,
+        "proxyVertexIndexWithinOwner": 24,
+        "referenceIndex": 24,
+        "transformPathId": 8682495451318871240,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 31,
+        "managerIndex": 31,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 25,
+        "proxyVertexIndexWithinOwner": 25,
+        "referenceIndex": 25,
+        "transformPathId": -1418378700041067320,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt/hair_L_e_05_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 32,
+        "managerIndex": 32,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 26,
+        "proxyVertexIndexWithinOwner": 26,
+        "referenceIndex": 26,
+        "transformPathId": -7957621550931286840,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 33,
+        "managerIndex": 33,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 27,
+        "proxyVertexIndexWithinOwner": 27,
+        "referenceIndex": 27,
+        "transformPathId": 7172366487538066632,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 34,
+        "managerIndex": 34,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 28,
+        "proxyVertexIndexWithinOwner": 28,
+        "referenceIndex": 28,
+        "transformPathId": -7643575961206496056,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 35,
+        "managerIndex": 35,
+        "owner": "MC_Hair",
+        "ownerLocalIndex": 29,
+        "proxyVertexIndexWithinOwner": 29,
+        "referenceIndex": 29,
+        "transformPathId": 8487825473358226632,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt/hair_L_d_05_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 36,
+        "managerIndex": 36,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 0,
+        "proxyVertexIndexWithinOwner": 0,
+        "referenceIndex": 0,
+        "transformPathId": -7049167327604808504,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 37,
+        "managerIndex": 37,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 1,
+        "proxyVertexIndexWithinOwner": 1,
+        "referenceIndex": 1,
+        "transformPathId": -1360719739787057976,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 38,
+        "managerIndex": 38,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 2,
+        "proxyVertexIndexWithinOwner": 2,
+        "referenceIndex": 2,
+        "transformPathId": -6205827831281457976,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 39,
+        "managerIndex": 39,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 3,
+        "proxyVertexIndexWithinOwner": 3,
+        "referenceIndex": 3,
+        "transformPathId": 5500012948766024904,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 40,
+        "managerIndex": 40,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 4,
+        "proxyVertexIndexWithinOwner": 4,
+        "referenceIndex": 4,
+        "transformPathId": -6172793693078854456,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt/piaodai_b_5_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 41,
+        "managerIndex": 41,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 5,
+        "proxyVertexIndexWithinOwner": 5,
+        "referenceIndex": 5,
+        "transformPathId": 566689848163263688,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 42,
+        "managerIndex": 42,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 6,
+        "proxyVertexIndexWithinOwner": 6,
+        "referenceIndex": 6,
+        "transformPathId": 4287089399476741320,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 43,
+        "managerIndex": 43,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 7,
+        "proxyVertexIndexWithinOwner": 7,
+        "referenceIndex": 7,
+        "transformPathId": 7698395312497910984,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 44,
+        "managerIndex": 44,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 8,
+        "proxyVertexIndexWithinOwner": 8,
+        "referenceIndex": 8,
+        "transformPathId": -2746061935791479608,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 45,
+        "managerIndex": 45,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 9,
+        "proxyVertexIndexWithinOwner": 9,
+        "referenceIndex": 9,
+        "transformPathId": -647389827437402936,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt/piaodai_hou_L_4_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 46,
+        "managerIndex": 46,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 10,
+        "proxyVertexIndexWithinOwner": 10,
+        "referenceIndex": 10,
+        "transformPathId": -1956738148934130488,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 47,
+        "managerIndex": 47,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 11,
+        "proxyVertexIndexWithinOwner": 11,
+        "referenceIndex": 11,
+        "transformPathId": 316286207248590024,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 48,
+        "managerIndex": 48,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 12,
+        "proxyVertexIndexWithinOwner": 12,
+        "referenceIndex": 12,
+        "transformPathId": 8886383742630126792,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 49,
+        "managerIndex": 49,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 13,
+        "proxyVertexIndexWithinOwner": 13,
+        "referenceIndex": 13,
+        "transformPathId": -8606583635000597304,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 50,
+        "managerIndex": 50,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 14,
+        "proxyVertexIndexWithinOwner": 14,
+        "referenceIndex": 14,
+        "transformPathId": -2582649907860511544,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt/piaodai_a_5_ctrl_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 51,
+        "managerIndex": 51,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 15,
+        "proxyVertexIndexWithinOwner": 15,
+        "referenceIndex": 15,
+        "transformPathId": -7701093531984173880,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 52,
+        "managerIndex": 52,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 16,
+        "proxyVertexIndexWithinOwner": 16,
+        "referenceIndex": 16,
+        "transformPathId": -3536917249495571256,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 53,
+        "managerIndex": 53,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 17,
+        "proxyVertexIndexWithinOwner": 17,
+        "referenceIndex": 17,
+        "transformPathId": 7712330460684248264,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 54,
+        "managerIndex": 54,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 18,
+        "proxyVertexIndexWithinOwner": 18,
+        "referenceIndex": 18,
+        "transformPathId": -4468589911815789368,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 55,
+        "managerIndex": 55,
+        "owner": "MC_Ribbon",
+        "ownerLocalIndex": 19,
+        "proxyVertexIndexWithinOwner": 19,
+        "referenceIndex": 19,
+        "transformPathId": 6176645957389673672,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt/piaodai_hou_R_4_skin_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 56,
+        "managerIndex": 56,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 0,
+        "proxyVertexIndexWithinOwner": 0,
+        "referenceIndex": 0,
+        "transformPathId": -4763340459310488376,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 57,
+        "managerIndex": 57,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 1,
+        "proxyVertexIndexWithinOwner": 1,
+        "referenceIndex": 1,
+        "transformPathId": -3633610889284918072,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 58,
+        "managerIndex": 58,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 2,
+        "proxyVertexIndexWithinOwner": 2,
+        "referenceIndex": 2,
+        "transformPathId": 6116225297359922376,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 59,
+        "managerIndex": 59,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 3,
+        "proxyVertexIndexWithinOwner": 3,
+        "referenceIndex": 3,
+        "transformPathId": 5019249027869205704,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 60,
+        "managerIndex": 60,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 4,
+        "proxyVertexIndexWithinOwner": 4,
+        "referenceIndex": 4,
+        "transformPathId": -7049167327604808504,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 61,
+        "managerIndex": 61,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 5,
+        "proxyVertexIndexWithinOwner": 5,
+        "referenceIndex": 5,
+        "transformPathId": -1360719739787057976,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 62,
+        "managerIndex": 62,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 6,
+        "proxyVertexIndexWithinOwner": 6,
+        "referenceIndex": 6,
+        "transformPathId": -6205827831281457976,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 63,
+        "managerIndex": 63,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 7,
+        "proxyVertexIndexWithinOwner": 7,
+        "referenceIndex": 7,
+        "transformPathId": 5500012948766024904,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 64,
+        "managerIndex": 64,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 8,
+        "proxyVertexIndexWithinOwner": 8,
+        "referenceIndex": 8,
+        "transformPathId": -6172793693078854456,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt/piaodai_b_5_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 65,
+        "managerIndex": 65,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 9,
+        "proxyVertexIndexWithinOwner": 9,
+        "referenceIndex": 9,
+        "transformPathId": 7411925145473869000,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/clothes_pifeng_L_a_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 66,
+        "managerIndex": 66,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 10,
+        "proxyVertexIndexWithinOwner": 10,
+        "referenceIndex": 10,
+        "transformPathId": 5460580564864492744,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/clothes_pifeng_L_a_4_jnt/clothes_pifeng_L_a_5_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 67,
+        "managerIndex": 67,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 11,
+        "proxyVertexIndexWithinOwner": 11,
+        "referenceIndex": 11,
+        "transformPathId": 6253498914639275208,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 68,
+        "managerIndex": 68,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 12,
+        "proxyVertexIndexWithinOwner": 12,
+        "referenceIndex": 12,
+        "transformPathId": 7163086160116868296,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 69,
+        "managerIndex": 69,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 13,
+        "proxyVertexIndexWithinOwner": 13,
+        "referenceIndex": 13,
+        "transformPathId": 566689848163263688,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 70,
+        "managerIndex": 70,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 14,
+        "proxyVertexIndexWithinOwner": 14,
+        "referenceIndex": 14,
+        "transformPathId": 4287089399476741320,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 71,
+        "managerIndex": 71,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 15,
+        "proxyVertexIndexWithinOwner": 15,
+        "referenceIndex": 15,
+        "transformPathId": 7698395312497910984,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 72,
+        "managerIndex": 72,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 16,
+        "proxyVertexIndexWithinOwner": 16,
+        "referenceIndex": 16,
+        "transformPathId": -2746061935791479608,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 73,
+        "managerIndex": 73,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 17,
+        "proxyVertexIndexWithinOwner": 17,
+        "referenceIndex": 17,
+        "transformPathId": -647389827437402936,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt/piaodai_hou_L_4_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 74,
+        "managerIndex": 74,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 18,
+        "proxyVertexIndexWithinOwner": 18,
+        "referenceIndex": 18,
+        "transformPathId": 2716055788869477576,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_touming_L_b_1_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 75,
+        "managerIndex": 75,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 19,
+        "proxyVertexIndexWithinOwner": 19,
+        "referenceIndex": 19,
+        "transformPathId": -8611114096288504632,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_touming_L_b_1_jnt/clothes_touming_L_b_2_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 76,
+        "managerIndex": 76,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 20,
+        "proxyVertexIndexWithinOwner": 20,
+        "referenceIndex": 20,
+        "transformPathId": 7161908563041150152,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_touming_L_b_1_jnt/clothes_touming_L_b_2_jnt/clothes_touming_L_b_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 77,
+        "managerIndex": 77,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 21,
+        "proxyVertexIndexWithinOwner": 21,
+        "referenceIndex": 21,
+        "transformPathId": 5160093372072813768,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_touming_L_b_1_jnt/clothes_touming_L_b_2_jnt/clothes_touming_L_b_3_jnt/clothes_touming_L_b_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 78,
+        "managerIndex": 78,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 22,
+        "proxyVertexIndexWithinOwner": 22,
+        "referenceIndex": 22,
+        "transformPathId": -7979748218170547000,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 79,
+        "managerIndex": 79,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 23,
+        "proxyVertexIndexWithinOwner": 23,
+        "referenceIndex": 23,
+        "transformPathId": 3899292162864407752,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt/clothes_pifeng_L_b_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 80,
+        "managerIndex": 80,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 24,
+        "proxyVertexIndexWithinOwner": 24,
+        "referenceIndex": 24,
+        "transformPathId": -9106659290867735352,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt/clothes_pifeng_L_b_3_jnt/clothes_pifeng_L_b_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 81,
+        "managerIndex": 81,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 25,
+        "proxyVertexIndexWithinOwner": 25,
+        "referenceIndex": 25,
+        "transformPathId": 2235519600079430856,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt/clothes_pifeng_L_b_3_jnt/clothes_pifeng_L_b_4_jnt/clothes_pifeng_L_b_5_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 82,
+        "managerIndex": 82,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 26,
+        "proxyVertexIndexWithinOwner": 26,
+        "referenceIndex": 26,
+        "transformPathId": -8997126520611248952,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 83,
+        "managerIndex": 83,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 27,
+        "proxyVertexIndexWithinOwner": 27,
+        "referenceIndex": 27,
+        "transformPathId": 6215122712080114888,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 84,
+        "managerIndex": 84,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 28,
+        "proxyVertexIndexWithinOwner": 28,
+        "referenceIndex": 28,
+        "transformPathId": -4715542699417180984,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_R_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 85,
+        "managerIndex": 85,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 29,
+        "proxyVertexIndexWithinOwner": 29,
+        "referenceIndex": 29,
+        "transformPathId": -1575136400255916856,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_R_0_skin_jnt/piaodai_back_R_1_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 86,
+        "managerIndex": 86,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 30,
+        "proxyVertexIndexWithinOwner": 30,
+        "referenceIndex": 30,
+        "transformPathId": -9196059830937361208,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_R_0_skin_jnt/piaodai_back_R_1_skin_jnt/piaodai_back_R_2_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 87,
+        "managerIndex": 87,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 31,
+        "proxyVertexIndexWithinOwner": 31,
+        "referenceIndex": 31,
+        "transformPathId": 536642403102844104,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_R_0_skin_jnt/piaodai_back_R_1_skin_jnt/piaodai_back_R_2_skin_jnt/piaodai_back_R_3_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 88,
+        "managerIndex": 88,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 32,
+        "proxyVertexIndexWithinOwner": 32,
+        "referenceIndex": 32,
+        "transformPathId": 7206423079526163656,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_R_0_skin_jnt/piaodai_back_R_1_skin_jnt/piaodai_back_R_2_skin_jnt/piaodai_back_R_3_skin_jnt/piaodai_back_R_4_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 89,
+        "managerIndex": 89,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 33,
+        "proxyVertexIndexWithinOwner": 33,
+        "referenceIndex": 33,
+        "transformPathId": 7017106670940939464,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 90,
+        "managerIndex": 90,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 34,
+        "proxyVertexIndexWithinOwner": 34,
+        "referenceIndex": 34,
+        "transformPathId": 6700677068433941704,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 91,
+        "managerIndex": 91,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 35,
+        "proxyVertexIndexWithinOwner": 35,
+        "referenceIndex": 35,
+        "transformPathId": 1995614364809192648,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 92,
+        "managerIndex": 92,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 36,
+        "proxyVertexIndexWithinOwner": 36,
+        "referenceIndex": 36,
+        "transformPathId": -7662181229480024888,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 93,
+        "managerIndex": 93,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 37,
+        "proxyVertexIndexWithinOwner": 37,
+        "referenceIndex": 37,
+        "transformPathId": 6406460734646740168,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 94,
+        "managerIndex": 94,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 38,
+        "proxyVertexIndexWithinOwner": 38,
+        "referenceIndex": 38,
+        "transformPathId": -1314328924529138488,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt/piaodai_back_L_5_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 95,
+        "managerIndex": 95,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 39,
+        "proxyVertexIndexWithinOwner": 39,
+        "referenceIndex": 39,
+        "transformPathId": 5654561042008335560,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 96,
+        "managerIndex": 96,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 40,
+        "proxyVertexIndexWithinOwner": 40,
+        "referenceIndex": 40,
+        "transformPathId": -1395559087208307512,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt/clothes_pifeng_M_a_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 97,
+        "managerIndex": 97,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 41,
+        "proxyVertexIndexWithinOwner": 41,
+        "referenceIndex": 41,
+        "transformPathId": -7923191846759930680,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt/clothes_pifeng_M_a_3_jnt/clothes_pifeng_M_a_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 98,
+        "managerIndex": 98,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 42,
+        "proxyVertexIndexWithinOwner": 42,
+        "referenceIndex": 42,
+        "transformPathId": 3620514040481473736,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt/clothes_pifeng_M_a_3_jnt/clothes_pifeng_M_a_4_jnt/clothes_pifeng_M_a_5_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 99,
+        "managerIndex": 99,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 43,
+        "proxyVertexIndexWithinOwner": 43,
+        "referenceIndex": 43,
+        "transformPathId": 8345430660232996040,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 100,
+        "managerIndex": 100,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 44,
+        "proxyVertexIndexWithinOwner": 44,
+        "referenceIndex": 44,
+        "transformPathId": -4821657139583949624,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 101,
+        "managerIndex": 101,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 45,
+        "proxyVertexIndexWithinOwner": 45,
+        "referenceIndex": 45,
+        "transformPathId": -9823258532092728,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 102,
+        "managerIndex": 102,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 46,
+        "proxyVertexIndexWithinOwner": 46,
+        "referenceIndex": 46,
+        "transformPathId": 1829260048147965128,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 103,
+        "managerIndex": 103,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 47,
+        "proxyVertexIndexWithinOwner": 47,
+        "referenceIndex": 47,
+        "transformPathId": -1956738148934130488,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 104,
+        "managerIndex": 104,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 48,
+        "proxyVertexIndexWithinOwner": 48,
+        "referenceIndex": 48,
+        "transformPathId": 316286207248590024,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 105,
+        "managerIndex": 105,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 49,
+        "proxyVertexIndexWithinOwner": 49,
+        "referenceIndex": 49,
+        "transformPathId": 8886383742630126792,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 106,
+        "managerIndex": 106,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 50,
+        "proxyVertexIndexWithinOwner": 50,
+        "referenceIndex": 50,
+        "transformPathId": -8606583635000597304,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 107,
+        "managerIndex": 107,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 51,
+        "proxyVertexIndexWithinOwner": 51,
+        "referenceIndex": 51,
+        "transformPathId": -2582649907860511544,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt/piaodai_a_5_ctrl_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 108,
+        "managerIndex": 108,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 52,
+        "proxyVertexIndexWithinOwner": 52,
+        "referenceIndex": 52,
+        "transformPathId": 2597901828849296584,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/clothes_pifeng_R_a_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 109,
+        "managerIndex": 109,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 53,
+        "proxyVertexIndexWithinOwner": 53,
+        "referenceIndex": 53,
+        "transformPathId": -860812654335138616,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/clothes_pifeng_R_a_4_jnt/clothes_pifeng_R_a_5_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 110,
+        "managerIndex": 110,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 54,
+        "proxyVertexIndexWithinOwner": 54,
+        "referenceIndex": 54,
+        "transformPathId": -5648667663282838328,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 111,
+        "managerIndex": 111,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 55,
+        "proxyVertexIndexWithinOwner": 55,
+        "referenceIndex": 55,
+        "transformPathId": 1348881300698981576,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt",
+        "attribute": 1,
+        "sourceFlag": 11,
+        "sourceFlagHex": "0x0b",
+        "activeManagerFlag": 27,
+        "activeManagerFlagHex": "0x1b",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 112,
+        "managerIndex": 112,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 56,
+        "proxyVertexIndexWithinOwner": 56,
+        "referenceIndex": 56,
+        "transformPathId": -7701093531984173880,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 113,
+        "managerIndex": 113,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 57,
+        "proxyVertexIndexWithinOwner": 57,
+        "referenceIndex": 57,
+        "transformPathId": -3536917249495571256,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 114,
+        "managerIndex": 114,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 58,
+        "proxyVertexIndexWithinOwner": 58,
+        "referenceIndex": 58,
+        "transformPathId": 7712330460684248264,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 115,
+        "managerIndex": 115,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 59,
+        "proxyVertexIndexWithinOwner": 59,
+        "referenceIndex": 59,
+        "transformPathId": -4468589911815789368,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 116,
+        "managerIndex": 116,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 60,
+        "proxyVertexIndexWithinOwner": 60,
+        "referenceIndex": 60,
+        "transformPathId": 6176645957389673672,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt/piaodai_hou_R_4_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 117,
+        "managerIndex": 117,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 61,
+        "proxyVertexIndexWithinOwner": 61,
+        "referenceIndex": 61,
+        "transformPathId": -8030837027653917496,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_back_R_5_skin_jnt",
+        "attribute": 0,
+        "sourceFlag": 1,
+        "sourceFlagHex": "0x01",
+        "activeManagerFlag": 17,
+        "activeManagerFlagHex": "0x11",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 118,
+        "managerIndex": 118,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 62,
+        "proxyVertexIndexWithinOwner": 62,
+        "referenceIndex": 62,
+        "transformPathId": 588712598372246728,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_touming_R_b_1_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 119,
+        "managerIndex": 119,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 63,
+        "proxyVertexIndexWithinOwner": 63,
+        "referenceIndex": 63,
+        "transformPathId": 7690051203418121416,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_touming_R_b_1_jnt/clothes_touming_R_b_2_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 120,
+        "managerIndex": 120,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 64,
+        "proxyVertexIndexWithinOwner": 64,
+        "referenceIndex": 64,
+        "transformPathId": 2144327475317073096,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_touming_R_b_1_jnt/clothes_touming_R_b_2_jnt/clothes_touming_R_b_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 121,
+        "managerIndex": 121,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 65,
+        "proxyVertexIndexWithinOwner": 65,
+        "referenceIndex": 65,
+        "transformPathId": 2746179714697684168,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_touming_R_b_1_jnt/clothes_touming_R_b_2_jnt/clothes_touming_R_b_3_jnt/clothes_touming_R_b_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 122,
+        "managerIndex": 122,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 66,
+        "proxyVertexIndexWithinOwner": 66,
+        "referenceIndex": 66,
+        "transformPathId": 201333765610431688,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_pifeng_R_b_2_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 123,
+        "managerIndex": 123,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 67,
+        "proxyVertexIndexWithinOwner": 67,
+        "referenceIndex": 67,
+        "transformPathId": -7603755635209378616,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_pifeng_R_b_2_jnt/clothes_pifeng_R_b_3_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 124,
+        "managerIndex": 124,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 68,
+        "proxyVertexIndexWithinOwner": 68,
+        "referenceIndex": 68,
+        "transformPathId": -2075845827730971448,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_pifeng_R_b_2_jnt/clothes_pifeng_R_b_3_jnt/clothes_pifeng_R_b_4_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      },
+      {
+        "orderedIndex": 125,
+        "managerIndex": 125,
+        "owner": "MC_Coat",
+        "ownerLocalIndex": 69,
+        "proxyVertexIndexWithinOwner": 69,
+        "referenceIndex": 69,
+        "transformPathId": 3883702135874741448,
+        "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/clothes_pifeng_R_b_2_jnt/clothes_pifeng_R_b_3_jnt/clothes_pifeng_R_b_4_jnt/clothes_pifeng_R_b_5_jnt",
+        "attribute": 2,
+        "sourceFlag": 13,
+        "sourceFlagHex": "0x0d",
+        "activeManagerFlag": 29,
+        "activeManagerFlagHex": "0x1d",
+        "readChannels": [
+          "worldPosition",
+          "worldRotation",
+          "localPosition",
+          "localRotation",
+          "lossyScale",
+          "localToWorldMatrix"
+        ],
+        "baseInput": {
+          "position": "proxy.positions[proxyVertex]",
+          "rotation": "proxy.rotations[proxyVertex]"
+        }
+      }
+    ],
+    "duplicates": {
+      "bindingEntries": 126,
+      "uniqueTransforms": 100,
+      "duplicateEntries": 26,
+      "duplicatePathCount": 26,
+      "preservedAsDistinctManagerEntries": true,
+      "groups": [
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt",
+          "orderedIndices": [
+            0,
+            89
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            1,
+            0
+          ],
+          "sourceFlags": [
+            "0x0b",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt",
+          "orderedIndices": [
+            1,
+            90
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt",
+          "orderedIndices": [
+            2,
+            91
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt",
+          "orderedIndices": [
+            3,
+            92
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt",
+          "orderedIndices": [
+            4,
+            93
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt/piaodai_back_L_5_skin_jnt",
+          "orderedIndices": [
+            5,
+            94
+          ],
+          "owners": [
+            "MC_Ribbon2",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt",
+          "orderedIndices": [
+            36,
+            60
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            1,
+            0
+          ],
+          "sourceFlags": [
+            "0x0b",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt",
+          "orderedIndices": [
+            37,
+            61
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt",
+          "orderedIndices": [
+            38,
+            62
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt",
+          "orderedIndices": [
+            39,
+            63
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt/piaodai_b_5_ctrl_jnt",
+          "orderedIndices": [
+            40,
+            64
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt",
+          "orderedIndices": [
+            41,
+            69
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            0,
+            0
+          ],
+          "sourceFlags": [
+            "0x01",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt",
+          "orderedIndices": [
+            42,
+            70
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            1,
+            0
+          ],
+          "sourceFlags": [
+            "0x0b",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt",
+          "orderedIndices": [
+            43,
+            71
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt",
+          "orderedIndices": [
+            44,
+            72
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt/piaodai_hou_L_4_skin_jnt",
+          "orderedIndices": [
+            45,
+            73
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt",
+          "orderedIndices": [
+            46,
+            103
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            1,
+            0
+          ],
+          "sourceFlags": [
+            "0x0b",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt",
+          "orderedIndices": [
+            47,
+            104
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt",
+          "orderedIndices": [
+            48,
+            105
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt",
+          "orderedIndices": [
+            49,
+            106
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt/piaodai_a_5_ctrl_jnt",
+          "orderedIndices": [
+            50,
+            107
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt",
+          "orderedIndices": [
+            51,
+            112
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            0,
+            0
+          ],
+          "sourceFlags": [
+            "0x01",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt",
+          "orderedIndices": [
+            52,
+            113
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            1,
+            0
+          ],
+          "sourceFlags": [
+            "0x0b",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt",
+          "orderedIndices": [
+            53,
+            114
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt",
+          "orderedIndices": [
+            54,
+            115
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        },
+        {
+          "hierarchyPath": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt/piaodai_hou_R_2_skin_jnt/piaodai_hou_R_3_skin_jnt/piaodai_hou_R_4_skin_jnt",
+          "orderedIndices": [
+            55,
+            116
+          ],
+          "owners": [
+            "MC_Ribbon",
+            "MC_Coat"
+          ],
+          "attributes": [
+            2,
+            0
+          ],
+          "sourceFlags": [
+            "0x0d",
+            "0x01"
+          ]
+        }
+      ]
+    }
+  },
+  "managerLifecycle": {
+    "addTransformInitialization": {
+      "flagArray[i]": "sourceFlag",
+      "initLocalPositionArray[i]": "float3(transform.localPosition)",
+      "initLocalRotationArray[i]": "quaternion(transform.localRotation)",
+      "positionArray[i]": "lastpositionArray[i] = double3(transform.position)",
+      "rotationArray[i]": "lastrotationArray[i] = quaternion(transform.rotation)",
+      "scaleArray[i]": "float3(transform.lossyScale)",
+      "localPositionArray[i]": "lastlocalPositionArray[i] = float3(transform.localPosition)",
+      "localRotationArray[i]": "lastlocalRotationArray[i] = quaternion(transform.localRotation)",
+      "localToWorldMatrixArray[i]": "float4x4(transform.localToWorldMatrix)",
+      "teamIdArray[i]": "(short)teamId",
+      "transformAccessArray[i]": "the same Transform; duplicate paths remain separate entries"
+    },
+    "copyDoubleBufferJob": [
+      "lastpositionArray = copy(positionArray)",
+      "lastrotationArray = copy(rotationArray)",
+      "lastlocalPositionArray = copy(localPositionArray)",
+      "lastlocalRotationArray = copy(localRotationArray)"
+    ],
+    "readTransformJobGates": [
+      "TransformAccess is valid",
+      "(flag & 0x10) != 0",
+      "(flag & 0x01) != 0",
+      "team is not culling-invisible",
+      "team is not LOD-culled"
+    ],
+    "readTransformJobActiveWrites": {
+      "sampledForEveryAttribute": [
+        "transform.position",
+        "transform.rotation",
+        "transform.localToWorldMatrix",
+        "transform.localPosition",
+        "transform.localRotation"
+      ],
+      "localPositionArray[i]": "float3(transform.localPosition)",
+      "localRotationArray[i]": "quaternion(transform.localRotation)",
+      "scaleArray[i]": "scale extracted from transform.localToWorldMatrix",
+      "localToWorldMatrixArray[i]": "float4x4(transform.localToWorldMatrix), or its relative-space form when TeamData.useRelativeTransform > 0",
+      "positionArray[i]": "double3(transform.position) when useRelativeTransform == 0; relative-space transformed position otherwise",
+      "rotationArray[i]": "quaternion(transform.rotation) when useRelativeTransform == 0; relative-space transformed rotation otherwise",
+      "lastArrays": "not written by ReadTransformJob"
+    },
+    "perFrameOrdering": [
+      "ReadTransform call site 1191",
+      "WriteDoubleBufferTransform call site 1232",
+      "optional animator-buffer read",
+      "ReadTransform call site 1883",
+      "PreProxyMeshUpdate",
+      "SimulationStepUpdate"
+    ],
+    "orderingBoundary": "The two ReadTransform call sites and intervening WriteDoubleBufferTransform are exact. Static evidence does not select the Endminf animator branch or prove a per-frame caller of public CopyDoubleBuffer; its exact copy equation is retained without inventing a call site."
+  },
+  "baseInputPublication": {
+    "managerInput": "ReadTransformJob localToWorldMatrixArray for every active 0/1/2 attribute",
+    "preProxyJob": "VirtualMeshManager.CalcProxyMeshSkinningJob",
+    "endminfOneBoneReduction": [
+      "referenceIndices[v] == v and skinBoneTransformIndices[v] == v for all 126 owner-local vertices",
+      "boneWeights[v] has weight0=1, weights1..3=0, and boneIndex0=v",
+      "skinningMatrix[v] = transformLocalToWorldMatrixArray[managerIndex(v)] * skinBoneBindPoses[v]",
+      "proxy.positions[v] = double3(mul(skinningMatrix[v], float4(localPositions[v], 1)).xyz)",
+      "proxy.rotations[v] is reconstructed from localNormals/localTangents transformed by the same one-bone skinningMatrix"
+    ],
+    "simulationStartMapping": {
+      "authoredPosition": "proxy.positions[ownerProxyChunk.start + ownerLocalIndex]",
+      "authoredRotation": "proxy.rotations[ownerProxyChunk.start + ownerLocalIndex]",
+      "basePosition": "lerp(oldPosition, authoredPosition, frameInterpolation)",
+      "baseRotation": "shortest-arc slerp(oldRotation, authoredRotation, frameInterpolation)"
+    },
+    "localChannelRole": "localPosition/localRotation are captured for restore/local writeback; they do not directly feed Endminf proxy basePosition/baseRotation"
+  },
+  "executionBoundary": {
+    "orderedSourceFlagsClosed": true,
+    "allSixTransformReadChannelsClosed": true,
+    "managerInitializationClosed": true,
+    "copyDoubleBufferEquationsClosed": true,
+    "readTransformCurrentArrayEquationsClosed": true,
+    "endminfOneBoneProxyMappingClosed": true,
+    "duplicateEntryMappingClosed": true,
+    "targetReady": false,
+    "targetReadySubset": "the active, unpatched, non-relative owner-solver input route is complete when actual Unity Transform samples and exact team state are supplied",
+    "unresolved": [
+      "live Endminf TeamData.useRelativeTransform value and the general relative-space numeric branch",
+      "which conditional ClothUpdate ReadTransform/animator-buffer branch executes for the target session",
+      "a concrete per-frame call site for public CopyDoubleBuffer",
+      "IFix-patched ReadTransformJob execution",
+      "duplicate transform write winner (read entries themselves remain exact and distinct)"
+    ],
+    "unityRuntimeModified": false,
+    "runtimeHookInstalled": false
+  }
+}
