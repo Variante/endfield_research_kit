@@ -4134,27 +4134,32 @@ def _registry_markers(
             unresolved_member_layout = (
                 row.get("actionBindingStatus") == "unresolved_member_layout"
             )
-            row["kind"] = "script_target" if exact_action_targets else "script_target_candidate"
-            row["subKind"] = (
-                "registered_action_target" if exact_action_targets
-                else "registered_action_target_candidate"
-            )
-            row["interactionStatus"] = (
-                "exact_script_action_target" if exact_action_targets
-                else (
-                    "unresolved_registered_slot_bridge" if unresolved_registry_bridge
-                    else "unresolved_serialized_member_layout" if unresolved_member_layout
-                    else "unresolved_action_formatter_member"
+            # An action reference is a relationship, not the entity's semantic
+            # identity. Preserve a known enemy/device/etc. in its normal layer;
+            # only an otherwise empty registry slot needs this fallback layer.
+            if row["kind"] == "empty_slot":
+                row["kind"] = "script_target" if exact_action_targets else "script_target_candidate"
+                row["subKind"] = (
+                    "registered_action_target" if exact_action_targets
+                    else "registered_action_target_candidate"
                 )
-            )
+                row["interactionStatus"] = (
+                    "exact_script_action_target" if exact_action_targets
+                    else (
+                        "unresolved_registered_slot_bridge" if unresolved_registry_bridge
+                        else "unresolved_serialized_member_layout" if unresolved_member_layout
+                        else "unresolved_action_formatter_member"
+                    )
+                )
             action_names = sorted({str(target.get("actionName") or "") for target in action_targets if target.get("actionName")})
-            row["label"] = " / ".join(action_names) or "脚本动作目标"
+            if row["kind"] in {"script_target", "script_target_candidate"}:
+                row["label"] = " / ".join(action_names) or "脚本动作目标"
             row["controlledByTriggers"] = []
             for target in exact_action_targets:
                 for trigger in target.get("controlTriggers") or []:
                     if trigger not in row["controlledByTriggers"]:
                         row["controlledByTriggers"].append(trigger)
-            row["evidence"] = (
+            script_target_evidence = (
                 "build-locked native formatter member + exact constant EntityPtr + unique registered script slot"
                 if exact_action_targets else
                 (
@@ -4166,6 +4171,8 @@ def _registry_markers(
                     "exact constant EntityPtr bytes inside a validated action record; formatter member unresolved"
                 )
             )
+            if row["kind"] in {"script_target", "script_target_candidate"}:
+                row["evidence"] = script_target_evidence
             row["actionSourceFiles"] = _coalesce_file_paths([target.get("sourceFile") for target in exact_action_targets])
         for reading in readings:
             producer = next(

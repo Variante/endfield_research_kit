@@ -62,6 +62,7 @@ DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAsset
 MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 TEXTURE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
 MATERIAL_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material"
+RENDERER_INDEX = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/renderer_index/renderers.jsonl"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
@@ -132,6 +133,10 @@ HLOD_MATERIAL_NAME_RE = re.compile(
     r"^M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)$",
     re.IGNORECASE,
 )
+HLOD_MATERIAL_CONTAINER_RE = re.compile(
+    r"/material/m_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)[.]mat$",
+    re.IGNORECASE,
+)
 HLOD_DIFFUSE_NAME_RE = re.compile(
     r"^T_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_-?\d+_D$",
     re.IGNORECASE,
@@ -153,6 +158,7 @@ LEVEL_RENDER_ALIGNMENTS = {}
 
 _TEXTURE_BINDINGS: dict[str, dict] | None = None
 _HLOD_TEXTURE_BINDINGS: dict[tuple[str, int, int], dict] | None = None
+_RENDERER_TEXTURE_BINDINGS: dict[tuple[str, int], dict] | None = None
 _TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
 _MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
 
@@ -235,7 +241,10 @@ def build_hlod_index(asset_map: Path) -> dict:
     material_containers: dict[str, dict[str, list[dict]]] = {}
     for entry in iter_asset_entries(asset_map):
         container = str(entry.get("Container", "")).replace("\\", "/")
-        material_match = HLOD_MATERIAL_NAME_RE.fullmatch(str(entry.get("Name", "")))
+        material_match = (
+            HLOD_MATERIAL_NAME_RE.fullmatch(str(entry.get("Name", "")))
+            or HLOD_MATERIAL_CONTAINER_RE.search(container)
+        )
         diffuse_match = HLOD_DIFFUSE_NAME_RE.fullmatch(str(entry.get("Name", "")))
         if material_match and entry.get("Type") == "Material":
             material_containers.setdefault(container, {"materials": [], "diffuse": []})["materials"].append({
@@ -291,20 +300,27 @@ def build_hlod_index(asset_map: Path) -> dict:
             "textureName": diffuse["name"],
             "container": container,
         })
+    material_identities = [
+        material
+        for rows in material_containers.values()
+        for material in rows["materials"]
+        if isinstance(material.get("pathId"), int)
+    ]
     return {
-        "schemaVersion": 3,
+        "schemaVersion": 4,
         "assetMap": str(asset_map),
         "assetMapSha256": sha256_file(asset_map),
         "levels": levels,
         "waterSectors": water_sectors,
         "hlodDiffuseBindings": diffuse_bindings,
+        "hlodMaterialIdentities": material_identities,
     }
 
 
 def load_hlod_index(asset_map: Path, cache: Path, refresh: bool) -> dict:
     if not refresh and cache.exists():
         cached = json.loads(cache.read_text(encoding="utf-8"))
-        if cached.get("schemaVersion") == 3 and cached.get("assetMapSha256") == sha256_file(asset_map):
+        if cached.get("schemaVersion") == 4 and cached.get("assetMapSha256") == sha256_file(asset_map):
             return cached
     index = build_hlod_index(asset_map)
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -719,7 +735,11 @@ def install_asset_map_hlod_diffuse_bindings(index: dict, texture_files: dict[str
     return installed
 
 
-def install_hlod_material_json_bindings(material_root: Path, texture_files: dict[str, Path]) -> tuple[int, int]:
+def install_hlod_material_json_bindings(
+    material_root: Path,
+    texture_files: dict[str, Path],
+    index: dict | None = None,
+) -> tuple[int, int]:
     """Install exact HLOD Material `_BaseColorMap` PPtr bindings.
 
     These serialized references are the complete authority for generated HLOD
@@ -731,10 +751,25 @@ def install_hlod_material_json_bindings(material_root: Path, texture_files: dict
     installed = unresolved = 0
     if not material_root.is_dir():
         return installed, unresolved
-    for material_path in material_root.glob("M_auto_generated_HLOD*_*.json"):
+    identities = {
+        int(row["pathId"]): (str(row["level"]).lower(), int(row["lod"]), int(row["hash"]))
+        for row in ((index or {}).get("hlodMaterialIdentities") or [])
+        if isinstance(row.get("pathId"), int)
+    }
+    for material_path in material_root.glob("*.json"):
         stem = material_path.stem.rsplit("_p", 1)[0]
         matched = HLOD_MATERIAL_NAME_RE.fullmatch(stem)
-        if not matched:
+        identity = None
+        if matched:
+            identity = (matched.group("level").lower(), int(matched.group("lod")), int(matched.group("hash")))
+        elif "_p" in material_path.stem:
+            try:
+                unsigned_path_id = int(material_path.stem.rsplit("_p", 1)[1], 16)
+                signed_path_id = unsigned_path_id - (1 << 64) if unsigned_path_id >= (1 << 63) else unsigned_path_id
+                identity = identities.get(signed_path_id)
+            except ValueError:
+                pass
+        if identity is None:
             continue
         try:
             payload = json.loads(material_path.read_text(encoding="utf-8"))
@@ -750,11 +785,7 @@ def install_hlod_material_json_bindings(material_root: Path, texture_files: dict
         if texture_path is None:
             unresolved += 1
             continue
-        key = (
-            matched.group("level").lower(),
-            int(matched.group("lod")),
-            int(matched.group("hash")),
-        )
+        key = identity
         available[key] = {
             "slot": "_BaseColorMap",
             "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
@@ -1082,11 +1113,6 @@ def render_point_cloud(
                             albedo[color_offset + 2],
                             albedo[color_offset + 3],
                         ))
-                    elif not textured_pixels:
-                        base = elevation_color(tint)
-                        light = 0.72 + 0.24 * (1.0 - tint)
-                        base = tuple(min(255, round(channel * light)) for channel in base)
-                        row[offset:offset + 4] = bytes((*base, 225))
     if not rendered_instances:
         # Sparse fallbacks remain exact transform points. This also covers a
         # resolved streaming mesh that produces zero analytical hits (for
@@ -1177,21 +1203,25 @@ def render_point_cloud(
         elevation_underlay = render_sparse_point_elevation(
             level_id, sparse_point_depth, width, height, output_root,
         )
-        point_cloud_overlay = {
-            "src": f"render/{image_name}",
-            "method": "exact_registry_transform_point_cloud",
-            "defaultOpacity": 1.0,
-            "heightMask": point_height_mask,
-        }
+        # Registry transforms carry positions but no renderer/material/UV
+        # evidence. Keep them in the explicitly grayscale analytical layer;
+        # publishing colored dots as a point-cloud overlay would imply a
+        # texture relation that does not exist.
+        point_cloud_overlay = None
+    published_src = (
+        elevation_underlay["src"]
+        if not rendered_instances and elevation_underlay else
+        f"render/{image_name}"
+    )
     return {
         "schemaVersion": 1,
         "status": (
             "recovered_streaming_textured_topdown" if textured_pixels else
             "recovered_streaming_mesh_topdown" if rendered_instances else
-            "exact_registry_transform_point_cloud"
+            "exact_registry_transform_elevation_only"
         ),
         "levelId": level_id,
-        "src": f"render/{image_name}",
+        "src": published_src,
         "elevationUnderlay": elevation_underlay,
         "pointCloudOverlay": point_cloud_overlay,
         "worldBounds": bounds,
@@ -1200,7 +1230,7 @@ def render_point_cloud(
             "method": (
                 "exact_streaming_matrix_obj_uv_material_texture_depth_pass" if textured_pixels else
                 "exact_streaming_matrix_obj_depth_pass" if rendered_instances else
-                "exact_registry_transform_point_cloud"
+                "exact_registry_transform_elevation_only"
             ),
             "pointCount": 0 if rendered_instances else len(positions),
             "pointRadius": 0 if rendered_instances else radius,
@@ -1264,6 +1294,16 @@ def texture_file_index(texture_root: Path) -> dict[str, Path]:
     return {
         path.stem.rsplit("_p", 1)[-1].upper(): path
         for path in texture_root.glob("*.png") if "_p" in path.stem
+    }
+
+
+def material_file_index(material_root: Path) -> dict[str, Path]:
+    """Exported Material JSON files keyed by AnimeStudio's PathID suffix."""
+    if not material_root.is_dir():
+        return {}
+    return {
+        path.stem.rsplit("_p", 1)[-1].upper(): path
+        for path in material_root.glob("*.json") if "_p" in path.stem
     }
 
 
@@ -1472,6 +1512,8 @@ def _read_textured_mesh(path: Path):
     vertices = []
     texcoords = []
     faces = []
+    base_group = None
+    submesh_index = None
     try:
         stream = path.open("r", encoding="utf-8", errors="strict")
     except OSError:
@@ -1490,6 +1532,16 @@ def _read_textured_mesh(path: Path):
                     texcoords.append((float(parts[1]), float(parts[2])))
                 except (IndexError, ValueError):
                     return None
+            elif line.startswith("g "):
+                group = line[2:].strip()
+                if base_group is None:
+                    base_group = group
+                    submesh_index = None
+                elif group.startswith(base_group + "_"):
+                    suffix = group[len(base_group) + 1:]
+                    submesh_index = int(suffix) if suffix.isdigit() else None
+                else:
+                    submesh_index = None
             elif line.startswith("f "):
                 vertex_indices = []
                 texture_indices = []
@@ -1502,8 +1554,17 @@ def _read_textured_mesh(path: Path):
                         vertex_indices = []
                         break
                 if len(vertex_indices) == 3:
-                    faces.append((tuple(vertex_indices), tuple(texture_indices)))
+                    faces.append((tuple(vertex_indices), tuple(texture_indices), submesh_index))
     return vertices, texcoords, faces
+
+
+def _submesh_binding(binding: dict | None, submesh_index: int | None) -> dict | None:
+    slots = (binding or {}).get("submeshBindings")
+    if slots is None:
+        return binding
+    if submesh_index is None or not 0 <= submesh_index < len(slots):
+        return None
+    return slots[submesh_index]
 
 
 def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
@@ -1580,21 +1641,18 @@ def render_hlod_point_samples(
         if path is None:
             continue
         texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
-        parsed = _read_textured_mesh(path) if texture else _read_cluster(path)
+        if texture is None:
+            continue
+        parsed = _read_textured_mesh(path)
         if not parsed:
             continue
         translate_x = fit["originX"] + cluster["i"] * size + size / 2
         translate_z = fit["originZ"] + cluster["j"] * size + size / 2
-        if texture:
-            raw_vertices, texcoords, faces = parsed
-            used_textures.add(texture["textureRel"])
-            corners = []
-            for vertex_face, texture_face in faces:
-                corners.extend(zip(vertex_face, texture_face))
-        else:
-            raw_vertices, _faces = parsed
-            texcoords = []
-            corners = [(index, -1) for index in range(len(raw_vertices))]
+        raw_vertices, texcoords, faces = parsed
+        used_textures.add(texture["textureRel"])
+        corners = []
+        for vertex_face, texture_face in faces:
+            corners.extend(zip(vertex_face, texture_face))
         for vertex_index, texture_index in corners:
             try:
                 obj_x, obj_y, obj_z = raw_vertices[vertex_index]
@@ -1606,41 +1664,35 @@ def render_hlod_point_samples(
             py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
             if not (0 <= px < width and 0 <= py < height):
                 continue
-            color = None
-            if texture and texture_index >= 0:
-                try:
-                    u, v = texcoords[texture_index]
-                except IndexError:
-                    pass
-                else:
-                    color = _sample_texture(texture, u * texture["scale"][0] + texture["offset"][0],
-                                            v * texture["scale"][1] + texture["offset"][1])
-                    if color is None:
-                        continue
+            if texture_index < 0:
+                continue
+            try:
+                u, v = texcoords[texture_index]
+            except IndexError:
+                continue
+            color = _sample_texture(texture, u * texture["scale"][0] + texture["offset"][0],
+                                    v * texture["scale"][1] + texture["offset"][1])
+            if color is None:
+                continue
             add(py * width + px, obj_y, color)
 
     all_heights = [world_y for rows in samples.values() for world_y, _color in rows]
     if not all_heights:
         return None
     low, high = min(all_heights), max(all_heights)
-    span = max(high - low, 1.0)
     top_depth = [NO_HIT] * (width * height)
     top_colors = bytearray(width * height * 4)
     records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
     record_count = 0
     for index in sorted(samples):
         ordered = sorted(samples[index], key=lambda row: row[0])
-        for world_y, recovered_color in ordered:
-            tint = (world_y - low) / span
-            color = recovered_color or (*[max(18, round(channel * 0.62)) for channel in elevation_color(tint)], 225)
+        for world_y, color in ordered:
             records.extend(struct.pack("<IfBBBB", index, world_y, *color))
             record_count += 1
         top_y, top_color = ordered[-1]
-        tint = (top_y - low) / span
-        color = top_color or (*[max(18, round(channel * 0.62)) for channel in elevation_color(tint)], 225)
         top_depth[index] = top_y
         offset = index * 4
-        top_colors[offset:offset + 4] = bytes((*color[:3], 225))
+        top_colors[offset:offset + 4] = bytes(top_color)
 
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_hlod_vertex_points.png"
@@ -1732,7 +1784,6 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
             raw_vertices, texcoords, faces = parsed
             structural_detail = _is_detail_structural(instance, mesh)
             binding = (bindings or {}).get(_asset_rel_from_obj(mesh.get("obj")))
-            texture = _texture_render_source(binding)
             # AnimeStudio's OBJ conversion mirrors Unity X. Undo that conversion
             # before applying the recovered Unity column-major instance matrix.
             vertices = []
@@ -1744,7 +1795,8 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
                     matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
                 ))
             drawn = 0
-            for vertex_face, texture_face in faces:
+            for vertex_face, texture_face, submesh_index in faces:
+                texture = _texture_render_source(_submesh_binding(binding, submesh_index))
                 try:
                     points = [vertices[index] for index in vertex_face]
                 except IndexError:
@@ -2332,14 +2384,14 @@ def render_depth_surface(
     image_suffix: str,
     material_colors: bytearray | bytes | None = None,
 ) -> dict | None:
-    """Render exact depth hits as a continuous height-shaded surface layer."""
+    """Render only exact texture-backed depth hits as a surface layer."""
     real = [value > NO_HIT for value in depth]
     covered = [value for value in depth if value > NO_HIT]
     if not covered:
         return None
     low, high = min(covered), max(covered)
-    span = max(high - low, 1.0)
     rows = []
+    emitted = 0
     for y in range(height):
         row = bytearray()
         for x in range(width):
@@ -2347,27 +2399,27 @@ def render_depth_surface(
             if not real[index]:
                 row.extend((255, 255, 255, 0))
                 continue
-            tint = (depth[index] - low) / span
             color_offset = index * 4
             if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
                 base = tuple(material_colors[color_offset + channel] for channel in range(3))
                 alpha = material_colors[color_offset + 3]
             else:
-                base = elevation_color(tint)
-                light = 0.72 + 0.24 * (1.0 - tint)
-                base = tuple(min(255, round(channel * light)) for channel in base)
-                alpha = 225
+                row.extend((255, 255, 255, 0))
+                continue
             row.extend((*base, alpha))
+            emitted += 1
         rows.append(bytes(row))
+    if not emitted:
+        return None
     image_name = f"{level_id}_{image_suffix}.png"
     write_png(output_root / image_name, width, height, rows)
     return {
         "src": f"render/{image_name}",
-        "method": "orthographic_exact_depth_material_color_or_elevation_palette_surface",
+        "method": "orthographic_exact_depth_texture_color_surface",
         "defaultOpacity": 1.0,
         "realPixelRatio": round(sum(real) / (width * height), 4),
         "elevationRange": {"min": low, "max": high},
-        "boundary": "Only exact triangle depth hits are filled; gaps remain transparent.",
+        "boundary": "Only exact triangle depth hits with a proven base-color texture and UV sample are filled; all other pixels remain transparent.",
     }
 
 
@@ -2385,8 +2437,8 @@ def render_depth_point_overlay(
     if not covered:
         return None
     low, high = min(covered), max(covered)
-    span = max(high - low, 1.0)
     emitted = 0
+    emitted_depth = [NO_HIT] * len(depth)
     rows = []
     for y in range(height):
         row = bytearray(width * 4)
@@ -2395,35 +2447,36 @@ def render_depth_point_overlay(
             value = depth[index]
             if value <= NO_HIT or ((x * 37 + y * 17) % 11) >= 6:
                 continue
-            tint = (value - low) / span
             color_offset = index * 4
             if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
-                base = tuple(material_colors[color_offset + channel] for channel in range(3))
+                color = tuple(material_colors[color_offset + channel] for channel in range(4))
             else:
-                base = elevation_color(tint)
-                base = tuple(max(18, round(channel * 0.68)) for channel in base)
+                continue
             offset = x * 4
-            row[offset:offset + 4] = bytes((*base, 225))
+            row[offset:offset + 4] = bytes(color)
+            emitted_depth[index] = value
             emitted += 1
         rows.append(bytes(row))
+    if not emitted:
+        return None
     image_name = f"{level_id}_{image_suffix}.png"
     write_png(output_root / image_name, width, height, rows)
     height_mask = render_point_height_mask(
-        level_id, depth, width, height, output_root,
+        level_id, emitted_depth, width, height, output_root,
         image_suffix=f"{image_suffix}_height_mask",
         sampling="streaming",
     )
     return {
         "src": f"render/{image_name}",
-        "method": "orthographic_exact_depth_material_color_or_elevation_palette_points",
+        "method": "orthographic_exact_depth_texture_color_points",
         "defaultOpacity": 0.72,
         "pointDensity": 6 / 11,
         "pointPixelCount": emitted,
         "elevationRange": {"min": low, "max": high},
         "heightMask": height_mask,
         "boundary": (
-            "Only exact triangle depth-hit pixels can emit points; exact exported material color is retained "
-            "where available and unresolved pixels use the elevation palette. No geometry is grown."
+            "Only exact triangle depth-hit pixels with a proven base-color texture and UV sample emit points; "
+            "unresolved pixels remain transparent. No geometry is grown."
         ),
     }
 
@@ -2509,8 +2562,6 @@ def render_level(
     if not covered:
         return None
     low, high = min(covered), max(covered)
-    span = max(high - low, 1.0)
-
     rows = [bytearray(width * 4) for _ in range(height)]
     for y in range(height):
         row = rows[y]
@@ -2524,14 +2575,10 @@ def render_level(
             # 8/11 screen-door alternative for explicit comparisons.
             if mode == "depth_points" and ((x * 37 + y * 17) % 11) >= 8:
                 continue
-            tint = (depth[index] - low) / span
-            base = elevation_color(tint)
-            light = 0.62 if mode == "mesh_vertices" else 0.72
             offset = x * 4
-            row[offset:offset + 4] = bytes((
-                *[max(18, round(channel * light)) for channel in base],
-                225 if mode == "mesh_vertices" else 215,
-            ))
+            color_offset = index * 4
+            if material_colors is not None and material_colors[color_offset + 3]:
+                row[offset:offset + 4] = material_colors[color_offset:color_offset + 4]
 
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_hlod_grid_inferred.png"
@@ -2558,22 +2605,10 @@ def render_level(
         level_id, clusters, lod, fit, bounds, mesh_files, width, height, output_root,
         bindings=bindings,
     )
-    point_cloud_overlay = layered_point_overlay or {
-        "src": f"render/{image_name}",
-        "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
-        "defaultOpacity": 0.72,
-        "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
-        "heightMask": render_point_height_mask(
-            level_id, depth, width, height, output_root,
-            image_suffix="hlod_height_mask",
-            sampling="all" if mode == "mesh_vertices" else "hlod_depth",
-        ),
-        "boundary": (
-            "Only recovered OBJ vertices emit points."
-            if mode == "mesh_vertices" else
-            "Only pixels hit by recovered HLOD triangles can emit points."
-        ),
-    }
+    point_cloud_overlay = layered_point_overlay or render_depth_point_overlay(
+        level_id, depth, width, height, output_root, "hlod_texture_points",
+        material_colors=material_colors,
+    )
     size = cell_size(lod)
     scene_meshes = _scene_meshes(used, mesh_files, lod=lod, fit=fit)
     result = {
@@ -2589,11 +2624,7 @@ def render_level(
         "hlodLevel": lod,
         "render": {
             "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
-            "shading": (
-                "actual OBJ vertices projected orthographically, with world-Y encoded by the bounded elevation palette"
-                if mode == "mesh_vertices" else
-                "the 87b60f49 screen-door sample of real HLOD depth pixels, colored by the bounded elevation palette"
-            ),
+            "shading": "exact exported base-color texture samples only; unresolved pixels remain transparent",
             "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
             "sourceSampleCount": primitive_count,
             "materialBindingCount": len(bindings or {}),
@@ -2658,7 +2689,7 @@ def render_level(
             "record, so cluster placement uses the grid index in each cluster's name. Map01/Map02 share one "
             "fixed regional grid origin; marker occupancy remains validation, not a per-level transform. Material color is sampled only when the "
             "cluster and generated material share one exact level/LOD/signed suffix and that material owns "
-            "one exact base-color PathID; every missing or ambiguous link retains the elevation palette."
+            "one exact base-color PathID; every missing or ambiguous link remains transparent."
         ),
     }
     alignment = LEVEL_RENDER_ALIGNMENTS.get(level_id)
@@ -2670,6 +2701,15 @@ def render_level(
 def streaming_texture_bindings(level_id: str, instances: list[dict]) -> dict[str, dict]:
     """Add exact generated-HLOD material bindings to ordinary Mesh bindings."""
     generic = dict(texture_bindings())
+    renderer_bindings = renderer_texture_bindings()
+    for instance in instances:
+        for mesh in _instance_meshes(instance):
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            name, path_id = str(mesh.get("name") or "").casefold(), mesh.get("pathId")
+            if asset_rel and isinstance(path_id, int):
+                binding = renderer_bindings.get((name, path_id))
+                if binding:
+                    generic[asset_rel] = binding
     available = _HLOD_TEXTURE_BINDINGS or {}
     for instance in instances:
         for mesh in _instance_meshes(instance):
@@ -2681,6 +2721,131 @@ def streaming_texture_bindings(level_id: str, instances: list[dict]) -> dict[str
             if binding:
                 generic[asset_rel] = binding
     return generic
+
+
+def renderer_texture_bindings() -> dict[tuple[str, int], dict]:
+    """Load globally unambiguous Mesh -> ordered Material -> texture PPtrs.
+
+    The renderer sidecar is authoritative only with a terminal complete
+    summary. A mesh identity observed with different ordered material lists
+    stays unresolved. Multi-material lists bind only to the exact OBJ submesh
+    indices exported by AnimeStudio; a missing material/texture leaves just
+    that slot transparent. Names participate only alongside the exact PathID.
+    """
+    global _RENDERER_TEXTURE_BINDINGS
+    if _RENDERER_TEXTURE_BINDINGS is not None:
+        return _RENDERER_TEXTURE_BINDINGS
+    _RENDERER_TEXTURE_BINDINGS = {}
+    if not RENDERER_INDEX.is_file():
+        return _RENDERER_TEXTURE_BINDINGS
+    asset_targets: dict[tuple[str, int], list[dict]] = {}
+    if DEFAULT_ASSET_MAP.is_file():
+        try:
+            for asset in iter_asset_entries(DEFAULT_ASSET_MAP):
+                asset_type, path_id = asset.get("Type"), asset.get("PathID")
+                if isinstance(asset_type, str) and isinstance(path_id, int):
+                    asset_targets.setdefault((asset_type, path_id), []).append(asset)
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+            asset_targets = {}
+
+    def pointer_target(pointer: dict, asset_type: str) -> dict | None:
+        target = pointer.get("target") or {}
+        if isinstance(target.get("pathId"), int):
+            return target
+        path_id = pointer.get("pathId")
+        candidates = asset_targets.get((asset_type, path_id), []) if isinstance(path_id, int) else []
+        if len(candidates) != 1:
+            return None
+        asset = candidates[0]
+        return {
+            "name": asset.get("Name"),
+            "source": asset.get("Source"),
+            "pathId": path_id,
+        }
+
+    relationships: dict[tuple[str, int], set[tuple[tuple[str, int], ...]]] = {}
+    terminal_summary = None
+    try:
+        with RENDERER_INDEX.open(encoding="utf-8") as stream:
+            for line in stream:
+                row = json.loads(line)
+                if row.get("kind") == "summary":
+                    terminal_summary = row
+                    continue
+                if row.get("kind") != "renderer":
+                    continue
+                mesh = pointer_target(row.get("mesh") or {}, "Mesh") or {}
+                name, path_id = str(mesh.get("name") or "").casefold(), mesh.get("pathId")
+                if not name or not isinstance(path_id, int):
+                    continue
+                material_targets = [
+                    pointer_target(pointer, "Material")
+                    for pointer in (row.get("materials") or [])
+                    if isinstance(pointer, dict) and pointer.get("pathId")
+                ]
+                # Never collapse a missing material slot: OBJ submesh indices
+                # align to the serialized ordered array. An external pointer is
+                # accepted only when Type+PathID is unique in the exact AssetMap.
+                if not material_targets or any(target is None for target in material_targets):
+                    continue
+                materials = tuple(
+                    (str(target.get("source") or "").casefold(), int(target["pathId"]))
+                    for target in material_targets
+                )
+                relationships.setdefault((name, path_id), set()).add(materials)
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        return _RENDERER_TEXTURE_BINDINGS
+    if not terminal_summary or terminal_summary.get("complete") is not True:
+        return _RENDERER_TEXTURE_BINDINGS
+    material_files = material_file_index(MATERIAL_ROOT)
+    texture_files = texture_file_index(TEXTURE_ROOT)
+
+    def material_binding(material_path_id: int) -> dict | None:
+        material_path = _path_id_file(material_files, material_path_id)
+        if material_path is None:
+            return None
+        try:
+            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            environments = (payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}
+        except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+            return None
+        selected = None
+        for slot in BASE_TEXTURE_SLOTS:
+            env = environments.get(slot) or {}
+            texture_path_id = (env.get("m_Texture") or {}).get("m_PathID")
+            if isinstance(texture_path_id, int):
+                selected = (slot, texture_path_id)
+                break
+        if selected is None:
+            return None
+        texture_path = _path_id_file(texture_files, selected[1])
+        if texture_path is None:
+            return None
+        return {
+            "slot": selected[0],
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialPath": material_path,
+            "mappingMethod": "exact_renderer_material_base_color_pptr",
+        }
+
+    for mesh_key, candidates in relationships.items():
+        if len(candidates) != 1:
+            continue
+        materials = next(iter(candidates))
+        if not materials:
+            continue
+        slots = [material_binding(material[1]) for material in materials]
+        if len(slots) == 1 and slots[0] is not None:
+            slots[0]["mappingMethod"] = "exact_renderer_mesh_single_material_base_color_pptr"
+            _RENDERER_TEXTURE_BINDINGS[mesh_key] = slots[0]
+        elif len(slots) > 1 and any(slot is not None for slot in slots):
+            _RENDERER_TEXTURE_BINDINGS[mesh_key] = {
+                "submeshBindings": slots,
+                "mappingMethod": "exact_renderer_ordered_material_obj_submesh_index",
+            }
+    return _RENDERER_TEXTURE_BINDINGS
 
 
 def render_streaming_surface_samples(
@@ -2733,7 +2898,7 @@ def render_streaming_surface_samples(
             raw_vertices, texcoords, faces = parsed
             structural_detail = _is_detail_structural(instance, mesh)
             authored_detail_prop = _is_detail_prop(instance, mesh)
-            texture = _texture_render_source((bindings or {}).get(_asset_rel_from_obj(mesh.get("obj"))))
+            binding = (bindings or {}).get(_asset_rel_from_obj(mesh.get("obj")))
             vertices = []
             for obj_x, obj_y, obj_z in raw_vertices:
                 local_x = -obj_x  # undo AnimeStudio OBJ's Unity-X mirror
@@ -2742,7 +2907,8 @@ def render_streaming_surface_samples(
                     matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13],
                     matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
                 ))
-            for vertex_face, texture_face in faces:
+            for vertex_face, texture_face, submesh_index in faces:
+                texture = _texture_render_source(_submesh_binding(binding, submesh_index))
                 try:
                     points = [vertices[index] for index in vertex_face]
                 except IndexError:
@@ -2959,13 +3125,16 @@ def main(argv: list[str] | None = None) -> int:
     if installed_diffuse_bindings:
         print(f"map previews: recovered {installed_diffuse_bindings} baked HLOD diffuse bindings from AssetMap containers")
     installed_material_bindings, unresolved_material_bindings = install_hlod_material_json_bindings(
-        MATERIAL_ROOT, texture_files,
+        MATERIAL_ROOT, texture_files, index,
     )
     if installed_material_bindings or unresolved_material_bindings:
         print(
             f"map previews: recovered {installed_material_bindings} serialized HLOD material diffuse bindings"
             f"; {unresolved_material_bindings} unresolved"
         )
+    installed_renderer_bindings = len(renderer_texture_bindings())
+    if installed_renderer_bindings:
+        print(f"map previews: recovered {installed_renderer_bindings} exact renderer material bindings")
     only = set(args.level)
     if args.water_only:
         if not args.level:

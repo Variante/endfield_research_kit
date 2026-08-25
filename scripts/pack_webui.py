@@ -655,70 +655,66 @@ def create_package(args: argparse.Namespace) -> int:
     assets_output.parent.mkdir(parents=True, exist_ok=True)
     if audio_output is not None:
         audio_output.parent.mkdir(parents=True, exist_ok=True)
-    package_paths = [output, assets_output]
-    if audio_output is not None:
-        package_paths.append(audio_output)
-
-    with staged_package_outputs(package_paths) as staged:
-        _write_packages(
-            staged[output],
-            staged[assets_output],
-            staged.get(audio_output),
+    with staged_package_output(output) as staged_output:
+        _write_story_package(
+            staged_output,
             project_root=project_root,
             webui_root=webui_root,
             plan=plan,
             copied_text_files=copied_text_files,
-            companion_feature_files=companion_feature_files,
             emoji_images=emoji_images,
+        )
+    size_mb = output.stat().st_size / (1024 * 1024)
+    print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)", flush=True)
+
+    with staged_package_output(assets_output) as staged_output:
+        _write_assets_package(
+            staged_output,
+            webui_root=webui_root,
+            plan=plan,
+            companion_feature_files=companion_feature_files,
             asset_images=asset_images,
             existing_videos=existing_videos,
         )
-
-    size_mb = output.stat().st_size / (1024 * 1024)
     assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
-    print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
-    print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
+    print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)", flush=True)
+
     if audio_output is not None:
+        with staged_package_output(audio_output) as staged_output:
+            _write_audio_package(staged_output, plan=plan)
         audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
-        print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
+        print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)", flush=True)
     return 0
 
 
 @contextmanager
-def staged_package_outputs(outputs: list[Path]):
-    """Keep published packages intact until every replacement is complete."""
-    staged: dict[Path, Path] = {}
+def staged_package_output(output: Path):
+    """Atomically publish one package immediately after it is complete."""
+    temp_path: Path | None = None
     try:
-        for output in outputs:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            descriptor, temp_name = tempfile.mkstemp(
-                dir=output.parent,
-                prefix=f".{output.name}.",
-                suffix=".tmp",
-            )
-            os.close(descriptor)
-            staged[output] = Path(temp_name)
-        yield staged
-        for output, temp_path in staged.items():
-            temp_path.replace(output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temp_name = tempfile.mkstemp(
+            dir=output.parent,
+            prefix=f".{output.name}.",
+            suffix=".tmp",
+        )
+        os.close(descriptor)
+        temp_path = Path(temp_name)
+        yield temp_path
+        temp_path.replace(output)
     finally:
-        for temp_path in staged.values():
+        if temp_path is not None:
             temp_path.unlink(missing_ok=True)
 
 
-def _write_packages(
+def _write_story_package(
     output: Path,
-    assets_output: Path,
-    audio_output: Path | None,
     *,
     project_root: Path,
     webui_root: Path,
     plan: PackagePlan,
     copied_text_files: list[Path],
-    companion_feature_files: list[Path],
     emoji_images: list[ExportedImage],
-    asset_images: list[ExportedImage],
-    existing_videos: list[ExportedImage],
 ) -> None:
     written: set[str] = set()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
@@ -746,6 +742,16 @@ def _write_packages(
         for image in emoji_images:
             zip_write_file(zipf, written, image.source_path, image.archive_path)
 
+
+def _write_assets_package(
+    assets_output: Path,
+    *,
+    webui_root: Path,
+    plan: PackagePlan,
+    companion_feature_files: list[Path],
+    asset_images: list[ExportedImage],
+    existing_videos: list[ExportedImage],
+) -> None:
     assets_written: set[str] = set()
     with zipfile.ZipFile(assets_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
         zip_writestr(zipf, assets_written, "README.txt", CHINESE_QUICKSTART_README)
@@ -759,15 +765,16 @@ def _write_packages(
         for video in existing_videos:
             zip_write_file(zipf, assets_written, video.source_path, video.archive_path)
 
-    if audio_output is not None:
-        audio_written: set[str] = set()
-        with zipfile.ZipFile(audio_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
-            zip_writestr(zipf, audio_written, "README.txt", CHINESE_QUICKSTART_README)
-            zip_writestr(zipf, audio_written, "README-webui-audio-package.txt", AUDIO_PACKAGE_README)
-            for audio_path in plan.audio_files:
-                zip_write_file(zipf, audio_written, audio_path.source_path, audio_path.archive_path)
-            for audio_index in plan.audio_indexes:
-                zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
+
+def _write_audio_package(audio_output: Path, *, plan: PackagePlan) -> None:
+    audio_written: set[str] = set()
+    with zipfile.ZipFile(audio_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+        zip_writestr(zipf, audio_written, "README.txt", CHINESE_QUICKSTART_README)
+        zip_writestr(zipf, audio_written, "README-webui-audio-package.txt", AUDIO_PACKAGE_README)
+        for audio_path in plan.audio_files:
+            zip_write_file(zipf, audio_written, audio_path.source_path, audio_path.archive_path)
+        for audio_index in plan.audio_indexes:
+            zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
 
 
 
