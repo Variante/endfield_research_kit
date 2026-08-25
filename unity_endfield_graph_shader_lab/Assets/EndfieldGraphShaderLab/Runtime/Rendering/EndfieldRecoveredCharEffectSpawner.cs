@@ -235,44 +235,15 @@ namespace EndfieldGraphShaderLab
             GameObject instance,
             ParticleSystem[] systems)
         {
-            bool preRollOverview02 =
-                EndfieldEndminfVisualCompatibilityClock.Requested &&
-                instance != null &&
-                instance.name.StartsWith(
-                    "P_fxui_endminm003_overview_02",
-                    StringComparison.Ordinal);
-            float preRollSeconds = preRollOverview02
-                ? EndfieldEndminfVisualCompatibilityClock.ConfiguredPreRollSeconds
-                : 0.0f;
-            if (preRollSeconds <= 0.0f)
-            {
-                foreach (ParticleSystem system in systems)
-                    system.Play(true);
-                return;
-            }
-
-            // Retail creates the complete overview_02 owner nine 60-Hz
-            // presentation ticks before Endminf's first visible body frame.
-            // The compatibility clock already carries that age for the two
-            // post components; carry the same age into every ParticleSystem.
-            // Advance each system without children so nested systems are not
-            // simulated repeatedly.  The bounded remainder keeps a custom
-            // recording pre-roll exact without replacing the source 60-Hz
-            // observation with Unity's unrelated fixedDeltaTime cadence.
-            const float sourceTickSeconds = 1.0f / 60.0f;
+            // The overview_02 post owner predates the first visible body by
+            // nine retail ticks, but the phase-paired no-frame-generation
+            // sequence does not put that age on its ParticleSystems. Applying
+            // the post offset here makes M13 visible at source frame 367,
+            // where retail has no ring, and removes its peak from frame 382.
+            // Keep particle delays on the selection/body timeline; only the
+            // separately recovered compatibility post clock carries pre-roll.
             foreach (ParticleSystem system in systems)
-            {
-                float remaining = preRollSeconds;
-                bool restart = true;
-                while (remaining > 0.000001f)
-                {
-                    float step = Mathf.Min(sourceTickSeconds, remaining);
-                    system.Simulate(step, false, restart, false);
-                    restart = false;
-                    remaining -= step;
-                }
-                system.Play(false);
-            }
+                system.Play(true);
         }
 
         private static void ApplyEndminfBillboardClampCompatibility(GameObject instance)
