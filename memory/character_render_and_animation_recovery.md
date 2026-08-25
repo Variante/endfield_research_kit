@@ -563,14 +563,17 @@ CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
 cloth-01, cloth-04, cloth-03, and hair), omitting eyebrow and iris. Exact
 exported shader joins recover `Cull Front`, `ZTest Less`, `ZWrite Off`, black
 target-0 blend, packed SceneMV target 1, Skin/generic stencil ref 36, and Hair's
-stencil-16 exclusion. The Unity owner now uses the recovered core clip-space
-depth/FOV/aspect width law and publishes SceneMV in the same frame; the packed
-average-normal attribute path and exact source Z-offset remain open sub-pass
-branches. Its 41-frame D3D11 gate passes. Whole-frame no-frame-generation PSNR
-decreases from 13.3886
-to 13.3268 dB because the former bright edge accidentally agreed with the
-still-mismatched presentation/exposure; retain the source-exact state and fix
-the downstream frame instead of tuning the outline back toward that metric.
+stencil-16 exclusion. The Unity owner now uses the recovered clip-space
+depth/FOV/aspect width law and publishes SceneMV in the same frame. The source
+mesh importer now preserves the four-component `m_UV2`/`TEXCOORD2` stream, so
+the selected material's packed average-normal reconstruction is active. The
+outline-mask green channel and `_OutlineOffsetZ` also reproject the exact
+camera-space depth bias instead of applying the former generic clip nudge. Its
+41-frame D3D11 gate passes. Two phase-identical post-rebuild captures still
+match zero of 41 frame hashes and have 31.4456 dB mutual PSNR; their three
+crystal-clean retail comparisons span 14.0684-14.0744 dB, containing the prior
+14.0693 dB result. Do not attribute that cross-run metric movement to the
+outline until the broader temporal/physical nondeterminism is closed.
 
 Do not fork the renderer per actor. Endminf-specific code may own source asset
 selection and timing, while the importer, material mapping, animation,

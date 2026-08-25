@@ -5951,6 +5951,54 @@ namespace EndfieldGraphShaderLabEditor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        public static void RebuildEndminfPrefabForOutlineRecovery()
+        {
+            EnsureFolders();
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            ManifestCharacterSpec endminf = PlayableCatalogCharacters().Single(character =>
+                string.Equals(character.RootName, "Endminf", StringComparison.OrdinalIgnoreCase));
+            GameObject root = BuildCharacter(endminf);
+            if (root == null)
+                throw new InvalidOperationException(
+                    "Endminf manifest character rebuild returned no root");
+
+            string[] outlineMeshes =
+            {
+                "S_actor_endminf_face_01_lod0",
+                "S_actor_endminf_body_01_lod0",
+                "S_actor_endminf_cloth_01_lod0",
+                "S_actor_endminf_cloth_04_lod0",
+                "S_actor_endminf_cloth_03_lod0",
+                "S_actor_endminf_hair_01_lod0",
+            };
+            foreach (string meshName in outlineMeshes)
+            {
+                SkinnedMeshRenderer renderer = root
+                    .GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                    .Single(candidate => candidate.sharedMesh != null &&
+                        string.Equals(
+                            candidate.sharedMesh.name,
+                            meshName,
+                            StringComparison.Ordinal));
+                Mesh mesh = renderer.sharedMesh;
+                if (!mesh.HasVertexAttribute(VertexAttribute.TexCoord2) ||
+                    mesh.GetVertexAttributeDimension(VertexAttribute.TexCoord2) != 4)
+                {
+                    throw new InvalidDataException(
+                        $"Endminf outline mesh lost packed TEXCOORD2: {meshName}");
+                }
+            }
+
+            UnityEngine.Object.DestroyImmediate(root);
+            EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
+            EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            Debug.Log(
+                "Endminf outline mesh refresh complete: six TEXCOORD2 float4 streams " +
+                "preserved and overview effect augmentations restored.");
+        }
+
         private sealed class ActorBuildResult
         {
             public GameObject Root;
@@ -9052,6 +9100,30 @@ namespace EndfieldGraphShaderLabEditor
                     for (int i = 0; i < outUvs.Length; i++)
                         outUvs[i] = new Vector2(uvs[i * 2], uvs[i * 2 + 1]);
                     mesh.uv2 = outUvs;
+                }
+            }
+
+            if (meshData.TryGetValue("m_UV2", out object uv2Obj) && uv2Obj is IList)
+            {
+                var uvs = FloatList(uv2Obj);
+                if (uvs.Count == outVerts.Length * 4)
+                {
+                    var outUvs = new Vector4[outVerts.Length];
+                    for (int i = 0; i < outUvs.Length; i++)
+                    {
+                        outUvs[i] = new Vector4(
+                            uvs[i * 4],
+                            uvs[i * 4 + 1],
+                            uvs[i * 4 + 2],
+                            uvs[i * 4 + 3]);
+                    }
+                    mesh.SetUVs(2, outUvs);
+                }
+                else if (uvs.Count != 0)
+                {
+                    throw new InvalidDataException(
+                        $"Recovered TEXCOORD2 must be float4 when present: " +
+                        $"{name} values={uvs.Count} vertices={outVerts.Length}");
                 }
             }
 

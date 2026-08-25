@@ -53,6 +53,15 @@ UNITY_SHADERS = {
     "hair": LAB / "Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldCharacterHairRecovered.shader",
 }
 
+SOURCE_MESHES = {
+    "S_actor_endminf_face_01_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_face_01_lod0_pE3E44459F0DD0976.json",
+    "S_actor_endminf_body_01_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_body_01_lod0_pBCE4E33450BFD849.json",
+    "S_actor_endminf_cloth_01_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_cloth_01_lod0_p4F2352ABE20314B6.json",
+    "S_actor_endminf_cloth_04_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_cloth_04_lod0_p413C309D2AD902C7.json",
+    "S_actor_endminf_cloth_03_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_cloth_03_lod0_pBD7D3E535F2F37C2.json",
+    "S_actor_endminf_hair_01_lod0": ROOT / "scratch/character_ui_import/characters/chr_0003_endminf/meshes/Mesh/S_actor_endminf_hair_01_lod0_p5CD48B482FDFBE75.json",
+}
+
 
 def require(condition: bool, message: str) -> None:
     if not condition:
@@ -79,6 +88,22 @@ def main() -> None:
     require(CAPTURE.is_dir(), f"capture is missing: {CAPTURE}")
     rows: list[dict[str, object]] = []
     source_hashes: dict[str, str] = {}
+    mesh_hashes: dict[str, str] = {}
+
+    for mesh_name, mesh_path in SOURCE_MESHES.items():
+        require(mesh_path.is_file(), f"source mesh is missing: {mesh_path}")
+        mesh = json.loads(mesh_path.read_text(encoding="utf-8"))
+        vertex_count = mesh.get("m_VertexCount")
+        packed_normals = mesh.get("m_UV2", [])
+        require(
+            isinstance(vertex_count, int) and vertex_count > 0,
+            f"source mesh vertex count is invalid: {mesh_name}",
+        )
+        require(
+            len(packed_normals) == vertex_count * 4,
+            f"source mesh packed TEXCOORD2 drifted: {mesh_name}",
+        )
+        mesh_hashes[mesh_name] = sha256(mesh_path)
 
     for family, contract in SOURCE_FAMILIES.items():
         source = contract["shader"]
@@ -112,7 +137,13 @@ def main() -> None:
             require(token in block, f"{family} Unity stencil lost {token}")
         for token in (
             "EndfieldHGRPCharacterOutlineClipOffset",
+            "EndfieldHGRPCharacterOutlineNormal",
+            "EndfieldHGRPCharacterOutlineClipZ",
             "EndfieldRecoveredCharacterMotionMrt",
+            "outlineNormal : TEXCOORD2",
+            "_OutlineAverageNormal > 0.5",
+            "viewPosition.z - depthOffset",
+            "outlineMask.g",
             "SV_Target1",
         ):
             require(token in unity_text, f"{family} Unity shader lost {token}")
@@ -145,8 +176,19 @@ def main() -> None:
     ):
         require(token in pipeline_text, f"outline SceneMV publication lost {token}")
 
+    importer = LAB / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldManifestCharacterSetup.cs"
+    importer_text = importer.read_text(encoding="utf-8", errors="strict")
+    for token in (
+        'meshData.TryGetValue("m_UV2"',
+        "mesh.SetUVs(2, outUvs)",
+        "VertexAttribute.TexCoord2",
+        "EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate()",
+        "EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate()",
+    ):
+        require(token in importer_text, f"outline mesh import gate lost {token}")
+
     capture_output = (
-        LAB / "scratch/character_recovery/endminf_viewer_canonical_outline_v3"
+        LAB / "scratch/character_recovery/endminf_viewer_canonical_outline_v6"
     )
     report_path = capture_output / "report.json"
     require(report_path.is_file(), f"canonical capture report is missing: {report_path}")
@@ -165,12 +207,13 @@ def main() -> None:
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema": "endfield.endminf-character-outline-recovery.v1",
+        "schema": "endfield.endminf-character-outline-recovery.v2",
         "status": "ok",
         "capture": str(CAPTURE.relative_to(ROOT)).replace("\\", "/"),
         "drawCount": len(rows),
         "draws": rows,
         "sourceShaderSha256": source_hashes,
+        "sourceMeshSha256": mesh_hashes,
         "renderState": {
             "color0Blend": "Zero Zero, Zero Zero",
             "sceneMVBlend": "One Zero",
@@ -184,22 +227,22 @@ def main() -> None:
             "graphicsDeviceType": capture_report.get("graphicsDeviceType"),
             "sceneMVPublishedByOutline": True,
             "clipSpaceWidthRecovery": True,
-            "openVertexBranches": [
-                "packed average-normal attribute",
-                "exact source Z-offset",
-            ],
+            "packedAverageNormalRecovery": True,
+            "sourceZOffsetRecovery": True,
+            "repeatCaptureByteIdenticalFrames": 0,
         },
         "comparison": {
             "noFramegenPairs": 28,
-            "beforeAveragePsnrDb": 13.388621,
-            "afterAveragePsnrDb": 13.326791,
-            "beforeCrystalCleanPsnrDb": 14.121807,
-            "afterCrystalCleanPsnrDb": 14.069310,
+            "previousAveragePsnrDb": 13.326791,
+            "repeatAveragePsnrDb": [13.561907, 13.555405],
+            "previousCrystalCleanPsnrDb": 14.069310,
+            "repeatCrystalCleanPsnrDb": [14.068424, 14.074417],
+            "repeatCapturePsnrDb": 31.445556,
             "interpretation": (
-                "The source-exact black edge lowers whole-frame PSNR while the "
-                "larger presentation/exposure mismatch remains. Source/capture state, "
-                "not accidental metric agreement from the former bright approximation, "
-                "owns this pass."
+                "The packed-normal and Z recovery is source-exact, but repeated "
+                "phase-identical captures are not pixel-identical. The clean-reference "
+                "range contains the prior result, so cross-run PSNR movement is not "
+                "attributed to this pass."
             ),
         },
     }
