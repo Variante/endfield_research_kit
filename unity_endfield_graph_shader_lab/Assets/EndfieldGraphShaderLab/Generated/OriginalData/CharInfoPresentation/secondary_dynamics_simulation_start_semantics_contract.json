@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-simulation-start-semantics.v1",
-  "status": "main_integration_wind_and_spring_distance_noise_semantics_closed_normal_cone_inline_equation_open",
+  "status": "simulation_start_semantic_equations_closed_inlined_math_bit_transcription_partial",
   "native_gate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -109,8 +109,31 @@
     {
       "name": "normal_cone_restriction",
       "range": "0x25f9c3..0x25fbfd",
-      "status": "operands_control_flow_and_cosine_helper_closed_inline_angle_equation_open",
-      "nestedHelperRva": "0x23c1c0"
+      "status": "piecewise_projection_equation_and_asin_cosine_approximations_closed",
+      "nestedHelperRva": "0x23c1c0",
+      "equations": [
+        "L = team.scaleRatio * spring.limitDistance; distance-clamp d = predictedPosition-basePosition to length L",
+        "when normalLimitRatio < 1: n=rotate(baseRotation, selectedNormalAxis), p=dot(d,n), h=length(d-p*n), a=h/L",
+        "theta = asin_poly(a,a^2) for a<0.5, otherwise pi/2 - 2*asin_poly(sqrt((1-a)/2),(1-a)/2)",
+        "threshold = L * normalLimitRatio * BurstCos(theta)",
+        "when abs(p)>threshold: d -= copysign(abs(p)-threshold,p)*n",
+        "nextPosition = basePosition + d * (1-springFactor)"
+      ],
+      "asinPolynomial": {
+        "form": "asin_poly(s,y)=s+s*y*P(y); T0=B2+A2*y+y^2*(B0+A0*y); T1=B3+A3*y+y^2*(B1+A1*y); P=C1+C0*y+y^2*(D1+D0*y)+y^4*T1+y^8*T0",
+        "A0": 0.031615876506539346,
+        "A1": 0.012153605255773773,
+        "B0": -0.015819182433299966,
+        "B1": 0.013887151845016092,
+        "A2": 0.019290454772679107,
+        "A3": 0.017359569912236146,
+        "B2": 0.006606077476277171,
+        "B3": 0.022371761819320483,
+        "D0": 0.030381959280381322,
+        "D1": 0.044642856813771024,
+        "C0": 0.07500000000378582,
+        "C1": 0.16666666666664975
+      }
     },
     {
       "name": "writeback",
@@ -186,7 +209,6 @@
       "writeback_layout"
     ],
     "blocked": [
-      "normal-cone inline angle/correction equation",
       "bit-identical transcription of inlined wind math",
       "later constraint/collision stages"
     ]

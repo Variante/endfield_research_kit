@@ -38,6 +38,12 @@ class SimulationStartSemanticsContractTests(unittest.TestCase):
             self.contract["nested_helpers"]["normalConeCos"]["status"],
             "exact_scalar_binary64_cosine_implementation_closed",
         )
+        cone = next(row for row in self.contract["stages"] if row["name"] == "normal_cone_restriction")
+        self.assertEqual(
+            cone["status"],
+            "piecewise_projection_equation_and_asin_cosine_approximations_closed",
+        )
+        self.assertAlmostEqual(cone["asinPolynomial"]["C1"], 1.0 / 6.0, places=12)
 
     def test_generated_contract_matches(self):
         expected = json.dumps(self.contract, indent=2) + "\n"
