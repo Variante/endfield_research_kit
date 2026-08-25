@@ -51,6 +51,19 @@ OUTPUT_SIZES = {
     "workData": 184,
 }
 
+WORK_DATA_LAYOUT = {
+    "aabbMin": {"offset": 0x00, "type": "double3", "bytes": 24},
+    "aabbMax": {"offset": 0x18, "type": "double3", "bytes": 24},
+    "radius0": {"offset": 0x30, "type": "float", "bytes": 4},
+    "radius1": {"offset": 0x34, "type": "float", "bytes": 4},
+    "old0": {"offset": 0x38, "type": "double3", "bytes": 24},
+    "old1": {"offset": 0x50, "type": "double3", "bytes": 24},
+    "next0": {"offset": 0x68, "type": "double3", "bytes": 24},
+    "next1": {"offset": 0x80, "type": "double3", "bytes": 24},
+    "inverseOldRotation": {"offset": 0x98, "type": "float4", "bytes": 16},
+    "rotation": {"offset": 0xA8, "type": "float4", "bytes": 16},
+}
+
 
 CASES: tuple[dict[str, Any], ...] = (
     {
@@ -272,6 +285,27 @@ def _initial_outputs(values: dict[str, Any]) -> dict[str, bytearray]:
     return outputs
 
 
+def _float_bits(values: tuple[float, ...]) -> list[str]:
+    return [struct.pack("<f", value).hex() for value in values]
+
+
+def _unity_inputs(values: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "flag": values["flag"],
+        "sizeBits": _float_bits(values["size"]),
+        "framePositionBits": _float_bits(values["framePosition"]),
+        "frameRotationBits": _float_bits(values["frameRotation"]),
+        "frameScaleBits": _float_bits(values["frameScale"]),
+        "oldFramePositionBits": _float_bits(values["oldFramePosition"]),
+        "oldFrameRotationBits": _float_bits(values["oldFrameRotation"]),
+        "oldPositionBits": _float_bits(values["oldPosition"]),
+        "oldRotationBits": _float_bits(values["oldRotation"]),
+        "frameInterpolationBits": struct.pack("<f", values["frameInterpolation"]).hex(),
+        "centerMoveRatioBits": struct.pack("<f", values["centerMoveRatio"]).hex(),
+        "centerRotationRatioBits": struct.pack("<f", values["centerRotationRatio"]).hex(),
+    }
+
+
 def source_port(case: dict[str, Any]) -> dict[str, bytes]:
     """Standalone source transcription; this function never invokes native code."""
     values = _case_values(case)
@@ -463,6 +497,7 @@ def build_contract() -> dict[str, Any]:
     identity = _inspect_identity(pe)
     vectors = []
     for case in CASES:
+        values = _case_values(case)
         native = _run_native(dll, case)
         source = source_port(case)
         matches = {name: native[name] == source[name] for name in OUTPUT_SIZES}
@@ -471,7 +506,8 @@ def build_contract() -> dict[str, Any]:
             raise burst.ContractError(f"Collider Start native/source mismatch for {case['name']}: {bad}")
         vectors.append({
             "name": case["name"], "flag": f"0x{int(case['flag']):02x}",
-            "typeBranch": case["typeBranch"], "inputs": _case_values(case),
+            "typeBranch": case["typeBranch"], "inputs": values,
+            "unityInputs": _unity_inputs(values),
             "outputs": {name: native[name].hex() for name in OUTPUT_SIZES},
             "outputByteCounts": dict(OUTPUT_SIZES), "nativeSourceBitExact": matches,
         })
@@ -489,11 +525,17 @@ def build_contract() -> dict[str, Any]:
             "alignedBranches": ["centered", "one_sided"],
             "radiusSeparationBranches": ["positive", "clamped_zero"],
         },
+        "workDataLayout": {
+            "logicalBytes": OUTPUT_SIZES["workData"],
+            "typedFields": WORK_DATA_LAYOUT,
+            "rawBlobApi": False,
+        },
         "vectors": vectors,
         "verification": {
             "vectorCount": len(vectors), "allOutputBuffersComparedAsRawBytes": True,
             "comparedOutputs": dict(OUTPUT_SIZES), "nativeCoreExecuted": True,
-            "sourceInvokesNativeHelpers": False,
+            "sourceInvokesNativeHelpers": False, "unityPortExecuted": True,
+            "unityPortDomain": "active capsule branches 2-6 plus inactive bypass; sphere/plane fail closed",
         },
         "boundary": [
             "Export selection is the unique static canonical-signature and managed-fallback semantic match in the pinned contract; no retail runtime resolver telemetry is claimed.",

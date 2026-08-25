@@ -1,5 +1,8 @@
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 namespace EndfieldGraphShaderLab
 {
@@ -64,7 +67,83 @@ namespace EndfieldGraphShaderLab
             "b89ba62b96625b1e7987cd91f30f8204b89ba62b96625b1e7987cd91f30f8204" +
             "e06e9a2a96625b1e7987cd91f30f82040700000008000000090000000a000000";
 
+        // Exact zlib-compressed 3,876-double table used by Simulation Start's
+        // source-transcribed spring sine and normal-cone cosine helpers.
+        private const string SimulationStartTrigTableZlibBase64 =
+            "eNrtmHlYTVvcx1NponmeNCgNUqmkDpWQWRGvoYsUV0ghIUNKdQ2VJhFJdQ2FiwaEIpkSckndDJEuIUWpS4amd6/V3v2xen7PPpzO5b7P+/fn7NNa3/Vb30/7" +
+            "hBTd9DF3v+ZQNtZ9//t0/+HFE7J8qnyNbZVeagnbXisdIqFrcPbyxt8dXLUCV19JcR2+Z5dnRcFTBa75EW0/P/ViL4fErzV/yLfrDTc85bpM/dxtmxf+ku8D" +
+            "X/ic4Tc/FII26OKwtPZghvNnoeGelmec47R+P1c3Kz5Iptp8CBuf0Dt2Z8V8ewfnaWiDz4b1s55Wp/fF45y7ZkSTdMhbq3gcgAnIjRVHO/uGqjrIzZ6xwvG6" +
+            "b57fNgNqhbeHZnyqpf6CudV0421JT0SEQJ7q6lhdbf3Qnl98xGEUQAHIq1yOUgl721f5ooT7D/uvcWomqQBm2AuuLaVGvI1TLeOy6PDDnC4uEYROeJh99diF" +
+            "sy/3vp6b3yi17+hqv7MHZIydHwiYnWbjCu1oAgxA7vx5GnXCfe2tVwydHPjhDCdE4/nN4wreQy/UXeQovXxmycaT3qdPl7H9Ygdxzt8ogOd2jwueWn0sSeBQ" +
+            "l27nbKMZXbxcHG3glB011LG/9jbIrWopHLYsrTzn2CiFkdffuJ3ilWfiDUTyjc/bjwJYZ/cQB2DFkcEBVFszPB8H4GmHWsfqoyxnhBiagCtd/MNfaAOD7Qxz" +
+            "JJ9MnvbMtt0xZtTwvbusZzWepCbAypJXPg7V5vT3w8s44zeN3v3b+WXBDeoNmbY56jPQCZRb8Jt/KJlp0Gq0a7ibEV6gba7IZ2oEW86MT+aM1pmelP2zc8g7" +
+            "5yUHVn6c52PBxiHvcMtJbzynvfFkHFqgQjavnPRKLe2V/ngB9YPZOOmVebRXfPXOelzPS+aZJ6XZf60Nuwtya6p1/hK/NOz9whnhPkJrbcj14dqVPzkMtU6O" +
+            "5Bwb8vlKqpVmGiQNq/RAGzQ7J6aY7h3ckHda4/yO6qOjpmddWIIC2AbyNai2968Yhmvb2rzb95O9f5Lu9fsr0QrrzX80J73T01ykPu1odH4tB7eS575uXIq6" +
+            "dFqBf3FILz17XuSj53IiE/KK+JtzsU+2rDZn45B3uOW+QmiDQZz85ReuLlqqeZbp7ad6h16M8aswY+OPcQC+HO0ineTiCTrdvh+3jtbcbt5gnqcu7b40+wkg" +
+            "h7zDcMg73HLIK/8Wd8UB/Gn7WdRRqnHhmm78EA7gIshxLSces63Wwids7Xk9r/KPBbKWEcuWr6y2zs7YjQPYZct4S432VunkkRxfvQQz3Cql/rZT8AJVrb+V" +
+            "k14ZR3vlkFPOWRu/iRlsnPTKOdoLK94M0NEcqmvGKye9Q/LOWv3HJtuwgxrhk0Os49KlpooNyRZYEvtuUNTbk2wc8o7gOf+dMVF5prxyZ1S7K87aRDl9oSZg" +
+            "5ZC4iszncxv0LRiOWqeiYH+XF3RpLwjhDaaz8gCLgddzNkeAnPQOySHv6OMPDGLluLbVx4Ec8g7Dod5fO95CIMHXc9B/nUPeYTjkHW659lY0AVtATnpHjO71" +
+            "vIlxvc75W7Jy0jskl8EbtPluTnqn2/OEN57QvSlRazpepCrOhN+c9M63ctIbPc1Jr3wrJ70TTnvn0czRFa+C/I+z8VsOKIBRXV65T3uF4/hU/6bAJBPSOz3N" +
+            "D7SGUldA0NoXb/CcBeOlcWMMjuTprRsIeaOnOOSVnuILp6IAkkBeiAPYNqTa+njAgw1OFsETh1L/ujWaMhzyTuUrT3dZn1/+IL0gSHshNtJ5ytrxngP5zUkv" +
+            "6NFeuKejuj+1/r7xj+b5HDQBj6yY96nHr4JOFzU3nygI2BcR6HT62MbVJtQVuAJy6tKgE7Qq3IFOaOzguL4Fh/eFCZsGSd2sEV6dbswrJ3t/Dd370vgD+j89" +
+            "J3s/l+79hvevYyKdq4x+dk5dOmoC7oL8PQ7gEsipS/lXlmGGJa5l9RnmZXPRCfcZVD6s1VbvYKjRNVS7U5NBHr724swbByIt42Ki1G/62JhTl141eOInE4Yr" +
+            "NazPiHJaZ5l98Xpsxbh+mV/DF1e0RqcdT5eRVlm+yuOoMdVqmhGelqjV4iq0zVPr4xYKmD7teh7yhp9EY3CjtcFRXjnplYe0V7jlkBduZ1X+fVfnkSG/OeQd" +
+            "4yyNOs12DVb+BNXyX7+DHPLOv8X98A+lbt28wnDIOwyHvHNqjRo1gjXpbHyc71VqxEW/m5PeiaG9w6yPjY/BATwdjGvXP9J0y0L/kNyJFgPTr/kdX/v5H4Mo" +
+            "HMDtwYkdJboVv8w5+dzHtFmxROmPRe+snHX63UvXuOlDTcBZkEPeifwVfWAeK3+CA9gBctQ6ig3rQe6Hf4j8dTDpLYaT3tlEe4czefvLWQ3zDdi4xlB0woMG" +
+            "j0O1L/d80LdyDg5AffAkVJs7Mwf1M0cnPPWYeGE2dcJVaf44AFGQk96Ror3TsCpRjrrDA9h4Z+0+Afm4GyiAIpDjWp6VBXLSC/W0F/xTSuNnRR3mO4e8ElJj" +
+            "n26UpcHKIe9wyyHvMBzyxliZp6+t9Av1fzTPHY8moNAMtYaFgJcJbo04WSOG1+AN/vHdnPTOLdo71jigWP1JqHZjN5qhVsn5onW8zOa3gIKAvCPu/bfVr0p0" +
+            "ZeW7feWoK7DEjLp0CXpC2t2+3xT/UOnazQunQ/yeOZnnHIK80VMc8kpPcdIb2bQ3SiRuBSpf3sN/DniHWR/pnTTaOwlf1Rz9Uw7qsXEVHEAAyHHt3vcw5egd" +
+            "lC+bKziQ6f1JCidSn6wtOQh549/i40SqqCugBnLIO13PA17hlpNeEaO9kjcanWACz5z0Qj3the1r5tZ6C2/u/6M55I3YxQ8O548ZwTOHvLJ65IG5CV+P6fLK" +
+            "Ie8wHPIOt3wEquU5t0AeggM4bZKNalV1rlF9HpqA2sODmtdsP6AYdoD0yhi699Pk5d7llq3VZeOkN3qaQ965YYI20PsAG/fHAdiAHPIOw6HebrdZlHV24vTf" +
+            "/5/zxiHvMJz0xm7aG5tfTDLQe/yrDq8c8k5JYsHKNHk/bV455I2e4pA3eoqjVpEv22GMW6VO0wDXpsyd/tzyz6vQBGwAOa7lKV4gv5YyyoLjONmY8VYu7a3c" +
+            "+DZqQmamsvEtDlupCeAYtyahCfg0gOSkd7bR3oksF46y3D9CezjeoLCx0uVZ5c4v4tPOTUQBzTy4CS/wHy02TnonhvYOt5zsdX+616s/OXkL3pj903PSOya0" +
+            "d1Zo17g2v7BJ4ZUvvHiVmoAJIC9cv5WaACsjsQMt1AQ06ZPrg7zjuMn99IAVGqyc9EYh7Y1HQ2X8jVouJ/Ob716AArhiOI9+n0p6EzY6z1RR1znmmfIJ8Qv9" +
+            "Mjs3wDe+jWqN96/nG+JaLdXTL9zrPO503X0dDg4ohmcOeWHsK+EvgSVfNX80d/W0pa6AuGFaPpqQa3okJ70TTHvnZpL2JTO3/v2s9NEJ3jXILXtAjehGPTmb" +
+            "P6kRHaQTXSze1HLgpSavfOkEkxvrt14yMHRzPN+gO+7QQoeo2W/fNaWG78tarl2Tvb+Map2PUhkgT8O1nGzw1hW9sU/TI7nzNBRApME8/EJnpmfYsrLYc/mN" +
+            "1OlPIgOFHLfux7W7NgDkpHfu0b0ftXohNWJDNUkv/Gx8Ew6gjwHplXs21+88HFqQBHmH4ZB3uOVPXqMJuAPy3LtLqAnI7eaV215Jzxe9/SUJ8g7D7wWiDW75" +
+            "bj76ky11wosHDNB7vPpoxt+6+WZu8jZ/HtJSL86KKhb31GDj23AAU0EOecdqyJ4FmntL1fnNhUtQAOIgh7zDcNIrI2iv9BTHtRp/RD8R1aqru26zpPDcW5ve" +
+            "JqucalJNP7duHxsnvfOQ9g7DIS+kWKIFzFbnN4e8ETp4YMrK8GH7eOXUpaJOWEgf1+rcdJ0iurcn4AU8VWPjuDZXPdarsikV375mR49z0jtjaO8YBP5ZNj/q" +
+            "jBrpHfJ5Nk56JYr2yv4PttNCbXfzzNcczZAd/WlJN6/Y5MwvvuU1JxHyDsMhr4x0/pp09LKJGq881/TjkJCafnpLBW9QE1KmXR5rS01IvCbDce2WSOodF9fw" +
+            "4uhkac/C4l/Zxd92BtAf4qjVZEe/7uaVMUXjqRN4qAp5h1t+7+TEwB3auSBHraTmeKibN1p1qw/d3btUFfIKt5z0wi3aC29GfCpUihTfy29OekON9kake1jS" +
+            "B1t51Z+dg14p2Vy/Y1DAHn7zWlS7H3fpMu9TJIe8wy2HvCMVVkOdoAgrt9qPJsAZ5Is4OiUnJ9rpolZMLGjsR106jbqi4+pVeZ+disa7q+DaTjDu8koy7ZUv" +
+            "FyOoE1BQIb1Dcj+8wQ86qDUSsqOTQ2hvDJU5IPRUvS6BjZPe+VYOeSffGn3Am2cOeYdbjlpH7t16kEPeYThqlZjFY3UYrw2gvfZ79SfTTbJ+ymyc9E4S7R1R" +
+            "/UtrGyNGsPIBK9AEqOtwLAyKGiIKNf3uv54k+SpA7W0q+gONSpNwACIgt8Y/NNZqk14pkpqwqeH5WVYOeYfhkFe45ZAXBG0az2yWsdvNbw55o9FhzZSmDaJK" +
+            "vHLSCzW0Fx73QgvI3PWj+fsItIE7fONVVGtpeOWCHPIOw1vzF0+usgnVoi4VdYLmGvNwwG9URgwTMMi3ns/KIa/0StUMlndvieeVU5eOCmAUyCHv9BQPwQGI" +
+            "aZFeYTjkHYaTXvlMe6U9aHtHVuh9BX5zXLvyR0BOesea9o6uwGLRqmsJ8VBv124VoHb4z87/Oie9kkp7RaihY2Jr9CAFXjnpHRHaO30udJg1OogoQF7Z07uy" +
+            "I+Fzijwbr8UbPKaJWlGt2OObOeSdgpQ3VEJtcZBXuOWQF9p7nSpo6bgix2/OwRvU0qypfEiN+KW938r9jvdfFdIqpRkZs9Pea2lBt+9/hQNo02C89J72EsNx" +
+            "7TbVgRy1jnz1A5Dj2o259N38CtVKSdoZGlL+y5dd3uO0tx/VSupijbsapPEEyIXYogCSNVBrpVj+T7fnRVahACI1nivrGAT+aaV6reOh482Gd4rM831xAOtA" +
+            "Dnln7WKxz5ZtqbGQV3qKk70uQPfyf4WTXulpzqFaqTx2rzrzPlWPakvzkEJkwLqgApP5sv5paAJCQQ555bWUZK+gNPdYXjl16cxvcEaqd9ZqkzL593Gtlsuq" +
+            "66FajbmqjGt1TbDCoDEXLjjMb5bhlUPecIuQNaNmnO88HgdwC+SkdwRp7+SoNDa1Bz+SIb0jQXvHe/Dzl229rrJyyDuKp5X6z6uUZuWQdxgOeWPnx8P+9fdi" +
+            "ovnNw3AAqiAXs32zKk1ECOSQd+Zk58f/qTmBZw55h+FQ7/9XOOQdhpNeqae9cj8t9YxKo6s0Gye9s4buvd3CCcfNDi+IYuOkV3qaX8ABlIK88roZNcLHVYJR" +
+            "Lca5K/Y0z0e1+2FvlxdIvlH5EnUFQkFOeqWneT6q5Z3OKgLm6I1fsNv6qUtJTYBdlzde0d64FVcV9/GwQlQrDsAY5KR3SA55x+ex/WOF0yJSbJz0igntldTJ" +
+            "FWP3heRI8soNO3+o7Nb7vQdMDJlYvnYHr5y6lNQEbAc55B2G015Rp72isrTTKwrty1BAYbK8ctorarRXlBU6vaJw61QKlVCezI/mtDfUaG/sjuv0xk5R9QHm" +
+            "s+UmxfCbaw9DJ5zy3XwEqmXlaJAHdwYAcoFHVC3PXQbz7NC4Z3mzQN6+AP1S66imbY7emHspk5z2hhrtDSXaGztTRNAHrkTzm9PeUaW9o0R7R55bvg3V8rMK" +
+            "kMt1oABuqFKXXimgI0gpxrr3ievbDLr4JKp14ltPqtK9uIvuxbjYt0syPQSFWPmez1rUBOwHOa7dpgiQz38eRE3AWpDT3vluLiCPAnCB+YD2G1IT7GGOAzCB" +
+            "OQ5AFead3gE57Q0V2hu7aG/Elflcabp56pIUr5z2igrtFcVlnV6R6ylOe0WF9ooC7RXZvhELXUIlp0Wxcbr3VejeVxDu7P3YubP0NqgtM/zpuQiqbS11FcP9" +
+            "w6yEW8/HkxzyDsNN3rdfutZRo0y/jykkt6EPCMtqH0yvCHt5UJKNu1W1URNQorzn/vlRowqC4kkOeWVy1RxqBcY7+M1x7TZGgxy1kvvzIJAX4ACWgzx4NgrA" +
+            "HeSCqHblXLp6X4Tu/UWCr6/oPvonUnjR5k8d+vYgFytGE2ACchkcgArISe+QnPRCMt3LW39FH1jHd056o6c56Z1v5QFBaAKWg5y6lNQEuCuhVlLqLyWPWill" +
+            "cp70qyXNCz74/9L3VRsKwEWp84XwTlx2+uUt4pMWRY+4arF5lUevyOIWIWoCHEC+55MoNQFmIDfFP1RqKTWXoABK5OR2u1BXMFy6uPTtjZo3Y/rOq9SiJkBa" +
+            "aZmWj4RbRKxcYubGprde06TnJy9yGOOi3PdCZwCKEMe1+74e5O9xAE9BjlrnVMFtxft4gbPkcsRvG9zdpCTd8RIFVNbn2m0UwFmQy6HW6Z2smK13bmGgkV1c" +
+            "OKpt+YdRSqkeewvOx0SwcV0cQKRi2ruDkx29HeWeDDBJGd7yRaolIf1RdMmpPmM6A+jmlVxBKxN5m7ERkHcYDnkl50jQusS2zxL/dU56Zw7tDaO5vdR2iz8J" +
+            "Z+Okd0gOeeWXqSjhUTxzXMtawSAne3sS3dthJwypFZZv/7/OjRejX4o75B+ab75J/esWQ3LXe27UFWiQj/dy2JcTndbteVy7TZXyU3DA4d24syP6JfaO/BWq" +
+            "tXYLe8UUb4pM9pUXkfx06KRT2+2r4okh5Z7XbufJJw9veXQ60F/mcXRJqc8VC0nmeVy7CenyqFVKm6fKkM/j2p0XJX+Lag1rHy2Zpah2993rOx1/gdt2Nn7a" +
+            "CAWwEeSLp6EAloCc9M4W2gtJusuc3khobye90dMc8o6CjdPD8Pu7trHxTTiAVrlmKzwB0YtnDVhhamIRyfCvOIAaubCXO6kJSOv2POQdhkNe+Lc46ZV22isP" +
+            "o1e71LqFifGbk975SnvH3aHc7qi3hxjklXupBUZXZlRv5Tc/vaSFOuHabr2vaWW4IjzzN1a+uBQF8BfIIa9wy9Gl85FIlK15Y+3xpXq81Ldy0juGtHcY3nwK" +
+            "bXC+LGqV3S5SUrlKH81cTmVIqLjnbzq+wVWUjXd7H6K90rkAga0/Ow/AG3wh870c8kpfec7iKVX+W3jlkHcYDnmHWw55h+Gkd5pp76xvfn77QfRvImwc8obm" +
+            "h7fXEzI6evOb41p+LCUz/A5aYGjf7PrxcyO+DhUv/HwlTEot/jfUSo9Ot0lDfJb9OmoC6kCOa7e0HOSQd8Q6P8DKIe8wHPIOtxzX8iN/aXOXU1oH0wd245BX" +
+            "uOVP8AYGSuPaVS6MmFKl4DFwwtoe45B3up4nvDOP9k5rUmjyxc+6vdl47mQ0AS+kyi6hE47q0/RxwdOduQPE1qWsundK+Zkw5JU6mcjG38R3hPHKj1SgADJA" +
+            "7nwWBZAsdQAHML1P8QMUgIQYw3FtJ++QCscbHNxnT4ZWXXLZR1GGD3+KAtgA8vU4gEVdXtGgvZEjdVnFfc+IMNI738rvl6IALKUYL5Ec8k5OuY7Kiz7/hPLK" +
+            "VexQAK2SELfAAbzp1vvjja63JIWeFFpItU7mxvsgh7zRU7wdbyBIkrp0iqkequHmv4eK9HbO2rLE+8Qo80KvUF7518EoAF/JeBxQfwmS49rNnCOZXHaGOuGv" +
+            "4tSloa7ICREzo8MBKaumCKHWsfYYD3LIO8cmTjCqfN0qCHmlp7hVC9pgTd9cg9WDat2TxVO9zPI3to3jmpPe0aC9Y70andBxQcgL4oYDH7vVCYT8aA55xbDX" +
+            "r06/eF/czCuHvMNwyDvccsg7DA+mWkfFrq3P9/L2JjQBtX2aUe0rHRbrxgHvMBzyCrec9E4A7Z1LzQ/K9A+H9eKV41pWCQT5lA4UwFKQk96ppb0hER+cfeCE" +
+            "02bSK9/KIW9sb3vsPi2hWoDffNlUFMDfIIe8oZ3l3uJdG8d37o9aaVEKyGvd0ARESeSj2n3aX/TkGbSBotDWbWgDXgK4lhMDQX7EGwXgDXLXB2gCZkig1tOq" +
+            "axcZR3uJ4ROo1klIt+3yxmLaG6uqnFOF4xWD2TjpHZKTXjGlvbJDCwUgIcArtz+KAqgWJ72E/76CQDDkFW455JWe4mtc0AREim/0GCkqKWGyhbpU1AkWhWAu" +
+            "LBBc2xmA+Mi78zZ++TpYhOSolaZ2eIqTXsNcQCCY9IoY7RXEBXqAF+ENan03j0G1XCYNcu06FECHGMTtcQANYriWmw73LkhDE+LetX906R4cqBTzl0InvLU3" +
+            "+XzrLPRL7R2Qf81CAeSK3bOteRRhtrwbh7xDcQHEIe9wyyHvcMtJL+TTXqDuD+IC/OaQd3Zo9eKKQ95h+Dxcqw9Ewz/ZitptiBV++6A9MfeQVS9uOXWpqBO+" +
+            "KHoIb2CmcCauZTmuOa7dncdA/v5l3Y1cg10gL0S1nOzfzQurMBUIZuOQV7jlkDckO7nA/wLHBheP";
+
         private static readonly float[] FloatSinCosReducerTable = BuildFloatSinCosReducerTable();
+        private static readonly double[] SimulationStartTrigTable = BuildSimulationStartTrigTable();
 
         public struct Double3
         {
@@ -123,6 +202,190 @@ namespace EndfieldGraphShaderLab
             public Double3 next1;
             public Float4 inverseOldRotation;
             public Float4 rotation;
+        }
+
+        public struct ColliderStartInput
+        {
+            public byte flag;
+            public Float3 size;
+            public Float3 framePosition;
+            public Float4 frameRotation;
+            public Float3 frameScale;
+            public Float3 oldFramePosition;
+            public Float4 oldFrameRotation;
+            public float frameInterpolation;
+            public float centerMoveRatio;
+            public float centerRotationRatio;
+        }
+
+        // Logical layout of the native 184-byte WorkData element. The managed
+        // port intentionally exposes fields rather than an opaque byte buffer.
+        public struct ColliderStartWorkData
+        {
+            public Double3 aabbMin;
+            public Double3 aabbMax;
+            public float radius0;
+            public float radius1;
+            public Double3 old0;
+            public Double3 old1;
+            public Double3 next0;
+            public Double3 next1;
+            public Float4 inverseOldRotation;
+            public Float4 rotation;
+        }
+
+        public struct ColliderStartState
+        {
+            public Float3 nowPosition;
+            public Float4 nowRotation;
+            public Float3 oldPosition;
+            public Float4 oldRotation;
+            public ColliderStartWorkData workData;
+        }
+
+        public static bool StartCapsuleCollider(
+            ColliderStartInput input,
+            ref ColliderStartState state)
+        {
+            if (((~input.flag) & 0x30) != 0)
+                return false;
+
+            int colliderType = input.flag & 0x0f;
+            if (colliderType < 2 || colliderType > 6)
+                throw new NotSupportedException(
+                    "Collider Start is transcribed only for Endminf capsule branches 2-6.");
+
+            Float3 nowPosition = LerpFloat3Binary32(
+                input.oldFramePosition, input.framePosition, input.frameInterpolation);
+            Float4 nowRotation = NormalizeFloat4Binary32(SlerpQuaternionBinary32(
+                input.oldFrameRotation, input.frameRotation, input.frameInterpolation));
+            Float3 oldPosition = LerpFloat3Binary32(
+                state.oldPosition, nowPosition, input.centerMoveRatio);
+
+            // The native core publishes this normalized value, but deliberately
+            // keeps the pre-normalized interpolation for old endpoint rotation
+            // and inversion below.
+            Float4 oldRotationRaw = SlerpQuaternionBinary32(
+                state.oldRotation, nowRotation, input.centerRotationRatio);
+            Float4 oldRotation = NormalizeFloat4Binary32(oldRotationRaw);
+
+            state.nowPosition = nowPosition;
+            state.nowRotation = nowRotation;
+            state.oldPosition = oldPosition;
+            state.oldRotation = oldRotation;
+
+            Float3 axis;
+            switch (colliderType)
+            {
+                case 2:
+                case 5:
+                    axis = new Float3(1.0f, 0.0f, 0.0f);
+                    break;
+                case 3:
+                case 6:
+                    axis = new Float3(0.0f, 1.0f, 0.0f);
+                    break;
+                case 4:
+                    axis = new Float3(0.0f, 0.0f, 1.0f);
+                    break;
+                default:
+                    throw new InvalidOperationException("Unreachable capsule branch.");
+            }
+
+            float scaleX = MultiplyBinary32(input.frameScale.x, axis.x);
+            float scaleY = MultiplyBinary32(input.frameScale.y, axis.y);
+            float scaleZ = MultiplyBinary32(input.frameScale.z, axis.z);
+            float axisScale = AddBinary32(AddBinary32(scaleX, scaleY), scaleZ);
+            Float3 direction;
+            if (axisScale == 0.0f)
+            {
+                direction = new Float3(0.0f, 0.0f, 0.0f);
+            }
+            else
+            {
+                float sign = axisScale < 0.0f ? -1.0f : 1.0f;
+                direction = new Float3(
+                    MultiplyBinary32(axis.x, sign),
+                    MultiplyBinary32(axis.y, sign),
+                    MultiplyBinary32(axis.z, sign));
+            }
+            if ((input.flag & 0x80) != 0)
+                direction = new Float3(-direction.x, -direction.y, -direction.z);
+
+            float absoluteScale = Math.Abs(axisScale);
+            float radius0 = MultiplyBinary32(input.size.x, absoluteScale);
+            float radius1 = MultiplyBinary32(input.size.y, absoluteScale);
+            float length = MultiplyBinary32(input.size.z, absoluteScale);
+            float separation0;
+            float separation1;
+            if (colliderType < 5)
+            {
+                float half = MultiplyBinary32(length, 0.5f);
+                separation0 = Math.Max(SubtractBinary32(half, radius0), 0.0f);
+                separation1 = Math.Max(SubtractBinary32(half, radius1), 0.0f);
+            }
+            else
+            {
+                separation0 = 0.0f;
+                separation1 = Math.Max(
+                    SubtractBinary32(SubtractBinary32(length, radius0), radius1), 0.0f);
+            }
+
+            Float3 local0 = new Float3(
+                MultiplyBinary32(direction.x, separation0),
+                MultiplyBinary32(direction.y, separation0),
+                MultiplyBinary32(direction.z, separation0));
+            Float3 local1 = new Float3(
+                MultiplyBinary32(direction.x, separation1),
+                MultiplyBinary32(direction.y, separation1),
+                MultiplyBinary32(direction.z, separation1));
+            Float3 oldOffset0 = RotateQuaternionColliderStartBinary32(oldRotationRaw, local0);
+            Float3 oldOffset1 = RotateQuaternionColliderStartBinary32(oldRotationRaw, local1);
+            Float3 nextOffset0 = RotateQuaternionColliderStartBinary32(nowRotation, local0);
+            Float3 nextOffset1 = RotateQuaternionColliderStartBinary32(nowRotation, local1);
+            Float3 old0 = AddFloat3Binary32(oldPosition, oldOffset0);
+            Float3 old1 = SubtractFloat3Binary32(oldPosition, oldOffset1);
+            Float3 next0 = AddFloat3Binary32(nowPosition, nextOffset0);
+            Float3 next1 = SubtractFloat3Binary32(nowPosition, nextOffset1);
+
+            Float3 lower = new Float3(
+                Min4Binary32(SubtractBinary32(old0.x, radius0), SubtractBinary32(next0.x, radius0),
+                    SubtractBinary32(old1.x, radius1), SubtractBinary32(next1.x, radius1)),
+                Min4Binary32(SubtractBinary32(old0.y, radius0), SubtractBinary32(next0.y, radius0),
+                    SubtractBinary32(old1.y, radius1), SubtractBinary32(next1.y, radius1)),
+                Min4Binary32(SubtractBinary32(old0.z, radius0), SubtractBinary32(next0.z, radius0),
+                    SubtractBinary32(old1.z, radius1), SubtractBinary32(next1.z, radius1)));
+            Float3 upper = new Float3(
+                Max4Binary32(AddBinary32(old0.x, radius0), AddBinary32(next0.x, radius0),
+                    AddBinary32(old1.x, radius1), AddBinary32(next1.x, radius1)),
+                Max4Binary32(AddBinary32(old0.y, radius0), AddBinary32(next0.y, radius0),
+                    AddBinary32(old1.y, radius1), AddBinary32(next1.y, radius1)),
+                Max4Binary32(AddBinary32(old0.z, radius0), AddBinary32(next0.z, radius0),
+                    AddBinary32(old1.z, radius1), AddBinary32(next1.z, radius1)));
+
+            float normSquared = DotFloat4Binary32(oldRotationRaw, oldRotationRaw);
+            float inverseNormSquared = DivideBinary32(1.0f, normSquared);
+            Float4 scaledInverse = new Float4(
+                MultiplyBinary32(oldRotationRaw.x, inverseNormSquared),
+                MultiplyBinary32(oldRotationRaw.y, inverseNormSquared),
+                MultiplyBinary32(oldRotationRaw.z, inverseNormSquared),
+                MultiplyBinary32(oldRotationRaw.w, inverseNormSquared));
+
+            state.workData = new ColliderStartWorkData
+            {
+                aabbMin = new Double3(lower.x, lower.y, lower.z),
+                aabbMax = new Double3(upper.x, upper.y, upper.z),
+                radius0 = radius0,
+                radius1 = radius1,
+                old0 = new Double3(old0.x, old0.y, old0.z),
+                old1 = new Double3(old1.x, old1.y, old1.z),
+                next0 = new Double3(next0.x, next0.y, next0.z),
+                next1 = new Double3(next1.x, next1.y, next1.z),
+                inverseOldRotation = new Float4(
+                    -scaledInverse.x, -scaledInverse.y, -scaledInverse.z, scaledInverse.w),
+                rotation = nowRotation,
+            };
+            return true;
         }
 
         public static bool ProjectTether(
@@ -448,6 +711,7 @@ namespace EndfieldGraphShaderLab
 
         public static void ProjectAngle(
             byte[] attributes,
+            int[] parentIndices,
             float[] depths,
             float[] frictions,
             Double3[] basicPositions,
@@ -469,52 +733,68 @@ namespace EndfieldGraphShaderLab
             Float4[] localRotations,
             Float3[] restorationVectors)
         {
-            if (attributes.Length != 2 || depths.Length != 2 || frictions.Length != 2 ||
-                basicPositions.Length != 2 || basicRotations.Length != 2 ||
-                nextPositions.Length != 2 || velocityPositions.Length != 2 ||
-                rotations.Length != 2 || lengths.Length != 2 || localPositions.Length != 2 ||
-                localRotations.Length != 2 || restorationVectors.Length != 2)
-                throw new ArgumentException("Controlled Angle source port requires exactly two particles.");
+            int count = attributes.Length;
+            if (count < 2 || parentIndices.Length != count || depths.Length != count ||
+                frictions.Length != count || basicPositions.Length != count ||
+                basicRotations.Length != count || nextPositions.Length != count ||
+                velocityPositions.Length != count || rotations.Length != count ||
+                lengths.Length != count || localPositions.Length != count ||
+                localRotations.Length != count || restorationVectors.Length != count)
+                throw new ArgumentException("Angle arrays must have one entry per baseline particle.");
             if ((restoration && (restorationCurve == null || restorationCurve.Length != 16)) ||
                 (limit && (limitCurve == null || limitCurve.Length != 16)))
                 throw new ArgumentException("Angle curves must contain 16 samples.");
 
-            rotations[0] = basicRotations[0];
-            rotations[1] = basicRotations[1];
-            if (limit)
+            for (int child = 0; child < count; child++)
             {
-                lengths[1] = (float)LengthDouble3(SubtractDouble3(nextPositions[0], nextPositions[1]));
-                Double3 basicDirection = NormalizeDouble3(SubtractDouble3(basicPositions[1], basicPositions[0]));
-                Double3 local = RotateQuaternionDouble(
-                    InverseQuaternionBinary32(basicRotations[0]), basicDirection);
-                localPositions[1] = new Float3((float)local.x, (float)local.y, (float)local.z);
-                localRotations[1] = MultiplyQuaternionBinary32(
-                    InverseQuaternionBinary32(basicRotations[0]), basicRotations[1]);
-            }
-            if (restoration)
-            {
-                Double3 rest = SubtractDouble3(basicPositions[1], basicPositions[0]);
-                restorationVectors[1] = new Float3((float)rest.x, (float)rest.y, (float)rest.z);
+                rotations[child] = basicRotations[child];
+                int parent = parentIndices[child];
+                if (parent < 0)
+                    continue;
+                if (parent >= count)
+                    throw new ArgumentException("Angle parent index is outside the baseline.");
+                if (limit)
+                {
+                    lengths[child] = (float)LengthDouble3(
+                        SubtractDouble3(nextPositions[parent], nextPositions[child]));
+                    Double3 basicDirection = NormalizeDouble3(
+                        SubtractDouble3(basicPositions[child], basicPositions[parent]));
+                    Double3 local = RotateQuaternionDouble(
+                        InverseQuaternionBinary32(basicRotations[parent]), basicDirection);
+                    localPositions[child] = new Float3((float)local.x, (float)local.y, (float)local.z);
+                    localRotations[child] = MultiplyQuaternionBinary32(
+                        InverseQuaternionBinary32(basicRotations[parent]), basicRotations[child]);
+                }
+                if (restoration)
+                {
+                    Double3 rest = SubtractDouble3(basicPositions[child], basicPositions[parent]);
+                    restorationVectors[child] = new Float3((float)rest.x, (float)rest.y, (float)rest.z);
+                }
             }
 
             for (int sweep = 0; sweep < 3; sweep++)
             {
                 float t = AddBinary32(MultiplyBinary32(MultiplyBinary32(sweep, 0.5f), 0.4f), 0.1f);
                 float oneMinusT = SubtractBinary32(1.0f, t);
-                Double3 p = nextPositions[1];
-                Double3 q = nextPositions[0];
-                double childMobility = AngleMobility(frictions[1]);
-                double parentMobility = AngleMobility(frictions[0]);
-                if (limit)
+                for (int child = 1; child < count; child++)
                 {
-                    Double3 u = RotateQuaternionDouble(rotations[0], ToDouble3(localPositions[1]));
+                    if ((attributes[child] & 2) == 0)
+                        continue;
+                    int parent = parentIndices[child];
+                    Double3 p = nextPositions[child];
+                    Double3 q = nextPositions[parent];
+                    double childMobility = AngleMobility(frictions[child]);
+                    double parentMobility = AngleMobility(frictions[parent]);
+                    if (limit)
+                    {
+                    Double3 u = RotateQuaternionDouble(rotations[parent], ToDouble3(localPositions[child]));
                     Double3 d = SubtractDouble3(p, q);
                     double currentLength = LengthDouble3(d);
-                    double blendLength = currentLength + 0.5 * (lengths[1] - currentLength);
+                    double blendLength = currentLength + 0.5 * (lengths[child] - currentLength);
                     Double3 direction = MultiplyDouble3(d, 1.0 / currentLength);
                     Double3 unconstrained = MultiplyDouble3(direction, blendLength);
                     float limitRadians = MultiplyBinary32(
-                        SampleAngleCurve(depths[1], limitCurve), 0.01745329238474369f);
+                        SampleAngleCurve(depths[child], limitCurve), 0.01745329238474369f);
                     double phi = AcosBurstDouble(Math.Min(Math.Max(
                         DotDouble3(unconstrained, u) /
                         (LengthDouble3(unconstrained) * LengthDouble3(u)), -1.0), 1.0));
@@ -537,35 +817,35 @@ namespace EndfieldGraphShaderLab
                         MultiplyDouble3(constrained, 0.6000000238418579)));
                     Double3 childCorrection = MultiplyDouble3(
                         SubtractDouble3(childTarget, p), childMobility);
-                    nextPositions[1] = AddDouble3(p, childCorrection);
-                    velocityPositions[1] = AddDouble3(
-                        velocityPositions[1], MultiplyDouble3(childCorrection, 0.8999999761581421));
-                    if ((attributes[0] & 2) != 0)
+                    nextPositions[child] = AddDouble3(p, childCorrection);
+                    velocityPositions[child] = AddDouble3(
+                        velocityPositions[child], MultiplyDouble3(childCorrection, 0.8999999761581421));
+                    if ((attributes[parent] & 2) != 0)
                     {
                         Double3 parentCorrection = MultiplyDouble3(
                             SubtractDouble3(unconstrained, constrained),
                             parentMobility * 0.4000000059604645);
-                        nextPositions[0] = AddDouble3(q, parentCorrection);
-                        velocityPositions[0] = AddDouble3(
-                            velocityPositions[0], MultiplyDouble3(parentCorrection, 0.8999999761581421));
+                        nextPositions[parent] = AddDouble3(q, parentCorrection);
+                        velocityPositions[parent] = AddDouble3(
+                            velocityPositions[parent], MultiplyDouble3(parentCorrection, 0.8999999761581421));
                     }
-                    Double3 updatedDirection = SubtractDouble3(nextPositions[1], nextPositions[0]);
-                    Float4 baseRotation = MultiplyQuaternionBinary32(rotations[0], localRotations[1]);
+                    Double3 updatedDirection = SubtractDouble3(nextPositions[child], nextPositions[parent]);
+                    Float4 baseRotation = MultiplyQuaternionBinary32(rotations[parent], localRotations[child]);
                     Float4 deltaRotation = RotationBetweenDouble(u, updatedDirection, null);
-                    rotations[1] = MultiplyQuaternionBinary32(deltaRotation, baseRotation);
-                }
+                    rotations[child] = MultiplyQuaternionBinary32(deltaRotation, baseRotation);
+                    }
 
-                if (restoration)
-                {
-                    p = nextPositions[1];
-                    q = nextPositions[0];
+                    if (restoration)
+                    {
+                    p = nextPositions[child];
+                    q = nextPositions[parent];
                     Double3 d = SubtractDouble3(p, q);
-                    Double3 rest = ToDouble3(restorationVectors[1]);
+                    Double3 rest = ToDouble3(restorationVectors[child]);
                     Double3 dn = NormalizeDouble3(d);
                     Double3 rn = NormalizeDouble3(rest);
                     double angle = AcosBurstDouble(Math.Min(Math.Max(DotDouble3(dn, rn), -1.0), 1.0));
                     float strength = Math.Min(Math.Max(
-                        SampleAngleCurve(depths[1], restorationCurve), 0.0f), 1.0f);
+                        SampleAngleCurve(depths[child], restorationCurve), 0.0f), 1.0f);
                     strength = Math.Min(Math.Max(
                         MultiplyBinary32(strength, simulationPowerW), 0.0f), 1.0f);
                     float gravityMix = AddBinary32(
@@ -579,19 +859,20 @@ namespace EndfieldGraphShaderLab
                         weightedCurrent, MultiplyDouble3(rotated, oneMinusT));
                     Double3 childCorrection = MultiplyDouble3(
                         SubtractDouble3(childTarget, p), parentMobility);
-                    nextPositions[1] = AddDouble3(p, childCorrection);
-                    velocityPositions[1] = AddDouble3(
-                        velocityPositions[1],
+                    nextPositions[child] = AddDouble3(p, childCorrection);
+                    velocityPositions[child] = AddDouble3(
+                        velocityPositions[child],
                         MultiplyDouble3(childCorrection, restorationVelocityAttenuation));
-                    if ((attributes[0] & 2) != 0)
+                    if ((attributes[parent] & 2) != 0)
                     {
                         Double3 parentDelta = SubtractDouble3(
                             SubtractDouble3(weightedCurrent, MultiplyDouble3(rotated, t)), q);
                         Double3 parentCorrection = MultiplyDouble3(parentDelta, childMobility);
-                        nextPositions[0] = AddDouble3(q, parentCorrection);
-                        velocityPositions[0] = AddDouble3(
-                            velocityPositions[0],
+                        nextPositions[parent] = AddDouble3(q, parentCorrection);
+                        velocityPositions[parent] = AddDouble3(
+                            velocityPositions[parent],
                             MultiplyDouble3(parentCorrection, restorationVelocityAttenuation));
+                    }
                     }
                 }
             }
@@ -655,6 +936,203 @@ namespace EndfieldGraphShaderLab
                 stepRotations[vertex] = SlerpQuaternionBinary32(
                     stepRotations[vertex], baseRotations[vertex], animationPoseRatio);
             }
+        }
+
+        /// <summary>
+        /// Source transcription of Simulation Start's complete verified zero-wind
+        /// domain. Wind state is intentionally absent from this API so callers
+        /// cannot silently treat the unrecovered nonzero-wind branch as exact.
+        /// </summary>
+        public static void StartSimulationParticleZeroWind(
+            float simulationPowerZ,
+            float simulationDeltaTime,
+            byte attribute,
+            float depth,
+            Double3 transformPosition,
+            Float4 transformRotation,
+            Double3 oldTransformPosition,
+            Float4 oldTransformRotation,
+            Double3 oldPosition,
+            Float3 velocity,
+            float frameInterpolation,
+            float teamTime,
+            int teamFlag,
+            float gravityRatio,
+            float scaleRatio,
+            float velocityWeight,
+            int forceMode,
+            Float3 impactForce,
+            float gravity,
+            Float3 gravityDirection,
+            float[] dampingCurve,
+            int normalAxis,
+            float inertiaDepth,
+            Double3 centerOldWorldPosition,
+            Float3 centerStepVector,
+            Float4 centerStepRotation,
+            Float3 centerInertiaVector,
+            Float4 centerInertiaRotation,
+            float springPower,
+            float springLimitDistance,
+            float springNormalLimitRatio,
+            float springNoise,
+            out Double3 basePosition,
+            out Float4 baseRotation,
+            out Double3 stepBasicPosition,
+            out Float4 stepBasicRotation,
+            out Double3 velocityPosition,
+            out Double3 nextPosition)
+        {
+            if (dampingCurve == null || dampingCurve.Length != 16)
+                throw new ArgumentException("Simulation Start damping curve must contain 16 samples.");
+
+            float interpolation = frameInterpolation;
+            basePosition = new Double3(
+                oldTransformPosition.x + interpolation * (transformPosition.x - oldTransformPosition.x),
+                oldTransformPosition.y + interpolation * (transformPosition.y - oldTransformPosition.y),
+                oldTransformPosition.z + interpolation * (transformPosition.z - oldTransformPosition.z));
+            baseRotation = NormalizeFloat4Binary32(SlerpQuaternionBinary32(
+                oldTransformRotation, transformRotation, interpolation));
+            stepBasicPosition = basePosition;
+            stepBasicRotation = baseRotation;
+
+            if ((attribute & 2) == 0 && (teamFlag & 0x2000) == 0)
+            {
+                velocityPosition = basePosition;
+                nextPosition = basePosition;
+                return;
+            }
+
+            float inertiaFactor = MultiplyBinary32(
+                SubtractBinary32(1.0f, MultiplyBinary32(depth, depth)), inertiaDepth);
+            Float3 translation = new Float3(
+                AddBinary32(centerInertiaVector.x, MultiplyBinary32(
+                    inertiaFactor, SubtractBinary32(centerStepVector.x, centerInertiaVector.x))),
+                AddBinary32(centerInertiaVector.y, MultiplyBinary32(
+                    inertiaFactor, SubtractBinary32(centerStepVector.y, centerInertiaVector.y))),
+                AddBinary32(centerInertiaVector.z, MultiplyBinary32(
+                    inertiaFactor, SubtractBinary32(centerStepVector.z, centerInertiaVector.z))));
+            Float3 relative = new Float3(
+                (float)(oldPosition.x - centerOldWorldPosition.x),
+                (float)(oldPosition.y - centerOldWorldPosition.y),
+                (float)(oldPosition.z - centerOldWorldPosition.z));
+            Float4 inertiaRotation = SlerpQuaternionBinary32(
+                centerInertiaRotation, centerStepRotation, inertiaFactor);
+            Float3 rotatedRelative = RotateQuaternionBinary32(inertiaRotation, relative);
+            velocityPosition = new Double3(
+                centerOldWorldPosition.x + rotatedRelative.x + translation.x,
+                centerOldWorldPosition.y + rotatedRelative.y + translation.y,
+                centerOldWorldPosition.z + rotatedRelative.z + translation.z);
+            Float3 inertiaVelocity = RotateQuaternionBinary32(inertiaRotation, velocity);
+            inertiaVelocity = new Float3(
+                MultiplyBinary32(inertiaVelocity.x, velocityWeight),
+                MultiplyBinary32(inertiaVelocity.y, velocityWeight),
+                MultiplyBinary32(inertiaVelocity.z, velocityWeight));
+
+            float dampingSample = SampleAngleCurve(depth, dampingCurve);
+            float damping = Math.Min(Math.Max(
+                SubtractBinary32(1.0f, MultiplyBinary32(dampingSample, simulationPowerZ)),
+                0.0f), 1.0f);
+            Float3 damped = new Float3(
+                MultiplyBinary32(inertiaVelocity.x, damping),
+                MultiplyBinary32(inertiaVelocity.y, damping),
+                MultiplyBinary32(inertiaVelocity.z, damping));
+            float gravityScale = MultiplyBinary32(gravity, gravityRatio);
+            Float3 acceleration = new Float3(
+                MultiplyBinary32(gravityDirection.x, gravityScale),
+                MultiplyBinary32(gravityDirection.y, gravityScale),
+                MultiplyBinary32(gravityDirection.z, gravityScale));
+            if (forceMode == 1 || forceMode == 2)
+            {
+                float oneMinusDepth = SubtractBinary32(1.0f, depth);
+                float denominator = AddBinary32(
+                    1.0f, MultiplyBinary32(5.0f, MultiplyBinary32(oneMinusDepth, oneMinusDepth)));
+                acceleration = new Float3(
+                    AddBinary32(acceleration.x, DivideBinary32(impactForce.x, denominator)),
+                    AddBinary32(acceleration.y, DivideBinary32(impactForce.y, denominator)),
+                    AddBinary32(acceleration.z, DivideBinary32(impactForce.z, denominator)));
+            }
+            else if (forceMode == 10 || forceMode == 11)
+            {
+                acceleration = new Float3(
+                    AddBinary32(acceleration.x, impactForce.x),
+                    AddBinary32(acceleration.y, impactForce.y),
+                    AddBinary32(acceleration.z, impactForce.z));
+            }
+
+            float accelerationScale = MultiplyBinary32(simulationDeltaTime, scaleRatio);
+            Float3 newVelocity = new Float3(
+                AddBinary32(damped.x, MultiplyBinary32(acceleration.x, accelerationScale)),
+                AddBinary32(damped.y, MultiplyBinary32(acceleration.y, accelerationScale)),
+                AddBinary32(damped.z, MultiplyBinary32(acceleration.z, accelerationScale)));
+            Float3 displacement = new Float3(
+                MultiplyBinary32(newVelocity.x, simulationDeltaTime),
+                MultiplyBinary32(newVelocity.y, simulationDeltaTime),
+                MultiplyBinary32(newVelocity.z, simulationDeltaTime));
+            Double3 predicted = new Double3(
+                velocityPosition.x + displacement.x,
+                velocityPosition.y + displacement.y,
+                velocityPosition.z + displacement.z);
+            nextPosition = predicted;
+
+            if ((teamFlag & 0x2000) == 0 || (attribute & 1) == 0)
+                return;
+
+            double limit = MultiplyBinary32(scaleRatio, springLimitDistance);
+            Double3 constrained = new Double3(
+                predicted.x - basePosition.x,
+                predicted.y - basePosition.y,
+                predicted.z - basePosition.z);
+            double constrainedLength = LengthDouble3(constrained);
+            if (constrainedLength > limit)
+                constrained = MultiplyDouble3(constrained, limit / constrainedLength);
+
+            if (springNormalLimitRatio < 1.0f)
+            {
+                Double3 normal = SimulationStartNormalAxis(normalAxis);
+                double parallel = constrained.x * normal.x;
+                parallel += constrained.y * normal.y;
+                parallel += constrained.z * normal.z;
+                Double3 tangent = new Double3(
+                    constrained.x - parallel * normal.x,
+                    constrained.y - parallel * normal.y,
+                    constrained.z - parallel * normal.z);
+                double angle = AsinSimulationStartDouble(LengthDouble3(tangent) / limit);
+                double threshold = limit * springNormalLimitRatio * SimulationStartCosBinary64(angle);
+                if (Math.Abs(parallel) > threshold)
+                {
+                    double excess = Math.Abs(parallel) - threshold;
+                    if (parallel < 0.0)
+                        excess = -excess;
+                    constrained = new Double3(
+                        constrained.x - excess * normal.x,
+                        constrained.y - excess * normal.y,
+                        constrained.z - excess * normal.z);
+                }
+            }
+
+            double phase = predicted.x;
+            phase += predicted.y;
+            phase += predicted.z;
+            float phaseTime = AddBinary32(
+                teamTime, MultiplyBinary32(49.61980056762695f, 0.0f));
+            phase += 2.451200008392334 * phaseTime;
+            double power = springPower;
+            double noise = MultiplyBinary32(springNoise, 0.6000000238418579f);
+            double springFactor = Math.Max(
+                0.0, power + power * noise * SimulationStartSinBinary64(phase));
+            double retained = 1.0 - springFactor;
+            nextPosition = new Double3(
+                basePosition.x + constrained.x * retained,
+                basePosition.y + constrained.y * retained,
+                basePosition.z + constrained.z * retained);
+        }
+
+        public static void SimulationStartSinCosBinary64(
+            double value, out double sine, out double cosine)
+        {
+            sine = SimulationStartSinBinary64(value);
+            cosine = SimulationStartCosBinary64(value);
         }
 
         public static void FinishSimulationParticle(
@@ -799,6 +1277,431 @@ namespace EndfieldGraphShaderLab
                 (float)((corrected.y - previousPosition.y) / dt),
                 (float)((corrected.z - previousPosition.z) / dt));
             nextPosition = corrected;
+        }
+
+        private static Double3 SimulationStartNormalAxis(int axis)
+        {
+            switch (axis)
+            {
+                case 0: return new Double3(1.0, 0.0, 0.0);
+                case 1: return new Double3(0.0, 1.0, 0.0);
+                case 2: return new Double3(0.0, 0.0, 1.0);
+                case 3: return new Double3(-1.0, 0.0, 0.0);
+                case 4: return new Double3(0.0, -1.0, 0.0);
+                case 5: return new Double3(0.0, 0.0, -1.0);
+                default: throw new ArgumentOutOfRangeException(nameof(axis));
+            }
+        }
+
+        private static double AsinSimulationStartDouble(double value)
+        {
+            double absolute = Math.Abs(value);
+            double y;
+            double root;
+            if (absolute < 0.5)
+            {
+                y = MultiplyBinary64(value, value);
+                root = absolute;
+            }
+            else
+            {
+                y = MultiplyBinary64(SubtractBinary64(1.0, absolute), 0.5);
+                root = Math.Sqrt(y);
+            }
+            double y2 = MultiplyBinary64(y, y);
+            double t0 = AddBinary64(
+                AddBinary64(0.006606077476277171,
+                    MultiplyBinary64(0.019290454772679107, y)),
+                MultiplyBinary64(y2, AddBinary64(
+                    -0.015819182433299966,
+                    MultiplyBinary64(0.031615876506539346, y))));
+            double t1 = AddBinary64(
+                AddBinary64(0.022371761819320483,
+                    MultiplyBinary64(0.017359569912236146, y)),
+                MultiplyBinary64(y2, AddBinary64(
+                    0.013887151845016092,
+                    MultiplyBinary64(0.012153605255773773, y))));
+            double polynomial = AddBinary64(
+                0.16666666666664975,
+                MultiplyBinary64(0.07500000000378582, y));
+            polynomial = AddBinary64(polynomial,
+                MultiplyBinary64(y2, AddBinary64(
+                    0.044642856813771024,
+                    MultiplyBinary64(0.030381959280381322, y))));
+            double y4 = MultiplyBinary64(y2, y2);
+            polynomial = AddBinary64(polynomial, MultiplyBinary64(y4, t1));
+            double y6 = MultiplyBinary64(y4, y2);
+            double y8 = MultiplyBinary64(y6, y2);
+            polynomial = AddBinary64(polynomial, MultiplyBinary64(y8, t0));
+            double result = AddBinary64(
+                root,
+                MultiplyBinary64(MultiplyBinary64(root, y), polynomial));
+            if (absolute >= 0.5)
+            {
+                result = value >= 0.0
+                    ? SubtractBinary64(Math.PI * 0.5, MultiplyBinary64(2.0, result))
+                    : AddBinary64(-Math.PI * 0.5, MultiplyBinary64(2.0, result));
+            }
+            return absolute < 0.5
+                ? DoubleFromBits((DoubleBits(result) & 0x7fffffffffffffffUL) |
+                    (DoubleBits(value) & 0x8000000000000000UL))
+                : result;
+        }
+
+        private static double SimulationStartSinBinary64(double value)
+        {
+            ulong inputBits = DoubleBits(value);
+            double absolute = DoubleFromBits(inputBits & 0x7fffffffffffffffUL);
+            double reduced;
+            if (absolute < 15.0)
+            {
+                double scaled = MultiplyBinary64(value, DoubleFromBits(0x3fd45f306dc9c883UL));
+                int n = (int)AddBinary64(scaled, scaled < 0.0 ? -0.5 : 0.5);
+                double nd = n;
+                reduced = AddBinary64(
+                    AddBinary64(value, MultiplyBinary64(nd, DoubleFromBits(0xc00921fb54442d18UL))),
+                    MultiplyBinary64(nd, DoubleFromBits(0xbca1a62633145c07UL)));
+                if ((n & 1) != 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else if (absolute < 100000000000000.0)
+            {
+                double highN = TruncateBinary64(MultiplyBinary64(
+                    value, DoubleFromBits(0x3e545f306dc9c883UL)));
+                double highScaled = MultiplyBinary64(highN, 16777216.0);
+                double scaled = SubtractBinary64(
+                    MultiplyBinary64(value, DoubleFromBits(0x3fd45f306dc9c883UL)), highScaled);
+                int lowN = (int)AddBinary64(scaled, scaled < 0.0 ? -0.5 : 0.5);
+                double low = lowN;
+                reduced = SubtractBinary64(value,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x400921fb50000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x400921fb50000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x3e6110b460000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x3e6110b460000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x3ca1a62630000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x3ca1a62630000000UL)));
+                reduced = AddBinary64(reduced, MultiplyBinary64(
+                    AddBinary64(highScaled, low), DoubleFromBits(0xbaf8a2e03707344aUL)));
+                if ((lowN & 1) != 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else if ((inputBits & 0x7ff0000000000000UL) != 0x7ff0000000000000UL)
+            {
+                SimulationStartLargeReduce(inputBits, out int n, out double hi, out double lo);
+                int positive = hi > 0.0 ? 1 : 0;
+                if ((n & 1) != 0)
+                {
+                    ulong sign = DoubleBits(hi) & 0x8000000000000000UL;
+                    double pio2 = DoubleFromBits(0xbff921fb54442d18UL ^ sign);
+                    double pio2Low = DoubleFromBits(0xbc91a62633145c07UL ^ sign);
+                    double summed = AddBinary64(hi, pio2);
+                    double correction = AddBinary64(
+                        AddBinary64(
+                            SubtractBinary64(hi, SubtractBinary64(summed, pio2)),
+                            SubtractBinary64(pio2, SubtractBinary64(summed, hi))),
+                        AddBinary64(pio2Low, lo));
+                    hi = summed;
+                    lo = correction;
+                }
+                int selector = positive + 2 * (n & 3) + 1;
+                reduced = AddBinary64(hi, lo);
+                if (((selector >> 2) & 1) != 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else
+            {
+                return DoubleFromBits(0x7ff8000000000000UL);
+            }
+            return SimulationStartSinPolynomial(reduced, inputBits);
+        }
+
+        private static double SimulationStartCosBinary64(double value)
+        {
+            ulong inputBits = DoubleBits(value);
+            double absolute = DoubleFromBits(inputBits & 0x7fffffffffffffffUL);
+            double reduced;
+            if (absolute < 15.0)
+            {
+                double scaled = AddBinary64(
+                    MultiplyBinary64(value, DoubleFromBits(0x3fd45f306dc9c883UL)), -0.5);
+                int n = (int)AddBinary64(scaled, scaled < 0.0 ? -0.5 : 0.5);
+                int selector = 2 * n + 1;
+                double nd = selector;
+                reduced = AddBinary64(
+                    AddBinary64(value, MultiplyBinary64(nd, DoubleFromBits(0xbff921fb54442d18UL))),
+                    MultiplyBinary64(nd, DoubleFromBits(0xbc91a62633145c07UL)));
+                if ((selector & 2) == 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else if (absolute < 100000000000000.0)
+            {
+                double highN = TruncateBinary64(AddBinary64(
+                    MultiplyBinary64(value, DoubleFromBits(0x3e645f306dc9c883UL)),
+                    DoubleFromBits(0xbe545f306dc9c883UL)));
+                double scaled = AddBinary64(
+                    MultiplyBinary64(value, DoubleFromBits(0x3fd45f306dc9c883UL)), -0.5);
+                scaled = AddBinary64(scaled, MultiplyBinary64(highN, -8388608.0));
+                int lowN = (int)AddBinary64(scaled, scaled < 0.0 ? -0.5 : 0.5);
+                int selector = 2 * lowN + 1;
+                double highScaled = MultiplyBinary64(highN, 16777216.0);
+                double low = selector;
+                reduced = SubtractBinary64(value,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x3ff921fb50000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x3ff921fb50000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x3e5110b460000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x3e5110b460000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(highScaled, DoubleFromBits(0x3c91a62630000000UL)));
+                reduced = SubtractBinary64(reduced,
+                    MultiplyBinary64(low, DoubleFromBits(0x3c91a62630000000UL)));
+                reduced = AddBinary64(reduced, MultiplyBinary64(
+                    AddBinary64(highScaled, low), DoubleFromBits(0xbae8a2e03707344aUL)));
+                if ((selector & 2) == 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else if ((inputBits & 0x7ff0000000000000UL) != 0x7ff0000000000000UL)
+            {
+                SimulationStartLargeReduce(inputBits, out int n, out double hi, out double lo);
+                int positive = hi > 0.0 ? 1 : 0;
+                if ((n & 1) == 0)
+                {
+                    ulong sign = hi <= 0.0 ? 0x8000000000000000UL : 0UL;
+                    double pio2 = DoubleFromBits(0xbff921fb54442d18UL ^ sign);
+                    double pio2Low = DoubleFromBits(0xbc91a62633145c07UL ^ sign);
+                    double summed = AddBinary64(hi, pio2);
+                    double correction = AddBinary64(
+                        AddBinary64(
+                            SubtractBinary64(hi, SubtractBinary64(summed, pio2)),
+                            SubtractBinary64(pio2, SubtractBinary64(summed, hi))),
+                        AddBinary64(pio2Low, lo));
+                    hi = summed;
+                    lo = correction;
+                }
+                int selector = positive + 2 * (n & 3) + 7;
+                reduced = AddBinary64(hi, lo);
+                if (((selector >> 1) & 2) == 0)
+                    reduced = XorDoubleSign(reduced);
+            }
+            else
+            {
+                return DoubleFromBits(0x7ff8000000000000UL);
+            }
+            return SimulationStartSinPolynomial(reduced, 0UL);
+        }
+
+        private static double SimulationStartSinPolynomial(double reduced, ulong inputBits)
+        {
+            if (inputBits == 0x8000000000000000UL)
+                return DoubleFromBits(inputBits);
+            double z = MultiplyBinary64(reduced, reduced);
+            double z2 = MultiplyBinary64(z, z);
+            double z4 = MultiplyBinary64(z2, z2);
+            double p0 = AddBinary64(
+                MultiplyBinary64(z, DoubleFromBits(0xbc62622b22d526beUL)),
+                DoubleFromBits(0x3ce94fa618796592UL));
+            double p1 = AddBinary64(
+                MultiplyBinary64(z, DoubleFromBits(0xbd6ae7ea531357bfUL)),
+                DoubleFromBits(0x3de6124601c23966UL));
+            double high = MultiplyBinary64(z4,
+                AddBinary64(p1, MultiplyBinary64(z2, p0)));
+            double p2 = AddBinary64(
+                MultiplyBinary64(z, DoubleFromBits(0xbe5ae64567cb5786UL)),
+                DoubleFromBits(0x3ec71de3a5568a50UL));
+            double p3 = AddBinary64(
+                MultiplyBinary64(z, DoubleFromBits(0xbf2a01a01a019fc7UL)),
+                DoubleFromBits(0x3f8111111111110fUL));
+            double low = AddBinary64(p3, MultiplyBinary64(z2, p2));
+            double polynomial = AddBinary64(AddBinary64(low, high), 0.0);
+            polynomial = AddBinary64(
+                MultiplyBinary64(z, polynomial), DoubleFromBits(0xbfc5555555555555UL));
+            return AddBinary64(reduced,
+                MultiplyBinary64(z, MultiplyBinary64(reduced, polynomial)));
+        }
+
+        private static void SimulationStartLargeReduce(
+            ulong inputBits, out int quadrant, out double radiansHigh, out double radiansLow)
+        {
+            ulong exponent = (inputBits >> 52) & 0x7ffUL;
+            ulong shift = (exponent < 0x6bcUL ? 1UL : 0UL) << 58;
+            ulong normalizedBits = unchecked(inputBits + 0xfc00000000000000UL + shift);
+            double x0 = DoubleFromBits(normalizedBits);
+            int index = exponent >= 0x436UL ? 4 * (int)exponent - 0x10d8 : 0;
+
+            double tab0 = SimulationStartTrigTable[index];
+            double xHigh = DoubleFromBits(normalizedBits & 0xfffffffff8000000UL);
+            double xLow = SubtractBinary64(x0, xHigh);
+            double tab0High = DoubleFromBits(DoubleBits(tab0) & 0xfffffffff8000000UL);
+            double tab0Low = SubtractBinary64(tab0, tab0High);
+            double product0 = MultiplyBinary64(tab0, x0);
+            double error0 = SubtractBinary64(MultiplyBinary64(xHigh, tab0High), product0);
+            error0 = AddBinary64(MultiplyBinary64(xLow, tab0High), error0);
+            error0 = AddBinary64(MultiplyBinary64(tab0Low, xHigh), error0);
+            error0 = AddBinary64(MultiplyBinary64(xLow, tab0Low), error0);
+
+            double coarse0 = MultiplyBinary64(
+                TruncateBinary64(MultiplyBinary64(product0, Math.Pow(2.0, -28.0))),
+                Math.Pow(2.0, 28.0));
+            double remainder0 = SubtractBinary64(product0, coarse0);
+            int positive0 = product0 > 0.0 ? 1 : 0;
+            int q0 = (((positive0 + (int)MultiplyBinary64(remainder0, 8.0) + 3) & 7) - 3) >> 1;
+            double half0 = DoubleFromBits(
+                (DoubleBits(product0) & 0x8000000000000000UL) | 0x3fe0000000000000UL);
+            double rounded0 = MultiplyBinary64(
+                TruncateBinary64(AddBinary64(MultiplyBinary64(4.0, remainder0), half0)), 0.25);
+            double reduced0 = SubtractBinary64(remainder0, rounded0);
+            if (Math.Abs(reduced0) > 0.25)
+                reduced0 = SubtractBinary64(reduced0, half0);
+            if (Math.Abs(reduced0) > 10000000000.0)
+                reduced0 = DoubleFromBits(DoubleBits(reduced0) & 0x8000000000000000UL);
+            bool exact0 = Math.Abs(product0) == 0.12499999999999999;
+            if (exact0)
+                reduced0 = product0;
+
+            double savedError0 = error0;
+            double sum0 = AddBinary64(error0, reduced0);
+            double tab1 = SimulationStartTrigTable[index + 1];
+            double tab1High = DoubleFromBits(DoubleBits(tab1) & 0xfffffffff8000000UL);
+            double tab1Low = SubtractBinary64(tab1, tab1High);
+            double product1 = MultiplyBinary64(tab1, x0);
+            double sum1 = AddBinary64(product1, sum0);
+            int positive1 = sum1 > 0.0 ? 1 : 0;
+            double half1 = DoubleFromBits(
+                (DoubleBits(sum1) & 0x8000000000000000UL) | 0x3fe0000000000000UL);
+            double coarse1 = MultiplyBinary64(
+                TruncateBinary64(MultiplyBinary64(sum1, Math.Pow(2.0, -28.0))),
+                Math.Pow(2.0, 28.0));
+            double remainder1 = SubtractBinary64(sum1, coarse1);
+            double rounded1 = MultiplyBinary64(
+                TruncateBinary64(AddBinary64(MultiplyBinary64(4.0, remainder1), half1)), 0.25);
+            double reduced1 = SubtractBinary64(remainder1, rounded1);
+            if (Math.Abs(reduced1) > 0.25)
+                reduced1 = SubtractBinary64(reduced1, half1);
+            int q1 = (((positive1 + (int)MultiplyBinary64(remainder1, 8.0) + 3) & 7) - 3) >> 1;
+            if (Math.Abs(reduced1) > 10000000000.0)
+                reduced1 = DoubleFromBits(DoubleBits(reduced1) & 0x8000000000000000UL);
+            bool exact1 = Math.Abs(sum1) == 0.12499999999999999;
+            if (exact1)
+                reduced1 = sum1;
+            quadrant = (exact0 ? 0 : q0) + (exact1 ? 0 : q1);
+
+            double product1Error = SubtractBinary64(
+                MultiplyBinary64(tab1High, xHigh), product1);
+            product1Error = AddBinary64(MultiplyBinary64(tab1High, xLow), product1Error);
+            product1Error = AddBinary64(MultiplyBinary64(tab1Low, xHigh), product1Error);
+            product1Error = AddBinary64(MultiplyBinary64(tab1Low, xLow), product1Error);
+            double sum1MinusSum0 = SubtractBinary64(sum1, sum0);
+            double reduced0Tail = SubtractBinary64(reduced0, sum0);
+            double recoveredSum0 = SubtractBinary64(sum1, sum1MinusSum0);
+            reduced0Tail = AddBinary64(reduced0Tail, savedError0);
+            reduced0Tail = AddBinary64(product1Error, reduced0Tail);
+            double sum0Tail = SubtractBinary64(sum0, recoveredSum0);
+            double product1Tail = SubtractBinary64(product1, sum1MinusSum0);
+            sum0Tail = AddBinary64(product1Tail, sum0Tail);
+            reduced0Tail = AddBinary64(reduced0Tail, sum0Tail);
+            double combined = AddBinary64(reduced0Tail, reduced1);
+            double combinedError = AddBinary64(
+                SubtractBinary64(reduced1, combined), reduced0Tail);
+
+            double tab2 = SimulationStartTrigTable[index + 2];
+            double tab2High = DoubleFromBits(DoubleBits(tab2) & 0xfffffffff8000000UL);
+            double tab2Low = SubtractBinary64(tab2, tab2High);
+            double product2 = MultiplyBinary64(tab2, x0);
+            double product2Error = SubtractBinary64(
+                MultiplyBinary64(xHigh, tab2High), product2);
+            product2Error = AddBinary64(MultiplyBinary64(tab2Low, xHigh), product2Error);
+            product2Error = AddBinary64(MultiplyBinary64(xLow, tab2High), product2Error);
+            product2Error = AddBinary64(MultiplyBinary64(xLow, tab2Low), product2Error);
+            double tail = AddBinary64(
+                AddBinary64(MultiplyBinary64(x0, SimulationStartTrigTable[index | 3]), product2Error),
+                combinedError);
+            double leading = AddBinary64(product2, combined);
+            double recoveredCombined = SubtractBinary64(leading, combined);
+            double leadingError = AddBinary64(
+                SubtractBinary64(product2, recoveredCombined),
+                SubtractBinary64(combined, SubtractBinary64(leading, recoveredCombined)));
+            tail = AddBinary64(tail, leadingError);
+            double reducedHigh = AddBinary64(tail, leading);
+            double reducedLow = AddBinary64(tail, SubtractBinary64(leading, reducedHigh));
+
+            if (Math.Abs(x0) < 0.7)
+            {
+                radiansHigh = x0;
+                radiansLow = 0.0;
+                return;
+            }
+            double splitHigh = DoubleFromBits(DoubleBits(reducedHigh) & 0xfffffffff8000000UL);
+            double splitLow = SubtractBinary64(reducedHigh, splitHigh);
+            double tau = DoubleFromBits(0x401921fb54442d18UL);
+            double tauHigh = DoubleFromBits(0x401921fb50000000UL);
+            double tauMiddle = DoubleFromBits(0x3e7110b460000000UL);
+            double tauLow = DoubleFromBits(0x3cb1a62633145c07UL);
+            radiansHigh = MultiplyBinary64(reducedHigh, tau);
+            double radiansError = SubtractBinary64(
+                MultiplyBinary64(splitHigh, tauHigh), radiansHigh);
+            radiansError = AddBinary64(MultiplyBinary64(splitLow, tauHigh), radiansError);
+            radiansError = AddBinary64(MultiplyBinary64(splitHigh, tauMiddle), radiansError);
+            radiansError = AddBinary64(MultiplyBinary64(splitLow, tauMiddle), radiansError);
+            radiansError = AddBinary64(MultiplyBinary64(reducedHigh, tauLow), radiansError);
+            radiansLow = AddBinary64(MultiplyBinary64(reducedLow, tau), radiansError);
+        }
+
+        private static double[] BuildSimulationStartTrigTable()
+        {
+            byte[] compressed = Convert.FromBase64String(SimulationStartTrigTableZlibBase64);
+            var tableBytes = new byte[3876 * sizeof(double)];
+            using (var source = new MemoryStream(compressed, 2, compressed.Length - 6, false))
+            using (var inflater = new DeflateStream(source, CompressionMode.Decompress))
+            {
+                int offset = 0;
+                while (offset < tableBytes.Length)
+                {
+                    int read = inflater.Read(tableBytes, offset, tableBytes.Length - offset);
+                    if (read == 0)
+                        throw new InvalidDataException("Simulation Start trig table ended early.");
+                    offset += read;
+                }
+                if (inflater.ReadByte() != -1)
+                    throw new InvalidDataException("Simulation Start trig table has trailing data.");
+            }
+            byte[] digest;
+            using (SHA256 sha = SHA256.Create())
+                digest = sha.ComputeHash(tableBytes);
+            string hash = BitConverter.ToString(digest).Replace("-", "").ToLowerInvariant();
+            if (!string.Equals(
+                hash, "f76922848d66989df9746d647c9a012a90ff827eb83ca3c30c7c6c647271c1dc",
+                StringComparison.Ordinal))
+                throw new InvalidDataException("Simulation Start trig table SHA-256 differs.");
+            var table = new double[3876];
+            Buffer.BlockCopy(tableBytes, 0, table, 0, tableBytes.Length);
+            return table;
+        }
+
+        private static double XorDoubleSign(double value)
+        {
+            return DoubleFromBits(DoubleBits(value) ^ 0x8000000000000000UL);
+        }
+
+        private static double TruncateBinary64(double value)
+        {
+            return (double)(long)value;
+        }
+
+        private static ulong DoubleBits(double value)
+        {
+            return BitConverter.ToUInt64(BitConverter.GetBytes(value), 0);
+        }
+
+        private static double DoubleFromBits(ulong bits)
+        {
+            return BitConverter.ToDouble(BitConverter.GetBytes(bits), 0);
         }
 
         private static float SampleAngleCurve(float depth, float[] values)
@@ -1211,6 +2114,58 @@ namespace EndfieldGraphShaderLab
                 AddBinary32(MultiplyBinary32(a.w, weightA), MultiplyBinary32(b.w, weightB)));
         }
 
+        private static Float3 LerpFloat3Binary32(Float3 a, Float3 b, float t)
+        {
+            return new Float3(
+                AddBinary32(a.x, MultiplyBinary32(t, SubtractBinary32(b.x, a.x))),
+                AddBinary32(a.y, MultiplyBinary32(t, SubtractBinary32(b.y, a.y))),
+                AddBinary32(a.z, MultiplyBinary32(t, SubtractBinary32(b.z, a.z))));
+        }
+
+        private static Float3 AddFloat3Binary32(Float3 a, Float3 b)
+        {
+            return new Float3(
+                AddBinary32(a.x, b.x), AddBinary32(a.y, b.y), AddBinary32(a.z, b.z));
+        }
+
+        private static Float3 SubtractFloat3Binary32(Float3 a, Float3 b)
+        {
+            return new Float3(
+                SubtractBinary32(a.x, b.x),
+                SubtractBinary32(a.y, b.y),
+                SubtractBinary32(a.z, b.z));
+        }
+
+        private static Float3 RotateQuaternionColliderStartBinary32(Float4 q, Float3 value)
+        {
+            float crossX = SubtractBinary32(
+                MultiplyBinary32(q.y, value.z), MultiplyBinary32(q.z, value.y));
+            float crossY = SubtractBinary32(
+                MultiplyBinary32(q.z, value.x), MultiplyBinary32(q.x, value.z));
+            float crossZ = SubtractBinary32(
+                MultiplyBinary32(q.x, value.y), MultiplyBinary32(q.y, value.x));
+            float tx = AddBinary32(crossX, crossX);
+            float ty = AddBinary32(crossY, crossY);
+            float tz = AddBinary32(crossZ, crossZ);
+            float secondX = SubtractBinary32(MultiplyBinary32(q.y, tz), MultiplyBinary32(q.z, ty));
+            float secondY = SubtractBinary32(MultiplyBinary32(q.z, tx), MultiplyBinary32(q.x, tz));
+            float secondZ = SubtractBinary32(MultiplyBinary32(q.x, ty), MultiplyBinary32(q.y, tx));
+            return new Float3(
+                AddBinary32(AddBinary32(value.x, MultiplyBinary32(q.w, tx)), secondX),
+                AddBinary32(AddBinary32(value.y, MultiplyBinary32(q.w, ty)), secondY),
+                AddBinary32(AddBinary32(value.z, MultiplyBinary32(q.w, tz)), secondZ));
+        }
+
+        private static float Min4Binary32(float a, float b, float c, float d)
+        {
+            return Math.Min(Math.Min(Math.Min(a, b), c), d);
+        }
+
+        private static float Max4Binary32(float a, float b, float c, float d)
+        {
+            return Math.Max(Math.Max(Math.Max(a, b), c), d);
+        }
+
         private static float SinBurstBoundedBinary32(float value)
         {
             if (float.IsNaN(value) || float.IsInfinity(value) || Math.Abs(value) >= 125.0f)
@@ -1424,6 +2379,24 @@ namespace EndfieldGraphShaderLab
         private static float SqrtBinary32(float value)
         {
             return (float)Math.Sqrt(value);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double AddBinary64(double left, double right)
+        {
+            return left + right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double SubtractBinary64(double left, double right)
+        {
+            return left - right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double MultiplyBinary64(double left, double right)
+        {
+            return left * right;
         }
     }
 }
