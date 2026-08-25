@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-burst-export.v1",
-  "status": "secondary_dynamics_static_candidate_classification_unresolved_export_identity",
+  "status": "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved",
   "native_gate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -177,7 +177,7 @@
       "nearCandidatesExcluded": [],
       "exclusionReason": "08401c... has the same 24 stack slots but writes the final slot at width 4; metadata identifies lengthPtr as NativeArray<int>, so only the qword form is ABI-compatible.",
       "semanticFingerprint": {
-        "status": "export_thunk_fingerprint_closed_internal_target_unobserved",
+        "status": "export_thunk_and_dual_cpu_solver_core_closed_managed_route_unobserved",
         "candidateHash": "c7e2be088565d3ff7a6e7ba86d23fd51",
         "export": {
           "rva": "0x3616e0",
@@ -572,8 +572,8 @@
           },
           "fileBacked": false,
           "diskState": "zero_fill_bss_no_on_disk_pointer",
-          "runtimeValue": "unobserved",
-          "runtimeGate": "GetProcAddress returned function pointer trace required"
+          "runtimeValue": "statically_assigned_by_burst.initialize_per_cpu_variant",
+          "runtimeGate": "GetProcAddress trace remains required only for managed BurstDirectCall wrapper-to-hash selection"
         },
         "initializerExports": [
           {
@@ -1176,33 +1176,143 @@
           },
           "boundary": "managed metadata names and slot widths only; no Burst target identity inferred"
         },
+        "exactCoreIdentity": {
+          "status": "static_slot_entry_range_and_dual_cpu_solver_core_closed",
+          "functionPointerSlotRva": "0x3c6390",
+          "variants": [
+            {
+              "cpuVariant": "x64_sse2",
+              "burstInitializeAssignment": {
+                "rva": "0x3600e8",
+                "bytes": 14,
+                "sha256": "9c295f1438ae68d7f5c8280cc305777edeed8e38a9a1adaf77ca2f34b8449f4c",
+                "functionPointerSlotRva": "0x3c6390"
+              },
+              "entry": {
+                "rva": "0xd3c20",
+                "bytes": 388,
+                "sha256": "45a37029be6fc56b56c94c4f5312f7fa5918f61177ff59388d772779fc6c3185"
+              },
+              "rangeLoop": {
+                "rva": "0xd3db0",
+                "bytes": 519,
+                "sha256": "e18f7179c8c658ab679fe4f1c96220ccd5457bec69b0bab05e9900ce01f27dbe"
+              },
+              "solverCore": {
+                "rva": "0xc6f10",
+                "bytes": 6687,
+                "sha256": "dd8104bdd776b5746842573c6632eede062bc147c3580b1336f95e4e8493aea7"
+              }
+            },
+            {
+              "cpuVariant": "avx2",
+              "burstInitializeAssignment": {
+                "rva": "0x35beb1",
+                "bytes": 14,
+                "sha256": "5d43af7920ff271b94cfaa9a61d451853f83b8db7dd37e3de15cf722d84fb97b",
+                "functionPointerSlotRva": "0x3c6390"
+              },
+              "entry": {
+                "rva": "0x26a370",
+                "bytes": 208,
+                "sha256": "894311128c4c424a80e7bb1f4c40cffa683467c43985fd585b2a81190741fdef"
+              },
+              "rangeLoop": {
+                "rva": "0x26a440",
+                "bytes": 523,
+                "sha256": "13356515ab54b827958f80ad3542a9aab7cc2f2d0ef20d2bcef78da2f60d0996"
+              },
+              "solverCore": {
+                "rva": "0x25e830",
+                "bytes": 5074,
+                "sha256": "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc"
+              }
+            }
+          ],
+          "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved",
+          "decodeBoundary": "full solver bodies are identified and hash-pinned; their complete numeric equations still require bounded semantic decoding before Unity implementation"
+        },
         "internalCfg": {
-          "status": "unavailable_target_pointer_unobserved",
-          "maxDepth": 0,
+          "status": "slot_entry_range_and_solver_core_graph_closed",
+          "maxDepth": 3,
           "recursionBound": {
             "maxDepth": 4,
             "maxNodes": 128,
             "maxEdges": 256
           },
           "seedTargetRva": "0x3c6390",
-          "nodes": [],
-          "edges": [],
-          "reason": "The only call target is a zero-fill .data function-pointer cell. No static code RVA exists to recurse into."
+          "nodes": [
+            {
+              "rva": "0xd3c20",
+              "bytes": 388,
+              "sha256": "45a37029be6fc56b56c94c4f5312f7fa5918f61177ff59388d772779fc6c3185"
+            },
+            {
+              "rva": "0xd3db0",
+              "bytes": 519,
+              "sha256": "e18f7179c8c658ab679fe4f1c96220ccd5457bec69b0bab05e9900ce01f27dbe"
+            },
+            {
+              "rva": "0xc6f10",
+              "bytes": 6687,
+              "sha256": "dd8104bdd776b5746842573c6632eede062bc147c3580b1336f95e4e8493aea7"
+            },
+            {
+              "rva": "0x26a370",
+              "bytes": 208,
+              "sha256": "894311128c4c424a80e7bb1f4c40cffa683467c43985fd585b2a81190741fdef"
+            },
+            {
+              "rva": "0x26a440",
+              "bytes": 523,
+              "sha256": "13356515ab54b827958f80ad3542a9aab7cc2f2d0ef20d2bcef78da2f60d0996"
+            },
+            {
+              "rva": "0x25e830",
+              "bytes": 5074,
+              "sha256": "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc"
+            }
+          ],
+          "edges": [
+            {
+              "cpuVariant": "x64_sse2",
+              "path": [
+                "0x3c6390",
+                "0xd3c20",
+                "0xd3db0",
+                "0xc6f10"
+              ]
+            },
+            {
+              "cpuVariant": "avx2",
+              "path": [
+                "0x3c6390",
+                "0x26a370",
+                "0x26a440",
+                "0x25e830"
+              ]
+            }
+          ],
+          "reason": "burst.initialize statically assigns both CPU-specific entry points to the export's zero-fill function-pointer slot."
         },
         "jobPayload": {
-          "status": "unavailable_target_pointer_unobserved",
+          "status": "solver_core_identity_closed_complete_numeric_decode_pending",
           "nativeArrayFieldAccesses": [],
-          "strideBytes": [],
+          "strideBytes": [
+            4,
+            464,
+            808
+          ],
           "constants": [],
           "writebacks": [],
-          "reason": "Payload/stride/constant/writeback claims require the runtime-resolved kernel body; the export thunk alone only proves ABI moves."
+          "reason": "The exact SSE2/AVX2 solver bodies and outer index/team/parameter strides are now pinned. Complete branch, constraint, collision, and writeback equation decoding is still required before a Unity port."
         },
         "sourcePins": {
           "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
           "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
           "libBurstGeneratedSha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
         },
-        "identityBoundary": "unique_abi_candidate_identity_unresolved"
+        "identityBoundary": "export_and_core_identity_closed_managed_route_unresolved"
       }
     },
     "colliderStartRange": {
@@ -23731,7 +23841,7 @@
   },
   "unresolved": [
     "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll; static export-table analysis cannot join a managed BurstDirectCall to a hash.",
-    "The candidate sets are ABI/function-shape evidence only. Runtime GetProcAddress plus a call-site/returned-pointer trace is required before publishing a hash-to-kernel mapping.",
-    "The DLL export rows are intentionally not promoted to a solver implementation or a secondary-dynamics verification claim."
+    "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove managed BurstDirectCall wrapper-to-hash selection; it is no longer required to identify the statically closed Simulation Start and Collider End export cores.",
+    "Hash-pinned solver bodies are evidence of original numerics, not a Unity solver implementation or secondary-dynamics equivalence claim; complete equation decoding and runtime integration remain open."
   ]
 }
