@@ -56,7 +56,7 @@ namespace EndfieldGraphShaderLabEditor
         // sustains overview_loop instead of stopping on the entrance pose.
         private const int FrameCount = 41;
         private const string LitEffectCompatibilityShader =
-            "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38";
+            "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax";
         private const string Suikuai1DiagnosticEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ADMIT_SUIKUAI1";
         private const string OutputEnvironment =
@@ -70,7 +70,6 @@ namespace EndfieldGraphShaderLabEditor
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
             "/all/Particle System (9) | ",
-            "/all/suikuai (2) | ",
             "/all/glow/Particle System (10) | ",
         };
         private static float started;
@@ -795,7 +794,7 @@ namespace EndfieldGraphShaderLabEditor
                 value.effectRootCount == 4);
             bool observedPrimaryRockCompatibilityBinding =
                 firstEntranceFrame != null &&
-                firstEntranceFrame.admittedRenderers == 67 &&
+                firstEntranceFrame.admittedRenderers == 68 &&
                 firstEntranceFrame.blockedRendererIdentities != null &&
                 firstEntranceFrame.blockedRendererIdentities.Length ==
                     ExpectedRemainingBlockedEffects.Length &&
@@ -832,8 +831,8 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add("rotation-only root motion with invariant position");
             if (!observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
-                    "ten-row primary rock compatibility plus exact suikuai (1) " +
-                    "binding with three separate blocked effects");
+                    "eleven-row LitEffect crystal compatibility plus exact suikuai (1) " +
+                    "binding with two separate blocked effects");
             if (!observedPreGBufferDepthOwnerReady)
                 missingObservations.Add(
                     "canonical CharacterPrePass depth/stencil ownership");

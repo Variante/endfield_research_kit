@@ -1,4 +1,4 @@
-Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38"
+Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
 {
     Properties
     {
@@ -80,7 +80,8 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38"
                 float4 baseSample = tex2D(_BaseColorMap, input.uv) * _BaseColor;
                 float3 mro = tex2D(_MROMap, input.uv).rgb;
                 // The exact HGBuffer variant consumes NORMAL and TANGENT and
-                // both source materials bind _NormalMap with _NormalScale=1.
+                // the selected source materials bind _NormalMap with
+                // _NormalScale=1.
                 float3 geometricNormal = normalize(input.normalWS);
                 float3 tangent = normalize(input.tangentWS.xyz);
                 float3 bitangent = normalize(cross(geometricNormal, tangent)) *

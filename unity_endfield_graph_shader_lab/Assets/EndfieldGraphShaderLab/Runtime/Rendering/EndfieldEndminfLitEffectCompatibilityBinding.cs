@@ -4,10 +4,10 @@ using UnityEngine;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Opt-in binding for the ten source-identified Endminf overview rock
-    /// renderers whose retained prefab was generated while LitEffect remained
-    /// fail-closed. Direct references are published by the editor validator;
-    /// runtime path/name searches are deliberately forbidden.
+    /// Opt-in binding for source-identified Endminf overview rock and hand-
+    /// crystal renderers whose retained prefabs remain fail-closed. Direct
+    /// references are published by the editor validator; runtime path/name
+    /// searches are deliberately forbidden.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class EndfieldEndminfLitEffectCompatibilityBinding : MonoBehaviour

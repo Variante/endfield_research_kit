@@ -28,14 +28,17 @@ namespace EndfieldGraphShaderLabEditor
         private const long BaseV2ShaderPathId = -1430105248647086886L;
         private const long LitEffectShaderPathId = 6428594484694422749L;
         public const string LitEffectCompatibilityEnvironment = "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT";
+        private const long EndminfLitEffectM27Material =
+            unchecked((long)0xA531A88850690EB8UL);
         private static readonly long[] LitEffectCompatibilityMaterials = {
             0x5A6341E8A834E421L,
+            EndminfLitEffectM27Material,
             unchecked((long)0xAFCE491DD7BC5724UL),
         };
-        // Do not add overview_02/all/suikuai (2), material
-        // pA531A88850690EB8, to the forward compatibility list. Its source
-        // material disables ForwardOnly and selects the five-MRT HGBuffer
-        // _PARALLAX_MAP program; the compatibility shader cannot publish its
+        // M27 overview_02/all/suikuai (2) is admitted only by the explicit
+        // visual-compatibility switch. Its source material disables
+        // ForwardOnly and selects the five-MRT HGBuffer _PARALLAX_MAP program;
+        // the compatibility shader does not claim to publish that exact
         // GBuffer/SceneMV/depth contract.
         // M28 uses the selected VFXRefract MRT ABI. Native
         // DistortionPassConstructor evidence confirms retail clones/copies
@@ -728,7 +731,7 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.GetEnvironmentVariable(LitEffectCompatibilityEnvironment), "1",
                 StringComparison.Ordinal);
             Shader litEffectCompatibilityShader = Shader.Find(
-                "Hidden/Endfield/Compatibility/Endminf/LitEffectM01M38");
+                "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax");
             if (litEffectCompatibility)
                 L.Require(litEffectCompatibilityShader != null,
                     "Endminf LitEffect visual-compatibility shader is missing");

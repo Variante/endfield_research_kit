@@ -52,7 +52,7 @@ complete frame without a client fault.
   workflows explicitly request D3D11. Historical D3D12 probes remain labeled
   evidence snapshots rather than active defaults. A full 41-frame D3D11
   Endminf capture passes the transition, settled-loop, entrance cleanup,
-  rotation-only root-motion, 67-renderer admission, and exact three-row
+  rotation-only root-motion, 68-renderer admission, and exact two-row
   fail-closed gates, and regenerates both maintained reference comparisons.
 - Every canonical non-playable post-model identity has a dependency-safe
   static prefab baseline. These prove identity and admitted dependencies, not
@@ -118,19 +118,18 @@ complete frame without a client fault.
   They remain active through 1.5 seconds and deactivate on the source boundary.
   The fifth constant-zero binding has no resolved hierarchy target and remains
   fail-closed rather than being fabricated.
-- The canonical capture now restores the ten retained physical rock renderers
-  that were absent from the previous sheet: seven M01 rows and three M38 rows,
+- The canonical capture now restores eleven retained LitEffect rock/crystal
+  renderers: seven M01 rows, three M38 rows, and the later M27 hand-crystal row,
   all keyed by exact renderer/material PathIDs and the exact
   `S_rock_small_1_017_02_lod2` mesh. Direct references are validated against
   pinned asset hashes, the default remains disabled/fail-closed, and only
   `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Capture schema
-  v4 proves 67 admitted entrance renderers and exactly three separately blocked
-  rows (one secondary LitEffect and two M28 VFXRefract rows). This restores the amber
-  faceted stone/chunks but remains a non-exact forward LitEffect compatibility
-  layer; do not treat its emission, lighting, or whole-frame MAE as retail
-  HGBuffer parity. Both references support the existing spawn, 1.5-second
-  nanguan visibility, hand-focus, peak-burst, and state-exit cleanup cadence,
-  so no crystal retiming or bloom tuning was admitted in this batch.
+  v4 proves 68 admitted entrance renderers and exactly two separately blocked
+  non-LitEffect rows. Frames 19-22 now contain M27's dark/amber faceted debris;
+  its default-off Unity ABI probe still proves an empty material/mesh binding.
+  This remains a non-exact forward LitEffect compatibility layer; its exact
+  five-MRT HGBuffer publication and deferred consumer remain fail-closed. No
+  crystal retiming, scale change, or bloom tuning was admitted.
 - The no-frame-generation reference makes two stone systems distinguishable:
   the ten LitEffect M01/M38 rows are the early fly-in faceted rocks, while the
   later raised-hand glow/particles are separate BaseV2 renderers and must not
@@ -140,9 +139,9 @@ complete frame without a client fault.
   prefix (including `_ParallaxColor` at byte 464 and its dark color at 480).
   This closes the selected physical b3 slice, not visual admission. Selected-
   frame b1 VFX globals, b2 per-draw history/LOD state, the selected b4 value,
-  `ParserBindChannels`, complete HGBuffer frame publication, and the visibly
-  over-bright raised-hand glow remain fail-closed; do not tune the non-exact
-  compatibility shader against the video.
+  `ParserBindChannels`, and complete HGBuffer frame publication remain
+  fail-closed. The raw retail peak frame itself contains the large M13 orange
+  ring, so it is not evidence for shrinking or dimming that authored row.
 - A renderer-isolation audit distinguishes the earlier broad glow
   `overview_04/1/guangyun (3)` with `M_fx_endminm_gfx_30` from the actual
   ten-piece crystal burst,
@@ -288,7 +287,7 @@ complete frame without a client fault.
   from byte 352. Decompiled use also corrects the physical texture order to
   BaseColor, Normal, MRO, ParallaxNoise, ParallaxMask, and Parallax at t0..t5.
   The selected `HGRP/DeferredLighting` pass closes the five-MRT A/B/C consumer
-  at t23/t24/t25. The ten rock renderers remain blocked only on live retail
+  at t23/t24/t25. Exact HGBuffer admission remains blocked only on live retail
   global/per-draw completeness and the complete deferred frame, not material
   layout or buffer identity. The exact remaining constant inputs are bounded to
   ShaderVariablesGlobal c27.y and live AnchorWaveBright c105.z/w, validated
@@ -302,7 +301,7 @@ complete frame without a client fault.
   vertex/index stream and uses SRP per-draw record 0, not Unity's standard
   procedural-particle transform buffer. The first valid pipeline change remains
   an M27-PathID-only five-MRT owner before deferred resolve, never global
-  `GBuffer` admission. It remains fail-closed because numeric active
+  `GBuffer` admission. The exact path remains fail-closed because numeric active
   constant-buffer ranges, selected-frame AnchorWaveBright, terrain profile,
   and a presented content-valid deferred consumer are not yet closed.
   Current-build native evidence now proves that AnchorWaveBright c105
@@ -328,7 +327,8 @@ complete frame without a client fault.
   handles, identifying or capturing the other authored live window, and
   focused 60 Hz exact-versus-disabled validation for both rows. The capture is
   forced-D3D11 renderer-path evidence and does not by itself authorize enabling
-  either renderer. M21, exact `suikuai (1)`, and M27 remain unchanged.
+  either renderer. M21, exact `suikuai (1)`, and M27's exact HGBuffer boundary
+  remain unchanged.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -363,17 +363,19 @@ complete frame without a client fault.
   Its exact branch and `T_fx_mask_138_M` payload are now hash-pinned and admitted:
   an exact-versus-control 60 Hz run changes no pixels before 4.50 seconds, peaks
   at 3,260 bounded pixels near the hand, and decays/moves outward without the
-  former oversized chromatic triangles. The generated sequence now reports 67
-  admitted renderers. `suikuai (2)` remains separately fail-closed: its
-  LitEffect material disables ForwardOnly and selects the five-MRT deferred
-  HGBuffer program, while the compatibility shader is a one-target ForwardOnly
-  stand-in. The new frame analyses now contain the selected M27 HGBuffer pair
+  former oversized chromatic triangles. The generated sequence now reports 68
+  admitted renderers. `suikuai (2)` is visually restored only under the
+  LitEffect compatibility switch: its exact mesh, particle simulation,
+  material identity, and four material textures feed a one-target ForwardOnly
+  stand-in. Its source LitEffect material disables ForwardOnly and selects the
+  five-MRT deferred HGBuffer program, so exact admission remains fail-closed.
+  The frame analyses contain the selected M27 HGBuffer pair
   and close its one-instance, engine-expanded particle topology. Its numeric
   active constant-buffer slices, optional-skin gate, five-attachment publication,
-  and presented deferred consumer remain open. Capture one range-logging frame
-  in the authored approximately 4.49-second burst window before restarting live
-  admission; do not compensate by resizing, brightening, retiming, or disabling
-  M21.
+  and presented deferred consumer remain open. EndfieldCapture session
+  `20260825T161654Z` cannot close them because its targeted graphics profile
+  deliberately omits retail instanced draws. Do not compensate by resizing,
+  brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
