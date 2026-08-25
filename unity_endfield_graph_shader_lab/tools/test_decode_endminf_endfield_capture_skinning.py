@@ -39,63 +39,85 @@ class CaptureSkinningTests(unittest.TestCase):
     def make_frame(self, root: Path, *, ambiguous: bool = False) -> Path:
         frame = root / "graphics" / "frames" / "100"
         frame.mkdir(parents=True)
-        cb = bytearray(MODULE.CB_BYTES)
         palette = bytearray(MODULE.PALETTE_BYTES)
-        first = 100
-        struct.pack_into("<4I", cb, (first + 5) * 16, 20, 50, 7, 9)
         for row in range(3 * MODULE.MESHES["hair"][1]):
-            struct.pack_into("<4f", palette, (23 + row) * 16,
-                             row + 0.1, row + 0.2, row + 0.3, row + 0.4)
-            struct.pack_into("<4f", palette, (53 + row) * 16,
-                             row + 1.1, row + 1.2, row + 1.3, row + 1.4)
-        blob = bytes(cb) + bytes(palette)
-        (frame / "resources.bin").write_bytes(blob)
+            struct.pack_into(
+                "<4f", palette, (23 + row) * 16,
+                row + 0.1, row + 0.2, row + 0.3, row + 0.4,
+            )
+            struct.pack_into(
+                "<4f", palette, (53 + row) * 16,
+                row + 1.1, row + 1.2, row + 1.3, row + 1.4,
+            )
+        (frame / "resources.bin").write_bytes(palette)
         draw = {
             "count": MODULE.MESHES["hair"][0],
             "indexedInstanced": True,
             "instanceCount": 1,
             "startInstance": 0,
             "vsCb2RangeValid": True,
-            "vsCb2FirstConstant": first,
+            "vsCb2FirstConstant": 100,
             "vsCb2NumConstants": 64,
+            "vsCb2MetadataValid": True,
+            "vsCb2CurrentPaletteRaw": 20,
+            "vsCb2PreviousPaletteRaw": 50,
         }
-        draws = [draw, dict(draw)]
+        draws = [draw, {**draw, "vsCb2FirstConstant": 200}]
         if ambiguous:
-            draws[-1]["vsCb2FirstConstant"] = first + 1
+            draws[-1]["vsCb2CurrentPaletteRaw"] = 21
         metadata = {
             "frame": 100,
             "captureIncomplete": False,
             "captureFailed": False,
             "resourcesFile": "resources.bin",
             "selectedResourceRecords": [
-                {"byteSize": MODULE.CB_BYTES, "blobOffset": 0,
-                 "blobBytes": MODULE.CB_BYTES, "completed": True},
-                {"byteSize": MODULE.PALETTE_BYTES, "blobOffset": MODULE.CB_BYTES,
-                 "blobBytes": MODULE.PALETTE_BYTES, "completed": True},
+                {
+                    "byteSize": MODULE.PALETTE_BYTES,
+                    "blobOffset": 0,
+                    "blobBytes": MODULE.PALETTE_BYTES,
+                    "completed": True,
+                },
             ],
             "drawRecords": draws,
         }
         (frame / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
         return frame
 
-    def test_decodes_unique_range_across_repeated_passes(self):
+    def test_decodes_shared_palette_pair_across_retail_pass_ranges(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.make_frame(root)
             result = MODULE.decode_session(root, ["hair"])
         hair = result["frames"][0]["meshes"]["hair"]
         self.assertEqual(hair["matchingDrawRecords"], 2)
+        self.assertEqual(len(hair["matchingRanges"]), 2)
         self.assertEqual(hair["currentEffectiveBaseRow"], 23)
         self.assertEqual(hair["previousEffectiveBaseRow"], 53)
-        self.assertEqual(hair["currentMatrices3x4"][0][0],
-                         [0.10000000149011612, 0.20000000298023224,
-                          0.30000001192092896, 0.4000000059604645])
+        self.assertEqual(
+            hair["currentMatrices3x4"][0][0],
+            [0.10000000149011612, 0.20000000298023224,
+             0.30000001192092896, 0.4000000059604645],
+        )
 
-    def test_rejects_ambiguous_ranges(self):
+    def test_rejects_ambiguous_palette_pairs(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.make_frame(root, ambiguous=True)
             with self.assertRaisesRegex(MODULE.CaptureError, "ambiguous hair"):
+                MODULE.decode_session(root, ["hair"])
+
+    def test_rejects_capture_without_draw_time_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            frame = self.make_frame(root)
+            metadata_path = frame / "metadata.json"
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            for draw in metadata["drawRecords"]:
+                draw.pop("vsCb2MetadataValid")
+                draw.pop("vsCb2CurrentPaletteRaw")
+                draw.pop("vsCb2PreviousPaletteRaw")
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.CaptureError, "capture again"):
                 MODULE.decode_session(root, ["hair"])
 
     def test_rejects_missing_palette_payload(self):
@@ -103,8 +125,8 @@ class CaptureSkinningTests(unittest.TestCase):
             root = Path(temporary)
             frame = self.make_frame(root)
             metadata_path = frame / "metadata.json"
-            metadata = json.loads(metadata_path.read_text())
-            metadata["selectedResourceRecords"].pop()
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["selectedResourceRecords"].clear()
             metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
             with self.assertRaisesRegex(MODULE.CaptureError, "8413184-byte resource"):
                 MODULE.decode_session(root, ["hair"])
