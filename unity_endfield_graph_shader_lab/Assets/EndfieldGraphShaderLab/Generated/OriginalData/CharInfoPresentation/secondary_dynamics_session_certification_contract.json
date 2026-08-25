@@ -1,0 +1,76 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-session-certification.v1",
+  "status": "target_session_certified",
+  "targetReady": true,
+  "target": {
+    "actorKey": "endminf",
+    "sequence": "ui_overview_start_and_loop",
+    "reference": "videos/2026-08-24_06-37-22.mkv",
+    "sessionId": "20260825T125815Z",
+    "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+    "endfieldExeSha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+  },
+  "artifactEvidence": {
+    "session": {
+      "path": "session.json",
+      "bytes": 594,
+      "sha256": "aa5aa04ed34e5326fae2acc409d137ac4ea890a20735f091f30b48c79c7b03f1"
+    },
+    "writerSummary": {
+      "path": "collected/summary.json",
+      "bytes": 119,
+      "sha256": "d222c59840b4d00b2032085313d392dc1543b7ba43590e1b59c6689d35e62147"
+    },
+    "inventory": {
+      "path": "collected/inventory.json",
+      "bytes": 1790,
+      "sha256": "231e862e47853722f1bb6083585dd5c3902fb408e4884883ebd14609fcbae29c"
+    },
+    "providerSummary": {
+      "path": "secondary-dynamics/summary.json",
+      "bytes": 140,
+      "sha256": "bf0a3213126454e6c784f8a52f8c01a19f4dcd42706af129dd6d9711b65068f3"
+    },
+    "window": {
+      "path": "secondary-dynamics/windows.jsonl",
+      "bytes": 5807,
+      "sha256": "da4da6882573287d90ae0d74e21b256fe58a77e06a7e4d99fbcd70d5f93e6001"
+    }
+  },
+  "window": {
+    "startNs": 837336171000000,
+    "endNs": 837348062000000,
+    "durationNs": 11891000000,
+    "clothUpdateCalls": 700,
+    "crossFrameTrueCalls": 700,
+    "crossFrameUnreadableCalls": 0,
+    "teamDataGetterCalls": 2772,
+    "uniqueTeamDataAddresses": 93,
+    "activeTeamLanesPerSettledCall": 4,
+    "warmupClothUpdateCalls": 7,
+    "relativeTrueCalls": 0,
+    "relativeFalseCalls": 2772,
+    "relativeSlotOverflow": 0
+  },
+  "certification": {
+    "certified": true,
+    "useRelativeTransform": false,
+    "useCrossFrameJob": true,
+    "useAnimatorTransform": false,
+    "writebackRoute": "TransformAccess"
+  },
+  "interpretation": {
+    "crossFrame": "All 700 ClothUpdate entry samples read MagicaManager UseCrossFrameJob=true with zero unreadable samples.",
+    "relativeTransform": "After seven warm-up ClothUpdate calls, 2,772 reads equal four active TeamData lanes across 693 calls. Every one of the 93 addresses rotated through those active lanes remained false; therefore the four Endminf overview owners were false throughout their measured active interval.",
+    "route": "UseAnimatorTransform=false and TransformAccess writeback remain closed by the hash-gated transform-read native contract, not inferred from this capture."
+  },
+  "boundary": {
+    "readOnly": true,
+    "forcedD3D11": true,
+    "frameGeneration": false,
+    "operatorLabeledTargetWindow": true,
+    "runtimeHookInstalled": true,
+    "gameBehaviorModified": false
+  }
+}
