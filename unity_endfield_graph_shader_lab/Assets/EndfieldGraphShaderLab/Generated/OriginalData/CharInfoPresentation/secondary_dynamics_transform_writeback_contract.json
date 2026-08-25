@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-transform-writeback.v1",
-  "status": "transform_writeback_call_edges_closed",
+  "status": "transform_writeback_contract_closed_with_duplicate_boundary",
   "secondary_dynamics_verified": false,
   "solver_implemented": false,
   "retail_equivalent": false,
@@ -1339,6 +1339,43 @@
         "hashSource": "current metadata method pointer + PE executable section span to next pointer"
       }
     ],
+    "pinnedEquationSpans": [
+      {
+        "name": "WriteTransformDataKernel",
+        "va": "0x186754520",
+        "fileOffset": "0x6752b20",
+        "bytes": 180,
+        "sha256": "4331bae2a6a6f86a6f36f1c928d1c801e51a03a81a5a62a615e5521be92f6ce8"
+      },
+      {
+        "name": "WriteTransformDataRangeKernel",
+        "va": "0x186754680",
+        "fileOffset": "0x6752c80",
+        "bytes": 184,
+        "sha256": "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923"
+      },
+      {
+        "name": "WriteTransformLocalDataKernel",
+        "va": "0x1867555e8",
+        "fileOffset": "0x6753be8",
+        "bytes": 208,
+        "sha256": "f7c329ea399f191c7c4f5be5bc11ff3b52c3c9592c2d7aeef0e51ad9137ca115"
+      },
+      {
+        "name": "WriteTransformLocalDataRangeKernel",
+        "va": "0x186755784",
+        "fileOffset": "0x6753d84",
+        "bytes": 208,
+        "sha256": "b3798e37d293ce37ebc5460db6ce424e40f217ce617057ae96421f3c69a05d9e"
+      },
+      {
+        "name": "WriteTransformJob.Execute.hot",
+        "va": "0x18672e7e0",
+        "fileOffset": "0x672cde0",
+        "bytes": 2003,
+        "sha256": "be8906f5f1bbca55200b7941031e56cb8e0a260054cc7a892ba056c2644dd91e"
+      }
+    ],
     "transformAccessArrayLifecycle": [
       {
         "methodIndex": 384482,
@@ -1899,19 +1936,203 @@
     ]
   },
   "writeback": {
-    "resultFields": [
-      "lastpositionArray",
-      "lastrotationArray",
-      "lastlocalPositionArray",
-      "lastlocalRotationArray"
-    ],
-    "readFields": [
-      "positionArray",
-      "rotationArray",
-      "localPositionArray",
-      "localRotationArray",
-      "localToWorldMatrixArray"
-    ],
+    "publicationSchedule": {
+      "postProxyOrder": [
+        "CreatePostProxyMeshUpdateList",
+        "CalcLineNormalTangent",
+        "WriteTransformData",
+        "WriteTransformLocalData"
+      ],
+      "managerOrder": [
+        "ReadTransform",
+        "PreProxyMeshUpdate",
+        "SimulationStepUpdate",
+        "CalcDisplayPosition",
+        "PostProxyMeshUpdate",
+        "DynamicBoneTransformManager.WriteTransform",
+        "WriteAnimatorBufferData",
+        "PostSimulationUpdate",
+        "CompleteMasterJob"
+      ],
+      "rangeDirection": "ascending jobVertexIndexList order"
+    },
+    "arrayProvenance": {
+      "jobVertexIndexList": "SimulationManager post-proxy update list",
+      "teamDataArray": {
+        "manager": "TeamManager",
+        "managerOffset": "0x10",
+        "strideBytes": 464
+      },
+      "teamIdArray": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x10"
+      },
+      "attributes": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x18"
+      },
+      "vertexParentIndices": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x58"
+      },
+      "vertexToTransformRotations": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x110"
+      },
+      "positionsPostSolver": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x118"
+      },
+      "rotationsPostSolver": {
+        "manager": "VirtualMeshManager",
+        "managerOffset": "0x120"
+      },
+      "worldPositionOutput": {
+        "manager": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "managerOffset": "0x28",
+        "field": "positionArray"
+      },
+      "worldRotationOutput": {
+        "manager": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "managerOffset": "0x38",
+        "field": "rotationArray"
+      },
+      "scaleInput": {
+        "manager": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "managerOffset": "0x48",
+        "field": "scaleArray"
+      },
+      "localPositionOutput": {
+        "manager": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "managerOffset": "0x50",
+        "field": "localPositionArray"
+      },
+      "localRotationOutput": {
+        "manager": "BeyondDynamicBone.DynamicBoneTransformManager",
+        "managerOffset": "0x60",
+        "field": "localRotationArray"
+      },
+      "finalJobBinding": "WriteTransformJob fields are named last*, but WriteTransform schedules the current position/rotation/local arrays above; the manager last* buffers are not publication sources"
+    },
+    "worldPublication": {
+      "abi": [
+        "int* jobVertexIndexList",
+        "TeamData* teamDataArray (stride 464)",
+        "double3* transformPositionArray",
+        "quaternion* transformRotationArray",
+        "int16* teamIdArray",
+        "double3* positionsPostSolver",
+        "quaternion* rotationsPostSolver",
+        "quaternion* vertexToTransformRotations",
+        "int* lengthPtr"
+      ],
+      "guards": [
+        "v = jobVertexIndexList[index]",
+        "teamId = teamIdArray[v]",
+        "return when teamId == 0"
+      ],
+      "indexEquations": [
+        "local = v - team.proxyCommonChunk.start",
+        "bone = team.proxyBoneChunk.start + local",
+        "dst = team.proxyTransformChunk.start + local"
+      ],
+      "equations": [
+        "transformPositionArray[dst] = positionsPostSolver[v]",
+        "correction = hamilton_f32(team.negativeScaleQuaternionValue, vertexToTransformRotations[bone])",
+        "transformRotationArray[dst] = hamilton_f32(rotationsPostSolver[v], correction)"
+      ],
+      "excludedOperations": [
+        "normalization",
+        "interpolation",
+        "attribute filtering",
+        "blend weighting"
+      ]
+    },
+    "localPublication": {
+      "guards": [
+        "v = jobVertexIndexList[index]",
+        "return when teamIdArray[v] == 0",
+        "return when vertexParentIndices[v] < 0",
+        "return when (attributes[v] & 2) == 0"
+      ],
+      "indexEquations": [
+        "local = v - team.proxyCommonChunk.start",
+        "child = team.proxyTransformChunk.start + local",
+        "parent = team.proxyTransformChunk.start + vertexParentIndices[v]"
+      ],
+      "equations": [
+        "deltaWorld = worldPosition[child] - worldPosition[parent]  # float64",
+        "parentInv = conjugate(worldRotation[parent]) / dot(worldRotation[parent], worldRotation[parent])  # float32, no zero guard",
+        "localD = rotate_double(float64(parentInv), deltaWorld)",
+        "localPosition[child] = float3(localD / double3(scale[parent]))",
+        "relative = hamilton_f32(parentInv, worldRotation[child])",
+        "localRotation[child].value = relative.value * team.negativeScaleQuaternionValue.value  # componentwise"
+      ],
+      "excludedOperations": [
+        "blend weighting",
+        "zero-length quaternion guard"
+      ]
+    },
+    "finalTransformJob": {
+      "flags": {
+        "0x01": "read",
+        "0x02": "world rotation write",
+        "0x04": "local position/rotation write",
+        "0x08": "restore",
+        "0x10": "enable"
+      },
+      "entryGates": [
+        "0x10 enable flag is required",
+        "culling-invisible entries are rejected",
+        "native validity checks run before any TransformAccess write"
+      ],
+      "weightEquation": "w = float32(team.clothSimulateWeight(+0xf0) * team.clothLodFadeWeight(+0xf4))",
+      "unusedWeightField": "team.blendWeight(+0x104) is not used",
+      "branchPrecedence": "world branch when (flags & 0x02) != 0; otherwise local branch when (flags & 0x04) != 0",
+      "localBranch": [
+        "targets are the current localPositionArray/localRotationArray",
+        "when w < 1, saturated lerp current local position to target and shortest-path slerp current local rotation to target",
+        "when w >= 1, assign targets directly"
+      ],
+      "worldBranch": [
+        "shortest-path slerp current world rotation to target world rotation using w",
+        "apply relative-transform state when enabled",
+        "write world position only for spring entries",
+        "when w < 1, saturated lerp current world position to target; when w >= 1, assign target directly"
+      ],
+      "dynamicInputs": [
+        "culling state",
+        "clothLodFadeWeight",
+        "relative-transform state"
+      ]
+    },
+    "endminfBindingBoundary": {
+      "bindingEntries": 126,
+      "uniqueTransforms": 100,
+      "duplicateEntries": 26,
+      "overlaps": [
+        {
+          "left": "Ribbon2",
+          "right": "Coat",
+          "duplicateEntries": 6
+        },
+        {
+          "left": "Ribbon",
+          "right": "Coat",
+          "duplicateEntries": 20
+        },
+        {
+          "left": "Hair",
+          "right": "other",
+          "duplicateEntries": 0
+        }
+      ],
+      "addTransformDeduplicates": false,
+      "representation": "duplicates remain distinct NativeArray and TransformAccessArray entries",
+      "jobMode": 1,
+      "winner": null,
+      "failClosedReason": "TransformAccess execution exposes no static deterministic winner or owner priority; require live job-list/TransformAccess telemetry or an explicitly labeled compatibility policy"
+    },
     "transformAccessPropertyReads": [
       {
         "methodIndex": 384531,
@@ -2167,21 +2388,23 @@
         "instructionBytes": "e8 a5 00 cb 04",
         "instructionVa": "0x18672ef4e"
       }
-    ],
-    "pointerProvenance": "unresolved: native register values such as [rax] are recorded, but the evidence does not establish which NativeArray element produced each value",
-    "jobIndexBoundary": "managed Execute(int index, TransformAccess transform) signatures are closed; schedule-range call and runtime array length are not independently closed here"
+    ]
   },
   "execution_boundary": {
     "transform_access_array_call_edges_closed": true,
-    "array_ownership_closed": false,
-    "schedule_closed": false,
+    "array_ownership_closed": true,
+    "schedule_closed": true,
     "transform_access_property_reads_closed": true,
     "transform_access_property_writes_closed": true,
     "job_managed_field_shapes_closed": true,
     "burst_range_dispatch_edges_closed": true,
-    "result_array_pointer_provenance_closed": false,
+    "result_array_pointer_provenance_closed": true,
+    "world_publication_equations_closed": true,
+    "local_publication_equations_closed": true,
+    "final_write_transform_branches_closed": true,
+    "duplicate_transform_winner_closed": false,
     "solver_numerics_recovered": false,
     "unity_runtime_executed": false,
-    "reason": "Native TransformAccess lifecycle/property edges and managed job signatures are pinned for one client build; the array-element pointer mapping, full Burst numerics, scheduling range, and runtime/visual equivalence remain open."
+    "reason": "Publication provenance, equations, scheduling, and final TransformAccess branches are closed for the pinned client. Endminf's 26 duplicate entries have no proven deterministic winner; solver/runtime/visual equivalence also remain outside this contract."
   }
 }
