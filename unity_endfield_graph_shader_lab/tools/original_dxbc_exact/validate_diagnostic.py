@@ -39,9 +39,9 @@ DURABLE = (
 )
 
 VERTEX_HASH = "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155"
-PIXEL_HASH = "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
-PLUGIN_HASH = "2cad1a83137e5d7ea10aa3d3e0cade65b4017a8b362554b8cdbff6ac3fd90eda"
-VALIDATOR_HASH = "3cc382f0fe0307051a5d9f53de50a9750406761ef5fc7ab56b89581f376fd9fd"
+PIXEL_HASH = "ca09544336a4d56e78c28a080da2df320c11cd21a896dacfdcdcac2b400752e5"
+PLUGIN_HASH = "eca049ec331dcfa722b1127bb9bfc7370d93bd856dcbc039aff595d96de2001d"
+VALIDATOR_HASH = "fc6ab7c29d8e1da46ac53b35168ff2b44fd36da6938a79a2440a70428accbd9f"
 KEYWORD = "ENDFIELD_ORIGINAL_DXBC_EXACT"
 
 EXPECTED_PLUGIN_EXPORTS = [
@@ -142,7 +142,7 @@ def load_live(
         "keyword": KEYWORD,
         "vertex_sha256": VERTEX_HASH,
         "pixel_sha256": PIXEL_HASH,
-        "native_contract_version": 1,
+        "native_contract_version": 2,
         "production_room_submitted": False,
     }
     for key, value in expected.items():
@@ -159,7 +159,7 @@ def load_live(
             "last_hresult": "0x00000000",
             "render_event_count": 2,
             "post_draw_exact_shader_objects_bound": True,
-            "shader_resource_mask": "0x3fffffe",
+            "shader_resource_mask": "0xffffffe",
             "resource_binding_compatible": True,
             "readback_changed_from_sentinel": True,
         }
@@ -248,7 +248,7 @@ def main() -> int:
         check(len(blobs["vertex_dxbc"]) == 496, "vertex DXBC size drift", errors)
     if "pixel_dxbc" in blobs:
         check(sha256(blobs["pixel_dxbc"]) == PIXEL_HASH, "pixel DXBC drift", errors)
-        check(len(blobs["pixel_dxbc"]) == 48_984, "pixel DXBC size drift", errors)
+        check(len(blobs["pixel_dxbc"]) == 50_296, "pixel DXBC size drift", errors)
     if "plugin" in blobs:
         check(sha256(blobs["plugin"]) == PLUGIN_HASH, "plugin binary drift", errors)
         check(
@@ -299,8 +299,8 @@ def main() -> int:
     for token in [
         "#pragma only_renderers d3d11",
         f"#pragma multi_compile_local __ {KEYWORD}",
-        "EndfieldCB8 : register(b8)",
-        "_EndfieldTextureT25 : register(t25)",
+        "EndfieldCB9 : register(b9)",
+        "_EndfieldTextureT27 : register(t27)",
         "sampler_EndfieldTextureT6 : register(s4)",
     ]:
         check(token in shader, f"shader contract token missing: {token}", errors)
@@ -312,10 +312,10 @@ def main() -> int:
         "SetGlobalConstantBuffer",
         "IssuePluginEvent",
         "ReadPixels",
-        "producer's logical GBuffer in t23=A, t24=B, t25=C order",
-        "else if (slot == 23)",
-        "texture = gbufferA",
+        "producer's logical GBuffer in t25=A, t26=B, t27=C order",
         "else if (slot == 25)",
+        "texture = gbufferA",
+        "else if (slot == 27)",
         "texture = gbufferC",
     ]:
         check(token in runtime, f"runtime fail-closed token missing: {token}", errors)

@@ -1,0 +1,53 @@
+{
+  "schema": "endfield-recovered-deferred-exact-consumer-validation-v1",
+  "valid": true,
+  "defaultOff": true,
+  "submitted": {
+    "camera": "MainCamera",
+    "width": 1920,
+    "height": 1080,
+    "publicationSerial": 42,
+    "exactBound": 1,
+    "resourceMask": 268435455,
+    "resourceFailureMask": 0,
+    "resourceFailureResults": "none",
+    "constantBufferMask": 1023,
+    "failureCount": 0,
+    "presented": false,
+    "retailPass0": false,
+    "screenContentValid": false
+  },
+  "readback": {
+    "camera": "MainCamera",
+    "width": 1920,
+    "height": 1080,
+    "bytes": 33177600,
+    "nonzeroBytes": 28981140,
+    "exactBound": 1,
+    "resourceMask": 268435455,
+    "resourceFailureMask": 0,
+    "resourceFailureResults": "none",
+    "constantBufferMask": 1023,
+    "rgbaFloatSha256": "a47ee73b28121de4519d9d84059d56fc2be7ff137646124071e3197f95f8363e",
+    "finiteFloats": 8294400,
+    "nonFiniteFloats": 0,
+    "min": "0.04023972",
+    "max": "1",
+    "failureCount": 0,
+    "presented": false,
+    "retailPass0": false
+  },
+  "hlslComparison": {
+    "camera": "MainCamera",
+    "width": 1920,
+    "height": 1080,
+    "floatCount": 8294400,
+    "maxAbs": 1.1920929e-07,
+    "rmse": 6.860995858205597e-09,
+    "over1e-6": 0,
+    "over1e-4": 0,
+    "over1e-3": 0,
+    "presented": false
+  },
+  "failures": []
+}

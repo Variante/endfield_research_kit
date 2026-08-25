@@ -30,11 +30,11 @@ namespace EndfieldGraphShaderLab
         public const string VertexSha256 =
             "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155";
         public const string PixelSha256 =
-            "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f";
+            "ca09544336a4d56e78c28a080da2df320c11cd21a896dacfdcdcac2b400752e5";
 
         private static readonly int[] ConstantBufferFloat4Counts =
         {
-            45, 157, 259, 3, 2054, 401, 216, 160, 4,
+            45, 157, 259, 3, 2054, 401, 216, 15, 160, 4,
         };
 
         [SerializeField] private Shader diagnosticShader;
@@ -278,7 +278,7 @@ namespace EndfieldGraphShaderLab
                 throw new InvalidOperationException("Diagnostic Shader is unsupported.");
 
             uint contractVersion = Native.GetContractVersion();
-            if (contractVersion != 1)
+            if (contractVersion != 2)
             {
                 throw new InvalidOperationException(
                     "Native diagnostic contract drift: " + contractVersion + ".");
@@ -627,27 +627,25 @@ namespace EndfieldGraphShaderLab
             textures.Add(zeroArray);
             textures.Add(zero3D);
 
-            var nativeTexturePointers = new ulong[26];
-            for (int slot = 1; slot <= 25; slot++)
+            var nativeTexturePointers = new ulong[28];
+            for (int slot = 1; slot <= 27; slot++)
             {
                 Texture texture;
                 if (slot == 1)
                     texture = depth2D;
-                else if (slot == 5)
+                else if (slot == 5 || slot == 11 || slot == 12)
                     texture = zeroArray;
                 else if (slot == 6)
                     texture = shadow2D;
-                else if (slot == 13 || (slot >= 16 && slot <= 21))
+                else if (slot == 15 || (slot >= 18 && slot <= 23))
                     texture = zero3D;
-                // The selected original D3D11 compact resolver consumes the
-                // producer's logical GBuffer in t23=A, t24=B, t25=C order.
-                // Keep this explicit in the exact-DXBC fixture; source HLSL
-                // identifiers are _60/_61/_62, not the compact register names.
-                else if (slot == 23)
-                    texture = gbufferA;
-                else if (slot == 24)
-                    texture = gbufferB;
+                // The frame-proven retail D3D11 resolver consumes the
+                // producer's logical GBuffer in t25=A, t26=B, t27=C order.
                 else if (slot == 25)
+                    texture = gbufferA;
+                else if (slot == 26)
+                    texture = gbufferB;
+                else if (slot == 27)
                     texture = gbufferC;
                 else
                     texture = zero2D;
