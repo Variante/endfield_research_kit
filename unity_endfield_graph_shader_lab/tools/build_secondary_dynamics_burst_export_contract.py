@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Classify the pinned Burst hashed exports used by secondary dynamics.
 
-The Burst DLL exports 628 opaque 32-hex names.  Those names are dispatch
-wrappers: the executable does not contain their hash bytes, and there is no
-static relocation from a managed BurstDirectCall to one of the names.  This
-builder therefore records PE/function-boundary and x64 ABI evidence and
-publishes *bounded candidates*, not a guessed hash-to-kernel mapping.
+The Burst DLL exports 628 opaque 32-hex names. Those names are dispatch
+wrappers, and there is no static relocation from a managed BurstDirectCall to
+one of the names. The monolithic ``burst.initialize`` export does, however,
+assign CPU-specific implementation entries to each hashed wrapper's function
+pointer slot. This builder records both boundaries: exact static export/core
+identity where semantic payload evidence closes it, and an unresolved managed
+wrapper-to-hash route where runtime selection has not been observed.
 
 The native gate is deliberately the same two-input gate used by the other
 secondary-dynamics contracts.  A Burst hash is accepted only for the exact
@@ -1333,6 +1335,127 @@ def _managed_layout_cross_check() -> dict[str, Any]:
     }
 
 
+def _simulation_exact_core_identity(
+    pe: dict[str, Any],
+    slot_rva: int,
+) -> dict[str, Any]:
+    """Close c7e2be... through burst.initialize to both solver cores."""
+    if slot_rva != 0x3C6390:
+        raise ContractError(f"Simulation Start slot drift: 0x{slot_rva:x}")
+    variants = []
+    specifications = (
+        {
+            "cpuVariant": "x64_sse2",
+            "initializerRva": 0x3600E8,
+            "initializerSha256": "9c295f1438ae68d7f5c8280cc305777edeed8e38a9a1adaf77ca2f34b8449f4c",
+            "entryRva": 0xD3C20,
+            "entryBytes": 388,
+            "entrySha256": "45a37029be6fc56b56c94c4f5312f7fa5918f61177ff59388d772779fc6c3185",
+            "rangeRva": 0xD3DB0,
+            "rangeBytes": 519,
+            "rangeSha256": "e18f7179c8c658ab679fe4f1c96220ccd5457bec69b0bab05e9900ce01f27dbe",
+            "coreRva": 0xC6F10,
+            "coreBytes": 6687,
+            "coreSha256": "dd8104bdd776b5746842573c6632eede062bc147c3580b1336f95e4e8493aea7",
+        },
+        {
+            "cpuVariant": "avx2",
+            "initializerRva": 0x35BEB1,
+            "initializerSha256": "5d43af7920ff271b94cfaa9a61d451853f83b8db7dd37e3de15cf722d84fb97b",
+            "entryRva": 0x26A370,
+            "entryBytes": 208,
+            "entrySha256": "894311128c4c424a80e7bb1f4c40cffa683467c43985fd585b2a81190741fdef",
+            "rangeRva": 0x26A440,
+            "rangeBytes": 523,
+            "rangeSha256": "13356515ab54b827958f80ad3542a9aab7cc2f2d0ef20d2bcef78da2f60d0996",
+            "coreRva": 0x25E830,
+            "coreBytes": 5074,
+            "coreSha256": "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc",
+        },
+    )
+    slot_va = pe["imageBase"] + slot_rva
+    for spec in specifications:
+        init_body, init_instructions = _exact_rva_span(
+            pe, spec["initializerRva"], 14, spec["initializerSha256"]
+        )
+        if [ins.mnemonic for ins in init_instructions] != ["lea", "mov"]:
+            raise ContractError("Simulation Start burst.initialize assignment shape drift")
+        if [_rip_memory_target(pe, ins) for ins in init_instructions] != [
+            pe["imageBase"] + spec["entryRva"], slot_va
+        ]:
+            raise ContractError(
+                f"Simulation Start {spec['cpuVariant']} initializer edge drift"
+            )
+        _entry_body, entry_instructions = _exact_rva_span(
+            pe, spec["entryRva"], spec["entryBytes"], spec["entrySha256"]
+        )
+        entry_calls = [
+            _direct_target(ins, pe["imageBase"])
+            for ins in entry_instructions if ins.mnemonic == "call"
+        ]
+        if entry_calls != [spec["rangeRva"]]:
+            raise ContractError(
+                f"Simulation Start {spec['cpuVariant']} entry-to-range edge drift"
+            )
+        _range_body, range_instructions = _exact_rva_span(
+            pe, spec["rangeRva"], spec["rangeBytes"], spec["rangeSha256"]
+        )
+        range_calls = [
+            _direct_target(ins, pe["imageBase"])
+            for ins in range_instructions if ins.mnemonic == "call"
+        ]
+        if range_calls != [spec["coreRva"]]:
+            raise ContractError(
+                f"Simulation Start {spec['cpuVariant']} range-to-core edge drift"
+            )
+        _core_body, core_instructions = _exact_rva_span(
+            pe, spec["coreRva"], spec["coreBytes"], spec["coreSha256"]
+        )
+        core_text = [f"{ins.mnemonic} {ins.op_str}" for ins in core_instructions]
+        required = (
+            "dword ptr [rbx + r14*4]",
+            "+ r12*2]",
+            "0x1d0",
+            "0x328",
+        )
+        for marker in required:
+            if not any(marker in row for row in core_text):
+                raise ContractError(
+                    f"Simulation Start {spec['cpuVariant']} core marker missing: {marker}"
+                )
+        variants.append({
+            "cpuVariant": spec["cpuVariant"],
+            "burstInitializeAssignment": {
+                "rva": f"0x{spec['initializerRva']:x}",
+                "bytes": len(init_body),
+                "sha256": spec["initializerSha256"],
+                "functionPointerSlotRva": f"0x{slot_rva:x}",
+            },
+            "entry": {
+                "rva": f"0x{spec['entryRva']:x}",
+                "bytes": spec["entryBytes"],
+                "sha256": spec["entrySha256"],
+            },
+            "rangeLoop": {
+                "rva": f"0x{spec['rangeRva']:x}",
+                "bytes": spec["rangeBytes"],
+                "sha256": spec["rangeSha256"],
+            },
+            "solverCore": {
+                "rva": f"0x{spec['coreRva']:x}",
+                "bytes": spec["coreBytes"],
+                "sha256": spec["coreSha256"],
+            },
+        })
+    return {
+        "status": "static_slot_entry_range_and_dual_cpu_solver_core_closed",
+        "functionPointerSlotRva": f"0x{slot_rva:x}",
+        "variants": variants,
+        "managedWrapperMapping": "semantic_identity_closed_runtime_GetProcAddress_route_unobserved",
+        "decodeBoundary": "full solver bodies are identified and hash-pinned; their complete numeric equations still require bounded semantic decoding before Unity implementation",
+    }
+
+
 def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, Any]],
                                      gate: dict[str, Any]) -> dict[str, Any]:
     candidate_hash = "c7e2be088565d3ff7a6e7ba86d23fd51"
@@ -1365,6 +1488,7 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
             "Simulation candidate target slot changed from the pinned zero-fill .data boundary: "
             f"{target_section['name']} fileBacked={target_section['fileBacked']}"
         )
+    exact_core_identity = _simulation_exact_core_identity(pe, target_rva)
     expected_static = [
         f"burst.initialize.statics.{candidate_hash}_x64_sse2",
         f"burst.initialize.statics.{candidate_hash}_avx2",
@@ -1440,7 +1564,7 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
     if actual_loads != expected_loads or actual_stores != expected_stores:
         raise ContractError("Simulation candidate exact ABI load/store mapping drift")
     return {
-        "status": "export_thunk_fingerprint_closed_internal_target_unobserved",
+        "status": "export_thunk_and_dual_cpu_solver_core_closed_managed_route_unobserved",
         "candidateHash": candidate_hash,
         "export": {
             "rva": row["rva"],
@@ -1477,34 +1601,50 @@ def _simulation_semantic_fingerprint(pe: dict[str, Any], rows: list[dict[str, An
             },
             "fileBacked": False,
             "diskState": "zero_fill_bss_no_on_disk_pointer",
-            "runtimeValue": "unobserved",
-            "runtimeGate": "GetProcAddress returned function pointer trace required",
+            "runtimeValue": "statically_assigned_by_burst.initialize_per_cpu_variant",
+            "runtimeGate": "GetProcAddress trace remains required only for managed BurstDirectCall wrapper-to-hash selection",
         },
         "initializerExports": initializer_exports,
         "managedCrossCheck": _managed_layout_cross_check(),
+        "exactCoreIdentity": exact_core_identity,
         "internalCfg": {
-            "status": "unavailable_target_pointer_unobserved",
-            "maxDepth": 0,
+            "status": "slot_entry_range_and_solver_core_graph_closed",
+            "maxDepth": 3,
             "recursionBound": {"maxDepth": 4, "maxNodes": 128, "maxEdges": 256},
             "seedTargetRva": f"0x{target_rva:x}",
-            "nodes": [],
-            "edges": [],
-            "reason": "The only call target is a zero-fill .data function-pointer cell. No static code RVA exists to recurse into.",
+            "nodes": [
+                row[key]
+                for row in exact_core_identity["variants"]
+                for key in ("entry", "rangeLoop", "solverCore")
+            ],
+            "edges": [
+                {
+                    "cpuVariant": row["cpuVariant"],
+                    "path": [
+                        exact_core_identity["functionPointerSlotRva"],
+                        row["entry"]["rva"],
+                        row["rangeLoop"]["rva"],
+                        row["solverCore"]["rva"],
+                    ],
+                }
+                for row in exact_core_identity["variants"]
+            ],
+            "reason": "burst.initialize statically assigns both CPU-specific entry points to the export's zero-fill function-pointer slot.",
         },
         "jobPayload": {
-            "status": "unavailable_target_pointer_unobserved",
+            "status": "solver_core_identity_closed_complete_numeric_decode_pending",
             "nativeArrayFieldAccesses": [],
-            "strideBytes": [],
+            "strideBytes": [4, 464, 808],
             "constants": [],
             "writebacks": [],
-            "reason": "Payload/stride/constant/writeback claims require the runtime-resolved kernel body; the export thunk alone only proves ABI moves.",
+            "reason": "The exact SSE2/AVX2 solver bodies and outer index/team/parameter strides are now pinned. Complete branch, constraint, collision, and writeback equation decoding is still required before a Unity port.",
         },
         "sourcePins": {
             "gameAssemblySha256": gate["gameAssembly"]["sha256"],
             "globalMetadataSha256": gate["globalMetadata"]["sha256"],
             "libBurstGeneratedSha256": gate["libBurstGenerated"]["sha256"],
         },
-        "identityBoundary": "unique_abi_candidate_identity_unresolved",
+        "identityBoundary": "export_and_core_identity_closed_managed_route_unresolved",
     }
 
 
@@ -1645,7 +1785,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     targets["simulationStartRange"]["semanticFingerprint"] = _simulation_semantic_fingerprint(pe, rows, gate)
     return {
         "schema": "endfield.charinfo.secondary-dynamics-burst-export.v1",
-        "status": "secondary_dynamics_static_candidate_classification_unresolved_export_identity",
+        "status": "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved",
         "native_gate": gate,
         "pe": {
             "imageBase": f"0x{pe['imageBase']:x}",
@@ -1669,8 +1809,8 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         },
         "unresolved": [
             "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll; static export-table analysis cannot join a managed BurstDirectCall to a hash.",
-            "The candidate sets are ABI/function-shape evidence only. Runtime GetProcAddress plus a call-site/returned-pointer trace is required before publishing a hash-to-kernel mapping.",
-            "The DLL export rows are intentionally not promoted to a solver implementation or a secondary-dynamics verification claim.",
+            "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove managed BurstDirectCall wrapper-to-hash selection; it is no longer required to identify the statically closed Simulation Start and Collider End export cores.",
+            "Hash-pinned solver bodies are evidence of original numerics, not a Unity solver implementation or secondary-dynamics equivalence claim; complete equation decoding and runtime integration remain open.",
         ],
     }
 

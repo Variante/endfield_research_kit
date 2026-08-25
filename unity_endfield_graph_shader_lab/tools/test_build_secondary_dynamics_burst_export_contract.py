@@ -21,7 +21,7 @@ import build_secondary_dynamics_burst_export_contract as builder
 class SecondaryDynamicsBurstExportTests(unittest.TestCase):
     def test_published_report_is_pinned_and_fail_closed(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
-        self.assertEqual(payload["status"], "secondary_dynamics_static_candidate_classification_unresolved_export_identity")
+        self.assertEqual(payload["status"], "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved")
         self.assertEqual(payload["native_gate"]["gameAssembly"]["sha256"], builder.EXPECTED_GAME_ASSEMBLY_SHA256)
         self.assertEqual(payload["native_gate"]["globalMetadata"]["sha256"], builder.EXPECTED_METADATA_SHA256)
         self.assertEqual(payload["native_gate"]["libBurstGenerated"]["sha256"], builder.EXPECTED_LIB_BURST_SHA256)
@@ -77,7 +77,7 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
     def test_simulation_semantic_fingerprint_is_closed_at_runtime_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         fingerprint = payload["targets"]["simulationStartRange"]["semanticFingerprint"]
-        self.assertEqual(fingerprint["status"], "export_thunk_fingerprint_closed_internal_target_unobserved")
+        self.assertEqual(fingerprint["status"], "export_thunk_and_dual_cpu_solver_core_closed_managed_route_unobserved")
         self.assertEqual(fingerprint["candidateHash"], "c7e2be088565d3ff7a6e7ba86d23fd51")
         self.assertEqual(fingerprint["export"]["rva"], "0x3616e0")
         self.assertEqual(fingerprint["export"]["bodySha256"], "38e122699775a7bc42cb1277028ece1430c467c9112510aa29948ee8d3f2e45d")
@@ -91,15 +91,25 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         target = fingerprint["indirectTarget"]
         self.assertEqual((target["targetRva"], target["section"], target["fileBacked"]), ("0x3c6390", ".data", False))
         self.assertEqual(target["diskState"], "zero_fill_bss_no_on_disk_pointer")
-        self.assertEqual(fingerprint["internalCfg"]["status"], "unavailable_target_pointer_unobserved")
+        self.assertEqual(target["runtimeValue"], "statically_assigned_by_burst.initialize_per_cpu_variant")
+        self.assertEqual(fingerprint["internalCfg"]["status"], "slot_entry_range_and_solver_core_graph_closed")
         self.assertEqual(fingerprint["internalCfg"]["recursionBound"], {"maxDepth": 4, "maxNodes": 128, "maxEdges": 256})
         self.assertEqual(fingerprint["internalCfg"]["seedTargetRva"], "0x3c6390")
-        self.assertEqual(fingerprint["jobPayload"]["status"], "unavailable_target_pointer_unobserved")
+        self.assertEqual(fingerprint["jobPayload"]["status"], "solver_core_identity_closed_complete_numeric_decode_pending")
         self.assertEqual(fingerprint["jobPayload"]["nativeArrayFieldAccesses"], [])
-        self.assertEqual(fingerprint["jobPayload"]["strideBytes"], [])
+        self.assertEqual(fingerprint["jobPayload"]["strideBytes"], [4, 464, 808])
         self.assertEqual(fingerprint["jobPayload"]["constants"], [])
         self.assertEqual(fingerprint["jobPayload"]["writebacks"], [])
-        self.assertEqual(fingerprint["identityBoundary"], "unique_abi_candidate_identity_unresolved")
+        exact = fingerprint["exactCoreIdentity"]
+        self.assertEqual(exact["status"], "static_slot_entry_range_and_dual_cpu_solver_core_closed")
+        variants = {row["cpuVariant"]: row for row in exact["variants"]}
+        self.assertEqual(variants["x64_sse2"]["entry"]["rva"], "0xd3c20")
+        self.assertEqual(variants["x64_sse2"]["rangeLoop"]["rva"], "0xd3db0")
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["rva"], "0xc6f10")
+        self.assertEqual(variants["avx2"]["entry"]["rva"], "0x26a370")
+        self.assertEqual(variants["avx2"]["rangeLoop"]["rva"], "0x26a440")
+        self.assertEqual(variants["avx2"]["solverCore"]["rva"], "0x25e830")
+        self.assertEqual(fingerprint["identityBoundary"], "export_and_core_identity_closed_managed_route_unresolved")
         self.assertEqual(fingerprint["sourcePins"]["libBurstGeneratedSha256"], builder.EXPECTED_LIB_BURST_SHA256)
         self.assertEqual(payload["contractComparison"]["burstWrapperProvenance"]["fileSha256"], builder._sha256(builder.REPO_ROOT / payload["contractComparison"]["burstWrapperProvenance"]["path"]))
 
