@@ -873,6 +873,19 @@ resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
 downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.
 
+The pre-burst `overview_04/1/Particle System (1)` lobe is owned by
+`M_fx_endminm_gfx_29`. Its source Material pins `_MainTex` to
+`T_fx_flow_17_M` (`pE9BD526F8E515836`, decoded PNG SHA-256
+`28406becfc0f0eaf58cd234a3e590fbc2823975d307bfe990d19fa2af28ed8fb`)
+and `_DisturbTex1`, `_MaskTex`, `_SampleTex0`, and `_SampleTex1` to
+`T_fx_flow_01_M` (`pE924975F4B2F54A4`). Both generated bindings had fallen
+back to white; the maintained Overview texture repair now restores and
+hash-gates them. The exact-texture 4.2167-second frame removes the opaque-white
+fallback but still leaves a brighter circular lobe than retail. Keep that
+remaining gap assigned to M29 particle/custom-data or BaseV2 output semantics,
+not missing texture identity, and do not hide it by disabling the source-live
+renderer.
+
 The exact-build secondary-dynamics session at
 `scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
 `UseCrossFrameJob=true` and exclusively false `useRelativeTransform` reads,

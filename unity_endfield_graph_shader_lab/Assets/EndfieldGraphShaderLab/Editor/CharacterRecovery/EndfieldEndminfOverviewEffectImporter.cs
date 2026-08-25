@@ -520,11 +520,14 @@ namespace EndfieldGraphShaderLabEditor
                 "Integrated Endminf suikuai (1) prefab binding did not persist");
         }
 
-        [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview M13 Textures")]
+        [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview Flow Textures")]
         public static void RepairOverviewM13Textures()
         {
+            const long m29MainPathId = unchecked((long)0xE9BD526F8E515836UL);
             const long sample1PathId = unchecked((long)0xE924975F4B2F54A4UL);
             const long sample3PathId = unchecked((long)0xD7AB7F885B7BC330UL);
+            const string m29MainSha256 =
+                "28406becfc0f0eaf58cd234a3e590fbc2823975d307bfe990d19fa2af28ed8fb";
             const string sample1Sha256 =
                 "fd335206b2de7d4578b941ceb2bcec79e56541017f07b3eb9f6655ad76450939";
             const string sample3Sha256 =
@@ -533,6 +536,8 @@ namespace EndfieldGraphShaderLabEditor
             string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
             string textureSourceRoot = Path.Combine(repo,
                 "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D");
+            string m29MainSource = RequireDecodedTextureSource(
+                textureSourceRoot, m29MainPathId, m29MainSha256);
             string sample1Source = RequireDecodedTextureSource(
                 textureSourceRoot, sample1PathId, sample1Sha256);
             string sample3Source = RequireDecodedTextureSource(
@@ -540,6 +545,8 @@ namespace EndfieldGraphShaderLabEditor
 
             L.EnsureFolder(GeneratedRoot);
             L.EnsureFolder(TextureRoot);
+            string m29MainAsset = BuildExactEndminfDecodedTexture(
+                m29MainPathId, textureSourceRoot);
             string sample1Asset = BuildExactEndminfDecodedTexture(
                 sample1PathId, textureSourceRoot);
             string sample3Asset = BuildExactEndminfDecodedTexture(
@@ -548,12 +555,19 @@ namespace EndfieldGraphShaderLabEditor
                 sample1Asset);
             Texture2D sample3 = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 sample3Asset);
+            Texture2D m29Main = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                m29MainAsset);
             string materialAsset = MaterialRoot +
                 "/M_fx_endminm_gfx_13_p57A25F1386F7012F.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(
                 materialAsset);
-            L.Require(material != null && sample1 != null && sample3 != null,
-                "Generated Endminf M13 material or decoded textures are missing");
+            string m29MaterialAsset = MaterialRoot +
+                "/M_fx_endminm_gfx_29_p7BCC4552203800A8.mat";
+            Material m29Material = AssetDatabase.LoadAssetAtPath<Material>(
+                m29MaterialAsset);
+            L.Require(material != null && m29Material != null &&
+                sample1 != null && sample3 != null && m29Main != null,
+                "Generated Endminf M13/M29 materials or decoded textures are missing");
 
             string[] sample1Properties = { "_DisturbTex2", "_SampleTex1" };
             string[] sample3Properties = { "_DissolveTex", "_SampleTex3" };
@@ -569,7 +583,23 @@ namespace EndfieldGraphShaderLabEditor
                     "Generated Endminf M13 material lost " + property);
                 material.SetTexture(property, sample3);
             }
+            // The source M29 row uses T_fx_flow_17_M for Main and reuses
+            // T_fx_flow_01_M for all four secondary carriers. Stale generated
+            // GUIDs made every route sample Unity's white fallback, producing
+            // an opaque palm disc absent from phase-paired retail frame 367.
+            L.Require(m29Material.HasProperty("_MainTex"),
+                "Generated Endminf M29 material lost _MainTex");
+            m29Material.SetTexture("_MainTex", m29Main);
+            string[] m29Sample1Properties = {
+                "_DisturbTex1", "_MaskTex", "_SampleTex0", "_SampleTex1" };
+            foreach (string property in m29Sample1Properties)
+            {
+                L.Require(m29Material.HasProperty(property),
+                    "Generated Endminf M29 material lost " + property);
+                m29Material.SetTexture(property, sample1);
+            }
             EditorUtility.SetDirty(material);
+            EditorUtility.SetDirty(m29Material);
             AssetDatabase.SaveAssets();
 
             foreach (string property in sample1Properties.Concat(sample3Properties))
@@ -583,15 +613,33 @@ namespace EndfieldGraphShaderLabEditor
                     "Generated Endminf M13 retained a missing texture binding: " +
                     property);
             }
+            foreach (string property in m29Sample1Properties)
+            {
+                Texture bound = m29Material.GetTexture(property);
+                string boundPath = bound == null
+                    ? null
+                    : AssetDatabase.GetAssetPath(bound);
+                L.Require(bound == sample1 && !string.IsNullOrEmpty(boundPath) &&
+                    File.Exists(L.ProjectAbsolute(boundPath)),
+                    "Generated Endminf M29 retained a missing texture binding: " +
+                    property);
+            }
+            L.Require(m29Material.GetTexture("_MainTex") == m29Main,
+                "Generated Endminf M29 retained a missing _MainTex binding");
             L.Require(
-                File.Exists(sample1Source) && File.Exists(sample3Source) &&
+                File.Exists(m29MainSource) && File.Exists(sample1Source) &&
+                File.Exists(sample3Source) &&
                 material.GetTexture("_DisturbTex2") == sample1 &&
                 material.GetTexture("_SampleTex1") == sample1 &&
                 material.GetTexture("_DissolveTex") == sample3 &&
-                material.GetTexture("_SampleTex3") == sample3,
-                "Generated Endminf M13 texture identity validation failed");
+                material.GetTexture("_SampleTex3") == sample3 &&
+                m29Material.GetTexture("_MainTex") == m29Main &&
+                m29Sample1Properties.All(property =>
+                    m29Material.GetTexture(property) == sample1),
+                "Generated Endminf M13/M29 texture identity validation failed");
             Debug.Log(
-                "Repaired exact decoded Endminf M13 texture bindings: " +
+                "Repaired exact decoded Endminf M13/M29 texture bindings: " +
+                "M29Main=pE9BD526F8E515836, " +
                 "Sample1/Disturb2=pE924975F4B2F54A4, " +
                 "Sample3/Dissolve=pD7AB7F885B7BC330.");
         }
