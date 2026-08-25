@@ -1,0 +1,688 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-substep.v1",
+  "status": "pinned_unpatched_substep_accumulator_count_and_solver_loop_closed",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "sourceContracts": [
+    {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_callback_contract.json",
+      "schema": "endfield.charinfo.secondary-dynamics-callback-writeback.v1",
+      "status": "native_callback_writeback_closed"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_schedule_contract.json",
+      "schema": "endfield.charinfo.secondary-dynamics-schedule.v1",
+      "status": "unpatched_schedule_and_transform_access_writeback_closed"
+    },
+    {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_time_manager_contract.json",
+      "schema": "endfield.charinfo.secondary-dynamics-time-manager.v1",
+      "status": "retail_default_step_scalars_closed_nondefault_power_helper_unported"
+    }
+  ],
+  "nativeMethods": [
+    {
+      "methodIndex": 384441,
+      "token": "0x06000382",
+      "type": "BeyondDynamicBone.ClothManager",
+      "method": "ClothUpdate",
+      "startVa": "0x182f918a0",
+      "endVa": "0x182f93110",
+      "spanBytes": 6256,
+      "sha256": "a1065dd5aaa62d715dc756e8ce87a4630d629d303494df34fb9d949b2231d077"
+    },
+    {
+      "methodIndex": 384596,
+      "token": "0x0600041d",
+      "type": "BeyondDynamicBone.TeamManager",
+      "method": "AlwaysTeamUpdate",
+      "startVa": "0x1835bea60",
+      "endVa": "0x1835c2230",
+      "spanBytes": 14288,
+      "sha256": "ed476f614553028a2543f094526aaf370f9c2975bbb49b872eb17d43e6c0ca88"
+    },
+    {
+      "methodIndex": 384599,
+      "token": "0x06000420",
+      "type": "BeyondDynamicBone.TeamManager",
+      "method": "SimulationStepTeamUpdate",
+      "startVa": "0x182f8e3a0",
+      "endVa": "0x182f8e710",
+      "spanBytes": 880,
+      "sha256": "a0031b5d80a0f3ef008aeea3a5f4cbd3a9b7d16cbd6370d6b28e8da7112138ed"
+    },
+    {
+      "methodIndex": 385474,
+      "token": "0x0600078b",
+      "type": "BeyondDynamicBone.SimulationManager",
+      "method": "SimulationStepUpdate",
+      "startVa": "0x182f8f430",
+      "endVa": "0x182f90b80",
+      "spanBytes": 5968,
+      "sha256": "5106aa8354dfe1d73e8a4ecb6a693cf8586938da5d456f7fc748267e08743335"
+    },
+    {
+      "methodIndex": 385741,
+      "token": "0x06000896",
+      "type": "BeyondDynamicBone.TimeManager",
+      "method": "FrameUpdate",
+      "startVa": "0x1834460c0",
+      "endVa": "0x183446280",
+      "spanBytes": 448,
+      "sha256": "7a539536c6ac6431798cbb2cd35fc0601e4af158b620f2cafe26baeb7de2b863"
+    },
+    {
+      "methodIndex": 385743,
+      "token": "0x06000898",
+      "type": "BeyondDynamicBone.TimeManager",
+      "method": ".ctor",
+      "startVa": "0x184d87460",
+      "endVa": "0x184d87480",
+      "spanBytes": 32,
+      "sha256": "a892c8d0275f9a1665d104b60f0cda87628a3b0dd2a49158a2a377297d787d63"
+    },
+    {
+      "methodIndex": 384711,
+      "token": "0x06000490",
+      "type": "BeyondDynamicBone.TeamManager+AlwaysTeamUpdatePostJob",
+      "method": "Execute",
+      "startVa": "0x186733450",
+      "endVa": "0x186733dd8",
+      "spanBytes": 2440,
+      "sha256": "54845866e2a08ec3f0d14a88960cb4ac64b7e54fdcfbf9b337f635ed885207f5"
+    },
+    {
+      "methodIndex": 384614,
+      "token": "0x0600042f",
+      "type": "BeyondDynamicBone.TeamManager+SimulationStepTeamUpdateKernels",
+      "method": "SimulationStepTeamUpdateKernel$BurstManaged",
+      "startVa": "0x186727f20",
+      "endVa": "0x186728c80",
+      "spanBytes": 3424,
+      "sha256": "b5a49b1d2726d050c11d0eb4d9ae7cd99ab7baa96298887bbee8497e198619c7"
+    },
+    {
+      "methodIndex": 384683,
+      "token": "0x06000474",
+      "type": "BeyondDynamicBone.TeamManager+TeamData",
+      "method": "get_IsFixedUpdate",
+      "startVa": "0x18673dc38",
+      "endVa": "0x18673dc88",
+      "spanBytes": 80,
+      "sha256": "977845151c99991f48d8068bc836881455d36bf895bd836631278572c7d7bad5"
+    },
+    {
+      "methodIndex": 384684,
+      "token": "0x06000475",
+      "type": "BeyondDynamicBone.TeamManager+TeamData",
+      "method": "get_IsUnscaled",
+      "startVa": "0x18673dfe4",
+      "endVa": "0x18673e034",
+      "spanBytes": 80,
+      "sha256": "0c4704f036eeff8b5978fdaaceb51e9896fca0046883ded43a923676f0206d13"
+    },
+    {
+      "methodIndex": 384686,
+      "token": "0x06000477",
+      "type": "BeyondDynamicBone.TeamManager+TeamData",
+      "method": "get_IsEnable",
+      "startVa": "0x1837ebd60",
+      "endVa": "0x1837ebdc0",
+      "spanBytes": 96,
+      "sha256": "6319cec0b90302415f3cbf7a8d85fec1735de8c31836ee7cfd660763bad790ef"
+    },
+    {
+      "methodIndex": 384697,
+      "token": "0x06000482",
+      "type": "BeyondDynamicBone.TeamManager+TeamData",
+      "method": "get_IsCullingInvisible",
+      "startVa": "0x18673db7c",
+      "endVa": "0x18673dbe4",
+      "spanBytes": 104,
+      "sha256": "dead8c860e4a34609cb117c83d7ad01c0f43f3cece57415297554311c264d81d"
+    }
+  ],
+  "equationSpans": [
+    {
+      "name": "alwaysPostAccumulatorAndClamp",
+      "startVa": "0x186733ab8",
+      "endVa": "0x186733ba7",
+      "spanBytes": 239,
+      "sha256": "9f63ac61d0207d69b19158d71e8e4d61f0816bd4be882a7cf7a5c2abaa4abdd5"
+    },
+    {
+      "name": "alwaysPostMaximumReduction",
+      "startVa": "0x186733c93",
+      "endVa": "0x186733cca",
+      "spanBytes": 55,
+      "sha256": "e17313c642cce94e7b94052f45b03e1f89dfdd99d4bbc98c92c235efcc93d3f6"
+    },
+    {
+      "name": "alwaysPostMaximumStore",
+      "startVa": "0x186733d81",
+      "endVa": "0x186733d88",
+      "spanBytes": 7,
+      "sha256": "ed4f2162511e6e34f1773287475c7c9b6362a7e8b45551a67e483d1aaa4ffcb6"
+    },
+    {
+      "name": "stepKernelGateAndClockAdvance",
+      "startVa": "0x186728096",
+      "endVa": "0x186728194",
+      "spanBytes": 254,
+      "sha256": "fcb7a71d443f93a2db13acb47a928b4ba98b8c09ee196d3ce440ccf4bcd3e801"
+    },
+    {
+      "name": "clothUpdateSolverLoop",
+      "startVa": "0x182f920d7",
+      "endVa": "0x182f92123",
+      "spanBytes": 76,
+      "sha256": "39b295ef20f6a8ef8207962d3e79b27b33b439e8a628f53a2b090d46a6cf5e1b"
+    },
+    {
+      "name": "alwaysPostJobScalarConstruction",
+      "startVa": "0x1835c1401",
+      "endVa": "0x1835c145b",
+      "spanBytes": 90,
+      "sha256": "3ac139e757e43380eedba389b735b54a835c597bbf7f75ff72cd4f66666ee156"
+    }
+  ],
+  "constants": [
+    {
+      "name": "one",
+      "va": "0x18b959200",
+      "bits": "0000803f",
+      "value": 1.0
+    },
+    {
+      "name": "zero",
+      "va": "0x18b959220",
+      "bits": "00000000",
+      "value": 0.0
+    },
+    {
+      "name": "pausedClockEpsilon",
+      "va": "0x18b9592c0",
+      "bits": "17b7d138",
+      "value": 9.999999747378752e-05
+    }
+  ],
+  "fieldAndArrayProvenance": {
+    "layouts": [
+      {
+        "type": "BeyondDynamicBone.TimeManager",
+        "typeIndex": 48430,
+        "fields": [
+          {
+            "name": "simulationFrequency",
+            "fieldIndex": 230469,
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "maxSimulationCountPerFrame",
+            "fieldIndex": 230470,
+            "boxedFieldOffset": "0x14",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "FixedUpdateCount",
+            "fieldIndex": 230473,
+            "boxedFieldOffset": "0x20",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "GlobalTimeScale",
+            "fieldIndex": 230474,
+            "boxedFieldOffset": "0x24",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "SimulationDeltaTime",
+            "fieldIndex": 230475,
+            "boxedFieldOffset": "0x28",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "MaxDeltaTime",
+            "fieldIndex": 230476,
+            "boxedFieldOffset": "0x2c",
+            "nativePayloadOffset": null
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.TeamManager",
+        "typeIndex": 48248,
+        "fields": [
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229581,
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": null
+          },
+          {
+            "name": "maxUpdateCount",
+            "fieldIndex": 229585,
+            "boxedFieldOffset": "0x30",
+            "nativePayloadOffset": null
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.TeamManager+AlwaysTeamUpdatePostJob",
+        "typeIndex": 48236,
+        "fields": [
+          {
+            "name": "teamCount",
+            "fieldIndex": 229722,
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": "0x0"
+          },
+          {
+            "name": "unityFrameDeltaTime",
+            "fieldIndex": 229723,
+            "boxedFieldOffset": "0x14",
+            "nativePayloadOffset": "0x4"
+          },
+          {
+            "name": "unityFrameFixedDeltaTime",
+            "fieldIndex": 229724,
+            "boxedFieldOffset": "0x18",
+            "nativePayloadOffset": "0x8"
+          },
+          {
+            "name": "unityFrameUnscaledDeltaTime",
+            "fieldIndex": 229725,
+            "boxedFieldOffset": "0x1c",
+            "nativePayloadOffset": "0xc"
+          },
+          {
+            "name": "globalTimeScale",
+            "fieldIndex": 229726,
+            "boxedFieldOffset": "0x20",
+            "nativePayloadOffset": "0x10"
+          },
+          {
+            "name": "simulationDeltaTime",
+            "fieldIndex": 229727,
+            "boxedFieldOffset": "0x24",
+            "nativePayloadOffset": "0x14"
+          },
+          {
+            "name": "maxSimmulationCountPerFrame",
+            "fieldIndex": 229728,
+            "boxedFieldOffset": "0x28",
+            "nativePayloadOffset": "0x18"
+          },
+          {
+            "name": "maxUpdateCount",
+            "fieldIndex": 229729,
+            "boxedFieldOffset": "0x30",
+            "nativePayloadOffset": "0x20"
+          },
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229730,
+            "boxedFieldOffset": "0x40",
+            "nativePayloadOffset": "0x30"
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.TeamManager+SimulationStepTeamUpdateJob",
+        "typeIndex": 48245,
+        "fields": [
+          {
+            "name": "updateIndex",
+            "fieldIndex": 229764,
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": "0x0"
+          },
+          {
+            "name": "simulationDeltaTime",
+            "fieldIndex": 229765,
+            "boxedFieldOffset": "0x14",
+            "nativePayloadOffset": "0x4"
+          },
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229766,
+            "boxedFieldOffset": "0x18",
+            "nativePayloadOffset": "0x8"
+          }
+        ]
+      },
+      {
+        "type": "BeyondDynamicBone.TeamManager+TeamData",
+        "typeIndex": 48233,
+        "fields": [
+          {
+            "name": "flag",
+            "fieldIndex": 229636,
+            "boxedFieldOffset": "0x10",
+            "nativePayloadOffset": "0x0"
+          },
+          {
+            "name": "originalUpdateMode",
+            "fieldIndex": 229637,
+            "boxedFieldOffset": "0x18",
+            "nativePayloadOffset": "0x8"
+          },
+          {
+            "name": "updateMode",
+            "fieldIndex": 229638,
+            "boxedFieldOffset": "0x1c",
+            "nativePayloadOffset": "0xc"
+          },
+          {
+            "name": "frameDeltaTime",
+            "fieldIndex": 229639,
+            "boxedFieldOffset": "0x20",
+            "nativePayloadOffset": "0x10"
+          },
+          {
+            "name": "time",
+            "fieldIndex": 229640,
+            "boxedFieldOffset": "0x24",
+            "nativePayloadOffset": "0x14"
+          },
+          {
+            "name": "oldTime",
+            "fieldIndex": 229641,
+            "boxedFieldOffset": "0x28",
+            "nativePayloadOffset": "0x18"
+          },
+          {
+            "name": "nowUpdateTime",
+            "fieldIndex": 229642,
+            "boxedFieldOffset": "0x2c",
+            "nativePayloadOffset": "0x1c"
+          },
+          {
+            "name": "oldUpdateTime",
+            "fieldIndex": 229643,
+            "boxedFieldOffset": "0x30",
+            "nativePayloadOffset": "0x20"
+          },
+          {
+            "name": "frameUpdateTime",
+            "fieldIndex": 229644,
+            "boxedFieldOffset": "0x34",
+            "nativePayloadOffset": "0x24"
+          },
+          {
+            "name": "frameOldTime",
+            "fieldIndex": 229645,
+            "boxedFieldOffset": "0x38",
+            "nativePayloadOffset": "0x28"
+          },
+          {
+            "name": "timeScale",
+            "fieldIndex": 229646,
+            "boxedFieldOffset": "0x3c",
+            "nativePayloadOffset": "0x2c"
+          },
+          {
+            "name": "nowTimeScale",
+            "fieldIndex": 229647,
+            "boxedFieldOffset": "0x40",
+            "nativePayloadOffset": "0x30"
+          },
+          {
+            "name": "updateCount",
+            "fieldIndex": 229648,
+            "boxedFieldOffset": "0x44",
+            "nativePayloadOffset": "0x34"
+          },
+          {
+            "name": "skipCount",
+            "fieldIndex": 229649,
+            "boxedFieldOffset": "0x48",
+            "nativePayloadOffset": "0x38"
+          },
+          {
+            "name": "frameInterpolation",
+            "fieldIndex": 229650,
+            "boxedFieldOffset": "0x4c",
+            "nativePayloadOffset": "0x3c"
+          },
+          {
+            "name": "resetSimulationToAnimationPose",
+            "fieldIndex": 229672,
+            "boxedFieldOffset": "0xfc",
+            "nativePayloadOffset": "0xec"
+          }
+        ]
+      }
+    ],
+    "flow": [
+      "TimeManager.FrameUpdate writes SimulationDeltaTime/MaxDeltaTime and clamps configuration.",
+      "TeamManager.AlwaysTeamUpdate constructs AlwaysTeamUpdatePostJob from TimeManager and Unity time sources.",
+      "AlwaysTeamUpdatePostJob reads/writes TeamManager.teamDataArray and reduces active per-team updateCount into TeamManager.maxUpdateCount.",
+      "ClothManager.ClothUpdate reads *TeamManager.maxUpdateCount and calls SimulationManager.SimulationStepUpdate(updateCount=maxUpdateCount, updateIndex=i) for i in [0,maxUpdateCount).",
+      "SimulationStepUpdate schedules TeamManager.SimulationStepTeamUpdate; its kernel executes a team only when updateIndex < TeamData.updateCount."
+    ],
+    "alwaysPostJobScalarSources": {
+      "teamCount": "TeamManager.get_TeamCount()",
+      "unityFrameDeltaTime": "TimeManager.GetDeltaTime()",
+      "unityFrameFixedDeltaTime": "float32(TimeManager.FixedUpdateCount * TimeManager.GetFixedDeltaTime())",
+      "unityFrameUnscaledDeltaTime": "TimeManager.GetUnscaledDeltaTime()",
+      "globalTimeScale": "TimeManager.GlobalTimeScale",
+      "simulationDeltaTime": "TimeManager.SimulationDeltaTime",
+      "maxSimmulationCountPerFrame": "TimeManager.maxSimulationCountPerFrame",
+      "maxUpdateCount": "TeamManager.maxUpdateCount NativeReference<int>",
+      "teamDataArray": "TeamManager.teamDataArray NativeArray<TeamData>"
+    }
+  },
+  "frameUpdate": {
+    "configurationClampsInclusive": {
+      "simulationFrequency": [
+        30,
+        150
+      ],
+      "maxSimulationCountPerFrame": [
+        1,
+        5
+      ],
+      "GlobalTimeScale": [
+        0.0,
+        1.0
+      ]
+    },
+    "equations": [
+      "SimulationDeltaTime = float32(1.0f / float32(simulationFrequency))",
+      "MaxDeltaTime = float32(float32(maxSimulationCountPerFrame) * SimulationDeltaTime)"
+    ],
+    "retailDefaults": {
+      "simulationFrequency": 90,
+      "maxSimulationCountPerFrame": 3,
+      "GlobalTimeScale": 1.0,
+      "SimulationDeltaTimeFloat32": 0.011111111380159855,
+      "MaxDeltaTimeFloat32": 0.03333333507180214
+    }
+  },
+  "perTeamAccumulator": {
+    "eligibleTeams": "teamId 1..teamCount-1; get_IsEnable must pass; culling-invisible teams take the non-accumulating branch",
+    "deltaSelection": [
+      "get_IsFixedUpdate: selectedDelta = unityFrameFixedDeltaTime",
+      "else get_IsUnscaled: selectedDelta = unityFrameUnscaledDeltaTime",
+      "else selectedDelta = unityFrameDeltaTime"
+    ],
+    "equations": [
+      "effectiveScale = get_IsUnscaled ? TeamData.timeScale : float32(TeamData.timeScale * globalTimeScale)",
+      "Flag_SyncSuspend (0x10) forces effectiveScale = 0",
+      "candidateTime = float32(TeamData.time + float32(effectiveScale * selectedDelta))",
+      "rawCount = truncTowardZero(float32(float32(candidateTime - TeamData.nowUpdateTime) / simulationDeltaTime))",
+      "TeamData.updateCount = rawCount >= maxSimmulationCountPerFrame ? maxSimmulationCountPerFrame : rawCount",
+      "TeamData.skipCount = rawCount - TeamData.updateCount",
+      "if skipCount > 0: candidateTime = float32(candidateTime - float32(float32(skipCount) * simulationDeltaTime))",
+      "TeamData.oldTime = previous TeamData.time; TeamData.time = candidateTime",
+      "maxUpdateCount = max(maxUpdateCount, TeamData.updateCount), seeded at 0"
+    ],
+    "branches": {
+      "resetSimulationToAnimationPoseNonzero": [
+        "TeamData.nowUpdateTime = candidateTime",
+        "TeamData.updateCount = 0",
+        "TeamData.skipCount = 0",
+        "Flag_Reset (0x4) is set"
+      ],
+      "pendingCountWhileEffectiveScaleExactlyZero": [
+        "TeamData.nowUpdateTime = float32(float32(candidateTime - simulationDeltaTime) + 0.0001f)",
+        "TeamData.updateCount = 0",
+        "TeamData.skipCount = 0"
+      ],
+      "positiveUpdateCount": [
+        "TeamData.oldUpdateTime = previous TeamData.nowUpdateTime",
+        "TeamData.frameOldTime = previous TeamData.frameUpdateTime",
+        "TeamData.frameUpdateTime = candidateTime"
+      ],
+      "signedBoundary": "No lower clamp is present after cvttss2si; nonpositive updateCount does not raise maxUpdateCount and does not execute a team step."
+    }
+  },
+  "solverLoop": {
+    "globalLoop": "for updateIndex = 0; updateIndex < maxUpdateCount; ++updateIndex: SimulationStepUpdate(maxUpdateCount, updateIndex)",
+    "perTeamGate": "Flag_StepRunning (bit 7) is set exactly when updateIndex < TeamData.updateCount; otherwise that team returns before solver work.",
+    "perExecutedTeamStep": [
+      "TeamData.nowUpdateTime = float32(TeamData.nowUpdateTime + simulationDeltaTime)",
+      "denominator = float32(TeamData.time - TeamData.frameOldTime)",
+      "if denominator > 0: TeamData.frameInterpolation = clamp(float32((TeamData.nowUpdateTime - TeamData.frameOldTime) / denominator), 0, 1); else frameInterpolation = 1"
+    ],
+    "meaning": "The number of SimulationStepUpdate calls is the maximum active team count; each team executes only its own updateCount prefix of those calls."
+  },
+  "ordinary60FpsDefault90Hz": {
+    "perRenderFrameSolverSteps": [
+      1,
+      2
+    ],
+    "nominalAverageStepsPerFrame": 1.5,
+    "nominalStepsPerSecond": 90,
+    "maxThreeClampReached": false,
+    "phaseRule": "The exact 1/2 ordering depends on TeamData.time and nowUpdateTime; float32 accumulation does not guarantee a strict alternating sequence or exactly 90 steps in every wall-clock one-second window.",
+    "zeroInitializedFirst12Frames": {
+      "initialState": {
+        "time": 0.0,
+        "nowUpdateTime": 0.0
+      },
+      "frameDeltaTimeFloat32": 0.01666666753590107,
+      "simulationDeltaTimeFloat32": 0.011111111380159855,
+      "counts": [
+        1,
+        2,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1
+      ],
+      "totalSolverSteps": 17,
+      "finalTime": 0.20000000298023224,
+      "finalNowUpdateTime": 0.18888889253139496
+    },
+    "zeroInitializedFirst60Frames": {
+      "counts": [
+        1,
+        2,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1
+      ],
+      "totalSolverSteps": 89
+    },
+    "zeroInitializedFirst1200Frames": {
+      "uniqueCounts": [
+        1,
+        2
+      ],
+      "totalSolverSteps": 1800,
+      "nominalExpectedSteps": 1800
+    }
+  },
+  "implementationBoundary": {
+    "unpatchedPinnedRouteClosed": true,
+    "frameUpdateScalarsClosed": true,
+    "perTeamAccumulatorClosed": true,
+    "globalCountReductionClosed": true,
+    "solverLoopCountClosed": true,
+    "perTeamStepClockClosed": true,
+    "ifixPatchedRouteClosed": false,
+    "runtimeImplemented": false,
+    "visualVerificationPerformed": false
+  },
+  "nonClaims": [
+    "The IFix-patched SimulationStepUpdate route is not audited; all equations are for the pinned unpatched native route.",
+    "Sync-parent, animator-update-mode, and distance-culling ownership selection around the accumulator is not reinterpreted beyond the pinned branch/helper identities.",
+    "This static contract does not implement the solver, enable writeback, or establish rendered equivalence."
+  ]
+}
