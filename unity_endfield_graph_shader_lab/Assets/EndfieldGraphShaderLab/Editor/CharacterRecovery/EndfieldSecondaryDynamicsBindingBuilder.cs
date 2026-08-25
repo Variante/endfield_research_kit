@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using EndfieldGraphShaderLab;
@@ -42,6 +43,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string SimulationStepTeamUpdatePath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_simulation_step_team_update_contract.json";
+        private const string SessionCertificationPath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+            "secondary_dynamics_session_certification_contract.json";
 
         internal static void Configure(
             GameObject actor,
@@ -64,12 +68,35 @@ namespace EndfieldGraphShaderLabEditor
             TextAsset transformRead = AssetDatabase.LoadAssetAtPath<TextAsset>(TransformReadPath);
             TextAsset simulationStepTeamUpdate =
                 AssetDatabase.LoadAssetAtPath<TextAsset>(SimulationStepTeamUpdatePath);
+            TextAsset sessionCertification =
+                AssetDatabase.LoadAssetAtPath<TextAsset>(SessionCertificationPath);
             if (solverInputs == null || payloadDecode == null || ownerRecovery == null ||
                 curveSamples == null || solverScalarPacking == null || centerUpdate == null ||
                 duplicateWrite == null || transformRead == null ||
-                simulationStepTeamUpdate == null)
+                simulationStepTeamUpdate == null || sessionCertification == null)
                 throw new FileNotFoundException(
                     "Endminf secondary-dynamics source contracts are missing.");
+
+            Dictionary<string, object> sessionRoot = Object(
+                ManifestMiniJson.Deserialize(sessionCertification.text),
+                "session certification root");
+            Dictionary<string, object> sessionValues = Object(
+                Required(sessionRoot, "certification"), "session certification values");
+            if (!Bool(sessionRoot, "targetReady", "session certification root") ||
+                !Bool(sessionValues, "certified", "session certification values"))
+                throw new InvalidDataException(
+                    "Endminf secondary-dynamics target session is not certified.");
+            bool useRelativeTransform = Bool(
+                sessionValues, "useRelativeTransform", "session certification values");
+            bool useCrossFrameJob = Bool(
+                sessionValues, "useCrossFrameJob", "session certification values");
+            bool useAnimatorTransform = Bool(
+                sessionValues, "useAnimatorTransform", "session certification values");
+            string writebackRoute = Text(sessionValues, "writebackRoute");
+            if (useRelativeTransform || !useCrossFrameJob || useAnimatorTransform ||
+                !string.Equals(writebackRoute, "TransformAccess", StringComparison.Ordinal))
+                throw new InvalidDataException(
+                    "Endminf target session differs from the supported transform route.");
 
             Dictionary<string, object> solverActor = ActorRow(solverInputs.text, "endminf");
             Dictionary<string, object> payloadActor = ActorRow(payloadDecode.text, "endminf");
@@ -271,6 +298,13 @@ namespace EndfieldGraphShaderLabEditor
             data.transformReadSha256 = Sha256(TransformReadPath);
             data.simulationStepTeamUpdate = simulationStepTeamUpdate;
             data.simulationStepTeamUpdateSha256 = Sha256(SimulationStepTeamUpdatePath);
+            data.sessionCertification = sessionCertification;
+            data.sessionCertificationSha256 = Sha256(SessionCertificationPath);
+            data.sessionCertified = true;
+            data.sessionUseRelativeTransform = useRelativeTransform;
+            data.sessionUseCrossFrameJob = useCrossFrameJob;
+            data.sessionUseAnimatorTransform = useAnimatorTransform;
+            data.sessionWritebackRoute = writebackRoute;
             data.owners = owners.ToArray();
             data.colliders = colliders;
             data.expectedBindingCount = bindingCount;
@@ -313,7 +347,12 @@ namespace EndfieldGraphShaderLabEditor
                 throw new FileNotFoundException("Generated Endminf prefab is missing.", EndminfPrefabPath);
             EndfieldSecondaryDynamicsRuntime runtime =
                 prefab.GetComponent<EndfieldSecondaryDynamicsRuntime>();
-            if (runtime == null || runtime.data == null || runtime.SolverWritebackEnabled)
+            if (runtime == null || runtime.data == null || runtime.SolverWritebackEnabled ||
+                !runtime.data.sessionCertified || runtime.data.sessionUseRelativeTransform ||
+                !runtime.data.sessionUseCrossFrameJob ||
+                runtime.data.sessionUseAnimatorTransform ||
+                !string.Equals(runtime.data.sessionWritebackRoute, "TransformAccess",
+                    StringComparison.Ordinal))
                 throw new InvalidDataException(
                     "Generated Endminf secondary-dynamics coordinator is missing or not fail-closed.");
             EndfieldSecondaryDynamicsOwnerContract.BindingAudit audit =
@@ -328,9 +367,71 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException(
                     "Generated Endminf secondary-dynamics binding audit differs.");
             }
+
+            GameObject instance = null;
+            EndfieldSecondaryDynamicsRuntime live = null;
+            try
+            {
+                instance = UnityEngine.Object.Instantiate(prefab);
+                live = instance.GetComponent<EndfieldSecondaryDynamicsRuntime>();
+                MethodInfo onEnable = typeof(EndfieldSecondaryDynamicsRuntime).GetMethod(
+                    "OnEnable", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo runBoundary = typeof(EndfieldSecondaryDynamicsRuntime).GetMethod(
+                    "RunWholeClothPipelineBoundary",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                if (live == null || onEnable == null || runBoundary == null)
+                    throw new InvalidDataException(
+                        "Generated Endminf live coordinator entry point is missing.");
+                onEnable.Invoke(live, null);
+                if (live == null || !live.BindingValid ||
+                    !live.TransformSnapshotReadEnabled || !live.SolverCoordinatorEnabled ||
+                    !live.SolverWritebackEnabled || live.LatestTransformSnapshot == null)
+                    throw new InvalidDataException(
+                        "Generated Endminf live read/coordinator boundary did not initialize: " +
+                        live.BindingFailure);
+                runBoundary.Invoke(live, null);
+                if (!live.BindingValid || live.LastSimulationSubsteps == null ||
+                    live.LastSimulationSubsteps.Length != 4 ||
+                    live.PublicationPositions == null ||
+                    live.PublicationRotations == null ||
+                    live.LatestTransformPublication == null ||
+                    live.LatestTransformPublication.Length != 126)
+                    throw new InvalidDataException(
+                        "Generated Endminf live value-only frame did not advance: " +
+                        live.BindingFailure);
+                int published = 0;
+                for (int sourceIndex = 0;
+                    sourceIndex < live.LatestTransformPublication.Length;
+                    sourceIndex++)
+                {
+                    EndfieldSecondaryDynamicsTransformPublication.FinalValue value =
+                        live.LatestTransformPublication[sourceIndex];
+                    if (value.sourceIndex != sourceIndex)
+                        throw new InvalidDataException(
+                            "TransformAccess publication lost source order.");
+                    if (value.publish)
+                        published++;
+                }
+                if (published != 90)
+                    throw new InvalidDataException(
+                        "TransformAccess publication active-lane count differs: " + published);
+            }
+            finally
+            {
+                if (live != null)
+                {
+                    MethodInfo onDisable = typeof(EndfieldSecondaryDynamicsRuntime).GetMethod(
+                        "OnDisable", BindingFlags.Instance | BindingFlags.NonPublic);
+                    onDisable?.Invoke(live, null);
+                }
+                if (instance != null)
+                    UnityEngine.Object.DestroyImmediate(instance);
+            }
+
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
-                "100 unique transforms, 26 overlaps, solver writeback fail-closed.");
+                "100 unique transforms, 26 overlaps, certified live TransformAccess " +
+                "publication, and source-ordered writes.");
         }
 
         private static Dictionary<string, object> ActorRow(string json, string actorKey)
@@ -811,6 +912,14 @@ namespace EndfieldGraphShaderLabEditor
             if (value != 0 && value != 1)
                 throw new InvalidDataException(context + "." + key + " is not a toggle.");
             return value != 0;
+        }
+
+        private static bool Bool(Dictionary<string, object> row, string key, string context)
+        {
+            object value = Required(row, key);
+            if (value is bool boolean)
+                return boolean;
+            throw new InvalidDataException(context + "." + key + " is not a boolean.");
         }
 
         private static int Integer(Dictionary<string, object> row, string key, string context) =>

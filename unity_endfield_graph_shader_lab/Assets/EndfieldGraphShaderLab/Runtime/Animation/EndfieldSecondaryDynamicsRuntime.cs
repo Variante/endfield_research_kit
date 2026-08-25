@@ -35,7 +35,17 @@ namespace EndfieldGraphShaderLab
         public string BindingFailure { get; private set; } = "not validated";
         public float TargetWeight { get; private set; }
         public float CurrentWeight { get; private set; }
-        public bool SolverWritebackEnabled => false;
+        public bool SolverWritebackEnabled => BindingValid &&
+            transformPublicationAdapter != null && frameCoordinator != null;
+        public bool SolverCoordinatorEnabled => frameCoordinator != null;
+        public int[] LastSimulationSubsteps { get; private set; } = Array.Empty<int>();
+        public EndfieldSecondaryDynamicsKernels.Double3[][] PublicationPositions =>
+            frameCoordinator == null ? null : frameCoordinator.PublicationPositions;
+        public EndfieldSecondaryDynamicsKernels.Float4[][] PublicationRotations =>
+            frameCoordinator == null ? null : frameCoordinator.PublicationRotations;
+        public EndfieldSecondaryDynamicsTransformPublication.FinalValue[]
+            LatestTransformPublication { get; private set; } =
+                Array.Empty<EndfieldSecondaryDynamicsTransformPublication.FinalValue>();
         public bool TransformSnapshotReadEnabled => transformSnapshotAdapter != null;
         public EndfieldSecondaryDynamicsTransformSnapshotAdapter.SnapshotFrame
             LatestTransformSnapshot { get; private set; }
@@ -45,6 +55,8 @@ namespace EndfieldGraphShaderLab
         private int updateLocation;
         private int fixedUpdateCount;
         private EndfieldSecondaryDynamicsTransformSnapshotAdapter transformSnapshotAdapter;
+        private EndfieldSecondaryDynamicsFrameCoordinator frameCoordinator;
+        private EndfieldSecondaryDynamicsTransformPublicationAdapter transformPublicationAdapter;
 
         private const float EnableRate = 8.0f;
         private const float DisableRate = 6.0f;
@@ -67,12 +79,18 @@ namespace EndfieldGraphShaderLab
                 transformSnapshotAdapter =
                     new EndfieldSecondaryDynamicsTransformSnapshotAdapter(transform, data);
                 LatestTransformSnapshot = transformSnapshotAdapter.Capture();
+                frameCoordinator = new EndfieldSecondaryDynamicsFrameCoordinator(
+                    data, LatestTransformSnapshot.Owners);
+                transformPublicationAdapter =
+                    new EndfieldSecondaryDynamicsTransformPublicationAdapter(transform, data);
             }
             catch (Exception exception)
             {
                 BindingValid = false;
                 BindingFailure = "transform snapshot adapter failed: " + exception.Message;
                 transformSnapshotAdapter = null;
+                frameCoordinator = null;
+                transformPublicationAdapter = null;
                 LatestTransformSnapshot = null;
                 Debug.LogError(
                     "Recovered secondary dynamics failed closed on " + name + ": " +
@@ -91,7 +109,12 @@ namespace EndfieldGraphShaderLab
             TargetWeight = 0.0f;
             CurrentWeight = 0.0f;
             transformSnapshotAdapter = null;
+            frameCoordinator = null;
+            transformPublicationAdapter = null;
             LatestTransformSnapshot = null;
+            LastSimulationSubsteps = Array.Empty<int>();
+            LatestTransformPublication =
+                Array.Empty<EndfieldSecondaryDynamicsTransformPublication.FinalValue>();
         }
 
         public void ApplyOverviewParameters(
@@ -120,12 +143,46 @@ namespace EndfieldGraphShaderLab
             try
             {
                 LatestTransformSnapshot = transformSnapshotAdapter.Capture();
+                LastSimulationSubsteps = frameCoordinator.AdvanceFrame(
+                    new EndfieldSecondaryDynamicsFrameCoordinator.FrameInput
+                    {
+                        Owners = LatestTransformSnapshot.Owners,
+                        Timing = new EndfieldSecondaryDynamicsFrameCoordinator.FrameTiming(
+                            true,
+                            false,
+                            false,
+                            false,
+                            Time.deltaTime,
+                            Time.fixedDeltaTime,
+                            Time.unscaledDeltaTime),
+                        ActorRootStationary = LatestTransformSnapshot.ActorRootStationary,
+                        ActorScale = LatestTransformSnapshot.ActorScale,
+                        NegativeScale = LatestTransformSnapshot.NegativeScale,
+                        WindZoneCount = 0,
+                        Session = new EndfieldSecondaryDynamicsFrameCoordinator.SessionCertification(
+                            data.sessionCertified,
+                            data.sessionUseRelativeTransform,
+                            data.sessionUseCrossFrameJob,
+                            data.sessionUseAnimatorTransform,
+                            EndfieldSecondaryDynamicsFrameCoordinator.WritebackRoute.TransformAccess),
+                        PreviousColliderSamples =
+                            LatestTransformSnapshot.PreviousColliderSamples,
+                        CurrentColliderSamples =
+                            LatestTransformSnapshot.CurrentColliderSamples,
+                    });
+                LatestTransformPublication = transformPublicationAdapter.Publish(
+                    frameCoordinator.PublicationPositions,
+                    frameCoordinator.PublicationRotations,
+                    CurrentWeight,
+                    true);
             }
             catch (Exception exception)
             {
                 BindingValid = false;
-                BindingFailure = "transform snapshot capture failed: " + exception.Message;
+                BindingFailure = "secondary-dynamics frame failed: " + exception.Message;
                 Active.Remove(this);
+                frameCoordinator = null;
+                transformPublicationAdapter = null;
                 Debug.LogError(
                     "Recovered secondary dynamics failed closed on " + name + ": " +
                     BindingFailure, this);
@@ -192,7 +249,7 @@ namespace EndfieldGraphShaderLab
                 data.ownerRecovery == null || data.curveSamples == null ||
                 data.solverScalarPacking == null || data.centerUpdate == null ||
                 data.duplicateWrite == null || data.transformRead == null ||
-                data.simulationStepTeamUpdate == null ||
+                data.simulationStepTeamUpdate == null || data.sessionCertification == null ||
                 string.IsNullOrEmpty(data.solverInputsSha256) ||
                 string.IsNullOrEmpty(data.payloadDecodeSha256) ||
                 string.IsNullOrEmpty(data.ownerRecoverySha256) ||
@@ -201,7 +258,8 @@ namespace EndfieldGraphShaderLab
                 string.IsNullOrEmpty(data.centerUpdateSha256) ||
                 string.IsNullOrEmpty(data.duplicateWriteSha256) ||
                 string.IsNullOrEmpty(data.transformReadSha256) ||
-                string.IsNullOrEmpty(data.simulationStepTeamUpdateSha256))
+                string.IsNullOrEmpty(data.simulationStepTeamUpdateSha256) ||
+                string.IsNullOrEmpty(data.sessionCertificationSha256))
             {
                 failure = "source contract references or hashes are missing";
                 return false;
@@ -215,9 +273,19 @@ namespace EndfieldGraphShaderLab
                 !HashMatches(data.duplicateWrite, data.duplicateWriteSha256) ||
                 !HashMatches(data.transformRead, data.transformReadSha256) ||
                 !HashMatches(data.simulationStepTeamUpdate,
-                    data.simulationStepTeamUpdateSha256))
+                    data.simulationStepTeamUpdateSha256) ||
+                !HashMatches(data.sessionCertification,
+                    data.sessionCertificationSha256))
             {
                 failure = "source contract hash differs from generated binding data";
+                return false;
+            }
+            if (!data.sessionCertified || data.sessionUseRelativeTransform ||
+                !data.sessionUseCrossFrameJob || data.sessionUseAnimatorTransform ||
+                !string.Equals(data.sessionWritebackRoute, "TransformAccess",
+                    StringComparison.Ordinal))
+            {
+                failure = "live target session does not certify the supported transform route";
                 return false;
             }
             if (data.owners == null || data.owners.Length != 4)

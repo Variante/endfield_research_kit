@@ -135,6 +135,13 @@ namespace EndfieldGraphShaderLab
         public string transformReadSha256;
         public TextAsset simulationStepTeamUpdate;
         public string simulationStepTeamUpdateSha256;
+        public TextAsset sessionCertification;
+        public string sessionCertificationSha256;
+        public bool sessionCertified;
+        public bool sessionUseRelativeTransform;
+        public bool sessionUseCrossFrameJob;
+        public bool sessionUseAnimatorTransform;
+        public string sessionWritebackRoute;
         public Owner[] owners = Array.Empty<Owner>();
         public CapsuleCollider[] colliders = Array.Empty<CapsuleCollider>();
         public int expectedBindingCount;

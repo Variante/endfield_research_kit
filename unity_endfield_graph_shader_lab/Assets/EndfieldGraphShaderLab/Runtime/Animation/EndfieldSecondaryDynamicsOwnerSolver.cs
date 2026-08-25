@@ -558,24 +558,43 @@ namespace EndfieldGraphShaderLab
                 int count = owner.baseLineDataCounts[baselineIndex];
                 if (count < 2)
                     throw new ArgumentException("Every recovered Endminf angle baseline requires at least two particles.");
-                var vertices = new int[count];
-                var localParents = new int[count];
+                var sourceVertices = new int[count];
                 var localByGlobal = new System.Collections.Generic.Dictionary<int, int>();
                 for (int local = 0; local < count; local++)
                 {
                     int particle = owner.baseLineData[start + local];
                     if (localByGlobal.ContainsKey(particle))
                         throw new ArgumentException("An angle baseline repeats a proxy vertex.");
-                    vertices[local] = particle;
+                    sourceVertices[local] = particle;
                     localByGlobal.Add(particle, local);
                 }
-                for (int local = 0; local < count; local++)
+
+                // Retail baselines may begin at a movable child whose immediate parent
+                // is the anchor just outside baseLineData. The Burst job addresses the
+                // full proxy arrays, so that parent participates in corrections without
+                // being visited as a baseline child. Prepending it as a synthetic local
+                // root gives the sliced managed kernel the same addressable closure.
+                int externalParent = owner.vertexParentIndices[sourceVertices[0]];
+                bool prependAnchor = externalParent >= 0 &&
+                    !localByGlobal.ContainsKey(externalParent);
+                var vertices = new int[count + (prependAnchor ? 1 : 0)];
+                int sourceOffset = prependAnchor ? 1 : 0;
+                if (prependAnchor)
+                    vertices[0] = externalParent;
+                Array.Copy(sourceVertices, 0, vertices, sourceOffset, count);
+
+                localByGlobal.Clear();
+                for (int local = 0; local < vertices.Length; local++)
+                    localByGlobal.Add(vertices[local], local);
+                var localParents = new int[vertices.Length];
+                for (int local = 0; local < vertices.Length; local++)
                 {
                     int parent = owner.vertexParentIndices[vertices[local]];
-                    if (parent < 0)
+                    if (local == 0)
                         localParents[local] = -1;
                     else if (!localByGlobal.TryGetValue(parent, out localParents[local]))
-                        throw new NotSupportedException("An Endminf angle parent lies outside its source baseline.");
+                        throw new NotSupportedException(
+                            "An Endminf angle parent lies outside its source baseline closure.");
                 }
                 result[baselineIndex] = new Baseline { Vertices = vertices, LocalParents = localParents };
             }
