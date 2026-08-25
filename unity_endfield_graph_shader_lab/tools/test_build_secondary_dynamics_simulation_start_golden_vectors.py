@@ -48,6 +48,10 @@ class SimulationStartGoldenVectorTests(unittest.TestCase):
             "StartSimulationParticleZeroWind; all 13 controlled vectors bit-exact",
             self.payload["boundary"]["unityPortDomain"],
         )
+        target = self.payload["endminfOverviewWindRequirement"]
+        self.assertEqual(target["postmodelWindZoneCount"], 0)
+        self.assertEqual(target["characterInfoEnvironmentWindZoneCount"], 0)
+        self.assertFalse(target["targetRequiresNonzeroWind"])
 
     def test_helpers_are_explicitly_pinned(self) -> None:
         for name, helper in self.payload["directHelpers"].items():

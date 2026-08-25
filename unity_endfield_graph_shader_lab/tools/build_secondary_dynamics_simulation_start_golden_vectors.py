@@ -20,6 +20,11 @@ OUTPUT = LAB_ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
     "secondary_dynamics_simulation_start_golden_vectors.json"
 )
+OWNER_RECOVERY = LAB_ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
+    "secondary_dynamics_owner_recovery.json"
+)
+OWNER_RECOVERY_SHA256 = "14222f72f6789f5bdc709b7a5a495e7b7a22f950596fc31bdef44a13a8c1a15a"
 CORE_RVA = 0x25E830
 CORE_BYTES = 5074
 CORE_SHA256 = "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc"
@@ -32,6 +37,36 @@ COS_SHA256 = "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f"
 SLERP_SIN_RVA = 0x1DE610
 SLERP_SIN_BYTES = 557
 SLERP_SIN_SHA256 = "d11fc448307689e5bf1c981bf1cae17af4604d6fa0105aa2196b162048a1c6ac"
+
+
+def _endminf_overview_wind_requirement() -> dict[str, Any]:
+    raw = OWNER_RECOVERY.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != OWNER_RECOVERY_SHA256:
+        raise burst.ContractError("secondary-dynamics owner recovery hash drift")
+    payload = json.loads(raw)
+    actor = payload["actors"]["endminf"]
+    environment = payload["charinfo_environment"]
+    counts = actor["dynamic_component_counts"]
+    if counts != {
+        "BeyondDynamicBone.BeyondBoneCapsuleCollider": 10,
+        "BeyondDynamicBone.BeyondBoneCloth": 4,
+    }:
+        raise burst.ContractError("Endminf dynamic component census drift")
+    if environment["cloth_component_count"] != 0 or environment["collider_component_count"] != 0 or environment["wind_zone_component_count"] != 0:
+        raise burst.ContractError("Character Info environment dynamics census drift")
+    return {
+        "source": {
+            "path": OWNER_RECOVERY.relative_to(LAB_ROOT).as_posix(),
+            "size": len(raw),
+            "sha256": digest,
+        },
+        "postmodelDynamicComponents": counts,
+        "postmodelWindZoneCount": 0,
+        "characterInfoEnvironmentWindZoneCount": 0,
+        "targetRequiresNonzeroWind": False,
+        "conclusion": "The complete selected Endminf postmodel and Character Info environment component censuses contain no BeyondDynamicBone wind zone; zero-wind Start is the authored target domain.",
+    }
 
 
 DEFAULTS: dict[str, Any] = {
@@ -475,6 +510,7 @@ def build_contract() -> dict[str, Any]:
                               "abi": "double -> double", "usedBySourceTranscription": True}},
         "windIsolation": {"teamWindDataZeroed": True, "movingWindZeroed": True,
                           "result": "zero; inlined wind blend/noise helpers not entered"},
+        "endminfOverviewWindRequirement": _endminf_overview_wind_requirement(),
         "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "vectors": vectors,
         "boundary": {"nativeCoreExecuted": True, "sourceTranscriptionMatched": True,

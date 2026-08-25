@@ -89,7 +89,22 @@
     "movingWindZeroed": true,
     "result": "zero; inlined wind blend/noise helpers not entered"
   },
-  "harnessSha256": "b40e6ef40bcc4b934535b8f292c77eb1aada50e81ade8adea39ea30f55938e6e",
+  "endminfOverviewWindRequirement": {
+    "source": {
+      "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_owner_recovery.json",
+      "size": 530240,
+      "sha256": "14222f72f6789f5bdc709b7a5a495e7b7a22f950596fc31bdef44a13a8c1a15a"
+    },
+    "postmodelDynamicComponents": {
+      "BeyondDynamicBone.BeyondBoneCapsuleCollider": 10,
+      "BeyondDynamicBone.BeyondBoneCloth": 4
+    },
+    "postmodelWindZoneCount": 0,
+    "characterInfoEnvironmentWindZoneCount": 0,
+    "targetRequiresNonzeroWind": false,
+    "conclusion": "The complete selected Endminf postmodel and Character Info environment component censuses contain no BeyondDynamicBone wind zone; zero-wind Start is the authored target domain."
+  },
+  "harnessSha256": "cd3654d99cdca19c2508445af16b09b8fdb601f9f28fd0d107fe8785d0a9018b",
   "vectors": [
     {
       "name": "inactive_bypass",
