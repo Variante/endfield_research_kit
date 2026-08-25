@@ -55,18 +55,52 @@ class TransformReadContractTests(unittest.TestCase):
     def test_current_last_equations_and_boundary(self) -> None:
         lifecycle = self.contract["managerLifecycle"]
         self.assertEqual(len(lifecycle["copyDoubleBufferJob"]), 4)
+        self.assertEqual(lifecycle["copyDoubleBufferCadence"]["callsPerClothUpdate"], 0)
         self.assertEqual(lifecycle["readTransformJobActiveWrites"]["lastArrays"], "not written by ReadTransformJob")
         boundary = self.contract["executionBoundary"]
         self.assertTrue(boundary["orderedSourceFlagsClosed"])
         self.assertTrue(boundary["endminfOneBoneProxyMappingClosed"])
+        self.assertTrue(boundary["copyDoubleBufferActiveCadenceClosed"])
+        self.assertTrue(boundary["animatorBufferBranchClosed"])
         self.assertFalse(boundary["targetReady"])
         self.assertFalse(boundary["unityRuntimeModified"])
         self.assertTrue(any("useRelativeTransform" in row for row in boundary["unresolved"]))
 
+    def test_source_static_animator_route_and_cross_frame_boundary(self) -> None:
+        branch = self.contract["managerLifecycle"]["sourceStaticBranch"]
+        self.assertIs(branch["UseAnimatorTransform"]["value"], False)
+        self.assertIn("ReadAnimatorBufferData is skipped", branch["UseAnimatorTransform"]["selectedRoute"])
+        self.assertIs(branch["UseCrossFrameJob"]["cctorDefault"], True)
+        self.assertFalse(branch["UseCrossFrameJob"]["targetLiveValueClosed"])
+        audit = self.contract["native"]["routeAudit"]
+        self.assertEqual(audit["magicaManagerStaticFields"]["useAnimatorTransformCompiledWriterVas"],
+                         ["0x184cf5449"])
+        self.assertEqual(audit["directCalls"]["ReadAnimatorBufferData"]["sourceVas"],
+                         ["0x182f91e60"])
+
+    def test_copy_double_buffer_has_no_active_call_site(self) -> None:
+        calls = self.contract["native"]["routeAudit"]["directCalls"]
+        self.assertEqual(calls["CopyDoubleBuffer"]["directCallCount"], 0)
+        self.assertEqual(calls["CopyDoubleBuffer"]["sourceVas"], [])
+        self.assertEqual(calls["ReadTransform"]["sourceVas"], ["0x182f91d47", "0x182f91ffb"])
+
+    def test_relative_transform_initial_value_is_closed_but_live_value_is_not(self) -> None:
+        relative = self.contract["teamRelativeTransform"]
+        self.assertIs(relative["initialValue"], False)
+        self.assertFalse(relative["targetLiveValueClosed"])
+        self.assertEqual([row["value"] for row in relative["compiledMutators"]], [True, False, True])
+        boundary = self.contract["executionBoundary"]
+        self.assertTrue(boundary["useRelativeTransformInitialValueClosed"])
+        self.assertFalse(boundary["useRelativeTransformTargetLiveValueClosed"])
+        self.assertFalse(boundary["useCrossFrameJobTargetLiveValueClosed"])
+
     def test_native_spans_are_pinned(self) -> None:
         rows = {row["methodIndex"]: row for row in self.contract["native"]["pinnedSpans"]}
+        rows_by_name = {row["name"]: row for row in self.contract["native"]["pinnedSpans"]}
         self.assertEqual(rows[384537]["sha256"], "96309abe74a2726bd30e849cb6571f0b2867f655fcb847a61ae634b610e323bf")
         self.assertEqual(rows[385042]["bytes"], 1760)
+        self.assertEqual(rows_by_name["MagicaManager..cctor through static defaults"]["bytes"], 171)
+        self.assertEqual(rows_by_name["DynamicBoneTransformManager.CopyDoubleBuffer active body"]["bytes"], 335)
 
     def test_mutated_payload_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
