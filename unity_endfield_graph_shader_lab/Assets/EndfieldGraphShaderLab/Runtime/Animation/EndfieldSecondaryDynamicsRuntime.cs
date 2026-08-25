@@ -36,11 +36,15 @@ namespace EndfieldGraphShaderLab
         public float TargetWeight { get; private set; }
         public float CurrentWeight { get; private set; }
         public bool SolverWritebackEnabled => false;
+        public bool TransformSnapshotReadEnabled => transformSnapshotAdapter != null;
+        public EndfieldSecondaryDynamicsTransformSnapshotAdapter.SnapshotFrame
+            LatestTransformSnapshot { get; private set; }
         public int UpdateLocation => updateLocation;
 
         [SerializeField, Range(0, 1)]
         private int updateLocation;
         private int fixedUpdateCount;
+        private EndfieldSecondaryDynamicsTransformSnapshotAdapter transformSnapshotAdapter;
 
         private const float EnableRate = 8.0f;
         private const float DisableRate = 6.0f;
@@ -58,6 +62,24 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
+            try
+            {
+                transformSnapshotAdapter =
+                    new EndfieldSecondaryDynamicsTransformSnapshotAdapter(transform, data);
+                LatestTransformSnapshot = transformSnapshotAdapter.Capture();
+            }
+            catch (Exception exception)
+            {
+                BindingValid = false;
+                BindingFailure = "transform snapshot adapter failed: " + exception.Message;
+                transformSnapshotAdapter = null;
+                LatestTransformSnapshot = null;
+                Debug.LogError(
+                    "Recovered secondary dynamics failed closed on " + name + ": " +
+                    BindingFailure, this);
+                return;
+            }
+
             if (!Active.Contains(this))
                 Active.Add(this);
             InstallPlayerLoop();
@@ -68,6 +90,8 @@ namespace EndfieldGraphShaderLab
             Active.Remove(this);
             TargetWeight = 0.0f;
             CurrentWeight = 0.0f;
+            transformSnapshotAdapter = null;
+            LatestTransformSnapshot = null;
         }
 
         public void ApplyOverviewParameters(
@@ -92,6 +116,20 @@ namespace EndfieldGraphShaderLab
             if (Mathf.Abs(next - CurrentWeight) >= WeightEpsilon ||
                 Mathf.Approximately(next, TargetWeight))
                 CurrentWeight = next;
+
+            try
+            {
+                LatestTransformSnapshot = transformSnapshotAdapter.Capture();
+            }
+            catch (Exception exception)
+            {
+                BindingValid = false;
+                BindingFailure = "transform snapshot capture failed: " + exception.Message;
+                Active.Remove(this);
+                Debug.LogError(
+                    "Recovered secondary dynamics failed closed on " + name + ": " +
+                    BindingFailure, this);
+            }
 
             // Intentionally no transform writes here. The original executes
             // the complete read/simulate/write ClothUpdate pipeline on exactly
