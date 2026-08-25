@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-center-update.v1",
-  "status": "no_wind_target_fixed_center_and_identity_ratios_closed_general_inertia_fail_closed",
+  "status": "no_wind_fixed_center_rotation_and_zero_root_smoothing_closed_downstream_step_inertia_fail_closed",
   "nativeGate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -172,6 +172,91 @@
       "length:i32"
     ]
   },
+  "simulationFeedWriteOwnership": {
+    "preservedRange": "CenterData+0x1c0..0x22b",
+    "loadStoreOnlyChunks": [
+      {
+        "sourceCenterOffset": "0x1c0",
+        "stackSlot": "[rsp + 0x868]",
+        "destinationCenterOffset": "0x1c0",
+        "loadRvas": [
+          "0x28f1a1",
+          "0x28f1ab"
+        ],
+        "storeRvas": [
+          "0x29282e",
+          "0x292837"
+        ],
+        "stackReferenceCount": 2
+      },
+      {
+        "sourceCenterOffset": "0x1e0",
+        "stackSlot": "[rsp + 0x888]",
+        "destinationCenterOffset": "0x1e0",
+        "loadRvas": [
+          "0x28f1b4",
+          "0x28f1be"
+        ],
+        "storeRvas": [
+          "0x29283f",
+          "0x292848"
+        ],
+        "stackReferenceCount": 2
+      },
+      {
+        "sourceCenterOffset": "0x200",
+        "stackSlot": "[rsp + 0x8a8]",
+        "destinationCenterOffset": "0x200",
+        "loadRvas": [
+          "0x28f1c7",
+          "0x28f1d1"
+        ],
+        "storeRvas": [
+          "0x292850",
+          "0x292859"
+        ],
+        "stackReferenceCount": 2
+      },
+      {
+        "sourceCenterOffset": "0x220",
+        "stackSlot": "[rsp + 0x8c8]",
+        "destinationCenterOffset": "0x220",
+        "loadRvas": [
+          "0x28f1e1",
+          "0x28f1e9"
+        ],
+        "storeRvas": [
+          "0x292861",
+          "0x292869"
+        ],
+        "stackReferenceCount": 2
+      },
+      {
+        "sourceCenterOffset": "0x228",
+        "stackSlot": "[rsp + 0x8d0]",
+        "destinationCenterOffset": "0x228",
+        "loadRvas": [
+          "0x28f1f1",
+          "0x28f1f9"
+        ],
+        "storeRvas": [
+          "0x292870",
+          "0x292877"
+        ],
+        "stackReferenceCount": 2
+      }
+    ],
+    "proof": "Each private stack slot has exactly its one input load and one output store reference in the pinned 16,366-byte core, so no intervening CalcCenter instruction can alter these bytes.",
+    "smoothingVelocityWrite": {
+      "centerRange": "0x22c..0x237",
+      "inputLoadRvas": [
+        "0x28f2b8",
+        "0x28f407"
+      ],
+      "updatedStackStoreRva": "0x2913f8",
+      "centerStoreRva": "0x29287d"
+    }
+  },
   "schedule": {
     "order": [
       "VirtualMeshManager.PreProxyMeshUpdate",
@@ -264,7 +349,8 @@
       "TeamData.nowUpdateTime = float32(TeamData.nowUpdateTime + simulationDeltaTime)",
       "denominator = float32(TeamData.time - TeamData.frameOldTime)",
       "if denominator > 0: TeamData.frameInterpolation = clamp(float32((TeamData.nowUpdateTime - TeamData.frameOldTime) / denominator), 0, 1); else frameInterpolation = 1"
-    ]
+    ],
+    "simulationFeedOwnership": "The pinned CalcCenter AVX2 core copies CenterData 0x1c0..0x22b from input to output without an intervening write. The pinned substep contract separately schedules TeamManager.SimulationStepTeamUpdate before each solver step; its equations are the remaining owner-recovery target."
   },
   "exactClosedEquations": {
     "activeGate": "execute iff (TeamData.flag & 0x2000000000080812) == 0x2; otherwise no selected TeamData, CenterData, or TeamWindData byte changes",
@@ -279,8 +365,25 @@
     "fixedCenterAggregation": [
       "iterate fixedArray[fixedDataChunk.startIndex .. startIndex+dataLength) in stored UInt16 order",
       "frameWorldPosition_f64 = sequential sum(positions[fixedIndex]) / f64(dataLength)",
-      "native one-fixed probes establish the pre-normalization Hamilton order rotations[fixedIndex] * vertexBindPoseRotations[fixedIndex] (not conjugate(bind)); exact normalization rounding remains fail-closed",
+      "relativeRotation = the AVX2 lane-ordered Hamilton product rotations[fixedIndex] * vertexBindPoseRotations[fixedIndex] (not conjugate(bind))",
+      "for every relativeRotation, accumulate its rotated up=(0,1,0) and forward=(0,0,1) vectors in fixed UInt16 order with binary32 adds",
+      "normalize forward and up independently; right = normalize(cross(up, forward)); correctedUp = cross(forward, right)",
+      "frameWorldRotation = Unity.Mathematics quaternion(float3x3(right, correctedUp, forward)): apply the u_sign/t_sign mask/select construction, then normalize the selected float4 with AVX binary32 horizontal order",
+      "the transcription is raw-byte exact for planar 1/8/4/9 vectors and independent spatial 8/4/9 vectors, covering all target multi-fixed cardinalities",
       "on bootstrap, oldFrameWorld/nowWorld/oldWorld position receive the aggregated frame position"
+    ],
+    "calcCenterSimulationFeedPreservation": [
+      "CalcCenterAndInertiaAndWind preserves CenterData byte range 0x1c0..0x22b: stepMoveInertiaRatio, stepRotationInertiaRatio, stepVector, stepRotation, inertiaVector, inertiaRotation, stepMovingSpeed, stepMovingDirection, angularVelocity, rotationAxis, and initLocalGravityDirection",
+      "Hair(depthInertia=1.0, worldInertia=1.0, localInertia=1.0, smoothing=0.4) and Coat(depthInertia=0.7, worldInertia=0.5, localInertia=0.8, smoothing=0.4) controlled vectors move and rotate the fixed center while distinct finite sentinels in every named preserved field remain raw-byte unchanged",
+      "smoothingVelocity at 0x22c..0x237 is updated by this core and is treated separately; direct production of step/inertia/angular fields by CalcCenter is rejected"
+    ],
+    "zeroRootMovementSmoothing": [
+      "target component velocity is float3(0) because the actor/component root is stationary and frameComponentShiftVector is exactly zero in both overview clips",
+      "base = f32(1 - movementInertiaSmoothing)",
+      "blend = saturate(f32(f32(pow_f32(base, 3.0f) * 0.99f) + 0.01f))",
+      "smoothingVelocity_next = f32(smoothingVelocity_old + f32(blend * f32(float3(0) - smoothingVelocity_old))) lane-wise",
+      "for Endminf movementInertiaSmoothing=0.4f, blend=0.22384002804756165 and the retained old-velocity factor is 0.7761599719524384",
+      "Hair and Coat two-step sentinel vectors match native bytes exactly; depthInertia does not enter this root-velocity smoothing branch"
     ],
     "generalRotationPublication": [
       "frameComponentShiftRotation is the normalized component delta from oldComponentWorldRotation to componentWorldRotation",
@@ -468,6 +571,8 @@
         "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
         "center.frameComponentShiftVector": "000000000000000000000000",
         "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
         "center.frameWorldPosition": "000000000000000000000000000000000000000000000000",
         "center.frameWorldRotation": "0000000000000000000000000000803f",
         "center.oldFrameWorldPosition": "000000000000000000000000000000000000000000000000",
@@ -476,10 +581,18 @@
         "center.nowWorldRotation": "0000000000000000000000000000803f",
         "center.oldWorldPosition": "000000000000000000000000000000000000000000000000",
         "center.oldWorldRotation": "0000000000000000000000000000803f",
+        "center.stepMoveInertiaRatio": "00000000",
+        "center.stepRotationInertiaRatio": "00000000",
         "center.stepVector": "000000000000000000000000",
         "center.stepRotation": "0000000000000000000000000000803f",
         "center.inertiaVector": "000000000000000000000000",
-        "center.inertiaRotation": "0000000000000000000000000000803f"
+        "center.inertiaRotation": "0000000000000000000000000000803f",
+        "center.stepMovingSpeed": "00000000",
+        "center.stepMovingDirection": "000000000000000000000000",
+        "center.angularVelocity": "00000000",
+        "center.rotationAxis": "000000000000000000000000",
+        "center.initLocalGravityDirection": "000000000000000000000000",
+        "center.smoothingVelocity": "000000000000000000000000"
       },
       "nativeSourceBitExact": {
         "team.flag": true,
@@ -493,6 +606,8 @@
         "center.oldComponentWorldRotation": true,
         "center.frameComponentShiftVector": true,
         "center.frameComponentShiftRotation": true,
+        "center.frameMovingSpeed": true,
+        "center.frameMovingDirection": true,
         "center.frameWorldPosition": true,
         "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
@@ -501,10 +616,18 @@
         "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
         "center.oldWorldRotation": true,
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
         "center.stepVector": true,
         "center.stepRotation": true,
         "center.inertiaVector": true,
-        "center.inertiaRotation": true
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true,
+        "center.smoothingVelocity": true
       },
       "teamWindElementUnchanged": true
     },
@@ -537,6 +660,8 @@
         "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
         "center.frameComponentShiftVector": "000000000000000000000000",
         "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
         "center.frameWorldPosition": "000000000000000000000000000000000000000000000000",
         "center.frameWorldRotation": "0000000000000000000000000000803f",
         "center.oldFrameWorldPosition": "000000000000000000000000000000000000000000000000",
@@ -545,10 +670,18 @@
         "center.nowWorldRotation": "0000000000000000000000000000803f",
         "center.oldWorldPosition": "000000000000000000000000000000000000000000000000",
         "center.oldWorldRotation": "0000000000000000000000000000803f",
+        "center.stepMoveInertiaRatio": "00000000",
+        "center.stepRotationInertiaRatio": "00000000",
         "center.stepVector": "000000000000000000000000",
         "center.stepRotation": "0000000000000000000000000000803f",
         "center.inertiaVector": "000000000000000000000000",
-        "center.inertiaRotation": "0000000000000000000000000000803f"
+        "center.inertiaRotation": "0000000000000000000000000000803f",
+        "center.stepMovingSpeed": "00000000",
+        "center.stepMovingDirection": "000000000000000000000000",
+        "center.angularVelocity": "00000000",
+        "center.rotationAxis": "000000000000000000000000",
+        "center.initLocalGravityDirection": "000000000000000000000000",
+        "center.smoothingVelocity": "000000000000000000000000"
       },
       "nativeSourceBitExact": {
         "team.flag": true,
@@ -562,6 +695,8 @@
         "center.oldComponentWorldRotation": true,
         "center.frameComponentShiftVector": true,
         "center.frameComponentShiftRotation": true,
+        "center.frameMovingSpeed": true,
+        "center.frameMovingDirection": true,
         "center.frameWorldPosition": true,
         "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
@@ -570,10 +705,18 @@
         "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
         "center.oldWorldRotation": true,
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
         "center.stepVector": true,
         "center.stepRotation": true,
         "center.inertiaVector": true,
-        "center.inertiaRotation": true
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true,
+        "center.smoothingVelocity": true
       },
       "teamWindElementUnchanged": true
     },
@@ -606,6 +749,8 @@
         "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
         "center.frameComponentShiftVector": "000000000000000000000000",
         "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
         "center.frameWorldPosition": "7b14ae47e17a843f7b14ae47e17a94bfb81e85eb51b89e3f",
         "center.frameWorldRotation": "0000000000000000000000000000803f",
         "center.oldFrameWorldPosition": "7b14ae47e17a843f7b14ae47e17a94bfb81e85eb51b89e3f",
@@ -614,10 +759,18 @@
         "center.nowWorldRotation": "0000000000000000000000000000803f",
         "center.oldWorldPosition": "7b14ae47e17a843f7b14ae47e17a94bfb81e85eb51b89e3f",
         "center.oldWorldRotation": "0000000000000000000000000000803f",
+        "center.stepMoveInertiaRatio": "00000000",
+        "center.stepRotationInertiaRatio": "00000000",
         "center.stepVector": "000000000000000000000000",
         "center.stepRotation": "0000000000000000000000000000803f",
         "center.inertiaVector": "000000000000000000000000",
-        "center.inertiaRotation": "0000000000000000000000000000803f"
+        "center.inertiaRotation": "0000000000000000000000000000803f",
+        "center.stepMovingSpeed": "00000000",
+        "center.stepMovingDirection": "000000000000000000000000",
+        "center.angularVelocity": "00000000",
+        "center.rotationAxis": "000000000000000000000000",
+        "center.initLocalGravityDirection": "000000000000000000000000",
+        "center.smoothingVelocity": "000000000000000000000000"
       },
       "nativeSourceBitExact": {
         "team.flag": true,
@@ -631,6 +784,8 @@
         "center.oldComponentWorldRotation": true,
         "center.frameComponentShiftVector": true,
         "center.frameComponentShiftRotation": true,
+        "center.frameMovingSpeed": true,
+        "center.frameMovingDirection": true,
         "center.frameWorldPosition": true,
         "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
@@ -639,10 +794,18 @@
         "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
         "center.oldWorldRotation": true,
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
         "center.stepVector": true,
         "center.stepRotation": true,
         "center.inertiaVector": true,
-        "center.inertiaRotation": true
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true,
+        "center.smoothingVelocity": true
       },
       "teamWindElementUnchanged": true
     },
@@ -675,6 +838,8 @@
         "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
         "center.frameComponentShiftVector": "000000000000000000000000",
         "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
         "center.frameWorldPosition": "000000000000f03f00000000000000c00000000000000840",
         "center.frameWorldRotation": "0000000000000000000000000000803f",
         "center.oldFrameWorldPosition": "000000000000f03f00000000000000c00000000000000840",
@@ -683,10 +848,18 @@
         "center.nowWorldRotation": "0000000000000000000000000000803f",
         "center.oldWorldPosition": "000000000000f03f00000000000000c00000000000000840",
         "center.oldWorldRotation": "0000000000000000000000000000803f",
+        "center.stepMoveInertiaRatio": "00000000",
+        "center.stepRotationInertiaRatio": "00000000",
         "center.stepVector": "000000000000000000000000",
         "center.stepRotation": "0000000000000000000000000000803f",
         "center.inertiaVector": "000000000000000000000000",
-        "center.inertiaRotation": "0000000000000000000000000000803f"
+        "center.inertiaRotation": "0000000000000000000000000000803f",
+        "center.stepMovingSpeed": "00000000",
+        "center.stepMovingDirection": "000000000000000000000000",
+        "center.angularVelocity": "00000000",
+        "center.rotationAxis": "000000000000000000000000",
+        "center.initLocalGravityDirection": "000000000000000000000000",
+        "center.smoothingVelocity": "000000000000000000000000"
       },
       "nativeSourceBitExact": {
         "team.flag": true,
@@ -700,6 +873,8 @@
         "center.oldComponentWorldRotation": true,
         "center.frameComponentShiftVector": true,
         "center.frameComponentShiftRotation": true,
+        "center.frameMovingSpeed": true,
+        "center.frameMovingDirection": true,
         "center.frameWorldPosition": true,
         "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
@@ -708,17 +883,25 @@
         "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
         "center.oldWorldRotation": true,
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
         "center.stepVector": true,
         "center.stepRotation": true,
         "center.inertiaVector": true,
-        "center.inertiaRotation": true
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true,
+        "center.smoothingVelocity": true
       },
       "teamWindElementUnchanged": true
     }
   ],
   "fixedCenterGoldenVectors": [
     {
-      "name": "endminf_mc_ribbon2_fixed_center_bootstrap",
+      "name": "endminf_mc_ribbon2_fixed_center_planar_bootstrap",
       "owner": "MC_Ribbon2",
       "inputs": {
         "fixedDataChunk": {
@@ -749,17 +932,21 @@
       "nativeSourceBitExact": {
         "team.flag": true,
         "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
         "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
         "team.gravityRatio": true,
         "team.scaleRatio": true
       },
-      "rotationComparisonBoundary": "native output recorded; quaternion normalization/reduction is not source-certified",
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
       "teamWindElementUnchanged": true
     },
     {
-      "name": "endminf_mc_hair_fixed_center_bootstrap",
+      "name": "endminf_mc_hair_fixed_center_planar_bootstrap",
       "owner": "MC_Hair",
       "inputs": {
         "fixedDataChunk": {
@@ -797,17 +984,21 @@
       "nativeSourceBitExact": {
         "team.flag": true,
         "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
         "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
         "team.gravityRatio": true,
         "team.scaleRatio": true
       },
-      "rotationComparisonBoundary": "native output recorded; quaternion normalization/reduction is not source-certified",
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
       "teamWindElementUnchanged": true
     },
     {
-      "name": "endminf_mc_ribbon_fixed_center_bootstrap",
+      "name": "endminf_mc_ribbon_fixed_center_planar_bootstrap",
       "owner": "MC_Ribbon",
       "inputs": {
         "fixedDataChunk": {
@@ -841,17 +1032,21 @@
       "nativeSourceBitExact": {
         "team.flag": true,
         "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
         "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
         "team.gravityRatio": true,
         "team.scaleRatio": true
       },
-      "rotationComparisonBoundary": "native output recorded; quaternion normalization/reduction is not source-certified",
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
       "teamWindElementUnchanged": true
     },
     {
-      "name": "endminf_mc_coat_fixed_center_bootstrap",
+      "name": "endminf_mc_coat_fixed_center_planar_bootstrap",
       "owner": "MC_Coat",
       "inputs": {
         "fixedDataChunk": {
@@ -890,28 +1085,420 @@
       "nativeSourceBitExact": {
         "team.flag": true,
         "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
         "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
         "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
         "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
         "team.gravityRatio": true,
         "team.scaleRatio": true
       },
-      "rotationComparisonBoundary": "native output recorded; quaternion normalization/reduction is not source-certified",
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
+      "teamWindElementUnchanged": true
+    },
+    {
+      "name": "endminf_mc_hair_fixed_center_spatial_bootstrap",
+      "owner": "MC_Hair",
+      "inputs": {
+        "fixedDataChunk": {
+          "startIndexI32": 0,
+          "dataLengthI32": 8
+        },
+        "fixedArrayUInt16": [
+          0,
+          3,
+          7,
+          10,
+          13,
+          17,
+          22,
+          26
+        ],
+        "windZoneCount": 0,
+        "syntheticPositionFormulaF64": "position[i] = (i+1, 2*i, -i)",
+        "syntheticRotationFormulaF32": "rotation[i] = (qz * qy) * qx with index-varying axes",
+        "bindPoseRotations": "qz(10 degrees) * index-varying qx"
+      },
+      "selectedNativeOutputs": {
+        "team.flag": "2204040000000000",
+        "center.frameWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.frameWorldRotation": "6c8b493ed825383dcea5063f8781533f",
+        "center.oldFrameWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldFrameWorldRotation": "6c8b493ed825383dcea5063f8781533f",
+        "center.nowWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.nowWorldRotation": "6c8b493ed825383dcea5063f8781533f",
+        "center.oldWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldWorldRotation": "6c8b493ed825383dcea5063f8781533f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f"
+      },
+      "nativeSourceBitExact": {
+        "team.flag": true,
+        "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
+        "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
+        "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
+        "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
+        "team.gravityRatio": true,
+        "team.scaleRatio": true
+      },
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
+      "teamWindElementUnchanged": true
+    },
+    {
+      "name": "endminf_mc_ribbon_fixed_center_spatial_bootstrap",
+      "owner": "MC_Ribbon",
+      "inputs": {
+        "fixedDataChunk": {
+          "startIndexI32": 0,
+          "dataLengthI32": 4
+        },
+        "fixedArrayUInt16": [
+          0,
+          6,
+          10,
+          16
+        ],
+        "windZoneCount": 0,
+        "syntheticPositionFormulaF64": "position[i] = (i+1, 2*i, -i)",
+        "syntheticRotationFormulaF32": "rotation[i] = (qz * qy) * qx with index-varying axes",
+        "bindPoseRotations": "qz(10 degrees) * index-varying qx"
+      },
+      "selectedNativeOutputs": {
+        "team.flag": "2204040000000000",
+        "center.frameWorldPosition": "0000000000002240000000000000304000000000000020c0",
+        "center.frameWorldRotation": "581b0c3e83a2b43c586e093f9d0c553f",
+        "center.oldFrameWorldPosition": "0000000000002240000000000000304000000000000020c0",
+        "center.oldFrameWorldRotation": "581b0c3e83a2b43c586e093f9d0c553f",
+        "center.nowWorldPosition": "0000000000002240000000000000304000000000000020c0",
+        "center.nowWorldRotation": "581b0c3e83a2b43c586e093f9d0c553f",
+        "center.oldWorldPosition": "0000000000002240000000000000304000000000000020c0",
+        "center.oldWorldRotation": "581b0c3e83a2b43c586e093f9d0c553f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f"
+      },
+      "nativeSourceBitExact": {
+        "team.flag": true,
+        "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
+        "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
+        "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
+        "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
+        "team.gravityRatio": true,
+        "team.scaleRatio": true
+      },
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
+      "teamWindElementUnchanged": true
+    },
+    {
+      "name": "endminf_mc_coat_fixed_center_spatial_bootstrap",
+      "owner": "MC_Coat",
+      "inputs": {
+        "fixedDataChunk": {
+          "startIndexI32": 0,
+          "dataLengthI32": 9
+        },
+        "fixedArrayUInt16": [
+          2,
+          4,
+          12,
+          26,
+          28,
+          33,
+          45,
+          47,
+          55
+        ],
+        "windZoneCount": 0,
+        "syntheticPositionFormulaF64": "position[i] = (i+1, 2*i, -i)",
+        "syntheticRotationFormulaF32": "rotation[i] = (qz * qy) * qx with index-varying axes",
+        "bindPoseRotations": "qz(10 degrees) * index-varying qx"
+      },
+      "selectedNativeOutputs": {
+        "team.flag": "2204040000000000",
+        "center.frameWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.frameWorldRotation": "f8de473ed50e923d65890b3f67ee4f3f",
+        "center.oldFrameWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldFrameWorldRotation": "f8de473ed50e923d65890b3f67ee4f3f",
+        "center.nowWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.nowWorldRotation": "f8de473ed50e923d65890b3f67ee4f3f",
+        "center.oldWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldWorldRotation": "f8de473ed50e923d65890b3f67ee4f3f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f"
+      },
+      "nativeSourceBitExact": {
+        "team.flag": true,
+        "center.frameWorldPosition": true,
+        "center.frameWorldRotation": true,
+        "center.oldFrameWorldPosition": true,
+        "center.oldFrameWorldRotation": true,
+        "center.nowWorldPosition": true,
+        "center.nowWorldRotation": true,
+        "center.oldWorldPosition": true,
+        "center.oldWorldRotation": true,
+        "team.gravityRatio": true,
+        "team.scaleRatio": true
+      },
+      "rotationComparisonBoundary": "all published center quaternions are source-certified raw-byte exact",
+      "teamWindElementUnchanged": true
+    }
+  ],
+  "targetMotionGoldenVectors": [
+    {
+      "name": "endminf_mc_hair_animated_fixed_step",
+      "owner": "MC_Hair",
+      "inputs": {
+        "simulationDeltaTimeF32": 0.011111111380159855,
+        "fixedArrayUInt16": [
+          0,
+          3,
+          7,
+          10,
+          13,
+          17,
+          22,
+          26
+        ],
+        "worldInertiaF32": 1.0,
+        "movementInertiaSmoothingF32": 0.4000000059604645,
+        "localInertiaF32": 1.0,
+        "depthInertiaF32": 1.0,
+        "centrifugalAccelerationF32": 0.0,
+        "windZoneCount": 0
+      },
+      "bootstrapOutputs": {
+        "team.flag": "2284040000000000",
+        "team.frameInterpolation": "0000803f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f",
+        "center.componentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.componentWorldRotation": "0000000000000000000000000000803f",
+        "center.componentWorldScale": "0000803f0000803f0000803f",
+        "center.oldComponentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
+        "center.frameComponentShiftVector": "000000000000000000000000",
+        "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
+        "center.frameWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.frameWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.oldFrameWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldFrameWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.nowWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.nowWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.oldWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.stepMoveInertiaRatio": "0000003e",
+        "center.stepRotationInertiaRatio": "0000803e",
+        "center.stepVector": "0000a03f000020c000007040",
+        "center.stepRotation": "cdcccc3dcdcc4cbe9a99993e6666663f",
+        "center.inertiaVector": "000090c00000a8400000c0c0",
+        "center.inertiaRotation": "cdccccbe0000003f9a9919bf3333333f",
+        "center.stepMovingSpeed": "0000f040",
+        "center.stepMovingDirection": "0000803e000000bf0000403f",
+        "center.angularVelocity": "00000441",
+        "center.rotationAxis": "000000be0000c03e000020bf",
+        "center.initLocalGravityDirection": "cdcc4c3e9a9999becdcccc3e",
+        "center.smoothingVelocity": "b988df40065ff8c0aa9a0841"
+      },
+      "animatedStepOutputs": {
+        "team.flag": "2284000000000000",
+        "team.frameInterpolation": "0000803f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f",
+        "center.componentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.componentWorldRotation": "0000000000000000000000000000803f",
+        "center.componentWorldScale": "0000803f0000803f0000803f",
+        "center.oldComponentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
+        "center.frameComponentShiftVector": "000000000000000000000000",
+        "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
+        "center.frameWorldPosition": "efa7c64b37892a4091ed7c3f357e384039b4c876be7f28c0",
+        "center.frameWorldRotation": "0000000000000000388d163f1c0d4f3f",
+        "center.oldFrameWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldFrameWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.nowWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.nowWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.oldWorldPosition": "0000000000802a40000000000080384000000000008028c0",
+        "center.oldWorldRotation": "00000000000000009b01073fcc81593f",
+        "center.stepMoveInertiaRatio": "0000003e",
+        "center.stepRotationInertiaRatio": "0000803e",
+        "center.stepVector": "0000a03f000020c000007040",
+        "center.stepRotation": "cdcccc3dcdcc4cbe9a99993e6666663f",
+        "center.inertiaVector": "000090c00000a8400000c0c0",
+        "center.inertiaRotation": "cdccccbe0000003f9a9919bf3333333f",
+        "center.stepMovingSpeed": "0000f040",
+        "center.stepMovingDirection": "0000803e000000bf0000403f",
+        "center.angularVelocity": "00000441",
+        "center.rotationAxis": "000000be0000c03e000020bf",
+        "center.initLocalGravityDirection": "cdcc4c3e9a9999becdcccc3e",
+        "center.smoothingVelocity": "8a7fad4099c6c0c0a90dd440"
+      },
+      "preservedSimulationFeedFields": {
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
+        "center.stepVector": true,
+        "center.stepRotation": true,
+        "center.inertiaVector": true,
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true
+      },
+      "zeroRootSmoothingNativeSourceBitExact": {
+        "bootstrap": true,
+        "animatedStep": true
+      },
+      "teamWindElementUnchanged": true
+    },
+    {
+      "name": "endminf_mc_coat_animated_fixed_step",
+      "owner": "MC_Coat",
+      "inputs": {
+        "simulationDeltaTimeF32": 0.011111111380159855,
+        "fixedArrayUInt16": [
+          2,
+          4,
+          12,
+          26,
+          28,
+          33,
+          45,
+          47,
+          55
+        ],
+        "worldInertiaF32": 0.5,
+        "movementInertiaSmoothingF32": 0.4000000059604645,
+        "localInertiaF32": 0.800000011920929,
+        "depthInertiaF32": 0.699999988079071,
+        "centrifugalAccelerationF32": 0.0,
+        "windZoneCount": 0
+      },
+      "bootstrapOutputs": {
+        "team.flag": "2284040000000000",
+        "team.frameInterpolation": "0000803f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f",
+        "center.componentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.componentWorldRotation": "0000000000000000000000000000803f",
+        "center.componentWorldScale": "0000803f0000803f0000803f",
+        "center.oldComponentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
+        "center.frameComponentShiftVector": "000000000000000000000000",
+        "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
+        "center.frameWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.frameWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.oldFrameWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldFrameWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.nowWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.nowWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.oldWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.stepMoveInertiaRatio": "0000003e",
+        "center.stepRotationInertiaRatio": "0000803e",
+        "center.stepVector": "0000a03f000020c000007040",
+        "center.stepRotation": "cdcccc3dcdcc4cbe9a99993e6666663f",
+        "center.inertiaVector": "000090c00000a8400000c0c0",
+        "center.inertiaRotation": "cdccccbe0000003f9a9919bf3333333f",
+        "center.stepMovingSpeed": "0000f040",
+        "center.stepMovingDirection": "0000803e000000bf0000403f",
+        "center.angularVelocity": "00000441",
+        "center.rotationAxis": "000000be0000c03e000020bf",
+        "center.initLocalGravityDirection": "cdcc4c3e9a9999becdcccc3e",
+        "center.smoothingVelocity": "b988df40065ff8c0aa9a0841"
+      },
+      "animatedStepOutputs": {
+        "team.flag": "2284000000000000",
+        "team.frameInterpolation": "0000803f",
+        "team.gravityRatio": "0000803f",
+        "team.scaleRatio": "0000803f",
+        "center.componentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.componentWorldRotation": "0000000000000000000000000000803f",
+        "center.componentWorldScale": "0000803f0000803f0000803f",
+        "center.oldComponentWorldPosition": "000000000000000000000000000000000000000000000000",
+        "center.oldComponentWorldRotation": "0000000000000000000000000000803f",
+        "center.frameComponentShiftVector": "000000000000000000000000",
+        "center.frameComponentShiftRotation": "0000000000000000000000000000803f",
+        "center.frameMovingSpeed": "00000000",
+        "center.frameMovingDirection": "000000000000000000000000",
+        "center.frameWorldPosition": "85eb51b81e053d40e4d022dbf9fe4b406fa575dfe2ff3bc0",
+        "center.frameWorldRotation": "000000000000000083eb1c3f79444a3f",
+        "center.oldFrameWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldFrameWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.nowWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.nowWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.oldWorldPosition": "0000000000003d400000000000004c400000000000003cc0",
+        "center.oldWorldRotation": "000000000000000089990c3f13ef553f",
+        "center.stepMoveInertiaRatio": "0000003e",
+        "center.stepRotationInertiaRatio": "0000803e",
+        "center.stepVector": "0000a03f000020c000007040",
+        "center.stepRotation": "cdcccc3dcdcc4cbe9a99993e6666663f",
+        "center.inertiaVector": "000090c00000a8400000c0c0",
+        "center.inertiaRotation": "cdccccbe0000003f9a9919bf3333333f",
+        "center.stepMovingSpeed": "0000f040",
+        "center.stepMovingDirection": "0000803e000000bf0000403f",
+        "center.angularVelocity": "00000441",
+        "center.rotationAxis": "000000be0000c03e000020bf",
+        "center.initLocalGravityDirection": "cdcc4c3e9a9999becdcccc3e",
+        "center.smoothingVelocity": "8a7fad4099c6c0c0a90dd440"
+      },
+      "preservedSimulationFeedFields": {
+        "center.stepMoveInertiaRatio": true,
+        "center.stepRotationInertiaRatio": true,
+        "center.stepVector": true,
+        "center.stepRotation": true,
+        "center.inertiaVector": true,
+        "center.inertiaRotation": true,
+        "center.stepMovingSpeed": true,
+        "center.stepMovingDirection": true,
+        "center.angularVelocity": true,
+        "center.rotationAxis": true,
+        "center.initLocalGravityDirection": true
+      },
+      "zeroRootSmoothingNativeSourceBitExact": {
+        "bootstrap": true,
+        "animatedStep": true
+      },
       "teamWindElementUnchanged": true
     }
   ],
   "verification": {
     "nativeAvx2CoreExecuted": true,
     "sourceInvokesNativeHelpers": false,
-    "selectedFieldCount": 23,
-    "vectorCount": 8,
+    "selectedFieldCount": 33,
+    "vectorCount": 13,
     "fixedCenterVectorCounts": [
       1,
       8,
       4,
       9
     ],
+    "multiFixedSpatialVectorCounts": [
+      8,
+      4,
+      9
+    ],
     "allCertifiedOutputsComparedAsRawBytes": true,
+    "calcPreservedFeedFieldCount": 11,
+    "zeroRootSmoothingVectorOwners": [
+      "MC_Hair",
+      "MC_Coat"
+    ],
     "observedButUncertifiedOutputsPresent": true
   },
   "failClosedBoundary": {
@@ -924,19 +1511,21 @@
       "zero-wind proof",
       "identity quaternion and translational bootstrap/reset/prediction publication subset",
       "Endminf fixed UInt16 lists/counts and fixed-center float64 position mean",
-      "one-fixed rotation * bind quaternion multiplication direction (normalization rounding excluded)",
+      "fixed-center quaternion reduction, operation order, basis normalization, and matrix-to-quaternion conversion for target counts 1/8/4/9",
       "general noncommutative actor-delta * fixed-center rotation multiplication order",
       "Endminf overview root-motion/component delta as target no-op",
-      "Endminf target gravityRatio=1.0f and scaleRatio=1.0f under identity rotation/unit scale"
+      "Endminf target gravityRatio=1.0f and scaleRatio=1.0f under identity rotation/unit scale",
+      "CalcCenter raw-byte preservation (not production) of CenterData step/inertia/angular feed fields through initLocalGravityDirection",
+      "target zero-root smoothingVelocity update for Hair and Coat"
     ],
     "unresolved": [
-      "bit-exact AVX2 component-delta quaternion normalization outside the target no-op, plus center angular velocity/rotation-axis equations driven by animated fixed vertices",
-      "fixed-center quaternion normalization and multi-fixed (Hair/Ribbon/Coat) reduction equation/operation order; native outputs are retained as observations but are not source-certified",
-      "nonzero anchor/world/local inertia blending, speed clamps, smoothing, teleport-keep, and negative-scale matrix branches",
+      "target-active center angularVelocity/rotationAxis and step/inertiaVector/inertiaRotation smoothing equations belong to the separately scheduled SimulationStepTeamUpdate kernel, not this CalcCenter core, and remain unrecovered",
+      "the exact TeamData/CenterData inputs and flag lifecycle presented to SimulationStepTeamUpdate for the 1/2-step 90 Hz-on-60 Hz target cadence",
+      "off-target anchor/world/local inertia speed clamps, teleport-keep, and negative-scale matrix branches",
       "off-target gravityRatio/gravityDot updates for rotated gravity and nonuniform/negative scaleRatio equations",
       "empty fixed-center range behavior and any nonzero wind-zone or moving-wind state",
       "the IFix-patched route and retail runtime resolver telemetry"
     ],
-    "rule": "Consumers must reject this contract as a complete Simulation Start feed while any unresolved item remains; the vectors prove only the named selected no-wind subset."
+    "rule": "Consumers must reject this contract as a complete Simulation Start feed until SimulationStepTeamUpdate is separately recovered. CalcCenter's proven behavior for those fields is preservation, not production."
   }
 }

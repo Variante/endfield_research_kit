@@ -60,20 +60,48 @@ class SecondaryDynamicsCenterUpdateContractTests(unittest.TestCase):
         self.assertEqual([rows[name]["fixedCount"] for name in builder.ENDMINF_FIXED], [1, 8, 4, 9])
         self.assertEqual([rows[name]["centerTransformIndex"] for name in builder.ENDMINF_FIXED], [6, 30, 20, 70])
 
-    def test_fixed_position_vectors_are_native_source_bit_exact(self) -> None:
+    def test_fixed_position_and_rotation_vectors_are_native_source_bit_exact(self) -> None:
         vectors = self.payload["fixedCenterGoldenVectors"]
-        self.assertEqual([len(row["inputs"]["fixedArrayUInt16"]) for row in vectors], [1, 8, 4, 9])
+        self.assertEqual([len(row["inputs"]["fixedArrayUInt16"]) for row in vectors],
+                         [1, 8, 4, 9, 8, 4, 9])
         for vector in vectors:
             self.assertEqual(set(vector["nativeSourceBitExact"]), set(builder.TARGET_FIXED_CERTIFIED_FIELDS))
             self.assertTrue(all(vector["nativeSourceBitExact"].values()), vector["name"])
             self.assertTrue(vector["teamWindElementUnchanged"])
 
-    def test_multi_fixed_rotation_and_ratios_remain_fail_closed(self) -> None:
+    def test_multi_fixed_rotation_is_closed_but_downstream_feed_remains_fail_closed(self) -> None:
+        equations = " ".join(self.payload["exactClosedEquations"]["fixedCenterAggregation"])
+        self.assertIn("rotated up=(0,1,0) and forward=(0,0,1)", equations)
+        self.assertIn("spatial 8/4/9", equations)
         unresolved = " ".join(self.payload["failClosedBoundary"]["unresolved"])
-        self.assertIn("multi-fixed", unresolved)
+        self.assertNotIn("multi-fixed", unresolved)
+        self.assertIn("SimulationStepTeamUpdate", unresolved)
+        self.assertIn("angularVelocity", unresolved)
         self.assertIn("gravityRatio", unresolved)
         self.assertIn("scaleRatio", unresolved)
-        self.assertIn("smoothing", unresolved)
+
+    def test_calc_center_preserves_simulation_start_feed_sentinels(self) -> None:
+        vectors = self.payload["targetMotionGoldenVectors"]
+        self.assertEqual([row["owner"] for row in vectors], ["MC_Hair", "MC_Coat"])
+        for vector in vectors:
+            self.assertEqual(set(vector["preservedSimulationFeedFields"]),
+                             set(builder.PRESERVED_SIMULATION_FEED_FIELDS))
+            self.assertTrue(all(vector["preservedSimulationFeedFields"].values()))
+            self.assertNotEqual(vector["bootstrapOutputs"]["center.frameWorldPosition"],
+                                vector["animatedStepOutputs"]["center.frameWorldPosition"])
+            self.assertTrue(all(vector["zeroRootSmoothingNativeSourceBitExact"].values()))
+            self.assertTrue(vector["teamWindElementUnchanged"])
+        ownership = self.payload["fieldAndArrayProvenance"]["simulationFeedOwnership"]
+        self.assertIn("0x1c0..0x22b", ownership)
+        self.assertIn("SimulationStepTeamUpdate", ownership)
+        native_ownership = self.payload["simulationFeedWriteOwnership"]
+        self.assertEqual(native_ownership["preservedRange"], "CenterData+0x1c0..0x22b")
+        self.assertEqual(len(native_ownership["loadStoreOnlyChunks"]), 5)
+        self.assertTrue(all(row["stackReferenceCount"] == 2
+                            for row in native_ownership["loadStoreOnlyChunks"]))
+        smoothing = " ".join(self.payload["exactClosedEquations"]["zeroRootMovementSmoothing"])
+        self.assertIn("pow_f32(base, 3.0f)", smoothing)
+        self.assertIn("0.22384002804756165", smoothing)
 
     def test_endminf_root_motion_is_target_closed_noop_only(self) -> None:
         proof = self.payload["endminfNoWindDomain"]["overviewRootMotionTargetProof"]
@@ -94,7 +122,7 @@ class SecondaryDynamicsCenterUpdateContractTests(unittest.TestCase):
     def test_unresolved_state_fails_closed(self) -> None:
         boundary = self.payload["failClosedBoundary"]
         self.assertFalse(boundary["runtimeFeedReady"])
-        self.assertGreaterEqual(len(boundary["unresolved"]), 5)
+        self.assertGreaterEqual(len(boundary["unresolved"]), 4)
         self.assertIn("Consumers must reject", boundary["rule"])
 
     def test_generated_contract_matches_builder(self) -> None:
