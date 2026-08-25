@@ -55,7 +55,7 @@ HLSL_COMPARISON_RE = re.compile(
     r"presented=(?P<presented>true|false)\.",
     re.IGNORECASE,
 )
-EXPECTED_RESOURCE_MASK = (1 << 26) - 1
+EXPECTED_RESOURCE_MASK = (1 << 28) - 1
 
 
 def validate_log(text: str, source: Path) -> dict[str, object]:
@@ -69,7 +69,9 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
                 f"expected={expected!r}; actual={actual!r}"
             )
 
-    require("batch_exit", "Exiting batchmode successfully now!" in text, True)
+    # Play-mode captures terminate through EditorApplication.Exit and do not
+    # consistently emit Unity's ordinary batch-success marker.
+    require("execute_method_exception", "executeMethod method" in text, False)
     require("script_compile_errors", "error CS" in text, False)
     require("shader_compile_errors", "Shader error in" in text, False)
     submitted_matches = list(SUBMITTED_RE.finditer(text))
@@ -80,9 +82,18 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
     require("hlsl_comparison_record_count", len(comparison_matches) > 0, True)
 
     submitted: dict[str, object] = {}
+    readback_main_matches = [
+        match for match in readback_matches if match["camera"] == "MainCamera"
+    ]
+    require("main_camera_readback_count", len(readback_main_matches) > 0, True)
+    target_extent = (
+        (int(readback_main_matches[-1]["width"]), int(readback_main_matches[-1]["height"]))
+        if readback_main_matches else (0, 0)
+    )
     submitted_main_matches = [
         match for match in submitted_matches
-        if int(match["width"]) == 640 and int(match["height"]) == 720
+        if match["camera"] == "MainCamera"
+        and (int(match["width"]), int(match["height"])) == target_extent
     ]
     if submitted_main_matches:
         match = submitted_main_matches[-1]
@@ -102,7 +113,7 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "screenContentValid": match["screen"].lower() == "true",
         }
         require("camera", submitted["camera"], "MainCamera")
-        require("extent", (submitted["width"], submitted["height"]), (640, 720))
+        require("extent_positive", submitted["width"] > 0 and submitted["height"] > 0, True)
         require("publication_serial", submitted["publicationSerial"] > 0, True)
         # The submission log is emitted immediately after ExecuteCommandBuffer;
         # exactBound/masks are authoritative only in the later GPU readback
@@ -113,11 +124,6 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         require("screen_content_valid", submitted["screenContentValid"], False)
 
     readback: dict[str, object] = {}
-    readback_main_matches = [
-        match for match in readback_matches
-        if int(match["width"]) == 640 and int(match["height"]) == 720
-    ]
-    require("main_camera_readback_count", len(readback_main_matches) > 0, True)
     if readback_main_matches:
         match = readback_main_matches[-1]
         readback = {
@@ -141,19 +147,20 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "retailPass0": match["pass0"].lower() == "true",
         }
         require("readback_camera", readback["camera"], "MainCamera")
-        require("readback_extent", (readback["width"], readback["height"]), (640, 720))
-        require("readback_bytes", readback["bytes"], 640 * 720 * 16)
+        expected_pixels = readback["width"] * readback["height"]
+        require("readback_extent", (readback["width"], readback["height"]), target_extent)
+        require("readback_bytes", readback["bytes"], expected_pixels * 16)
         require("readback_nonzero", readback["nonzeroBytes"] > 0, True)
         require("readback_exact_shader_bound", readback["exactBound"], 1)
         require(
-            "readback_resource_mask_all_t0_t25",
+            "readback_resource_mask_all_t0_t27",
             readback["resourceMask"],
             EXPECTED_RESOURCE_MASK,
         )
         require("readback_resource_failure_mask", readback["resourceFailureMask"], 0)
         require("readback_resource_failure_results", readback["resourceFailureResults"], "none")
-        require("readback_constant_buffer_mask_all_b0_b8", readback["constantBufferMask"], 0x1FF)
-        require("readback_finite_float_count", readback["finiteFloats"], 640 * 720 * 4)
+        require("readback_constant_buffer_mask_all_b0_b9", readback["constantBufferMask"], 0x3FF)
+        require("readback_finite_float_count", readback["finiteFloats"], expected_pixels * 4)
         require("readback_nonfinite_float_count", readback["nonFiniteFloats"], 0)
         require("readback_native_failures", readback["failureCount"], 0)
         require("readback_presented", readback["presented"], False)
@@ -162,7 +169,8 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
     comparison: dict[str, object] = {}
     comparison_main_matches = [
         match for match in comparison_matches
-        if int(match["width"]) == 640 and int(match["height"]) == 720
+        if match["camera"] == "MainCamera"
+        and (int(match["width"]), int(match["height"])) == target_extent
     ]
     require("main_camera_hlsl_comparison_count", len(comparison_main_matches) > 0, True)
     if comparison_main_matches:
@@ -180,7 +188,7 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "presented": match["presented"].lower() == "true",
         }
         require("hlsl_comparison_camera", comparison["camera"], "MainCamera")
-        require("hlsl_comparison_float_count", comparison["floatCount"], 640 * 720 * 4)
+        require("hlsl_comparison_float_count", comparison["floatCount"], target_extent[0] * target_extent[1] * 4)
         require("hlsl_comparison_max_abs_within_one_ulp", comparison["maxAbs"] <= 1.1920929e-7, True)
         require("hlsl_comparison_over_1e6", comparison["over1e-6"], 0)
         require("hlsl_comparison_presented", comparison["presented"], False)

@@ -15,8 +15,9 @@
 namespace
 {
 constexpr const char* kReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_EXACT";
-constexpr std::uint32_t kContractVersion = 1;
-constexpr std::uint32_t kTextureSlotCount = 26;
+constexpr std::uint32_t kContractVersion = 2;
+constexpr std::uint32_t kTextureSlotCount = 28;
+constexpr std::uint32_t kConstantBufferSlotCount = 10;
 
 IUnityInterfaces* g_unityInterfaces = nullptr;
 std::atomic<bool> g_armed{false};
@@ -543,17 +544,17 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
         vertex == reinterpret_cast<ID3D11VertexShader*>(expectedVertex) &&
         pixel == reinterpret_cast<ID3D11PixelShader*>(expectedPixel);
 
-    ID3D11Buffer* constantBuffers[9] = {};
-    ID3D11ShaderResourceView* resources[26] = {};
+    ID3D11Buffer* constantBuffers[kConstantBufferSlotCount] = {};
+    ID3D11ShaderResourceView* resources[kTextureSlotCount] = {};
     ID3D11SamplerState* samplers[5] = {};
-    context->PSGetConstantBuffers(0, 9, constantBuffers);
-    context->PSGetShaderResources(0, 26, resources);
+    context->PSGetConstantBuffers(0, kConstantBufferSlotCount, constantBuffers);
+    context->PSGetShaderResources(0, kTextureSlotCount, resources);
     context->PSGetSamplers(0, 5, samplers);
 
     std::uint32_t constantMask = 0;
     std::uint32_t resourceMask = 0;
     std::uint32_t samplerMask = 0;
-    for (std::uint32_t index = 0; index < 9; ++index)
+    for (std::uint32_t index = 0; index < kConstantBufferSlotCount; ++index)
     {
         if (constantBuffers[index] != nullptr)
         {
@@ -561,7 +562,7 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
             constantBuffers[index]->Release();
         }
     }
-    for (std::uint32_t index = 0; index < 26; ++index)
+    for (std::uint32_t index = 0; index < kTextureSlotCount; ++index)
     {
         if (resources[index] != nullptr)
         {
