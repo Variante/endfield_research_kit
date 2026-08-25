@@ -1104,8 +1104,8 @@ namespace EndfieldGraphShaderLab
                 applyPostProcess &&
                 operatorLightRig != null &&
                 operatorLightRig.sourceBackedClusteredNprLightLoop &&
-                !useRecoveredPostUberWorldUi &&
-                !useRecoveredSceneMV;
+                ((!useRecoveredPostUberWorldUi && !useRecoveredSceneMV) ||
+                 recoveredDeferredExactConsumer.Requested);
             RenderTexture physicalRecoveredCameraDepth = null;
             EndfieldRecoveredCharInfoAutoExposureCameraState liveAutoExposureState =
                 PrepareRecoveredLiveCharInfoAutoExposure(
