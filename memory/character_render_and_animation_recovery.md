@@ -289,17 +289,20 @@ complete frame without a client fault.
   this post owner nine 60 Hz frames before the first visible Endminf body frame;
   applying that explicit 0.15-second recording pre-roll removes the two
   incorrectly shifted chromatic pulses and, together with the recovered
-  gyroscope transition, lowers the same MAE to 22.3254. The whole `_02` owner,
-  not only its post components, has that age: the compatibility spawner now
-  advances each
-  particle system by the same nine discrete 60 Hz ticks before playback.
-  A focused source-frame 372-396 comparison moves M13 and M21 from their
-  former nine-frame-late peak to the retail burst window; the subsequent
-  41-frame D3D11 capture passes entrance VFX, cleanup, start-to-loop handoff,
-  and settled-loop gates. At the body-matched retail frame 382 this replaces
-  the former opaque peak ring with the late crystal cloud and residual glow,
-  without changing M13/M21 delay, scale, material, or emission data. The five
-  retained retail FrameAnalysis snapshots also expose
+  gyroscope transition, lowers the same MAE to 22.3254. That age belongs to
+  the compatibility post clock, not to `_02`'s ParticleSystems. A phase-paired
+  check against no-frame-generation source frames 367, 382, and 397 proves
+  that applying the nine-tick post offset to particle simulation makes M13
+  appear before retail and removes it from the retail peak. Particle delays
+  therefore remain on the selection/body timeline: M13 is absent at requested
+  4.2167 seconds, alive at 4.4667, and gone by 4.7167, while the post clock is
+  still 0.15 seconds ahead. The focused D3D11 capture passes those renderer
+  liveness gates and visually restores the large ring at source frame 382
+  without changing M13/M21 delay, scale, material, or emission data. Its
+  remaining over-saturated halo is a presentation/bloom gap; the exact source
+  material still authors intensity 100, exposure intensity 10.7, alpha 0.43,
+  and premultiplied blending, so no unsupported material multiplier is used.
+  The five retained retail FrameAnalysis snapshots also expose
   `_ExposureWithMiscParams.xy=(1,1)` in the selected global constant-buffer
   allocations, so neutral exposure is captured state rather than a tuning
   assumption. Actor SceneMV coverage and the source blank-frame history

@@ -103,11 +103,11 @@ def verify() -> dict[str, object]:
     ).read_text(encoding="utf-8")
     require_tokens(spawner, (
         "PlayRecoveredParticleSystems(instance, systems)",
-        "EndfieldEndminfVisualCompatibilityClock.ConfiguredPreRollSeconds",
-        "const float sourceTickSeconds = 1.0f / 60.0f",
-        "system.Simulate(step, false, restart, false)",
-        "system.Play(false)",
-    ), "overview-02 particle pre-roll")
+        "Keep particle delays on the selection/body timeline",
+        "system.Play(true)",
+    ), "overview-02 split post/particle clocks")
+    if "system.Simulate(" in spawner:
+        raise RuntimeError("overview-02 particle systems regained a post-clock pre-roll")
 
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
@@ -138,7 +138,7 @@ def verify() -> dict[str, object]:
             "combinedMode": 6,
             "singleMode": 3,
             "averageSteps": [0, 0],
-            "particlePreRollClock": "same nine discrete 60 Hz ticks as post owner",
+            "particleClock": "selection/body timeline; no post-owner age offset",
         },
         "boundary": (
             "The animated values, native center/mode/power packing, source-only "
