@@ -371,7 +371,8 @@ def build_contract() -> dict[str, Any]:
                 "tapered capsule radius",
                 "friction near contact",
             ],
-            "unityPortExecuted": False,
+            "unityPortExecuted": True,
+            "unityVerifier": "EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyPointCollisionGoldenVectors",
         },
     }
 

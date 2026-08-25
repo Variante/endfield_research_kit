@@ -24,6 +24,51 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        public struct Float3
+        {
+            public float x;
+            public float y;
+            public float z;
+
+            public Float3(float x, float y, float z)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+        }
+
+        public struct Float4
+        {
+            public float x;
+            public float y;
+            public float z;
+            public float w;
+
+            public Float4(float x, float y, float z, float w)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.w = w;
+            }
+        }
+
+        public struct CapsuleColliderWork
+        {
+            public byte flag;
+            public Double3 aabbMin;
+            public Double3 aabbMax;
+            public float radius0;
+            public float radius1;
+            public Double3 old0;
+            public Double3 old1;
+            public Double3 next0;
+            public Double3 next1;
+            public Float4 inverseOldRotation;
+            public Float4 rotation;
+        }
+
         public static bool ProjectTether(
             Double3 rootNext,
             ref Double3 childNext,
@@ -195,6 +240,185 @@ namespace EndfieldGraphShaderLab
             return accepted;
         }
 
+        public static int ProjectPointCapsules(
+            ref Double3 nextPosition,
+            ref Double3 velocityPosition,
+            ref float friction,
+            out Float3 collisionNormal,
+            float particleRadius,
+            CapsuleColliderWork[] colliders,
+            bool boneSpring)
+        {
+            Double3 original = nextPosition;
+            double addX = 0.0;
+            double addY = 0.0;
+            double addZ = 0.0;
+            float addNormalX = 0.0f;
+            float addNormalY = 0.0f;
+            float addNormalZ = 0.0f;
+            float contactNormalX = 0.0f;
+            float contactNormalY = 0.0f;
+            float contactNormalZ = 0.0f;
+            double minimumDistance = double.MaxValue;
+            int penetratingCount = 0;
+            bool contactFound = false;
+
+            if (colliders != null)
+            {
+                foreach (CapsuleColliderWork collider in colliders)
+                {
+                    int type = collider.flag & 0x0f;
+                    if ((collider.flag & 0x30) != 0x30 || type < 2 || type > 7)
+                        continue;
+                    double expandedRadius = particleRadius * 2.0;
+                    if (original.x + expandedRadius < collider.aabbMin.x ||
+                        original.y + expandedRadius < collider.aabbMin.y ||
+                        original.z + expandedRadius < collider.aabbMin.z ||
+                        original.x - expandedRadius > collider.aabbMax.x ||
+                        original.y - expandedRadius > collider.aabbMax.y ||
+                        original.z - expandedRadius > collider.aabbMax.z)
+                        continue;
+
+                    double ux = collider.old1.x - collider.old0.x;
+                    double uy = collider.old1.y - collider.old0.y;
+                    double uz = collider.old1.z - collider.old0.z;
+                    double denominator = (ux * ux + uy * uy) + uz * uz;
+                    float t = 0.0f;
+                    if (denominator != 0.0)
+                    {
+                        double px = original.x - collider.old0.x;
+                        double py = original.y - collider.old0.y;
+                        double pz = original.z - collider.old0.z;
+                        t = (float)(((px * ux + py * uy) + pz * uz) / denominator);
+                        t = Math.Min(Math.Max(t, 0.0f), 1.0f);
+                    }
+                    float colliderRadius = AddBinary32(
+                        collider.radius0,
+                        MultiplyBinary32(
+                            SubtractBinary32(collider.radius1, collider.radius0), t));
+                    double td = t;
+                    double oldCenterX = collider.old0.x + ux * td;
+                    double oldCenterY = collider.old0.y + uy * td;
+                    double oldCenterZ = collider.old0.z + uz * td;
+                    Float3 local = RotateQuaternionBinary32(
+                        collider.inverseOldRotation,
+                        new Float3(
+                            (float)(original.x - oldCenterX),
+                            (float)(original.y - oldCenterY),
+                            (float)(original.z - oldCenterZ)));
+                    Float3 transportedFloat = RotateQuaternionBinary32(collider.rotation, local);
+                    double tx = transportedFloat.x;
+                    double ty = transportedFloat.y;
+                    double tz = transportedFloat.z;
+                    double transportedLength = Math.Sqrt((tx * tx + ty * ty) + tz * tz);
+                    double nx = tx / transportedLength;
+                    double ny = ty / transportedLength;
+                    double nz = tz / transportedLength;
+                    double newCenterX = collider.next0.x + (collider.next1.x - collider.next0.x) * td;
+                    double newCenterY = collider.next0.y + (collider.next1.y - collider.next0.y) * td;
+                    double newCenterZ = collider.next0.z + (collider.next1.z - collider.next0.z) * td;
+                    float surfaceRadius = AddBinary32(colliderRadius, particleRadius);
+                    double surfaceX = newCenterX + nx * surfaceRadius;
+                    double surfaceY = newCenterY + ny * surfaceRadius;
+                    double surfaceZ = newCenterZ + nz * surfaceRadius;
+                    double distance = ((original.x - surfaceX) * nx +
+                        (original.y - surfaceY) * ny) + (original.z - surfaceZ) * nz;
+                    float nxf = (float)nx;
+                    float nyf = (float)ny;
+                    float nzf = (float)nz;
+                    if (distance <= 0.0)
+                    {
+                        addX += -nx * distance;
+                        addY += -ny * distance;
+                        addZ += -nz * distance;
+                        addNormalX = AddBinary32(addNormalX, nxf);
+                        addNormalY = AddBinary32(addNormalY, nyf);
+                        addNormalZ = AddBinary32(addNormalZ, nzf);
+                        penetratingCount++;
+                    }
+                    if (distance <= particleRadius)
+                    {
+                        contactNormalX = AddBinary32(contactNormalX, nxf);
+                        contactNormalY = AddBinary32(contactNormalY, nyf);
+                        contactNormalZ = AddBinary32(contactNormalZ, nzf);
+                        minimumDistance = Math.Min(minimumDistance, distance);
+                        contactFound = true;
+                    }
+                }
+            }
+
+            if (penetratingCount > 0)
+            {
+                float inverseCount = DivideBinary32(1.0f, penetratingCount);
+                float averageX = MultiplyBinary32(addNormalX, inverseCount);
+                float averageY = MultiplyBinary32(addNormalY, inverseCount);
+                float averageZ = MultiplyBinary32(addNormalZ, inverseCount);
+                float normalLength = SqrtBinary32(AddBinary32(
+                    AddBinary32(MultiplyBinary32(averageX, averageX), MultiplyBinary32(averageY, averageY)),
+                    MultiplyBinary32(averageZ, averageZ)));
+                if (normalLength >= 1.0e-8f)
+                {
+                    float weight = Math.Min(normalLength, 1.0f);
+                    nextPosition.x += addX / penetratingCount * weight;
+                    nextPosition.y += addY / penetratingCount * weight;
+                    nextPosition.z += addZ / penetratingCount * weight;
+                }
+                if (boneSpring)
+                {
+                    velocityPosition.x += addX;
+                    velocityPosition.y += addY;
+                    velocityPosition.z += addZ;
+                }
+            }
+
+            collisionNormal = new Float3(0, 0, 0);
+            if (contactFound && particleRadius > 0.0f)
+            {
+                float normalLengthSquared = AddBinary32(
+                    AddBinary32(
+                        MultiplyBinary32(contactNormalX, contactNormalX),
+                        MultiplyBinary32(contactNormalY, contactNormalY)),
+                    MultiplyBinary32(contactNormalZ, contactNormalZ));
+                if (normalLengthSquared > 1.0e-6f)
+                {
+                    double ratio = Math.Min(Math.Max(minimumDistance / particleRadius, 0.0), 1.0);
+                    friction = Math.Max(friction, (float)(1.0 - ratio));
+                    collisionNormal = NormalizeFloat3Binary32(
+                        new Float3(contactNormalX, contactNormalY, contactNormalZ));
+                }
+            }
+            return penetratingCount;
+        }
+
+        private static Float3 RotateQuaternionBinary32(Float4 q, Float3 v)
+        {
+            float tx = MultiplyBinary32(2.0f, SubtractBinary32(
+                MultiplyBinary32(q.y, v.z), MultiplyBinary32(q.z, v.y)));
+            float ty = MultiplyBinary32(2.0f, SubtractBinary32(
+                MultiplyBinary32(q.z, v.x), MultiplyBinary32(q.x, v.z)));
+            float tz = MultiplyBinary32(2.0f, SubtractBinary32(
+                MultiplyBinary32(q.x, v.y), MultiplyBinary32(q.y, v.x)));
+            float cx = SubtractBinary32(MultiplyBinary32(q.y, tz), MultiplyBinary32(q.z, ty));
+            float cy = SubtractBinary32(MultiplyBinary32(q.z, tx), MultiplyBinary32(q.x, tz));
+            float cz = SubtractBinary32(MultiplyBinary32(q.x, ty), MultiplyBinary32(q.y, tx));
+            return new Float3(
+                AddBinary32(AddBinary32(v.x, MultiplyBinary32(q.w, tx)), cx),
+                AddBinary32(AddBinary32(v.y, MultiplyBinary32(q.w, ty)), cy),
+                AddBinary32(AddBinary32(v.z, MultiplyBinary32(q.w, tz)), cz));
+        }
+
+        private static Float3 NormalizeFloat3Binary32(Float3 value)
+        {
+            float lengthSquared = AddBinary32(
+                AddBinary32(MultiplyBinary32(value.x, value.x), MultiplyBinary32(value.y, value.y)),
+                MultiplyBinary32(value.z, value.z));
+            float inverse = DivideBinary32(1.0f, SqrtBinary32(lengthSquared));
+            return new Float3(
+                MultiplyBinary32(value.x, inverse),
+                MultiplyBinary32(value.y, inverse),
+                MultiplyBinary32(value.z, inverse));
+        }
+
         private static float DistanceWeight(
             byte attribute,
             float depth,
@@ -260,6 +484,12 @@ namespace EndfieldGraphShaderLab
         private static float DivideBinary32(float left, float right)
         {
             return left / right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static float SqrtBinary32(float value)
+        {
+            return (float)Math.Sqrt(value);
         }
     }
 }
