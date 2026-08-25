@@ -1,0 +1,949 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-basic-posture-golden-vectors.v1",
+  "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "abi": {
+    "entry": {
+      "rva": "0x241910",
+      "bytes": 58,
+      "sha256": "f5d035f3bfc4f52f9740b9011d068f34792ad437e4fb2049de09457be818888d"
+    },
+    "range": {
+      "rva": "0x2421b0",
+      "bytes": 209,
+      "sha256": "d9700e11acecd958bc1dd4bc35c0738431166df99c1d0411b9bfb461fa969939"
+    },
+    "rangeFinalArgument": "pointer to int32 range count",
+    "coreArgument14": "int32 rangeIndex value",
+    "parameterOrder": [
+      "stepBaseLineIndexArray",
+      "teamDataArray",
+      "attributes",
+      "vertexParentIndices",
+      "vertexLocalPositions",
+      "vertexLocalRotations",
+      "baseLineStartDataIndices",
+      "baseLineDataCounts",
+      "baseLineData",
+      "basePosArray",
+      "baseRotArray",
+      "stepBasicPositionArray",
+      "stepBasicRotationArray",
+      "rangeIndex"
+    ]
+  },
+  "core": {
+    "rva": "0x241aa0",
+    "bytes": 1804,
+    "sha256": "1a83498696a2e50778d1aed396decdafacbae129c3ae4196daa9391497eaae98"
+  },
+  "sineHelper": {
+    "rva": "0x1de610",
+    "bytes": 557,
+    "sha256": "d11fc448307689e5bf1c981bf1cae17af4604d6fa0105aa2196b162048a1c6ac"
+  },
+  "harnessSha256": "509ef5cc6ce7ab3401856c136b6b9ca7bbeb09e481937b5b800073485c960217",
+  "vectors": [
+    {
+      "name": "root_identity_ratio_zero",
+      "input": {
+        "parents": [
+          -1
+        ],
+        "attributes": [
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            8.0,
+            9.0,
+            10.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            1.25,
+            -2.5,
+            3.75
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "initScaleFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "scaleRatioFloat32": 1.0,
+        "negativeScaleDirectionFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 0.0,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            1.25,
+            -2.5,
+            3.75
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "0000a03f",
+            "000020c0",
+            "00007040"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "child_positive_scale_ratio_zero",
+      "input": {
+        "parents": [
+          -1,
+          0
+        ],
+        "attributes": [
+          2,
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.5,
+            -0.25
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.70710677,
+            0.70710677
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            10.0,
+            -1.0,
+            2.0
+          ],
+          [
+            99.0,
+            99.0,
+            99.0
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "initScaleFloat32": [
+          2.0,
+          3.0,
+          4.0
+        ],
+        "scaleRatioFloat32": 0.5,
+        "negativeScaleDirectionFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 0.0,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            10.0,
+            -1.0,
+            2.0
+          ],
+          [
+            11.0,
+            -0.25,
+            1.5
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "00002041",
+            "000080bf",
+            "00000040"
+          ],
+          [
+            "00003041",
+            "000080be",
+            "0000c03f"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.7071067690849304,
+            0.7071067690849304
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          [
+            "00000000",
+            "00000000",
+            "f304353f",
+            "f304353f"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "child_negative_scale_ratio_zero",
+      "input": {
+        "parents": [
+          -1,
+          0
+        ],
+        "attributes": [
+          2,
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            -0.5,
+            0.25
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            -3.0,
+            4.0,
+            1.0
+          ],
+          [
+            50.0,
+            50.0,
+            50.0
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "initScaleFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "scaleRatioFloat32": 1.0,
+        "negativeScaleDirectionFloat32": [
+          -1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 0.0,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            -3.0,
+            4.0,
+            1.0
+          ],
+          [
+            -4.0,
+            3.5,
+            1.25
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "000040c0",
+            "00008040",
+            "0000803f"
+          ],
+          [
+            "000080c0",
+            "00006040",
+            "0000a03f"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "partial_pose_position_and_nlerp",
+      "input": {
+        "parents": [
+          -1,
+          0
+        ],
+        "attributes": [
+          2,
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            2.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            2.0,
+            4.0,
+            6.0
+          ],
+          [
+            6.0,
+            4.0,
+            6.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.043619387,
+            0.99904823
+          ],
+          [
+            0.0,
+            0.0,
+            0.043619387,
+            0.99904823
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "initScaleFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "scaleRatioFloat32": 1.0,
+        "negativeScaleDirectionFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 0.25,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            0.5,
+            1.0,
+            1.5
+          ],
+          [
+            3.0,
+            1.0,
+            1.5
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "0000003f",
+            "0000803f",
+            "0000c03f"
+          ],
+          [
+            "00004040",
+            "0000803f",
+            "0000c03f"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.010908057913184166,
+            0.9999373555183411
+          ],
+          [
+            0.0,
+            0.0,
+            0.010908057913184166,
+            0.9999373555183411
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "00000000",
+            "b6b7323c",
+            "e5fb7f3f"
+          ],
+          [
+            "00000000",
+            "00000000",
+            "b6b7323c",
+            "e5fb7f3f"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "partial_pose_representative_slerp",
+      "input": {
+        "parents": [
+          -1
+        ],
+        "attributes": [
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            3.0,
+            -2.0,
+            1.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.70710677,
+            0.0,
+            0.70710677
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            1.0,
+            2.0,
+            3.0
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "initScaleFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "scaleRatioFloat32": 1.0,
+        "negativeScaleDirectionFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 0.375,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            1.75,
+            0.5,
+            2.25
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "0000e03f",
+            "0000003f",
+            "00001040"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.2902846932411194,
+            0.0,
+            0.9569402933120728
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "32a0943e",
+            "00000000",
+            "0afa743f"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "pose_ratio_one_early_exit",
+      "input": {
+        "parents": [
+          -1,
+          0
+        ],
+        "attributes": [
+          2,
+          2
+        ],
+        "localPositionsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            9.0,
+            9.0,
+            9.0
+          ]
+        ],
+        "localRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "basePositionsFloat32": [
+          [
+            7.0,
+            8.0,
+            9.0
+          ],
+          [
+            10.0,
+            11.0,
+            12.0
+          ]
+        ],
+        "baseRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "stepPositionsFloat32": [
+          [
+            -1.0,
+            -2.0,
+            -3.0
+          ],
+          [
+            -4.0,
+            -5.0,
+            -6.0
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.2,
+            0.3,
+            0.4,
+            0.5
+          ]
+        ],
+        "initScaleFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "scaleRatioFloat32": 1.0,
+        "negativeScaleDirectionFloat32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "negativeScaleQuaternionFloat32": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "animationPoseRatioFloat32": 1.0,
+        "rangeIndex": 0
+      },
+      "output": {
+        "stepPositionsFloat32": [
+          [
+            -1.0,
+            -2.0,
+            -3.0
+          ],
+          [
+            -4.0,
+            -5.0,
+            -6.0
+          ]
+        ],
+        "stepPositionsBinary32Le": [
+          [
+            "000080bf",
+            "000000c0",
+            "000040c0"
+          ],
+          [
+            "000080c0",
+            "0000a0c0",
+            "0000c0c0"
+          ]
+        ],
+        "stepRotationsFloat32": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.20000000298023224,
+            0.30000001192092896,
+            0.4000000059604645,
+            0.5
+          ]
+        ],
+        "stepRotationsBinary32Le": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f"
+          ],
+          [
+            "cdcc4c3e",
+            "9a99993e",
+            "cdcccc3e",
+            "0000003f"
+          ]
+        ]
+      }
+    }
+  ],
+  "boundary": {
+    "nativeCoreExecuted": true,
+    "sourceTranscriptionBinary32Matched": true,
+    "caseCoverage": [
+      "root hierarchy",
+      "non-root hierarchy",
+      "positive scale",
+      "negative scale",
+      "animation-pose ratio zero",
+      "animation-pose ratio partial",
+      "animation-pose ratio one early exit",
+      "quaternion nlerp",
+      "quaternion slerp"
+    ]
+  }
+}
