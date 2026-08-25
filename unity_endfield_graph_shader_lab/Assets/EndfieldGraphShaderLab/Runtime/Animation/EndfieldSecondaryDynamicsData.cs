@@ -30,6 +30,7 @@ namespace EndfieldGraphShaderLab
             public int[] vertexParentIndices;
             public Vector3[] vertexLocalPositions;
             public Quaternion[] vertexLocalRotations;
+            public Quaternion[] vertexBindPoseRotations;
             public Quaternion[] vertexToTransformRotations;
             public byte[] baseLineFlags;
             public ushort[] baseLineStartDataIndices;

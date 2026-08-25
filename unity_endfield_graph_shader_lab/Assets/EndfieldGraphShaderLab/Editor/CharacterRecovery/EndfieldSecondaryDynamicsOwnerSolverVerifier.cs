@@ -152,6 +152,7 @@ namespace EndfieldGraphShaderLabEditor
                 vertexParentIndices = new[] { -1, 0, 1 },
                 vertexLocalPositions = new[] { Vector3.zero, Vector3.up, Vector3.up },
                 vertexLocalRotations = new[] { Quaternion.identity, Quaternion.identity, Quaternion.identity },
+                vertexBindPoseRotations = new[] { Quaternion.identity, Quaternion.identity, Quaternion.identity },
                 vertexToTransformRotations = new[] { Quaternion.identity, Quaternion.identity, Quaternion.identity },
                 baseLineFlags = new byte[] { 1 },
                 baseLineStartDataIndices = new ushort[] { 0 },

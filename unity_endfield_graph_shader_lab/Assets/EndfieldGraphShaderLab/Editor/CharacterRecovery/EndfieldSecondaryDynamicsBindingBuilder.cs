@@ -127,6 +127,8 @@ namespace EndfieldGraphShaderLabEditor
                 Vector3[] localPositions = Vector3Array(arrays, "vertexLocalPositions", ownerPath);
                 Quaternion[] localRotations = QuaternionArray(
                     arrays, "vertexLocalRotations", ownerPath);
+                Quaternion[] vertexBindPoseRotations = QuaternionArray(
+                    arrays, "vertexBindPoseRotations", ownerPath);
                 Quaternion[] vertexToTransformRotations = QuaternionArray(
                     arrays, "vertexToTransformRotations", ownerPath);
                 byte[] baseLineFlags = ByteArray(arrays, "baseLineFlags", ownerPath);
@@ -147,6 +149,7 @@ namespace EndfieldGraphShaderLabEditor
                     parentIndices,
                     localPositions,
                     localRotations,
+                    vertexBindPoseRotations,
                     vertexToTransformRotations);
                 ValidateBaselines(
                     ownerPath,
@@ -212,6 +215,7 @@ namespace EndfieldGraphShaderLabEditor
                     vertexParentIndices = parentIndices,
                     vertexLocalPositions = localPositions,
                     vertexLocalRotations = localRotations,
+                    vertexBindPoseRotations = vertexBindPoseRotations,
                     vertexToTransformRotations = vertexToTransformRotations,
                     baseLineFlags = baseLineFlags,
                     baseLineStartDataIndices = baseLineStarts,
@@ -535,6 +539,7 @@ namespace EndfieldGraphShaderLabEditor
             int[] parentIndices,
             Vector3[] localPositions,
             Quaternion[] localRotations,
+            Quaternion[] vertexBindPoseRotations,
             Quaternion[] vertexToTransformRotations)
         {
             var cardinalities = new Dictionary<string, int>
@@ -546,6 +551,7 @@ namespace EndfieldGraphShaderLabEditor
                 { "vertexParentIndices", parentIndices.Length },
                 { "vertexLocalPositions", localPositions.Length },
                 { "vertexLocalRotations", localRotations.Length },
+                { "vertexBindPoseRotations", vertexBindPoseRotations.Length },
                 { "vertexToTransformRotations", vertexToTransformRotations.Length },
             };
             foreach (KeyValuePair<string, int> pair in cardinalities)
