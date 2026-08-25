@@ -900,6 +900,13 @@ the stronger M13 ring and dotted trails against the actor-only black clear;
 the aligned retail reference composites those layers over the bright CharInfo
 scene, and existing exact-owner evidence says M13 owns the large ring. Do not
 apply an arbitrary material attenuation from that cross-background contrast.
+A same-seed exclusion at 4.2167/4.4667/4.7167 seconds now attributes the dense
+segmented white trail specifically to `overview_02/all/Particle System` and
+`M_fx_endminm_gfx_14`: it owns 466 of 531 live particles at the last sample,
+and excluding only M14 removes that trail while preserving the surrounding
+smoke, stones, fragments, and isolated lights. Retail retains a much finer
+version, so M14 must not be removed; its remaining gap is exact BaseV2/particle
+and presentation interpretation, not material ownership or effect admission.
 
 The exact-build secondary-dynamics session at
 `scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
