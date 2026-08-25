@@ -25,15 +25,21 @@ namespace EndfieldGraphShaderLab
         private const string ForwardPassName = "FORWARD";
         private const string DepthOnlyShaderName =
             "Hidden/Endfield/HGRPCompat/RecoveredPreGBufferDepthOnly";
+        private const string CanonicalFiveMrtKeyword =
+            "ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT";
         private const string SourceZTestPropertyName = "_RecoveredSourceZTest";
         private const int MaximumCharacterCount = 15;
 
         private static readonly GraphicsFormat ExactGBufferFormat =
             GraphicsFormat.A2B10G10R10_UNormPack32;
+        private static readonly GraphicsFormat ExactGBufferCFormat =
+            GraphicsFormat.R8G8B8A8_SRGB;
         private static readonly int GBufferAId =
             Shader.PropertyToID("_EndfieldRecoveredCanonicalPreGBufferA");
         private static readonly int GBufferBId =
             Shader.PropertyToID("_EndfieldRecoveredCanonicalPreGBufferB");
+        private static readonly int GBufferCId =
+            Shader.PropertyToID("_EndfieldRecoveredCanonicalPreGBufferC");
         private static readonly int SelectorBitsId =
             Shader.PropertyToID("_EndfieldRecoveredPreGBufferSelectorBits");
         private static readonly int ZTestId = Shader.PropertyToID("_ZTest");
@@ -42,6 +48,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID(SourceZTestPropertyName);
         private static readonly int ReadyId =
             Shader.PropertyToID("_EndfieldRecoveredPreGBufferDepthOwnerReady");
+        private static readonly int FiveMrtReadyId = Shader.PropertyToID(
+            "_EndfieldRecoveredCanonicalCharacterPreGBufferReady");
 
         private static readonly HashSet<string> SupportedCharacterShaders =
             new HashSet<string>(StringComparer.Ordinal)
@@ -85,7 +93,15 @@ namespace EndfieldGraphShaderLab
 
         private readonly bool requested;
         private Material depthOnlyMaterial;
-        private bool loggedActive;
+        private RenderTexture gBufferA;
+        private RenderTexture gBufferB;
+        private RenderTexture gBufferC;
+        private Camera publicationCamera;
+        private int publicationWidth;
+        private int publicationHeight;
+        private int publicationFrame = -1;
+        private bool publicationReady;
+        private string lastLoggedDrawSignature = string.Empty;
         private bool loggedFailure;
         private bool disposed;
 
@@ -95,6 +111,7 @@ namespace EndfieldGraphShaderLab
         {
             requested = IsRequested();
             Shader.SetGlobalFloat(ReadyId, 0.0f);
+            Shader.SetGlobalFloat(FiveMrtReadyId, 0.0f);
             if (!requested)
                 return;
 
@@ -115,14 +132,22 @@ namespace EndfieldGraphShaderLab
                 return;
             disposed = true;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
+            Shader.SetGlobalFloat(FiveMrtReadyId, 0.0f);
+            publicationReady = false;
+            publicationCamera = null;
+            publicationFrame = -1;
             ResetAllRecoveredCharacterZTestsToCompatibility();
-            if (depthOnlyMaterial == null)
-                return;
-            if (Application.isPlaying)
-                UnityEngine.Object.Destroy(depthOnlyMaterial);
-            else
-                UnityEngine.Object.DestroyImmediate(depthOnlyMaterial);
-            depthOnlyMaterial = null;
+            ReleaseGBuffer(ref gBufferA);
+            ReleaseGBuffer(ref gBufferB);
+            ReleaseGBuffer(ref gBufferC);
+            if (depthOnlyMaterial != null)
+            {
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(depthOnlyMaterial);
+                else
+                    UnityEngine.Object.DestroyImmediate(depthOnlyMaterial);
+                depthOnlyMaterial = null;
+            }
         }
 
         internal bool RenderCanonicalOwner(
@@ -131,12 +156,17 @@ namespace EndfieldGraphShaderLab
             int width,
             int height,
             RenderTargetIdentifier canonicalColorTarget,
+            RenderTexture canonicalSceneMV,
             RenderTargetIdentifier canonicalDepthTarget,
             bool canonicalDepthIsSeparate,
-            int canonicalDepthBits,
+            GraphicsFormat canonicalDepthFormat,
             out string failure)
         {
             Shader.SetGlobalFloat(ReadyId, 0.0f);
+            Shader.SetGlobalFloat(FiveMrtReadyId, 0.0f);
+            publicationReady = false;
+            publicationCamera = null;
+            publicationFrame = -1;
             failure = "the source-gated canonical CharacterPrePass owner is disabled";
             if (!requested)
                 return false;
@@ -158,20 +188,35 @@ namespace EndfieldGraphShaderLab
                 failure = $"required shader '{DepthOnlyShaderName}' is missing or unsupported";
                 return LogFailure(failure);
             }
-            if (canonicalDepthBits < 24)
+            if (!canonicalDepthIsSeparate ||
+                canonicalDepthFormat != GraphicsFormat.D32_SFloat_S8_UInt)
             {
                 failure =
-                    $"canonical Forward depth has only {canonicalDepthBits} bits; a stencil-bearing owner is not proven";
+                    "canonical five-MRT CharacterPrePass requires the captured " +
+                    $"separate D32_SFloat_S8_UInt depth/stencil owner; actual={canonicalDepthFormat}";
                 return LogFailure(failure);
             }
-            if (SystemInfo.supportedRenderTargetCount < 2)
+            if (canonicalSceneMV == null || !canonicalSceneMV.IsCreated() ||
+                canonicalSceneMV.width != width || canonicalSceneMV.height != height ||
+                canonicalSceneMV.graphicsFormat !=
+                    EndfieldRecoveredSceneMVCompositor.SceneMVFormat)
             {
-                failure = "the graphics device cannot bind the two recovered PreG color targets";
+                failure =
+                    "canonical five-MRT CharacterPrePass requires the same-frame " +
+                    "A2B10G10R10 SceneMV attachment";
                 return LogFailure(failure);
             }
-            if (!SystemInfo.IsFormatSupported(ExactGBufferFormat, FormatUsage.Render))
+            if (SystemInfo.supportedRenderTargetCount < 5)
             {
-                failure = $"exact {ExactGBufferFormat} render-target support is unavailable";
+                failure = "the graphics device cannot bind five recovered CharacterNPR targets";
+                return LogFailure(failure);
+            }
+            if (!SystemInfo.IsFormatSupported(ExactGBufferFormat, FormatUsage.Render) ||
+                !SystemInfo.IsFormatSupported(ExactGBufferCFormat, FormatUsage.Render))
+            {
+                failure =
+                    $"exact CharacterNPR render-target support is unavailable: " +
+                    $"A/B={ExactGBufferFormat}, C={ExactGBufferCFormat}";
                 return LogFailure(failure);
             }
 
@@ -203,35 +248,33 @@ namespace EndfieldGraphShaderLab
                 return LogFailure(failure);
             }
 
-            var descriptor = new RenderTextureDescriptor(
-                Mathf.Max(width, 1),
-                Mathf.Max(height, 1))
-            {
-                graphicsFormat = ExactGBufferFormat,
-                depthStencilFormat = GraphicsFormat.None,
-                depthBufferBits = 0,
-                dimension = TextureDimension.Tex2D,
-                volumeDepth = 1,
-                msaaSamples = 1,
-                bindMS = false,
-                useMipMap = false,
-                autoGenerateMips = false,
-                enableRandomWrite = false,
-                sRGB = false,
-                useDynamicScale = false
-            };
+            if (!EnsureGBuffers(width, height, out failure))
+                return LogFailure(failure);
             var commandBuffer = new CommandBuffer
             {
                 name = "Recovered canonical CharacterPrePass depth owner"
             };
             try
             {
-                commandBuffer.GetTemporaryRT(GBufferAId, descriptor, FilterMode.Point);
-                commandBuffer.GetTemporaryRT(GBufferBId, descriptor, FilterMode.Point);
+                commandBuffer.SetRenderTarget(gBufferA);
+                commandBuffer.ClearRenderTarget(false, true, Color.clear);
+                commandBuffer.SetRenderTarget(gBufferB);
+                commandBuffer.ClearRenderTarget(false, true, Color.clear);
+                commandBuffer.SetRenderTarget(gBufferC);
+                commandBuffer.ClearRenderTarget(false, true, Color.clear);
+                commandBuffer.SetRenderTarget(canonicalSceneMV);
+                commandBuffer.ClearRenderTarget(
+                    false,
+                    true,
+                    EndfieldRecoveredSceneMVCompositor.SceneMVNeutral);
+                HDRenderPipeline.ReportRecoveredSceneMVNeutralInitialization();
                 RenderTargetIdentifier[] mrt =
                 {
-                    new RenderTargetIdentifier(GBufferAId),
-                    new RenderTargetIdentifier(GBufferBId)
+                    canonicalColorTarget,
+                    new RenderTargetIdentifier(canonicalSceneMV),
+                    new RenderTargetIdentifier(gBufferA),
+                    new RenderTargetIdentifier(gBufferB),
+                    new RenderTargetIdentifier(gBufferC)
                 };
                 commandBuffer.SetRenderTarget(mrt, canonicalDepthTarget);
 
@@ -244,6 +287,7 @@ namespace EndfieldGraphShaderLab
                         0);
                 }
 
+                commandBuffer.EnableShaderKeyword(CanonicalFiveMrtKeyword);
                 foreach (CharacterDraw draw in characterDraws)
                 {
                     int actorIndex;
@@ -263,14 +307,16 @@ namespace EndfieldGraphShaderLab
                         draw.submesh,
                         draw.pass);
                 }
+                commandBuffer.DisableShaderKeyword(CanonicalFiveMrtKeyword);
 
                 RestoreCanonicalTarget(
                     commandBuffer,
                     canonicalColorTarget,
                     canonicalDepthTarget,
                     canonicalDepthIsSeparate);
-                commandBuffer.ReleaseTemporaryRT(GBufferAId);
-                commandBuffer.ReleaseTemporaryRT(GBufferBId);
+                commandBuffer.SetGlobalTexture(GBufferAId, gBufferA);
+                commandBuffer.SetGlobalTexture(GBufferBId, gBufferB);
+                commandBuffer.SetGlobalTexture(GBufferCId, gBufferC);
                 context.ExecuteCommandBuffer(commandBuffer);
 
                 // Material render state changes are deliberately deferred until
@@ -290,19 +336,183 @@ namespace EndfieldGraphShaderLab
             }
 
             failure = string.Empty;
-            if (!loggedActive)
+            publicationCamera = camera;
+            publicationWidth = width;
+            publicationHeight = height;
+            publicationFrame = Time.frameCount;
+            publicationReady = true;
+            string[] characterKeys = characterDraws.ConvertAll(
+                draw => draw.stableKey).ToArray();
+            string drawList = string.Join(" | ", characterKeys);
+            string[] membershipKeys = (string[])characterKeys.Clone();
+            Array.Sort(membershipKeys, StringComparer.Ordinal);
+            string drawSignature = string.Join(" | ", membershipKeys);
+            if (!string.Equals(
+                    drawSignature,
+                    lastLoggedDrawSignature,
+                    StringComparison.Ordinal))
             {
                 Debug.Log(
                     "Recovered canonical CharacterPrePass owner active (default-off): " +
                     $"{genericDepthDraws.Count} source-safe generic depth draw(s), " +
                     $"{characterDraws.Count} opaque DepthCharacterOnly-compatible draw(s), " +
-                    "two exact A2B10G10R10 dummy colors, and the same stencil-bearing depth " +
-                    "attachment consumed by the following opaque Forward list. Source Equal " +
-                    "is activated only after owner execution.");
-                loggedActive = true;
+                    "captured five-MRT topology B10G11R11/A2B10G10R10/" +
+                    "A2B10G10R10/A2B10G10R10/R8G8B8A8_SRGB, and the same " +
+                    "D32S8 attachment consumed by the following opaque Forward list. " +
+                    "CharacterNPR writes zero sceneColor, packed SceneMV, selector, normal/family, " +
+                    "and material payload to slots 0..4 before source-ordered ForwardOpaque. " +
+                    "Source Equal is activated only after owner execution. Draws=" +
+                    drawList + ".");
+                lastLoggedDrawSignature = drawSignature;
             }
             Shader.SetGlobalFloat(ReadyId, 1.0f);
+            Shader.SetGlobalFloat(FiveMrtReadyId, 1.0f);
             return true;
+        }
+
+        internal bool TryGetCurrentPublication(
+            Camera camera,
+            int width,
+            int height,
+            out RenderTexture publishedGBufferA,
+            out RenderTexture publishedGBufferB,
+            out RenderTexture publishedGBufferC,
+            out string failure)
+        {
+            publishedGBufferA = null;
+            publishedGBufferB = null;
+            publishedGBufferC = null;
+            failure = string.Empty;
+            if (!HasCurrentPublication(camera, width, height) ||
+                !IsCreated(gBufferA) || !IsCreated(gBufferB) || !IsCreated(gBufferC))
+            {
+                failure =
+                    "the canonical CharacterNPR five-MRT owner has no matching current-frame publication";
+                return false;
+            }
+            publishedGBufferA = gBufferA;
+            publishedGBufferB = gBufferB;
+            publishedGBufferC = gBufferC;
+            return true;
+        }
+
+        internal bool HasCurrentPublication(Camera camera, int width, int height)
+        {
+            return publicationReady && camera != null && camera == publicationCamera &&
+                width == publicationWidth && height == publicationHeight &&
+                publicationFrame == Time.frameCount;
+        }
+
+        private bool EnsureGBuffers(int width, int height, out string failure)
+        {
+            width = Mathf.Max(width, 1);
+            height = Mathf.Max(height, 1);
+            if (Matches(gBufferA, width, height, ExactGBufferFormat) &&
+                Matches(gBufferB, width, height, ExactGBufferFormat) &&
+                Matches(gBufferC, width, height, ExactGBufferCFormat))
+            {
+                failure = string.Empty;
+                return true;
+            }
+
+            ReleaseGBuffer(ref gBufferA);
+            ReleaseGBuffer(ref gBufferB);
+            ReleaseGBuffer(ref gBufferC);
+            gBufferA = CreateGBuffer(
+                width,
+                height,
+                ExactGBufferFormat,
+                "Recovered canonical CharacterNPR GBuffer A");
+            gBufferB = CreateGBuffer(
+                width,
+                height,
+                ExactGBufferFormat,
+                "Recovered canonical CharacterNPR GBuffer B");
+            gBufferC = CreateGBuffer(
+                width,
+                height,
+                ExactGBufferCFormat,
+                "Recovered canonical CharacterNPR GBuffer C");
+            if (!IsCreated(gBufferA) || !IsCreated(gBufferB) || !IsCreated(gBufferC))
+            {
+                ReleaseGBuffer(ref gBufferA);
+                ReleaseGBuffer(ref gBufferB);
+                ReleaseGBuffer(ref gBufferC);
+                failure =
+                    "failed to allocate the exact CharacterNPR A/B/C attachments";
+                return false;
+            }
+            failure = string.Empty;
+            return true;
+        }
+
+        private static RenderTexture CreateGBuffer(
+            int width,
+            int height,
+            GraphicsFormat format,
+            string name)
+        {
+            var descriptor = new RenderTextureDescriptor(width, height)
+            {
+                graphicsFormat = format,
+                depthStencilFormat = GraphicsFormat.None,
+                depthBufferBits = 0,
+                dimension = TextureDimension.Tex2D,
+                volumeDepth = 1,
+                msaaSamples = 1,
+                bindMS = false,
+                useMipMap = false,
+                autoGenerateMips = false,
+                enableRandomWrite = false,
+                sRGB = format == GraphicsFormat.R8G8B8A8_SRGB,
+                useDynamicScale = false
+            };
+            var texture = new RenderTexture(descriptor)
+            {
+                name = name,
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            if (!texture.Create())
+            {
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(texture);
+                else
+                    UnityEngine.Object.DestroyImmediate(texture);
+                return null;
+            }
+            return texture;
+        }
+
+        private static bool Matches(
+            RenderTexture texture,
+            int width,
+            int height,
+            GraphicsFormat format)
+        {
+            return IsCreated(texture) && texture.width == width &&
+                   texture.height == height && texture.graphicsFormat == format &&
+                   texture.depthStencilFormat == GraphicsFormat.None &&
+                   texture.antiAliasing == 1;
+        }
+
+        private static bool IsCreated(RenderTexture texture)
+        {
+            return texture != null && texture.IsCreated();
+        }
+
+        private static void ReleaseGBuffer(ref RenderTexture texture)
+        {
+            if (texture == null)
+                return;
+            if (texture.IsCreated())
+                texture.Release();
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(texture);
+            else
+                UnityEngine.Object.DestroyImmediate(texture);
+            texture = null;
         }
 
         private bool TryCollectDraws(

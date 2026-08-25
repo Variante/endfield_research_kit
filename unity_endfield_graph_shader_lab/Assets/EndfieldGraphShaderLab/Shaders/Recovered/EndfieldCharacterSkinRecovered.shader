@@ -1243,7 +1243,9 @@ Shader "Endfield/Recovered/CharacterSkin"
                 normalWS,
                 0.4,
                 baseSample,
-                endfieldSameOwnerNormalTS);
+                endfieldSameOwnerNormalTS,
+                i.currentClipXYW,
+                i.previousClipXYW);
         }
         ENDCG
 
@@ -1267,7 +1269,7 @@ Shader "Endfield/Recovered/CharacterSkin"
             #pragma target 5.0
             #pragma vertex SkinVert
             #pragma fragment SkinRecoveredPreGBufferDiagnosticFrag
-            #pragma multi_compile __ ENDFIELD_RECOVERED_SAME_OWNER_AUDIT
+            #pragma multi_compile __ ENDFIELD_RECOVERED_SAME_OWNER_AUDIT ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT
             ENDCG
         }
 
