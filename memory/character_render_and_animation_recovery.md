@@ -915,14 +915,27 @@ phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
 the authored baseline; entrance VFX, cleanup, and rotation-only root motion
 remain active.
 
+The later exact-build dynamics session
+`scratch/reverse_engineering/endfield_capture/20260825T220029Z` is complete
+and lossless and independently observes 584 stable `UseCrossFrameJob=true`
+calls, but records zero TeamData rows. This exposed an instrumentation defect,
+not a game-value result: settled `AlwaysTeamUpdate` can skip the hooked
+`GetTeamDataRef` call, leaving the old collector empty. EndfieldCapture now
+samples the pinned `TeamManager.teamDataArray` NativeArray at manager `+0x10`
+after every exact `AlwaysTeamUpdate`, using the closed 464-byte TeamData stride
+and `useRelativeTransform` offset `+0x9c`. It reports scan/readability and
+sample counts separately and fails bounded certification on any unreadable or
+empty interval. The replacement provider builds and passes all 14 tests; one
+replacement dynamics window is still required before enabling writeback.
+
 The captured skinning oracle now supplies the phase-sequenced retail shape
 target, and the deterministic owner-path comparison confirms that the authored
 baseline is already close in the settled loop but diverges substantially during
-the entrance. The recovered solver still fails closed because session
-`20260825T125815Z` did not certify the four Endminf TeamData identities. The
-remaining admission evidence is one bounded Endminf `Numpad 5` dynamics window
-that either isolates the four owners or records the current collector's bounded
-universal-false coverage while confirming the maintained cross-frame route.
+the entrance. The recovered solver still fails closed because neither existing
+session certifies the four Endminf TeamData identities. The remaining admission
+evidence is one bounded Endminf `Numpad 5` dynamics window with the repaired
+direct-array collector, recording bounded universal coverage while confirming
+the maintained cross-frame route.
 The native contract already closes ordinary Transform reads and TransformAccess
 writes; do not bypass the session gate or enable writeback from the graphics
 oracle alone. The session-contract builder now accepts an explicit capture root
