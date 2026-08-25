@@ -12,6 +12,9 @@ managed_fallback_accesses_closed_burst_solver_unresolved
 | 385699 Wind | managed_helper | `0x186776704..0x186776b64` (1120 B) | helper_only | 385700 `0x186776394` |
 | 385700 WindForceBlend | managed_helper | `0x186776394..0x186776704` (880 B) | helper_only | - |
 | 385701 UnsafeDo | burst_range_dispatch_wrapper | `0x186776080..0x186776394` (788 B) | wrapper_only_burst_solver_unresolved | 385542 `0x1867744b0`, 385570 `0x1867775fc` |
+| 385703 Execute | managed_dispatch_wrapper | `0x186779004..0x18677909c` (152 B) | wrapper_only | 385704 `0x18677909c` |
+| 385704 Execute(int) | managed_fallback | `0x18677909c..0x1867799d0` (2356 B) | managed_fallback_observed | - |
+| 385705 UnsafeDo | burst_range_dispatch_wrapper | `0x1867799d0..0x186779b84` (436 B) | wrapper_only_burst_solver_unresolved | 385602 `0x186778f04` |
 | 385450 Execute | managed_dispatch_wrapper | `0x186761580..0x186761618` (152 B) | wrapper_only | 385451 `0x186761618` |
 | 385451 Execute(int) | managed_fallback | `0x186761618..0x1867624ac` (3732 B) | managed_fallback_observed | - |
 | 385452 UnsafeDo | burst_range_dispatch_wrapper | `0x1867624ac..0x1867626d4` (552 B) | wrapper_only_burst_solver_unresolved | 385394 `0x186761454` |
