@@ -101,7 +101,10 @@ namespace EndfieldGraphShaderLabEditor
             ActorScale = F3(1f, 1f, 1f),
             NegativeScale = false,
             WindZoneCount = 0,
-            Session = F.SessionCertification.EndminfOverviewTarget,
+            // Controlled certified route for the coordinator equations. The live
+            // overview values still require the contract's two telemetry lanes.
+            Session = new F.SessionCertification(
+                true, false, true, false, F.WritebackRoute.TransformAccess),
             PreviousColliderSamples = ColliderSamples(),
             CurrentColliderSamples = ColliderSamples(),
         };
