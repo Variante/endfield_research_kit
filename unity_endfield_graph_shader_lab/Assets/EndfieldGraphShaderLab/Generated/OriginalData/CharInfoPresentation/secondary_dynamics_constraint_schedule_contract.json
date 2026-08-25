@@ -22,6 +22,10 @@
     "solverInputs": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
       "sha256": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
+    },
+    "payloadDecode": {
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
+      "sha256": "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
     }
   },
   "orderedCalls": [
@@ -110,6 +114,72 @@
       "simulationManagerObjectOffset": null
     }
   ],
+  "burstKernels": [
+    {
+      "name": "tether",
+      "export": "5f353c4e9c4136cbe284ba1795d08c96",
+      "cpuVariant": "avx2",
+      "coreRva": "0x29f7d0",
+      "bytes": 648,
+      "sha256": "39f9eb3cd9771cbd921c9091d3821fedd510b1efc9b86161713a9010fd2c7b4a"
+    },
+    {
+      "name": "distance",
+      "export": "166b2138a31dc6d21b37fb45b233bcbc",
+      "cpuVariant": "avx2",
+      "coreRva": "0x321ef0",
+      "bytes": 1624,
+      "sha256": "bca4c3f13dff30f5de4cdc982372849514c7a3cd21641e82cf0ecca536764a1c"
+    },
+    {
+      "name": "angle",
+      "export": "1835a4d768d0158271d1bcd27c64126f",
+      "cpuVariant": "avx2",
+      "coreRva": "0x303d40",
+      "bytes": 6480,
+      "sha256": "d3d5d8f685a57d0495d39a5068d8bae97db9fae0b247235a734293264edd2666"
+    },
+    {
+      "name": "triangleBending",
+      "export": "542bcd5aaaa49ef7126b0d6322cf8e33",
+      "cpuVariant": "avx2",
+      "coreRva": "0x2a36b0",
+      "bytes": 2019,
+      "sha256": "2f9387d6e1f0010b1958e06e3a1f71c2f0e26284156124120ad4f1d86d59d05b"
+    },
+    {
+      "name": "triangleAggregate",
+      "export": "18a84ab1967a6a10c557a91c565be282",
+      "cpuVariant": "avx2",
+      "coreRva": "0x26f010",
+      "bytes": 290,
+      "sha256": "67ac6c9cb26df5d1db9dce4c0f8e61daf0e0241eea0e808f89202698e49fbbb6"
+    },
+    {
+      "name": "pointCollider",
+      "export": "6a5470d135bde394bed7e7182cdf7c65",
+      "cpuVariant": "avx2",
+      "coreRva": "0x2fcda0",
+      "bytes": 3660,
+      "sha256": "bead77afdd711f8049af5b48df8eed513a7deeb74285be97dcd8cdf4c9a75b1d"
+    },
+    {
+      "name": "edgeCollider",
+      "export": "5d2de5fa1d3044afb09aaa1af2a12205",
+      "cpuVariant": "avx2",
+      "coreRva": "0x307d80",
+      "bytes": 4296,
+      "sha256": "3c85d4e00fe318982d0068310719c0823c43170aefd5eed64fc8b3db0e56638f"
+    },
+    {
+      "name": "motion",
+      "export": "506453e9c91acf679338d5b09990e7d8",
+      "cpuVariant": "avx2",
+      "coreRva": "0x2fe180",
+      "bytes": 1804,
+      "sha256": "adf914f3366a63b0faed668f5fbcf7576d722bb95760571daea506fcd60d1c33"
+    }
+  ],
   "projectionOrder": [
     "Tether",
     "Distance pass 1",
@@ -127,12 +197,17 @@
       "owner": "MC_Ribbon2",
       "proxyBindingCount": 7,
       "colliderReferenceCount": 2,
+      "simulatedVertexCount": 6,
+      "lineCount": 5,
+      "triangleCount": 0,
+      "authoredTriangleBendingStiffness": 0.241,
       "activeFamilies": {
         "tether": true,
         "distance": true,
         "angle": true,
-        "triangleBending": true,
+        "triangleBending": false,
         "colliderCollision": true,
+        "edgeColliderCollision": true,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -142,12 +217,17 @@
       "owner": "MC_Hair",
       "proxyBindingCount": 31,
       "colliderReferenceCount": 0,
+      "simulatedVertexCount": 30,
+      "lineCount": 22,
+      "triangleCount": 0,
+      "authoredTriangleBendingStiffness": 1.0,
       "activeFamilies": {
         "tether": true,
         "distance": true,
         "angle": true,
-        "triangleBending": true,
+        "triangleBending": false,
         "colliderCollision": false,
+        "edgeColliderCollision": false,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -157,12 +237,17 @@
       "owner": "MC_Ribbon",
       "proxyBindingCount": 21,
       "colliderReferenceCount": 4,
+      "simulatedVertexCount": 20,
+      "lineCount": 16,
+      "triangleCount": 0,
+      "authoredTriangleBendingStiffness": 0.241,
       "activeFamilies": {
         "tether": true,
         "distance": true,
         "angle": true,
-        "triangleBending": true,
+        "triangleBending": false,
         "colliderCollision": true,
+        "edgeColliderCollision": true,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -172,12 +257,17 @@
       "owner": "MC_Coat",
       "proxyBindingCount": 71,
       "colliderReferenceCount": 4,
+      "simulatedVertexCount": 70,
+      "lineCount": 65,
+      "triangleCount": 0,
+      "authoredTriangleBendingStiffness": 1.0,
       "activeFamilies": {
         "tether": true,
         "distance": true,
         "angle": true,
-        "triangleBending": true,
+        "triangleBending": false,
         "colliderCollision": true,
+        "edgeColliderCollision": true,
         "motion": false,
         "selfCollision": false,
         "springPrediction": true
@@ -203,13 +293,13 @@
       "MC_Ribbon",
       "MC_Coat"
     ],
-    "triangleBending": [
+    "triangleBending": [],
+    "colliderCollision": [
       "MC_Ribbon2",
-      "MC_Hair",
       "MC_Ribbon",
       "MC_Coat"
     ],
-    "colliderCollision": [
+    "edgeColliderCollision": [
       "MC_Ribbon2",
       "MC_Ribbon",
       "MC_Coat"
@@ -228,14 +318,15 @@
       "tether",
       "distance",
       "angle",
-      "triangleBending",
       "springPrediction"
     ],
     "requiredForOwnersWithColliderReferences": "colliderCollision",
-    "authoredNoOpFamilies": [
+    "authoredOrTopologyNoOpFamilies": [
+      "triangleBending",
       "motion",
       "selfCollision"
     ],
+    "edgeColliderBoundary": "three colliding owners have line edges; retain edge-collider support until processingStepEdgeCollision is proven empty",
     "hairAngleLimitEnabled": true
   },
   "implementationBoundary": {
