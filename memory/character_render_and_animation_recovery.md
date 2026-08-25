@@ -907,6 +907,13 @@ and excluding only M14 removes that trail while preserving the surrounding
 smoke, stones, fragments, and isolated lights. Retail retains a much finer
 version, so M14 must not be removed; its remaining gap is exact BaseV2/particle
 and presentation interpretation, not material ownership or effect admission.
+The material selects exact non-instanced VS0840/PS0841 (`HG_ENABLE_MV` plus
+`_USE_SOFTBLEND`); its texture, tint, emission, size curve, stretch-renderer
+state, and 4.4-second delay are source-closed. The phase census also rules out
+clock drift: 133 particles are alive at 4.4667 seconds and 466 at 4.7167
+seconds, matching the authored 2000/s emission window. Continue from the exact
+soft-depth/particle-vertex/presentation ABI rather than retiming the system or
+attenuating its source properties.
 
 The exact-build secondary-dynamics session at
 `scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
