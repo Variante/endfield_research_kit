@@ -35,7 +35,7 @@
     "bytes": 3660,
     "sha256": "bead77afdd711f8049af5b48df8eed513a7deeb74285be97dcd8cdf4c9a75b1d"
   },
-  "harnessSha256": "efe513c96c437da8853e73a0a2a09088d1ebcd133ccf5d6d1eb184fbdc073d31",
+  "harnessSha256": "7bddf0045a63ba98a2f5c433355356c258a02b6f85f8273836fe2d927bbad9e8",
   "vectors": [
     {
       "name": "static_capsule_penetration",
@@ -560,6 +560,7 @@
       "tapered capsule radius",
       "friction near contact"
     ],
-    "unityPortExecuted": false
+    "unityPortExecuted": true,
+    "unityVerifier": "EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyPointCollisionGoldenVectors"
   }
 }

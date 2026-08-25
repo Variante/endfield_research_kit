@@ -181,7 +181,8 @@
     "equationsClosed": true,
     "helperGap": false,
     "goldenVectorsCaptured": true,
-    "solverImplemented": false,
+    "solverImplemented": true,
+    "solverConnectedToRuntime": false,
     "retailEquivalent": false
   }
 }

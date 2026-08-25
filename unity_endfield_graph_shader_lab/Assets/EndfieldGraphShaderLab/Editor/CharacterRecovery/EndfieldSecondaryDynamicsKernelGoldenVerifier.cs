@@ -48,7 +48,8 @@ namespace EndfieldGraphShaderLabEditor
         {
             VerifyTetherGoldenVectors();
             VerifyDistanceGoldenVectors();
-            Debug.Log("Verified five tether and eight Distance native AVX2 golden vectors exactly.");
+            VerifyPointCollisionGoldenVectors();
+            Debug.Log("Verified five tether, eight Distance, and six Point-capsule native AVX2 golden vectors exactly.");
         }
 
         public static void VerifyTetherGoldenVectors()
@@ -167,6 +168,85 @@ namespace EndfieldGraphShaderLabEditor
                 result[index] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(
                     values[index * 3], values[index * 3 + 1], values[index * 3 + 2]);
             return result;
+        }
+
+        public static void VerifyPointCollisionGoldenVectors()
+        {
+            VerifyPointCase("static_capsule_penetration", 0.2, 0, 0,
+                0, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0,
+                0.3f, 0.3f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                new[] { "000000a09999d93f", "0000000000000000", "0000000000000000" },
+                "0000803f", new[] { "0000803f", "00000000", "00000000" }, 1);
+            VerifyPointCase("no_contact_normal_zero", 0.6, 0, 0,
+                0, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0,
+                0.3f, 0.3f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                new[] { "333333333333e33f", "0000000000000000", "0000000000000000" },
+                "00000000", new[] { "00000000", "00000000", "00000000" }, 0);
+            VerifyPointCase("translated_collider_transport", 0.2, 0, 0,
+                0, -1, 0, 0, 1, 0, 0.1, -1, 0, 0.1, 1, 0,
+                0.3f, 0.3f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                new[] { "333333030000e03f", "0000000000000000", "0000000000000000" },
+                "0000803f", new[] { "0000803f", "00000000", "00000000" }, 1);
+            VerifyPointCase("rotated_collider_transport", 0.2, 0, 0,
+                0, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0,
+                0.3f, 0.3f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0.7071067690849304f, 0.7071067690849304f),
+                new[] { "9a9999999999c93f", "000000a09999d93f", "0000000000000000" },
+                "0000803f", new[] { "00000000", "0000803f", "00000000" }, 1);
+            VerifyPointCase("tapered_capsule_radius", 0.2, 0.5, 0,
+                0, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0,
+                0.2f, 0.4f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                new[] { "000000e0ccccdc3f", "000000000000e03f", "0000000000000000" },
+                "0000803f", new[] { "0000803f", "00000000", "00000000" }, 1);
+            VerifyPointCase("friction_near_contact", 0.45, 0, 0,
+                0, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0,
+                0.3f, 0.3f, new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                new[] { "cdccccccccccdc3f", "0000000000000000", "0000000000000000" },
+                "0100003f", new[] { "0000803f", "00000000", "00000000" }, 0);
+        }
+
+        private static void VerifyPointCase(
+            string name, double px, double py, double pz,
+            double a0x, double a0y, double a0z, double a1x, double a1y, double a1z,
+            double b0x, double b0y, double b0z, double b1x, double b1y, double b1z,
+            float radius0, float radius1,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 rotation,
+            string[] nextBits, string frictionBits, string[] normalBits, int expectedCount)
+        {
+            var next = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(px, py, pz);
+            var velocity = next;
+            float friction = 0;
+            var collider = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.CapsuleColliderWork
+            {
+                flag = 0x32,
+                aabbMin = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(-100, -100, -100),
+                aabbMax = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(100, 100, 100),
+                radius0 = radius0,
+                radius1 = radius1,
+                old0 = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(a0x, a0y, a0z),
+                old1 = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(a1x, a1y, a1z),
+                next0 = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(b0x, b0y, b0z),
+                next1 = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3(b1x, b1y, b1z),
+                inverseOldRotation = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1),
+                rotation = rotation,
+            };
+            int count = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.ProjectPointCapsules(
+                ref next, ref velocity, ref friction, out var normal, 0.1f,
+                new[] { collider }, false);
+            if (count != expectedCount)
+                throw new InvalidOperationException(name + " penetrating count differs.");
+            RequireBits(name + " next", next, nextBits);
+            RequireFloatBits(name + " friction", friction, frictionBits);
+            RequireFloatBits(name + " normal.x", normal.x, normalBits[0]);
+            RequireFloatBits(name + " normal.y", normal.y, normalBits[1]);
+            RequireFloatBits(name + " normal.z", normal.z, normalBits[2]);
+        }
+
+        private static void RequireFloatBits(string label, float value, string expected)
+        {
+            string bits = BitConverter.ToString(BitConverter.GetBytes(value))
+                .Replace("-", "").ToLowerInvariant();
+            if (!string.Equals(bits, expected, StringComparison.Ordinal))
+                throw new InvalidOperationException(label + " differs: " + bits + " != " + expected);
         }
 
         private static void RequireBits(
