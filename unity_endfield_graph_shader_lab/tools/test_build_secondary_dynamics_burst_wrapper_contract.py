@@ -35,9 +35,13 @@ class SecondaryDynamicsBurstWrapperContractTests(unittest.TestCase):
 
     def test_requested_entries_are_exact_wrappers(self) -> None:
         self.assertEqual(self.by_index[385570]["role"], "simulation_start_entry")
+        self.assertEqual(self.by_index[385624]["role"], "simulation_update_directcall")
+        self.assertEqual(self.by_index[385648]["role"], "simulation_end_directcall")
         self.assertEqual(self.by_index[385394]["role"], "collider_start_entry")
         self.assertEqual(self.by_index[385295]["role"], "collider_end_entry")
         self.assertEqual(self.by_index[385570]["spanBytes"], 944)
+        self.assertEqual(self.by_index[385624]["spanBytes"], 456)
+        self.assertEqual(self.by_index[385648]["spanBytes"], 540)
         self.assertEqual(self.by_index[385394]["spanBytes"], 300)
         self.assertEqual(self.by_index[385295]["spanBytes"], 136)
 
@@ -49,6 +53,10 @@ class SecondaryDynamicsBurstWrapperContractTests(unittest.TestCase):
         self.assertEqual(self.by_index[385295]["directCalls"][-1]["methodIndex"], 385317)
         self.assertEqual(self.by_index[385416]["indirectCalls"][0]["register"], "r10")
         self.assertEqual(self.by_index[385317]["indirectCalls"][0]["register"], "rax")
+        self.assertEqual(self.by_index[385624]["indirectCalls"][0]["register"], "r10")
+        self.assertEqual(self.by_index[385648]["indirectCalls"][0]["register"], "r10")
+        self.assertEqual(self.by_index[385624]["directCalls"][-1]["methodIndex"], 385604)
+        self.assertEqual(self.by_index[385648]["directCalls"][-1]["methodIndex"], 385628)
 
     def test_initialization_chain_reaches_burst_compiler_service(self) -> None:
         path = self.payload["resolutionPath"]
@@ -58,7 +66,7 @@ class SecondaryDynamicsBurstWrapperContractTests(unittest.TestCase):
         self.assertTrue(path["runtimeTelemetryRequired"])
         self.assertEqual(self.payload["burstGenerated"]["count"], 628)
         self.assertEqual(self.payload["burstGenerated"]["mappingStatus"], "unresolved_wrapper_to_hashed_export")
-        self.assertEqual(len(self.payload["unresolved"]), 3)
+        self.assertEqual(len(self.payload["unresolved"]), 5)
 
     def test_rip_globals_are_pinned(self) -> None:
         sim = self.by_index[385570]
