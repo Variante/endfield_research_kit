@@ -955,12 +955,18 @@ or shaders rather than hand-editing generated prefabs.
    hot draw detour: it retains at most 32 fixed-size candidates and publishes
    them only at the closing Present, bounds lock acquisition on the render
    thread, clears the added trampoline pointers during uninstall, and guards
-   hook-target capacity. The proxy/WARP regression now drives 4,096 inactive
-   and 256 active instanced draws, repeats capture in the same session, and
-   passed 20 consecutive lifecycle runs; retail safety remains unverified
-   until the next real session. One new targeted automatic graphics sequence
-   through `ui_overview_start` and the settled loop is still required to join
-   those ranges to each frame's captured palette payload.
+   hook-target capacity. Retail session `20260825T185008Z` then completed 42
+   targeted packages with zero dropped/incomplete/failed frames and quiescent
+   cleanup, closing the crash regression, but every package retained zero
+   draws. The cache had treated the provider snapshot's combined
+   armed-or-active flag as an active collection window, so it flushed at the
+   opening boundary and never enabled collection. `ffb4ccc` now gates the
+   cache on the provider's exact active-frame state and makes Release proxy
+   metadata checks fail by return code instead of relying on disabled
+   `assert` calls. All 14 tests and 20 consecutive two-capture stress runs pass.
+   One new targeted automatic graphics sequence through `ui_overview_start`
+   and the settled loop is still required to join those ranges to each
+   frame's captured palette payload.
    `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
    performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
    hair LOD0 index/bindpose counts. Its tests pin those counts to the generated
