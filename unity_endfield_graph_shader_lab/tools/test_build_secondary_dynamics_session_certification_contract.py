@@ -13,16 +13,16 @@ SPEC.loader.exec_module(MODULE)
 
 
 class SessionCertificationContractTests(unittest.TestCase):
-    def test_pinned_capture_certifies_expected_route(self):
+    def test_pinned_capture_preserves_settings_but_rejects_owner_attribution(self):
         repo = Path(__file__).resolve().parents[2]
         session = repo / "scratch" / "reverse_engineering" / "endfield_capture" / \
             MODULE.SESSION_ID
         contract = MODULE.build(session)
-        self.assertTrue(contract["targetReady"])
+        self.assertFalse(contract["targetReady"])
         self.assertEqual(
             contract["certification"],
             {
-                "certified": True,
+                "certified": False,
                 "useRelativeTransform": False,
                 "useCrossFrameJob": True,
                 "useAnimatorTransform": False,
@@ -32,6 +32,7 @@ class SessionCertificationContractTests(unittest.TestCase):
         self.assertEqual(contract["window"]["activeTeamLanesPerSettledCall"], 4)
         self.assertEqual(contract["window"]["warmupClothUpdateCalls"], 7)
         self.assertEqual(contract["window"]["relativeTrueCalls"], 0)
+        self.assertFalse(contract["boundary"]["endminfFourOwnerCertification"])
 
 
 if __name__ == "__main__":
