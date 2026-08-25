@@ -26,12 +26,13 @@ Staged capture-only 3DMigoto is the independently valid retail-tested path for
 graphics evidence. Capture sessions belong under the relevant scratch recovery
 topic, and evidence requires the captured provider request and session summary.
 
-Secondary-dynamics session `20260825T123927Z` closed the live
-`UseCrossFrameJob=true` value across 929 `ClothUpdate` calls, but remains
-uncertified: the provisional property-getter hook observed zero calls and did
-not sample the four Endminf `TeamData.useRelativeTransform` lanes. Replace that
-hook with the contractually required post-`AlwaysTeamUpdate` TeamData sampling
-and transition watch; do not relax the collector's four-owner gate.
+Secondary-dynamics session `20260825T125815Z` closed the global live
+`UseCrossFrameJob=true` value across 700 `ClothUpdate` calls and observed 2,772
+false `TeamData.useRelativeTransform` getter reads. It remains uncertified for
+Endminf: 93 rotating TeamData addresses were observed and the capture records
+`endminfFourOwnerCertification=false`, so none can be attributed to the four
+Endminf owners. Preserve the settings as scheduler telemetry, but do not use
+them to admit target writeback without an owner-identity join.
 
 Native D3D11 COM hooks must use the exact Windows SDK vtable order. Shader
 creation occupies `ID3D11Device` slots 12-18 (with stream-output geometry at
@@ -834,17 +835,18 @@ downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.
 
 The exact-build secondary-dynamics session at
-`scratch/reverse_engineering/endfield_capture/20260825T125815Z` certifies four
-settled Endminf TeamData lanes with `UseRelativeTransform=false`,
-`UseCrossFrameJob=true`, and animator update disabled. Unity now runs the
+`scratch/reverse_engineering/endfield_capture/20260825T125815Z` observes
+`UseCrossFrameJob=true` and exclusively false `useRelativeTransform` reads,
+but does not identify the four Endminf TeamData owners; its own summary records
+`endminfFourOwnerCertification=false`. A 770-frame diagnostic run of the
 recovered four-owner solver/coordinator and source-ordered TransformAccess
-publication, including the retail `RestoreTransform` lifecycle from immutable
-AddTransform-time local buffers. A 770-frame run proved bounded execution but
-failed visible retail-shape review: during the entrance it inflated the cape
-into a broad rigid sheet and degraded hanging-strip/hair silhouettes. Solver
-writeback is therefore diagnostic-only and default-off until a phase-paired
-retail shape gate passes; normal actor/VFX reproduction retains the authored
-baseline. Entrance VFX, cleanup, and rotation-only root motion remain active.
+publication proved bounded execution but failed visible retail-shape review:
+during the entrance it inflated the cape into a broad rigid sheet and degraded
+hanging-strip/hair silhouettes. Solver writeback is therefore diagnostic-only,
+default-off, and session-uncertified until an owner-identity join and a
+phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
+the authored baseline; entrance VFX, cleanup, and rotation-only root motion
+remain active.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
@@ -936,9 +938,14 @@ or shaders rather than hand-editing generated prefabs.
    remaining camera, effect-shape, and material differences.
 2. Reproduce the complete Endminf Character Info frame against the reference
    video, closing the presentation scene before further isolated shader work.
-3. Generalize Endminf's proven Animator path from source contracts, close the
-   root-motion compatibility boundary, then prioritize IK, facial systems, and
-   secondary motion.
+3. Close Endminf secondary motion only from joined target evidence: capture
+   either owner-tagged transform trajectories for all four BeyondBoneCloth
+   owners across consecutive frames, or the hair/cape draw palette SRV
+   base/range together with that frame's palette payload. Existing 3DMigoto
+   captures identify the draws but lost the palette payload, while
+   `20260825T150404Z` captured the palette without the per-draw range. Keep
+   solver writeback fail-closed until one joined source passes phase-paired
+   retail-shape review.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under

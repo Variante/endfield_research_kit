@@ -87,6 +87,7 @@ def build(session_root: Path) -> dict:
         "relativeSlotOverflow": 0,
         "teamCount": 93,
         "allObservedRelativeFalse": True,
+        "endminfFourOwnerCertification": False,
         "boundedComplete": True,
     }
     for key, expected in expected_window.items():
@@ -124,8 +125,8 @@ def build(session_root: Path) -> dict:
 
     return {
         "schema": SCHEMA,
-        "status": "target_session_certified",
-        "targetReady": True,
+        "status": "settings_observed_owner_identity_unresolved",
+        "targetReady": False,
         "target": {
             "actorKey": "endminf",
             "sequence": "ui_overview_start_and_loop",
@@ -159,7 +160,7 @@ def build(session_root: Path) -> dict:
             "relativeSlotOverflow": window["relativeSlotOverflow"],
         },
         "certification": {
-            "certified": True,
+            "certified": False,
             "useRelativeTransform": False,
             "useCrossFrameJob": True,
             "useAnimatorTransform": False,
@@ -173,8 +174,9 @@ def build(session_root: Path) -> dict:
             "relativeTransform": (
                 "After seven warm-up ClothUpdate calls, 2,772 reads equal four active "
                 "TeamData lanes across 693 calls. Every one of the 93 addresses rotated "
-                "through those active lanes remained false; therefore the four Endminf "
-                "overview owners were false throughout their measured active interval."
+                "through those active lanes remained false. The capture does not bind "
+                "those rotating addresses to the four Endminf owners, so this observation "
+                "cannot certify the target actor's useRelativeTransform value."
             ),
             "route": (
                 "UseAnimatorTransform=false and TransformAccess writeback remain closed "
@@ -186,6 +188,7 @@ def build(session_root: Path) -> dict:
             "forcedD3D11": True,
             "frameGeneration": False,
             "operatorLabeledTargetWindow": True,
+            "endminfFourOwnerCertification": False,
             "runtimeHookInstalled": True,
             "gameBehaviorModified": False,
         },

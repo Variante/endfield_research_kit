@@ -1,7 +1,7 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-session-certification.v1",
-  "status": "target_session_certified",
-  "targetReady": true,
+  "status": "settings_observed_owner_identity_unresolved",
+  "targetReady": false,
   "target": {
     "actorKey": "endminf",
     "sequence": "ui_overview_start_and_loop",
@@ -54,7 +54,7 @@
     "relativeSlotOverflow": 0
   },
   "certification": {
-    "certified": true,
+    "certified": false,
     "useRelativeTransform": false,
     "useCrossFrameJob": true,
     "useAnimatorTransform": false,
@@ -62,7 +62,7 @@
   },
   "interpretation": {
     "crossFrame": "All 700 ClothUpdate entry samples read MagicaManager UseCrossFrameJob=true with zero unreadable samples.",
-    "relativeTransform": "After seven warm-up ClothUpdate calls, 2,772 reads equal four active TeamData lanes across 693 calls. Every one of the 93 addresses rotated through those active lanes remained false; therefore the four Endminf overview owners were false throughout their measured active interval.",
+    "relativeTransform": "After seven warm-up ClothUpdate calls, 2,772 reads equal four active TeamData lanes across 693 calls. Every one of the 93 addresses rotated through those active lanes remained false. The capture does not bind those rotating addresses to the four Endminf owners, so this observation cannot certify the target actor's useRelativeTransform value.",
     "route": "UseAnimatorTransform=false and TransformAccess writeback remain closed by the hash-gated transform-read native contract, not inferred from this capture."
   },
   "boundary": {
@@ -70,6 +70,7 @@
     "forcedD3D11": true,
     "frameGeneration": false,
     "operatorLabeledTargetWindow": true,
+    "endminfFourOwnerCertification": false,
     "runtimeHookInstalled": true,
     "gameBehaviorModified": false
   }
