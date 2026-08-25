@@ -151,14 +151,17 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             if (data.solverInputs == null || data.payloadDecode == null ||
+                data.ownerRecovery == null ||
                 string.IsNullOrEmpty(data.solverInputsSha256) ||
-                string.IsNullOrEmpty(data.payloadDecodeSha256))
+                string.IsNullOrEmpty(data.payloadDecodeSha256) ||
+                string.IsNullOrEmpty(data.ownerRecoverySha256))
             {
                 failure = "source contract references or hashes are missing";
                 return false;
             }
             if (!HashMatches(data.solverInputs, data.solverInputsSha256) ||
-                !HashMatches(data.payloadDecode, data.payloadDecodeSha256))
+                !HashMatches(data.payloadDecode, data.payloadDecodeSha256) ||
+                !HashMatches(data.ownerRecovery, data.ownerRecoverySha256))
             {
                 failure = "source contract hash differs from generated binding data";
                 return false;
@@ -167,6 +170,23 @@ namespace EndfieldGraphShaderLab
             {
                 failure = "expected exactly four recovered cloth owners";
                 return false;
+            }
+            if (data.colliders == null || data.colliders.Length != 10)
+            {
+                failure = "expected exactly ten recovered capsule colliders";
+                return false;
+            }
+            for (int colliderIndex = 0; colliderIndex < data.colliders.Length; colliderIndex++)
+            {
+                EndfieldSecondaryDynamicsData.CapsuleCollider collider =
+                    data.colliders[colliderIndex];
+                if (string.IsNullOrEmpty(collider.transformPath) ||
+                    transform.Find(collider.transformPath) == null ||
+                    collider.direction < 0 || collider.direction > 2)
+                {
+                    failure = "capsule collider binding differs at index " + colliderIndex;
+                    return false;
+                }
             }
 
             int bindingCount = 0;
@@ -183,6 +203,13 @@ namespace EndfieldGraphShaderLab
                     owner.proxyTransformPaths.Length != owner.proxyVertexCount)
                 {
                     failure = "proxy transform count differs for " + owner.ownerPath;
+                    return false;
+                }
+                if (owner.colliderIndices == null ||
+                    owner.colliderIndices.Length != owner.colliderCount ||
+                    owner.colliderIndices.Any(index => index < 0 || index >= data.colliders.Length))
+                {
+                    failure = "collider index list differs for " + owner.ownerPath;
                     return false;
                 }
                 foreach (string path in owner.proxyTransformPaths)

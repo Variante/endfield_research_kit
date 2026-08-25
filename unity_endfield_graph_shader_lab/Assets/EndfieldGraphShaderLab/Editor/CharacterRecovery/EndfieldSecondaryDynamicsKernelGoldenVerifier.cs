@@ -7,6 +7,11 @@ namespace EndfieldGraphShaderLabEditor
 {
     public static class EndfieldSecondaryDynamicsKernelGoldenVerifier
     {
+        public static void VerifySourceDataLayerMenu()
+        {
+            EndfieldSecondaryDynamicsBindingBuilder.VerifyEndminfSourceDataLayer();
+        }
+
         [Serializable]
         private sealed class AngleGoldenContract
         {
@@ -174,13 +179,14 @@ namespace EndfieldGraphShaderLabEditor
             VerifyTetherGoldenVectors();
             VerifyDistanceGoldenVectors();
             VerifyColliderStartGoldenVectors();
+            VerifyColliderEndGoldenVectors();
             VerifyPointCollisionGoldenVectors();
             VerifyAngleGoldenVectors();
             VerifyBasicPostureGoldenVectors();
             VerifySimulationStartTrigGoldenVectors();
             VerifySimulationStartGoldenVectors();
             VerifySimulationEndGoldenVectors();
-            Debug.Log("Verified float sincos, Angle, tether, Distance, Collider Start, Point-capsule, BasicPosture, Simulation Start, and Simulation End native AVX2 vectors exactly.");
+            Debug.Log("Verified float sincos, Angle, tether, Distance, Collider Start, Collider End, Point-capsule, BasicPosture, Simulation Start, and Simulation End native AVX2 vectors exactly.");
         }
 
         public static void VerifyFloatSinCosGoldenVectors()
@@ -457,6 +463,143 @@ namespace EndfieldGraphShaderLabEditor
         {
             float value = FloatFromLittleEndianHex("a5a5a5a5");
             return F4v(value, value, value, value);
+        }
+
+        public static void VerifyColliderEndGoldenVectors()
+        {
+            double d0 = DoubleFromLittleEndianHex("0000000000000080");
+            double d1 = DoubleFromLittleEndianHex("010000000000f87f");
+            double d2 = DoubleFromLittleEndianHex("000000000000f03f");
+            float f0 = FloatFromLittleEndianHex("00000080");
+            float f1 = FloatFromLittleEndianHex("4523c17f");
+            float f2 = FloatFromLittleEndianHex("0000803f");
+            var nowPositions = new[]
+            {
+                D3(d0, d1, d2),
+                D3(-2.5, 3.25, -4.75),
+                D3(1000.125, -0.0009765625, 7.0),
+            };
+            var nowRotations = new[]
+            {
+                F4v(f0, f1, f2, -1.0f),
+                F4v(0.25f, -0.5f, 0.75f, -0.875f),
+                F4v(-0.0f, 1.0f, -2.0f, 4.0f),
+            };
+            double poisonDouble = DoubleFromLittleEndianHex("a5a5a5a5a5a5a5a5");
+            float poisonFloat = FloatFromLittleEndianHex("a5a5a5a5");
+            var oldPositions = new[]
+            {
+                D3(poisonDouble, poisonDouble, poisonDouble),
+                D3(poisonDouble, poisonDouble, poisonDouble),
+                D3(poisonDouble, poisonDouble, poisonDouble),
+            };
+            var oldRotations = new[]
+            {
+                F4v(poisonFloat, poisonFloat, poisonFloat, poisonFloat),
+                F4v(poisonFloat, poisonFloat, poisonFloat, poisonFloat),
+                F4v(poisonFloat, poisonFloat, poisonFloat, poisonFloat),
+            };
+
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FinishColliderSnapshots(
+                new[] { 2, 0, 2 }, nowPositions, nowRotations,
+                oldPositions, oldRotations, 2);
+            RequireBits("Collider End selected[2] position", oldPositions[2],
+                new[] { "0000000000418f40", "00000000000050bf", "0000000000001c40" });
+            RequireFloat4Bits("Collider End selected[2] rotation", oldRotations[2],
+                new[] { "00000080", "0000803f", "000000c0", "00008040" });
+            RequireBits("Collider End selected[0] position", oldPositions[0],
+                new[] { "0000000000000080", "010000000000f87f", "000000000000f03f" });
+            RequireFloat4Bits("Collider End selected[0] rotation", oldRotations[0],
+                new[] { "00000080", "4523c17f", "0000803f", "000080bf" });
+            RequireBits("Collider End unselected position", oldPositions[1],
+                new[] { "a5a5a5a5a5a5a5a5", "a5a5a5a5a5a5a5a5", "a5a5a5a5a5a5a5a5" });
+            RequireFloat4Bits("Collider End unselected rotation", oldRotations[1],
+                new[] { "a5a5a5a5", "a5a5a5a5", "a5a5a5a5", "a5a5a5a5" });
+
+            // Native count <= 0 returns before touching any payload pointer.
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FinishColliderSnapshots(
+                null, null, null, null, null, 0);
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FinishColliderSnapshots(
+                null, null, null, null, null, -3);
+
+            RequireColliderEndFailsClosed(
+                "late invalid selected index", new[] { 0, 3 },
+                nowPositions, nowRotations, oldPositions, oldRotations, 2);
+            RequireColliderEndFailsClosed(
+                "negative selected index", new[] { -1 },
+                nowPositions, nowRotations, oldPositions, oldRotations, 1);
+            RequireColliderEndFailsClosed(
+                "short selected list", Array.Empty<int>(),
+                nowPositions, nowRotations, oldPositions, oldRotations, 1);
+            RequireColliderEndFailsClosed(
+                "short rotation source", new[] { 2 },
+                nowPositions, new[] { nowRotations[0] }, oldPositions, oldRotations, 1);
+            RequireColliderEndFailsClosed(
+                "null source", new[] { 0 },
+                null, nowRotations, oldPositions, oldRotations, 1);
+        }
+
+        private static void RequireColliderEndFailsClosed(
+            string name,
+            int[] selected,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] nowPositions,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] nowRotations,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[] oldPositions,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] oldRotations,
+            int count)
+        {
+            var beforePositions = (EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3[])
+                oldPositions.Clone();
+            var beforeRotations = (EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[])
+                oldRotations.Clone();
+            bool threw = false;
+            try
+            {
+                EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.FinishColliderSnapshots(
+                    selected, nowPositions, nowRotations, oldPositions, oldRotations, count);
+            }
+            catch (ArgumentException)
+            {
+                threw = true;
+            }
+            if (!threw)
+                throw new InvalidOperationException(name + " did not fail closed.");
+            for (int index = 0; index < oldPositions.Length; index++)
+            {
+                RequireBits(name + " position[" + index + "]", oldPositions[index],
+                    Double3Bits(beforePositions[index]));
+                RequireFloat4Bits(name + " rotation[" + index + "]", oldRotations[index],
+                    Float4Bits(beforeRotations[index]));
+            }
+        }
+
+        private static string[] Double3Bits(
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Double3 value)
+        {
+            return new[]
+            {
+                LittleEndianHex(value.x), LittleEndianHex(value.y), LittleEndianHex(value.z),
+            };
+        }
+
+        private static string[] Float4Bits(
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 value)
+        {
+            return new[]
+            {
+                LittleEndianHex(value.x), LittleEndianHex(value.y),
+                LittleEndianHex(value.z), LittleEndianHex(value.w),
+            };
+        }
+
+        private static string LittleEndianHex(double value)
+        {
+            return BitConverter.ToString(BitConverter.GetBytes(value)).Replace("-", "").ToLowerInvariant();
+        }
+
+        private static string LittleEndianHex(float value)
+        {
+            return BitConverter.ToString(BitConverter.GetBytes(value)).Replace("-", "").ToLowerInvariant();
         }
 
         private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 Float3FromBits(string[] bits)

@@ -39,8 +39,21 @@ namespace EndfieldGraphShaderLab
             public int[] distanceConstraintIndexArray;
             public ushort[] distanceConstraintDataArray;
             public float[] distanceConstraintRestLengths;
+            public int[] colliderIndices;
 
             public SolverInputs solverInputs;
+        }
+
+        [Serializable]
+        public struct CapsuleCollider
+        {
+            public string transformPath;
+            public Vector3 center;
+            public Vector3 size;
+            public int direction;
+            public bool reverseDirection;
+            public bool radiusSeparation;
+            public bool alignedOnCenter;
         }
 
         [Serializable]
@@ -94,7 +107,10 @@ namespace EndfieldGraphShaderLab
         public string solverInputsSha256;
         public TextAsset payloadDecode;
         public string payloadDecodeSha256;
+        public TextAsset ownerRecovery;
+        public string ownerRecoverySha256;
         public Owner[] owners = Array.Empty<Owner>();
+        public CapsuleCollider[] colliders = Array.Empty<CapsuleCollider>();
         public int expectedBindingCount;
         public int expectedUniqueBindingCount;
         public int expectedOverlappingBindingCount;
