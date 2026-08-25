@@ -158,6 +158,11 @@
     "equationsClosed": true,
     "helperGap": false,
     "goldenVectorsCaptured": false,
+    "boundedGoldenVectorCoverage": [
+      "inactive bypass",
+      "active base velocity",
+      "particle speed limit"
+    ],
     "requiresExactFloatDoubleConversionOrder": true,
     "requiresBurstMinMaxNaNBehavior": true,
     "upstreamStagesRequired": [
