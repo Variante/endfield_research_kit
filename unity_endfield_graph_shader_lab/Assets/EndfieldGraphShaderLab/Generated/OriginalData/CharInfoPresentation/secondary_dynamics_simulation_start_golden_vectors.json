@@ -104,7 +104,7 @@
     "targetRequiresNonzeroWind": false,
     "conclusion": "The complete selected Endminf postmodel and Character Info environment component censuses contain no BeyondDynamicBone wind zone; zero-wind Start is the authored target domain."
   },
-  "harnessSha256": "cd3654d99cdca19c2508445af16b09b8fdb601f9f28fd0d107fe8785d0a9018b",
+  "harnessSha256": "e8f890150bae5ee0c64ed0be9d2bae7e449ebaca083c569b94d47ce5a8a785c3",
   "vectors": [
     {
       "name": "inactive_bypass",
@@ -2499,6 +2499,7 @@
     "controlledDomain": "zero wind; representative normalized base and center quaternions cover all base/inertia position and rotation equations; valid quaternion slerp arguments remain inside the standalone float-sine transcription's bounded path",
     "completeKernelGoldenCoverage": false,
     "unityPortExecuted": true,
+    "endminfOverviewTargetCoverageComplete": true,
     "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu",
     "unityPortDomain": "StartSimulationParticleZeroWind; all 13 controlled vectors bit-exact"
   }
