@@ -390,6 +390,170 @@ namespace EndfieldGraphShaderLab
             return penetratingCount;
         }
 
+        public static void UpdateBasicPosture(
+            int[] parentIndices,
+            byte[] attributes,
+            Float3[] localPositions,
+            Float4[] localRotations,
+            Float3[] basePositions,
+            Float4[] baseRotations,
+            Float3[] stepPositions,
+            Float4[] stepRotations,
+            Float3 initScale,
+            float scaleRatio,
+            Float3 negativeScaleDirection,
+            Float4 negativeScaleQuaternion,
+            float animationPoseRatio)
+        {
+            if (animationPoseRatio > 0.99f)
+                return;
+            for (int vertex = 0; vertex < parentIndices.Length; vertex++)
+            {
+                int parent = parentIndices[vertex];
+                if ((attributes[vertex] & 2) != 0 && parent >= 0)
+                {
+                    Float3 local = localPositions[vertex];
+                    Float3 scaled = new Float3(
+                        MultiplyBinary32(MultiplyBinary32(MultiplyBinary32(local.x, negativeScaleDirection.x), initScale.x), scaleRatio),
+                        MultiplyBinary32(MultiplyBinary32(MultiplyBinary32(local.y, negativeScaleDirection.y), initScale.y), scaleRatio),
+                        MultiplyBinary32(MultiplyBinary32(MultiplyBinary32(local.z, negativeScaleDirection.z), initScale.z), scaleRatio));
+                    Float3 rotated = RotateQuaternionBinary32(stepRotations[parent], scaled);
+                    stepPositions[vertex] = new Float3(
+                        AddBinary32(stepPositions[parent].x, rotated.x),
+                        AddBinary32(stepPositions[parent].y, rotated.y),
+                        AddBinary32(stepPositions[parent].z, rotated.z));
+                    Float4 authored = localRotations[vertex];
+                    authored = new Float4(
+                        MultiplyBinary32(negativeScaleQuaternion.x, authored.x),
+                        MultiplyBinary32(negativeScaleQuaternion.y, authored.y),
+                        MultiplyBinary32(negativeScaleQuaternion.z, authored.z),
+                        MultiplyBinary32(negativeScaleQuaternion.w, authored.w));
+                    stepRotations[vertex] = MultiplyQuaternionBinary32(stepRotations[parent], authored);
+                }
+                else
+                {
+                    stepRotations[vertex] = NormalizeFloat4Binary32(stepRotations[vertex]);
+                }
+            }
+            if (animationPoseRatio <= 1.0e-8f)
+                return;
+            for (int vertex = 0; vertex < parentIndices.Length; vertex++)
+            {
+                Float3 step = stepPositions[vertex];
+                Float3 authored = basePositions[vertex];
+                stepPositions[vertex] = new Float3(
+                    AddBinary32(step.x, MultiplyBinary32(animationPoseRatio, SubtractBinary32(authored.x, step.x))),
+                    AddBinary32(step.y, MultiplyBinary32(animationPoseRatio, SubtractBinary32(authored.y, step.y))),
+                    AddBinary32(step.z, MultiplyBinary32(animationPoseRatio, SubtractBinary32(authored.z, step.z))));
+                stepRotations[vertex] = SlerpQuaternionBinary32(
+                    stepRotations[vertex], baseRotations[vertex], animationPoseRatio);
+            }
+        }
+
+        private static Float4 SlerpQuaternionBinary32(Float4 a, Float4 b, float t)
+        {
+            float dot = DotFloat4Binary32(a, b);
+            if (dot < 0.0f)
+            {
+                b = new Float4(-b.x, -b.y, -b.z, -b.w);
+                dot = -dot;
+            }
+            if (dot >= 0.9995f)
+            {
+                return NormalizeFloat4Binary32(new Float4(
+                    AddBinary32(a.x, MultiplyBinary32(t, SubtractBinary32(b.x, a.x))),
+                    AddBinary32(a.y, MultiplyBinary32(t, SubtractBinary32(b.y, a.y))),
+                    AddBinary32(a.z, MultiplyBinary32(t, SubtractBinary32(b.z, a.z))),
+                    AddBinary32(a.w, MultiplyBinary32(t, SubtractBinary32(b.w, a.w)))));
+            }
+            float theta = AcosBurstBinary32(dot);
+            float inverseSin = DivideBinary32(
+                1.0f,
+                SqrtBinary32(SubtractBinary32(1.0f, MultiplyBinary32(dot, dot))));
+            float weightA = MultiplyBinary32(
+                inverseSin,
+                SinBurstBoundedBinary32(MultiplyBinary32(SubtractBinary32(1.0f, t), theta)));
+            float weightB = MultiplyBinary32(
+                inverseSin,
+                SinBurstBoundedBinary32(MultiplyBinary32(t, theta)));
+            return new Float4(
+                AddBinary32(MultiplyBinary32(a.x, weightA), MultiplyBinary32(b.x, weightB)),
+                AddBinary32(MultiplyBinary32(a.y, weightA), MultiplyBinary32(b.y, weightB)),
+                AddBinary32(MultiplyBinary32(a.z, weightA), MultiplyBinary32(b.z, weightB)),
+                AddBinary32(MultiplyBinary32(a.w, weightA), MultiplyBinary32(b.w, weightB)));
+        }
+
+        private static float SinBurstBoundedBinary32(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || Math.Abs(value) >= 125.0f)
+                throw new ArgumentOutOfRangeException(nameof(value), "Pinned BasicPosture sine fast path exceeded.");
+            float quotient = MultiplyBinary32(value, 0.31830987334251404f);
+            int rounded = (int)AddBinary32(quotient, quotient < 0.0f ? -0.5f : 0.5f);
+            float roundedFloat = rounded;
+            float reduced = AddBinary32(value, MultiplyBinary32(roundedFloat, -3.1414794921875f));
+            reduced = AddBinary32(reduced, MultiplyBinary32(roundedFloat, -0.0001131594181060791f));
+            reduced = AddBinary32(reduced, MultiplyBinary32(roundedFloat, -1.984187258941006e-09f));
+            float signed = (rounded & 1) != 0 ? -reduced : reduced;
+            float square = MultiplyBinary32(reduced, reduced);
+            float polynomial = AddBinary32(
+                MultiplyBinary32(square, 2.6083159809786594e-06f), -0.00019810690719168633f);
+            polynomial = AddBinary32(MultiplyBinary32(square, polynomial), 0.00833307858556509f);
+            polynomial = AddBinary32(MultiplyBinary32(square, polynomial), -0.16666659712791443f);
+            return AddBinary32(signed, MultiplyBinary32(square, MultiplyBinary32(signed, polynomial)));
+        }
+
+        private static float AcosBurstBinary32(float value)
+        {
+            float absolute = Math.Abs(value);
+            float polynomialInput;
+            float root;
+            if (absolute < 0.5f)
+            {
+                polynomialInput = MultiplyBinary32(value, value);
+                root = absolute;
+            }
+            else
+            {
+                polynomialInput = MultiplyBinary32(0.5f, SubtractBinary32(1.0f, absolute));
+                root = absolute == 1.0f ? 0.0f : SqrtBinary32(polynomialInput);
+            }
+            float polynomial = AddBinary32(MultiplyBinary32(polynomialInput, 0.04197454825043678f), 0.024240460246801376f);
+            polynomial = AddBinary32(MultiplyBinary32(polynomialInput, polynomial), 0.04547423869371414f);
+            polynomial = AddBinary32(MultiplyBinary32(polynomialInput, polynomial), 0.07495029270648956f);
+            polynomial = AddBinary32(MultiplyBinary32(polynomialInput, polynomial), 0.16666772961616516f);
+            float signedRoot = value < 0.0f ? -root : root;
+            float asin = AddBinary32(signedRoot, MultiplyBinary32(polynomialInput, MultiplyBinary32(signedRoot, polynomial)));
+            if (absolute < 0.5f)
+                return SubtractBinary32(1.5707963705062866f, asin);
+            float doubled = AddBinary32(root, MultiplyBinary32(polynomialInput, MultiplyBinary32(root, polynomial)));
+            doubled = AddBinary32(doubled, doubled);
+            return value < 0.0f ? SubtractBinary32(3.1415927410125732f, doubled) : doubled;
+        }
+
+        private static float DotFloat4Binary32(Float4 a, Float4 b)
+        {
+            return AddBinary32(
+                AddBinary32(MultiplyBinary32(a.x, b.x), MultiplyBinary32(a.y, b.y)),
+                AddBinary32(MultiplyBinary32(a.z, b.z), MultiplyBinary32(a.w, b.w)));
+        }
+
+        private static Float4 NormalizeFloat4Binary32(Float4 value)
+        {
+            float inverse = DivideBinary32(1.0f, SqrtBinary32(DotFloat4Binary32(value, value)));
+            return new Float4(
+                MultiplyBinary32(value.x, inverse), MultiplyBinary32(value.y, inverse),
+                MultiplyBinary32(value.z, inverse), MultiplyBinary32(value.w, inverse));
+        }
+
+        private static Float4 MultiplyQuaternionBinary32(Float4 a, Float4 b)
+        {
+            return new Float4(
+                AddBinary32(AddBinary32(MultiplyBinary32(a.w, b.x), MultiplyBinary32(a.x, b.w)), SubtractBinary32(MultiplyBinary32(a.y, b.z), MultiplyBinary32(a.z, b.y))),
+                AddBinary32(AddBinary32(MultiplyBinary32(a.w, b.y), MultiplyBinary32(a.y, b.w)), SubtractBinary32(MultiplyBinary32(a.z, b.x), MultiplyBinary32(a.x, b.z))),
+                AddBinary32(AddBinary32(MultiplyBinary32(a.w, b.z), MultiplyBinary32(a.z, b.w)), SubtractBinary32(MultiplyBinary32(a.x, b.y), MultiplyBinary32(a.y, b.x))),
+                SubtractBinary32(SubtractBinary32(SubtractBinary32(MultiplyBinary32(a.w, b.w), MultiplyBinary32(a.x, b.x)), MultiplyBinary32(a.y, b.y)), MultiplyBinary32(a.z, b.z)));
+        }
+
         private static Float3 RotateQuaternionBinary32(Float4 q, Float3 v)
         {
             float tx = MultiplyBinary32(2.0f, SubtractBinary32(

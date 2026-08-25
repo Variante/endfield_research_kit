@@ -49,7 +49,8 @@ namespace EndfieldGraphShaderLabEditor
             VerifyTetherGoldenVectors();
             VerifyDistanceGoldenVectors();
             VerifyPointCollisionGoldenVectors();
-            Debug.Log("Verified five tether, eight Distance, and six Point-capsule native AVX2 golden vectors exactly.");
+            VerifyBasicPostureGoldenVectors();
+            Debug.Log("Verified tether, Distance, Point-capsule, and BasicPosture native AVX2 vectors exactly.");
         }
 
         public static void VerifyTetherGoldenVectors()
@@ -247,6 +248,107 @@ namespace EndfieldGraphShaderLabEditor
                 .Replace("-", "").ToLowerInvariant();
             if (!string.Equals(bits, expected, StringComparison.Ordinal))
                 throw new InvalidOperationException(label + " differs: " + bits + " != " + expected);
+        }
+
+        public static void VerifyBasicPostureGoldenVectors()
+        {
+            var identity = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(0, 0, 0, 1);
+            VerifyBasicCase("root_identity_ratio_zero", new[] { -1 }, new byte[] { 2 },
+                F3(0, 0, 0), F4(0, 0, 0, 1), F3(8, 9, 10), F4(0, 0, 0, 1),
+                F3(1.25f, -2.5f, 3.75f), F4(0, 0, 0, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1), 1,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 0,
+                new[] { new[] { "0000a03f", "000020c0", "00007040" } },
+                new[] { new[] { "00000000", "00000000", "00000000", "0000803f" } });
+            VerifyBasicCase("child_positive_scale_ratio_zero", new[] { -1, 0 }, new byte[] { 2, 2 },
+                F3(0, 0, 0, 1, 0.5f, -0.25f), F4(0, 0, 0, 1, 0, 0, 0.70710677f, 0.70710677f),
+                F3(0, 0, 0, 0, 0, 0), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(10, -1, 2, 99, 99, 99), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(2, 3, 4), 0.5f,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 0,
+                new[] { new[] { "00002041", "000080bf", "00000040" }, new[] { "00003041", "000080be", "0000c03f" } },
+                new[] { new[] { "00000000", "00000000", "00000000", "0000803f" }, new[] { "00000000", "00000000", "f304353f", "f304353f" } });
+            VerifyBasicCase("child_negative_scale_ratio_zero", new[] { -1, 0 }, new byte[] { 2, 2 },
+                F3(0, 0, 0, 1, -0.5f, 0.25f), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(0, 0, 0, 0, 0, 0), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(-3, 4, 1, 50, 50, 50), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1), 1,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(-1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 0,
+                new[] { new[] { "000040c0", "00008040", "0000803f" }, new[] { "000080c0", "00006040", "0000a03f" } },
+                new[] { new[] { "00000000", "00000000", "00000000", "0000803f" }, new[] { "00000000", "00000000", "00000000", "0000803f" } });
+            VerifyBasicCase("partial_pose_position_and_nlerp", new[] { -1, 0 }, new byte[] { 2, 2 },
+                F3(0, 0, 0, 2, 0, 0), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(2, 4, 6, 6, 4, 6), F4(0, 0, 0.043619387f, 0.99904823f, 0, 0, 0.043619387f, 0.99904823f),
+                F3(0, 0, 0, 0, 0, 0), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1), 1,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 0.25f,
+                new[] { new[] { "0000003f", "0000803f", "0000c03f" }, new[] { "00004040", "0000803f", "0000c03f" } },
+                new[] { new[] { "00000000", "00000000", "b6b7323c", "e5fb7f3f" }, new[] { "00000000", "00000000", "b6b7323c", "e5fb7f3f" } });
+            VerifyBasicCase("partial_pose_representative_slerp", new[] { -1 }, new byte[] { 2 },
+                F3(0, 0, 0), F4(0, 0, 0, 1), F3(3, -2, 1), F4(0, 0.70710677f, 0, 0.70710677f),
+                F3(1, 2, 3), F4(0, 0, 0, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1), 1,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 0.375f,
+                new[] { new[] { "0000e03f", "0000003f", "00001040" } },
+                new[] { new[] { "00000000", "32a0943e", "00000000", "0afa743f" } });
+            VerifyBasicCase("pose_ratio_one_early_exit", new[] { -1, 0 }, new byte[] { 2, 2 },
+                F3(0, 0, 0, 9, 9, 9), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(7, 8, 9, 10, 11, 12), F4(0, 0, 0, 1, 0, 0, 0, 1),
+                F3(-1, -2, -3, -4, -5, -6), F4(0, 0, 0, 1, 0.2f, 0.3f, 0.4f, 0.5f),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1), 1,
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(1, 1, 1),
+                new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(1, 1, 1, 1), 1,
+                new[] { new[] { "000080bf", "000000c0", "000040c0" }, new[] { "000080c0", "0000a0c0", "0000c0c0" } },
+                new[] { new[] { "00000000", "00000000", "00000000", "0000803f" }, new[] { "cdcc4c3e", "9a99993e", "cdcccc3e", "0000003f" } });
+        }
+
+        private static void VerifyBasicCase(string name, int[] parents, byte[] attributes,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[] localPositions,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] localRotations,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[] basePositions,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] baseRotations,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[] stepPositions,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] stepRotations,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 initScale, float scaleRatio,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3 negativeScaleDirection,
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4 negativeScaleQuaternion,
+            float ratio, string[][] positionBits, string[][] rotationBits)
+        {
+            EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.UpdateBasicPosture(
+                parents, attributes, localPositions, localRotations, basePositions, baseRotations,
+                stepPositions, stepRotations, initScale, scaleRatio, negativeScaleDirection,
+                negativeScaleQuaternion, ratio);
+            for (int index = 0; index < stepPositions.Length; index++)
+            {
+                RequireFloatBits(name + " position.x", stepPositions[index].x, positionBits[index][0]);
+                RequireFloatBits(name + " position.y", stepPositions[index].y, positionBits[index][1]);
+                RequireFloatBits(name + " position.z", stepPositions[index].z, positionBits[index][2]);
+                RequireFloatBits(name + " rotation.x", stepRotations[index].x, rotationBits[index][0]);
+                RequireFloatBits(name + " rotation.y", stepRotations[index].y, rotationBits[index][1]);
+                RequireFloatBits(name + " rotation.z", stepRotations[index].z, rotationBits[index][2]);
+                RequireFloatBits(name + " rotation.w", stepRotations[index].w, rotationBits[index][3]);
+            }
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[] F3(params float[] values)
+        {
+            var result = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3[values.Length / 3];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float3(values[i * 3], values[i * 3 + 1], values[i * 3 + 2]);
+            return result;
+        }
+
+        private static EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[] F4(params float[] values)
+        {
+            var result = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4[values.Length / 4];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = new EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels.Float4(values[i * 4], values[i * 4 + 1], values[i * 4 + 2], values[i * 4 + 3]);
+            return result;
         }
 
         private static void RequireBits(
