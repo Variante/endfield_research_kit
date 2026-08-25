@@ -915,18 +915,22 @@ phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
 the authored baseline; entrance VFX, cleanup, and rotation-only root motion
 remain active.
 
-The later exact-build dynamics session
-`scratch/reverse_engineering/endfield_capture/20260825T220029Z` is complete
-and lossless and independently observes 584 stable `UseCrossFrameJob=true`
-calls, but records zero TeamData rows. This exposed an instrumentation defect,
-not a game-value result: settled `AlwaysTeamUpdate` can skip the hooked
-`GetTeamDataRef` call, leaving the old collector empty. EndfieldCapture now
-samples the pinned `TeamManager.teamDataArray` NativeArray at manager `+0x10`
-after every exact `AlwaysTeamUpdate`, using the closed 464-byte TeamData stride
-and `useRelativeTransform` offset `+0x9c`. It reports scan/readability and
-sample counts separately and fails bounded certification on any unreadable or
-empty interval. The replacement provider builds and passes all 14 tests; one
-replacement dynamics window is still required before enabling writeback.
+The exact-build dynamics sessions at
+`scratch/reverse_engineering/endfield_capture/20260825T220029Z` and
+`scratch/reverse_engineering/endfield_capture/20260825T221253Z` are complete
+and lossless and independently observe 584 and 641 stable
+`UseCrossFrameJob=true` calls. Neither is a TeamData-value result. The first
+records zero rows because settled `AlwaysTeamUpdate` can skip the hooked
+`GetTeamDataRef`; the second reports all 641 direct-array scans unreadable and
+therefore correctly fails bounded certification. Pinned `AlwaysTeamUpdate` and
+`GetTeamDataRef` machine code resolve the second instrumentation defect:
+manager `+0x10` is an `ExNativeArray<TeamData>` object reference, not an inline
+`NativeArray`; its payload pointer is wrapper `+0x10` and its logical count is
+wrapper `+0x28`. EndfieldCapture now follows that two-level layout after every
+exact `AlwaysTeamUpdate`, using the closed 464-byte TeamData stride and
+`useRelativeTransform` offset `+0x9c`. A synthetic layout test covers the exact
+manager/wrapper/payload/count chain, and all 14 tests pass. One replacement
+dynamics window is still required before enabling writeback.
 
 The captured skinning oracle now supplies the phase-sequenced retail shape
 target, and the deterministic owner-path comparison confirms that the authored
