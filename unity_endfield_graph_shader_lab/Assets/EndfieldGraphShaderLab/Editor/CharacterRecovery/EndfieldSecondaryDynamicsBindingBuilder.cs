@@ -39,6 +39,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string TransformReadPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_transform_read_contract.json";
+        private const string SimulationStepTeamUpdatePath =
+            "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
+            "secondary_dynamics_simulation_step_team_update_contract.json";
 
         internal static void Configure(
             GameObject actor,
@@ -59,9 +62,12 @@ namespace EndfieldGraphShaderLabEditor
             TextAsset centerUpdate = AssetDatabase.LoadAssetAtPath<TextAsset>(CenterUpdatePath);
             TextAsset duplicateWrite = AssetDatabase.LoadAssetAtPath<TextAsset>(DuplicateWritePath);
             TextAsset transformRead = AssetDatabase.LoadAssetAtPath<TextAsset>(TransformReadPath);
+            TextAsset simulationStepTeamUpdate =
+                AssetDatabase.LoadAssetAtPath<TextAsset>(SimulationStepTeamUpdatePath);
             if (solverInputs == null || payloadDecode == null || ownerRecovery == null ||
                 curveSamples == null || solverScalarPacking == null || centerUpdate == null ||
-                duplicateWrite == null || transformRead == null)
+                duplicateWrite == null || transformRead == null ||
+                simulationStepTeamUpdate == null)
                 throw new FileNotFoundException(
                     "Endminf secondary-dynamics source contracts are missing.");
 
@@ -259,6 +265,8 @@ namespace EndfieldGraphShaderLabEditor
             data.duplicateWriteSha256 = Sha256(DuplicateWritePath);
             data.transformRead = transformRead;
             data.transformReadSha256 = Sha256(TransformReadPath);
+            data.simulationStepTeamUpdate = simulationStepTeamUpdate;
+            data.simulationStepTeamUpdateSha256 = Sha256(SimulationStepTeamUpdatePath);
             data.owners = owners.ToArray();
             data.colliders = colliders;
             data.expectedBindingCount = bindingCount;

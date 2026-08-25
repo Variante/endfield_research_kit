@@ -154,6 +154,7 @@ namespace EndfieldGraphShaderLab
                 data.ownerRecovery == null || data.curveSamples == null ||
                 data.solverScalarPacking == null || data.centerUpdate == null ||
                 data.duplicateWrite == null || data.transformRead == null ||
+                data.simulationStepTeamUpdate == null ||
                 string.IsNullOrEmpty(data.solverInputsSha256) ||
                 string.IsNullOrEmpty(data.payloadDecodeSha256) ||
                 string.IsNullOrEmpty(data.ownerRecoverySha256) ||
@@ -161,7 +162,8 @@ namespace EndfieldGraphShaderLab
                 string.IsNullOrEmpty(data.solverScalarPackingSha256) ||
                 string.IsNullOrEmpty(data.centerUpdateSha256) ||
                 string.IsNullOrEmpty(data.duplicateWriteSha256) ||
-                string.IsNullOrEmpty(data.transformReadSha256))
+                string.IsNullOrEmpty(data.transformReadSha256) ||
+                string.IsNullOrEmpty(data.simulationStepTeamUpdateSha256))
             {
                 failure = "source contract references or hashes are missing";
                 return false;
@@ -173,7 +175,9 @@ namespace EndfieldGraphShaderLab
                 !HashMatches(data.solverScalarPacking, data.solverScalarPackingSha256) ||
                 !HashMatches(data.centerUpdate, data.centerUpdateSha256) ||
                 !HashMatches(data.duplicateWrite, data.duplicateWriteSha256) ||
-                !HashMatches(data.transformRead, data.transformReadSha256))
+                !HashMatches(data.transformRead, data.transformReadSha256) ||
+                !HashMatches(data.simulationStepTeamUpdate,
+                    data.simulationStepTeamUpdateSha256))
             {
                 failure = "source contract hash differs from generated binding data";
                 return false;
