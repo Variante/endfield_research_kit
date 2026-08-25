@@ -35,8 +35,10 @@ echo.
 echo Observer ready. Start Endfield through its normal launcher now.
 echo Navigate to Endminf's Character Info overview and let the loop run briefly.
 echo Return here and press Ctrl+C once the pose has settled.
-echo This trace observes LoadLibraryW and GetProcAddress only; it does not call a
-echo returned pointer, replace code, or write game state.
+echo This trace observes LoadLibraryW, GetProcAddress, and the returned live
+echo pointers from five pinned BurstDirectCall wrappers. It does not call a
+echo returned pointer, replace code, or write game state. Interceptor attachment
+echo can perturb timing while the observer is active.
 echo.
 "%TRACE_PY%" "%TRACE_SCRIPT%" --game-root "%GAME_ROOT%" --start-immediately
 set "TRACE_EXIT=%ERRORLEVEL%"

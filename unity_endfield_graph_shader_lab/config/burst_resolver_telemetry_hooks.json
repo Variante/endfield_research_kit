@@ -59,6 +59,17 @@
       "methodIndex": 385482,
       "methodName": "Initialize$StartSimulationStepJobKernels_StartSimulationStepRangeKernel_00000408$BurstDirectCall",
       "fullName": "BeyondDynamicBone.SimulationManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_00000408$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 385566,
+        "getFunctionPointerOffset": "0x67775a8",
+        "invokeMethodIndex": 385570,
+        "invokeStartOffset": "0x67775fc",
+        "invokeEndOffsetExclusive": "0x67779ac",
+        "invokeBodySha256": "cafeebc9f217a60a011aaac5d3df41e50b0c1afe05e1189c3295a53741482530",
+        "indirectCallOffset": "0x6777804",
+        "targetRegister": "rdx",
+        "instructionBytes": "ffd2"
+      },
       "windows": [
         {"role": "constructor", "methodIndex": 385567, "startOffset": "0x3fb21e0", "endOffsetExclusive": "0x3fb2270"},
         {"role": "static_constructor", "methodIndex": 385569, "startOffset": "0x3fb2c70", "endOffsetExclusive": "0x3fb2c80"},
@@ -73,6 +84,17 @@
       "methodIndex": 385487,
       "methodName": "Initialize$UpdateStepBasicPotureJobKernels_UpdateStepBasicPotureRangeKernel_0000040D$BurstDirectCall",
       "fullName": "BeyondDynamicBone.SimulationManager+UpdateStepBasicPotureJobKernels+UpdateStepBasicPotureRangeKernel_0000040D$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 385620,
+        "getFunctionPointerOffset": "0x677a0a4",
+        "invokeMethodIndex": 385624,
+        "invokeStartOffset": "0x677a0f8",
+        "invokeEndOffsetExclusive": "0x677a2c0",
+        "invokeBodySha256": "c5f6a6a50a68c38b019cd7db1b209c25300c2eaa9c68ab3d7edc127f8bb7f88d",
+        "indirectCallOffset": "0x677a20b",
+        "targetRegister": "r10",
+        "instructionBytes": "41ffd2"
+      },
       "windows": [
         {"role": "constructor", "methodIndex": 385621, "startOffset": "0x3fb1f10", "endOffsetExclusive": "0x3fb1fa0"},
         {"role": "static_constructor", "methodIndex": 385623, "startOffset": "0x3fb2c20", "endOffsetExclusive": "0x3fb2c30"},
@@ -87,6 +109,17 @@
       "methodIndex": 385489,
       "methodName": "Initialize$EndSimulationStepJobKernels_EndSimulationStepRangeKernel_0000040F$BurstDirectCall",
       "fullName": "BeyondDynamicBone.SimulationManager+EndSimulationStepJobKernels+EndSimulationStepRangeKernel_0000040F$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 385644,
+        "getFunctionPointerOffset": "0x6770180",
+        "invokeMethodIndex": 385648,
+        "invokeStartOffset": "0x67701d4",
+        "invokeEndOffsetExclusive": "0x67703f0",
+        "invokeBodySha256": "0ce5e043ff6984f1fd75e7a646dcdb9e0a0054c726451dbe37256f391f6e9ae7",
+        "indirectCallOffset": "0x6770311",
+        "targetRegister": "r10",
+        "instructionBytes": "41ffd2"
+      },
       "windows": [
         {"role": "constructor", "methodIndex": 385645, "startOffset": "0x3fb1df0", "endOffsetExclusive": "0x3fb1e80"},
         {"role": "static_constructor", "methodIndex": 385647, "startOffset": "0x3fb2c00", "endOffsetExclusive": "0x3fb2c10"},
@@ -101,6 +134,17 @@
       "methodIndex": 385394,
       "methodName": "Initialize$StartSimulationStepJobKernels_StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
       "fullName": "BeyondDynamicBone.ColliderManager+StartSimulationStepJobKernels+StartSimulationStepRangeKernel_000003D8$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 385412,
+        "getFunctionPointerOffset": "0x6762c6c",
+        "invokeMethodIndex": 385416,
+        "invokeStartOffset": "0x6762cc0",
+        "invokeEndOffsetExclusive": "0x6762edc",
+        "invokeBodySha256": "7df4869600061f52675346458da081a90aa0afe2971e233d0fa388d9bc0d69e9",
+        "indirectCallOffset": "0x6762dfd",
+        "targetRegister": "r10",
+        "instructionBytes": "41ffd2"
+      },
       "windows": [
         {"role": "constructor", "methodIndex": 385413, "startOffset": "0x3fb2660", "endOffsetExclusive": "0x3fb26f0"},
         {"role": "static_constructor", "methodIndex": 385415, "startOffset": "0x3fb2cf0", "endOffsetExclusive": "0x3fb2d00"},
@@ -115,6 +159,17 @@
       "methodIndex": 385295,
       "methodName": "Initialize$EndSimulationStepJobKernels_EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
       "fullName": "BeyondDynamicBone.EndSimulationStepJobKernels+EndSimulationStepRangeKernel_000003BB$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 385313,
+        "getFunctionPointerOffset": "0x675b078",
+        "invokeMethodIndex": 385317,
+        "invokeStartOffset": "0x675b0cc",
+        "invokeEndOffsetExclusive": "0x675b1d4",
+        "invokeBodySha256": "af0bc7f23f65b57b0635f634adad4b9024c7e7c2f36818f26b622a0d56f544f1",
+        "indirectCallOffset": "0x675b172",
+        "targetRegister": "rax",
+        "instructionBytes": "ffd0"
+      },
       "windows": [
         {"role": "constructor", "methodIndex": 385314, "startOffset": "0x3fb29c0", "endOffsetExclusive": "0x3fb2a50"},
         {"role": "static_constructor", "methodIndex": 385316, "startOffset": "0x3fb2d50", "endOffsetExclusive": "0x3fb2d60"},
@@ -131,11 +186,12 @@
   },
   "evidenceBoundary": {
     "classification": "observed_runtime_candidate",
-    "scope": "Read-only LoadLibraryW/GetProcAddress observation for one exact lib_burst_generated.dll HMODULE, with disk-hash-pinned inputs plus runtime path/size/base matching and bounded all-module caller backtraces; a verified GameAssembly-only subset is used for target-window attribution.",
+    "scope": "Read-only LoadLibraryW/GetProcAddress observation plus GetFunctionPointer return observation at five exact GameAssembly.dll wrappers, with disk-hash-pinned inputs, wrapper-body hashes, indirect-call instruction bytes, runtime module identity, and bounded caller backtraces.",
     "nonClaims": [
       "The trace does not call a resolver export, replace a resolver body, or write game state.",
       "Interceptor attachment can perturb timing and loader scheduling; the capture is not behavior-neutral and remains candidate evidence.",
       "A returned proc pointer is an identity observation only; it does not prove the pointer was called or map it to a Burst generic.",
+      "A GetFunctionPointer return is a live wrapper call-target observation, but it does not invoke the pointer, prove every subsequent indirect call completed, or establish the kernel's algorithm.",
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The callerBacktrace is bounded and includes only frames Frida resolves to a loaded module; gameAssemblyCallerBacktrace is the verified GameAssembly.dll subset, and an empty backtrace is not identity proof.",
       "Target-window attribution is a caller-address observation against the five pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",

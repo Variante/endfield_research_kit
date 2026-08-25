@@ -5,6 +5,8 @@
 const CONFIG = __BURST_RESOLVER_TRACE_CONFIG__;
 const capture = CONFIG.capture;
 const hookStates = {};
+const callTargetStates = {};
+const observedCallTargets = new Set();
 const targetModuleName = String(CONFIG.resolverModuleName).toLowerCase();
 const gameAssemblyName = String(CONFIG.moduleName).toLowerCase();
 const targetWindows = Array.isArray(CONFIG.targets) ? CONFIG.targets : [];
@@ -502,6 +504,48 @@ function attachHook(name, spec) {
   }
 }
 
+function attachCallTargetHook(target) {
+  const probe = target.callTargetProbe;
+  if (!gameAssembly || !probe) {
+    callTargetStates[target.id] = "probe_missing";
+    fatal("call_target_probe_missing", { targetId: target.id });
+    return;
+  }
+  let address;
+  try {
+    address = gameAssembly.base.add(ptr(probe.getFunctionPointerOffset));
+  } catch (error) {
+    callTargetStates[target.id] = "address_failed";
+    fatal("call_target_probe_address_failed", { targetId: target.id, error: String(error) });
+    return;
+  }
+  try {
+    Interceptor.attach(address, {
+      onLeave(retval) {
+        if (!captureEnabled || capped || terminalState) return;
+        const returnPointer = pointerText(retval);
+        const observationKey = `${target.id}:${String(returnPointer).toLowerCase()}`;
+        if (observedCallTargets.has(observationKey)) return;
+        observedCallTargets.add(observationKey);
+        record("burst_function_pointer", {
+          targetId: target.id,
+          targetMethodIndex: target.methodIndex,
+          targetMethodName: target.methodName,
+          targetFullName: target.fullName,
+          callTargetProbe: probe,
+          returnPointer,
+          ...resolvedPointer(retval),
+          threadId: Process.getCurrentThreadId(),
+        });
+      },
+    });
+    callTargetStates[target.id] = "attached";
+  } catch (error) {
+    callTargetStates[target.id] = "attach_failed";
+    fatal("call_target_probe_attach_failed", { targetId: target.id, error: String(error) });
+  }
+}
+
 let gameAssembly = null;
 let kernel32 = null;
 try {
@@ -513,9 +557,11 @@ try {
 
 discoverResolverIdentity();
 for (const [name, spec] of Object.entries(CONFIG.hooks)) attachHook(name, spec);
-const failed = Object.entries(hookStates)
-  .filter(([, value]) => value !== "attached")
-  .map(([name, value]) => ({ name, state: value }));
+for (const target of targetWindows) attachCallTargetHook(target);
+const failed = [
+  ...Object.entries(hookStates).map(([name, state]) => ({ kind: "resolver_hook", name, state })),
+  ...Object.entries(callTargetStates).map(([name, state]) => ({ kind: "call_target_hook", name, state })),
+].filter((entry) => entry.state !== "attached");
 
 setInterval(flush, capture.flushIntervalMs);
 
@@ -569,6 +615,7 @@ transmit("ready", {
       windowCount: Array.isArray(target.windows) ? target.windows.length : 0,
     })),
     hooks: hookStates,
+    callTargetHooks: callTargetStates,
     failed,
     maxEvents: capture.maxEvents,
     maxBacktraceFrames: capture.maxBacktraceFrames,

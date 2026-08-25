@@ -46,6 +46,10 @@ class BurstResolverTelemetryTests(unittest.TestCase):
                 {window["role"] for window in target["windows"]},
                 telemetry.TARGET_WINDOW_ROLES,
             )
+            self.assertEqual(
+                target["callTargetProbe"]["getFunctionPointerOffset"],
+                next(window for window in target["windows"] if window["role"] == "get_function_pointer")["startOffset"],
+            )
 
     def test_rendered_agent_is_observation_only_and_has_required_apis(self) -> None:
         rendered = telemetry.render_agent_source(
@@ -59,6 +63,9 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertIn("callerBacktrace", rendered)
         self.assertIn("targetWindowMatches", rendered)
         self.assertIn("resolvedExportName", rendered)
+        self.assertIn("burst_function_pointer", rendered)
+        self.assertIn("callTargetHooks", rendered)
+        self.assertIn("getFunctionPointerOffset", rendered)
         self.assertIn("readAnsiString", rendered)
         self.assertIn("loadlibrary_path_unterminated", rendered)
         identity = rendered.index('setResolverIdentity(retval, module ? module.path : this.requestedPath, "loadlibraryw")')
@@ -97,11 +104,13 @@ class BurstResolverTelemetryTests(unittest.TestCase):
                         "resolver": root / "Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
                     },
                 ):
-                    with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("attach ran")):
-                        self.assertEqual(
-                            telemetry.main(["--check-only", "--game-root", str(root)]),
-                            0,
-                        )
+                    with patch.object(telemetry, "verify_call_target_probes") as probe_gate:
+                        with patch.object(telemetry.core, "load_frida", side_effect=AssertionError("attach ran")):
+                            self.assertEqual(
+                                telemetry.main(["--check-only", "--game-root", str(root)]),
+                                0,
+                            )
+                    probe_gate.assert_called_once()
 
     def test_resolver_handshake_rejects_path_or_size_drift(self) -> None:
         manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
