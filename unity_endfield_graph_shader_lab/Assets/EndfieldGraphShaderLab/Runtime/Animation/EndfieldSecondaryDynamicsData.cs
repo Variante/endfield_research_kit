@@ -125,6 +125,8 @@ namespace EndfieldGraphShaderLab
         public string centerUpdateSha256;
         public TextAsset duplicateWrite;
         public string duplicateWriteSha256;
+        public TextAsset transformRead;
+        public string transformReadSha256;
         public Owner[] owners = Array.Empty<Owner>();
         public CapsuleCollider[] colliders = Array.Empty<CapsuleCollider>();
         public int expectedBindingCount;
