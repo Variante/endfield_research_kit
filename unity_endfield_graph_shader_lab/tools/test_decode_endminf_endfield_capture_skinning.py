@@ -57,14 +57,24 @@ class CaptureSkinningTests(unittest.TestCase):
             "startInstance": 0,
             "vsCb2RangeValid": True,
             "vsCb2FirstConstant": 100,
-            "vsCb2NumConstants": 64,
+            "vsCb2NumConstants": MODULE.SKINNING_CB_CONSTANTS,
             "vsCb2MetadataValid": True,
             "vsCb2CurrentPaletteRaw": 20,
             "vsCb2PreviousPaletteRaw": 50,
         }
-        draws = [draw, {**draw, "vsCb2FirstConstant": 200}]
+        draws = [
+            draw,
+            {**draw, "vsCb2FirstConstant": 200},
+            {
+                **draw,
+                "vsCb2FirstConstant": 300,
+                "vsCb2NumConstants": 16,
+                "vsCb2CurrentPaletteRaw": 0,
+                "vsCb2PreviousPaletteRaw": 0,
+            },
+        ]
         if ambiguous:
-            draws[-1]["vsCb2CurrentPaletteRaw"] = 21
+            draws[1]["vsCb2CurrentPaletteRaw"] = 21
         metadata = {
             "frame": 100,
             "captureIncomplete": False,

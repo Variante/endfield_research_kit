@@ -19,6 +19,7 @@ from pathlib import Path
 PALETTE_BYTES = 8_413_184
 PALETTE_STRIDE = 16
 ROWS_PER_MATRIX = 3
+SKINNING_CB_CONSTANTS = 4_096
 
 MESHES = {
     "body": (16_524, 44),
@@ -72,6 +73,7 @@ def unique_mesh_draw(metadata: dict, mesh: str) -> dict:
         row for row in metadata.get("drawRecords", [])
         if row.get("indexedInstanced") is True
         and row.get("vsCb2RangeValid") is True
+        and int(row.get("vsCb2NumConstants", -1)) == SKINNING_CB_CONSTANTS
         and int(row.get("count", -1)) == index_count
     ]
     if not matching_rows:
