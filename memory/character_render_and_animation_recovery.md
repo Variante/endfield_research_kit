@@ -947,13 +947,20 @@ or shaders rather than hand-editing generated prefabs.
    captures identify the draws but lost the palette payload, while
    `20260825T150404Z` captured the palette without the per-draw range. Keep
    solver writeback fail-closed until one joined source passes phase-paired
-   retail-shape review. EndfieldCapture `33ca8ef` now records bounded
-   `DrawIndexedInstanced` arguments and the cached VS b2
-   `first_constant`/`num_constants` range without calling D3D11 state getters
-   from the draw detour; its proxy/WARP lifecycle test closes publication of
-   those fields. One new targeted automatic graphics sequence through
-   `ui_overview_start` and the settled loop is still required to join those
-   ranges to each frame's captured palette payload.
+   retail-shape review. EndfieldCapture `33ca8ef` added the required
+   `DrawIndexedInstanced` arguments and cached VS b2
+   `first_constant`/`num_constants` range, but retail session
+   `20260825T181918Z` faulted in `EndfieldCaptureD3D11.dll` as the first
+   automatic frame became active. `55b3850` removes provider work from that
+   hot draw detour: it retains at most 32 fixed-size candidates and publishes
+   them only at the closing Present, bounds lock acquisition on the render
+   thread, clears the added trampoline pointers during uninstall, and guards
+   hook-target capacity. The proxy/WARP regression now drives 4,096 inactive
+   and 256 active instanced draws, repeats capture in the same session, and
+   passed 20 consecutive lifecycle runs; retail safety remains unverified
+   until the next real session. One new targeted automatic graphics sequence
+   through `ui_overview_start` and the settled loop is still required to join
+   those ranges to each frame's captured palette payload.
    `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
    performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
    hair LOD0 index/bindpose counts. Its tests pin those counts to the generated
