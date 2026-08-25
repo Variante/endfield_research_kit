@@ -111,6 +111,12 @@ complete frame without a client fault.
   117 within one frame, and every later checkpoint preserves the presented-frame
   delta through source frame 791. This makes the oracle suitable for direct
   Unity-vs-retail hair/cape trajectory comparisons without guessing a phase.
+  A synchronized Unity capture at `(presentedFrame - 1884) / 60` now compares
+  all 74 retail-rendered owner bones at those 40 checkpoints. The entrance is
+  the material gap: frame means reach 0.133 m and 29.7 degrees, with individual
+  maxima of 0.289 m and 96.6 degrees. From settled-loop checkpoint 20 onward,
+  means remain 1.5-2.3 mm and 0.86-1.07 degrees. The generated comparison is
+  `reports/assets/character_recovery/endminf_secondary_dynamics_trajectory_comparison.json`.
   This closes the retail hair/cape shape oracle for the captured sequence, but
   does not by itself certify the recovered solver. Deterministic Unity capture
   also hash-binds the owner contract and verifies Endminf's 4 cloth owners, 18
@@ -878,10 +884,17 @@ phase-paired retail shape gate both pass. Normal actor/VFX reproduction retains
 the authored baseline; entrance VFX, cleanup, and rotation-only root motion
 remain active.
 
-The captured skinning oracle now supplies the missing phase-sequenced retail
-shape target. The next solver step is a deterministic owner-path comparison
-against those reconstructed matrices; do not enable writeback merely because
-the capture is internally valid.
+The captured skinning oracle now supplies the phase-sequenced retail shape
+target, and the deterministic owner-path comparison confirms that the authored
+baseline is already close in the settled loop but diverges substantially during
+the entrance. The recovered solver still fails closed because session
+`20260825T125815Z` did not certify the four Endminf TeamData identities. The
+remaining admission evidence is one bounded Endminf `Numpad 5` dynamics window
+that either isolates the four owners or records the current collector's bounded
+universal-false coverage while confirming the maintained cross-frame route.
+The native contract already closes ordinary Transform reads and TransformAccess
+writes; do not bypass the session gate or enable writeback from the graphics
+oracle alone.
 
 The four August 24 observer captures also close Endminf's post-Forward
 CharacterOutline owner. Retail draws exactly six LOD0 submeshes (face, body,
@@ -987,7 +1000,12 @@ or shaders rather than hand-editing generated prefabs.
    passes only when their draw-time current/previous palette pair agrees and
    fails closed on older packages without the snapshot. The resulting
    owner-tagged trajectory oracle is now the phase-paired comparison target for
-   the default-off solver; no additional graphics capture is currently needed.
+   the default-off solver. The baseline comparison is complete: entrance
+   checkpoints contain the large trajectory gap, while the settled loop is
+   already near retail. No additional graphics capture is needed. One new
+   `dynamics`-profile `Numpad 5` window is required to certify Endminf through
+   either direct four-owner isolation or the maintained bounded universal-false
+   coverage before solver writeback can be tested.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
