@@ -139,8 +139,9 @@
   },
   "implementationBoundary": {
     "equationsClosed": true,
-    "helperGap": false,
-    "goldenVectorsCaptured": false,
+    "helperGap": true,
+    "helperGapDetail": "scalar float sincos remains native-executed and hash-pinned, not source-transcribed",
+    "goldenVectorsCaptured": true,
     "solverImplemented": false,
     "retailEquivalent": false
   }
