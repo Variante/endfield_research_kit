@@ -472,8 +472,27 @@ of these workflows, open the matching `SKILL.md` before acting:
   `webui/overrides/options.json`.
 - `.codex/skills/animestudio-workflow/`: building, running, patching, and
   debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
-- `.codex/skills/endfield-render-capture/`: staged 3DMigoto graphics-evidence
-  capture, collection, and review boundaries.
+
+`tools/EndfieldCapture/README.md` is the local usage and requirements guide for
+the optional native observer. It requires Windows x64, Visual Studio 2022 C++
+build tools, CMake 3.23+, and an exact installed Endfield build selected by
+`ENDFIELD_GAME_ROOT` or `ENDFIELD_GAME_EXE`. Build and test it from the
+submodule with:
+
+```bat
+cmake -S tools\EndfieldCapture -B tools\EndfieldCapture\build-local -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=ON
+cmake --build tools\EndfieldCapture\build-local --config Release --parallel
+ctest --test-dir tools\EndfieldCapture\build-local -C Release --output-on-failure
+```
+
+Use `tools\EndfieldCapture\StartCapture.bat` only with Endfield closed and
+follow its exact-build, prelaunch, one-attachment, bounded-session, and
+collection gates. It is observation-only: do not use it for shader/resource
+overrides, draw suppression, input hooks, or game modification. Treat missing
+modules, hash mismatches, hook errors, lost events, and incomplete provider
+summaries as failed evidence. Keep raw sessions under
+`scratch/reverse_engineering/endfield_capture/` and publish only compact,
+validated findings under the owning report or memory topic.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the
