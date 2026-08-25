@@ -404,6 +404,8 @@ def build_contract() -> dict[str, Any]:
         "boundary": {
             "nativeCoreExecuted": True,
             "sourceTranscriptionBinary32Matched": True,
+            "unityPortExecuted": True,
+            "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu",
             "caseCoverage": [
                 "root hierarchy", "non-root hierarchy", "positive scale", "negative scale",
                 "animation-pose ratio zero", "animation-pose ratio partial",
