@@ -36,7 +36,21 @@ class SimulationEndSemanticsContractTests(unittest.TestCase):
         boundary = self.contract["implementation_boundary"]
         self.assertTrue(boundary["equationsClosed"])
         self.assertFalse(boundary["helperGap"])
-        self.assertFalse(boundary["goldenVectorsCaptured"])
+        self.assertTrue(boundary["goldenVectorsCaptured"])
+        self.assertTrue(boundary["completeClosedBranchGoldenCoverage"])
+        self.assertEqual(
+            boundary["boundedGoldenVectorCoverage"],
+            [
+                "inactive bypass",
+                "active base velocity",
+                "particle speed limit",
+                "static-friction accumulation",
+                "static-friction release",
+                "static-friction no-contact decay",
+                "dynamic-friction attenuation",
+                "center centrifugal response",
+            ],
+        )
         self.assertFalse(boundary["solverImplemented"])
 
     def test_generated_contract_matches(self):

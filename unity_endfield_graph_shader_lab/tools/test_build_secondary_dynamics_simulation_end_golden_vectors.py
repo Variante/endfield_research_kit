@@ -16,14 +16,59 @@ class SimulationEndGoldenVectorTests(unittest.TestCase):
     def setUpClass(cls):
         cls.contract = target.build_contract()
 
-    def test_executes_three_bounded_native_paths(self):
-        self.assertEqual(len(self.contract["vectors"]), 3)
+    def test_executes_all_closed_native_paths(self):
+        self.assertEqual(
+            [row["name"] for row in self.contract["vectors"]],
+            [
+                "inactive_bypass",
+                "active_unlimited",
+                "active_speed_limit",
+                "static_friction_accumulation",
+                "static_friction_release",
+                "static_friction_no_contact_decay",
+                "dynamic_friction_attenuation",
+                "center_centrifugal_response",
+            ],
+        )
         self.assertTrue(self.contract["boundary"]["nativeCoreExecuted"])
         self.assertTrue(self.contract["boundary"]["sourceTranscriptionMatched"])
 
-    def test_records_remaining_branch_gap(self):
-        self.assertFalse(self.contract["boundary"]["completeKernelGoldenCoverage"])
-        self.assertIn("static friction", self.contract["boundary"]["notCovered"])
+    def test_records_complete_closed_branch_coverage(self):
+        self.assertTrue(self.contract["boundary"]["completeKernelGoldenCoverage"])
+        self.assertEqual(self.contract["boundary"]["notCovered"], [])
+        self.assertIn("static-friction accumulation", self.contract["boundary"]["covered"])
+        self.assertIn("static-friction release", self.contract["boundary"]["covered"])
+        self.assertIn("static-friction no-contact decay", self.contract["boundary"]["covered"])
+        self.assertIn("dynamic-friction attenuation", self.contract["boundary"]["covered"])
+        self.assertIn("center centrifugal response", self.contract["boundary"]["covered"])
+
+    def test_pins_core_abi_order(self):
+        self.assertEqual(self.contract["abi"]["leadingValue"], "dt float32")
+        self.assertEqual(
+            self.contract["abi"]["pointerOrder"],
+            [
+                "stepParticleIndexArray", "teamDataArray", "parameterArray", "centerDataArray",
+                "attributes", "vertexDepths", "teamIdArray", "nextPosArray", "oldPosArray",
+                "velocityArray", "realVelocityArray", "velocityPosArray", "frictionArray",
+                "staticFrictionArray", "collisionNormalArray",
+            ],
+        )
+        self.assertEqual(self.contract["abi"]["trailingValue"], "rangeIndex int32")
+
+    def test_records_mutated_friction_state_bits(self):
+        rows = {row["name"]: row for row in self.contract["vectors"]}
+        self.assertEqual(
+            rows["static_friction_accumulation"]["output"]["staticFrictionBinary32Le"],
+            "e17a943e",
+        )
+        self.assertEqual(
+            rows["static_friction_no_contact_decay"]["output"]["staticFrictionBinary32Le"],
+            "3333b33e",
+        )
+        self.assertEqual(
+            rows["dynamic_friction_attenuation"]["output"]["frictionBinary32Le"],
+            "9a99993e",
+        )
 
     def test_generated_contract_matches(self):
         expected = json.dumps(self.contract, indent=2) + "\n"
