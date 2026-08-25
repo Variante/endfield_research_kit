@@ -29,6 +29,9 @@ SIN_SHA256 = "4b74ab7e0a799b053d616b14cf3380c3124a112d3756786a6df6c17f3d0521e4"
 COS_RVA = 0x23C1C0
 COS_BYTES = 718
 COS_SHA256 = "6dd6e6504c6daed91f592c93fb0c0a6716787a20d2214fd83d4ed6e845ca0b8f"
+SLERP_SIN_RVA = 0x1DE610
+SLERP_SIN_BYTES = 557
+SLERP_SIN_SHA256 = "d11fc448307689e5bf1c981bf1cae17af4604d6fa0105aa2196b162048a1c6ac"
 
 
 DEFAULTS: dict[str, Any] = {
@@ -74,10 +77,30 @@ CASES: tuple[dict[str, Any], ...] = (
     {"name": "base_transform_interpolation", "attribute": 0,
      "position": (4.0, -2.0, 2.0), "oldTransformPosition": (0.0, 2.0, -2.0),
      "frameInterpolation": 0.25},
+    {"name": "base_transform_rotation_slerp", "attribute": 0,
+     "rotation": (0.0, 0.0, 0.7071067811865476, 0.7071067811865476),
+     "oldTransformRotation": (0.7071067811865476, 0.0, 0.0, 0.7071067811865476),
+     "frameInterpolation": 0.35},
+    {"name": "base_transform_rotation_nlerp", "attribute": 0,
+     "rotation": (0.0, 0.009999499987500624, 0.0, 0.9999499987499375),
+     "oldTransformRotation": (0.0, 0.0, 0.0, 1.0),
+     "frameInterpolation": 0.4},
+    {"name": "base_transform_rotation_shortest_arc_sign_flip", "attribute": 0,
+     "rotation": (0.0, 0.0, -0.7071067811865476, -0.7071067811865476),
+     "oldTransformRotation": (0.7071067811865476, 0.0, 0.0, 0.7071067811865476),
+     "frameInterpolation": 0.35},
     {"name": "inertia_translation_and_velocity", "depth": 0.5,
      "inertiaDepth": 1.0, "oldPos": (1.0, 0.0, 0.0),
      "velocity": (2.0, 4.0, 0.0), "velocityWeight": 0.5,
      "centerStepVector": (2.0, 0.0, 0.0), "centerInertiaVector": (0.0, 2.0, 0.0)},
+    {"name": "inertia_position_and_velocity_rotation", "depth": 0.5,
+     "inertiaDepth": 0.8, "oldPos": (2.0, -1.0, 3.0),
+     "velocity": (1.5, -2.0, 0.75), "velocityWeight": 0.65,
+     "centerOldWorldPosition": (0.5, -0.25, 1.0),
+     "centerStepVector": (0.75, -0.5, 0.25),
+     "centerInertiaVector": (-0.25, 0.5, -0.75),
+     "centerStepRotation": (0.0, 0.0, 0.7071067811865476, 0.7071067811865476),
+     "centerInertiaRotation": (0.0, 0.7071067811865476, 0.0, 0.7071067811865476)},
     {"name": "damping_and_gravity_prediction", "dt": 0.25,
      "simulationPower": (0.0, 0.0, 0.8, 0.0), "velocity": (4.0, 0.0, 0.0),
      "dampingCurve": (0.25,) * 16, "gravity": 2.0, "gravityRatio": 0.5,
@@ -123,7 +146,99 @@ def _fdiv(a: float, b: float) -> float:
     return _f32(_f32(a) / _f32(b))
 
 
+def _sqrt(value: float) -> float:
+    return _f32(math.sqrt(_f32(value)))
+
+
+def _sin_burst(value: float) -> float:
+    """Transcribe the bounded path of Simulation Start's float sine helper."""
+    value = _f32(value)
+    if not math.isfinite(value) or abs(value) >= _f32(125.0):
+        raise burst.ContractError("Simulation Start quaternion sine left its pinned bounded path")
+    quotient = _fmul(value, _f32(0.31830987334251404))
+    rounded = math.trunc(_fadd(quotient, _f32(-0.5 if quotient < 0.0 else 0.5)))
+    rounded_float = _f32(float(rounded))
+    reduced = _fadd(value, _fmul(rounded_float, _f32(-3.1414794921875)))
+    reduced = _fadd(reduced, _fmul(rounded_float, _f32(-0.0001131594181060791)))
+    reduced = _fadd(reduced, _fmul(rounded_float, _f32(-1.984187258941006e-09)))
+    signed = _f32(-reduced) if rounded & 1 else reduced
+    square = _fmul(reduced, reduced)
+    polynomial = _fadd(_fmul(square, _f32(2.6083159809786594e-06)),
+                       _f32(-0.00019810690719168633))
+    polynomial = _fadd(_fmul(square, polynomial), _f32(0.00833307858556509))
+    polynomial = _fadd(_fmul(square, polynomial), _f32(-0.16666659712791443))
+    return _fadd(signed, _fmul(square, _fmul(signed, polynomial)))
+
+
+def _acos_burst(value: float) -> float:
+    value = _f32(value)
+    absolute = _f32(abs(value))
+    if absolute < _f32(0.5):
+        polynomial_input = _fmul(value, value)
+        root = absolute
+    else:
+        polynomial_input = _fmul(_f32(0.5), _fsub(1.0, absolute))
+        root = 0.0 if absolute == _f32(1.0) else _sqrt(polynomial_input)
+    polynomial = _fadd(_fmul(polynomial_input, _f32(0.04197454825043678)),
+                       _f32(0.024240460246801376))
+    polynomial = _fadd(_fmul(polynomial_input, polynomial), _f32(0.04547423869371414))
+    polynomial = _fadd(_fmul(polynomial_input, polynomial), _f32(0.07495029270648956))
+    polynomial = _fadd(_fmul(polynomial_input, polynomial), _f32(0.16666772961616516))
+    signed_root = _f32(-root) if value < 0.0 else root
+    asin_value = _fadd(signed_root, _fmul(polynomial_input, _fmul(signed_root, polynomial)))
+    if absolute < _f32(0.5):
+        return _fsub(_f32(1.5707963705062866), asin_value)
+    doubled = _fadd(root, _fmul(polynomial_input, _fmul(root, polynomial)))
+    doubled = _fadd(doubled, doubled)
+    return _fsub(_f32(3.1415927410125732), doubled) if value < 0.0 else doubled
+
+
+def _dot4(a: tuple[float, ...], b: tuple[float, ...]) -> float:
+    return _fadd(_fadd(_fmul(a[0], b[0]), _fmul(a[1], b[1])),
+                 _fadd(_fmul(a[2], b[2]), _fmul(a[3], b[3])))
+
+
+def _normalize4(q: tuple[float, ...]) -> tuple[float, ...]:
+    inverse = _fdiv(1.0, _sqrt(_dot4(q, q)))
+    return tuple(_fmul(value, inverse) for value in q)
+
+
+def _slerp(a: tuple[float, ...], b: tuple[float, ...], t: float) -> tuple[float, ...]:
+    dot = _dot4(a, b)
+    if dot < 0.0:
+        b = tuple(_f32(-value) for value in b)
+        dot = _f32(-dot)
+    if dot >= _f32(0.9995):
+        mixed = tuple(_fadd(a[i], _fmul(t, _fsub(b[i], a[i]))) for i in range(4))
+        return _normalize4(mixed)
+    theta = _acos_burst(dot)
+    inverse_sin = _fdiv(1.0, _sqrt(_fsub(1.0, _fmul(dot, dot))))
+    wa = _fmul(inverse_sin, _sin_burst(_fmul(_fsub(1.0, t), theta)))
+    wb = _fmul(inverse_sin, _sin_burst(_fmul(t, theta)))
+    return tuple(_fadd(_fmul(a[i], wa), _fmul(b[i], wb)) for i in range(4))
+
+
+def _rotate(q: tuple[float, ...], v: tuple[float, ...]) -> tuple[float, float, float]:
+    qv = q[:3]
+    cross1 = (
+        _fsub(_fmul(qv[1], v[2]), _fmul(qv[2], v[1])),
+        _fsub(_fmul(qv[2], v[0]), _fmul(qv[0], v[2])),
+        _fsub(_fmul(qv[0], v[1]), _fmul(qv[1], v[0])),
+    )
+    twice = tuple(_fadd(value, value) for value in cross1)
+    cross2 = (
+        _fsub(_fmul(qv[1], twice[2]), _fmul(qv[2], twice[1])),
+        _fsub(_fmul(qv[2], twice[0]), _fmul(qv[0], twice[2])),
+        _fsub(_fmul(qv[0], twice[1]), _fmul(qv[1], twice[0])),
+    )
+    return tuple(_fadd(_fadd(v[i], _fmul(q[3], twice[i])), cross2[i]) for i in range(3))  # type: ignore[return-value]
+
+
 def _f3(values: tuple[float, ...]) -> tuple[float, float, float]:
+    return tuple(_f32(v) for v in values)  # type: ignore[return-value]
+
+
+def _f4(values: tuple[float, ...]) -> tuple[float, float, float, float]:
     return tuple(_f32(v) for v in values)  # type: ignore[return-value]
 
 
@@ -180,9 +295,8 @@ def source_port(raw: dict[str, Any], sin_helper: Callable[[float], float],
     interpolation = _f32(c["frameInterpolation"])
     base = tuple(float(old + float(interpolation)*(now-old))
                  for old, now in zip(c["oldTransformPosition"], c["position"]))
-    # Controlled vectors deliberately use the identity quaternion so this path pins
-    # interpolation/writeback without hiding another unpinned transcendental boundary.
-    base_rotation = (0.0, 0.0, 0.0, 1.0)
+    base_rotation = _normalize4(_slerp(_f4(c["oldTransformRotation"]),
+                                       _f4(c["rotation"]), interpolation))
     if not (c["attribute"] & 2) and not (c["teamFlag"] & 0x2000):
         return {"basePos": base, "baseRot": base_rotation, "stepBasicPosition": base,
                 "stepBasicRotation": base_rotation, "velocityPos": base, "nextPos": base}
@@ -195,9 +309,12 @@ def source_port(raw: dict[str, Any], sin_helper: Callable[[float], float],
                         for a, b in zip(inertia_vector, step_vector))
     center = tuple(float(v) for v in c["centerOldWorldPosition"])
     relative = _f3(tuple(old-center_value for old, center_value in zip(c["oldPos"], center)))
+    inertia_rotation = _slerp(_f4(c["centerInertiaRotation"]),
+                              _f4(c["centerStepRotation"]), k)
+    rotated_relative = _rotate(inertia_rotation, relative)
     inertia_position = tuple(center_value + float(r) + float(t)
-                             for center_value, r, t in zip(center, relative, translation))
-    inertia_velocity = _f3_mul(_f3(c["velocity"]), c["velocityWeight"])
+                             for center_value, r, t in zip(center, rotated_relative, translation))
+    inertia_velocity = _f3_mul(_rotate(inertia_rotation, _f3(c["velocity"])), c["velocityWeight"])
 
     curve = _sample16(tuple(_f32(v) for v in c["dampingCurve"]), depth)
     damping = max(min(_fsub(1.0, _fmul(curve, c["simulationPower"][2])), 1.0), 0.0)
@@ -317,6 +434,7 @@ def build_contract() -> dict[str, Any]:
     burst._exact_rva_span(pe, CORE_RVA, CORE_BYTES, CORE_SHA256)
     burst._exact_rva_span(pe, SIN_RVA, SIN_BYTES, SIN_SHA256)
     burst._exact_rva_span(pe, COS_RVA, COS_BYTES, COS_SHA256)
+    burst._exact_rva_span(pe, SLERP_SIN_RVA, SLERP_SIN_BYTES, SLERP_SIN_SHA256)
     module = ctypes.WinDLL(str(dll))
     sin_helper = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)(module._handle + SIN_RVA)
     cos_helper = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double)(module._handle + COS_RVA)
@@ -347,6 +465,10 @@ def build_contract() -> dict[str, Any]:
                 "internalRegisterConvention": "simulationDeltaTime is live in xmm4; all 23 pointers are stack arguments",
                 "ffiShim": "movss xmm4,[rsp+0x28]; mov rax,core; jmp rax"},
         "directHelpers": {
+            "quaternionSlerpSin": {"rva": f"0x{SLERP_SIN_RVA:x}", "bytes": SLERP_SIN_BYTES,
+                                    "sha256": SLERP_SIN_SHA256,
+                                    "abi": "float32 -> float32", "usedBySourceTranscription": False,
+                                    "sourceBoundary": "standalone bounded-path transcription"},
             "springNoiseSin": {"rva": f"0x{SIN_RVA:x}", "bytes": SIN_BYTES, "sha256": SIN_SHA256,
                                "abi": "double -> double", "usedBySourceTranscription": True},
             "normalConeCos": {"rva": f"0x{COS_RVA:x}", "bytes": COS_BYTES, "sha256": COS_SHA256,
@@ -356,14 +478,16 @@ def build_contract() -> dict[str, Any]:
         "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "vectors": vectors,
         "boundary": {"nativeCoreExecuted": True, "sourceTranscriptionMatched": True,
-                     "covered": ["inactive bypass", "base transform interpolation", "inertia",
+                     "covered": ["inactive bypass", "base transform position interpolation",
+                                 "base transform shortest-arc quaternion nlerp and slerp interpolation",
+                                 "center step/inertia quaternion interpolation and rotated position/velocity", "inertia",
                                  "damping and gravity prediction", "force mode 1 attenuation",
                                  "force mode 10 preservation", "spring distance clamp", "spring noise",
                                  "normal cone restriction"],
                      "nonStandaloneHelperBoundary": ["spring noise uses the directly pinned scalar sine helper",
                                                      "normal-cone threshold uses the directly pinned scalar cosine helper"],
-                     "notCovered": ["nonzero wind", "non-identity quaternion interpolation"],
-                     "controlledDomain": "identity old/current/inertia rotations isolate position, force, spring, and cone arithmetic",
+                     "notCovered": ["nonzero wind"],
+                     "controlledDomain": "zero wind; representative normalized base and center quaternions cover all base/inertia position and rotation equations; valid quaternion slerp arguments remain inside the standalone float-sine transcription's bounded path",
                      "completeKernelGoldenCoverage": False, "unityPortExecuted": False},
     }
 

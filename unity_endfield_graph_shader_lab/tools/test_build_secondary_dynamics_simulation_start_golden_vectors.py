@@ -31,6 +31,10 @@ class SimulationStartGoldenVectorTests(unittest.TestCase):
         names = {row["name"] for row in self.payload["vectors"]}
         self.assertEqual({raw["name"] for raw in MODULE.CASES}, names)
         for required in ("inactive_bypass", "base_transform_interpolation",
+                         "base_transform_rotation_slerp",
+                         "base_transform_rotation_nlerp",
+                         "base_transform_rotation_shortest_arc_sign_flip",
+                         "inertia_position_and_velocity_rotation",
                          "damping_and_gravity_prediction", "spring_distance_clamp",
                          "spring_noise", "normal_cone_restriction"):
             self.assertIn(required, names)
@@ -41,9 +45,27 @@ class SimulationStartGoldenVectorTests(unittest.TestCase):
         self.assertIn("nonzero wind", self.payload["boundary"]["notCovered"])
 
     def test_helpers_are_explicitly_pinned(self) -> None:
-        for helper in self.payload["directHelpers"].values():
-            self.assertTrue(helper["usedBySourceTranscription"])
+        for name, helper in self.payload["directHelpers"].items():
             self.assertEqual(64, len(helper["sha256"]))
+            if name == "quaternionSlerpSin":
+                self.assertFalse(helper["usedBySourceTranscription"])
+                self.assertEqual("standalone bounded-path transcription", helper["sourceBoundary"])
+            else:
+                self.assertTrue(helper["usedBySourceTranscription"])
+
+    def test_shortest_arc_sign_flip_matches_positive_representation(self) -> None:
+        rows = {row["name"]: row for row in self.payload["vectors"]}
+        positive = rows["base_transform_rotation_slerp"]["output"]
+        flipped = rows["base_transform_rotation_shortest_arc_sign_flip"]["output"]
+        self.assertEqual(positive["baseRotBinary32Le"], flipped["baseRotBinary32Le"])
+        self.assertEqual(positive["stepBasicRotationBinary32Le"],
+                         flipped["stepBasicRotationBinary32Le"])
+
+    def test_nonidentity_rotation_boundary_is_closed(self) -> None:
+        boundary = self.payload["boundary"]
+        self.assertNotIn("non-identity quaternion interpolation", boundary["notCovered"])
+        self.assertIn("center step/inertia quaternion interpolation and rotated position/velocity",
+                      boundary["covered"])
 
     def test_generated_file_matches(self) -> None:
         expected = json.dumps(self.payload, indent=2) + "\n"
