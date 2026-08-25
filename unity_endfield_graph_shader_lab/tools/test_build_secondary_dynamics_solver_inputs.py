@@ -75,6 +75,71 @@ class SecondaryDynamicsSolverInputTests(unittest.TestCase):
         self.assertEqual(builder._constraint_view(serialized), {name: serialized[name] for name in constraint_names})
         self.assertEqual(serialized, original)
 
+    def test_proxy_transform_bindings_are_exact_and_fail_closed(self) -> None:
+        serialized2 = {
+            "preBuildData": {
+                "uniquePreBuildData": {
+                    "proxyMesh": {
+                        "transformData": {
+                            "transformArray": [
+                                {"m_FileID": 0, "m_PathID": 11},
+                                {"m_FileID": 0, "m_PathID": 0},
+                                {"m_FileID": 0, "m_PathID": 22},
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        self.assertEqual(
+            builder._proxy_transform_bindings(
+                serialized2,
+                {11: "Root/A", 22: "Root/B"},
+            ),
+            [
+                {"array_index": 0, "path_id": 11, "path": "Root/A"},
+                {"array_index": 2, "path_id": 22, "path": "Root/B"},
+            ],
+        )
+
+        unknown = copy.deepcopy(serialized2)
+        unknown["preBuildData"]["uniquePreBuildData"]["proxyMesh"][
+            "transformData"
+        ]["transformArray"][2]["m_PathID"] = 33
+        with self.assertRaisesRegex(ValueError, "unknown path ID 33"):
+            builder._proxy_transform_bindings(unknown, {11: "Root/A"})
+
+        duplicate = copy.deepcopy(serialized2)
+        duplicate["preBuildData"]["uniquePreBuildData"]["proxyMesh"][
+            "transformData"
+        ]["transformArray"][2]["m_PathID"] = 11
+        with self.assertRaisesRegex(ValueError, "repeats path ID 11"):
+            builder._proxy_transform_bindings(duplicate, {11: "Root/A"})
+
+        empty = copy.deepcopy(serialized2)
+        empty["preBuildData"]["uniquePreBuildData"]["proxyMesh"][
+            "transformData"
+        ]["transformArray"] = []
+        with self.assertRaisesRegex(ValueError, "empty or malformed"):
+            builder._proxy_transform_bindings(empty, {})
+
+    def test_real_endminf_proxy_transforms_resolve_to_hierarchy(self) -> None:
+        actor, objects = self._endminf_fixture()
+        transform_paths, _ = builder._manifest_maps(actor)
+        observed_counts = []
+        for row in actor["cloths"]:
+            payload = objects[int(row["path_id"])]
+            bindings = builder._proxy_transform_bindings(
+                payload["serializeData2"],
+                transform_paths,
+            )
+            observed_counts.append(len(bindings))
+            self.assertEqual(
+                [binding["array_index"] for binding in bindings],
+                list(range(len(bindings))),
+            )
+        self.assertEqual(observed_counts, [7, 31, 21, 71])
+
     def test_generated_contract_exposes_three_targets_and_is_fail_closed(self) -> None:
         observed = builder.build_contract()
         raw_output = builder.OUTPUT.read_bytes()
@@ -100,6 +165,20 @@ class SecondaryDynamicsSolverInputTests(unittest.TestCase):
                 self.assertIn("gravity", solver_input["parameters"])
                 self.assertIn("springConstraint", solver_input["constraints"])
                 self.assertIn("preBuildData", solver_input["prebuild_data"])
+                transform_array = solver_input["prebuild_data"][
+                    "uniquePreBuildData"
+                ]["proxyMesh"]["transformData"]["transformArray"]
+                expected_ids = [
+                    (index, int(value["m_PathID"]))
+                    for index, value in enumerate(transform_array)
+                    if int(value["m_PathID"]) != 0
+                ]
+                bindings = solver_input["proxy_transform_bindings"]
+                self.assertEqual(
+                    [(row["array_index"], row["path_id"]) for row in bindings],
+                    expected_ids,
+                )
+                self.assertEqual(cloth["proxy_transform_bindings"], bindings)
                 self.assertFalse(solver_input.get("solver_implemented", False))
 
     def test_owner_path_root_and_collider_drift_is_rejected(self) -> None:
@@ -181,6 +260,14 @@ class SecondaryDynamicsSolverInputTests(unittest.TestCase):
         drift = copy.deepcopy(actor)
         drift["target_filter"]["repo_path"] = "runtime_native.json"
         with self.assertRaisesRegex(ValueError, "target filter path spoof/drift"):
+            builder._validate_actor_rows("endminf", drift, objects)
+
+        drift = copy.deepcopy(actor)
+        drift["hierarchy_name_map"]["repo_path"] = (
+            "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
+            "Generated/Characters/Playable/Pelica/pelica_ui_recovery_manifest.json"
+        )
+        with self.assertRaisesRegex(ValueError, "hierarchy evidence character drift"):
             builder._validate_actor_rows("endminf", drift, objects)
 
 
