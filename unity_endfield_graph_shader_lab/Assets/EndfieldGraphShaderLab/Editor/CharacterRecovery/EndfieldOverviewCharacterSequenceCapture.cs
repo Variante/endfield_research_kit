@@ -146,6 +146,8 @@ namespace EndfieldGraphShaderLabEditor
             public bool matte_verified = false;
             public bool secondary_dynamics_verified = false;
             public string secondary_dynamics_contract = SecondaryDynamicsContract;
+            public EndfieldSecondaryDynamicsOwnerContract.BindingAudit
+                secondary_dynamics_owner_binding;
             public string render_fidelity_status =
                 "incomplete_missing_retail_secondary_dynamics_solver";
             public CaptureClip[] clips = Array.Empty<CaptureClip>();
@@ -421,6 +423,11 @@ namespace EndfieldGraphShaderLabEditor
                 if (animation == null || playback == null)
                     throw new InvalidDataException(
                         "Actor has no Animation/EndfieldOverviewPlayback: " + actorName);
+                sidecar.secondary_dynamics_owner_binding =
+                    EndfieldSecondaryDynamicsOwnerContract.Verify(
+                        actor,
+                        actorName,
+                        SecondaryDynamicsContract);
 
                 AnimationClip startClip = ResolveClip(animation, playback.startClip);
                 AnimationClip loopClip = ResolveClip(animation, playback.loopClip);
@@ -1225,6 +1232,7 @@ namespace EndfieldGraphShaderLabEditor
             "The transparent pass temporarily disables HGCompatRenderPipelineAsset character post processing; transparent frames therefore do not contain recovered post-process output.",
             "matteVerified=false: alpha readback is reported as an audit only; no independent character matte or UI-removal ground truth was verified.",
             "secondaryDynamicsVerified=false: the original BeyondBoneCloth owners and serialized constraints are catalogued, but the retail BeyondDynamicBone/Burst solver and its PlayerLoop scheduling are not present; cloth, hair, ribbons, and accessories can diverge from the animated body.",
+            "The secondary-dynamics owner-binding audit verifies only that the declared cloth owners, root bones, and collider owners resolve on the instantiated actor; it performs no transform writes and is not solver equivalence.",
             "Recovered renderer/shader pipeline output is not a proof of retail pixel parity or of a complete source rendering pipeline.",
         };
     }
