@@ -29,6 +29,8 @@ EXPECTED_RESOURCE_HASH = "554904b3"
 EXPECTED_BYTE_WIDTH = 8_413_184
 EXPECTED_STRIDE = 16
 ROWS_PER_MATRIX = 3
+EXPECTED_CONSTANT_BUFFER_HASH = "a517561d"
+EXPECTED_CONSTANT_BUFFER_BYTE_WIDTH = 4_194_304
 
 
 class CaptureError(ValueError):
@@ -73,6 +75,132 @@ def select_resource(capture_dir: Path, draw: int) -> tuple[Path, Path]:
             "3DMigoto 'buf' analysis option"
         )
     return descriptor, payload
+
+
+def select_constant_buffer(capture_dir: Path, draw: int, slot: int = 2) -> tuple[Path, Path]:
+    prefix = f"{draw:06d}-vs-cb{slot}={EXPECTED_CONSTANT_BUFFER_HASH}-"
+    descriptors = sorted(
+        path for path in capture_dir.glob(f"{prefix}*.dsc") if path.is_file()
+    )
+    if len(descriptors) != 1:
+        raise CaptureError(
+            f"expected exactly one draw {draw:06d} vs-cb{slot}="
+            f"{EXPECTED_CONSTANT_BUFFER_HASH} descriptor in {capture_dir}, "
+            f"found {len(descriptors)}"
+        )
+    descriptor = descriptors[0]
+    payload = descriptor.with_suffix(".buf")
+    if not payload.is_file():
+        raise CaptureError(
+            f"binary constant-buffer payload is missing for {descriptor.name}; "
+            "recapture with the 3DMigoto 'buf' analysis option"
+        )
+    return descriptor, payload
+
+
+def parse_constant_buffer_range(log_path: Path, draw: int, slot: int = 2) -> tuple[int, int]:
+    try:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        raise CaptureError(f"cannot read frame-analysis log {log_path}: {exc}") from exc
+    call_pattern = re.compile(
+        rf"^{draw:06d} VSSetConstantBuffers1\(StartSlot:{slot}, NumBuffers:(\d+),"
+    )
+    value_pattern = re.compile(
+        rf"^\s+{slot}: first_constant=(\d+) num_constants=(\d+)\s*$"
+    )
+    matches: list[tuple[int, int]] = []
+    for index, line in enumerate(lines):
+        call = call_pattern.match(line)
+        if call is None:
+            continue
+        if int(call.group(1), 10) != 1:
+            raise CaptureError(
+                f"draw {draw:06d} slot {slot} range logger reported an unexpected "
+                f"NumBuffers={call.group(1)}"
+            )
+        if index + 1 >= len(lines):
+            raise CaptureError(f"draw {draw:06d} slot {slot} range log is truncated")
+        value = value_pattern.match(lines[index + 1])
+        if value is None:
+            raise CaptureError(
+                f"draw {draw:06d} slot {slot} lacks numeric first_constant/"
+                "num_constants evidence; use the observer-only range-logging build"
+            )
+        matches.append((int(value.group(1), 10), int(value.group(2), 10)))
+    if len(matches) != 1:
+        raise CaptureError(
+            f"expected exactly one draw {draw:06d} VS slot {slot} range in "
+            f"{log_path}, found {len(matches)}"
+        )
+    return matches[0]
+
+
+def derive_palette_bases(
+    capture_dir: Path, draw: int, relative_instance: int = 0
+) -> dict[str, int | str]:
+    if relative_instance < 0:
+        raise CaptureError("relative instance must be non-negative")
+    first_constant, num_constants = parse_constant_buffer_range(
+        capture_dir / "log.txt", draw, 2
+    )
+    instance_row = relative_instance * 16
+    metadata_row = instance_row + 5
+    if metadata_row >= num_constants:
+        raise CaptureError(
+            f"instance metadata row {metadata_row} exceeds bound b2 range of "
+            f"{num_constants} constants"
+        )
+    descriptor, payload = select_constant_buffer(capture_dir, draw, 2)
+    metadata = parse_descriptor(descriptor)
+    if metadata["type"] != "Buffer":
+        raise CaptureError(f"{descriptor} is not a Buffer descriptor")
+    if metadata["byte_width"] != EXPECTED_CONSTANT_BUFFER_BYTE_WIDTH:
+        raise CaptureError(
+            f"unexpected b2 byte_width {metadata['byte_width']} in {descriptor}; "
+            f"expected {EXPECTED_CONSTANT_BUFFER_BYTE_WIDTH}"
+        )
+    if metadata["stride"] != 0:
+        raise CaptureError(f"unexpected b2 stride {metadata['stride']} in {descriptor}")
+    data = payload.read_bytes()
+    if len(data) != metadata["byte_width"]:
+        raise CaptureError(
+            f"b2 payload size {len(data)} does not match descriptor byte_width "
+            f"{metadata['byte_width']}"
+        )
+    absolute_row = first_constant + metadata_row
+    byte_offset = absolute_row * 16
+    if byte_offset + 16 > len(data):
+        raise CaptureError(
+            f"b2 metadata row {absolute_row} exceeds the captured ring buffer"
+        )
+    current_raw, previous_raw, reserved_z, reserved_w = struct.unpack_from(
+        "<4I", data, byte_offset
+    )
+    current_effective = current_raw + 3
+    previous_effective = previous_raw + 3
+    record_count = EXPECTED_BYTE_WIDTH // EXPECTED_STRIDE
+    if current_effective >= record_count or previous_effective >= record_count:
+        raise CaptureError(
+            "derived skin-palette base exceeds the vs-t0 float4 record count: "
+            f"current={current_effective}, previous={previous_effective}, "
+            f"records={record_count}"
+        )
+    return {
+        "constant_buffer_descriptor": descriptor.name,
+        "constant_buffer_payload": payload.name,
+        "first_constant": first_constant,
+        "num_constants": num_constants,
+        "relative_instance": relative_instance,
+        "instance_metadata_relative_row": metadata_row,
+        "instance_metadata_absolute_row": absolute_row,
+        "current_base_raw": current_raw,
+        "previous_base_raw": previous_raw,
+        "reserved_z": reserved_z,
+        "reserved_w": reserved_w,
+        "current_effective_base_row": current_effective,
+        "previous_effective_base_row": previous_effective,
+    }
 
 
 def load_float4_records(descriptor: Path, payload: Path) -> tuple[list[tuple[float, ...]], dict[str, object]]:
@@ -152,12 +280,19 @@ def changed_matrix_ranges(
 def decode_capture(
     capture_dir: Path,
     draw: int,
-    base_row: int,
+    base_row: int | None,
     matrix_count: int,
     previous_base_row: int | None = None,
+    relative_instance: int = 0,
 ) -> dict[str, object]:
     descriptor, payload = select_resource(capture_dir, draw)
     records, metadata = load_float4_records(descriptor, payload)
+    derived = None
+    if base_row is None:
+        derived = derive_palette_bases(capture_dir, draw, relative_instance)
+        base_row = int(derived["current_effective_base_row"])
+        if previous_base_row is None:
+            previous_base_row = int(derived["previous_effective_base_row"])
     matrices = extract_matrices(records, base_row, matrix_count)
     result = {
         "capture_dir": str(capture_dir.resolve()),
@@ -171,6 +306,8 @@ def decode_capture(
         "rows_per_matrix": ROWS_PER_MATRIX,
         "matrices_3x4": matrices,
     }
+    if derived is not None:
+        result["derived_binding"] = derived
     if previous_base_row is not None:
         result["previous_effective_base_row"] = previous_base_row
         result["previous_matrices_3x4"] = extract_matrices(
@@ -186,10 +323,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--current-base-row",
         type=int,
-        required=True,
         help="effective float4 row index after the shader's +3 adjustment",
     )
     parser.add_argument("--matrix-count", type=int, required=True)
+    parser.add_argument(
+        "--relative-instance",
+        type=int,
+        default=0,
+        help="instance index relative to BaseInstance (default: 0)",
+    )
     parser.add_argument(
         "--previous-base-row",
         type=int,
@@ -214,6 +356,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             args.current_base_row,
             args.matrix_count,
             args.previous_base_row,
+            args.relative_instance,
         )
         if args.compare_capture_dir is not None:
             compare = decode_capture(
@@ -223,6 +366,7 @@ def main(argv: Iterable[str] | None = None) -> int:
                 if args.compare_current_base_row is not None
                 else args.current_base_row,
                 args.matrix_count,
+                relative_instance=args.relative_instance,
             )
             ranges, maximum = changed_matrix_ranges(
                 result["matrices_3x4"], compare["matrices_3x4"], args.tolerance

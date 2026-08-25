@@ -36,6 +36,30 @@ class DecodeEndminfSkinningCaptureTests(unittest.TestCase):
                 stream.write(struct.pack("<4f", value, value + 1, value + 2, value + 3))
         return capture
 
+    def add_range_logged_b2(
+        self, capture: Path, draw: int, first_constant: int, current: int, previous: int
+    ) -> None:
+        stem = (
+            f"{draw:06d}-vs-cb2={MODULE.EXPECTED_CONSTANT_BUFFER_HASH}-"
+            "vs=1479b2b594b9c91a-ps=e9ccfc0d0d3c7746"
+        )
+        (capture / f"{stem}.dsc").write_text(
+            "type=Buffer byte_width=4194304 usage=\"DYNAMIC\" "
+            "bind_flags=\"constant_buffer\" cpu_access_flags=\"write\" "
+            "misc_flags=0 stride=0\n",
+            encoding="utf-8",
+        )
+        data = bytearray(MODULE.EXPECTED_CONSTANT_BUFFER_BYTE_WIDTH)
+        struct.pack_into("<4I", data, (first_constant + 5) * 16, current, previous, 7, 9)
+        (capture / f"{stem}.buf").write_bytes(data)
+        (capture / "log.txt").write_text(
+            f"{draw:06d} VSSetConstantBuffers1(StartSlot:2, NumBuffers:1, "
+            "ppConstantBuffers:0x1, pFirstConstant:0x2, pNumConstants:0x3)\n"
+            f"       2: first_constant={first_constant} num_constants=4096\n"
+            "       2: resource=0x4 hash=a517561d\n",
+            encoding="utf-8",
+        )
+
     def test_decodes_three_row_matrices_from_effective_base(self):
         with tempfile.TemporaryDirectory() as temporary:
             capture = self.make_capture(Path(temporary), 77)
@@ -59,6 +83,16 @@ class DecodeEndminfSkinningCaptureTests(unittest.TestCase):
             )
         self.assertEqual(ranges, [{"start_matrix": 1, "end_matrix_exclusive": 2}])
         self.assertAlmostEqual(maximum, 0.25)
+
+    def test_derives_current_and_previous_bases_from_range_logged_b2(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = self.make_capture(Path(temporary), 77)
+            self.add_range_logged_b2(capture, 77, first_constant=128, current=12, previous=42)
+            result = MODULE.decode_capture(capture, 77, None, 1)
+        self.assertEqual(result["effective_base_row"], 15)
+        self.assertEqual(result["previous_effective_base_row"], 45)
+        self.assertEqual(result["derived_binding"]["instance_metadata_absolute_row"], 133)
+        self.assertEqual(result["derived_binding"]["reserved_z"], 7)
 
     def test_fails_closed_when_binary_payload_is_missing(self):
         with tempfile.TemporaryDirectory() as temporary:
