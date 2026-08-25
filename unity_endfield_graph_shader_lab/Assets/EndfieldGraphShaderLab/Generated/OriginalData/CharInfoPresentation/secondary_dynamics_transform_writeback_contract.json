@@ -43,6 +43,11 @@
       },
       "role": "managed field-shape corroboration only; not implementation evidence"
     },
+    "payload_decode": {
+      "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
+      "size": 1161329,
+      "sha256": "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
+    },
     "codeRegistration": "0x18b9217d0"
   },
   "managed": {
@@ -2131,7 +2136,29 @@
       "representation": "duplicates remain distinct NativeArray and TransformAccessArray entries",
       "jobMode": 1,
       "winner": null,
-      "failClosedReason": "TransformAccess execution exposes no static deterministic winner or owner priority; require live job-list/TransformAccess telemetry or an explicitly labeled compatibility policy"
+      "failClosedReason": "TransformAccess execution exposes no static deterministic winner or owner priority; require live job-list/TransformAccess telemetry or an explicitly labeled compatibility policy",
+      "sourceAttributeClassification": {
+        "source": {
+          "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
+          "size": 1161329,
+          "sha256": "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
+        },
+        "duplicatePathCount": 26,
+        "ownerPairCounts": {
+          "MC_Coat/MC_Ribbon2": 6,
+          "MC_Coat/MC_Ribbon": 20
+        },
+        "attributePairCountsNonCoatToCoat": {
+          "1:0": 5,
+          "2:0": 19,
+          "0:0": 2
+        },
+        "coatAttributesAllFixedZero": true,
+        "nonCoatDynamicVsCoatFixed": 24,
+        "bothFixed": 2,
+        "interpretation": "source topology distinguishes 24 dynamic Ribbon/Ribbon2 entries from fixed Coat copies, but this does not prove TransformAccess execution order or authorize a winner",
+        "boundedCompatibilityCandidate": "prefer a nonzero VertexAttribute over a zero-attribute duplicate; leaves two fixed/fixed duplicates unresolved and is not selected by this contract"
+      }
     },
     "transformAccessPropertyReads": [
       {

@@ -33,6 +33,7 @@ EVIDENCE_ROOT = LAB_ROOT / "scratch/character_recovery/secondary_dynamics_owner"
 DEFAULT_NATIVE = EVIDENCE_ROOT / "transform_writeback_native.json"
 DEFAULT_METADATA_CATALOG = EVIDENCE_ROOT / "transform_writeback_metadata.json"
 DEFAULT_DUMMY_GENERATION = REPO_ROOT / "tools/DummyDll/generation.json"
+DEFAULT_PAYLOAD_DECODE = SOURCE_ROOT / "secondary_dynamics_payload_decode.json"
 DEFAULT_OUTPUT = SOURCE_ROOT / "secondary_dynamics_transform_writeback_contract.json"
 DEFAULT_GAME_ASSEMBLY: Path | None = None
 DEFAULT_METADATA: Path | None = None
@@ -41,6 +42,7 @@ EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b98
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 EXPECTED_CODE_REGISTRATION = "0x18b9217d0"
 EXPECTED_BONE_ASSEMBLY_SHA256 = "025c209c7f0b9ee927891421c74b42bdd16ff224f16f9c189f9f7d6ad1a3182c"
+EXPECTED_PAYLOAD_DECODE_SHA256 = "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -267,6 +269,54 @@ def _repo_path(path: Path) -> str:
 
 def file_record(path: Path) -> dict[str, Any]:
     return {"repo_path": _repo_path(path), "size": path.stat().st_size, "sha256": sha256(path)}
+
+
+def _endminf_duplicate_source_boundary(path: Path = DEFAULT_PAYLOAD_DECODE) -> dict[str, Any]:
+    record = file_record(path)
+    if record["sha256"] != EXPECTED_PAYLOAD_DECODE_SHA256:
+        raise ContractError("secondary-dynamics payload decode hash drift")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    by_path: dict[str, list[dict[str, Any]]] = {}
+    for cloth in payload["actors"]["endminf"]["cloths"]:
+        owner = cloth["game_object_path"]
+        transforms = cloth["transform_array"]["entries"][:-1]
+        attributes = cloth["proxy_mesh_arrays"]["attributes"]["values"]
+        if len(transforms) != len(attributes):
+            raise ContractError(f"{owner} transform/attribute cardinality drift")
+        for index, (transform, attribute) in enumerate(zip(transforms, attributes)):
+            by_path.setdefault(transform["hierarchy_path"], []).append({
+                "owner": owner,
+                "vertexIndex": index,
+                "attribute": int(attribute),
+            })
+    duplicates = [rows for rows in by_path.values() if len(rows) > 1]
+    if len(duplicates) != 26 or any(len(rows) != 2 for rows in duplicates):
+        raise ContractError("Endminf duplicate transform source cardinality drift")
+    pair_counts: dict[str, int] = {}
+    attribute_pair_counts: dict[str, int] = {}
+    for rows in duplicates:
+        rows.sort(key=lambda row: row["owner"])
+        pair = "/".join(row["owner"] for row in rows)
+        pair_counts[pair] = pair_counts.get(pair, 0) + 1
+        non_coat = next(row for row in rows if row["owner"] != "MC_Coat")
+        coat = next(row for row in rows if row["owner"] == "MC_Coat")
+        key = f"{non_coat['attribute']}:{coat['attribute']}"
+        attribute_pair_counts[key] = attribute_pair_counts.get(key, 0) + 1
+    if pair_counts != {"MC_Coat/MC_Ribbon2": 6, "MC_Coat/MC_Ribbon": 20}:
+        raise ContractError("Endminf duplicate owner-pair census drift")
+    if attribute_pair_counts != {"1:0": 5, "2:0": 19, "0:0": 2}:
+        raise ContractError("Endminf duplicate attribute-pair census drift")
+    return {
+        "source": record,
+        "duplicatePathCount": len(duplicates),
+        "ownerPairCounts": pair_counts,
+        "attributePairCountsNonCoatToCoat": attribute_pair_counts,
+        "coatAttributesAllFixedZero": True,
+        "nonCoatDynamicVsCoatFixed": 24,
+        "bothFixed": 2,
+        "interpretation": "source topology distinguishes 24 dynamic Ribbon/Ribbon2 entries from fixed Coat copies, but this does not prove TransformAccess execution order or authorize a winner",
+        "boundedCompatibilityCandidate": "prefer a nonzero VertexAttribute over a zero-attribute duplicate; leaves two fixed/fixed duplicates unresolved and is not selected by this contract",
+    }
 
 
 def _validate_pinned_spans(game_assembly: Path) -> list[dict[str, Any]]:
@@ -645,6 +695,7 @@ def build_contract(
                 "native_evidence": file_record(native_evidence),
                 "metadata_catalog": file_record(metadata_catalog),
                 "dummy_generation": dummy,
+                "payload_decode": file_record(DEFAULT_PAYLOAD_DECODE),
                 "codeRegistration": EXPECTED_CODE_REGISTRATION,
             },
             "managed": {
@@ -719,6 +770,7 @@ def build_contract(
                     "jobMode": 1,
                     "winner": None,
                     "failClosedReason": "TransformAccess execution exposes no static deterministic winner or owner priority; require live job-list/TransformAccess telemetry or an explicitly labeled compatibility policy",
+                    "sourceAttributeClassification": _endminf_duplicate_source_boundary(),
                 },
                 "transformAccessPropertyReads": [row for row in transform_access_calls if row["role"] == "transform_read"],
                 "transformAccessPropertyWrites": [row for row in transform_access_calls if row["role"] == "transform_write"],
