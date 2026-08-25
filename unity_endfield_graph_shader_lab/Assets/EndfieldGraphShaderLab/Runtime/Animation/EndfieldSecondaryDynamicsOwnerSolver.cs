@@ -594,6 +594,7 @@ namespace EndfieldGraphShaderLab
             RequireLength(owner.vertexParentIndices, count, "parent indices");
             RequireLength(owner.vertexLocalPositions, count, "local positions");
             RequireLength(owner.vertexLocalRotations, count, "local rotations");
+            RequireLength(owner.vertexBindPoseRotations, count, "bind-pose rotations");
             RequireLength(owner.vertexToTransformRotations, count, "vertex-to-transform rotations");
             RequireLength(owner.distanceConstraintIndexArray, count, "distance indices");
             if (owner.baseLineFlags == null || owner.baseLineStartDataIndices == null ||
@@ -763,6 +764,7 @@ namespace EndfieldGraphShaderLab
             source.vertexParentIndices = Clone(source.vertexParentIndices);
             source.vertexLocalPositions = Clone(source.vertexLocalPositions);
             source.vertexLocalRotations = Clone(source.vertexLocalRotations);
+            source.vertexBindPoseRotations = Clone(source.vertexBindPoseRotations);
             source.vertexToTransformRotations = Clone(source.vertexToTransformRotations);
             source.baseLineFlags = Clone(source.baseLineFlags);
             source.baseLineStartDataIndices = Clone(source.baseLineStartDataIndices);
