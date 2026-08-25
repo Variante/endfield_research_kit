@@ -39,14 +39,42 @@ class AngleGoldenVectorTests(unittest.TestCase):
             boundary["standaloneSincosContract"],
             "secondary_dynamics_float_sincos_golden_vectors.json")
         self.assertTrue(boundary["unityPortExecuted"])
-        self.assertEqual(len(self.contract["vectors"]), 7)
+        self.assertEqual(boundary["controlledTwoParticleVectorCount"], 7)
+        self.assertEqual(boundary["endminfFullBaselineVectorCount"], 18)
+        self.assertEqual(boundary["endminfBaselineParticleCountRange"], [3, 9])
+        self.assertEqual(boundary["orderedSweepCount"], 3)
+        self.assertTrue(boundary["orderedInterParticleWritesPreserved"])
+        self.assertEqual(len(self.contract["vectors"]), 25)
+        self.assertEqual(len(self.contract["unityBaselineVectors"]), 18)
 
     def test_requested_case_coverage(self):
-        self.assertEqual(set(self.vectors), {
+        self.assertTrue({
             "restoration_only_aligned", "restoration_only_bent",
             "hair_limit_inside_cone", "hair_limit_outside_cone",
             "combined_limit_then_restoration", "active_parent_writeback",
-            "friction_mobility"})
+            "friction_mobility"}.issubset(self.vectors))
+
+    def test_all_decoded_endminf_baseline_shapes_are_native_exact_vectors(self):
+        source = self.contract["endminfPayloadSource"]
+        self.assertEqual(source["actor"], "endminf")
+        self.assertEqual(source["clothBaselineShapes"], {
+            "MC_Ribbon2": [6],
+            "MC_Hair": [4, 4, 4, 4, 3, 3, 4, 3],
+            "MC_Ribbon": [4, 5, 4, 5],
+            "MC_Coat": [9, 4, 6, 9, 4],
+        })
+        rows = self.contract["unityBaselineVectors"]
+        observed = {}
+        for row in rows:
+            observed.setdefault(row["cloth"], []).append(len(row["attributes"]))
+            self.assertEqual(len(row["parents"]), len(row["attributes"]))
+            self.assertEqual(len(row["sourceVertexIndices"]), len(row["attributes"]))
+            self.assertEqual(len(row["nextBits"]), len(row["attributes"]) * 3)
+        self.assertEqual(observed, source["clothBaselineShapes"])
+
+    def test_native_harness_uses_unity_flush_denormal_mode(self):
+        self.assertEqual(self.contract["nativeFloatMode"]["denormalMode"], "flush")
+        self.assertEqual(self.contract["nativeFloatMode"]["denormalControlMask"], "0x3000000")
 
     def test_aligned_case_is_stable_and_scratch_is_initialized(self):
         row = self.vectors["restoration_only_aligned"]
