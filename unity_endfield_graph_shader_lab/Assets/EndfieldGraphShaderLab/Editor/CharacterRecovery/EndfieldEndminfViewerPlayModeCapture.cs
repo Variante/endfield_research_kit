@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -54,6 +55,11 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_ENDMINF_CAPTURE_ADMIT_SUIKUAI1";
         private const string OutputEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_OUTPUT";
+        // Comma/semicolon-separated internal requested timestamps. This keeps
+        // targeted retail phase matching on the exact 60 Hz simulation clock
+        // without writing the 600-frame video-export sequence.
+        private const string RequestedTimesEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_REQUESTED_TIMES";
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
@@ -347,6 +353,9 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            string requestedTimesText = Environment.GetEnvironmentVariable(
+                RequestedTimesEnvironment);
+            bool targetedTimes = !string.IsNullOrWhiteSpace(requestedTimesText);
             capturePrePostHdr = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_PREPOST_HDR") == "1";
             capturePostStages = Environment.GetEnvironmentVariable(
@@ -354,6 +363,13 @@ namespace EndfieldGraphShaderLabEditor
             if (capturePrePostHdr && capturePostStages)
                 throw new InvalidOperationException(
                     "Pre-post HDR and five-stage post diagnostics are mutually exclusive.");
+            if (targetedTimes && (fineWindow || videoExport || capturePrePostHdr ||
+                capturePostStages))
+            {
+                throw new InvalidOperationException(
+                    RequestedTimesEnvironment +
+                    " is mutually exclusive with fixed-window, video, and post diagnostics.");
+            }
             string excludedMaterial = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL");
             prePostHdrCohort = string.IsNullOrWhiteSpace(excludedMaterial)
@@ -372,7 +388,7 @@ namespace EndfieldGraphShaderLabEditor
                 postStagesRun = string.IsNullOrWhiteSpace(excludedMaterial)
                     ? "full"
                     : "excluded_" + excludedMaterial;
-            captureFps = videoExport ? SimulationFps : Fps;
+            captureFps = videoExport || targetedTimes ? SimulationFps : Fps;
             string requestedOutput = Environment.GetEnvironmentVariable(
                 OutputEnvironment);
             output = string.IsNullOrWhiteSpace(requestedOutput)
@@ -385,11 +401,15 @@ namespace EndfieldGraphShaderLabEditor
                         SafePathComponent(postStagesRun)
                     : videoExport
                     ? "../exports/endminf_overview/frames"
+                    : targetedTimes
+                        ? "../scratch/character_recovery/endminf_viewer_targeted_times"
                     : fineWindow
                         ? "../scratch/character_recovery/endminf_viewer_playmode_fine_window"
                         : "../scratch/character_recovery/endminf_viewer_playmode_sequence"))
                 : Path.GetFullPath(requestedOutput);
-            requestedTimes = capturePostStages
+            requestedTimes = targetedTimes
+                ? ParseRequestedTimes(requestedTimesText)
+                : capturePostStages
                 ? new[] { 4.40f, 4.4333334f, 4.4666667f, 4.50f, 4.55f }
                 : capturePrePostHdr
                 ? Enumerable.Range(0, 19).Select(value =>
@@ -838,8 +858,12 @@ namespace EndfieldGraphShaderLabEditor
                 if (!observedLightCookieDataReady)
                     missingObservations.Add("exact-consumer LightCookieData readiness");
             }
+            bool targetedTimes = !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
-                status = capturePrePostHdr || capturePostStages
+                status = targetedTimes
+                    ? "targeted_ok"
+                    : capturePrePostHdr || capturePostStages
                     ? "diagnostic_ok"
                     : missingObservations.Count == 0
                     ? "ok"
@@ -905,6 +929,7 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
             EditorApplication.update -= Tick;
             if (!capturePrePostHdr && !capturePostStages && !fineWindow &&
+                !targetedTimes &&
                 missingObservations.Count > 0)
             {
                 captureFailure =
@@ -914,7 +939,8 @@ namespace EndfieldGraphShaderLabEditor
                 EditorApplication.ExitPlaymode();
                 return;
             }
-            if (!capturePrePostHdr && !capturePostStages && !fineWindow && !videoExport)
+            if (!capturePrePostHdr && !capturePostStages && !fineWindow &&
+                !videoExport && !targetedTimes)
             {
                 try
                 {
@@ -1264,6 +1290,39 @@ namespace EndfieldGraphShaderLabEditor
             var pixels = new Color32[raw.Length];
             for (int y = 0; y < Height; y++) Array.Copy(raw, y * Width, pixels, (Height - 1 - y) * Width, Width);
             return pixels;
+        }
+
+        private static float[] ParseRequestedTimes(string value)
+        {
+            string[] tokens = (value ?? string.Empty).Split(
+                new[] { ',', ';' },
+                StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length == 0)
+                throw new InvalidOperationException(
+                    RequestedTimesEnvironment + " contains no timestamps.");
+            var result = new List<float>(tokens.Length);
+            foreach (string token in tokens)
+            {
+                if (!float.TryParse(
+                    token.Trim(),
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out float timestamp) ||
+                    !float.IsFinite(timestamp) || timestamp < 0f)
+                {
+                    throw new InvalidOperationException(
+                        RequestedTimesEnvironment +
+                        " contains an invalid non-negative timestamp: " + token.Trim());
+                }
+                if (result.Count > 0 && timestamp <= result[result.Count - 1])
+                {
+                    throw new InvalidOperationException(
+                        RequestedTimesEnvironment +
+                        " timestamps must be strictly increasing.");
+                }
+                result.Add(timestamp);
+            }
+            return result.ToArray();
         }
 
         private static string SafePathComponent(string value)
