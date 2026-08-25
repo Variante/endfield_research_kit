@@ -1466,7 +1466,7 @@
           "methodIndex": 385455,
           "method": "BeyondDynamicBone.ColliderManager+EndSimulationStepJob.Execute(int)",
           "source": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
-          "sourceSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed",
+          "sourceSha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa",
           "bodySha256": "f1c0ba8d18fa324f21aafd9c791f7658c7238d4bc4bfcacc5f1cd96268c8b297",
           "fields": [
             {
@@ -1516,6 +1516,20 @@
               "instructionOffsets": [
                 "0x64"
               ]
+            }
+          ],
+          "stateCarryForward": [
+            {
+              "sourceField": "nowPositions",
+              "destinationField": "oldPositions",
+              "elementType": "Unity.Mathematics.double3",
+              "widthBytes": 24
+            },
+            {
+              "sourceField": "nowRotations",
+              "destinationField": "oldRotations",
+              "elementType": "Unity.Mathematics.quaternion",
+              "widthBytes": 16
             }
           ],
           "boundary": "managed fallback accesses are evidence of the six-container job layout, not evidence that either hashed export is the fallback or Burst kernel"
@@ -1579,8 +1593,8 @@
         "provenance": {
           "solver": {
             "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
-            "fileSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed",
-            "rebuiltCanonicalSha256": "32465480a3a7106adf425f76613cd70edc1b2e33bcb1d5bcf3ec938ffa1509ff",
+            "fileSha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa",
+            "rebuiltCanonicalSha256": "12aeb97938786ad2d58cc5250e000005e72c07832788d0a9caacb2294ae86845",
             "schema": "endfield.charinfo.secondary-dynamics-solver-static.v1",
             "status": "native_spans_hash_pinned"
           },
@@ -23625,8 +23639,8 @@
     },
     "burstWrapperProvenance": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_wrapper_contract.json",
-      "fileSha256": "2a594ddd0b03ec04b6fa31f412a84ac6bb4b63f9c624a7636824dddcb0517d4e",
-      "rebuiltCanonicalSha256": "9a0083ebb8f43cbcf2c5cea2a7e721951a9cfe539584951530d9ac420ca67524",
+      "fileSha256": "040085572380fbf8969aa76f611637d82eb7844721bdee769ac915484f764e73",
+      "rebuiltCanonicalSha256": "3f890147dfc73e609a62c267d8f1eae50bfe79e8706d06d1aa553ef4e5e8a620",
       "schema": "endfield.charinfo.secondary-dynamics-burst-wrapper.v1",
       "status": "initialization_resolution_chain_closed_export_mapping_unresolved"
     }

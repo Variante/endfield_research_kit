@@ -883,7 +883,7 @@
       "type": "BeyondDynamicBone.ColliderManager+EndSimulationStepJob",
       "method": "Execute(int)",
       "role": "managed_fallback",
-      "solverStatus": "managed_fallback_observed",
+      "solverStatus": "managed_fallback_state_carry_forward_closed",
       "va": "0x18675a9cc",
       "endVaExclusive": "0x18675aa6c",
       "spanBytes": 160,
@@ -953,6 +953,48 @@
           "instructionOffsets": [
             "0x64"
           ]
+        }
+      ],
+      "stateTransitions": [
+        {
+          "operation": "copy",
+          "index": "jobColliderIndexList[Execute(index)]",
+          "sourceField": "nowPositions",
+          "destinationField": "oldPositions",
+          "elementType": "Unity.Mathematics.double3",
+          "widthBytes": 24,
+          "sourceInstructionOffsets": [
+            "0x2f",
+            "0x35"
+          ],
+          "destinationInstructionOffsets": [
+            "0x41",
+            "0x45"
+          ],
+          "instructionBytes": {
+            "0x2f": "f20f1044c810",
+            "0x35": "0f100cc8",
+            "0x41": "0f110cc8",
+            "0x45": "f20f1144c810"
+          }
+        },
+        {
+          "operation": "copy",
+          "index": "jobColliderIndexList[Execute(index)]",
+          "sourceField": "nowRotations",
+          "destinationField": "oldRotations",
+          "elementType": "Unity.Mathematics.quaternion",
+          "widthBytes": 16,
+          "sourceInstructionOffsets": [
+            "0x55"
+          ],
+          "destinationInstructionOffsets": [
+            "0x64"
+          ],
+          "instructionBytes": {
+            "0x55": "f30f6f04c8",
+            "0x64": "f30f7f04c8"
+          }
         }
       ]
     },

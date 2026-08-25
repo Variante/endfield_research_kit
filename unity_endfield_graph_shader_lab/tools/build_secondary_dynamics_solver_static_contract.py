@@ -70,6 +70,7 @@ def _target(
     next_calls: list[dict[str, Any]],
     *,
     accesses: list[dict[str, Any]] | None = None,
+    state_transitions: list[dict[str, Any]] | None = None,
     solver_status: str,
 ) -> dict[str, Any]:
     row: dict[str, Any] = {
@@ -86,6 +87,8 @@ def _target(
     }
     if accesses is not None:
         row["bufferAccesses"] = accesses
+    if state_transitions is not None:
+        row["stateTransitions"] = state_transitions
     return row
 
 
@@ -408,7 +411,38 @@ TARGETS = [
                 {"jobField": "oldPositions", "jobOffset": "0x30", "index": "colliderIndex", "strideBytes": 24, "elementFieldDisplacements": [0, 16], "instructionOffsets": ["0x41", "0x45"]},
                 {"jobField": "nowRotations", "jobOffset": "0x20", "index": "colliderIndex", "strideBytes": 16, "elementFieldDisplacements": [0], "instructionOffsets": ["0x55"]},
                 {"jobField": "oldRotations", "jobOffset": "0x40", "index": "colliderIndex", "strideBytes": 16, "elementFieldDisplacements": [0], "instructionOffsets": ["0x64"]},
-            ], solver_status="managed_fallback_observed"),
+            ], state_transitions=[
+                {
+                    "operation": "copy",
+                    "index": "jobColliderIndexList[Execute(index)]",
+                    "sourceField": "nowPositions",
+                    "destinationField": "oldPositions",
+                    "elementType": "Unity.Mathematics.double3",
+                    "widthBytes": 24,
+                    "sourceInstructionOffsets": ["0x2f", "0x35"],
+                    "destinationInstructionOffsets": ["0x41", "0x45"],
+                    "instructionBytes": {
+                        "0x2f": "f20f1044c810",
+                        "0x35": "0f100cc8",
+                        "0x41": "0f110cc8",
+                        "0x45": "f20f1144c810",
+                    },
+                },
+                {
+                    "operation": "copy",
+                    "index": "jobColliderIndexList[Execute(index)]",
+                    "sourceField": "nowRotations",
+                    "destinationField": "oldRotations",
+                    "elementType": "Unity.Mathematics.quaternion",
+                    "widthBytes": 16,
+                    "sourceInstructionOffsets": ["0x55"],
+                    "destinationInstructionOffsets": ["0x64"],
+                    "instructionBytes": {
+                        "0x55": "f30f6f04c8",
+                        "0x64": "f30f7f04c8",
+                    },
+                },
+            ], solver_status="managed_fallback_state_carry_forward_closed"),
     _target(385456, COL_END, "UnsafeDo", "burst_range_dispatch_wrapper", 0x18675AB00, 0x18675ABBC,
             "b8700fd30831d687414b987c03978d19b382aa2723816bc63e4fa2ce1e00c9b1",
             [_managed_call(385295, 0x18675A944, "EndSimulationStepRangeKernel", "burst_wrapper", [0x84])], solver_status="wrapper_only_burst_solver_unresolved"),
@@ -484,6 +518,51 @@ def _verify_buffer_access(pe: Any, row: dict[str, Any], access: dict[str, Any]) 
         )
 
 
+def _verify_state_transition(pe: Any, row: dict[str, Any], transition: dict[str, Any]) -> None:
+    """Prove a bounded managed copy from exact instructions and field rows."""
+    if transition.get("operation") != "copy":
+        raise ContractError(
+            f"method {row['methodIndex']} has unsupported state transition operation"
+        )
+    accesses = {entry["jobField"]: entry for entry in row.get("bufferAccesses", [])}
+    source = accesses.get(transition.get("sourceField"))
+    destination = accesses.get(transition.get("destinationField"))
+    if source is None or destination is None:
+        raise ContractError(
+            f"method {row['methodIndex']} state transition lacks source/destination access rows"
+        )
+    if source.get("index") != destination.get("index") or source.get("index") != "colliderIndex":
+        raise ContractError(
+            f"method {row['methodIndex']} state transition index identity drifted"
+        )
+    width = int(transition["widthBytes"])
+    if int(source["strideBytes"]) != width or int(destination["strideBytes"]) != width:
+        raise ContractError(
+            f"method {row['methodIndex']} state transition width/stride drifted"
+        )
+    expected_source_offsets = set(transition.get("sourceInstructionOffsets", []))
+    expected_destination_offsets = set(transition.get("destinationInstructionOffsets", []))
+    if expected_source_offsets != set(source.get("instructionOffsets", [])) or expected_destination_offsets != set(destination.get("instructionOffsets", [])):
+        raise ContractError(
+            f"method {row['methodIndex']} state transition instruction ownership drifted"
+        )
+
+    start = int(row["va"], 16)
+    body = pe.bytes_at_va(start, int(row["spanBytes"]))
+    signatures = transition.get("instructionBytes", {})
+    if set(signatures) != expected_source_offsets | expected_destination_offsets:
+        raise ContractError(
+            f"method {row['methodIndex']} state transition byte-signature census drifted"
+        )
+    for encoded_offset, encoded_bytes in signatures.items():
+        offset = int(encoded_offset, 16)
+        expected = bytes.fromhex(encoded_bytes)
+        if body[offset:offset + len(expected)] != expected:
+            raise ContractError(
+                f"method {row['methodIndex']} state transition bytes drifted at {encoded_offset}"
+            )
+
+
 def _verify_targets(gameassembly: Path, metadata: Path) -> None:
     native, md, pe, method_by_pointer, all_pointers = _native_indexes(metadata, gameassembly)
     signatures_by_index: dict[int, tuple[int, dict[str, Any]]] = {}
@@ -555,6 +634,8 @@ def _verify_targets(gameassembly: Path, metadata: Path) -> None:
                 )
         for access in row.get("bufferAccesses", []):
             _verify_buffer_access(pe, row, access)
+        for transition in row.get("stateTransitions", []):
+            _verify_state_transition(pe, row, transition)
 
 
 def build_contract(
