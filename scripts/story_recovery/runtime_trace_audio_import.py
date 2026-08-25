@@ -156,10 +156,15 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
                 if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                     raise fail(source, f"{key} must be a non-negative integer")
                 event[key] = value
+        dropped = row.get("droppedEventCount")
+        if dropped is not None:
+            if isinstance(dropped, bool) or not isinstance(dropped, int) or dropped < 0:
+                raise fail(source, "droppedEventCount must be a non-negative integer")
+            event["droppedEventCount"] = dropped
         for key in (
             "modulePathMatch", "moduleSizeMatch",
             "moduleSha256Match", "nativeModulePathMatch", "nativeModuleSizeMatch",
-            "nativeModuleSha256Match",
+            "nativeModuleSha256Match", "captureComplete",
         ):
             value = row.get(key)
             if value is not None:
@@ -2038,7 +2043,7 @@ def build_bundle(
                 "modulePathMatch", "moduleSizeMatch", "moduleSha256Match",
                 "attachedNativeModulePath", "attachedNativeModuleSize",
                 "attachedNativeModuleSha256", "nativeModulePathMatch", "nativeModuleSizeMatch",
-                "nativeModuleSha256Match",
+                "nativeModuleSha256Match", "captureComplete", "droppedEventCount",
             ):
                 if key in event:
                     sessions[session_id][key] = event[key]
@@ -2164,7 +2169,11 @@ def build_bundle(
     callback_lifecycle = summarize_callback_lifecycle(observations, session_order)
     codec_stream_callbacks = summarize_codec_stream_callbacks(observations, session_order)
     codec_memory_source_copies = summarize_codec_memory_source_copies(observations, session_order)
-    native_pairing_gate = native_runtime_evidence_status == "verified"
+    incomplete_capture_sessions = [
+        session["id"] for session in sessions.values()
+        if session.get("captureComplete") is False or session.get("droppedEventCount", 0) > 0
+    ]
+    native_pairing_gate = native_runtime_evidence_status == "verified" and not incomplete_capture_sessions
     if not native_pairing_gate:
         native_pairs = 0
         native_unpaired_results = 0
@@ -2198,13 +2207,17 @@ def build_bundle(
         "runtimeEvidenceStatus": runtime_evidence_status,
         "nativeRuntimeEvidenceStatus": native_runtime_evidence_status,
         "nativePairing": {
-            "status": native_runtime_evidence_status,
+            "status": "incompleteCapture" if incomplete_capture_sessions else native_runtime_evidence_status,
             "available": native_pairing_gate,
             "reason": (
-                "Native lifecycle summaries are withheld until session_end records "
-                "matching path, size, and SHA-256 facts for AkSoundEngine.dll."
-                if not native_pairing_gate else "verified native module gate"
+                "Native lifecycle summaries are withheld because one or more bounded capture queues dropped events."
+                if incomplete_capture_sessions else (
+                    "Native lifecycle summaries are withheld until session_end records "
+                    "matching path, size, and SHA-256 facts for AkSoundEngine.dll."
+                    if not native_pairing_gate else "verified native module gate and complete capture queue"
+                )
             ),
+            "incompleteCaptureSessions": incomplete_capture_sessions,
             "pairedCallResultCount": native_pairs,
             "unpairedResultCount": native_unpaired_results,
             "keyCorrelations": native_key_correlations,

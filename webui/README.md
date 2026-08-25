@@ -829,6 +829,19 @@ Use the smallest relevant root workflow:
 python scripts\pack_webui.py
 ```
 
+Packaging writes the main code/text zip followed by three complementary media
+zips. The recommended `-media` zip contains images/videos referenced by Story,
+Text, Map, Characters, and Gameplay; the `-audio` zip contains referenced FLAC
+files. The optional `-resources` zip contains every file listed by the Assets
+page, including indexed images, videos, JSON, OBJ, and FBX files, together with
+the remaining FLAC inventory and complete Audio/Assets resource indexes.
+Assets referenced by normal pages are duplicated in this self-contained Assets
+payload. Extract main, media, audio, then resources into the same directory;
+resources is optional unless the full Audio or Assets browser is needed.
+Use a comma-separated positional selection to build any subset, for example
+`.\pack_webui.bat resource` or `.\pack_webui.bat media,audio`. Omitting the
+selection builds all four archives.
+
 `export_assets.bat` assumes generated Story and Story evidence are current. It
 rebuilds every downstream semantic view: Mission Pipeline, map recovery,
 Characters, Gameplay/projectiles, Assets/audio, the curated source graph, and

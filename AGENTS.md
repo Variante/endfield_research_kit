@@ -472,8 +472,8 @@ of these workflows, open the matching `SKILL.md` before acting:
   `webui/overrides/options.json`.
 - `.codex/skills/animestudio-workflow/`: building, running, patching, and
   debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
-- `.codex/skills/endfield-render-capture/`: prelaunch EndfieldCapture and
-  staged 3DMigoto graphics-evidence capture, collection, and review boundaries.
+- `.codex/skills/endfield-render-capture/`: staged 3DMigoto graphics-evidence
+  capture, collection, and review boundaries.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the
@@ -576,9 +576,10 @@ export folder so the cached scanner baseline is rebuilt.
 - Put durable shared helper code under the maintained script/tool surface.
   `tools/` is ignored by default except for already tracked helper scripts, so
   new promoted tools need intentional tracking and documentation.
-- Local vendor/tool caches may live under ignored `tools/`. If
-  `tools/Ruri.ShaderDecompiler` is present, regularly pull upstream before
-  rebuild or recovery work: `git -C tools\Ruri.ShaderDecompiler pull --ff-only`.
+- Local vendor/tool caches may live under ignored `tools/`. `tools/Ruri.ShaderDecompiler`
+  is historical migration evidence only; do not pull it, build it, or add new
+  AnimeStudio dependencies on it. Preserve it locally until the AnimeStudio
+  shader-recovery fixtures and downstream verifiers certify the replacement.
 - Keep `ue5_*` and `unity_*` directories self-contained. Code, assets, generated
   files, and helpers related to those projects should live inside the matching
   project folder.

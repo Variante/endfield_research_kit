@@ -1,19 +1,14 @@
 ---
 name: endfield-render-capture
-description: Prepare, capture, and review Endfield character-render evidence with the prelaunch EndfieldCapture workflow and the temporary staged 3DMigoto D3D11 fallback. Use for neutral draw/resource recovery, shader-hash inventories, frame-analysis review, and deciding which captured resources are useful. Do not use for visual mods or changing game behavior.
+description: Prepare, capture, and review Endfield character-render evidence with the staged 3DMigoto D3D11 workflow. Use for neutral draw/resource recovery, shader-hash inventories, frame-analysis review, and deciding which captured resources are useful. Do not use for visual mods or changing game behavior.
 ---
 
 # Endfield render capture
 
-Prefer the native `tools/EndfieldCapture/` project. Its prelaunch host,
-build/module gates, synthetic injection lifecycle, audio hooks, forced-D3D11
-hooks, bounded network metadata observation, host-side recording, bounded
-writer, and collector are implemented. Retail capture remains
-experimental until a session passes provider summaries and collection.
-EndfieldCapture is prelaunch-only: start `arm` before Endfield. Never add
-generic attach-by-PID or attach it to an already-running process. The normal
-retail renderer is not necessarily D3D11, so `-force-d3d11` captures remain
-renderer-path evidence.
+Use the staged 3DMigoto D3D11 workflow for retail render evidence. It is
+independently valid when its frame-analysis logs, selected resources, and
+matching uncaptured screenshot are retained. The normal retail renderer is not
+necessarily D3D11, so `-force-d3d11` captures remain renderer-path evidence.
 
 ## Safety and evidence boundary
 
@@ -29,10 +24,8 @@ renderer-path evidence.
   `scratch/character_recovery/3dmigoto-dev-v1.0.0/`.
 - Stop after a small number of frames. The broad preset can produce tens of GB
   per frame; inspect one frame before capturing more.
-- For EndfieldCapture, run `check` and `arm` before starting Endfield. `arm`
-  must refuse an already-running target, wait only for the exact configured
-  executable, validate process/module path, size, SHA-256, architecture, and
-  creation identity, then make at most one ordinary attachment attempt.
+- Start the staged capture before launching Endfield and retain the exact game
+  build fingerprint with each session.
 - Do not add public PID attachment, process suspension, rapid anti-cheat timing,
   hidden privilege escalation, retry, fallback injection, or process-wide hook
   removal. The guided wrapper's visible UAC relaunch is the sole elevation path.
@@ -40,9 +33,9 @@ renderer-path evidence.
   queue loss in one provider must fail that evidence domain closed without
   reclassifying another.
 
-## EndfieldCapture workflow
+## Optional native-observer workflow
 
-1. Read `tools/EndfieldCapture/README.md`. The guided wrapper's `check`
+1. Read the native observer's local README. Its guided wrapper's `check`
    validates the selected executable and, for audio, `GameAssembly.dll`,
    `global-metadata.dat`, and `AkSoundEngine.dll`. Stop on any mismatch or
    `runtime.error`.
@@ -50,13 +43,23 @@ renderer-path evidence.
    wrapper or pass the intended provider profile:
 
    ```bat
-   tools\EndfieldCapture\StartCapture.bat
-   tools\EndfieldCapture\StartCapture.bat graphics
-   tools\EndfieldCapture\StartCapture.bat audio
-   tools\EndfieldCapture\StartCapture.bat network
-   tools\EndfieldCapture\StartCapture.bat both
-   tools\EndfieldCapture\StartCapture.bat all
+   StartCapture.bat
+   StartCapture.bat graphics
+   StartCapture.bat audio
+   StartCapture.bat network
+   StartCapture.bat both
+   StartCapture.bat all
+   StartCapture.bat graphics light
+   StartCapture.bat graphics targeted
+   StartCapture.bat graphics full
    ```
+
+   Graphics defaults to `targeted`. Use `light` for backbuffer plus aggregate
+   counters with no selected-resource blob; use `targeted` for the first
+   bounded pipeline-state set; use `full` only when targeted misses the needed
+   resource. Native `full` is capped at 64 selected resources and 128 MiB and
+   is not equivalent to exhaustive 3DMigoto frame analysis. Require the
+   selected profile and limits in session/frame metadata during review.
 
    Accept the wrapper's Windows UAC prompt. The installed client denies the
    thread/VM rights required for capture-DLL attachment at normal user
@@ -68,7 +71,7 @@ renderer-path evidence.
    `endfield_paths.bat`.
    After retaining the exact process identity, the host makes one attachment
    attempt. The `graphics` profile uses the dedicated self-bootstrapping
-   `EndfieldCaptureD3D11.dll` and uses a tiny private WARP swap chain only to
+   the dedicated D3D11 capture DLL and uses a tiny private WARP swap chain only to
    discover and hook the shared DXGI `Present` method. The provider becomes
    attached only after a real game `Present`, then hooks that device's draw and
    shader-creation methods; capture buffers allocate only
@@ -95,9 +98,9 @@ renderer-path evidence.
 3. For development or test work, build and test from the submodule:
 
    ```bat
-   cmake -S tools\EndfieldCapture -B tools\EndfieldCapture\build-local -G "Visual Studio 17 2022" -A x64
-   cmake --build tools\EndfieldCapture\build-local --config Release
-   ctest --test-dir tools\EndfieldCapture\build-local -C Release --output-on-failure
+   cmake -S tools\native-observer -B tools\native-observer\build-local -G "Visual Studio 17 2022" -A x64
+   cmake --build tools\native-observer\build-local --config Release
+   ctest --test-dir tools\native-observer\build-local -C Release --output-on-failure
    ```
 
 4. The wrapper owns the direct `check`/`arm` arguments: authoritative manifest,
@@ -114,7 +117,8 @@ renderer-path evidence.
    tool README. Review provider
    completeness, dropped-event counts, module facts, actual observed graphics
    API/device facts, and capture limits before opening large resources.
-   `Numpad 1` requests the next Present boundary once per session; repeated
+   `Numpad 1` requests the configured graphics profile at the next Present
+   boundary once per session; repeated
    presses are ignored, and another frame requires a new session. `Numpad 2` marks a bounded
    audio evidence window, `Numpad 3` toggles the external recorder, `Numpad 4`
    marks a bounded network window, and `Numpad 0` toggles the panel. Keep
@@ -122,7 +126,7 @@ renderer-path evidence.
    hotkey signal is only a request; require the provider event and session
    summary before treating it as evidence.
 
-## EndfieldCapture session storage
+## Optional native-observer session storage
 
 - Use one UTC-sortable session root for graphics, audio, or combined capture:
   `scratch/reverse_engineering/endfield_capture/<session-id>/`.
@@ -139,7 +143,7 @@ renderer-path evidence.
   host-recorded `video/frame-*.bmp`, `audio.wav`, and status/summary files under
   `recording/`. The compatibility recorder is not MP4 and must fail closed if
   frames or process-loopback audio are absent after a request.
-- Never write raw captures inside `tools/EndfieldCapture/`, the installed game,
+- Never write raw captures inside the native observer project, the installed game,
   `export_full/`, `webui/`, or `reports/`.
 - Keep a successful or diagnostically valuable raw session in `scratch/`.
   Use `tmp/reverse_engineering/endfield_capture/<session-id>/` only for a
@@ -189,8 +193,8 @@ renderer-path evidence.
 - Do not publish a recovered renderer or alter Unity materials from a capture
   alone. Require exact mesh/material/texture joins and preserve uncertainty.
 
-The native project and its staged implementation plan are documented in
-`tools/EndfieldCapture/README.md` and `tools/EndfieldCapture/PLAN.md`. The
-temporary known-good 3DMigoto configuration is documented in
+The optional native-observer project and its staged implementation plan are
+kept outside the main workflow documentation. The temporary known-good
+3DMigoto configuration is documented in
 `tools/3Dmigoto-AE/README.md` and
 `scratch/character_recovery/3dmigoto-dev-v1.0.0/README.md`.

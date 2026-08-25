@@ -173,6 +173,11 @@ MonoBehaviour, shader, animation, and audio recovery work informed by
 thanks to those projects and their maintainers for the groundwork that made
 this research workflow possible.
 
+Shader recovery was also informed by
+[Ruri.ShaderDecompiler](https://github.com/ShiyumeMeguri/Ruri.ShaderDecompiler).
+It remains credited as historical/provenance work; the maintained Endfield
+export path is being consolidated into AnimeStudio.
+
 Special thanks to these LLM-driven community wiki projects. They are not
 affiliated with this repository, but they are useful public references:
 

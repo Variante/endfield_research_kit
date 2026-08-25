@@ -4,12 +4,6 @@ export*
 !export.bat
 !export_assets.bat
 tools/*
-!tools/
-tools/audio-runtime-capture/
-!tools/endfield-il2cpp/
-tools/endfield-il2cpp/*
-!tools/endfield-il2cpp/*.py
-!tools/endfield-il2cpp/README.md
 reports
 CLAUDE.md
 scratch
@@ -27,3 +21,4 @@ unity*
 *.obj
 webui/data/
 *.log
+*.txt

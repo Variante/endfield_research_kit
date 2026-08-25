@@ -27,6 +27,18 @@
       "sha256": "b33c3c71e44c305fb1c3903942308f2ab55a7854d68c719fe55e7de323e7dba2"
     }
   },
+  "nativeCaptureProfiles": {
+    "audio_chain_v1": {
+      "enabled": [
+        "AudioAdapter._PostEventWithExternalSource",
+        "AkSoundEngine.SourceMediaLookup",
+        "AkSoundEngine.DefaultIoOpenDispatch"
+      ],
+      "deferred": {
+        "AkSoundEngine.ExternalDescriptorPostEvent": "native ABI not yet recovered"
+      }
+    }
+  },
   "hooks": [
     {
       "name": "AudioAdapter.PostEvent(string)",

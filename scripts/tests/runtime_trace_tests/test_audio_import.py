@@ -333,6 +333,29 @@ class AudioRuntimeImportTests(unittest.TestCase):
         self.assertFalse(bundle["nativePairing"]["available"])
         self.assertEqual(bundle["nativePairing"]["nativeCallRelations"], [])
 
+    def test_native_pairing_is_withheld_when_bounded_queue_dropped_events(self):
+        events = [
+            row("dropped", 0, "session_start", gameBuild="fixture", captureTool="native-fixture"),
+            row(
+                "dropped", 1, "audio_native_call", native=True,
+                moduleName="AkSoundEngine.dll", nativeCaptureId="native-1",
+                hookName="AkSoundEngine.SourceMediaLookup",
+                sourceKind="wwiseSourceMediaLookup", rva="0x10df60",
+                memory={"sourceKey": 123},
+            ),
+            row(
+                "dropped", 2, "session_end",
+                nativeModulePathMatch=True, nativeModuleSizeMatch=True,
+                nativeModuleSha256Match=True, captureComplete=False,
+                droppedEventCount=1,
+            ),
+        ]
+        bundle = importer.build_bundle(events, ["fixture"], Path("missing-index.json"))
+        self.assertEqual(bundle["nativeRuntimeEvidenceStatus"], "verified")
+        self.assertFalse(bundle["nativePairing"]["available"])
+        self.assertEqual(bundle["nativePairing"]["status"], "incompleteCapture")
+        self.assertEqual(bundle["nativePairing"]["incompleteCaptureSessions"], ["dropped"])
+
     def test_native_call_relations_require_exact_parent_capture_id(self):
         events = [
             row("nested", 0, "session_start", gameBuild="fixture", captureTool="fixture"),
