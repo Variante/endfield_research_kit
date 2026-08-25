@@ -20,23 +20,23 @@
   "sources": {
     "solver_inputs": {
       "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
-      "size": 1310099,
-      "sha256": "f12ba5d88013a2e28a82c93c1f56c171388cc74d3a3a040f7e33ffb6cf90c197"
+      "size": 1447800,
+      "sha256": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
     },
     "native_evidence": {
       "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/lifecycle_native.json",
-      "size": 15587730,
-      "sha256": "05c18f4a404698ad9cec8928d88f5833f09d0b0bbe1a627191722cdd32ff6517"
+      "size": 12618692,
+      "sha256": "83a3b0ac0e41e7221e4b49612920016a4213e13c7bfd5cd05503425f57932cf1"
     },
     "metadata_catalog": {
       "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/lifecycle_metadata.json",
-      "size": 1810421,
-      "sha256": "75dfc0bd58415fc907bae56a986962b4b9f328a71c36c2374fa886aaa9b8f243"
+      "size": 1889915,
+      "sha256": "27eafb9844b89ded83b8bb63657336a79ba07dc3e8289576e9d13e7a23b7d704"
     },
     "player_loop_contract": {
       "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/playerloop_recovery_contract.json",
       "size": 6770,
-      "sha256": "2e1a8235c257c7e709f6968f049e4b54261a08e0f2d9a4be784a5f9f173e6069"
+      "sha256": "675796fe66f6498b70c4ad74084935d08b9049f060b8a30699df3a4c86651172"
     },
     "dummy_generation": {
       "record": {

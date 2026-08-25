@@ -19,13 +19,13 @@
   "sources": {
     "native_evidence": {
       "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/transform_writeback_native.json",
-      "size": 46242697,
-      "sha256": "c67612d1ce026ac6bb4e5e6a52c8d17b51d6ed628da5d95ecf6a3879a37e55f1"
+      "size": 8245937,
+      "sha256": "20a6a61cd68189db5850c9870b079fed587606f3db07751e5ec3c8a435743291"
     },
     "metadata_catalog": {
       "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/transform_writeback_metadata.json",
-      "size": 16261736,
-      "sha256": "d954239a46953b17f3b482c3102796dfd4df12a0ad406458dfc9fbd463a5016c"
+      "size": 1939356,
+      "sha256": "afbb2eaabb9cfece162e6c74aa294f2060852609e10a793f0e6be7c8e1281f42"
     },
     "dummy_generation": {
       "record": {
