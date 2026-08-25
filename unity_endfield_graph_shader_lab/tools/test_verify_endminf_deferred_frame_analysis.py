@@ -49,6 +49,20 @@ class EndminfDeferredFrameAnalysisTests(unittest.TestCase):
         self.assertEqual(resources["t0"], "00000000")
         self.assertEqual(resources["t27"], "0000001b")
 
+    def test_liteffect_instanced_parallax_draws_are_deduplicated(self):
+        with tempfile.TemporaryDirectory() as temp:
+            frame = Path(temp) / "FrameAnalysis-2026-08-24-182646"
+            frame.mkdir()
+            (frame / "log.txt").write_text("", encoding="utf-8")
+            for binding in ("ib=aaaa", "ps-t0=bbbb", "o0=cccc"):
+                (frame / (
+                    "000047-" + binding + "-vs=" + MODULE.LITEFFECT_VS_HASH +
+                    "-ps=" + MODULE.LITEFFECT_PS_HASH + ".dsc"
+                )).write_text("", encoding="utf-8")
+            report, failures = MODULE.audit_capture(frame)
+        self.assertEqual(report["litEffectInstancedParallaxDraws"], [47])
+        self.assertTrue(any("liteffect_instanced_parallax_draws" in failure for failure in failures))
+
 
 if __name__ == "__main__":
     unittest.main()
