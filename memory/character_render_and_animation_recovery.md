@@ -1199,9 +1199,20 @@ the 285-quad 36-byte particle stream, and its native BC7 texture mip chain. A
 dedicated Unity 8/7-to-7/2 ABI shell is now stage+SHA pinned; WARP creates both
 retail objects and a live Unity reserved-variant run reports four deterministic
 substitutions (two imports per stage), balanced VS/PS swaps, and zero failures.
-The remaining M14 work is runtime transport: bind stage-specific captured
-buffers, the float4 skin carrier, scene depth, and the exact texture, then draw
+The opt-in D3D11 runtime transport is also live: it binds stage-specific captured
+buffers, the zero skin carrier, scene depth, and the exact texture, then draws
 the captured stream into SceneColor/SceneMV with `One, OneMinusSrcAlpha`.
+FrameAnalysis draw 115 closes the otherwise ambiguous input layout: layout
+`48fadbbd` aliases the slot-0 UV at byte 28 into TEXCOORD0/1/4 and reads packed
+zero blend indices/weights from a 20-byte slot-1 buffer submitted with stride
+zero. The native plugin reproduces that layout, passes WARP creation, and a
+matched 4.50-second exact-versus-suppressed run visibly isolates the dense amber
+segmented/smoky trail around the raised hand while retaining M13's outer ring.
+Keep this path behind `ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1` until its temporal
+sequence, rather than one phase-matched frame, is accepted against the no-frame-
+generation reference. The large raw changed-pixel count is not a geometry
+explosion: the final A/B remains spatially localized and bloom/temporal history
+propagates small HDR changes.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

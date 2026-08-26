@@ -930,6 +930,9 @@ namespace EndfieldGraphShaderLab
             ScriptableCullingParameters cullingParameters;
             if (!camera.TryGetCullingParameters(out cullingParameters))
                 return;
+            bool exactEndminfM14Prepared =
+                EndfieldRecoveredEndminfM14ExactRuntime
+                    .PrepareBeforeCulling(camera);
 
             float requestedShadowDistance =
                 recoveredDirectionalCSMProducer.Requested
@@ -1026,6 +1029,14 @@ namespace EndfieldGraphShaderLab
                 out recoveredPostUberWorldUiFailure);
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
+            if (exactEndminfM14Prepared && !recoveredSceneMVRequest.requested)
+            {
+                recoveredSceneMVRequest = new EndfieldRecoveredSceneMVRequest(
+                    true,
+                    true,
+                    false,
+                    string.Empty);
+            }
             ResetRecoveredSceneMVDiagnostic(recoveredSceneMVRequest.requested);
             LastRecoveredSceneMVDiagnostic.requestFailure =
                 recoveredSceneMVRequest.failure ?? string.Empty;
@@ -1955,6 +1966,21 @@ namespace EndfieldGraphShaderLab
                 recoveredSceneColorPingAllocated = true;
                 if (mainReady)
                     recoveredCurrentSceneColor = composedSceneColor;
+                if (mainReady && exactEndminfM14Prepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM14ExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M14 transport failed closed: " +
+                            EndfieldRecoveredEndminfM14ExactRuntime.Failure;
+                    }
+                }
                 if (mainReady && recoveredSceneMVRequest.hasGlow902Queue3005)
                 {
                     DrawRenderers(
