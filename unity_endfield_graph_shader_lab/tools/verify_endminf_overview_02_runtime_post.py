@@ -24,6 +24,12 @@ SHADER = (
     / "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat"
     / "EndfieldHGRPExposureTonemap.shader"
 )
+CAPTURE = (
+    LAB
+    / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+    / "EndfieldEndminfViewerPlayModeCapture.cs"
+)
+OPEN_WRAPPER = LAB / "open_character_recovery_lab.bat"
 
 EXPECTED_CLIP_SHA256 = (
     "9814b9de92d5af7902b1967c295f98d29327824bdd7b478984527c5ccccd076c"
@@ -95,6 +101,17 @@ def verify() -> dict[str, object]:
     ), "render-pipeline packing")
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
         raise RuntimeError("retired empirical Effect-02 evaluator is still present")
+
+    require_tokens(CAPTURE.read_text(encoding="utf-8"), (
+        'private const string RecordingVisualPostPreRollSeconds = "0";',
+        "IncludeCharInfoBackground = true",
+        "IncludeBackgroundPortrait = true",
+        "foregroundUiOverlayIncluded = false",
+    ), "August 24 capture scope and phase")
+    require_tokens(OPEN_WRAPPER.read_text(encoding="utf-8"), (
+        'set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0"',
+        'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
+    ), "August 24 interactive reproduction profile")
 
     spawner = (
         LAB

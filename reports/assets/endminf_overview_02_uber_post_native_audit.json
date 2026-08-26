@@ -86,6 +86,23 @@
         "decoded_bloom": "per channel: b > 0.3 ? 1.493800044 * pow(b, 0.330000013) - 0.699999988 : b",
         "bloom_uv": "unwarped presentation UV, explicit LOD 0"
       }
+    },
+    "unbound_frameanalysis_ring_candidate": {
+      "capture": "scratch/character_recovery/3dmigoto-dev-v1.0.0/package/FrameAnalysis-2026-08-24-182850",
+      "draw": 163,
+      "vertex_dxbc_hash": "833324977c629596",
+      "pixel_dxbc_hash": "bcbd3cc174bf08dc",
+      "radial_blur_params": {
+        "cbuffer_vector": 18608,
+        "value": [0.509984434, 0.532905281, 0.101738632, 1.0]
+      },
+      "radial_blur_params2": {
+        "cbuffer_vector": 18633,
+        "value": [3.0, 0.0942715853, 0.0, 0.0]
+      },
+      "binding_offset_recorded": false,
+      "admitted_as_draw_constants": false,
+      "interpretation": "3DMigoto dumped the full shared 4 MiB dynamic constant-buffer ring but did not record the PSSetConstantBuffers1 first-constant value. This unique Uber-shaped c0/c25 candidate is real ring data but cannot be assigned to draw 163. The pinned native producer remains decisive: both active effects with radial intensity above 0.01 select mode 6; single-effect or low-radial state selects mode 3."
     }
   },
   "compatibility_implementation": {
@@ -98,7 +115,7 @@
       "LogLut2D sampling",
       "final OETF/dither and saturated source alpha"
     ],
-    "capture_backend": "D3D12 compatibility translation; the pinned retail Shader has no D3D12 platform blob"
+    "capture_backend": "D3D11 is authoritative because the pinned retail Shader contains the recovered D3D11 program table; the public-Unity compatibility shader remains a source-backed translation rather than imported retail DXBC."
   },
   "implementation_decision": {
     "admitted": false,
@@ -112,6 +129,7 @@
     "runtime_resources_json": "scratch/animestudio/endminf_uber_post/runtime_resources_json/MonoBehaviour/HGRenderPipelineRuntimeResources_p4DE8DD3BDDF7D101.json",
     "shader_json": "scratch/animestudio/endminf_uber_post/shader_json/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.json",
     "shader_raw": "scratch/animestudio/endminf_uber_post/shader_raw/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.dat",
-    "shader_diagnostic": "scratch/animestudio/endminf_uber_post/shader_convert/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.shader"
+    "shader_diagnostic": "scratch/animestudio/endminf_uber_post/shader_convert/Shader/HGRP_PostProcessing_UberPost_pDB0470E45A287314.shader",
+    "unbound_ring_candidate_verifier": "unity_endfield_graph_shader_lab/tools/verify_endminf_uber_live_constants.py"
   }
 }

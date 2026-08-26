@@ -19,8 +19,8 @@ exit /b 2
 
 :open_endminf
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1"
-  rem The recording's Endminf _02 post owner starts nine 60-Hz frames before its first visible body frame.
-  set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0.15"
+  rem Direct UI-free registration places the maintained Aug-24 no-frame-generation post pulse on the authored body clock.
+  set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0"
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=0"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1"
   set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
