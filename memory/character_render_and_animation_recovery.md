@@ -1387,6 +1387,17 @@ closed, and the latest capture also proves neutral retail exposure. Measure the
 complete crystal/VFX sequence with a retail-like neutral composition against
 the no-frame-generation reference, close the remaining bloom/compositing and
 non-M27 effect-shape differences, then return to body, hair, and cloth polish.
+The largest early unclosed shape is M29/M30 around no-frame-generation source
+frames 376-385. Session `20260826T162514Z` identifies M29 by exact pair
+`CE755059DEDDC2E0/F2AD2A14856044AC`, 1,386 indices, and its PS b3 c1/c4
+fingerprint; M30 uses `62A5CE6C09171DE9/5558DEDDB1EE6188`, 6/12 indices, and
+a separate b3 fingerprint. That session did not retain their own draw-time IA
+or PS SRVs, so it supports source-assisted reconstruction but not exact replay.
+EndfieldCapture now priority-retains M29's pair plus full bound constant
+allocations, IA, and t0-t5, and retains IA/t0-t5 for the shared M14/M30 pair.
+Its Release build and all 15 tests pass. One dense `graphics full` sequence
+covering reference frames 376-385 remains required; no other owner needs to be
+recaptured in that run.
 
 ## Main animation gap
 
