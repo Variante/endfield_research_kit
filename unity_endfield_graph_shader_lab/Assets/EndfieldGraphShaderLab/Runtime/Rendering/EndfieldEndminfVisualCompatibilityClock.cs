@@ -109,6 +109,8 @@ namespace EndfieldGraphShaderLab
             float radial = EvaluateSourceCurve(elapsed, 0.152f, 0.109f);
             bool chromaticActive = chromatic > 0.0f;
             bool radialActive = radial > 0.0f;
+            // The pinned native producer selects the nine-tap combined mode
+            // when both effects are active and radial intensity exceeds 0.01.
             int mode = chromaticActive || radialActive
                 ? (chromaticActive && radial > 0.01f ? 6 : 3)
                 : 0;

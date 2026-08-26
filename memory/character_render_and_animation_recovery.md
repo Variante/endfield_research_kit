@@ -313,9 +313,22 @@ complete frame without a client fault.
   4.2167 seconds, alive at 4.4667, and gone by 4.7167, while the post clock is
   still 0.15 seconds ahead. The streamed late-pulse coefficients are the same
   zero-tangent cubic as the current `SmoothStep` evaluation within about
-  2.5e-8. On the maintained no-frame-generation phase map that post pulse rises
-  around retail frames 369-370, peaks around 371, decays through 380, and is
-  zero by 381-382; interpolation and post retiming are not the frame-382 gap.
+  2.5e-8. The pinned native producer selects mode 6 when both effects are active
+  and radial intensity exceeds 0.01, and mode 3 otherwise; the recovered mode-3
+  and mode-6 DXBC sampling equations and the source-warp/bloom-merge order are
+  already represented by the compatibility shader. A tempting mode-3 c0/c25
+  vector in `FrameAnalysis-2026-08-24-182850` is not draw evidence: 3DMigoto
+  dumped the complete shared 4 MiB dynamic constant-buffer ring without the
+  `PSSetConstantBuffers1` first-constant value needed to identify the bound
+  subrange. Direct UI-free registration of the retained draw-163 output against
+  adjacent no-frame-generation frames places it at source frame 381 (shared ROI
+  MAE 15.9454, versus 17.8257 at 382 and 19.8977 at 380). The authored pulse and
+  documented one-frame body-anchor uncertainty therefore admit zero pre-roll
+  for the August 24 route, not the older recording-specific 0.15 seconds. A
+  16-frame D3D11 mode-6 capture at zero pre-roll passes the grey-background,
+  portrait, no-foreground-UI, SphereOutside, and exact-M27 gates; relative to
+  the old 0.15-second baseline, its UI-free ROI MAE improves 35.3839 to 32.8222,
+  effect ROI MAE 45.1446 to 40.5320, and temporal-delta MAE 33.1514 to 30.5939.
   Viewer capture schema v5 records evaluated chromatic intensity, radial
   intensity, effective power, and mode on every row so the next dense 60 Hz
   comparison can verify that phase without inferring it from the final image.

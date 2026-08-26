@@ -47,13 +47,11 @@ namespace EndfieldGraphShaderLabEditor
         // cursor-input path; they are not static game-data defaults.
         private const string RecordingGyroscopeInputX = "0.989";
         private const string RecordingGyroscopeInputY = "-0.874";
-        // Wolfgd remains visible through source frame 1099, while Endminf's
-        // first compared body frame is 1110. The recovered _02 post owner is
-        // created on the intervening selection edge, nine simulation ticks
-        // before the first local render sample. This explicit recording-only
-        // pre-roll prevents both short source pulses from being shifted onto
-        // comparison frames 0 and 18.
-        private const string RecordingVisualPostPreRollSeconds = "0.15";
+        // Direct UI-free registration of the retained retail Uber output places
+        // the August 24 no-frame-generation pulse on the authored body clock.
+        // The older August 21 route's 0.15-second offset remains available as
+        // an explicit environment override, but is not this capture's default.
+        private const string RecordingVisualPostPreRollSeconds = "0";
         // RestartOverviewFromSelection is invoked on an editor update edge;
         // the body Animation has advanced by two 60-Hz simulation ticks before
         // the first renderable sample. Offset later requested timestamps so
