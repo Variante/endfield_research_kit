@@ -14,6 +14,7 @@ EXPECTED_COUNT = 6
 EXPECTED_INSTANCE_COUNT = 1
 PIXEL_STAGE = 4
 SRV_TEXTURE_KIND = 3
+CONSTANT_BUFFER_KIND = 2
 REQUIRED_TEXTURE_SLOTS = frozenset(range(5))
 BC7_TYPELESS = 97
 BC7_UNORM_SRGB = 99
@@ -103,6 +104,30 @@ def validate_textures(metadata: dict) -> list[dict]:
     return [by_slot[slot] for slot in sorted(REQUIRED_TEXTURE_SLOTS)]
 
 
+def validate_material_constants(draw: dict, metadata: dict) -> dict:
+    rows = [row for row in draw.get("constantBuffers", [])
+            if isinstance(row, dict) and row.get("stage") == PIXEL_STAGE and
+            row.get("slot") == 3]
+    require(len(rows) == 1, "M13 draw has no unique PS b3 material range")
+    binding = rows[0]
+    require(binding.get("rangeValid") is True and binding.get("metadataValid") is True,
+            "M13 PS b3 material range is invalid")
+    require(binding.get("capturedConstants", 0) >= 50,
+            f"M13 PS b3 captured only {binding.get('capturedConstants', 0)} of 50 vectors")
+    require(len(bytes.fromhex(binding.get("dataHex", ""))) >= 50 * 16,
+            "M13 PS b3 payload is shorter than 50 vectors")
+    selected = [row for row in metadata.get("selectedResourceRecords", [])
+                if isinstance(row, dict) and
+                row.get("captureKind") == CONSTANT_BUFFER_KIND and
+                row.get("objectId") == binding.get("bufferId")]
+    require(len(selected) == 1,
+            "M13 PS b3 backing constant buffer was not selected for full readback")
+    record = selected[0]
+    require(record.get("completed") is True and record.get("failure") == 0,
+            "M13 PS b3 backing constant buffer did not complete")
+    return record
+
+
 def verify_session(session_root: Path) -> dict:
     frames_root = session_root / "graphics" / "frames"
     require(frames_root.is_dir(), f"graphics frame directory is missing: {frames_root}")
@@ -124,6 +149,7 @@ def verify_session(session_root: Path) -> dict:
             continue
         require(len(exact_draws) == 1,
                 f"frame {frame_dir.name} repeats the exact M13 draw")
+        material_constants = validate_material_constants(exact_draws[0], metadata)
         textures = validate_textures(metadata)
         resources_path = frame_dir / metadata.get("resourcesFile", "resources.bin")
         require(resources_path.is_file(),
@@ -135,12 +161,15 @@ def verify_session(session_root: Path) -> dict:
         for slot, row in enumerate(textures):
             require(row["blobOffset"] + row["blobBytes"] <= resource_bytes,
                     f"M13 selected texture t{slot} exceeds resources.bin")
+        require(material_constants["blobOffset"] + material_constants["blobBytes"] <=
+                resource_bytes, "M13 PS b3 backing constant buffer exceeds resources.bin")
         matches.append({
             "frame": frame_dir.name,
             "count": EXPECTED_COUNT,
             "instanceCount": EXPECTED_INSTANCE_COUNT,
             "vertexShaderIdentity": f"{VS_IDENTITY:016x}",
             "pixelShaderIdentity": f"{PS_IDENTITY:016x}",
+            "materialConstantVectors": 50,
             "textures": [
                 {
                     "slot": slot,
