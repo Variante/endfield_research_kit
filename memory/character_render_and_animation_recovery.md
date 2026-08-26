@@ -1253,7 +1253,9 @@ that pair. The next graphics evidence is therefore one settled full-profile
 frame after the entrance VFX has disappeared; it must retain SphereOutside and
 the neighboring exact Default Lit resolver. EndfieldCapture now priority-
 retains the Sphere pair, IA geometry, all bounded Sphere PS SRVs, resolver
-b0-b10, and all 32 resolver PS SRV slots in that single package. Do not use a
+b0-b10, and all 32 resolver PS SRV slots in that single package. Its direct
+`DrawIndexed` path and exact 2,304-index static-mesh fallback are retained too,
+so shader creation before attachment cannot silently drop the draw. Do not use a
 long full-profile sequence because its 128 MiB resource budget can stall the
 client.
 
