@@ -149,9 +149,11 @@ complete frame without a client fault.
   its default-off Unity ABI probe still proves an empty material/mesh binding.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
-  This remains a non-exact forward LitEffect compatibility layer; its exact
-  five-MRT HGBuffer publication and deferred consumer remain fail-closed. No
-  crystal retiming, scale change, or bloom tuning was admitted.
+  This remains a non-exact forward LitEffect compatibility layer. A separate
+  M27-only five-MRT source port now publishes the captured attachment formats
+  in a private D3D11 sidecar; it does not make the compatibility layer exact or
+  present deferred output. No crystal retiming, scale change, or bloom tuning
+  was admitted.
 - The no-frame-generation reference makes two stone systems distinguishable:
   the ten LitEffect M01/M38 rows are the early fly-in faceted rocks, while the
   later raised-hand glow/particles are separate BaseV2 renderers and must not
@@ -345,10 +347,14 @@ complete frame without a client fault.
   and the captured b3 values match the exported material (`0.096` strength,
   five steps, `3.36` tiling, `20/10` radii, and the authored HDR colors). The
   optional `_VertexSkinMatrices` path is therefore inactive, consistent with
-  the source mesh's zero skin rows. Exact admission remains fail-closed only on
-  porting the hash-pinned equations into the five-target publication and a
-  presented content-valid deferred consumer; do not replace those with more
-  material tuning.
+  the source mesh's zero skin rows. The hash-pinned fragment equations now have
+  an M27-PathID-only five-target Unity source port. A D3D11 runtime probe proves
+  the live 15-particle draw, M27-specific publication signal, and nonempty
+  SceneColor, SceneMV, GBufferA, and GBufferB readbacks without the prior
+  disabled-renderer crash. GBufferC currently remains zero, and the sidecar is
+  non-presented. Exact admission therefore still requires the original-DXBC
+  ABI swap or equivalent transport closure plus a content-valid presented
+  deferred consumer; do not replace those with more material tuning.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not
@@ -416,8 +422,9 @@ metadata-only; all five surfaces are byte-identical from 4.4833 through
 dense segmented trail, M21 the compact ten-stone burst, and M27 the faceted
 fragment burst. M13 has exact pre-temporal zero gates after its authored
 lifetime at 4.70/4.7167, while M27 is exactly absent at 4.4833 before its
-4.49-second delay. M27's particle/material ownership is exact, but its Unity
-LitEffect rendering remains explicitly compatibility-only. Detailed stage
+4.49-second delay. M27's particle/material ownership is exact. Its ordinary
+beauty rendering remains compatibility-only, while the separate five-MRT
+source port is a non-presented diagnostic producer. Detailed stage
 hashes, repeated-exclusion gates, thresholds, and bounds live in
 `reports/assets/character_recovery/endminf_post_stage_raised_hand_delta.json`.
 - The frame-generation-off recording visibly confirms additional faceted
@@ -443,7 +450,9 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   Numeric VS/PS ranges, per-draw record 0, the inactive optional-skin branch,
   PS c103/c105, complete material b3, and b4/c0 are now captured and decoded in
   `reports/assets/character_recovery/endminf_m27_particle_abi.json`. No further
-  M27 game capture is currently needed. Five-attachment publication and the
+  M27 game capture is currently needed. Unity now has a crash-safe, layer-
+  isolated five-attachment M27 publisher with an explicit per-frame readiness
+  signal. The original DXBC transport, nonzero/verified GBufferC content, and
   presented deferred consumer remain open. Do not compensate by resizing,
   brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
