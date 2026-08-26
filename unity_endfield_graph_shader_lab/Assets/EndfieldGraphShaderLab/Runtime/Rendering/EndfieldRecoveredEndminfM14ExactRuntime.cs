@@ -10,7 +10,7 @@ namespace EndfieldGraphShaderLab
     /// VFXBaseV2 draw. The native event is required because retail reuses
     /// b0-b3 for different vertex and pixel payloads.
     /// </summary>
-    internal static class EndfieldRecoveredEndminfM14ExactRuntime
+    public static class EndfieldRecoveredEndminfM14ExactRuntime
     {
         internal const string EnvironmentVariable =
             "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT";
@@ -24,19 +24,22 @@ namespace EndfieldGraphShaderLab
         private static bool failed;
         private static string failure = string.Empty;
         private static bool loggedActivation;
+        private static bool loggedValidation;
         private static bool loggedFailure;
         private static IntPtr renderEvent;
         private static bool suppressDrawForCapture;
+        private static bool submissionPending;
         private static ParticleSystemRenderer selectedRenderer;
         private static int selectedPacket = -1;
         private static float overviewEpoch = float.NaN;
 
-        internal static bool Requested => string.Equals(
+        public static bool Requested => string.Equals(
             System.Environment.GetEnvironmentVariable(EnvironmentVariable),
             "1",
             StringComparison.Ordinal);
 
         internal static string Failure => failure;
+        public static bool HasPendingValidation => submissionPending;
 
         internal static bool PrepareBeforeCulling(Camera camera)
         {
@@ -236,6 +239,7 @@ namespace EndfieldGraphShaderLab
             command.IssuePluginEvent(renderEvent, 0);
             context.ExecuteCommandBuffer(command);
             command.Release();
+            submissionPending = true;
 
             Shader.SetGlobalFloat(ReadyId, 1.0f);
             if (!loggedActivation)
@@ -244,6 +248,25 @@ namespace EndfieldGraphShaderLab
                     "Recovered exact Endminf M14 native draw submitted: " +
                     "7 phase packets, SceneColor/SceneMV, capture 20260826T091023Z.");
                 loggedActivation = true;
+            }
+            return true;
+        }
+
+        public static bool ValidatePendingAfterSynchronizedRender(
+            out string validationFailure)
+        {
+            validationFailure = string.Empty;
+            if (!submissionPending)
+                return true;
+            submissionPending = false;
+            if (!ValidateAfterSubmit(out validationFailure))
+                return Fail(validationFailure);
+            if (!loggedValidation)
+            {
+                Debug.Log(
+                    "Recovered exact Endminf M14 native draw validated: " +
+                    "draw count is nonzero and the callback reported S_OK.");
+                loggedValidation = true;
             }
             return true;
         }
