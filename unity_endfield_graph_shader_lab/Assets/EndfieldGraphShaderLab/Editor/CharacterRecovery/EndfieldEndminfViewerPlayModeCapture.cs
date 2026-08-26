@@ -524,6 +524,15 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void RunDeferredExactConsumerProbe()
         {
+            if (Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC") == "1")
+            {
+                if (Environment.GetEnvironmentVariable(
+                        "ENDFIELD_M27_FORCE_RAW_SHELL") == "1")
+                    EndfieldM27ShellHashCapture.PrepareRawRuntimeVariant();
+                else
+                    EndfieldM27ShellHashCapture.PreparePinnedRuntimeVariant();
+            }
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",

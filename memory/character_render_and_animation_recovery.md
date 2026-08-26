@@ -1173,15 +1173,22 @@ and resources. The live exact deferred resolver is no longer a blocker. The
 Unity-owned M27 HGBuffer shell now closes the retail `10/9` vertex and `10/5`
 pixel signatures with independently isolated, stage+SHA-pinned callback
 identities; WARP object creation and a repeatable Unity cache-cleared activation
-both pass. Keep it non-presented until the captured b0-b4 ranges, t0-t5
-resources, and particle vertex transport are bound and read back successfully.
-The legacy HLSL sidecar keeps its separate old-layout bindings and remains the
-visual fallback.
+both pass. Session `20260826T042005Z` also contains the exact 435-vertex,
+1,080-index expanded 15-rock draw in its shared graphics ring, and the maintained
+generator recovers the unique 60-byte Position/Normal/Color/UV/UV2/Custom1
+stream plus its 16-bit index stream. Exact submission remains fail-closed because
+all three M27-bearing sessions (`042005`, `083131`, and `091023`) retained only
+b0/c0-c27 while the retail vertex shader projects through b0/c32-c35 and reads
+c44/c81. EndfieldCapture now retains VS b0 through c81 and its complete 14-test
+Release suite passes; one replacement targeted M27 frame is required. No more
+geometry, index, material, resolver, or secondary-dynamics capture is needed for
+this gate. The legacy HLSL sidecar keeps its separate old-layout bindings and
+remains the visual fallback.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-An original-client GPU capture would improve exact resource binding later, but
-its absence no longer pauses the Unity reproduction work.
+Pause exact M27 presentation until that single replacement targeted frame closes
+VS b0/c81; other Unity reproduction work remains independent.
 
 ## Main animation gap
 

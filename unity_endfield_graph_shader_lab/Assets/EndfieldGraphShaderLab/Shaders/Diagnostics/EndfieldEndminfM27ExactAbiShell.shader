@@ -25,6 +25,14 @@ Shader "Hidden/Endfield/Diagnostics/EndminfM27ExactAbiShell"
             ZWrite On
             Cull Off
             Blend Off
+            Stencil
+            {
+                Ref 0
+                Comp Always
+                Pass Replace
+                Fail Keep
+                ZFail Keep
+            }
 
             HLSLPROGRAM
             #pragma target 5.0
