@@ -1549,10 +1549,18 @@ or shaders rather than hand-editing generated prefabs.
    owner-tagged trajectory oracle is now the phase-paired comparison target for
    the default-off solver. The baseline comparison is complete: entrance
    checkpoints contain the large trajectory gap, while the settled loop is
-   already near retail. No additional graphics capture is needed. One new
-   `dynamics`-profile `Numpad 5` window is required to certify Endminf through
-   either direct four-owner isolation or the maintained bounded universal-false
-   coverage before solver writeback can be tested.
+   already near retail. A synchronized 40-frame solver-writeback A/B is also
+   complete and rejects the current diagnostic solver: it worsens translation
+   at all 40 checkpoints, with owner means increasing from 0.0137-0.0286 m to
+   0.0170-0.0872 m and rotation means increasing from 7.0-8.6 degrees to
+   15.6-22.7 degrees. The persistent settled-loop offset begins in solver state,
+   not from a local/world mismatch in the publication adapter, so the solver
+   remains disabled and must not be parameter-tuned around this error. The
+   generated A/B is
+   `reports/assets/character_recovery/endminf_secondary_dynamics_solver_trajectory_comparison.json`.
+   One new dense `dynamics`-profile `Numpad 5` window through
+   `ui_overview_start` and the loop is required for exact two-animation
+   trajectory replay/interpolation and for direct four-owner certification.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under

@@ -52,6 +52,24 @@ class TrajectoryComparisonTests(unittest.TestCase):
             )
         )
 
+    def test_solver_writeback_accepts_v5_uniform_enabled_state(self) -> None:
+        frames = [
+            {"secondaryDynamicsSolverWriteback": True},
+            {"secondaryDynamicsSolverWriteback": True},
+        ]
+        self.assertTrue(MODULE.solver_writeback_enabled(frames))
+
+    def test_solver_writeback_rejects_mixed_state(self) -> None:
+        frames = [
+            {"secondaryDynamicsSolverWriteback": False},
+            {"secondaryDynamicsSolverWriteback": True},
+        ]
+        with self.assertRaisesRegex(
+            MODULE.ComparisonError,
+            "state changes within the sequence",
+        ):
+            MODULE.solver_writeback_enabled(frames)
+
 
 if __name__ == "__main__":
     unittest.main()
