@@ -1,5 +1,6 @@
 param(
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+    [switch]$ToolOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -7,16 +8,24 @@ $ErrorActionPreference = "Stop"
 $toolRoot = $PSScriptRoot
 $projectRoot = (Resolve-Path (Join-Path $toolRoot "..\..")).Path
 $buildRoot = Join-Path $toolRoot "build"
-$pluginOutputRoot = Join-Path $projectRoot "Assets\EndfieldGraphShaderLab\Plugins\x86_64"
+$pluginOutputRoot = if ($ToolOnly) {
+    $buildRoot
+} else {
+    Join-Path $projectRoot "Assets\EndfieldGraphShaderLab\Plugins\x86_64"
+}
 $outputDll = Join-Path $pluginOutputRoot "OriginalDxbcSwapPlugin.dll"
 $outputImportLibrary = Join-Path $buildRoot "OriginalDxbcSwapPlugin.lib"
 $outputExports = Join-Path $buildRoot "OriginalDxbcSwapPlugin.exp"
 $pluginObject = Join-Path $buildRoot "OriginalDxbcSwapPlugin.obj"
 $validatorObject = Join-Path $buildRoot "ValidateEmbeddedDxbc.obj"
 $validatorExe = Join-Path $buildRoot "ValidateEmbeddedDxbc.exe"
+$registryValidatorObject = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.obj"
+$registryValidatorExe = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.exe"
 $generatedHeader = Join-Path $buildRoot "EmbeddedDxbc.generated.h"
 $vertex = Join-Path $toolRoot "bytecode\selected_deferred_resolver_vs.dxbc"
 $pixel = Join-Path $toolRoot "bytecode\selected_deferred_resolver_ps.dxbc"
+$m27Vertex = Join-Path $toolRoot "bytecode\endminf_m27_hgbuffer_vs.dxbc"
+$m27Pixel = Join-Path $toolRoot "bytecode\endminf_m27_hgbuffer_ps.dxbc"
 $pluginApi = "D:\Program Files\2022.3.62f3\Editor\Data\PluginAPI"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -33,8 +42,10 @@ if (-not (Test-Path -LiteralPath $vswhere)) {
 New-Item -ItemType Directory -Path $buildRoot -Force | Out-Null
 New-Item -ItemType Directory -Path $pluginOutputRoot -Force | Out-Null
 python (Join-Path $toolRoot "generate_embedded_header.py") `
-    --vertex $vertex `
-    --pixel $pixel `
+    --deferred-vertex $vertex `
+    --deferred-pixel $pixel `
+    --m27-vertex $m27Vertex `
+    --m27-pixel $m27Pixel `
     --output $generatedHeader
 if ($LASTEXITCODE -ne 0) {
     throw "Exact DXBC header generation failed with exit code $LASTEXITCODE."
@@ -55,7 +66,7 @@ $compileCommand = @(
     "/I`"$pluginApi`" /I`"$buildRoot`"",
     "/Fo`"$pluginObject`"",
     "`"$source`"",
-    "/link /NOLOGO /Brepro /OUT:`"$outputDll`" /IMPLIB:`"$outputImportLibrary`""
+    "/link /NOLOGO /Brepro /OUT:`"$outputDll`" /IMPLIB:`"$outputImportLibrary`" bcrypt.lib"
 ) -join " "
 $compile = "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $compileCommand"
 cmd.exe /d /c $compile
@@ -80,11 +91,31 @@ if ($LASTEXITCODE -ne 0) {
     throw "D3D11 rejected an embedded selected shader (exit $LASTEXITCODE)."
 }
 
+$registryValidatorSource = Join-Path $toolRoot "VerifyM27SubstitutionRegistry.cpp"
+$registryValidatorCompileCommand = @(
+    "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
+    "/I`"$buildRoot`" /I`"$toolRoot`"",
+    "/Fo`"$registryValidatorObject`" `"$registryValidatorSource`"",
+    "/link /NOLOGO /Brepro /OUT:`"$registryValidatorExe`" d3d11.lib bcrypt.lib"
+) -join " "
+$registryValidatorCompile =
+    "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $registryValidatorCompileCommand"
+cmd.exe /d /c $registryValidatorCompile
+if ($LASTEXITCODE -ne 0) {
+    throw "M27 registry validator compilation failed with exit code $LASTEXITCODE."
+}
+
+& $registryValidatorExe
+if ($LASTEXITCODE -ne 0) {
+    throw "M27 substitution registry validation failed with exit $LASTEXITCODE."
+}
+
 foreach ($intermediate in @(
     $outputImportLibrary,
     $outputExports,
     $pluginObject,
-    $validatorObject
+    $validatorObject,
+    $registryValidatorObject
 )) {
     [System.IO.File]::Delete($intermediate)
 }
@@ -92,7 +123,11 @@ foreach ($intermediate in @(
 $dllHash = (Get-FileHash -LiteralPath $outputDll -Algorithm SHA256).Hash.ToLowerInvariant()
 $validatorHash =
     (Get-FileHash -LiteralPath $validatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$registryValidatorHash =
+    (Get-FileHash -LiteralPath $registryValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Output "plugin=$outputDll"
 Write-Output "plugin_sha256=$dllHash"
 Write-Output "validator=$validatorExe"
 Write-Output "validator_sha256=$validatorHash"
+Write-Output "m27_registry_validator=$registryValidatorExe"
+Write-Output "m27_registry_validator_sha256=$registryValidatorHash"

@@ -5,6 +5,27 @@
   "graphics_api": "Direct3D11",
   "native_contract_version": 2,
   "reserved_local_keyword": "ENDFIELD_ORIGINAL_DXBC_EXACT",
+  "m27_substitution": {
+    "activation_policy": "default-off-fail-closed-until-shell-hashes-pinned",
+    "reserved_local_keyword": "ENDFIELD_ORIGINAL_DXBC_M27_EXACT",
+    "dispatch_identity": "sha256(Unity input shell bytecode) plus compiler stage",
+    "registry_ready": false,
+    "unresolved_reason": "exact Unity-compiled M27 shell VS/PS hashes have not been observed and independently pinned",
+    "vertex": {
+      "file": "bytecode/endminf_m27_hgbuffer_vs.dxbc",
+      "retail_source_file": "0678_endfield_dxbc_0.dxbc",
+      "size": 8148,
+      "sha256": "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+      "profile": "vs_5_0"
+    },
+    "pixel": {
+      "file": "bytecode/endminf_m27_hgbuffer_ps.dxbc",
+      "retail_source_file": "0679_endfield_dxbc_1.dxbc",
+      "size": 8200,
+      "sha256": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+      "profile": "ps_5_0"
+    }
+  },
   "source_shader": "HGRP/DeferredLighting",
   "source_pass": 0,
   "source_pass_name": "Default Lit - Full Lighting",
