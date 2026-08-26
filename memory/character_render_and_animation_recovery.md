@@ -873,18 +873,22 @@ resamples 3840x2160 to 1920x1080 with Lanczos and no crop before sheet
 downscaling; do not use cross-resolution whole-frame metrics outside that
 explicit contract.
 
-The pre-burst `overview_04/1/Particle System (1)` lobe is owned by
+The pre-burst `overview_04/1/Particle System (1)` M29 mesh particle uses
 `M_fx_endminm_gfx_29`. Its source Material pins `_MainTex` to
 `T_fx_flow_17_M` (`pE9BD526F8E515836`, decoded PNG SHA-256
 `28406becfc0f0eaf58cd234a3e590fbc2823975d307bfe990d19fa2af28ed8fb`)
 and `_DisturbTex1`, `_MaskTex`, `_SampleTex0`, and `_SampleTex1` to
 `T_fx_flow_01_M` (`pE924975F4B2F54A4`). Both generated bindings had fallen
 back to white; the maintained Overview texture repair now restores and
-hash-gates them. The exact-texture 4.2167-second frame removes the opaque-white
-fallback but still leaves a brighter circular lobe than retail. Keep that
-remaining gap assigned to M29 particle/custom-data or BaseV2 output semantics,
-not missing texture identity, and do not hide it by disabling the source-live
-renderer.
+hash-gates them. Later controlled exclusions correct the visual ownership:
+removing M29 has no visible effect at 4.2167 or 4.4667 seconds. The broad early
+amber halo belongs to `overview_04/1/guangyun (3)` with M30; the later outer
+ring belongs to `overview_02/all/huan` with M13. M31/M43 contribute minor haze,
+M42/M32 inner arcs, M24 sparks, M14 segmented trails, and M21 the small stones.
+Do not tune M29 or the crystal system to compensate for M30/M13. M29 still has
+unclosed per-draw color/LOD semantics; a useful future graphics sequence is
+retail source frames 364-371 (center 367/extracted frame 255), retaining its
+1,386-index one-instance Sphere001 draw.
 
 The same audit found 20 additional dangling generated texture slots across
 M18, M20, M28, M32, M35, M42, M46, and `M_ui_wind_901`. One targeted
@@ -917,9 +921,11 @@ error, not an M14 exception. The maintained importer now applies normal linear
 Color transport to all 36 admitted Endminf BaseV2 materials and validates all
 seven captured material witnesses. A D3D11 Viewer rerender passes and changes
 30.2%, 42.0%, and 66.6% of pixels at the three bounded late-effect samples;
-phase-matched comparison confirms the color moves toward retail while the
-remaining oversized hand lobe/ring is a particle/custom-data or BaseV2 output
-shape/composition gap rather than evidence for restoring raw-sRGB tint.
+phase-matched comparison confirms the color moves toward retail. The remaining
+early M30 halo and later M13 ring are separate phase-specific contracts, and
+most of M30's rightward extent is hidden behind opaque retail UI in the
+reference. Their actor-only size therefore cannot be corrected from the
+composited reference alone and is not evidence for restoring raw-sRGB tint.
 
 The same frame's complete `resources.bin` contains the shared dynamic particle
 buffer despite its recorder label reflecting the first SRV observation. The
