@@ -106,6 +106,11 @@ def verify() -> dict[str, object]:
         'private const string RecordingVisualPostPreRollSeconds = "0";',
         "IncludeCharInfoBackground = true",
         "IncludeBackgroundPortrait = true",
+        "charInfoBackgroundRequested = IncludeCharInfoBackground",
+        "backgroundPortraitRequested = IncludeBackgroundPortrait",
+        "IsCharInfoBackgroundActive()",
+        "IsBackgroundPortraitActive()",
+        "if (!requiredCompositionReady)",
         "foregroundUiOverlayIncluded = false",
     ), "August 24 capture scope and phase")
     require_tokens(OPEN_WRAPPER.read_text(encoding="utf-8"), (
