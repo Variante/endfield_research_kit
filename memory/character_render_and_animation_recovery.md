@@ -403,26 +403,34 @@ complete frame without a client fault.
   zero-based ordinal 15 range shape, or the Default record exactly two passes
   before the observed eleven-range Subsurface anchor. Fallback identities must
   be absent/zero or agree with the exact hashes; any conflict fails closed.
-  One new targeted
-  source-frame-382-window capture is still required to recover the selected
-  Default Lit slices; another M27 material draw capture is not required. The
-  same session
+  Session `20260826T091023Z` closes that request: all 49 sequence frames are
+  complete, zero-drop packages and retain the live Default Lit resolver plus
+  its shared 4 MiB constant arena. The selected current pixel program is
+  `b21a1e35eda1c5bc...`, 48,984 bytes, with nine constant buffers (`b0..b8`),
+  resources `t0..t25`, and no simple-subsurface keyword. The prior exact
+  consumer embedded the older ten-buffer/28-resource subsurface variant and
+  shifted every binding after b6/t10. The maintained consumer, ShaderLab ABI
+  shell, native bridge, standalone diagnostic, and decoder now use the live
+  layout; D3D11 standalone validation passes with CB mask `0x1ff` and SRV mask
+  `0x3fffffe`. The capture also proves AnchorWaveBright b1/c105 is exactly zero
+  in all 49 frames. No further Default-resolver or M27 material capture is
+  required. The same session
   frame observed 48 compute dispatches but retained only the first 16, with
   explicit truncation. EndfieldCapture now retains 64 compact dispatch records
   under the targeted profile, enough to preserve the complete observed peak
   sequence without quadrupling the frame snapshot's stack footprint; its full
   14-test Release suite includes a 48-dispatch no-truncation regression gate.
-  Current-build native evidence now proves that AnchorWaveBright c105
+  Current-build native evidence proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
-  verbatim to the global constant buffer; its zero construction default is not
-  a selected-frame fact. The current-build terrain
+  verbatim to the global constant buffer; the new selected-frame capture closes
+  its value as zero. The current-build terrain
   profile producer is now bounded further: a reserved zero-key dictionary maps
   to float(index + 1), with zero meaning no registered terrain profile. Its
   CharInfo selected-frame value remains unobserved, so canonical M27 still must
   not assume zero.
   `decode_endminf_default_deferred_capture.py` is the maintained fail-closed
-  join from the prioritized resolver record and its ten PS ranges to the
-  deduplicated resource blob. It writes source-shaped b0-b9 binary slices and
+  join from the prioritized resolver record and its nine live PS ranges to the
+  deduplicated resource blob. It writes source-shaped b0-b8 binary slices and
   rejects conflicting identities, unverified fallback ordinals, missing slots,
   backing buffers, or bounds.
 - The two remaining M28 `VFXRefract` rows stay fail-closed, but the four new
@@ -1157,7 +1165,12 @@ another per-material shader approximation. The missing boundary includes:
   disabled until a D3D11/RenderDoc resource descriptor proves the format.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
-and resources. The exact deferred program is no longer a blocker.
+and resources. The live exact deferred resolver is no longer a blocker, but it
+must remain non-presented for M27 until the Unity-owned HGBuffer shell closes
+the retail `10/9` vertex and `10/5` pixel signatures. The current one-shot
+probe remains correctly fail-closed (`7/11` vertex maximum, conflicting pixel
+candidate), so no ambiguous shell hash is pinned; the legacy HLSL sidecar keeps
+its separate old-layout bindings and remains the visual fallback.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

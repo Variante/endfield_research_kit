@@ -37,10 +37,11 @@ Activation requires all of the following:
 The diagnostic binds the frame-proven Endminf retail D3D11 objects in native render event 0
 and issues the three-vertex draw after Unity has populated the synthetic b/t/s
 fixture; event 1 records the binding state. Before the draw, the native event
-recreates all 27 source SRVs from Unity's D3D11 texture resources; the
-standalone report pins `shader_resource_mask=0xffffffe`. The retail pixel
-variant is 3DMigoto hash `37eacbc3c84bb392` and includes the simple-subsurface
-keyword, ten constant-buffer slots, and resources `t0..t27`. Unity clears those
+recreates all 25 source SRVs from Unity's D3D11 texture resources. The retail
+pixel variant is the live `Default Lit - Full Lighting` program observed in all
+49 retained frames of capture `20260826T091023Z` (SHA-256 prefix
+`b21a1e35eda1c5bc`). It uses nine constant-buffer slots and resources
+`t0..t25`, without the simple-subsurface keyword. Unity clears those
 SRV slots by event 1, so the report records that post-draw cleanup separately.
 The neutral fixture is still not a render-fidelity fixture. The compiler
 callback remains an optional build-time variant probe, while the runtime proof

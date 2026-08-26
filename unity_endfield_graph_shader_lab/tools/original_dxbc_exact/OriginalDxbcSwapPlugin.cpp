@@ -21,8 +21,8 @@ namespace
 constexpr const char* kReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_EXACT";
 constexpr const char* kM27ReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_M27_EXACT";
 constexpr std::uint32_t kContractVersion = 2;
-constexpr std::uint32_t kTextureSlotCount = 28;
-constexpr std::uint32_t kConstantBufferSlotCount = 10;
+constexpr std::uint32_t kTextureSlotCount = 26;
+constexpr std::uint32_t kConstantBufferSlotCount = 9;
 
 enum class SubstitutionRoute : std::uint32_t
 {
