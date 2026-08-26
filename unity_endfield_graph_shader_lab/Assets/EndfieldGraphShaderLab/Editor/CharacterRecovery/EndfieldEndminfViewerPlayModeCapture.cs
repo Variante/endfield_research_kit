@@ -118,8 +118,10 @@ namespace EndfieldGraphShaderLabEditor
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
             public bool actorOnlyCapture =
                 !IncludeCharInfoBackground && !IncludeBackgroundPortrait;
-            public bool charInfoBackgroundIncluded = IncludeCharInfoBackground;
-            public bool backgroundPortraitIncluded = IncludeBackgroundPortrait;
+            public bool charInfoBackgroundRequested = IncludeCharInfoBackground;
+            public bool backgroundPortraitRequested = IncludeBackgroundPortrait;
+            public bool charInfoBackgroundIncluded;
+            public bool backgroundPortraitIncluded;
             public bool foregroundUiOverlayIncluded = false;
             public bool postProcessingExplicitlyDisabled = false;
             public bool prePostHdrDiagnostic;
@@ -1151,10 +1153,22 @@ namespace EndfieldGraphShaderLabEditor
                 if (!observedLightCookieDataReady)
                     missingObservations.Add("exact-consumer LightCookieData readiness");
             }
+            bool charInfoBackgroundIncluded =
+                !IncludeCharInfoBackground || IsCharInfoBackgroundActive();
+            bool backgroundPortraitIncluded =
+                !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
+            if (!charInfoBackgroundIncluded)
+                missingObservations.Add("active recovered CharInfo grey background");
+            if (!backgroundPortraitIncluded)
+                missingObservations.Add("active Endminf background portrait");
+            bool requiredCompositionReady =
+                charInfoBackgroundIncluded && backgroundPortraitIncluded;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
-                status = targetedTimes && capturePostStages
+                status = !requiredCompositionReady
+                    ? "failed: missing " + string.Join(", ", missingObservations.ToArray())
+                    : targetedTimes && capturePostStages
                     ? "targeted_diagnostic_ok"
                     : targetedTimes
                     ? "targeted_ok"
@@ -1173,6 +1187,8 @@ namespace EndfieldGraphShaderLabEditor
                     : string.Empty,
                 fps = captureFps,
                 graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
+                charInfoBackgroundIncluded = charInfoBackgroundIncluded,
+                backgroundPortraitIncluded = backgroundPortraitIncluded,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
                 renderPipeline = GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName,
@@ -1229,6 +1245,16 @@ namespace EndfieldGraphShaderLabEditor
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
             EditorApplication.update -= Tick;
+            if (!requiredCompositionReady)
+            {
+                captureFailure =
+                    "Endminf Viewer capture is missing its required UI-free " +
+                    "background composition: " +
+                    string.Join(", ", missingObservations.ToArray());
+                Debug.LogError(captureFailure);
+                EditorApplication.ExitPlaymode();
+                return;
+            }
             if (!capturePrePostHdr && !capturePostStages && !fineWindow &&
                 !targetedTimes &&
                 missingObservations.Count > 0)
@@ -1273,6 +1299,56 @@ namespace EndfieldGraphShaderLabEditor
                 ": roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
             EditorApplication.ExitPlaymode();
+        }
+
+        private static bool IsCharInfoBackgroundActive()
+        {
+            return UnityEngine.Object
+                .FindObjectsOfType<EndfieldRecoveredCharInfoPresentation>(true)
+                .Any(value =>
+                    value != null &&
+                    value.enabled &&
+                    value.gameObject.activeInHierarchy &&
+                    value.compatibilityBackdropRenderer != null &&
+                    value.compatibilityBackdropRenderer.enabled &&
+                    value.compatibilityBackdropRenderer.gameObject.activeInHierarchy);
+        }
+
+        private static bool IsBackgroundPortraitActive()
+        {
+            return UnityEngine.Object
+                .FindObjectsOfType<EndfieldRecoveredCharInfoBackgroundPortrait>(true)
+                .Any(value =>
+                {
+                    if (value == null ||
+                        !value.enabled ||
+                        !value.gameObject.activeInHierarchy ||
+                        !value.RecoveredPortraitRequested)
+                    {
+                        return false;
+                    }
+
+                    Renderer renderer = value.portraitRenderer != null
+                        ? value.portraitRenderer
+                        : value.GetComponent<Renderer>();
+                    MeshFilter filter = value.portraitMeshFilter != null
+                        ? value.portraitMeshFilter
+                        : value.GetComponent<MeshFilter>();
+                    Material material = renderer != null
+                        ? renderer.sharedMaterial
+                        : null;
+                    return renderer != null &&
+                           renderer.enabled &&
+                           renderer.gameObject.activeInHierarchy &&
+                           filter != null &&
+                           filter.sharedMesh != null &&
+                           material != null &&
+                           material.shader != null &&
+                           string.Equals(
+                               material.shader.name,
+                               EndfieldRecoveredCharInfoBackgroundPortrait.ShaderName,
+                               StringComparison.Ordinal);
+                });
         }
 
 

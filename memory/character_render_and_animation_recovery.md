@@ -1413,6 +1413,17 @@ the late effect pulse. Focused verifier-only resolution overrides are available
 through paired `ENDFIELD_ENDMINF_CAPTURE_WIDTH` and
 `ENDFIELD_ENDMINF_CAPTURE_HEIGHT`; canonical captures remain 1920x1080.
 
+Viewer reports now distinguish requested composition from observed renderer
+state. Every capture mode, including targeted diagnostics, fails if the active
+recovered grey-field renderer or the exact Endminf portrait mesh/material is
+missing; foreground screen-space UI remains outside the camera render. A fresh
+one-frame D3D11 pulse probe passed both observed gates, the physical
+SphereOutside gate, and the no-foreground-UI contract. Disabling the partial
+temporal resolve changes that pulse frame by only 1.21 mean RGB levels and does
+not remove its broad multicolour pull. The visible over-warp is therefore in the
+still-unclosed combined radial/chromatic presentation boundary, not evidence
+that hair/cape geometry or the required background layers should be removed.
+
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 M13, M14, and M27 packet capture/admission and temporal native replay are now
