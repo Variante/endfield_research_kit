@@ -909,12 +909,17 @@ version, so M14 must not be removed. Exact-build graphics session
 `20260826T000901Z`, frame 13175, closes its shader and expanded-particle ABI:
 the dynamic VS4914/PS4915 draw has 1,710 indices/285 quads and complete bounded
 VS b0-b4 plus PS b0-b3 snapshots. VS b3/c13 is zero, so source vertex color is
-unmodified. PS b3/c4 is
-`(0.29275623,0.17861338,0.04641925,1)`, exactly the linear conversion of the
-authored sRGB `_TintColor`; M14 must therefore use Unity's normal Color-property
-linear upload rather than the compatibility raw-sRGB tint path retained by the
-other BaseV2 materials. The maintained importer applies and validates that
-material-scoped transport.
+unmodified. All eight retained exact-pair draws (seven unique generated
+materials: M14, M22, M26, M31, M39, M40, and M43) expose PS b3/c4 values that
+match Unity's normal authored-Color linear upload; M31 appears in two draws.
+The former compatibility raw-sRGB tint path was therefore a systemic recovery
+error, not an M14 exception. The maintained importer now applies normal linear
+Color transport to all 36 admitted Endminf BaseV2 materials and validates all
+seven captured material witnesses. A D3D11 Viewer rerender passes and changes
+30.2%, 42.0%, and 66.6% of pixels at the three bounded late-effect samples;
+phase-matched comparison confirms the color moves toward retail while the
+remaining oversized hand lobe/ring is a particle/custom-data or BaseV2 output
+shape/composition gap rather than evidence for restoring raw-sRGB tint.
 
 The same frame's complete `resources.bin` contains the shared dynamic particle
 buffer despite its recorder label reflecting the first SRV observation. The

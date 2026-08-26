@@ -44,6 +44,28 @@ REQUIRED_BINDINGS = {
 PARTICLE_VERTEX_STRIDE = 36
 PARTICLE_UVS = ((0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0))
 
+# Base vertices distinguish every exact-pair emitter retained in frame 13175.
+# The expected vectors are the PS b3/c4 uploads matched against the generated
+# material closure. M31 has two one-quad draws with the same material state.
+CAPTURED_BASEV2_TINT_WITNESSES = {
+    4908: ("M_fx_endminm_gfx_22", "EC97B180E0A82AB7",
+           (1.0, 0.4251311, 0.0975873, 1.0)),
+    86: ("M_fx_endminm_gfx_43", "73D80B62F5BA886F",
+         (1.0, 1.0, 1.0, 1.0)),
+    1450: ("M_fx_endminm_gfx_31", "602883BD6BB1831B",
+           (1.0, 0.5607878, 0.0976956, 1.0)),
+    844: ("M_fx_endminm_gfx_40", "26EC2259AEC716E7",
+          (0.7615293, 0.3865187, 0.2021150, 1.0)),
+    1466: ("M_fx_endminm_gfx_39", "BF692EC36800069D",
+           (0.7605246, 0.5119022, 0.2015562, 1.0)),
+    54: ("M_fx_endminm_gfx_31", "602883BD6BB1831B",
+         (1.0, 0.5607878, 0.0976956, 1.0)),
+    3227: ("M_fx_endminm_gfx_14", "F6DCA5E6B2122169",
+           (0.29275623, 0.17861338, 0.04641925, 1.0)),
+    1482: ("M_fx_endminm_gfx_26", "364397B467C89F2E",
+           (0.29275623, 0.17861338, 0.04641925, 1.0)),
+}
+
 
 class CaptureError(ValueError):
     pass
@@ -148,7 +170,6 @@ def decode_m14_draw(draw: dict) -> dict:
         )
         for (stage, slot), (required, limit) in REQUIRED_BINDINGS.items()
     }
-
     c13 = bindings["0:b3"]["float4"][13]
     require(all(math.isfinite(value) for value in c13),
             "M14 VS b3/c13 contains a non-finite color carrier")
@@ -174,6 +195,42 @@ def decode_m14_draw(draw: dict) -> dict:
         "vertexColorMultiplier": [1.0 - value for value in c13],
         "bindings": bindings,
     }
+
+
+def decode_priority_pair_tint(draw: dict) -> dict:
+    """Decode PS b3/c1 and c4 for any retained VS4914/PS4915 draw."""
+    require(draw.get("priorityShaderPair") is True,
+            "exact-pair tint draw is not priority retained")
+    shaders = {int(row.get("stage", -1)): row for row in draw.get("shaders", [])
+               if isinstance(row, dict)}
+    require(int(shaders.get(0, {}).get("identityHash", -1)) == VS_IDENTITY and
+            int(shaders.get(4, {}).get("identityHash", -1)) == PS_IDENTITY,
+            "priority marker does not identify VS4914/PS4915")
+    rows = [row for row in draw.get("constantBuffers", [])
+            if isinstance(row, dict) and int(row.get("stage", -1)) == 4 and
+            int(row.get("slot", -1)) == 3]
+    require(len(rows) == 1, "exact-pair draw does not have one PS b3 range")
+    binding = decode_binding(rows[0], 4, 3, 22, 22)
+    base_vertex = int(draw.get("baseVertex", -1))
+    result = {
+        "indexCount": int(draw.get("count", -1)),
+        "startIndex": int(draw.get("start", -1)),
+        "baseVertex": base_vertex,
+        "psPerMaterialC1": binding["float4"][1],
+        "psTintColorC4": binding["float4"][4],
+    }
+    witness = CAPTURED_BASEV2_TINT_WITNESSES.get(base_vertex)
+    if witness is not None:
+        material_name, path_id, expected = witness
+        actual = result["psTintColorC4"]
+        require(math.dist(actual, expected) <= 1.0e-6,
+                f"{material_name} PS b3/c4 no longer matches the captured tint")
+        result.update({
+            "material": material_name,
+            "materialPathIdHex": path_id,
+            "materialMatch": "generated-authored-Color-linear-upload",
+        })
+    return result
 
 
 def _particle_quad(data: bytes, offset: int) -> tuple[float, float] | None:
@@ -310,6 +367,8 @@ def decode_frame(frame_dir: Path) -> dict | None:
     if not candidates:
         return None
     decoded_draws = [decode_m14_draw(row) for row in candidates]
+    priority_pair_tints = [decode_priority_pair_tint(row)
+                           for row in priority_draws]
     for decoded_draw in decoded_draws:
         decoded_draw["rawParticleGeometry"] = decode_particle_geometry(
             frame_dir, metadata, decoded_draw["quadCount"]
@@ -318,6 +377,11 @@ def decode_frame(frame_dir: Path) -> dict | None:
         "frame": int(metadata.get("frame", frame_dir.name)),
         "frameDirectory": str(frame_dir.resolve()),
         "metadataSha256": hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
+        "priorityPairDrawCount": len(priority_pair_tints),
+        "capturedLinearTintWitnessCount": sum(
+            "material" in row for row in priority_pair_tints
+        ),
+        "priorityPairDraws": priority_pair_tints,
         "m14DrawCount": len(candidates),
         "m14Draws": decoded_draws,
     }
