@@ -1473,9 +1473,19 @@ a separate b3 fingerprint. That session did not retain their own draw-time IA
 or PS SRVs, so it supports source-assisted reconstruction but not exact replay.
 EndfieldCapture now priority-retains M29's pair plus full bound constant
 allocations, IA, and t0-t5, and retains IA/t0-t5 for the shared M14/M30 pair.
-Its Release build and all 15 tests pass. One dense `graphics full` sequence
-covering reference frames 376-385 remains required; no other owner needs to be
-recaptured in that run.
+Session `20260826T231348Z` contains two targeted sequences and closes the
+temporal constant side: each sequence retains the 13 exact 1,386-index M29
+packets, and raw `bindings.v1.bin` preserves all nine VS/PS constant slices,
+including complete PS b3. The combined-runtime JSON writer had omitted those
+already captured slices, so it now emits the same constant-buffer and
+fullscreen-resolver records as the graphics-only writer. This session does not
+close texture replay: 110 of 111 frames reached the 32-resource selector cap,
+because repeated unsupported exact-pair PS slots consumed ten records before
+later M29/M30 textures. The narrow exact-pair selector now skips zero-byte
+unsupported resources; the Release `build-local` and all 15 tests pass. One
+new bounded `graphics targeted` sequence over reference frames 376-385 remains
+required to close owner-specific IA/t0-t5. Full/everything capture is not
+required for that focused rerun.
 
 The pre-patch session is now covered by a fail-closed M29/M30 temporal
 verifier. It identifies 13 M29 packets at 2.5333-4.1667 seconds and 11 M30
@@ -1558,9 +1568,13 @@ or shaders rather than hand-editing generated prefabs.
    remains disabled and must not be parameter-tuned around this error. The
    generated A/B is
    `reports/assets/character_recovery/endminf_secondary_dynamics_solver_trajectory_comparison.json`.
-   One new dense `dynamics`-profile `Numpad 5` window through
-   `ui_overview_start` and the loop is required for exact two-animation
-   trajectory replay/interpolation and for direct four-owner certification.
+   Session `20260826T231348Z` directly certifies the four owners' world-relative
+   mode: one bounded window observed 155 teams across 617 cloth updates with
+   every relative flag false and no unreadable/overflow calls. It does not
+   contain owner matrices or particle trajectories, so repeating the current
+   `Numpad 5` window cannot provide exact two-animation replay data. Extend the
+   dynamics provider to retain bounded per-owner transforms/positions and
+   validate that payload synthetically before requesting another game capture.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
