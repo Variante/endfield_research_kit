@@ -131,6 +131,9 @@ namespace EndfieldGraphShaderLab
         public float AnimatorTransitionNormalizedTime { get; private set; }
         public int RootMotionCallbackCount { get; private set; }
         public float AppliedRootDeltaRotationDegrees { get; private set; }
+        public int PlaybackGeneration => playbackGeneration;
+        public bool AutomaticOverviewPlaybackActive =>
+            AnimatorContractActive || waitingForExit || IsLooping;
         public Vector3 RootMotionPositionDelta =>
             transform.position - rootMotionAnchorPosition;
 
