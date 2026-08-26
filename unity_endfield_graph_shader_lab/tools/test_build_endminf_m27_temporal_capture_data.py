@@ -49,6 +49,41 @@ class M27TemporalBuilderTests(unittest.TestCase):
         self.assertIn("format == DXGI_FORMAT_BC7_UNORM_SRGB", plugin)
         self.assertIn("EndfieldOriginalDxbcGetM27DrawFailureStage", plugin)
 
+    def test_runtime_and_sequence_gate_share_the_capture_envelope(self) -> None:
+        runtime = (
+            MODULE.REPO / "unity_endfield_graph_shader_lab/Assets"
+            / "EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredEndminfM27ExactRuntime.cs"
+        ).read_text(encoding="utf-8")
+        capture = (
+            MODULE.REPO / "unity_endfield_graph_shader_lab/Assets"
+            / "EndfieldGraphShaderLab/Editor/CharacterRecovery"
+            / "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("public static bool IsCapturedPhase(float seconds)", runtime)
+        self.assertIn("if (!IsCapturedPhase(seconds))", runtime)
+        self.assertIn(
+            "EndfieldRecoveredEndminfM27ExactRuntime.IsCapturedPhase(",
+            capture,
+        )
+
+    def test_exact_runtime_can_bootstrap_from_retained_inactive_binding(self) -> None:
+        deferred = (
+            MODULE.REPO / "unity_endfield_graph_shader_lab/Assets"
+            / "EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredDeferredGBufferFrame.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("TryResolveRetainedEndminfM27Material(", deferred)
+        self.assertIn(
+            "row.particleRendererPathId == EndminfM27RendererPathId",
+            deferred,
+        )
+        self.assertIn(
+            "row.materialPathId != EndminfM27MaterialPathId ||",
+            deferred,
+        )
+        self.assertIn("sourceMaterial = materials[0];", deferred)
+
 
 if __name__ == "__main__":
     unittest.main()

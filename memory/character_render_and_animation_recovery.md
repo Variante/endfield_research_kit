@@ -1223,6 +1223,27 @@ the no-M27 image, while the rise and peak change only their expected rendered
 samples. The decayed tail remains a valid but pixel-neutral publication at the
 sampled presentation frame. WARP validates both retail input layouts, and the
 runtime fails closed with a resource-stage code if creation or binding drifts.
+The full 41-frame actor-only sequence now treats M27 readiness as required only
+inside that captured packet envelope and can initialize the native owner from
+the retained inactive PathID binding before the approximate renderer spawns.
+Rise, peak, decay, and the later no-M27 tail therefore pass one continuous
+capture instead of requiring a peak-only probe.
+
+The same `20260826T162514Z` packages close the selected-view exposure boundary.
+Across frames 2970-3027, the relevant PS b1 c27 global is consistently
+`_ExposureWithMiscParams=(1, 1, 1.7777778, 0.1002004)`: adapted exposure and
+its reciprocal are both exactly one. A matched Unity D3D11 frame reports
+`(1, 1, 1.7777778, 0)`; the recovered Endminf BaseV2 consumers read only `.y`,
+so exposure does not explain the oversized actor-only peak. Grouped renderer
+exclusions instead attribute that peak to the ordinary additive BaseV2 stack:
+removing all ordinary producers removes it while exact M13/M14/M27 publication
+remains healthy. M20 owns most of the broad brown decay smoke, M14 owns the
+later dense gold fragments, and M22 owns thin rays/sparks. The staged M20
+Material and ParticleSystem JSON byte-for-value match their generated Unity
+assets, so do not suppress or rescale them to compensate for comparing black
+actor-only output with retail's grey Character Info composition. The next
+measurement boundary is neutral/transparent composition and bloom footprint,
+not another graphics capture or guessed per-material attenuation.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
@@ -1284,9 +1305,10 @@ registration is measured, but no further M14 graphics capture is needed.
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 M13, M14, and M27 packet capture/admission and temporal native replay are now
-closed. Measure the complete crystal/VFX sequence against the
-no-frame-generation reference, close any remaining non-M27 effect-shape or
-post differences, then return to body, hair, and cloth polish.
+closed, and the latest capture also proves neutral retail exposure. Measure the
+complete crystal/VFX sequence with a retail-like neutral composition against
+the no-frame-generation reference, close the remaining bloom/compositing and
+non-M27 effect-shape differences, then return to body, hair, and cloth polish.
 
 ## Main animation gap
 
