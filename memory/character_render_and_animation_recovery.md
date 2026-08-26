@@ -426,8 +426,15 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   active constant-buffer slices, optional-skin gate, five-attachment publication,
   and presented deferred consumer remain open. EndfieldCapture session
   `20260825T161654Z` cannot close them because its targeted graphics profile
-  deliberately omits retail instanced draws. Do not compensate by resizing,
-  brightening, retiming, or disabling M21.
+  deliberately omits retail instanced draws, while `20260826T000901Z` retains
+  only the unrelated M14 priority pair. The maintained targeted profile now
+  priority-retains M27 subprogram 113 by both exact shader hashes and its
+  1,080-index/one-instance expanded-particle draw, including PS c105, the
+  complete per-draw/material slices, and terrain b4/c0. Validate the next
+  bounded source-frame 384-386 capture with
+  `unity_endfield_graph_shader_lab/tools/verify_endminf_m27_graphics_capture.py`
+  before using it. Do not compensate by resizing, brightening, retiming, or
+  disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
