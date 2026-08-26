@@ -1482,10 +1482,16 @@ fullscreen-resolver records as the graphics-only writer. This session does not
 close texture replay: 110 of 111 frames reached the 32-resource selector cap,
 because repeated unsupported exact-pair PS slots consumed ten records before
 later M29/M30 textures. The narrow exact-pair selector now skips zero-byte
-unsupported resources; the Release `build-local` and all 15 tests pass. One
-new bounded `graphics targeted` sequence over reference frames 376-385 remains
-required to close owner-specific IA/t0-t5. Full/everything capture is not
-required for that focused rerun.
+unsupported resources. Retained draw records now also carry their own bounded
+IA/PS resource observations, keyed to the frame-wide selected payload records;
+this removes the ownership ambiguity that remained even when a texture blob
+survived. The WARP test covers PS slot plus IA/index ownership. The fail-closed
+`verify_endminf_m29_m30_capture_completeness.py` gate rejects truncation,
+missing constants, missing draw ownership, and missing byte-bearing payloads;
+it rejects `20260826T231348Z` at its 110 truncated frames. The Release
+`build-local` and all 15 tests pass. One new bounded `graphics targeted`
+sequence over reference frames 376-385 remains required to close owner-specific
+IA/t0-t5. Full/everything capture is not required for that focused rerun.
 
 The pre-patch session is now covered by a fail-closed M29/M30 temporal
 verifier. It identifies 13 M29 packets at 2.5333-4.1667 seconds and 11 M30
