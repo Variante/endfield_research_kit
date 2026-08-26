@@ -23,6 +23,69 @@ namespace EndfieldGraphShaderLabEditor
         private const string OutputEnvironment =
             "ENDFIELD_M27_SHELL_HASH_OUTPUT";
 
+        public static void PreparePinnedRuntimeVariant()
+        {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
+                throw new InvalidOperationException(
+                    "Exact M27 runtime preparation requires Direct3D11.");
+            if (Native.GetContractVersion() != 2 ||
+                Native.GetM27RegistryReady() != 1)
+            {
+                throw new InvalidOperationException(
+                    "The exact M27 stage+SHA registry is not ready.");
+            }
+            if (Native.SetM27SubstitutionArmed(1) != 1)
+                throw new InvalidOperationException(
+                    "The exact M27 compiler route could not be armed.");
+            try
+            {
+                ForceRecompileWhileArmed();
+                ForceLoadReservedVariant();
+                uint matches = Native.GetM27MatchCount();
+                uint vertexSwaps = Native.GetVertexSwapCount();
+                uint pixelSwaps = Native.GetPixelSwapCount();
+                uint failures = Native.GetFailureCount();
+                if (matches != 2 || vertexSwaps != 1 || pixelSwaps != 1 ||
+                    failures != 0)
+                {
+                    throw new InvalidOperationException(
+                        "Exact M27 runtime variant preparation failed: " +
+                        $"matches={matches}, vertexSwaps={vertexSwaps}, " +
+                        $"pixelSwaps={pixelSwaps}, failures={failures}.");
+                }
+                Debug.Log(
+                    "Prepared exact Endminf M27 runtime variant: " +
+                    "stage+SHA substitutions=2, VS=10/9, PS=10/5.");
+            }
+            finally
+            {
+                Native.SetM27SubstitutionArmed(0);
+            }
+        }
+
+        public static void PrepareRawRuntimeVariant()
+        {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
+                throw new InvalidOperationException(
+                    "Raw M27 shell preparation requires Direct3D11.");
+            Native.SetM27SubstitutionArmed(0);
+            ForceRecompileWhileArmed();
+            ForceLoadReservedVariant();
+            uint matches = Native.GetM27MatchCount();
+            uint vertexSwaps = Native.GetVertexSwapCount();
+            uint pixelSwaps = Native.GetPixelSwapCount();
+            if (matches != 0 || vertexSwaps != 0 || pixelSwaps != 0)
+            {
+                throw new InvalidOperationException(
+                    "Raw M27 shell preparation unexpectedly substituted a " +
+                    $"stage: matches={matches}, vertexSwaps={vertexSwaps}, " +
+                    $"pixelSwaps={pixelSwaps}.");
+            }
+            Debug.Log(
+                "Prepared unsubstituted Endminf M27 ABI shell control: " +
+                "stage+SHA substitutions=0.");
+        }
+
         [Serializable]
         private sealed class Report
         {
@@ -380,6 +443,18 @@ namespace EndfieldGraphShaderLabEditor
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetCallbackCount")]
             internal static extern uint GetCallbackCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetVertexSwapCount")]
+            internal static extern uint GetVertexSwapCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetPixelSwapCount")]
+            internal static extern uint GetPixelSwapCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetFailureCount")]
+            internal static extern uint GetFailureCount();
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM27CallbackObservationCount")]
