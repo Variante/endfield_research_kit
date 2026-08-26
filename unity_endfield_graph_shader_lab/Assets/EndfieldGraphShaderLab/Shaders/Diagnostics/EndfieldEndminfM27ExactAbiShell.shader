@@ -31,7 +31,9 @@ Shader "Hidden/Endfield/Diagnostics/EndminfM27ExactAbiShell"
             #pragma only_renderers d3d11
             #pragma vertex BridgeVertex
             #pragma fragment BridgePixel
-            #pragma multi_compile_local __ ENDFIELD_ORIGINAL_DXBC_M27_EXACT
+            #pragma multi_compile __ ENDFIELD_ORIGINAL_DXBC_M27_EXACT
+
+            #define ENDFIELD_M27_EXACT_ABI_SHELL_MARKER 1
 
             // The selected retail pair uses these physical slot extents:
             // VS b0[82], b1[20], b2[4091]; PS b0[45], b1[106],

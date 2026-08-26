@@ -40,7 +40,7 @@ DURABLE = (
 
 VERTEX_HASH = "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155"
 PIXEL_HASH = "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f"
-PLUGIN_HASH = "0cb25a4b89fb4f4b196264529bac0905edb2e94ee8fd37645ecfadf10f0afdbd"
+PLUGIN_HASH = "d87ddd027b0ab1a6f29b04282bb5b1cc69bfdbc550903999d7374f8347aa50b9"
 VALIDATOR_HASH = "3cc382f0fe0307051a5d9f53de50a9750406761ef5fc7ab56b89581f376fd9fd"
 KEYWORD = "ENDFIELD_ORIGINAL_DXBC_EXACT"
 
@@ -54,6 +54,8 @@ EXPECTED_PLUGIN_EXPORTS = [
     "EndfieldOriginalDxbcGetExactShaderBound",
     "EndfieldOriginalDxbcGetFailureCount",
     "EndfieldOriginalDxbcGetLastResult",
+    "EndfieldOriginalDxbcGetM27CallbackObservation",
+    "EndfieldOriginalDxbcGetM27CallbackObservationCount",
     "EndfieldOriginalDxbcGetM27MatchCount",
     "EndfieldOriginalDxbcGetM27MaximumSignatureCounts",
     "EndfieldOriginalDxbcGetM27MismatchCount",

@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <mutex>
 
 #include "IUnityInterface.h"
 #include "IUnityGraphicsD3D11.h"
@@ -69,6 +70,17 @@ std::atomic<std::uint32_t> g_m27MaxPixelOutputCount{0};
 std::atomic<std::uint8_t> g_m27ObservedVertexSha256[32] = {};
 std::atomic<std::uint8_t> g_m27ObservedPixelSha256[32] = {};
 
+constexpr std::size_t kM27CallbackObservationCapacity = 512;
+constexpr std::size_t kM27CallbackMetadataCount = 12;
+struct M27CallbackObservation
+{
+    std::uint32_t metadata[kM27CallbackMetadataCount];
+    unsigned char sha256[32];
+};
+M27CallbackObservation g_m27CallbackObservations[kM27CallbackObservationCapacity] = {};
+std::size_t g_m27CallbackObservationCount = 0;
+std::mutex g_m27CallbackObservationMutex;
+
 bool Sha256(
     const unsigned char* data,
     std::size_t size,
@@ -87,28 +99,88 @@ bool Sha256(
         32));
 }
 
-bool HasM27ConstantBuffer(
-    ID3D11ShaderReflection* reflection,
-    const char* name,
-    UINT expectedBytes)
+void ObserveM27Callback(
+    const unsigned char* byteCode,
+    std::size_t byteCodeSize,
+    bool isVertex)
 {
-    ID3D11ShaderReflectionConstantBuffer* buffer =
-        reflection->GetConstantBufferByName(name);
-    if (buffer == nullptr)
-        return false;
-    D3D11_SHADER_BUFFER_DESC description = {};
-    return SUCCEEDED(buffer->GetDesc(&description)) &&
-        description.Type == D3D_CT_CBUFFER &&
-        description.Size == expectedBytes;
+    unsigned char digest[32] = {};
+    if (!Sha256(byteCode, byteCodeSize, digest))
+        return;
+
+    M27CallbackObservation observation = {};
+    observation.metadata[0] = isVertex ? 1u : 2u;
+    observation.metadata[1] = static_cast<std::uint32_t>(byteCodeSize);
+    std::memcpy(observation.sha256, digest, sizeof(digest));
+
+    ID3D11ShaderReflection* reflection = nullptr;
+    if (SUCCEEDED(D3DReflect(
+            byteCode,
+            byteCodeSize,
+            IID_ID3D11ShaderReflection,
+            reinterpret_cast<void**>(&reflection))) && reflection != nullptr)
+    {
+        D3D11_SHADER_DESC shader = {};
+        if (SUCCEEDED(reflection->GetDesc(&shader)))
+        {
+            observation.metadata[2] = shader.InputParameters;
+            observation.metadata[3] = shader.OutputParameters;
+            observation.metadata[4] = shader.BoundResources;
+            for (UINT index = 0; index < shader.BoundResources; ++index)
+            {
+                D3D11_SHADER_INPUT_BIND_DESC binding = {};
+                if (FAILED(reflection->GetResourceBindingDesc(index, &binding)))
+                    continue;
+                if (binding.Type == D3D_SIT_CBUFFER &&
+                    binding.BindPoint < 5u && binding.Name != nullptr)
+                {
+                    ID3D11ShaderReflectionConstantBuffer* buffer =
+                        reflection->GetConstantBufferByName(binding.Name);
+                    D3D11_SHADER_BUFFER_DESC description = {};
+                    if (buffer != nullptr &&
+                        SUCCEEDED(buffer->GetDesc(&description)))
+                    {
+                        observation.metadata[5u + binding.BindPoint] =
+                            description.Size;
+                    }
+                }
+                else if (binding.Type == D3D_SIT_TEXTURE &&
+                    binding.BindPoint < 32u)
+                {
+                    observation.metadata[10] |= 1u << binding.BindPoint;
+                }
+                else if (binding.Type == D3D_SIT_SAMPLER &&
+                    binding.BindPoint < 32u)
+                {
+                    observation.metadata[11] |= 1u << binding.BindPoint;
+                }
+            }
+        }
+        reflection->Release();
+    }
+
+    std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+    for (std::size_t index = 0; index < g_m27CallbackObservationCount; ++index)
+    {
+        if (std::memcmp(
+                g_m27CallbackObservations[index].sha256,
+                digest,
+                sizeof(digest)) == 0)
+        {
+            return;
+        }
+    }
+    if (g_m27CallbackObservationCount < kM27CallbackObservationCapacity)
+        g_m27CallbackObservations[g_m27CallbackObservationCount++] = observation;
 }
 
-bool MatchesM27AbiShell(
+void RecordM27SignatureCounts(
     const unsigned char* byteCode,
     std::size_t byteCodeSize,
     bool isVertex)
 {
     if (byteCode == nullptr || byteCodeSize == 0)
-        return false;
+        return;
 
     ID3D11ShaderReflection* reflection = nullptr;
     const HRESULT reflected = D3DReflect(
@@ -117,11 +189,10 @@ bool MatchesM27AbiShell(
         IID_ID3D11ShaderReflection,
         reinterpret_cast<void**>(&reflection));
     if (FAILED(reflected) || reflection == nullptr)
-        return false;
+        return;
 
     D3D11_SHADER_DESC description = {};
-    bool matches = SUCCEEDED(reflection->GetDesc(&description));
-    if (matches)
+    if (SUCCEEDED(reflection->GetDesc(&description)))
     {
         std::atomic<std::uint32_t>& maxInputs = isVertex
             ? g_m27MaxVertexInputCount
@@ -129,39 +200,11 @@ bool MatchesM27AbiShell(
         std::atomic<std::uint32_t>& maxOutputs = isVertex
             ? g_m27MaxVertexOutputCount
             : g_m27MaxPixelOutputCount;
-        std::uint32_t priorInputs = maxInputs.load(std::memory_order_relaxed);
-        while (priorInputs < description.InputParameters &&
-            !maxInputs.compare_exchange_weak(
-                priorInputs,
-                description.InputParameters,
-                std::memory_order_relaxed)) {}
-        std::uint32_t priorOutputs = maxOutputs.load(std::memory_order_relaxed);
-        while (priorOutputs < description.OutputParameters &&
-            !maxOutputs.compare_exchange_weak(
-                priorOutputs,
-                description.OutputParameters,
-                std::memory_order_relaxed)) {}
-    }
-    if (matches)
-    {
-        const D3D11_SHADER_VERSION_TYPE expectedType = isVertex
-            ? D3D11_SHVER_VERTEX_SHADER
-            : D3D11_SHVER_PIXEL_SHADER;
-        matches = D3D11_SHVER_GET_TYPE(description.Version) == expectedType;
-    }
-    if (matches && isVertex)
-    {
-        matches = description.InputParameters >= 9u &&
-            description.OutputParameters >= 8u;
-    }
-    if (matches && !isVertex)
-    {
-        matches = description.InputParameters == 10u &&
-            description.OutputParameters == 5u;
+        maxInputs.store(description.InputParameters, std::memory_order_relaxed);
+        maxOutputs.store(description.OutputParameters, std::memory_order_relaxed);
     }
 
     reflection->Release();
-    return matches;
 }
 
 IUnityGraphicsD3D11* GetD3D11()
@@ -206,6 +249,11 @@ void ResetDiagnosticState()
         g_m27ObservedVertexSha256[index].store(0, std::memory_order_relaxed);
         g_m27ObservedPixelSha256[index].store(0, std::memory_order_relaxed);
     }
+    {
+        std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+        std::memset(g_m27CallbackObservations, 0, sizeof(g_m27CallbackObservations));
+        g_m27CallbackObservationCount = 0;
+    }
 }
 
 void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
@@ -236,15 +284,10 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
     std::size_t replacementDxbcSize = 0;
     if (route == SubstitutionRoute::M27HashPinned)
     {
-        // Both native exact routes reserve compiler keywords. Admit only the
-        // dedicated M27 shell's reflected ABI before recording or resolving
-        // a hash, so unrelated diagnostic variants cannot overwrite identity.
-        if (!MatchesM27AbiShell(
-                params.inputByteCode,
-                params.inputByteCodeSize,
-                isVertex))
-            return;
-
+        ObserveM27Callback(
+            params.inputByteCode,
+            params.inputByteCodeSize,
+            isVertex);
         unsigned char digest[32] = {};
         if (!Sha256(params.inputByteCode, params.inputByteCodeSize, digest))
         {
@@ -252,29 +295,6 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
             g_failureCount.fetch_add(1, std::memory_order_relaxed);
             return;
         }
-        std::atomic<std::uint8_t>* observed =
-            isVertex ? g_m27ObservedVertexSha256 : g_m27ObservedPixelSha256;
-        bool alreadyObserved = false;
-        bool conflicts = false;
-        for (std::size_t index = 0; index < sizeof(digest); ++index)
-        {
-            const std::uint8_t prior =
-                observed[index].load(std::memory_order_acquire);
-            alreadyObserved = alreadyObserved || prior != 0;
-            conflicts = conflicts || (prior != 0 && prior != digest[index]);
-        }
-        if (alreadyObserved && conflicts)
-        {
-            g_m27VariantHashConflictCount.fetch_add(
-                1, std::memory_order_relaxed);
-            return;
-        }
-        if (!alreadyObserved)
-        {
-            for (std::size_t index = 0; index < sizeof(digest); ++index)
-                observed[index].store(digest[index], std::memory_order_release);
-        }
-
         const auto stage = isVertex
             ? EndfieldM27Substitution::Stage::Vertex
             : EndfieldM27Substitution::Stage::Pixel;
@@ -282,12 +302,20 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
             EndfieldM27Substitution::Resolve(stage, digest);
         if (entry == nullptr)
         {
-            // A callback keyword is not shader identity. Unknown or unpinned
-            // shell bytecode must retain Unity's shader object unchanged.
+            // A callback keyword is not shader identity. Unknown bytecode must
+            // retain Unity's shader object unchanged; only a stage+SHA registry
+            // hit may substitute the retail M27 stage.
             g_blockedCount.fetch_add(1, std::memory_order_relaxed);
-            g_m27MismatchCount.fetch_add(1, std::memory_order_relaxed);
             return;
         }
+        std::atomic<std::uint8_t>* observed =
+            isVertex ? g_m27ObservedVertexSha256 : g_m27ObservedPixelSha256;
+        for (std::size_t index = 0; index < sizeof(digest); ++index)
+            observed[index].store(digest[index], std::memory_order_release);
+        RecordM27SignatureCounts(
+            params.inputByteCode,
+            params.inputByteCodeSize,
+            isVertex);
         replacementDxbc = entry->replacementDxbc;
         replacementDxbcSize = entry->replacementDxbcSize;
         g_m27MatchCount.fetch_add(1, std::memory_order_relaxed);
@@ -957,6 +985,39 @@ EndfieldOriginalDxbcGetM27ObservedShellSha256(
     for (std::size_t index = 0; index < 32; ++index)
         output[index] = observed[index].load(std::memory_order_acquire);
     return 32;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27CallbackObservationCount()
+{
+    std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+    return static_cast<std::uint32_t>(g_m27CallbackObservationCount);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27CallbackObservation(
+    std::uint32_t index,
+    std::uint32_t* metadata,
+    std::uint32_t metadataCount,
+    unsigned char* sha256,
+    std::uint32_t sha256Size)
+{
+    if (metadata == nullptr || metadataCount < kM27CallbackMetadataCount ||
+        sha256 == nullptr || sha256Size < 32u)
+    {
+        return 0;
+    }
+    std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+    if (index >= g_m27CallbackObservationCount)
+        return 0;
+    const M27CallbackObservation& observation =
+        g_m27CallbackObservations[index];
+    std::memcpy(
+        metadata,
+        observation.metadata,
+        sizeof(observation.metadata));
+    std::memcpy(sha256, observation.sha256, sizeof(observation.sha256));
+    return static_cast<std::uint32_t>(kM27CallbackMetadataCount);
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

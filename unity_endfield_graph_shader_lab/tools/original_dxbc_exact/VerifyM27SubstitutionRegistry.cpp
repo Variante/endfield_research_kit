@@ -40,14 +40,28 @@ int main()
 
     unsigned char unknownShellHash[32] = {};
     unknownShellHash[0] = 1;
-    const bool failsClosed =
-        !EndfieldM27Substitution::Ready() &&
+    const bool dispatchValid =
+        EndfieldM27Substitution::Ready() &&
         EndfieldM27Substitution::Resolve(
             EndfieldM27Substitution::Stage::Vertex,
             unknownShellHash) == nullptr &&
         EndfieldM27Substitution::Resolve(
             EndfieldM27Substitution::Stage::Pixel,
-            unknownShellHash) == nullptr;
+            unknownShellHash) == nullptr &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Vertex,
+            EndfieldM27Substitution::kEntries[0].shellSha256) ==
+                &EndfieldM27Substitution::kEntries[0] &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Pixel,
+            EndfieldM27Substitution::kEntries[1].shellSha256) ==
+                &EndfieldM27Substitution::kEntries[1] &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Vertex,
+            EndfieldM27Substitution::kEntries[1].shellSha256) == nullptr &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Pixel,
+            EndfieldM27Substitution::kEntries[0].shellSha256) == nullptr;
 
     ID3D11Device* device = nullptr;
     ID3D11DeviceContext* context = nullptr;
@@ -80,9 +94,9 @@ int main()
         nullptr,
         &pixel);
     std::printf(
-        "registry_ready=%u fail_closed=%u hashes=%u vertex=0x%08lx pixel=0x%08lx\n",
+        "registry_ready=%u dispatch=%u hashes=%u vertex=0x%08lx pixel=0x%08lx\n",
         EndfieldM27Substitution::Ready() ? 1u : 0u,
-        failsClosed ? 1u : 0u,
+        dispatchValid ? 1u : 0u,
         hashesValid ? 1u : 0u,
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult));
@@ -93,7 +107,7 @@ int main()
         vertex->Release();
     context->Release();
     device->Release();
-    return hashesValid && failsClosed &&
+    return hashesValid && dispatchValid &&
             SUCCEEDED(vertexResult) && SUCCEEDED(pixelResult)
         ? 0
         : 3;
