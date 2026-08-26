@@ -33,10 +33,16 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
             / "Rendering"
             / "EndfieldRecoveredDeferredExactConsumer.cs"
         ).read_text(encoding="utf-8")
+        self.assertIn("case 11: return fallbackArray;", source)
         self.assertIn("case 12: return fallbackArray;", source)
+        self.assertIn("case 13: return resources.t11ScreenShadow;", source)
+        self.assertIn("case 14: return Texture2D.blackTexture;", source)
         self.assertIn("case 15: return integratedFogFallback;", source)
         self.assertIn("TextureFormat.ASTC_4x4", source)
-        self.assertIn("t12=LightCookie:black-zero-cookie", source)
+        self.assertIn("t11=SubsurfaceProfileLut:black-non-subsurface-fixture", source)
+        self.assertIn("t12=SubsurfaceTransmissionLut:black-non-subsurface-fixture", source)
+        self.assertIn("t13=screenShadow:", source)
+        self.assertIn("t14=LightCookie:black-zero-cookie", source)
         self.assertIn("t15=IntegratedFog:black-disabled-1x1-ASTC", source)
         self.assertIn("t18-t23=IrradianceV2:zero-inactive-fallback", source)
         self.assertIn("t25-t27=GBuffer:A/B/C", source)
