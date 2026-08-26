@@ -77,6 +77,8 @@ namespace EndfieldGraphShaderLab
 
         internal bool Requested => requested;
 
+        internal RenderTexture RecoveredHlslOutput => recoveredHlslOutput;
+
         internal bool Render(
             ScriptableRenderContext context,
             Camera camera,
@@ -173,9 +175,20 @@ namespace EndfieldGraphShaderLab
             {
                 return FailClosed(gBufferFailure);
             }
-            Texture cameraDepth = resources.t1CameraDepth;
-            if (!IsCreated(cameraDepth))
-                return FailClosed("same-frame camera depth texture is unavailable");
+            // A/B/C are produced in the isolated five-target sidecar, so t1
+            // must come from that same publication.  Canonical camera depth
+            // does not contain sidecar-only owners such as Endminf M27 and
+            // would reconstruct unrelated world positions for their pixels.
+            if (!gBufferFrame.TryGetResolverDepth(
+                    camera,
+                    width,
+                    height,
+                    out RenderTexture resolverDepth,
+                    out string resolverDepthFailure))
+            {
+                return FailClosed(resolverDepthFailure);
+            }
+            Texture cameraDepth = resolverDepth;
             string materialFailure = string.Empty;
             string fallbackFailure = string.Empty;
             string outputFailure = string.Empty;

@@ -130,6 +130,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredPass0InputSubsetReady;
             public bool observedDeferredGBufferFrameReady;
             public bool observedEndminfM27HGBufferReady;
+            public bool observedEndminfM27PresentationReady;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -174,6 +175,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool deferredPass0InputSubsetReady;
             public bool deferredGBufferFrameReady;
             public bool endminfM27HGBufferReady;
+            public bool endminfM27PresentationReady;
             public bool preGBufferDepthOwnerReady;
             public bool canonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerReady;
@@ -524,6 +526,7 @@ namespace EndfieldGraphShaderLabEditor
         {
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+                "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
                 "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
                 "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
                 "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
@@ -833,6 +836,8 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredDeferredGBufferFrameReady") > 0.5f,
                 endminfM27HGBufferReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredEndminfM27HGBufferReady") > 0.5f,
+                endminfM27PresentationReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredEndminfM27PresentationReady") > 0.5f,
                 preGBufferDepthOwnerReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredPreGBufferDepthOwnerReady") > 0.5f,
                 canonicalCharacterPreGBufferReady = Shader.GetGlobalFloat(
@@ -934,6 +939,8 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredGBufferFrameReady);
             bool observedEndminfM27HGBufferReady = Frames.Any(value =>
                 value.endminfM27HGBufferReady);
+            bool observedEndminfM27PresentationReady = Frames.Any(value =>
+                value.endminfM27PresentationReady);
             bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
                 value.preGBufferDepthOwnerReady);
             bool observedCanonicalCharacterPreGBufferReady = Frames.All(value =>
@@ -995,6 +1002,16 @@ namespace EndfieldGraphShaderLabEditor
                     missingObservations.Add("exact-consumer five-MRT GBuffer readiness");
                 if (!observedDeferredExactConsumerReady)
                     missingObservations.Add("exact-consumer submitted output");
+                if (string.Equals(
+                        Environment.GetEnvironmentVariable(
+                            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION"),
+                        "1",
+                        StringComparison.Ordinal) &&
+                    !observedEndminfM27PresentationReady)
+                {
+                    missingObservations.Add(
+                        "exact M27 deferred presentation readiness");
+                }
                 if (!observedLightCookieDataReady)
                     missingObservations.Add("exact-consumer LightCookieData readiness");
             }
@@ -1043,6 +1060,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedDeferredGBufferFrameReady,
                 observedEndminfM27HGBufferReady =
                     observedEndminfM27HGBufferReady,
+                observedEndminfM27PresentationReady =
+                    observedEndminfM27PresentationReady,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =

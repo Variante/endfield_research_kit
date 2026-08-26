@@ -130,6 +130,7 @@ namespace EndfieldGraphShaderLab
             Camera camera,
             EndfieldRecoveredPreGBufferDiagnostic.Frame preGBufferFrame,
             bool directionalCSMReady,
+            RenderTexture postGBufferDepth,
             EndfieldRecoveredContactShadowProducer.Frame contactShadowFrame,
             RenderTargetIdentifier restoreTarget)
         {
@@ -242,9 +243,15 @@ namespace EndfieldGraphShaderLab
             };
             try
             {
+                // Retail builds this receiver after GBuffer, so consume the
+                // canonical post-GBuffer depth when the pipeline owns a
+                // physical attachment. This includes identity-gated M27
+                // depth while retaining the earlier character prepass.
                 commandBuffer.SetGlobalTexture(
                     DepthTextureId,
-                    preGBufferFrame.depthCopy);
+                    postGBufferDepth != null && postGBufferDepth.IsCreated()
+                        ? postGBufferDepth
+                        : preGBufferFrame.depthCopy);
                 commandBuffer.SetGlobalMatrix(
                     InverseViewProjectionId,
                     preGBufferFrame.inverseGpuViewProjection);

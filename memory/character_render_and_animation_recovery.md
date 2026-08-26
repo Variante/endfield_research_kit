@@ -355,10 +355,16 @@ complete frame without a client fault.
   transport bug: broad material copying replaced captured shader defaults with
   zeroes for properties absent from the narrow exported compatibility material.
   The owner now transfers only properties serialized by that M27 asset and
-  preserves captured defaults such as `_BaseColorBrighterScale=1`. The sidecar
-  remains non-presented. Exact admission therefore still requires the
-  original-DXBC ABI swap or equivalent transport closure plus a content-valid
-  presented deferred consumer; do not replace those with more material tuning.
+  preserves captured defaults such as `_BaseColorBrighterScale=1`. A default-off
+  presentation probe now keeps private A/B/C and depth in one same-frame
+  publication, stages only identity-owned M27 depth before low-resolution
+  directional shadow generation, and composites color at equal depth before
+  ForwardOpaque. Its 4.60-second D3D11 joined readback finds about 2.1K owned
+  pixels, but the recovered pass-0 HLSL result is RGB-zero at every owned pixel;
+  canonical color already equals M27's black SceneColor there. This is a
+  content-invalid diagnostic, not exact admission. The remaining gap is the
+  deferred light/resource fixture selected for those M27 pixels, not more
+  material tuning or another M27 game capture.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not
@@ -457,8 +463,10 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   M27 game capture is currently needed. Unity now has a crash-safe, layer-
   isolated five-attachment M27 publisher with an explicit per-frame readiness
   signal. All five attachment readbacks are now content-nonzero after preserving
-  captured shader defaults during exact material-property transfer. The
-  original DXBC transport and presented deferred consumer remain open. A
+  captured shader defaults during exact material-property transfer. The staged
+  presentation path is ordering-correct and report-visible but remains
+  content-invalid because the recovered deferred resolver contributes zero on
+  the M27 ownership mask. A
   fail-closed Unity compiler-extension probe rejects direct shader-object
   substitution: the isolated shell reflects as VS 7-input/11-output and PS
   11-input/5-output, versus the retail pair's VS 10/9 and PS 10/5, and its

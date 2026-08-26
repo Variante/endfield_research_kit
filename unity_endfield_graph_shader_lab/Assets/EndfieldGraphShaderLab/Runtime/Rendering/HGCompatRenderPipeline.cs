@@ -550,6 +550,8 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredResolverInputProbe;
         private readonly EndfieldRecoveredDeferredExactConsumer
             recoveredDeferredExactConsumer;
+        private readonly EndfieldRecoveredEndminfM27DeferredPresentation
+            recoveredEndminfM27DeferredPresentation;
         private readonly EndfieldRecoveredDirectionalCSMProducer
             recoveredDirectionalCSMProducer;
         private readonly EndfieldRecoveredContactShadowProducer
@@ -686,6 +688,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredDeferredResolverInputProbe();
             recoveredDeferredExactConsumer =
                 new EndfieldRecoveredDeferredExactConsumer();
+            recoveredEndminfM27DeferredPresentation =
+                new EndfieldRecoveredEndminfM27DeferredPresentation();
             recoveredContactShadowProducer =
                 new EndfieldRecoveredContactShadowProducer();
             recoveredLowResDirectionalShadowProducer =
@@ -796,6 +800,7 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredDeferredResolverInputProbe?.Dispose();
             recoveredDeferredExactConsumer?.Dispose();
+            recoveredEndminfM27DeferredPresentation?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
             recoveredDeferredShadowData?.Dispose();
@@ -1689,6 +1694,15 @@ namespace EndfieldGraphShaderLab
                     recoveredCanonicalFrameResourcesReady,
                     canonicalColorTarget,
                     canonicalDepthTarget);
+            recoveredEndminfM27DeferredPresentation.PublishDepth(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredDeferredGBufferFrameReady,
+                recoveredDeferredGBufferFrame,
+                canonicalColorTarget,
+                canonicalDepthTarget);
             EndfieldRecoveredContactShadowProducer.Frame
                 recoveredContactShadowFrame =
                     recoveredContactShadowProducer.Render(
@@ -1706,6 +1720,9 @@ namespace EndfieldGraphShaderLab
                 camera,
                 preGBufferFrame,
                 recoveredDirectionalCSMReady,
+                useSeparatePrimaryDepth
+                    ? recoveredPrimarySceneDepth
+                    : null,
                 recoveredContactShadowFrame,
                 canonicalColorTarget);
             recoveredVisibilitySHProducer.Render(
@@ -1796,7 +1813,8 @@ namespace EndfieldGraphShaderLab
                 recoveredDeferredResolverResources,
                 canonicalColorTarget,
                 canonicalDepthTarget);
-            recoveredDeferredExactConsumer.Render(
+            bool recoveredDeferredExactConsumerReady =
+                recoveredDeferredExactConsumer.Render(
                 context,
                 camera,
                 renderWidth,
@@ -1814,6 +1832,17 @@ namespace EndfieldGraphShaderLab
                 recoveredShaderVariablesGlobalReady,
                 recoveredDeferredLightDataReady,
                 recoveredDeferredShadowDataReady,
+                canonicalColorTarget,
+                canonicalDepthTarget);
+            recoveredEndminfM27DeferredPresentation.Render(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredDeferredExactConsumerReady,
+                recoveredDeferredGBufferFrame,
+                recoveredDeferredExactConsumer.RecoveredHlslOutput,
+                cameraColorDescriptor,
                 canonicalColorTarget,
                 canonicalDepthTarget);
 

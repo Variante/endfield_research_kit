@@ -125,6 +125,10 @@ namespace EndfieldGraphShaderLab
         private int publishedWidth;
         private int publishedHeight;
         private uint publicationSerial;
+        private int endminfM27PublishedFrame = -1;
+        private int endminfM27PublishedCameraInstanceId;
+        private int endminfM27PublishedWidth;
+        private int endminfM27PublishedHeight;
         // HGRP/Lit's source vertex supplies previous clip x/y/w lanes to the
         // fragment motion encoder. Keep the immediately preceding camera and
         // object transforms; a camera, renderer, or extent discontinuity
@@ -145,10 +149,17 @@ namespace EndfieldGraphShaderLab
             endminfM27Requested =
                 ReadBooleanEnvironment(EndminfM27EnvironmentVariable) ||
                 HasCommandLineArgument(EndminfM27CommandLineArgument);
+            // A generic deferred-resolver probe historically implied the
+            // SphereOutside producer. M27 is now a complete identity-gated
+            // five-target producer in its own right; requiring the inactive
+            // CharInfo room hierarchy first prevents its draw from ever
+            // publishing. Keep the legacy implication only when M27 is not
+            // the requested producer.
             sphereOutsideRequested =
                 ReadBooleanEnvironment(EnvironmentVariable) ||
                 HasCommandLineArgument(CommandLineArgument) ||
-                EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested;
+                EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested &&
+                !endminfM27Requested;
             requested = sphereOutsideRequested || endminfM27Requested;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             Shader.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
@@ -370,6 +381,13 @@ namespace EndfieldGraphShaderLab
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 context.ExecuteCommandBuffer(command);
                 PublishFrame(camera, width, height);
+                if (endminfM27Renderer != null)
+                {
+                    endminfM27PublishedFrame = Time.frameCount;
+                    endminfM27PublishedCameraInstanceId = camera.GetInstanceID();
+                    endminfM27PublishedWidth = width;
+                    endminfM27PublishedHeight = height;
+                }
                 previousGpuViewProjection = gpuViewProjection;
                 previousObjectToWorld = objectToWorld;
                 hasPreviousGpuViewProjection = true;
@@ -471,6 +489,81 @@ namespace EndfieldGraphShaderLab
             {
                 failure =
                     "same-frame A/B/C resolver textures are unavailable " +
+                    $"for publication serial {publicationSerial}";
+                return false;
+            }
+            return true;
+        }
+
+        internal bool TryGetEndminfM27PresentationInputs(
+            Camera camera,
+            int width,
+            int height,
+            out RenderTexture sourceSceneColor,
+            out RenderTexture mask,
+            out RenderTexture depth,
+            out string failure)
+        {
+            sourceSceneColor = sceneColor;
+            mask = gBufferC;
+            depth = depthStencil;
+            failure = string.Empty;
+            if (!endminfM27Requested)
+            {
+                failure = "Endminf M27 producer is not requested";
+                return false;
+            }
+            if (!TryGetResolverInputs(
+                    camera,
+                    width,
+                    height,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out failure))
+                return false;
+            if (endminfM27PublishedFrame != Time.frameCount ||
+                endminfM27PublishedCameraInstanceId != camera.GetInstanceID() ||
+                endminfM27PublishedWidth != width ||
+                endminfM27PublishedHeight != height)
+            {
+                failure =
+                    "Endminf M27 has no identity-specific same-frame publication";
+                return false;
+            }
+            if (sourceSceneColor == null || !sourceSceneColor.IsCreated() ||
+                mask == null || !mask.IsCreated() ||
+                depth == null || !depth.IsCreated())
+            {
+                failure = "Endminf M27 presentation mask/depth is unavailable";
+                return false;
+            }
+            return true;
+        }
+
+        internal bool TryGetResolverDepth(
+            Camera camera,
+            int width,
+            int height,
+            out RenderTexture resolverDepth,
+            out string failure)
+        {
+            resolverDepth = depthStencil;
+            if (!TryGetResolverInputs(
+                    camera,
+                    width,
+                    height,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out failure))
+                return false;
+            if (resolverDepth == null || !resolverDepth.IsCreated())
+            {
+                failure =
+                    "same-frame deferred resolver depth texture is unavailable " +
                     $"for publication serial {publicationSerial}";
                 return false;
             }
@@ -1075,6 +1168,10 @@ namespace EndfieldGraphShaderLab
             publishedCameraInstanceId = 0;
             publishedWidth = 0;
             publishedHeight = 0;
+            endminfM27PublishedFrame = -1;
+            endminfM27PublishedCameraInstanceId = 0;
+            endminfM27PublishedWidth = 0;
+            endminfM27PublishedHeight = 0;
         }
 
         private void InvalidateMotionHistory()
