@@ -45,6 +45,9 @@ namespace EndfieldGraphShaderLabEditor
         private const string SessionCertificationPath =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/" +
             "secondary_dynamics_session_certification_contract.json";
+        private const string CapturedReplayReportRelativePath =
+            "reports/assets/character_recovery/" +
+            "endminf_captured_secondary_dynamics_oracle.json";
 
         internal static void Configure(
             GameObject actor,
@@ -316,7 +319,10 @@ namespace EndfieldGraphShaderLabEditor
             if (runtime == null)
                 runtime = actor.AddComponent<EndfieldSecondaryDynamicsRuntime>();
             runtime.data = data;
+            runtime.enableUnverifiedSolverWriteback = false;
             EditorUtility.SetDirty(runtime);
+
+            ConfigureCapturedReplay(actor, actorGeneratedRoot, persist);
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Verify Endminf Secondary Dynamics Source Data")]
@@ -335,6 +341,37 @@ namespace EndfieldGraphShaderLabEditor
             finally
             {
                 UnityEngine.Object.DestroyImmediate(probe);
+            }
+        }
+
+        [MenuItem("Endfield/Character Recovery Lab/Validate Endminf Captured Secondary Dynamics Replay")]
+        public static void ValidateEndminfCapturedReplay()
+        {
+            EndfieldCapturedSecondaryDynamicsReplayData data = DecodeCapturedReplayReport();
+            try
+            {
+                ValidateCapturedReplayData(data);
+                Debug.Log(
+                    "Validated bounded Endminf captured secondary-dynamics replay: " +
+                    data.SampleCount + " samples, " + data.BoneCount +
+                    " unique hair/cape bones, clamped endpoints, and midpoint interpolation.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(data);
+            }
+        }
+
+        public static void ValidateEndminfCapturedReplayCommandLine()
+        {
+            try
+            {
+                ValidateEndminfCapturedReplay();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
             }
         }
 
@@ -375,6 +412,18 @@ namespace EndfieldGraphShaderLabEditor
                     StringComparison.Ordinal))
                 throw new InvalidDataException(
                     "Generated Endminf secondary-dynamics coordinator is missing, uncertified, or not default-off.");
+            EndfieldCapturedSecondaryDynamicsReplay replay =
+                prefab.GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
+            string replayFailure = "component or data is absent";
+            bool replayValid = replay != null && replay.useCapturedReplay && replay.data != null &&
+                replay.data.Validate(out replayFailure) &&
+                string.Equals(replay.data.sourceSha256, Sha256Absolute(CapturedReplayReportPath()),
+                    StringComparison.OrdinalIgnoreCase);
+            if (!replayValid)
+            {
+                throw new InvalidDataException(
+                    "Generated Endminf captured replay is missing or stale: " + replayFailure);
+            }
             EndfieldSecondaryDynamicsOwnerContract.BindingAudit audit =
                 EndfieldSecondaryDynamicsOwnerContract.Verify(prefab, "Endminf", SolverInputsPath);
             if (!audit.owner_binding_verified ||
@@ -391,7 +440,196 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
                 "100 unique transforms, 26 overlaps, a certified retail settings route, " +
-                "and default-off solver writeback.");
+                "default-off solver writeback, and a default captured 74-bone replay path.");
+        }
+
+        private static void ConfigureCapturedReplay(
+            GameObject actor,
+            string actorGeneratedRoot,
+            bool persist)
+        {
+            EndfieldCapturedSecondaryDynamicsReplay replay =
+                actor.GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
+            if (replay == null)
+                replay = actor.AddComponent<EndfieldCapturedSecondaryDynamicsReplay>();
+            replay.useCapturedReplay = true;
+
+            string reportPath = CapturedReplayReportPath();
+            if (!File.Exists(reportPath))
+            {
+                replay.data = null;
+                EditorUtility.SetDirty(replay);
+                Debug.LogError(
+                    "Endminf captured secondary-dynamics replay report is absent; " +
+                    "the generated runtime will fail closed: " + reportPath);
+                return;
+            }
+
+            EndfieldCapturedSecondaryDynamicsReplayData decoded = DecodeCapturedReplayReport();
+            ValidateCapturedReplayData(decoded);
+            if (!persist)
+            {
+                UnityEngine.Object.DestroyImmediate(decoded);
+                replay.data = null;
+                EditorUtility.SetDirty(replay);
+                return;
+            }
+
+            string directory = actorGeneratedRoot + "/Animation";
+            EnsureAssetFolder(directory);
+            string assetPath = directory + "/EndminfCapturedSecondaryDynamicsReplayData.asset";
+            EndfieldCapturedSecondaryDynamicsReplayData asset =
+                AssetDatabase.LoadAssetAtPath<EndfieldCapturedSecondaryDynamicsReplayData>(assetPath);
+            if (asset == null)
+            {
+                asset = ScriptableObject.CreateInstance<EndfieldCapturedSecondaryDynamicsReplayData>();
+                AssetDatabase.CreateAsset(asset, assetPath);
+            }
+            EditorUtility.CopySerialized(decoded, asset);
+            UnityEngine.Object.DestroyImmediate(decoded);
+            EditorUtility.SetDirty(asset);
+            replay.data = asset;
+            EditorUtility.SetDirty(replay);
+        }
+
+        private static EndfieldCapturedSecondaryDynamicsReplayData DecodeCapturedReplayReport()
+        {
+            string reportPath = CapturedReplayReportPath();
+            if (!File.Exists(reportPath))
+                throw new FileNotFoundException(
+                    "Endminf captured secondary-dynamics oracle is missing.", reportPath);
+            Dictionary<string, object> root = Object(
+                ManifestMiniJson.Deserialize(File.ReadAllText(reportPath)),
+                "captured replay oracle");
+            string schema = Text(root, "schema");
+            if (!string.Equals(schema,
+                    EndfieldCapturedSecondaryDynamicsReplayData.ExpectedSchema,
+                    StringComparison.Ordinal))
+                throw new InvalidDataException("Captured replay oracle schema drifted: " + schema);
+
+            Dictionary<string, object> alignment = Object(
+                Required(root, "referenceAlignment"), "referenceAlignment");
+            float sourceFps = Float(alignment, "sourceFps", "referenceAlignment");
+            int firstPresented = Integer(
+                alignment, "firstCapturePresentedFrame", "referenceAlignment");
+            int firstReference = Integer(
+                alignment, "firstReferenceSourceFrame", "referenceAlignment");
+            List<object> frames = Array(root, "frames");
+            if (frames.Count != Integer(root, "frameCount", "captured replay oracle"))
+                throw new InvalidDataException("Captured replay frame count drifted.");
+            if (frames.Count < 2)
+                throw new InvalidDataException("Captured replay requires at least two frames.");
+
+            Dictionary<string, object> firstFrame = Object(frames[0], "frames[0]");
+            List<object> firstMatrices = Array(firstFrame, "ownerBoneMatrices");
+            string[] bonePaths = firstMatrices.Select((value, index) =>
+                Text(Object(value, "frames[0].ownerBoneMatrices[" + index + "]"), "path"))
+                .ToArray();
+            if (bonePaths.Length == 0 ||
+                bonePaths.Distinct(StringComparer.Ordinal).Count() != bonePaths.Length)
+                throw new InvalidDataException("Captured replay bone paths are empty or duplicated.");
+
+            var sampleTimes = new float[frames.Count];
+            var positions = new Vector3[frames.Count * bonePaths.Length];
+            var rotations = new Quaternion[positions.Length];
+            int previousPresented = int.MinValue;
+            for (int sample = 0; sample < frames.Count; sample++)
+            {
+                Dictionary<string, object> frame = Object(frames[sample], "frames[" + sample + "]");
+                int presented = Integer(frame, "presentedFrame", "frames[" + sample + "]");
+                if (sample == 0 && presented != firstPresented ||
+                    sample > 0 && presented <= previousPresented)
+                    throw new InvalidDataException("Captured replay presented frames are not increasing.");
+                previousPresented = presented;
+                sampleTimes[sample] = (presented - firstPresented) / sourceFps;
+                List<object> matrices = Array(frame, "ownerBoneMatrices");
+                if (matrices.Count != bonePaths.Length)
+                    throw new InvalidDataException("Captured replay bone count varies by frame.");
+                for (int bone = 0; bone < bonePaths.Length; bone++)
+                {
+                    Dictionary<string, object> row = Object(
+                        matrices[bone], "frames[" + sample + "].ownerBoneMatrices[" + bone + "]");
+                    if (!string.Equals(Text(row, "path"), bonePaths[bone], StringComparison.Ordinal))
+                        throw new InvalidDataException("Captured replay bone order varies by frame.");
+                    DecodeRootSpacePose(row, sample * bonePaths.Length + bone,
+                        positions, rotations);
+                }
+            }
+
+            var data = ScriptableObject.CreateInstance<EndfieldCapturedSecondaryDynamicsReplayData>();
+            data.sourceSchema = schema;
+            data.sourceSha256 = Sha256Absolute(reportPath);
+            data.sourceFps = sourceFps;
+            data.firstReferenceSourceFrame = firstReference;
+            data.playbackReferenceSourceFrame = firstReference;
+            data.bonePaths = bonePaths;
+            data.sampleTimes = sampleTimes;
+            data.rootSpacePositions = positions;
+            data.rootSpaceRotations = rotations;
+            return data;
+        }
+
+        private static void DecodeRootSpacePose(
+            Dictionary<string, object> row,
+            int poseIndex,
+            Vector3[] positions,
+            Quaternion[] rotations)
+        {
+            List<object> matrix = Array(row, "currentRootSpace3x4");
+            if (matrix.Count != 3)
+                throw new InvalidDataException("Captured replay matrix is not 3x4.");
+            var values = new float[3, 4];
+            for (int y = 0; y < 3; y++)
+            {
+                List<object> sourceRow = matrix[y] as List<object> ??
+                    throw new InvalidDataException("Captured replay matrix row is malformed.");
+                if (sourceRow.Count != 4)
+                    throw new InvalidDataException("Captured replay matrix is not 3x4.");
+                for (int x = 0; x < 4; x++)
+                    values[y, x] = Number(sourceRow[x], "captured replay matrix");
+            }
+            Vector3 right = new Vector3(values[0, 0], values[1, 0], values[2, 0]);
+            Vector3 up = new Vector3(values[0, 1], values[1, 1], values[2, 1]);
+            Vector3 forward = new Vector3(values[0, 2], values[1, 2], values[2, 2]);
+            float determinant = Vector3.Dot(right, Vector3.Cross(up, forward));
+            if (Mathf.Abs(determinant - 1f) > 1e-3f)
+                throw new InvalidDataException("Captured replay matrix basis is not right-handed orthonormal.");
+            positions[poseIndex] = new Vector3(values[0, 3], values[1, 3], values[2, 3]);
+            rotations[poseIndex] = Quaternion.LookRotation(forward, up).normalized;
+        }
+
+        private static void ValidateCapturedReplayData(
+            EndfieldCapturedSecondaryDynamicsReplayData data)
+        {
+            string failure = "data is absent";
+            if (data == null || !data.Validate(out failure))
+                throw new InvalidDataException("Captured replay data is invalid: " + failure);
+            if (data.SampleCount != 40 || data.BoneCount != 74)
+                throw new InvalidDataException("Captured replay dimensions differ from the oracle.");
+
+            EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
+                data.sampleTimes, -1f, out int low, out int high, out float blend);
+            if (low != 0 || high != 0 || blend != 0f)
+                throw new InvalidDataException("Captured replay does not clamp its lower endpoint.");
+            float midpoint = (data.sampleTimes[10] + data.sampleTimes[11]) * 0.5f;
+            EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
+                data.sampleTimes, midpoint, out low, out high, out blend);
+            if (low != 10 || high != 11 || Mathf.Abs(blend - 0.5f) > 1e-5f)
+                throw new InvalidDataException("Captured replay midpoint interpolation drifted.");
+            EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
+                data.sampleTimes, float.MaxValue, out low, out high, out blend);
+            if (low != 39 || high != 39 || blend != 0f)
+                throw new InvalidDataException("Captured replay does not clamp its upper endpoint.");
+        }
+
+        private static string CapturedReplayReportPath() => Path.GetFullPath(Path.Combine(
+            Application.dataPath, "..", "..", CapturedReplayReportRelativePath));
+
+        private static string Sha256Absolute(string absolutePath)
+        {
+            using (SHA256 sha = SHA256.Create())
+                return string.Concat(sha.ComputeHash(File.ReadAllBytes(absolutePath))
+                    .Select(value => value.ToString("x2")));
         }
 
         private static Dictionary<string, object> ActorRow(string json, string actorKey)
