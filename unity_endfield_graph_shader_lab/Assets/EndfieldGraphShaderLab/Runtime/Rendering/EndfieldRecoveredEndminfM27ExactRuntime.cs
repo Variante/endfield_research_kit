@@ -148,11 +148,7 @@ namespace EndfieldGraphShaderLab
         private static int ResolveNearestPacket(float seconds)
         {
             float[] phases = EndfieldRecoveredM27TemporalCaptureData.PhaseSeconds;
-            float leadingHalfInterval = (phases[1] - phases[0]) * 0.5f;
-            float trailingHalfInterval =
-                (phases[phases.Length - 1] - phases[phases.Length - 2]) * 0.5f;
-            if (seconds < phases[0] - leadingHalfInterval ||
-                seconds > phases[phases.Length - 1] + trailingHalfInterval)
+            if (!IsCapturedPhase(seconds))
                 return -1;
             int nearest = 0;
             float distance = Mathf.Abs(seconds - phases[0]);
@@ -166,6 +162,16 @@ namespace EndfieldGraphShaderLab
                 }
             }
             return nearest;
+        }
+
+        public static bool IsCapturedPhase(float seconds)
+        {
+            float[] phases = EndfieldRecoveredM27TemporalCaptureData.PhaseSeconds;
+            float leadingHalfInterval = (phases[1] - phases[0]) * 0.5f;
+            float trailingHalfInterval =
+                (phases[phases.Length - 1] - phases[phases.Length - 2]) * 0.5f;
+            return seconds >= phases[0] - leadingHalfInterval &&
+                seconds <= phases[phases.Length - 1] + trailingHalfInterval;
         }
 
         internal static bool Issue(CommandBuffer command)

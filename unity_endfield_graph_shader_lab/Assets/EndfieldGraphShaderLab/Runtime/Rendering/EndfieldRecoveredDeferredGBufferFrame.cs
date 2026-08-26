@@ -259,6 +259,17 @@ namespace EndfieldGraphShaderLab
                 FailClosed(context, failure);
                 return false;
             }
+            if (endminfM27ExactDxbcRequested &&
+                endminfM27SourceMaterial == null &&
+                !EndfieldRecoveredEndminfM27ExactRuntime.Initialized &&
+                !TryResolveRetainedEndminfM27Material(
+                    camera,
+                    out endminfM27SourceMaterial,
+                    out failure))
+            {
+                FailClosed(context, failure);
+                return false;
+            }
             bool exactM27Active = false;
             if (endminfM27ExactDxbcRequested &&
                 (endminfM27SourceMaterial != null ||
@@ -866,6 +877,56 @@ namespace EndfieldGraphShaderLab
                 return null;
             return lightRig.actorRoot.GetComponentInChildren<
                 SkinnedMeshRenderer>(true);
+        }
+
+        private static bool TryResolveRetainedEndminfM27Material(
+            Camera camera,
+            out Material sourceMaterial,
+            out string failure)
+        {
+            sourceMaterial = null;
+            failure = string.Empty;
+            if (camera == null)
+                return true;
+            EndfieldEndminfLitEffectCompatibilityBinding[] bindings =
+                Resources.FindObjectsOfTypeAll<
+                    EndfieldEndminfLitEffectCompatibilityBinding>();
+            List<EndfieldEndminfLitEffectCompatibilityBinding.Row> rows =
+                bindings
+                    .Where(binding =>
+                        binding != null &&
+                        binding.gameObject.scene.IsValid() &&
+                        binding.gameObject.scene == camera.gameObject.scene &&
+                        binding.rows != null)
+                    .SelectMany(binding => binding.rows)
+                    .Where(row =>
+                        row != null &&
+                        row.particleRendererPathId == EndminfM27RendererPathId)
+                    .ToList();
+            if (rows.Count == 0)
+                return true;
+            if (rows.Any(row =>
+                    row.materialPathId != EndminfM27MaterialPathId ||
+                    row.meshPathId != EndminfM27MeshPathId ||
+                    row.material == null || row.mesh == null))
+            {
+                failure =
+                    "the retained inactive Endminf M27 identity drifted";
+                return false;
+            }
+            Material[] materials = rows
+                .Select(row => row.material)
+                .Distinct()
+                .ToArray();
+            if (materials.Length != 1)
+            {
+                failure =
+                    "the retained Endminf M27 material is not unique; found " +
+                    materials.Length;
+                return false;
+            }
+            sourceMaterial = materials[0];
+            return true;
         }
 
         private bool TryEnsureEndminfM27Material(

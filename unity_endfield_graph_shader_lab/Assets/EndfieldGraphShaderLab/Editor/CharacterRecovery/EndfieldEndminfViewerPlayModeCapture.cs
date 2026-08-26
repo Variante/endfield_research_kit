@@ -180,6 +180,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool canonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerReady;
             public bool lightCookieDataReady;
+            public Vector4 exposureWithMiscParams;
             public string[] effectRoots;
             public ParticleRow[] liveRenderers;
             public ParticleRow[] handFamily;
@@ -717,10 +718,18 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL");
             if (!string.IsNullOrWhiteSpace(excludedMaterial))
             {
+                HashSet<string> excludedMaterials = new HashSet<string>(
+                    excludedMaterial.Split(new[] { ';' },
+                        StringSplitOptions.RemoveEmptyEntries)
+                        .Select(value => value.Trim())
+                        .Where(value => value.Length > 0),
+                    StringComparer.Ordinal);
+                if (excludedMaterials.Count == 0)
+                    throw new InvalidOperationException(
+                        "The Endminf excluded-material set is empty.");
                 foreach (ParticleSystemRenderer renderer in renderers.Where(value =>
                     value.enabled && value.sharedMaterials.Any(material => material != null &&
-                        string.Equals(material.name, excludedMaterial,
-                            StringComparison.Ordinal))))
+                        excludedMaterials.Contains(material.name))))
                 {
                     renderer.enabled = false;
                 }
@@ -889,6 +898,8 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredDeferredExactConsumerReady") > 0.5f,
                 lightCookieDataReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredLightCookieDataReady") > 0.5f,
+                exposureWithMiscParams = Shader.GetGlobalVector(
+                    "_ExposureWithMiscParams"),
                 effectRoots = roots.Select(value => value.name + " @ " + Hierarchy(value.transform)).ToArray(),
                 liveRenderers = renderers.Where(value => value.enabled &&
                         value.gameObject.activeInHierarchy &&
@@ -978,8 +989,25 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredShadowDataReady);
             bool observedDeferredPass0InputSubsetReady = Frames.All(value =>
                 value.deferredPass0InputSubsetReady);
-            bool observedDeferredGBufferFrameReady = Frames.All(value =>
-                value.deferredGBufferFrameReady);
+            // M27 owns this exact sidecar only inside its retained temporal
+            // packet envelope. No sidecar publication before or after that
+            // envelope is the correct no-M27 state, not a readiness failure.
+            float firstActorClock = Frames.Count > 0
+                ? Frames[0].activeBodyClipTime
+                : 0.0f;
+            float firstSequenceClock = Frames.Count > 0
+                ? Frames[0].actualSeconds
+                : 0.0f;
+            FrameRow[] requiredDeferredGBufferFrames = exactEndminfM27Requested
+                ? Frames.Where(value =>
+                    EndfieldRecoveredEndminfM27ExactRuntime.IsCapturedPhase(
+                        firstActorClock + value.actualSeconds -
+                        firstSequenceClock)).ToArray()
+                : Frames.ToArray();
+            bool observedDeferredGBufferFrameReady =
+                requiredDeferredGBufferFrames.Length > 0 &&
+                requiredDeferredGBufferFrames.All(value =>
+                    value.deferredGBufferFrameReady);
             bool observedEndminfM27HGBufferReady = Frames.Any(value =>
                 value.endminfM27HGBufferReady);
             bool observedEndminfM27PresentationReady = Frames.Any(value =>
