@@ -42,6 +42,45 @@ int main()
         g_EndfieldSelectedPixelDxbcSize,
         nullptr,
         &pixel);
+    ID3D11VertexShader* m27Vertex = nullptr;
+    HRESULT m27VertexResult = device->CreateVertexShader(
+        g_EndfieldM27VertexDxbc,
+        g_EndfieldM27VertexDxbcSize,
+        nullptr,
+        &m27Vertex);
+    ID3D11PixelShader* m27Pixel = nullptr;
+    HRESULT m27PixelResult = device->CreatePixelShader(
+        g_EndfieldM27PixelDxbc,
+        g_EndfieldM27PixelDxbcSize,
+        nullptr,
+        &m27Pixel);
+    const D3D11_INPUT_ELEMENT_DESC m27Elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TANGENT", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 12,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 56,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    ID3D11InputLayout* m27InputLayout = nullptr;
+    HRESULT m27InputLayoutResult = device->CreateInputLayout(
+        m27Elements,
+        static_cast<UINT>(sizeof(m27Elements) / sizeof(m27Elements[0])),
+        g_EndfieldM27VertexDxbc,
+        g_EndfieldM27VertexDxbcSize,
+        &m27InputLayout);
     ID3D11VertexShader* m14Vertex = nullptr;
     HRESULT m14VertexResult = device->CreateVertexShader(
         g_EndfieldM14VertexDxbc,
@@ -132,12 +171,16 @@ int main()
 
     std::printf(
         "feature_level=0x%x vertex=0x%08lx pixel=0x%08lx "
+        "m27_vertex=0x%08lx m27_pixel=0x%08lx m27_layout=0x%08lx "
         "m14_vertex=0x%08lx m14_pixel=0x%08lx m14_layout=0x%08lx "
         "m13_vertex=0x%08lx m13_pixel=0x%08lx m13_layout=0x%08lx "
         "m13_bc7=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult),
+        static_cast<unsigned long>(m27VertexResult),
+        static_cast<unsigned long>(m27PixelResult),
+        static_cast<unsigned long>(m27InputLayoutResult),
         static_cast<unsigned long>(m14VertexResult),
         static_cast<unsigned long>(m14PixelResult),
         static_cast<unsigned long>(m14InputLayoutResult),
@@ -148,6 +191,12 @@ int main()
 
     if (pixel != nullptr)
         pixel->Release();
+    if (m27InputLayout != nullptr)
+        m27InputLayout->Release();
+    if (m27Pixel != nullptr)
+        m27Pixel->Release();
+    if (m27Vertex != nullptr)
+        m27Vertex->Release();
     if (m14Pixel != nullptr)
         m14Pixel->Release();
     if (m14InputLayout != nullptr)
@@ -167,6 +216,8 @@ int main()
     context->Release();
     device->Release();
     return SUCCEEDED(vertexResult) && SUCCEEDED(pixelResult) &&
+            SUCCEEDED(m27VertexResult) && SUCCEEDED(m27PixelResult) &&
+            SUCCEEDED(m27InputLayoutResult) &&
             SUCCEEDED(m14VertexResult) && SUCCEEDED(m14PixelResult)
             && SUCCEEDED(m14InputLayoutResult) && SUCCEEDED(m13VertexResult)
             && SUCCEEDED(m13PixelResult) && SUCCEEDED(m13InputLayoutResult)

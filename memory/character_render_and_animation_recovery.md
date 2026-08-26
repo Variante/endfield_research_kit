@@ -1183,7 +1183,26 @@ projects through b0/c32-c35 and reads c44/c81. Targeted session
 retains all 82 VS b0 vectors through c81, and the shared b0-b2 buffer/range
 identities prove that the larger VS b0 prefix is also the correct shared-stage
 payload. The maintained generator rebases the immutable 435-vertex packet and
-constant arrays to this frame and reports the exact vertex envelope closed.
+constant arrays to this frame and reports the exact vertex envelope closed. It
+also emits the eight distinct stage-specific native buffers instead of folding
+same-numbered VS/PS slots through Unity material constants. The direct D3D11
+path binds the captured six-texture order, zero skin SRV, shared sampler,
+five-MRT/depth/stencil state, packet-local 60-byte input layout, and exact
+1,080-index draw. WARP creates both shaders and the layout. A synchronized
+4.50-second combined Viewer run validates nonzero M13, M14, and M27 native draw
+counts with zero callback failures and `S_OK`; M27 writes 22,110 owned pixels
+and changes 4,553 presentation pixels in the same command sequence.
+
+Session `20260826T142935Z` bounds but does not close M27's temporal envelope.
+Its 4K backbuffers show an early four-crystal hand phase at frame 2308, a
+14-crystal burst at frame 2383, and clean no-crystal tail frames 2469/2530.
+Frame 2308 submits four separate 72-index M27 draws. The targeted package
+retains their shader constants and shared SRV/UAV buffers, but not the direct
+IA vertex/index binding records needed to replay those four packets exactly.
+Therefore the current exact path is a certified peak checkpoint, not a full
+M27 temporal sequence. A future capture must retain direct IA bindings for all
+M27-pair draws at the early four-crystal reference phase; material or resolver
+capture is not the missing evidence.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
@@ -1244,9 +1263,10 @@ registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-M13 and M14 packet capture/admission are closed; validate the now-closed exact
-M27 hand-crystal packet in the full Unity sequence, then measure the combined
-crystal/VFX sequence before returning to body, hair, and cloth polish.
+M13 and M14 packet capture/admission are closed, and M27's exact peak packet is
+validated in the combined Unity frame. Close M27's early four-draw IA packet,
+then measure the complete crystal/VFX sequence before returning to body, hair,
+and cloth polish.
 
 ## Main animation gap
 

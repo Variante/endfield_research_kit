@@ -109,7 +109,6 @@ namespace EndfieldGraphShaderLab
         private readonly bool endminfM27Requested;
         private readonly bool endminfM27ExactDxbcRequested;
         private Material endminfM27Material;
-        private Mesh endminfM27ExactExpandedMesh;
         private int endminfM27SourceMaterialId;
         private RenderTexture sceneColor;
         private RenderTexture sceneMV;
@@ -187,8 +186,6 @@ namespace EndfieldGraphShaderLab
             ReleaseResources();
             ReleaseObject(endminfM27Material);
             endminfM27Material = null;
-            ReleaseObject(endminfM27ExactExpandedMesh);
-            endminfM27ExactExpandedMesh = null;
             endminfM27SourceMaterialId = 0;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             Shader.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
@@ -253,6 +250,7 @@ namespace EndfieldGraphShaderLab
                     out endminfM27Mesh,
                     out failure) ||
                  endminfM27Renderer != null &&
+                 !endminfM27ExactDxbcRequested &&
                  !TryEnsureEndminfM27Material(
                     endminfM27SourceMaterial,
                     out endminfM27PassIndex,
@@ -271,6 +269,16 @@ namespace EndfieldGraphShaderLab
                     string.IsNullOrEmpty(failure)
                         ? "no requested HGBuffer producer is active"
                         : failure);
+                return false;
+            }
+            if (endminfM27Renderer != null &&
+                endminfM27ExactDxbcRequested &&
+                !EndfieldRecoveredEndminfM27ExactRuntime.Prepare(
+                    endminfM27SourceMaterial))
+            {
+                FailClosed(
+                    context,
+                    EndfieldRecoveredEndminfM27ExactRuntime.Failure);
                 return false;
             }
 
@@ -355,16 +363,13 @@ namespace EndfieldGraphShaderLab
                 {
                     if (endminfM27ExactDxbcRequested)
                     {
-                        if (endminfM27ExactExpandedMesh == null)
-                            endminfM27ExactExpandedMesh =
-                                EndfieldRecoveredM27ExactCaptureData
-                                    .CreateExpandedMesh();
-                        command.DrawMesh(
-                            endminfM27ExactExpandedMesh,
-                            Matrix4x4.identity,
-                            endminfM27Material,
-                            0,
-                            endminfM27PassIndex);
+                        if (!EndfieldRecoveredEndminfM27ExactRuntime.Issue(command))
+                        {
+                            FailClosed(
+                                context,
+                                EndfieldRecoveredEndminfM27ExactRuntime.Failure);
+                            return false;
+                        }
                     }
                     else
                     {
@@ -448,11 +453,12 @@ namespace EndfieldGraphShaderLab
             failureLogged = false;
             if (endminfM27Renderer != null && !endminfM27ActivationLogged)
             {
-                string baseMapProperty = endminfM27ExactDxbcRequested
-                    ? "_M27T5"
-                    : "_BaseColorMap";
-                Texture m27BaseMap = endminfM27Material.GetTexture(
-                    baseMapProperty);
+                Material telemetryMaterial = endminfM27ExactDxbcRequested
+                    ? endminfM27SourceMaterial
+                    : endminfM27Material;
+                Texture m27BaseMap = telemetryMaterial != null
+                    ? telemetryMaterial.GetTexture("_BaseColorMap")
+                    : null;
                 Debug.Log(
                     "Recovered Endminf M27 five-MRT HGBuffer sidecar active: " +
                     $"camera={camera.name}, rendererPathId={EndminfM27RendererPathId}, " +
