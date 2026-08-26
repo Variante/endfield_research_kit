@@ -182,6 +182,13 @@ namespace EndfieldGraphShaderLabEditor
             public SecondaryDynamicsBoneRow[] secondaryDynamicsBones;
             public bool secondaryDynamicsSolverWriteback;
             public string secondaryDynamicsBindingFailure;
+            public bool capturedSecondaryReplayEnabled;
+            public bool capturedSecondaryReplayBindingValid;
+            public string capturedSecondaryReplayBindingFailure;
+            public float capturedSecondaryReplaySeconds;
+            public int capturedSecondaryReplayLowerSample;
+            public int capturedSecondaryReplayUpperSample;
+            public float capturedSecondaryReplayBlend;
             public string[] blockedRendererIdentities;
             public int changedPixelsFromPrevious;
             public long absoluteRgbDifferenceFromPrevious;
@@ -754,6 +761,8 @@ namespace EndfieldGraphShaderLabEditor
                     shadowPlane.bounds);
             EndfieldSecondaryDynamicsRuntime secondaryDynamics = actor
                 .GetComponent<EndfieldSecondaryDynamicsRuntime>();
+            EndfieldCapturedSecondaryDynamicsReplay capturedReplay = actor
+                .GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
             Frames.Add(new FrameRow {
                 index = next, requestedSeconds = requested, actualSeconds = elapsed, file = file,
                 endminfPostSeconds = endminfPostSeconds,
@@ -820,6 +829,25 @@ namespace EndfieldGraphShaderLabEditor
                 secondaryDynamicsBindingFailure = secondaryDynamics == null
                     ? "runtime missing"
                     : secondaryDynamics.BindingFailure,
+                capturedSecondaryReplayEnabled = capturedReplay != null &&
+                    capturedReplay.useCapturedReplay,
+                capturedSecondaryReplayBindingValid = capturedReplay != null &&
+                    capturedReplay.BindingValid,
+                capturedSecondaryReplayBindingFailure = capturedReplay == null
+                    ? "runtime missing"
+                    : capturedReplay.BindingFailure,
+                capturedSecondaryReplaySeconds = capturedReplay != null
+                    ? capturedReplay.PlaybackSeconds
+                    : 0f,
+                capturedSecondaryReplayLowerSample = capturedReplay != null
+                    ? capturedReplay.LowerSampleIndex
+                    : -1,
+                capturedSecondaryReplayUpperSample = capturedReplay != null
+                    ? capturedReplay.UpperSampleIndex
+                    : -1,
+                capturedSecondaryReplayBlend = capturedReplay != null
+                    ? capturedReplay.SampleBlend
+                    : 0f,
                 blockedRendererIdentities = renderers.Where(value => !value.enabled)
                     .Select(value => Hierarchy(value.transform) + " | " +
                         string.Join(", ", value.sharedMaterials.Select(material =>
