@@ -331,9 +331,16 @@ complete frame without a client fault.
   vertex/index stream and uses SRP per-draw record 0, not Unity's standard
   procedural-particle transform buffer. The first valid pipeline change remains
   an M27-PathID-only five-MRT owner before deferred resolve, never global
-  `GBuffer` admission. The exact path remains fail-closed because numeric active
-  constant-buffer ranges, selected-frame AnchorWaveBright, terrain profile,
-  and a presented content-valid deferred consumer are not yet closed.
+  `GBuffer` admission. EndfieldCapture session `20260826T042005Z`, frame 7439,
+  closes all eight numeric active constant-buffer ranges for that exact draw.
+  The 16-float4 per-draw record is identity-based, its c4.w skin bit 5 is clear,
+  and the captured b3 values match the exported material (`0.096` strength,
+  five steps, `3.36` tiling, `20/10` radii, and the authored HDR colors). The
+  optional `_VertexSkinMatrices` path is therefore inactive, consistent with
+  the source mesh's zero skin rows. Exact admission remains fail-closed only on
+  porting the hash-pinned equations into the five-target publication and a
+  presented content-valid deferred consumer; do not replace those with more
+  material tuning.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not
@@ -421,20 +428,16 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   material identity, and four material textures feed a one-target ForwardOnly
   stand-in. Its source LitEffect material disables ForwardOnly and selects the
   five-MRT deferred HGBuffer program, so exact admission remains fail-closed.
-  The frame analyses contain the selected M27 HGBuffer pair
-  and close its one-instance, engine-expanded particle topology. Its numeric
-  active constant-buffer slices, optional-skin gate, five-attachment publication,
-  and presented deferred consumer remain open. EndfieldCapture session
-  `20260825T161654Z` cannot close them because its targeted graphics profile
-  deliberately omits retail instanced draws, while `20260826T000901Z` retains
-  only the unrelated M14 priority pair. The maintained targeted profile now
-  priority-retains M27 subprogram 113 by both exact shader hashes and its
-  1,080-index/one-instance expanded-particle draw, including PS c105, the
-  complete per-draw/material slices, and terrain b4/c0. Validate the next
-  bounded source-frame 384-386 capture with
-  `unity_endfield_graph_shader_lab/tools/verify_endminf_m27_graphics_capture.py`
-  before using it. Do not compensate by resizing, brightening, retiming, or
-  disabling M21.
+  The frame analyses contain the selected M27 HGBuffer pair and close its
+  one-instance, engine-expanded particle topology. The maintained targeted
+  profile then recorded 52 complete frames with zero drops in session
+  `20260826T042005Z`; strict verification finds the exact draw in frame 7439.
+  Numeric VS/PS ranges, per-draw record 0, the inactive optional-skin branch,
+  PS c103/c105, complete material b3, and b4/c0 are now captured and decoded in
+  `reports/assets/character_recovery/endminf_m27_particle_abi.json`. No further
+  M27 game capture is currently needed. Five-attachment publication and the
+  presented deferred consumer remain open. Do not compensate by resizing,
+  brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
