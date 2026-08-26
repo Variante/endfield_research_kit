@@ -259,9 +259,28 @@ namespace EndfieldGraphShaderLab
                 FailClosed(context, failure);
                 return false;
             }
+            bool exactM27Active = false;
+            if (endminfM27ExactDxbcRequested &&
+                (endminfM27SourceMaterial != null ||
+                 EndfieldRecoveredEndminfM27ExactRuntime.Initialized))
+            {
+                if (!EndfieldRecoveredEndminfM27ExactRuntime.Prepare(
+                        endminfM27SourceMaterial,
+                        camera))
+                {
+                    FailClosed(
+                        context,
+                        EndfieldRecoveredEndminfM27ExactRuntime.Failure);
+                    return false;
+                }
+                exactM27Active =
+                    EndfieldRecoveredEndminfM27ExactRuntime.HasActivePacket;
+            }
             Renderer motionOwner = renderer != null
                 ? renderer
                 : endminfM27Renderer;
+            if (motionOwner == null && exactM27Active)
+                motionOwner = ResolveSelectedActorMotionOwner(camera);
             if (motionOwner == null)
             {
                 FailClosed(
@@ -271,17 +290,6 @@ namespace EndfieldGraphShaderLab
                         : failure);
                 return false;
             }
-            if (endminfM27Renderer != null &&
-                endminfM27ExactDxbcRequested &&
-                !EndfieldRecoveredEndminfM27ExactRuntime.Prepare(
-                    endminfM27SourceMaterial))
-            {
-                FailClosed(
-                    context,
-                    EndfieldRecoveredEndminfM27ExactRuntime.Failure);
-                return false;
-            }
-
             var command = new CommandBuffer
             {
                 name = "Recovered same-frame HGBuffer sidecar"
@@ -359,7 +367,7 @@ namespace EndfieldGraphShaderLab
                     motionVectorsParams);
                 if (renderer != null)
                     command.DrawRenderer(renderer, material, 0, passIndex);
-                if (endminfM27Renderer != null)
+                if (endminfM27Renderer != null || exactM27Active)
                 {
                     if (endminfM27ExactDxbcRequested)
                     {
@@ -416,7 +424,7 @@ namespace EndfieldGraphShaderLab
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 context.ExecuteCommandBuffer(command);
                 PublishFrame(camera, width, height);
-                if (endminfM27Renderer != null)
+                if (endminfM27Renderer != null || exactM27Active)
                 {
                     endminfM27PublishedFrame = Time.frameCount;
                     endminfM27PublishedCameraInstanceId = camera.GetInstanceID();
@@ -451,7 +459,8 @@ namespace EndfieldGraphShaderLab
                 activationLogged = true;
             }
             failureLogged = false;
-            if (endminfM27Renderer != null && !endminfM27ActivationLogged)
+            if ((endminfM27Renderer != null || exactM27Active) &&
+                !endminfM27ActivationLogged)
             {
                 Material telemetryMaterial = endminfM27ExactDxbcRequested
                     ? endminfM27SourceMaterial
@@ -462,17 +471,17 @@ namespace EndfieldGraphShaderLab
                 Debug.Log(
                     "Recovered Endminf M27 five-MRT HGBuffer sidecar active: " +
                     $"camera={camera.name}, rendererPathId={EndminfM27RendererPathId}, " +
-                    $"particles={endminfM27Renderer.GetComponent<ParticleSystem>().particleCount}, " +
+                    $"particles={(endminfM27Renderer == null ? 0 : endminfM27Renderer.GetComponent<ParticleSystem>().particleCount)}, " +
                     $"baseMap={(m27BaseMap == null ? "<null>" : m27BaseMap.name)}, " +
                     $"baseMapSize={(m27BaseMap == null ? "0x0" : m27BaseMap.width + "x" + m27BaseMap.height)}, " +
                     $"exactDxbc={endminfM27ExactDxbcRequested}, " +
                     (endminfM27ExactDxbcRequested
-                        ? "captureFrame=" +
-                            EndfieldRecoveredM27ExactCaptureData.SourceFrame +
-                            ", capturedExpandedVertices=" +
-                            EndfieldRecoveredM27ExactCaptureData.ExpandedVertexCount +
-                            ", capturedExpandedIndices=" +
-                            EndfieldRecoveredM27ExactCaptureData.ExpandedIndexCount +
+                        ? "captureSession=" +
+                            EndfieldRecoveredM27TemporalCaptureData.SourceSession +
+                            ", temporalPackets=" +
+                            EndfieldRecoveredM27TemporalCaptureData.PacketCount +
+                            ", capturedDraws=" +
+                            EndfieldRecoveredM27TemporalCaptureData.TotalDrawCount +
                             ", "
                         : $"baseColor={endminfM27Material.GetColor("_BaseColor")}, " +
                           $"baseTintCover={endminfM27Material.GetFloat("_BaseColorTintCover").ToString("R", CultureInfo.InvariantCulture)}, " +
@@ -842,6 +851,21 @@ namespace EndfieldGraphShaderLab
             sourceMaterial = row.material;
             mesh = row.mesh;
             return true;
+        }
+
+        private static Renderer ResolveSelectedActorMotionOwner(Camera camera)
+        {
+            EndfieldHGOperatorLightRig lightRig = camera != null
+                ? camera.GetComponent<EndfieldHGOperatorLightRig>()
+                : null;
+            if (lightRig == null || lightRig.actorRoot == null ||
+                !string.Equals(
+                    lightRig.actorRoot.name,
+                    "Endminf",
+                    StringComparison.OrdinalIgnoreCase))
+                return null;
+            return lightRig.actorRoot.GetComponentInChildren<
+                SkinnedMeshRenderer>(true);
         }
 
         private bool TryEnsureEndminfM27Material(
