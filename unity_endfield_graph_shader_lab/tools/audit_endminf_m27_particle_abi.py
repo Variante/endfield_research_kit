@@ -14,6 +14,7 @@ import hashlib
 import json
 import re
 import shutil
+import struct
 import subprocess
 import tempfile
 from pathlib import Path
@@ -26,6 +27,10 @@ SOURCE_CONTRACT = REPO / "reports/assets/character_recovery/endminf_m27_suikuai_
 PROGRAM_CONTRACT = REPO / "reports/assets/character_recovery/endminf_m27_liteffect_program_recovery.json"
 CAPTURE_CONTRACT = REPO / "reports/assets/character_recovery/endminf_deferred_pass0_frame_analysis.json"
 UNITY_PROBE = REPO / "reports/assets/character_recovery/endminf_m27_particle_abi_unity_probe.json"
+LIVE_CAPTURE = (
+    REPO
+    / "scratch/reverse_engineering/endfield_capture/20260826T042005Z/graphics/frames/7439/metadata.json"
+)
 RESOURCE_MAPPING = (
     UNITY
     / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/"
@@ -223,6 +228,121 @@ def validate_capture(capture: dict[str, Any], source: dict[str, Any]) -> dict[st
     }
 
 
+def decode_float4(row: dict[str, Any], index: int) -> list[float]:
+    payload = bytes.fromhex(row.get("dataHex", ""))
+    offset = index * 16
+    require(len(payload) >= offset + 16, f"captured constant c{index} is incomplete")
+    return list(struct.unpack_from("<4f", payload, offset))
+
+
+def decode_uint4(row: dict[str, Any], index: int) -> list[int]:
+    payload = bytes.fromhex(row.get("dataHex", ""))
+    offset = index * 16
+    require(len(payload) >= offset + 16, f"captured constant c{index} is incomplete")
+    return list(struct.unpack_from("<4I", payload, offset))
+
+
+def validate_live_ranges() -> dict[str, Any]:
+    metadata = load_json(LIVE_CAPTURE)
+    matches = [
+        draw for draw in metadata.get("drawRecords", [])
+        if draw.get("count") == 1080 and draw.get("instanceCount") == 1
+    ]
+    require(len(matches) == 1, "live capture does not contain one exact M27 draw")
+    draw = matches[0]
+    require(draw.get("priorityShaderPair") is True, "live M27 shader pair was not retained")
+    shaders = {row.get("stage"): row for row in draw.get("shaders", [])}
+    require(shaders.get(0, {}).get("identityHash") == 0xC0266E7FAC0046C1,
+            "live M27 vertex shader identity drifted")
+    require(shaders.get(4, {}).get("identityHash") == 0x92D80A93ADD9C714,
+            "live M27 pixel shader identity drifted")
+
+    rows = {(row.get("stage"), row.get("slot")): row
+            for row in draw.get("constantBuffers", [])}
+    expected_ranges = {
+        (0, 0): (4336, 96, 2),
+        (0, 1): (4432, 208, 82),
+        (0, 2): (19408, 4096, 104),
+        (4, 0): (4336, 96, 28),
+        (4, 1): (4432, 208, 106),
+        (4, 2): (19408, 4096, 16),
+        (4, 3): (109744, 48, 36),
+        (4, 4): (18496, 16, 1),
+    }
+    ranges = []
+    for key, expected in expected_ranges.items():
+        require(key in rows, f"live capture is missing constant range {key}")
+        row = rows[key]
+        actual = (row.get("firstConstant"), row.get("numConstants"),
+                  row.get("capturedConstants"))
+        require(actual == expected, f"live constant range {key} drifted: {actual}")
+        require(row.get("rangeValid") is True and row.get("metadataValid") is True,
+                f"live constant range {key} is invalid")
+        ranges.append({
+            "stage": key[0],
+            "slot": key[1],
+            "firstConstant": expected[0],
+            "numConstants": expected[1],
+            "capturedConstants": expected[2],
+            "capturedBytesSha256": hashlib.sha256(
+                bytes.fromhex(row["dataHex"])).hexdigest(),
+        })
+
+    dynamic = rows[(4, 2)]
+    dynamic_c4_uint = decode_uint4(dynamic, 4)
+    skin_flags = dynamic_c4_uint[3]
+    require((skin_flags & 32) == 0, "live M27 unexpectedly enables the skin branch")
+    material = rows[(4, 3)]
+    global_constants = rows[(4, 1)]
+    bindless = rows[(4, 4)]
+    return {
+        "capture": relative(LIVE_CAPTURE),
+        "frame": metadata.get("frame"),
+        "draw": {
+            "indexCount": draw.get("count"),
+            "instanceCount": draw.get("instanceCount"),
+            "baseVertex": draw.get("baseVertex"),
+            "startInstance": draw.get("startInstance"),
+        },
+        "ranges": ranges,
+        "dynamicRecord0": {
+            "float4Count": 16,
+            "objectToWorldRows": [decode_float4(dynamic, index) for index in range(4)],
+            "recordC4Float": decode_float4(dynamic, 4),
+            "recordC4Uint": dynamic_c4_uint,
+            "skinFlagMask": 32,
+            "skinBranchActive": False,
+            "recordC5Uint": decode_uint4(dynamic, 5),
+        },
+        "globalValuesUsedByPixelProgram": {
+            "b1_c26": decode_float4(global_constants, 26),
+            "b1_c27": decode_float4(global_constants, 27),
+            "b1_c103": decode_float4(global_constants, 103),
+            "b1_c105": decode_float4(global_constants, 105),
+        },
+        "materialValues": {
+            "b3_c0": decode_float4(material, 0),
+            "b3_c1": decode_float4(material, 1),
+            "b3_c2": decode_float4(material, 2),
+            "ParallaxStrength_b3_c22_x": decode_float4(material, 22)[0],
+            "ParallaxControl_b3_c24_float": decode_float4(material, 24),
+            "ParallaxControl_b3_c24_uint": decode_uint4(material, 24),
+            "ParallaxMask_b3_c25": decode_float4(material, 25),
+            "ParallaxNoise_b3_c26": decode_float4(material, 26),
+            "ParallaxRadii_b3_c27": decode_float4(material, 27),
+            "ParallaxToggle_b3_c28": decode_float4(material, 28),
+            "ParallaxColor_b3_c29": decode_float4(material, 29),
+            "ParallaxColorDark_b3_c30": decode_float4(material, 30),
+        },
+        "bindlessB4C0": decode_float4(bindless, 0),
+        "conclusion": (
+            "Numeric active ranges and per-draw record 0 are closed. Bit 5 of "
+            "record c4.w is clear, so the exact program does not read the optional "
+            "_VertexSkinMatrices path for this draw."
+        ),
+    }
+
+
 def main(output: Path, unity_particle_include: Path) -> dict[str, Any]:
     source = load_json(SOURCE_CONTRACT)
     representative_program = load_json(PROGRAM_CONTRACT)
@@ -269,9 +389,10 @@ def main(output: Path, unity_particle_include: Path) -> dict[str, Any]:
 
     programs = validate_programs()
     captured_topology = validate_capture(capture, source)
+    live_ranges = validate_live_ranges()
     report = {
-        "schema": "endfield.endminf-m27-particle-abi.v2",
-        "status": "fail_closed_active_cb_ranges_and_deferred_publication_unresolved",
+        "schema": "endfield.endminf-m27-particle-abi.v3",
+        "status": "fail_closed_deferred_publication_unresolved",
         "scope": "P_fxui_endminm003_overview_02/all/suikuai (2) only",
         "selectedRetailProgram": {
             "shader": "HGRP/LitEffect",
@@ -281,6 +402,7 @@ def main(output: Path, unity_particle_include: Path) -> dict[str, Any]:
             **programs,
         },
         "capturedParticlePublication": captured_topology,
+        "liveActiveConstantRanges": live_ranges,
         "exactSerializedConsumer": {
             "particlePathId": source["particleSystem"]["pathId"],
             "particleRawSha256": source["particleSystem"]["rawDataSha256"],
@@ -315,26 +437,10 @@ def main(output: Path, unity_particle_include: Path) -> dict[str, Any]:
             "The 1080-index late draw is exactly the authored 15-particle burst expanded from the 72-index source mesh.",
             "UnityStandardParticleInstancing is not the retail transport and must not be enabled for this compatibility shader.",
             "BLEND inputs remain the optional _VertexSkinMatrices path; the unskinned source mesh does not author those values.",
+            "Frame 7439 closes every active numeric constant-buffer range used by the exact M27 draw.",
+            "The captured per-draw skin flag is clear, so the optional _VertexSkinMatrices resource is inactive.",
         ],
         "remainingBlockers": [
-            {
-                "gate": "active constant-buffer ranges",
-                "gap": (
-                    "The five frames dump whole 4 MiB ring allocations but log pointer "
-                    "addresses rather than numeric pFirstConstant/pNumConstants values. "
-                    "The active b2 record-0 bytes and material/global slices are not isolated."
-                ),
-                "required": "one range-logging frame at the M27 15-particle late window",
-            },
-            {
-                "gate": "optional skin branch and generated auxiliary stream",
-                "gap": (
-                    "The captured input layout closes physical slots, including the "
-                    "20-byte stride-zero BLEND/TANGENT buffer, but the active b2 flags "
-                    "that decide whether t0 is read remain outside the unresolved range."
-                ),
-                "required": "decode b2 record 0 and t0 only if the bit-5 skin gate is active",
-            },
             {
                 "gate": "exact deferred publication",
                 "gap": (
@@ -347,8 +453,9 @@ def main(output: Path, unity_particle_include: Path) -> dict[str, Any]:
         "implementationDecision": {
             "admitted": False,
             "reason": (
-                "Particle expansion and shader selection are closed, but numeric active "
-                "constant ranges and the exact deferred target contract remain unresolved."
+                "Particle expansion, shader selection, numeric active constant ranges, "
+                "and the inactive skin branch are closed, but the exact deferred target "
+                "contract remains unresolved."
             ),
             "doNotUse": [
                 "UnityStandardParticleInstancing procedural setup",
