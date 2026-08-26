@@ -384,7 +384,10 @@ complete frame without a client fault.
   priority over generic fullscreen triangles, records both shader identities
   and compact PS b0-b10 ranges, and selects every unique backing constant
   buffer once into `resources.bin`. Its full 14-test Release suite includes an
-  end-to-end D3D11 proxy package gate. One new targeted source-frame-382-window capture is still
+  end-to-end D3D11 proxy package gate. The old frame contains 24 fullscreen
+  triangles and Default Lit is the sixteenth, so hash-priority is required;
+  replacement now also reports generic-record truncation explicitly. One new
+  targeted source-frame-382-window capture is still
   required to recover the selected Default Lit slices; another M27 material
   draw capture is not required. The same session
   frame observed 48 compute dispatches but retained only the first 16, with
