@@ -1316,6 +1316,20 @@ shows the intended ring/trail burst decaying to sparse amber fragments instead
 of freezing one geometry packet. Keep the path opt-in while full-sequence video
 registration is measured, but no further M14 graphics capture is needed.
 
+The canonical Viewer capture now retains the physical SphereOutside-resolved
+grey CharInfo field and the actor-specific background portrait while excluding
+all foreground UI. A one-frame 3840x2160 probe at requested 4.4667 seconds
+passed the same exact M27/SphereOutside gates and, after Lanczos reduction to
+1920x1080, improved the UI-free retail ROI PSNR from 14.4202 to 14.5289 dB.
+Native resolution is therefore a real but small presentation contributor, not
+the dominant crystal/VFX gap. The source-backed radial/chromatic kernel is
+already stronger than retail when sampled at its actual 4.4667-second post
+peak; do not increase blur or bloom to compensate. The higher-value boundary is
+the still-unclosed retail temporal/upscaler state and its phase relationship to
+the late effect pulse. Focused verifier-only resolution overrides are available
+through paired `ENDFIELD_ENDMINF_CAPTURE_WIDTH` and
+`ENDFIELD_ENDMINF_CAPTURE_HEIGHT`; canonical captures remain 1920x1080.
+
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 M13, M14, and M27 packet capture/admission and temporal native replay are now
@@ -1356,9 +1370,11 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Compare the resulting background+portrait+actor/VFX 770-frame output
-   against the no-frame-generation recording with foreground UI masked out,
-   then close the remaining camera, bloom, effect-shape, and material gaps.
+1. Close the retail temporal/upscaler and late-pulse phase boundary, then
+   compare the resulting background+portrait+actor/VFX 770-frame output against
+   the no-frame-generation recording with foreground UI masked out. Keep the
+   source-backed bloom/material values fixed unless new evidence supersedes
+   their current contracts.
 2. Close Endminf secondary motion against the joined retail shape oracle from
    EndfieldCapture session `20260825T191720Z`. Its 40 complete frames each
    contain 32 valid draw-time b2 snapshots with no dropped/incomplete/failed
