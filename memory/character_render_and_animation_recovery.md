@@ -1190,7 +1190,8 @@ VFXBaseV2 pair, but its five selected BC7 SRVs failed before readback because
 the capture path only sized uncompressed single-mip textures. EndfieldCapture
 now computes BC block rows, copies the SRV-selected mip into a one-subresource
 staging texture, and reports width, height, source/view formats, and subresource;
-its BC7 mip WARP test passes. Only a narrow M13 texture retry remains. The older
+its BC7 mip WARP test and complete 14-test Release suite pass. Only a narrow M13
+texture retry remains. The older
 FrameAnalysis peak identifies M13 as draw 121 and proves its one billboard
 carries authored RGBA `(1, 0.2862745, 0.0235294, 0.0862745)`; this agrees with
 the generated start-color and color-over-lifetime contract. The conspicuous
