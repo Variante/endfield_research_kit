@@ -1449,6 +1449,14 @@ improves ROI MAE from 29.8231 to 29.7657, effect-ROI MAE from 34.6499 to
 the live post-source format and fail if the Endminf reproduction does not
 observe RGBA16F; this promotion does not replace the separately proven packed
 pre-post CameraColor owner.
+The retained Uber `t1` descriptor separately proves a 1920x1080
+`R11G11B10_FLOAT` reconstructed bloom input for the 3840x2160 source. The
+recovered bloom pyramid now uses that explicit packed format instead of
+platform `DefaultHDR`, and Viewer reports fail if the live binding regresses.
+Its dense comparison moves ROI/effect-ROI/temporal MAE from
+29.7657/34.5757/27.1143 to 29.8295/34.6175/27.1543. That small regression does
+not override the direct resource descriptor; it indicates remaining upstream
+effect-shape/timing differences can still dominate whole-ROI scores.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

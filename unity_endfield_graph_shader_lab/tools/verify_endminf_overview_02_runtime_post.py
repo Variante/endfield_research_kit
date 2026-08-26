@@ -117,6 +117,7 @@ def verify() -> dict[str, object]:
         "endminfPost.centerViewport",
         "GraphicsFormat.R16G16B16A16_SFloat",
         "LastRecoveredEndminfPostSourceGraphicsFormat",
+        "LastRecoveredEndminfBloomGraphicsFormat",
         "RecoveredEndminfPostSourceId",
     ), "render-pipeline packing")
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
@@ -132,7 +133,9 @@ def verify() -> dict[str, object]:
         "endminfPostCenterViewport = endminfPostState.centerViewport",
         "public string endminfPostSourceGraphicsFormat",
         "observedEndminfPostSourceRgba16",
+        "observedEndminfBloomR11",
         "retail R16G16B16A16_FLOAT Uber source handoff",
+        "retail R11G11B10_FLOAT Uber bloom handoff",
         "IsCharInfoBackgroundActive()",
         "IsBackgroundPortraitActive()",
         "if (!requiredCaptureContractReady)",
@@ -189,6 +192,7 @@ def verify() -> dict[str, object]:
             "ordinaryCenterSpace": "viewport_0_to_1",
             "farOffscreenCenterTestSpace": "signed_viewport",
             "postSourceGraphicsFormat": "R16G16B16A16_SFloat",
+            "bloomGraphicsFormat": "B10G11R11_UFloatPack32",
             "averageSteps": [0, 0],
             "particleClock": "selection/body timeline; no post-owner age offset",
         },
