@@ -1420,9 +1420,21 @@ missing; foreground screen-space UI remains outside the camera render. A fresh
 one-frame D3D11 pulse probe passed both observed gates, the physical
 SphereOutside gate, and the no-foreground-UI contract. Disabling the partial
 temporal resolve changes that pulse frame by only 1.21 mean RGB levels and does
-not remove its broad multicolour pull. The visible over-warp is therefore in the
-still-unclosed combined radial/chromatic presentation boundary, not evidence
-that hair/cape geometry or the required background layers should be removed.
+not remove its broad multicolour pull. The dominant over-warp was instead a
+coordinate-space translation defect: the compatibility clock returned signed
+viewport coordinates for ordinary on-screen centers even though the Uber
+consumer subtracts a 0..1 UV. The corrected runtime keeps the ordinary center
+in viewport space and uses signed space only for the native far-offscreen
+normalization test. At body phase 4.4667 seconds it publishes
+`(0.509934, 0.532675)`, within 0.00024 of the retained retail Uber-shaped ring
+candidate `(0.509984, 0.532905)`. The same 21-frame UI-free comparison improves
+ROI MAE from 34.3644 to 29.8231, effect-ROI MAE from 42.4441 to 34.6499, and
+effect temporal-delta MAE from 30.8086 to 27.3592. A controlled mode-3 replay
+is worse on all three metrics (30.5015, 35.3130, and 28.4171), so the pinned
+native producer's combined mode 6 remains canonical; the unbound ring's mode-3
+lane is not admitted as draw state. The remaining mismatch is the exact shipped
+Uber kernel/presentation ABI plus effect shape, not hair/cape geometry or the
+required background layers.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
@@ -1492,7 +1504,8 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Close the retail temporal/upscaler and late-pulse phase boundary, then
+1. Close the exact shipped Uber kernel/presentation and retail temporal/upscaler
+   boundary now that the late-pulse center and combined mode are measured, then
    compare the resulting background+portrait+actor/VFX 770-frame output against
    the no-frame-generation recording with foreground UI masked out. Keep the
    source-backed bloom/material values fixed unless new evidence supersedes

@@ -78,12 +78,13 @@ def verify() -> dict[str, object]:
         "(chromaticActive && radial > 0.01f ? 6 : 3)",
         "camera.WorldToViewportPoint(",
         "overview02Root.TransformPoint(RecoveredPostCenterLocal)",
+        "Vector2 center = new Vector2(viewport.x, viewport.y)",
         "viewport.x * 2.0f - 1.0f",
         "viewport.y * 2.0f - 1.0f",
-        "packed.magnitude > 1.414f",
-        "(packed.normalized + Vector2.one) * 0.5f",
-        "Mathf.Clamp01(packed.x)",
-        "Mathf.Clamp01(packed.y)",
+        "signedCenter.magnitude > 1.414f",
+        "(signedCenter.normalized + Vector2.one) * 0.5f",
+        "Mathf.Clamp01(center.x)",
+        "Mathf.Clamp01(center.y)",
         "time <= 0.16666667f",
         "time < 4.4f",
         "time <= 4.4333334f",
@@ -108,6 +109,8 @@ def verify() -> dict[str, object]:
         "IncludeBackgroundPortrait = true",
         "charInfoBackgroundRequested = IncludeCharInfoBackground",
         "backgroundPortraitRequested = IncludeBackgroundPortrait",
+        "public Vector2 endminfPostCenterViewport",
+        "endminfPostCenterViewport = endminfPostState.centerViewport",
         "IsCharInfoBackgroundActive()",
         "IsBackgroundPortraitActive()",
         "if (!requiredCompositionReady)",
@@ -151,7 +154,7 @@ def verify() -> dict[str, object]:
         raise RuntimeError("Effect-02 warped taps incorrectly resample bloom")
 
     return {
-        "status": "verified_source_state_and_combination_order_full_uber_unresolved",
+        "status": "verified_source_state_center_and_combination_order_full_uber_unresolved",
         "clipSha256": EXPECTED_CLIP_SHA256,
         "curveCount": len(bindings),
         "runtime": {
@@ -159,11 +162,14 @@ def verify() -> dict[str, object]:
             "combinedPowerBase": 1.0,
             "combinedMode": 6,
             "singleMode": 3,
+            "ordinaryCenterSpace": "viewport_0_to_1",
+            "farOffscreenCenterTestSpace": "signed_viewport",
             "averageSteps": [0, 0],
             "particleClock": "selection/body timeline; no post-owner age offset",
         },
         "boundary": (
-            "The animated values, native center/mode/power packing, source-only "
+            "The animated values, ordinary/far-offscreen native center packing, "
+            "native mode/power packing, source-only "
             "warp, and separate bloom sampling order are verified. The combined "
             "shipped Uber bloom merge and exact D3D12 presentation bindings remain "
             "unresolved."
