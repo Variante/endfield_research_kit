@@ -380,10 +380,11 @@ complete frame without a client fault.
   the capture runtime counted plain draws but previously retained full state
   only for `DrawIndexedInstanced`, while the resolver uses
   `DrawInstanced(3,1,0,0)`. EndfieldCapture now hooks that call in a separate
-  eight-record bounded list, records both shader identities and compact PS
-  b0-b10 ranges, and selects every unique backing constant buffer once into
-  `resources.bin`. Its full 14-test Release suite includes an end-to-end D3D11
-  proxy package gate. One new targeted source-frame-382-window capture is still
+  eight-record bounded list, gives the hash-pinned Default Lit resolver
+  priority over generic fullscreen triangles, records both shader identities
+  and compact PS b0-b10 ranges, and selects every unique backing constant
+  buffer once into `resources.bin`. Its full 14-test Release suite includes an
+  end-to-end D3D11 proxy package gate. One new targeted source-frame-382-window capture is still
   required to recover the selected Default Lit slices; another M27 material
   draw capture is not required. The same session
   frame observed 48 compute dispatches but retained only the first 16, with
