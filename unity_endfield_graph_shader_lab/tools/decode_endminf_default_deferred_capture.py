@@ -88,14 +88,19 @@ def _word_preview(data: bytes) -> dict:
 
 def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, list[bytes]]:
     exact_identity_selection = resolver.get("priorityDefaultDeferred") is True
+    family_order_selection = (
+        resolver.get("_defaultSelectionEvidence")
+        == "twoPassesBeforeElevenRangeSubsurfaceAnchor"
+    )
     range_shape_selection = (
         resolver.get("priorityDeferredRangeShape") is True
         and resolver.get("fullscreenOrdinal") == EXPECTED_DEFAULT_FULLSCREEN_ORDINAL
     )
-    if not exact_identity_selection and not range_shape_selection:
+    if (not exact_identity_selection and not range_shape_selection
+            and not family_order_selection):
         raise CaptureError(
             "resolver has neither the exact Default Lit identity nor its "
-            "verified fullscreen ordinal/range shape"
+            "verified fullscreen ordinal/range-shape family order"
         )
     if resolver.get("vertexCountPerInstance") != 3 or resolver.get("instanceCount") != 1:
         raise CaptureError("Default Lit resolver is not DrawInstanced(3,1)")
@@ -103,7 +108,8 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
     ps_identity = _shader_identity(resolver, 4)
     allowed_vs_identities = {EXPECTED_VS_IDENTITY}
     allowed_ps_identities = {EXPECTED_PS_IDENTITY}
-    if range_shape_selection and not exact_identity_selection:
+    if ((range_shape_selection or family_order_selection)
+            and not exact_identity_selection):
         # Shader objects created before hook attachment have no bytecode entry
         # and are serialized with identity zero (or no identity). A conflicting
         # registered identity still fails closed.
@@ -196,7 +202,10 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
         "selectionEvidence": (
             "exactShaderIdentity"
             if exact_identity_selection
-            else "fullscreenOrdinal15AndDeferredRangeShape"
+            else resolver.get(
+                "_defaultSelectionEvidence",
+                "fullscreenOrdinal15AndDeferredRangeShape",
+            )
         ),
         "fullscreenOrdinal": resolver.get("fullscreenOrdinal"),
         "vertexShaderIdentity": (
@@ -216,16 +225,48 @@ def decode_frame(frame_dir: Path) -> list[tuple[dict, list[bytes]]]:
         raise CaptureError(f"{frame_dir} has an unsupported graphics schema")
     if metadata.get("captureIncomplete") or metadata.get("captureFailed"):
         raise CaptureError(f"{frame_dir} is incomplete or failed")
-    exact_resolvers = [
-        row for row in metadata.get("fullscreenResolvers", [])
-        if isinstance(row, dict) and row.get("priorityDefaultDeferred") is True
-    ]
-    resolvers = exact_resolvers or [
+    all_resolvers = [
         row for row in metadata.get("fullscreenResolvers", [])
         if isinstance(row, dict)
-        and row.get("priorityDeferredRangeShape") is True
+    ]
+    exact_resolvers = [
+        row for row in all_resolvers
+        if row.get("priorityDefaultDeferred") is True
+    ]
+    range_shape_resolvers = [
+        row for row in all_resolvers
+        if row.get("priorityDeferredRangeShape") is True
         and row.get("fullscreenOrdinal") == EXPECTED_DEFAULT_FULLSCREEN_ORDINAL
     ]
+    family_resolvers = []
+    if not exact_resolvers and not range_shape_resolvers:
+        by_ordinal = {
+            row.get("fullscreenOrdinal"): row for row in all_resolvers
+            if isinstance(row.get("fullscreenOrdinal"), int)
+        }
+        for anchor in all_resolvers:
+            anchor_slots = {
+                row.get("slot") for row in anchor.get("psConstantBuffers", [])
+                if isinstance(row, dict)
+            }
+            anchor_ordinal = anchor.get("fullscreenOrdinal")
+            if (anchor.get("priorityDeferredRangeShape") is not True
+                    or not isinstance(anchor_ordinal, int)
+                    or anchor_ordinal not in {
+                        EXPECTED_DEFAULT_FULLSCREEN_ORDINAL + 2,
+                        EXPECTED_DEFAULT_FULLSCREEN_ORDINAL + 3,
+                    }
+                    or not set(range(11)).issubset(anchor_slots)):
+                continue
+            candidate = by_ordinal.get(anchor_ordinal - 2)
+            if candidate is None:
+                continue
+            selected = dict(candidate)
+            selected["_defaultSelectionEvidence"] = (
+                "twoPassesBeforeElevenRangeSubsurfaceAnchor"
+            )
+            family_resolvers.append(selected)
+    resolvers = exact_resolvers or range_shape_resolvers or family_resolvers
     if not resolvers:
         return []
     resource_name = metadata.get("resourcesFile")

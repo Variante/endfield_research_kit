@@ -389,14 +389,21 @@ complete frame without a client fault.
   complete 50-frame, zero-drop sequence, but every package retained only the
   first eight generic fullscreen records: the game created the Default Lit
   shader before hook attachment, so the local shader registry could not apply
-  hash priority. EndfieldCapture now also prioritizes the complete PS b0-b9
-  deferred range shape and records each fullscreen draw's original ordinal.
-  This retains the late resolver without enlarging the frame snapshot; the
-  end-to-end proxy regression overflows the first-eight list before a
-  range-shaped resolver and the full 14-test Release suite passes. The decoder
-  accepts the old-frame-proven zero-based ordinal 15 plus complete range shape
-  only when shader identities are absent/zero or agree with the exact hashes;
-  any conflicting registered identity fails closed. One new targeted
+  hash priority. Session `20260826T085934Z` then retained the eleven-range
+  Subsurface anchor at ordinal 17 in 15 clean sequence packages, confirming the
+  old-frame Default/Foliage/Subsurface order at 15/16/17. It also exposed two
+  independent bounds: the narrower Default/Foliage layouts did not satisfy the
+  initial all-range shape gate, and two earlier 4.0/8.0 MiB buffers left too
+  little of the 16 MiB resource budget for the shared 4 MiB constant arena.
+  EndfieldCapture now retains 32 fullscreen records, covering the complete
+  observed 24-pass sequence with headroom, and gives the targeted profile a
+  32 MiB resource budget. The end-to-end proxy regression still overflows that
+  list with 40 generic passes before a prioritized resolver; the full 14-test
+  Release suite passes. The decoder accepts exact hashes, the old-frame-proven
+  zero-based ordinal 15 range shape, or the Default record exactly two passes
+  before the observed eleven-range Subsurface anchor. Fallback identities must
+  be absent/zero or agree with the exact hashes; any conflict fails closed.
+  One new targeted
   source-frame-382-window capture is still required to recover the selected
   Default Lit slices; another M27 material draw capture is not required. The
   same session
