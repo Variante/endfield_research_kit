@@ -967,9 +967,12 @@ and `videos/2026-08-24_06-37-22.mkv` retained as its 4K, user-confirmed
 frame-generation-off companion reference.
 Current work should compare camera, timing, pose, materials, effects, lighting,
 background, shadows, and final post-processing against those recordings.
-For the current Endminf deliverable, retail UI and CharInfo presentation layers
-are reference-only evidence: Unity renders the main character and her spawned
-visual effects against a plain clear target.
+For the current Endminf deliverable, Unity retains the CharInfo grey background
+target and actor-specific background portrait with the main character and her
+spawned visual effects. Foreground controls, labels, icons, cursor, and other
+front UI overlays are excluded. The portrait transport is source-recovered;
+the visible grey carrier remains explicitly compatibility-labeled until the
+physical `SphereOutside` presentation is closed.
 
 The maintained video-to-frame workflow is
 `unity_endfield_graph_shader_lab/scripts/reference_video/`. Its config records
@@ -1040,12 +1043,13 @@ materials (including the earlier M13/M29 closure). Two source-local assets are
 both named `T_fx_flow_902_M`, so M35 `_OffsetTex` is explicitly pinned to the
 cloudy `p8CA0E6F6DA6348A5` payload rather than the unrelated triangular
 `pC983DCCB52F1F83F` payload. Unity batch import passes and the generated
-Overview material census has zero unresolved texture GUIDs. Phase-matched
-4.2167/4.4667/4.7167-second renders remove the white-fallback shapes but retain
-the stronger M13 ring and dotted trails against the actor-only black clear;
-the aligned retail reference composites those layers over the bright CharInfo
-scene, and existing exact-owner evidence says M13 owns the large ring. Do not
-apply an arbitrary material attenuation from that cross-background contrast.
+Overview material census has zero unresolved texture GUIDs. Historical phase-
+matched 4.2167/4.4667/4.7167-second actor-only renders remove the white-fallback
+shapes but exaggerate the M13 ring and dotted trails against black. The
+canonical capture now includes the grey CharInfo carrier and actor-specific
+portrait, which makes the same source-authored smoke pale and translucent
+without material attenuation. Existing exact-owner evidence says M13 owns the
+large ring; do not tune it from the retired black comparison.
 A current-build, exact-AssetMap AnimeStudio pass now restores the complete
 serialized Material JSON boundary for all 36 admitted Endminf BaseV2 rows from
 their two source chunks. The fail-closed admission audit validates every
@@ -1241,9 +1245,17 @@ remains healthy. M20 owns most of the broad brown decay smoke, M14 owns the
 later dense gold fragments, and M22 owns thin rays/sparks. The staged M20
 Material and ParticleSystem JSON byte-for-value match their generated Unity
 assets, so do not suppress or rescale them to compensate for comparing black
-actor-only output with retail's grey Character Info composition. The next
-measurement boundary is neutral/transparent composition and bloom footprint,
-not another graphics capture or guessed per-material attenuation.
+actor-only output with retail's grey Character Info composition. The canonical
+peak render now includes the grey CharInfo carrier and recovered Endminf
+portrait with no foreground UI. `20260826T162514Z` contains no exact
+`SphereOutside` HGBuffer pair, and no earlier EndfieldCapture metadata contains
+that pair. The next graphics evidence is therefore one settled full-profile
+frame after the entrance VFX has disappeared; it must retain SphereOutside and
+the neighboring exact Default Lit resolver. EndfieldCapture now priority-
+retains the Sphere pair, IA geometry, all bounded Sphere PS SRVs, resolver
+b0-b10, and all 32 resolver PS SRV slots in that single package. Do not use a
+long full-profile sequence because its 128 MiB resource budget can stall the
+client.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
@@ -1342,11 +1354,13 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Compare the actor/VFX-only 770-frame Endminf output against the
-   no-frame-generation recording with retail UI masked out, then close the
-   remaining camera, effect-shape, and material differences.
-2. Reproduce the complete Endminf Character Info frame against the reference
-   video, closing the presentation scene before further isolated shader work.
+1. Capture one settled Endminf Character Info frame with the full graphics
+   profile, then use its exact SphereOutside/Default Lit package to replace the
+   compatibility grey carrier. Keep the recovered background portrait and
+   exclude every foreground UI overlay.
+2. Compare the resulting background+portrait+actor/VFX 770-frame output
+   against the no-frame-generation recording with foreground UI masked out,
+   then close the remaining camera, bloom, effect-shape, and material gaps.
 3. Close Endminf secondary motion against the joined retail shape oracle from
    EndfieldCapture session `20260825T191720Z`. Its 40 complete frames each
    contain 32 valid draw-time b2 snapshots with no dropped/incomplete/failed

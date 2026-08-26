@@ -19,10 +19,13 @@ namespace EndfieldGraphShaderLabEditor
         private const string Scene = "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity";
         private const int Width = 1920;
         private const int Height = 1080;
-        // This deliverable isolates the selected actor and her spawned visual
-        // effects. CharInfo's portrait, compatibility backdrop, physical-room
-        // subset, and screen UI are reference-only evidence, not output.
-        private const bool ActorOnlyCapture = true;
+        // The requested deliverable retains the CharInfo grey background and
+        // actor-specific background portrait, but never the foreground UI
+        // controls, labels, icons, or cursor overlay. The grey carrier remains
+        // visibly tagged as compatibility until SphereOutside's physical
+        // presentation is source-complete.
+        private const bool IncludeCharInfoBackground = true;
+        private const bool IncludeBackgroundPortrait = true;
         // The pinned retail recording is 1920x1080 at exactly 60 fps. Keep the
         // Play-mode simulation on that clock and only thin the written PNGs
         // to 4 fps. Driving Time.captureDeltaTime at 4 fps changed particle
@@ -106,7 +109,11 @@ namespace EndfieldGraphShaderLabEditor
             public string graphicsDeviceType;
             public string scene = Scene;
             public string selectionPath = "CharacterRecoveryViewerUI.SelectModel(Endminf)";
-            public bool actorOnlyCapture = ActorOnlyCapture;
+            public bool actorOnlyCapture =
+                !IncludeCharInfoBackground && !IncludeBackgroundPortrait;
+            public bool charInfoBackgroundIncluded = IncludeCharInfoBackground;
+            public bool backgroundPortraitIncluded = IncludeBackgroundPortrait;
+            public bool foregroundUiOverlayIncluded = false;
             public bool postProcessingExplicitlyDisabled = false;
             public bool prePostHdrDiagnostic;
             public bool postStageDiagnostic;
@@ -355,15 +362,15 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.SetEnvironmentVariable(
                     "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT", "0");
             }
-            if (ActorOnlyCapture)
-            {
-                Environment.SetEnvironmentVariable(
-                    "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY", "0");
-                Environment.SetEnvironmentVariable(
-                    "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC", "0");
-                Environment.SetEnvironmentVariable(
-                    "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT", "0");
-            }
+            Environment.SetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY",
+                IncludeCharInfoBackground ? "1" : "0");
+            Environment.SetEnvironmentVariable(
+                "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
+                IncludeCharInfoBackground ? "1" : "0");
+            Environment.SetEnvironmentVariable(
+                "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT",
+                IncludeBackgroundPortrait ? "1" : "0");
             EndfieldRecoveredCharInfoPresentation.RefreshStandaloneSelection();
             // Character refreshes rebuild the source actor prefab and can
             // remove its generated overview-effect requests/spawner. Restore
