@@ -10,6 +10,7 @@ from pathlib import Path
 LAB = Path(__file__).resolve().parents[1]
 REPO = LAB.parent
 AUDIT = REPO / "reports/assets/endminf_overview_02_post_curve_native_audit.json"
+UBER_AUDIT = REPO / "reports/assets/endminf_overview_02_uber_post_native_audit.json"
 CLOCK = (
     LAB
     / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
@@ -34,6 +35,9 @@ OPEN_WRAPPER = LAB / "open_character_recovery_lab.bat"
 EXPECTED_CLIP_SHA256 = (
     "9814b9de92d5af7902b1967c295f98d29327824bdd7b478984527c5ccccd076c"
 )
+EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256 = (
+    "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
+)
 EXPECTED_KEYS = (
     ((0.0, 0.12700000405311584), (0.1666666716337204, 0.0),
      (4.400000095367432, 0.0), (4.433333396911621, 0.10100000351667404),
@@ -53,6 +57,7 @@ def require_tokens(text: str, tokens: tuple[str, ...], label: str) -> None:
 
 def verify() -> dict[str, object]:
     audit = json.loads(AUDIT.read_text(encoding="utf-8"))
+    uber_audit = json.loads(UBER_AUDIT.read_text(encoding="utf-8"))
     if audit["inputs"]["clipSha256"] != EXPECTED_CLIP_SHA256:
         raise RuntimeError("overview-02 clip hash mismatch")
     if audit["targetPath"] != {"name": "post (1)", "crc32": 669740077}:
@@ -64,6 +69,17 @@ def verify() -> dict[str, object]:
         actual = tuple((row["time"], row["value"]) for row in binding["keys"])
         if actual != expected:
             raise RuntimeError(f"overview-02 curve {index} key mismatch: {actual!r}")
+    combined_variant = uber_audit["recovered_shader"]["endminf_combined_variant"]
+    if combined_variant["keywords"] != [
+        "BLOOM",
+        "RADIAL_BLUR_CHROMATIC_ABERRATION",
+    ]:
+        raise RuntimeError("Endminf combined Uber keyword pair mismatch")
+    if (
+        combined_variant["fragment_dxbc_sha256"]
+        != EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256
+    ):
+        raise RuntimeError("Endminf combined Uber fragment hash mismatch")
 
     clock = CLOCK.read_text(encoding="utf-8")
     require_tokens(clock, (
@@ -136,6 +152,7 @@ def verify() -> dict[str, object]:
 
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
+        EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256,
         "float4 SampleEndminfSceneLod0(float2 uv)",
         "float effectivePower)",
         "if (_EndminfVisualCompatibilityParams.z > 3.0)",
@@ -154,8 +171,9 @@ def verify() -> dict[str, object]:
         raise RuntimeError("Effect-02 warped taps incorrectly resample bloom")
 
     return {
-        "status": "verified_source_state_center_and_combination_order_full_uber_unresolved",
+        "status": "verified_source_state_center_and_combined_uber_kernel",
         "clipSha256": EXPECTED_CLIP_SHA256,
+        "combinedFragmentDxbcSha256": EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256,
         "curveCount": len(bindings),
         "runtime": {
             "radialPower": 1.0,
@@ -169,10 +187,9 @@ def verify() -> dict[str, object]:
         },
         "boundary": (
             "The animated values, ordinary/far-offscreen native center packing, "
-            "native mode/power packing, source-only "
-            "warp, and separate bloom sampling order are verified. The combined "
-            "shipped Uber bloom merge and exact D3D12 presentation bindings remain "
-            "unresolved."
+            "native mode/power packing, exact combined shipped Uber kernel, "
+            "source-only warp, and separate bloom sampling order are verified. "
+            "The public-Unity presentation/binding ABI remains unresolved."
         ),
     }
 

@@ -1433,8 +1433,12 @@ effect temporal-delta MAE from 30.8086 to 27.3592. A controlled mode-3 replay
 is worse on all three metrics (30.5015, 35.3130, and 28.4171), so the pinned
 native producer's combined mode 6 remains canonical; the unbound ring's mode-3
 lane is not admitted as draw state. The remaining mismatch is the exact shipped
-Uber kernel/presentation ABI plus effect shape, not hair/cape geometry or the
-required background layers.
+Uber presentation/binding ABI plus effect shape, not hair/cape geometry or the
+required background layers. Direct disassembly of exact combined fragment
+`3f490e1504c43554...` confirms the compatibility helper's distance exponent,
+mode threshold, nine mode-6 taps, mode-3 taps, LOD-0 source sampling, and
+separate bloom sample. The fragment does not consume `_ScreenSize`, so neither
+an aspect correction nor further kernel tuning is evidence-backed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
@@ -1504,8 +1508,9 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Close the exact shipped Uber kernel/presentation and retail temporal/upscaler
-   boundary now that the late-pulse center and combined mode are measured, then
+1. Close the public-Unity Uber presentation/binding and retail temporal/upscaler
+   boundary now that the late-pulse center, combined mode, and exact kernel are
+   measured, then
    compare the resulting background+portrait+actor/VFX 770-frame output against
    the no-frame-generation recording with foreground UI masked out. Keep the
    source-backed bloom/material values fixed unless new evidence supersedes
