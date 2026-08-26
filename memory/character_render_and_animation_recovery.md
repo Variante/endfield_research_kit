@@ -1193,6 +1193,16 @@ attenuation. No more geometry, index, material, resolver, or secondary-dynamics
 capture is needed for the M27 gate. The legacy HLSL sidecar keeps its separate
 old-layout bindings and remains the visual fallback.
 
+M14 `overview_02/all/tuowei` no longer has a shader-identity gate. Capture
+`20260826T000901Z` closes its exact VS4914/PS4915 pair, all used constant ranges,
+the 285-quad 36-byte particle stream, and its native BC7 texture mip chain. A
+dedicated Unity 8/7-to-7/2 ABI shell is now stage+SHA pinned; WARP creates both
+retail objects and a live Unity reserved-variant run reports four deterministic
+substitutions (two imports per stage), balanced VS/PS swaps, and zero failures.
+The remaining M14 work is runtime transport: bind stage-specific captured
+buffers, the float4 skin carrier, scene depth, and the exact texture, then draw
+the captured stream into SceneColor/SceneMV with `One, OneMinusSrcAlpha`.
+
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 Pause exact M27 presentation until that single replacement targeted frame closes

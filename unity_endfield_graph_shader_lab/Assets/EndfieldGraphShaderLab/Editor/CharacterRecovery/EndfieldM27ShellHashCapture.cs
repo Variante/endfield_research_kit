@@ -22,6 +22,11 @@ namespace EndfieldGraphShaderLabEditor
             "EndfieldEndminfM27ExactAbiShell.shader";
         private const string OutputEnvironment =
             "ENDFIELD_M27_SHELL_HASH_OUTPUT";
+        private const string M14ShaderAsset =
+            "Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/" +
+            "EndfieldEndminfM14ExactAbiShell.shader";
+        private const string M14OutputEnvironment =
+            "ENDFIELD_M14_SHELL_HASH_OUTPUT";
 
         public static void PreparePinnedRuntimeVariant()
         {
@@ -282,6 +287,126 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
+        public static void RunM14Observation()
+        {
+            string output = Environment.GetEnvironmentVariable(
+                M14OutputEnvironment);
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                output = Path.GetFullPath(Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "scratch",
+                    "character_recovery",
+                    "m14_vfxbasev2",
+                    "shell_hash_observation.json"));
+            }
+            else
+            {
+                output = Path.GetFullPath(output);
+            }
+
+            try
+            {
+                if (SystemInfo.graphicsDeviceType !=
+                    GraphicsDeviceType.Direct3D11)
+                {
+                    throw new InvalidOperationException(
+                        "M14 shell observation requires Direct3D11; actual=" +
+                        SystemInfo.graphicsDeviceType + ".");
+                }
+                if (Native.GetContractVersion() != 2)
+                    throw new InvalidOperationException(
+                        "Original DXBC plugin contract version drifted.");
+                if (Native.SetM27SubstitutionArmed(1) != 1)
+                    throw new InvalidOperationException(
+                        "The reserved exact-stage callback could not be armed.");
+
+                ForceRecompileWhileArmed(M14ShaderAsset);
+                ForceLoadReservedVariant(M14ShaderAsset);
+                CallbackObservation[] observations = ReadCallbackObservations();
+                Directory.CreateDirectory(Path.GetDirectoryName(output));
+                File.WriteAllText(
+                    output + ".callbacks.json",
+                    JsonUtility.ToJson(new Report
+                    {
+                        schema = "endfield.m14-unity-shell-callbacks.v1",
+                        status = "raw_callback_inventory",
+                        callbackObservations = observations,
+                    }, true));
+                CallbackObservation[] vertexCandidates = observations.Where(value =>
+                    value.stage == 1 && value.inputParameters == 8 &&
+                    value.outputParameters == 7).ToArray();
+                CallbackObservation[] pixelCandidates = observations.Where(value =>
+                    value.stage == 2 && value.inputParameters == 7 &&
+                    value.outputParameters == 2).ToArray();
+                CallbackObservation vertex = vertexCandidates.Single(value =>
+                    value.byteCodeSize == 1424 && value.sha256 ==
+                    "0dc6bf259f8510c1e280160543cab0b591485a34bf226c048bf3f245fdad6714");
+                CallbackObservation pixel = pixelCandidates.Single(value =>
+                    value.byteCodeSize == 3192 && value.sha256 ==
+                    "465a86bc25083537c7cfa6d8f481253d907a29e4097fc5ce378d080083e25b57");
+                uint matchCount = Native.GetM27MatchCount();
+                uint vertexSwaps = Native.GetVertexSwapCount();
+                uint pixelSwaps = Native.GetPixelSwapCount();
+                uint failures = Native.GetFailureCount();
+                if (matchCount < 2 || vertexSwaps == 0 ||
+                    vertexSwaps != pixelSwaps ||
+                    matchCount != vertexSwaps + pixelSwaps || failures != 0)
+                {
+                    throw new InvalidOperationException(
+                        "Pinned M14 shell substitution failed validation: " +
+                        $"matches={matchCount}, vertexSwaps={vertexSwaps}, " +
+                        $"pixelSwaps={pixelSwaps}, failures={failures}.");
+                }
+                var report = new Report
+                {
+                    schema = "endfield.m14-unity-shell-hashes.v1",
+                    status = "pinned_substitution_activated",
+                    unityVersion = Application.unityVersion,
+                    graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
+                    shaderAsset = M14ShaderAsset,
+                    shaderSourceSha256 = HashFile(Path.GetFullPath(Path.Combine(
+                        Application.dataPath, "..", M14ShaderAsset))),
+                    contractVersion = Native.GetContractVersion(),
+                    registryReady = Native.GetM27RegistryReady(),
+                    callbackCount = Native.GetCallbackCount(),
+                    mismatchCount = Native.GetM27MismatchCount(),
+                    matchCount = matchCount,
+                    variantHashConflictCount =
+                        Native.GetM27VariantHashConflictCount(),
+                    maximumVertexInputs = vertex.inputParameters,
+                    maximumVertexOutputs = vertex.outputParameters,
+                    maximumPixelInputs = pixel.inputParameters,
+                    maximumPixelOutputs = pixel.outputParameters,
+                    vertexShellSha256 = vertex.sha256,
+                    pixelShellSha256 = pixel.sha256,
+                    callbackObservations = observations,
+                };
+                Directory.CreateDirectory(Path.GetDirectoryName(output));
+                File.WriteAllText(output, JsonUtility.ToJson(report, true));
+                Debug.Log(
+                    "Validated pinned M14 Unity shell hashes: VS=" +
+                    vertex.sha256 + ", PS=" + pixel.sha256 +
+                    ", output=" + output + ".");
+                Native.SetM27SubstitutionArmed(0);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    Native.SetM27SubstitutionArmed(0);
+                }
+                catch
+                {
+                    // Preserve the original actionable observation failure.
+                }
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
         private static byte[] ReadObservedHash(uint stage)
         {
             byte[] value = new byte[32];
@@ -300,10 +425,15 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void ForceRecompileWhileArmed()
         {
+            ForceRecompileWhileArmed(ShaderAsset);
+        }
+
+        private static void ForceRecompileWhileArmed(string shaderAsset)
+        {
             string shaderPath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
                 "..",
-                ShaderAsset));
+                shaderAsset));
             byte[] original = File.ReadAllBytes(shaderPath);
             byte[] touch = System.Text.Encoding.ASCII.GetBytes(
                 "\n// ENDFIELD_M27_ARMED_CAPTURE_REIMPORT\n");
@@ -314,7 +444,7 @@ namespace EndfieldGraphShaderLabEditor
             {
                 File.WriteAllBytes(shaderPath, modified);
                 AssetDatabase.ImportAsset(
-                    ShaderAsset,
+                    shaderAsset,
                     ImportAssetOptions.ForceUpdate |
                     ImportAssetOptions.ForceSynchronousImport);
             }
@@ -326,7 +456,12 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void ForceLoadReservedVariant()
         {
-            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAsset);
+            ForceLoadReservedVariant(ShaderAsset);
+        }
+
+        private static void ForceLoadReservedVariant(string shaderAsset)
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderAsset);
             if (shader == null)
                 throw new InvalidOperationException(
                     "Could not load the dedicated M27 shell shader.");
@@ -339,8 +474,16 @@ namespace EndfieldGraphShaderLabEditor
             {
                 material.EnableKeyword("ENDFIELD_ORIGINAL_DXBC_M27_EXACT");
                 if (!material.SetPass(0))
+                {
+                    string messages = string.Join(
+                        " | ",
+                        ShaderUtil.GetShaderMessages(shader).Select(value =>
+                            value.severity + ": " + value.message +
+                            " (" + value.file + ":" + value.line + ")"));
                     throw new InvalidOperationException(
-                        "Could not activate the reserved M27 shell variant.");
+                        "Could not activate the reserved exact shell variant " +
+                        shaderAsset + ". Import messages: " + messages);
+                }
             }
             finally
             {
