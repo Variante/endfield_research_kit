@@ -1191,7 +1191,12 @@ the generated start-color and color-over-lifetime contract. The conspicuous
 black-background ring is therefore not evidence for arbitrary material
 attenuation. No more geometry, index, material, resolver, or secondary-dynamics
 capture is needed for the M27 gate. The legacy HLSL sidecar keeps its separate
-old-layout bindings and remains the visual fallback.
+old-layout bindings and remains the visual fallback. Capture admission now has
+separate fail-closed M13 and M27 validators: M13 requires the exact shader pair
+plus complete PS `t0-t4` resource ranges, and M27 requires all 82 VS b0 vectors
+through c81. As a negative control, `091023` fails those gates specifically for
+absent M13 and its two-vector M27 VS b0 payload; it can no longer be falsely
+accepted by the former one-vector M27 check.
 
 M14 `overview_02/all/tuowei` no longer has a shader-identity gate. Capture
 `20260826T000901Z` closes its exact VS4914/PS4915 pair, all used constant ranges,
