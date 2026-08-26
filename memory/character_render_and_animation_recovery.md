@@ -1432,6 +1432,23 @@ Its Release build and all 15 tests pass. One dense `graphics full` sequence
 covering reference frames 376-385 remains required; no other owner needs to be
 recaptured in that run.
 
+The pre-patch session is now covered by a fail-closed M29/M30 temporal
+verifier. It identifies 13 M29 packets at 2.5333-4.1667 seconds and 11 M30
+packets at 2.8000-4.1667 seconds using shader pair plus exact PS b3 c1/c4
+fingerprints, rather than index count alone. M29 is always a one-instance
+1,386-index Sphere001 draw; M30 is a one-instance 6/12-index billboard draw.
+Both captured c4 values exactly equal the linear upload of the generated
+materials' authored `_TintColor`, while c1 matches their authored intensity
+and alpha, so no tint retuning is authorized. The report remains explicitly
+`validated_source_assisted_only`: selected IA belongs to another retained
+carrier and neither owner has its own PS t0-t5 closure. A current 21-frame
+UI-free/no-frame-generation ablation with the grey field and portrait proves
+that both source-assisted owners should remain enabled. Excluding M29 worsens
+effect-ROI MAE from 42.4441 to 42.4787; excluding M30 worsens it to 42.5368
+and also worsens temporal-delta MAE from 30.8086 to 30.8190. Exact replay still
+waits on the focused post-patch capture; the compatibility result is measured,
+not treated as completion.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only

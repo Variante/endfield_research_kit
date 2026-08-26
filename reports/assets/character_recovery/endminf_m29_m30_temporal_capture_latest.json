@@ -1,0 +1,1064 @@
+{
+  "schema": "endfield.endminf-m29-m30-temporal-capture.v1",
+  "status": "validated_source_assisted_only",
+  "sessionId": "20260826T162514Z",
+  "capture": "scratch/reverse_engineering/endfield_capture/20260826T162514Z",
+  "phaseAnchor": {
+    "frame": 2978,
+    "seconds": 4.433333,
+    "basis": "no-frame-generation source frame 381 peak registration"
+  },
+  "owners": {
+    "M29": {
+      "shaderPair": {
+        "vertex": "0xCE755059DEDDC2E0",
+        "pixel": "0xF2AD2A14856044AC"
+      },
+      "packetCount": 13,
+      "drawCount": 13,
+      "indexCounts": [
+        1386
+      ],
+      "material": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_29_p7BCC4552203800A8.mat",
+        "sha256": "4d3c6b686d384d6c30d14c082659392de29e288d4ffe2e43410554cca416e1fc",
+        "materialPathId": "0x7BCC4552203800A8",
+        "authoredTint": [
+          0.54901963,
+          0.43381283,
+          0.32156864,
+          1.0
+        ],
+        "linearTint": [
+          0.26225068061762996,
+          0.15781065714725356,
+          0.08437621829248851,
+          1.0
+        ],
+        "intensity": 15.0,
+        "alpha": 1.3
+      },
+      "frames": [
+        {
+          "frame": 2864,
+          "phaseSeconds": 2.533333,
+          "indexCount": 1386,
+          "startIndex": 1128,
+          "baseVertex": 375,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "372d6253d84c5c61ffdbf993385599b03211456dc1098adf536bfb2c6eeeadde",
+            "vsB3": "de2a74f021925594ddb03ec5821a321ad6b282651dd842f24ea937d0c50da70b",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "9d3c2abce5c9615c84334f494c78ec7ee37f8dcbcbcb48e2a75b567a8dd45335",
+            "psB2": "de2a74f021925594ddb03ec5821a321ad6b282651dd842f24ea937d0c50da70b",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "eae5c0628cac196fe6ddbafc099ddc14519c3a80385c424394b12effd117acf2"
+        },
+        {
+          "frame": 2872,
+          "phaseSeconds": 2.666666,
+          "indexCount": 1386,
+          "startIndex": 1128,
+          "baseVertex": 356,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "236d97133bc68afe3c05f8d120628b6e2062d9654bc8840e9c8e0f3f2df228a6",
+            "vsB3": "de2a74f021925594ddb03ec5821a321ad6b282651dd842f24ea937d0c50da70b",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "3b25f2441a5535798a13c510cb8438773e242c0cd1181cf4da3d8a6503d9d1c6",
+            "psB2": "de2a74f021925594ddb03ec5821a321ad6b282651dd842f24ea937d0c50da70b",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "6eba7d07243d09d7a8cecba9399ed921b8f595ea34dc8ad8fce13796746dbe5a"
+        },
+        {
+          "frame": 2880,
+          "phaseSeconds": 2.8,
+          "indexCount": 1386,
+          "startIndex": 1128,
+          "baseVertex": 417,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "39820ff425116ce36054fa69a7c7e31d04f24b3d14fa59f9d919b4e1e50a06a3",
+            "vsB3": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "38e7490e22abb6c54282028ba292d274fea6bf2e89da1add19def6c6bd77810e",
+            "psB2": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "c007621b06bc7099f10f234e29c3dace53c79a139e037b68cec33795535c4c5f"
+        },
+        {
+          "frame": 2888,
+          "phaseSeconds": 2.933333,
+          "indexCount": 1386,
+          "startIndex": 2892,
+          "baseVertex": 826,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "0e6e02fdc04a6f9937733640024fd10d3db12be3c69d86c5d4f6bf024884bfaa",
+            "vsB3": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "0950cbf6be3bb96a1d504ab54907b3e709b58152a44210b712f90e45839932f3",
+            "psB2": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "64b39adf6f7d64e4ad8c2230b796c826ad94ff134cea2553caf068f4e3886fbe"
+        },
+        {
+          "frame": 2896,
+          "phaseSeconds": 3.066666,
+          "indexCount": 1386,
+          "startIndex": 3588,
+          "baseVertex": 978,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "c49cb819a9170ff7548022c305e5723be952a21b37898c3d97c74488f2e14025",
+            "vsB3": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "7a23765ce573a0011dbdc1bc38828dde438c02a78c5550607407474608564f62",
+            "psB2": "5c734597d82537af1d54a86d9b3408ea9e13db28bfc51705a8fd367e6fff05b0",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "2506a74bc1cb92bc0bfcd1def3751bd2ce027408db34244fc9580717168baf52"
+        },
+        {
+          "frame": 2905,
+          "phaseSeconds": 3.216666,
+          "indexCount": 1386,
+          "startIndex": 2592,
+          "baseVertex": 883,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "21684e9beabcbdc0292b9dd5a5b499c0714d52cf5cdca3d6e4d707e9c2514f40",
+            "vsB3": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c",
+            "psB2": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "aac09fde522b803308a54067671a30eee9676874b9d841c2375110448ae505be"
+        },
+        {
+          "frame": 2913,
+          "phaseSeconds": 3.35,
+          "indexCount": 1386,
+          "startIndex": 2592,
+          "baseVertex": 990,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "3f85cb0b3a044f6b3f756ab1919776f6e84e13025b093264ef7697d8d0cfa266",
+            "vsB3": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008",
+            "psB2": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "249478e9dc58439a5b118e4e588c361525137f9fcee0c69b3a9bfd443dad4076"
+        },
+        {
+          "frame": 2921,
+          "phaseSeconds": 3.483333,
+          "indexCount": 1386,
+          "startIndex": 2592,
+          "baseVertex": 1037,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "42ff5762a1b6da6d1ab8733ec78b980f09eacd66528e9a7983291433c9131bc8",
+            "vsB3": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173",
+            "psB2": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "cc5f5d2b573781d5a281fcf331d3fc0c32719e5a493a1b894556725fabcac544"
+        },
+        {
+          "frame": 2929,
+          "phaseSeconds": 3.616666,
+          "indexCount": 1386,
+          "startIndex": 2592,
+          "baseVertex": 1056,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "aa26b77920eaaee5d0ccfbe9631c87e21efabec8ee1df968ddb9bcd789d464a1",
+            "vsB3": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392",
+            "psB2": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "17fc242539acef637f4ed117bfcb0c2b7fb5401ff7c0dcce909c50d39fb0958f"
+        },
+        {
+          "frame": 2937,
+          "phaseSeconds": 3.75,
+          "indexCount": 1386,
+          "startIndex": 1824,
+          "baseVertex": 869,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "ffc104593e7727f099d4effdd2c32c7a2947ed2ab1c11681749ee79401f32770",
+            "vsB3": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812",
+            "psB2": "d0fd8742ac5f05280e0ba724e32b45be66dcd936218480f88936ab906d0d9ad2",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "a81841d5e0ebcdde9446af58c19a66cbba05d18384264a0cb48814defc43828a"
+        },
+        {
+          "frame": 2945,
+          "phaseSeconds": 3.883333,
+          "indexCount": 1386,
+          "startIndex": 1824,
+          "baseVertex": 811,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "68e4ce00ac415f40dd2647aff76ea0404187e588e38b22b5d1b65e5977f5dd4e",
+            "vsB3": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649",
+            "psB2": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "551c2b550f346c746ee9226085976695c48c3d5be70d37a8fc72dc7de79d287b"
+        },
+        {
+          "frame": 2953,
+          "phaseSeconds": 4.016666,
+          "indexCount": 1386,
+          "startIndex": 1056,
+          "baseVertex": 582,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "d2721d01443e239871b4b7415d3298a5624e2810804c21accbd0bd082eb72b3a",
+            "vsB3": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950",
+            "psB2": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "e6f3ddc58810f43ba14b4bfacf5b2ca3368c6bbab02f9982d288776e4a2e6939"
+        },
+        {
+          "frame": 2962,
+          "phaseSeconds": 4.166666,
+          "indexCount": 1386,
+          "startIndex": 1056,
+          "baseVertex": 555,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            15.0,
+            1.2999999523162842
+          ],
+          "psB3C4": [
+            0.26225072145462036,
+            0.15781067311763763,
+            0.08437621593475342,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "27411071acc26bc8be6ab0b970ee54eb204fa499648b4bef8892842da55f505f",
+            "vsB1": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9",
+            "vsB2": "4823d5e5c4f2f0ba389402d96e21beb1fd973910f02083564aa198ce55caa22f",
+            "vsB3": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "vsB4": "cbb51896f6e18483628c86cefef0a17bee3a0b7c5dd2a3f3d5008ae6ddec8fb9",
+            "psB0": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb",
+            "psB1": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16",
+            "psB2": "9bf7d7d2d78f7aaa4515376f36a225227c406b156b0f6845b7ba585f191f6372",
+            "psB3": "e2b3bbc1e20085f7be817432485fe5c37e8b60df06a774626dd8065d642691cb"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "99d8e2a5276ffcde2237d66d781aed032f297e5a7f796d755168ddb9c82dbe3c"
+        }
+      ]
+    },
+    "M30": {
+      "shaderPair": {
+        "vertex": "0x62A5CE6C09171DE9",
+        "pixel": "0x5558DEDDB1EE6188"
+      },
+      "packetCount": 11,
+      "drawCount": 11,
+      "indexCounts": [
+        6,
+        12
+      ],
+      "material": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_30_p5FE318FDDD817ADA.mat",
+        "sha256": "0fde5d0172117b32e814f633f516c0727e101ce64f70107894c50875261bfd56",
+        "materialPathId": "0x5FE318FDDD817ADA",
+        "authoredTint": [
+          0.96981126,
+          0.75122124,
+          0.3348593,
+          1.0
+        ],
+        "linearTint": [
+          0.9326945291163876,
+          0.5244260568679933,
+          0.09170078505214357,
+          1.0
+        ],
+        "intensity": 3.0,
+        "alpha": 0.5
+      },
+      "frames": [
+        {
+          "frame": 2880,
+          "phaseSeconds": 2.8,
+          "indexCount": 6,
+          "startIndex": 3282,
+          "baseVertex": 1195,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "39820ff425116ce36054fa69a7c7e31d04f24b3d14fa59f9d919b4e1e50a06a3",
+            "vsB3": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "38e7490e22abb6c54282028ba292d274fea6bf2e89da1add19def6c6bd77810e",
+            "psB2": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "c007621b06bc7099f10f234e29c3dace53c79a139e037b68cec33795535c4c5f"
+        },
+        {
+          "frame": 2888,
+          "phaseSeconds": 2.933333,
+          "indexCount": 12,
+          "startIndex": 5046,
+          "baseVertex": 1877,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "0e6e02fdc04a6f9937733640024fd10d3db12be3c69d86c5d4f6bf024884bfaa",
+            "vsB3": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "0950cbf6be3bb96a1d504ab54907b3e709b58152a44210b712f90e45839932f3",
+            "psB2": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "64b39adf6f7d64e4ad8c2230b796c826ad94ff134cea2553caf068f4e3886fbe"
+        },
+        {
+          "frame": 2896,
+          "phaseSeconds": 3.066666,
+          "indexCount": 6,
+          "startIndex": 4974,
+          "baseVertex": 2130,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "73a56c2b0710f9e42858eb8b56a48d992e518e05f0b9f546a8a40fd3e880118c",
+            "vsB1": "35fa9371d7f37af5b6dc649b3c6c41640b301dbc78d793dd315a3e2a34004f8f",
+            "vsB2": "c49cb819a9170ff7548022c305e5723be952a21b37898c3d97c74488f2e14025",
+            "vsB3": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "9e4dad74c259dd4821470a678fcf7d68697f0cda4c6bc81ced243191a7792cb4",
+            "psB1": "7a23765ce573a0011dbdc1bc38828dde438c02a78c5550607407474608564f62",
+            "psB2": "8fb156973b2c34a41010e20026d2228c7f2903080f86e2de95551081b0d9c277",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "2506a74bc1cb92bc0bfcd1def3751bd2ce027408db34244fc9580717168baf52"
+        },
+        {
+          "frame": 2905,
+          "phaseSeconds": 3.216666,
+          "indexCount": 12,
+          "startIndex": 3978,
+          "baseVertex": 1972,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "21684e9beabcbdc0292b9dd5a5b499c0714d52cf5cdca3d6e4d707e9c2514f40",
+            "vsB3": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c",
+            "psB2": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "aac09fde522b803308a54067671a30eee9676874b9d841c2375110448ae505be"
+        },
+        {
+          "frame": 2913,
+          "phaseSeconds": 3.35,
+          "indexCount": 6,
+          "startIndex": 3978,
+          "baseVertex": 2150,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "3f85cb0b3a044f6b3f756ab1919776f6e84e13025b093264ef7697d8d0cfa266",
+            "vsB3": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008",
+            "psB2": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "249478e9dc58439a5b118e4e588c361525137f9fcee0c69b3a9bfd443dad4076"
+        },
+        {
+          "frame": 2921,
+          "phaseSeconds": 3.483333,
+          "indexCount": 12,
+          "startIndex": 3978,
+          "baseVertex": 2229,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "42ff5762a1b6da6d1ab8733ec78b980f09eacd66528e9a7983291433c9131bc8",
+            "vsB3": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173",
+            "psB2": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "cc5f5d2b573781d5a281fcf331d3fc0c32719e5a493a1b894556725fabcac544"
+        },
+        {
+          "frame": 2929,
+          "phaseSeconds": 3.616666,
+          "indexCount": 6,
+          "startIndex": 3978,
+          "baseVertex": 2260,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "aa26b77920eaaee5d0ccfbe9631c87e21efabec8ee1df968ddb9bcd789d464a1",
+            "vsB3": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392",
+            "psB2": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "17fc242539acef637f4ed117bfcb0c2b7fb5401ff7c0dcce909c50d39fb0958f"
+        },
+        {
+          "frame": 2937,
+          "phaseSeconds": 3.75,
+          "indexCount": 6,
+          "startIndex": 3210,
+          "baseVertex": 1949,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "ffc104593e7727f099d4effdd2c32c7a2947ed2ab1c11681749ee79401f32770",
+            "vsB3": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812",
+            "psB2": "bdfcc2e46559af276338e93fefe25dfeb10207b954288e26bfc43d1b4ffa5eb2",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "a81841d5e0ebcdde9446af58c19a66cbba05d18384264a0cb48814defc43828a"
+        },
+        {
+          "frame": 2945,
+          "phaseSeconds": 3.883333,
+          "indexCount": 12,
+          "startIndex": 3210,
+          "baseVertex": 1852,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "68e4ce00ac415f40dd2647aff76ea0404187e588e38b22b5d1b65e5977f5dd4e",
+            "vsB3": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649",
+            "psB2": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "551c2b550f346c746ee9226085976695c48c3d5be70d37a8fc72dc7de79d287b"
+        },
+        {
+          "frame": 2953,
+          "phaseSeconds": 4.016666,
+          "indexCount": 6,
+          "startIndex": 2442,
+          "baseVertex": 1470,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "5c2558e6ec7e848d57291bb95e7a79f8a87fe673d56a010901b41725443a38e4",
+            "vsB1": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049",
+            "vsB2": "d2721d01443e239871b4b7415d3298a5624e2810804c21accbd0bd082eb72b3a",
+            "vsB3": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9",
+            "psB1": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950",
+            "psB2": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "e6f3ddc58810f43ba14b4bfacf5b2ca3368c6bbab02f9982d288776e4a2e6939"
+        },
+        {
+          "frame": 2962,
+          "phaseSeconds": 4.166666,
+          "indexCount": 12,
+          "startIndex": 2442,
+          "baseVertex": 1425,
+          "instanceCount": 1,
+          "psB3C1": [
+            1.0,
+            0.0,
+            3.0,
+            0.5
+          ],
+          "psB3C4": [
+            0.9326946139335632,
+            0.5244261026382446,
+            0.09170079231262207,
+            1.0
+          ],
+          "constantSha256": {
+            "vsB0": "27411071acc26bc8be6ab0b970ee54eb204fa499648b4bef8892842da55f505f",
+            "vsB1": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9",
+            "vsB2": "4823d5e5c4f2f0ba389402d96e21beb1fd973910f02083564aa198ce55caa22f",
+            "vsB3": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "vsB4": "28caf3e7c0ef69c8b9f44cc7189fef61e52dfa5f5a5354792f38c0ca186a36d8",
+            "psB0": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb",
+            "psB1": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16",
+            "psB2": "1b7bc8cb8f5b2a1649d5a2888b903a4f370face0331dc9856d61642529b436fa",
+            "psB3": "08dadfdddf1871845f6ddab218648fbbd86c272a27935c3f526c25f8125b1606"
+          },
+          "truncatedConstantAllocations": [
+            "vsB1",
+            "vsB2",
+            "vsB3",
+            "vsB4",
+            "psB0",
+            "psB1",
+            "psB2"
+          ],
+          "metadataSha256": "99d8e2a5276ffcde2237d66d781aed032f297e5a7f796d755168ddb9c82dbe3c"
+        }
+      ]
+    }
+  },
+  "exactReplayReady": false,
+  "exactReplayGap": "This pre-patch session retains draw identity and bounded constant prefixes, but not owner-specific M29/M30 IA and PS t0-t5 resources."
+}
