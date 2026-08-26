@@ -121,6 +121,41 @@ class DecodeDefaultDeferredCaptureTests(unittest.TestCase):
             )
             self.assertIsNone(decoded["pixelShaderIdentity"])
 
+    def test_decodes_default_two_passes_before_subsurface_anchor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            def mutate(metadata):
+                resolver = metadata["fullscreenResolvers"][0]
+                resolver["priorityDefaultDeferred"] = False
+                resolver["priorityDeferredRangeShape"] = False
+                for shader in resolver["shaders"]:
+                    shader["identityHash"] = 0
+                anchor = dict(resolver)
+                anchor["fullscreenOrdinal"] = (
+                    MODULE.EXPECTED_DEFAULT_FULLSCREEN_ORDINAL + 2
+                )
+                anchor["priorityDeferredRangeShape"] = True
+                anchor["psConstantBuffers"] = [
+                    dict(row) for row in resolver["psConstantBuffers"]
+                ] + [{
+                    "slot": 10,
+                    "bufferId": 1234,
+                    "firstConstant": 0,
+                    "numConstants": 16,
+                    "byteWidth": 131072,
+                    "rangeValid": True,
+                }]
+                metadata["fullscreenResolvers"].append(anchor)
+
+            frame, _ = self.make_frame(Path(temporary), mutate)
+            rows = MODULE.decode_frame(frame)
+            self.assertEqual(len(rows), 1)
+            decoded, slices = rows[0]
+            self.assertEqual(len(slices), 10)
+            self.assertEqual(
+                decoded["selectionEvidence"],
+                "twoPassesBeforeElevenRangeSubsurfaceAnchor",
+            )
+
     def test_range_shape_rejects_conflicting_registered_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             def mutate(metadata):
