@@ -350,6 +350,8 @@ namespace EndfieldGraphShaderLab
             GraphicsFormat.B10G11R11_UFloatPack32;
         public static GraphicsFormat LastRecoveredEndminfPostSourceGraphicsFormat
             { get; private set; } = GraphicsFormat.None;
+        public static GraphicsFormat LastRecoveredEndminfBloomGraphicsFormat
+            { get; private set; } = GraphicsFormat.None;
         public static EndfieldRecoveredSceneMVDiagnosticState
             LastRecoveredSceneMVDiagnostic { get; } =
                 new EndfieldRecoveredSceneMVDiagnosticState();
@@ -3889,7 +3891,7 @@ namespace EndfieldGraphShaderLab
                 var descriptor = new RenderTextureDescriptor(
                     recoveredBloomMipWidths[i],
                     recoveredBloomMipHeights[i],
-                    RenderTextureFormat.DefaultHDR,
+                    RecoveredSceneColorFormat,
                     0)
                 {
                     msaaSamples = 1,
@@ -3906,6 +3908,8 @@ namespace EndfieldGraphShaderLab
                         descriptor,
                         FilterMode.Bilinear);
                 }
+                LastRecoveredEndminfBloomGraphicsFormat =
+                    descriptor.graphicsFormat;
             }
 
             // The recovered rotated-grid prefilter uses the first bloom mip's
@@ -3925,7 +3929,7 @@ namespace EndfieldGraphShaderLab
             var diagnosticMip0Descriptor = new RenderTextureDescriptor(
                 recoveredBloomMipWidths[0],
                 recoveredBloomMipHeights[0],
-                RenderTextureFormat.DefaultHDR,
+                RecoveredSceneColorFormat,
                 0)
             {
                 msaaSamples = 1,

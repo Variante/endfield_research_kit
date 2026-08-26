@@ -150,6 +150,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEndminfM27PresentationReady;
             public bool observedSphereOutsidePresentationReady;
             public bool observedEndminfPostSourceRgba16;
+            public bool observedEndminfBloomR11;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -174,6 +175,7 @@ namespace EndfieldGraphShaderLabEditor
             public int endminfPostMode;
             public Vector2 endminfPostCenterViewport;
             public string endminfPostSourceGraphicsFormat;
+            public string endminfBloomGraphicsFormat;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -910,6 +912,9 @@ namespace EndfieldGraphShaderLabEditor
                 endminfPostSourceGraphicsFormat =
                     HGCompatRenderPipeline
                         .LastRecoveredEndminfPostSourceGraphicsFormat.ToString(),
+                endminfBloomGraphicsFormat =
+                    HGCompatRenderPipeline
+                        .LastRecoveredEndminfBloomGraphicsFormat.ToString(),
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
@@ -1180,10 +1185,22 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add(
                     "retail R16G16B16A16_FLOAT Uber source handoff");
             }
+            bool observedEndminfBloomR11 =
+                Frames.Count > 0 && Frames.All(value => string.Equals(
+                    value.endminfBloomGraphicsFormat,
+                    GraphicsFormat.B10G11R11_UFloatPack32.ToString(),
+                    StringComparison.Ordinal));
+            if (EndfieldEndminfVisualCompatibilityClock.Requested &&
+                !observedEndminfBloomR11)
+            {
+                missingObservations.Add(
+                    "retail R11G11B10_FLOAT Uber bloom handoff");
+            }
             bool requiredCaptureContractReady =
                 charInfoBackgroundIncluded &&
                 backgroundPortraitIncluded &&
-                observedEndminfPostSourceRgba16;
+                observedEndminfPostSourceRgba16 &&
+                observedEndminfBloomR11;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
@@ -1239,6 +1256,7 @@ namespace EndfieldGraphShaderLabEditor
                     observedSphereOutsidePresentationReady,
                 observedEndminfPostSourceRgba16 =
                     observedEndminfPostSourceRgba16,
+                observedEndminfBloomR11 = observedEndminfBloomR11,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =
