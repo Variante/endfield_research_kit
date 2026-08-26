@@ -1576,11 +1576,19 @@ or shaders rather than hand-editing generated prefabs.
    `reports/assets/character_recovery/endminf_secondary_dynamics_solver_trajectory_comparison.json`.
    Session `20260826T231348Z` directly certifies the four owners' world-relative
    mode: one bounded window observed 155 teams across 617 cloth updates with
-   every relative flag false and no unreadable/overflow calls. It does not
-   contain owner matrices or particle trajectories, so repeating the current
-   `Numpad 5` window cannot provide exact two-animation replay data. Extend the
-   dynamics provider to retain bounded per-owner transforms/positions and
-   validate that payload synthetically before requesting another game capture.
+   every relative flag false and no unreadable/overflow calls. It predates
+   transform retention and therefore contains no owner trajectories. The
+   current-build provider now hooks the final `DynamicBoneTransformManager`
+   writeback after the original call and retains only teams whose runtime
+   `proxyTransformChunk` lengths match Endminf's exact Ribbon2/Hair/Ribbon/Coat
+   layout of 6/30/20/70 transforms. Each bounded sample carries world and local
+   position/rotation, transform/team flags, component/team identity, cloth
+   weights, and chunk identity. Capacity, unreadable calls, incomplete writes,
+   non-contiguous writebacks, duplicate candidates, and missing owner rows all
+   fail closed. Synthetic positive, unrelated-team, unreadable, overflow, and
+   incomplete-owner tests pass together with the complete 15-test Release
+   suite. One post-patch dynamics window across Overview start and loop remains
+   required before replacing the older skinning-derived replay oracle.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
