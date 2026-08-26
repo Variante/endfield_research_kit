@@ -391,10 +391,22 @@ complete frame without a client fault.
   reached the same requested/actual 60 Hz times, but two full controls did not
   produce byte- or pixel-identical final PNGs because cross-process temporal
   history differs. Final-output subtraction must therefore fail closed for
-  material ownership; use the deterministic pre-temporal stage diagnostic
-  above, and treat final PNGs as visual comparisons only.
+material ownership; use the deterministic pre-temporal stage diagnostic
+above, and treat final PNGs as visual comparisons only.
+Arbitrary requested-time five-stage capture now closes the raised-hand Unity
+ownership boundary with duplicate D3D11 controls and duplicate exclusions.
+The 4.40-4.4667-second surfaces remain cross-process nondeterministic and are
+metadata-only; all five surfaces are byte-identical from 4.4833 through
+4.7167 seconds. In that stable suffix M13 owns the large outer ring, M14 the
+dense segmented trail, M21 the compact ten-stone burst, and M27 the faceted
+fragment burst. M13 has exact pre-temporal zero gates after its authored
+lifetime at 4.70/4.7167, while M27 is exactly absent at 4.4833 before its
+4.49-second delay. M27's particle/material ownership is exact, but its Unity
+LitEffect rendering remains explicitly compatibility-only. Detailed stage
+hashes, repeated-exclusion gates, thresholds, and bounds live in
+`reports/assets/character_recovery/endminf_post_stage_raised_hand_delta.json`.
 - The frame-generation-off recording visibly confirms additional faceted
-  fragments around the raised hand. Both `overview_02/all/suikuai` source rows are authored
+fragments around the raised hand. Both `overview_02/all/suikuai` source rows are authored
   enabled, nonlooping, GPU-instanced mesh bursts at 4.49 seconds; an importer
   marker bug formerly mislabeled blocked rows as source-disabled and is now
   corrected. The `suikuai (1)` Refract row selects the distinct `_USE_BLEND +
