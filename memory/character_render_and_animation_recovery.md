@@ -1238,6 +1238,22 @@ layout and pass the same source-index/UV and constant-range gates. The report is
 its verifier and three focused regressions pass. No further M27 material,
 resolver, geometry, or temporal game capture is currently needed.
 
+The shader-pair-only `M27` label above is narrower than the retained evidence
+permits. M01, M27, and M38 share that exact LitEffect VS/PS pair and repeated
+29-vertex/72-index topology. The aggregate fail-closed verifier now scans all
+38 retained frames from 2721 through 3027 and validates 157 draws: 105 carry
+the bright M01-or-M27 PS b3/c29 fingerprint and 52 carry the lower M38
+fingerprint. All 23,112 indices repeat the source topology, all 9,309 effective
+vertices are exactly sliceable, and the source-UV signature is recorded rather
+than incorrectly used to reject the 59 alternate particle-layout draws. The
+sequence contains early M01/M38 aggregates, a zero-draw transition at frame
+2970, and the late single M27 draw. Treat the existing 16-packet native replay
+as a proven shared-LitEffect transport over its selected late window, not as
+proof that every early 72-index draw belongs to M27. The full aggregate report
+is `reports/assets/character_recovery/endminf_liteffect_temporal_capture_latest.json`;
+the existing session is sufficient and no additional game capture is needed
+for this owner split.
+
 The complete M27 sequence now replays through the native D3D11 owner rather
 than holding the old peak checkpoint. A generated 16-packet/39-draw payload
 retains each packet's effective vertex/index slices, separate VS/PS constants,
@@ -1338,8 +1354,9 @@ outside it. It continues through the body transition even after Unity retires
 the source particle renderer, matching the captured effect lifetime boundary.
 A seven-sample D3D11 exact/suppressed run completes with no native failures and
 shows the intended ring/trail burst decaying to sparse amber fragments instead
-of freezing one geometry packet. Keep the path opt-in while full-sequence video
-registration is measured, but no further M14 graphics capture is needed.
+of freezing one geometry packet. The measured no-frame-generation A/B now
+admits this path in the canonical Endminf profile; no further M14 graphics
+capture is currently needed.
 
 The canonical Viewer capture now retains the physical SphereOutside-resolved
 grey CharInfo field and the actor-specific background portrait while excluding
@@ -1349,7 +1366,15 @@ passed the same exact M27/SphereOutside gates and, after Lanczos reduction to
 Native resolution is therefore a real but small presentation contributor, not
 the dominant crystal/VFX gap. The source-backed radial/chromatic kernel is
 already stronger than retail when sampled at its actual 4.4667-second post
-peak; do not increase blur or bloom to compensate. The higher-value boundary is
+peak; do not increase blur or bloom to compensate. On the 21-frame UI-free
+no-frame-generation window, enabling the already validated exact M13 and
+seven-packet M14 transports improves mean ROI MAE from 34.6230 to 34.3530,
+effect-ROI MAE from 42.9247 to 42.4235, and effect temporal-delta MAE from
+30.8982 to 30.7600. They are therefore part of the canonical Endminf
+reproduction profile. Their remaining coarse packet cadence is not a reason to
+retune bloom; the largest unclosed early shape is the compact M29/M30
+flash/glow, while M13 owns the late outer ring and M14 the segmented trail. The
+higher-value boundary is
 the still-unclosed retail temporal/upscaler state and its phase relationship to
 the late effect pulse. Focused verifier-only resolution overrides are available
 through paired `ENDFIELD_ENDMINF_CAPTURE_WIDTH` and
