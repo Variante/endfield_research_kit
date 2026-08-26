@@ -373,7 +373,12 @@ complete frame without a client fault.
   directional/material-family or CharacterOnly resolver selection open. The
   latest targeted M27 draw capture does not contain the fullscreen deferred
   resolver that lit the retail crystal, so closing that selection now requires
-  resolver-frame evidence rather than another material-draw capture.
+  resolver-frame evidence rather than another material-draw capture. That
+  frame observed 48 compute dispatches but retained only the first 16, with
+  explicit truncation. EndfieldCapture now retains 64 compact dispatch records
+  under the targeted profile, enough to preserve the complete observed peak
+  sequence without quadrupling the frame snapshot's stack footprint; its full
+  14-test Release suite includes a 48-dispatch no-truncation regression gate.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not
