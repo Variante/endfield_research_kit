@@ -41,18 +41,40 @@ int main()
         g_EndfieldSelectedPixelDxbcSize,
         nullptr,
         &pixel);
+    ID3D11VertexShader* m14Vertex = nullptr;
+    HRESULT m14VertexResult = device->CreateVertexShader(
+        g_EndfieldM14VertexDxbc,
+        g_EndfieldM14VertexDxbcSize,
+        nullptr,
+        &m14Vertex);
+    ID3D11PixelShader* m14Pixel = nullptr;
+    HRESULT m14PixelResult = device->CreatePixelShader(
+        g_EndfieldM14PixelDxbc,
+        g_EndfieldM14PixelDxbcSize,
+        nullptr,
+        &m14Pixel);
 
     std::printf(
-        "feature_level=0x%x vertex=0x%08lx pixel=0x%08lx\n",
+        "feature_level=0x%x vertex=0x%08lx pixel=0x%08lx "
+        "m14_vertex=0x%08lx m14_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
-        static_cast<unsigned long>(pixelResult));
+        static_cast<unsigned long>(pixelResult),
+        static_cast<unsigned long>(m14VertexResult),
+        static_cast<unsigned long>(m14PixelResult));
 
     if (pixel != nullptr)
         pixel->Release();
+    if (m14Pixel != nullptr)
+        m14Pixel->Release();
+    if (m14Vertex != nullptr)
+        m14Vertex->Release();
     if (vertex != nullptr)
         vertex->Release();
     context->Release();
     device->Release();
-    return SUCCEEDED(vertexResult) && SUCCEEDED(pixelResult) ? 0 : 3;
+    return SUCCEEDED(vertexResult) && SUCCEEDED(pixelResult) &&
+            SUCCEEDED(m14VertexResult) && SUCCEEDED(m14PixelResult)
+        ? 0
+        : 3;
 }

@@ -26,6 +26,8 @@ $vertex = Join-Path $toolRoot "bytecode\selected_deferred_resolver_vs.dxbc"
 $pixel = Join-Path $toolRoot "bytecode\selected_deferred_resolver_ps.dxbc"
 $m27Vertex = Join-Path $toolRoot "bytecode\endminf_m27_hgbuffer_vs.dxbc"
 $m27Pixel = Join-Path $toolRoot "bytecode\endminf_m27_hgbuffer_ps.dxbc"
+$m14Vertex = Join-Path $toolRoot "bytecode\endminf_m14_vfxbasev2_vs.dxbc"
+$m14Pixel = Join-Path $toolRoot "bytecode\endminf_m14_vfxbasev2_ps.dxbc"
 $pluginApi = "D:\Program Files\2022.3.62f3\Editor\Data\PluginAPI"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -46,6 +48,8 @@ python (Join-Path $toolRoot "generate_embedded_header.py") `
     --deferred-pixel $pixel `
     --m27-vertex $m27Vertex `
     --m27-pixel $m27Pixel `
+    --m14-vertex $m14Vertex `
+    --m14-pixel $m14Pixel `
     --output $generatedHeader
 if ($LASTEXITCODE -ne 0) {
     throw "Exact DXBC header generation failed with exit code $LASTEXITCODE."

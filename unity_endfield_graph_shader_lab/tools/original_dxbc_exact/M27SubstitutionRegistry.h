@@ -24,11 +24,11 @@ struct Entry
     const unsigned char* replacementSha256;
 };
 
-// These Unity-compiled shell hashes were isolated by activating the dedicated
-// reserved material variant after arming the compiler extension. The activation
-// added exactly one 10/9 VS and one 10/5 PS callback to an otherwise identical
-// callback inventory. Stage-only, size-only, keyword-only, and first-seen
-// matching remain forbidden because the binary callback carries no shader name.
+// These Unity-compiled shell hashes were isolated by activating dedicated
+// reserved material variants after arming the compiler extension. Stage-only,
+// size-only, keyword-only, and first-seen matching remain forbidden because the
+// binary callback carries no shader name. The first pair is M27 HGBuffer; the
+// second pair is M14 VFXBaseV2 SceneColor/SceneMV.
 inline constexpr Entry kEntries[] = {
     {
         Stage::Vertex,
@@ -55,6 +55,32 @@ inline constexpr Entry kEntries[] = {
         g_EndfieldM27PixelDxbc,
         g_EndfieldM27PixelDxbcSize,
         g_EndfieldM27PixelDxbcSha256,
+    },
+    {
+        Stage::Vertex,
+        true,
+        {
+            0x0d, 0xc6, 0xbf, 0x25, 0x9f, 0x85, 0x10, 0xc1,
+            0xe2, 0x80, 0x16, 0x05, 0x43, 0xca, 0xb0, 0xb5,
+            0x91, 0x48, 0x5a, 0x34, 0xbf, 0x22, 0x6c, 0x04,
+            0x8b, 0xf3, 0xf2, 0x45, 0xfd, 0xad, 0x67, 0x14,
+        },
+        g_EndfieldM14VertexDxbc,
+        g_EndfieldM14VertexDxbcSize,
+        g_EndfieldM14VertexDxbcSha256,
+    },
+    {
+        Stage::Pixel,
+        true,
+        {
+            0x46, 0x5a, 0x86, 0xbc, 0x25, 0x08, 0x35, 0x37,
+            0xc7, 0xcf, 0xa6, 0xd8, 0xf4, 0x81, 0x25, 0x3d,
+            0x90, 0x7a, 0x29, 0xe4, 0x09, 0x7f, 0xc5, 0xce,
+            0x37, 0x8d, 0x08, 0x00, 0x83, 0xe2, 0x5b, 0x57,
+        },
+        g_EndfieldM14PixelDxbc,
+        g_EndfieldM14PixelDxbcSize,
+        g_EndfieldM14PixelDxbcSha256,
     },
 };
 
