@@ -905,32 +905,30 @@ segmented white trail specifically to `overview_02/all/Particle System` and
 `M_fx_endminm_gfx_14`: it owns 466 of 531 live particles at the last sample,
 and excluding only M14 removes that trail while preserving the surrounding
 smoke, stones, fragments, and isolated lights. Retail retains a much finer
-version, so M14 must not be removed; its remaining gap is exact BaseV2/particle
-and presentation interpretation, not material ownership or effect admission.
-FrameAnalysis draw 115 resolves byte-exactly to VS4914/PS4915 with
-`HG_ENABLE_MV`, `SRP_INSTANCING_ON`, and `_USE_SOFTBLEND`; the earlier
-non-instanced 0840/0841 assignment is superseded. The captured instancing lane
-selects one SRP per-draw record, not procedural particle instances. Its texture,
-tint, emission, size curve, stretch-renderer state, and 4.4-second delay are
-source-closed. The phase census also rules out clock drift: 133 particles are
-alive at 4.4667 seconds and 466 at 4.7167 seconds, matching the authored 2000/s
-emission window. Continue from the exact SRP per-draw color/transform record,
-soft-depth, and presentation ABI rather than retiming the system or attenuating
-its source properties.
+version, so M14 must not be removed. Exact-build graphics session
+`20260826T000901Z`, frame 13175, closes its shader and expanded-particle ABI:
+the dynamic VS4914/PS4915 draw has 1,710 indices/285 quads and complete bounded
+VS b0-b4 plus PS b0-b3 snapshots. VS b3/c13 is zero, so source vertex color is
+unmodified. PS b3/c4 is
+`(0.29275623,0.17861338,0.04641925,1)`, exactly the linear conversion of the
+authored sRGB `_TintColor`; M14 must therefore use Unity's normal Color-property
+linear upload rather than the compatibility raw-sRGB tint path retained by the
+other BaseV2 materials. The maintained importer applies and validates that
+material-scoped transport.
 
-The retained FrameAnalysis constant-buffer files contain reused backing
-allocations but not `SetConstantBuffers1`'s draw-time range arrays, so they
-cannot identify M14's selected SRP record or VS b3/c13 soundly. The dedicated
-EndfieldCapture graphics proxy now tracks draw-time VS/PS shader identities and
-b0-b4 setter ranges, copies every float4 addressable by the exact pair through
-per-slot bounded GPU ranges (through VS b1/c81, VS b2/c103, PS b0/c27, and PS
-b1/c104), and publishes those bytes with explicit truncation. Exact SHA-256
-priority for VS4914/PS4915 prevents M14 from being
-evicted by the retail frame's 60 larger instanced draws. The production proxy,
-provider, and WARP tests pass, including repeated same-session requests and
-known VS/PS b3 marker recovery. One targeted graphics frame during M14's live
-window remains the only capture needed for this correction; do not request
-another secondary-dynamics run.
+The same frame's complete `resources.bin` contains the shared dynamic particle
+buffer despite its recorder label reflecting the first SRV observation. The
+verifier recovers the exact 36-byte Position/Normal/packed-Color/UV stream: 288
+contiguous expanded quads contain the 285 consumed by M14, with 247
+non-degenerate witnesses and median width:height `1.9973:1`. This independently
+confirms the recovered Stretch renderer and `lengthScale=2`; the authored
+start-size/size-over-life, 2,000/s emission window, 4.4-second delay, and timing
+remain unchanged. A count-matched Unity sample at 4.55 seconds has 300 M14
+particles versus retail's 285, while the earlier 4.7167 comparison had 466 and
+was too late for a shape-density judgment. Remaining actor-only contrast is a
+presentation/compositing boundary, not evidence for resizing, retiming,
+attenuating, or disabling M14. No further M14 or secondary-dynamics capture is
+needed for this correction.
 
 Exact-build session
 `scratch/reverse_engineering/endfield_capture/20260825T230225Z` is the complete

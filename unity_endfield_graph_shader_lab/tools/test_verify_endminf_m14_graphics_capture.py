@@ -14,8 +14,28 @@ SPEC.loader.exec_module(MODULE)
 
 
 class M14CaptureTests(unittest.TestCase):
+    @staticmethod
+    def particle_resource(quad_count: int, *, aspect_ratio: float = 2.0) -> bytes:
+        data = bytearray(64)
+        uv_rows = ((0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0))
+        for quad in range(quad_count):
+            center = float(quad)
+            positions = (
+                (center, 0.5, 0.0),
+                (center + aspect_ratio, 0.5, 0.0),
+                (center + aspect_ratio, -0.5, 0.0),
+                (center, -0.5, 0.0),
+            )
+            for position, uv in zip(positions, uv_rows):
+                data.extend(struct.pack(
+                    "<6fI2f", *position, 0.0, 0.0, 1.0,
+                    0xFFFFFFFF, *uv
+                ))
+        return bytes(data)
+
     def make_session(self, root: Path, *, include_target: bool = True,
-                     c13_count: int = 16) -> Path:
+                     c13_count: int = 16,
+                     index_count: int | None = None) -> Path:
         (root / "graphics/frames/100").mkdir(parents=True)
         session = {
             "schema": "endfieldCapture.session.v1",
@@ -50,7 +70,7 @@ class M14CaptureTests(unittest.TestCase):
                 "dataHex": data.hex(),
             })
         draw = {
-            "count": MODULE.M14_INDEX_COUNT,
+            "count": index_count or MODULE.M14_REFERENCE_INDEX_COUNT,
             "indexedInstanced": True,
             "instanceCount": 1,
             "startInstance": 0,
@@ -88,6 +108,35 @@ class M14CaptureTests(unittest.TestCase):
         self.assertEqual(draw["vertexColorMultiplier"], [0.75, 0.5, 0.25, 1.0])
         self.assertEqual(len(draw["bindings"]["0:b1"]["float4"]), 82)
         self.assertEqual(len(draw["bindings"]["4:b1"]["float4"]), 105)
+
+    def test_accepts_dynamic_peak_particle_count(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            result = MODULE.decode_session(self.make_session(
+                Path(temporary), index_count=1_710
+            ))
+        draw = result["frames"][0]["m14Draws"][0]
+        self.assertEqual(draw["indexCount"], 1_710)
+        self.assertEqual(draw["quadCount"], 285)
+        self.assertEqual(draw["referenceIndexCount"], 1_098)
+
+    def test_decodes_raw_expanded_particle_geometry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            frame = Path(temporary)
+            payload = self.particle_resource(6)
+            (frame / "resources.bin").write_bytes(payload)
+            metadata = {"selectedResourceRecords": [{
+                "captureKind": 4,
+                "completed": True,
+                "failure": 0,
+                "blobOffset": 0,
+                "blobBytes": len(payload),
+            }]}
+            result = MODULE.decode_particle_geometry(frame, metadata, 4)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["streamByteOffset"], 64)
+        self.assertEqual(result["contiguousQuadCount"], 6)
+        self.assertEqual(result["consumedQuadCount"], 4)
+        self.assertAlmostEqual(result["medianAspectRatio"], 2.0)
 
     def test_rejects_pre_priority_recorder(self):
         with tempfile.TemporaryDirectory() as temporary:
