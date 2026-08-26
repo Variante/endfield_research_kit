@@ -818,7 +818,11 @@ def validate_external_ui_effect_export(
         key=lambda value: (value[0].casefold(), value[1].casefold(), value[2]),
     ):
         unsigned_path_id = path_id & ((1 << 64) - 1)
-        filename = f"{name}_p{unsigned_path_id:X}.json"
+        # AnimeStudio's ByType JSON contract always writes the unsigned
+        # PathID as a zero-padded 16-digit hexadecimal value.  Positive IDs
+        # below 0x1000... therefore retain a leading zero (for example the
+        # Endminf overview_01 GameObject at p08F1384761F76C79).
+        filename = f"{name}_p{unsigned_path_id:016X}.json"
         type_root = output / entry_type
         candidates = sorted(type_root.rglob(filename)) if type_root.is_dir() else []
         if len(candidates) > 1:

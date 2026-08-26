@@ -98,13 +98,16 @@ namespace EndfieldGraphShaderLabEditor
             "_USE_BLEND", "_USE_RBOFFSET", "_USE_RGBOFFSET" };
         private const string VisualCompatibilityEnvironment =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
+        private const string M28VisualCompatibilityEnvironment =
+            "ENDFIELD_ENDMINF_M28_VISUAL_COMPAT";
         private static readonly long[] AdmittedRefractMaterials =
-            IsVisualCompatibilityRequested()
-                ? new[] {
-                    EndminfRefract28Material,
-                    EndminfRefractSuikuai1Material,
-                }
-                : Array.Empty<long>();
+            (IsVisualCompatibilityRequested()
+                ? new[] { EndminfRefractSuikuai1Material }
+                : Array.Empty<long>())
+            .Concat(IsM28VisualCompatibilityRequested()
+                ? new[] { EndminfRefract28Material }
+                : Array.Empty<long>())
+            .ToArray();
         // overview_02/all/suikuai (1), material p19E6A2A7AE736DA5,
         // requires both the original GPU-instanced particle vertex ABI and
         // the distinct _USE_BLEND + _USE_RBOFFSET + _USE_RGBOFFSET fragment.
@@ -895,15 +898,17 @@ namespace EndfieldGraphShaderLabEditor
         {
             var context = new EndfieldZhuangfyParticleEffectImporter.Context();
             bool visualCompatibility = IsVisualCompatibilityRequested();
+            bool m28VisualCompatibility =
+                IsM28VisualCompatibilityRequested();
             Shader shader = Shader.Find(
                 "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT");
             L.Require(shader != null, "Exact recovered VFXRefract shader is missing");
-            if (visualCompatibility)
+            if (visualCompatibility || m28VisualCompatibility)
             {
                 ValidateSuikuai1ShaderContract(shader);
-                Debug.Log("Endminf M_fx_endminm_gfx_28 and exact suikuai (1) " +
-                    "VFXRefract branches admitted through the recovered " +
-                    "Distortion MRT scene-color clone path for direct-frame validation.");
+                Debug.Log("Endminf exact suikuai (1) VFXRefract branch admitted=" +
+                    visualCompatibility + "; experimental M28 direct-frame branch=" +
+                    m28VisualCompatibility + ".");
             }
             Shader baseV2Shader = Shader.Find("Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT");
             L.Require(baseV2Shader != null, "Exact recovered VFXBaseV2 shader is missing");
@@ -1078,7 +1083,7 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 if (AdmittedBaseV2Materials.ContainsKey(id))
                     ApplyCapturedBaseV2TintTransport(material, id, row);
-                if (visualCompatibility && id == EndminfRefract28Material)
+                if (m28VisualCompatibility && id == EndminfRefract28Material)
                 {
                     Texture dissolveTexture = material.GetTexture("_DissolveTex");
                     Vector4 dissolveSpeed = material.GetVector("_DissolveUVSpeed");
@@ -1311,6 +1316,15 @@ namespace EndfieldGraphShaderLabEditor
         {
             string value = Environment.GetEnvironmentVariable(
                 VisualCompatibilityEnvironment);
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsM28VisualCompatibilityRequested()
+        {
+            string value = Environment.GetEnvironmentVariable(
+                M28VisualCompatibilityEnvironment);
             return string.Equals(value, "1", StringComparison.Ordinal) ||
                    string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);

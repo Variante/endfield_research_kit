@@ -120,7 +120,7 @@ class ExtractionTests(unittest.TestCase):
         )
         for entry in entries[:2]:
             path_id = int(entry["PathID"]) + path_id_delta
-            filename = f"{entry['Name']}_p{path_id & ((1 << 64) - 1):X}.json"
+            filename = f"{entry['Name']}_p{path_id & ((1 << 64) - 1):016X}.json"
             path = output / entry["Type"] / filename
             path.parent.mkdir(parents=True, exist_ok=True)
             internal_name = "wrong" if wrong_internal_name and entry is entries[1] else entry["Name"]
