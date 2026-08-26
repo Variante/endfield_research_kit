@@ -66,7 +66,7 @@ $compileCommand = @(
     "/I`"$pluginApi`" /I`"$buildRoot`"",
     "/Fo`"$pluginObject`"",
     "`"$source`"",
-    "/link /NOLOGO /Brepro /OUT:`"$outputDll`" /IMPLIB:`"$outputImportLibrary`" bcrypt.lib"
+    "/link /NOLOGO /Brepro /OUT:`"$outputDll`" /IMPLIB:`"$outputImportLibrary`" bcrypt.lib d3dcompiler.lib dxguid.lib"
 ) -join " "
 $compile = "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $compileCommand"
 cmd.exe /d /c $compile
