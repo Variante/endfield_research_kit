@@ -15,6 +15,15 @@ EXPECTED_INSTANCE_COUNT = 1
 PIXEL_STAGE = 4
 SRV_TEXTURE_KIND = 3
 REQUIRED_TEXTURE_SLOTS = frozenset(range(5))
+BC7_TYPELESS = 97
+BC7_UNORM_SRGB = 99
+EXPECTED_TEXTURES = {
+    0: (256, 256, 65_536),
+    1: (512, 512, 262_144),
+    2: (512, 512, 262_144),
+    3: (256, 256, 65_536),
+    4: (256, 256, 65_536),
+}
 
 
 class CaptureError(ValueError):
@@ -80,6 +89,17 @@ def validate_textures(metadata: dict) -> list[dict]:
                 f"M13 selected texture t{slot} has no valid blob offset")
         require(isinstance(row.get("blobBytes"), int) and row["blobBytes"] > 0,
                 f"M13 selected texture t{slot} has no captured bytes")
+        width, height, byte_size = EXPECTED_TEXTURES[slot]
+        require(row.get("width") == width and row.get("height") == height,
+                f"M13 selected texture t{slot} dimensions drifted")
+        require(row.get("format") in {BC7_TYPELESS, BC7_UNORM_SRGB},
+                f"M13 selected texture t{slot} is not BC7")
+        require(row.get("viewFormat") == BC7_UNORM_SRGB,
+                f"M13 selected texture t{slot} view is not BC7 sRGB")
+        require(row.get("subresource") == 0,
+                f"M13 selected texture t{slot} does not start at mip 0")
+        require(row["blobBytes"] == byte_size,
+                f"M13 selected texture t{slot} byte size drifted")
     return [by_slot[slot] for slot in sorted(REQUIRED_TEXTURE_SLOTS)]
 
 

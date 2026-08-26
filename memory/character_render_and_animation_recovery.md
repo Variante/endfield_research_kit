@@ -1176,15 +1176,21 @@ identities; WARP object creation and a repeatable Unity cache-cleared activation
 both pass. Session `20260826T042005Z` also contains the exact 435-vertex,
 1,080-index expanded 15-rock draw in its shared graphics ring, and the maintained
 generator recovers the unique 60-byte Position/Normal/Color/UV/UV2/Custom1
-stream plus its 16-bit index stream. Exact submission remains fail-closed because
-all three M27-bearing sessions (`042005`, `083131`, and `091023`) retained only
-b0/c0-c27 while the retail vertex shader projects through b0/c32-c35 and reads
-c44/c81. `091023` contains the exact M27 draw at frame 1405, so its timing and
-geometry are valid but its two-vector VS b0 payload is not. EndfieldCapture now
-retains VS b0 through c81 and its complete 14-test Release suite passes; one
-replacement targeted M27 frame is required. That replacement now also
-priority-retains the exact M13 `overview_02/all/huan` six-index VFXBaseV2 pair
-and copies its five PS texture carriers, avoiding a later M13-only run. The older
+stream plus its 16-bit index stream. Older M27-bearing sessions (`042005`,
+`083131`, and `091023`) retained only b0/c0-c27 while the retail vertex shader
+projects through b0/c32-c35 and reads c44/c81. Targeted session
+`20260826T141208Z`, frame 2529, closes that gate: its exact 1,080-index draw
+retains all 82 VS b0 vectors through c81, and the shared b0-b2 buffer/range
+identities prove that the larger VS b0 prefix is also the correct shared-stage
+payload. The maintained generator rebases the immutable 435-vertex packet and
+constant arrays to this frame and reports the exact vertex envelope closed.
+
+The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
+VFXBaseV2 pair, but its five selected BC7 SRVs failed before readback because
+the capture path only sized uncompressed single-mip textures. EndfieldCapture
+now computes BC block rows, copies the SRV-selected mip into a one-subresource
+staging texture, and reports width, height, source/view formats, and subresource;
+its BC7 mip WARP test passes. Only a narrow M13 texture retry remains. The older
 FrameAnalysis peak identifies M13 as draw 121 and proves its one billboard
 carries authored RGBA `(1, 0.2862745, 0.0235294, 0.0862745)`; this agrees with
 the generated start-color and color-over-lifetime contract. The conspicuous
@@ -1233,8 +1239,8 @@ registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-Pause exact M27 presentation until that single replacement targeted frame closes
-VS b0/c81; other Unity reproduction work remains independent.
+Validate the now-closed exact M27 packet in the full Unity sequence, then admit
+M13 only after one corrected BC7 texture capture passes its fail-closed gate.
 
 ## Main animation gap
 

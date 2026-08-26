@@ -20,27 +20,27 @@ class EndminfM27ExactCaptureDataTests(unittest.TestCase):
             generated = MODULE.build(MODULE.CAPTURE, output)
         self.assertEqual(generated, MODULE.OUTPUT.read_text(encoding="utf-8"))
         self.assertIn("new Vector4[DeclaredFloat4Counts[slot]]", generated)
-        self.assertIn("SourceFrame = 7439", generated)
+        self.assertIn("SourceFrame = 2529", generated)
         self.assertIn("ExpandedVertexCount = 435", generated)
         self.assertIn("ExpandedIndexCount = 1080", generated)
-        self.assertIn("ExactVertexEnvelopeClosed =\n            false", generated)
+        self.assertIn("ExactVertexEnvelopeClosed =\n            true", generated)
 
     def test_uses_largest_closed_shared_stage_ranges(self):
         capture = MODULE.load_capture(MODULE.CAPTURE)
         rows = MODULE.collect_payloads(MODULE.select_draw(capture))
         self.assertEqual(
             [(row["slot"], row["declared_float4s"], row["captured_float4s"]) for row in rows],
-            [(0, 82, 28), (1, 106, 106), (2, 4091, 104), (3, 31, 31), (4, 1, 1)],
+            [(0, 82, 82), (1, 106, 106), (2, 4091, 104), (3, 31, 31), (4, 1, 1)],
         )
 
     def test_recovers_unique_expanded_geometry_from_shared_ring_buffer(self):
         capture = MODULE.load_capture(MODULE.CAPTURE)
         geometry = MODULE.collect_geometry(MODULE.CAPTURE, capture)
         self.assertEqual(geometry["resource_kind"], 4)
-        self.assertEqual(geometry["vertex_offset"], 971112)
+        self.assertEqual(geometry["vertex_offset"], 934068)
         self.assertEqual(geometry["vertex_stride"], 60)
         self.assertEqual(geometry["vertex_count"], 435)
-        self.assertEqual(geometry["index_offset"], 1147844)
+        self.assertEqual(geometry["index_offset"], 1115468)
         self.assertEqual(geometry["index_count"], 1080)
 
 

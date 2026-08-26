@@ -15,8 +15,8 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[2]
 CAPTURE = (
     REPO
-    / "scratch/reverse_engineering/endfield_capture/20260826T042005Z"
-    / "graphics/frames/7439/metadata.json"
+    / "scratch/reverse_engineering/endfield_capture/20260826T141208Z"
+    / "graphics/frames/2529/metadata.json"
 )
 OUTPUT = (
     REPO
@@ -34,13 +34,14 @@ EXPECTED_SHADER_IDENTITIES = {
     4: 0x92D80A93ADD9C714,
 }
 SOURCE_ROWS = {
-    0: (4, 0, 82),
+    0: (0, 0, 82),
     1: (4, 1, 106),
     2: (0, 2, 4091),
     3: (4, 3, 31),
     4: (4, 4, 1),
 }
-EXPECTED_CAPTURED_FLOAT4S = {0: 28, 1: 106, 2: 104, 3: 36, 4: 1}
+EXPECTED_CAPTURED_FLOAT4S = {0: 82, 1: 106, 2: 104, 3: 36, 4: 1}
+EXPECTED_FRAME = 2529
 EXPANDED_COPY_COUNT = 15
 SOURCE_VERTEX_COUNT = 29
 SOURCE_INDEX_COUNT = 72
@@ -210,7 +211,7 @@ namespace EndfieldGraphShaderLab
     {{
         internal const string SourceCapture = "{relative_capture}";
         internal const string SourceCaptureSha256 = "{capture_hash}";
-        internal const int SourceFrame = {capture.get("frame", 7439)};
+        internal const int SourceFrame = {capture.get("frame", EXPECTED_FRAME)};
         internal const int CapturedB0Float4Count = {rows[0]["captured_float4s"]};
         internal const bool ExactVertexEnvelopeClosed =
             {str(rows[0]["captured_float4s"] >= 82).lower()};
@@ -329,7 +330,7 @@ namespace EndfieldGraphShaderLab
 
 def build(capture_path: Path, output: Path) -> str:
     capture = load_capture(capture_path)
-    require(capture.get("frame") == 7439, "M27 capture frame drifted")
+    require(capture.get("frame") == EXPECTED_FRAME, "M27 capture frame drifted")
     rows = collect_payloads(select_draw(capture))
     geometry = collect_geometry(capture_path, capture)
     text = render(capture_path, capture, rows, geometry)

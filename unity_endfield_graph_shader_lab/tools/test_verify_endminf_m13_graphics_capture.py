@@ -41,9 +41,15 @@ def metadata() -> dict:
                 "captureKind": MODULE.SRV_TEXTURE_KIND,
                 "stage": MODULE.PIXEL_STAGE,
                 "slot": slot,
-                "byteSize": 16,
-                "blobOffset": slot * 16,
-                "blobBytes": 16,
+                "byteSize": MODULE.EXPECTED_TEXTURES[slot][2],
+                "width": MODULE.EXPECTED_TEXTURES[slot][0],
+                "height": MODULE.EXPECTED_TEXTURES[slot][1],
+                "format": MODULE.BC7_UNORM_SRGB,
+                "viewFormat": MODULE.BC7_UNORM_SRGB,
+                "subresource": 0,
+                "blobOffset": sum(MODULE.EXPECTED_TEXTURES[index][2]
+                                  for index in range(slot)),
+                "blobBytes": MODULE.EXPECTED_TEXTURES[slot][2],
                 "failure": 0,
                 "completed": True,
             }
@@ -59,11 +65,13 @@ class M13CaptureTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp.cleanup()
 
-    def make_session(self, value: dict, resource_bytes: int = 80) -> Path:
+    def make_session(self, value: dict, resource_bytes: int | None = None) -> Path:
         root = Path(self.temp.name)
         frame = root / "graphics" / "frames" / "123"
         frame.mkdir(parents=True)
         (frame / "metadata.json").write_text(json.dumps(value), encoding="utf-8")
+        if resource_bytes is None:
+            resource_bytes = sum(row[2] for row in MODULE.EXPECTED_TEXTURES.values())
         (frame / "resources.bin").write_bytes(bytes(resource_bytes))
         return root
 
@@ -86,7 +94,16 @@ class M13CaptureTests(unittest.TestCase):
 
     def test_rejects_texture_outside_resource_blob(self) -> None:
         with self.assertRaisesRegex(MODULE.CaptureError, "t4 exceeds"):
-            MODULE.verify_session(self.make_session(metadata(), resource_bytes=64))
+            MODULE.verify_session(self.make_session(
+                metadata(),
+                resource_bytes=sum(row[2] for row in MODULE.EXPECTED_TEXTURES.values()) - 1,
+            ))
+
+    def test_rejects_non_bc7_texture_view(self) -> None:
+        value = metadata()
+        value["selectedResourceRecords"][1]["viewFormat"] = 28
+        with self.assertRaisesRegex(MODULE.CaptureError, "t1 view is not BC7 sRGB"):
+            MODULE.verify_session(self.make_session(value))
 
 
 if __name__ == "__main__":
