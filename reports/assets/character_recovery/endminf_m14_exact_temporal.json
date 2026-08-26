@@ -1,0 +1,733 @@
+{
+  "schema": "endfield.endminf-m14-exact-temporal.v1",
+  "status": "measured",
+  "scope": "opt-in exact M14 contribution before temporal resolve",
+  "fullCapture": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\m14_exact_runtime\\exact_temporal_full",
+  "excludedCapture": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\scratch\\character_recovery\\m14_exact_runtime\\exact_temporal_excluded",
+  "frameCount": 10,
+  "supportThreshold": 0.05,
+  "uniqueSupportMasks": 10,
+  "baselineSupportSha256": "e955a82f8d445433833fe424e1c47166edcbb083332cca98eca584440387e060",
+  "rows": [
+    {
+      "frame": 0,
+      "sampleTime": 4.483333110809326,
+      "support005Sha256": "e955a82f8d445433833fe424e1c47166edcbb083332cca98eca584440387e060",
+      "support005BaselineIoU": 1.0,
+      "support005PreviousIoU": 1.0,
+      "changedPackedPixels": 716872,
+      "totalMaxChannelDelta": 118608.76152801514,
+      "maximumChannelDelta": 129.96728515625,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 507196,
+          "bounds": {
+            "minX": 587,
+            "minY": 0,
+            "maxX": 1615,
+            "maxY": 1070
+          },
+          "centroid": {
+            "x": 1108.9038359923975,
+            "y": 494.83688751488575
+          },
+          "deltaEnergy": 118522.05764770508
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 326737,
+          "bounds": {
+            "minX": 587,
+            "minY": 0,
+            "maxX": 1584,
+            "maxY": 993
+          },
+          "centroid": {
+            "x": 1086.2582199138758,
+            "y": 502.9132543911464
+          },
+          "deltaEnergy": 117750.97580623627
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 167401,
+          "bounds": {
+            "minX": 587,
+            "minY": 0,
+            "maxX": 1584,
+            "maxY": 982
+          },
+          "centroid": {
+            "x": 1110.8381431413193,
+            "y": 539.9465534853435
+          },
+          "deltaEnergy": 113656.22902107239
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 107733,
+          "bounds": {
+            "minX": 592,
+            "minY": 0,
+            "maxX": 1584,
+            "maxY": 969
+          },
+          "centroid": {
+            "x": 1130.7733192243788,
+            "y": 567.8088515125356
+          },
+          "deltaEnergy": 109398.23900318146
+        }
+      ]
+    },
+    {
+      "frame": 1,
+      "sampleTime": 4.5,
+      "support005Sha256": "abc1881c1427a38f9c749e44940480ec8d054d3b7deff80aef48c7906e25c03d",
+      "support005BaselineIoU": 0.33738110455280274,
+      "support005PreviousIoU": 0.33738110455280274,
+      "changedPackedPixels": 742155,
+      "totalMaxChannelDelta": 86410.97986793518,
+      "maximumChannelDelta": 107.995849609375,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 479887,
+          "bounds": {
+            "minX": 583,
+            "minY": 0,
+            "maxX": 1635,
+            "maxY": 1028
+          },
+          "centroid": {
+            "x": 1095.2740436811166,
+            "y": 491.7694915678066
+          },
+          "deltaEnergy": 86297.58545589447
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 309496,
+          "bounds": {
+            "minX": 583,
+            "minY": 0,
+            "maxX": 1557,
+            "maxY": 988
+          },
+          "centroid": {
+            "x": 1083.7509240830252,
+            "y": 500.28727027166747
+          },
+          "deltaEnergy": 85525.37335205078
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 152756,
+          "bounds": {
+            "minX": 583,
+            "minY": 0,
+            "maxX": 1557,
+            "maxY": 975
+          },
+          "centroid": {
+            "x": 1110.9331613815496,
+            "y": 544.6920906543769
+          },
+          "deltaEnergy": 81560.74493980408
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 97575,
+          "bounds": {
+            "minX": 583,
+            "minY": 0,
+            "maxX": 1557,
+            "maxY": 968
+          },
+          "centroid": {
+            "x": 1131.1327286702538,
+            "y": 580.2097975915962
+          },
+          "deltaEnergy": 77642.20704174042
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "sampleTime": 4.516666889190674,
+      "support005Sha256": "7bf22dbf2189628fd044359ae0861d2350e40f4d80f5cb040613ed2f0751e351",
+      "support005BaselineIoU": 0.015531710082619249,
+      "support005PreviousIoU": 0.018978404777635276,
+      "changedPackedPixels": 212212,
+      "totalMaxChannelDelta": 6325.890683174133,
+      "maximumChannelDelta": 97.5625,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 119309,
+          "bounds": {
+            "minX": 574,
+            "minY": 0,
+            "maxX": 1579,
+            "maxY": 987
+          },
+          "centroid": {
+            "x": 1067.4106731260845,
+            "y": 471.6490289919453
+          },
+          "deltaEnergy": 6294.181317329407
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 28460,
+          "bounds": {
+            "minX": 576,
+            "minY": 0,
+            "maxX": 1579,
+            "maxY": 987
+          },
+          "centroid": {
+            "x": 1110.1292691496838,
+            "y": 580.8265987350668
+          },
+          "deltaEnergy": 5871.129956245422
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 4560,
+          "bounds": {
+            "minX": 597,
+            "minY": 4,
+            "maxX": 1579,
+            "maxY": 983
+          },
+          "centroid": {
+            "x": 1163.4995614035088,
+            "y": 612.156798245614
+          },
+          "deltaEnergy": 5376.719157218933
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 1878,
+          "bounds": {
+            "minX": 600,
+            "minY": 4,
+            "maxX": 1579,
+            "maxY": 983
+          },
+          "centroid": {
+            "x": 1168.6650692225771,
+            "y": 575.667731629393
+          },
+          "deltaEnergy": 5198.4785985946655
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.5333333015441895,
+      "support005Sha256": "91f3413794a764209f3ec08de4a162265145f776c28242fe3647c5bb5c0a6238",
+      "support005BaselineIoU": 0.002711969702400153,
+      "support005PreviousIoU": 0.10041657531243148,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4110.434326171875,
+      "maximumChannelDelta": 103.751953125,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 531,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.6760828625236,
+            "y": 437.8738229755179
+          },
+          "deltaEnergy": 4110.43310546875
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 511,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.1663405088063,
+            "y": 438.12915851272015
+          },
+          "deltaEnergy": 4110.3282470703125
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 459,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1189.7189542483661,
+            "y": 443.18082788671023
+          },
+          "deltaEnergy": 4108.926025390625
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 410,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1179.5658536585365,
+            "y": 449.8170731707317
+          },
+          "deltaEnergy": 4105.3089599609375
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.550000190734863,
+      "support005Sha256": "f9bdb17ddc262e248cf2a23a1e2d7af3d77a05969dd013d3a0ef73a05a431f78",
+      "support005BaselineIoU": 0.0026940813839573725,
+      "support005PreviousIoU": 0.9891067538126361,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4184.7861328125,
+      "maximumChannelDelta": 103.76953125,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 531,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.6760828625236,
+            "y": 437.8738229755179
+          },
+          "deltaEnergy": 4184.78515625
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 510,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1192.8333333333333,
+            "y": 438.3450980392157
+          },
+          "deltaEnergy": 4184.668212890625
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 454,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1188.3722466960353,
+            "y": 443.557268722467
+          },
+          "deltaEnergy": 4183.180908203125
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 407,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1179.1793611793612,
+            "y": 449.94840294840293
+          },
+          "deltaEnergy": 4179.853515625
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.583333492279053,
+      "support005Sha256": "26038efdb9bbff6364aaf08edf9e3a77436210e067bb1fe44e02423c97e6dfd7",
+      "support005BaselineIoU": 0.002592499671457415,
+      "support005PreviousIoU": 0.9497816593886463,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4351.756896972656,
+      "maximumChannelDelta": 103.8994140625,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 530,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.5075471698112,
+            "y": 438.10188679245283
+          },
+          "deltaEnergy": 4351.755126953125
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 509,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.506876227898,
+            "y": 438.2711198428291
+          },
+          "deltaEnergy": 4351.636962890625
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 439,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1183.4123006833713,
+            "y": 448.4350797266515
+          },
+          "deltaEnergy": 4349.48095703125
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 411,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1179.1824817518248,
+            "y": 450.49878345498786
+          },
+          "deltaEnergy": 4347.37451171875
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "support005Sha256": "dbf0b7e2a8f2dfa78fde5e1b089031be55cfce0f804636a8fa2cb59c220a98e1",
+      "support005BaselineIoU": 0.0026880596390831926,
+      "support005PreviousIoU": 0.9414316702819957,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4238.146072387695,
+      "maximumChannelDelta": 103.2265625,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 530,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.5075471698112,
+            "y": 438.10188679245283
+          },
+          "deltaEnergy": 4238.144287109375
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 511,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.3874755381605,
+            "y": 438.0587084148728
+          },
+          "deltaEnergy": 4238.043701171875
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 456,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1189.890350877193,
+            "y": 443.2828947368421
+          },
+          "deltaEnergy": 4236.567626953125
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 412,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1182.1917475728155,
+            "y": 448.5752427184466
+          },
+          "deltaEnergy": 4233.632568359375
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.650000095367432,
+      "support005Sha256": "f600c9128f81bf1a340d1cf1e683f8af2509e5791fbca98e15a23770c4665bb2",
+      "support005BaselineIoU": 0.002705947708904539,
+      "support005PreviousIoU": 0.9848484848484849,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4231.873779296875,
+      "maximumChannelDelta": 103.2109375,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 531,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.6760828625236,
+            "y": 437.8738229755179
+          },
+          "deltaEnergy": 4231.87255859375
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 513,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1194.3001949317738,
+            "y": 437.83820662768034
+          },
+          "deltaEnergy": 4231.78759765625
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 461,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1191.1344902386118,
+            "y": 442.6160520607375
+          },
+          "deltaEnergy": 4230.454345703125
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 414,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1181.1304347826087,
+            "y": 449.3188405797101
+          },
+          "deltaEnergy": 4227.291748046875
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.683333396911621,
+      "support005Sha256": "5f09067d97190a190057324334a37ce64dbf091a280fa2395e054f1a22c17937",
+      "support005BaselineIoU": 0.0027178620281821386,
+      "support005PreviousIoU": 0.9828693790149893,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4278.7861328125,
+      "maximumChannelDelta": 103.7421875,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 531,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.6760828625236,
+            "y": 437.8738229755179
+          },
+          "deltaEnergy": 4278.784912109375
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 515,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.778640776699,
+            "y": 438.1611650485437
+          },
+          "deltaEnergy": 4278.705322265625
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 465,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1189.5591397849462,
+            "y": 443.18064516129033
+          },
+          "deltaEnergy": 4277.3524169921875
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 420,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1179.404761904762,
+            "y": 449.9190476190476
+          },
+          "deltaEnergy": 4274.30078125
+        }
+      ]
+    },
+    {
+      "frame": 9,
+      "sampleTime": 4.7166666984558105,
+      "support005Sha256": "178ffd6b604c1c66001b006e1a95604b999a43272aa9f6ecc4999765d85026aa",
+      "support005BaselineIoU": 0.0026999581864882625,
+      "support005PreviousIoU": 0.9828693790149893,
+      "changedPackedPixels": 534,
+      "totalMaxChannelDelta": 4234.99462890625,
+      "maximumChannelDelta": 103.78515625,
+      "thresholds": [
+        {
+          "threshold": 0.001,
+          "pixelCount": 531,
+          "bounds": {
+            "minX": 1014,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1193.6760828625236,
+            "y": 437.8738229755179
+          },
+          "deltaEnergy": 4234.9931640625
+        },
+        {
+          "threshold": 0.01,
+          "pixelCount": 511,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1410,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1195.0097847358122,
+            "y": 437.74755381604695
+          },
+          "deltaEnergy": 4234.89990234375
+        },
+        {
+          "threshold": 0.05,
+          "pixelCount": 461,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1192.5921908893708,
+            "y": 441.8329718004338
+          },
+          "deltaEnergy": 4233.556396484375
+        },
+        {
+          "threshold": 0.1,
+          "pixelCount": 419,
+          "bounds": {
+            "minX": 1015,
+            "minY": 301,
+            "maxX": 1409,
+            "maxY": 584
+          },
+          "centroid": {
+            "x": 1180.9331742243437,
+            "y": 450.0429594272076
+          },
+          "deltaEnergy": 4230.591064453125
+        }
+      ]
+    }
+  ]
+}

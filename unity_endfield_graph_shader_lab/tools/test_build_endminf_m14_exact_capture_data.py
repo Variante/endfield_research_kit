@@ -19,29 +19,30 @@ class BuildEndminfM14ExactCaptureDataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "capture.generated.cs"
             cpp_output = Path(directory) / "capture.generated.h"
-            text = target.build(target.FRAME, target.REPORT, output, cpp_output)
+            text = target.build(target.CAPTURE, target.REPORT, output, cpp_output)
             self.assertEqual(text, output.read_text(encoding="utf-8"))
-            self.assertIn("internal const int QuadCount = 285;", text)
-            self.assertIn("internal const int VertexCount = 1140;", text)
-            self.assertIn("internal const int IndexCount = 1710;", text)
-            self.assertIn("CreateVertexConstantBufferValues", text)
-            self.assertIn("CreatePixelConstantBufferValues", text)
-            self.assertIn(target.EXPECTED_FRAME.__str__(), text)
+            self.assertIn("internal const int PacketCount = 7;", text)
+            self.assertIn("1405, 1413, 1421, 1429, 1437, 1445, 1453", text)
+            self.assertIn("4.50f, 4.75f, 5.00f", text)
             cpp_text = cpp_output.read_text(encoding="utf-8")
-            self.assertIn("g_EndfieldM14VertexCount = 1140", cpp_text)
+            self.assertIn("g_EndfieldM14PacketCount", cpp_text)
+            self.assertIn("1968u", cpp_text)
+            self.assertIn("2880u", cpp_text)
             self.assertIn("g_EndfieldM14VSDeclaredFloat4Counts", cpp_text)
 
     def test_selected_draw_closes_stage_specific_ranges(self) -> None:
-        metadata = target.load_json(target.FRAME / "metadata.json")
-        constants = target.collect_constants(target.select_draw(metadata))
-        self.assertEqual(
-            [row["captured_count"] for row in constants[0]],
-            list(target.CAPTURED_COUNTS[0]),
-        )
-        self.assertEqual(
-            [row["captured_count"] for row in constants[4]],
-            list(target.CAPTURED_COUNTS[4]),
-        )
+        report = target.load_json(target.REPORT)
+        packets = target.collect_packets(target.CAPTURE, report)
+        constants = packets[0]["constants"]
+        for stage in (0, 4):
+            self.assertTrue(all(
+                row["captured_count"] >= target.MINIMUM_COUNTS[stage][slot]
+                for slot, row in enumerate(constants[stage])
+            ))
+            self.assertTrue(all(
+                row["captured_count"] <= target.DECLARED_COUNTS[stage][slot]
+                for slot, row in enumerate(constants[stage])
+            ))
 
 
 if __name__ == "__main__":

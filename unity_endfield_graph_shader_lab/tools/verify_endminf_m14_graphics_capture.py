@@ -27,8 +27,9 @@ PS_IDENTITY = 0x5558DEDDB1EE6188
 VS_BYTECODE_SIZE = 6_148
 PS_BYTECODE_SIZE = 5_072
 
-# (stage, slot): (highest addressable vector count, recorder vector limit).
-# The limits exactly cover every constant index read by VS4914/PS4915.
+# (stage, slot): (highest addressable vector count, minimum retained vectors).
+# Recorder profiles may grow, but these minima cover every constant index read
+# by VS4914/PS4915 and therefore remain the fail-closed shader requirement.
 REQUIRED_BINDINGS = {
     (0, 0): (2, 2),
     (0, 1): (82, 82),
@@ -87,7 +88,7 @@ def require(condition: bool, message: str) -> None:
 
 
 def decode_binding(row: dict, stage: int, slot: int,
-                   required_count: int, capture_limit: int) -> dict:
+                   required_count: int, capture_minimum: int) -> dict:
     label = f"stage {stage} b{slot}"
     require(row.get("rangeValid") is True, f"{label} range is not valid")
     require(row.get("metadataValid") is True, f"{label} GPU snapshot is not valid")
@@ -97,9 +98,10 @@ def decode_binding(row: dict, stage: int, slot: int,
     require(first >= 0, f"{label} has an invalid firstConstant")
     require(count >= required_count,
             f"{label} exposes {count} vectors; shader requires {required_count}")
-    require(captured == capture_limit,
-            f"{label} captured {captured} vectors; expected {capture_limit}")
-    require(row.get("truncated") is (count > capture_limit),
+    require(capture_minimum <= captured <= count,
+            f"{label} captured {captured} vectors; expected at least "
+            f"{capture_minimum} and no more than its declared {count}")
+    require(row.get("truncated") is (count > captured),
             f"{label} truncation flag does not match its declared range")
     data_hex = row.get("dataHex")
     require(isinstance(data_hex, str), f"{label} has no dataHex payload")
@@ -223,14 +225,29 @@ def decode_priority_pair_tint(draw: dict) -> dict:
     if witness is not None:
         material_name, path_id, expected = witness
         actual = result["psTintColorC4"]
-        require(math.dist(actual, expected) <= 1.0e-6,
-                f"{material_name} PS b3/c4 no longer matches the captured tint")
-        result.update({
-            "material": material_name,
-            "materialPathIdHex": path_id,
-            "materialMatch": "generated-authored-Color-linear-upload",
-        })
+        # Base vertices are offsets in Unity's reused particle ring, not stable
+        # material identities across frames or capture sessions. Preserve the
+        # pinned-frame witness only when its color independently agrees.
+        if math.dist(actual, expected) <= 1.0e-6:
+            result.update({
+                "material": material_name,
+                "materialPathIdHex": path_id,
+                "materialMatch": "generated-authored-Color-linear-upload",
+            })
+        else:
+            result["baseVertexWitnessStatus"] = (
+                "ring_offset_reused_with_different_material_state"
+            )
     return result
+
+
+def is_m14_shader_pair(draw: dict) -> bool:
+    shaders = {int(row.get("stage", -1)): row
+               for row in draw.get("shaders", []) if isinstance(row, dict)}
+    return (
+        int(shaders.get(0, {}).get("identityHash", -1)) == VS_IDENTITY and
+        int(shaders.get(4, {}).get("identityHash", -1)) == PS_IDENTITY
+    )
 
 
 def _particle_quad(data: bytes, offset: int) -> tuple[float, float] | None:
@@ -357,7 +374,8 @@ def decode_frame(frame_dir: Path) -> dict | None:
     # live window: 1,098 indices in FrameAnalysis and 1,710 at the captured
     # peak. Do not hardcode one instantaneous alive-particle count.
     priority_draws = [row for row in draws if isinstance(row, dict) and
-                      row.get("priorityShaderPair") is True]
+                      row.get("priorityShaderPair") is True and
+                      is_m14_shader_pair(row)]
     plausible = [row for row in priority_draws
                  if int(row.get("count", -1)) >= M14_REFERENCE_INDEX_COUNT and
                  int(row.get("count", -1)) % 6 == 0]

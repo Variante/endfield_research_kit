@@ -1195,7 +1195,8 @@ old-layout bindings and remains the visual fallback.
 
 M14 `overview_02/all/tuowei` no longer has a shader-identity gate. Capture
 `20260826T000901Z` closes its exact VS4914/PS4915 pair, all used constant ranges,
-the 285-quad 36-byte particle stream, and its native BC7 texture mip chain. A
+the phase-matched 285-quad 36-byte particle stream, and its native BC7 texture
+mip chain. A
 dedicated Unity 8/7-to-7/2 ABI shell is now stage+SHA pinned; WARP creates both
 retail objects and a live Unity reserved-variant run reports four deterministic
 substitutions (two imports per stage), balanced VS/PS swaps, and zero failures.
@@ -1208,11 +1209,22 @@ zero blend indices/weights from a 20-byte slot-1 buffer submitted with stride
 zero. The native plugin reproduces that layout, passes WARP creation, and a
 matched 4.50-second exact-versus-suppressed run visibly isolates the dense amber
 segmented/smoky trail around the raised hand while retaining M13's outer ring.
-Keep this path behind `ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1` until its temporal
-sequence, rather than one phase-matched frame, is accepted against the no-frame-
-generation reference. The large raw changed-pixel count is not a geometry
-explosion: the final A/B remains spatially localized and bloom/temporal history
-propagates small HDR changes.
+
+Sequence capture `20260826T091023Z` extends that closure across seven complete
+exact-pair packets at game frames 1405-1453. The packets are sampled at 0.25 s
+cadence and contain dynamic 328, 480, 477, 415, 346, 277, and 216-quad streams,
+with independently retained stage-specific constants. Holding the old 285-quad
+packet across time was disproved: its strong contribution collapsed after two
+samples because its captured camera/particle state was valid at only one
+instant. The opt-in native path now creates all seven immutable packets, anchors
+their phase to the Overview-start epoch, selects the nearest packet only inside
+the evidenced 4.375-6.125 s window, and restores the compatibility renderer
+outside it. It continues through the body transition even after Unity retires
+the source particle renderer, matching the captured effect lifetime boundary.
+A seven-sample D3D11 exact/suppressed run completes with no native failures and
+shows the intended ring/trail burst decaying to sparse amber fragments instead
+of freezing one geometry packet. Keep the path opt-in while full-sequence video
+registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

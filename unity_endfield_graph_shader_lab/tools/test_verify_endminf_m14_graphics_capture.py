@@ -141,7 +141,7 @@ class M14CaptureTests(unittest.TestCase):
         self.assertEqual(witness["materialMatch"],
                          "generated-authored-Color-linear-upload")
 
-    def test_rejects_changed_captured_basev2_tint(self):
+    def test_does_not_reuse_base_vertex_as_cross_frame_material_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = self.make_session(Path(temporary))
             path = root / "graphics/frames/100/metadata.json"
@@ -149,9 +149,12 @@ class M14CaptureTests(unittest.TestCase):
             draw = metadata["drawRecords"][0]
             draw["baseVertex"] = 3227
             path.write_text(json.dumps(metadata), encoding="utf-8")
-            with self.assertRaisesRegex(
-                    MODULE.CaptureError, "no longer matches the captured tint"):
-                MODULE.decode_session(root)
+            result = MODULE.decode_session(root)
+        witness = result["frames"][0]["priorityPairDraws"][0]
+        self.assertNotIn("material", witness)
+        self.assertEqual(
+            witness["baseVertexWitnessStatus"],
+            "ring_offset_reused_with_different_material_state")
 
     def test_decodes_raw_expanded_particle_geometry(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -191,7 +194,8 @@ class M14CaptureTests(unittest.TestCase):
             metadata = json.loads(path.read_text(encoding="utf-8"))
             metadata["drawRecords"][0]["shaders"][0]["identityHash"] ^= 1
             path.write_text(json.dumps(metadata), encoding="utf-8")
-            with self.assertRaisesRegex(MODULE.CaptureError, "VS4914 SHA-256"):
+            with self.assertRaisesRegex(
+                    MODULE.CaptureError, "no priority-retained VS4914/PS4915"):
                 MODULE.decode_session(root)
 
 
