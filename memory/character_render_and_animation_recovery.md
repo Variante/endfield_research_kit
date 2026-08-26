@@ -1179,11 +1179,19 @@ generator recovers the unique 60-byte Position/Normal/Color/UV/UV2/Custom1
 stream plus its 16-bit index stream. Exact submission remains fail-closed because
 all three M27-bearing sessions (`042005`, `083131`, and `091023`) retained only
 b0/c0-c27 while the retail vertex shader projects through b0/c32-c35 and reads
-c44/c81. EndfieldCapture now retains VS b0 through c81 and its complete 14-test
-Release suite passes; one replacement targeted M27 frame is required. No more
-geometry, index, material, resolver, or secondary-dynamics capture is needed for
-this gate. The legacy HLSL sidecar keeps its separate old-layout bindings and
-remains the visual fallback.
+c44/c81. `091023` contains the exact M27 draw at frame 1405, so its timing and
+geometry are valid but its two-vector VS b0 payload is not. EndfieldCapture now
+retains VS b0 through c81 and its complete 14-test Release suite passes; one
+replacement targeted M27 frame is required. That replacement now also
+priority-retains the exact M13 `overview_02/all/huan` six-index VFXBaseV2 pair
+and copies its five PS texture carriers, avoiding a later M13-only run. The older
+FrameAnalysis peak identifies M13 as draw 121 and proves its one billboard
+carries authored RGBA `(1, 0.2862745, 0.0235294, 0.0862745)`; this agrees with
+the generated start-color and color-over-lifetime contract. The conspicuous
+black-background ring is therefore not evidence for arbitrary material
+attenuation. No more geometry, index, material, resolver, or secondary-dynamics
+capture is needed for the M27 gate. The legacy HLSL sidecar keeps its separate
+old-layout bindings and remains the visual fallback.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
