@@ -63,12 +63,16 @@ subprogram-113 pair and checks them at build time:
 
 `M27SubstitutionRegistry.h` dispatches by both compiler stage and the SHA-256
 of Unity's input shell bytecode. The callback never uses a keyword, callback
-order, byte count, or first-seen variant as shader identity. The exact
-Unity-compiled shell hashes are not yet available, so both registry entries
-are deliberately unpinned and `EndfieldOriginalDxbcGetM27RegistryReady()`
-returns zero. In this state the M27 route records the observed per-stage shell
-hash, increments the mismatch/blocked counters, and leaves Unity's shader
-object unchanged.
+order, byte count, or first-seen variant as shader identity. A reserved-variant
+inventory delta isolated one VS 10/9 shell and one PS 10/5 shell:
+
+- VS `b6ffa6a650c43fa86cfed1a146ecdfb046d6c92c7e866ff6f51ac79a6c7d4833`;
+- PS `9a6803527679aa4d4822ca38a4257c2dafcbce2748a67c7e3387f63e3ee54707`.
+
+Both entries are pinned. Unknown callback hashes leave Unity's shader object
+unchanged. The editor validator clears Unity's cached GPU data for only the
+dedicated shell, activates its reserved material variant, and requires exactly
+the two pinned substitutions with zero mismatch or conflict counters.
 
 Build and validate without replacing the Unity project plugin asset:
 
@@ -77,7 +81,6 @@ Build and validate without replacing the Unity project plugin asset:
 ```
 
 The build runs `VerifyM27SubstitutionRegistry.exe`, which verifies both retail
-blob hashes, asks WARP D3D11 to create both shader objects, and proves that the
-unresolved registry rejects unknown shell hashes. Pin shell hashes only after
-collecting the exact D3D11 callback bytecode for the dedicated M27 shell and
-verifying one stable VS and PS identity independently.
+blob hashes, asks WARP D3D11 to create both shader objects, proves exact
+stage+SHA dispatch, rejects unknown and cross-stage hashes, and requires the
+registry to be ready.

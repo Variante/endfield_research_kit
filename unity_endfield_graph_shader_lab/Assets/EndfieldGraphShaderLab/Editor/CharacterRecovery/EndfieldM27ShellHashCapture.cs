@@ -10,9 +10,9 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLabEditor
 {
     /// <summary>
-    /// One-shot, fail-closed capture of the dedicated M27 shell's Unity-
-    /// compiled D3D11 stage hashes. The native callback does not substitute
-    /// until these independently observed identities are pinned.
+    /// Captures and validates the dedicated M27 shell's Unity-compiled D3D11
+    /// stage hashes. The native callback substitutes only stage+SHA identities
+    /// pinned from a reserved-variant callback-inventory delta.
     /// </summary>
     public static class EndfieldM27ShellHashCapture
     {
@@ -44,6 +44,25 @@ namespace EndfieldGraphShaderLabEditor
             public uint maximumPixelOutputs;
             public string vertexShellSha256;
             public string pixelShellSha256;
+            public CallbackObservation[] callbackObservations;
+        }
+
+        [Serializable]
+        private sealed class CallbackObservation
+        {
+            public uint stage;
+            public uint byteCodeSize;
+            public uint inputParameters;
+            public uint outputParameters;
+            public uint boundResources;
+            public uint constantBuffer0Bytes;
+            public uint constantBuffer1Bytes;
+            public uint constantBuffer2Bytes;
+            public uint constantBuffer3Bytes;
+            public uint constantBuffer4Bytes;
+            public string textureSlotMask;
+            public string samplerSlotMask;
+            public string sha256;
         }
 
         public static void Run()
@@ -81,10 +100,8 @@ namespace EndfieldGraphShaderLabEditor
                     throw new InvalidOperationException(
                         "M27 substitution callback could not be armed.");
 
-                AssetDatabase.ImportAsset(
-                    ShaderAsset,
-                    ImportAssetOptions.ForceUpdate |
-                    ImportAssetOptions.ForceSynchronousImport);
+                ForceRecompileWhileArmed();
+                ForceLoadReservedVariant();
 
                 uint configureCount = Native.GetConfigureCount();
                 uint callbackCountBeforeRead = Native.GetCallbackCount();
@@ -122,15 +139,22 @@ namespace EndfieldGraphShaderLabEditor
                 uint variantHashConflictCount =
                     Native.GetM27VariantHashConflictCount();
                 uint registryReady = Native.GetM27RegistryReady();
+                CallbackObservation[] callbackObservations =
+                    ReadCallbackObservations();
                 bool bothStagesObserved =
                     vertex.Any(value => value != 0) &&
                     pixel.Any(value => value != 0);
-                if (registryReady != 0 || matchCount != 0 ||
-                    (bothStagesObserved && variantHashConflictCount != 0) ||
-                    mismatchCount < 1 || callbackCount < 2)
+                bool validState = registryReady != 0
+                    ? bothStagesObserved && matchCount >= 2 &&
+                        mismatchCount == 0 &&
+                        variantHashConflictCount == 0 && callbackCount >= 2
+                    : matchCount == 0 &&
+                        (!bothStagesObserved || variantHashConflictCount == 0) &&
+                        callbackCount >= 2;
+                if (!validState)
                 {
                     throw new InvalidOperationException(
-                        "Unpinned M27 registry did not remain fail closed: " +
+                        "M27 shell substitution state failed validation: " +
                         $"ready={registryReady}, matches={matchCount}, " +
                         $"mismatches={mismatchCount}, callbacks={callbackCount}, " +
                         $"variantHashConflicts={variantHashConflictCount}.");
@@ -143,9 +167,11 @@ namespace EndfieldGraphShaderLabEditor
                 var report = new Report
                 {
                     schema = "endfield.m27-unity-shell-hashes.v1",
-                    status = bothStagesObserved
-                        ? "observed_unpinned_fail_closed"
-                        : "unity_shell_abi_mismatch_fail_closed",
+                    status = registryReady != 0 && bothStagesObserved
+                        ? "pinned_substitution_activated"
+                        : bothStagesObserved
+                            ? "observed_unpinned_fail_closed"
+                            : "unity_shell_abi_mismatch_fail_closed",
                     unityVersion = Application.unityVersion,
                     graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
                     shaderAsset = ShaderAsset,
@@ -166,11 +192,12 @@ namespace EndfieldGraphShaderLabEditor
                     pixelShellSha256 = pixel.Any(value => value != 0)
                         ? Hex(pixel)
                         : string.Empty,
+                    callbackObservations = callbackObservations,
                 };
                 Directory.CreateDirectory(Path.GetDirectoryName(output));
                 File.WriteAllText(output, JsonUtility.ToJson(report, true));
                 Debug.Log(
-                    "Observed fail-closed M27 Unity shell state: status=" +
+                    "Validated M27 Unity shell state: status=" +
                     report.status + ", VS=" +
                     report.vertexShellSha256 + ", PS=" +
                     report.pixelShellSha256 + ", output=" + output + ".");
@@ -206,6 +233,96 @@ namespace EndfieldGraphShaderLabEditor
                     " hash: bytesWritten=" + written + ".");
             }
             return value;
+        }
+
+        private static void ForceRecompileWhileArmed()
+        {
+            string shaderPath = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                ShaderAsset));
+            byte[] original = File.ReadAllBytes(shaderPath);
+            byte[] touch = System.Text.Encoding.ASCII.GetBytes(
+                "\n// ENDFIELD_M27_ARMED_CAPTURE_REIMPORT\n");
+            var modified = new byte[original.Length + touch.Length];
+            Buffer.BlockCopy(original, 0, modified, 0, original.Length);
+            Buffer.BlockCopy(touch, 0, modified, original.Length, touch.Length);
+            try
+            {
+                File.WriteAllBytes(shaderPath, modified);
+                AssetDatabase.ImportAsset(
+                    ShaderAsset,
+                    ImportAssetOptions.ForceUpdate |
+                    ImportAssetOptions.ForceSynchronousImport);
+            }
+            finally
+            {
+                File.WriteAllBytes(shaderPath, original);
+            }
+        }
+
+        private static void ForceLoadReservedVariant()
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAsset);
+            if (shader == null)
+                throw new InvalidOperationException(
+                    "Could not load the dedicated M27 shell shader.");
+            ShaderUtil.ClearCachedData(shader);
+            var material = new Material(shader)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            try
+            {
+                material.EnableKeyword("ENDFIELD_ORIGINAL_DXBC_M27_EXACT");
+                if (!material.SetPass(0))
+                    throw new InvalidOperationException(
+                        "Could not activate the reserved M27 shell variant.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
+        private static CallbackObservation[] ReadCallbackObservations()
+        {
+            uint count = Native.GetM27CallbackObservationCount();
+            var values = new CallbackObservation[count];
+            for (uint index = 0; index < count; ++index)
+            {
+                var metadata = new uint[12];
+                var digest = new byte[32];
+                uint written = Native.GetM27CallbackObservation(
+                    index,
+                    metadata,
+                    (uint)metadata.Length,
+                    digest,
+                    (uint)digest.Length);
+                if (written != metadata.Length)
+                {
+                    throw new InvalidOperationException(
+                        "Could not read M27 callback observation " + index +
+                        ": metadataWritten=" + written + ".");
+                }
+                values[index] = new CallbackObservation
+                {
+                    stage = metadata[0],
+                    byteCodeSize = metadata[1],
+                    inputParameters = metadata[2],
+                    outputParameters = metadata[3],
+                    boundResources = metadata[4],
+                    constantBuffer0Bytes = metadata[5],
+                    constantBuffer1Bytes = metadata[6],
+                    constantBuffer2Bytes = metadata[7],
+                    constantBuffer3Bytes = metadata[8],
+                    constantBuffer4Bytes = metadata[9],
+                    textureSlotMask = "0x" + metadata[10].ToString("x8"),
+                    samplerSlotMask = "0x" + metadata[11].ToString("x8"),
+                    sha256 = Hex(digest),
+                };
+            }
+            return values;
         }
 
         private static string HashFile(string path)
@@ -263,6 +380,19 @@ namespace EndfieldGraphShaderLabEditor
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetCallbackCount")]
             internal static extern uint GetCallbackCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM27CallbackObservationCount")]
+            internal static extern uint GetM27CallbackObservationCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM27CallbackObservation")]
+            internal static extern uint GetM27CallbackObservation(
+                uint index,
+                [Out] uint[] metadata,
+                uint metadataCount,
+                [Out] byte[] sha256,
+                uint sha256Size);
         }
     }
 }

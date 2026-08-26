@@ -528,15 +528,19 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   presentation path is ordering-correct and report-visible but remains
   content-invalid because the recovered deferred resolver contributes zero on
   the M27 ownership mask. A
-  fail-closed Unity compiler-extension probe rejects direct shader-object
-  substitution: the isolated shell reflects as VS 7-input/11-output and PS
-  11-input/5-output, versus the retail pair's VS 10/9 and PS 10/5, and its
-  five-MRT pixel candidates are not hash-unique. The native registry therefore
-  remains deliberately unpinned. Exact transport must own the retail expanded
-  particle vertex declaration/buffers natively or establish a genuinely
-  signature-identical shell; it must not swap the retail DXBC into the current
-  Unity particle draw. Do not compensate by resizing, brightening, retiming,
-  or disabling M21.
+  compiler-extension inventory showed that Unity's callback DXBC strips RDEF,
+  so source names and constant-buffer reflection cannot identify this shell.
+  Activating the dedicated reserved material variant after arming adds exactly
+  one VS 10/9 callback and one PS 10/5 callback to an otherwise identical
+  133-hash inventory. Their stage+SHA identities are now pinned as
+  `b6ffa6a650c43fa8...` and `9a6803527679aa4d...`; repeat validation clears
+  Unity's per-shader cached GPU data, observes exactly two substitutions, and
+  reports zero mismatches or hash conflicts. Unknown callback hashes remain
+  unchanged. This closes shell identification and exact shader-object creation,
+  but exact transport still must bind the captured b0-b4 ranges, six pixel
+  textures, and retail particle vertex streams before the result can replace
+  the visual HLSL fallback. Do not compensate by resizing, brightening,
+  retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
@@ -1165,12 +1169,14 @@ another per-material shader approximation. The missing boundary includes:
   disabled until a D3D11/RenderDoc resource descriptor proves the format.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
-and resources. The live exact deferred resolver is no longer a blocker, but it
-must remain non-presented for M27 until the Unity-owned HGBuffer shell closes
-the retail `10/9` vertex and `10/5` pixel signatures. The current one-shot
-probe remains correctly fail-closed (`7/11` vertex maximum, conflicting pixel
-candidate), so no ambiguous shell hash is pinned; the legacy HLSL sidecar keeps
-its separate old-layout bindings and remains the visual fallback.
+and resources. The live exact deferred resolver is no longer a blocker. The
+Unity-owned M27 HGBuffer shell now closes the retail `10/9` vertex and `10/5`
+pixel signatures with independently isolated, stage+SHA-pinned callback
+identities; WARP object creation and a repeatable Unity cache-cleared activation
+both pass. Keep it non-presented until the captured b0-b4 ranges, t0-t5
+resources, and particle vertex transport are bound and read back successfully.
+The legacy HLSL sidecar keeps its separate old-layout bindings and remains the
+visual fallback.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
