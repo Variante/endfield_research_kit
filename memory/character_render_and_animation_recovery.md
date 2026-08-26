@@ -316,6 +316,9 @@ complete frame without a client fault.
   2.5e-8. On the maintained no-frame-generation phase map that post pulse rises
   around retail frames 369-370, peaks around 371, decays through 380, and is
   zero by 381-382; interpolation and post retiming are not the frame-382 gap.
+  Viewer capture schema v5 records evaluated chromatic intensity, radial
+  intensity, effective power, and mode on every row so the next dense 60 Hz
+  comparison can verify that phase without inferring it from the final image.
   The focused D3D11 capture passes those renderer
   liveness gates and visually restores the large ring at source frame 382
   without changing M13/M21 delay, scale, material, or emission data. Its
