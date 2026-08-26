@@ -12,6 +12,170 @@
       "frame": 13175,
       "frameDirectory": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260826T000901Z\\graphics\\frames\\13175",
       "metadataSha256": "39e2c4e9fbeccbd7554becbf7f8fcf7919f4eb6d24b65d09fd425b132c6ed0e5",
+      "priorityPairDrawCount": 8,
+      "capturedLinearTintWitnessCount": 8,
+      "priorityPairDraws": [
+        {
+          "indexCount": 60,
+          "startIndex": 4902,
+          "baseVertex": 4908,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            74.69999694824219,
+            1.0
+          ],
+          "psTintColorC4": [
+            1.0,
+            0.42513108253479004,
+            0.09758734703063965,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_22",
+          "materialPathIdHex": "EC97B180E0A82AB7",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 6,
+          "startIndex": 4902,
+          "baseVertex": 86,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            1.399999976158142,
+            1.350000023841858
+          ],
+          "psTintColorC4": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_43",
+          "materialPathIdHex": "73D80B62F5BA886F",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 6,
+          "startIndex": 4902,
+          "baseVertex": 1450,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            1.399999976158142,
+            1.350000023841858
+          ],
+          "psTintColorC4": [
+            1.0,
+            0.5607877969741821,
+            0.09769564121961594,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_31",
+          "materialPathIdHex": "602883BD6BB1831B",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 6,
+          "startIndex": 4902,
+          "baseVertex": 844,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            15.0,
+            0.5699999928474426
+          ],
+          "psTintColorC4": [
+            0.7615293264389038,
+            0.386518657207489,
+            0.20211495459079742,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_40",
+          "materialPathIdHex": "26EC2259AEC716E7",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 6,
+          "startIndex": 4902,
+          "baseVertex": 1466,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            15.0,
+            0.800000011920929
+          ],
+          "psTintColorC4": [
+            0.7605246305465698,
+            0.5119022130966187,
+            0.2015562355518341,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_39",
+          "materialPathIdHex": "BF692EC36800069D",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 6,
+          "startIndex": 4902,
+          "baseVertex": 54,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            1.399999976158142,
+            1.350000023841858
+          ],
+          "psTintColorC4": [
+            1.0,
+            0.5607877969741821,
+            0.09769564121961594,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_31",
+          "materialPathIdHex": "602883BD6BB1831B",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 1710,
+          "startIndex": 4902,
+          "baseVertex": 3227,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            77.0999984741211,
+            8.6899995803833
+          ],
+          "psTintColorC4": [
+            0.29275622963905334,
+            0.17861337959766388,
+            0.04641924798488617,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_14",
+          "materialPathIdHex": "F6DCA5E6B2122169",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        },
+        {
+          "indexCount": 120,
+          "startIndex": 4902,
+          "baseVertex": 1482,
+          "psPerMaterialC1": [
+            1.0,
+            0.0,
+            77.0999984741211,
+            8.6899995803833
+          ],
+          "psTintColorC4": [
+            0.29275622963905334,
+            0.17861337959766388,
+            0.04641924798488617,
+            1.0
+          ],
+          "material": "M_fx_endminm_gfx_26",
+          "materialPathIdHex": "364397B467C89F2E",
+          "materialMatch": "generated-authored-Color-linear-upload"
+        }
+      ],
       "m14DrawCount": 1,
       "m14Draws": [
         {

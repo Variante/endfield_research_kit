@@ -119,6 +119,40 @@ class M14CaptureTests(unittest.TestCase):
         self.assertEqual(draw["quadCount"], 285)
         self.assertEqual(draw["referenceIndexCount"], 1_098)
 
+    def test_decodes_captured_basev2_linear_tint_witness(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.make_session(Path(temporary))
+            path = root / "graphics/frames/100/metadata.json"
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            draw = metadata["drawRecords"][0]
+            draw["baseVertex"] = 3227
+            row = next(row for row in draw["constantBuffers"]
+                       if row["stage"] == 4 and row["slot"] == 3)
+            data = bytearray.fromhex(row["dataHex"])
+            struct.pack_into("<4f", data, 4 * 16,
+                             0.29275623, 0.17861338, 0.04641925, 1.0)
+            row["dataHex"] = data.hex()
+            path.write_text(json.dumps(metadata), encoding="utf-8")
+            result = MODULE.decode_session(root)
+        frame = result["frames"][0]
+        self.assertEqual(frame["capturedLinearTintWitnessCount"], 1)
+        witness = frame["priorityPairDraws"][0]
+        self.assertEqual(witness["material"], "M_fx_endminm_gfx_14")
+        self.assertEqual(witness["materialMatch"],
+                         "generated-authored-Color-linear-upload")
+
+    def test_rejects_changed_captured_basev2_tint(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.make_session(Path(temporary))
+            path = root / "graphics/frames/100/metadata.json"
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            draw = metadata["drawRecords"][0]
+            draw["baseVertex"] = 3227
+            path.write_text(json.dumps(metadata), encoding="utf-8")
+            with self.assertRaisesRegex(
+                    MODULE.CaptureError, "no longer matches the captured tint"):
+                MODULE.decode_session(root)
+
     def test_decodes_raw_expanded_particle_geometry(self):
         with tempfile.TemporaryDirectory() as temporary:
             frame = Path(temporary)

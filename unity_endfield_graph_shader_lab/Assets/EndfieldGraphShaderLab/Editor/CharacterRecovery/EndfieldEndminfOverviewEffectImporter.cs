@@ -29,15 +29,28 @@ namespace EndfieldGraphShaderLabEditor
         private const long LitEffectShaderPathId = 6428594484694422749L;
         private const long EndminfM14Material =
             unchecked((long)0xF6DCA5E6B2122169UL);
-        // Exact PS4915 b3/c4 from graphics-only session
-        // 20260826T000901Z, frame 13175, 1,710-index M14 draw. It is the
-        // linear-space upload of the authored _TintColor Color property.
-        private static readonly Vector4 EndminfM14CapturedLinearTint =
-            new Vector4(
-                0.29275622963905334f,
-                0.17861337959766388f,
-                0.04641924798488617f,
-                1f);
+        // Exact PS4915 b3/c4 witnesses from graphics-only session
+        // 20260826T000901Z, frame 13175. Every non-white witness is the
+        // linear-space upload of its authored _TintColor Color property.
+        // M31 is drawn twice; M14 and M26 are distinguished by their
+        // 1,710-index and 120-index particle draws respectively.
+        private static readonly Dictionary<long, Vector4>
+            CapturedBaseV2LinearTints = new Dictionary<long, Vector4> {
+                { unchecked((long)0xEC97B180E0A82AB7UL),
+                    new Vector4(1f, 0.4251311f, 0.0975873f, 1f) }, // M22
+                { 0x73D80B62F5BA886FL,
+                    new Vector4(1f, 1f, 1f, 1f) }, // M43
+                { 0x602883BD6BB1831BL,
+                    new Vector4(1f, 0.5607878f, 0.0976956f, 1f) }, // M31
+                { 0x26EC2259AEC716E7L,
+                    new Vector4(0.7615293f, 0.3865187f, 0.2021150f, 1f) }, // M40
+                { unchecked((long)0xBF692EC36800069DUL),
+                    new Vector4(0.7605246f, 0.5119022f, 0.2015562f, 1f) }, // M39
+                { EndminfM14Material,
+                    new Vector4(0.29275623f, 0.17861338f, 0.04641925f, 1f) },
+                { 0x364397B467C89F2EL,
+                    new Vector4(0.29275623f, 0.17861338f, 0.04641925f, 1f) }, // M26
+            };
         public const string LitEffectCompatibilityEnvironment = "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT";
         private const long EndminfLitEffectM27Material =
             unchecked((long)0xA531A88850690EB8UL);
@@ -405,7 +418,55 @@ namespace EndfieldGraphShaderLabEditor
                 "M14 still bypasses the captured linear Color upload");
             AssetDatabase.SaveAssets();
             Debug.Log("Rebuilt Endminf M14 with captured linear tint: " +
-                EndminfM14CapturedLinearTint);
+                CapturedBaseV2LinearTints[EndminfM14Material]);
+        }
+
+        [MenuItem("Endfield/Character Recovery Lab/Repair Endminf BaseV2 Linear Tint Transport")]
+        public static void RepairAndValidateBaseV2LinearTintTransport()
+        {
+            int repaired = 0;
+            int capturedWitnesses = 0;
+            foreach (long materialPathId in AdmittedBaseV2Materials.Keys)
+            {
+                string suffix = "_p" + unchecked((ulong)materialPathId)
+                    .ToString("X16", CultureInfo.InvariantCulture) + ".mat";
+                string assetPath = AssetDatabase.FindAssets("t:Material", new[] {
+                        MaterialRoot })
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .Single(path => path.EndsWith(suffix, StringComparison.Ordinal));
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(assetPath);
+                L.Require(material != null && material.shader != null &&
+                    material.shader.name ==
+                        "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT",
+                    "Generated Endminf BaseV2 material is unavailable: " +
+                    suffix);
+                Color rawTint = material.GetColor("_TintColor");
+                Vector4 linearTint = new Vector4(
+                    rawTint.linear.r,
+                    rawTint.linear.g,
+                    rawTint.linear.b,
+                    rawTint.a);
+                if (CapturedBaseV2LinearTints.TryGetValue(
+                        materialPathId, out Vector4 expectedLinearTint))
+                {
+                    L.Require(Vector4.Distance(linearTint, expectedLinearTint) <=
+                        1.0e-6f,
+                        "Generated BaseV2 Color no longer produces captured " +
+                        "PS b3/c4: " + material.name);
+                    capturedWitnesses++;
+                }
+                material.SetFloat("_UseRecoveredRawTintColor", 0f);
+                material.SetVector("_RecoveredRawTintColor",
+                    new Vector4(rawTint.r, rawTint.g, rawTint.b, rawTint.a));
+                EditorUtility.SetDirty(material);
+                repaired++;
+            }
+            L.Require(capturedWitnesses == CapturedBaseV2LinearTints.Count,
+                "Not every captured BaseV2 tint witness was repaired");
+            AssetDatabase.SaveAssets();
+            Debug.Log("Repaired normal linear Color transport on " + repaired +
+                " Endminf BaseV2 materials; capturedWitnesses=" +
+                capturedWitnesses + ".");
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Repair Endminf Overview Stripe Texture")]
@@ -1058,26 +1119,26 @@ namespace EndfieldGraphShaderLabEditor
                 L.Float(rawTintRow, "g"),
                 L.Float(rawTintRow, "b"),
                 L.Float(rawTintRow, "a"));
-            bool useRawTintTransport = materialPathId != EndminfM14Material;
-            if (!useRawTintTransport)
+            Color linearTint = rawTint.linear;
+            Vector4 actualLinearTint = new Vector4(
+                linearTint.r, linearTint.g, linearTint.b, linearTint.a);
+            if (CapturedBaseV2LinearTints.TryGetValue(
+                    materialPathId, out Vector4 expectedLinearTint))
             {
-                Color linearTint = rawTint.linear;
-                Vector4 actualLinearTint = new Vector4(
-                    linearTint.r, linearTint.g, linearTint.b, linearTint.a);
                 L.Require(Vector4.Distance(
                         actualLinearTint,
-                        EndminfM14CapturedLinearTint) <= 1.0e-6f,
-                    "M14 authored Color no longer produces captured PS b3/c4");
+                        expectedLinearTint) <= 1.0e-6f,
+                    "Authored BaseV2 Color no longer produces captured PS " +
+                    "b3/c4: " + material.name);
             }
-            material.SetFloat("_UseRecoveredRawTintColor",
-                useRawTintTransport ? 1f : 0f);
+            material.SetFloat("_UseRecoveredRawTintColor", 0f);
             material.SetVector("_RecoveredRawTintColor",
                 new Vector4(rawTint.r, rawTint.g, rawTint.b, rawTint.a));
             Vector4 recoveredRawTint = material.GetVector(
                 "_RecoveredRawTintColor");
             L.Require(
                 Mathf.Abs(material.GetFloat("_UseRecoveredRawTintColor") -
-                    (useRawTintTransport ? 1f : 0f)) <= 1.0e-6f &&
+                    0f) <= 1.0e-6f &&
                 Vector4.Distance(recoveredRawTint,
                     new Vector4(rawTint.r, rawTint.g, rawTint.b, rawTint.a)) <=
                     1.0e-6f,
