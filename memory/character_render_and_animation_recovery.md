@@ -400,6 +400,10 @@ complete frame without a client fault.
   to float(index + 1), with zero meaning no registered terrain profile. Its
   CharInfo selected-frame value remains unobserved, so canonical M27 still must
   not assume zero.
+  `decode_endminf_default_deferred_capture.py` is the maintained fail-closed
+  join from the prioritized resolver record and its ten PS ranges to the
+  deduplicated resource blob. It writes source-shaped b0-b9 binary slices and
+  rejects missing identities, slots, backing buffers, or bounds.
 - The two remaining M28 `VFXRefract` rows stay fail-closed, but the four new
   neutral forced-D3D11 frame analyses reopen their recovery path. All four
   record the exact SRP-instanced 0624/0625 program pair; the newest capture's
