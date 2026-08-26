@@ -75,11 +75,11 @@ std::atomic<std::uint8_t> g_m27ObservedPixelSha256[32] = {};
 ID3D11VertexShader* g_m14RuntimeVertexShader = nullptr;
 ID3D11PixelShader* g_m14RuntimePixelShader = nullptr;
 ID3D11InputLayout* g_m14InputLayout = nullptr;
-ID3D11Buffer* g_m14VertexBuffer = nullptr;
+ID3D11Buffer* g_m14VertexBuffers[g_EndfieldM14PacketCount] = {};
 ID3D11Buffer* g_m14DefaultVertexBuffer = nullptr;
-ID3D11Buffer* g_m14IndexBuffer = nullptr;
-ID3D11Buffer* g_m14VertexConstantBuffers[5] = {};
-ID3D11Buffer* g_m14PixelConstantBuffers[4] = {};
+ID3D11Buffer* g_m14IndexBuffers[g_EndfieldM14PacketCount] = {};
+ID3D11Buffer* g_m14VertexConstantBuffers[g_EndfieldM14PacketCount][5] = {};
+ID3D11Buffer* g_m14PixelConstantBuffers[g_EndfieldM14PacketCount][4] = {};
 ID3D11Buffer* g_m14SkinBuffer = nullptr;
 ID3D11ShaderResourceView* g_m14SkinView = nullptr;
 ID3D11SamplerState* g_m14Samplers[2] = {};
@@ -88,6 +88,7 @@ ID3D11DepthStencilState* g_m14DepthState = nullptr;
 ID3D11RasterizerState* g_m14RasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_m14DepthTexture{0};
 std::atomic<std::uintptr_t> g_m14MainTexture{0};
+std::atomic<std::uint32_t> g_m14PacketIndex{0};
 std::atomic<std::uint32_t> g_m14DrawCount{0};
 std::atomic<std::uint32_t> g_m14FailureCount{0};
 std::atomic<HRESULT> g_m14LastResult{S_OK};
@@ -456,13 +457,16 @@ void ReleaseM14RuntimeResources()
         ReleaseM14Object(sampler);
     ReleaseM14Object(g_m14SkinView);
     ReleaseM14Object(g_m14SkinBuffer);
-    for (ID3D11Buffer*& buffer : g_m14PixelConstantBuffers)
-        ReleaseM14Object(buffer);
-    for (ID3D11Buffer*& buffer : g_m14VertexConstantBuffers)
-        ReleaseM14Object(buffer);
-    ReleaseM14Object(g_m14IndexBuffer);
+    for (std::uint32_t packet = 0; packet < g_EndfieldM14PacketCount; ++packet)
+    {
+        for (ID3D11Buffer*& buffer : g_m14PixelConstantBuffers[packet])
+            ReleaseM14Object(buffer);
+        for (ID3D11Buffer*& buffer : g_m14VertexConstantBuffers[packet])
+            ReleaseM14Object(buffer);
+        ReleaseM14Object(g_m14IndexBuffers[packet]);
+        ReleaseM14Object(g_m14VertexBuffers[packet]);
+    }
     ReleaseM14Object(g_m14DefaultVertexBuffer);
-    ReleaseM14Object(g_m14VertexBuffer);
     ReleaseM14Object(g_m14InputLayout);
     ReleaseM14Object(g_m14RuntimePixelShader);
     ReleaseM14Object(g_m14RuntimeVertexShader);
@@ -575,61 +579,50 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
         &g_m14DefaultVertexBuffer);
     if (FAILED(result))
         return result;
-    result = CreateM14ImmutableBuffer(
-        device,
-        D3D11_BIND_VERTEX_BUFFER,
-        g_EndfieldM14Vertices,
-        static_cast<UINT>(g_EndfieldM14VerticesSize),
-        &g_m14VertexBuffer);
-    if (FAILED(result))
-        return result;
-    result = CreateM14ImmutableBuffer(
-        device,
-        D3D11_BIND_INDEX_BUFFER,
-        g_EndfieldM14Indices,
-        static_cast<UINT>(g_EndfieldM14IndicesSize),
-        &g_m14IndexBuffer);
-    if (FAILED(result))
-        return result;
-
-    const std::uint8_t* vsPayloads[] = {
-        g_EndfieldM14VSCB0, g_EndfieldM14VSCB1, g_EndfieldM14VSCB2,
-        g_EndfieldM14VSCB3, g_EndfieldM14VSCB4,
-    };
-    const std::size_t vsPayloadSizes[] = {
-        g_EndfieldM14VSCB0Size, g_EndfieldM14VSCB1Size,
-        g_EndfieldM14VSCB2Size, g_EndfieldM14VSCB3Size,
-        g_EndfieldM14VSCB4Size,
-    };
-    for (std::size_t slot = 0; slot < 5; ++slot)
+    for (std::uint32_t packetIndex = 0;
+         packetIndex < g_EndfieldM14PacketCount;
+         ++packetIndex)
     {
-        result = CreateM14ConstantBuffer(
+        const EndfieldM14PacketPayload& packet =
+            g_EndfieldM14Packets[packetIndex];
+        result = CreateM14ImmutableBuffer(
             device,
-            g_EndfieldM14VSDeclaredFloat4Counts[slot],
-            vsPayloads[slot],
-            vsPayloadSizes[slot],
-            &g_m14VertexConstantBuffers[slot]);
+            D3D11_BIND_VERTEX_BUFFER,
+            packet.vertices,
+            static_cast<UINT>(packet.vertexBytes),
+            &g_m14VertexBuffers[packetIndex]);
         if (FAILED(result))
             return result;
-    }
-    const std::uint8_t* psPayloads[] = {
-        g_EndfieldM14PSCB0, g_EndfieldM14PSCB1,
-        g_EndfieldM14PSCB2, g_EndfieldM14PSCB3,
-    };
-    const std::size_t psPayloadSizes[] = {
-        g_EndfieldM14PSCB0Size, g_EndfieldM14PSCB1Size,
-        g_EndfieldM14PSCB2Size, g_EndfieldM14PSCB3Size,
-    };
-    for (std::size_t slot = 0; slot < 4; ++slot)
-    {
-        result = CreateM14ConstantBuffer(
+        result = CreateM14ImmutableBuffer(
             device,
-            g_EndfieldM14PSDeclaredFloat4Counts[slot],
-            psPayloads[slot],
-            psPayloadSizes[slot],
-            &g_m14PixelConstantBuffers[slot]);
+            D3D11_BIND_INDEX_BUFFER,
+            packet.indices,
+            static_cast<UINT>(packet.indexBytes),
+            &g_m14IndexBuffers[packetIndex]);
         if (FAILED(result))
             return result;
+        for (std::size_t slot = 0; slot < 5; ++slot)
+        {
+            result = CreateM14ConstantBuffer(
+                device,
+                g_EndfieldM14VSDeclaredFloat4Counts[slot],
+                packet.vs[slot],
+                packet.vsBytes[slot],
+                &g_m14VertexConstantBuffers[packetIndex][slot]);
+            if (FAILED(result))
+                return result;
+        }
+        for (std::size_t slot = 0; slot < 4; ++slot)
+        {
+            result = CreateM14ConstantBuffer(
+                device,
+                g_EndfieldM14PSDeclaredFloat4Counts[slot],
+                packet.ps[slot],
+                packet.psBytes[slot],
+                &g_m14PixelConstantBuffers[packetIndex][slot]);
+            if (FAILED(result))
+                return result;
+        }
     }
 
     const float zeroSkin[4] = {};
@@ -1214,8 +1207,23 @@ void UNITY_INTERFACE_API DrawM14ExactRuntime(int eventId)
     context->OMGetDepthStencilState(&oldDepthState, &oldStencilReference);
     context->RSGetState(&oldRasterizerState);
 
+    const std::uint32_t packetIndex =
+        g_m14PacketIndex.load(std::memory_order_acquire);
+    if (packetIndex >= g_EndfieldM14PacketCount)
+    {
+        ReleaseM14Object(renderDepth);
+        ReleaseM14Object(renderTargets[1]);
+        ReleaseM14Object(renderTargets[0]);
+        ReleaseM14Object(m14PixelViews[1]);
+        ReleaseM14Object(m14PixelViews[0]);
+        context->Release();
+        g_m14FailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m14LastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+    const EndfieldM14PacketPayload& packet = g_EndfieldM14Packets[packetIndex];
     ID3D11Buffer* vertexBuffers[2] = {
-        g_m14VertexBuffer,
+        g_m14VertexBuffers[packetIndex],
         g_m14DefaultVertexBuffer,
     };
     const UINT strides[2] = {g_EndfieldM14VertexStride, 0};
@@ -1223,19 +1231,22 @@ void UNITY_INTERFACE_API DrawM14ExactRuntime(int eventId)
     const FLOAT blendFactor[4] = {};
     context->IASetInputLayout(g_m14InputLayout);
     context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
-    context->IASetIndexBuffer(g_m14IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    context->IASetIndexBuffer(
+        g_m14IndexBuffers[packetIndex], DXGI_FORMAT_R16_UINT, 0);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(g_m14RuntimeVertexShader, nullptr, 0);
     context->PSSetShader(g_m14RuntimePixelShader, nullptr, 0);
-    context->VSSetConstantBuffers(0, 5, g_m14VertexConstantBuffers);
-    context->PSSetConstantBuffers(0, 4, g_m14PixelConstantBuffers);
+    context->VSSetConstantBuffers(
+        0, 5, g_m14VertexConstantBuffers[packetIndex]);
+    context->PSSetConstantBuffers(
+        0, 4, g_m14PixelConstantBuffers[packetIndex]);
     context->VSSetShaderResources(0, 1, &g_m14SkinView);
     context->PSSetShaderResources(0, 2, m14PixelViews);
     context->PSSetSamplers(0, 2, g_m14Samplers);
     context->OMSetBlendState(g_m14BlendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(g_m14DepthState, 0);
     context->RSSetState(g_m14RasterizerState);
-    context->DrawIndexed(g_EndfieldM14IndexCount, 0, 0);
+    context->DrawIndexed(packet.indexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVertexView = nullptr;
     ID3D11ShaderResourceView* nullPixelViews[2] = {};
@@ -1417,11 +1428,27 @@ EndfieldOriginalDxbcSetM14TextureResources(void* sceneDepth, void* mainTexture)
     return sceneDepth != nullptr && mainTexture != nullptr ? 1u : 0u;
 }
 
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM14PacketIndex(std::uint32_t packetIndex)
+{
+    if (packetIndex >= g_EndfieldM14PacketCount)
+        return 0u;
+    g_m14PacketIndex.store(packetIndex, std::memory_order_release);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM14PacketCount()
+{
+    return g_EndfieldM14PacketCount;
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcResetM14RuntimeState()
 {
     g_m14DepthTexture.store(0, std::memory_order_release);
     g_m14MainTexture.store(0, std::memory_order_release);
+    g_m14PacketIndex.store(0, std::memory_order_release);
     g_m14DrawCount.store(0, std::memory_order_relaxed);
     g_m14FailureCount.store(0, std::memory_order_relaxed);
     g_m14LastResult.store(S_OK, std::memory_order_relaxed);
