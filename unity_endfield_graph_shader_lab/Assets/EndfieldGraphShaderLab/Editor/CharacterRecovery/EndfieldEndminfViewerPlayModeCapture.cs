@@ -386,9 +386,9 @@ namespace EndfieldGraphShaderLabEditor
                         : "1");
             if (exactEndminfM27)
             {
-                // The exact five-target publisher owns M27 exclusively.
-                // Disable the ForwardOnly compatibility renderer so the test
-                // cannot accidentally admit a double publication.
+                // The exact five-target publisher owns the captured shared
+                // M01/M38/M27 LitEffect sequence. Disable all ForwardOnly
+                // compatibility rows so the test cannot double-publish them.
                 Environment.SetEnvironmentVariable(
                     "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT", "0");
             }

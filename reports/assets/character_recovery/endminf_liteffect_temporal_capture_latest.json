@@ -3,6 +3,8 @@
   "status": "validated",
   "sessionId": "20260826T162514Z",
   "captureRoot": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260826T162514Z",
+  "sampleCount": 38,
+  "drawCount": 157,
   "frameRange": {
     "first": 2721,
     "last": 3027
@@ -111,6 +113,7 @@
   "frames": [
     {
       "frame": 2721,
+      "phaseSeconds": 0.15,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 3,
       "fingerprintCounts": {
@@ -414,6 +417,7 @@
     },
     {
       "frame": 2729,
+      "phaseSeconds": 0.283333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 3,
       "fingerprintCounts": {
@@ -717,6 +721,7 @@
     },
     {
       "frame": 2737,
+      "phaseSeconds": 0.416666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -1112,6 +1117,7 @@
     },
     {
       "frame": 2746,
+      "phaseSeconds": 0.566666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -1691,6 +1697,7 @@
     },
     {
       "frame": 2754,
+      "phaseSeconds": 0.7,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -2270,6 +2277,7 @@
     },
     {
       "frame": 2762,
+      "phaseSeconds": 0.833333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -2849,6 +2857,7 @@
     },
     {
       "frame": 2771,
+      "phaseSeconds": 0.983333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -3428,6 +3437,7 @@
     },
     {
       "frame": 2780,
+      "phaseSeconds": 1.133333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -4007,6 +4017,7 @@
     },
     {
       "frame": 2788,
+      "phaseSeconds": 1.266666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -4586,6 +4597,7 @@
     },
     {
       "frame": 2797,
+      "phaseSeconds": 1.416666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -5165,6 +5177,7 @@
     },
     {
       "frame": 2805,
+      "phaseSeconds": 1.55,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -5744,6 +5757,7 @@
     },
     {
       "frame": 2813,
+      "phaseSeconds": 1.683333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -6323,6 +6337,7 @@
     },
     {
       "frame": 2822,
+      "phaseSeconds": 1.833333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -6902,6 +6917,7 @@
     },
     {
       "frame": 2831,
+      "phaseSeconds": 1.983333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -7481,6 +7497,7 @@
     },
     {
       "frame": 2839,
+      "phaseSeconds": 2.116666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -8060,6 +8077,7 @@
     },
     {
       "frame": 2847,
+      "phaseSeconds": 2.25,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -8639,6 +8657,7 @@
     },
     {
       "frame": 2855,
+      "phaseSeconds": 2.383333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 6,
       "fingerprintCounts": {
@@ -9218,6 +9237,7 @@
     },
     {
       "frame": 2864,
+      "phaseSeconds": 2.533333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 5,
       "fingerprintCounts": {
@@ -9705,6 +9725,7 @@
     },
     {
       "frame": 2872,
+      "phaseSeconds": 2.666666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 5,
       "fingerprintCounts": {
@@ -10192,6 +10213,7 @@
     },
     {
       "frame": 2880,
+      "phaseSeconds": 2.8,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 5,
       "fingerprintCounts": {
@@ -10679,6 +10701,7 @@
     },
     {
       "frame": 2888,
+      "phaseSeconds": 2.933333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 5,
       "fingerprintCounts": {
@@ -11166,6 +11189,7 @@
     },
     {
       "frame": 2896,
+      "phaseSeconds": 3.066666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -11561,6 +11585,7 @@
     },
     {
       "frame": 2905,
+      "phaseSeconds": 3.216666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -11956,6 +11981,7 @@
     },
     {
       "frame": 2913,
+      "phaseSeconds": 3.35,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -12351,6 +12377,7 @@
     },
     {
       "frame": 2921,
+      "phaseSeconds": 3.483333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -12746,6 +12773,7 @@
     },
     {
       "frame": 2929,
+      "phaseSeconds": 3.616666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -13141,6 +13169,7 @@
     },
     {
       "frame": 2937,
+      "phaseSeconds": 3.75,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -13536,6 +13565,7 @@
     },
     {
       "frame": 2945,
+      "phaseSeconds": 3.883333,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -13931,6 +13961,7 @@
     },
     {
       "frame": 2953,
+      "phaseSeconds": 4.016666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -14326,6 +14357,7 @@
     },
     {
       "frame": 2962,
+      "phaseSeconds": 4.166666,
       "phase": "early_m01_m38_aggregate",
       "drawCount": 4,
       "fingerprintCounts": {
@@ -14721,6 +14753,7 @@
     },
     {
       "frame": 2970,
+      "phaseSeconds": 4.3,
       "phase": "zero_transition",
       "drawCount": 0,
       "fingerprintCounts": {
@@ -14733,6 +14766,7 @@
     },
     {
       "frame": 2978,
+      "phaseSeconds": 4.433333,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -14852,6 +14886,7 @@
     },
     {
       "frame": 2987,
+      "phaseSeconds": 4.583333,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -14971,6 +15006,7 @@
     },
     {
       "frame": 2995,
+      "phaseSeconds": 4.716666,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -15090,6 +15126,7 @@
     },
     {
       "frame": 3003,
+      "phaseSeconds": 4.85,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -15209,6 +15246,7 @@
     },
     {
       "frame": 3011,
+      "phaseSeconds": 4.983333,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -15328,6 +15366,7 @@
     },
     {
       "frame": 3019,
+      "phaseSeconds": 5.116666,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {
@@ -15447,6 +15486,7 @@
     },
     {
       "frame": 3027,
+      "phaseSeconds": 5.25,
       "phase": "late_m27_single_draw",
       "drawCount": 1,
       "fingerprintCounts": {

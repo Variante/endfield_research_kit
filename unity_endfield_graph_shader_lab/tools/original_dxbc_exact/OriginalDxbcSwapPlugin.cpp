@@ -118,7 +118,8 @@ std::atomic<HRESULT> g_m13LastResult{S_OK};
 
 ID3D11VertexShader* g_m27DrawVertexShader = nullptr;
 ID3D11PixelShader* g_m27DrawPixelShader = nullptr;
-constexpr std::uint32_t kM27MaximumDrawsPerFrame = 4;
+constexpr std::uint32_t kM27MaximumDrawsPerFrame =
+    g_EndfieldM27TemporalMaximumDrawsPerFrame;
 ID3D11InputLayout* g_m27DrawInputLayouts[2] = {};
 ID3D11Buffer* g_m27DrawVertexBuffers
     [g_EndfieldM27TemporalFrameCount][kM27MaximumDrawsPerFrame] = {};

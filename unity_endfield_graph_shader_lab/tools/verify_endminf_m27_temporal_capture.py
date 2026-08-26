@@ -35,8 +35,12 @@ SEQUENCE_FRAMES = (
     2905, 2913, 2921, 2929, 2937, 2945, 2953, 2962,
     2970, 2978, 2987, 2995, 3003, 3011, 3019, 3027,
 )
-PHASE_ANCHOR_FRAME = 2905
-PHASE_ANCHOR_SECONDS = 4.50
+# The no-frame-generation dense comparison pins the 1,080-index burst peak to
+# body phase 4.433333 s (source frame 381). Presented-frame deltas within this
+# one capture session remain valid; the older frame-2905/4.50 assignment was a
+# provisional owner-local label and shifted the whole replay 1.2167 s late.
+PHASE_ANCHOR_FRAME = 2978
+PHASE_ANCHOR_SECONDS = 4.433333
 REQUIRED_CONSTANTS = {
     (0, 0): 82,
     (0, 1): 20,

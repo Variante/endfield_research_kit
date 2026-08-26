@@ -32,6 +32,8 @@ class M27TemporalCaptureTests(unittest.TestCase):
         self.assertEqual(peak["drawCount"], 1)
         self.assertEqual(peak["draws"][0]["indexCount"], 1080)
         self.assertEqual(peak["binding"]["vertexStride"], 60)
+        self.assertAlmostEqual(peak["phaseSeconds"], 4.433333, places=6)
+        self.assertAlmostEqual(early["phaseSeconds"], 3.216666, places=6)
 
     def test_transition_sample_preserves_zero_m27_draws(self) -> None:
         transition = next(

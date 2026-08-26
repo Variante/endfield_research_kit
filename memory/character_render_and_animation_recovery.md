@@ -1259,7 +1259,8 @@ than holding the old peak checkpoint. A generated 16-packet/39-draw payload
 retains each packet's effective vertex/index slices, separate VS/PS constants,
 the retail 60- and 68-byte input layouts, the captured t0-t3 BC5/BC7 resources,
 the shared black t4/t5 fallback, and the explicit zero-draw packet. The actor
-overview clock owns packet selection through the captured 4.50-6.53-second
+overview clock owns packet selection through the corrected captured
+3.2167-5.2500-second
 envelope; it deliberately outlives AnimeStudio's approximate ParticleSystem
 lifetime. A five-phase D3D11 Viewer run covering rise, zero draw, 1,080-index
 peak, and decay publishes M27 in every requested frame, reports nonzero native
@@ -1358,6 +1359,38 @@ of freezing one geometry packet. The measured no-frame-generation A/B now
 admits this path in the canonical Endminf profile; no further M14 graphics
 capture is currently needed.
 
+The later continuous session `20260826T162514Z` adds nine M14 packets with
+1,872, 2,898, 2,898, 2,874, 2,628, 2,328, 2,058, 1,782, and 1,584 indices.
+Their provisional phase labels inherited M27's stale frame-2905 anchor and were
+rejected by a retail A/B: replay at 5.72-6.80 seconds worsened every UI-free
+metric. The authoritative no-frame-generation peak instead pins the session's
+frame 2978 to body phase 4.433333 seconds/source frame 381. Presented-frame
+deltas place the nine packets at 4.433333-5.516666 seconds, interleaving them
+with the older coarse checkpoints; the dense packet owns the exact duplicate
+at 5.25 seconds. The same correction reanchors M27 frame 2905 from 4.50 to
+3.216666 seconds and its 1,080-index frame 2978 to 4.433333 seconds. The
+zero-draw frame 2970 is now accepted as an exact successful callback rather
+than misclassified as a failed submission. A synchronized 21-frame D3D11 run
+validates all M14/M27 callbacks, preserves the grey background and portrait
+with no foreground UI, and improves baseline effect-ROI MAE from 42.9247 to
+42.4441. The stale-label render was microscopically lower at 42.4235, but that
+accidental metric difference does not override the direct peak registration.
+
+The same continuous session retains the complete shared LitEffect shader-pair
+sequence, not only the owner previously labelled M27: 38 phase packets contain
+157 M01/M38/M27 draws from 0.15 through 5.25 seconds, with at most six draws in
+one packet. The generated native payload now submits every retained draw and
+the managed validator checks the exact per-frame counter delta, including the
+intentional zero-draw packet. D3D11 probes at 0.15, 0.50, 1.00, 2.00, 2.80,
+3.00, 3.2167, 4.30, 4.4333, and 5.25 seconds validate the 3/4/5/6/0/1-draw
+families without drift. The 21-frame UI-free dense render remains byte-identical
+to the prior M27-only replay and therefore keeps ROI MAE 34.3644, effect-ROI
+MAE 42.4441, and effect temporal-delta MAE 30.8086. This is a stronger exact
+transport boundary but not a claimed visual improvement: the additional rows
+are currently hidden or rejected by the recovered depth/composite path. All
+validation renders include the grey CharInfo gameplay field and actor portrait
+and exclude the foreground UI overlay.
+
 The canonical Viewer capture now retains the physical SphereOutside-resolved
 grey CharInfo field and the actor-specific background portrait while excluding
 all foreground UI. A one-frame 3840x2160 probe at requested 4.4667 seconds
@@ -1368,7 +1401,7 @@ the dominant crystal/VFX gap. The source-backed radial/chromatic kernel is
 already stronger than retail when sampled at its actual 4.4667-second post
 peak; do not increase blur or bloom to compensate. On the 21-frame UI-free
 no-frame-generation window, enabling the already validated exact M13 and
-seven-packet M14 transports improves mean ROI MAE from 34.6230 to 34.3530,
+then-seven-packet M14 transports improved mean ROI MAE from 34.6230 to 34.3530,
 effect-ROI MAE from 42.9247 to 42.4235, and effect temporal-delta MAE from
 30.8982 to 30.7600. They are therefore part of the canonical Endminf
 reproduction profile. Their remaining coarse packet cadence is not a reason to

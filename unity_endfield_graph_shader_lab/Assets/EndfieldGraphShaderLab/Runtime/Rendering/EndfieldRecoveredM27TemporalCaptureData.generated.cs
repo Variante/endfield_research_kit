@@ -4,11 +4,11 @@ namespace EndfieldGraphShaderLab
     internal static class EndfieldRecoveredM27TemporalCaptureData
     {
         internal const string SourceSession = "20260826T162514Z";
-        internal const string SourceReportSha256 = "7e27593ced728931dad6737ab5f2cd2204959f4a47363ff000eca59aff66069a";
-        internal const int PacketCount = 16;
-        internal const int TotalDrawCount = 39;
-        internal static readonly int[] SourceFrames = { 2905, 2913, 2921, 2929, 2937, 2945, 2953, 2962, 2970, 2978, 2987, 2995, 3003, 3011, 3019, 3027 };
-        internal static readonly float[] PhaseSeconds = { 4.500000f, 4.633333f, 4.766667f, 4.900000f, 5.033333f, 5.166667f, 5.300000f, 5.450000f, 5.583333f, 5.716667f, 5.866667f, 6.000000f, 6.133333f, 6.266667f, 6.400000f, 6.533333f };
-        internal static readonly int[] DrawCounts = { 4, 4, 4, 4, 4, 4, 4, 4, 0, 1, 1, 1, 1, 1, 1, 1 };
+        internal const string SourceReportSha256 = "3f66f71acdc1005c817bf8df2ce384232355df4c66479e896d5e90b0dadb7aa0";
+        internal const int PacketCount = 38;
+        internal const int TotalDrawCount = 157;
+        internal static readonly int[] SourceFrames = { 2721, 2729, 2737, 2746, 2754, 2762, 2771, 2780, 2788, 2797, 2805, 2813, 2822, 2831, 2839, 2847, 2855, 2864, 2872, 2880, 2888, 2896, 2905, 2913, 2921, 2929, 2937, 2945, 2953, 2962, 2970, 2978, 2987, 2995, 3003, 3011, 3019, 3027 };
+        internal static readonly float[] PhaseSeconds = { 0.150000f, 0.283333f, 0.416666f, 0.566666f, 0.700000f, 0.833333f, 0.983333f, 1.133333f, 1.266666f, 1.416666f, 1.550000f, 1.683333f, 1.833333f, 1.983333f, 2.116666f, 2.250000f, 2.383333f, 2.533333f, 2.666666f, 2.800000f, 2.933333f, 3.066666f, 3.216666f, 3.350000f, 3.483333f, 3.616666f, 3.750000f, 3.883333f, 4.016666f, 4.166666f, 4.300000f, 4.433333f, 4.583333f, 4.716666f, 4.850000f, 4.983333f, 5.116666f, 5.250000f };
+        internal static readonly int[] DrawCounts = { 3, 3, 4, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 1, 1, 1, 1, 1, 1, 1 };
     }
 }

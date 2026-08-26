@@ -33,6 +33,10 @@ class M14LateTemporalCaptureTests(unittest.TestCase):
             row["geometry"]["uniqueLargeExpandedQuadStream"]
             for row in self.report["frames"]
         ))
+        self.assertAlmostEqual(
+            self.report["frames"][0]["phaseSeconds"], 4.433333, places=6)
+        self.assertAlmostEqual(
+            self.report["frames"][-1]["phaseSeconds"], 5.516666, places=6)
 
     def test_every_packet_has_all_nine_constant_buffers_and_exact_ia_hashes(self) -> None:
         for row in self.report["frames"]:
