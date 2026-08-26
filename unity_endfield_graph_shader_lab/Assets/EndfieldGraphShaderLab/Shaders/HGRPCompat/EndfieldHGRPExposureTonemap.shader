@@ -117,8 +117,9 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
                 float effectivePower)
             {
                 // Direct translation of shipped UberPost DXBC fragment
-                // 524235fff5fcaad4 (RADIAL_BLUR_CHROMATIC_ABERRATION),
-                // specialized to Endminf's two active components. Both exact
+                // 3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b
+                // (BLOOM + RADIAL_BLUR_CHROMATIC_ABERRATION), specialized to
+                // Endminf's two active components. Both exact
                 // serialized _averageSteps values are zero, so the DXBC keeps
                 // the powered radial vector unnormalized.
                 float2 delta = uv - center;
