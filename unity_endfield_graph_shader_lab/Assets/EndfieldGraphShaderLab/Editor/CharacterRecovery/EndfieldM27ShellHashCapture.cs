@@ -50,8 +50,13 @@ namespace EndfieldGraphShaderLabEditor
                 uint vertexSwaps = Native.GetVertexSwapCount();
                 uint pixelSwaps = Native.GetPixelSwapCount();
                 uint failures = Native.GetFailureCount();
-                if (matches != 2 || vertexSwaps != 1 || pixelSwaps != 1 ||
-                    failures != 0)
+                // Asset import can request the same reserved variant more
+                // than once in a process (for example after a script reload).
+                // Validate balanced, complete VS/PS pairs instead of assuming
+                // Unity will compile exactly one pair per preparation call.
+                if (matches < 2 || vertexSwaps == 0 ||
+                    vertexSwaps != pixelSwaps ||
+                    matches != vertexSwaps + pixelSwaps || failures != 0)
                 {
                     throw new InvalidOperationException(
                         "Exact M27 runtime variant preparation failed: " +
@@ -60,7 +65,8 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 Debug.Log(
                     "Prepared exact Endminf M27 runtime variant: " +
-                    "stage+SHA substitutions=2, VS=10/9, PS=10/5.");
+                    $"stage+SHA substitutions={matches}, " +
+                    $"balancedPairs={vertexSwaps}, VS=10/9, PS=10/5.");
             }
             finally
             {

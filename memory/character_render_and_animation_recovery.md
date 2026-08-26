@@ -1209,6 +1209,21 @@ layout and pass the same source-index/UV and constant-range gates. The report is
 its verifier and three focused regressions pass. No further M27 material,
 resolver, geometry, or temporal game capture is currently needed.
 
+The complete M27 sequence now replays through the native D3D11 owner rather
+than holding the old peak checkpoint. A generated 16-packet/39-draw payload
+retains each packet's effective vertex/index slices, separate VS/PS constants,
+the retail 60- and 68-byte input layouts, the captured t0-t3 BC5/BC7 resources,
+the shared black t4/t5 fallback, and the explicit zero-draw packet. The actor
+overview clock owns packet selection through the captured 4.50-6.53-second
+envelope; it deliberately outlives AnimeStudio's approximate ParticleSystem
+lifetime. A five-phase D3D11 Viewer run covering rise, zero draw, 1,080-index
+peak, and decay publishes M27 in every requested frame, reports nonzero native
+draws, zero failures, and `S_OK`. The zero packet byte-identically preserves
+the no-M27 image, while the rise and peak change only their expected rendered
+samples. The decayed tail remains a valid but pixel-neutral publication at the
+sampled presentation frame. WARP validates both retail input layouts, and the
+runtime fails closed with a resource-stage code if creation or binding drifts.
+
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
 mip into a one-subresource staging texture, and records its complete descriptor.
@@ -1268,11 +1283,10 @@ registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-M13 and M14 packet capture/admission are closed, M27's exact peak packet is
-validated in the combined Unity frame, and the M27 temporal IA packet set is
-now capture-complete. Generate and replay the 16-sample/39-draw M27 sequence,
-measure the complete crystal/VFX result against the no-frame-generation
-reference, then return to body, hair, and cloth polish.
+M13, M14, and M27 packet capture/admission and temporal native replay are now
+closed. Measure the complete crystal/VFX sequence against the
+no-frame-generation reference, close any remaining non-M27 effect-shape or
+post differences, then return to body, hair, and cloth polish.
 
 ## Main animation gap
 
