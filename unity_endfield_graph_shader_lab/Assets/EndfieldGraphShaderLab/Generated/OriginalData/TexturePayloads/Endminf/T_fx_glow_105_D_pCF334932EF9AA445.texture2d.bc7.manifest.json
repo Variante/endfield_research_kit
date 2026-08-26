@@ -1,0 +1,106 @@
+{
+  "schema": "animestudio.texture2d-native-payload.v1",
+  "type": "Texture2D",
+  "name": "T_fx_glow_105_D",
+  "pathId": -3516386400929143739,
+  "sourceFile": "CAB-c0944558649283ebb964e4f3fb2a17a8",
+  "sourceOriginalPath": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\FC784A3D097236EF3B3E84F44E1B28D2.chk",
+  "sourceOffset": 847897551,
+  "container": "",
+  "width": 256,
+  "height": 128,
+  "completeImageSize": 43728,
+  "mipsStripped": 0,
+  "format": "BC7",
+  "formatValue": 25,
+  "mipMap": false,
+  "mipCount": 9,
+  "imageCount": 1,
+  "textureDimension": 2,
+  "colorSpace": 1,
+  "textureSettings": {
+    "filterMode": 1,
+    "aniso": 1,
+    "mipBias": 0.0,
+    "wrapU": 0,
+    "wrapV": 0,
+    "wrapW": 0
+  },
+  "payload": {
+    "file": "T_fx_glow_105_D_pCF334932EF9AA445.texture2d.bc7",
+    "bytes": 43728,
+    "sha256": "FFD3A6F707D0D0A6C92D3012BEC11A41B59AB4949E377558F426EAD4AD22D672",
+    "layout": "unity_texture2d_resource_mip_chain_largest_to_smallest",
+    "layoutValidated": true,
+    "mipDimensions": [
+      {
+        "mip": 0,
+        "width": 256,
+        "height": 128,
+        "offset": 0,
+        "byteSize": 32768
+      },
+      {
+        "mip": 1,
+        "width": 128,
+        "height": 64,
+        "offset": 32768,
+        "byteSize": 8192
+      },
+      {
+        "mip": 2,
+        "width": 64,
+        "height": 32,
+        "offset": 40960,
+        "byteSize": 2048
+      },
+      {
+        "mip": 3,
+        "width": 32,
+        "height": 16,
+        "offset": 43008,
+        "byteSize": 512
+      },
+      {
+        "mip": 4,
+        "width": 16,
+        "height": 8,
+        "offset": 43520,
+        "byteSize": 128
+      },
+      {
+        "mip": 5,
+        "width": 8,
+        "height": 4,
+        "offset": 43648,
+        "byteSize": 32
+      },
+      {
+        "mip": 6,
+        "width": 4,
+        "height": 2,
+        "offset": 43680,
+        "byteSize": 16
+      },
+      {
+        "mip": 7,
+        "width": 2,
+        "height": 1,
+        "offset": 43696,
+        "byteSize": 16
+      },
+      {
+        "mip": 8,
+        "width": 1,
+        "height": 1,
+        "offset": 43712,
+        "byteSize": 16
+      }
+    ]
+  },
+  "streamData": {
+    "offset": 0,
+    "size": 43728,
+    "path": "archive:/CAB-c0944558649283ebb964e4f3fb2a17a8/CAB-c0944558649283ebb964e4f3fb2a17a8.resS"
+  }
+}

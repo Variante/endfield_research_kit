@@ -118,7 +118,15 @@ complete frame without a client fault.
   means remain 1.5-2.3 mm and 0.86-1.07 degrees. The generated comparison is
   `reports/assets/character_recovery/endminf_secondary_dynamics_trajectory_comparison.json`.
   This closes the retail hair/cape shape oracle for the captured sequence, but
-  does not by itself certify the recovered solver. Deterministic Unity capture
+  does not by itself certify the recovered solver. The generated Endminf actor
+  now uses that oracle directly through a bounded replay owner: 40 samples and
+  74 unique hair/cape bones are interpolated in root space after Animator
+  evaluation, reset on each Overview playback generation, and clamped outside
+  the captured 0-11.233-second span. It fails closed on stale data, missing
+  bones, or simultaneous experimental-solver writeback. This removes guessed
+  entrance solver history from the canonical captured sequence while remaining
+  explicit replay evidence rather than a general BeyondBoneCloth solve.
+  Deterministic Unity capture
   also hash-binds the owner contract and verifies Endminf's 4 cloth owners, 18
   root references, and 10 collider owners against the instantiated prefab.
   The refreshed three-actor static solver-input contract now maps all 333
@@ -985,8 +993,15 @@ remain unchanged. A count-matched Unity sample at 4.55 seconds has 300 M14
 particles versus retail's 285, while the earlier 4.7167 comparison had 466 and
 was too late for a shape-density judgment. Remaining actor-only contrast is a
 presentation/compositing boundary, not evidence for resizing, retiming,
-attenuating, or disabling M14. No further M14 or secondary-dynamics capture is
-needed for this correction.
+attenuating, or disabling M14. M14's exact AssetMap source now also supplies the
+complete native `T_fx_glow_105_D` BC7 payload: 256x128, nine authored mips,
+43,728 bytes, SHA-256
+`FFD3A6F707D0D0A6C92D3012BEC11A41B59AB4949E377558F426EAD4AD22D672`.
+The importer validates every mip offset/size and the reloaded Unity raw bytes
+before binding `_MainTex`, instead of allowing Unity to regenerate lower mips
+from the decoded PNG. Focused positive/negative verifier tests and the Unity
+material rebuild pass. No further M14 or secondary-dynamics capture is needed
+for these corrections.
 
 Exact-build session
 `scratch/reverse_engineering/endfield_capture/20260825T230225Z` is the complete

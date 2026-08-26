@@ -1,0 +1,678 @@
+{
+  "schema": "endfield.endminf-m14-native-mip-delta.v1",
+  "status": "source_closed_native_mip_effect_measured",
+  "scope": "M14 only; deterministic raised-hand frames 3-8",
+  "sourceTexture": {
+    "name": "T_fx_glow_105_D",
+    "pathId": -3516386400929143739,
+    "format": "BC7",
+    "width": 256,
+    "height": 128,
+    "mipCount": 9,
+    "payloadBytes": 43728,
+    "payloadSha256": "ffd3a6f707d0d0a6c92d3012bec11a41b59ab4949e377558f426ead4ad22d672"
+  },
+  "method": "The old and native full cohorts are each differenced against an M14-excluded cohort. Excluded outputs are required byte-identical across builds before attributing any full-frame change to the mip chain.",
+  "rows": [
+    {
+      "frame": 3,
+      "sampleTime": 4.483333110809326,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 60,
+        "changedBytes": 239,
+        "rgbAbsoluteByteDelta": 15645
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 60,
+        "changedBytes": 240,
+        "rgbAbsoluteByteDelta": 15127
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 38,
+        "changedBytes": 118,
+        "rgbAbsoluteByteDelta": 5674
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.483333110809326,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 60,
+        "changedBytes": 239,
+        "rgbAbsoluteByteDelta": 15395
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 60,
+        "changedBytes": 240,
+        "rgbAbsoluteByteDelta": 15109
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 38,
+        "changedBytes": 120,
+        "rgbAbsoluteByteDelta": 5826
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.483333110809326,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 63,
+        "changedBytes": 374,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 63,
+        "changedBytes": 374,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 41,
+        "changedBytes": 127,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.483333110809326,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 441345,
+        "changedBytes": 756041,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 441404,
+        "changedBytes": 756138,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 758,
+        "changedBytes": 877,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 3,
+      "sampleTime": 4.483333110809326,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 14515,
+        "changedBytes": 15941,
+        "rgbAbsoluteByteDelta": 40380
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 14517,
+        "changedBytes": 15936,
+        "rgbAbsoluteByteDelta": 40331
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 67,
+        "changedBytes": 73,
+        "rgbAbsoluteByteDelta": 87
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.5,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 154,
+        "changedBytes": 580,
+        "rgbAbsoluteByteDelta": 38346
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 154,
+        "changedBytes": 581,
+        "rgbAbsoluteByteDelta": 38338
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 85,
+        "changedBytes": 254,
+        "rgbAbsoluteByteDelta": 12474
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.5,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 154,
+        "changedBytes": 592,
+        "rgbAbsoluteByteDelta": 39417
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 154,
+        "changedBytes": 592,
+        "rgbAbsoluteByteDelta": 41433
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 85,
+        "changedBytes": 264,
+        "rgbAbsoluteByteDelta": 13196
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.5,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 144,
+        "changedBytes": 848,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 144,
+        "changedBytes": 848,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 80,
+        "changedBytes": 260,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.5,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 506395,
+        "changedBytes": 1118702,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 506398,
+        "changedBytes": 1118786,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 5532,
+        "changedBytes": 6166,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 4,
+      "sampleTime": 4.5,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 36026,
+        "changedBytes": 42036,
+        "rgbAbsoluteByteDelta": 111311
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 36098,
+        "changedBytes": 42131,
+        "rgbAbsoluteByteDelta": 111524
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 286,
+        "changedBytes": 331,
+        "rgbAbsoluteByteDelta": 471
+      }
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.550000190734863,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 738,
+        "changedBytes": 2847,
+        "rgbAbsoluteByteDelta": 182368
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 738,
+        "changedBytes": 2837,
+        "rgbAbsoluteByteDelta": 186521
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 428,
+        "changedBytes": 1337,
+        "rgbAbsoluteByteDelta": 66165
+      }
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.550000190734863,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 738,
+        "changedBytes": 2859,
+        "rgbAbsoluteByteDelta": 181616
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 738,
+        "changedBytes": 2852,
+        "rgbAbsoluteByteDelta": 182109
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 427,
+        "changedBytes": 1328,
+        "rgbAbsoluteByteDelta": 67097
+      }
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.550000190734863,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 519,
+        "changedBytes": 3070,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 519,
+        "changedBytes": 3071,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 366,
+        "changedBytes": 1231,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.550000190734863,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 518119,
+        "changedBytes": 1786958,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 518164,
+        "changedBytes": 1793474,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 471924,
+        "changedBytes": 964055,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 5,
+      "sampleTime": 4.550000190734863,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 250720,
+        "changedBytes": 322085,
+        "rgbAbsoluteByteDelta": 814720
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 255478,
+        "changedBytes": 328294,
+        "rgbAbsoluteByteDelta": 827254
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 11678,
+        "changedBytes": 12948,
+        "rgbAbsoluteByteDelta": 15462
+      }
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 2104,
+        "changedBytes": 8291,
+        "rgbAbsoluteByteDelta": 523456
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 2104,
+        "changedBytes": 8290,
+        "rgbAbsoluteByteDelta": 526509
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 1201,
+        "changedBytes": 4050,
+        "rgbAbsoluteByteDelta": 206353
+      }
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 2104,
+        "changedBytes": 8296,
+        "rgbAbsoluteByteDelta": 524006
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 2104,
+        "changedBytes": 8297,
+        "rgbAbsoluteByteDelta": 528557
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 1201,
+        "changedBytes": 3991,
+        "rgbAbsoluteByteDelta": 205181
+      }
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 1381,
+        "changedBytes": 8213,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 1380,
+        "changedBytes": 8211,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 1034,
+        "changedBytes": 3596,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 518399,
+        "changedBytes": 2484145,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 518399,
+        "changedBytes": 2495995,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 514037,
+        "changedBytes": 1448239,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 6,
+      "sampleTime": 4.616666793823242,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 742771,
+        "changedBytes": 1100092,
+        "rgbAbsoluteByteDelta": 3354349
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 754548,
+        "changedBytes": 1119889,
+        "rgbAbsoluteByteDelta": 3407885
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 47289,
+        "changedBytes": 54298,
+        "rgbAbsoluteByteDelta": 62462
+      }
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.699999809265137,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 4101,
+        "changedBytes": 16286,
+        "rgbAbsoluteByteDelta": 1055942
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 4101,
+        "changedBytes": 16285,
+        "rgbAbsoluteByteDelta": 1054441
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 2242,
+        "changedBytes": 7772,
+        "rgbAbsoluteByteDelta": 407921
+      }
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.699999809265137,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 4101,
+        "changedBytes": 16294,
+        "rgbAbsoluteByteDelta": 1078709
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 4101,
+        "changedBytes": 16296,
+        "rgbAbsoluteByteDelta": 1075448
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 2242,
+        "changedBytes": 7697,
+        "rgbAbsoluteByteDelta": 402765
+      }
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.699999809265137,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 2395,
+        "changedBytes": 14280,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 2393,
+        "changedBytes": 14262,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 1817,
+        "changedBytes": 6641,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.699999809265137,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 518394,
+        "changedBytes": 2817530,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 518394,
+        "changedBytes": 2822927,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 517614,
+        "changedBytes": 1597921,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 7,
+      "sampleTime": 4.699999809265137,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 1282846,
+        "changedBytes": 2189206,
+        "rgbAbsoluteByteDelta": 8748493
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 1298165,
+        "changedBytes": 2223749,
+        "rgbAbsoluteByteDelta": 8928136
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 132992,
+        "changedBytes": 164465,
+        "rgbAbsoluteByteDelta": 195729
+      }
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.7166666984558105,
+      "stage": "before_temporal",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 4373,
+        "changedBytes": 17394,
+        "rgbAbsoluteByteDelta": 1113043
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 4373,
+        "changedBytes": 17398,
+        "rgbAbsoluteByteDelta": 1110722
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 2427,
+        "changedBytes": 8376,
+        "rgbAbsoluteByteDelta": 442785
+      }
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.7166666984558105,
+      "stage": "after_temporal_bloom_input",
+      "graphicsFormat": "B10G11R11_UFloatPack32",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 4373,
+        "changedBytes": 17382,
+        "rgbAbsoluteByteDelta": 1134452
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 4373,
+        "changedBytes": 17394,
+        "rgbAbsoluteByteDelta": 1136417
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 2423,
+        "changedBytes": 8296,
+        "rgbAbsoluteByteDelta": 437209
+      }
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.7166666984558105,
+      "stage": "bloom_prefilter_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 2587,
+        "changedBytes": 15407,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 2585,
+        "changedBytes": 15401,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 1986,
+        "changedBytes": 7270,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.7166666984558105,
+      "stage": "bloom_reconstructed_mip0",
+      "graphicsFormat": "R16G16B16A16_SFloat",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 518395,
+        "changedBytes": 2827685,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 518395,
+        "changedBytes": 2834743,
+        "rgbAbsoluteByteDelta": 0
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 517872,
+        "changedBytes": 1627851,
+        "rgbAbsoluteByteDelta": 0
+      }
+    },
+    {
+      "frame": 8,
+      "sampleTime": 4.7166666984558105,
+      "stage": "final_uber",
+      "graphicsFormat": "R8G8B8A8_UNorm",
+      "negativeControlByteIdentical": true,
+      "decodedPngM14Contribution": {
+        "changedPixels": 1298700,
+        "changedBytes": 2219593,
+        "rgbAbsoluteByteDelta": 9160757
+      },
+      "nativeMipM14Contribution": {
+        "changedPixels": 1317136,
+        "changedBytes": 2263342,
+        "rgbAbsoluteByteDelta": 9372971
+      },
+      "decodedPngToNativeMipFullFrame": {
+        "changedPixels": 158348,
+        "changedBytes": 200445,
+        "rgbAbsoluteByteDelta": 234922
+      }
+    }
+  ]
+}
