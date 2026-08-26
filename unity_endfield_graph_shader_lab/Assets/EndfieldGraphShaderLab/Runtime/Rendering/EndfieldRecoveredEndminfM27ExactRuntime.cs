@@ -6,7 +6,9 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Exact direct-D3D11 transport for the captured Endminf M27 HGBuffer draw.
+    /// Exact direct-D3D11 transport for the captured Endminf M01/M38/M27
+    /// LitEffect HGBuffer sequence. Native entry-point names retain the legacy
+    /// M27 ABI label.
     /// It preserves the retail shader's separate VS/PS constant-buffer and SRV
     /// namespaces, which Unity's shared material shell cannot represent.
     /// </summary>
@@ -25,6 +27,7 @@ namespace EndfieldGraphShaderLab
         private static bool loggedValidation;
         private static bool loggedFailure;
         private static int selectedPacket = -1;
+        private static uint validatedDrawCount;
         private static float overviewEpoch = float.NaN;
 
         public static bool Requested => string.Equals(
@@ -62,6 +65,7 @@ namespace EndfieldGraphShaderLab
                             "native M27 packet count does not match generated data");
                     }
                     selectedPacket = -1;
+                    validatedDrawCount = 0;
                     overviewEpoch = float.NaN;
                     prepared = true;
                 }
@@ -185,8 +189,11 @@ namespace EndfieldGraphShaderLab
             if (!loggedActivation)
             {
                 Debug.Log(
-                    "Recovered exact Endminf M27 native HGBuffer draw submitted: " +
-                    "16 phase packets, five MRTs, capture 20260826T162514Z.");
+                    "Recovered exact Endminf LitEffect native HGBuffer draw submitted: " +
+                    EndfieldRecoveredM27TemporalCaptureData.PacketCount +
+                    " phase packets, " +
+                    EndfieldRecoveredM27TemporalCaptureData.TotalDrawCount +
+                    " draws, five MRTs, capture 20260826T162514Z.");
                 loggedActivation = true;
             }
             return true;
@@ -205,19 +212,35 @@ namespace EndfieldGraphShaderLab
                 uint failures = Native.GetM27DrawFailureCount();
                 int result = Native.GetM27DrawLastResult();
                 uint stage = Native.GetM27DrawFailureStage();
-                if (draws == 0 || failures != 0 || result < 0)
+                int expectedPacketDraws = selectedPacket >= 0 &&
+                    selectedPacket < EndfieldRecoveredM27TemporalCaptureData.DrawCounts.Length
+                        ? EndfieldRecoveredM27TemporalCaptureData.DrawCounts[selectedPacket]
+                        : -1;
+                uint submittedDraws = draws >= validatedDrawCount
+                    ? draws - validatedDrawCount
+                    : uint.MaxValue;
+                // Frame 2970 is an intentional zero-draw packet. A callback
+                // that reports S_OK with no failures is exact evidence for
+                // that transition, not a failed native submission.
+                if (expectedPacketDraws < 0 ||
+                    submittedDraws != (uint)expectedPacketDraws ||
+                    failures != 0 || result < 0)
                 {
                     validationFailure = "native M27 result drifted: draws=" +
                         draws + ", failures=" + failures + ", hresult=0x" +
                         unchecked((uint)result).ToString("x8") +
-                        ", stage=" + stage;
+                        ", stage=" + stage +
+                        ", previousValidatedDraws=" + validatedDrawCount +
+                        ", submittedDraws=" + submittedDraws +
+                        ", expectedPacketDraws=" + expectedPacketDraws;
                     return Fail(validationFailure);
                 }
+                validatedDrawCount = draws;
                 if (!loggedValidation)
                 {
                     Debug.Log(
-                        "Recovered exact Endminf M27 native draw validated: " +
-                        "draw count is nonzero and the callback reported S_OK.");
+                        "Recovered exact Endminf LitEffect native draw validated: " +
+                        "packet draw contract and callback result are valid.");
                     loggedValidation = true;
                 }
                 return true;

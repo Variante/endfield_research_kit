@@ -9,7 +9,7 @@
   "frames": [
     {
       "frame": 2905,
-      "phaseSeconds": 4.5,
+      "phaseSeconds": 3.216666,
       "drawCount": 4,
       "metadataSha256": "aac09fde522b803308a54067671a30eee9676874b9d841c2375110448ae505be",
       "binding": {
@@ -329,7 +329,7 @@
     },
     {
       "frame": 2913,
-      "phaseSeconds": 4.633333,
+      "phaseSeconds": 3.35,
       "drawCount": 4,
       "metadataSha256": "249478e9dc58439a5b118e4e588c361525137f9fcee0c69b3a9bfd443dad4076",
       "binding": {
@@ -649,7 +649,7 @@
     },
     {
       "frame": 2921,
-      "phaseSeconds": 4.766667,
+      "phaseSeconds": 3.483333,
       "drawCount": 4,
       "metadataSha256": "cc5f5d2b573781d5a281fcf331d3fc0c32719e5a493a1b894556725fabcac544",
       "binding": {
@@ -969,7 +969,7 @@
     },
     {
       "frame": 2929,
-      "phaseSeconds": 4.9,
+      "phaseSeconds": 3.616666,
       "drawCount": 4,
       "metadataSha256": "17fc242539acef637f4ed117bfcb0c2b7fb5401ff7c0dcce909c50d39fb0958f",
       "binding": {
@@ -1289,7 +1289,7 @@
     },
     {
       "frame": 2937,
-      "phaseSeconds": 5.033333,
+      "phaseSeconds": 3.75,
       "drawCount": 4,
       "metadataSha256": "a81841d5e0ebcdde9446af58c19a66cbba05d18384264a0cb48814defc43828a",
       "binding": {
@@ -1609,7 +1609,7 @@
     },
     {
       "frame": 2945,
-      "phaseSeconds": 5.166667,
+      "phaseSeconds": 3.883333,
       "drawCount": 4,
       "metadataSha256": "551c2b550f346c746ee9226085976695c48c3d5be70d37a8fc72dc7de79d287b",
       "binding": {
@@ -1929,7 +1929,7 @@
     },
     {
       "frame": 2953,
-      "phaseSeconds": 5.3,
+      "phaseSeconds": 4.016666,
       "drawCount": 4,
       "metadataSha256": "e6f3ddc58810f43ba14b4bfacf5b2ca3368c6bbab02f9982d288776e4a2e6939",
       "binding": {
@@ -2249,7 +2249,7 @@
     },
     {
       "frame": 2962,
-      "phaseSeconds": 5.45,
+      "phaseSeconds": 4.166666,
       "drawCount": 4,
       "metadataSha256": "99d8e2a5276ffcde2237d66d781aed032f297e5a7f796d755168ddb9c82dbe3c",
       "binding": {
@@ -2569,7 +2569,7 @@
     },
     {
       "frame": 2970,
-      "phaseSeconds": 5.583333,
+      "phaseSeconds": 4.3,
       "drawCount": 0,
       "metadataSha256": "31c85b7a14ff5bdf00ef29a8b7dcd98da612782ccef1d091e4eeeeaf80e49113",
       "binding": null,
@@ -2577,7 +2577,7 @@
     },
     {
       "frame": 2978,
-      "phaseSeconds": 5.716667,
+      "phaseSeconds": 4.433333,
       "drawCount": 1,
       "metadataSha256": "b4c130237803ea9c442409ab35412bbfc2494d2a5c0b7d912f8977f61ea6c6e0",
       "binding": {
@@ -2669,7 +2669,7 @@
     },
     {
       "frame": 2987,
-      "phaseSeconds": 5.866667,
+      "phaseSeconds": 4.583333,
       "drawCount": 1,
       "metadataSha256": "e07af84fffc9f4de0f4ea5db22f0c96c2e0d1be3db1fb5ed5b292b126f3f7e13",
       "binding": {
@@ -2761,7 +2761,7 @@
     },
     {
       "frame": 2995,
-      "phaseSeconds": 6.0,
+      "phaseSeconds": 4.716666,
       "drawCount": 1,
       "metadataSha256": "5318634cc44aa4ff609ed44904c8ca0bb3405f62604c60f5e96834a61d276b09",
       "binding": {
@@ -2853,7 +2853,7 @@
     },
     {
       "frame": 3003,
-      "phaseSeconds": 6.133333,
+      "phaseSeconds": 4.85,
       "drawCount": 1,
       "metadataSha256": "e400f26c3abbfef4a2e8876661381878f1f94b422b7ef6bde338303c3f7ae2d9",
       "binding": {
@@ -2945,7 +2945,7 @@
     },
     {
       "frame": 3011,
-      "phaseSeconds": 6.266667,
+      "phaseSeconds": 4.983333,
       "drawCount": 1,
       "metadataSha256": "283d7d1abc5cd10488802349117e3295ec452ee3a300f9cad8e2a6fb2674dec8",
       "binding": {
@@ -3037,7 +3037,7 @@
     },
     {
       "frame": 3019,
-      "phaseSeconds": 6.4,
+      "phaseSeconds": 5.116666,
       "drawCount": 1,
       "metadataSha256": "daebb4c20c03b64020199b67bd4d765b697a6d2557f62c0930bad581bd29744a",
       "binding": {
@@ -3129,7 +3129,7 @@
     },
     {
       "frame": 3027,
-      "phaseSeconds": 6.533333,
+      "phaseSeconds": 5.25,
       "drawCount": 1,
       "metadataSha256": "d517d5d6e68d7c299c104dfb20c567f5f8e8981c1e1ef0b36eb9f38443ea9c0c",
       "binding": {

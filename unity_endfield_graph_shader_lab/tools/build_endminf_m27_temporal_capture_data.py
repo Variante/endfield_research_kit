@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build phase-addressable native payloads for captured Endminf M27 draws."""
+"""Build phase-addressable native payloads for captured Endminf LitEffect draws."""
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
 CAPTURE = REPO / "scratch/reverse_engineering/endfield_capture/20260826T162514Z"
-REPORT = REPO / "reports/assets/character_recovery/endminf_m27_temporal_capture_latest.json"
+REPORT = (REPO / "reports/assets/character_recovery"
+          / "endminf_liteffect_temporal_capture_latest.json")
 CS_OUTPUT = (
     REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab"
     / "Runtime/Rendering/EndfieldRecoveredM27TemporalCaptureData.generated.cs"
@@ -163,9 +164,10 @@ def collect_textures(capture: Path, frame: int = 2905) -> list[dict[str, Any]]:
 
 def collect(capture: Path, report_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     report = load_json(report_path)
-    require(report.get("status") == "validated", "M27 temporal report is not valid")
+    require(report.get("status") == "validated",
+            "LitEffect temporal report is not valid")
     require(report.get("sessionId") == EXPECTED_SESSION,
-            "M27 temporal report session drifted")
+            "LitEffect temporal report session drifted")
     frames = [collect_frame(capture, row) for row in report.get("frames", [])]
     require(len(frames) == report.get("sampleCount"), "M27 packet count drifted")
     defaults = {frame.get("default_vertex") for frame in frames if frame["draws"]}
@@ -187,6 +189,7 @@ def render_cpp(frames: list[dict[str, Any]], textures: list[dict[str, Any]]) -> 
     draw_descriptors: list[str] = []
     frame_descriptors: list[str] = []
     draw_offset = 0
+    maximum_draws = max(len(frame["draws"]) for frame in frames)
     default_vertex = next(frame["default_vertex"] for frame in frames if frame["draws"])
     arrays.append(cpp_array("g_EndfieldM27TemporalDefaultVertex", default_vertex))
     for texture in textures:
@@ -244,6 +247,8 @@ def render_cpp(frames: list[dict[str, Any]], textures: list[dict[str, Any]]) -> 
         "inline constexpr EndfieldM27TemporalFramePayload g_EndfieldM27TemporalFrames[] = {\n" +
         "\n".join(frame_descriptors) + "\n};\n"
         f"inline constexpr std::uint32_t g_EndfieldM27TemporalDrawCount = {draw_offset}u;\n"
+        f"inline constexpr std::uint32_t g_EndfieldM27TemporalMaximumDrawsPerFrame = "
+        f"{maximum_draws}u;\n"
         "inline constexpr std::uint32_t g_EndfieldM27TemporalFrameCount = "
         "static_cast<std::uint32_t>(sizeof(g_EndfieldM27TemporalFrames) / "
         "sizeof(g_EndfieldM27TemporalFrames[0]));\n")

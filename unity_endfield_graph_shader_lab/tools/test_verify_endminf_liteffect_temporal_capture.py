@@ -34,6 +34,10 @@ class EndminfLitEffectTemporalCaptureTests(unittest.TestCase):
         self.assertEqual(self.report["counts"]["draws"], 157)
         self.assertEqual(self.report["counts"]["brightM01OrM27Draws"], 105)
         self.assertEqual(self.report["counts"]["lowM38Draws"], 52)
+        self.assertAlmostEqual(
+            self.report["frames"][0]["phaseSeconds"], 0.15, places=6)
+        peak = next(row for row in self.report["frames"] if row["frame"] == 2978)
+        self.assertAlmostEqual(peak["phaseSeconds"], 4.433333, places=6)
 
     def test_phase_structure_is_fail_closed(self) -> None:
         transition = next(

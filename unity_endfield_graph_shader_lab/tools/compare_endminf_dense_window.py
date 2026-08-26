@@ -69,6 +69,17 @@ def parse_box(values: list[int]) -> tuple[int, int, int, int]:
     return box
 
 
+def sheet_indices(frame_count: int) -> list[int]:
+    if frame_count <= 0:
+        raise ValueError("comparison contains no recovered frames")
+    # Keep the established dense-window cadence, but never request indices
+    # outside a shorter targeted probe.
+    return sorted({
+        index for index in (0, 2, 4, 6, 8, 10, 12, 14, frame_count - 1)
+        if 0 <= index < frame_count
+    })
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--unity-dir", type=Path, required=True)
@@ -185,7 +196,7 @@ def main() -> int:
     best = min(alignments, key=lambda value: value["summary"]["meanEffectRoiMae"])
     best_offset = int(best["summary"]["sourceOffsetFrames"])
     sheet_path = args.output.with_name(args.output.stem + "_sheet.png")
-    indices = sorted({0, 2, 4, 6, 8, 10, 12, 14, len(recovered_frames) - 1})
+    indices = sheet_indices(len(recovered_frames))
     make_sheet(sheet_payload[best_offset], sheet_path, indices)
 
     for alignment in alignments:

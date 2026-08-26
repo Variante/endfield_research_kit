@@ -4,10 +4,12 @@ namespace EndfieldGraphShaderLab
     internal static class EndfieldRecoveredM14ExactCaptureData
     {
         internal const string SourceSession = "20260826T091023Z";
+        internal const string LateSourceSession = "20260826T162514Z";
         internal const string SourceReportSha256 = "3affeb8dfde441641cc3dab0263cff2fbe0c6ff688f362e004ac10d8b294d16f";
-        internal const int PacketCount = 7;
-        internal static readonly int[] SourceFrames = { 1405, 1413, 1421, 1429, 1437, 1445, 1453 };
-        internal static readonly float[] PhaseSeconds = { 4.50f, 4.75f, 5.00f, 5.25f, 5.50f, 5.75f, 6.00f };
-        internal static readonly int[] IndexCounts = { 1968, 2880, 2862, 2490, 2076, 1662, 1296 };
+        internal const string LateSourceReportSha256 = "4c8af38f05e3f3371a118adbe2d8432763bb8191fffcb87afaad311f7f5d9904";
+        internal const int PacketCount = 15;
+        internal static readonly int[] SourceFrames = { 2978, 1405, 2987, 2995, 1413, 3003, 3011, 1421, 3019, 3027, 3035, 1437, 3043, 1445, 1453 };
+        internal static readonly float[] PhaseSeconds = { 4.433333f, 4.500000f, 4.583333f, 4.716666f, 4.750000f, 4.850000f, 4.983333f, 5.000000f, 5.116666f, 5.250000f, 5.383333f, 5.500000f, 5.516666f, 5.750000f, 6.000000f };
+        internal static readonly int[] IndexCounts = { 1872, 1968, 2898, 2898, 2880, 2874, 2628, 2862, 2328, 2058, 1782, 2076, 1584, 1662, 1296 };
     }
 }

@@ -173,8 +173,11 @@ namespace EndfieldGraphShaderLab
         private static int ResolveNearestPacket(float seconds)
         {
             float[] phases = EndfieldRecoveredM14ExactCaptureData.PhaseSeconds;
-            if (seconds < phases[0] - 0.125f ||
-                seconds > phases[phases.Length - 1] + 0.125f)
+            float leadingHalfInterval = (phases[1] - phases[0]) * 0.5f;
+            float trailingHalfInterval =
+                (phases[phases.Length - 1] - phases[phases.Length - 2]) * 0.5f;
+            if (seconds < phases[0] - leadingHalfInterval ||
+                seconds > phases[phases.Length - 1] + trailingHalfInterval)
                 return -1;
             int nearest = 0;
             float distance = Mathf.Abs(seconds - phases[0]);
@@ -246,7 +249,10 @@ namespace EndfieldGraphShaderLab
             {
                 Debug.Log(
                     "Recovered exact Endminf M14 native draw submitted: " +
-                    "7 phase packets, SceneColor/SceneMV, capture 20260826T091023Z.");
+                    EndfieldRecoveredM14ExactCaptureData.PacketCount +
+                    " phase packets, SceneColor/SceneMV, captures " +
+                    EndfieldRecoveredM14ExactCaptureData.SourceSession + " + " +
+                    EndfieldRecoveredM14ExactCaptureData.LateSourceSession + ".");
                 loggedActivation = true;
             }
             return true;

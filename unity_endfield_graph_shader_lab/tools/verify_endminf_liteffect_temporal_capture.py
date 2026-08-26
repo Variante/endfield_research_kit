@@ -30,6 +30,8 @@ VS_IDENTITY = 0xC0266E7FAC0046C1
 PS_IDENTITY = 0x92D80A93ADD9C714
 FRAME_MIN = 2721
 FRAME_MAX = 3027
+PHASE_ANCHOR_FRAME = 2978
+PHASE_ANCHOR_SECONDS = 4.433333
 EXPECTED_FRAMES = (
     2721, 2729, 2737, 2746, 2754, 2762, 2771, 2780, 2788, 2797,
     2805, 2813, 2822, 2831, 2839, 2847, 2855, 2864, 2872, 2880,
@@ -337,6 +339,8 @@ def verify_session(capture: Path) -> dict[str, Any]:
                  if isinstance(draw, dict) and exact_pair(draw)]
         row: dict[str, Any] = {
             "frame": frame,
+            "phaseSeconds": round(
+                PHASE_ANCHOR_SECONDS + (frame - PHASE_ANCHOR_FRAME) / 60.0, 6),
             "phase": phase_name(frame),
             "drawCount": len(draws),
             "fingerprintCounts": {BRIGHT_NAME: 0, LOW_NAME: 0},
@@ -368,6 +372,8 @@ def verify_session(capture: Path) -> dict[str, Any]:
         "status": "validated",
         "sessionId": EXPECTED_SESSION,
         "captureRoot": str(capture.resolve()),
+        "sampleCount": len(frames),
+        "drawCount": len(all_draws),
         "frameRange": {"first": FRAME_MIN, "last": FRAME_MAX},
         "shaderPair": {
             "vertexIdentity": f"0x{VS_IDENTITY:016X}",

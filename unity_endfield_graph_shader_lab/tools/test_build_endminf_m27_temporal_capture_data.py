@@ -26,14 +26,16 @@ class M27TemporalBuilderTests(unittest.TestCase):
             generated_cpp = cpp.read_text(encoding="utf-8")
         self.assertEqual(generated, MODULE.CS_OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(generated_cpp, MODULE.CPP_OUTPUT.read_text(encoding="utf-8"))
-        self.assertIn("PacketCount = 16", generated)
-        self.assertIn("TotalDrawCount = 39", generated)
-        self.assertIn("g_EndfieldM27TemporalDrawCount = 39u", generated_cpp)
+        self.assertIn("PacketCount = 38", generated)
+        self.assertIn("TotalDrawCount = 157", generated)
+        self.assertIn("g_EndfieldM27TemporalDrawCount = 157u", generated_cpp)
+        self.assertIn(
+            "g_EndfieldM27TemporalMaximumDrawsPerFrame = 6u", generated_cpp)
         self.assertIn("g_EndfieldM27TemporalFrameCount", generated_cpp)
 
     def test_preserves_both_ia_layouts_and_zero_draw_transition(self) -> None:
         frames, textures = MODULE.collect(MODULE.CAPTURE, MODULE.REPORT)
-        self.assertEqual(len(frames), 16)
+        self.assertEqual(len(frames), 38)
         self.assertEqual(len(textures), 6)
         self.assertEqual({draw["vertex_stride"] for frame in frames
                           for draw in frame["draws"]}, {60, 68})
@@ -62,6 +64,8 @@ class M27TemporalBuilderTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("public static bool IsCapturedPhase(float seconds)", runtime)
         self.assertIn("if (!IsCapturedPhase(seconds))", runtime)
+        self.assertIn("submittedDraws != (uint)expectedPacketDraws", runtime)
+        self.assertIn("validatedDrawCount = draws", runtime)
         self.assertIn(
             "EndfieldRecoveredEndminfM27ExactRuntime.IsCapturedPhase(",
             capture,

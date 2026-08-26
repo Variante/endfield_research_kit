@@ -16,7 +16,7 @@
   "frames": [
     {
       "frame": 2978,
-      "phaseSeconds": 5.716667,
+      "phaseSeconds": 4.433333,
       "metadataSha256": "b4c130237803ea9c442409ab35412bbfc2494d2a5c0b7d912f8977f61ea6c6e0",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -161,7 +161,7 @@
     },
     {
       "frame": 2987,
-      "phaseSeconds": 5.866667,
+      "phaseSeconds": 4.583333,
       "metadataSha256": "e07af84fffc9f4de0f4ea5db22f0c96c2e0d1be3db1fb5ed5b292b126f3f7e13",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -306,7 +306,7 @@
     },
     {
       "frame": 2995,
-      "phaseSeconds": 6.0,
+      "phaseSeconds": 4.716666,
       "metadataSha256": "5318634cc44aa4ff609ed44904c8ca0bb3405f62604c60f5e96834a61d276b09",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -451,7 +451,7 @@
     },
     {
       "frame": 3003,
-      "phaseSeconds": 6.133333,
+      "phaseSeconds": 4.85,
       "metadataSha256": "e400f26c3abbfef4a2e8876661381878f1f94b422b7ef6bde338303c3f7ae2d9",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -596,7 +596,7 @@
     },
     {
       "frame": 3011,
-      "phaseSeconds": 6.266667,
+      "phaseSeconds": 4.983333,
       "metadataSha256": "283d7d1abc5cd10488802349117e3295ec452ee3a300f9cad8e2a6fb2674dec8",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -741,7 +741,7 @@
     },
     {
       "frame": 3019,
-      "phaseSeconds": 6.4,
+      "phaseSeconds": 5.116666,
       "metadataSha256": "daebb4c20c03b64020199b67bd4d765b697a6d2557f62c0930bad581bd29744a",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -886,7 +886,7 @@
     },
     {
       "frame": 3027,
-      "phaseSeconds": 6.533333,
+      "phaseSeconds": 5.25,
       "metadataSha256": "d517d5d6e68d7c299c104dfb20c567f5f8e8981c1e1ef0b36eb9f38443ea9c0c",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -1031,7 +1031,7 @@
     },
     {
       "frame": 3035,
-      "phaseSeconds": 6.666667,
+      "phaseSeconds": 5.383333,
       "metadataSha256": "556ede928a06e7c3b608c572eb487cccfee86dbe25a29b42f553cd9017b602a2",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
@@ -1155,7 +1155,7 @@
     },
     {
       "frame": 3043,
-      "phaseSeconds": 6.8,
+      "phaseSeconds": 5.516666,
       "metadataSha256": "0c1172eda947f42dbbc0c028cdae127e7f45aec94e978db746ff57cd3a47ecc5",
       "shaderPair": {
         "vertex": "0x62A5CE6C09171DE9",
