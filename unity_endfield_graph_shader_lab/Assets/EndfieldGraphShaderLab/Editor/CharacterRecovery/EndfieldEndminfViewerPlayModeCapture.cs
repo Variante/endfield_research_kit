@@ -110,7 +110,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v4";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v5";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -166,6 +166,10 @@ namespace EndfieldGraphShaderLabEditor
             public float requestedSeconds;
             public float actualSeconds;
             public float endminfPostSeconds;
+            public float endminfPostChromaticIntensity;
+            public float endminfPostRadialIntensity;
+            public float endminfPostEffectivePower;
+            public int endminfPostMode;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -871,6 +875,10 @@ namespace EndfieldGraphShaderLabEditor
             Write(Path.Combine(output, file), pixels);
             EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(
                 out float endminfPostSeconds);
+            EndfieldEndminfVisualCompatibilityClock.TryEvaluateRecoveredPost(
+                camera,
+                out EndfieldEndminfVisualCompatibilityClock.RecoveredPostState
+                    endminfPostState);
             EndfieldRecoveredCharInfoPresentation charInfoPresentation =
                 UnityEngine.Object.FindObjectOfType<EndfieldRecoveredCharInfoPresentation>(true);
             Renderer shadowPlane = charInfoPresentation == null
@@ -887,6 +895,11 @@ namespace EndfieldGraphShaderLabEditor
             Frames.Add(new FrameRow {
                 index = next, requestedSeconds = requested, actualSeconds = elapsed, file = file,
                 endminfPostSeconds = endminfPostSeconds,
+                endminfPostChromaticIntensity =
+                    endminfPostState.chromaticIntensity,
+                endminfPostRadialIntensity = endminfPostState.radialIntensity,
+                endminfPostEffectivePower = endminfPostState.effectivePower,
+                endminfPostMode = endminfPostState.mode,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
