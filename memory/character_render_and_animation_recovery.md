@@ -890,15 +890,22 @@ The pre-burst `overview_04/1/Particle System (1)` M29 mesh particle uses
 and `_DisturbTex1`, `_MaskTex`, `_SampleTex0`, and `_SampleTex1` to
 `T_fx_flow_01_M` (`pE924975F4B2F54A4`). Both generated bindings had fallen
 back to white; the maintained Overview texture repair now restores and
-hash-gates them. Later controlled exclusions correct the visual ownership:
-removing M29 has no visible effect at 4.2167 or 4.4667 seconds. The broad early
-amber halo belongs to `overview_04/1/guangyun (3)` with M30; the later outer
-ring belongs to `overview_02/all/huan` with M13. M31/M43 contribute minor haze,
-M42/M32 inner arcs, M24 sparks, M14 segmented trails, and M21 the small stones.
-Do not tune M29 or the crystal system to compensate for M30/M13. M29 still has
-unclosed per-draw color/LOD semantics; a useful future graphics sequence is
-retail source frames 364-371 (center 367/extracted frame 255), retaining its
-1,386-index one-instance Sphere001 draw.
+hash-gates them. Arbitrary requested-time capture can now retain all five
+post-stage surfaces. Duplicate D3D11 controls and duplicate M29/M30 exclusions
+fail closed at 4.15-4.1833 seconds but are byte-identical from 4.20 through
+4.2667 seconds. In that stable interval, excluding M30 removes the broad early
+amber halo owned by `overview_04/1/guangyun (3)`, while excluding M29 also
+changes the pre-temporal scene buffer and final image independently; M29 is
+therefore a real mesh contribution, not a negative control, even where its
+final-image change is visually subtle. Detailed stage hashes, thresholds, and
+bounds live in
+`reports/assets/character_recovery/endminf_post_stage_m30_m29_delta.json`.
+The later outer ring belongs to `overview_02/all/huan` with M13. M31/M43
+contribute minor haze, M42/M32 inner arcs, M24 sparks, M14 segmented trails,
+and M21 the small stones. Do not tune M29 or the crystal system to compensate
+for M30/M13. M29 still has unclosed per-draw color/LOD semantics; a useful
+future graphics sequence is retail source frames 364-371 (center 367/extracted
+frame 255), retaining its 1,386-index one-instance Sphere001 draw.
 
 The same audit found 20 additional dangling generated texture slots across
 M18, M20, M28, M32, M35, M42, M46, and `M_ui_wind_901`. One targeted

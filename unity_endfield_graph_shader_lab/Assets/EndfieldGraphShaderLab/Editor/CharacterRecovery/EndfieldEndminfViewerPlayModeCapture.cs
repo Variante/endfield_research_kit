@@ -400,12 +400,11 @@ namespace EndfieldGraphShaderLabEditor
             if (capturePrePostHdr && capturePostStages)
                 throw new InvalidOperationException(
                     "Pre-post HDR and five-stage post diagnostics are mutually exclusive.");
-            if (targetedTimes && (fineWindow || videoExport || capturePrePostHdr ||
-                capturePostStages))
+            if (targetedTimes && (fineWindow || videoExport || capturePrePostHdr))
             {
                 throw new InvalidOperationException(
                     RequestedTimesEnvironment +
-                    " is mutually exclusive with fixed-window, video, and post diagnostics.");
+                    " is mutually exclusive with fixed-window, video, and pre-post HDR diagnostics.");
             }
             string excludedMaterial = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL");
@@ -932,7 +931,9 @@ namespace EndfieldGraphShaderLabEditor
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
-                status = targetedTimes
+                status = targetedTimes && capturePostStages
+                    ? "targeted_diagnostic_ok"
+                    : targetedTimes
                     ? "targeted_ok"
                     : capturePrePostHdr || capturePostStages
                     ? "diagnostic_ok"
