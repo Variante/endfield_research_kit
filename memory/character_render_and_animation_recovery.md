@@ -364,7 +364,16 @@ complete frame without a client fault.
   canonical color already equals M27's black SceneColor there. This is a
   content-invalid diagnostic, not exact admission. The remaining gap is the
   deferred light/resource fixture selected for those M27 pixels, not more
-  material tuning or another M27 game capture.
+  material tuning. The `37eacbc3c84bb392` variant's descriptor layout is now
+  corrected independently: its simple-subsurface arrays occupy t11/t12, the
+  full-resolution screen-shadow mask occupies t13, and the zero-cookie fallback
+  moves to t14. A focused 4.60-second D3D11 run verifies an all-white t13 R
+  channel and valid same-frame M27 publication, yet all 2,138 owned pixels remain
+  RGB-zero. This disproves the earlier t13-only explanation and leaves the
+  directional/material-family or CharacterOnly resolver selection open. The
+  latest targeted M27 draw capture does not contain the fullscreen deferred
+  resolver that lit the retail crystal, so closing that selection now requires
+  resolver-frame evidence rather than another material-draw capture.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not

@@ -316,10 +316,10 @@ namespace EndfieldGraphShaderLab
                     "t8=HDPLS:white-inactive-fallback," +
                     "t9=CSMRamp:black-null-fallback," +
                     $"t10=multiscattering:{(multiscatteringLut != null ? "ready" : "absent")}," +
-                    $"t11=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
-                    "t12=LightCookie:black-zero-cookie," +
-                    "t13=SubsurfaceProfileLut:black-non-subsurface-fixture," +
-                    "t14=SubsurfaceTransmissionLut:white-non-subsurface-fixture," +
+                    "t11=SubsurfaceProfileLut:black-non-subsurface-fixture," +
+                    "t12=SubsurfaceTransmissionLut:black-non-subsurface-fixture," +
+                    $"t13=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
+                    "t14=LightCookie:black-zero-cookie," +
                     "t15=IntegratedFog:black-disabled-1x1-ASTC," +
                     $"t16=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
                     $"t17=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
@@ -916,21 +916,25 @@ namespace EndfieldGraphShaderLab
                 case 6: return resources.t6PunctualShadow;
                 case 7: return resources.t7LowResShadow;
                 case 10: return multiscatteringLut;
-                case 11: return resources.t11ScreenShadow;
+                // The captured retail 37eacbc3 variant inserts its two
+                // simple-subsurface arrays at t11/t12. SphereOutside has
+                // material-family index zero, so neutral arrays are sufficient
+                // and the shader does not sample either fixture.
+                case 11: return fallbackArray;
+                case 12: return fallbackArray;
                 // CharInfo serializes a null CSM ramp; the installed native
                 // push binds Texture2D.blackTexture for this slot.
                 case 9: return Texture2D.blackTexture;
                 // The selected CharInfo HDPLS selector rows are all zero; the
                 // inactive native push binds white to the HDPLS screen mask.
                 case 8: return Texture2D.whiteTexture;
+                // The same variant shifts the full-resolution screen-shadow
+                // mask to t13. Binding black here zeroed the directional RGB
+                // at the shader's final shadow multiply.
+                case 13: return resources.t11ScreenShadow;
                 // The source-closed isolated light fixtures have no cookie
                 // indices; the native zero-cookie transport binds black.
-                case 12: return fallbackArray;
-                // The captured retail variant adds two 2D resources with the
-                // simple-subsurface keyword. SphereOutside is not subsurface,
-                // so retain explicit neutral fixture bindings for those slots.
-                case 13: return fallback2D;
-                case 14: return Texture2D.whiteTexture;
+                case 14: return Texture2D.blackTexture;
                 // The installed CharInfo route disables volumetric fog and
                 // publishes the native 1x1x1 ASTC_4x4 black Texture3D.
                 case 15: return integratedFogFallback;
