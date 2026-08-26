@@ -1,0 +1,25 @@
+// Source-backed reconstruction of the shipped DLSSVelocityCombineCS
+// CombineVelocity D3D11 kernel. The retail dispatch converts the packed
+// CharacterNPR SceneMV attachment to normalized two-channel motion before
+// Streamline DLAA consumes it.
+
+#pragma kernel CombineVelocity
+
+Texture2D<float4> _Velocity;
+RWTexture2D<float2> _CombinedVelocity;
+
+uint2 _InputExtent;
+
+[numthreads(8, 8, 1)]
+void CombineVelocity(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 coordinate = dispatchThreadId.xy;
+    if (any(coordinate >= _InputExtent))
+        return;
+
+    float2 packed = _Velocity.Load(int3(coordinate, 0)).xy;
+    float2 signedDistance = packed * 2.0 - 1.0;
+    float2 squared = signedDistance * signedDistance;
+    float2 decoded = sign(signedDistance) * squared * squared;
+    _CombinedVelocity[coordinate] = decoded;
+}

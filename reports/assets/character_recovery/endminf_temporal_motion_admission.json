@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.endminf-temporal-motion-admission.v12",
+  "schema": "endfield.endminf-temporal-motion-admission.v13",
   "subject": "Endminf Character Info temporal and motion admission",
   "reference": {
     "recording": "videos/2026-08-21_20-15-17.mkv",
@@ -115,7 +115,7 @@
     "boundary": "The public Unity wrapper has no DLAA enum and feature creation does not establish Endfield's exact Streamline schedule, motion/depth/reactive inputs, jitter, reset policy, executed output, or frame-generation path. This is an implementation-feasibility result only."
   },
   "nativeStreamlineRuntimeContract": {
-    "status": "pinned custom Streamline DLAA schedule, tags, constants, options, evaluate call, velocity conversion, reset producer, and default native-scale extent recovered; combined-motion storage format remains incomplete",
+    "status": "pinned custom Streamline DLAA schedule, tags, constants, options, evaluate call, exact runtime velocity conversion descriptors, reset producer, and default native-scale extent recovered",
     "sourceGate": {
       "unityPlayerSha256": "b47728ba10f09c46e8a107b4c7055e48cfe402d3d8c88a4529074981f9672aa2",
       "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
@@ -262,11 +262,11 @@
       "storageFormats": {
         "packedInputSceneMv": "GraphicsFormat.A2B10G10R10_UNormPack32 (public enum 75 / 0x4b; DXGI_FORMAT_R10G10B10A2_UNORM), full-resolution, Point/Repeat, no random write, neutral clear (0.5,0.5,0,0)",
         "taauDilationInheritance": "TAAU's dilated SceneMV descriptor inherits PassInput.sceneMV.colorFormat dynamically.",
-        "combinedOutput": "unresolved"
+        "combinedOutput": "GraphicsFormat.R16G16_SFloat / DXGI_FORMAT_R16G16_FLOAT, full input/native resolution; the observed D3D11 resource has shader-resource, render-target, and unordered-access bind flags"
       },
       "correctedLiteralAttribution": "Native descriptor literal 0x2d maps exactly to GraphicsFormat.R16_SFloat / DXGI_FORMAT_R16_FLOAT, but the pinned writer is TAAUPassConstructor.ConstructDilationPass and uses it for dilated depth. It is not evidence for _CombinedVelocity.",
       "allocationFormatAudit": {
-        "result": "not statically recoverable from the pinned retail binary and matching stock Unity symbols",
+        "result": "closed by runtime D3D11 resource descriptors in four independent full-frame 3DMigoto captures; the earlier static binary audit remains useful only as the reason the format could not be inferred without runtime evidence",
         "retailHelper": {
           "rva": "0x1282a40",
           "size": "0x2fc",
@@ -280,9 +280,25 @@
         },
         "stockSymbolBoundary": "The Unity 2022.3.62f3 nondevelopment Mono player PDB has no RenderGraph or TextureDesc symbols and no usable UDT, enum, or typedef records. No credible stock equivalent of the retail helper was found; the helper is consistent with a HyperGryph fork addition.",
         "literalBoundary": "The caller later supplies 0x2d to an unidentified virtual method at vtable offset 0x700. The concrete vtable and enum domain are not statically materialized, so numeric coincidence cannot identify GraphicsFormat, DXGI_FORMAT, or RenderTextureFormat.",
-        "minimalRuntimeProbe": "Break at UnityPlayer.dll+0x12819f8 on a DLSS frame, resolve the concrete vtable target, follow the allocation to D3D12 resource creation, and inspect D3D12_RESOURCE_DESC.Format at descriptor offset 0x20; PIX or RenderDoc inspection of velocity-combine UAV u0 is equivalent."
+        "runtimeDescriptorEvidence": {
+          "root": "scratch/character_recovery/3dmigoto-dev-v1.0.0/package",
+          "shader3DMigotoHash": "c47ae110dd014417",
+          "inputResourceHash": "72d2b22c",
+          "outputResourceHash": "f68eddc6",
+          "captures": [
+            {"session": "FrameAnalysis-2026-08-24-182534", "dispatch": 117},
+            {"session": "FrameAnalysis-2026-08-24-182744", "dispatch": 138},
+            {"session": "FrameAnalysis-2026-08-24-182819", "dispatch": 127},
+            {"session": "FrameAnalysis-2026-08-24-182850", "dispatch": 142}
+          ],
+          "dispatchGroups": [480, 270, 1],
+          "inputDescriptor": "Texture2D 3840x2160, one mip, R10G10B10A2_UNORM, SRV+RTV",
+          "outputDescriptor": "Texture2D 3840x2160, one mip, R16G16_FLOAT, SRV+RTV+UAV",
+          "interpretation": "The 8x8 kernel's 480x270 dispatch covers the full 3840x2160 native input. Every capture binds the same packed input and two-channel floating-point output identities."
+        }
       },
-      "boundary": "The packed input SceneMV format is exact. The combined-output UAV format remains unresolved because typed float DXBC resources do not encode the bound DXGI/Unity GraphicsFormat and its transient allocation writer has not been recovered. Do not infer R16G16_SFloat from the shader declaration."
+      "unityProducer": "The lab now dispatches the exact fourth-power decode from its packed full-resolution SceneMV into a temporary GraphicsFormat.R16G16_SFloat UAV and publishes _CombinedVelocity while the recovered post path executes. This producer is beauty-neutral because no DLSS/DLAA consumer is enabled.",
+      "boundary": "Packed input format, output format, extent, bindings, dispatch dimensions, and decode equation are exact. Direct retail attachment of every non-character motion producer and the custom Streamline DLAA consumer/output remain outside this producer-side closure."
     },
     "dlssOptions": {
       "hgToStreamlineQuality": {
