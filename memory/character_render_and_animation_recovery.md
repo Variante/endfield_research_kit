@@ -1439,6 +1439,16 @@ required background layers. Direct disassembly of exact combined fragment
 mode threshold, nine mode-6 taps, mode-3 taps, LOD-0 source sampling, and
 separate bloom sample. The fragment does not consume `_ScreenSize`, so neither
 an aspect correction nor further kernel tuning is evidence-backed.
+The same retained Uber draw binds a full-resolution
+`R16G16B16A16_FLOAT` source `t0`, while the recovered physical sceneColor
+owner correctly remains packed `B10G11R11_UFloatPack32`. The canonical
+Endminf path now performs the missing RGBA16F post handoff after temporal
+resolve and uses it for both bloom prefiltering and Uber. The 21-frame A/B
+improves ROI MAE from 29.8231 to 29.7657, effect-ROI MAE from 34.6499 to
+34.5757, and temporal-delta MAE from 27.3592 to 27.1143. Capture reports record
+the live post-source format and fail if the Endminf reproduction does not
+observe RGBA16F; this promotion does not replace the separately proven packed
+pre-post CameraColor owner.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

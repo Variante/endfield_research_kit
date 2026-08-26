@@ -9,6 +9,7 @@ using EndfieldGraphShaderLab;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace EndfieldGraphShaderLabEditor
@@ -148,6 +149,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEndminfM27HGBufferReady;
             public bool observedEndminfM27PresentationReady;
             public bool observedSphereOutsidePresentationReady;
+            public bool observedEndminfPostSourceRgba16;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -171,6 +173,7 @@ namespace EndfieldGraphShaderLabEditor
             public float endminfPostEffectivePower;
             public int endminfPostMode;
             public Vector2 endminfPostCenterViewport;
+            public string endminfPostSourceGraphicsFormat;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -904,6 +907,9 @@ namespace EndfieldGraphShaderLabEditor
                 endminfPostEffectivePower = endminfPostState.effectivePower,
                 endminfPostMode = endminfPostState.mode,
                 endminfPostCenterViewport = endminfPostState.centerViewport,
+                endminfPostSourceGraphicsFormat =
+                    HGCompatRenderPipeline
+                        .LastRecoveredEndminfPostSourceGraphicsFormat.ToString(),
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
@@ -1163,12 +1169,25 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add("active recovered CharInfo grey background");
             if (!backgroundPortraitIncluded)
                 missingObservations.Add("active Endminf background portrait");
-            bool requiredCompositionReady =
-                charInfoBackgroundIncluded && backgroundPortraitIncluded;
+            bool observedEndminfPostSourceRgba16 =
+                Frames.Count > 0 && Frames.All(value => string.Equals(
+                    value.endminfPostSourceGraphicsFormat,
+                    GraphicsFormat.R16G16B16A16_SFloat.ToString(),
+                    StringComparison.Ordinal));
+            if (EndfieldEndminfVisualCompatibilityClock.Requested &&
+                !observedEndminfPostSourceRgba16)
+            {
+                missingObservations.Add(
+                    "retail R16G16B16A16_FLOAT Uber source handoff");
+            }
+            bool requiredCaptureContractReady =
+                charInfoBackgroundIncluded &&
+                backgroundPortraitIncluded &&
+                observedEndminfPostSourceRgba16;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
-                status = !requiredCompositionReady
+                status = !requiredCaptureContractReady
                     ? "failed: missing " + string.Join(", ", missingObservations.ToArray())
                     : targetedTimes && capturePostStages
                     ? "targeted_diagnostic_ok"
@@ -1218,6 +1237,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedEndminfM27PresentationReady,
                 observedSphereOutsidePresentationReady =
                     observedSphereOutsidePresentationReady,
+                observedEndminfPostSourceRgba16 =
+                    observedEndminfPostSourceRgba16,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =
@@ -1247,11 +1268,11 @@ namespace EndfieldGraphShaderLabEditor
             bool videoExport = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
             EditorApplication.update -= Tick;
-            if (!requiredCompositionReady)
+            if (!requiredCaptureContractReady)
             {
                 captureFailure =
                     "Endminf Viewer capture is missing its required UI-free " +
-                    "background composition: " +
+                    "composition or retail post-source handoff: " +
                     string.Join(", ", missingObservations.ToArray());
                 Debug.LogError(captureFailure);
                 EditorApplication.ExitPlaymode();

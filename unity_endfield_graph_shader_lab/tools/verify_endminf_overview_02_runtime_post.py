@@ -115,6 +115,9 @@ def verify() -> dict[str, object]:
         "endminfPost.mode",
         "endminfPost.effectivePower",
         "endminfPost.centerViewport",
+        "GraphicsFormat.R16G16B16A16_SFloat",
+        "LastRecoveredEndminfPostSourceGraphicsFormat",
+        "RecoveredEndminfPostSourceId",
     ), "render-pipeline packing")
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
         raise RuntimeError("retired empirical Effect-02 evaluator is still present")
@@ -127,9 +130,12 @@ def verify() -> dict[str, object]:
         "backgroundPortraitRequested = IncludeBackgroundPortrait",
         "public Vector2 endminfPostCenterViewport",
         "endminfPostCenterViewport = endminfPostState.centerViewport",
+        "public string endminfPostSourceGraphicsFormat",
+        "observedEndminfPostSourceRgba16",
+        "retail R16G16B16A16_FLOAT Uber source handoff",
         "IsCharInfoBackgroundActive()",
         "IsBackgroundPortraitActive()",
-        "if (!requiredCompositionReady)",
+        "if (!requiredCaptureContractReady)",
         "foregroundUiOverlayIncluded = false",
     ), "August 24 capture scope and phase")
     require_tokens(OPEN_WRAPPER.read_text(encoding="utf-8"), (
@@ -182,6 +188,7 @@ def verify() -> dict[str, object]:
             "singleMode": 3,
             "ordinaryCenterSpace": "viewport_0_to_1",
             "farOffscreenCenterTestSpace": "signed_viewport",
+            "postSourceGraphicsFormat": "R16G16B16A16_SFloat",
             "averageSteps": [0, 0],
             "particleClock": "selection/body timeline; no post-owner age offset",
         },
