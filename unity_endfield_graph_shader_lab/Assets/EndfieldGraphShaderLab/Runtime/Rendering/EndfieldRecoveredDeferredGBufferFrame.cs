@@ -610,6 +610,44 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        internal bool TryGetSphereOutsidePresentationInputs(
+            Camera camera,
+            int width,
+            int height,
+            out RenderTexture sourceSceneColor,
+            out RenderTexture mask,
+            out RenderTexture depth,
+            out string failure)
+        {
+            sourceSceneColor = sceneColor;
+            mask = gBufferC;
+            depth = depthStencil;
+            failure = string.Empty;
+            if (!sphereOutsideRequested)
+            {
+                failure = "SphereOutside producer is not requested";
+                return false;
+            }
+            if (!TryGetResolverInputs(
+                    camera,
+                    width,
+                    height,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out failure))
+                return false;
+            if (sourceSceneColor == null || !sourceSceneColor.IsCreated() ||
+                mask == null || !mask.IsCreated() ||
+                depth == null || !depth.IsCreated())
+            {
+                failure = "SphereOutside presentation attachments are unavailable";
+                return false;
+            }
+            return true;
+        }
+
         internal bool TryGetResolverDepth(
             Camera camera,
             int width,

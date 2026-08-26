@@ -115,10 +115,11 @@ capture into a maintained dependency.
 
 ## Useful conclusion from the retired explorations
 
-Retail visual parity is not reached. More isolated shader approximation will
-not close the main difference: the missing piece is the complete CharInfo
-presentation frame, especially `SphereOutside`, `ShadowPlane`, the exact
-character stencil path, and frame-produced lighting resources.
+Retail visual parity is not reached. The isolated `SphereOutside` background
+now has a frame-proven physical deferred presentation, and the actor-specific
+portrait is included without foreground UI. The remaining complete-frame gaps
+are `ShadowPlane`, the exact character stencil path, unrecovered frame-produced
+lighting resources, bloom/compositing, and secondary motion.
 
 The reference video remains the visual authority. Native or GPU evidence can
 strengthen individual bindings later, but the active work is to reconstruct
