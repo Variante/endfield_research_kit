@@ -15,7 +15,10 @@ PS_BYTES = 8200
 EXPECTED_COUNT = 1080
 EXPECTED_INSTANCE_COUNT = 1
 REQUIRED_CONSTANTS = {
-    (0, 0): 1,
+    # The M27 vertex shader reads the per-camera transform range through c81.
+    # Older capture profiles retained only two vectors here and must fail
+    # closed even when every other binding is complete.
+    (0, 0): 82,
     (0, 1): 28,
     (0, 2): 16,
     (4, 0): 1,

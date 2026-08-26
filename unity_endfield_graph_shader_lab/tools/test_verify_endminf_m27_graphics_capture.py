@@ -77,6 +77,15 @@ class M27CaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.CaptureError, "need 106"):
             MODULE.verify_session(self.make_session({"drawRecords": [value]}))
 
+    def test_rejects_vertex_constants_stopping_before_c81(self) -> None:
+        value = draw()
+        row = next(row for row in value["constantBuffers"]
+                   if row["stage"] == 0 and row["slot"] == 0)
+        row["capturedConstants"] = 2
+        row["dataHex"] = "00" * 2 * 16
+        with self.assertRaisesRegex(MODULE.CaptureError, "need 82"):
+            MODULE.verify_session(self.make_session({"drawRecords": [value]}))
+
     def test_rejects_old_profile_without_geometry_marker(self) -> None:
         value = draw()
         value.pop("priorityM27Geometry")
