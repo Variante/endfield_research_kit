@@ -369,11 +369,23 @@ complete frame without a client fault.
   full-resolution screen-shadow mask occupies t13, and the zero-cookie fallback
   moves to t14. A focused 4.60-second D3D11 run verifies an all-white t13 R
   channel and valid same-frame M27 publication, yet all 2,138 owned pixels remain
-  RGB-zero. This disproves the earlier t13-only explanation and leaves the
-  directional/material-family or CharacterOnly resolver selection open. The
-  latest targeted M27 draw capture does not contain the fullscreen deferred
-  resolver that lit the retail crystal, so closing that selection now requires
-  resolver-frame evidence rather than another material-draw capture. That
+  RGB-zero. This disproves the earlier t13-only explanation. M27's exported
+  `_ShadingModel=0`, stencil ref 0, HGBuffer Replace operation, neutral b4/c0
+  terrain-profile payload, and the retail resolver stencil contracts close its
+  family as Default Lit; the adjacent foliage and subsurface fullscreen passes
+  are stencil alternatives, not competing M27 classifications. An exact
+  Subsurface diagnostic also remains RGB-zero and is rejected for M27. The
+  remaining fault is therefore inside the Default Lit frame-input closure.
+  Session `20260826T042005Z` does not contain the fullscreen resolver's state:
+  the capture runtime counted plain draws but previously retained full state
+  only for `DrawIndexedInstanced`, while the resolver uses
+  `DrawInstanced(3,1,0,0)`. EndfieldCapture now hooks that call in a separate
+  eight-record bounded list, records both shader identities and compact PS
+  b0-b10 ranges, and selects every unique backing constant buffer once into
+  `resources.bin`. Its full 14-test Release suite includes an end-to-end D3D11
+  proxy package gate. One new targeted source-frame-382-window capture is still
+  required to recover the selected Default Lit slices; another M27 material
+  draw capture is not required. The same session
   frame observed 48 compute dispatches but retained only the first 16, with
   explicit truncation. EndfieldCapture now retains 64 compact dispatch records
   under the targeted profile, enough to preserve the complete observed peak
@@ -474,7 +486,8 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   Numeric VS/PS ranges, per-draw record 0, the inactive optional-skin branch,
   PS c103/c105, complete material b3, and b4/c0 are now captured and decoded in
   `reports/assets/character_recovery/endminf_m27_particle_abi.json`. No further
-  M27 game capture is currently needed. Unity now has a crash-safe, layer-
+  M27 material-draw capture is needed; one resolver-state capture remains as
+  bounded above. Unity now has a crash-safe, layer-
   isolated five-attachment M27 publisher with an explicit per-frame readiness
   signal. All five attachment readbacks are now content-nonzero after preserving
   captured shader defaults during exact material-property transfer. The staged
