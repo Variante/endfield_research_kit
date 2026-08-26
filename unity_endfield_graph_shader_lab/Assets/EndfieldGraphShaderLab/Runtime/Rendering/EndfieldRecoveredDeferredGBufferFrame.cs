@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using Unity.Collections;
@@ -399,10 +400,17 @@ namespace EndfieldGraphShaderLab
             failureLogged = false;
             if (endminfM27Renderer != null && !endminfM27ActivationLogged)
             {
+                Texture m27BaseMap = endminfM27Material.GetTexture(
+                    "_BaseColorMap");
                 Debug.Log(
                     "Recovered Endminf M27 five-MRT HGBuffer sidecar active: " +
                     $"camera={camera.name}, rendererPathId={EndminfM27RendererPathId}, " +
                     $"particles={endminfM27Renderer.GetComponent<ParticleSystem>().particleCount}, " +
+                    $"baseMap={(m27BaseMap == null ? "<null>" : m27BaseMap.name)}, " +
+                    $"baseMapSize={(m27BaseMap == null ? "0x0" : m27BaseMap.width + "x" + m27BaseMap.height)}, " +
+                    $"baseColor={endminfM27Material.GetColor("_BaseColor")}, " +
+                    $"baseTintCover={endminfM27Material.GetFloat("_BaseColorTintCover").ToString("R", CultureInfo.InvariantCulture)}, " +
+                    $"baseBrighterScale={endminfM27Material.GetFloat("_BaseColorBrighterScale").ToString("R", CultureInfo.InvariantCulture)}, " +
                     "geometryRendererEnabled=true, ordinaryCameraExcluded=true, " +
                     "presented=false.");
                 endminfM27ActivationLogged = true;
@@ -725,7 +733,9 @@ namespace EndfieldGraphShaderLab
                     name = "Recovered exact-contract Endminf M27 HGBuffer",
                     hideFlags = HideFlags.HideAndDontSave,
                 };
-                endminfM27Material.CopyPropertiesFromMaterial(sourceMaterial);
+                CopyExactM27SourceProperties(
+                    sourceMaterial,
+                    endminfM27Material);
                 endminfM27SourceMaterialId = sourceId;
             }
             passIndex = endminfM27Material.FindPass(EndminfM27PassName);
@@ -735,6 +745,65 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             return true;
+        }
+
+        private static void CopyExactM27SourceProperties(
+            Material source,
+            Material destination)
+        {
+            // CopyPropertiesFromMaterial also copies zero-valued defaults for
+            // fields absent from the narrow compatibility shader. That erased
+            // captured retail b3 values such as c4.z
+            // (_BaseColorBrighterScale=1) and made GBufferC entirely black.
+            // Transfer only properties serialized by the retained M27 asset;
+            // every other destination default is hash-pinned capture data.
+            string[] textureProperties =
+            {
+                "_BaseColorMap",
+                "_MROMap",
+                "_NormalMap",
+                "_ParallaxMap",
+            };
+            foreach (string property in textureProperties)
+            {
+                if (!source.HasProperty(property) ||
+                    !destination.HasProperty(property))
+                    continue;
+                destination.SetTexture(property, source.GetTexture(property));
+                destination.SetTextureScale(
+                    property,
+                    source.GetTextureScale(property));
+                destination.SetTextureOffset(
+                    property,
+                    source.GetTextureOffset(property));
+            }
+
+            string[] colorProperties =
+            {
+                "_BaseColor",
+                "_ParallaxColor",
+            };
+            foreach (string property in colorProperties)
+            {
+                if (source.HasProperty(property) &&
+                    destination.HasProperty(property))
+                    destination.SetColor(property, source.GetColor(property));
+            }
+
+            string[] floatProperties =
+            {
+                "_ParallaxIntensity",
+                "_ParallaxStrength",
+                "_ParallaxTilling",
+                "_ParallaxMarchNum",
+                "_ParallaxMinBrightness",
+            };
+            foreach (string property in floatProperties)
+            {
+                if (source.HasProperty(property) &&
+                    destination.HasProperty(property))
+                    destination.SetFloat(property, source.GetFloat(property));
+            }
         }
 
         private bool TryEnsureResources(

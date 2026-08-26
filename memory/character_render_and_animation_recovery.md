@@ -350,11 +350,15 @@ complete frame without a client fault.
   the source mesh's zero skin rows. The hash-pinned fragment equations now have
   an M27-PathID-only five-target Unity source port. A D3D11 runtime probe proves
   the live 15-particle draw, M27-specific publication signal, and nonempty
-  SceneColor, SceneMV, GBufferA, and GBufferB readbacks without the prior
-  disabled-renderer crash. GBufferC currently remains zero, and the sidecar is
-  non-presented. Exact admission therefore still requires the original-DXBC
-  ABI swap or equivalent transport closure plus a content-valid presented
-  deferred consumer; do not replace those with more material tuning.
+  SceneColor, SceneMV, GBufferA, GBufferB, and GBufferC readbacks without the
+  prior disabled-renderer crash. The initial zero GBufferC was a Unity owner
+  transport bug: broad material copying replaced captured shader defaults with
+  zeroes for properties absent from the narrow exported compatibility material.
+  The owner now transfers only properties serialized by that M27 asset and
+  preserves captured defaults such as `_BaseColorBrighterScale=1`. The sidecar
+  remains non-presented. Exact admission therefore still requires the
+  original-DXBC ABI swap or equivalent transport closure plus a content-valid
+  presented deferred consumer; do not replace those with more material tuning.
   Current-build native evidence now proves that AnchorWaveBright c105
   is `(position.x, position.y, radius, intensity * enabledFlag)` and is published
   verbatim to the global constant buffer; its zero construction default is not
@@ -452,9 +456,10 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   `reports/assets/character_recovery/endminf_m27_particle_abi.json`. No further
   M27 game capture is currently needed. Unity now has a crash-safe, layer-
   isolated five-attachment M27 publisher with an explicit per-frame readiness
-  signal. The original DXBC transport, nonzero/verified GBufferC content, and
-  presented deferred consumer remain open. Do not compensate by resizing,
-  brightening, retiming, or disabling M21.
+  signal. All five attachment readbacks are now content-nonzero after preserving
+  captured shader defaults during exact material-property transfer. The
+  original DXBC transport and presented deferred consumer remain open. Do not
+  compensate by resizing, brightening, retiming, or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
