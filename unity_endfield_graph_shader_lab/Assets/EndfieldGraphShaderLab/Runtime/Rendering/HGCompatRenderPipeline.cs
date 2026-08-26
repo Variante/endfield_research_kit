@@ -279,6 +279,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_RecoveredTemporalResponsiveTransparency");
         private static readonly int RecoveredTemporalResolveId =
             Shader.PropertyToID("_EndfieldRecoveredTemporalResolve");
+        private static readonly int RecoveredCombinedVelocityId =
+            Shader.PropertyToID("_CombinedVelocity");
         private static readonly int RecoveredPostSemanticsId = Shader.PropertyToID("_EndfieldRecoveredPostSemantics");
         private static readonly int RecoveredColorGradingLutId = Shader.PropertyToID("_RecoveredColorGradingLut");
         private static readonly int RecoveredColorGradingLutReadyId = Shader.PropertyToID("_RecoveredColorGradingLutReady");
@@ -568,6 +570,8 @@ namespace EndfieldGraphShaderLab
             recoveredScreenDirectAudit;
         private readonly EndfieldRecoveredSceneMVCompositor
             recoveredSceneMVCompositor;
+        private readonly EndfieldRecoveredCombinedVelocityProducer
+            recoveredCombinedVelocityProducer;
         private RenderTexture recoveredExactCameraDepth;
         private sealed class RecoveredTemporalCameraState
         {
@@ -619,6 +623,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredPreGBufferDepthOwnerFailure;
         private bool loggedRecoveredSceneMV;
         private bool loggedRecoveredSceneMVFailure;
+        private bool loggedRecoveredCombinedVelocityFailure;
         private bool loggedRecoveredVFXGlobalsFailure;
         private bool loggedRecoveredSceneColorFormatFailure;
         private bool loggedRecoveredPreTransparentSceneColorFormatFailure;
@@ -714,6 +719,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredPreGBufferDepthOwner();
             recoveredSceneMVCompositor =
                 new EndfieldRecoveredSceneMVCompositor();
+            recoveredCombinedVelocityProducer =
+                new EndfieldRecoveredCombinedVelocityProducer();
             GraphicsSettings.useScriptableRenderPipelineBatching = true;
 
             if (recoveredLiveCharInfoAutoExposureRequested)
@@ -3395,6 +3402,23 @@ namespace EndfieldGraphShaderLab
                 recoveredTemporalDilationMaterial != null &&
                 recoveredPrimarySceneDepth != null &&
                 recoveredSceneMV != null;
+            bool combinedVelocityProduced =
+                recoveredCombinedVelocityProducer.TryEnqueue(
+                    commandBuffer,
+                    recoveredSceneMV,
+                    width,
+                    height,
+                    RecoveredCombinedVelocityId,
+                    out string combinedVelocityFailure);
+            if (!combinedVelocityProduced &&
+                !string.IsNullOrEmpty(combinedVelocityFailure) &&
+                !loggedRecoveredCombinedVelocityFailure)
+            {
+                Debug.LogWarning(
+                    "Recovered DLSS velocity combine failed closed: " +
+                    combinedVelocityFailure + ".");
+                loggedRecoveredCombinedVelocityFailure = true;
+            }
             bool invalidHistory = state.history == null ||
                 state.history.width != width ||
                 state.history.height != height ||
@@ -3719,6 +3743,8 @@ namespace EndfieldGraphShaderLab
             state.hasPreviousNonJitteredViewProjection = true;
             state.lastElapsed = temporalResolveActive ? elapsed : float.NaN;
             state.lastFrame = Time.frameCount;
+            if (combinedVelocityProduced)
+                commandBuffer.ReleaseTemporaryRT(RecoveredCombinedVelocityId);
         }
 
         private static void ReleaseRecoveredTemporalHistory(

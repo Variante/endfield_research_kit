@@ -273,8 +273,13 @@ complete frame without a client fault.
   normalized UV-fraction motion; depth and camera matrices do not enter that
   kernel. Packed SceneMV is exactly `A2B10G10R10_UNormPack32`; the native
   `0x2d` descriptor is instead `R16_SFloat` dilated depth and supplies no
-  evidence for combined velocity. The transient combined-output format and
-  direct producer attachment remain open. The same-frame reset is exactly large de-jittered camera
+  evidence for combined velocity. Four full retail D3D11 FrameAnalysis captures
+  independently close the transient output as full-native-resolution
+  `R16G16_FLOAT` with SRV, RTV, and UAV bindings: the 3840x2160 packed input is
+  decoded by a 480x270 dispatch of the 8x8 kernel. Unity now publishes the same
+  temporary `R16G16_SFloat` `_CombinedVelocity` producer without enabling a
+  DLSS/DLAA consumer or changing beauty. Direct attachment of every retail
+  non-character motion producer remains open. The same-frame reset is exactly large de-jittered camera
   movement or `isFirstFrame`, after which `isFirstFrame` is cleared; size and
   AA-mode changes are not independent compiled terms. DLAA scale is delegated
   to Streamline optimal-settings mode 6 rather than forced to one by HG. The
@@ -306,7 +311,12 @@ complete frame without a client fault.
   appear before retail and removes it from the retail peak. Particle delays
   therefore remain on the selection/body timeline: M13 is absent at requested
   4.2167 seconds, alive at 4.4667, and gone by 4.7167, while the post clock is
-  still 0.15 seconds ahead. The focused D3D11 capture passes those renderer
+  still 0.15 seconds ahead. The streamed late-pulse coefficients are the same
+  zero-tangent cubic as the current `SmoothStep` evaluation within about
+  2.5e-8. On the maintained no-frame-generation phase map that post pulse rises
+  around retail frames 369-370, peaks around 371, decays through 380, and is
+  zero by 381-382; interpolation and post retiming are not the frame-382 gap.
+  The focused D3D11 capture passes those renderer
   liveness gates and visually restores the large ring at source frame 382
   without changing M13/M21 delay, scale, material, or emission data. Its
   remaining over-saturated halo is a presentation/bloom gap; the exact source
@@ -1166,11 +1176,10 @@ another per-material shader approximation. The missing boundary includes:
 - the full TAA producer/consumer chain beyond the now-complete actor SceneMV
   MRT coverage, recorded blank-frame history boundary, and recovered Dilation
   auxiliary-history producer.
-- the exact `_CombinedVelocity` allocation format used by the recovered
-  Streamline DLAA velocity-combine dispatch. The pinned retail helper has no
-  credible stock Unity/PDB equivalent, and its later `0x2d` virtual-call
-  argument has no statically recoverable enum domain. Keep the native proxy
-  disabled until a D3D11/RenderDoc resource descriptor proves the format.
+- the custom Streamline DLAA consumer/output after the now-exact
+  `_CombinedVelocity` producer. Four retail D3D11 descriptors prove the
+  producer's full-resolution `R16G16_FLOAT` UAV allocation; this does not make
+  Unity's public D3D12 NVIDIA wrapper equivalent to the game's D3D11 schedule.
 
 `SphereOutside` is asset-complete. Its remaining gates are runtime frame state
 and resources. The live exact deferred resolver is no longer a blocker. The
