@@ -100,14 +100,25 @@ namespace EndfieldGraphShaderLabEditor
                     long materialPathId = node.materialPathIds[0];
                     Material material = materialPathId == Material01PathId
                         ? material01 : material38;
-                    if (!node.rendererFailClosedForUnrecoveredShader)
-                    {
-                        Require(renderer.enabled &&
-                            renderer.renderMode == ParticleSystemRenderMode.Mesh &&
-                            renderer.sharedMaterials.Length == 1 &&
-                            renderer.sharedMaterial == material,
-                            "Fresh Endminf LitEffect source-stage binding drifted");
-                    }
+                    bool retainedFailClosed =
+                        node.rendererFailClosedForUnrecoveredShader &&
+                        !renderer.enabled && renderer.sharedMaterials.Length == 0;
+                    bool freshlyAdmitted =
+                        !node.rendererFailClosedForUnrecoveredShader &&
+                        renderer.enabled &&
+                        renderer.renderMode == ParticleSystemRenderMode.Mesh &&
+                        renderer.sharedMaterials.Length == 1 &&
+                        renderer.sharedMaterial == material;
+                    // Repair the exact half-applied boundary produced by the
+                    // previous builder: direct compatibility rows were saved
+                    // default-off, but their source marker was left admitted.
+                    bool staleDefaultOffBoundary =
+                        !node.rendererFailClosedForUnrecoveredShader &&
+                        node.sourceRendererEnabled && !renderer.enabled &&
+                        renderer.sharedMaterials.Length == 0;
+                    Require(retainedFailClosed || freshlyAdmitted ||
+                        staleDefaultOffBoundary,
+                        "Endminf LitEffect retained/admitted boundary drifted");
                     if (materialPathId == Material01PathId) material01Count++;
                     else material38Count++;
 
@@ -115,6 +126,8 @@ namespace EndfieldGraphShaderLabEditor
                     // supplies these references only under the explicit opt-in.
                     renderer.enabled = false;
                     renderer.sharedMaterials = Array.Empty<Material>();
+                    node.sourceRendererEnabled = false;
+                    node.rendererFailClosedForUnrecoveredShader = true;
                     rows.Add(new EndfieldEndminfLitEffectCompatibilityBinding.Row {
                         particleRendererPathId = node.particleRendererPathId,
                         materialPathId = materialPathId,
@@ -185,7 +198,12 @@ namespace EndfieldGraphShaderLabEditor
                     renderer.renderMode == ParticleSystemRenderMode.Mesh &&
                     renderer.sharedMaterials.Length == 1 &&
                     renderer.sharedMaterial == material && renderer.mesh == mesh;
-                Require(retainedFailClosed || freshlyAdmitted,
+                bool staleDefaultOffBoundary =
+                    !node.rendererFailClosedForUnrecoveredShader &&
+                    node.sourceRendererEnabled && !renderer.enabled &&
+                    renderer.sharedMaterials.Length == 0 && renderer.mesh == null;
+                Require(retainedFailClosed || freshlyAdmitted ||
+                    staleDefaultOffBoundary,
                     "Endminf M27 retained/admitted boundary drifted: " +
                     "failClosed=" + node.rendererFailClosedForUnrecoveredShader +
                     ", sourceEnabled=" + node.sourceRendererEnabled +
@@ -196,6 +214,8 @@ namespace EndfieldGraphShaderLabEditor
                 renderer.enabled = false;
                 renderer.sharedMaterials = Array.Empty<Material>();
                 renderer.SetMeshes(Array.Empty<Mesh>(), 0);
+                node.sourceRendererEnabled = false;
+                node.rendererFailClosedForUnrecoveredShader = true;
                 EndfieldEndminfLitEffectCompatibilityBinding binding =
                     root.GetComponent<EndfieldEndminfLitEffectCompatibilityBinding>();
                 if (binding == null)
@@ -226,6 +246,8 @@ namespace EndfieldGraphShaderLabEditor
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
             EndfieldEndminfLitEffectCompatibilityBinding binding = root != null
                 ? root.GetComponent<EndfieldEndminfLitEffectCompatibilityBinding>() : null;
+            EndfieldRecoveredParticleEffectSource source = root != null
+                ? root.GetComponent<EndfieldRecoveredParticleEffectSource>() : null;
             Require(binding != null && binding.contractSchema ==
                 EndfieldEndminfLitEffectCompatibilityBinding.ContractSchema &&
                 binding.rows != null && binding.rows.Length == 10,
@@ -238,10 +260,18 @@ namespace EndfieldGraphShaderLabEditor
                  row.materialPathId == Material38PathId)) &&
                 binding.rows.Select(row => row.particleRendererPathId).Distinct().Count() == 10,
                 "Saved Endminf LitEffect direct-reference rows drifted");
+            Require(source != null && source.particleNodes != null &&
+                binding.rows.All(row => source.particleNodes.Count(node =>
+                    node.particleRendererPathId == row.particleRendererPathId &&
+                    !node.sourceRendererEnabled &&
+                    node.rendererFailClosedForUnrecoveredShader) == 1),
+                "Saved Endminf LitEffect marker boundary drifted");
 
             GameObject m27Root = AssetDatabase.LoadAssetAtPath<GameObject>(M27Prefab);
             EndfieldEndminfLitEffectCompatibilityBinding m27Binding = m27Root != null
                 ? m27Root.GetComponent<EndfieldEndminfLitEffectCompatibilityBinding>() : null;
+            EndfieldRecoveredParticleEffectSource m27Source = m27Root != null
+                ? m27Root.GetComponent<EndfieldRecoveredParticleEffectSource>() : null;
             Require(m27Binding != null && m27Binding.contractSchema ==
                 EndfieldEndminfLitEffectCompatibilityBinding.ContractSchema &&
                 m27Binding.rows != null && m27Binding.rows.Length == 1,
@@ -254,6 +284,12 @@ namespace EndfieldGraphShaderLabEditor
                 m27.materialPathId == Material27PathId &&
                 m27.meshPathId == RockMeshPathId,
                 "Saved Endminf M27 direct-reference row drifted");
+            Require(m27Source != null && m27Source.particleNodes != null &&
+                m27Source.particleNodes.Count(node =>
+                    node.particleRendererPathId == M27RendererPathId &&
+                    !node.sourceRendererEnabled &&
+                    node.rendererFailClosedForUnrecoveredShader) == 1,
+                "Saved Endminf M27 marker boundary drifted");
         }
 
         private static string HashAsset(string assetPath)

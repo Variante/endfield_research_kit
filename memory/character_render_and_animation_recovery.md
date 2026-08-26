@@ -357,8 +357,11 @@ complete frame without a client fault.
   handles, identifying or capturing the other authored live window, and
   focused 60 Hz exact-versus-disabled validation for both rows. The capture is
   forced-D3D11 renderer-path evidence and does not by itself authorize enabling
-  either renderer. M21, exact `suikuai (1)`, and M27's exact HGBuffer boundary
-  remain unchanged.
+  either renderer. The maintained importer therefore keeps M28 behind the
+  diagnostic-only `ENDFIELD_ENDMINF_M28_VISUAL_COMPAT=1` switch; broad Endminf
+  visual compatibility still preserves the canonical 68-admitted/2-blocked
+  boundary. M21, exact `suikuai (1)`, and M27's exact HGBuffer boundary remain
+  unchanged.
 - The `M_fx_endminm_gfx_09` burst stripes now bind the exact exported RGBA
   `T_fx_star_07_D` payload. The previous missing `_MainTex` silently sampled
   white and produced a large opaque rectangle; the repaired source-alpha
@@ -383,6 +386,13 @@ complete frame without a client fault.
   brightened, or retimed. Detailed per-stage thresholds, bounds, and hashes
   live in `reports/assets/character_recovery/endminf_post_stage_m13_delta.json`.
   This is Unity-path attribution only and does not establish a retail mismatch.
+  A later D3D11 repeat after the BaseV2 linear-tint repair sampled 4.4333,
+  4.4667, 4.5000, and 4.5333 seconds with the recorded camera input. All runs
+  reached the same requested/actual 60 Hz times, but two full controls did not
+  produce byte- or pixel-identical final PNGs because cross-process temporal
+  history differs. Final-output subtraction must therefore fail closed for
+  material ownership; use the deterministic pre-temporal stage diagnostic
+  above, and treat final PNGs as visual comparisons only.
 - The frame-generation-off recording visibly confirms additional faceted
   fragments around the raised hand. Both `overview_02/all/suikuai` source rows are authored
   enabled, nonlooping, GPU-instanced mesh bursts at 4.49 seconds; an importer
@@ -904,6 +914,14 @@ the stronger M13 ring and dotted trails against the actor-only black clear;
 the aligned retail reference composites those layers over the bright CharInfo
 scene, and existing exact-owner evidence says M13 owns the large ring. Do not
 apply an arbitrary material attenuation from that cross-background contrast.
+A current-build, exact-AssetMap AnimeStudio pass now restores the complete
+serialized Material JSON boundary for all 36 admitted Endminf BaseV2 rows from
+their two source chunks. The fail-closed admission audit validates every
+source hash, common shader PathID, ordered local keyword set, render queue, and
+matching original D3D11 variant with zero failures. This closes source
+provenance for the active M21/M24/M30/M31/M32/M35/M42/M43 crystal and hand-VFX
+rows as well as the remaining Overview BaseV2 materials; it does not itself
+prove a visual parameter mismatch or authorize aesthetic tuning.
 A same-seed exclusion at 4.2167/4.4667/4.7167 seconds now attributes the dense
 segmented white trail specifically to `overview_02/all/Particle System` and
 `M_fx_endminm_gfx_14`: it owns 466 of 531 live particles at the last sample,
