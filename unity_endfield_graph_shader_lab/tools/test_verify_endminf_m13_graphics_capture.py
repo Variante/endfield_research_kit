@@ -22,6 +22,15 @@ def draw() -> dict:
         "indexedInstanced": True,
         "priorityShaderPair": True,
         "instanceCount": 1,
+        "constantBuffers": [{
+            "stage": MODULE.PIXEL_STAGE,
+            "slot": 3,
+            "bufferId": 1234,
+            "capturedConstants": 50,
+            "rangeValid": True,
+            "metadataValid": True,
+            "dataHex": bytes(50 * 16).hex(),
+        }],
         "shaders": [
             {"stage": 0, "identityHash": MODULE.VS_IDENTITY},
             {"stage": 4, "identityHash": MODULE.PS_IDENTITY},
@@ -36,7 +45,14 @@ def metadata() -> dict:
         "resourceSelectionTruncated": False,
         "resourcesFile": "resources.bin",
         "drawRecords": [draw()],
-        "selectedResourceRecords": [
+        "selectedResourceRecords": [{
+            "captureKind": MODULE.CONSTANT_BUFFER_KIND,
+            "objectId": 1234,
+            "blobOffset": 0,
+            "blobBytes": 1024,
+            "failure": 0,
+            "completed": True,
+        }] + [
             {
                 "captureKind": MODULE.SRV_TEXTURE_KIND,
                 "stage": MODULE.PIXEL_STAGE,
@@ -47,8 +63,8 @@ def metadata() -> dict:
                 "format": MODULE.BC7_UNORM_SRGB,
                 "viewFormat": MODULE.BC7_UNORM_SRGB,
                 "subresource": 0,
-                "blobOffset": sum(MODULE.EXPECTED_TEXTURES[index][2]
-                                  for index in range(slot)),
+                "blobOffset": 1024 + sum(MODULE.EXPECTED_TEXTURES[index][2]
+                                         for index in range(slot)),
                 "blobBytes": MODULE.EXPECTED_TEXTURES[slot][2],
                 "failure": 0,
                 "completed": True,
@@ -71,7 +87,8 @@ class M13CaptureTests(unittest.TestCase):
         frame.mkdir(parents=True)
         (frame / "metadata.json").write_text(json.dumps(value), encoding="utf-8")
         if resource_bytes is None:
-            resource_bytes = sum(row[2] for row in MODULE.EXPECTED_TEXTURES.values())
+            resource_bytes = 1024 + sum(
+                row[2] for row in MODULE.EXPECTED_TEXTURES.values())
         (frame / "resources.bin").write_bytes(bytes(resource_bytes))
         return root
 
@@ -88,7 +105,7 @@ class M13CaptureTests(unittest.TestCase):
 
     def test_rejects_incomplete_texture(self) -> None:
         value = metadata()
-        value["selectedResourceRecords"][2]["completed"] = False
+        value["selectedResourceRecords"][3]["completed"] = False
         with self.assertRaisesRegex(MODULE.CaptureError, "t2 did not complete"):
             MODULE.verify_session(self.make_session(value))
 
@@ -96,13 +113,20 @@ class M13CaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.CaptureError, "t4 exceeds"):
             MODULE.verify_session(self.make_session(
                 metadata(),
-                resource_bytes=sum(row[2] for row in MODULE.EXPECTED_TEXTURES.values()) - 1,
+                resource_bytes=1024 + sum(
+                    row[2] for row in MODULE.EXPECTED_TEXTURES.values()) - 1,
             ))
 
     def test_rejects_non_bc7_texture_view(self) -> None:
         value = metadata()
-        value["selectedResourceRecords"][1]["viewFormat"] = 28
+        value["selectedResourceRecords"][2]["viewFormat"] = 28
         with self.assertRaisesRegex(MODULE.CaptureError, "t1 view is not BC7 sRGB"):
+            MODULE.verify_session(self.make_session(value))
+
+    def test_rejects_truncated_material_constants(self) -> None:
+        value = metadata()
+        value["drawRecords"][0]["constantBuffers"][0]["capturedConstants"] = 36
+        with self.assertRaisesRegex(MODULE.CaptureError, "only 36 of 50"):
             MODULE.verify_session(self.make_session(value))
 
 

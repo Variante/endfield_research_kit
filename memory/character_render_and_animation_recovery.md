@@ -1186,12 +1186,19 @@ payload. The maintained generator rebases the immutable 435-vertex packet and
 constant arrays to this frame and reports the exact vertex envelope closed.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
-VFXBaseV2 pair, but its five selected BC7 SRVs failed before readback because
-the capture path only sized uncompressed single-mip textures. EndfieldCapture
-now computes BC block rows, copies the SRV-selected mip into a one-subresource
-staging texture, and reports width, height, source/view formats, and subresource;
-its BC7 mip WARP test and complete 14-test Release suite pass. Only a narrow M13
-texture retry remains. The older
+VFXBaseV2 pair. EndfieldCapture now computes BC block rows, copies the
+SRV-selected mip into a one-subresource staging texture, and reports width,
+height, source/view formats, and subresource; its BC7 mip WARP test passes.
+Session `20260826T142935Z`, frame 2383, consequently closes all five exact BC7
+SRVs and contains a unique current 240-byte dynamic quad in the selected
+particle ring. Its fail-closed packet build exposed one remaining range gap:
+the retail pixel shader declares and reads material b3 through c49, while the
+capture retained only c0-c35 and did not select that distinct backing
+allocation. EndfieldCapture now retains all 50 vectors and selects every
+distinct constant-buffer allocation before the five textures; its complete
+14-test Release suite passes. One repeat M13 window with this corrected build
+is required, and the validator now rejects the former frame specifically as
+`captured only 36 of 50 vectors`. The older
 FrameAnalysis peak identifies M13 as draw 121 and proves its one billboard
 carries authored RGBA `(1, 0.2862745, 0.0235294, 0.0862745)`; this agrees with
 the generated start-color and color-over-lifetime contract. The conspicuous
@@ -1241,7 +1248,7 @@ registration is measured, but no further M14 graphics capture is needed.
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 Validate the now-closed exact M27 packet in the full Unity sequence, then admit
-M13 only after one corrected BC7 texture capture passes its fail-closed gate.
+M13 after one corrected material-buffer capture passes its fail-closed gate.
 
 ## Main animation gap
 
