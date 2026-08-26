@@ -170,6 +170,7 @@ namespace EndfieldGraphShaderLabEditor
             public float endminfPostRadialIntensity;
             public float endminfPostEffectivePower;
             public int endminfPostMode;
+            public Vector2 endminfPostCenterViewport;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -902,6 +903,7 @@ namespace EndfieldGraphShaderLabEditor
                 endminfPostRadialIntensity = endminfPostState.radialIntensity,
                 endminfPostEffectivePower = endminfPostState.effectivePower,
                 endminfPostMode = endminfPostState.mode,
+                endminfPostCenterViewport = endminfPostState.centerViewport,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
