@@ -178,6 +178,8 @@ namespace EndfieldGraphShaderLab
         private static readonly int RecoveredCameraDepthReadyId =
             Shader.PropertyToID("_EndfieldRecoveredCameraDepthReady");
         private static readonly int CharacterBloomSourceId = Shader.PropertyToID("_EndfieldCharacterBloomSource");
+        private static readonly int RecoveredEndminfPostSourceId =
+            Shader.PropertyToID("_EndfieldRecoveredEndminfPostSource");
         private static readonly int CharacterBloomAId = Shader.PropertyToID("_EndfieldCharacterBloomA");
         private static readonly int CharacterBloomBId = Shader.PropertyToID("_EndfieldCharacterBloomB");
         private static readonly int BloomTextureId = Shader.PropertyToID("_BloomTex");
@@ -346,6 +348,8 @@ namespace EndfieldGraphShaderLab
         // sceneColor descriptor the diagnostic owns.
         public const GraphicsFormat RecoveredSceneColorFormat =
             GraphicsFormat.B10G11R11_UFloatPack32;
+        public static GraphicsFormat LastRecoveredEndminfPostSourceGraphicsFormat
+            { get; private set; } = GraphicsFormat.None;
         public static EndfieldRecoveredSceneMVDiagnosticState
             LastRecoveredSceneMVDiagnostic { get; } =
                 new EndfieldRecoveredSceneMVDiagnosticState();
@@ -2942,11 +2946,55 @@ namespace EndfieldGraphShaderLab
                     recoveredPrimarySceneDepth,
                     recoveredSceneMV,
                     recoveredSceneColorDescriptor);
+            }
+            // The retained retail Uber draw binds full-resolution
+            // R16G16B16A16_FLOAT t0 after the packed B10G11R11 sceneColor
+            // owner. Preserve that post-handoff promotion for Endminf before
+            // bloom and Uber sample the source.
+            bool useRecoveredEndminfRgba16PostSource =
+                useRecoveredPostSemantics &&
+                EndfieldEndminfVisualCompatibilityClock.Requested &&
+                SystemInfo.IsFormatSupported(
+                    GraphicsFormat.R16G16B16A16_SFloat,
+                    FormatUsage.Render);
+            RenderTargetIdentifier recoveredPostSource =
+                new RenderTargetIdentifier(CameraColorId);
+            RenderTextureDescriptor recoveredPostSourceDescriptor =
+                recoveredSceneColorDescriptor;
+            LastRecoveredEndminfPostSourceGraphicsFormat =
+                recoveredPostSourceDescriptor.graphicsFormat;
+            if (useRecoveredEndminfRgba16PostSource)
+            {
+                recoveredPostSourceDescriptor = new RenderTextureDescriptor(
+                    width,
+                    height)
+                {
+                    graphicsFormat = GraphicsFormat.R16G16B16A16_SFloat,
+                    depthStencilFormat = GraphicsFormat.None,
+                    msaaSamples = 1,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    sRGB = false
+                };
+                commandBuffer.GetTemporaryRT(
+                    RecoveredEndminfPostSourceId,
+                    recoveredPostSourceDescriptor,
+                    FilterMode.Bilinear);
+                commandBuffer.Blit(
+                    CameraColorId,
+                    RecoveredEndminfPostSourceId);
+                recoveredPostSource = new RenderTargetIdentifier(
+                    RecoveredEndminfPostSourceId);
+                LastRecoveredEndminfPostSourceGraphicsFormat =
+                    recoveredPostSourceDescriptor.graphicsFormat;
+            }
+            if (useRecoveredPostSemantics)
+            {
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
                     commandBuffer,
                     EndfieldRecoveredPostStageDiagnostic.AfterTemporal,
-                    new RenderTargetIdentifier(CameraColorId),
-                    recoveredSceneColorDescriptor);
+                    recoveredPostSource,
+                    recoveredPostSourceDescriptor);
             }
             if (!useRecoveredPostSemantics)
             {
@@ -3040,6 +3088,7 @@ namespace EndfieldGraphShaderLab
                 // already-rendered HDR camera color rather than a character redraw.
                 recoveredBloomMipCount = BuildRecoveredSceneBloomPyramid(
                     commandBuffer,
+                    recoveredPostSource,
                     width,
                     height,
                     bloomThreshold,
@@ -3177,7 +3226,7 @@ namespace EndfieldGraphShaderLab
                         : FilterMode.Bilinear);
                 commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
                 commandBuffer.Blit(
-                    CameraColorId,
+                    recoveredPostSource,
                     EndfieldRecoveredSceneMVCompositor.PostColorId,
                     postProcessMaterial,
                     0);
@@ -3214,7 +3263,7 @@ namespace EndfieldGraphShaderLab
                     FilterMode.Point);
                 commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
                 commandBuffer.Blit(
-                    CameraColorId,
+                    recoveredPostSource,
                     RecoveredFinalDisplayId,
                     postProcessMaterial,
                     0);
@@ -3240,7 +3289,7 @@ namespace EndfieldGraphShaderLab
                     PresentFlipYId,
                     ShouldFlipPresentation(camera) ? 1.0f : 0.0f);
                 commandBuffer.Blit(
-                    CameraColorId,
+                    recoveredPostSource,
                     BuiltinRenderTextureType.CameraTarget,
                     postProcessMaterial,
                     0);
@@ -3282,6 +3331,8 @@ namespace EndfieldGraphShaderLab
             }
             if (!deferPresentationForSceneMV)
                 commandBuffer.ReleaseTemporaryRT(CameraColorId);
+            if (useRecoveredEndminfRgba16PostSource)
+                commandBuffer.ReleaseTemporaryRT(RecoveredEndminfPostSourceId);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
@@ -3804,6 +3855,7 @@ namespace EndfieldGraphShaderLab
 
         private int BuildRecoveredSceneBloomPyramid(
             CommandBuffer commandBuffer,
+            RenderTargetIdentifier sourceColor,
             int sourceWidth,
             int sourceHeight,
             float serializedThreshold,
@@ -3866,7 +3918,7 @@ namespace EndfieldGraphShaderLab
                     1.0f / recoveredBloomMipWidths[0],
                     1.0f / recoveredBloomMipHeights[0]));
             commandBuffer.Blit(
-                CameraColorId,
+                sourceColor,
                 RecoveredBloomMipDownIds[0],
                 postProcessMaterial,
                 1);
