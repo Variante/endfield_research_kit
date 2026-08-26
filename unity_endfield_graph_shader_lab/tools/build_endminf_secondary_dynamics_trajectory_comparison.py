@@ -97,17 +97,31 @@ def metrics(rows: list[dict]) -> dict:
     }
 
 
+def solver_writeback_enabled(frames: list[dict]) -> bool:
+    states = {
+        bool(frame.get("secondaryDynamicsSolverWriteback", False))
+        for frame in frames
+    }
+    if len(states) != 1:
+        raise ComparisonError("Unity solver-writeback state changes within the sequence")
+    return states.pop()
+
+
 def compare(retail: dict, unity: dict) -> dict:
     if retail.get("schema") != (
         "endfield.charinfo.endminf-captured-secondary-dynamics-oracle.v1"
     ):
         raise ComparisonError("retail oracle schema differs")
-    if unity.get("schema") != "endfield.endminf-viewer-playmode-sequence.v4":
+    if unity.get("schema") not in {
+        "endfield.endminf-viewer-playmode-sequence.v4",
+        "endfield.endminf-viewer-playmode-sequence.v5",
+    }:
         raise ComparisonError("Unity sequence schema differs")
     retail_frames = retail.get("frames", [])
     unity_frames = unity.get("frames", [])
     if len(retail_frames) != 40 or len(unity_frames) != 40:
         raise ComparisonError("comparison requires forty synchronized frames")
+    writeback_enabled = solver_writeback_enabled(unity_frames)
 
     owner_paths = {
         owner["owner"]: set(owner.get("capturedProxyPaths", []))
@@ -169,8 +183,10 @@ def compare(retail: dict, unity: dict) -> dict:
         "status": "retail_trajectory_gap_measured",
         "scope": (
             "74 retail-rendered owner bones at 40 source-aligned checkpoints; "
-            "Unity recovered solver writeback remains disabled"
+            "Unity recovered solver writeback is " +
+            ("enabled" if writeback_enabled else "disabled")
         ),
+        "solverWritebackEnabled": writeback_enabled,
         "uniqueComparedPaths": len(unique_paths),
         "ownerMetrics": {
             owner: metrics(rows) for owner, rows in owner_rows.items()
