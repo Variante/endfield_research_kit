@@ -16,6 +16,10 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT";
         public const string ContractSchema =
             "endfield.endminf-liteffect-runtime-binding.v1";
+        private const string ExactM27EnvironmentVariable =
+            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER";
+        private const long M27RendererPathId = 59284134265994738L;
+        internal const int ExactM27Layer = 31;
 
         [Serializable]
         public sealed class Row
@@ -33,7 +37,12 @@ namespace EndfieldGraphShaderLab
 
         private void OnEnable()
         {
-            if (!Requested)
+            bool exactM27 = string.Equals(
+                Environment.GetEnvironmentVariable(
+                    ExactM27EnvironmentVariable),
+                "1",
+                StringComparison.Ordinal);
+            if (!Requested && !exactM27)
                 return;
 
             foreach (Row row in rows)
@@ -47,9 +56,15 @@ namespace EndfieldGraphShaderLab
                     continue;
                 }
 
+                if (exactM27 &&
+                    row.particleRendererPathId != M27RendererPathId)
+                    continue;
+
                 row.renderer.renderMode = ParticleSystemRenderMode.Mesh;
                 row.renderer.SetMeshes(new[] { row.mesh }, 1);
                 row.renderer.sharedMaterials = new[] { row.material };
+                if (exactM27)
+                    row.renderer.gameObject.layer = ExactM27Layer;
                 row.renderer.enabled = true;
             }
         }

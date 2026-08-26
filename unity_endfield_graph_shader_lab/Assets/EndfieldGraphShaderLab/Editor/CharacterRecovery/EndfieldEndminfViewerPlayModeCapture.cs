@@ -129,6 +129,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredShadowDataReady;
             public bool observedDeferredPass0InputSubsetReady;
             public bool observedDeferredGBufferFrameReady;
+            public bool observedEndminfM27HGBufferReady;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -172,6 +173,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool deferredShadowDataReady;
             public bool deferredPass0InputSubsetReady;
             public bool deferredGBufferFrameReady;
+            public bool endminfM27HGBufferReady;
             public bool preGBufferDepthOwnerReady;
             public bool canonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerReady;
@@ -325,6 +327,8 @@ namespace EndfieldGraphShaderLabEditor
             // open_character_recovery_lab.bat. Batch validation must not
             // silently fall back to the preserved gacha-room presentation
             // merely because its parent shell lacks these process variables.
+            bool exactEndminfM27 = Environment.GetEnvironmentVariable(
+                "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER") == "1";
             string[] reproductionFlags = {
                 "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY",
                 "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT",
@@ -334,7 +338,20 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET"
             };
             foreach (string flag in reproductionFlags)
-                Environment.SetEnvironmentVariable(flag, "1");
+                Environment.SetEnvironmentVariable(
+                    flag,
+                    exactEndminfM27 &&
+                    flag == "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT"
+                        ? "0"
+                        : "1");
+            if (exactEndminfM27)
+            {
+                // The exact five-target publisher owns M27 exclusively.
+                // Disable the ForwardOnly compatibility renderer so the test
+                // cannot accidentally admit a double publication.
+                Environment.SetEnvironmentVariable(
+                    "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT", "0");
+            }
             if (ActorOnlyCapture)
             {
                 Environment.SetEnvironmentVariable(
@@ -355,6 +372,11 @@ namespace EndfieldGraphShaderLabEditor
             // pinned PathIDs and direct tracked assets. This remains opt-in and
             // does not broaden the four separately blocked non-primary rows.
             EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
+            // The overview rebuild refreshes transient source prefabs. Restore
+            // the direct LitEffect rows afterward so both compatibility and
+            // exact M27 owners receive the same hash-validated references.
+            EndfieldEndminfLitEffectCompatibilityBindingBuilder
+                .BuildAndValidate();
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
                     EndfieldEndminfVisualCompatibilityClock.PreRollSecondsEnvironmentVariable)))
             {
@@ -384,6 +406,13 @@ namespace EndfieldGraphShaderLabEditor
                     RecordingGyroscopeInputY);
             }
             EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
+            if (exactEndminfM27)
+            {
+                int exactM27LayerMask = 1 << 31;
+                foreach (Camera sceneCamera in
+                    UnityEngine.Object.FindObjectsOfType<Camera>(true))
+                    sceneCamera.cullingMask &= ~exactM27LayerMask;
+            }
             Frames.Clear();
             captureFailure = null;
             next = 0;
@@ -802,6 +831,8 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredDeferredPass0InputSubsetReady") > 0.5f,
                 deferredGBufferFrameReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredDeferredGBufferFrameReady") > 0.5f,
+                endminfM27HGBufferReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredEndminfM27HGBufferReady") > 0.5f,
                 preGBufferDepthOwnerReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredPreGBufferDepthOwnerReady") > 0.5f,
                 canonicalCharacterPreGBufferReady = Shader.GetGlobalFloat(
@@ -888,6 +919,11 @@ namespace EndfieldGraphShaderLabEditor
                     frame.liveRenderers.Any(renderer =>
                         renderer.shaders != null &&
                         renderer.shaders.Contains(LitEffectCompatibilityShader)));
+            bool exactEndminfM27Requested = string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER"),
+                "1",
+                StringComparison.Ordinal);
             bool observedDeferredLightDataReady = Frames.All(value =>
                 value.deferredLightDataReady);
             bool observedDeferredShadowDataReady = Frames.All(value =>
@@ -896,6 +932,8 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredPass0InputSubsetReady);
             bool observedDeferredGBufferFrameReady = Frames.All(value =>
                 value.deferredGBufferFrameReady);
+            bool observedEndminfM27HGBufferReady = Frames.Any(value =>
+                value.endminfM27HGBufferReady);
             bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
                 value.preGBufferDepthOwnerReady);
             bool observedCanonicalCharacterPreGBufferReady = Frames.All(value =>
@@ -912,10 +950,14 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
             if (!observedRotationOnlyRootMotion)
                 missingObservations.Add("rotation-only root motion with invariant position");
-            if (!observedPrimaryRockCompatibilityBinding)
+            if (!exactEndminfM27Requested &&
+                !observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
                     "eleven-row LitEffect crystal compatibility plus exact suikuai (1) " +
                     "binding with two separate blocked effects");
+            if (exactEndminfM27Requested && !observedEndminfM27HGBufferReady)
+                missingObservations.Add(
+                    "exact Endminf M27 five-MRT HGBuffer publication");
             if (!observedPreGBufferDepthOwnerReady)
                 missingObservations.Add(
                     "canonical CharacterPrePass depth/stencil ownership");
@@ -999,6 +1041,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedDeferredPass0InputSubsetReady,
                 observedDeferredGBufferFrameReady =
                     observedDeferredGBufferFrameReady,
+                observedEndminfM27HGBufferReady =
+                    observedEndminfM27HGBufferReady,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =
