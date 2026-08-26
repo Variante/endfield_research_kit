@@ -770,6 +770,20 @@ namespace EndfieldGraphShaderLabEditor
                     requested);
             }
             Color32[] pixels = Render(camera);
+            // ReadPixels in Render synchronizes this focused D3D11 capture, so
+            // the render-thread plugin callback must be observable here. Do
+            // not accept a submitted event as proof that the exact M13 packet
+            // actually drew.
+            if (EndfieldRecoveredEndminfM13ExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM13ExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM13ExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m13ValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M13 callback validation failed: " +
+                    m13ValidationFailure);
+            }
             if (capturePrePostHdr && next == 18)
                 EndfieldRecoveredPrePostHdrDiagnostic.WaitForPending();
             if (capturePostStages)

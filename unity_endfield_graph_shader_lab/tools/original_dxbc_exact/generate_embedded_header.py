@@ -31,6 +31,14 @@ EXPECTED = {
         5_072,
         "5558deddb1ee6188dfb530e5be89d86d67352362384fababc585e778b78b99e7",
     ),
+    "m13_vertex": (
+        5_672,
+        "96a93dcb3965cbedd03699822fac90d431a43353b56088035f44014d2c273030",
+    ),
+    "m13_pixel": (
+        11_652,
+        "0265c7a6806a095fef85fe2f14360cf0874e521d2510c4740db4e2ae341a3c5c",
+    ),
 }
 
 
@@ -72,6 +80,8 @@ def main() -> int:
     parser.add_argument("--m27-pixel", type=Path, required=True)
     parser.add_argument("--m14-vertex", type=Path, required=True)
     parser.add_argument("--m14-pixel", type=Path, required=True)
+    parser.add_argument("--m13-vertex", type=Path, required=True)
+    parser.add_argument("--m13-pixel", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -81,6 +91,8 @@ def main() -> int:
     m27_pixel = checked(args.m27_pixel, "m27_pixel")
     m14_vertex = checked(args.m14_vertex, "m14_vertex")
     m14_pixel = checked(args.m14_pixel, "m14_pixel")
+    m13_vertex = checked(args.m13_vertex, "m13_vertex")
+    m13_pixel = checked(args.m13_pixel, "m13_pixel")
     text = (
         "#pragma once\n"
         "#include <cstddef>\n\n"
@@ -108,6 +120,17 @@ def main() -> int:
         )
         + render_digest(
             "g_EndfieldM14PixelDxbcSha256", hashlib.sha256(m14_pixel).digest()
+        )
+        + "\n"
+        + render_array("g_EndfieldM13VertexDxbc", m13_vertex)
+        + "\n"
+        + render_array("g_EndfieldM13PixelDxbc", m13_pixel)
+        + "\n"
+        + render_digest(
+            "g_EndfieldM13VertexDxbcSha256", hashlib.sha256(m13_vertex).digest()
+        )
+        + render_digest(
+            "g_EndfieldM13PixelDxbcSha256", hashlib.sha256(m13_pixel).digest()
         )
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

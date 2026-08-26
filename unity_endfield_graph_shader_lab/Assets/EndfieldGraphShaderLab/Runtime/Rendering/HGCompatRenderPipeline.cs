@@ -930,6 +930,9 @@ namespace EndfieldGraphShaderLab
             ScriptableCullingParameters cullingParameters;
             if (!camera.TryGetCullingParameters(out cullingParameters))
                 return;
+            bool exactEndminfM13Prepared =
+                EndfieldRecoveredEndminfM13ExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM14Prepared =
                 EndfieldRecoveredEndminfM14ExactRuntime
                     .PrepareBeforeCulling(camera);
@@ -1979,6 +1982,20 @@ namespace EndfieldGraphShaderLab
                         compositorFailure =
                             "exact Endminf M14 transport failed closed: " +
                             EndfieldRecoveredEndminfM14ExactRuntime.Failure;
+                    }
+                }
+                if (mainReady && exactEndminfM13Prepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM13ExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M13 transport failed closed: " +
+                            EndfieldRecoveredEndminfM13ExactRuntime.Failure;
                     }
                 }
                 if (mainReady && recoveredSceneMVRequest.hasGlow902Queue3005)

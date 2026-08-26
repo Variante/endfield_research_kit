@@ -15,31 +15,26 @@ SPEC.loader.exec_module(target)
 
 
 class BuildEndminfM13ExactCaptureDataTests(unittest.TestCase):
-    def test_incomplete_capture_is_rejected_before_packet_publication(self) -> None:
+    def test_canonical_capture_builds_complete_packet(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "capture.generated.cs"
             cpp_output = Path(directory) / "capture.generated.h"
-            with self.assertRaisesRegex(
-                    ValueError, "stage 0 b4 backing allocation was not selected"):
-                target.build(target.FRAME, output, cpp_output)
-            self.assertFalse(output.exists())
-            self.assertFalse(cpp_output.exists())
+            text = target.build(target.FRAME, output, cpp_output)
+            self.assertIn("SourceFrame = 5404", text)
+            self.assertIn("RingByteOffset = 1045520", text)
+            cpp = cpp_output.read_text(encoding="utf-8")
+            self.assertIn("{2, 82, 20, 4094, 4}", cpp)
+            self.assertIn("{28, 105, 4085, 50}", cpp)
+            self.assertIn("g_EndfieldM13Texture4", cpp)
 
     def test_full_selected_buffer_closes_shared_truncated_previews(self) -> None:
         metadata = target.load_json(target.FRAME / "metadata.json")
         resources = (target.FRAME / "resources.bin").read_bytes()
-        draw = target.select_draw(metadata)
-        draw["constantBuffers"] = [row for row in draw["constantBuffers"]
-                                   if row["bufferId"] == 117766608864]
-        old_counts = target.DECLARED_COUNTS
-        try:
-            target.DECLARED_COUNTS = {0: (2, 82, 20, 4094),
-                                      4: (28, 105, 4085)}
-            constants = target.collect_constants(draw, metadata, resources)
-        finally:
-            target.DECLARED_COUNTS = old_counts
+        constants = target.collect_constants(
+            target.select_draw(metadata), metadata, resources)
         self.assertEqual(len(constants[0][3]["payload"]), 4094 * 16)
         self.assertEqual(len(constants[4][2]["payload"]), 4085 * 16)
+        self.assertEqual(len(constants[4][3]["payload"]), 50 * 16)
 
 
 if __name__ == "__main__":

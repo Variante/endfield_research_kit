@@ -46,7 +46,17 @@ int main()
             g_EndfieldM14PixelDxbc,
             g_EndfieldM14PixelDxbcSize,
             digest) &&
-        std::memcmp(digest, g_EndfieldM14PixelDxbcSha256, 32) == 0;
+        std::memcmp(digest, g_EndfieldM14PixelDxbcSha256, 32) == 0 &&
+        Sha256(
+            g_EndfieldM13VertexDxbc,
+            g_EndfieldM13VertexDxbcSize,
+            digest) &&
+        std::memcmp(digest, g_EndfieldM13VertexDxbcSha256, 32) == 0 &&
+        Sha256(
+            g_EndfieldM13PixelDxbc,
+            g_EndfieldM13PixelDxbcSize,
+            digest) &&
+        std::memcmp(digest, g_EndfieldM13PixelDxbcSha256, 32) == 0;
 
     unsigned char unknownShellHash[32] = {};
     unknownShellHash[0] = 1;
