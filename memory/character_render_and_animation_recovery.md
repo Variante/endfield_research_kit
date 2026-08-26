@@ -1193,22 +1193,21 @@ five-MRT/depth/stencil state, packet-local 60-byte input layout, and exact
 counts with zero callback failures and `S_OK`; M27 writes 22,110 owned pixels
 and changes 4,553 presentation pixels in the same command sequence.
 
-Session `20260826T142935Z` bounds but does not close M27's temporal envelope.
-Its 4K backbuffers show an early four-crystal hand phase at frame 2308, a
-14-crystal burst at frame 2383, and clean no-crystal tail frames 2469/2530.
-Frame 2308 submits four separate 72-index M27 draws. The targeted package
-retains their shader constants and shared SRV/UAV buffers, but not the direct
-IA vertex/index binding records needed to replay those four packets exactly.
-Therefore the current exact path is a certified peak checkpoint, not a full
-M27 temporal sequence. EndfieldCapture `b17b906` now priority-retains the two
-vertex slots, index format, strides, and byte offsets for every exact M27-pair
-draw, plus all six pixel textures. If an IA buffer aliases an already selected
-compute SRV/UAV, both binding records reference the same `resources.bin` blob
-instead of reading the multi-megabyte allocation twice. The Release build,
-all 14 tests, D3D11 proxy lifecycle, WARP alias/offset regression, and installed
-build gate pass. Capture the early four-crystal phase represented by session
-`20260826T142935Z` frame 2308 with this build; material or resolver capture is
-not the missing evidence.
+Session `20260826T162514Z` closes M27's temporal IA envelope. Its 65-frame
+targeted sequence contains 37 M27-pair-bearing frames and safely reuses aliased
+SRV/IA blobs. The maintained fail-closed verifier selects 16 phase samples from
+frame 2905 through 3027: 39 exact draws spanning the four-crystal hand phase,
+an explicit zero-M27-draw flash transition at frame 2970, the 1,080-index
+15-crystal peak at frame 2978, and the complete decay. Frame 2905 retains four
+separate 72-index draws with the exact 68-byte slot-0 stream, 20-byte
+stride-zero slot-1 carrier, R16 index base, byte offsets, and complete
+stage-specific constants. Every effective index slice byte-equals the 72-index
+source mesh, and every effective vertex slice contains all 29 source UV pairs
+at the captured 68-byte cadence. The peak and decay use the separate 60-byte
+layout and pass the same source-index/UV and constant-range gates. The report is
+`reports/assets/character_recovery/endminf_m27_temporal_capture_latest.json`;
+its verifier and three focused regressions pass. No further M27 material,
+resolver, geometry, or temporal game capture is currently needed.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
@@ -1269,10 +1268,11 @@ registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-M13 and M14 packet capture/admission are closed, and M27's exact peak packet is
-validated in the combined Unity frame. Close M27's early four-draw IA packet,
-then measure the complete crystal/VFX sequence before returning to body, hair,
-and cloth polish.
+M13 and M14 packet capture/admission are closed, M27's exact peak packet is
+validated in the combined Unity frame, and the M27 temporal IA packet set is
+now capture-complete. Generate and replay the 16-sample/39-draw M27 sequence,
+measure the complete crystal/VFX result against the no-frame-generation
+reference, then return to body, hair, and cloth polish.
 
 ## Main animation gap
 

@@ -1,0 +1,3223 @@
+{
+  "schema": "endfield.endminf-m27-temporal-capture.v1",
+  "status": "validated",
+  "sessionId": "20260826T162514Z",
+  "captureRoot": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260826T162514Z",
+  "sourceMesh": "D:\\fluffy-dump\\scratch\\animestudio\\endminf_m27_source_contract\\fc_json\\Mesh\\S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.json",
+  "sampleCount": 16,
+  "drawCount": 39,
+  "frames": [
+    {
+      "frame": 2905,
+      "phaseSeconds": 4.5,
+      "drawCount": 4,
+      "metadataSha256": "aac09fde522b803308a54067671a30eee9676874b9d841c2375110448ae505be",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1008224,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 2304,
+          "baseVertex": 567,
+          "vertexCount": 29,
+          "vertexByteOffset": 968876,
+          "indexByteOffset": 1012832,
+          "vertexSha256": "7ab79afb75347d5bc34cb61bb37a5965aaca73a7874476112e153fe65bd4723b",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "87f664f2067179c7eae2584ae926c62a94900e8f5889ad72cae5ea9c5a8a4344"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "ec919152e6a013c2848c3c1cd6919c2263d76bf9db06607114b38d358fd938a8"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19200,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2448,
+          "baseVertex": 677,
+          "vertexCount": 29,
+          "vertexByteOffset": 976356,
+          "indexByteOffset": 1013120,
+          "vertexSha256": "36cf0396ea76023dcc8a7e1e7d8b461022a27576171602850b86e41a5beb4c7c",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "87f664f2067179c7eae2584ae926c62a94900e8f5889ad72cae5ea9c5a8a4344"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "b5020d6f14aeb73f27524010fa2d879cdd5cce9d85bd46a2ff60b27755b7187e"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19200,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2520,
+          "baseVertex": 724,
+          "vertexCount": 29,
+          "vertexByteOffset": 979552,
+          "indexByteOffset": 1013264,
+          "vertexSha256": "0858ab6a69d63d5dc383c95b299f827dfda36bfa81fb4e28f36ebe492a76515d",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "87f664f2067179c7eae2584ae926c62a94900e8f5889ad72cae5ea9c5a8a4344"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8128,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "fcb38e37611ebc50980eaf5002b0a8a8e75ed70b36df7c79c660e51fba4735b1"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8128,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19200,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2376,
+          "baseVertex": 622,
+          "vertexCount": 29,
+          "vertexByteOffset": 972616,
+          "indexByteOffset": 1012976,
+          "vertexSha256": "ccb55cf348df4663fe19a1d7ecebc73eac8bd0f7101aac09bf2e68fddbe8633c",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "87f664f2067179c7eae2584ae926c62a94900e8f5889ad72cae5ea9c5a8a4344"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8160,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "c9081fddf40fd38cf806510353db7f8656dffe8d36c57e9a5a1e8c728c397954"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "4e150e6ae9748d10969d6a86699dc25961a81d55a1c4e9c205250d63c7be054c"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8160,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19200,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2913,
+      "phaseSeconds": 4.633333,
+      "drawCount": 4,
+      "metadataSha256": "249478e9dc58439a5b118e4e588c361525137f9fcee0c69b3a9bfd443dad4076",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1010024,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 2304,
+          "baseVertex": 628,
+          "vertexCount": 29,
+          "vertexByteOffset": 973024,
+          "indexByteOffset": 1014632,
+          "vertexSha256": "b4fe0fa22ee0f8bf39aca9b843d10d7a9b939ce2e6d123b508db7853cc781433",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8949ed1c4d946841ba3c8ef3b5ef7c875829665c78850fa07e8a1e741fee1bd6"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "e4468401fa184dff41a80e3ce7181699ae4de5aed9fd009e575a4f9d30a2ecd5"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2448,
+          "baseVertex": 738,
+          "vertexCount": 29,
+          "vertexByteOffset": 980504,
+          "indexByteOffset": 1014920,
+          "vertexSha256": "fae835931e2f30df4f3f91793231132c0b334be6c9330fc9703747837a48ca76",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8949ed1c4d946841ba3c8ef3b5ef7c875829665c78850fa07e8a1e741fee1bd6"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "976cfa50b84a28e8bcd9bcd6ee2a5b6442716adf6dbdb2af53ec40705063741a"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2520,
+          "baseVertex": 785,
+          "vertexCount": 29,
+          "vertexByteOffset": 983700,
+          "indexByteOffset": 1015064,
+          "vertexSha256": "292d2d26af86c4717d9708cd3a7a0e99a34ae268c0a6ef9cbfc95d2f5e4eeeda",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8949ed1c4d946841ba3c8ef3b5ef7c875829665c78850fa07e8a1e741fee1bd6"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "4a749ab89c581028a51e542793ecd0892410f2ffaa007caa682314d6d85999cb"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2376,
+          "baseVertex": 683,
+          "vertexCount": 29,
+          "vertexByteOffset": 976764,
+          "indexByteOffset": 1014776,
+          "vertexSha256": "39c7a9064f35c037e542216b322c56cc828acda1ed04f6567e0b619d552d7d7f",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8949ed1c4d946841ba3c8ef3b5ef7c875829665c78850fa07e8a1e741fee1bd6"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "9f98790478440891dec7bfcb2f30e6cc31c4711a1fb72ca7dc461f500e2bd377"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "cb1b00f584b064a9a8bc1a5ac173f64e65fc9e9be7538274c7aa69f7d5e91008"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2921,
+      "phaseSeconds": 4.766667,
+      "drawCount": 4,
+      "metadataSha256": "cc5f5d2b573781d5a281fcf331d3fc0c32719e5a493a1b894556725fabcac544",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1011716,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 2304,
+          "baseVertex": 661,
+          "vertexCount": 29,
+          "vertexByteOffset": 975268,
+          "indexByteOffset": 1016324,
+          "vertexSha256": "22ab3b306c625bb5ee792066f48e0444b28d2f5ccbcfe49e49e32c8eb82ac710",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "f7662b3c0a117a512c641479a2de911d7d03f52aa5079643038516858ddba30a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8256,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "28be5b7bfe4d707c3ef4acf922051c1ef7a4d62fa8ac0a270bce83b0118c4451"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8256,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2448,
+          "baseVertex": 771,
+          "vertexCount": 29,
+          "vertexByteOffset": 982748,
+          "indexByteOffset": 1016612,
+          "vertexSha256": "6ef9d143f7cd0884fe7a4867ae8f633d560e1d93bf4399aaf4bd385d6b5a9b2e",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "f7662b3c0a117a512c641479a2de911d7d03f52aa5079643038516858ddba30a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8272,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "25f521828b8996773f5d04e36cb99457a83d962db3fba038d2ef88cad76d1501"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8272,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2520,
+          "baseVertex": 818,
+          "vertexCount": 29,
+          "vertexByteOffset": 985944,
+          "indexByteOffset": 1016756,
+          "vertexSha256": "96562092a8a80022f3828cbccec24d661345236632e289b3892f2faf65e30c3f",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "f7662b3c0a117a512c641479a2de911d7d03f52aa5079643038516858ddba30a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8288,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "674165810690490acd5db640bf8688eab681483f2e2c63494bf40426342a5425"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8288,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2376,
+          "baseVertex": 716,
+          "vertexCount": 29,
+          "vertexByteOffset": 979008,
+          "indexByteOffset": 1016468,
+          "vertexSha256": "eaa933eed15e7058d710f140993e0deeb731843f247144bbf5d374fcf10e86c0",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "f7662b3c0a117a512c641479a2de911d7d03f52aa5079643038516858ddba30a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8320,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "bbb758fdd8250bc73e3247676122db114f0974e95bd6660d884f790b7f13da1e"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "6e793adbc4e29eac7331daabd0a88e76b80cc2eb6f087f8fff3c9429a7db6173"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8320,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2929,
+      "phaseSeconds": 4.9,
+      "drawCount": 4,
+      "metadataSha256": "17fc242539acef637f4ed117bfcb0c2b7fb5401ff7c0dcce909c50d39fb0958f",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1012832,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 2304,
+          "baseVertex": 678,
+          "vertexCount": 29,
+          "vertexByteOffset": 976424,
+          "indexByteOffset": 1017440,
+          "vertexSha256": "f01ba21a8f04ff413e899f53b400141cbcaf5e6dbd22f7a970f02901a0562db5",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8332b832ff55543e7f592057f6683c641e0d29d7624bda28427306b11a19241e"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "39ac156993767b8322d6c66d7c228e6f50bfb17b30ee94e39f1f19e8d52962af"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2448,
+          "baseVertex": 788,
+          "vertexCount": 29,
+          "vertexByteOffset": 983904,
+          "indexByteOffset": 1017728,
+          "vertexSha256": "7ddcdca651591a0d262e8a201147dceb32203c598864051274f3cedee928f325",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8332b832ff55543e7f592057f6683c641e0d29d7624bda28427306b11a19241e"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "1006d6a9166a39da12a09fba619a0e721388c9af0be32ef6f6ea55087b53668c"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2520,
+          "baseVertex": 835,
+          "vertexCount": 29,
+          "vertexByteOffset": 987100,
+          "indexByteOffset": 1017872,
+          "vertexSha256": "9a16e0f147e4a6ee5c91818bba3f5d146f194a87ac22eee163a33eaf2fdc65d2",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8332b832ff55543e7f592057f6683c641e0d29d7624bda28427306b11a19241e"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "a79d788e8ac21924d81a85b865665437886f29107d229deba4b0d3b569e8de15"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 2376,
+          "baseVertex": 733,
+          "vertexCount": 29,
+          "vertexByteOffset": 980164,
+          "indexByteOffset": 1017584,
+          "vertexSha256": "77cbd82833515b3fcfda626533c9598323a13f88c91ad897958da2b0aada9188",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8332b832ff55543e7f592057f6683c641e0d29d7624bda28427306b11a19241e"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "93ebd941a09792d2d96123a523399605d9bd19dcedb602bcc7cf413b66febbfe"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "aa54789fac919cf41903d1d3700902e585c5f622f6b98c5d4c50b4972ace9392"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19184,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2937,
+      "phaseSeconds": 5.033333,
+      "drawCount": 4,
+      "metadataSha256": "a81841d5e0ebcdde9446af58c19a66cbba05d18384264a0cb48814defc43828a",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1001636,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 1536,
+          "baseVertex": 512,
+          "vertexCount": 29,
+          "vertexByteOffset": 965136,
+          "indexByteOffset": 1004708,
+          "vertexSha256": "93e73c8c6ee9b723010413e04a0db5dab375d893955d24ca3a6f422d4cf75961",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "2b73a158dba1c9b7e478276f586629c7384363aff4528363413973df7ca1c624"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "9468e1e7b6d587a52b832aaacc0d619e361e00f210b997d29c6cc27af0139da0"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1680,
+          "baseVertex": 622,
+          "vertexCount": 29,
+          "vertexByteOffset": 972616,
+          "indexByteOffset": 1004996,
+          "vertexSha256": "622fa85df2ec32b23cddc2b8e69ea9089bda2637414f1b42a3eb57b29b0c444d",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "2b73a158dba1c9b7e478276f586629c7384363aff4528363413973df7ca1c624"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "e93c26b48f85c69c45cd3a87d354230d6b82c0db074a1dc472a82cf599ba3a9d"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1752,
+          "baseVertex": 669,
+          "vertexCount": 29,
+          "vertexByteOffset": 975812,
+          "indexByteOffset": 1005140,
+          "vertexSha256": "4349556ff5eae1476d0f9ad987a0ce39fe7927f7a69f3481bcae2828b5213abd",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "2b73a158dba1c9b7e478276f586629c7384363aff4528363413973df7ca1c624"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "1e6b50cfc67695ab063676c6086d8ad149d3293f0ed694033c807519e37a440d"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1608,
+          "baseVertex": 567,
+          "vertexCount": 29,
+          "vertexByteOffset": 968876,
+          "indexByteOffset": 1004852,
+          "vertexSha256": "5c32f97c3292c2288a95084c91c5ae2c84f88fe30f70f8426997ea630c449e7f",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "2b73a158dba1c9b7e478276f586629c7384363aff4528363413973df7ca1c624"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "cd93b9061c09637007e6ddbc801a30ba04c8a7b5005efa682b4eb0dcd7b98360"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "129e8b5b261b031dd69badd8cb95292294b2411bf727f4bcdf2a832c89b0a812"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2945,
+      "phaseSeconds": 5.166667,
+      "drawCount": 4,
+      "metadataSha256": "551c2b550f346c746ee9226085976695c48c3d5be70d37a8fc72dc7de79d287b",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1001600,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 1536,
+          "baseVertex": 512,
+          "vertexCount": 29,
+          "vertexByteOffset": 965136,
+          "indexByteOffset": 1004672,
+          "vertexSha256": "14b0718896d47fd1b90c19e8173a4a48046214723227d040a52c04d4c30dfadc",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "fc1187f8362b88378e573d474cf7e7d66b5aee09fc937363ab486199cd48739a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "ec6ba6c418d9fbd9443c495a78c6b5c1909271170191153c6b2663a382e3c6b5"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1680,
+          "baseVertex": 622,
+          "vertexCount": 29,
+          "vertexByteOffset": 972616,
+          "indexByteOffset": 1004960,
+          "vertexSha256": "c67b01ff555141c6ff117e52d86b06edd2afd82a80e97e32d5d940a7bd18c2fe",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "fc1187f8362b88378e573d474cf7e7d66b5aee09fc937363ab486199cd48739a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7680,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "5538fad5df98b9176d65319e34d8bafffbabf4c8eb178bfa556b28389148ed54"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7680,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1752,
+          "baseVertex": 669,
+          "vertexCount": 29,
+          "vertexByteOffset": 975812,
+          "indexByteOffset": 1005104,
+          "vertexSha256": "d60ed6f82cd3395f23ba568a725f306ae5cfee2477d8fca453cb7ee9fc392830",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "fc1187f8362b88378e573d474cf7e7d66b5aee09fc937363ab486199cd48739a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7696,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "8b4fd3f7bd69a11f6b65ccdb30717605f44a2d605a260e9dff598cb45c880ada"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7696,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 1608,
+          "baseVertex": 567,
+          "vertexCount": 29,
+          "vertexByteOffset": 968876,
+          "indexByteOffset": 1004816,
+          "vertexSha256": "ec3e05a0fbb0ae1ee61121ca7f21ab767e24362390be3c577a078d263fd92620",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "fc1187f8362b88378e573d474cf7e7d66b5aee09fc937363ab486199cd48739a"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7728,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "0e470476ac24a7003ad7b62a12568b4c48a5d6e8b1f09c00db3ca01d8c794fa3"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "0b793fdc99cede6e4e5836a58318085e1016d1457cd3c0bf9a98da5697720649"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7728,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19168,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2953,
+      "phaseSeconds": 5.3,
+      "drawCount": 4,
+      "metadataSha256": "e6f3ddc58810f43ba14b4bfacf5b2ca3368c6bbab02f9982d288776e4a2e6939",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 986696,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 768,
+          "baseVertex": 311,
+          "vertexCount": 29,
+          "vertexByteOffset": 951468,
+          "indexByteOffset": 988232,
+          "vertexSha256": "774c890e004a8feed4b72ccd146403417df8546b7a511f2a57d771441df60fa6",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "5400086253ee2ca48b8ff09020dde293e7a32c502593b20b55a55f23edce2945"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "0b3a89dd7a1d174fd79810a60c1ba1b087fa559a73ac1bbc7f0d6e219fe7c6a5"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19152,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 912,
+          "baseVertex": 421,
+          "vertexCount": 29,
+          "vertexByteOffset": 958948,
+          "indexByteOffset": 988520,
+          "vertexSha256": "2c4bfc40b76540a98024617c7ba97551386bb40905f51d3d0fcee5d56da21e13",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "5400086253ee2ca48b8ff09020dde293e7a32c502593b20b55a55f23edce2945"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "c340652873cca7f812260b2390eae810318dc49e195318dfc9c1c3140a94a161"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8096,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19152,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 984,
+          "baseVertex": 467,
+          "vertexCount": 29,
+          "vertexByteOffset": 962076,
+          "indexByteOffset": 988664,
+          "vertexSha256": "1ce1303c37af5c47b94efcaca8afbc13aa6d6968297f52376eb8904e00a062f3",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "5400086253ee2ca48b8ff09020dde293e7a32c502593b20b55a55f23edce2945"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "772d89eeb4498c1f700a2b50b9f4a26a00f5f4e086e40b2019bd84c608fd09f6"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8112,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19152,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 840,
+          "baseVertex": 366,
+          "vertexCount": 29,
+          "vertexByteOffset": 955208,
+          "indexByteOffset": 988376,
+          "vertexSha256": "3599a4b0e0ccb4492d14ed3f97a63e20b1ae8458f255d6623de4773fa09cede4",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "6587b74b8c4b43bff7aa2fd75923997ce4c01b5912fb054d284f79b39cd8a049"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "5400086253ee2ca48b8ff09020dde293e7a32c502593b20b55a55f23edce2945"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "cd8a5b1b4f168952e7aad9c7ff0163be64aa958dd0ee4968c340ce099fc7ce07"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "93a8f81124f0e2ced396ca2a0af4872099c4330938c82fb6c5f822814e970fc9"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "8318aa974fac50f12b905b89950115e5de07c12feec4184849a9452c21e2e950"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8144,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19152,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2962,
+      "phaseSeconds": 5.45,
+      "drawCount": 4,
+      "metadataSha256": "99d8e2a5276ffcde2237d66d781aed032f297e5a7f796d755168ddb9c82dbe3c",
+      "binding": {
+        "vertexStride": 68,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 983924,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 72,
+          "startIndex": 768,
+          "baseVertex": 286,
+          "vertexCount": 29,
+          "vertexByteOffset": 949768,
+          "indexByteOffset": 985460,
+          "vertexSha256": "61f0eed7cf5e8741a74be6b226f44bb5d9f07ee4ad522e18621122215bc862ad",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "e6cf4b4cc147f7fb7947c1d58f2fdc4a517a84455564e0b3285b3dc181721995"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "dc1c16f9562184f38dfe7aa9faba03b24bcc795ffe0ed46169db3814c6f37c79"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19136,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 912,
+          "baseVertex": 396,
+          "vertexCount": 29,
+          "vertexByteOffset": 957248,
+          "indexByteOffset": 985748,
+          "vertexSha256": "c8cfc4b6a80af4c377415109c4b8b8fec5a42a5249dd812bc158c953c27a7b69",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "e6cf4b4cc147f7fb7947c1d58f2fdc4a517a84455564e0b3285b3dc181721995"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7680,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "32b0a953b3e514202cd8a27792e90c3123b2d273ec720de8e8b1ff2113dd723b"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7680,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b9874354c485a6358ccb6ccceb35c26c705a2a329ff6cb20004424913cc71886"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19136,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 984,
+          "baseVertex": 443,
+          "vertexCount": 29,
+          "vertexByteOffset": 960444,
+          "indexByteOffset": 985892,
+          "vertexSha256": "9cbfdeb85ba8cdb94786d03b93b38793befcd32aaa294742134b9aa2bece525a",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "e6cf4b4cc147f7fb7947c1d58f2fdc4a517a84455564e0b3285b3dc181721995"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7696,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "afe5e3974f7ff4c9235c49156c2a0b2fad570205b9346a6e6fd664a62964b274"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7696,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "d39562dca14355e5bd0a7beba07c3277ef11426399b54f3f43cd90be5e3b281e"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19136,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        },
+        {
+          "indexCount": 72,
+          "startIndex": 840,
+          "baseVertex": 341,
+          "vertexCount": 29,
+          "vertexByteOffset": 953508,
+          "indexByteOffset": 985604,
+          "vertexSha256": "5f6b1e4b72af15577c3b02d73b4a869cedb997521fb69b5af0e1151f06c10a0d",
+          "indexSha256": "5decb4eef5cec36c445d239d7610d1f99d76fc72bf1fb18337c03b95d0e3980c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "e6cf4b4cc147f7fb7947c1d58f2fdc4a517a84455564e0b3285b3dc181721995"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7728,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "79659abadcd5e2b0ab50a11a1f771c430e35654c0f7545b31840ef24ed6dc20b"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "ba36beb6c927f705d265715063023f130f44028c86f7205c530834bcaaee8f16"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7728,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "aa05b3b16f43b9b6f7314a90ee1ebd17b5b3d8f51f71b133192bfb52248763c4"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 105072,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "47eaa830f5515f05b34aaacab47ab7a6132923ccfcfb17783b6830230154a70d"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19136,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2970,
+      "phaseSeconds": 5.583333,
+      "drawCount": 0,
+      "metadataSha256": "31c85b7a14ff5bdf00ef29a8b7dcd98da612782ccef1d091e4eeeeaf80e49113",
+      "binding": null,
+      "draws": []
+    },
+    {
+      "frame": 2978,
+      "phaseSeconds": 5.716667,
+      "drawCount": 1,
+      "metadataSha256": "b4c130237803ea9c442409ab35412bbfc2494d2a5c0b7d912f8977f61ea6c6e0",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1112156,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 1080,
+          "startIndex": 0,
+          "baseVertex": 71,
+          "vertexCount": 435,
+          "vertexByteOffset": 934580,
+          "indexByteOffset": 1112156,
+          "vertexSha256": "bf4702672326d96568d81499a3f29c8d380fa96a9fe3384943d1046261b6b6af",
+          "indexSha256": "63032b1ce32a2aa8d32817ad1a89e5f58dc932b35fdf0c84aff2bce69db4e997",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "5ef3c0860b2777b01d6fe57a61972e48d7d45b0fbe7dfcc83f5ed91c06a964f9"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8c03a84e647bdb3723da8e30f7de6054f0813583304550ba59a98b4e1a170db4"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8416,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "032ec01dd9b01b0a872cb9b112b24e647b0b16bfe7ada8bd6ce682be6de31a71"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "08f46e1ea58cfd84273b1ce5ae80670cec98d0877ae242ecd04a80ebeb1389fb"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "196a750107b61a921eb60d74fc7637c78fbbdbe295a63c1b0d346895ab8448cc"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8416,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "b85f6f5f71ed1b51d83890c812c7a97f55d34030405a6dd8a97a064e2508a1c7"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 19120,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2987,
+      "phaseSeconds": 5.866667,
+      "drawCount": 1,
+      "metadataSha256": "e07af84fffc9f4de0f4ea5db22f0c96c2e0d1be3db1fb5ed5b292b126f3f7e13",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1126160,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 1008,
+          "startIndex": 900,
+          "baseVertex": 311,
+          "vertexCount": 406,
+          "vertexByteOffset": 948980,
+          "indexByteOffset": 1127960,
+          "vertexSha256": "c08641afd0ed63c48a02b0ce837f21bae1b56cdd7f9c85903a2a654992f98281",
+          "indexSha256": "0480d810228b9781352bc945b964b3c7ae60eb750fc7ec6fa41392154a1564c5",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "71a0f88bf6c1884d8994d139f07f6adbbe17aa1251a08644b62d06a7cdd7a20f"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "bdab930a65aff99d6f8f436df877484c650e448843418be109c6053652aa55da"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "4955ac9ace6ef09171a36b8a316aa69b366fdd5e10ee2274ce7b85ec0ae8d562"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 8080,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "c3f447c4b9df4f10242bfb5a7ddb793984ee72b1771b3bdf5f6f8037d3c21829"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18928,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 2995,
+      "phaseSeconds": 6.0,
+      "drawCount": 1,
+      "metadataSha256": "5318634cc44aa4ff609ed44904c8ca0bb3405f62604c60f5e96834a61d276b09",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1100960,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 720,
+          "startIndex": 900,
+          "baseVertex": 311,
+          "vertexCount": 290,
+          "vertexByteOffset": 948980,
+          "indexByteOffset": 1102760,
+          "vertexSha256": "d0069df2822ed64c911166d6da811f51dc53d8896a90d3f9c0de407b3e8785c1",
+          "indexSha256": "228271b74cfe77996d6ca217846b802053b0579636e377e1e9429eb689672ca8",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "a8a0f1bb26614fc654614a173e2bcce477d6a0bceccc8215c802d953248cad29"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 5600,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "5f0f8dd35f9c24c1bfe089fc5296edc1401b8e303f5dd71f229df5453f1b74f0"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "09e34ddc73675dce532ece7bf234df125ef8e7a8f210e29b5832521fab2b553e"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 5600,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "c3f447c4b9df4f10242bfb5a7ddb793984ee72b1771b3bdf5f6f8037d3c21829"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18896,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 3003,
+      "phaseSeconds": 6.133333,
+      "drawCount": 1,
+      "metadataSha256": "e400f26c3abbfef4a2e8876661381878f1f94b422b7ef6bde338303c3f7ae2d9",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1076128,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 504,
+          "startIndex": 921,
+          "baseVertex": 1460,
+          "vertexCount": 203,
+          "vertexByteOffset": 1017920,
+          "indexByteOffset": 1077970,
+          "vertexSha256": "5c9fbbf9087312da456a0de4c812f7cf398ce8e5a586b9eb62a9de019b00e4f0",
+          "indexSha256": "1447c16c7b39397f858ff20a483384032a59fed30617d8be078dfd1b9e61483a",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "e539504496790f8d00401784a4b3781be1de75e5e22137ebb401242fdbad1c37"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "c8c67aa440f96a11033f9090ceb69ae57f9e4d9c03a7b0592d7c4bcf9312222c"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "9e8c0a1d499759a76e60af297bd6701549d6d47552e0dadfebbcf304ec9e35cf"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 7664,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18864,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 3011,
+      "phaseSeconds": 6.266667,
+      "drawCount": 1,
+      "metadataSha256": "283d7d1abc5cd10488802349117e3295ec452ee3a300f9cad8e2a6fb2674dec8",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1036036,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 432,
+          "startIndex": 15,
+          "baseVertex": 1100,
+          "vertexCount": 174,
+          "vertexByteOffset": 996320,
+          "indexByteOffset": 1036066,
+          "vertexSha256": "906935bfcf9f25eaf99b11e08a689c8c7f735ca08226510c8facfd01b7ddb0b6",
+          "indexSha256": "929bf4b3e118df1b581b79e87ec3a526f9d58f1395097a40ca92c05db742db1b",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "1083d7e0e8d25d60cb1a7330162fc60e2c2fc7dbb0a01728f38f88d196ea83c4"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 5600,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "d88ebe8eb96d341a16a64aae708f30e30abd9890f391bafbf1b31f11b7b1d5b2"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "8c3e8563fdc85085e96f8e1ab89eca2703f5e06d9639c70326cf74b559cf73fc"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 5600,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18848,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 3019,
+      "phaseSeconds": 6.4,
+      "drawCount": 1,
+      "metadataSha256": "daebb4c20c03b64020199b67bd4d765b697a6d2557f62c0930bad581bd29744a",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 1018160,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 288,
+          "startIndex": 15,
+          "baseVertex": 975,
+          "vertexCount": 116,
+          "vertexByteOffset": 988820,
+          "indexByteOffset": 1018190,
+          "vertexSha256": "9468f6e718052464542b9b8495d33dd81aa84ef17bc0558b065494ef9c976f5f",
+          "indexSha256": "ae1e49d7f2435a24a73fee9e4be6a2902335880a34aa75127ddd6327a04308e5",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "8604be7d3c0d0945116999a7907023ca323eb85d98004468f2cfb3947e9d48a4"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 4816,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "85668b5f742d3bba9d7d0f6dcf209d39510bb04dc4cfa75254be0a5b4deb6aec"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "be44a1190494cfe6a12973fe9bcdf798f25014e106b59712a4eab1145fd6ca7e"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 4816,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18832,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "frame": 3027,
+      "phaseSeconds": 6.533333,
+      "drawCount": 1,
+      "metadataSha256": "d517d5d6e68d7c299c104dfb20c567f5f8e8981c1e1ef0b36eb9f38443ea9c0c",
+      "binding": {
+        "vertexStride": 60,
+        "vertexBufferByteOffset": 930320,
+        "indexBufferByteOffset": 987020,
+        "ringBlobOffset": 0,
+        "ringBlobBytes": 4194304,
+        "slot1Sha256": "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+      },
+      "draws": [
+        {
+          "indexCount": 144,
+          "startIndex": 0,
+          "baseVertex": 887,
+          "vertexCount": 58,
+          "vertexByteOffset": 983540,
+          "indexByteOffset": 987020,
+          "vertexSha256": "4b1044a2627251207d05bc6ef89f2d4485ac0d56b8f33198c4d9bc905576a888",
+          "indexSha256": "ae4d64639693ac4215f7e3878ccbbe5f03e59f99b711aa66629ffca07f74187c",
+          "constantBuffers": [
+            {
+              "stage": 0,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 82,
+              "sha256": "41720aa5e15d4be6ea5cefdd6d02e993d261f4c2fac0c3113dc2b76bc1a93c23"
+            },
+            {
+              "stage": 0,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 82,
+              "sha256": "76be35ef968610d5537a9f03fa4e918d9f87dc9bf471b3cee5dd492c47556d8c"
+            },
+            {
+              "stage": 0,
+              "slot": 2,
+              "firstConstant": 5584,
+              "numConstants": 4096,
+              "capturedConstants": 104,
+              "sha256": "03e82a4dc28f99a2cba4dc3ddaaa88ce2fe52dc88e2b555b69845f63741f99f3"
+            },
+            {
+              "stage": 4,
+              "slot": 0,
+              "firstConstant": 4336,
+              "numConstants": 96,
+              "capturedConstants": 28,
+              "sha256": "0d2c066e1e9ceab471df6d8e5d34c2112a5a549e88eca05f8189981100207a01"
+            },
+            {
+              "stage": 4,
+              "slot": 1,
+              "firstConstant": 4432,
+              "numConstants": 208,
+              "capturedConstants": 106,
+              "sha256": "93d9c1552093b3635502450bd831205a981609ec13c2ae6cda89aa0e1586eaca"
+            },
+            {
+              "stage": 4,
+              "slot": 2,
+              "firstConstant": 5584,
+              "numConstants": 4096,
+              "capturedConstants": 16,
+              "sha256": "75ce10973483eef21a3b11525b706b325c0c94f5bddea116ce7fea73d3f13b48"
+            },
+            {
+              "stage": 4,
+              "slot": 3,
+              "firstConstant": 103872,
+              "numConstants": 48,
+              "capturedConstants": 48,
+              "sha256": "66e20a0df6f882de0430ba563b28780df28080bca50e9ac0100998720fa89f1f"
+            },
+            {
+              "stage": 4,
+              "slot": 4,
+              "firstConstant": 18800,
+              "numConstants": 16,
+              "capturedConstants": 1,
+              "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
