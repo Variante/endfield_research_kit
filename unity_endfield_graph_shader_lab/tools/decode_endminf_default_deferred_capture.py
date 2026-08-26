@@ -12,6 +12,10 @@ from pathlib import Path
 
 EXPECTED_VS_IDENTITY = 0xA6AFE2C96CAA3FD9
 EXPECTED_PS_IDENTITY = 0xCA09544336A4D56E
+# The old complete 3DMigoto frame records Default Lit as the sixteenth
+# DrawInstanced(3,1) fullscreen pass, immediately before foliage and
+# subsurface. EndfieldCapture stores zero-based fullscreen ordinals.
+EXPECTED_DEFAULT_FULLSCREEN_ORDINAL = 15
 REQUIRED_CONSTANTS = (45, 157, 259, 3, 2054, 401, 216, 15, 160, 4)
 CONSTANT_BYTES = 16
 
@@ -83,18 +87,34 @@ def _word_preview(data: bytes) -> dict:
 
 
 def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, list[bytes]]:
-    if resolver.get("priorityDefaultDeferred") is not True:
-        raise CaptureError("resolver is not tagged priorityDefaultDeferred")
+    exact_identity_selection = resolver.get("priorityDefaultDeferred") is True
+    range_shape_selection = (
+        resolver.get("priorityDeferredRangeShape") is True
+        and resolver.get("fullscreenOrdinal") == EXPECTED_DEFAULT_FULLSCREEN_ORDINAL
+    )
+    if not exact_identity_selection and not range_shape_selection:
+        raise CaptureError(
+            "resolver has neither the exact Default Lit identity nor its "
+            "verified fullscreen ordinal/range shape"
+        )
     if resolver.get("vertexCountPerInstance") != 3 or resolver.get("instanceCount") != 1:
         raise CaptureError("Default Lit resolver is not DrawInstanced(3,1)")
     vs_identity = _shader_identity(resolver, 0)
     ps_identity = _shader_identity(resolver, 4)
-    if vs_identity != EXPECTED_VS_IDENTITY:
+    allowed_vs_identities = {EXPECTED_VS_IDENTITY}
+    allowed_ps_identities = {EXPECTED_PS_IDENTITY}
+    if range_shape_selection and not exact_identity_selection:
+        # Shader objects created before hook attachment have no bytecode entry
+        # and are serialized with identity zero (or no identity). A conflicting
+        # registered identity still fails closed.
+        allowed_vs_identities.update((None, 0))
+        allowed_ps_identities.update((None, 0))
+    if vs_identity not in allowed_vs_identities:
         raise CaptureError(
             f"Default Lit resolver VS identity is {vs_identity!r}, expected "
             f"{EXPECTED_VS_IDENTITY}"
         )
-    if ps_identity != EXPECTED_PS_IDENTITY:
+    if ps_identity not in allowed_ps_identities:
         raise CaptureError(
             f"Default Lit resolver PS identity is {ps_identity!r}, expected "
             f"{EXPECTED_PS_IDENTITY}"
@@ -173,8 +193,18 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
             **_word_preview(data),
         })
     return ({
-        "vertexShaderIdentity": f"{vs_identity:016x}",
-        "pixelShaderIdentity": f"{ps_identity:016x}",
+        "selectionEvidence": (
+            "exactShaderIdentity"
+            if exact_identity_selection
+            else "fullscreenOrdinal15AndDeferredRangeShape"
+        ),
+        "fullscreenOrdinal": resolver.get("fullscreenOrdinal"),
+        "vertexShaderIdentity": (
+            f"{vs_identity:016x}" if vs_identity else None
+        ),
+        "pixelShaderIdentity": (
+            f"{ps_identity:016x}" if ps_identity else None
+        ),
         "constantBuffers": decoded,
         "uniqueBackingBuffers": len(resources),
     }, slices)
@@ -186,9 +216,15 @@ def decode_frame(frame_dir: Path) -> list[tuple[dict, list[bytes]]]:
         raise CaptureError(f"{frame_dir} has an unsupported graphics schema")
     if metadata.get("captureIncomplete") or metadata.get("captureFailed"):
         raise CaptureError(f"{frame_dir} is incomplete or failed")
-    resolvers = [
+    exact_resolvers = [
         row for row in metadata.get("fullscreenResolvers", [])
         if isinstance(row, dict) and row.get("priorityDefaultDeferred") is True
+    ]
+    resolvers = exact_resolvers or [
+        row for row in metadata.get("fullscreenResolvers", [])
+        if isinstance(row, dict)
+        and row.get("priorityDeferredRangeShape") is True
+        and row.get("fullscreenOrdinal") == EXPECTED_DEFAULT_FULLSCREEN_ORDINAL
     ]
     if not resolvers:
         return []
