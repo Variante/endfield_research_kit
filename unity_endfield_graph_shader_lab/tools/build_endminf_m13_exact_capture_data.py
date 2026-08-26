@@ -13,19 +13,19 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
-SESSION = REPO / "scratch/reverse_engineering/endfield_capture/20260826T142935Z"
-FRAME_ID = 2383
+SESSION = REPO / "scratch/reverse_engineering/endfield_capture/20260826T144934Z"
+FRAME_ID = 5404
 FRAME = SESSION / "graphics/frames" / str(FRAME_ID)
 OUTPUT = (REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab"
           / "Runtime/Rendering/EndfieldRecoveredM13ExactCaptureData.generated.cs")
 CPP_OUTPUT = (REPO / "unity_endfield_graph_shader_lab/tools/original_dxbc_exact"
               / "M13CapturePayload.generated.h")
 
-EXPECTED_METADATA_SHA256 = "041abdc1f8f7e16ee2ee145800413be5420f697359d539a188041fc9fe6d6335"
-EXPECTED_RESOURCES_SHA256 = "13a3fcc463ad64b718149cd78f5f8d880563daf41a47ca3c33ed8d152cae7514"
+EXPECTED_METADATA_SHA256 = "1a67e671ad25f61fc9e9ee069515406fa61bb7a77478efa39fe85e43a34804b2"
+EXPECTED_RESOURCES_SHA256 = "8f80561c565eb007f3eafa1d0002717ae8633c5d0b01f35f62da0aa3e177ce5a"
 EXPECTED_VS = 0x96A93DCB3965CBED
 EXPECTED_PS = 0x0265C7A6806A095F
-EXPECTED_DRAW = (6, 1, 4830, 1862, 0)
+EXPECTED_DRAW = (6, 1, 0)
 VERTEX_STRIDE = 60
 VERTEX_COUNT = 4
 INDEX_PAYLOAD = struct.pack("<6H", 0, 1, 2, 0, 2, 3)
@@ -53,8 +53,8 @@ def select_draw(metadata: dict[str, Any]) -> dict[str, Any]:
     rows = []
     for row in metadata.get("drawRecords", []):
         shaders = {item.get("stage"): item for item in row.get("shaders", [])}
-        draw_key = (row.get("count"), row.get("instanceCount"), row.get("start"),
-                    row.get("baseVertex"), row.get("startInstance"))
+        draw_key = (row.get("count"), row.get("instanceCount"),
+                    row.get("startInstance"))
         if (draw_key == EXPECTED_DRAW and row.get("indexedInstanced") is True and
                 row.get("priorityShaderPair") is True and
                 shaders.get(0, {}).get("identityHash") == EXPECTED_VS and
@@ -206,6 +206,19 @@ def render_cpp(packet: dict[str, Any]) -> str:
         "{2, 82, 20, 4094, 4};\n"
         "inline constexpr std::uint32_t g_EndfieldM13PSDeclaredFloat4Counts[] = "
         "{28, 105, 4085, 50};\n\n" + "\n".join(arrays) + "\n"
+        "inline constexpr const std::uint8_t* g_EndfieldM13VSConstantPayloads[] = "
+        "{g_EndfieldM13VSCB0, g_EndfieldM13VSCB1, g_EndfieldM13VSCB2, "
+        "g_EndfieldM13VSCB3, g_EndfieldM13VSCB4};\n"
+        "inline constexpr std::size_t g_EndfieldM13VSConstantPayloadSizes[] = "
+        "{g_EndfieldM13VSCB0Size, g_EndfieldM13VSCB1Size, "
+        "g_EndfieldM13VSCB2Size, g_EndfieldM13VSCB3Size, "
+        "g_EndfieldM13VSCB4Size};\n"
+        "inline constexpr const std::uint8_t* g_EndfieldM13PSConstantPayloads[] = "
+        "{g_EndfieldM13PSCB0, g_EndfieldM13PSCB1, g_EndfieldM13PSCB2, "
+        "g_EndfieldM13PSCB3};\n"
+        "inline constexpr std::size_t g_EndfieldM13PSConstantPayloadSizes[] = "
+        "{g_EndfieldM13PSCB0Size, g_EndfieldM13PSCB1Size, "
+        "g_EndfieldM13PSCB2Size, g_EndfieldM13PSCB3Size};\n"
         "struct EndfieldM13TexturePayload { const std::uint8_t* bytes; std::size_t size; "
         "std::uint32_t width; std::uint32_t height; };\n"
         "inline constexpr EndfieldM13TexturePayload g_EndfieldM13Textures[] = {\n" +
@@ -219,8 +232,10 @@ namespace EndfieldGraphShaderLab
 {{
     internal static class EndfieldRecoveredM13ExactCaptureData
     {{
-        internal const string SourceSession = "20260826T142935Z";
+        internal const string SourceSession = "20260826T144934Z";
         internal const int SourceFrame = {FRAME_ID};
+        internal const float PhaseSeconds = 4.50f;
+        internal const float ActiveHalfWidthSeconds = 0.125f;
         internal const int RingByteOffset = {packet["geometry"]["ring_offset"]};
         internal const string VertexSha256 = "{packet["geometry"]["vertex_sha256"]}";
         internal static readonly string[] TextureSha256 = {{ {texture_hashes} }};

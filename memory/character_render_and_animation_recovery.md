@@ -1186,31 +1186,28 @@ payload. The maintained generator rebases the immutable 435-vertex packet and
 constant arrays to this frame and reports the exact vertex envelope closed.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
-VFXBaseV2 pair. EndfieldCapture now computes BC block rows, copies the
-SRV-selected mip into a one-subresource staging texture, and reports width,
-height, source/view formats, and subresource; its BC7 mip WARP test passes.
-Session `20260826T142935Z`, frame 2383, consequently closes all five exact BC7
-SRVs and contains a unique current 240-byte dynamic quad in the selected
-particle ring. Its fail-closed packet build exposed one remaining range gap:
-the retail pixel shader declares and reads material b3 through c49, while the
-capture retained only c0-c35 and did not select that distinct backing
-allocation. EndfieldCapture now retains all 50 vectors and selects every
-distinct constant-buffer allocation before the five textures; its complete
-14-test Release suite passes. One repeat M13 window with this corrected build
-is required, and the validator now rejects the former frame specifically as
-`captured only 36 of 50 vectors`. The older
-FrameAnalysis peak identifies M13 as draw 121 and proves its one billboard
-carries authored RGBA `(1, 0.2862745, 0.0235294, 0.0862745)`; this agrees with
-the generated start-color and color-over-lifetime contract. The conspicuous
-black-background ring is therefore not evidence for arbitrary material
-attenuation. No more geometry, index, material, resolver, or secondary-dynamics
-capture is needed for the M27 gate. The legacy HLSL sidecar keeps its separate
-old-layout bindings and remains the visual fallback. Capture admission now has
-separate fail-closed M13 and M27 validators: M13 requires the exact shader pair
-plus complete PS `t0-t4` resource ranges, and M27 requires all 82 VS b0 vectors
-through c81. As a negative control, `091023` fails those gates specifically for
-absent M13 and its two-vector M27 VS b0 payload; it can no longer be falsely
-accepted by the former one-vector M27 check.
+VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
+mip into a one-subresource staging texture, and records its complete descriptor.
+Session `20260826T142935Z`, frame 2383, closed all five exact BC7 SRVs and the
+unique 240-byte dynamic quad, but correctly failed admission because PS b3
+stopped at c35. Corrected session `20260826T144934Z`, frame 5404, retains the
+full distinct backing allocations for VS b0-b4 and PS b0-b3 through c49, the
+five BC7 SRVs, and the unique current quad. The hash-pinned packet generator
+now publishes those complete constants, textures, shader bytecode, vertices,
+and indices to the native D3D11 path. WARP creates both shaders, the exact input
+layout, and a captured BC7 resource. A synchronized 4.50-second Viewer capture
+then reports a nonzero native draw count, zero callback failures, `S_OK`, and
+`targeted_ok`; submitting the plugin event alone is not accepted as validation.
+The compatibility M13 renderer is suppressed only inside the captured
+4.375-4.625-second window and restored outside it. The older FrameAnalysis peak
+also proves its billboard carries authored RGBA
+`(1, 0.2862745, 0.0235294, 0.0862745)`, agreeing with the generated particle
+contract. The conspicuous actor-only ring is therefore not evidence for
+arbitrary attenuation. No further M13 or M14 graphics capture is needed.
+Capture admission remains separate and fail-closed: M13 requires the exact
+shader pair, complete constant allocations, all five textures, and unique
+geometry, while M27 requires all 82 VS b0 vectors through c81. The legacy HLSL
+sidecar keeps its separate old-layout bindings as the visual fallback.
 
 M14 `overview_02/all/tuowei` no longer has a shader-identity gate. Capture
 `20260826T000901Z` closes its exact VS4914/PS4915 pair, all used constant ranges,
@@ -1247,8 +1244,9 @@ registration is measured, but no further M14 graphics capture is needed.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
-Validate the now-closed exact M27 packet in the full Unity sequence, then admit
-M13 after one corrected material-buffer capture passes its fail-closed gate.
+M13 and M14 packet capture/admission are closed; validate the now-closed exact
+M27 hand-crystal packet in the full Unity sequence, then measure the combined
+crystal/VFX sequence before returning to body, hair, and cloth polish.
 
 ## Main animation gap
 
