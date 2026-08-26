@@ -21,9 +21,8 @@ namespace EndfieldGraphShaderLabEditor
         private const int Height = 1080;
         // The requested deliverable retains the CharInfo grey background and
         // actor-specific background portrait, but never the foreground UI
-        // controls, labels, icons, or cursor overlay. The grey carrier remains
-        // visibly tagged as compatibility until SphereOutside's physical
-        // presentation is source-complete.
+        // controls, labels, icons, or cursor overlay. Exact-consumer captures
+        // additionally require the physical SphereOutside presentation.
         private const bool IncludeCharInfoBackground = true;
         private const bool IncludeBackgroundPortrait = true;
         // The pinned retail recording is 1920x1080 at exactly 60 fps. Keep the
@@ -73,6 +72,8 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_ENDMINF_CAPTURE_SECONDARY_DYNAMICS";
         private const string SecondaryDynamicsSolverEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ENABLE_SECONDARY_DYNAMICS_SOLVER";
+        private const string SphereOutsidePresentationEnvironment =
+            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION";
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
@@ -138,6 +139,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredGBufferFrameReady;
             public bool observedEndminfM27HGBufferReady;
             public bool observedEndminfM27PresentationReady;
+            public bool observedSphereOutsidePresentationReady;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -183,6 +185,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool deferredGBufferFrameReady;
             public bool endminfM27HGBufferReady;
             public bool endminfM27PresentationReady;
+            public bool sphereOutsidePresentationReady;
             public bool preGBufferDepthOwnerReady;
             public bool canonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerReady;
@@ -544,6 +547,8 @@ namespace EndfieldGraphShaderLabEditor
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+                "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+                SphereOutsidePresentationEnvironment,
                 "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
                 "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
                 "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
@@ -897,6 +902,8 @@ namespace EndfieldGraphShaderLabEditor
                     "_EndfieldRecoveredEndminfM27HGBufferReady") > 0.5f,
                 endminfM27PresentationReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredEndminfM27PresentationReady") > 0.5f,
+                sphereOutsidePresentationReady = Shader.GetGlobalFloat(
+                    "_EndfieldRecoveredSphereOutsidePresentationReady") > 0.5f,
                 preGBufferDepthOwnerReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredPreGBufferDepthOwnerReady") > 0.5f,
                 canonicalCharacterPreGBufferReady = Shader.GetGlobalFloat(
@@ -1019,6 +1026,8 @@ namespace EndfieldGraphShaderLabEditor
                 value.endminfM27HGBufferReady);
             bool observedEndminfM27PresentationReady = Frames.Any(value =>
                 value.endminfM27PresentationReady);
+            bool observedSphereOutsidePresentationReady = Frames.Any(value =>
+                value.sphereOutsidePresentationReady);
             bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
                 value.preGBufferDepthOwnerReady);
             bool observedCanonicalCharacterPreGBufferReady = Frames.All(value =>
@@ -1090,6 +1099,17 @@ namespace EndfieldGraphShaderLabEditor
                     missingObservations.Add(
                         "exact M27 deferred presentation readiness");
                 }
+                if (IncludeCharInfoBackground &&
+                    string.Equals(
+                        Environment.GetEnvironmentVariable(
+                            SphereOutsidePresentationEnvironment),
+                        "1",
+                        StringComparison.Ordinal) &&
+                    !observedSphereOutsidePresentationReady)
+                {
+                    missingObservations.Add(
+                        "physical SphereOutside deferred presentation readiness");
+                }
                 if (!observedLightCookieDataReady)
                     missingObservations.Add("exact-consumer LightCookieData readiness");
             }
@@ -1140,6 +1160,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedEndminfM27HGBufferReady,
                 observedEndminfM27PresentationReady =
                     observedEndminfM27PresentationReady,
+                observedSphereOutsidePresentationReady =
+                    observedSphereOutsidePresentationReady,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =

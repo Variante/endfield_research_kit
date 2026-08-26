@@ -970,9 +970,9 @@ background, shadows, and final post-processing against those recordings.
 For the current Endminf deliverable, Unity retains the CharInfo grey background
 target and actor-specific background portrait with the main character and her
 spawned visual effects. Foreground controls, labels, icons, cursor, and other
-front UI overlays are excluded. The portrait transport is source-recovered;
-the visible grey carrier remains explicitly compatibility-labeled until the
-physical `SphereOutside` presentation is closed.
+front UI overlays are excluded. The portrait transport is source-recovered.
+The grey carrier now uses the frame-proven physical `SphereOutside` HGBuffer
+plus Default Lit resolve before ForwardOpaque; foreground UI remains excluded.
 
 The maintained video-to-frame workflow is
 `unity_endfield_graph_shader_lab/scripts/reference_video/`. Its config records
@@ -1356,14 +1356,10 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Capture one settled Endminf Character Info frame with the full graphics
-   profile, then use its exact SphereOutside/Default Lit package to replace the
-   compatibility grey carrier. Keep the recovered background portrait and
-   exclude every foreground UI overlay.
-2. Compare the resulting background+portrait+actor/VFX 770-frame output
+1. Compare the resulting background+portrait+actor/VFX 770-frame output
    against the no-frame-generation recording with foreground UI masked out,
    then close the remaining camera, bloom, effect-shape, and material gaps.
-3. Close Endminf secondary motion against the joined retail shape oracle from
+2. Close Endminf secondary motion against the joined retail shape oracle from
    EndfieldCapture session `20260825T191720Z`. Its 40 complete frames each
    contain 32 valid draw-time b2 snapshots with no dropped/incomplete/failed
    package. `8e65872` preserves the exact 16-byte row consumed by each retained
@@ -1383,8 +1379,8 @@ or shaders rather than hand-editing generated prefabs.
    `dynamics`-profile `Numpad 5` window is required to certify Endminf through
    either direct four-owner isolation or the maintained bounded universal-false
    coverage before solver writeback can be tested.
-4. Generalize the finished Endminf path and rebuild every playable character
+3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
-5. Keep changing inventories and exhaustive validation output under
+4. Keep changing inventories and exhaustive validation output under
    `reports/assets/character_recovery/`; update this file only when the durable
    conclusion or evidence boundary changes.
