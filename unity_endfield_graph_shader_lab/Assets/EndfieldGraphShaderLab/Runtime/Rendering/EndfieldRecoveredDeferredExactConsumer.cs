@@ -21,8 +21,10 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string ShaderName =
             EndfieldOriginalDxbcDiagnosticRuntime.ShaderName;
-        private const int TextureSlotCount = 28;
-        private const int ConstantBufferSlotCount = 10;
+        private const int TextureSlotCount = 26;
+        private const int ConstantBufferSlotCount = 9;
+        private const int LegacyHlslTextureSlotCount = 28;
+        private const int LegacyHlslConstantBufferSlotCount = 10;
         private static readonly int[] ConstantBufferIds = CreateConstantBufferIds();
         private static readonly int[] ConstantBufferByteCounts =
         {
@@ -33,7 +35,6 @@ namespace EndfieldGraphShaderLab
             2054 * sizeof(float) * 4,
             401 * sizeof(float) * 4,
             216 * sizeof(float) * 4,
-            15 * sizeof(float) * 4,
             160 * sizeof(float) * 4,
             4 * sizeof(float) * 4,
         };
@@ -42,6 +43,10 @@ namespace EndfieldGraphShaderLab
         private static readonly int ReadyId =
             Shader.PropertyToID("_EndfieldRecoveredDeferredExactConsumerReady");
         private static readonly int[] TextureIds = CreateTextureIds();
+        private static readonly int[] LegacyHlslTextureIds =
+            CreateTextureIds(LegacyHlslTextureSlotCount);
+        private static readonly int[] LegacyHlslConstantBufferIds =
+            CreateConstantBufferIds(LegacyHlslConstantBufferSlotCount);
 
         private readonly bool requested;
         private Material material;
@@ -211,6 +216,14 @@ namespace EndfieldGraphShaderLab
                 if (!TryPrepareNative(out string nativeFailure))
                     return FailClosed(nativeFailure);
 
+                BindLegacyHlslInputs(
+                    constantBuffers,
+                    resources,
+                    cameraDepth,
+                    resolverT23,
+                    resolverT24,
+                    resolverT25);
+
                 for (int slot = 0; slot < ConstantBufferSlotCount; slot++)
                 {
                     command.SetGlobalConstantBuffer(
@@ -257,7 +270,7 @@ namespace EndfieldGraphShaderLab
                 command.SetRenderTarget(output);
                 command.ClearRenderTarget(false, true, Color.clear);
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
-                // The shell establishes Unity's b0..b9 and sampler metadata;
+                // The shell establishes Unity's b0..b8 and sampler metadata;
                 // the native event replaces only the shader stages and draws
                 // the embedded exact DXBC after all source pointers are set.
                 command.DrawProcedural(
@@ -310,22 +323,19 @@ namespace EndfieldGraphShaderLab
                     "retailPass0=false, screenContentValid=false.");
                 Debug.Log(
                     "Recovered exact deferred resolver source texture closures: " +
-                    "variant=retail-37eacbc3c84bb392," +
+                    "variant=live-b21a1e35eda1c5bc," +
                     "b6=HDPLS:zero-local-fallback," +
-                    "b7=SubsurfaceProfileSimple:zero-non-subsurface-fixture," +
                     "t8=HDPLS:white-inactive-fallback," +
                     "t9=CSMRamp:black-null-fallback," +
                     $"t10=multiscattering:{(multiscatteringLut != null ? "ready" : "absent")}," +
-                    "t11=SubsurfaceProfileLut:black-non-subsurface-fixture," +
-                    "t12=SubsurfaceTransmissionLut:black-non-subsurface-fixture," +
-                    $"t13=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
-                    "t14=LightCookie:black-zero-cookie," +
-                    "t15=IntegratedFog:black-disabled-1x1-ASTC," +
-                    $"t16=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
-                    $"t17=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
-                    "t18-t23=IrradianceV2:zero-inactive-fallback," +
-                    "t24=wetness:white-disabled-fallback," +
-                    "t25-t27=GBuffer:A/B/C," +
+                    $"t11=screenShadow:{(resources.T11Ready ? "ready" : "absent")}," +
+                    "t12=LightCookie:black-zero-cookie," +
+                    "t13=IntegratedFog:black-disabled-1x1-ASTC," +
+                    $"t14=LogSH:{(resources.T14Ready ? "ready" : "absent")}," +
+                    $"t15=VisibilitySH:{(resources.T15Ready ? "ready" : "absent")}," +
+                    "t16-t21=IrradianceV2:zero-inactive-fallback," +
+                    "t22=wetness:white-disabled-fallback," +
+                    "t23-t25=GBuffer:A/B/C," +
                     "fallbackTextureSlots=t2,t3,t4.");
                 loggedFailure = false;
                 lastFailure = string.Empty;
@@ -427,7 +437,6 @@ namespace EndfieldGraphShaderLab
                 lightData?.CurrentBuffer,
                 shadowData?.CurrentBuffer,
                 zeroHdplsBuffer,
-                zeroSubsurfaceProfileBuffer,
                 lightCookieData,
                 visibilitySHConstants?.CurrentBuffer,
             };
@@ -438,10 +447,8 @@ namespace EndfieldGraphShaderLab
                 {
                     failure = slot == 6
                         ? "exact consumer b6 local HDPLS zero fallback allocation is unavailable"
-                        : slot == 7
-                            ? "exact consumer b7 local non-subsurface profile zero fallback allocation is unavailable"
-                            : "exact consumer b" + slot +
-                              " source-backed constant buffer is unavailable";
+                        : "exact consumer b" + slot +
+                          " source-backed constant buffer is unavailable";
                     return false;
                 }
             }
@@ -471,9 +478,89 @@ namespace EndfieldGraphShaderLab
                 sizeof(float) * 4,
                 ComputeBufferType.Constant)
             {
-                name = "Recovered exact deferred resolver b7 non-subsurface zero fallback"
+                name = "Recovered legacy HLSL resolver b7 zero fallback"
             };
             zeroSubsurfaceProfileBuffer.SetData(new Vector4[15]);
+        }
+
+        private void BindLegacyHlslInputs(
+            ComputeBuffer[] currentBuffers,
+            EndfieldRecoveredDeferredResolverInputProbe.ResourceFrame resources,
+            Texture cameraDepth,
+            RenderTexture resolverT23,
+            RenderTexture resolverT24,
+            RenderTexture resolverT25)
+        {
+            ComputeBuffer[] legacyBuffers =
+            {
+                currentBuffers[0], currentBuffers[1], currentBuffers[2],
+                currentBuffers[3], currentBuffers[4], currentBuffers[5],
+                currentBuffers[6], zeroSubsurfaceProfileBuffer,
+                currentBuffers[7], currentBuffers[8],
+            };
+            int[] byteCounts =
+            {
+                45, 157, 259, 3, 2054, 401, 216, 15, 160, 4,
+            };
+            for (int slot = 0; slot < LegacyHlslConstantBufferSlotCount; slot++)
+            {
+                recoveredHlslMaterial.SetConstantBuffer(
+                    LegacyHlslConstantBufferIds[slot],
+                    legacyBuffers[slot],
+                    0,
+                    byteCounts[slot] * sizeof(float) * 4);
+            }
+            recoveredHlslMaterial.SetBuffer(BufferT0Id, resources.t0Binning);
+            for (int slot = 1; slot < LegacyHlslTextureSlotCount; slot++)
+            {
+                recoveredHlslMaterial.SetTexture(
+                    LegacyHlslTextureIds[slot],
+                    SelectLegacyHlslTexture(
+                        slot,
+                        cameraDepth,
+                        resources,
+                        resolverT23,
+                        resolverT24,
+                        resolverT25));
+            }
+        }
+
+        private Texture SelectLegacyHlslTexture(
+            int slot,
+            Texture cameraDepth,
+            EndfieldRecoveredDeferredResolverInputProbe.ResourceFrame resources,
+            RenderTexture resolverT23,
+            RenderTexture resolverT24,
+            RenderTexture resolverT25)
+        {
+            switch (slot)
+            {
+                case 1: return cameraDepth;
+                case 5: return resources.t5Reflection;
+                case 6: return resources.t6PunctualShadow;
+                case 7: return resources.t7LowResShadow;
+                case 8: return Texture2D.whiteTexture;
+                case 9: return Texture2D.blackTexture;
+                case 10: return multiscatteringLut;
+                case 11:
+                case 12: return fallbackArray;
+                case 13: return resources.t11ScreenShadow;
+                case 14: return Texture2D.blackTexture;
+                case 15: return integratedFogFallback;
+                case 16: return resources.t14LogSh;
+                case 17: return resources.t15VisibilitySh;
+                case 18:
+                case 19:
+                case 20:
+                case 21:
+                case 22:
+                case 23: return fallback3D;
+                case 24: return Texture2D.whiteTexture;
+                case 25: return resolverT23;
+                case 26: return resolverT24;
+                case 27: return resolverT25;
+                default: return fallback2D;
+            }
         }
 
         private bool TryPrepareNative(out string failure)
@@ -916,49 +1003,40 @@ namespace EndfieldGraphShaderLab
                 case 6: return resources.t6PunctualShadow;
                 case 7: return resources.t7LowResShadow;
                 case 10: return multiscatteringLut;
-                // The captured retail 37eacbc3 variant inserts its two
-                // simple-subsurface arrays at t11/t12. SphereOutside has
-                // material-family index zero, so neutral arrays are sufficient
-                // and the shader does not sample either fixture.
-                case 11: return fallbackArray;
-                case 12: return fallbackArray;
                 // CharInfo serializes a null CSM ramp; the installed native
                 // push binds Texture2D.blackTexture for this slot.
                 case 9: return Texture2D.blackTexture;
                 // The selected CharInfo HDPLS selector rows are all zero; the
                 // inactive native push binds white to the HDPLS screen mask.
                 case 8: return Texture2D.whiteTexture;
-                // The same variant shifts the full-resolution screen-shadow
-                // mask to t13. Binding black here zeroed the directional RGB
-                // at the shader's final shadow multiply.
-                case 13: return resources.t11ScreenShadow;
+                case 11: return resources.t11ScreenShadow;
                 // The source-closed isolated light fixtures have no cookie
                 // indices; the native zero-cookie transport binds black.
-                case 14: return Texture2D.blackTexture;
+                case 12: return Texture2D.blackTexture;
                 // The installed CharInfo route disables volumetric fog and
                 // publishes the native 1x1x1 ASTC_4x4 black Texture3D.
-                case 15: return integratedFogFallback;
-                case 25: return resolverT23;
-                case 26: return resolverT24;
-                case 27: return resolverT25;
+                case 13: return integratedFogFallback;
+                case 23: return resolverT23;
+                case 24: return resolverT24;
+                case 25: return resolverT25;
                 // The installed CharInfo V2 route resolves no /aiTest/index.bytes
                 // map, so the native missing-map result uses one shared 1x1x1
                 // zero Texture3D for all six irradiance slots.  This fixture
                 // texture mirrors that zero texel only; it is not a live V2
                 // atlas and must not be replaced with the legacy Gacha payload.
+                case 16:
+                case 17:
                 case 18:
                 case 19:
                 case 20:
                 case 21:
-                case 22:
-                case 23:
                     return fallback3D;
-                case 16: return resources.t14LogSh;
-                case 17: return resources.t15VisibilitySh;
+                case 14: return resources.t14LogSh;
+                case 15: return resources.t15VisibilitySh;
                 // The selected CharInfo environment keeps rain/wetness
                 // disabled; the original native push binds its white fallback
                 // to the wetness slot in that state.
-                case 24: return Texture2D.whiteTexture;
+                case 22: return Texture2D.whiteTexture;
                 default:
                     return fallback2D;
             }
@@ -966,16 +1044,26 @@ namespace EndfieldGraphShaderLab
 
         private static int[] CreateTextureIds()
         {
-            var ids = new int[TextureSlotCount];
-            for (int slot = 1; slot < TextureSlotCount; slot++)
+            return CreateTextureIds(TextureSlotCount);
+        }
+
+        private static int[] CreateTextureIds(int count)
+        {
+            var ids = new int[count];
+            for (int slot = 1; slot < count; slot++)
                 ids[slot] = Shader.PropertyToID("_EndfieldTextureT" + slot);
             return ids;
         }
 
         private static int[] CreateConstantBufferIds()
         {
-            var ids = new int[ConstantBufferSlotCount];
-            for (int slot = 0; slot < ConstantBufferSlotCount; slot++)
+            return CreateConstantBufferIds(ConstantBufferSlotCount);
+        }
+
+        private static int[] CreateConstantBufferIds(int count)
+        {
+            var ids = new int[count];
+            for (int slot = 0; slot < count; slot++)
                 ids[slot] = Shader.PropertyToID("EndfieldCB" + slot);
             return ids;
         }

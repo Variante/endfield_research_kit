@@ -12,6 +12,11 @@ from pathlib import Path
 
 EXPECTED_VS_IDENTITY = 0xA6AFE2C96CAA3FD9
 EXPECTED_PS_IDENTITY = 0xCA09544336A4D56E
+# The live CharInfo frame selects a narrower Default Lit variant than the
+# older 3DMigoto frame. Forty-nine consecutive packages identify this exact
+# registered bytecode at the same family position (two passes before the
+# eleven-range Subsurface resolver).
+CURRENT_DEFAULT_PS_IDENTITY = 0xB21A1E35EDA1C5BC
 # The old complete 3DMigoto frame records Default Lit as the sixteenth
 # DrawInstanced(3,1) fullscreen pass, immediately before foliage and
 # subsurface. EndfieldCapture stores zero-based fullscreen ordinals.
@@ -107,7 +112,10 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
     vs_identity = _shader_identity(resolver, 0)
     ps_identity = _shader_identity(resolver, 4)
     allowed_vs_identities = {EXPECTED_VS_IDENTITY}
-    allowed_ps_identities = {EXPECTED_PS_IDENTITY}
+    allowed_ps_identities = {
+        EXPECTED_PS_IDENTITY,
+        CURRENT_DEFAULT_PS_IDENTITY,
+    }
     if ((range_shape_selection or family_order_selection)
             and not exact_identity_selection):
         # Shader objects created before hook attachment have no bytecode entry
@@ -123,7 +131,9 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
     if ps_identity not in allowed_ps_identities:
         raise CaptureError(
             f"Default Lit resolver PS identity is {ps_identity!r}, expected "
-            f"{EXPECTED_PS_IDENTITY}"
+            f"one of {sorted(value for value in allowed_ps_identities if value)}"
+            + (" or an absent pre-attachment identity"
+               if None in allowed_ps_identities else "")
         )
 
     ranges = resolver.get("psConstantBuffers")
@@ -137,7 +147,8 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
         if slot in by_slot:
             raise CaptureError(f"Default Lit resolver has duplicate PS b{slot}")
         by_slot[slot] = row
-    expected_slots = set(range(len(REQUIRED_CONSTANTS)))
+    current_variant = ps_identity == CURRENT_DEFAULT_PS_IDENTITY
+    expected_slots = set(range(9 if current_variant else len(REQUIRED_CONSTANTS)))
     if set(by_slot) != expected_slots:
         raise CaptureError(
             f"Default Lit resolver slots are {sorted(by_slot)}, expected "
@@ -148,7 +159,7 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
     resource_rows: dict[int, dict] = {}
     decoded = []
     slices = []
-    for slot, required in enumerate(REQUIRED_CONSTANTS):
+    for slot in sorted(expected_slots):
         row = by_slot[slot]
         if row.get("rangeValid") is not True:
             raise CaptureError(f"Default Lit resolver PS b{slot} range is invalid")
@@ -161,6 +172,7 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
             raise CaptureError(
                 f"Default Lit resolver PS b{slot} has nonnumeric range metadata"
             ) from exc
+        required = bound if current_variant else REQUIRED_CONSTANTS[slot]
         if object_id <= 0 or first < 0 or bound < required or byte_width <= 0:
             raise CaptureError(
                 f"Default Lit resolver PS b{slot} cannot provide {required} constants: "
@@ -213,6 +225,10 @@ def decode_resolver(metadata: dict, blob: bytes, resolver: dict) -> tuple[dict, 
         ),
         "pixelShaderIdentity": (
             f"{ps_identity:016x}" if ps_identity else None
+        ),
+        "pixelShaderVariant": (
+            "liveCharInfoNarrowDefault"
+            if current_variant else "legacySelectedDefault"
         ),
         "constantBuffers": decoded,
         "uniqueBackingBuffers": len(resources),

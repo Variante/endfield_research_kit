@@ -32,7 +32,7 @@ def passing_report() -> dict[str, object]:
         "last_hresult": "0x00000000",
         "render_event_count": 2,
         "post_draw_exact_shader_objects_bound": True,
-        "shader_resource_mask": "0xffffffe",
+        "shader_resource_mask": "0x3fffffe",
         "resource_binding_compatible": True,
         "readback_changed_from_sentinel": True,
         "callback_count": 0,

@@ -156,6 +156,28 @@ class DecodeDefaultDeferredCaptureTests(unittest.TestCase):
                 "twoPassesBeforeElevenRangeSubsurfaceAnchor",
             )
 
+    def test_decodes_live_narrow_default_variant_bound_ranges(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            def mutate(metadata):
+                resolver = metadata["fullscreenResolvers"][0]
+                resolver["shaders"][1]["identityHash"] = (
+                    MODULE.CURRENT_DEFAULT_PS_IDENTITY
+                )
+                resolver["psConstantBuffers"].pop()
+
+            frame, _ = self.make_frame(Path(temporary), mutate)
+            rows = MODULE.decode_frame(frame)
+            self.assertEqual(len(rows), 1)
+            decoded, slices = rows[0]
+            self.assertEqual(len(slices), 9)
+            self.assertEqual(
+                decoded["pixelShaderVariant"], "liveCharInfoNarrowDefault"
+            )
+            self.assertEqual(
+                len(slices[0]),
+                decoded["constantBuffers"][0]["boundConstants"] * 16,
+            )
+
     def test_range_shape_rejects_conflicting_registered_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
             def mutate(metadata):

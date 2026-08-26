@@ -12,8 +12,8 @@ EXPECTED = {
         "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155",
     ),
     "deferred_pixel": (
-        50_296,
-        "ca09544336a4d56e78c28a080da2df320c11cd21a896dacfdcdcac2b400752e5",
+        48_984,
+        "b21a1e35eda1c5bcb60198c6af313799ddcc94d0cee0be9025938f3ba8c56b6f",
     ),
     "m27_vertex": (
         8_148,
