@@ -17,17 +17,23 @@ namespace EndfieldGraphShaderLabEditor
     public static class EndfieldEndminfViewerPlayModeCapture
     {
         private const string Scene = "Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity";
-        private const int Width = 1920;
-        private const int Height = 1080;
+        private const int DefaultWidth = 1920;
+        private const int DefaultHeight = 1080;
+        private const string CaptureWidthEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_WIDTH";
+        private const string CaptureHeightEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_HEIGHT";
         // The requested deliverable retains the CharInfo grey background and
         // actor-specific background portrait, but never the foreground UI
         // controls, labels, icons, or cursor overlay. Exact-consumer captures
         // additionally require the physical SphereOutside presentation.
         private const bool IncludeCharInfoBackground = true;
         private const bool IncludeBackgroundPortrait = true;
-        // The pinned retail recording is 1920x1080 at exactly 60 fps. Keep the
-        // Play-mode simulation on that clock and only thin the written PNGs
-        // to 4 fps. Driving Time.captureDeltaTime at 4 fps changed particle
+        // Keep the default verifier output at 1920x1080 and the Play-mode
+        // simulation on the retail 60 Hz clock. A paired width/height override
+        // is reserved for focused native-resolution presentation probes; it
+        // does not alter the canonical comparison dimensions or timing. Only
+        // thin written PNGs to 4 fps. Driving Time.captureDeltaTime at 4 fps changed particle
         // integration, AnimationEvent stepping, and every temporal producer,
         // so the old side-by-side frames were not equivalent observations.
         private const float SimulationFps = 60f;
@@ -88,6 +94,8 @@ namespace EndfieldGraphShaderLabEditor
         private static string output;
         private static float[] requestedTimes;
         private static float captureFps = Fps;
+        private static int captureWidth = DefaultWidth;
+        private static int captureHeight = DefaultHeight;
         private static string captureFailure;
         private static bool capturePrePostHdr;
         private static bool capturePostStages;
@@ -104,8 +112,8 @@ namespace EndfieldGraphShaderLabEditor
         {
             public string schema = "endfield.endminf-viewer-playmode-sequence.v4";
             public string status = "ok";
-            public int width = Width;
-            public int height = Height;
+            public int width = captureWidth;
+            public int height = captureHeight;
             public float fps;
             public string graphicsDeviceType;
             public string scene = Scene;
@@ -336,6 +344,23 @@ namespace EndfieldGraphShaderLabEditor
                     "Endminf Viewer capture requires the project's authoritative " +
                     "Direct3D11 backend; actual=" +
                     SystemInfo.graphicsDeviceType + ".");
+            captureWidth = ParseCaptureDimension(
+                CaptureWidthEnvironment,
+                DefaultWidth);
+            captureHeight = ParseCaptureDimension(
+                CaptureHeightEnvironment,
+                DefaultHeight);
+            bool widthOverridden = !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable(CaptureWidthEnvironment));
+            bool heightOverridden = !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable(CaptureHeightEnvironment));
+            if (widthOverridden != heightOverridden)
+            {
+                throw new InvalidOperationException(
+                    CaptureWidthEnvironment + " and " +
+                    CaptureHeightEnvironment +
+                    " must be supplied together.");
+            }
             // Exercise the same explicit reproduction profile as
             // open_character_recovery_lab.bat. Batch validation must not
             // silently fall back to the preserved gacha-room presentation
@@ -1567,14 +1592,25 @@ namespace EndfieldGraphShaderLabEditor
         {
             bool exactFinalTarget = HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested();
             var rt = new RenderTexture(
-                Width,
-                Height,
+                captureWidth,
+                captureHeight,
                 24,
                 exactFinalTarget ? RenderTextureFormat.ARGB32 : RenderTextureFormat.ARGBHalf,
                 RenderTextureReadWrite.Linear);
             rt.Create(); RenderTexture old = RenderTexture.active; value.targetTexture = rt; value.Render();
-            RenderTexture.active = rt; var texture = new Texture2D(Width, Height, TextureFormat.RGBA32, false, false);
-            texture.ReadPixels(new Rect(0, 0, Width, Height), 0, 0); texture.Apply(); Color32[] pixels = texture.GetPixels32();
+            RenderTexture.active = rt;
+            var texture = new Texture2D(
+                captureWidth,
+                captureHeight,
+                TextureFormat.RGBA32,
+                false,
+                false);
+            texture.ReadPixels(
+                new Rect(0, 0, captureWidth, captureHeight),
+                0,
+                0);
+            texture.Apply();
+            Color32[] pixels = texture.GetPixels32();
             value.targetTexture = null; RenderTexture.active = old; UnityEngine.Object.Destroy(texture); rt.Release(); UnityEngine.Object.Destroy(rt);
             return pixels;
         }
@@ -1584,8 +1620,34 @@ namespace EndfieldGraphShaderLabEditor
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
             texture.LoadImage(File.ReadAllBytes(path)); Color32[] raw = texture.GetPixels32(); UnityEngine.Object.Destroy(texture);
             var pixels = new Color32[raw.Length];
-            for (int y = 0; y < Height; y++) Array.Copy(raw, y * Width, pixels, (Height - 1 - y) * Width, Width);
+            for (int y = 0; y < captureHeight; y++)
+            {
+                Array.Copy(
+                    raw,
+                    y * captureWidth,
+                    pixels,
+                    (captureHeight - 1 - y) * captureWidth,
+                    captureWidth);
+            }
             return pixels;
+        }
+
+        private static int ParseCaptureDimension(string environment, int fallback)
+        {
+            string value = Environment.GetEnvironmentVariable(environment);
+            if (string.IsNullOrWhiteSpace(value))
+                return fallback;
+            if (!int.TryParse(
+                    value.Trim(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int dimension) ||
+                dimension < 64 || dimension > 8192)
+            {
+                throw new InvalidOperationException(
+                    environment + " must be an integer from 64 through 8192.");
+            }
+            return dimension;
         }
 
         private static float[] ParseRequestedTimes(string value)
@@ -1631,8 +1693,21 @@ namespace EndfieldGraphShaderLabEditor
         private static void Write(string path, Color32[] pixels)
         {
             var flipped = new Color32[pixels.Length];
-            for (int y = 0; y < Height; y++) Array.Copy(pixels, y * Width, flipped, (Height - 1 - y) * Width, Width);
-            var texture = new Texture2D(Width, Height, TextureFormat.RGBA32, false, false);
+            for (int y = 0; y < captureHeight; y++)
+            {
+                Array.Copy(
+                    pixels,
+                    y * captureWidth,
+                    flipped,
+                    (captureHeight - 1 - y) * captureWidth,
+                    captureWidth);
+            }
+            var texture = new Texture2D(
+                captureWidth,
+                captureHeight,
+                TextureFormat.RGBA32,
+                false,
+                false);
             texture.SetPixels32(flipped); texture.Apply(); File.WriteAllBytes(path, texture.EncodeToPNG()); UnityEngine.Object.Destroy(texture);
         }
     }
