@@ -35,7 +35,9 @@ class DecodeDefaultDeferredCaptureTests(unittest.TestCase):
             "instanceCount": 1,
             "startVertex": 0,
             "startInstance": 0,
+            "fullscreenOrdinal": MODULE.EXPECTED_DEFAULT_FULLSCREEN_ORDINAL,
             "priorityDefaultDeferred": True,
+            "priorityDeferredRangeShape": True,
             "shaders": [
                 {"stage": 0, "identityHash": MODULE.EXPECTED_VS_IDENTITY},
                 {"stage": 4, "identityHash": MODULE.EXPECTED_PS_IDENTITY},
@@ -100,6 +102,36 @@ class DecodeDefaultDeferredCaptureTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.CaptureError, "PS identity"):
                 MODULE.decode_frame(frame)
 
+    def test_decodes_pre_attachment_shader_by_ordinal_and_range_shape(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            def mutate(metadata):
+                resolver = metadata["fullscreenResolvers"][0]
+                resolver["priorityDefaultDeferred"] = False
+                for shader in resolver["shaders"]:
+                    shader["identityHash"] = 0
+
+            frame, _ = self.make_frame(Path(temporary), mutate)
+            rows = MODULE.decode_frame(frame)
+            self.assertEqual(len(rows), 1)
+            decoded, slices = rows[0]
+            self.assertEqual(len(slices), 10)
+            self.assertEqual(
+                decoded["selectionEvidence"],
+                "fullscreenOrdinal15AndDeferredRangeShape",
+            )
+            self.assertIsNone(decoded["pixelShaderIdentity"])
+
+    def test_range_shape_rejects_conflicting_registered_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            def mutate(metadata):
+                resolver = metadata["fullscreenResolvers"][0]
+                resolver["priorityDefaultDeferred"] = False
+                resolver["shaders"][1]["identityHash"] = 7
+
+            frame, _ = self.make_frame(Path(temporary), mutate)
+            with self.assertRaisesRegex(MODULE.CaptureError, "PS identity"):
+                MODULE.decode_frame(frame)
+
     def test_rejects_missing_constant_slot(self):
         with tempfile.TemporaryDirectory() as temporary:
             def mutate(metadata):
@@ -113,6 +145,7 @@ class DecodeDefaultDeferredCaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             def mutate(metadata):
                 metadata["fullscreenResolvers"][0]["priorityDefaultDeferred"] = False
+                metadata["fullscreenResolvers"][0]["priorityDeferredRangeShape"] = False
 
             root = Path(temporary)
             self.make_frame(root, mutate)

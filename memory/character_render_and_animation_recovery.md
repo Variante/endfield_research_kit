@@ -385,11 +385,21 @@ complete frame without a client fault.
   and compact PS b0-b10 ranges, and selects every unique backing constant
   buffer once into `resources.bin`. Its full 14-test Release suite includes an
   end-to-end D3D11 proxy package gate. The old frame contains 24 fullscreen
-  triangles and Default Lit is the sixteenth, so hash-priority is required;
-  replacement now also reports generic-record truncation explicitly. One new
-  targeted source-frame-382-window capture is still
-  required to recover the selected Default Lit slices; another M27 material
-  draw capture is not required. The same session
+  triangles and Default Lit is the sixteenth. Session `20260826T083131Z` is a
+  complete 50-frame, zero-drop sequence, but every package retained only the
+  first eight generic fullscreen records: the game created the Default Lit
+  shader before hook attachment, so the local shader registry could not apply
+  hash priority. EndfieldCapture now also prioritizes the complete PS b0-b9
+  deferred range shape and records each fullscreen draw's original ordinal.
+  This retains the late resolver without enlarging the frame snapshot; the
+  end-to-end proxy regression overflows the first-eight list before a
+  range-shaped resolver and the full 14-test Release suite passes. The decoder
+  accepts the old-frame-proven zero-based ordinal 15 plus complete range shape
+  only when shader identities are absent/zero or agree with the exact hashes;
+  any conflicting registered identity fails closed. One new targeted
+  source-frame-382-window capture is still required to recover the selected
+  Default Lit slices; another M27 material draw capture is not required. The
+  same session
   frame observed 48 compute dispatches but retained only the first 16, with
   explicit truncation. EndfieldCapture now retains 64 compact dispatch records
   under the targeted profile, enough to preserve the complete observed peak
@@ -406,7 +416,8 @@ complete frame without a client fault.
   `decode_endminf_default_deferred_capture.py` is the maintained fail-closed
   join from the prioritized resolver record and its ten PS ranges to the
   deduplicated resource blob. It writes source-shaped b0-b9 binary slices and
-  rejects missing identities, slots, backing buffers, or bounds.
+  rejects conflicting identities, unverified fallback ordinals, missing slots,
+  backing buffers, or bounds.
 - The two remaining M28 `VFXRefract` rows stay fail-closed, but the four new
   neutral forced-D3D11 frame analyses reopen their recovery path. All four
   record the exact SRP-instanced 0624/0625 program pair; the newest capture's
