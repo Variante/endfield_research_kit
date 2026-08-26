@@ -573,6 +573,8 @@ namespace EndfieldGraphShaderLabEditor
             }
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+                "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+                "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
                 "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
                 SphereOutsidePresentationEnvironment,

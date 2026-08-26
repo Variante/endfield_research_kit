@@ -32,6 +32,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME=1"
   set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=1"
   set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
+  rem Exact temporal VFX owners improve the no-frame-generation UI-free sequence.
+  set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
+  set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=1"
@@ -44,7 +47,7 @@ exit /b 2
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=0.989"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=-0.874"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
-  echo Opening Endminf reproduction with physical SphereOutside and exact M27 deferred presentation.
+  echo Opening Endminf reproduction with physical SphereOutside and exact M13/M14/M27 presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
 
