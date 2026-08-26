@@ -3,7 +3,9 @@
 
 The verifier is intentionally tied to the pinned retail build and the exact
 VS4914/PS4915 bytecode pair. It rejects pre-M14 recorder output, incomplete
-GPU copies, truncated shader-addressable ranges, and shader/count lookalikes.
+GPU copies, truncated shader-addressable ranges, and implausible particle
+draws. Particle index counts are dynamic: FrameAnalysis observed 1,098 indices
+while the phase-matched peak capture observed 1,710.
 """
 
 from __future__ import annotations
@@ -12,13 +14,14 @@ import argparse
 import hashlib
 import json
 import math
+import statistics
 import struct
 from pathlib import Path
 
 
 GAME_BUILD = "endfield-2026-07-11-gameassembly-0c557367"
 TARGET_SHA256 = "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
-M14_INDEX_COUNT = 1_098
+M14_REFERENCE_INDEX_COUNT = 1_098
 VS_IDENTITY = 0x62A5CE6C09171DE9
 PS_IDENTITY = 0x5558DEDDB1EE6188
 VS_BYTECODE_SIZE = 6_148
@@ -37,6 +40,9 @@ REQUIRED_BINDINGS = {
     (4, 2): (5, 5),
     (4, 3): (22, 22),
 }
+
+PARTICLE_VERTEX_STRIDE = 36
+PARTICLE_UVS = ((0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0))
 
 
 class CaptureError(ValueError):
@@ -100,8 +106,9 @@ def decode_binding(row: dict, stage: int, slot: int,
 
 def decode_m14_draw(draw: dict) -> dict:
     require(draw.get("indexedInstanced") is True, "M14 draw is not indexed-instanced")
-    require(int(draw.get("count", -1)) == M14_INDEX_COUNT,
-            f"M14 draw count is not {M14_INDEX_COUNT}")
+    index_count = int(draw.get("count", -1))
+    require(index_count >= M14_REFERENCE_INDEX_COUNT and index_count % 6 == 0,
+            "M14 draw does not contain a plausible dynamic quad index count")
     require(int(draw.get("instanceCount", -1)) == 1, "M14 instanceCount is not one")
     require(int(draw.get("startInstance", -1)) == 0, "M14 startInstance is not zero")
     require(draw.get("priorityShaderPair") is True,
@@ -146,7 +153,11 @@ def decode_m14_draw(draw: dict) -> dict:
     require(all(math.isfinite(value) for value in c13),
             "M14 VS b3/c13 contains a non-finite color carrier")
     return {
-        "indexCount": M14_INDEX_COUNT,
+        "indexCount": index_count,
+        "quadCount": index_count // 6,
+        "referenceIndexCount": M14_REFERENCE_INDEX_COUNT,
+        "startIndex": int(draw.get("start", -1)),
+        "baseVertex": int(draw.get("baseVertex", -1)),
         "instanceCount": 1,
         "startInstance": 0,
         "vertexShader": {
@@ -162,6 +173,109 @@ def decode_m14_draw(draw: dict) -> dict:
         "vsPerDrawC13": c13,
         "vertexColorMultiplier": [1.0 - value for value in c13],
         "bindings": bindings,
+    }
+
+
+def _particle_quad(data: bytes, offset: int) -> tuple[float, float] | None:
+    positions = []
+    for vertex, expected_uv in enumerate(PARTICLE_UVS):
+        row = offset + vertex * PARTICLE_VERTEX_STRIDE
+        values = struct.unpack_from("<6fI2f", data, row)
+        position = values[:3]
+        normal = values[3:6]
+        uv = values[7:9]
+        if not all(math.isfinite(value) for value in position + normal + uv):
+            return None
+        # Stretch billboards can publish a shortened direction carrier as
+        # their velocity approaches zero; finiteness plus canonical UV order
+        # identifies the stream without incorrectly rejecting those rows.
+        if uv != expected_uv:
+            return None
+        positions.append(position)
+    width = math.dist(positions[0], positions[1])
+    height = math.dist(positions[1], positions[2])
+    return width, height
+
+
+def decode_particle_geometry(frame_dir: Path, metadata: dict,
+                             quad_count: int) -> dict | None:
+    """Recover the expanded stock-Unity particle stream from resources.bin.
+
+    The current recorder deduplicates a D3D11 buffer first observed through an
+    SRV/UAV binding, so the shared IA resource is labelled kind 4/5 rather than
+    kind 0. Its raw bytes remain complete. Locate the stream by its exact
+    36-byte Position/Normal/packed-Color/UV ABI and canonical quad UV order.
+    """
+    rows = metadata.get("selectedResourceRecords")
+    if rows is None:
+        return None
+    require(isinstance(rows, list), "selectedResourceRecords is not an array")
+    resources_path = frame_dir / "resources.bin"
+    try:
+        resources = resources_path.read_bytes()
+    except OSError as exc:
+        raise CaptureError(f"cannot read {resources_path}: {exc}") from exc
+
+    candidates = []
+    for resource_index, row in enumerate(rows):
+        if not isinstance(row, dict) or int(row.get("captureKind", -1)) not in (0, 4, 5):
+            continue
+        if row.get("completed") is not True or int(row.get("failure", -1)) != 0:
+            continue
+        blob_offset = int(row.get("blobOffset", -1))
+        blob_bytes = int(row.get("blobBytes", -1))
+        require(blob_offset >= 0 and blob_bytes >= 0 and
+                blob_offset + blob_bytes <= len(resources),
+                f"selected resource {resource_index} exceeds resources.bin")
+        data = resources[blob_offset:blob_offset + blob_bytes]
+        starts = {}
+        limit = len(data) - PARTICLE_VERTEX_STRIDE * 4
+        for offset in range(0, max(0, limit + 1), 4):
+            dimensions = _particle_quad(data, offset)
+            if dimensions is not None:
+                starts[offset] = dimensions
+        for offset in sorted(starts):
+            if offset - PARTICLE_VERTEX_STRIDE * 4 in starts:
+                continue
+            run = 1
+            while offset + run * PARTICLE_VERTEX_STRIDE * 4 in starts:
+                run += 1
+            if run >= quad_count:
+                candidates.append((run - quad_count, resource_index, offset,
+                                   run, starts, row))
+    require(bool(candidates),
+            "resources.bin contains no complete M14 36-byte particle-quad stream")
+    _, resource_index, offset, run, starts, resource_row = min(candidates)
+    widths = []
+    heights = []
+    ratios = []
+    for index in range(quad_count):
+        width, height = starts[offset + index * PARTICLE_VERTEX_STRIDE * 4]
+        widths.append(width)
+        heights.append(height)
+        if width > 1.0e-8 and height > 1.0e-8:
+            ratios.append(width / height)
+    require(len(ratios) >= quad_count * 0.7,
+            "M14 raw stream has too few non-degenerate expanded quads")
+    median_ratio = statistics.median(ratios)
+    require(1.85 <= median_ratio <= 2.15,
+            f"M14 median expanded-quad aspect ratio {median_ratio:.6g} is not 2:1")
+    return {
+        "resourceIndex": resource_index,
+        "captureKind": int(resource_row["captureKind"]),
+        "blobOffset": int(resource_row["blobOffset"]),
+        "streamByteOffset": offset,
+        "vertexStride": PARTICLE_VERTEX_STRIDE,
+        "contiguousQuadCount": run,
+        "consumedQuadCount": quad_count,
+        "nonDegenerateQuadCount": len(ratios),
+        "medianRawWidth": statistics.median(widths),
+        "medianRawHeight": statistics.median(heights),
+        "medianAspectRatio": median_ratio,
+        "minimumRawWidth": min(widths),
+        "maximumRawWidth": max(widths),
+        "minimumRawHeight": min(heights),
+        "maximumRawHeight": max(heights),
     }
 
 
@@ -181,17 +295,31 @@ def decode_frame(frame_dir: Path) -> dict | None:
             f"{frame_dir} is incomplete or failed")
     draws = metadata.get("drawRecords")
     require(isinstance(draws, list), f"{frame_dir} has no drawRecords")
-    candidates = [row for row in draws if isinstance(row, dict) and
-                  int(row.get("count", -1)) == M14_INDEX_COUNT and
-                  row.get("priorityShaderPair") is True]
+    # The exact shader pair is shared by several particle emitters in this
+    # frame. M14 is the largest priority-retained quad draw during its bounded
+    # live window: 1,098 indices in FrameAnalysis and 1,710 at the captured
+    # peak. Do not hardcode one instantaneous alive-particle count.
+    priority_draws = [row for row in draws if isinstance(row, dict) and
+                      row.get("priorityShaderPair") is True]
+    plausible = [row for row in priority_draws
+                 if int(row.get("count", -1)) >= M14_REFERENCE_INDEX_COUNT and
+                 int(row.get("count", -1)) % 6 == 0]
+    candidates = [] if not plausible else [max(
+        plausible, key=lambda row: int(row.get("count", -1))
+    )]
     if not candidates:
         return None
+    decoded_draws = [decode_m14_draw(row) for row in candidates]
+    for decoded_draw in decoded_draws:
+        decoded_draw["rawParticleGeometry"] = decode_particle_geometry(
+            frame_dir, metadata, decoded_draw["quadCount"]
+        )
     return {
         "frame": int(metadata.get("frame", frame_dir.name)),
         "frameDirectory": str(frame_dir.resolve()),
         "metadataSha256": hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
         "m14DrawCount": len(candidates),
-        "m14Draws": [decode_m14_draw(row) for row in candidates],
+        "m14Draws": decoded_draws,
     }
 
 
