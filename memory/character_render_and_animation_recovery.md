@@ -458,8 +458,16 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   isolated five-attachment M27 publisher with an explicit per-frame readiness
   signal. All five attachment readbacks are now content-nonzero after preserving
   captured shader defaults during exact material-property transfer. The
-  original DXBC transport and presented deferred consumer remain open. Do not
-  compensate by resizing, brightening, retiming, or disabling M21.
+  original DXBC transport and presented deferred consumer remain open. A
+  fail-closed Unity compiler-extension probe rejects direct shader-object
+  substitution: the isolated shell reflects as VS 7-input/11-output and PS
+  11-input/5-output, versus the retail pair's VS 10/9 and PS 10/5, and its
+  five-MRT pixel candidates are not hash-unique. The native registry therefore
+  remains deliberately unpinned. Exact transport must own the retail expanded
+  particle vertex declaration/buffers natively or establish a genuinely
+  signature-identical shell; it must not swap the retail DXBC into the current
+  Unity particle draw. Do not compensate by resizing, brightening, retiming,
+  or disabling M21.
 - Blink, facial, physical-transform, CharacterNPR, eye, hair, shadow, GBuffer,
   light, cookie, irradiance, particle, gacha, and post-processing behavior is
   recovered only where its input contract is verified. Unknown inputs remain
