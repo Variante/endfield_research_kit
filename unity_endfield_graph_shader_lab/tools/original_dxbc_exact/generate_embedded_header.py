@@ -7,13 +7,21 @@ from pathlib import Path
 
 
 EXPECTED = {
-    "vertex": (
+    "deferred_vertex": (
         496,
         "a6afe2c96caa3fd940004ce9ee725886d0f8df683d5f73403278743e32563155",
     ),
-    "pixel": (
+    "deferred_pixel": (
         50_296,
         "ca09544336a4d56e78c28a080da2df320c11cd21a896dacfdcdcac2b400752e5",
+    ),
+    "m27_vertex": (
+        8_148,
+        "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+    ),
+    "m27_pixel": (
+        8_200,
+        "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
     ),
 }
 
@@ -31,6 +39,11 @@ def render_array(name: str, data: bytes) -> str:
     )
 
 
+def render_digest(name: str, digest: bytes) -> str:
+    values = ", ".join(f"0x{value:02x}" for value in digest)
+    return f"inline constexpr unsigned char {name}[32] = {{{values}}};\n"
+
+
 def checked(path: Path, stage: str) -> bytes:
     data = path.read_bytes()
     expected_size, expected_hash = EXPECTED[stage]
@@ -45,19 +58,34 @@ def checked(path: Path, stage: str) -> bytes:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vertex", type=Path, required=True)
-    parser.add_argument("--pixel", type=Path, required=True)
+    parser.add_argument("--deferred-vertex", type=Path, required=True)
+    parser.add_argument("--deferred-pixel", type=Path, required=True)
+    parser.add_argument("--m27-vertex", type=Path, required=True)
+    parser.add_argument("--m27-pixel", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    vertex = checked(args.vertex, "vertex")
-    pixel = checked(args.pixel, "pixel")
+    deferred_vertex = checked(args.deferred_vertex, "deferred_vertex")
+    deferred_pixel = checked(args.deferred_pixel, "deferred_pixel")
+    m27_vertex = checked(args.m27_vertex, "m27_vertex")
+    m27_pixel = checked(args.m27_pixel, "m27_pixel")
     text = (
         "#pragma once\n"
         "#include <cstddef>\n\n"
-        + render_array("g_EndfieldSelectedVertexDxbc", vertex)
+        + render_array("g_EndfieldSelectedVertexDxbc", deferred_vertex)
         + "\n"
-        + render_array("g_EndfieldSelectedPixelDxbc", pixel)
+        + render_array("g_EndfieldSelectedPixelDxbc", deferred_pixel)
+        + "\n"
+        + render_array("g_EndfieldM27VertexDxbc", m27_vertex)
+        + "\n"
+        + render_array("g_EndfieldM27PixelDxbc", m27_pixel)
+        + "\n"
+        + render_digest(
+            "g_EndfieldM27VertexDxbcSha256", hashlib.sha256(m27_vertex).digest()
+        )
+        + render_digest(
+            "g_EndfieldM27PixelDxbcSha256", hashlib.sha256(m27_pixel).digest()
+        )
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(text, encoding="utf-8", newline="\n")

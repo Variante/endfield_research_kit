@@ -48,3 +48,35 @@ does not depend on a player-side compiler callback or a shell material
 overwriting the exact stages.
 
 Do not enable the keyword or arm the plugin outside this disposable diagnostic.
+
+## M27 Unity-owned draw substitution
+
+The same plugin now contains a separate, default-off M27 compiler-callback
+route for a Unity-owned particle draw. It embeds the exact retail HGBuffer
+subprogram-113 pair and checks them at build time:
+
+- VS `0678_endfield_dxbc_0.dxbc`: 8,148 bytes,
+  SHA-256 `c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c`;
+- PS `0679_endfield_dxbc_1.dxbc`: 8,200 bytes,
+  SHA-256 `92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e`.
+
+`M27SubstitutionRegistry.h` dispatches by both compiler stage and the SHA-256
+of Unity's input shell bytecode. The callback never uses a keyword, callback
+order, byte count, or first-seen variant as shader identity. The exact
+Unity-compiled shell hashes are not yet available, so both registry entries
+are deliberately unpinned and `EndfieldOriginalDxbcGetM27RegistryReady()`
+returns zero. In this state the M27 route records the observed per-stage shell
+hash, increments the mismatch/blocked counters, and leaves Unity's shader
+object unchanged.
+
+Build and validate without replacing the Unity project plugin asset:
+
+```powershell
+.\build_plugin.ps1 -ToolOnly
+```
+
+The build runs `VerifyM27SubstitutionRegistry.exe`, which verifies both retail
+blob hashes, asks WARP D3D11 to create both shader objects, and proves that the
+unresolved registry rejects unknown shell hashes. Pin shell hashes only after
+collecting the exact D3D11 callback bytecode for the dedicated M27 shell and
+verifying one stable VS and PS identity independently.

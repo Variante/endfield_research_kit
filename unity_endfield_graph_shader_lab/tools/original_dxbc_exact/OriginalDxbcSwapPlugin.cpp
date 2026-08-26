@@ -1,26 +1,38 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <bcrypt.h>
 #include <d3d11.h>
 
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 
 #include "IUnityInterface.h"
 #include "IUnityGraphicsD3D11.h"
 #include "IUnityShaderCompilerAccess.h"
 #include "EmbeddedDxbc.generated.h"
+#include "M27SubstitutionRegistry.h"
 
 namespace
 {
 constexpr const char* kReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_EXACT";
+constexpr const char* kM27ReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_M27_EXACT";
 constexpr std::uint32_t kContractVersion = 2;
 constexpr std::uint32_t kTextureSlotCount = 28;
 constexpr std::uint32_t kConstantBufferSlotCount = 10;
 
+enum class SubstitutionRoute : std::uint32_t
+{
+    None = 0,
+    DeferredDiagnostic = 1,
+    M27HashPinned = 2,
+};
+
 IUnityInterfaces* g_unityInterfaces = nullptr;
 std::atomic<bool> g_armed{false};
+std::atomic<SubstitutionRoute> g_substitutionRoute{SubstitutionRoute::None};
 std::atomic<std::uint32_t> g_pluginLoadCount{0};
 std::atomic<std::uint32_t> g_configureCount{0};
 std::atomic<bool> g_vertexClaimed{false};
@@ -46,6 +58,28 @@ std::atomic<std::uint32_t> g_postDrawShaderResourceMask{0};
 std::atomic<std::uint32_t> g_samplerMask{0};
 std::uintptr_t g_texturePointers[kTextureSlotCount] = {};
 std::atomic<std::uint32_t> g_texturePointerCount{0};
+std::atomic<std::uint32_t> g_m27MatchCount{0};
+std::atomic<std::uint32_t> g_m27MismatchCount{0};
+std::atomic<std::uint8_t> g_m27ObservedVertexSha256[32] = {};
+std::atomic<std::uint8_t> g_m27ObservedPixelSha256[32] = {};
+
+bool Sha256(
+    const unsigned char* data,
+    std::size_t size,
+    unsigned char digest[32])
+{
+    if (data == nullptr || size == 0 ||
+        size > (std::numeric_limits<ULONG>::max)())
+        return false;
+    return BCRYPT_SUCCESS(BCryptHash(
+        BCRYPT_SHA256_ALG_HANDLE,
+        nullptr,
+        0,
+        const_cast<PUCHAR>(data),
+        static_cast<ULONG>(size),
+        digest,
+        32));
+}
 
 IUnityGraphicsD3D11* GetD3D11()
 {
@@ -77,6 +111,13 @@ void ResetDiagnosticState()
     g_samplerMask.store(0, std::memory_order_relaxed);
     std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
     g_texturePointerCount.store(0, std::memory_order_relaxed);
+    g_m27MatchCount.store(0, std::memory_order_relaxed);
+    g_m27MismatchCount.store(0, std::memory_order_relaxed);
+    for (std::size_t index = 0; index < 32; ++index)
+    {
+        g_m27ObservedVertexSha256[index].store(0, std::memory_order_relaxed);
+        g_m27ObservedPixelSha256[index].store(0, std::memory_order_relaxed);
+    }
 }
 
 void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
@@ -101,11 +142,59 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
         return;
     }
 
-    // Every callback for the reserved diagnostic keyword belongs to the
-    // isolated shell's D3D11 variant set. Replace all of them: Unity may pick
-    // a later local-keyword variant at player load rather than the first one
-    // observed during the editor build. The stage-claim flags remain exposed
-    // as historical counters, but no variant is blocked in this mode.
+    const SubstitutionRoute route =
+        g_substitutionRoute.load(std::memory_order_acquire);
+    const unsigned char* replacementDxbc = nullptr;
+    std::size_t replacementDxbcSize = 0;
+    if (route == SubstitutionRoute::M27HashPinned)
+    {
+        unsigned char digest[32] = {};
+        if (!Sha256(params.inputByteCode, params.inputByteCodeSize, digest))
+        {
+            g_lastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+            g_failureCount.fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+        std::atomic<std::uint8_t>* observed =
+            isVertex ? g_m27ObservedVertexSha256 : g_m27ObservedPixelSha256;
+        for (std::size_t index = 0; index < sizeof(digest); ++index)
+            observed[index].store(digest[index], std::memory_order_release);
+
+        const auto stage = isVertex
+            ? EndfieldM27Substitution::Stage::Vertex
+            : EndfieldM27Substitution::Stage::Pixel;
+        const EndfieldM27Substitution::Entry* entry =
+            EndfieldM27Substitution::Resolve(stage, digest);
+        if (entry == nullptr)
+        {
+            // A callback keyword is not shader identity. Unknown or unpinned
+            // shell bytecode must retain Unity's shader object unchanged.
+            g_blockedCount.fetch_add(1, std::memory_order_relaxed);
+            g_m27MismatchCount.fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+        replacementDxbc = entry->replacementDxbc;
+        replacementDxbcSize = entry->replacementDxbcSize;
+        g_m27MatchCount.fetch_add(1, std::memory_order_relaxed);
+    }
+    else if (route == SubstitutionRoute::DeferredDiagnostic)
+    {
+        // Preserve the existing isolated deferred diagnostic callback. Its
+        // production proof uses the native fullscreen event and does not share
+        // the M27 shell route.
+        replacementDxbc = isVertex
+            ? g_EndfieldSelectedVertexDxbc
+            : g_EndfieldSelectedPixelDxbc;
+        replacementDxbcSize = isVertex
+            ? g_EndfieldSelectedVertexDxbcSize
+            : g_EndfieldSelectedPixelDxbcSize;
+    }
+    else
+    {
+        g_blockedCount.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
+
     std::atomic<bool>& stageClaim = isVertex ? g_vertexClaimed : g_pixelClaimed;
     stageClaim.store(true, std::memory_order_relaxed);
 
@@ -124,8 +213,8 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
     {
         ID3D11VertexShader* shader = nullptr;
         result = device->CreateVertexShader(
-            g_EndfieldSelectedVertexDxbc,
-            g_EndfieldSelectedVertexDxbcSize,
+            replacementDxbc,
+            replacementDxbcSize,
             nullptr,
             &shader);
         replacement = shader;
@@ -134,8 +223,8 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
     {
         ID3D11PixelShader* shader = nullptr;
         result = device->CreatePixelShader(
-            g_EndfieldSelectedPixelDxbc,
-            g_EndfieldSelectedPixelDxbcSize,
+            replacementDxbc,
+            replacementDxbcSize,
             nullptr,
             &shader);
         replacement = shader;
@@ -335,7 +424,9 @@ HRESULT CreateDiagnosticShaderResourceView(
 
 void DrawExactRuntimeShader()
 {
-    if (!g_armed.load(std::memory_order_acquire))
+    if (!g_armed.load(std::memory_order_acquire) ||
+        g_substitutionRoute.load(std::memory_order_acquire) !=
+            SubstitutionRoute::DeferredDiagnostic)
         return;
 
     IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
@@ -600,12 +691,14 @@ UnityPluginLoad(IUnityInterfaces* unityInterfaces)
     g_unityInterfaces = unityInterfaces;
     g_pluginLoadCount.fetch_add(1, std::memory_order_relaxed);
     g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
     ResetDiagnosticState();
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
     g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
     ReleaseRuntimeShaders();
     g_unityInterfaces = nullptr;
 }
@@ -621,6 +714,7 @@ UnityShaderCompilerExtEvent(UnityShaderCompilerExtEventType eventType, void* dat
             return;
 
         configure->ReserveKeyword(kReservedKeyword);
+        configure->ReserveKeyword(kM27ReservedKeyword);
         configure->SetGPUProgramCompilerMask(
             (1u << kUnityShaderCompilerExtGPUProgramTargetDX11VertexSM50) |
             (1u << kUnityShaderCompilerExtGPUProgramTargetDX11PixelSM50));
@@ -662,6 +756,9 @@ EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
     if (armed != 0)
     {
         g_armed.store(false, std::memory_order_release);
+        g_substitutionRoute.store(
+            SubstitutionRoute::DeferredDiagnostic,
+            std::memory_order_release);
         ReleaseRuntimeShaders();
         ResetDiagnosticState();
         g_armed.store(true, std::memory_order_release);
@@ -669,9 +766,64 @@ EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
     else
     {
         g_armed.store(false, std::memory_order_release);
+        g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
         ReleaseRuntimeShaders();
     }
     return g_armed.load(std::memory_order_acquire) ? 1u : 0u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM27SubstitutionArmed(std::uint32_t armed)
+{
+    g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(
+        armed != 0
+            ? SubstitutionRoute::M27HashPinned
+            : SubstitutionRoute::None,
+        std::memory_order_release);
+    ReleaseRuntimeShaders();
+    ResetDiagnosticState();
+    if (armed != 0)
+        g_armed.store(true, std::memory_order_release);
+    return g_armed.load(std::memory_order_acquire) ? 1u : 0u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27RegistryReady()
+{
+    return EndfieldM27Substitution::Ready() ? 1u : 0u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27MatchCount()
+{
+    return g_m27MatchCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27MismatchCount()
+{
+    return g_m27MismatchCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM27ObservedShellSha256(
+    std::uint32_t stage,
+    unsigned char* output,
+    std::uint32_t outputSize)
+{
+    if (output == nullptr || outputSize < 32)
+        return 0;
+    const std::atomic<std::uint8_t>* observed = nullptr;
+    if (stage == static_cast<std::uint32_t>(EndfieldM27Substitution::Stage::Vertex))
+        observed = g_m27ObservedVertexSha256;
+    else if (stage == static_cast<std::uint32_t>(EndfieldM27Substitution::Stage::Pixel))
+        observed = g_m27ObservedPixelSha256;
+    else
+        return 0;
+    for (std::size_t index = 0; index < 32; ++index)
+        output[index] = observed[index].load(std::memory_order_acquire);
+    return 32;
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

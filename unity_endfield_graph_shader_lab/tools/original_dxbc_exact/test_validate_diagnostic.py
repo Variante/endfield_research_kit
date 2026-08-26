@@ -54,6 +54,16 @@ class LiveReportTests(unittest.TestCase):
             MODULE.EXPECTED_PLUGIN_EXPORTS,
         )
 
+    def test_plugin_contract_includes_fail_closed_m27_exports(self) -> None:
+        for name in (
+            "EndfieldOriginalDxbcGetM27MatchCount",
+            "EndfieldOriginalDxbcGetM27MismatchCount",
+            "EndfieldOriginalDxbcGetM27ObservedShellSha256",
+            "EndfieldOriginalDxbcGetM27RegistryReady",
+            "EndfieldOriginalDxbcSetM27SubstitutionArmed",
+        ):
+            self.assertIn(name, MODULE.EXPECTED_PLUGIN_EXPORTS)
+
     def test_direct_runtime_activation_report_passes_without_compiler_callback(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "standalone_validation.json"
