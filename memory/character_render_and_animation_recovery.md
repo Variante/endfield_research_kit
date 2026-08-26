@@ -1200,9 +1200,15 @@ Frame 2308 submits four separate 72-index M27 draws. The targeted package
 retains their shader constants and shared SRV/UAV buffers, but not the direct
 IA vertex/index binding records needed to replay those four packets exactly.
 Therefore the current exact path is a certified peak checkpoint, not a full
-M27 temporal sequence. A future capture must retain direct IA bindings for all
-M27-pair draws at the early four-crystal reference phase; material or resolver
-capture is not the missing evidence.
+M27 temporal sequence. EndfieldCapture `b17b906` now priority-retains the two
+vertex slots, index format, strides, and byte offsets for every exact M27-pair
+draw, plus all six pixel textures. If an IA buffer aliases an already selected
+compute SRV/UAV, both binding records reference the same `resources.bin` blob
+instead of reading the multi-megabyte allocation twice. The Release build,
+all 14 tests, D3D11 proxy lifecycle, WARP alias/offset regression, and installed
+build gate pass. Capture the early four-crystal phase represented by session
+`20260826T142935Z` frame 2308 with this build; material or resolver capture is
+not the missing evidence.
 
 The same frame priority-retains the exact M13 `overview_02/all/huan` six-index
 VFXBaseV2 pair. EndfieldCapture computes BC block rows, copies each SRV-selected
