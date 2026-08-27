@@ -1132,6 +1132,17 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT"
                 #elif defined(_SAMPLE_TEX1) && !defined(_SAMPLE_TEX2) && !defined(_USE_SOFTBLEND)
                 return _MainTex.SampleBias(
                     sampler_LinearClamp, uv, bias + _GlobalMipBias);
+                #elif !defined(_SAMPLE_TEX0) && !defined(_SAMPLE_TEX1) && \
+                    !defined(_SAMPLE_TEX2) && !defined(_SAMPLE_TEX3) && \
+                    !defined(_USE_SOFTBLEND)
+                // Exact BASE fragment 0001 (including Endminf M17
+                // `baoshan`) binds the static LinearClamp sampler. The
+                // source Texture2D itself is Repeat, so using Unity's paired
+                // sampler repeats the radial carrier outside [0,1] and turns
+                // the authored 7.4-intensity flash into a large diagonal
+                // contribution.
+                return _MainTex.SampleBias(
+                    sampler_LinearClamp, uv, bias + _GlobalMipBias);
                 #else
                 return _MainTex.SampleBias(
                     sampler_MainTex, uv, bias + _GlobalMipBias);

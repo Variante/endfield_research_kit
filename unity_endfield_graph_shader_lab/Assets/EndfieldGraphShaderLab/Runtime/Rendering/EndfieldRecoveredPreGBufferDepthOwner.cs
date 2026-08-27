@@ -25,6 +25,8 @@ namespace EndfieldGraphShaderLab
         private const string ForwardPassName = "FORWARD";
         private const string DepthOnlyShaderName =
             "Hidden/Endfield/HGRPCompat/RecoveredPreGBufferDepthOnly";
+        private const string ReferenceBackdropShaderName =
+            "Endfield/CharacterRecovery/ReferenceBackdrop";
         private const string CanonicalFiveMrtKeyword =
             "ENDFIELD_RECOVERED_CANONICAL_FIVE_MRT";
         private const string SourceZTestPropertyName = "_RecoveredSourceZTest";
@@ -600,7 +602,12 @@ namespace EndfieldGraphShaderLab
                         continue;
                     }
 
-                    if (!opaque || IsSourceBackedCharInfoPassAfterCharacterPreG(renderer, material))
+                    if (!opaque ||
+                        string.Equals(
+                            shaderName,
+                            ReferenceBackdropShaderName,
+                            StringComparison.Ordinal) ||
+                        IsSourceBackedCharInfoPassAfterCharacterPreG(renderer, material))
                         continue;
                     if (shaderName.StartsWith("Endfield/Recovered/", StringComparison.Ordinal))
                     {

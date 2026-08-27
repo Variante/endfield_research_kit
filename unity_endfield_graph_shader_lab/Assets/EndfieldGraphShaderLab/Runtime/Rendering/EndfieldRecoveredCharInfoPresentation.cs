@@ -354,11 +354,11 @@ namespace EndfieldGraphShaderLab
             // closed. Admit the original plane over the compatibility wall;
             // SphereOutside remains excluded for its unresolved deferred path.
             if (shadowPlaneRenderer != null) shadowPlaneRenderer.enabled = true;
-            // Far is source-complete, but its retail composition is against
-            // the unresolved physical wall. Over this neutral carrier it
-            // exposes the full dense perspective mesh and diverges sharply;
-            // keep it fail-closed until SphereOutside's consumer is live.
-            if (farGridRenderer != null) farGridRenderer.enabled = false;
+            // Far's mesh, material, texture, settled tint, transform, and
+            // transparent shader are source-closed. The compatibility wall is
+            // only a neutral replacement for the unresolved opaque sphere; it
+            // must not replace the authored grid geometry as well.
+            if (farGridRenderer != null) farGridRenderer.enabled = true;
             Renderer backdrop = appliedBackdropRenderer != null
                 ? appliedBackdropRenderer
                 : compatibilityBackdropRenderer;
@@ -378,15 +378,14 @@ namespace EndfieldGraphShaderLab
                 endminfBackdropProperties.SetColor(
                     "_BottomColor",
                     new Color(0.785f, 0.79f, 0.80f, 1.0f));
-                // The exact Far renderer remains admitted, but its recovered
-                // transparent pass sorts behind this presentation plate in the
-                // public pipeline. Retain a low-contrast carrier on the plate
-                // until that queue relationship is closed.
+                // GridDeco/Far now owns all grid structure. Keep this plate a
+                // neutral gray carrier so procedural screen-space lines do not
+                // double or contradict the source mesh's perspective families.
                 endminfBackdropProperties.SetColor(
                     "_GridColor",
                     new Color(0.32f, 0.325f, 0.32f, 1.0f));
-                endminfBackdropProperties.SetFloat("_GridOpacity", 0.11f);
-                endminfBackdropProperties.SetFloat("_DiagonalOpacity", 0.025f);
+                endminfBackdropProperties.SetFloat("_GridOpacity", 0.0f);
+                endminfBackdropProperties.SetFloat("_DiagonalOpacity", 0.0f);
                 endminfBackdropProperties.SetFloat("_GridColumns", 3.1f);
                 endminfBackdropProperties.SetFloat("_GridRows", 7.25f);
                 endminfBackdropProperties.SetFloat("_GridPhaseX", -0.45f);
