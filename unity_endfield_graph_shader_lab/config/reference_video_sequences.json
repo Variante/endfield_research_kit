@@ -61,6 +61,34 @@
       ]
     },
     {
+      "id": "endminf_overview_clean_2026-08-26",
+      "source": "../videos/2026-08-26_21-25-50.mkv",
+      "resolution": [3840, 2160],
+      "notes": "User-supplied clean Endminf Character Info reference with the grey gameplay background and faint actor portrait retained but foreground UI hidden. One-based source frame 88 is the final blank model-swap frame and frame 89 is the first visible Endminf entrance frame. This is the primary visual-comparison reference; its body-phase anchor remains bounded until clean-frame registration closes it.",
+      "segments": [
+        {
+          "id": "endminf_overview_start_and_loop_clean",
+          "character": "endminf",
+          "behavior": "ui_overview_start_then_loop",
+          "startFrame": 88,
+          "startSeconds": 1.45,
+          "endSeconds": 10.767,
+          "comparison": {
+            "bodyClipStartSourceFrame": 91,
+            "bodyClipPhaseSeconds": 0.05090830227,
+            "firstVisibleSourceFrame": 89,
+            "anchorUncertaintyFrames": 1,
+            "comparisonWidth": 1920,
+            "comparisonHeight": 1080,
+            "resamplingFilter": "lanczos",
+            "sampleCount": 28,
+            "tileColumns": 4,
+            "notes": "Frame 88 is visibly blank and frame 89 begins the entrance. A five-candidate full-sequence sweep against the deterministic Unity export selects source anchor 91 by effect-region MAE, with a bounded plus-or-minus-one-frame residual. No foreground-UI mask is required."
+          }
+        }
+      ]
+    },
+    {
       "id": "roster_overview_2026-08-15",
       "source": "../videos/2026-08-15_10-32-32.mkv",
       "resolution": [3840, 2160],

@@ -114,19 +114,33 @@ def main() -> int:
     first_source = int(sidecar["output"]["firstSourceFrame"])
     fps = float(sidecar["output"]["fps"])
 
-    recovered_frames = [
-        load_rgb(args.unity_dir / row["file"], (width, height))
-        for row in unity_report["frames"]
-    ]
-    alignments = []
-    sheet_payload: dict[int, list[dict]] = {}
-    for offset in args.source_offsets:
-        rows = []
-        previous_reference = None
-        previous_recovered = None
-        for index, (frame_row, recovered) in enumerate(
-            zip(unity_report["frames"], recovered_frames, strict=True)
-        ):
+    reference_frame_count = int(sidecar["output"]["frameCount"])
+    unity_frames = []
+    for frame_row in unity_report["frames"]:
+        requested = float(frame_row["requestedSeconds"])
+        extracted = [
+            body_anchor + round(requested * fps) + offset - first_source + 1
+            for offset in args.source_offsets
+        ]
+        if min(extracted) < 1 or max(extracted) > reference_frame_count:
+            break
+        unity_frames.append(frame_row)
+    if not unity_frames:
+        raise ValueError("Unity and retail sequences have no common bounded frame window")
+    frame_count = len(unity_frames)
+    selected_sheet_indices = set(sheet_indices(frame_count))
+    rows_by_offset: dict[int, list[dict]] = {
+        offset: [] for offset in args.source_offsets
+    }
+    previous_reference: dict[int, np.ndarray | None] = {
+        offset: None for offset in args.source_offsets
+    }
+    previous_recovered = None
+    for index, frame_row in enumerate(unity_frames):
+        recovered = load_rgb(
+            args.unity_dir / frame_row["file"], (width, height)
+        )
+        for offset in args.source_offsets:
             requested = float(frame_row["requestedSeconds"])
             source_frame = body_anchor + round(requested * fps) + offset
             extracted_frame = source_frame - first_source + 1
@@ -137,10 +151,11 @@ def main() -> int:
                 crop(reference, effect_roi), crop(recovered, effect_roi)
             )
             temporal = None
-            if previous_reference is not None and previous_recovered is not None:
+            prior_reference = previous_reference[offset]
+            if prior_reference is not None and previous_recovered is not None:
                 reference_delta = (
                     crop(reference, effect_roi).astype(np.float64)
-                    - crop(previous_reference, effect_roi).astype(np.float64)
+                    - crop(prior_reference, effect_roi).astype(np.float64)
                 )
                 recovered_delta = (
                     crop(recovered, effect_roi).astype(np.float64)
@@ -151,12 +166,7 @@ def main() -> int:
                     "referenceAbsEnergy": float(np.mean(np.abs(reference_delta))),
                     "recoveredAbsEnergy": float(np.mean(np.abs(recovered_delta))),
                 }
-            absolute = np.abs(
-                recovered.astype(np.int16) - reference.astype(np.int16)
-            ).astype(np.uint8)
-            heat = ImageEnhance.Contrast(Image.fromarray(absolute)).enhance(3.0)
-            rows.append(
-                {
+            row = {
                     "index": index,
                     "requestedSeconds": requested,
                     "postSeconds": float(frame_row["endminfPostSeconds"]),
@@ -167,13 +177,25 @@ def main() -> int:
                     "roi": roi_metrics,
                     "effectRoi": effect_metrics,
                     "effectTemporal": temporal,
-                    "_reference": reference,
-                    "_recovered": recovered,
-                    "_difference": np.asarray(heat, dtype=np.uint8),
                 }
-            )
-            previous_reference = reference
-            previous_recovered = recovered
+            if index in selected_sheet_indices:
+                absolute = np.abs(
+                    recovered.astype(np.int16) - reference.astype(np.int16)
+                ).astype(np.uint8)
+                heat = ImageEnhance.Contrast(Image.fromarray(absolute)).enhance(3.0)
+                row.update({
+                    "_reference": reference.copy(),
+                    "_recovered": recovered.copy(),
+                    "_difference": np.asarray(heat, dtype=np.uint8),
+                })
+            rows_by_offset[offset].append(row)
+            previous_reference[offset] = reference
+        previous_recovered = recovered
+
+    alignments = []
+    sheet_payload: dict[int, list[dict]] = {}
+    for offset in args.source_offsets:
+        rows = rows_by_offset[offset]
         summary = {
             "sourceOffsetFrames": offset,
             "meanRoiMae": float(np.mean([row["roi"]["mae"] for row in rows])),
@@ -196,7 +218,7 @@ def main() -> int:
     best = min(alignments, key=lambda value: value["summary"]["meanEffectRoiMae"])
     best_offset = int(best["summary"]["sourceOffsetFrames"])
     sheet_path = args.output.with_name(args.output.stem + "_sheet.png")
-    indices = sheet_indices(len(recovered_frames))
+    indices = sorted(selected_sheet_indices)
     make_sheet(sheet_payload[best_offset], sheet_path, indices)
 
     for alignment in alignments:

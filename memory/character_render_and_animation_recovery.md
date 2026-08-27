@@ -25,6 +25,11 @@ archetypes remain labeled source kits rather than finished characters.
 Staged capture-only 3DMigoto is the independently valid retail-tested path for
 graphics evidence. Capture sessions belong under the relevant scratch recovery
 topic, and evidence requires the captured provider request and session summary.
+The maintained 3DMigoto fork now includes a disabled-by-default Character Info
+ground-truth recording preset derived from a retained frame's clean scene/UI
+boundary. It suppresses only the observed post-scene foreground UI family,
+fails open when client shader hashes change, and still requires a fresh retail
+A/B before a recording is accepted as UI-free evidence.
 
 Secondary-dynamics session `20260825T125815Z` closed the global live
 `UseCrossFrameJob=true` value across 700 `ClothUpdate` calls and observed 2,772
@@ -76,6 +81,14 @@ complete frame without a client fault.
   Unity 2022.3 still does not serialize the retail per-transition
   `m_EnableBlendRootMotion` field; that flag remains retained evidence for the
   transition/callback path rather than permission to apply translation.
+- `videos/2026-08-26_21-25-50.mkv` is the primary clean visual reference. It
+  is 3840x2160 at native 60 Hz, retains the grey Character Info field and faint
+  Endminf portrait, and contains no foreground UI. One-based source frame 88
+  is the final blank swap frame and frame 89 is the first visible entrance
+  frame. The maintained extractor writes 558 lossless frames under the
+  `endminf_overview_clean_2026-08-26` reference sequence. A five-candidate
+  sweep selects source anchor 91 by effect-region MAE with a bounded one-frame
+  residual; this supersedes UI-masked video for visual comparisons.
 - Five neutral 3DMigoto analyses now retain full presented retail frames across
   the settled loop, early turn, raised-arm turn, hand-rock presentation, and
   peak burst. Their final JPGs join exactly to no-framegen extracted frames
@@ -119,13 +132,20 @@ complete frame without a client fault.
   `reports/assets/character_recovery/endminf_secondary_dynamics_trajectory_comparison.json`.
   This closes the retail hair/cape shape oracle for the captured sequence, but
   does not by itself certify the recovered solver. The generated Endminf actor
-  now uses that oracle directly through a bounded replay owner: 40 samples and
-  74 unique hair/cape bones are interpolated in root space after Animator
-  evaluation, reset on each Overview playback generation, and clamped outside
-  the captured 0-11.233-second span. It fails closed on stale data, missing
-  bones, or simultaneous experimental-solver writeback. This removes guessed
-  entrance solver history from the canonical captured sequence while remaining
-  explicit replay evidence rather than a general BeyondBoneCloth solve.
+  now uses the merged dense oracle directly through a bounded replay owner: 145
+  retail samples and 74 unique hair/cape bones span playback source frames
+  117-1264. Session `20260826T231348Z` contributes 7,635 direct render-boundary
+  observations; only 431 per-bone values are bounded interpolations.
+  Skin-matrix reconstruction and actor-root publication are consistent with
+  Unity bind poses. The visible shift was a clock defect: sample zero belongs
+  to body phase 0.08424164 seconds, while the old replay began at controller
+  time zero. Replay now synchronizes to the evaluated body clock during the
+  entrance, preserves the measured two-frame sequence anchor, then continues
+  the finite retail trajectory across transition and loop wraps. It clamps
+  rather than fabricating periodic motion after the captured endpoint and
+  fails closed on stale v3 data, missing bones, or simultaneous experimental-
+  solver writeback. This is explicit replay evidence, not a general
+  BeyondBoneCloth solve.
   Deterministic Unity capture
   also hash-binds the owner contract and verifies Endminf's 4 cloth owners, 18
   root references, and 10 collider owners against the instantiated prefab.
@@ -143,8 +163,11 @@ complete frame without a client fault.
   all keyed by exact renderer/material PathIDs and the exact
   `S_rock_small_1_017_02_lod2` mesh. Direct references are validated against
   pinned asset hashes, the default remains disabled/fail-closed, and only
-  `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Capture schema
-  v4 proves 68 admitted entrance renderers and exactly two separately blocked
+  `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Exact M27 mode
+  now redirects only M27 to its identity-gated layer while retaining the ten
+  separate M01/M38 ForwardOnly owners; the former blanket exclusion caused the
+  visible 58-renderer/12-blocked stone regression. A current exact-M27 probe
+  proves 68 admitted entrance renderers and exactly two separately blocked
   non-LitEffect rows. Frames 19-22 now contain M27's dark/amber faceted debris;
   its default-off Unity ABI probe still proves an empty material/mesh binding.
   A same-seed M27-excluded differential isolates only that small late fragment
@@ -1490,8 +1513,9 @@ survived. The WARP test covers PS slot plus IA/index ownership. The fail-closed
 missing constants, missing draw ownership, and missing byte-bearing payloads;
 it rejects `20260826T231348Z` at its 110 truncated frames. The Release
 `build-local` and all 15 tests pass. One new bounded `graphics targeted`
-sequence over reference frames 376-385 remains required to close owner-specific
-IA/t0-t5. Full/everything capture is not required for that focused rerun.
+sequence over clean-reference frames 352-361 (the phase-equivalent replacement
+for old no-frame-generation frames 376-385) remains required to close owner-
+specific IA/t0-t5. Full/everything capture is not required for that focused rerun.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.

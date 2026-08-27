@@ -47,7 +47,7 @@ namespace EndfieldGraphShaderLabEditor
             "secondary_dynamics_session_certification_contract.json";
         private const string CapturedReplayReportRelativePath =
             "reports/assets/character_recovery/" +
-            "endminf_captured_secondary_dynamics_oracle.json";
+            "endminf_dense_captured_secondary_dynamics_oracle.json";
 
         internal static void Configure(
             GameObject actor,
@@ -440,7 +440,8 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
                 "100 unique transforms, 26 overlaps, a certified retail settings route, " +
-                "default-off solver writeback, and a default captured 74-bone replay path.");
+                "default-off solver writeback, and a default dense 145-sample/74-bone " +
+                "captured replay path.");
         }
 
         private static void ConfigureCapturedReplay(
@@ -509,6 +510,8 @@ namespace EndfieldGraphShaderLabEditor
 
             Dictionary<string, object> alignment = Object(
                 Required(root, "referenceAlignment"), "referenceAlignment");
+            Dictionary<string, object> playback = Object(
+                Required(root, "playback"), "playback");
             float sourceFps = Float(alignment, "sourceFps", "referenceAlignment");
             int firstPresented = Integer(
                 alignment, "firstCapturePresentedFrame", "referenceAlignment");
@@ -562,6 +565,10 @@ namespace EndfieldGraphShaderLabEditor
             data.sourceFps = sourceFps;
             data.firstReferenceSourceFrame = firstReference;
             data.playbackReferenceSourceFrame = firstReference;
+            data.entranceBodyClipAnchorSeconds = Float(
+                playback, "entranceBodyClipAnchorSeconds", "playback");
+            data.entranceSequenceAnchorSeconds = Float(
+                playback, "entranceSequenceAnchorSeconds", "playback");
             data.bonePaths = bonePaths;
             data.sampleTimes = sampleTimes;
             data.rootSpacePositions = positions;
@@ -604,7 +611,7 @@ namespace EndfieldGraphShaderLabEditor
             string failure = "data is absent";
             if (data == null || !data.Validate(out failure))
                 throw new InvalidDataException("Captured replay data is invalid: " + failure);
-            if (data.SampleCount != 40 || data.BoneCount != 74)
+            if (data.SampleCount != 145 || data.BoneCount != 74)
                 throw new InvalidDataException("Captured replay dimensions differ from the oracle.");
 
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
@@ -618,7 +625,8 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException("Captured replay midpoint interpolation drifted.");
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
                 data.sampleTimes, float.MaxValue, out low, out high, out blend);
-            if (low != 39 || high != 39 || blend != 0f)
+            int last = data.SampleCount - 1;
+            if (low != last || high != last || blend != 0f)
                 throw new InvalidDataException("Captured replay does not clamp its upper endpoint.");
         }
 

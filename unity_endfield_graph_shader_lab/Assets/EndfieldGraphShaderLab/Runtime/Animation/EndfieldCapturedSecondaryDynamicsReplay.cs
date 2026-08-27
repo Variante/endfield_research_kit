@@ -23,10 +23,12 @@ namespace EndfieldGraphShaderLab
         public int LowerSampleIndex { get; private set; }
         public int UpperSampleIndex { get; private set; }
         public float SampleBlend { get; private set; }
+        public bool PoseAppliedThisFrame { get; private set; }
 
         private Transform[] bones = Array.Empty<Transform>();
         private EndfieldOverviewPlayback overview;
         private int observedPlaybackGeneration = int.MinValue;
+        private float sequenceElapsedSeconds;
         private bool warned;
 
         private void OnEnable()
@@ -35,11 +37,14 @@ namespace EndfieldGraphShaderLab
             BindingFailure = "not validated";
             PlaybackSeconds = 0f;
             observedPlaybackGeneration = int.MinValue;
+            sequenceElapsedSeconds = 0f;
             warned = false;
+            PoseAppliedThisFrame = false;
         }
 
         private void LateUpdate()
         {
+            PoseAppliedThisFrame = false;
             if (!useCapturedReplay)
                 return;
             if (!BindingValid && !TryBind())
@@ -51,14 +56,32 @@ namespace EndfieldGraphShaderLab
             if (generation != observedPlaybackGeneration)
             {
                 observedPlaybackGeneration = generation;
-                PlaybackSeconds = 0f;
+                sequenceElapsedSeconds = 0f;
+            }
+            else if (overview.TryGetAutomaticOverviewStartSeconds(
+                         out float bodyClipSeconds))
+            {
+                float bodyClipStartSeconds =
+                    data.entranceBodyClipAnchorSeconds -
+                    data.entranceSequenceAnchorSeconds;
+                sequenceElapsedSeconds = Mathf.Max(
+                    0f,
+                    bodyClipSeconds - bodyClipStartSeconds);
             }
             else
             {
-                PlaybackSeconds += Mathf.Max(0f, Time.deltaTime);
+                // The retained trajectory is a finite retail start-to-loop
+                // sequence, so continue its measured timeline across Animator
+                // transitions and loop wraps. Do not synthesize a periodic
+                // replay after the captured endpoint.
+                sequenceElapsedSeconds += Mathf.Max(0f, Time.deltaTime);
             }
 
+            PlaybackSeconds = Mathf.Max(
+                0f,
+                sequenceElapsedSeconds - data.entranceSequenceAnchorSeconds);
             ApplyAtSeconds(PlaybackSeconds);
+            PoseAppliedThisFrame = true;
         }
 
         public bool TryBind()
