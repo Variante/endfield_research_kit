@@ -1485,6 +1485,24 @@ Its dense comparison moves ROI/effect-ROI/temporal MAE from
 not override the direct resource descriptor; it indicates remaining upstream
 effect-shape/timing differences can still dominate whole-ROI scores.
 
+A fresh five-stage 4.40-4.55-second diagnostic against the clean August 26
+reference localizes the apparent shifted hair, cape, portrait, and particle
+UVs to the final compatibility Uber pulse. The pre-Uber character geometry is
+coherent; at 4.4333/4.50 seconds, suppressing only that late pulse preserves
+the authored hand burst and ring while reducing 1920x1080 retail ROI MAE from
+33.6897/33.8937 to 31.5582/31.6457 and reducing the ROI fraction with channel
+spread at least 24 from 35.70%/33.29% to 19.25%/18.92%. This does not authorize
+removing the retail radial/chromatic effect or retuning its source curves. It
+proves that another bind-pose, renderer-transform, UV, camera, or replay-offset
+patch would target the wrong stage. The exact combined DXBC reads live PS b1
+c0/c25; the old 3DMigoto constant arena contains one plausible candidate but
+does not bind its `PSSetConstantBuffers1` offset to the draw. EndfieldCapture
+now priority-retains exact combined fragment
+`3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b`
+and all fullscreen PS b0-b10 ranges. The same remaining targeted Numpad-1
+frame must therefore close both M30/M31 scene depth and the exact Uber b1
+range before changing the canonical post path.
+
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.
 M13, M14, and M27 packet capture/admission and temporal native replay are now
