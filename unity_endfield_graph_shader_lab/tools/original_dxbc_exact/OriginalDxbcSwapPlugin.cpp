@@ -2338,7 +2338,7 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
     ID3D11DepthStencilView* renderDepth = nullptr;
     context->OMGetRenderTargets(
         D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, renderTargets, &renderDepth);
-    bool targetReady = renderTargets[0] != nullptr && renderDepth == nullptr;
+    bool targetReady = renderTargets[0] != nullptr && renderDepth != nullptr;
     for (std::size_t index = 1;
          index < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
          ++index)
@@ -2350,6 +2350,10 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
     ID3D11Texture2D* outputTexture = nullptr;
     D3D11_RENDER_TARGET_VIEW_DESC outputViewDescription = {};
     D3D11_TEXTURE2D_DESC outputDescription = {};
+    ID3D11Resource* depthResource = nullptr;
+    ID3D11Texture2D* depthTexture = nullptr;
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDescription = {};
+    D3D11_TEXTURE2D_DESC depthDescription = {};
     if (targetReady)
     {
         renderTargets[0]->GetDesc(&outputViewDescription);
@@ -2376,8 +2380,37 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
         for (ID3D11Texture2D* texture : packet->textures)
             targetReady = targetReady && texture != outputTexture;
     }
+    if (targetReady)
+    {
+        renderDepth->GetDesc(&depthViewDescription);
+        renderDepth->GetResource(&depthResource);
+        if (depthResource == nullptr ||
+            FAILED(depthResource->QueryInterface(
+                __uuidof(ID3D11Texture2D),
+                reinterpret_cast<void**>(&depthTexture))))
+        {
+            targetReady = false;
+        }
+    }
+    if (targetReady)
+    {
+        depthTexture->GetDesc(&depthDescription);
+        targetReady =
+            depthViewDescription.Format == DXGI_FORMAT_D24_UNORM_S8_UINT &&
+            depthViewDescription.ViewDimension ==
+                D3D11_DSV_DIMENSION_TEXTURE2D &&
+            depthViewDescription.Texture2D.MipSlice == 0u &&
+            depthDescription.Format == DXGI_FORMAT_R24G8_TYPELESS &&
+            depthDescription.Width == packet->width &&
+            depthDescription.Height == packet->height &&
+            depthDescription.SampleDesc.Count == 1u &&
+            depthDescription.ArraySize == 1u &&
+            depthTexture != outputTexture;
+    }
     if (!targetReady)
     {
+        ReleaseM14Object(depthTexture);
+        ReleaseM14Object(depthResource);
         ReleaseM14Object(outputTexture);
         ReleaseM14Object(outputResource);
         ReleaseM14Object(renderDepth);
@@ -2416,6 +2449,9 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
         for (ID3D11Buffer*& constant : pixelConstants)
             ReleaseM14Object(constant);
         ReleaseM14Object(vertexConstant);
+        ReleaseM14Object(depthTexture);
+        ReleaseM14Object(depthResource);
+        ReleaseM14Object(renderDepth);
         ReleaseM14Object(outputTexture);
         ReleaseM14Object(outputResource);
         for (ID3D11RenderTargetView*& target : renderTargets)
@@ -2556,6 +2592,9 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
     for (ID3D11Buffer*& constant : pixelConstants)
         ReleaseM14Object(constant);
     ReleaseM14Object(vertexConstant);
+    ReleaseM14Object(depthTexture);
+    ReleaseM14Object(depthResource);
+    ReleaseM14Object(renderDepth);
     ReleaseM14Object(outputTexture);
     ReleaseM14Object(outputResource);
     for (ID3D11RenderTargetView*& target : renderTargets)
