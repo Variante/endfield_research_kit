@@ -79,6 +79,8 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_ENDMINF_CAPTURE_SECONDARY_DYNAMICS";
         private const string SecondaryDynamicsSolverEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ENABLE_SECONDARY_DYNAMICS_SOLVER";
+        private const string RetainedSkinningDiagnosticEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_RETAINED_SKINNING";
         private const string SphereOutsidePresentationEnvironment =
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION";
         private const string Suikuai1Material =
@@ -101,6 +103,7 @@ namespace EndfieldGraphShaderLabEditor
         private static bool capturePrePostHdr;
         private static bool capturePostStages;
         private static bool captureSecondaryDynamics;
+        private static bool captureRetainedSkinningDiagnostic;
         private static bool enableSecondaryDynamicsSolver;
         private static string prePostHdrCohort;
         private static string prePostHdrOutput;
@@ -166,6 +169,7 @@ namespace EndfieldGraphShaderLabEditor
             public string gyroscopeInputX;
             public string gyroscopeInputY;
             public float visualPostPreRollSeconds;
+            public bool retainedSkinningDiagnostic;
             public FrameRow[] frames;
         }
 
@@ -234,6 +238,8 @@ namespace EndfieldGraphShaderLabEditor
             public int capturedSecondaryReplayUpperSample;
             public float capturedSecondaryReplayBlend;
             public bool capturedSecondaryReplayPoseAppliedThisFrame;
+            public EndfieldEndminfRetainedSkinningDiagnostic.RendererRow[]
+                retainedSkinningRenderers;
             public string[] blockedRendererIdentities;
             public int changedPixelsFromPrevious;
             public long absoluteRgbDifferenceFromPrevious;
@@ -500,6 +506,9 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_ENDMINF_CAPTURE_POST_STAGES") == "1";
             captureSecondaryDynamics = Environment.GetEnvironmentVariable(
                 SecondaryDynamicsEnvironment) == "1";
+            captureRetainedSkinningDiagnostic =
+                Environment.GetEnvironmentVariable(
+                    RetainedSkinningDiagnosticEnvironment) == "1";
             enableSecondaryDynamicsSolver = Environment.GetEnvironmentVariable(
                 SecondaryDynamicsSolverEnvironment) == "1";
             if (videoExport && enableSecondaryDynamicsSolver)
@@ -573,6 +582,24 @@ namespace EndfieldGraphShaderLabEditor
             Directory.CreateDirectory(output);
             EditorApplication.playModeStateChanged += State;
             EditorApplication.EnterPlaymode();
+        }
+
+        public static void RunRetainedSkinningDiagnostic()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    RequestedTimesEnvironment)))
+            {
+                throw new InvalidOperationException(
+                    "Retained skinning diagnostic requires explicit requested " +
+                    "times in " + RequestedTimesEnvironment + ".");
+            }
+            Environment.SetEnvironmentVariable(
+                RetainedSkinningDiagnosticEnvironment,
+                "1");
+            Environment.SetEnvironmentVariable(
+                SecondaryDynamicsEnvironment,
+                "1");
+            Run();
         }
 
         public static void RunDeferredB31Probe()
@@ -1061,6 +1088,10 @@ namespace EndfieldGraphShaderLabEditor
                     : 0f,
                 capturedSecondaryReplayPoseAppliedThisFrame =
                     capturedReplay != null && capturedReplay.PoseAppliedThisFrame,
+                retainedSkinningRenderers = captureRetainedSkinningDiagnostic
+                    ? EndfieldEndminfRetainedSkinningDiagnostic.Capture(actor)
+                    : Array.Empty<
+                        EndfieldEndminfRetainedSkinningDiagnostic.RendererRow>(),
                 blockedRendererIdentities = renderers.Where(value => !value.enabled)
                     .Select(value => Hierarchy(value.transform) + " | " +
                         string.Join(", ", value.sharedMaterials.Select(material =>
@@ -1378,6 +1409,7 @@ namespace EndfieldGraphShaderLabEditor
                         0.0f,
                         Frames[0].endminfPostSeconds - Frames[0].actualSeconds)
                     : 0.0f,
+                retainedSkinningDiagnostic = captureRetainedSkinningDiagnostic,
                 frames = Frames.ToArray()
             };
             File.WriteAllText(Path.Combine(output, "report.json"), JsonUtility.ToJson(report, true));
