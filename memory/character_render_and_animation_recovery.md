@@ -1645,6 +1645,27 @@ passes, so remaining cape-width differences require a retained-sample baked-
 mesh/GPU-palette differential or stronger same-initialization retail trajectory
 evidence rather than another path-remap or constant replay delay.
 
+An opt-in retained-skinning probe now samples only after each beauty render and
+serializes `BakeMesh` local/world bounds, vertex checksums and positions, every
+active bone matrix and bindpose, and renderer-local/world skin palettes. Its
+3.0/5.0-second D3D11 validation reports six visible LOD0 hair/cloth renderers
+per frame, matching bone/bindpose counts, non-empty baked geometry, and applied
+captured replay for all 12 rows. This is a diagnostic boundary, not a beauty
+change; direct retail comparison still requires a time- and renderer-matched
+interpretation of the retained draw-time VS b2 palettes.
+
+A same-time opening ablation at 0.4667-1.10 seconds rules out the recovered
+pre-Bloom temporal resolve as the source of the excessive comb trails: keeping
+it improves effect-ROI and temporal-delta MAE. M46 is the strongest individual
+billboard cohort, but the full M46-by-temporal factorial also rejects removing
+it. With temporal resolve active, M46 improves effect MAE at every 0.4667-1.05
+sample and only regresses the 1.0833/1.10 tail; excluding it worsens temporal-
+delta MAE from `77.2471` to `77.3810`. With temporal resolve disabled, excluding
+M46 worsens both effect and temporal metrics. M36 exclusion likewise worsens
+the effect and temporal metrics. Retain M36, M46, and the temporal resolve;
+their source-authored contributions are required, while the remaining broad
+opening mismatch belongs to downstream integration or another producer.
+
 The same corrected run exposed a separate native validation gap hidden by the
 old readiness flag: render event 3 armed the deferred exact draw but did not
 restore `SubstitutionRoute::DeferredDiagnostic` after M27 shader preparation
