@@ -1614,6 +1614,18 @@ that obscure the hand and body. The exact Uber payload remains the dominant
 visual blocker; do not compensate for that post distortion by shifting bones
 or UVs.
 
+The first corrected 770-frame sequence still used the lower-right gyroscope
+endpoint from an older recording. The canonical clean
+`videos/2026-08-26_21-25-50.mkv` cursor stabilizes at source pixel `(1036,75)`
+in its 3840x2160 frame, which maps to normalized source input
+`(-0.4604167,0.9305556)`. An identical eight-checkpoint A/B against that clean
+reference improves ROI/effect-ROI/temporal-delta MAE from
+`38.4311/43.4587/53.4870` to `25.8487/25.0545/35.6725`. The Viewer and launcher
+now use this recording-specific endpoint by default while preserving explicit
+environment overrides for older captures. This corrects a real camera/root
+presentation mismatch that had made body, cape, portrait, and stones appear
+shifted; it does not replace the remaining exact Uber or secondary-shape work.
+
 The same corrected run exposed a separate native validation gap hidden by the
 old readiness flag: render event 3 armed the deferred exact draw but did not
 restore `SubstitutionRoute::DeferredDiagnostic` after M27 shader preparation
@@ -1722,51 +1734,14 @@ or shaders rather than hand-editing generated prefabs.
    the no-frame-generation recording with foreground UI masked out. Keep the
    source-backed bloom/material values fixed unless new evidence supersedes
    their current contracts.
-2. Close Endminf secondary motion against the joined retail shape oracle from
-   EndfieldCapture session `20260825T191720Z`. Its 40 complete frames each
-   contain 32 valid draw-time b2 snapshots with no dropped/incomplete/failed
-   package. `8e65872` preserves the exact 16-byte row consumed by each retained
-   draw in a bounded 512-byte GPU copy; all 14 Release tests and 30 consecutive
-   multi-capture stress runs pass. Confirmed skinning draws bind all 4096 b2
-   constants; same-index-count 16-constant passes are separate non-skin
-   submissions and must remain excluded.
-   `unity_endfield_graph_shader_lab/tools/decode_endminf_endfield_capture_skinning.py`
-   performs that join for the exact body, cloth-01, cloth-03, cloth-04, and
-   hair LOD0 index/bindpose counts. It accepts repeated 4096-constant skinning
-   passes only when their draw-time current/previous palette pair agrees and
-   fails closed on older packages without the snapshot. The resulting
-   owner-tagged trajectory oracle is now the phase-paired comparison target for
-   the default-off solver. The baseline comparison is complete: entrance
-   checkpoints contain the large trajectory gap, while the settled loop is
-   already near retail. A synchronized 40-frame solver-writeback A/B is also
-   complete and rejects the current diagnostic solver: it worsens translation
-   at all 40 checkpoints, with owner means increasing from 0.0137-0.0286 m to
-   0.0170-0.0872 m and rotation means increasing from 7.0-8.6 degrees to
-   15.6-22.7 degrees. The persistent settled-loop offset begins in solver state,
-   not from a local/world mismatch in the publication adapter, so the solver
-   remains disabled and must not be parameter-tuned around this error. The
-   generated A/B is
-   `reports/assets/character_recovery/endminf_secondary_dynamics_solver_trajectory_comparison.json`.
-   Session `20260826T231348Z` directly certifies the four owners' world-relative
-   mode: one bounded window observed 155 teams across 617 cloth updates with
-   every relative flag false and no unreadable/overflow calls. It predates
-   transform retention and therefore contains no owner trajectories. The
-   attempted current-build provider extension to the returned
-   `DynamicBoneTransformManager.WriteTransform` handle is rejected for retail
-   use. Installed-binary witnesses prove its hidden 16-byte `JobHandle` return
-   ABI, but its only caller immediately chains that returned handle into later
-   jobs; reading manager arrays when `WriteTransform` returns can therefore
-   race unfinished simulation. The live hook is disabled before retail use.
-   The bounded copied-TeamData sampler, candidate schema, finite-value gate,
-   and synthetic positive/unreadable/overflow tests remain preparatory code,
-   not captured evidence. A safe dense trajectory path must sample after a
-   proven job-completion/render boundary and then identify the unique
-   6/30/20/70 candidates by joining them to the existing owner-tagged skinning
-   oracle. For the current recovery, the safe dense boundary is the already
-   proven draw-time VS b2 skinning palette captured by the graphics provider:
-   the six-frame sequence cadence observes final render-consumed matrices
-   without reading unfinished Unity jobs. Do not request another dynamics
-   window; extend the graphics sequence across start and loop instead.
+2. Re-audit Endminf hair/cape silhouettes after the clean-reference gyroscope
+   correction and exact Uber import. The 145-sample, 74-bone draw-time retail
+   replay is bound and applied in every canonical frame, while the diagnostic
+   solver is rejected because it worsens all 40 certified checkpoints. Residual
+   late-loop narrowing survives at retained replay samples, so first validate
+   active renderer weighted-bone coverage and bindpose/palette consumption.
+   Do not retime the replay, enable the solver, or manually widen cloth without
+   stronger same-initialization retail trajectory evidence.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under

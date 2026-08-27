@@ -44,10 +44,11 @@ exit /b 2
   set "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1"
   set "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW=1"
   set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=1"
-  rem Recording-specific live cursor state for videos/2026-08-21_20-15-17.mkv.
+  rem Recording-specific live cursor endpoint measured from the canonical clean
+  rem videos/2026-08-26_21-25-50.mkv reference at source pixel (1036,75).
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=recorded-input"
-  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=0.989"
-  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=-0.874"
+  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=-0.4604167"
+  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=0.9305556"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
   echo Opening Endminf reproduction with physical SphereOutside and exact M13/M14/M27 presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
