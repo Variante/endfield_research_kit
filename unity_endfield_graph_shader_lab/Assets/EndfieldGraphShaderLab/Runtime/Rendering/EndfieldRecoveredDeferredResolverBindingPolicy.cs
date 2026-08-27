@@ -25,8 +25,11 @@ namespace EndfieldGraphShaderLab
                     ResourceProbeEnvironmentVariable);
                 string exactValue = Environment.GetEnvironmentVariable(
                     ExactConsumerEnvironmentVariable);
+                string m27PresentationValue = Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredEndminfM27DeferredPresentation
+                        .EnvironmentVariable);
                 return IsEnabled(value) || IsEnabled(resourceValue) ||
-                    IsEnabled(exactValue);
+                    IsEnabled(exactValue) || IsEnabled(m27PresentationValue);
             }
         }
 
@@ -35,7 +38,10 @@ namespace EndfieldGraphShaderLab
             get
             {
                 return IsEnabled(Environment.GetEnvironmentVariable(
-                    ExactConsumerEnvironmentVariable));
+                           ExactConsumerEnvironmentVariable)) ||
+                    IsEnabled(Environment.GetEnvironmentVariable(
+                        EndfieldRecoveredEndminfM27DeferredPresentation
+                            .EnvironmentVariable));
             }
         }
 

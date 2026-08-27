@@ -17,8 +17,8 @@ validate_log = MODULE.validate_log
 
 GOOD_LOG = """
 Exiting batchmode successfully now!
-Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0xfffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x3ff, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
-Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0xfffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x3ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
+Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
+Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
 Recovered deferred pass-0 HLSL vs exact DXBC comparison: camera=MainCamera, size=640x720, floatCount=1843200, maxAbs=1.1920929E-07, rmse=4.8E-09, over1e-6=0, over1e-4=0, over1e-3=0, presented=false.
 """
 
@@ -33,21 +33,41 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
             / "Rendering"
             / "EndfieldRecoveredDeferredExactConsumer.cs"
         ).read_text(encoding="utf-8")
-        self.assertIn("case 11: return fallbackArray;", source)
-        self.assertIn("case 12: return fallbackArray;", source)
-        self.assertIn("case 13: return resources.t11ScreenShadow;", source)
-        self.assertIn("case 14: return Texture2D.blackTexture;", source)
-        self.assertIn("case 15: return integratedFogFallback;", source)
+        self.assertIn("case 11: return resources.t11ScreenShadow;", source)
+        self.assertIn("case 12: return Texture2D.blackTexture;", source)
+        self.assertIn("case 13: return integratedFogFallback;", source)
         self.assertIn("TextureFormat.ASTC_4x4", source)
-        self.assertIn("t11=SubsurfaceProfileLut:black-non-subsurface-fixture", source)
-        self.assertIn("t12=SubsurfaceTransmissionLut:black-non-subsurface-fixture", source)
-        self.assertIn("t13=screenShadow:", source)
-        self.assertIn("t14=LightCookie:black-zero-cookie", source)
-        self.assertIn("t15=IntegratedFog:black-disabled-1x1-ASTC", source)
-        self.assertIn("t18-t23=IrradianceV2:zero-inactive-fallback", source)
-        self.assertIn("t25-t27=GBuffer:A/B/C", source)
+        self.assertIn("t11=screenShadow:", source)
+        self.assertIn("t12=LightCookie:black-zero-cookie", source)
+        self.assertIn("t13=IntegratedFog:black-disabled-1x1-ASTC", source)
+        self.assertIn("t16-t21=IrradianceV2:zero-inactive-fallback", source)
+        self.assertIn("t23-t25=GBuffer:A/B/C", source)
         self.assertIn("fallbackTextureSlots=t2,t3,t4.", source)
         self.assertIn("legacy Gacha payload", source)
+
+    def test_runtime_event_arm_owns_the_deferred_route(self):
+        source = (
+            LAB_ROOT / "tools" / "original_dxbc_exact" /
+            "OriginalDxbcSwapPlugin.cpp"
+        ).read_text(encoding="utf-8")
+        arm = source.split("void ArmDiagnosticOnRenderThread()", 1)[1].split(
+            "void UNITY_INTERFACE_API InspectPostDrawBindings", 1
+        )[0]
+        self.assertIn("SubstitutionRoute::DeferredDiagnostic", arm)
+        cleanup = source.split("if (eventId == 2)", 1)[1].split(
+            "return;", 1
+        )[0]
+        self.assertIn("SubstitutionRoute::None", cleanup)
+
+    def test_canonical_capture_rejects_diagnostic_solver_ownership(self):
+        capture = (
+            LAB_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Editor" /
+            "CharacterRecovery" / "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("videoExport && enableSecondaryDynamicsSolver", capture)
+        self.assertIn("Canonical Endminf video export requires the captured retail", capture)
+        self.assertIn("secondary-dynamics replay. The diagnostic solver", capture)
+        self.assertIn("observedCanonicalSecondaryReplay", capture)
 
     def test_exact_consumer_requires_current_cookie_publication_provenance(self):
         consumer = (
@@ -112,12 +132,12 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
 
     def test_reports_incomplete_resource_mask(self):
         report = validate_log(
-            GOOD_LOG.replace("resourceMask=0xfffffff", "resourceMask=0xfffff5f"),
+            GOOD_LOG.replace("resourceMask=0x3ffffff", "resourceMask=0x3ffff5f"),
             Path("fixture.log"),
         )
         self.assertFalse(report["valid"])
         self.assertTrue(
-            any("readback_resource_mask_all_t0_t27" in failure
+            any("readback_resource_mask_all_t0_t25" in failure
                 for failure in report["failures"])
         )
 

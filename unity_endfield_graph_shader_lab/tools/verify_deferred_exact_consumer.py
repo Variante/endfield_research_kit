@@ -55,7 +55,7 @@ HLSL_COMPARISON_RE = re.compile(
     r"presented=(?P<presented>true|false)\.",
     re.IGNORECASE,
 )
-EXPECTED_RESOURCE_MASK = (1 << 28) - 1
+EXPECTED_RESOURCE_MASK = (1 << 26) - 1
 
 
 def validate_log(text: str, source: Path) -> dict[str, object]:
@@ -153,13 +153,13 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         require("readback_nonzero", readback["nonzeroBytes"] > 0, True)
         require("readback_exact_shader_bound", readback["exactBound"], 1)
         require(
-            "readback_resource_mask_all_t0_t27",
+            "readback_resource_mask_all_t0_t25",
             readback["resourceMask"],
             EXPECTED_RESOURCE_MASK,
         )
         require("readback_resource_failure_mask", readback["resourceFailureMask"], 0)
         require("readback_resource_failure_results", readback["resourceFailureResults"], "none")
-        require("readback_constant_buffer_mask_all_b0_b9", readback["constantBufferMask"], 0x3FF)
+        require("readback_constant_buffer_mask_all_b0_b8", readback["constantBufferMask"], 0x1FF)
         require("readback_finite_float_count", readback["finiteFloats"], expected_pixels * 4)
         require("readback_nonfinite_float_count", readback["nonFiniteFloats"], 0)
         require("readback_native_failures", readback["failureCount"], 0)

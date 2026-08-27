@@ -147,6 +147,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedDeferredPass0InputSubsetReady;
             public bool observedDeferredGBufferFrameReady;
             public bool observedEndminfM27HGBufferReady;
+            public bool endminfM27PresentationRequested;
             public bool observedEndminfM27PresentationReady;
             public bool observedSphereOutsidePresentationReady;
             public bool observedEndminfPostSourceRgba16;
@@ -156,6 +157,7 @@ namespace EndfieldGraphShaderLabEditor
             public string exactEndminfUberFailure;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
+            public bool deferredExactConsumerRequested;
             public bool observedDeferredExactConsumerReady;
             public bool observedLightCookieDataReady;
             public string gyroscopeMode;
@@ -372,6 +374,7 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void Run()
         {
+            PrepareDeferredExactConsumerRuntimeVariantIfRequested();
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 throw new InvalidOperationException(
                     "Endminf Viewer capture requires the project's authoritative " +
@@ -497,6 +500,14 @@ namespace EndfieldGraphShaderLabEditor
                 SecondaryDynamicsEnvironment) == "1";
             enableSecondaryDynamicsSolver = Environment.GetEnvironmentVariable(
                 SecondaryDynamicsSolverEnvironment) == "1";
+            if (videoExport && enableSecondaryDynamicsSolver)
+            {
+                throw new InvalidOperationException(
+                    "Canonical Endminf video export requires the captured retail " +
+                    "secondary-dynamics replay. The diagnostic solver cannot own " +
+                    "the same hair/cape bones; unset " +
+                    SecondaryDynamicsSolverEnvironment + ".");
+            }
             if (capturePrePostHdr && capturePostStages)
                 throw new InvalidOperationException(
                     "Pre-post HDR and five-stage post diagnostics are mutually exclusive.");
@@ -586,15 +597,6 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void RunDeferredExactConsumerProbe()
         {
-            if (Environment.GetEnvironmentVariable(
-                    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC") == "1")
-            {
-                if (Environment.GetEnvironmentVariable(
-                        "ENDFIELD_M27_FORCE_RAW_SHELL") == "1")
-                    EndfieldM27ShellHashCapture.PrepareRawRuntimeVariant();
-                else
-                    EndfieldM27ShellHashCapture.PreparePinnedRuntimeVariant();
-            }
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
                 "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
@@ -616,6 +618,25 @@ namespace EndfieldGraphShaderLabEditor
             foreach (string flag in excluded)
                 Environment.SetEnvironmentVariable(flag, null);
             Run();
+        }
+
+        private static void PrepareDeferredExactConsumerRuntimeVariantIfRequested()
+        {
+            bool exactConsumerRequested =
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER") == "1" ||
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION") == "1";
+            if (!exactConsumerRequested ||
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC") != "1")
+                return;
+
+            if (Environment.GetEnvironmentVariable(
+                    "ENDFIELD_M27_FORCE_RAW_SHELL") == "1")
+                EndfieldM27ShellHashCapture.PrepareRawRuntimeVariant();
+            else
+                EndfieldM27ShellHashCapture.PreparePinnedRuntimeVariant();
         }
 
         private static void State(PlayModeStateChange state)
@@ -1122,6 +1143,27 @@ namespace EndfieldGraphShaderLabEditor
                 value.deferredExactConsumerReady);
             bool observedLightCookieDataReady = Frames.All(value =>
                 value.lightCookieDataReady);
+            bool endminfM27PresentationRequested = string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION"),
+                "1",
+                StringComparison.Ordinal);
+            bool deferredExactConsumerRequested =
+                endminfM27PresentationRequested || string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER"),
+                    "1",
+                    StringComparison.Ordinal);
+            bool observedCanonicalSecondaryReplay =
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") != "1" ||
+                (Frames.Count > 0 && Frames.All(value =>
+                    !value.secondaryDynamicsSolverWriteback &&
+                    value.capturedSecondaryReplayEnabled &&
+                    value.capturedSecondaryReplayBindingValid &&
+                    string.IsNullOrEmpty(
+                        value.capturedSecondaryReplayBindingFailure) &&
+                    value.capturedSecondaryReplayPoseAppliedThisFrame));
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
@@ -1134,6 +1176,9 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add(
                     "eleven-row LitEffect crystal compatibility plus exact suikuai (1) " +
                     "binding with two separate blocked effects");
+            if (!observedCanonicalSecondaryReplay)
+                missingObservations.Add(
+                    "captured retail hair/cape trajectory without diagnostic solver ownership");
             if (exactEndminfM27Requested && !observedEndminfM27HGBufferReady)
                 missingObservations.Add(
                     "exact Endminf M27 five-MRT HGBuffer publication");
@@ -1158,11 +1203,7 @@ namespace EndfieldGraphShaderLabEditor
                     missingObservations.Add(
                         "Endminf b31-only probe unexpectedly admitted unresolved b34/pass-0 readiness");
             }
-            if (string.Equals(
-                    Environment.GetEnvironmentVariable(
-                        "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER"),
-                    "1",
-                    StringComparison.Ordinal))
+            if (deferredExactConsumerRequested)
             {
                 if (!observedDeferredLightDataReady)
                     missingObservations.Add("exact-consumer deferred b31 readiness");
@@ -1174,11 +1215,7 @@ namespace EndfieldGraphShaderLabEditor
                     missingObservations.Add("exact-consumer five-MRT GBuffer readiness");
                 if (!observedDeferredExactConsumerReady)
                     missingObservations.Add("exact-consumer submitted output");
-                if (string.Equals(
-                        Environment.GetEnvironmentVariable(
-                            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION"),
-                        "1",
-                        StringComparison.Ordinal) &&
+                if (endminfM27PresentationRequested &&
                     !observedEndminfM27PresentationReady)
                 {
                     missingObservations.Add(
@@ -1303,6 +1340,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedDeferredGBufferFrameReady,
                 observedEndminfM27HGBufferReady =
                     observedEndminfM27HGBufferReady,
+                endminfM27PresentationRequested =
+                    endminfM27PresentationRequested,
                 observedEndminfM27PresentationReady =
                     observedEndminfM27PresentationReady,
                 observedSphereOutsidePresentationReady =
@@ -1318,6 +1357,8 @@ namespace EndfieldGraphShaderLabEditor
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =
                     observedCanonicalCharacterPreGBufferReady,
+                deferredExactConsumerRequested =
+                    deferredExactConsumerRequested,
                 observedDeferredExactConsumerReady =
                     observedDeferredExactConsumerReady,
                 observedLightCookieDataReady = observedLightCookieDataReady,
