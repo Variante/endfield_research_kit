@@ -1681,6 +1681,20 @@ kernel/parameter transport, not TAA history, authored M36/M46 particles, or
 bloom. Do not compensate in those upstream systems; the exact runtime Uber
 capture remains the required closure.
 
+The pinned native Uber parameter producer has now been regenerated and
+hash-gated against the selected client instead of relying on the retired
+native-map artifact. It packs `c0=(center.x, center.y, radialIntensity,
+effectivePower)` and `c25=(mode, chromaticIntensity, radialAverageSteps,
+chromaticAverageStep)` with unit-preserving radial/chromatic intensities. Mode
+6 is selected exactly when both effects are active and radial intensity exceeds
+`0.01`; otherwise mode 3 is selected. In the both-active branch, effective
+power is `lerp(1, radialPower, saturate(radial/chromatic))`. The matching
+FrameAnalysis call order places DLSS/DLAA before the final Uber draw, so an
+upscaler cannot attenuate or correct this final RGB split. Keep the recovered
+curve units and mode predicate fixed. The remaining uncertainty is live
+stage-local constants/binding timing and the shipped Uber output transport,
+which still requires an exact retained Uber packet.
+
 The same corrected run exposed a separate native validation gap hidden by the
 old readiness flag: render event 3 armed the deferred exact draw but did not
 restore `SubstitutionRoute::DeferredDiagnostic` after M27 shader preparation
