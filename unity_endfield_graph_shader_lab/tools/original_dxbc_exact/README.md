@@ -54,9 +54,13 @@ Do not enable the keyword or arm the plugin outside this disposable diagnostic.
 
 The build also hash-checks and embeds the exact Endminf CharInfo combined
 `BLOOM + RADIAL_BLUR_CHROMATIC_ABERRATION` fullscreen pair. WARP validation
-must create both shader objects successfully. Runtime submission remains
-default-off and fail-closed until one current 128-MiB targeted capture binds
-the exact draw and supplies its stage-qualified VS b0 plus PS b0/b1 payloads.
+must create both shader objects successfully. The default-off native transport
+uses an immutable 64-packet render-thread ring, stage-local VS/PS constants,
+strict source/bloom/LUT/output descriptors, and complete touched-state restore.
+Set `ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1` only after the generated live
+payload exists. Runtime submission otherwise fails closed before drawing.
+One current 128-MiB targeted capture must bind the exact draw and supply its
+stage-qualified VS b0 plus PS b0/b1 payloads.
 `build_endminf_uber_capture_payload.py` converts only that validated report
 into immutable native constant bytes; the older unbound 3DMigoto arena is not
 accepted as runtime state.
