@@ -1526,11 +1526,11 @@ plus the 33,177,600-byte input. The
 focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
 unrelated selector pressure as a visible diagnostic after checking every exact
 owner binding; missing owner payloads still fail closed. The existing temporal
-sequences do not need repeating. The 96 MiB clean validation build and focused
-native tests pass; after the current 64 MiB session closes, the production
-launcher must be rebuilt and the full native suite rerun. One targeted
-Numpad-1 frame at the crystal peak is then the only remaining graphics evidence
-needed. Full/everything mode and another Numpad-4 sequence are not required.
+sequences do not need repeating. After the 64 MiB session closed, the 96 MiB
+production launcher and D3D11 DLL rebuilt successfully and all 15 native tests,
+including the D3D11 proxy lifecycle, pass. One targeted Numpad-1 frame at the
+crystal peak is the only remaining graphics evidence needed. Full/everything
+mode and another Numpad-4 sequence are not required.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.
