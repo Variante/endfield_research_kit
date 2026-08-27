@@ -1582,12 +1582,21 @@ regression gate for 76 MiB of measured pre-M30 evidence plus that exact depth
 input. The one-frame and 32-resource bounds remain unchanged. The
 focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
 unrelated selector pressure as a visible diagnostic after checking every exact
-owner binding; missing owner payloads still fail closed. The existing temporal
+owner binding; it now distinguishes M31 by its exact shared shader pair,
+intensity/alpha tuple, and two capture-proven tint states instead of folding it
+into M30. Missing owner payloads still fail closed. The existing temporal
 sequences do not need repeating. The 128-MiB production launcher and D3D11 DLL
 rebuilt successfully and all 15 native tests, including the D3D11 proxy
 lifecycle, pass. One targeted Numpad-1 frame at the crystal peak is the only
 remaining graphics evidence needed. Full/everything mode and another Numpad-4
 sequence are not required.
+The existing temporal sequence plus `081152Z` now also generate eleven
+hash-pinned M30 packets: exact captured constant prefixes, canonical one/two-
+quad IA slices, the 20-byte secondary stream, and immutable 256x256 PS t1.
+Both generated C# and native payload contracts explicitly publish
+`DepthContractReady=false`; the native plugin compiles and statically validates
+that fail-closed boundary. No M30 draw is admitted until the replacement frame
+retains and validates the full-resolution PS t0 scene-depth descriptor.
 The `064009Z` backbuffers show the cyan promotion presentation (blue skin,
 shoulder accent, and visible effect grading), while the canonical clean
 `2026-08-26_21-25-50.mkv` reference uses the yellow-accent natural-skin
