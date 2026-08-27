@@ -32,12 +32,20 @@ class M29M30TemporalCaptureTests(unittest.TestCase):
         self.assertEqual(self.report["owners"]["M30"]["indexCounts"], [6, 12])
 
     def test_corrected_phase_anchor_is_applied(self) -> None:
-        self.assertAlmostEqual(MODULE.phase_seconds(2978), 4.433333, places=6)
+        anchor = self.report["phaseAnchor"]
+        self.assertAlmostEqual(
+            MODULE.phase_seconds(anchor["timestampQpc"], anchor["timestampQpc"],
+                                 self.report["captureClock"]["qpcFrequency"]),
+            4.433333, places=6)
         self.assertAlmostEqual(
             self.report["owners"]["M29"]["frames"][0]["phaseSeconds"],
-            2.533333,
+            2.483322,
             places=6,
         )
+
+    def test_capture_clock_is_explicit_about_legacy_fallback(self) -> None:
+        self.assertEqual(self.report["captureClock"]["qpcFrequency"], 10_000_000)
+        self.assertIn("legacy", self.report["captureClock"]["basis"])
 
     def test_material_colors_match_captured_linear_uploads(self) -> None:
         for owner_name in ("M29", "M30"):
@@ -46,8 +54,11 @@ class M29M30TemporalCaptureTests(unittest.TestCase):
             self.assertTrue(MODULE.close(tuple(material["linearTint"]), expected))
 
     def test_discontinuous_manual_frames_are_separate_bursts(self) -> None:
-        rows = [{"frame": value} for value in (100, 108, 116, 500, 900)]
-        bursts = MODULE.frame_bursts(rows)
+        rows = [{"frame": frame, "timestampQpc": qpc}
+                for frame, qpc in ((100, 0), (108, 1_333_333),
+                                   (116, 2_666_667), (500, 20_000_000),
+                                   (900, 40_000_000))]
+        bursts = MODULE.frame_bursts(rows, 10_000_000)
         self.assertEqual([row["packetCount"] for row in bursts], [3, 1, 1])
         self.assertEqual(bursts[0]["sampledSpanSeconds"], 0.266667)
 
