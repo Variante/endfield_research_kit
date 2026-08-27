@@ -212,6 +212,7 @@ namespace EndfieldGraphShaderLabEditor
             public string[] effectRoots;
             public ParticleRow[] liveRenderers;
             public ParticleRow[] handFamily;
+            public ParticleRow[] primaryRockFamily;
             public SecondaryDynamicsBoneRow[] secondaryDynamicsBones;
             public bool secondaryDynamicsSolverWriteback;
             public string secondaryDynamicsBindingFailure;
@@ -222,6 +223,7 @@ namespace EndfieldGraphShaderLabEditor
             public int capturedSecondaryReplayLowerSample;
             public int capturedSecondaryReplayUpperSample;
             public float capturedSecondaryReplayBlend;
+            public bool capturedSecondaryReplayPoseAppliedThisFrame;
             public string[] blockedRendererIdentities;
             public int changedPixelsFromPrevious;
             public long absoluteRgbDifferenceFromPrevious;
@@ -388,18 +390,11 @@ namespace EndfieldGraphShaderLabEditor
             foreach (string flag in reproductionFlags)
                 Environment.SetEnvironmentVariable(
                     flag,
-                    exactEndminfM27 &&
-                    flag == "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT"
-                        ? "0"
-                        : "1");
-            if (exactEndminfM27)
-            {
-                // The exact five-target publisher owns the captured shared
-                // M01/M38/M27 LitEffect sequence. Disable all ForwardOnly
-                // compatibility rows so the test cannot double-publish them.
-                Environment.SetEnvironmentVariable(
-                    "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT", "0");
-            }
+                    "1");
+            // Exact HGBuffer publication replaces only the identity-gated M27
+            // hand-crystal row. The ten source-identified M01/M38 primary-rock
+            // renderers remain separate ForwardOnly owners; disabling the
+            // whole compatibility binding removed those stones from the shot.
             Environment.SetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY",
                 IncludeCharInfoBackground ? "1" : "0");
@@ -978,6 +973,15 @@ namespace EndfieldGraphShaderLabEditor
                     value.GetComponentInParent<EndfieldRecoveredParticleEffectSource>(true) is EndfieldRecoveredParticleEffectSource owner &&
                     (owner.name.IndexOf("_03", StringComparison.Ordinal) >= 0 || owner.name.IndexOf("_04", StringComparison.Ordinal) >= 0))
                     .Select(value => Particle(value)).ToArray(),
+                primaryRockFamily = roots
+                    .SelectMany(value => value.GetComponentsInChildren<
+                        EndfieldEndminfLitEffectCompatibilityBinding>(true))
+                    .SelectMany(value => value.rows ?? Array.Empty<
+                        EndfieldEndminfLitEffectCompatibilityBinding.Row>())
+                    .Where(value => value != null && value.renderer != null)
+                    .Select(value => Particle(value.renderer))
+                    .OrderBy(value => value.path, StringComparer.Ordinal)
+                    .ToArray(),
                 secondaryDynamicsBones = captureSecondaryDynamics
                     ? CaptureSecondaryDynamicsBones(actor)
                     : Array.Empty<SecondaryDynamicsBoneRow>(),
@@ -1005,6 +1009,8 @@ namespace EndfieldGraphShaderLabEditor
                 capturedSecondaryReplayBlend = capturedReplay != null
                     ? capturedReplay.SampleBlend
                     : 0f,
+                capturedSecondaryReplayPoseAppliedThisFrame =
+                    capturedReplay != null && capturedReplay.PoseAppliedThisFrame,
                 blockedRendererIdentities = renderers.Where(value => !value.enabled)
                     .Select(value => Hierarchy(value.transform) + " | " +
                         string.Join(", ", value.sharedMaterials.Select(material =>
@@ -1097,8 +1103,7 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
             if (!observedRotationOnlyRootMotion)
                 missingObservations.Add("rotation-only root motion with invariant position");
-            if (!exactEndminfM27Requested &&
-                !observedPrimaryRockCompatibilityBinding)
+            if (!observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
                     "eleven-row LitEffect crystal compatibility plus exact suikuai (1) " +
                     "binding with two separate blocked effects");

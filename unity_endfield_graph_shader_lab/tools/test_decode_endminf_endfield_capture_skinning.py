@@ -141,6 +141,28 @@ class CaptureSkinningTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.CaptureError, "8413184-byte resource"):
                 MODULE.decode_session(root, ["hair"])
 
+    def test_partial_mode_retains_present_mesh_and_marks_absent_mesh(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_frame(root)
+            result = MODULE.decode_session(
+                root, ["hair", "cloth_04"], allow_partial=True
+            )
+        self.assertEqual(
+            result["schema"],
+            "endfield.charinfo.endminf-partial-captured-skin-palette-sequence.v1",
+        )
+        self.assertEqual(result["meshObservationCounts"], {"hair": 1, "cloth_04": 0})
+        self.assertIn("hair", result["frames"][0]["meshes"])
+        self.assertEqual(result["frames"][0]["missingMeshes"], ["cloth_04"])
+
+    def test_partial_mode_still_rejects_ambiguous_present_mesh(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_frame(root, ambiguous=True)
+            with self.assertRaisesRegex(MODULE.CaptureError, "ambiguous hair"):
+                MODULE.decode_session(root, ["hair"], allow_partial=True)
+
 
 if __name__ == "__main__":
     unittest.main()

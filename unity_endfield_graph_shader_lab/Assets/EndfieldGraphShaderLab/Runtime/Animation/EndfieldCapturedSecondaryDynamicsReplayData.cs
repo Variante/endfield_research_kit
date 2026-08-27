@@ -9,13 +9,15 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldCapturedSecondaryDynamicsReplayData : ScriptableObject
     {
         public const string ExpectedSchema =
-            "endfield.charinfo.endminf-captured-secondary-dynamics-oracle.v1";
+            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v3";
 
         public string sourceSchema;
         public string sourceSha256;
         public float sourceFps;
         public int firstReferenceSourceFrame;
         public int playbackReferenceSourceFrame;
+        public float entranceBodyClipAnchorSeconds;
+        public float entranceSequenceAnchorSeconds;
         public string[] bonePaths = Array.Empty<string>();
         public float[] sampleTimes = Array.Empty<float>();
         public Vector3[] rootSpacePositions = Array.Empty<Vector3>();
@@ -39,6 +41,15 @@ namespace EndfieldGraphShaderLab
             if (!IsFinite(sourceFps) || sourceFps <= 0f)
             {
                 failure = "captured oracle source FPS is invalid";
+                return false;
+            }
+            if (!IsFinite(entranceBodyClipAnchorSeconds) ||
+                entranceBodyClipAnchorSeconds < 0f ||
+                !IsFinite(entranceSequenceAnchorSeconds) ||
+                entranceSequenceAnchorSeconds < 0f ||
+                entranceSequenceAnchorSeconds > entranceBodyClipAnchorSeconds)
+            {
+                failure = "captured oracle entrance body anchor is invalid";
                 return false;
             }
             if (BoneCount == 0 || SampleCount < 2)
