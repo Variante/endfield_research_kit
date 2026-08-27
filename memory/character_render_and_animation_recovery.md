@@ -1768,6 +1768,16 @@ the required entrance/settled sequences, and M31 draw 3 still lacks its
 33,177,600-byte PS t0 scene-depth payload. The combined, Uber, and M29/M30/M31
 verifiers all fail closed on those exact omissions.
 
+The next targeted D3D11 recapture also closes the formerly inferred Uber draw
+state in the same frame. EndfieldCapture now records the priority combined
+Uber resolver's output texture/view format and dimensions, MRT/depth binding,
+viewport and scissor, PS s0 descriptor, blend state/factor/sample mask,
+depth/stencil state, and rasterizer state. The exact-Uber verifier requires
+that draw-bound state together with VS b0, PS b0/b1, shader identities, and the
+128-MiB resource policy. This prevents a successful constant payload from
+silently retaining guessed sampler, output, viewport, blend, or raster state
+and avoids another runtime pass solely to recover presentation bindings.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
