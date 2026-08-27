@@ -22,6 +22,7 @@ namespace EndfieldGraphShaderLab
         private RenderTexture sourceTexture;
         private RenderTexture bloomTexture;
         private RenderTexture outputTexture;
+        private RenderTexture outputDepthTexture;
         private IntPtr renderEvent;
         private bool initialized;
         private bool failed;
@@ -121,7 +122,11 @@ namespace EndfieldGraphShaderLab
             command.CopyTexture(bloom, new RenderTargetIdentifier(bloomTexture));
             command.SetRenderTarget(
                 new RenderTargetIdentifier(outputTexture),
-                new RenderTargetIdentifier(BuiltinRenderTextureType.None));
+                new RenderTargetIdentifier(outputDepthTexture));
+            // Retail Uber keeps a distinct full-resolution D24S8 attachment
+            // bound and clears it to reverse-Z far (0) / stencil 0 before the
+            // fullscreen draw. It is not the primary scene depth owner.
+            command.ClearRenderTarget(true, false, Color.clear, 0.0f);
             command.IssuePluginEvent(renderEvent, checked((int)packet));
             command.CopyTexture(
                 new RenderTargetIdentifier(outputTexture), destination);
@@ -143,6 +148,7 @@ namespace EndfieldGraphShaderLab
             ReleaseTexture(ref sourceTexture);
             ReleaseTexture(ref bloomTexture);
             ReleaseTexture(ref outputTexture);
+            ReleaseTexture(ref outputDepthTexture);
         }
 
         private bool Initialize()
@@ -228,13 +234,52 @@ namespace EndfieldGraphShaderLab
                     "Endfield Exact Uber Bloom R11G11B10",
                     FilterMode.Bilinear))
                 return false;
-            return EnsureTexture(
+            if (!EnsureTexture(
                 ref outputTexture,
                 width,
                 height,
                 GraphicsFormat.R8G8B8A8_UNorm,
                 "Endfield Exact Uber Linear UNorm Output",
-                FilterMode.Point);
+                FilterMode.Point))
+                return false;
+            return EnsureDepthTexture(width, height);
+        }
+
+        private bool EnsureDepthTexture(int width, int height)
+        {
+            const GraphicsFormat format = GraphicsFormat.D24_UNorm_S8_UInt;
+            if (outputDepthTexture != null && outputDepthTexture.IsCreated() &&
+                outputDepthTexture.width == width &&
+                outputDepthTexture.height == height &&
+                outputDepthTexture.depthStencilFormat == format)
+                return true;
+            ReleaseTexture(ref outputDepthTexture);
+            if (!SystemInfo.IsFormatSupported(format, FormatUsage.Render))
+                return Fail("Endfield Exact Uber D24S8 attachment is unsupported");
+            var descriptor = new RenderTextureDescriptor(width, height)
+            {
+                graphicsFormat = GraphicsFormat.None,
+                depthStencilFormat = format,
+                msaaSamples = 1,
+                useMipMap = false,
+                autoGenerateMips = false,
+                sRGB = false,
+            };
+            outputDepthTexture = new RenderTexture(descriptor)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "Endfield Exact Uber D24S8 Output Attachment",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                anisoLevel = 0,
+            };
+            if (!outputDepthTexture.Create() ||
+                outputDepthTexture.depthStencilFormat != format)
+            {
+                ReleaseTexture(ref outputDepthTexture);
+                return Fail("could not create exact Uber D24S8 attachment");
+            }
+            return true;
         }
 
         private bool EnsureTexture(

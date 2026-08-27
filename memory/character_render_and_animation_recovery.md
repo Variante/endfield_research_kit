@@ -1777,6 +1777,15 @@ that draw-bound state together with VS b0, PS b0/b1, shader identities, and the
 128-MiB resource policy. This prevents a successful constant payload from
 silently retaining guessed sampler, output, viewport, blend, or raster state
 and avoids another runtime pass solely to recover presentation bindings.
+The retained retail Uber draw additionally proves that its R8G8B8A8 output is
+paired with a distinct full-resolution `R24G8_TYPELESS` resource viewed as
+`D24_UNORM_S8_UINT`, cleared to reverse-Z far depth `0` and stencil `0` before
+the pass. The exact Unity transport previously required a null DSV. It now
+allocates, binds, and clears a dedicated D24S8 attachment, while the native
+draw rejects any other depth descriptor. This attachment is not the primary
+scene depth and must never clear or replace that owner. Uber depth testing is
+disabled, so the immediate pixel delta may be zero; the correction closes the
+retail render-pass binding and later-draw continuity contract.
 
 ## Main animation gap
 

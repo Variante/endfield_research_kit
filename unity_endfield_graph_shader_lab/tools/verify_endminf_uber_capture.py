@@ -111,6 +111,7 @@ def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
     require(isinstance(state, dict) and state.get("valid") is True,
             f"frame {frame} exact Uber draw-bound pipeline state is absent")
     target = state.get("target")
+    depth_target = state.get("depthTarget")
     viewport = state.get("viewport")
     scissor = state.get("scissor")
     sampler = state.get("sampler")
@@ -118,9 +119,11 @@ def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
     depth = state.get("depthStencil")
     raster = state.get("rasterizer")
     require(all(isinstance(value, dict) for value in
-                (target, viewport, scissor, sampler, blend, depth, raster)),
+                (target, depth_target, viewport, scissor, sampler, blend,
+                 depth, raster)),
             f"frame {frame} exact Uber pipeline state is incomplete")
     assert isinstance(target, dict) and isinstance(viewport, dict)
+    assert isinstance(depth_target, dict)
     assert isinstance(scissor, dict) and isinstance(sampler, dict)
     assert isinstance(blend, dict) and isinstance(depth, dict)
     assert isinstance(raster, dict)
@@ -132,8 +135,14 @@ def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
             int(target.get("viewFormat", -1)) == 28 and
             int(target.get("sampleCount", 0)) == 1 and
             int(target.get("renderTargetCount", 0)) == 1 and
-            target.get("depthBound") is False,
+            target.get("depthBound") is True,
             f"frame {frame} exact Uber output target contract drifted")
+    require(int(depth_target.get("width", 0)) == width and
+            int(depth_target.get("height", 0)) == height and
+            int(depth_target.get("textureFormat", -1)) == 44 and
+            int(depth_target.get("viewFormat", -1)) == 45 and
+            int(depth_target.get("sampleCount", 0)) == 1,
+            f"frame {frame} exact Uber D24S8 attachment contract drifted")
     require(int(viewport.get("count", 0)) == 1 and
             abs(float(viewport.get("x", math.nan))) <= 1e-6 and
             abs(float(viewport.get("y", math.nan))) <= 1e-6 and
