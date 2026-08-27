@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed unless an EndfieldCapture session closes M29/M30 draw resources."""
+"""Fail closed unless a capture closes exact M29/M30/M31 draw resources."""
 
 from __future__ import annotations
 
@@ -36,6 +36,18 @@ OWNERS = {
         "counts": {6, 12},
         "c1": (1.0, 0.0, 3.0, 0.5),
         "c4": (0.93269453, 0.52442606, 0.09170079, 1.0),
+    },
+    "M31": {
+        "vertex": 0x62A5CE6C09171DE9,
+        "pixel": 0x5558DEDDB1EE6188,
+        "counts": {6},
+        "c1": (1.0, 0.0, 1.4, 1.35),
+        "c4": (1.0, 0.5607878, 0.0976956, 1.0),
+        # The second simultaneous M31 renderer in the retained captures uses
+        # the same authored intensity/alpha fingerprint with a white tint
+        # override. Keep this as an explicit witness instead of accepting an
+        # arbitrary c4 and accidentally folding another BaseV2 owner into M31.
+        "alternateC4": ((1.0, 1.0, 1.0, 1.0),),
     },
 }
 
@@ -86,7 +98,10 @@ def owner_name(draw: dict[str, Any]) -> str | None:
             b3 = constant(draw, 4, 3)
         except VerificationError:
             continue
-        if close(vector(b3, 1), owner["c1"]) and close(vector(b3, 4), owner["c4"]):
+        c4_witnesses = (owner["c4"], *owner.get("alternateC4", ()))
+        if (close(vector(b3, 1), owner["c1"])
+                and any(close(vector(b3, 4), witness)
+                        for witness in c4_witnesses)):
             return name
     return None
 
@@ -176,7 +191,7 @@ def build_report(capture: Path) -> dict[str, Any]:
     for name, rows in owners.items():
         require(rows, f"capture contains no exact {name} owner packets")
     return {
-        "schema": "endfield.endminf-m29-m30-capture-completeness.v1",
+        "schema": "endfield.endminf-m29-m30-m31-capture-completeness.v1",
         "status": "validated_exact_owner_resource_closure",
         "capture": str(capture.resolve()),
         "frameCount": len(paths),
@@ -208,7 +223,7 @@ def main() -> int:
         report = build_report(args.capture.resolve())
     except (OSError, ValueError, VerificationError) as exc:
         diagnostic = {
-            "schema": "endfield.endminf-m29-m30-capture-completeness.v1",
+            "schema": "endfield.endminf-m29-m30-m31-capture-completeness.v1",
             "status": "validation_failed",
             "capture": str(args.capture.resolve()),
             "diagnostic": str(exc),

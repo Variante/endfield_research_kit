@@ -21,6 +21,7 @@
 #include "M14CapturePayload.generated.h"
 #include "M27CapturePayload.generated.h"
 #include "M27TemporalCapturePayload.generated.h"
+#include "M30CapturePayload.generated.h"
 #include "M27SubstitutionRegistry.h"
 
 #if __has_include("EndminfUberCapturePayload.generated.h")
@@ -159,6 +160,12 @@ constexpr std::size_t kEndminfUberPsB1Bytes = 26u * 16u;
 static_assert(g_EndfieldUberVsB0Size == kEndminfUberVsB0Bytes);
 static_assert(g_EndfieldUberPsB0Size == kEndminfUberPsB0Bytes);
 static_assert(g_EndfieldUberPsB1Size == kEndminfUberPsB1Bytes);
+static_assert(g_EndfieldM30PayloadPrepared);
+static_assert(!g_EndfieldM30DepthContractReady);
+static_assert(g_EndfieldM30PacketCount == 11u);
+static_assert(g_EndfieldM30TextureT1Size == 65536u);
+static_assert(g_EndfieldM30TextureWidth == 256u &&
+    g_EndfieldM30TextureHeight == 256u);
 
 enum class EndminfUberPacketState : std::uint32_t
 {

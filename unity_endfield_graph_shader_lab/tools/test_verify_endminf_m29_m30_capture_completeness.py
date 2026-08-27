@@ -19,14 +19,14 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
-def b3(owner: dict[str, object]) -> str:
+def b3(owner: dict[str, object], c4: tuple[float, ...] | None = None) -> str:
     values = [0.0] * (5 * 4)
     values[4:8] = owner["c1"]
-    values[16:20] = owner["c4"]
+    values[16:20] = owner["c4"] if c4 is None else c4
     return struct.pack("<20f", *values).hex()
 
 
-def draw(owner_name: str) -> dict[str, object]:
+def draw(owner_name: str, c4: tuple[float, ...] | None = None) -> dict[str, object]:
     owner = MODULE.OWNERS[owner_name]
     resources = [
         {"objectId": 100, "kind": 1, "stage": 0, "slot": 0, "byteSize": 64},
@@ -41,7 +41,7 @@ def draw(owner_name: str) -> dict[str, object]:
         ],
         "constantBuffers": [{
             "stage": 4, "slot": 3, "rangeValid": True,
-            "metadataValid": True, "dataHex": b3(owner),
+            "metadataValid": True, "dataHex": b3(owner, c4),
         }],
         "resources": resources,
     }
@@ -54,7 +54,7 @@ def metadata(truncated: bool = False, include_resources: bool = True) -> dict[st
         for object_id, stage, slot, size in (
             (100, 0, 0, 64), (101, 0, 0, 12), (200, 4, 0, 16))
     ]
-    rows = [draw("M29"), draw("M30")]
+    rows = [draw("M29"), draw("M30"), draw("M31")]
     if not include_resources:
         rows[0]["resources"] = []
     return {
@@ -80,6 +80,31 @@ class CaptureCompletenessTests(unittest.TestCase):
         self.assertEqual(report["status"], "validated_exact_owner_resource_closure")
         self.assertEqual(report["owners"]["M29"]["packetCount"], 1)
         self.assertEqual(report["owners"]["M30"]["packetCount"], 1)
+        self.assertEqual(report["owners"]["M31"]["packetCount"], 1)
+
+    def test_m31_known_tint_fingerprints_are_classified_separately(self) -> None:
+        payload = metadata()
+        payload["drawRecords"].append(
+            draw("M31", MODULE.OWNERS["M31"]["alternateC4"][0]))
+        report = self.build(payload)
+        self.assertEqual(report["owners"]["M30"]["packetCount"], 1)
+        self.assertEqual(report["owners"]["M31"]["packetCount"], 2)
+
+    def test_m30_packet_cannot_satisfy_m31_gate(self) -> None:
+        payload = metadata()
+        payload["drawRecords"] = payload["drawRecords"][:2]
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "capture contains no exact M31 owner packets"):
+            self.build(payload)
+
+    def test_m31_unknown_tint_fails_closed(self) -> None:
+        payload = metadata()
+        payload["drawRecords"][2] = draw("M31", (0.5, 0.5, 0.5, 1.0))
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "capture contains no exact M31 owner packets"):
+            self.build(payload)
 
     def test_unrelated_global_truncation_is_diagnostic_after_owner_closure(self) -> None:
         report = self.build(metadata(truncated=True))
