@@ -1,0 +1,242 @@
+{
+  "activity": {
+    "chromaticActive": "chromaticAbberation.IsActive() && settingParameters.chromaticAberrationEnabled",
+    "inactiveBehavior": "when both effective activity flags are false, the method returns without writing radialBlurParams or radialBlurParams2",
+    "keywordSelection": {
+      "chromaticActive": "RADIAL_BLUR_CHROMATIC_ABERRATION",
+      "radialOnly": "RADIAL_BLUR"
+    },
+    "radialActive": "radialBlur.IsActive() && settingParameters.radialBlurEnabled"
+  },
+  "centerSelection": {
+    "commonRemap": "q = 2*center-1; when length(q)>1.414, center=(normalize(q)+1)*0.5; then center.x and center.y are independently Clamp01",
+    "default": [
+      0.5,
+      0.5
+    ],
+    "globalCenter": "camera.WorldToViewportPoint(globalCenter.value).xy",
+    "localCenter": "selected center.value",
+    "precedence": [
+      "chromatic center when chromatic is active and either center.overrideState or enableGlobalCenter.value is true",
+      "radial center when radial is active and either center.overrideState or enableGlobalCenter.value is true",
+      "default center"
+    ]
+  },
+  "decodedNativeBody": {
+    "constants": {
+      "centerDefault": {
+        "sourceVirtualAddress": "0x18B9591E0",
+        "value": 0.5
+      },
+      "centerEdgeScale": {
+        "sourceVirtualAddress": "0x18B9591E0",
+        "value": 0.5
+      },
+      "centerNdcScale": {
+        "sourceVirtualAddress": "0x18B9592B4",
+        "value": 2.0
+      },
+      "centerUnit": {
+        "sourceVirtualAddress": "0x18B959200",
+        "value": 1.0
+      },
+      "farCenterRadius": {
+        "sourceVirtualAddress": "0x18DC80A50",
+        "value": 1.414
+      },
+      "modeThreshold": {
+        "sourceVirtualAddress": "0x18B959710",
+        "value": 0.01
+      },
+      "temporaryPowerSeed": {
+        "sourceVirtualAddress": "0x18DA45808",
+        "value": 1.2000000476837158
+      }
+    },
+    "landmarks": [
+      {
+        "bodyOffset": "0x9C",
+        "bytes": "488b8eb8010000",
+        "meaning": "radial settings gate at settingParameters+0x1B8"
+      },
+      {
+        "bodyOffset": "0xDB",
+        "bytes": "488b8ec0010000",
+        "meaning": "chromatic settings gate at settingParameters+0x1C0"
+      },
+      {
+        "bodyOffset": "0x37E",
+        "bytes": "488b5340",
+        "meaning": "radial intensity read"
+      },
+      {
+        "bodyOffset": "0x392",
+        "bytes": "488b5740",
+        "meaning": "chromatic intensity read for power ratio"
+      },
+      {
+        "bodyOffset": "0x3A9",
+        "bytes": "f30f5ef0",
+        "meaning": "radial/chromatic intensity division"
+      },
+      {
+        "bodyOffset": "0x3B9",
+        "bytes": "488b5348",
+        "meaning": "radial power read"
+      },
+      {
+        "bodyOffset": "0x3E4",
+        "bytes": "488b5350",
+        "meaning": "radial averageSteps read"
+      },
+      {
+        "bodyOffset": "0x41C",
+        "bytes": "488b5748",
+        "meaning": "chromatic averageStep read"
+      },
+      {
+        "bodyOffset": "0x43F",
+        "bytes": "4584e7",
+        "meaning": "both-active mode predicate"
+      },
+      {
+        "bodyOffset": "0x44B",
+        "bytes": "488b5340",
+        "meaning": "mode radial-intensity read"
+      },
+      {
+        "bodyOffset": "0x460",
+        "bytes": "b806000000",
+        "meaning": "mode-6 candidate"
+      },
+      {
+        "bodyOffset": "0x46C",
+        "bytes": "8d48fd",
+        "meaning": "mode-3 candidate"
+      },
+      {
+        "bodyOffset": "0x477",
+        "bytes": "0f46c1",
+        "meaning": "mode-3 select for intensity <= threshold"
+      },
+      {
+        "bodyOffset": "0x496",
+        "bytes": "f3410f7f4550",
+        "meaning": "radialBlurParams store at data+0x50"
+      },
+      {
+        "bodyOffset": "0x4CD",
+        "bytes": "f3410f7f4560",
+        "meaning": "radialBlurParams2 store at data+0x60"
+      }
+    ]
+  },
+  "metadataFields": {
+    "HG.Rendering.Runtime.HGChromaticAbberation": [
+      "enabled",
+      "center",
+      "intensity",
+      "averageStep",
+      "enableGlobalCenter",
+      "globalCenter"
+    ],
+    "HG.Rendering.Runtime.HGRadialBlur": [
+      "enabled",
+      "center",
+      "intensity",
+      "power",
+      "averageSteps",
+      "enableGlobalCenter",
+      "globalCenter"
+    ]
+  },
+  "nativeEvidence": {
+    "codeRegistrationVa": "0x18B9217D0",
+    "gameAssembly": "D:\\Program Files\\Endfield Game\\GameAssembly.dll",
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "gate": "validated",
+    "globalMetadata": "D:\\Program Files\\Endfield Game\\Endfield_Data\\il2cpp_data\\Metadata\\global-metadata.dat",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+  },
+  "scalingAndSelection": {
+    "averageStepEncoding": "BooleanParameter value converted exactly to float 0.0 or 1.0",
+    "chromaticIntensityScaling": "none",
+    "effectivePower": {
+      "bothActive": "lerp(1.0, radialBlur.power.value, Clamp01(radialBlur.intensity.value / chromaticAbberation.intensity.value))",
+      "chromaticOnly": "1.0",
+      "radialOnly": "radialBlur.power.value",
+      "temporarySeed": "1.2000000476837158 is loaded before branching but is replaced on every path that writes output; it is not an effective output power"
+    },
+    "modeSelection": {
+      "comparison": "the float intensity is converted to double and compared with the pinned double literal 0.01; <= and unordered select mode 3",
+      "mode3": "all other output-writing states",
+      "mode6": "radialActive && chromaticActive && double(radialBlur.intensity.value) > 0.01"
+    },
+    "radialIntensityScaling": "none"
+  },
+  "schema": "endfield.endminf-uber-radial-chromatic-native-parameters.v1",
+  "scopeBoundary": "This report decodes the managed IL2CPP producer and its exact recovered Uber c0/c25 ABI. It does not modify or approximate Unity beauty rendering.",
+  "shaderAbi": {
+    "buffer": "exact combined Uber pixel pass cbuffer (PS b1)",
+    "vectors": [
+      {
+        "lanes": {
+          "w": "effective radial power",
+          "x": "selected/remapped center.x",
+          "y": "selected/remapped center.y",
+          "z": "radialBlur.intensity.value, or 0 when radial is inactive"
+        },
+        "passDataField": "radialBlurParams",
+        "passDataOffset": "0x50",
+        "shaderProperty": "_RadialBlurParams",
+        "shaderRegister": "c0"
+      },
+      {
+        "lanes": {
+          "w": "float(chromaticAbberation.averageStep.value), or 0 when chromatic is inactive",
+          "x": "mode as float (3 or 6)",
+          "y": "chromaticAbberation.intensity.value",
+          "z": "float(radialBlur.averageSteps.value), or 0 when radial is inactive"
+        },
+        "passDataField": "radialBlurParams2",
+        "passDataOffset": "0x60",
+        "shaderProperty": "_RadialBlurParams2",
+        "shaderRegister": "c25"
+      }
+    ]
+  },
+  "status": "validated_exact_native_parameter_contract",
+  "target": {
+    "bodySha256": "a5711413dc91ff5271fcf50298292f339a3bba23be9f0feab6536b9e83c75d75",
+    "boundedSizeBytes": 1368,
+    "image": "HG.RenderPipelines.Runtime.dll",
+    "method": "PrepareRadialBlurAndChromaticAberrationParameters",
+    "methodIndex": 286867,
+    "nextMethodVirtualAddress": "0x189B86648",
+    "parameters": [
+      {
+        "name": "settingParameters",
+        "type": "HG.Rendering.Runtime.HGSettingParameters"
+      },
+      {
+        "name": "data",
+        "type": "HG.Rendering.Runtime.UberPostPassUtils+UberPostPassData"
+      },
+      {
+        "name": "camera",
+        "type": "HG.Rendering.Runtime.HGCamera+ViewConstants&"
+      },
+      {
+        "name": "radialBlur",
+        "type": "HG.Rendering.Runtime.HGRadialBlur"
+      },
+      {
+        "name": "chromaticAbberation",
+        "type": "HG.Rendering.Runtime.HGChromaticAbberation"
+      }
+    ],
+    "token": "0x06000F0F",
+    "type": "HG.Rendering.Runtime.UberPostPassUtils",
+    "virtualAddress": "0x189B860F0"
+  }
+}
