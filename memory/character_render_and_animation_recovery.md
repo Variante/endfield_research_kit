@@ -170,6 +170,9 @@ complete frame without a client fault.
   proves 68 admitted entrance renderers and exactly two separately blocked
   non-LitEffect rows. Frames 19-22 now contain M27's dark/amber faceted debris;
   its default-off Unity ABI probe still proves an empty material/mesh binding.
+  The maintained Endminf launcher now enables this proven compatibility path;
+  it had incorrectly forced the flag off even though canonical batch captures
+  enabled it, which made the ten M01/M38 stones disappear in interactive use.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer. A separate

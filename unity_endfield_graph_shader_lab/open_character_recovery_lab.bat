@@ -21,7 +21,9 @@ exit /b 2
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1"
   rem Direct UI-free registration places the maintained Aug-24 no-frame-generation post pulse on the authored body clock.
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0"
-  set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=0"
+  rem Retain the ten source-identified M01/M38 fly-in rocks. Exact M27 mode
+  rem redirects only its own hand-crystal row and does not replace these owners.
+  set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1"
   set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1"
