@@ -63,6 +63,37 @@ def fixture(mode: float = 3.0, priority: bool = True,
                 {"slot": 1, "bufferId": 100, "firstConstant": b1_first,
                  "numConstants": 32, "rangeValid": True},
             ],
+            "pipelineState": {
+                "valid": True,
+                "target": {"width": 3840, "height": 2160,
+                           "textureFormat": 28, "viewFormat": 28,
+                           "sampleCount": 1, "renderTargetCount": 1,
+                           "depthBound": False},
+                "viewport": {"count": 1, "x": 0.0, "y": 0.0,
+                             "width": 3840.0, "height": 2160.0,
+                             "minDepth": 0.0, "maxDepth": 1.0},
+                "scissor": {"count": 1, "left": 0, "top": 0,
+                            "right": 3840, "bottom": 2160},
+                "sampler": {"filter": 21, "addressU": 3, "addressV": 3,
+                            "addressW": 3, "comparison": 1,
+                            "mipBias": 0.0, "maxAnisotropy": 1,
+                            "minLod": 0.0, "maxLod": 3.4e38},
+                "blend": {"enabled": False, "source": 2,
+                          "destination": 1, "operation": 1,
+                          "sourceAlpha": 2, "destinationAlpha": 1,
+                          "operationAlpha": 1, "writeMask": 15,
+                          "factor": [0.0, 0.0, 0.0, 0.0],
+                          "sampleMask": 0xffffffff},
+                "depthStencil": {"depthEnabled": False, "writeMask": 0,
+                                 "function": 8, "stencilEnabled": False,
+                                 "stencilReference": 0},
+                "rasterizer": {"fillMode": 3, "cullMode": 1,
+                               "frontCounterClockwise": False,
+                               "depthClipEnabled": True,
+                               "scissorEnabled": True,
+                               "multisampleEnabled": False,
+                               "antialiasedLineEnabled": False},
+            },
         }],
     }
     return session, metadata, blob
@@ -108,6 +139,13 @@ class UberCaptureTests(unittest.TestCase):
     def test_unexpected_mode_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "mode is unexpected"):
             self.build(*fixture(mode=4.0))
+
+    def test_missing_pipeline_state_fails_closed(self) -> None:
+        session, metadata, blob = fixture()
+        del metadata["fullscreenResolvers"][0]["pipelineState"]
+        with self.assertRaisesRegex(MODULE.VerificationError,
+                                    "pipeline state is absent"):
+            self.build(session, metadata, blob)
 
 
 if __name__ == "__main__":

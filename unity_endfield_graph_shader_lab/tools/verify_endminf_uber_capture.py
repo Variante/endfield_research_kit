@@ -106,6 +106,62 @@ def finite(values: tuple[float, ...]) -> bool:
     return all(math.isfinite(value) for value in values)
 
 
+def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
+    state = resolver.get("pipelineState")
+    require(isinstance(state, dict) and state.get("valid") is True,
+            f"frame {frame} exact Uber draw-bound pipeline state is absent")
+    target = state.get("target")
+    viewport = state.get("viewport")
+    scissor = state.get("scissor")
+    sampler = state.get("sampler")
+    blend = state.get("blend")
+    depth = state.get("depthStencil")
+    raster = state.get("rasterizer")
+    require(all(isinstance(value, dict) for value in
+                (target, viewport, scissor, sampler, blend, depth, raster)),
+            f"frame {frame} exact Uber pipeline state is incomplete")
+    assert isinstance(target, dict) and isinstance(viewport, dict)
+    assert isinstance(scissor, dict) and isinstance(sampler, dict)
+    assert isinstance(blend, dict) and isinstance(depth, dict)
+    assert isinstance(raster, dict)
+    width = int(target.get("width", 0))
+    height = int(target.get("height", 0))
+    require(width > 0 and height > 0,
+            f"frame {frame} exact Uber target dimensions are invalid")
+    require(int(target.get("textureFormat", -1)) == 28 and
+            int(target.get("viewFormat", -1)) == 28 and
+            int(target.get("sampleCount", 0)) == 1 and
+            int(target.get("renderTargetCount", 0)) == 1 and
+            target.get("depthBound") is False,
+            f"frame {frame} exact Uber output target contract drifted")
+    require(int(viewport.get("count", 0)) == 1 and
+            abs(float(viewport.get("x", math.nan))) <= 1e-6 and
+            abs(float(viewport.get("y", math.nan))) <= 1e-6 and
+            abs(float(viewport.get("width", math.nan)) - width) <= 1e-3 and
+            abs(float(viewport.get("height", math.nan)) - height) <= 1e-3 and
+            abs(float(viewport.get("minDepth", math.nan))) <= 1e-6 and
+            abs(float(viewport.get("maxDepth", math.nan)) - 1.0) <= 1e-6,
+            f"frame {frame} exact Uber viewport contract drifted")
+    require(int(scissor.get("count", 0)) == 1,
+            f"frame {frame} exact Uber scissor state is absent")
+    require(int(sampler.get("filter", -1)) == 21 and
+            int(sampler.get("addressU", -1)) == 3 and
+            int(sampler.get("addressV", -1)) == 3 and
+            int(sampler.get("addressW", -1)) == 3,
+            f"frame {frame} exact Uber sampler contract drifted")
+    require(blend.get("enabled") is False and
+            int(blend.get("writeMask", 0)) == 15,
+            f"frame {frame} exact Uber blend contract drifted")
+    require(depth.get("depthEnabled") is False and
+            depth.get("stencilEnabled") is False,
+            f"frame {frame} exact Uber depth/stencil contract drifted")
+    require(int(raster.get("fillMode", -1)) == 3 and
+            int(raster.get("cullMode", -1)) == 1 and
+            raster.get("depthClipEnabled") is True,
+            f"frame {frame} exact Uber rasterizer contract drifted")
+    return state
+
+
 def inspect_resolver(frame: int, resolver_index: int,
                      resolver: dict[str, Any], metadata: dict[str, Any],
                      resource_blob: bytes) -> dict[str, Any]:
@@ -153,6 +209,7 @@ def inspect_resolver(frame: int, resolver_index: int,
             f"frame {frame} exact Uber mode is unexpected: {radial2[0]}")
     require(radial2[2] in (0.0, 1.0) and radial2[3] in (0.0, 1.0),
             f"frame {frame} exact Uber average-step flags are invalid")
+    draw_pipeline_state = pipeline_state(resolver, frame)
     return {
         "frame": frame,
         "resolverIndex": resolver_index,
@@ -161,6 +218,7 @@ def inspect_resolver(frame: int, resolver_index: int,
         "pixelSha256": PIXEL_SHA256,
         "vertexIdentity": f"{VERTEX_IDENTITY:016x}",
         "vertexSha256": VERTEX_SHA256,
+        "pipelineState": draw_pipeline_state,
         "vsB0": {
             "bufferId": int(vs_b0["bufferId"]),
             "firstConstant": int(vs_b0["firstConstant"]),
