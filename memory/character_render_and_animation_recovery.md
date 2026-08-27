@@ -1492,6 +1492,15 @@ it rejects `20260826T231348Z` at its 110 truncated frames. The Release
 `build-local` and all 15 tests pass. One new bounded `graphics targeted`
 sequence over reference frames 376-385 remains required to close owner-specific
 IA/t0-t5. Full/everything capture is not required for that focused rerun.
+The combined gate
+`verify_endminf_combined_graphics_capture.py` checks this closure together with
+render-boundary skin-palette coverage across entrance and settled-loop bursts.
+It deliberately permits a mesh to be absent from individual retained frames,
+but rejects ambiguous draw-time b2 pairs and insufficient per-burst coverage.
+For `20260826T231348Z`, cloth-01/cloth-04/hair have 109/56/91 unambiguous
+observations across both 55/56-frame bursts; the capture is rejected only by
+the old resource truncation, so its cloth evidence is usable while its
+M29/M30 texture evidence is not.
 
 The pre-patch session is now covered by a fail-closed M29/M30 temporal
 verifier. It identifies 13 M29 packets at 2.5333-4.1667 seconds and 11 M30

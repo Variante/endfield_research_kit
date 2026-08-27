@@ -1,0 +1,2015 @@
+{
+  "schema": "endfield.endminf-combined-graphics-capture.v1",
+  "status": "rejected",
+  "capture": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260826T231348Z",
+  "effects": {
+    "status": "rejected",
+    "error": "resource selection truncated in 110 frames"
+  },
+  "skinning": {
+    "status": "validated_render_boundary_palette_coverage",
+    "frameCount": 111,
+    "sequences": [
+      {
+        "index": 0,
+        "frameCount": 55,
+        "firstFrame": 2833,
+        "lastFrame": 3265
+      },
+      {
+        "index": 1,
+        "frameCount": 56,
+        "firstFrame": 3512,
+        "lastFrame": 3968
+      }
+    ],
+    "paletteResourceErrorCount": 1,
+    "paletteResourceErrors": [
+      {
+        "frame": 3520,
+        "error": "expected one completed palette resource, found 0"
+      }
+    ],
+    "ambiguousObservationCount": 0,
+    "ambiguousObservations": [],
+    "meshes": {
+      "body": {
+        "observationCount": 19,
+        "minimumRequired": 8,
+        "perSequence": [
+          0,
+          19
+        ],
+        "firstFrame": 3536,
+        "lastFrame": 3968,
+        "observations": [
+          {
+            "frame": 3536,
+            "sequence": 1,
+            "currentBaseRaw": 243344,
+            "previousBaseRaw": 242126,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3816,
+            "sequence": 1,
+            "currentBaseRaw": 60225,
+            "previousBaseRaw": 59007,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3824,
+            "sequence": 1,
+            "currentBaseRaw": 69969,
+            "previousBaseRaw": 68751,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3832,
+            "sequence": 1,
+            "currentBaseRaw": 79713,
+            "previousBaseRaw": 78495,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3840,
+            "sequence": 1,
+            "currentBaseRaw": 89457,
+            "previousBaseRaw": 88239,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3848,
+            "sequence": 1,
+            "currentBaseRaw": 99201,
+            "previousBaseRaw": 97983,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3856,
+            "sequence": 1,
+            "currentBaseRaw": 108945,
+            "previousBaseRaw": 107727,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3864,
+            "sequence": 1,
+            "currentBaseRaw": 118689,
+            "previousBaseRaw": 117471,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3872,
+            "sequence": 1,
+            "currentBaseRaw": 128433,
+            "previousBaseRaw": 127215,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3882,
+            "sequence": 1,
+            "currentBaseRaw": 140613,
+            "previousBaseRaw": 139395,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3890,
+            "sequence": 1,
+            "currentBaseRaw": 150357,
+            "previousBaseRaw": 149139,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3898,
+            "sequence": 1,
+            "currentBaseRaw": 160101,
+            "previousBaseRaw": 158883,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3906,
+            "sequence": 1,
+            "currentBaseRaw": 169845,
+            "previousBaseRaw": 168627,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3914,
+            "sequence": 1,
+            "currentBaseRaw": 179589,
+            "previousBaseRaw": 178371,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3922,
+            "sequence": 1,
+            "currentBaseRaw": 189333,
+            "previousBaseRaw": 188115,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3930,
+            "sequence": 1,
+            "currentBaseRaw": 199077,
+            "previousBaseRaw": 197859,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3952,
+            "sequence": 1,
+            "currentBaseRaw": 225873,
+            "previousBaseRaw": 224655,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3960,
+            "sequence": 1,
+            "currentBaseRaw": 235617,
+            "previousBaseRaw": 234399,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3968,
+            "sequence": 1,
+            "currentBaseRaw": 245361,
+            "previousBaseRaw": 244143,
+            "matchingDrawRecords": 2
+          }
+        ]
+      },
+      "cloth_01": {
+        "observationCount": 109,
+        "minimumRequired": 40,
+        "perSequence": [
+          55,
+          54
+        ],
+        "firstFrame": 2833,
+        "lastFrame": 3968,
+        "observations": [
+          {
+            "frame": 2833,
+            "sequence": 0,
+            "currentBaseRaw": 476304,
+            "previousBaseRaw": 475086,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2841,
+            "sequence": 0,
+            "currentBaseRaw": 486048,
+            "previousBaseRaw": 484830,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2849,
+            "sequence": 0,
+            "currentBaseRaw": 495792,
+            "previousBaseRaw": 494574,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2857,
+            "sequence": 0,
+            "currentBaseRaw": 505536,
+            "previousBaseRaw": 504318,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2865,
+            "sequence": 0,
+            "currentBaseRaw": 515280,
+            "previousBaseRaw": 514062,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2873,
+            "sequence": 0,
+            "currentBaseRaw": 525024,
+            "previousBaseRaw": 523806,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2881,
+            "sequence": 0,
+            "currentBaseRaw": 10615,
+            "previousBaseRaw": 9397,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2889,
+            "sequence": 0,
+            "currentBaseRaw": 20359,
+            "previousBaseRaw": 19141,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2897,
+            "sequence": 0,
+            "currentBaseRaw": 30103,
+            "previousBaseRaw": 28885,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2905,
+            "sequence": 0,
+            "currentBaseRaw": 39847,
+            "previousBaseRaw": 38629,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2913,
+            "sequence": 0,
+            "currentBaseRaw": 49591,
+            "previousBaseRaw": 48373,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2921,
+            "sequence": 0,
+            "currentBaseRaw": 59335,
+            "previousBaseRaw": 58117,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2929,
+            "sequence": 0,
+            "currentBaseRaw": 69079,
+            "previousBaseRaw": 67861,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2937,
+            "sequence": 0,
+            "currentBaseRaw": 78823,
+            "previousBaseRaw": 77605,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2945,
+            "sequence": 0,
+            "currentBaseRaw": 88567,
+            "previousBaseRaw": 87349,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2953,
+            "sequence": 0,
+            "currentBaseRaw": 98311,
+            "previousBaseRaw": 97093,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2961,
+            "sequence": 0,
+            "currentBaseRaw": 108055,
+            "previousBaseRaw": 106837,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2969,
+            "sequence": 0,
+            "currentBaseRaw": 117799,
+            "previousBaseRaw": 116581,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2977,
+            "sequence": 0,
+            "currentBaseRaw": 127543,
+            "previousBaseRaw": 126325,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2985,
+            "sequence": 0,
+            "currentBaseRaw": 137287,
+            "previousBaseRaw": 136069,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 2993,
+            "sequence": 0,
+            "currentBaseRaw": 147031,
+            "previousBaseRaw": 145813,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3001,
+            "sequence": 0,
+            "currentBaseRaw": 156775,
+            "previousBaseRaw": 155557,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3009,
+            "sequence": 0,
+            "currentBaseRaw": 166519,
+            "previousBaseRaw": 165301,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3017,
+            "sequence": 0,
+            "currentBaseRaw": 176263,
+            "previousBaseRaw": 175045,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3025,
+            "sequence": 0,
+            "currentBaseRaw": 186007,
+            "previousBaseRaw": 184789,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3033,
+            "sequence": 0,
+            "currentBaseRaw": 195751,
+            "previousBaseRaw": 194533,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3041,
+            "sequence": 0,
+            "currentBaseRaw": 205495,
+            "previousBaseRaw": 204277,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3049,
+            "sequence": 0,
+            "currentBaseRaw": 215239,
+            "previousBaseRaw": 214021,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3057,
+            "sequence": 0,
+            "currentBaseRaw": 224983,
+            "previousBaseRaw": 223765,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3065,
+            "sequence": 0,
+            "currentBaseRaw": 234727,
+            "previousBaseRaw": 233509,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3073,
+            "sequence": 0,
+            "currentBaseRaw": 244471,
+            "previousBaseRaw": 243253,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3081,
+            "sequence": 0,
+            "currentBaseRaw": 254215,
+            "previousBaseRaw": 252997,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3089,
+            "sequence": 0,
+            "currentBaseRaw": 263959,
+            "previousBaseRaw": 262741,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3097,
+            "sequence": 0,
+            "currentBaseRaw": 273703,
+            "previousBaseRaw": 272485,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3105,
+            "sequence": 0,
+            "currentBaseRaw": 283447,
+            "previousBaseRaw": 282229,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3113,
+            "sequence": 0,
+            "currentBaseRaw": 293191,
+            "previousBaseRaw": 291973,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3121,
+            "sequence": 0,
+            "currentBaseRaw": 302935,
+            "previousBaseRaw": 301717,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3129,
+            "sequence": 0,
+            "currentBaseRaw": 312679,
+            "previousBaseRaw": 311461,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3137,
+            "sequence": 0,
+            "currentBaseRaw": 322423,
+            "previousBaseRaw": 321205,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3145,
+            "sequence": 0,
+            "currentBaseRaw": 332167,
+            "previousBaseRaw": 330949,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3153,
+            "sequence": 0,
+            "currentBaseRaw": 341911,
+            "previousBaseRaw": 340693,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3161,
+            "sequence": 0,
+            "currentBaseRaw": 351655,
+            "previousBaseRaw": 350437,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3169,
+            "sequence": 0,
+            "currentBaseRaw": 361399,
+            "previousBaseRaw": 360181,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3177,
+            "sequence": 0,
+            "currentBaseRaw": 371143,
+            "previousBaseRaw": 369925,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3185,
+            "sequence": 0,
+            "currentBaseRaw": 380887,
+            "previousBaseRaw": 379669,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3193,
+            "sequence": 0,
+            "currentBaseRaw": 390631,
+            "previousBaseRaw": 389413,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3201,
+            "sequence": 0,
+            "currentBaseRaw": 400375,
+            "previousBaseRaw": 399157,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3209,
+            "sequence": 0,
+            "currentBaseRaw": 410119,
+            "previousBaseRaw": 408901,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3217,
+            "sequence": 0,
+            "currentBaseRaw": 419863,
+            "previousBaseRaw": 418645,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3225,
+            "sequence": 0,
+            "currentBaseRaw": 429607,
+            "previousBaseRaw": 428389,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3233,
+            "sequence": 0,
+            "currentBaseRaw": 439351,
+            "previousBaseRaw": 438133,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3241,
+            "sequence": 0,
+            "currentBaseRaw": 449095,
+            "previousBaseRaw": 447877,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3249,
+            "sequence": 0,
+            "currentBaseRaw": 458839,
+            "previousBaseRaw": 457621,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3257,
+            "sequence": 0,
+            "currentBaseRaw": 468583,
+            "previousBaseRaw": 467365,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3265,
+            "sequence": 0,
+            "currentBaseRaw": 478327,
+            "previousBaseRaw": 477109,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3528,
+            "sequence": 1,
+            "currentBaseRaw": 232523,
+            "previousBaseRaw": 231305,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3536,
+            "sequence": 1,
+            "currentBaseRaw": 242267,
+            "previousBaseRaw": 241049,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3544,
+            "sequence": 1,
+            "currentBaseRaw": 252011,
+            "previousBaseRaw": 250793,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3552,
+            "sequence": 1,
+            "currentBaseRaw": 261755,
+            "previousBaseRaw": 260537,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3560,
+            "sequence": 1,
+            "currentBaseRaw": 271499,
+            "previousBaseRaw": 270281,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3568,
+            "sequence": 1,
+            "currentBaseRaw": 281243,
+            "previousBaseRaw": 280025,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3576,
+            "sequence": 1,
+            "currentBaseRaw": 290987,
+            "previousBaseRaw": 289769,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3584,
+            "sequence": 1,
+            "currentBaseRaw": 300731,
+            "previousBaseRaw": 299513,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3592,
+            "sequence": 1,
+            "currentBaseRaw": 310475,
+            "previousBaseRaw": 309257,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3600,
+            "sequence": 1,
+            "currentBaseRaw": 320219,
+            "previousBaseRaw": 319001,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3608,
+            "sequence": 1,
+            "currentBaseRaw": 329963,
+            "previousBaseRaw": 328745,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3616,
+            "sequence": 1,
+            "currentBaseRaw": 339707,
+            "previousBaseRaw": 338489,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3624,
+            "sequence": 1,
+            "currentBaseRaw": 349451,
+            "previousBaseRaw": 348233,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3632,
+            "sequence": 1,
+            "currentBaseRaw": 359195,
+            "previousBaseRaw": 357977,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3640,
+            "sequence": 1,
+            "currentBaseRaw": 368939,
+            "previousBaseRaw": 367721,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3648,
+            "sequence": 1,
+            "currentBaseRaw": 378683,
+            "previousBaseRaw": 377465,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3656,
+            "sequence": 1,
+            "currentBaseRaw": 388427,
+            "previousBaseRaw": 387209,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3664,
+            "sequence": 1,
+            "currentBaseRaw": 398171,
+            "previousBaseRaw": 396953,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3672,
+            "sequence": 1,
+            "currentBaseRaw": 407915,
+            "previousBaseRaw": 406697,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3680,
+            "sequence": 1,
+            "currentBaseRaw": 417659,
+            "previousBaseRaw": 416441,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3688,
+            "sequence": 1,
+            "currentBaseRaw": 427403,
+            "previousBaseRaw": 426185,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3696,
+            "sequence": 1,
+            "currentBaseRaw": 437147,
+            "previousBaseRaw": 435929,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3704,
+            "sequence": 1,
+            "currentBaseRaw": 446891,
+            "previousBaseRaw": 445673,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3712,
+            "sequence": 1,
+            "currentBaseRaw": 456635,
+            "previousBaseRaw": 455417,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3720,
+            "sequence": 1,
+            "currentBaseRaw": 466379,
+            "previousBaseRaw": 465161,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3728,
+            "sequence": 1,
+            "currentBaseRaw": 476123,
+            "previousBaseRaw": 474905,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3736,
+            "sequence": 1,
+            "currentBaseRaw": 485867,
+            "previousBaseRaw": 484649,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3744,
+            "sequence": 1,
+            "currentBaseRaw": 495611,
+            "previousBaseRaw": 494393,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3752,
+            "sequence": 1,
+            "currentBaseRaw": 505355,
+            "previousBaseRaw": 504137,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3760,
+            "sequence": 1,
+            "currentBaseRaw": 515099,
+            "previousBaseRaw": 513881,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3768,
+            "sequence": 1,
+            "currentBaseRaw": 524843,
+            "previousBaseRaw": 523625,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3776,
+            "sequence": 1,
+            "currentBaseRaw": 10428,
+            "previousBaseRaw": 9210,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3784,
+            "sequence": 1,
+            "currentBaseRaw": 20172,
+            "previousBaseRaw": 18954,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3792,
+            "sequence": 1,
+            "currentBaseRaw": 29916,
+            "previousBaseRaw": 28698,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3800,
+            "sequence": 1,
+            "currentBaseRaw": 39660,
+            "previousBaseRaw": 38442,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3808,
+            "sequence": 1,
+            "currentBaseRaw": 49404,
+            "previousBaseRaw": 48186,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3816,
+            "sequence": 1,
+            "currentBaseRaw": 59148,
+            "previousBaseRaw": 57930,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3824,
+            "sequence": 1,
+            "currentBaseRaw": 68892,
+            "previousBaseRaw": 67674,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3832,
+            "sequence": 1,
+            "currentBaseRaw": 78636,
+            "previousBaseRaw": 77418,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3840,
+            "sequence": 1,
+            "currentBaseRaw": 88380,
+            "previousBaseRaw": 87162,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3848,
+            "sequence": 1,
+            "currentBaseRaw": 98124,
+            "previousBaseRaw": 96906,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3856,
+            "sequence": 1,
+            "currentBaseRaw": 107868,
+            "previousBaseRaw": 106650,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3864,
+            "sequence": 1,
+            "currentBaseRaw": 117612,
+            "previousBaseRaw": 116394,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3872,
+            "sequence": 1,
+            "currentBaseRaw": 127356,
+            "previousBaseRaw": 126138,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3882,
+            "sequence": 1,
+            "currentBaseRaw": 139536,
+            "previousBaseRaw": 138318,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3890,
+            "sequence": 1,
+            "currentBaseRaw": 149280,
+            "previousBaseRaw": 148062,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3898,
+            "sequence": 1,
+            "currentBaseRaw": 159024,
+            "previousBaseRaw": 157806,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3906,
+            "sequence": 1,
+            "currentBaseRaw": 168768,
+            "previousBaseRaw": 167550,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3914,
+            "sequence": 1,
+            "currentBaseRaw": 178512,
+            "previousBaseRaw": 177294,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3922,
+            "sequence": 1,
+            "currentBaseRaw": 188256,
+            "previousBaseRaw": 187038,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3930,
+            "sequence": 1,
+            "currentBaseRaw": 198000,
+            "previousBaseRaw": 196782,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3952,
+            "sequence": 1,
+            "currentBaseRaw": 224796,
+            "previousBaseRaw": 223578,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3960,
+            "sequence": 1,
+            "currentBaseRaw": 234540,
+            "previousBaseRaw": 233322,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3968,
+            "sequence": 1,
+            "currentBaseRaw": 244284,
+            "previousBaseRaw": 243066,
+            "matchingDrawRecords": 3
+          }
+        ]
+      },
+      "cloth_04": {
+        "observationCount": 56,
+        "minimumRequired": 24,
+        "perSequence": [
+          26,
+          30
+        ],
+        "firstFrame": 2833,
+        "lastFrame": 3968,
+        "observations": [
+          {
+            "frame": 2833,
+            "sequence": 0,
+            "currentBaseRaw": 476904,
+            "previousBaseRaw": 475686,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 2841,
+            "sequence": 0,
+            "currentBaseRaw": 486648,
+            "previousBaseRaw": 485430,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2977,
+            "sequence": 0,
+            "currentBaseRaw": 128143,
+            "previousBaseRaw": 126925,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2985,
+            "sequence": 0,
+            "currentBaseRaw": 137887,
+            "previousBaseRaw": 136669,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3097,
+            "sequence": 0,
+            "currentBaseRaw": 274303,
+            "previousBaseRaw": 273085,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3105,
+            "sequence": 0,
+            "currentBaseRaw": 284047,
+            "previousBaseRaw": 282829,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3113,
+            "sequence": 0,
+            "currentBaseRaw": 293791,
+            "previousBaseRaw": 292573,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3121,
+            "sequence": 0,
+            "currentBaseRaw": 303535,
+            "previousBaseRaw": 302317,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3129,
+            "sequence": 0,
+            "currentBaseRaw": 313279,
+            "previousBaseRaw": 312061,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3137,
+            "sequence": 0,
+            "currentBaseRaw": 323023,
+            "previousBaseRaw": 321805,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3145,
+            "sequence": 0,
+            "currentBaseRaw": 332767,
+            "previousBaseRaw": 331549,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3153,
+            "sequence": 0,
+            "currentBaseRaw": 342511,
+            "previousBaseRaw": 341293,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3161,
+            "sequence": 0,
+            "currentBaseRaw": 352255,
+            "previousBaseRaw": 351037,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3169,
+            "sequence": 0,
+            "currentBaseRaw": 361999,
+            "previousBaseRaw": 360781,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3177,
+            "sequence": 0,
+            "currentBaseRaw": 371743,
+            "previousBaseRaw": 370525,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3185,
+            "sequence": 0,
+            "currentBaseRaw": 381487,
+            "previousBaseRaw": 380269,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3193,
+            "sequence": 0,
+            "currentBaseRaw": 391231,
+            "previousBaseRaw": 390013,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3201,
+            "sequence": 0,
+            "currentBaseRaw": 400975,
+            "previousBaseRaw": 399757,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3209,
+            "sequence": 0,
+            "currentBaseRaw": 410719,
+            "previousBaseRaw": 409501,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3217,
+            "sequence": 0,
+            "currentBaseRaw": 420463,
+            "previousBaseRaw": 419245,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3225,
+            "sequence": 0,
+            "currentBaseRaw": 430207,
+            "previousBaseRaw": 428989,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3233,
+            "sequence": 0,
+            "currentBaseRaw": 439951,
+            "previousBaseRaw": 438733,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3241,
+            "sequence": 0,
+            "currentBaseRaw": 449695,
+            "previousBaseRaw": 448477,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3249,
+            "sequence": 0,
+            "currentBaseRaw": 459439,
+            "previousBaseRaw": 458221,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3257,
+            "sequence": 0,
+            "currentBaseRaw": 469183,
+            "previousBaseRaw": 467965,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3265,
+            "sequence": 0,
+            "currentBaseRaw": 478927,
+            "previousBaseRaw": 477709,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3528,
+            "sequence": 1,
+            "currentBaseRaw": 233060,
+            "previousBaseRaw": 231842,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3536,
+            "sequence": 1,
+            "currentBaseRaw": 242804,
+            "previousBaseRaw": 241586,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3544,
+            "sequence": 1,
+            "currentBaseRaw": 252548,
+            "previousBaseRaw": 251330,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3552,
+            "sequence": 1,
+            "currentBaseRaw": 262292,
+            "previousBaseRaw": 261074,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3664,
+            "sequence": 1,
+            "currentBaseRaw": 398708,
+            "previousBaseRaw": 397490,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3672,
+            "sequence": 1,
+            "currentBaseRaw": 408452,
+            "previousBaseRaw": 407234,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3680,
+            "sequence": 1,
+            "currentBaseRaw": 418196,
+            "previousBaseRaw": 416978,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3688,
+            "sequence": 1,
+            "currentBaseRaw": 427940,
+            "previousBaseRaw": 426722,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3696,
+            "sequence": 1,
+            "currentBaseRaw": 437684,
+            "previousBaseRaw": 436466,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3784,
+            "sequence": 1,
+            "currentBaseRaw": 20709,
+            "previousBaseRaw": 19491,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3800,
+            "sequence": 1,
+            "currentBaseRaw": 40197,
+            "previousBaseRaw": 38979,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3808,
+            "sequence": 1,
+            "currentBaseRaw": 49941,
+            "previousBaseRaw": 48723,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3816,
+            "sequence": 1,
+            "currentBaseRaw": 59685,
+            "previousBaseRaw": 58467,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3824,
+            "sequence": 1,
+            "currentBaseRaw": 69429,
+            "previousBaseRaw": 68211,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3832,
+            "sequence": 1,
+            "currentBaseRaw": 79173,
+            "previousBaseRaw": 77955,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3840,
+            "sequence": 1,
+            "currentBaseRaw": 88917,
+            "previousBaseRaw": 87699,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3848,
+            "sequence": 1,
+            "currentBaseRaw": 98661,
+            "previousBaseRaw": 97443,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3856,
+            "sequence": 1,
+            "currentBaseRaw": 108405,
+            "previousBaseRaw": 107187,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3864,
+            "sequence": 1,
+            "currentBaseRaw": 118149,
+            "previousBaseRaw": 116931,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3872,
+            "sequence": 1,
+            "currentBaseRaw": 127893,
+            "previousBaseRaw": 126675,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3882,
+            "sequence": 1,
+            "currentBaseRaw": 140073,
+            "previousBaseRaw": 138855,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3890,
+            "sequence": 1,
+            "currentBaseRaw": 149817,
+            "previousBaseRaw": 148599,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3898,
+            "sequence": 1,
+            "currentBaseRaw": 159561,
+            "previousBaseRaw": 158343,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3906,
+            "sequence": 1,
+            "currentBaseRaw": 169305,
+            "previousBaseRaw": 168087,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3914,
+            "sequence": 1,
+            "currentBaseRaw": 179049,
+            "previousBaseRaw": 177831,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3922,
+            "sequence": 1,
+            "currentBaseRaw": 188793,
+            "previousBaseRaw": 187575,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3930,
+            "sequence": 1,
+            "currentBaseRaw": 198537,
+            "previousBaseRaw": 197319,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3952,
+            "sequence": 1,
+            "currentBaseRaw": 225333,
+            "previousBaseRaw": 224115,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3960,
+            "sequence": 1,
+            "currentBaseRaw": 235077,
+            "previousBaseRaw": 233859,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3968,
+            "sequence": 1,
+            "currentBaseRaw": 244821,
+            "previousBaseRaw": 243603,
+            "matchingDrawRecords": 4
+          }
+        ]
+      },
+      "hair": {
+        "observationCount": 91,
+        "minimumRequired": 40,
+        "perSequence": [
+          44,
+          47
+        ],
+        "firstFrame": 2833,
+        "lastFrame": 3968,
+        "observations": [
+          {
+            "frame": 2833,
+            "sequence": 0,
+            "currentBaseRaw": 475758,
+            "previousBaseRaw": 474540,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 2841,
+            "sequence": 0,
+            "currentBaseRaw": 485502,
+            "previousBaseRaw": 484284,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 2849,
+            "sequence": 0,
+            "currentBaseRaw": 495246,
+            "previousBaseRaw": 494028,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 2857,
+            "sequence": 0,
+            "currentBaseRaw": 504990,
+            "previousBaseRaw": 503772,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2865,
+            "sequence": 0,
+            "currentBaseRaw": 514734,
+            "previousBaseRaw": 513516,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 2873,
+            "sequence": 0,
+            "currentBaseRaw": 524478,
+            "previousBaseRaw": 523260,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2881,
+            "sequence": 0,
+            "currentBaseRaw": 10069,
+            "previousBaseRaw": 8851,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2889,
+            "sequence": 0,
+            "currentBaseRaw": 19813,
+            "previousBaseRaw": 18595,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2897,
+            "sequence": 0,
+            "currentBaseRaw": 29557,
+            "previousBaseRaw": 28339,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2905,
+            "sequence": 0,
+            "currentBaseRaw": 39301,
+            "previousBaseRaw": 38083,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 2913,
+            "sequence": 0,
+            "currentBaseRaw": 49045,
+            "previousBaseRaw": 47827,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 2921,
+            "sequence": 0,
+            "currentBaseRaw": 58789,
+            "previousBaseRaw": 57571,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 2929,
+            "sequence": 0,
+            "currentBaseRaw": 68533,
+            "previousBaseRaw": 67315,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2937,
+            "sequence": 0,
+            "currentBaseRaw": 78277,
+            "previousBaseRaw": 77059,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2945,
+            "sequence": 0,
+            "currentBaseRaw": 88021,
+            "previousBaseRaw": 86803,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2953,
+            "sequence": 0,
+            "currentBaseRaw": 97765,
+            "previousBaseRaw": 96547,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 2961,
+            "sequence": 0,
+            "currentBaseRaw": 107509,
+            "previousBaseRaw": 106291,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 2969,
+            "sequence": 0,
+            "currentBaseRaw": 117253,
+            "previousBaseRaw": 116035,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 2977,
+            "sequence": 0,
+            "currentBaseRaw": 126997,
+            "previousBaseRaw": 125779,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 2985,
+            "sequence": 0,
+            "currentBaseRaw": 136741,
+            "previousBaseRaw": 135523,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3081,
+            "sequence": 0,
+            "currentBaseRaw": 253669,
+            "previousBaseRaw": 252451,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3089,
+            "sequence": 0,
+            "currentBaseRaw": 263413,
+            "previousBaseRaw": 262195,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3097,
+            "sequence": 0,
+            "currentBaseRaw": 273157,
+            "previousBaseRaw": 271939,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3105,
+            "sequence": 0,
+            "currentBaseRaw": 282901,
+            "previousBaseRaw": 281683,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3113,
+            "sequence": 0,
+            "currentBaseRaw": 292645,
+            "previousBaseRaw": 291427,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3121,
+            "sequence": 0,
+            "currentBaseRaw": 302389,
+            "previousBaseRaw": 301171,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3129,
+            "sequence": 0,
+            "currentBaseRaw": 312133,
+            "previousBaseRaw": 310915,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3137,
+            "sequence": 0,
+            "currentBaseRaw": 321877,
+            "previousBaseRaw": 320659,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3145,
+            "sequence": 0,
+            "currentBaseRaw": 331621,
+            "previousBaseRaw": 330403,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3153,
+            "sequence": 0,
+            "currentBaseRaw": 341365,
+            "previousBaseRaw": 340147,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3161,
+            "sequence": 0,
+            "currentBaseRaw": 351109,
+            "previousBaseRaw": 349891,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3169,
+            "sequence": 0,
+            "currentBaseRaw": 360853,
+            "previousBaseRaw": 359635,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3177,
+            "sequence": 0,
+            "currentBaseRaw": 370597,
+            "previousBaseRaw": 369379,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3185,
+            "sequence": 0,
+            "currentBaseRaw": 380341,
+            "previousBaseRaw": 379123,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3193,
+            "sequence": 0,
+            "currentBaseRaw": 390085,
+            "previousBaseRaw": 388867,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3201,
+            "sequence": 0,
+            "currentBaseRaw": 399829,
+            "previousBaseRaw": 398611,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3209,
+            "sequence": 0,
+            "currentBaseRaw": 409573,
+            "previousBaseRaw": 408355,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3217,
+            "sequence": 0,
+            "currentBaseRaw": 419317,
+            "previousBaseRaw": 418099,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3225,
+            "sequence": 0,
+            "currentBaseRaw": 429061,
+            "previousBaseRaw": 427843,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3233,
+            "sequence": 0,
+            "currentBaseRaw": 438805,
+            "previousBaseRaw": 437587,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3241,
+            "sequence": 0,
+            "currentBaseRaw": 448549,
+            "previousBaseRaw": 447331,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3249,
+            "sequence": 0,
+            "currentBaseRaw": 458293,
+            "previousBaseRaw": 457075,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3257,
+            "sequence": 0,
+            "currentBaseRaw": 468037,
+            "previousBaseRaw": 466819,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3265,
+            "sequence": 0,
+            "currentBaseRaw": 477781,
+            "previousBaseRaw": 476563,
+            "matchingDrawRecords": 7
+          },
+          {
+            "frame": 3528,
+            "sequence": 1,
+            "currentBaseRaw": 233294,
+            "previousBaseRaw": 232076,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3536,
+            "sequence": 1,
+            "currentBaseRaw": 243038,
+            "previousBaseRaw": 241820,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3544,
+            "sequence": 1,
+            "currentBaseRaw": 252782,
+            "previousBaseRaw": 251564,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3552,
+            "sequence": 1,
+            "currentBaseRaw": 262526,
+            "previousBaseRaw": 261308,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3560,
+            "sequence": 1,
+            "currentBaseRaw": 272270,
+            "previousBaseRaw": 271052,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3568,
+            "sequence": 1,
+            "currentBaseRaw": 282014,
+            "previousBaseRaw": 280796,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3576,
+            "sequence": 1,
+            "currentBaseRaw": 291758,
+            "previousBaseRaw": 290540,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3584,
+            "sequence": 1,
+            "currentBaseRaw": 301502,
+            "previousBaseRaw": 300284,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3592,
+            "sequence": 1,
+            "currentBaseRaw": 311246,
+            "previousBaseRaw": 310028,
+            "matchingDrawRecords": 4
+          },
+          {
+            "frame": 3600,
+            "sequence": 1,
+            "currentBaseRaw": 320990,
+            "previousBaseRaw": 319772,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3608,
+            "sequence": 1,
+            "currentBaseRaw": 330734,
+            "previousBaseRaw": 329516,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3616,
+            "sequence": 1,
+            "currentBaseRaw": 340478,
+            "previousBaseRaw": 339260,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3624,
+            "sequence": 1,
+            "currentBaseRaw": 350222,
+            "previousBaseRaw": 349004,
+            "matchingDrawRecords": 5
+          },
+          {
+            "frame": 3632,
+            "sequence": 1,
+            "currentBaseRaw": 359966,
+            "previousBaseRaw": 358748,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3640,
+            "sequence": 1,
+            "currentBaseRaw": 369710,
+            "previousBaseRaw": 368492,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3648,
+            "sequence": 1,
+            "currentBaseRaw": 379454,
+            "previousBaseRaw": 378236,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3656,
+            "sequence": 1,
+            "currentBaseRaw": 389198,
+            "previousBaseRaw": 387980,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3664,
+            "sequence": 1,
+            "currentBaseRaw": 398942,
+            "previousBaseRaw": 397724,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3672,
+            "sequence": 1,
+            "currentBaseRaw": 408686,
+            "previousBaseRaw": 407468,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3680,
+            "sequence": 1,
+            "currentBaseRaw": 418430,
+            "previousBaseRaw": 417212,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3688,
+            "sequence": 1,
+            "currentBaseRaw": 428174,
+            "previousBaseRaw": 426956,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3696,
+            "sequence": 1,
+            "currentBaseRaw": 437918,
+            "previousBaseRaw": 436700,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3704,
+            "sequence": 1,
+            "currentBaseRaw": 447662,
+            "previousBaseRaw": 446444,
+            "matchingDrawRecords": 2
+          },
+          {
+            "frame": 3728,
+            "sequence": 1,
+            "currentBaseRaw": 476894,
+            "previousBaseRaw": 475676,
+            "matchingDrawRecords": 3
+          },
+          {
+            "frame": 3776,
+            "sequence": 1,
+            "currentBaseRaw": 11199,
+            "previousBaseRaw": 9981,
+            "matchingDrawRecords": 1
+          },
+          {
+            "frame": 3784,
+            "sequence": 1,
+            "currentBaseRaw": 20943,
+            "previousBaseRaw": 19725,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3792,
+            "sequence": 1,
+            "currentBaseRaw": 30687,
+            "previousBaseRaw": 29469,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3800,
+            "sequence": 1,
+            "currentBaseRaw": 40431,
+            "previousBaseRaw": 39213,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3808,
+            "sequence": 1,
+            "currentBaseRaw": 50175,
+            "previousBaseRaw": 48957,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3816,
+            "sequence": 1,
+            "currentBaseRaw": 59919,
+            "previousBaseRaw": 58701,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3824,
+            "sequence": 1,
+            "currentBaseRaw": 69663,
+            "previousBaseRaw": 68445,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3832,
+            "sequence": 1,
+            "currentBaseRaw": 79407,
+            "previousBaseRaw": 78189,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3840,
+            "sequence": 1,
+            "currentBaseRaw": 89151,
+            "previousBaseRaw": 87933,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3848,
+            "sequence": 1,
+            "currentBaseRaw": 98895,
+            "previousBaseRaw": 97677,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3856,
+            "sequence": 1,
+            "currentBaseRaw": 108639,
+            "previousBaseRaw": 107421,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3864,
+            "sequence": 1,
+            "currentBaseRaw": 118383,
+            "previousBaseRaw": 117165,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3872,
+            "sequence": 1,
+            "currentBaseRaw": 128127,
+            "previousBaseRaw": 126909,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3882,
+            "sequence": 1,
+            "currentBaseRaw": 140307,
+            "previousBaseRaw": 139089,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3890,
+            "sequence": 1,
+            "currentBaseRaw": 150051,
+            "previousBaseRaw": 148833,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3898,
+            "sequence": 1,
+            "currentBaseRaw": 159795,
+            "previousBaseRaw": 158577,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3906,
+            "sequence": 1,
+            "currentBaseRaw": 169539,
+            "previousBaseRaw": 168321,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3914,
+            "sequence": 1,
+            "currentBaseRaw": 179283,
+            "previousBaseRaw": 178065,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3922,
+            "sequence": 1,
+            "currentBaseRaw": 189027,
+            "previousBaseRaw": 187809,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3930,
+            "sequence": 1,
+            "currentBaseRaw": 198771,
+            "previousBaseRaw": 197553,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3952,
+            "sequence": 1,
+            "currentBaseRaw": 225567,
+            "previousBaseRaw": 224349,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3960,
+            "sequence": 1,
+            "currentBaseRaw": 235311,
+            "previousBaseRaw": 234093,
+            "matchingDrawRecords": 6
+          },
+          {
+            "frame": 3968,
+            "sequence": 1,
+            "currentBaseRaw": 245055,
+            "previousBaseRaw": 243837,
+            "matchingDrawRecords": 6
+          }
+        ]
+      }
+    },
+    "errors": []
+  },
+  "errors": [
+    "M29/M30: resource selection truncated in 110 frames"
+  ]
+}
