@@ -171,6 +171,14 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredVFXSoftDepthReady");
         private static readonly int RecoveredPostUberWorldUiReadyId =
             Shader.PropertyToID("_EndfieldRecoveredPostUberWorldUiReady");
+        private static readonly int NonJitteredViewNoTransProjMatrixId =
+            Shader.PropertyToID("_NonJitteredViewNoTransProjMatrix");
+        private static readonly int WorldSpaceCameraPosInternalId =
+            Shader.PropertyToID("_WorldSpaceCameraPos_Internal");
+        private static readonly int RenderPathInjectedId =
+            Shader.PropertyToID("_RenderPathInjected");
+        private static readonly int HGFlipXId = Shader.PropertyToID("_HGFlipX");
+        private static readonly int HGFlipYId = Shader.PropertyToID("_HGFlipY");
         private static readonly int RecoveredCameraDepthTextureId =
             Shader.PropertyToID("_EndfieldRecoveredCameraDepthTexture");
         private static readonly int RecoveredCameraDepthTextureTexelSizeId =
@@ -328,6 +336,11 @@ namespace EndfieldGraphShaderLab
         private const float RecoveredBloomSerializedThreshold = 0.75f;
         private const float RecoveredBloomSerializedIntensity = 0.45f;
         private const float RecoveredBloomSerializedScatter = 0.8f;
+        // Public-Unity HLSL receives a different pre-Uber temporal source than
+        // retail's Streamline output. A matched peak sweep against clean frame
+        // 269 selects one quarter of the source intensity for this fallback;
+        // the native exact path below still receives the unscaled retail state.
+        private const float EndminfCompatibilityUberIntensityScale = 0.25f;
         private const float RecoveredGachaBloomSerializedThreshold = 0.95f;
         private const float RecoveredGachaBloomSerializedIntensity = 0.5f;
         private const float RecoveredGachaBloomSerializedScatter = 0.4f;
@@ -1261,6 +1274,9 @@ namespace EndfieldGraphShaderLab
             // for ordinary cameras and every failed/degraded route.
             commandBuffer.SetGlobalFloat(RecoveredVFXSoftDepthReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(RecoveredPostUberWorldUiReadyId, 0.0f);
+            commandBuffer.SetGlobalFloat(RenderPathInjectedId, 0.0f);
+            commandBuffer.SetGlobalFloat(HGFlipXId, 0.0f);
+            commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);
             commandBuffer.SetGlobalFloat(
                 EndfieldRecoveredSceneMVCompositor.SceneMVMRTReadyId,
                 0.0f);
@@ -3177,8 +3193,10 @@ namespace EndfieldGraphShaderLab
                 EndminfVisualCompatibilityParamsId,
                 hasEndminfPost
                     ? new Vector4(
-                        endminfPost.radialIntensity,
-                        endminfPost.chromaticIntensity,
+                        endminfPost.radialIntensity *
+                            EndminfCompatibilityUberIntensityScale,
+                        endminfPost.chromaticIntensity *
+                            EndminfCompatibilityUberIntensityScale,
                         endminfPost.mode,
                         endminfPost.effectivePower)
                     : Vector4.zero);
@@ -3463,6 +3481,30 @@ namespace EndfieldGraphShaderLab
                 SceneDepthTexelSizeId,
                 new Vector4(1.0f / width, 1.0f / height, width, height));
             commandBuffer.SetGlobalFloat(RecoveredPostUberWorldUiReadyId, 1.0f);
+            Matrix4x4 viewNoTranslation = camera.worldToCameraMatrix;
+            viewNoTranslation.m03 = 0.0f;
+            viewNoTranslation.m13 = 0.0f;
+            viewNoTranslation.m23 = 0.0f;
+            viewNoTranslation.m33 = 1.0f;
+            Matrix4x4 projection = GL.GetGPUProjectionMatrix(
+                camera.nonJitteredProjectionMatrix,
+                true);
+            commandBuffer.SetGlobalMatrix(
+                NonJitteredViewNoTransProjMatrixId,
+                projection * viewNoTranslation);
+            Vector3 cameraPosition = camera.transform.position;
+            commandBuffer.SetGlobalVector(
+                WorldSpaceCameraPosInternalId,
+                new Vector4(
+                    cameraPosition.x,
+                    cameraPosition.y,
+                    cameraPosition.z,
+                    1.0f));
+            commandBuffer.SetGlobalFloat(RenderPathInjectedId, 1.0f);
+            commandBuffer.SetGlobalFloat(HGFlipXId, 0.0f);
+            commandBuffer.SetGlobalFloat(
+                HGFlipYId,
+                camera.targetTexture == null ? 1.0f : 0.0f);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
@@ -3473,6 +3515,16 @@ namespace EndfieldGraphShaderLab
                 RenderQueueRange.transparent,
                 SortingCriteria.CommonTransparent,
                 1 << EndfieldRecoveredCharInfoBackgroundPortrait.SourceUiLayer);
+
+            commandBuffer = new CommandBuffer
+            {
+                name = "Reset recovered post-Uber CharInfo world UI globals"
+            };
+            commandBuffer.SetGlobalFloat(RenderPathInjectedId, 0.0f);
+            commandBuffer.SetGlobalFloat(HGFlipXId, 0.0f);
+            commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);
+            context.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Release();
 
             if (!loggedRecoveredPostUberWorldUi)
             {

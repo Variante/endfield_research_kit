@@ -36,6 +36,10 @@ namespace EndfieldGraphShaderLab
             new Vector3(0.0f, 0.0f, 0.8f);
         private static readonly Vector3 SettledCardAnchoredPosition =
             new Vector3(-300.0f, 50.0f, 0.0f);
+        private static readonly AnimationCurve CardAnchoredXCurve =
+            BuildCardAnchoredXCurve();
+        private static readonly AnimationCurve CardAlphaCurve =
+            BuildCardAlphaCurve();
 
         private static readonly Vector3 WulfaLookAt =
             new Vector3(0.022f, 1.19f, 0.0f);
@@ -89,6 +93,9 @@ namespace EndfieldGraphShaderLab
         public string actorName = "Wulfa";
 
         private MaterialPropertyBlock propertyBlock;
+        private EndfieldOverviewPlayback overviewPlayback;
+        private int observedPlaybackGeneration = int.MinValue;
+        private float portraitAnimationSeconds;
         private bool loggedActivation;
         private bool loggedFailure;
 
@@ -106,6 +113,7 @@ namespace EndfieldGraphShaderLab
             actorName = configuredActorName;
             if (actorChanged)
             {
+                ResetAnimationClock();
                 loggedActivation = false;
                 loggedFailure = false;
             }
@@ -129,6 +137,7 @@ namespace EndfieldGraphShaderLab
             }
             if (actorChanged)
             {
+                ResetAnimationClock();
                 loggedActivation = false;
                 loggedFailure = false;
             }
@@ -210,6 +219,12 @@ namespace EndfieldGraphShaderLab
             Vector3 overviewImageOffset = hasProfile
                 ? presentationProfile.overviewImageOffset
                 : Vector3.zero;
+            float animationSeconds = ResolveAnimationSeconds(resolvedActor);
+            Vector3 cardAnchoredPosition = new Vector3(
+                CardAnchoredXCurve.Evaluate(animationSeconds),
+                SettledCardAnchoredPosition.y,
+                0.0f);
+            float animationAlpha = CardAlphaCurve.Evaluate(animationSeconds);
 
             // CharInfoCamAttachment is aligned with lookat_overview, assigned
             // the raw vcam_overview local rotation, and reparented under the
@@ -218,7 +233,7 @@ namespace EndfieldGraphShaderLab
             // anchoredPosition=(-300,50), size=900x900.
             Vector3 localCardCenter = lookAt + overviewRotation *
                 (overviewImageOffset + CanvasLocalPosition +
-                 SettledCardAnchoredPosition * SourceCanvasScale);
+                 cardAnchoredPosition * SourceCanvasScale);
             transform.position = resolvedActor.TransformPoint(localCardCenter);
             transform.rotation = resolvedActor.rotation * overviewRotation;
             transform.localScale = Vector3.Scale(
@@ -233,7 +248,7 @@ namespace EndfieldGraphShaderLab
             propertyBlock.SetTexture("_MainTex", texture);
             propertyBlock.SetColor(
                 "_TintColor",
-                new Color(1.0f, 1.0f, 1.0f, SettledAnimationAlpha));
+                new Color(1.0f, 1.0f, 1.0f, animationAlpha));
             propertyBlock.SetFloat("_DepthOffset", SourceDepthOffset);
             portraitRenderer.SetPropertyBlock(propertyBlock);
             portraitRenderer.enabled = true;
@@ -248,7 +263,9 @@ namespace EndfieldGraphShaderLab
                     $"overviewImgOffset=({overviewImageOffset.x:R},{overviewImageOffset.y:R},{overviewImageOffset.z:R}), " +
                     "card=900x900, canvasScale=0.0016, " +
                     "simpleSpriteTightQuad=actor-specific, " +
-                    "settledAlpha=90/255, depthOffset=0.011, " +
+                    "sourceAutoplay=charinfobgdeco_in, " +
+                    "anchoredX=-200..-300/3.5s, alpha=0..90/255/1s, " +
+                    "depthOffset=0.011, " +
                     "blend=One/OneMinusSrcAlpha, " +
                     "sceneDepthClip=primary-full-scene-post-Uber. " +
                     "The distinct retail paired output-depth attachment remains omitted; " +
@@ -278,6 +295,94 @@ namespace EndfieldGraphShaderLab
                 actorName = CanonicalActorName(fallback.name, actorName);
             }
             return fallback;
+        }
+
+        private float ResolveAnimationSeconds(Transform resolvedActor)
+        {
+            if (!Application.isPlaying)
+                return 3.5f;
+
+            EndfieldOverviewPlayback resolvedOverview = resolvedActor == null
+                ? null
+                : resolvedActor.GetComponentInChildren<EndfieldOverviewPlayback>(true);
+            if (resolvedOverview != overviewPlayback)
+            {
+                overviewPlayback = resolvedOverview;
+                observedPlaybackGeneration = int.MinValue;
+                portraitAnimationSeconds = 0.0f;
+            }
+            if (overviewPlayback == null ||
+                !overviewPlayback.AutomaticOverviewPlaybackActive)
+            {
+                return 3.5f;
+            }
+
+            int generation = overviewPlayback.PlaybackGeneration;
+            bool startState = overviewPlayback.TryGetAutomaticOverviewStartSeconds(
+                out float bodyClipSeconds);
+            if (generation != observedPlaybackGeneration)
+            {
+                observedPlaybackGeneration = generation;
+                portraitAnimationSeconds = startState
+                    ? Mathf.Max(0.0f, bodyClipSeconds)
+                    : 0.0f;
+            }
+            else if (startState)
+            {
+                portraitAnimationSeconds = Mathf.Max(0.0f, bodyClipSeconds);
+            }
+            else
+            {
+                portraitAnimationSeconds += Mathf.Max(0.0f, Time.deltaTime);
+            }
+            return portraitAnimationSeconds;
+        }
+
+        private void ResetAnimationClock()
+        {
+            overviewPlayback = null;
+            observedPlaybackGeneration = int.MinValue;
+            portraitAnimationSeconds = 0.0f;
+        }
+
+        private static AnimationCurve BuildCardAnchoredXCurve()
+        {
+            Keyframe start = new Keyframe(
+                0.0f,
+                -200.0f,
+                2.2694368f,
+                2.2694368f,
+                1.0f / 3.0f,
+                0.04842146f)
+            {
+                weightedMode = WeightedMode.Both
+            };
+            Keyframe end = new Keyframe(
+                3.5f,
+                -300.0f,
+                0.0f,
+                0.0f,
+                1.0f,
+                1.0f / 3.0f)
+            {
+                weightedMode = WeightedMode.Both
+            };
+            return new AnimationCurve(start, end)
+            {
+                preWrapMode = WrapMode.ClampForever,
+                postWrapMode = WrapMode.ClampForever
+            };
+        }
+
+        private static AnimationCurve BuildCardAlphaCurve()
+        {
+            return new AnimationCurve(
+                new Keyframe(0.0f, 0.0f, 0.0f, 0.0f),
+                new Keyframe(1.0f, SettledAnimationAlpha, 0.0f, 0.0f))
+            {
+                preWrapMode = WrapMode.ClampForever,
+                postWrapMode = WrapMode.ClampForever
+            };
         }
 
         private static Transform FindActiveRecoveryRigTransform()
@@ -372,6 +477,7 @@ namespace EndfieldGraphShaderLab
 
         private void OnEnable()
         {
+            ResetAnimationClock();
             ApplyRecoveredState();
         }
 

@@ -24,6 +24,9 @@ SCRATCH_CONTRACT = (
 )
 PIPELINE = ASSET_ROOT / "Runtime/Rendering/HGCompatRenderPipeline.cs"
 OWNER = ASSET_ROOT / "Runtime/Rendering/EndfieldRecoveredPreGBufferDepthOwner.cs"
+REFERENCE_BACKDROP_SHADER = (
+    ASSET_ROOT / "Shaders/ReferenceBackdrop.shader"
+)
 GPU_VERIFIER = (
     ASSET_ROOT
     / "Editor/CharacterRecovery"
@@ -211,6 +214,7 @@ def verify_native_contract(contract: dict) -> None:
 
 def verify_implementation() -> None:
     owner = OWNER.read_text(encoding="utf-8")
+    reference_backdrop = REFERENCE_BACKDROP_SHADER.read_text(encoding="utf-8")
     pipeline = PIPELINE.read_text(encoding="utf-8")
     setup = SETUP.read_text(encoding="utf-8")
     gpu_verifier = GPU_VERIFIER.read_text(encoding="utf-8")
@@ -221,7 +225,7 @@ def verify_implementation() -> None:
         'CharacterPassName = "RECOVERED_PREGBUFFER_DIAGNOSTIC"',
         'SourceZTestPropertyName = "_RecoveredSourceZTest"',
         "material.renderQueue <= (int)RenderQueue.GeometryLast",
-        "SystemInfo.supportedRenderTargetCount < 2",
+        "SystemInfo.supportedRenderTargetCount < 5",
         "GraphicsFormat.A2B10G10R10_UNormPack32",
         "commandBuffer.SetRenderTarget(mrt, canonicalDepthTarget)",
         "genericDepthDraws",
@@ -230,11 +234,23 @@ def verify_implementation() -> None:
         "material.SetFloat(ZTestId, (float)CompareFunction.LessEqual)",
         "material.SetFloat(ZTestId, state.sourceZTest)",
         "context.ExecuteCommandBuffer(commandBuffer)",
-        "commandBuffer.ReleaseTemporaryRT(GBufferAId)",
-        "commandBuffer.ReleaseTemporaryRT(GBufferBId)",
+        "ReleaseGBuffer(ref gBufferA)",
+        "ReleaseGBuffer(ref gBufferB)",
         "source Equal remains disabled",
+        'ReferenceBackdropShaderName =\n            "Endfield/CharacterRecovery/ReferenceBackdrop"',
     ):
         require(token in owner, f"depth-owner implementation lost token: {token}")
+    require(
+        "ZWrite Off" in reference_backdrop,
+        "ReferenceBackdrop no longer proves its no-depth contract",
+    )
+    collect = owner.find("private bool TryCollectDraws(")
+    backdrop_exclusion = owner.find("ReferenceBackdropShaderName", collect)
+    generic_add = owner.find("genericDepthDraws.Add(", backdrop_exclusion)
+    require(
+        collect >= 0 and collect < backdrop_exclusion < generic_add,
+        "ZWrite-Off ReferenceBackdrop must be excluded before generic depth admission",
+    )
     require_in_order(
         owner,
         [

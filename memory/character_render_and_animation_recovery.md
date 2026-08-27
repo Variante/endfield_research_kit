@@ -1787,6 +1787,126 @@ scene depth and must never clear or replace that owner. Uber depth testing is
 disabled, so the immediate pixel delta may be zero; the correction closes the
 retail render-pass binding and later-draw continuity contract.
 
+The two useful skin-palette rows in session `20260827T081152Z` are now joined
+to the clean no-frame-generation sequence by independent backbuffer edge and
+74-bone pose matches. Capture frames 1845/2578 map to clean frames 257/273 and
+playback source frames 369/385 within a one-frame anchor boundary. They carry
+73/74 and 74/74 replay bones respectively and override older-run dynamics only
+at those two phases. The dense replay contract is schema v4; source frame 385
+no longer interpolates either cloth-04 owner. This improves same-reference
+hair/cape evidence without treating the capture's cyan final composite as a
+color oracle.
+
+At the matched crystal peak, the public-Unity HLSL Uber fallback was the source
+of the broad RGB echoes: a clean-frame-269 sweep over exact source parameters
+selected `0.25` of the radial/chromatic intensity for that fallback, improving
+full-frame PSNR from 17.5342 to 17.5831 dB once the recovered smoke is also
+present. The native exact runtime continues to receive the unscaled retail
+state. This is a public-Unity pre-Uber temporal-source correction, not authority
+to alter the recovered curve units. The remaining dominant local peak shape
+error was the oversized `M_fx_endminm_gfx_17` / `baoshan` bright wedge. The
+installed no-keyword BASE fragment samples MainTex through static
+`LinearClamp`, while the recovered shader had used Unity's paired sampler from
+the source Repeat Texture2D. Exact-owner diagnostics showed continuous UVs,
+uniform vertex alpha, and a smooth radial texture; switching only the BASE
+sampling ABI to static LinearClamp removes the repeated out-of-range radial
+carrier while preserving the authored `7.4` intensity, premultiplied zero-alpha
+output, blend state, queue, curves, and texture. The matched peak phase sweep
+now reaches 19.5151 dB against clean reference frame 269, versus 17.5831 dB
+before this correction. The BaseV2 admission verifier now fails closed if this
+static sampler boundary regresses. A source-identity-scoped A/B also rejects
+Unity procedural particle instancing as the cause: disabling it for `baoshan`
+left the former wedge visually unchanged and moved matched-peak PSNR by only
++0.007 dB, so the adaptation remains reverted.
+
+The static-LinearClamp M17 correction also survives the full clean-reference
+sequence rather than only the selected peak. Across all 554 mapped frames
+(clean reference = Unity frame + 4), aggregate RGB PSNR improves from
+18.0352384 to 18.0672940 dB, with a mean per-frame gain of 0.033 dB. This
+confirms a real but deliberately localized transport fix; it does not close the
+remaining M31 shell, exact Uber, gas shape, or particle-composition gaps.
+
+M31's missing shell is not safely correctable with particle pre-roll. A narrow
+two-tick diagnostic moved `overview_02/all/guangyun (6)` from alpha 10/255 to
+108/255 at the matched frame, but M31-only output remained a broad brown haze;
+the timing adaptation was reverted. A separate source-equivalent
+`vertInstancingColor(input.color)` diagnostic changed the broad haze but did
+not recover the retail shell, so that shader adaptation was also reverted. Its
+`_USE_SOFTBLEND` path uses a 0.001 distance and still lacks the captured
+33,177,600-byte retail scene-depth input, so exact depth/edge reconstruction
+remains the owner of this gap.
+
+The missing peak gas is source-identified `overview_02/all/smoke (2)` using
+`M_fx_endminm_gfx_20`. Its authored 4.46-second delay and six-particle payload
+are retained, but Unity published it two render ticks after the matched retail
+frame. A narrow owner/material/parent gate now presentation-advances only that
+particle system by `2/60` seconds and resumes playback after simulation. A
+focused D3D11 report proves all six particles alive and playing at post time
+4.4333 (clean frame 269); crystals, stones, rays, and every other particle
+remain on the selection/body clock.
+
+The CharInfo background now uses the exact `S_GridFar`/`M_GridFar` source route
+over the neutral wall with its 1,012-vertex/1,518-index mesh, layer 13, queue
+2950, `ForwardOnly` pass, exact transform, BC7-sRGB `T_GridLineFar` texture, and
+static `sampler_LinearClamp`. The importer restores the source submesh AABB as
+well as the overall mesh bounds; validation fails if they diverge. Bounds and
+sampler corrections alone did not admit the draw, nor did an opaque-fragment or
+direct `DrawRenderer` diagnostic with source `ZTest LEqual`. Changing only the
+diagnostic depth test to Always exposed the full perspective grid, proving
+depth occlusion. The recovered pre-GBuffer owner had been forcing every generic
+opaque-queue renderer through its depth-only material and therefore wrote the
+`Endfield/CharacterRecovery/ReferenceBackdrop` even though that shader declares
+`ZWrite Off`. Excluding that exact shader from generic depth admission removes
+one depth draw and makes GridFar visible with normal character occlusion. Keep
+the source grid; remaining strength/alignment differences belong to final Uber,
+camera, and portrait composition rather than procedural replacement geometry.
+
+Portrait alignment is likewise no longer a screenshot-fitting task. Lua and
+raw RectTransform evidence confirm `CharInfoCamAttachment` at
+`lookat_overview`, the authored overview-camera rotation, centered anchors and
+pivots, canvas scale 0.0016, card size 900, settled anchored position
+`(-300,50)`, and zero Endminf `overviewImgOffset`. The exact selected D3D11
+`CLIP_SCENEDEPTH + HG_WORLD_UI` program is now extracted from Endfield blob 207;
+its vertex/pixel SHA-256 values exactly match the retained manifest
+`14b05d...e0d52` / `1ff3fa...f0546`. The vertex path transforms absolute
+object-to-world position, subtracts `_WorldSpaceCameraPos_Internal` exactly
+once when `_RenderPathInjected>0`, multiplies by the non-jittered view-without-
+translation projection from the 720-byte `_UIRenderingConstants` prefix, then
+applies destination-dependent `_HGFlipX/Y` only to clip X/Y. For an offscreen
+target both flips are zero; an unrotated D3D backbuffer uses flip Y=1. The lab
+now publishes that exact no-translation matrix/camera/flip contract only for
+the post-Uber world-UI draw and resets it afterward. `charinfobgdeco_in` also
+drives the recovered portrait from the Overview playback clock: CharTexture
+alpha rises from 0 to 90/255 over one second and anchored X moves from -200 to
+-300 over 3.5 seconds with the retained weighted tangents. Focused renders at
+0, 0.5, 1.0, 3.5, and 4.4333 seconds validate startup fade, settled placement,
+orientation, and coexistence with the source grid; any remaining bounded
+layout discrepancy must be measured against the mapped clean frames rather
+than corrected with a screenshot-only offset.
+
+The Endminf capture harness now preserves Texture2D pixel order end to end.
+`ReadPixels`/`GetPixels32` and `SetPixels32` already share bottom-left ordering;
+the former writer and reader each applied an extra vertical flip, producing
+misleading upside-down PNGs while keeping their internal frame-difference check
+self-consistent. Removing both flips yields upright 4.4333-second peak and
+7-second settled-loop captures with valid retained secondary replay, source
+GridFar, portrait, and no foreground UI. This is a validation-output correction,
+not a render-pipeline or camera adaptation.
+
+The opening camera effect is a short horizontal slice/fracture transition
+layered over a weaker radial/chromatic ghost, not generic distortion or square
+mosaic pixelation. Clean reference frames 4-22 bound the visible body-relative
+phase to about 0.033-0.350 seconds (one-frame anchor uncertainty): neighboring
+hard-edged, variable-height horizontal bands preserve scene imagery while
+applying different constant X offsets, with only small cyan/red edge separation.
+The recovered final Uber has no row-displacement schedule, and the later
+`baofahengxian` additive particles begin around 2.4 seconds, so neither owns
+this fracture. A source-equivalent owner still requires an opening graphics
+capture of consecutive source frames 89-112 and the scene-color resources
+before/after each full-screen draw. Until then, any implementation must remain
+a narrowly timed pre-Uber scene-color slice pass and retain the broad ghost as
+an independent weaker layer.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
@@ -1819,24 +1939,27 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Close the public-Unity Uber presentation/binding and retail temporal/upscaler
-   boundary now that the late-pulse center, combined mode, and exact kernel are
-   measured, then
-   compare the resulting background+portrait+actor/VFX 770-frame output against
-   the no-frame-generation recording with foreground UI masked out. Keep the
-   source-backed bloom/material values fixed unless new evidence supersedes
-   their current contracts.
-2. Re-audit Endminf hair/cape silhouettes after the clean-reference gyroscope
+1. Close the crystal peak in owner order: retain the exact static-LinearClamp
+   M17 `baoshan` transport and now-timed M20 gas, then import the remaining
+   128-MiB M30/M31 scene-depth and Uber draw-state capture. Then rerender the
+   complete 770-frame background+portrait+actor/VFX sequence against the clean
+   no-frame-generation recording. Keep source tint, particle, bloom, and curve
+   values fixed unless stronger evidence supersedes them.
+2. Replace the initial broad distortion with the reference horizontal-strip
+   mosaic using its recovered owner and timing. Preserve the now-admitted exact
+   `S_GridFar` route and source-animated portrait while final Uber/camera
+   composition closes their remaining strength and bounded alignment gaps.
+3. Re-audit Endminf hair/cape silhouettes after the clean-reference gyroscope
    correction and exact Uber import. The 145-sample, 74-bone draw-time retail
-   replay is bound and applied in every canonical frame, while the diagnostic
+   replay plus two clean-reference-matched capture palettes are bound, while the diagnostic
    solver is rejected because it worsens all 40 certified checkpoints. Residual
    late-loop narrowing survives at retained replay samples. Active-renderer
    weighted-bone coverage is now validated for all 74 replay transforms; next
    compare retained-sample baked meshes and GPU palettes against exact bindposes
    or obtain stronger same-initialization retail trajectory evidence. Do not
    retime the replay, enable the solver, or manually widen cloth without it.
-3. Generalize the finished Endminf path and rebuild every playable character
+4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
-4. Keep changing inventories and exhaustive validation output under
+5. Keep changing inventories and exhaustive validation output under
    `reports/assets/character_recovery/`; update this file only when the durable
    conclusion or evidence boundary changes.

@@ -119,6 +119,10 @@ def verify() -> dict[str, object]:
         "LastRecoveredEndminfPostSourceGraphicsFormat",
         "LastRecoveredEndminfBloomGraphicsFormat",
         "RecoveredEndminfPostSourceId",
+        "private const float EndminfCompatibilityUberIntensityScale = 0.25f;",
+        "endminfPost.radialIntensity *",
+        "EndminfCompatibilityUberIntensityScale",
+        "endminfPost.chromaticIntensity *",
     ), "render-pipeline packing")
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
         raise RuntimeError("retired empirical Effect-02 evaluator is still present")
@@ -155,9 +159,29 @@ def verify() -> dict[str, object]:
         "PlayRecoveredParticleSystems(instance, systems)",
         "Keep particle delays on the selection/body timeline",
         "system.Play(true)",
+        "private const float EndminfSmoke20PresentationAdvanceSeconds = 2f / 60f;",
+        'private const string EndminfSmoke20MaterialName = "M_fx_endminm_gfx_20";',
+        "if (IsEndminfSmoke20(instance, system))",
+        "EndminfSmoke20PresentationAdvanceSeconds,",
+        "system.Play(false);",
+        '"P_fxui_endminm003_overview_02"',
+        '"smoke (2)"',
     ), "overview-02 split post/particle clocks")
-    if "system.Simulate(" in spawner:
-        raise RuntimeError("overview-02 particle systems regained a post-clock pre-roll")
+    if spawner.count("system.Simulate(") != 1:
+        raise RuntimeError(
+            "overview-02 must retain exactly one source-identified smoke correction"
+        )
+    smoke_gate = re.search(
+        r"if \(IsEndminfSmoke20\(instance, system\)\).*?"
+        r"system\.Simulate\(.*?EndminfSmoke20PresentationAdvanceSeconds,.*?"
+        r"system\.Play\(false\);",
+        spawner,
+        re.DOTALL,
+    )
+    if smoke_gate is None:
+        raise RuntimeError(
+            "M20 smoke correction escaped its source-identified owner gate"
+        )
 
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
@@ -194,7 +218,11 @@ def verify() -> dict[str, object]:
             "postSourceGraphicsFormat": "R16G16B16A16_SFloat",
             "bloomGraphicsFormat": "B10G11R11_UFloatPack32",
             "averageSteps": [0, 0],
-            "particleClock": "selection/body timeline; no post-owner age offset",
+            "publicUnityFallbackIntensityScale": 0.25,
+            "particleClock": (
+                "selection/body timeline; only source-identified M20 smoke is "
+                "presentation-advanced by two ticks"
+            ),
         },
         "boundary": (
             "The animated values, ordinary/far-offscreen native center packing, "

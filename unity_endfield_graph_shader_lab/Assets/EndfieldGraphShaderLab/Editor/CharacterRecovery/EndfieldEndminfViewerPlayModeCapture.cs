@@ -211,6 +211,14 @@ namespace EndfieldGraphShaderLabEditor
             public bool shadowPlaneInCameraFrustum;
             public Vector3 shadowPlaneBoundsCenter;
             public Vector3 shadowPlaneBoundsExtents;
+            public bool farGridEnabled;
+            public bool farGridActive;
+            public bool farGridInCameraFrustum;
+            public Vector3 farGridBoundsCenter;
+            public Vector3 farGridBoundsExtents;
+            public int farGridLayer;
+            public int farGridRenderQueue;
+            public int cameraCullingMask;
             public bool deferredLightDataReady;
             public bool deferredShadowDataReady;
             public bool deferredPass0InputSubsetReady;
@@ -962,6 +970,13 @@ namespace EndfieldGraphShaderLabEditor
                 GeometryUtility.TestPlanesAABB(
                     GeometryUtility.CalculateFrustumPlanes(camera),
                     shadowPlane.bounds);
+            Renderer farGrid = charInfoPresentation == null
+                ? null
+                : charInfoPresentation.farGridRenderer;
+            bool farGridInFrustum = farGrid != null &&
+                GeometryUtility.TestPlanesAABB(
+                    GeometryUtility.CalculateFrustumPlanes(camera),
+                    farGrid.bounds);
             EndfieldSecondaryDynamicsRuntime secondaryDynamics = actor
                 .GetComponent<EndfieldSecondaryDynamicsRuntime>();
             EndfieldCapturedSecondaryDynamicsReplay capturedReplay = actor
@@ -1015,6 +1030,16 @@ namespace EndfieldGraphShaderLabEditor
                 shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
                 shadowPlaneBoundsCenter = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.center,
                 shadowPlaneBoundsExtents = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.extents,
+                farGridEnabled = farGrid != null && farGrid.enabled,
+                farGridActive = farGrid != null && farGrid.gameObject.activeInHierarchy,
+                farGridInCameraFrustum = farGridInFrustum,
+                farGridBoundsCenter = farGrid == null ? Vector3.zero : farGrid.bounds.center,
+                farGridBoundsExtents = farGrid == null ? Vector3.zero : farGrid.bounds.extents,
+                farGridLayer = farGrid == null ? -1 : farGrid.gameObject.layer,
+                farGridRenderQueue = farGrid == null || farGrid.sharedMaterial == null
+                    ? -1
+                    : farGrid.sharedMaterial.renderQueue,
+                cameraCullingMask = camera == null ? 0 : camera.cullingMask,
                 deferredLightDataReady = Shader.GetGlobalFloat(
                     "_EndfieldRecoveredDeferredLightDataReady") > 0.5f,
                 deferredShadowDataReady = Shader.GetGlobalFloat(
@@ -1920,17 +1945,9 @@ namespace EndfieldGraphShaderLabEditor
         private static Color32[] Read(string path)
         {
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
-            texture.LoadImage(File.ReadAllBytes(path)); Color32[] raw = texture.GetPixels32(); UnityEngine.Object.Destroy(texture);
-            var pixels = new Color32[raw.Length];
-            for (int y = 0; y < captureHeight; y++)
-            {
-                Array.Copy(
-                    raw,
-                    y * captureWidth,
-                    pixels,
-                    (captureHeight - 1 - y) * captureWidth,
-                    captureWidth);
-            }
+            texture.LoadImage(File.ReadAllBytes(path));
+            Color32[] pixels = texture.GetPixels32();
+            UnityEngine.Object.Destroy(texture);
             return pixels;
         }
 
@@ -1994,23 +2011,19 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void Write(string path, Color32[] pixels)
         {
-            var flipped = new Color32[pixels.Length];
-            for (int y = 0; y < captureHeight; y++)
-            {
-                Array.Copy(
-                    pixels,
-                    y * captureWidth,
-                    flipped,
-                    (captureHeight - 1 - y) * captureWidth,
-                    captureWidth);
-            }
             var texture = new Texture2D(
                 captureWidth,
                 captureHeight,
                 TextureFormat.RGBA32,
                 false,
                 false);
-            texture.SetPixels32(flipped); texture.Apply(); File.WriteAllBytes(path, texture.EncodeToPNG()); UnityEngine.Object.Destroy(texture);
+            // ReadPixels/GetPixels32 and SetPixels32 share Texture2D's
+            // bottom-left pixel order. Flipping here produced vertically
+            // inverted PNGs and required a second compensating flip in Read.
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            UnityEngine.Object.Destroy(texture);
         }
     }
 }

@@ -25,6 +25,8 @@ namespace EndfieldGraphShaderLab
         private const string EndminfCompositeRockClipName =
             "A_fx_endminf_ui_overview_03_04";
         private const float EndminfCompositeRockClipDelaySeconds = 2.7666667f;
+        private const float EndminfSmoke20PresentationAdvanceSeconds = 2f / 60f;
+        private const string EndminfSmoke20MaterialName = "M_fx_endminm_gfx_20";
 
         public enum BindingKind
         {
@@ -302,7 +304,55 @@ namespace EndfieldGraphShaderLab
             // Keep particle delays on the selection/body timeline; only the
             // separately recovered compatibility post clock carries pre-roll.
             foreach (ParticleSystem system in systems)
+            {
                 system.Play(true);
+                if (IsEndminfSmoke20(instance, system))
+                {
+                    // The retained 4.46 s source delay is correct, but Unity's
+                    // public ParticleSystem publishes this six-particle plume
+                    // two render ticks after the matched retail frame. Advance
+                    // only the source-identified smoke owner; global particle
+                    // pre-roll shifts crystals, stones, rays and their seeds.
+                    system.Simulate(
+                        EndminfSmoke20PresentationAdvanceSeconds,
+                        false,
+                        false,
+                        true);
+                    // Simulate leaves a public-Unity ParticleSystem paused;
+                    // resume this owner without recursively restarting peers.
+                    system.Play(false);
+                }
+            }
+        }
+
+        private static bool IsEndminfSmoke20(
+            GameObject instance,
+            ParticleSystem system)
+        {
+            if (!EndfieldEndminfVisualCompatibilityClock.Requested ||
+                instance == null || system == null ||
+                instance.name.IndexOf(
+                    "P_fxui_endminm003_overview_02",
+                    StringComparison.Ordinal) < 0 ||
+                !string.Equals(system.name, "smoke (2)", StringComparison.Ordinal) ||
+                system.transform.parent == null ||
+                !string.Equals(system.transform.parent.name, "all", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
+            if (renderer == null)
+                return false;
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                if (material != null && string.Equals(
+                        material.name,
+                        EndminfSmoke20MaterialName,
+                        StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
         }
 
         private static void ApplyEndminfBillboardClampCompatibility(GameObject instance)
