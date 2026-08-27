@@ -1514,12 +1514,12 @@ Focused session `20260827T061004Z` contains one 31-package sequence covering
 the buildup, peak, and fade. It retains 12 exact M29 packets and 10 exact M30
 packets. M29 now has complete owned IA and PS t0-t2 payloads. M30 has complete
 IA, constants, and PS t1, but its stable PS t0 is a 3840x2160 four-byte
-scene-color input (33,177,600 bytes) and is absent from every packet: the old
+scene-depth soft-particle input (33,177,600 bytes) and is absent from every packet: the old
 targeted aggregate ceiling was only 32 MiB and about 25 MiB of prior bounded
 evidence was already selected. Follow-up session `20260827T064009Z` proves the
 64 MiB patch is active across 38 complete packages, but exposes larger
 16-MiB geometry carriers: the exact M30 frames already retain 58.66-59.25 MiB
-before its scene-color input, so t0 remains absent. The measured closure needs
+before its scene-depth input, so t0 remains absent. The measured closure needs
 about 91 MiB. EndfieldCapture's targeted byte ceiling is therefore 96 MiB,
 still below `full` and with a regression gate for 60 MiB of pre-M30 evidence
 plus the 33,177,600-byte input. The
