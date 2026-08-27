@@ -39,6 +39,14 @@ EXPECTED = {
         11_652,
         "0265c7a6806a095fef85fe2f14360cf0874e521d2510c4740db4e2ae341a3c5c",
     ),
+    "uber_vertex": (
+        608,
+        "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e",
+    ),
+    "uber_pixel": (
+        4_836,
+        "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b",
+    ),
 }
 
 
@@ -82,6 +90,8 @@ def main() -> int:
     parser.add_argument("--m14-pixel", type=Path, required=True)
     parser.add_argument("--m13-vertex", type=Path, required=True)
     parser.add_argument("--m13-pixel", type=Path, required=True)
+    parser.add_argument("--uber-vertex", type=Path, required=True)
+    parser.add_argument("--uber-pixel", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -93,6 +103,8 @@ def main() -> int:
     m14_pixel = checked(args.m14_pixel, "m14_pixel")
     m13_vertex = checked(args.m13_vertex, "m13_vertex")
     m13_pixel = checked(args.m13_pixel, "m13_pixel")
+    uber_vertex = checked(args.uber_vertex, "uber_vertex")
+    uber_pixel = checked(args.uber_pixel, "uber_pixel")
     text = (
         "#pragma once\n"
         "#include <cstddef>\n\n"
@@ -131,6 +143,17 @@ def main() -> int:
         )
         + render_digest(
             "g_EndfieldM13PixelDxbcSha256", hashlib.sha256(m13_pixel).digest()
+        )
+        + "\n"
+        + render_array("g_EndfieldUberVertexDxbc", uber_vertex)
+        + "\n"
+        + render_array("g_EndfieldUberPixelDxbc", uber_pixel)
+        + "\n"
+        + render_digest(
+            "g_EndfieldUberVertexDxbcSha256", hashlib.sha256(uber_vertex).digest()
+        )
+        + render_digest(
+            "g_EndfieldUberPixelDxbcSha256", hashlib.sha256(uber_pixel).digest()
         )
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

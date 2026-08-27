@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import struct
@@ -17,6 +18,10 @@ DEFAULT_OUTPUT = (
     / "endminf_uber_capture_latest.json"
 )
 PIXEL_IDENTITY = 0x3F490E1504C43554
+VERTEX_IDENTITY = 0xA8C084C37EBA0ECC
+VERTEX_SHA256 = (
+    "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e"
+)
 PIXEL_SHA256 = (
     "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
 )
@@ -39,15 +44,17 @@ def shader_identity(resolver: dict[str, Any], stage: int) -> int | None:
     return int(rows[0]["identityHash"]) if rows else None
 
 
-def constant_range(resolver: dict[str, Any], slot: int) -> dict[str, Any]:
-    rows = [row for row in resolver.get("psConstantBuffers", [])
+def constant_range(resolver: dict[str, Any], key: str, stage: str,
+                   slot: int) -> dict[str, Any]:
+    rows = [row for row in resolver.get(key, [])
             if isinstance(row, dict) and int(row.get("slot", -1)) == slot]
-    require(len(rows) == 1, f"exact Uber PS b{slot} range is not unique")
+    require(len(rows) == 1,
+            f"exact Uber {stage} b{slot} range is not unique")
     row = rows[0]
     require(row.get("rangeValid") is True,
-            f"exact Uber PS b{slot} range is invalid")
+            f"exact Uber {stage} b{slot} range is invalid")
     require(int(row.get("bufferId", 0)) != 0,
-            f"exact Uber PS b{slot} has no buffer identity")
+            f"exact Uber {stage} b{slot} has no buffer identity")
     return row
 
 
@@ -77,6 +84,24 @@ def vector(payload: bytes, first_constant: int,
     return struct.unpack_from("<4f", payload, offset)
 
 
+def declared_vectors(payload: bytes, first_constant: int,
+                     count: int) -> list[list[float]]:
+    require(count > 0, "declared constant range is empty")
+    return [list(vector(payload, first_constant, index))
+            for index in range(count)]
+
+
+def range_sha256(values: list[list[float]]) -> str:
+    flattened = [lane for value in values for lane in value]
+    return hashlib.sha256(
+        struct.pack(f"<{len(flattened)}f", *flattened)).hexdigest()
+
+
+def range_hex(values: list[list[float]]) -> str:
+    flattened = [lane for value in values for lane in value]
+    return struct.pack(f"<{len(flattened)}f", *flattened).hex()
+
+
 def finite(values: tuple[float, ...]) -> bool:
     return all(math.isfinite(value) for value in values)
 
@@ -86,20 +111,39 @@ def inspect_resolver(frame: int, resolver_index: int,
                      resource_blob: bytes) -> dict[str, Any]:
     require(resolver.get("priorityEndminfUber") is True,
             f"frame {frame} resolver {resolver_index} lost Uber priority tagging")
-    b0 = constant_range(resolver, 0)
-    b1 = constant_range(resolver, 1)
+    require(shader_identity(resolver, 0) == VERTEX_IDENTITY,
+            f"frame {frame} resolver {resolver_index} has the wrong Uber VS")
+    vs_b0 = constant_range(
+        resolver, "vsConstantBuffers", "VS", 0)
+    b0 = constant_range(resolver, "psConstantBuffers", "PS", 0)
+    b1 = constant_range(resolver, "psConstantBuffers", "PS", 1)
+    require(int(vs_b0.get("numConstants", 0)) >= 1,
+            f"frame {frame} exact Uber VS b0 does not expose c0")
     require(int(b0.get("numConstants", 0)) >= 28,
             f"frame {frame} exact Uber PS b0 does not expose c27")
     require(int(b1.get("numConstants", 0)) >= 26,
             f"frame {frame} exact Uber PS b1 does not expose c25")
-    b0_payload = selected_payload(metadata, int(b0["bufferId"]), resource_blob)
+    vs_b0_payload = selected_payload(
+        metadata, int(vs_b0["bufferId"]), resource_blob)
+    b0_payload = (vs_b0_payload
+                  if int(b0["bufferId"]) == int(vs_b0["bufferId"])
+                  else selected_payload(
+                      metadata, int(b0["bufferId"]), resource_blob))
     b1_payload = (b0_payload if int(b1["bufferId"]) == int(b0["bufferId"])
                   else selected_payload(
                       metadata, int(b1["bufferId"]), resource_blob))
+    vertex_params = vector(
+        vs_b0_payload, int(vs_b0["firstConstant"]), 0)
     exposure = vector(b0_payload, int(b0["firstConstant"]), 27)
     radial = vector(b1_payload, int(b1["firstConstant"]), 0)
     radial2 = vector(b1_payload, int(b1["firstConstant"]), 25)
-    require(finite(exposure + radial + radial2),
+    vs_b0_values = declared_vectors(
+        vs_b0_payload, int(vs_b0["firstConstant"]), 1)
+    b0_values = declared_vectors(
+        b0_payload, int(b0["firstConstant"]), 28)
+    b1_values = declared_vectors(
+        b1_payload, int(b1["firstConstant"]), 26)
+    require(finite(vertex_params + exposure + radial + radial2),
             f"frame {frame} exact Uber constants are non-finite")
     require(0.0 <= radial[0] <= 1.0 and 0.0 <= radial[1] <= 1.0,
             f"frame {frame} exact Uber center is outside viewport space")
@@ -115,11 +159,27 @@ def inspect_resolver(frame: int, resolver_index: int,
         "fullscreenOrdinal": int(resolver.get("fullscreenOrdinal", -1)),
         "pixelIdentity": f"{PIXEL_IDENTITY:016x}",
         "pixelSha256": PIXEL_SHA256,
+        "vertexIdentity": f"{VERTEX_IDENTITY:016x}",
+        "vertexSha256": VERTEX_SHA256,
+        "vsB0": {
+            "bufferId": int(vs_b0["bufferId"]),
+            "firstConstant": int(vs_b0["firstConstant"]),
+            "numConstants": int(vs_b0["numConstants"]),
+            "c0": list(vertex_params),
+            "declaredConstants": 1,
+            "declaredRangeSha256": range_sha256(vs_b0_values),
+            "declaredRangeHex": range_hex(vs_b0_values),
+            "values": vs_b0_values,
+        },
         "b0": {
             "bufferId": int(b0["bufferId"]),
             "firstConstant": int(b0["firstConstant"]),
             "numConstants": int(b0["numConstants"]),
             "c27ExposureWithMiscParams": list(exposure),
+            "declaredConstants": 28,
+            "declaredRangeSha256": range_sha256(b0_values),
+            "declaredRangeHex": range_hex(b0_values),
+            "values": b0_values,
         },
         "b1": {
             "bufferId": int(b1["bufferId"]),
@@ -127,6 +187,10 @@ def inspect_resolver(frame: int, resolver_index: int,
             "numConstants": int(b1["numConstants"]),
             "c0RadialBlurParams": list(radial),
             "c25RadialBlurParams2": list(radial2),
+            "declaredConstants": 26,
+            "declaredRangeSha256": range_sha256(b1_values),
+            "declaredRangeHex": range_hex(b1_values),
+            "values": b1_values,
         },
     }
 

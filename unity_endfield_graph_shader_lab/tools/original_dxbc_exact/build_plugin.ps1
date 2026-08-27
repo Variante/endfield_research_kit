@@ -30,6 +30,8 @@ $m14Vertex = Join-Path $toolRoot "bytecode\endminf_m14_vfxbasev2_vs.dxbc"
 $m14Pixel = Join-Path $toolRoot "bytecode\endminf_m14_vfxbasev2_ps.dxbc"
 $m13Vertex = Join-Path $toolRoot "bytecode\endminf_m13_vfxbasev2_vs.dxbc"
 $m13Pixel = Join-Path $toolRoot "bytecode\endminf_m13_vfxbasev2_ps.dxbc"
+$uberVertex = Join-Path $toolRoot "bytecode\endminf_uber_post_vs.dxbc"
+$uberPixel = Join-Path $toolRoot "bytecode\endminf_uber_post_ps.dxbc"
 $pluginApi = "D:\Program Files\2022.3.62f3\Editor\Data\PluginAPI"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -54,6 +56,8 @@ python (Join-Path $toolRoot "generate_embedded_header.py") `
     --m14-pixel $m14Pixel `
     --m13-vertex $m13Vertex `
     --m13-pixel $m13Pixel `
+    --uber-vertex $uberVertex `
+    --uber-pixel $uberPixel `
     --output $generatedHeader
 if ($LASTEXITCODE -ne 0) {
     throw "Exact DXBC header generation failed with exit code $LASTEXITCODE."

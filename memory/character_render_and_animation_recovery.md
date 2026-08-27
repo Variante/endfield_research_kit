@@ -1499,9 +1499,19 @@ c0/c25; the old 3DMigoto constant arena contains one plausible candidate but
 does not bind its `PSSetConstantBuffers1` offset to the draw. EndfieldCapture
 now priority-retains exact combined fragment
 `3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b`
-and all fullscreen PS b0-b10 ranges. The same remaining targeted Numpad-1
-frame must therefore close both M30/M31 scene depth and the exact Uber b1
-range before changing the canonical post path.
+and all fullscreen PS b0-b10 ranges. Direct disassembly additionally proves
+that exact vertex fragment
+`a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e`
+reads a separate stage-local VS b0; PS b0 cannot stand in for it despite the
+shared slot number. EndfieldCapture now retains and serializes this VS b0 for
+the priority Uber draw too. The verifier requires the exact VS/PS pair, VS
+b0[1], PS b0[28], and PS b1[26], and publishes byte-exact declared ranges.
+The payload builder accepts only one unambiguous validated packet. Both exact
+shader objects are now hash-pinned in the native Unity tool and create
+successfully on WARP D3D11; runtime submission remains fail-closed until the
+new live constants exist. The same remaining targeted Numpad-1 frame must
+therefore close M30/M31 scene depth and the complete Uber VS/PS constant ABI
+before changing the canonical post path.
 
 The active task is to reconstruct these missing frame systems from recovered
 assets and measure the resulting Endminf frame against the reference video.

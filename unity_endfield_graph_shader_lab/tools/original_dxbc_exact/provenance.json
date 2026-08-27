@@ -4,6 +4,30 @@
   "unity_version": "2022.3.62f3",
   "graphics_api": "Direct3D11",
   "native_contract_version": 2,
+  "endminf_uber_post": {
+    "activation_policy": "default-off-fail-closed-until-exact-live-constant-payload-is-validated",
+    "source_shader": "HGRP/PostProcessing/UberPost",
+    "compiled_keywords": [
+      "BLOOM",
+      "RADIAL_BLUR_CHROMATIC_ABERRATION"
+    ],
+    "vertex": {
+      "file": "bytecode/endminf_uber_post_vs.dxbc",
+      "retail_source_file": "2016_endfield_dxbc_0.dxbc",
+      "size": 608,
+      "sha256": "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e",
+      "profile": "vs_5_0"
+    },
+    "pixel": {
+      "file": "bytecode/endminf_uber_post_ps.dxbc",
+      "retail_source_file": "2017_endfield_dxbc_1.dxbc",
+      "size": 4836,
+      "sha256": "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b",
+      "profile": "ps_5_0"
+    },
+    "abi": "VS b0[1]; PS b0[28], b1[26], t0-t2, s0; Draw(3,0)",
+    "constant_evidence": "reports/assets/character_recovery/endminf_uber_capture_latest.json"
+  },
   "reserved_local_keyword": "ENDFIELD_ORIGINAL_DXBC_EXACT",
   "m27_substitution": {
     "activation_policy": "default-off-fail-closed-until-shell-hashes-pinned",
