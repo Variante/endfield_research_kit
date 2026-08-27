@@ -1516,16 +1516,21 @@ packets. M29 now has complete owned IA and PS t0-t2 payloads. M30 has complete
 IA, constants, and PS t1, but its stable PS t0 is a 3840x2160 four-byte
 scene-color input (33,177,600 bytes) and is absent from every packet: the old
 targeted aggregate ceiling was only 32 MiB and about 25 MiB of prior bounded
-evidence was already selected. EndfieldCapture's targeted byte ceiling is now
-64 MiB, leaving room for that input while remaining half of `full`. The
+evidence was already selected. Follow-up session `20260827T064009Z` proves the
+64 MiB patch is active across 38 complete packages, but exposes larger
+16-MiB geometry carriers: the exact M30 frames already retain 58.66-59.25 MiB
+before its scene-color input, so t0 remains absent. The measured closure needs
+about 91 MiB. EndfieldCapture's targeted byte ceiling is therefore 96 MiB,
+still below `full` and with a regression gate for 60 MiB of pre-M30 evidence
+plus the 33,177,600-byte input. The
 focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
 unrelated selector pressure as a visible diagnostic after checking every exact
 owner binding; missing owner payloads still fail closed. The existing temporal
-sequence does not need repeating. The production `build-local` launcher and
-D3D11 DLL were rebuilt after the old session closed, and all 15 native tests,
-including the D3D11 proxy lifecycle, pass. One targeted Numpad-1 frame at the
-crystal peak is the only remaining graphics evidence needed. Full/everything
-mode and another Numpad-4 sequence are not required.
+sequences do not need repeating. The 96 MiB clean validation build and focused
+native tests pass; after the current 64 MiB session closes, the production
+launcher must be rebuilt and the full native suite rerun. One targeted
+Numpad-1 frame at the crystal peak is then the only remaining graphics evidence
+needed. Full/everything mode and another Numpad-4 sequence are not required.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.
