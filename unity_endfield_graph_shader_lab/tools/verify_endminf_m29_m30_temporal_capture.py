@@ -19,13 +19,20 @@ OUTPUT = (REPO / "reports/assets/character_recovery"
           / "endminf_m29_m30_temporal_capture_latest.json")
 MATERIAL_ROOT = (REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab"
                  / "Generated/Characters/Playable/Endminf/Effects/Overview/Materials")
-SESSION = "20260826T162514Z"
 PHASE_ANCHOR_FRAME = 2978
 PHASE_ANCHOR_SECONDS = 4.433333
 M29_FRAMES = (2864, 2872, 2880, 2888, 2896, 2905, 2913,
               2921, 2929, 2937, 2945, 2953, 2962)
 M30_FRAMES = (2880, 2888, 2896, 2905, 2913, 2921,
               2929, 2937, 2945, 2953, 2962)
+KNOWN_CAPTURES = {
+    "20260826T162514Z": {
+        "phaseAnchorFrame": PHASE_ANCHOR_FRAME,
+        "phaseAnchorSeconds": PHASE_ANCHOR_SECONDS,
+        "phaseAnchorBasis": "no-frame-generation source frame 381 peak registration",
+        "expectedFrames": {"M29": M29_FRAMES, "M30": M30_FRAMES},
+    },
+}
 
 
 class VerificationError(RuntimeError):
@@ -36,7 +43,6 @@ OWNERS = {
     "M29": {
         "vertex": 0xCE755059DEDDC2E0,
         "pixel": 0xF2AD2A14856044AC,
-        "frames": M29_FRAMES,
         "counts": {1386},
         "c1": (1.0, 0.0, 15.0, 1.3),
         "c4": (0.26225068, 0.15781066, 0.08437622, 1.0),
@@ -47,7 +53,6 @@ OWNERS = {
     "M30": {
         "vertex": 0x62A5CE6C09171DE9,
         "pixel": 0x5558DEDDB1EE6188,
-        "frames": M30_FRAMES,
         "counts": {6, 12},
         "c1": (1.0, 0.0, 3.0, 0.5),
         "c4": (0.93269453, 0.52442606, 0.09170079, 1.0),
@@ -67,8 +72,9 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def phase_seconds(frame: int) -> float:
-    return PHASE_ANCHOR_SECONDS + (frame - PHASE_ANCHOR_FRAME) / 60.0
+def phase_seconds(frame: int, anchor_frame: int = PHASE_ANCHOR_FRAME,
+                  anchor_seconds: float = PHASE_ANCHOR_SECONDS) -> float:
+    return anchor_seconds + (frame - anchor_frame) / 60.0
 
 
 def shaders(draw: dict[str, Any]) -> dict[int, int]:
@@ -147,18 +153,73 @@ def parse_material(owner_name: str, owner: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def collect_owner(capture: Path, owner_name: str,
-                  owner: dict[str, Any]) -> list[dict[str, Any]]:
+def resource_key(row: dict[str, Any]) -> tuple[int, int, int]:
+    return (int(row.get("objectId", 0)), int(row.get("stage", -1)),
+            int(row.get("slot", -1)))
+
+
+def inspect_resource_closure(draw: dict[str, Any],
+                             metadata: dict[str, Any]) -> dict[str, Any]:
+    resources = [row for row in draw.get("resources", []) if isinstance(row, dict)]
+    selected = [row for row in metadata.get("selectedResourceRecords", [])
+                if isinstance(row, dict)]
+    selected_by_key = {resource_key(row): row for row in selected}
+    selected_by_object: dict[int, list[dict[str, Any]]] = {}
+    for row in selected:
+        selected_by_object.setdefault(int(row.get("objectId", 0)), []).append(row)
+    missing = []
+    unsupported = []
+    for row in resources:
+        key = resource_key(row)
+        match = selected_by_key.get(key)
+        if match is None:
+            match = next((item for item in selected_by_object.get(key[0], [])
+                          if item.get("completed") is True
+                          and int(item.get("blobBytes", 0)) > 0), None)
+        if match is not None and match.get("completed") is True and \
+                int(match.get("blobBytes", 0)) > 0:
+            continue
+        target = {"objectId": key[0], "stage": key[1], "slot": key[2],
+                  "byteSize": int(row.get("byteSize", 0))}
+        if target["byteSize"] == 0:
+            unsupported.append(target)
+        else:
+            missing.append(target)
+    return {
+        "ownerResourcesPresent": bool(resources),
+        "complete": bool(resources) and not missing,
+        "ownedResourceCount": len(resources),
+        "missingPayloads": missing,
+        "unsupportedZeroByteBindings": unsupported,
+    }
+
+
+def metadata_paths(capture: Path) -> list[Path]:
+    root = capture / "graphics/frames"
+    require(root.is_dir(), f"graphics frame directory is absent: {root}")
+    paths = sorted(root.glob("*/metadata.json"), key=lambda path: int(path.parent.name))
+    require(paths, f"capture has no graphics frame metadata: {root}")
+    return paths
+
+
+def collect_owner(capture: Path, owner_name: str, owner: dict[str, Any],
+                  paths: list[Path], first_frame: int,
+                  phase_anchor: tuple[int, float] | None,
+                  expected_frames: tuple[int, ...] | None) -> list[dict[str, Any]]:
     rows = []
-    for frame_id in owner["frames"]:
-        metadata_path = capture / "graphics/frames" / str(frame_id) / "metadata.json"
-        require(metadata_path.is_file(), f"{owner_name} frame {frame_id} metadata is absent")
+    observed_frames = []
+    for metadata_path in paths:
+        frame_id = int(metadata_path.parent.name)
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        matches = [draw for draw in metadata.get("drawRecords", [])
+        matches = [(index, draw) for index, draw in
+                   enumerate(metadata.get("drawRecords", []))
                    if isinstance(draw, dict) and is_owner(draw, owner)]
-        require(len(matches) == 1,
+        require(len(matches) <= 1,
                 f"{owner_name} frame {frame_id} owner draw count is {len(matches)}")
-        draw = matches[0]
+        if not matches:
+            continue
+        draw_index, draw = matches[0]
+        observed_frames.append(frame_id)
         require(int(draw.get("count", -1)) in owner["counts"],
                 f"{owner_name} frame {frame_id} index count drifted")
         require(int(draw.get("instanceCount", -1)) == 1,
@@ -175,9 +236,11 @@ def collect_owner(capture: Path, owner_name: str,
                 if source.get("truncated") is True:
                     truncated.append(key)
         b3 = constant(draw, 4, 3)
-        rows.append({
+        row = {
             "frame": frame_id,
-            "phaseSeconds": round(phase_seconds(frame_id), 6),
+            "drawIndex": draw_index,
+            "frameRelativeSeconds": round((frame_id - first_frame) / 60.0, 6),
+            "timestampQpc": int(metadata.get("timestampQpc", 0)),
             "indexCount": int(draw["count"]),
             "startIndex": int(draw["start"]),
             "baseVertex": int(draw["baseVertex"]),
@@ -186,16 +249,73 @@ def collect_owner(capture: Path, owner_name: str,
             "psB3C4": list(vector(b3, 4)),
             "constantSha256": constants,
             "truncatedConstantAllocations": truncated,
+            "resourceClosure": inspect_resource_closure(draw, metadata),
             "metadataSha256": sha256(metadata_path),
-        })
+        }
+        if phase_anchor is not None:
+            row["phaseSeconds"] = round(
+                phase_seconds(frame_id, phase_anchor[0], phase_anchor[1]), 6)
+        rows.append(row)
+    if expected_frames is not None:
+        missing_expected = [frame for frame in expected_frames
+                            if frame not in observed_frames]
+        if missing_expected:
+            raise VerificationError(
+                f"{owner_name} frame {missing_expected[0]} owner draw count is 0")
+        require(tuple(observed_frames) == tuple(expected_frames),
+                f"{owner_name} frame sequence drifted: expected "
+                f"{list(expected_frames)}, observed {observed_frames}")
+    require(rows, f"capture contains no exact {owner_name} owner packets")
     return rows
 
 
-def build_report(capture: Path = CAPTURE) -> dict[str, Any]:
-    require(capture.name == SESSION, "M29/M30 capture session drifted")
+def frame_bursts(frames: list[dict[str, Any]], max_gap_frames: int = 60
+                 ) -> list[dict[str, Any]]:
+    bursts: list[list[dict[str, Any]]] = []
+    for row in frames:
+        if not bursts or row["frame"] - bursts[-1][-1]["frame"] > max_gap_frames:
+            bursts.append([row])
+        else:
+            bursts[-1].append(row)
+    return [{
+        "firstFrame": burst[0]["frame"],
+        "lastFrame": burst[-1]["frame"],
+        "packetCount": len(burst),
+        "sampledSpanSeconds": round(
+            (burst[-1]["frame"] - burst[0]["frame"]) / 60.0, 6),
+        "frames": [row["frame"] for row in burst],
+    } for burst in bursts]
+
+
+def build_report(capture: Path = CAPTURE,
+                 phase_anchor_frame: int | None = None,
+                 phase_anchor_seconds: float | None = None) -> dict[str, Any]:
+    capture = capture.resolve()
+    known = KNOWN_CAPTURES.get(capture.name)
+    require((phase_anchor_frame is None) == (phase_anchor_seconds is None),
+            "phase anchor frame and seconds must be supplied together")
+    if phase_anchor_frame is not None:
+        phase_anchor = (phase_anchor_frame, float(phase_anchor_seconds))
+        phase_basis = "explicit CLI/user alignment"
+    elif known is not None:
+        phase_anchor = (int(known["phaseAnchorFrame"]),
+                        float(known["phaseAnchorSeconds"]))
+        phase_basis = str(known["phaseAnchorBasis"])
+    else:
+        phase_anchor = None
+        phase_basis = "unknown; capture-relative timing only"
+    paths = metadata_paths(capture)
+    first_frame = int(paths[0].parent.name)
     owners = {}
     for owner_name, owner in OWNERS.items():
-        frames = collect_owner(capture, owner_name, owner)
+        expected = (tuple(known["expectedFrames"][owner_name])
+                    if known is not None else None)
+        frames = collect_owner(capture, owner_name, owner, paths, first_frame,
+                               phase_anchor, expected)
+        complete_frames = [row["frame"] for row in frames
+                           if row["resourceClosure"]["complete"]]
+        bursts = frame_bursts(frames)
+        primary_burst = max(bursts, key=lambda burst: burst["packetCount"])
         owners[owner_name] = {
             "shaderPair": {
                 "vertex": f"0x{owner['vertex']:016X}",
@@ -204,25 +324,32 @@ def build_report(capture: Path = CAPTURE) -> dict[str, Any]:
             "packetCount": len(frames),
             "drawCount": len(frames),
             "indexCounts": sorted({row["indexCount"] for row in frames}),
+            "firstFrame": frames[0]["frame"],
+            "lastFrame": frames[-1]["frame"],
+            "frameBursts": bursts,
+            "primaryBurst": primary_burst,
+            "resourceClosedFrames": complete_frames,
             "material": parse_material(owner_name, owner),
             "frames": frames,
         }
+    exact_replay_ready = all(
+        bool(owner["resourceClosedFrames"]) for owner in owners.values())
+    phase_contract: dict[str, Any] = {"basis": phase_basis}
+    if phase_anchor is not None:
+        phase_contract.update({"frame": phase_anchor[0], "seconds": phase_anchor[1]})
     return {
         "schema": "endfield.endminf-m29-m30-temporal-capture.v1",
-        "status": "validated_source_assisted_only",
-        "sessionId": SESSION,
+        "status": ("validated_exact_owner_temporal_and_resource_evidence"
+                   if exact_replay_ready else "validated_source_assisted_only"),
+        "sessionId": capture.name,
         "capture": str(capture.relative_to(REPO)).replace("\\", "/"),
-        "phaseAnchor": {
-            "frame": PHASE_ANCHOR_FRAME,
-            "seconds": PHASE_ANCHOR_SECONDS,
-            "basis": "no-frame-generation source frame 381 peak registration",
-        },
+        "frameCount": len(paths),
+        "phaseAnchor": phase_contract,
         "owners": owners,
-        "exactReplayReady": False,
-        "exactReplayGap": (
-            "This pre-patch session retains draw identity and bounded constant prefixes, "
-            "but not owner-specific M29/M30 IA and PS t0-t5 resources."
-        ),
+        "exactReplayReady": exact_replay_ready,
+        "exactReplayGap": (None if exact_replay_ready else
+            "No byte-complete owner-specific packet exists for one or more owners; "
+            "inspect each frame's resourceClosure.missingPayloads."),
     }
 
 
@@ -230,8 +357,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capture", type=Path, default=CAPTURE)
     parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--phase-anchor-frame", type=int)
+    parser.add_argument("--phase-anchor-seconds", type=float)
     args = parser.parse_args()
-    report = build_report(args.capture.resolve())
+    try:
+        report = build_report(
+            args.capture.resolve(), args.phase_anchor_frame,
+            args.phase_anchor_seconds)
+    except (OSError, ValueError, VerificationError) as exc:
+        print(f"ERROR: {exc}")
+        return 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(args.output)

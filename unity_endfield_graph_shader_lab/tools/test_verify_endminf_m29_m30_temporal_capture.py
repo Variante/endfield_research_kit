@@ -45,6 +45,12 @@ class M29M30TemporalCaptureTests(unittest.TestCase):
             expected = MODULE.OWNERS[owner_name]["c4"]
             self.assertTrue(MODULE.close(tuple(material["linearTint"]), expected))
 
+    def test_discontinuous_manual_frames_are_separate_bursts(self) -> None:
+        rows = [{"frame": value} for value in (100, 108, 116, 500, 900)]
+        bursts = MODULE.frame_bursts(rows)
+        self.assertEqual([row["packetCount"] for row in bursts], [3, 1, 1])
+        self.assertEqual(bursts[0]["sampledSpanSeconds"], 0.266667)
+
     def test_tint_fingerprint_attack_fails_closed(self) -> None:
         original = MODULE.OWNERS["M30"]["c4"]
         MODULE.OWNERS["M30"]["c4"] = (0.0, 0.0, 0.0, 1.0)
