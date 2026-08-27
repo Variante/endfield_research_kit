@@ -1589,7 +1589,11 @@ or shaders rather than hand-editing generated prefabs.
    not captured evidence. A safe dense trajectory path must sample after a
    proven job-completion/render boundary and then identify the unique
    6/30/20/70 candidates by joining them to the existing owner-tagged skinning
-   oracle. Do not request another dynamics window until that boundary closes.
+   oracle. For the current recovery, the safe dense boundary is the already
+   proven draw-time VS b2 skinning palette captured by the graphics provider:
+   the six-frame sequence cadence observes final render-consumed matrices
+   without reading unfinished Unity jobs. Do not request another dynamics
+   window; extend the graphics sequence across start and loop instead.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
