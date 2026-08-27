@@ -173,6 +173,13 @@ complete frame without a client fault.
   The maintained Endminf launcher now enables this proven compatibility path;
   it had incorrectly forced the flag off even though canonical batch captures
   enabled it, which made the ten M01/M38 stones disappear in interactive use.
+  Runtime spawning now explicitly restarts recovered `playAutomatically`
+  legacy effect clips after its inactive staging step. The composite
+  `effect_nanguan` clip uses a capture-closed 2.7667-second (30-fps tick 83)
+  trigger: retail's last nonzero and first-zero packets are at 4.1667 and 4.30
+  seconds, while its source active curve ends at 1.50 seconds. This aligns the
+  four one-rock owners with the observed 3.07-4.17-second interval instead of
+  deactivating them at 1.50 seconds.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer. A separate

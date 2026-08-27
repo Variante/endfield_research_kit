@@ -22,6 +22,9 @@ namespace EndfieldGraphShaderLab
             "endfield.charinfo-char-effect-particle.v1";
         public const string EndminfOverviewContractSchema =
             "endfield.endminf-overview-particle-stage.v1";
+        private const string EndminfCompositeRockClipName =
+            "A_fx_endminf_ui_overview_03_04";
+        private const float EndminfCompositeRockClipDelaySeconds = 2.7666667f;
 
         public enum BindingKind
         {
@@ -219,6 +222,7 @@ namespace EndfieldGraphShaderLab
 
             activeEffects[request.prefabName] = instance;
             instance.SetActive(true);
+            StartRecoveredLegacyAnimations(instance);
             PlayRecoveredParticleSystems(instance, systems);
 
             if (binding.expectedDuration > 0f)
@@ -229,6 +233,61 @@ namespace EndfieldGraphShaderLab
                         instance,
                         binding.expectedDuration));
             }
+        }
+
+        private void StartRecoveredLegacyAnimations(GameObject instance)
+        {
+            // Instantiate activates an enabled prefab before this spawner can
+            // clear and stage its ParticleSystems. Deactivating that instance
+            // again stops playAutomatically legacy Animation components, and
+            // the following activation does not reliably restart them. Replay
+            // only clips explicitly marked automatic in the recovered prefab.
+            foreach (Animation animation in
+                instance.GetComponentsInChildren<Animation>(true))
+            {
+                if (!animation.playAutomatically || animation.clip == null)
+                    continue;
+                animation.Stop();
+                animation.Rewind(animation.clip.name);
+                if (string.Equals(
+                        animation.clip.name,
+                        EndminfCompositeRockClipName,
+                        StringComparison.Ordinal))
+                {
+                    // Retail's last nonzero/first-zero sampled packets are at
+                    // 4.1667/4.30 s. The exact 1.50 s source active curve and
+                    // its 30-fps ticks fix the trigger at tick 83 (2.7667 s).
+                    StartCoroutine(PlayRecoveredLegacyAnimationAfterDelay(
+                        instance,
+                        animation,
+                        EndminfCompositeRockClipDelaySeconds));
+                    continue;
+                }
+                PlayRecoveredLegacyAnimation(animation);
+            }
+        }
+
+        private static void PlayRecoveredLegacyAnimation(Animation animation)
+        {
+            if (!animation.Play(animation.clip.name))
+            {
+                Debug.LogError(
+                    "Recovered CharEffect legacy animation failed closed: " +
+                    animation.clip.name,
+                    animation);
+            }
+        }
+
+        private static IEnumerator PlayRecoveredLegacyAnimationAfterDelay(
+            GameObject instance,
+            Animation animation,
+            float delaySeconds)
+        {
+            yield return new WaitForSeconds(delaySeconds);
+            if (instance == null || animation == null ||
+                !instance.activeInHierarchy)
+                yield break;
+            PlayRecoveredLegacyAnimation(animation);
         }
 
         private static void PlayRecoveredParticleSystems(
