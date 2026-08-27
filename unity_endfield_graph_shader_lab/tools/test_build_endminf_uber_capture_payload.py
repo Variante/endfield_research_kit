@@ -54,6 +54,7 @@ def report() -> dict[str, object]:
 class PayloadBuilderTests(unittest.TestCase):
     def test_valid_report_builds_exact_arrays(self) -> None:
         header = BUILD.build_header(report())
+        self.assertIn("g_EndfieldUberCapturePayloadAvailable = true", header)
         self.assertIn("g_EndfieldUberVsB0Size = sizeof", header)
         self.assertIn("g_EndfieldUberPsB0Size = sizeof", header)
         self.assertIn("g_EndfieldUberPsB1Size = sizeof", header)

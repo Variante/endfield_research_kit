@@ -352,6 +352,12 @@ namespace EndfieldGraphShaderLab
             { get; private set; } = GraphicsFormat.None;
         public static GraphicsFormat LastRecoveredEndminfBloomGraphicsFormat
             { get; private set; } = GraphicsFormat.None;
+        public static bool LastRecoveredEndminfExactUberRequested
+            { get; private set; }
+        public static bool LastRecoveredEndminfExactUberSubmitted
+            { get; private set; }
+        public static string LastRecoveredEndminfExactUberFailure
+            { get; private set; } = string.Empty;
         public static EndfieldRecoveredSceneMVDiagnosticState
             LastRecoveredSceneMVDiagnostic { get; } =
                 new EndfieldRecoveredSceneMVDiagnosticState();
@@ -523,6 +529,8 @@ namespace EndfieldGraphShaderLab
         private readonly HGCompatRenderPipelineAsset asset;
         private readonly Material postProcessMaterial;
         private readonly EndfieldRecoveredCharInfoLut recoveredColorGradingLut;
+        private readonly EndfieldRecoveredEndminfUberExactRuntime
+            recoveredEndminfUberExactRuntime;
         private readonly bool separateCharacterShadowDiagnosticEnabled;
         private readonly bool recoveredMultiCharacterShadowAtlasRequested;
         private readonly bool
@@ -727,6 +735,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredSceneMVCompositor();
             recoveredCombinedVelocityProducer =
                 new EndfieldRecoveredCombinedVelocityProducer();
+            recoveredEndminfUberExactRuntime =
+                new EndfieldRecoveredEndminfUberExactRuntime();
             GraphicsSettings.useScriptableRenderPipelineBatching = true;
 
             if (recoveredLiveCharInfoAutoExposureRequested)
@@ -829,6 +839,7 @@ namespace EndfieldGraphShaderLab
             recoveredReflectionProbeFallback?.Dispose();
             recoveredLightBinning?.Dispose();
             recoveredColorGradingLut?.Dispose();
+            recoveredEndminfUberExactRuntime?.Dispose();
             recoveredSceneMVCompositor?.Dispose();
             ReleaseRecoveredPrimarySceneDepth(recoveredExactCameraDepth);
             recoveredExactCameraDepth = null;
@@ -2887,6 +2898,10 @@ namespace EndfieldGraphShaderLab
         {
             deferredPostColor = default;
             deferredLinearUnorm = false;
+            LastRecoveredEndminfExactUberRequested =
+                recoveredEndminfUberExactRuntime.Requested;
+            LastRecoveredEndminfExactUberSubmitted = false;
+            LastRecoveredEndminfExactUberFailure = string.Empty;
             EndfieldHGOperatorPresentation operatorPresentation =
                 camera.GetComponent<EndfieldHGOperatorPresentation>();
             int width = Mathf.Max(camera.pixelWidth, 1);
@@ -3227,11 +3242,37 @@ namespace EndfieldGraphShaderLab
                         ? FilterMode.Point
                         : FilterMode.Bilinear);
                 commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
-                commandBuffer.Blit(
-                    recoveredPostSource,
-                    EndfieldRecoveredSceneMVCompositor.PostColorId,
-                    postProcessMaterial,
-                    0);
+                var deferredPostTarget = new RenderTargetIdentifier(
+                    EndfieldRecoveredSceneMVCompositor.PostColorId);
+                bool exactDeferredUber =
+                    useRecoveredLinearUnormFinalTarget &&
+                    useRecoveredPostSemantics &&
+                    recoveredLutReady &&
+                    recoveredEndminfUberExactRuntime.Enqueue(
+                        commandBuffer,
+                        recoveredPostSource,
+                        new RenderTargetIdentifier(bloomOutputId),
+                        recoveredColorGradingLut.Texture,
+                        deferredPostTarget,
+                        width,
+                        height,
+                        recoveredBloomMipWidths[0],
+                        recoveredBloomMipHeights[0],
+                        exposure,
+                        hasEndminfPost,
+                        endminfPost);
+                if (!exactDeferredUber)
+                {
+                    commandBuffer.Blit(
+                        recoveredPostSource,
+                        EndfieldRecoveredSceneMVCompositor.PostColorId,
+                        postProcessMaterial,
+                        0);
+                }
+                LastRecoveredEndminfExactUberSubmitted = exactDeferredUber;
+                if (LastRecoveredEndminfExactUberRequested && !exactDeferredUber)
+                    LastRecoveredEndminfExactUberFailure =
+                        recoveredEndminfUberExactRuntime.Failure;
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
                     commandBuffer,
                     EndfieldRecoveredPostStageDiagnostic.FinalUber,
@@ -3264,11 +3305,36 @@ namespace EndfieldGraphShaderLab
                     finalDisplayDescriptor,
                     FilterMode.Point);
                 commandBuffer.SetGlobalFloat(PresentFlipYId, 0.0f);
-                commandBuffer.Blit(
-                    recoveredPostSource,
-                    RecoveredFinalDisplayId,
-                    postProcessMaterial,
-                    0);
+                var finalDisplayTarget = new RenderTargetIdentifier(
+                    RecoveredFinalDisplayId);
+                bool exactDisplayUber =
+                    useRecoveredPostSemantics &&
+                    recoveredLutReady &&
+                    recoveredEndminfUberExactRuntime.Enqueue(
+                        commandBuffer,
+                        recoveredPostSource,
+                        new RenderTargetIdentifier(bloomOutputId),
+                        recoveredColorGradingLut.Texture,
+                        finalDisplayTarget,
+                        width,
+                        height,
+                        recoveredBloomMipWidths[0],
+                        recoveredBloomMipHeights[0],
+                        exposure,
+                        hasEndminfPost,
+                        endminfPost);
+                if (!exactDisplayUber)
+                {
+                    commandBuffer.Blit(
+                        recoveredPostSource,
+                        RecoveredFinalDisplayId,
+                        postProcessMaterial,
+                        0);
+                }
+                LastRecoveredEndminfExactUberSubmitted = exactDisplayUber;
+                if (LastRecoveredEndminfExactUberRequested && !exactDisplayUber)
+                    LastRecoveredEndminfExactUberFailure =
+                        recoveredEndminfUberExactRuntime.Failure;
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
                     commandBuffer,
                     EndfieldRecoveredPostStageDiagnostic.FinalUber,
