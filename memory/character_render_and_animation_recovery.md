@@ -1625,6 +1625,25 @@ now use this recording-specific endpoint by default while preserving explicit
 environment overrides for older captures. This corrects a real camera/root
 presentation mismatch that had made body, cape, portrait, and stones appear
 shifted; it does not replace the remaining exact Uber or secondary-shape work.
+A fresh 770-frame canonical render with that endpoint passes the complete
+start-to-loop, background, portrait, no-foreground-UI, stone, M27, deferred,
+and captured-secondary-replay gates. Across the full 555-frame overlap at the
+sidecar's proven offset zero, ROI/effect-ROI/temporal-delta MAE improves from
+`32.2628/35.4458/15.5904` to `23.7086/23.6431/13.7609`. The synchronized pulse
+peak improves from `16.6648` dB / `0.7023` SSIM to `17.1922` dB / `0.7328`, but
+still shows the broad overbright RGB ghost instead of retail's compact amber
+ring; exact Uber transport remains the dominant peak blocker.
+
+The captured-replay renderer-consumption audit rules out a disconnected or
+unused secondary skeleton. All 74 replay transforms resolve in active target
+skinning palettes and have positive vertex weight. Hair consumes 21 replay
+bones across 3,359/7,900 weighted vertices, cloth-01 consumes 52 across
+7,389/27,314, and cloth-04 consumes 2 across 612/7,811; cloth-03 is correctly
+rigid to non-replay `mask_jnt`. The unique consumed count is still 74 because
+one bone is shared by cloth-01 and cloth-04. This necessary structural gate
+passes, so remaining cape-width differences require a retained-sample baked-
+mesh/GPU-palette differential or stronger same-initialization retail trajectory
+evidence rather than another path-remap or constant replay delay.
 
 The same corrected run exposed a separate native validation gap hidden by the
 old readiness flag: render event 3 armed the deferred exact draw but did not
@@ -1693,7 +1712,11 @@ upper-right streaks but does not create the circular burst; retain the authored
 soft-blend keyword and do not treat the missing depth as the cause of the ring.
 The remaining 128-MiB targeted recapture is for exact M30/M31 edge fading and
 resource closure, not for ring ownership, shader selection, tint, or texture
-identity.
+identity. Session `20260827T081152Z` is not that recapture: its runtime status
+records the retired 96-MiB budget, it contains one two-frame burst rather than
+the required entrance/settled sequences, and M31 draw 3 still lacks its
+33,177,600-byte PS t0 scene-depth payload. The combined, Uber, and M29/M30/M31
+verifiers all fail closed on those exact omissions.
 
 ## Main animation gap
 
@@ -1738,10 +1761,11 @@ or shaders rather than hand-editing generated prefabs.
    correction and exact Uber import. The 145-sample, 74-bone draw-time retail
    replay is bound and applied in every canonical frame, while the diagnostic
    solver is rejected because it worsens all 40 certified checkpoints. Residual
-   late-loop narrowing survives at retained replay samples, so first validate
-   active renderer weighted-bone coverage and bindpose/palette consumption.
-   Do not retime the replay, enable the solver, or manually widen cloth without
-   stronger same-initialization retail trajectory evidence.
+   late-loop narrowing survives at retained replay samples. Active-renderer
+   weighted-bone coverage is now validated for all 74 replay transforms; next
+   compare retained-sample baked meshes and GPU palettes against exact bindposes
+   or obtain stronger same-initialization retail trajectory evidence. Do not
+   retime the replay, enable the solver, or manually widen cloth without it.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
