@@ -49,8 +49,10 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
     window = load_last_window(capture)
     require(window.get("trajectoryComplete") is True,
             "window does not certify complete trajectory retention")
-    require(window.get("endminfTrajectoryFourOwnerCoverage") is True,
-            "window does not contain all four Endminf chunk lengths")
+    require(window.get("endminfTrajectoryFourChunkCandidateCoverage") is True,
+            "window does not contain all four Endminf chunk candidates")
+    require(window.get("endminfTrajectoryFourOwnerCoverage") is not True,
+            "capture must not claim owner identity from chunk length alone")
     require(int(window.get("transformWriteUnreadableCalls", -1)) == 0,
             "one or more transform writes was unreadable")
     require(int(window.get("transformSampleOverflow", -1)) == 0,
@@ -140,8 +142,8 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
         }
 
     return {
-        "schema": "endfield.endminf-secondary-dynamics-trajectory-capture.v1",
-        "status": "validated_exact_four_owner_transform_trajectory",
+        "schema": "endfield.endminf-secondary-dynamics-trajectory-capture.v2",
+        "status": "validated_unique_four_chunk_candidate_trajectory",
         "capture": str(capture.resolve()),
         "windowId": window_id,
         "writebackCount": len(ordered_writebacks),
