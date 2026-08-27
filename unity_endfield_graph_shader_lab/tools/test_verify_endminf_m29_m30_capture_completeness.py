@@ -92,7 +92,9 @@ class CaptureCompletenessTests(unittest.TestCase):
             row for row in payload["selectedResourceRecords"]
             if row["objectId"] != 200
         ]
-        with self.assertRaisesRegex(MODULE.VerificationError, "missing resource payloads"):
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                r'M29 frame 1 draw 0.*"slot": 0, "stage": 4'):
             self.build(payload)
 
     def test_missing_draw_ownership_fails_closed(self) -> None:

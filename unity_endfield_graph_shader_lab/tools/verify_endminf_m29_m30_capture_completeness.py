@@ -138,7 +138,9 @@ def inspect_owner_draw(frame: int, draw_index: int, owner: str,
             missing_payload.append({"stage": key[1], "slot": key[2],
                                     "objectId": key[0]})
     require(not missing_payload,
-            f"{owner} frame {frame} has {len(missing_payload)} missing resource payloads")
+            f"{owner} frame {frame} draw {draw_index} has "
+            f"{len(missing_payload)} missing resource payloads: "
+            f"{json.dumps(missing_payload, sort_keys=True)}")
     return {
         "frame": frame,
         "drawIndex": draw_index,
@@ -205,7 +207,17 @@ def main() -> int:
     try:
         report = build_report(args.capture.resolve())
     except (OSError, ValueError, VerificationError) as exc:
+        diagnostic = {
+            "schema": "endfield.endminf-m29-m30-capture-completeness.v1",
+            "status": "validation_failed",
+            "capture": str(args.capture.resolve()),
+            "diagnostic": str(exc),
+        }
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(diagnostic, indent=2) + "\n", encoding="utf-8")
         print(f"ERROR: {exc}")
+        print(args.output)
         return 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
