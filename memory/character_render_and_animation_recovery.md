@@ -1521,10 +1521,11 @@ evidence was already selected. EndfieldCapture's targeted byte ceiling is now
 focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
 unrelated selector pressure as a visible diagnostic after checking every exact
 owner binding; missing owner payloads still fail closed. The existing temporal
-sequence does not need repeating. After the currently running old capture
-process is closed and the patched launcher is installed, one targeted Numpad-1
-frame at the crystal peak is the only remaining graphics evidence needed.
-Full/everything mode and another Numpad-4 sequence are not required.
+sequence does not need repeating. The production `build-local` launcher and
+D3D11 DLL were rebuilt after the old session closed, and all 15 native tests,
+including the D3D11 proxy lifecycle, pass. One targeted Numpad-1 frame at the
+crystal peak is the only remaining graphics evidence needed. Full/everything
+mode and another Numpad-4 sequence are not required.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.
