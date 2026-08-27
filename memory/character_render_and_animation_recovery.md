@@ -1580,6 +1580,21 @@ incorrectly routed blend through Sample0. Routing that exact specialization
 through Sample2 removes the dark Loft silhouette and restores thin warm wind
 streaks without disabling the source material.
 
+The broad late circular burst is M31, not M30. A synchronized 4.4333/4.50 s
+material ablation removes the ring while preserving the central flash, rays,
+and debris. Session `20260827T064009Z` contains two exact M31 packets in frame
+1841 (draws 3 and 11): the shared VFXBaseV2 pair is
+`62A5CE6C09171DE9/5558DEDDB1EE6188`, PS b3 c1/c4 exactly match M31's authored
+intensity/alpha and linearized tint, and its 256x256 BC7-sRGB t1 payload plus
+IA bindings are retained. M31 and M30 both soft-sample the same 3840x2160
+scene-depth object at t0, which is the one 33,177,600-byte payload omitted by
+the old 64-MiB package. Disabling only M30 soft blend restores several thin
+upper-right streaks but does not create the circular burst; retain the authored
+soft-blend keyword and do not treat the missing depth as the cause of the ring.
+The remaining 96-MiB targeted recapture is for exact M30/M31 edge fading and
+resource closure, not for ring ownership, shader selection, tint, or texture
+identity.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
