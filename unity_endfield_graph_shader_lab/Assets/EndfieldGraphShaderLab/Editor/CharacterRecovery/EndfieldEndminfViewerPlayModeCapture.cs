@@ -151,6 +151,9 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedSphereOutsidePresentationReady;
             public bool observedEndminfPostSourceRgba16;
             public bool observedEndminfBloomR11;
+            public bool exactEndminfUberRequested;
+            public bool observedExactEndminfUberSubmitted;
+            public string exactEndminfUberFailure;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool observedDeferredExactConsumerReady;
@@ -176,6 +179,9 @@ namespace EndfieldGraphShaderLabEditor
             public Vector2 endminfPostCenterViewport;
             public string endminfPostSourceGraphicsFormat;
             public string endminfBloomGraphicsFormat;
+            public bool exactEndminfUberRequested;
+            public bool exactEndminfUberSubmitted;
+            public string exactEndminfUberFailure;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -925,6 +931,12 @@ namespace EndfieldGraphShaderLabEditor
                 endminfBloomGraphicsFormat =
                     HGCompatRenderPipeline
                         .LastRecoveredEndminfBloomGraphicsFormat.ToString(),
+                exactEndminfUberRequested = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactUberRequested,
+                exactEndminfUberSubmitted = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactUberSubmitted,
+                exactEndminfUberFailure = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactUberFailure,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
@@ -1216,11 +1228,30 @@ namespace EndfieldGraphShaderLabEditor
                 missingObservations.Add(
                     "retail R11G11B10_FLOAT Uber bloom handoff");
             }
+            bool exactEndminfUberRequested = Frames.Any(
+                value => value.exactEndminfUberRequested);
+            bool observedExactEndminfUberSubmitted =
+                !exactEndminfUberRequested ||
+                (Frames.Count > 0 && Frames.All(
+                    value => value.exactEndminfUberSubmitted));
+            string exactEndminfUberFailure = Frames
+                .Select(value => value.exactEndminfUberFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            if (!observedExactEndminfUberSubmitted)
+            {
+                missingObservations.Add(
+                    "exact Endminf Uber native submission" +
+                    (string.IsNullOrWhiteSpace(exactEndminfUberFailure)
+                        ? string.Empty
+                        : " (" + exactEndminfUberFailure + ")"));
+            }
             bool requiredCaptureContractReady =
                 charInfoBackgroundIncluded &&
                 backgroundPortraitIncluded &&
                 observedEndminfPostSourceRgba16 &&
-                observedEndminfBloomR11;
+                observedEndminfBloomR11 &&
+                observedExactEndminfUberSubmitted;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
@@ -1277,6 +1308,10 @@ namespace EndfieldGraphShaderLabEditor
                 observedEndminfPostSourceRgba16 =
                     observedEndminfPostSourceRgba16,
                 observedEndminfBloomR11 = observedEndminfBloomR11,
+                exactEndminfUberRequested = exactEndminfUberRequested,
+                observedExactEndminfUberSubmitted =
+                    observedExactEndminfUberSubmitted,
+                exactEndminfUberFailure = exactEndminfUberFailure,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =

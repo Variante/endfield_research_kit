@@ -97,6 +97,7 @@ def build_header(report: dict[str, Any]) -> str:
         "#pragma once\n"
         "#include <cstddef>\n"
         "#include <cstdint>\n\n"
+        "inline constexpr bool g_EndfieldUberCapturePayloadAvailable = true;\n"
         f'inline constexpr char g_EndfieldUberCapture[] = "{capture}";\n'
         f"inline constexpr std::uint32_t g_EndfieldUberCaptureFrame = {frame}u;\n"
         f"inline constexpr std::uint32_t g_EndfieldUberFullscreenOrdinal = {ordinal}u;\n\n"
