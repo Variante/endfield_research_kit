@@ -1597,6 +1597,17 @@ Both generated C# and native payload contracts explicitly publish
 `DepthContractReady=false`; the native plugin compiles and statically validates
 that fail-closed boundary. No M30 draw is admitted until the replacement frame
 retains and validates the full-resolution PS t0 scene-depth descriptor.
+A fresh 770-frame, 60 Hz Viewer sequence after restoring the LitEffect stones
+and their authored lifetime completes successfully, excludes the foreground UI,
+and observes the primary rock compatibility binding. Against the synchronized
+clean-reference peak (reference frame 269 versus Unity frame 265), the full
+frame remains at 16.5448 dB PSNR and 0.7073 SSIM: retail has a compact amber
+ring/core, while Unity still has a broad RGB-separated ghost field and an
+overbright core that obscure the hand and body. M27's HGBuffer is ready in this
+run but its deferred presentation is not; a same-phase compatibility-M27 probe
+does not materially change the peak. The exact Uber payload therefore remains
+the dominant visual blocker, rather than the restored stone lifecycle or an
+M27 ownership error.
 The `064009Z` backbuffers show the cyan promotion presentation (blue skin,
 shoulder accent, and visible effect grading), while the canonical clean
 `2026-08-26_21-25-50.mkv` reference uses the yellow-accent natural-skin
