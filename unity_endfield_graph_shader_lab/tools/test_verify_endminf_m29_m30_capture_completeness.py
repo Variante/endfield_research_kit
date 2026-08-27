@@ -81,9 +81,19 @@ class CaptureCompletenessTests(unittest.TestCase):
         self.assertEqual(report["owners"]["M29"]["packetCount"], 1)
         self.assertEqual(report["owners"]["M30"]["packetCount"], 1)
 
-    def test_truncated_selection_fails_closed(self) -> None:
-        with self.assertRaisesRegex(MODULE.VerificationError, "truncated"):
-            self.build(metadata(truncated=True))
+    def test_unrelated_global_truncation_is_diagnostic_after_owner_closure(self) -> None:
+        report = self.build(metadata(truncated=True))
+        self.assertTrue(report["globalResourceSelectionTruncated"])
+        self.assertEqual(report["resourceSelectionTruncatedFrames"], [1])
+
+    def test_missing_owner_payload_still_fails_when_globally_truncated(self) -> None:
+        payload = metadata(truncated=True)
+        payload["selectedResourceRecords"] = [
+            row for row in payload["selectedResourceRecords"]
+            if row["objectId"] != 200
+        ]
+        with self.assertRaisesRegex(MODULE.VerificationError, "missing resource payloads"):
+            self.build(payload)
 
     def test_missing_draw_ownership_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "owner resources"):
