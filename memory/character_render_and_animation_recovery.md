@@ -1067,7 +1067,11 @@ The pre-burst `overview_04/1/Particle System (1)` M29 mesh particle uses
 and `_DisturbTex1`, `_MaskTex`, `_SampleTex0`, and `_SampleTex1` to
 `T_fx_flow_01_M` (`pE924975F4B2F54A4`). Both generated bindings had fallen
 back to white; the maintained Overview texture repair now restores and
-hash-gates them. Arbitrary requested-time capture can now retain all five
+hash-gates them. The complete M29 packet in session `20260827T064009Z`
+independently closes this extraction boundary: decoded BC7 PS t0 and t1/t2
+match the generated PNG pixels exactly after the expected vertical texture
+orientation. Remaining M29 differences are shader/output behavior, not an
+AnimeStudio texture-payload mismatch. Arbitrary requested-time capture can now retain all five
 post-stage surfaces. Duplicate D3D11 controls and duplicate M29/M30 exclusions
 fail closed at 4.15-4.1833 seconds but are byte-identical from 4.20 through
 4.2667 seconds. In that stable interval, excluding M30 removes the broad early
@@ -1548,8 +1552,12 @@ the old resource truncation, so its cloth evidence is usable while its
 M29/M30 texture evidence is not.
 
 The pre-patch session is now covered by a fail-closed M29/M30 temporal
-verifier. It identifies 13 M29 packets at 2.5333-4.1667 seconds and 11 M30
-packets at 2.8000-4.1667 seconds using shader pair plus exact PS b3 c1/c4
+verifier. Capture timing uses `timestampQpc`, never presented-frame deltas:
+the 13-packet M29 sequence begins at 2.4833 seconds and the 11-packet M30
+sequence begins at 2.7666 seconds, matching M30's authored 2.77-second delay.
+Legacy sessions report the verified 10 MHz Windows-host clock fallback;
+new EndfieldCapture sessions record `qpcFrequency` directly in `session.json`.
+Owner selection uses shader pair plus exact PS b3 c1/c4
 fingerprints, rather than index count alone. M29 is always a one-instance
 1,386-index Sphere001 draw; M30 is a one-instance 6/12-index billboard draw.
 Both captured c4 values exactly equal the linear upload of the generated
@@ -1563,6 +1571,14 @@ effect-ROI MAE from 42.4441 to 42.4787; excluding M30 worsens it to 42.5368
 and also worsens temporal-delta MAE from 30.8086 to 30.8190. Exact replay still
 waits on the focused post-patch capture; the compatibility result is measured,
 not treated as completion.
+
+The large grey triangular artifact visible above the early crystal burst was
+not M29/M30. A same-time material ablation assigns it to the M35 Loft pair.
+M35 authors Sample2 as its only blend carrier (`weight4=1`) while Sample0 is
+disturbance-only (`weight4=0`); the recovered non-polar three-sample branch
+incorrectly routed blend through Sample0. Routing that exact specialization
+through Sample2 removes the dark Loft silhouette and restores thin warm wind
+streaks without disabling the source material.
 
 ## Main animation gap
 

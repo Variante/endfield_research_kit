@@ -254,6 +254,21 @@ namespace EndfieldGraphShaderLabEditor
             public bool isPlaying;
             public bool isEmitting;
             public int alive;
+            public Vector3 rendererBoundsCenter;
+            public Vector3 rendererBoundsExtents;
+            public Vector3 rendererViewportCenter;
+            public string mesh;
+            public Vector3 meshBoundsCenter;
+            public Vector3 meshBoundsExtents;
+            public Vector3 firstParticlePosition;
+            public Vector3 firstParticleWorldPosition;
+            public Vector3 firstParticleSize3D;
+            public Vector3 firstParticleRotation3D;
+            public Vector4 firstParticleColor;
+            public float firstParticleRemainingLifetime;
+            public float firstParticleStartLifetime;
+            public uint firstParticleRandomSeed;
+            public Vector4 firstParticleCustom1;
         }
 
         [Serializable]
@@ -1681,6 +1696,25 @@ namespace EndfieldGraphShaderLabEditor
             ParticleSystem.EmissionModule emission = system.emission;
             var vertexStreams = new List<ParticleSystemVertexStream>();
             renderer.GetActiveVertexStreams(vertexStreams);
+            var particles = new ParticleSystem.Particle[Mathf.Max(1, system.particleCount)];
+            int particleCount = system.GetParticles(particles);
+            ParticleSystem.Particle first = particleCount > 0
+                ? particles[0]
+                : default;
+            Vector3 firstWorld = first.position;
+            if (particleCount > 0 && main.simulationSpace == ParticleSystemSimulationSpace.Local)
+                firstWorld = system.transform.TransformPoint(first.position);
+            else if (particleCount > 0 &&
+                     main.simulationSpace == ParticleSystemSimulationSpace.Custom &&
+                     main.customSimulationSpace != null)
+                firstWorld = main.customSimulationSpace.TransformPoint(first.position);
+            var custom1 = new List<Vector4>();
+            system.GetCustomParticleData(
+                custom1,
+                ParticleSystemCustomData.Custom1);
+            Mesh mesh = renderer.mesh;
+            Bounds bounds = renderer.bounds;
+            Color32 firstColor = first.GetCurrentColor(system);
             return new ParticleRow {
                 path = Hierarchy(renderer.transform),
                 materials = renderer.sharedMaterials.Select(material =>
@@ -1707,7 +1741,28 @@ namespace EndfieldGraphShaderLabEditor
                 playOnAwake = main.playOnAwake,
                 isPlaying = system.isPlaying,
                 isEmitting = system.isEmitting,
-                alive = system.particleCount
+                alive = system.particleCount,
+                rendererBoundsCenter = bounds.center,
+                rendererBoundsExtents = bounds.extents,
+                rendererViewportCenter = camera != null
+                    ? camera.WorldToViewportPoint(bounds.center)
+                    : Vector3.zero,
+                mesh = mesh != null ? mesh.name : string.Empty,
+                meshBoundsCenter = mesh != null ? mesh.bounds.center : Vector3.zero,
+                meshBoundsExtents = mesh != null ? mesh.bounds.extents : Vector3.zero,
+                firstParticlePosition = first.position,
+                firstParticleWorldPosition = firstWorld,
+                firstParticleSize3D = first.GetCurrentSize3D(system),
+                firstParticleRotation3D = first.rotation3D,
+                firstParticleColor = new Vector4(
+                    firstColor.r / 255f,
+                    firstColor.g / 255f,
+                    firstColor.b / 255f,
+                    firstColor.a / 255f),
+                firstParticleRemainingLifetime = first.remainingLifetime,
+                firstParticleStartLifetime = first.startLifetime,
+                firstParticleRandomSeed = first.randomSeed,
+                firstParticleCustom1 = custom1.Count > 0 ? custom1[0] : Vector4.zero,
             };
         }
 
