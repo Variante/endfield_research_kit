@@ -1523,18 +1523,22 @@ targeted aggregate ceiling was only 32 MiB and about 25 MiB of prior bounded
 evidence was already selected. Follow-up session `20260827T064009Z` proves the
 64 MiB patch is active across 38 complete packages, but exposes larger
 16-MiB geometry carriers: the exact M30 frames already retain 58.66-59.25 MiB
-before its scene-depth input, so t0 remains absent. The measured closure needs
-about 91 MiB. EndfieldCapture's targeted byte ceiling is therefore 96 MiB,
-still below `full` and with a regression gate for 60 MiB of pre-M30 evidence
-plus the 33,177,600-byte input. The
+before its scene-depth input, so t0 remains absent. Session
+`20260827T081152Z` is healthy and contains two complete targeted Numpad-1
+packages, but disproves the subsequent 96-MiB estimate: frame 1845 retains
+75,579,484 resource bytes before the exact M30 draw and still omits its
+33,177,600-byte scene-depth PS t0. The measured closure is therefore about
+107.4 MiB. EndfieldCapture's targeted byte ceiling is now 128 MiB, with a
+regression gate for 76 MiB of measured pre-M30 evidence plus that exact depth
+input. The one-frame and 32-resource bounds remain unchanged. The
 focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
 unrelated selector pressure as a visible diagnostic after checking every exact
 owner binding; missing owner payloads still fail closed. The existing temporal
-sequences do not need repeating. After the 64 MiB session closed, the 96 MiB
-production launcher and D3D11 DLL rebuilt successfully and all 15 native tests,
-including the D3D11 proxy lifecycle, pass. One targeted Numpad-1 frame at the
-crystal peak is the only remaining graphics evidence needed. Full/everything
-mode and another Numpad-4 sequence are not required.
+sequences do not need repeating. The 128-MiB production launcher and D3D11 DLL
+rebuilt successfully and all 15 native tests, including the D3D11 proxy
+lifecycle, pass. One targeted Numpad-1 frame at the crystal peak is the only
+remaining graphics evidence needed. Full/everything mode and another Numpad-4
+sequence are not required.
 The `064009Z` backbuffers show the cyan promotion presentation (blue skin,
 shoulder accent, and visible effect grading), while the canonical clean
 `2026-08-26_21-25-50.mkv` reference uses the yellow-accent natural-skin
@@ -1591,7 +1595,7 @@ scene-depth object at t0, which is the one 33,177,600-byte payload omitted by
 the old 64-MiB package. Disabling only M30 soft blend restores several thin
 upper-right streaks but does not create the circular burst; retain the authored
 soft-blend keyword and do not treat the missing depth as the cause of the ring.
-The remaining 96-MiB targeted recapture is for exact M30/M31 edge fading and
+The remaining 128-MiB targeted recapture is for exact M30/M31 edge fading and
 resource closure, not for ring ownership, shader selection, tint, or texture
 identity.
 
