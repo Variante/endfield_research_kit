@@ -1531,6 +1531,12 @@ production launcher and D3D11 DLL rebuilt successfully and all 15 native tests,
 including the D3D11 proxy lifecycle, pass. One targeted Numpad-1 frame at the
 crystal peak is the only remaining graphics evidence needed. Full/everything
 mode and another Numpad-4 sequence are not required.
+The `064009Z` backbuffers show the cyan promotion presentation (blue skin,
+shoulder accent, and visible effect grading), while the canonical clean
+`2026-08-26_21-25-50.mkv` reference uses the yellow-accent natural-skin
+presentation. Reuse the capture's shader ownership, geometry, timing,
+constants, and depth behavior, but do not use its final composited color as
+the clean-reference color oracle.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.
