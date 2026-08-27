@@ -42,12 +42,14 @@ namespace EndfieldGraphShaderLabEditor
         // Match the complete no-frame-generation retail segment through the
         // sustained loop tail, rather than stopping at the former 10 s export.
         private const int VideoFrameCount = 770;
-        // The supplied retail recording keeps the pointer at the lower-right
-        // during Endminf's entrance. These normalized coordinates are measured
-        // from that 1920x1080 capture and select the already recovered live
-        // cursor-input path; they are not static game-data defaults.
-        private const string RecordingGyroscopeInputX = "0.989";
-        private const string RecordingGyroscopeInputY = "-0.874";
+        // The canonical clean reference videos/2026-08-26_21-25-50.mkv keeps
+        // the pointer at source pixel (1036,75) after its short initial move.
+        // Convert that 3840x2160 top-left image coordinate to the source
+        // normalized mouse domain: x=2*1036/3840-1, y=1-2*75/2160.
+        // These are recording-specific live inputs, not game-data defaults;
+        // environment overrides preserve comparisons against older captures.
+        private const string RecordingGyroscopeInputX = "-0.4604167";
+        private const string RecordingGyroscopeInputY = "0.9305556";
         // Direct UI-free registration of the retained retail Uber output places
         // the August 24 no-frame-generation pulse on the authored body clock.
         // The older August 21 route's 0.15-second offset remains available as
