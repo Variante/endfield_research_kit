@@ -25,7 +25,8 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     window = {
         "windowId": 1,
         "trajectoryComplete": overflow == 0,
-        "endminfTrajectoryFourOwnerCoverage": True,
+        "endminfTrajectoryFourChunkCandidateCoverage": True,
+        "endminfTrajectoryFourOwnerCoverage": False,
         "transformWriteUnreadableCalls": 0,
         "transformSampleOverflow": overflow,
         "transformSampleCount": sample_count,
@@ -65,7 +66,7 @@ class TrajectoryCaptureTests(unittest.TestCase):
             report = MODULE.build_report(root, minimum_writebacks=2)
             self.assertEqual(
                 report["status"],
-                "validated_exact_four_owner_transform_trajectory")
+                "validated_unique_four_chunk_candidate_trajectory")
             self.assertEqual(report["writebackCount"], 2)
             self.assertEqual(report["sampleCount"], 252)
 

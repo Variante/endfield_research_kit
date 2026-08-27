@@ -1578,17 +1578,18 @@ or shaders rather than hand-editing generated prefabs.
    mode: one bounded window observed 155 teams across 617 cloth updates with
    every relative flag false and no unreadable/overflow calls. It predates
    transform retention and therefore contains no owner trajectories. The
-   current-build provider now hooks the final `DynamicBoneTransformManager`
-   writeback after the original call and retains only teams whose runtime
-   `proxyTransformChunk` lengths match Endminf's exact Ribbon2/Hair/Ribbon/Coat
-   layout of 6/30/20/70 transforms. Each bounded sample carries world and local
-   position/rotation, transform/team flags, component/team identity, cloth
-   weights, and chunk identity. Capacity, unreadable calls, incomplete writes,
-   non-contiguous writebacks, duplicate candidates, and missing owner rows all
-   fail closed. Synthetic positive, unrelated-team, unreadable, overflow, and
-   incomplete-owner tests pass together with the complete 15-test Release
-   suite. One post-patch dynamics window across Overview start and loop remains
-   required before replacing the older skinning-derived replay oracle.
+   attempted current-build provider extension to the returned
+   `DynamicBoneTransformManager.WriteTransform` handle is rejected for retail
+   use. Installed-binary witnesses prove its hidden 16-byte `JobHandle` return
+   ABI, but its only caller immediately chains that returned handle into later
+   jobs; reading manager arrays when `WriteTransform` returns can therefore
+   race unfinished simulation. The live hook is disabled before retail use.
+   The bounded copied-TeamData sampler, candidate schema, finite-value gate,
+   and synthetic positive/unreadable/overflow tests remain preparatory code,
+   not captured evidence. A safe dense trajectory path must sample after a
+   proven job-completion/render boundary and then identify the unique
+   6/30/20/70 candidates by joining them to the existing owner-tagged skinning
+   oracle. Do not request another dynamics window until that boundary closes.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
