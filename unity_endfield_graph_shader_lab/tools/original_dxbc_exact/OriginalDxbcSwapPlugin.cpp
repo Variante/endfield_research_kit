@@ -5,6 +5,7 @@
 #include <d3dcompiler.h>
 
 #include <atomic>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -21,6 +22,12 @@
 #include "M27CapturePayload.generated.h"
 #include "M27TemporalCapturePayload.generated.h"
 #include "M27SubstitutionRegistry.h"
+
+#if __has_include("EndminfUberCapturePayload.generated.h")
+#include "EndminfUberCapturePayload.generated.h"
+#else
+#include "EndminfUberCapturePayload.fallback.h"
+#endif
 
 namespace
 {
@@ -143,6 +150,49 @@ std::atomic<std::uint32_t> g_m27DrawCount{0};
 std::atomic<std::uint32_t> g_m27DrawFailureCount{0};
 std::atomic<HRESULT> g_m27DrawLastResult{S_OK};
 std::atomic<std::uint32_t> g_m27DrawFailureStage{0};
+
+constexpr std::size_t kEndminfUberPacketCapacity = 64;
+constexpr std::uint32_t kEndminfUberMaximumEventId = 0x7fffffffu;
+constexpr std::size_t kEndminfUberVsB0Bytes = 1u * 16u;
+constexpr std::size_t kEndminfUberPsB0Bytes = 28u * 16u;
+constexpr std::size_t kEndminfUberPsB1Bytes = 26u * 16u;
+static_assert(g_EndfieldUberVsB0Size == kEndminfUberVsB0Bytes);
+static_assert(g_EndfieldUberPsB0Size == kEndminfUberPsB0Bytes);
+static_assert(g_EndfieldUberPsB1Size == kEndminfUberPsB1Bytes);
+
+enum class EndminfUberPacketState : std::uint32_t
+{
+    Empty = 0,
+    Ready = 1,
+    Consuming = 2,
+};
+
+struct EndminfUberPacket
+{
+    std::atomic<EndminfUberPacketState> state{EndminfUberPacketState::Empty};
+    std::atomic<std::uint32_t> eventId{0};
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    std::uint8_t vsB0[kEndminfUberVsB0Bytes] = {};
+    std::uint8_t psB0[kEndminfUberPsB0Bytes] = {};
+    std::uint8_t psB1[kEndminfUberPsB1Bytes] = {};
+    ID3D11Texture2D* textures[3] = {};
+};
+
+EndminfUberPacket g_endminfUberPackets[kEndminfUberPacketCapacity] = {};
+std::mutex g_endminfUberMutex;
+ID3D11Texture2D* g_endminfUberConfiguredTextures[3] = {};
+std::uint32_t g_endminfUberNextEventId = 1;
+ID3D11VertexShader* g_endminfUberVertexShader = nullptr;
+ID3D11PixelShader* g_endminfUberPixelShader = nullptr;
+ID3D11SamplerState* g_endminfUberSampler = nullptr;
+ID3D11BlendState* g_endminfUberBlendState = nullptr;
+ID3D11DepthStencilState* g_endminfUberDepthState = nullptr;
+ID3D11RasterizerState* g_endminfUberRasterizerState = nullptr;
+std::atomic<std::uint32_t> g_endminfUberDrawCount{0};
+std::atomic<std::uint32_t> g_endminfUberFailureCount{0};
+std::atomic<HRESULT> g_endminfUberLastResult{S_OK};
+std::atomic<std::uint32_t> g_endminfUberFailureStage{0};
 
 constexpr std::size_t kM27CallbackObservationCapacity = 512;
 constexpr std::size_t kM27CallbackMetadataCount = 12;
@@ -1998,6 +2048,509 @@ void UNITY_INTERFACE_API DrawM13ExactRuntime(int eventId)
     g_m13LastResult.store(S_OK, std::memory_order_relaxed);
 }
 
+void RecordEndminfUberFailure(HRESULT result, std::uint32_t stage)
+{
+    g_endminfUberFailureStage.store(stage, std::memory_order_relaxed);
+    g_endminfUberLastResult.store(result, std::memory_order_relaxed);
+    g_endminfUberFailureCount.fetch_add(1, std::memory_order_relaxed);
+}
+
+void ReleaseEndminfUberPacketTextures(EndminfUberPacket& packet)
+{
+    for (ID3D11Texture2D*& texture : packet.textures)
+        ReleaseM14Object(texture);
+}
+
+void ReleaseEndminfUberRuntimeResources()
+{
+    ReleaseM14Object(g_endminfUberRasterizerState);
+    ReleaseM14Object(g_endminfUberDepthState);
+    ReleaseM14Object(g_endminfUberBlendState);
+    ReleaseM14Object(g_endminfUberSampler);
+    ReleaseM14Object(g_endminfUberPixelShader);
+    ReleaseM14Object(g_endminfUberVertexShader);
+    std::lock_guard<std::mutex> lock(g_endminfUberMutex);
+    for (ID3D11Texture2D*& texture : g_endminfUberConfiguredTextures)
+        ReleaseM14Object(texture);
+    for (EndminfUberPacket& packet : g_endminfUberPackets)
+    {
+        ReleaseEndminfUberPacketTextures(packet);
+        packet.eventId.store(0u, std::memory_order_relaxed);
+        packet.state.store(EndminfUberPacketState::Empty,
+            std::memory_order_release);
+    }
+    g_endminfUberNextEventId = 1;
+}
+
+bool IsEndminfUberTexture(
+    ID3D11Texture2D* texture,
+    DXGI_FORMAT format,
+    UINT width,
+    UINT height)
+{
+    if (texture == nullptr)
+        return false;
+    D3D11_TEXTURE2D_DESC description = {};
+    texture->GetDesc(&description);
+    return description.Width == width && description.Height == height &&
+        description.MipLevels >= 1u && description.ArraySize == 1u &&
+        description.Format == format && description.SampleDesc.Count == 1u &&
+        (description.BindFlags & D3D11_BIND_SHADER_RESOURCE) != 0u;
+}
+
+bool ValidateEndminfUberTextureSet(
+    ID3D11Texture2D* const textures[3],
+    UINT width,
+    UINT height)
+{
+    if (width == 0u || height == 0u)
+        return false;
+    return IsEndminfUberTexture(
+               textures[0], DXGI_FORMAT_R16G16B16A16_FLOAT, width, height) &&
+        IsEndminfUberTexture(
+            textures[1], DXGI_FORMAT_R11G11B10_FLOAT,
+            (width + 1u) / 2u, (height + 1u) / 2u) &&
+        IsEndminfUberTexture(
+            textures[2], DXGI_FORMAT_R16G16B16A16_FLOAT, 1024u, 32u);
+}
+
+HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
+{
+    if (device == nullptr)
+        return E_POINTER;
+    if (g_endminfUberVertexShader != nullptr &&
+        g_endminfUberPixelShader != nullptr &&
+        g_endminfUberSampler != nullptr &&
+        g_endminfUberBlendState != nullptr &&
+        g_endminfUberDepthState != nullptr &&
+        g_endminfUberRasterizerState != nullptr)
+    {
+        return S_OK;
+    }
+
+    ReleaseM14Object(g_endminfUberRasterizerState);
+    ReleaseM14Object(g_endminfUberDepthState);
+    ReleaseM14Object(g_endminfUberBlendState);
+    ReleaseM14Object(g_endminfUberSampler);
+    ReleaseM14Object(g_endminfUberPixelShader);
+    ReleaseM14Object(g_endminfUberVertexShader);
+
+    g_endminfUberFailureStage.store(101u, std::memory_order_relaxed);
+    HRESULT result = device->CreateVertexShader(
+        g_EndfieldUberVertexDxbc,
+        g_EndfieldUberVertexDxbcSize,
+        nullptr,
+        &g_endminfUberVertexShader);
+    if (FAILED(result))
+        return result;
+    g_endminfUberFailureStage.store(102u, std::memory_order_relaxed);
+    result = device->CreatePixelShader(
+        g_EndfieldUberPixelDxbc,
+        g_EndfieldUberPixelDxbcSize,
+        nullptr,
+        &g_endminfUberPixelShader);
+    if (FAILED(result))
+        return result;
+
+    D3D11_SAMPLER_DESC sampler = {};
+    sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.MinLOD = 0.0f;
+    sampler.MaxLOD = D3D11_FLOAT32_MAX;
+    g_endminfUberFailureStage.store(103u, std::memory_order_relaxed);
+    result = device->CreateSamplerState(&sampler, &g_endminfUberSampler);
+    if (FAILED(result))
+        return result;
+
+    D3D11_BLEND_DESC blend = {};
+    blend.RenderTarget[0].BlendEnable = FALSE;
+    blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    g_endminfUberFailureStage.store(104u, std::memory_order_relaxed);
+    result = device->CreateBlendState(&blend, &g_endminfUberBlendState);
+    if (FAILED(result))
+        return result;
+
+    D3D11_DEPTH_STENCIL_DESC depth = {};
+    depth.DepthEnable = FALSE;
+    depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    depth.StencilEnable = FALSE;
+    g_endminfUberFailureStage.store(105u, std::memory_order_relaxed);
+    result = device->CreateDepthStencilState(&depth, &g_endminfUberDepthState);
+    if (FAILED(result))
+        return result;
+
+    D3D11_RASTERIZER_DESC rasterizer = {};
+    rasterizer.FillMode = D3D11_FILL_SOLID;
+    rasterizer.CullMode = D3D11_CULL_NONE;
+    rasterizer.DepthClipEnable = TRUE;
+    rasterizer.ScissorEnable = TRUE;
+    g_endminfUberFailureStage.store(106u, std::memory_order_relaxed);
+    result = device->CreateRasterizerState(
+        &rasterizer, &g_endminfUberRasterizerState);
+    if (SUCCEEDED(result))
+        g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
+    return result;
+}
+
+void PatchEndminfUberFloat(
+    std::uint8_t* bytes,
+    std::size_t byteCount,
+    std::size_t floatIndex,
+    float value)
+{
+    const std::size_t offset = floatIndex * sizeof(float);
+    if (bytes != nullptr && offset + sizeof(float) <= byteCount)
+        std::memcpy(bytes + offset, &value, sizeof(value));
+}
+
+bool EndminfUberEventIdInUse(std::uint32_t eventId)
+{
+    for (const EndminfUberPacket& packet : g_endminfUberPackets)
+    {
+        if (packet.state.load(std::memory_order_acquire) !=
+                EndminfUberPacketState::Empty &&
+            packet.eventId.load(std::memory_order_relaxed) == eventId)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::uint32_t AllocateEndminfUberEventId()
+{
+    for (std::size_t attempt = 0;
+         attempt <= kEndminfUberPacketCapacity;
+         ++attempt)
+    {
+        std::uint32_t candidate = g_endminfUberNextEventId++;
+        if (candidate == 0u || candidate > kEndminfUberMaximumEventId)
+        {
+            candidate = 1u;
+            g_endminfUberNextEventId = 2u;
+        }
+        if (!EndminfUberEventIdInUse(candidate))
+            return candidate;
+    }
+    return 0u;
+}
+
+void ReleaseEndminfUberClassInstances(
+    ID3D11ClassInstance** instances,
+    UINT count)
+{
+    for (UINT index = 0; index < count; ++index)
+        ReleaseM14Object(instances[index]);
+}
+
+void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
+{
+    EndminfUberPacket* packet = nullptr;
+    if (eventId > 0)
+    {
+        for (EndminfUberPacket& candidate : g_endminfUberPackets)
+        {
+            if (candidate.state.load(std::memory_order_acquire) !=
+                EndminfUberPacketState::Ready)
+            {
+                continue;
+            }
+            if (candidate.eventId.load(std::memory_order_relaxed) !=
+                static_cast<std::uint32_t>(eventId))
+                continue;
+            EndminfUberPacketState expected = EndminfUberPacketState::Ready;
+            if (candidate.state.compare_exchange_strong(
+                    expected,
+                    EndminfUberPacketState::Consuming,
+                    std::memory_order_acq_rel))
+            {
+                packet = &candidate;
+            }
+            break;
+        }
+    }
+    if (packet == nullptr)
+    {
+        RecordEndminfUberFailure(E_INVALIDARG, 201u);
+        return;
+    }
+
+    const auto finishPacket = [packet]() {
+        ReleaseEndminfUberPacketTextures(*packet);
+        packet->eventId.store(0u, std::memory_order_relaxed);
+        packet->state.store(
+            EndminfUberPacketState::Empty, std::memory_order_release);
+    };
+
+    IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
+    ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
+    if (device == nullptr)
+    {
+        RecordEndminfUberFailure(E_POINTER, 202u);
+        finishPacket();
+        return;
+    }
+    if (!ValidateEndminfUberTextureSet(
+            packet->textures, packet->width, packet->height))
+    {
+        RecordEndminfUberFailure(E_INVALIDARG, 203u);
+        finishPacket();
+        return;
+    }
+    HRESULT result = CreateEndminfUberRuntimeResources(device);
+    if (FAILED(result))
+    {
+        RecordEndminfUberFailure(result,
+            g_endminfUberFailureStage.load(std::memory_order_relaxed));
+        finishPacket();
+        return;
+    }
+
+    ID3D11DeviceContext* context = nullptr;
+    device->GetImmediateContext(&context);
+    if (context == nullptr)
+    {
+        RecordEndminfUberFailure(E_POINTER, 204u);
+        finishPacket();
+        return;
+    }
+
+    ID3D11RenderTargetView* renderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+    ID3D11DepthStencilView* renderDepth = nullptr;
+    context->OMGetRenderTargets(
+        D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, renderTargets, &renderDepth);
+    bool targetReady = renderTargets[0] != nullptr && renderDepth == nullptr;
+    for (std::size_t index = 1;
+         index < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+         ++index)
+    {
+        targetReady = targetReady && renderTargets[index] == nullptr;
+    }
+
+    ID3D11Resource* outputResource = nullptr;
+    ID3D11Texture2D* outputTexture = nullptr;
+    D3D11_RENDER_TARGET_VIEW_DESC outputViewDescription = {};
+    D3D11_TEXTURE2D_DESC outputDescription = {};
+    if (targetReady)
+    {
+        renderTargets[0]->GetDesc(&outputViewDescription);
+        renderTargets[0]->GetResource(&outputResource);
+        if (outputResource == nullptr ||
+            FAILED(outputResource->QueryInterface(
+                __uuidof(ID3D11Texture2D),
+                reinterpret_cast<void**>(&outputTexture))))
+        {
+            targetReady = false;
+        }
+    }
+    if (targetReady)
+    {
+        outputTexture->GetDesc(&outputDescription);
+        targetReady =
+            outputViewDescription.Format == DXGI_FORMAT_R8G8B8A8_UNORM &&
+            outputViewDescription.ViewDimension == D3D11_RTV_DIMENSION_TEXTURE2D &&
+            outputViewDescription.Texture2D.MipSlice == 0u &&
+            outputDescription.Width == packet->width &&
+            outputDescription.Height == packet->height &&
+            outputDescription.SampleDesc.Count == 1u &&
+            outputDescription.ArraySize == 1u;
+        for (ID3D11Texture2D* texture : packet->textures)
+            targetReady = targetReady && texture != outputTexture;
+    }
+    if (!targetReady)
+    {
+        ReleaseM14Object(outputTexture);
+        ReleaseM14Object(outputResource);
+        ReleaseM14Object(renderDepth);
+        for (ID3D11RenderTargetView*& target : renderTargets)
+            ReleaseM14Object(target);
+        context->Release();
+        RecordEndminfUberFailure(E_INVALIDARG, 205u);
+        finishPacket();
+        return;
+    }
+
+    ID3D11Buffer* vertexConstant = nullptr;
+    ID3D11Buffer* pixelConstants[2] = {};
+    ID3D11ShaderResourceView* resources[3] = {};
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_CONSTANT_BUFFER,
+        packet->vsB0, static_cast<UINT>(sizeof(packet->vsB0)),
+        &vertexConstant);
+    if (SUCCEEDED(result))
+        result = CreateM14ImmutableBuffer(
+            device, D3D11_BIND_CONSTANT_BUFFER,
+            packet->psB0, static_cast<UINT>(sizeof(packet->psB0)),
+            &pixelConstants[0]);
+    if (SUCCEEDED(result))
+        result = CreateM14ImmutableBuffer(
+            device, D3D11_BIND_CONSTANT_BUFFER,
+            packet->psB1, static_cast<UINT>(sizeof(packet->psB1)),
+            &pixelConstants[1]);
+    for (std::size_t index = 0; SUCCEEDED(result) && index < 3; ++index)
+        result = device->CreateShaderResourceView(
+            packet->textures[index], nullptr, &resources[index]);
+    if (FAILED(result))
+    {
+        for (ID3D11ShaderResourceView*& resource : resources)
+            ReleaseM14Object(resource);
+        for (ID3D11Buffer*& constant : pixelConstants)
+            ReleaseM14Object(constant);
+        ReleaseM14Object(vertexConstant);
+        ReleaseM14Object(outputTexture);
+        ReleaseM14Object(outputResource);
+        for (ID3D11RenderTargetView*& target : renderTargets)
+            ReleaseM14Object(target);
+        context->Release();
+        RecordEndminfUberFailure(result, 206u);
+        finishPacket();
+        return;
+    }
+
+    constexpr UINT kClassCapacity = 256u;
+    ID3D11VertexShader* oldVertexShader = nullptr;
+    ID3D11PixelShader* oldPixelShader = nullptr;
+    ID3D11GeometryShader* oldGeometryShader = nullptr;
+    ID3D11HullShader* oldHullShader = nullptr;
+    ID3D11DomainShader* oldDomainShader = nullptr;
+    ID3D11ClassInstance* oldVertexClasses[kClassCapacity] = {};
+    ID3D11ClassInstance* oldPixelClasses[kClassCapacity] = {};
+    ID3D11ClassInstance* oldGeometryClasses[kClassCapacity] = {};
+    ID3D11ClassInstance* oldHullClasses[kClassCapacity] = {};
+    ID3D11ClassInstance* oldDomainClasses[kClassCapacity] = {};
+    UINT oldVertexClassCount = kClassCapacity;
+    UINT oldPixelClassCount = kClassCapacity;
+    UINT oldGeometryClassCount = kClassCapacity;
+    UINT oldHullClassCount = kClassCapacity;
+    UINT oldDomainClassCount = kClassCapacity;
+    ID3D11InputLayout* oldInputLayout = nullptr;
+    D3D11_PRIMITIVE_TOPOLOGY oldTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    ID3D11Buffer* oldVertexConstant = nullptr;
+    ID3D11Buffer* oldPixelConstants[2] = {};
+    ID3D11ShaderResourceView* oldResources[3] = {};
+    ID3D11SamplerState* oldSampler = nullptr;
+    ID3D11BlendState* oldBlendState = nullptr;
+    FLOAT oldBlendFactor[4] = {};
+    UINT oldSampleMask = 0;
+    ID3D11DepthStencilState* oldDepthState = nullptr;
+    UINT oldStencilReference = 0;
+    ID3D11RasterizerState* oldRasterizerState = nullptr;
+    ID3D11Predicate* oldPredicate = nullptr;
+    BOOL oldPredicateValue = FALSE;
+    D3D11_VIEWPORT oldViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_RECT oldScissors[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldScissorCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+
+    context->VSGetShader(&oldVertexShader, oldVertexClasses, &oldVertexClassCount);
+    context->PSGetShader(&oldPixelShader, oldPixelClasses, &oldPixelClassCount);
+    context->GSGetShader(&oldGeometryShader, oldGeometryClasses, &oldGeometryClassCount);
+    context->HSGetShader(&oldHullShader, oldHullClasses, &oldHullClassCount);
+    context->DSGetShader(&oldDomainShader, oldDomainClasses, &oldDomainClassCount);
+    context->IAGetInputLayout(&oldInputLayout);
+    context->IAGetPrimitiveTopology(&oldTopology);
+    context->VSGetConstantBuffers(0, 1, &oldVertexConstant);
+    context->PSGetConstantBuffers(0, 2, oldPixelConstants);
+    context->PSGetShaderResources(0, 3, oldResources);
+    context->PSGetSamplers(0, 1, &oldSampler);
+    context->OMGetBlendState(&oldBlendState, oldBlendFactor, &oldSampleMask);
+    context->OMGetDepthStencilState(&oldDepthState, &oldStencilReference);
+    context->RSGetState(&oldRasterizerState);
+    context->GetPredication(&oldPredicate, &oldPredicateValue);
+    context->RSGetViewports(&oldViewportCount, oldViewports);
+    context->RSGetScissorRects(&oldScissorCount, oldScissors);
+
+    const FLOAT blendFactor[4] = {};
+    const D3D11_VIEWPORT viewport = {
+        0.0f, 0.0f,
+        static_cast<FLOAT>(packet->width),
+        static_cast<FLOAT>(packet->height),
+        0.0f, 1.0f,
+    };
+    const D3D11_RECT scissor = {
+        0, 0,
+        static_cast<LONG>(packet->width),
+        static_cast<LONG>(packet->height),
+    };
+    context->SetPredication(nullptr, FALSE);
+    context->IASetInputLayout(nullptr);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(g_endminfUberVertexShader, nullptr, 0);
+    context->PSSetShader(g_endminfUberPixelShader, nullptr, 0);
+    context->GSSetShader(nullptr, nullptr, 0);
+    context->HSSetShader(nullptr, nullptr, 0);
+    context->DSSetShader(nullptr, nullptr, 0);
+    context->VSSetConstantBuffers(0, 1, &vertexConstant);
+    context->PSSetConstantBuffers(0, 2, pixelConstants);
+    context->PSSetShaderResources(0, 3, resources);
+    context->PSSetSamplers(0, 1, &g_endminfUberSampler);
+    context->OMSetBlendState(g_endminfUberBlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_endminfUberDepthState, 0u);
+    context->RSSetState(g_endminfUberRasterizerState);
+    context->RSSetViewports(1, &viewport);
+    context->RSSetScissorRects(1, &scissor);
+    context->Draw(3, 0);
+
+    ID3D11ShaderResourceView* nullResources[3] = {};
+    context->PSSetShaderResources(0, 3, nullResources);
+    context->VSSetShader(oldVertexShader, oldVertexClasses, oldVertexClassCount);
+    context->PSSetShader(oldPixelShader, oldPixelClasses, oldPixelClassCount);
+    context->GSSetShader(oldGeometryShader, oldGeometryClasses, oldGeometryClassCount);
+    context->HSSetShader(oldHullShader, oldHullClasses, oldHullClassCount);
+    context->DSSetShader(oldDomainShader, oldDomainClasses, oldDomainClassCount);
+    context->IASetInputLayout(oldInputLayout);
+    context->IASetPrimitiveTopology(oldTopology);
+    context->VSSetConstantBuffers(0, 1, &oldVertexConstant);
+    context->PSSetConstantBuffers(0, 2, oldPixelConstants);
+    context->PSSetShaderResources(0, 3, oldResources);
+    context->PSSetSamplers(0, 1, &oldSampler);
+    context->OMSetBlendState(oldBlendState, oldBlendFactor, oldSampleMask);
+    context->OMSetDepthStencilState(oldDepthState, oldStencilReference);
+    context->RSSetState(oldRasterizerState);
+    context->RSSetViewports(oldViewportCount, oldViewports);
+    context->RSSetScissorRects(oldScissorCount, oldScissors);
+    context->SetPredication(oldPredicate, oldPredicateValue);
+
+    ReleaseEndminfUberClassInstances(oldDomainClasses, oldDomainClassCount);
+    ReleaseEndminfUberClassInstances(oldHullClasses, oldHullClassCount);
+    ReleaseEndminfUberClassInstances(oldGeometryClasses, oldGeometryClassCount);
+    ReleaseEndminfUberClassInstances(oldPixelClasses, oldPixelClassCount);
+    ReleaseEndminfUberClassInstances(oldVertexClasses, oldVertexClassCount);
+    ReleaseM14Object(oldPredicate);
+    ReleaseM14Object(oldRasterizerState);
+    ReleaseM14Object(oldDepthState);
+    ReleaseM14Object(oldBlendState);
+    ReleaseM14Object(oldSampler);
+    for (ID3D11ShaderResourceView*& resource : oldResources)
+        ReleaseM14Object(resource);
+    for (ID3D11Buffer*& constant : oldPixelConstants)
+        ReleaseM14Object(constant);
+    ReleaseM14Object(oldVertexConstant);
+    ReleaseM14Object(oldInputLayout);
+    ReleaseM14Object(oldDomainShader);
+    ReleaseM14Object(oldHullShader);
+    ReleaseM14Object(oldGeometryShader);
+    ReleaseM14Object(oldPixelShader);
+    ReleaseM14Object(oldVertexShader);
+    for (ID3D11ShaderResourceView*& resource : resources)
+        ReleaseM14Object(resource);
+    for (ID3D11Buffer*& constant : pixelConstants)
+        ReleaseM14Object(constant);
+    ReleaseM14Object(vertexConstant);
+    ReleaseM14Object(outputTexture);
+    ReleaseM14Object(outputResource);
+    for (ID3D11RenderTargetView*& target : renderTargets)
+        ReleaseM14Object(target);
+    context->Release();
+    g_endminfUberDrawCount.fetch_add(1, std::memory_order_relaxed);
+    g_endminfUberLastResult.store(S_OK, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
+    finishPacket();
+}
+
 void UNITY_INTERFACE_API DrawM27ExactRuntime(int eventId)
 {
     if (eventId != 0)
@@ -2193,6 +2746,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
     ReleaseRuntimeShaders();
+    ReleaseEndminfUberRuntimeResources();
     ReleaseM27DrawResources();
     ReleaseM13RuntimeResources();
     ReleaseM14RuntimeResources();
@@ -2208,6 +2762,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
     g_armed.store(false, std::memory_order_release);
     g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
     ReleaseRuntimeShaders();
+    ReleaseEndminfUberRuntimeResources();
     ReleaseM27DrawResources();
     ReleaseM13RuntimeResources();
     ReleaseM14RuntimeResources();
@@ -2321,6 +2876,262 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetM27RenderEventFunc()
 {
     return DrawM27ExactRuntime;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberPayloadReady()
+{
+    return g_EndfieldUberCapturePayloadAvailable ? 1u : 0u;
+}
+
+extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberRenderEventFunc()
+{
+    return DrawEndminfUberExactRuntime;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetEndminfUberTextureResources(
+    void* source,
+    void* bloom,
+    void* lut)
+{
+    void* pointers[3] = {source, bloom, lut};
+    ID3D11Texture2D* textures[3] = {};
+    HRESULT result = S_OK;
+    for (std::size_t index = 0; index < 3; ++index)
+    {
+        if (pointers[index] == nullptr)
+        {
+            result = E_POINTER;
+            break;
+        }
+        result = reinterpret_cast<IUnknown*>(pointers[index])->QueryInterface(
+            __uuidof(ID3D11Texture2D),
+            reinterpret_cast<void**>(&textures[index]));
+        if (FAILED(result) || textures[index] == nullptr)
+            break;
+    }
+
+    if (SUCCEEDED(result))
+    {
+        D3D11_TEXTURE2D_DESC sourceDescription = {};
+        textures[0]->GetDesc(&sourceDescription);
+        if (!ValidateEndminfUberTextureSet(
+                textures, sourceDescription.Width, sourceDescription.Height))
+        {
+            result = E_INVALIDARG;
+        }
+    }
+    if (SUCCEEDED(result))
+    {
+        ID3D11Device* devices[3] = {};
+        for (std::size_t index = 0; index < 3; ++index)
+            textures[index]->GetDevice(&devices[index]);
+        const bool sameDevice = devices[0] != nullptr &&
+            devices[0] == devices[1] && devices[0] == devices[2];
+        for (ID3D11Device*& device : devices)
+            ReleaseM14Object(device);
+        if (!sameDevice)
+            result = E_INVALIDARG;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(g_endminfUberMutex);
+        for (ID3D11Texture2D*& old : g_endminfUberConfiguredTextures)
+            ReleaseM14Object(old);
+        if (SUCCEEDED(result))
+        {
+            for (std::size_t index = 0; index < 3; ++index)
+            {
+                g_endminfUberConfiguredTextures[index] = textures[index];
+                textures[index] = nullptr;
+            }
+        }
+    }
+    for (ID3D11Texture2D*& texture : textures)
+        ReleaseM14Object(texture);
+    if (FAILED(result))
+    {
+        RecordEndminfUberFailure(result, 301u);
+        return 0u;
+    }
+    g_endminfUberLastResult.store(S_OK, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcQueueEndminfUberPacket(
+    float screenWidth,
+    float screenHeight,
+    float exposure,
+    float centerX,
+    float centerY,
+    float radialIntensity,
+    float power,
+    float mode,
+    float chromaticIntensity,
+    float averageStepFlagZ,
+    float averageStepFlagW)
+{
+    if (!g_EndfieldUberCapturePayloadAvailable)
+    {
+        RecordEndminfUberFailure(
+            HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND), 401u);
+        return 0u;
+    }
+    const bool finite = std::isfinite(screenWidth) &&
+        std::isfinite(screenHeight) && std::isfinite(exposure) &&
+        std::isfinite(centerX) && std::isfinite(centerY) &&
+        std::isfinite(radialIntensity) && std::isfinite(power) &&
+        std::isfinite(mode) && std::isfinite(chromaticIntensity) &&
+        std::isfinite(averageStepFlagZ) &&
+        std::isfinite(averageStepFlagW);
+    const bool validDimensions = screenWidth >= 1.0f &&
+        screenHeight >= 1.0f && screenWidth <= 16384.0f &&
+        screenHeight <= 16384.0f &&
+        std::floor(screenWidth) == screenWidth &&
+        std::floor(screenHeight) == screenHeight;
+    const bool validParams = centerX >= 0.0f && centerX <= 1.0f &&
+        centerY >= 0.0f && centerY <= 1.0f &&
+        radialIntensity >= 0.0f && power > 0.0f &&
+        (mode == 3.0f || mode == 6.0f) && chromaticIntensity >= 0.0f;
+    const bool validFlagZ = averageStepFlagZ < 0.0f ||
+        averageStepFlagZ == 0.0f || averageStepFlagZ == 1.0f;
+    const bool validFlagW = averageStepFlagW < 0.0f ||
+        averageStepFlagW == 0.0f || averageStepFlagW == 1.0f;
+    if (!finite || !validDimensions || !validParams ||
+        !validFlagZ || !validFlagW)
+    {
+        RecordEndminfUberFailure(E_INVALIDARG, 402u);
+        return 0u;
+    }
+
+    const UINT width = static_cast<UINT>(screenWidth);
+    const UINT height = static_cast<UINT>(screenHeight);
+    std::lock_guard<std::mutex> lock(g_endminfUberMutex);
+    if (!ValidateEndminfUberTextureSet(
+            g_endminfUberConfiguredTextures, width, height))
+    {
+        RecordEndminfUberFailure(E_INVALIDARG, 403u);
+        return 0u;
+    }
+    EndminfUberPacket* packet = nullptr;
+    for (EndminfUberPacket& candidate : g_endminfUberPackets)
+    {
+        if (candidate.state.load(std::memory_order_acquire) ==
+            EndminfUberPacketState::Empty)
+        {
+            packet = &candidate;
+            break;
+        }
+    }
+    if (packet == nullptr)
+    {
+        RecordEndminfUberFailure(
+            HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY), 404u);
+        return 0u;
+    }
+    const std::uint32_t eventId = AllocateEndminfUberEventId();
+    if (eventId == 0u)
+    {
+        RecordEndminfUberFailure(E_FAIL, 405u);
+        return 0u;
+    }
+
+    std::memcpy(packet->vsB0, g_EndfieldUberVsB0, sizeof(packet->vsB0));
+    std::memcpy(packet->psB0, g_EndfieldUberPsB0, sizeof(packet->psB0));
+    std::memcpy(packet->psB1, g_EndfieldUberPsB1, sizeof(packet->psB1));
+    // ShaderVariablesGlobal._ScreenSize = (width, height, rcpWidth, rcpHeight).
+    PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 0u, screenWidth);
+    PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 1u, screenHeight);
+    PatchEndminfUberFloat(
+        packet->psB0, sizeof(packet->psB0), 2u, 1.0f / screenWidth);
+    PatchEndminfUberFloat(
+        packet->psB0, sizeof(packet->psB0), 3u, 1.0f / screenHeight);
+    PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 27u * 4u, exposure);
+    PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 0u, centerX);
+    PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 1u, centerY);
+    PatchEndminfUberFloat(
+        packet->psB1, sizeof(packet->psB1), 2u, radialIntensity);
+    PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 3u, power);
+    PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 25u * 4u, mode);
+    PatchEndminfUberFloat(
+        packet->psB1, sizeof(packet->psB1), 25u * 4u + 1u,
+        chromaticIntensity);
+    if (averageStepFlagZ >= 0.0f)
+        PatchEndminfUberFloat(
+            packet->psB1, sizeof(packet->psB1), 25u * 4u + 2u,
+            averageStepFlagZ);
+    if (averageStepFlagW >= 0.0f)
+        PatchEndminfUberFloat(
+            packet->psB1, sizeof(packet->psB1), 25u * 4u + 3u,
+            averageStepFlagW);
+    for (std::size_t index = 0; index < 3; ++index)
+    {
+        packet->textures[index] = g_endminfUberConfiguredTextures[index];
+        packet->textures[index]->AddRef();
+    }
+    packet->width = width;
+    packet->height = height;
+    packet->eventId.store(eventId, std::memory_order_relaxed);
+    packet->state.store(EndminfUberPacketState::Ready, std::memory_order_release);
+    g_endminfUberLastResult.store(S_OK, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
+    return eventId;
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcResetEndminfUberRuntimeState()
+{
+    std::lock_guard<std::mutex> lock(g_endminfUberMutex);
+    for (ID3D11Texture2D*& texture : g_endminfUberConfiguredTextures)
+        ReleaseM14Object(texture);
+    for (EndminfUberPacket& packet : g_endminfUberPackets)
+    {
+        EndminfUberPacketState expected = EndminfUberPacketState::Ready;
+        if (packet.state.compare_exchange_strong(
+                expected,
+                EndminfUberPacketState::Consuming,
+                std::memory_order_acq_rel))
+        {
+            ReleaseEndminfUberPacketTextures(packet);
+            packet.eventId.store(0u, std::memory_order_relaxed);
+            packet.state.store(
+                EndminfUberPacketState::Empty, std::memory_order_release);
+        }
+    }
+    g_endminfUberNextEventId = 1;
+    g_endminfUberDrawCount.store(0u, std::memory_order_relaxed);
+    g_endminfUberFailureCount.store(0u, std::memory_order_relaxed);
+    g_endminfUberLastResult.store(S_OK, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberDrawCount()
+{
+    return g_endminfUberDrawCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberFailureCount()
+{
+    return g_endminfUberFailureCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberLastResult()
+{
+    return static_cast<std::int32_t>(
+        g_endminfUberLastResult.load(std::memory_order_relaxed));
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetEndminfUberFailureStage()
+{
+    return g_endminfUberFailureStage.load(std::memory_order_relaxed);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
