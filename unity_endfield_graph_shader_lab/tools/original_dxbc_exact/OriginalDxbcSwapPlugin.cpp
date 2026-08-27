@@ -1593,6 +1593,12 @@ void ArmDiagnosticOnRenderThread()
     ResetDiagnosticState();
     std::memcpy(g_texturePointers, pointers, sizeof(pointers));
     g_texturePointerCount.store(pointerCount, std::memory_order_release);
+    // Event 3 is the runtime-only arm edge. Shader-compilation probes may
+    // have left the mutually exclusive M27 route selected or reset the route
+    // to None; DrawExactRuntimeShader must see the deferred route explicitly.
+    g_substitutionRoute.store(
+        SubstitutionRoute::DeferredDiagnostic,
+        std::memory_order_release);
     g_armed.store(true, std::memory_order_release);
 }
 
@@ -1625,6 +1631,9 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
             std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
             g_texturePointerCount.store(0, std::memory_order_release);
             g_armed.store(false, std::memory_order_release);
+            g_substitutionRoute.store(
+                SubstitutionRoute::None,
+                std::memory_order_release);
             ReleaseRuntimeShaders();
         }
         return;

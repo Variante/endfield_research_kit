@@ -1597,17 +1597,32 @@ Both generated C# and native payload contracts explicitly publish
 `DepthContractReady=false`; the native plugin compiles and statically validates
 that fail-closed boundary. No M30 draw is admitted until the replacement frame
 retains and validates the full-resolution PS t0 scene-depth descriptor.
-A fresh 770-frame, 60 Hz Viewer sequence after restoring the LitEffect stones
-and their authored lifetime completes successfully, excludes the foreground UI,
-and observes the primary rock compatibility binding. Against the synchronized
-clean-reference peak (reference frame 269 versus Unity frame 265), the full
-frame remains at 16.5448 dB PSNR and 0.7073 SSIM: retail has a compact amber
-ring/core, while Unity still has a broad RGB-separated ghost field and an
-overbright core that obscure the hand and body. M27's HGBuffer is ready in this
-run but its deferred presentation is not; a same-phase compatibility-M27 probe
-does not materially change the peak. The exact Uber payload therefore remains
-the dominant visual blocker, rather than the restored stone lifecycle or an
-M27 ownership error.
+The first post-stone 770-frame baseline was not a valid hair/cape oracle: its
+capture command enabled the rejected diagnostic secondary-dynamics solver,
+which made the dense captured retail trajectory fail closed because both paths
+owned the same 74 bones. Canonical video export now rejects that combination.
+A corrected 770-frame, 60 Hz Viewer sequence has solver writeback in 0/770
+frames and the 145-sample, 74-bone retail replay bound and applied in 770/770;
+it completes the start-to-loop transition, restores the LitEffect stones and
+their authored lifetime, includes the grey background and portrait, and
+excludes foreground UI. M27 HGBuffer presentation is active in all 326 captured
+phase frames after making its presentation selector transitively request the
+deferred consumer. The synchronized peak improves from 16.5448 to 16.6648 dB
+RGB PSNR but remains only 0.7023 SSIM: retail has a compact amber ring/core,
+while Unity still has a broad RGB-separated ghost field and an overbright core
+that obscure the hand and body. The exact Uber payload remains the dominant
+visual blocker; do not compensate for that post distortion by shifting bones
+or UVs.
+
+The same corrected run exposed a separate native validation gap hidden by the
+old readiness flag: render event 3 armed the deferred exact draw but did not
+restore `SubstitutionRoute::DeferredDiagnostic` after M27 shader preparation
+reset the mutually exclusive compiler route. The native event now sets and
+clears that route explicitly. A 1920x1080 M27 peak probe validates exact-bound
+state, all t0-t25 resources (`0x3ffffff`), all b0-b8 buffers (`0x1ff`), finite
+RGBA, and the recovered-HLSL comparison at one ULP (`maxAbs=1.1920929e-7`, no
+values over `1e-6`). The maintained validator now uses the current 26-texture,
+9-buffer ABI instead of the retired 28/10 contract.
 The `064009Z` backbuffers show the cyan promotion presentation (blue skin,
 shoulder accent, and visible effect grading), while the canonical clean
 `2026-08-26_21-25-50.mkv` reference uses the yellow-accent natural-skin

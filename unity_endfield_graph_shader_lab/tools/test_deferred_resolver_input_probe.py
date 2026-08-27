@@ -28,6 +28,20 @@ class DeferredResolverInputProbeTests(unittest.TestCase):
         self.assertIn("FailClosed(context, failure)", probe)
         self.assertIn("SetRenderTarget(canonicalColorTarget, canonicalDepthTarget)", probe)
 
+    def test_m27_presentation_transitively_requests_exact_consumer(self) -> None:
+        policy = (RUNTIME / "EndfieldRecoveredDeferredResolverBindingPolicy.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "EndfieldRecoveredEndminfM27DeferredPresentation\n"
+            "                        .EnvironmentVariable",
+            policy,
+        )
+        self.assertGreaterEqual(
+            policy.count("EndfieldRecoveredEndminfM27DeferredPresentation"),
+            2,
+        )
+
     def test_probe_consumes_source_gbuffer_order_and_all_bridge_slots(self) -> None:
         probe = (RUNTIME / "EndfieldRecoveredDeferredResolverInputProbe.cs").read_text(
             encoding="utf-8"
