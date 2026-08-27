@@ -21,6 +21,7 @@ MATERIAL_ROOT = (REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphSha
                  / "Generated/Characters/Playable/Endminf/Effects/Overview/Materials")
 PHASE_ANCHOR_FRAME = 2978
 PHASE_ANCHOR_SECONDS = 4.433333
+LEGACY_WINDOWS_QPC_FREQUENCY = 10_000_000
 M29_FRAMES = (2864, 2872, 2880, 2888, 2896, 2905, 2913,
               2921, 2929, 2937, 2945, 2953, 2962)
 M30_FRAMES = (2880, 2888, 2896, 2905, 2913, 2921,
@@ -72,9 +73,25 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def phase_seconds(frame: int, anchor_frame: int = PHASE_ANCHOR_FRAME,
+def phase_seconds(timestamp_qpc: int, anchor_timestamp_qpc: int,
+                  qpc_frequency: int,
                   anchor_seconds: float = PHASE_ANCHOR_SECONDS) -> float:
-    return anchor_seconds + (frame - anchor_frame) / 60.0
+    require(timestamp_qpc > 0 and anchor_timestamp_qpc > 0,
+            "phase timing requires positive QPC timestamps")
+    require(qpc_frequency > 0, "phase timing requires a positive QPC frequency")
+    return anchor_seconds + ((timestamp_qpc - anchor_timestamp_qpc)
+                             / qpc_frequency)
+
+
+def capture_clock(capture: Path) -> tuple[int, str]:
+    session_path = capture / "session.json"
+    require(session_path.is_file(), f"capture session manifest is absent: {session_path}")
+    session = json.loads(session_path.read_text(encoding="utf-8"))
+    frequency = int(session.get("qpcFrequency", 0))
+    if frequency > 0:
+        return frequency, "session.json qpcFrequency"
+    return (LEGACY_WINDOWS_QPC_FREQUENCY,
+            "legacy Windows capture fallback; host QPC frequency verified as 10000000")
 
 
 def shaders(draw: dict[str, Any]) -> dict[int, int]:
@@ -204,7 +221,8 @@ def metadata_paths(capture: Path) -> list[Path]:
 
 def collect_owner(capture: Path, owner_name: str, owner: dict[str, Any],
                   paths: list[Path], first_frame: int,
-                  phase_anchor: tuple[int, float] | None,
+                  first_timestamp_qpc: int, qpc_frequency: int,
+                  phase_anchor: tuple[int, int, float] | None,
                   expected_frames: tuple[int, ...] | None) -> list[dict[str, Any]]:
     rows = []
     observed_frames = []
@@ -236,11 +254,16 @@ def collect_owner(capture: Path, owner_name: str, owner: dict[str, Any],
                 if source.get("truncated") is True:
                     truncated.append(key)
         b3 = constant(draw, 4, 3)
+        timestamp_qpc = int(metadata.get("timestampQpc", 0))
+        require(timestamp_qpc > 0,
+                f"{owner_name} frame {frame_id} has no valid timestampQpc")
         row = {
             "frame": frame_id,
             "drawIndex": draw_index,
             "frameRelativeSeconds": round((frame_id - first_frame) / 60.0, 6),
-            "timestampQpc": int(metadata.get("timestampQpc", 0)),
+            "qpcRelativeSeconds": round(
+                (timestamp_qpc - first_timestamp_qpc) / qpc_frequency, 6),
+            "timestampQpc": timestamp_qpc,
             "indexCount": int(draw["count"]),
             "startIndex": int(draw["start"]),
             "baseVertex": int(draw["baseVertex"]),
@@ -254,7 +277,8 @@ def collect_owner(capture: Path, owner_name: str, owner: dict[str, Any],
         }
         if phase_anchor is not None:
             row["phaseSeconds"] = round(
-                phase_seconds(frame_id, phase_anchor[0], phase_anchor[1]), 6)
+                phase_seconds(timestamp_qpc, phase_anchor[1], qpc_frequency,
+                              phase_anchor[2]), 6)
         rows.append(row)
     if expected_frames is not None:
         missing_expected = [frame for frame in expected_frames
@@ -269,11 +293,13 @@ def collect_owner(capture: Path, owner_name: str, owner: dict[str, Any],
     return rows
 
 
-def frame_bursts(frames: list[dict[str, Any]], max_gap_frames: int = 60
+def frame_bursts(frames: list[dict[str, Any]], qpc_frequency: int,
+                 max_gap_seconds: float = 1.0
                  ) -> list[dict[str, Any]]:
     bursts: list[list[dict[str, Any]]] = []
     for row in frames:
-        if not bursts or row["frame"] - bursts[-1][-1]["frame"] > max_gap_frames:
+        if not bursts or ((row["timestampQpc"] - bursts[-1][-1]["timestampQpc"])
+                          / qpc_frequency) > max_gap_seconds:
             bursts.append([row])
         else:
             bursts[-1].append(row)
@@ -282,7 +308,9 @@ def frame_bursts(frames: list[dict[str, Any]], max_gap_frames: int = 60
         "lastFrame": burst[-1]["frame"],
         "packetCount": len(burst),
         "sampledSpanSeconds": round(
-            (burst[-1]["frame"] - burst[0]["frame"]) / 60.0, 6),
+            (burst[-1]["timestampQpc"] - burst[0]["timestampQpc"])
+            / qpc_frequency, 6),
+        "presentedFrameSpan": burst[-1]["frame"] - burst[0]["frame"],
         "frames": [row["frame"] for row in burst],
     } for burst in bursts]
 
@@ -305,16 +333,32 @@ def build_report(capture: Path = CAPTURE,
         phase_anchor = None
         phase_basis = "unknown; capture-relative timing only"
     paths = metadata_paths(capture)
+    qpc_frequency, qpc_frequency_basis = capture_clock(capture)
     first_frame = int(paths[0].parent.name)
+    metadata_by_frame = {
+        int(path.parent.name): json.loads(path.read_text(encoding="utf-8"))
+        for path in paths
+    }
+    first_timestamp_qpc = int(metadata_by_frame[first_frame].get("timestampQpc", 0))
+    require(first_timestamp_qpc > 0, f"frame {first_frame} has no valid timestampQpc")
+    if phase_anchor is not None:
+        anchor_metadata = metadata_by_frame.get(phase_anchor[0])
+        require(anchor_metadata is not None,
+                f"phase anchor frame {phase_anchor[0]} is absent from capture")
+        anchor_timestamp_qpc = int(anchor_metadata.get("timestampQpc", 0))
+        require(anchor_timestamp_qpc > 0,
+                f"phase anchor frame {phase_anchor[0]} has no valid timestampQpc")
+        phase_anchor = (phase_anchor[0], anchor_timestamp_qpc, phase_anchor[1])
     owners = {}
     for owner_name, owner in OWNERS.items():
         expected = (tuple(known["expectedFrames"][owner_name])
                     if known is not None else None)
         frames = collect_owner(capture, owner_name, owner, paths, first_frame,
+                               first_timestamp_qpc, qpc_frequency,
                                phase_anchor, expected)
         complete_frames = [row["frame"] for row in frames
                            if row["resourceClosure"]["complete"]]
-        bursts = frame_bursts(frames)
+        bursts = frame_bursts(frames, qpc_frequency)
         primary_burst = max(bursts, key=lambda burst: burst["packetCount"])
         owners[owner_name] = {
             "shaderPair": {
@@ -336,7 +380,9 @@ def build_report(capture: Path = CAPTURE,
         bool(owner["resourceClosedFrames"]) for owner in owners.values())
     phase_contract: dict[str, Any] = {"basis": phase_basis}
     if phase_anchor is not None:
-        phase_contract.update({"frame": phase_anchor[0], "seconds": phase_anchor[1]})
+        phase_contract.update({"frame": phase_anchor[0],
+                               "timestampQpc": phase_anchor[1],
+                               "seconds": phase_anchor[2]})
     return {
         "schema": "endfield.endminf-m29-m30-temporal-capture.v1",
         "status": ("validated_exact_owner_temporal_and_resource_evidence"
@@ -344,6 +390,8 @@ def build_report(capture: Path = CAPTURE,
         "sessionId": capture.name,
         "capture": str(capture.relative_to(REPO)).replace("\\", "/"),
         "frameCount": len(paths),
+        "captureClock": {"qpcFrequency": qpc_frequency,
+                         "basis": qpc_frequency_basis},
         "phaseAnchor": phase_contract,
         "owners": owners,
         "exactReplayReady": exact_replay_ready,
