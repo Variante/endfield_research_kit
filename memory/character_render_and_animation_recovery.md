@@ -1502,20 +1502,29 @@ packets, and raw `bindings.v1.bin` preserves all nine VS/PS constant slices,
 including complete PS b3. The combined-runtime JSON writer had omitted those
 already captured slices, so it now emits the same constant-buffer and
 fullscreen-resolver records as the graphics-only writer. This session does not
-close texture replay: 110 of 111 frames reached the 32-resource selector cap,
+close texture replay: 110 of 111 frames reached the 32-resource selector cap
 because repeated unsupported exact-pair PS slots consumed ten records before
 later M29/M30 textures. The narrow exact-pair selector now skips zero-byte
-unsupported resources. Retained draw records now also carry their own bounded
+unsupported resources. Retained draw records also carry their own bounded
 IA/PS resource observations, keyed to the frame-wide selected payload records;
 this removes the ownership ambiguity that remained even when a texture blob
-survived. The WARP test covers PS slot plus IA/index ownership. The fail-closed
-`verify_endminf_m29_m30_capture_completeness.py` gate rejects truncation,
-missing constants, missing draw ownership, and missing byte-bearing payloads;
-it rejects `20260826T231348Z` at its 110 truncated frames. The Release
-`build-local` and all 15 tests pass. One new bounded `graphics targeted`
-sequence over clean-reference frames 352-361 (the phase-equivalent replacement
-for old no-frame-generation frames 376-385) remains required to close owner-
-specific IA/t0-t5. Full/everything capture is not required for that focused rerun.
+survived. The WARP test covers PS slot plus IA/index ownership.
+
+Focused session `20260827T061004Z` contains one 31-package sequence covering
+the buildup, peak, and fade. It retains 12 exact M29 packets and 10 exact M30
+packets. M29 now has complete owned IA and PS t0-t2 payloads. M30 has complete
+IA, constants, and PS t1, but its stable PS t0 is a 3840x2160 four-byte
+scene-color input (33,177,600 bytes) and is absent from every packet: the old
+targeted aggregate ceiling was only 32 MiB and about 25 MiB of prior bounded
+evidence was already selected. EndfieldCapture's targeted byte ceiling is now
+64 MiB, leaving room for that input while remaining half of `full`. The
+focused `verify_endminf_m29_m30_capture_completeness.py` gate treats global
+unrelated selector pressure as a visible diagnostic after checking every exact
+owner binding; missing owner payloads still fail closed. The existing temporal
+sequence does not need repeating. After the currently running old capture
+process is closed and the patched launcher is installed, one targeted Numpad-1
+frame at the crystal peak is the only remaining graphics evidence needed.
+Full/everything mode and another Numpad-4 sequence are not required.
 The combined gate
 `verify_endminf_combined_graphics_capture.py` checks this closure together with
 render-boundary skin-palette coverage across entrance and settled-loop bursts.
