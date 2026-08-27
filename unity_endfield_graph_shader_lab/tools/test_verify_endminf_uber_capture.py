@@ -25,6 +25,8 @@ def fixture(mode: float = 3.0, priority: bool = True,
     values = [0.0] * (256 * 4)
     b0_first = 4
     b1_first = 64
+    vs_b0_first = 180
+    values[vs_b0_first * 4:(vs_b0_first + 1) * 4] = [3840.0, 2160.0, 0.0, 0.0]
     values[(b0_first + 27) * 4:(b0_first + 28) * 4] = [1.0, 1.0, 0.0, 0.0]
     values[b1_first * 4:(b1_first + 1) * 4] = [0.51, 0.53, 0.10, 1.0]
     values[(b1_first + 25) * 4:(b1_first + 26) * 4] = [mode, 0.09, 0.0, 0.0]
@@ -45,9 +47,16 @@ def fixture(mode: float = 3.0, priority: bool = True,
             "fullscreenOrdinal": 24,
             "priorityEndminfUber": priority,
             "shaders": [{
+                "stage": 0, "identityHash": MODULE.VERTEX_IDENTITY,
+                "bytecodeSize": 608,
+            }, {
                 "stage": 4, "identityHash": MODULE.PIXEL_IDENTITY,
                 "bytecodeSize": 4836,
             }],
+            "vsConstantBuffers": [
+                {"slot": 0, "bufferId": 100, "firstConstant": vs_b0_first,
+                 "numConstants": 1, "rangeValid": True},
+            ],
             "psConstantBuffers": [
                 {"slot": 0, "bufferId": 100, "firstConstant": b0_first,
                  "numConstants": 28, "rangeValid": True},
@@ -76,6 +85,9 @@ class UberCaptureTests(unittest.TestCase):
     def test_exact_live_binding_passes(self) -> None:
         report = self.build(*fixture())
         self.assertEqual(report["status"], "validated_exact_live_uber_binding")
+        self.assertEqual(len(report["packets"][0]["vsB0"]["values"]), 1)
+        self.assertEqual(len(report["packets"][0]["b0"]["values"]), 28)
+        self.assertEqual(len(report["packets"][0]["b1"]["values"]), 26)
         self.assertEqual(report["packets"][0]["b1"]["c25RadialBlurParams2"][0],
                          3.0)
 
@@ -86,6 +98,12 @@ class UberCaptureTests(unittest.TestCase):
     def test_missing_priority_tag_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "priority tagging"):
             self.build(*fixture(priority=False))
+
+    def test_missing_vertex_range_fails_closed(self) -> None:
+        session, metadata, blob = fixture()
+        metadata["fullscreenResolvers"][0]["vsConstantBuffers"] = []
+        with self.assertRaisesRegex(MODULE.VerificationError, "VS b0"):
+            self.build(session, metadata, blob)
 
     def test_unexpected_mode_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "mode is unexpected"):

@@ -195,6 +195,18 @@ int main()
     textureInitial.SysMemSlicePitch = static_cast<UINT>(texturePayload.size);
     HRESULT m13TextureResult = device->CreateTexture2D(
         &textureDescription, &textureInitial, &m13Texture);
+    ID3D11VertexShader* uberVertex = nullptr;
+    HRESULT uberVertexResult = device->CreateVertexShader(
+        g_EndfieldUberVertexDxbc,
+        g_EndfieldUberVertexDxbcSize,
+        nullptr,
+        &uberVertex);
+    ID3D11PixelShader* uberPixel = nullptr;
+    HRESULT uberPixelResult = device->CreatePixelShader(
+        g_EndfieldUberPixelDxbc,
+        g_EndfieldUberPixelDxbcSize,
+        nullptr,
+        &uberPixel);
 
     std::printf(
         "feature_level=0x%x vertex=0x%08lx pixel=0x%08lx "
@@ -202,7 +214,7 @@ int main()
         "m27_layout68=0x%08lx "
         "m14_vertex=0x%08lx m14_pixel=0x%08lx m14_layout=0x%08lx "
         "m13_vertex=0x%08lx m13_pixel=0x%08lx m13_layout=0x%08lx "
-        "m13_bc7=0x%08lx\n",
+        "m13_bc7=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult),
@@ -216,7 +228,9 @@ int main()
         static_cast<unsigned long>(m13VertexResult),
         static_cast<unsigned long>(m13PixelResult),
         static_cast<unsigned long>(m13InputLayoutResult),
-        static_cast<unsigned long>(m13TextureResult));
+        static_cast<unsigned long>(m13TextureResult),
+        static_cast<unsigned long>(uberVertexResult),
+        static_cast<unsigned long>(uberPixelResult));
 
     if (pixel != nullptr)
         pixel->Release();
@@ -242,6 +256,10 @@ int main()
         m13Pixel->Release();
     if (m13Vertex != nullptr)
         m13Vertex->Release();
+    if (uberPixel != nullptr)
+        uberPixel->Release();
+    if (uberVertex != nullptr)
+        uberVertex->Release();
     if (vertex != nullptr)
         vertex->Release();
     context->Release();
@@ -253,7 +271,8 @@ int main()
             SUCCEEDED(m14VertexResult) && SUCCEEDED(m14PixelResult)
             && SUCCEEDED(m14InputLayoutResult) && SUCCEEDED(m13VertexResult)
             && SUCCEEDED(m13PixelResult) && SUCCEEDED(m13InputLayoutResult)
-            && SUCCEEDED(m13TextureResult)
+            && SUCCEEDED(m13TextureResult) && SUCCEEDED(uberVertexResult)
+            && SUCCEEDED(uberPixelResult)
         ? 0
         : 3;
 }

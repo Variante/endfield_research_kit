@@ -50,6 +50,17 @@ overwriting the exact stages.
 
 Do not enable the keyword or arm the plugin outside this disposable diagnostic.
 
+## Endminf combined Uber transport
+
+The build also hash-checks and embeds the exact Endminf CharInfo combined
+`BLOOM + RADIAL_BLUR_CHROMATIC_ABERRATION` fullscreen pair. WARP validation
+must create both shader objects successfully. Runtime submission remains
+default-off and fail-closed until one current 128-MiB targeted capture binds
+the exact draw and supplies its stage-qualified VS b0 plus PS b0/b1 payloads.
+`build_endminf_uber_capture_payload.py` converts only that validated report
+into immutable native constant bytes; the older unbound 3DMigoto arena is not
+accepted as runtime state.
+
 ## M27 Unity-owned draw substitution
 
 The same plugin now contains a separate, default-off M27 compiler-callback
