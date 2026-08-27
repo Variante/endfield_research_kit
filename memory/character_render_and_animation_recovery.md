@@ -1508,8 +1508,19 @@ the priority Uber draw too. The verifier requires the exact VS/PS pair, VS
 b0[1], PS b0[28], and PS b1[26], and publishes byte-exact declared ranges.
 The payload builder accepts only one unambiguous validated packet. Both exact
 shader objects are now hash-pinned in the native Unity tool and create
-successfully on WARP D3D11; runtime submission remains fail-closed until the
-new live constants exist. The same remaining targeted Numpad-1 frame must
+successfully on WARP D3D11. The Unity path now has a dedicated exact native
+`Draw(3,0)` transport rather than compiler substitution: a 64-packet immutable
+render-thread ring keeps main/render thread state separate, validates the exact
+RGBA16F source, half-resolution R11G11B10 bloom, 1024x32 FP16 LUT, and linear
+R8G8B8A8 output, binds stage-local constant buffers, and restores every touched
+D3D11 state. The managed bridge owns stable exact-format copies around SRP
+temporary identifiers and the Viewer report distinguishes requested,
+submitted, and fail-closed fallback. Fallback and generated-payload validators
+both pass, including mode 0 outside the pulse, modes 3/6 during it, 64 unique
+queued events, overflow rejection, and invalid flag rejection. A live Unity
+negative run rejects the absent payload visibly and keeps compatibility output;
+runtime submission remains fail-closed until the new live constants exist. The
+same remaining targeted Numpad-1 frame must
 therefore close M30/M31 scene depth and the complete Uber VS/PS constant ABI
 before changing the canonical post path.
 

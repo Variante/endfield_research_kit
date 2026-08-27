@@ -2996,7 +2996,8 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
     const bool validParams = centerX >= 0.0f && centerX <= 1.0f &&
         centerY >= 0.0f && centerY <= 1.0f &&
         radialIntensity >= 0.0f && power > 0.0f &&
-        (mode == 3.0f || mode == 6.0f) && chromaticIntensity >= 0.0f;
+        (mode == 0.0f || mode == 3.0f || mode == 6.0f) &&
+        chromaticIntensity >= 0.0f;
     const bool validFlagZ = averageStepFlagZ < 0.0f ||
         averageStepFlagZ == 0.0f || averageStepFlagZ == 1.0f;
     const bool validFlagW = averageStepFlagW < 0.0f ||

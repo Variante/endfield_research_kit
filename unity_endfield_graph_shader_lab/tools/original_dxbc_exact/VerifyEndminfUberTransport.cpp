@@ -164,7 +164,9 @@ int main(int argc, char** argv)
             queuedIds[index] = queue(
                 1920.0f, 1080.0f, 1.0f,
                 0.5f, 0.5f, 0.1f, 1.0f,
-                3.0f, 0.1f, -1.0f, -1.0f);
+                index == 0 ? 0.0f : 3.0f,
+                index == 0 ? 0.0f : 0.1f,
+                -1.0f, -1.0f);
             if (queuedIds[index] == 0u)
             {
                 FreeLibrary(module);

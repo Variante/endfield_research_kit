@@ -1231,14 +1231,16 @@ namespace EndfieldGraphShaderLabEditor
             bool exactEndminfUberRequested = Frames.Any(
                 value => value.exactEndminfUberRequested);
             bool observedExactEndminfUberSubmitted =
+                Frames.Count > 0 && Frames.All(
+                    value => value.exactEndminfUberSubmitted);
+            bool exactEndminfUberRequirementReady =
                 !exactEndminfUberRequested ||
-                (Frames.Count > 0 && Frames.All(
-                    value => value.exactEndminfUberSubmitted));
+                observedExactEndminfUberSubmitted;
             string exactEndminfUberFailure = Frames
                 .Select(value => value.exactEndminfUberFailure)
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
                 string.Empty;
-            if (!observedExactEndminfUberSubmitted)
+            if (!exactEndminfUberRequirementReady)
             {
                 missingObservations.Add(
                     "exact Endminf Uber native submission" +
@@ -1251,7 +1253,7 @@ namespace EndfieldGraphShaderLabEditor
                 backgroundPortraitIncluded &&
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
-                observedExactEndminfUberSubmitted;
+                exactEndminfUberRequirementReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
