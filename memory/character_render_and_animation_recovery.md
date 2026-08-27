@@ -1651,20 +1651,35 @@ active bone matrix and bindpose, and renderer-local/world skin palettes. Its
 3.0/5.0-second D3D11 validation reports six visible LOD0 hair/cloth renderers
 per frame, matching bone/bindpose counts, non-empty baked geometry, and applied
 captured replay for all 12 rows. This is a diagnostic boundary, not a beauty
-change; direct retail comparison still requires a time- and renderer-matched
-interpretation of the retained draw-time VS b2 palettes.
+change. A fail-closed comparator now joins those rows to `20260826T231348Z`'s
+draw-time VS b2 palettes by exact mesh count, shader identity, source-palette
+SRV/CB object identity, and a documented +/-1-frame timing boundary. At 5.0
+seconds, mean retail-to-Unity rotation error is `1.83` degrees for cloth-01,
+`4.72` for cloth-04, and `0.42` for hair; hair translation error is only
+`0.00072`. The 3.0-second cloth-04/hair observations require much wider retail
+brackets and remain explicitly reduced-fidelity. This proves that late hair
+palette transport is already very close and that residual cape shape is not a
+global matrix convention or transpose failure. It remains CPU-semantic and
+partly circular because Unity is driven by the recovered retail replay; it is
+not yet direct readback of Unity's submitted GPU palette.
 
-A same-time opening ablation at 0.4667-1.10 seconds rules out the recovered
-pre-Bloom temporal resolve as the source of the excessive comb trails: keeping
-it improves effect-ROI and temporal-delta MAE. M46 is the strongest individual
-billboard cohort, but the full M46-by-temporal factorial also rejects removing
-it. With temporal resolve active, M46 improves effect MAE at every 0.4667-1.05
-sample and only regresses the 1.0833/1.10 tail; excluding it worsens temporal-
-delta MAE from `77.2471` to `77.3810`. With temporal resolve disabled, excluding
-M46 worsens both effect and temporal metrics. M36 exclusion likewise worsens
-the effect and temporal metrics. Retain M36, M46, and the temporal resolve;
-their source-authored contributions are required, while the remaining broad
-opening mismatch belongs to downstream integration or another producer.
+A same-time early-entrance ablation at 0.4667-1.10 seconds rejects removing the
+recovered pre-Bloom temporal resolve, M36, or M46. With temporal resolve active,
+M46 improves effect MAE at every 0.4667-1.05 sample and only regresses the
+1.0833/1.10 tail; excluding it worsens temporal-delta MAE from `77.2471` to
+`77.3810`. With temporal resolve disabled, excluding M46 worsens both effect
+and temporal metrics. M36 exclusion likewise worsens the effect and temporal
+metrics. Retain all three source-authored contributions.
+
+Five-surface post captures at 0/0.0167 seconds localize the conspicuous initial
+RGB comb unambiguously: `before_temporal`, `after_temporal_bloom_input`, bloom
+prefilter, and reconstructed bloom are clean, while the repeated colored actor
+silhouettes first appear in `final_uber`. The same surfaces are clean at
+0.5/1.0833 seconds after the initial recovered radial/chromatic curves reach
+zero. Therefore the dominant initial trail mismatch is the compatibility Uber
+kernel/parameter transport, not TAA history, authored M36/M46 particles, or
+bloom. Do not compensate in those upstream systems; the exact runtime Uber
+capture remains the required closure.
 
 The same corrected run exposed a separate native validation gap hidden by the
 old readiness flag: render event 3 armed the deferred exact draw but did not
