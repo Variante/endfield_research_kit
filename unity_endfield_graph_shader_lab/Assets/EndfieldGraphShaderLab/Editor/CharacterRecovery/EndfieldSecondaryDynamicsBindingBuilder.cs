@@ -356,8 +356,7 @@ namespace EndfieldGraphShaderLabEditor
                     data.SampleCount + " samples, " + data.BoneCount +
                     " unique hair/cape bones, clamped endpoints, midpoint interpolation, " +
                     data.transparentCapeSampleCount +
-                    " transparent-cape samples, and a fail-closed sparse extension (" +
-                    data.transparentCapeAdmissionFailures.Length + " unmet gates).");
+                    " same-session transparent-cape samples with exact admission.");
             }
             finally
             {
@@ -443,7 +442,7 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
                 "100 unique transforms, 26 overlaps, a certified retail settings route, " +
-                "default-off solver writeback, and a default dense 145-sample/74-bone " +
+                "default-off solver writeback, and a default QPC-timed 144-sample/80-bone " +
                 "captured replay path.");
         }
 
@@ -538,16 +537,20 @@ namespace EndfieldGraphShaderLabEditor
             var sampleTimes = new float[frames.Count];
             var positions = new Vector3[frames.Count * bonePaths.Length];
             var rotations = new Quaternion[positions.Length];
-            int previousPresented = int.MinValue;
             for (int sample = 0; sample < frames.Count; sample++)
             {
                 Dictionary<string, object> frame = Object(frames[sample], "frames[" + sample + "]");
-                int presented = Integer(frame, "presentedFrame", "frames[" + sample + "]");
-                if (sample == 0 && presented != firstPresented ||
-                    sample > 0 && presented <= previousPresented)
-                    throw new InvalidDataException("Captured replay presented frames are not increasing.");
-                previousPresented = presented;
-                sampleTimes[sample] = (presented - firstPresented) / sourceFps;
+                int capturePresented = Integer(
+                    frame, "capturePresentedFrame", "frames[" + sample + "]");
+                if (sample == 0 && capturePresented != firstPresented)
+                    throw new InvalidDataException(
+                        "Captured replay first package differs from its alignment anchor.");
+                if (Integer(frame, "sampleIndex", "frames[" + sample + "]") != sample)
+                    throw new InvalidDataException("Captured replay sample indices drifted.");
+                sampleTimes[sample] = Float(frame, "phaseSeconds", "frames[" + sample + "]");
+                if (sample > 0 && sampleTimes[sample] <= sampleTimes[sample - 1])
+                    throw new InvalidDataException(
+                        "Captured replay phase times are not strictly increasing.");
                 List<object> matrices = Array(frame, "ownerBoneMatrices");
                 if (matrices.Count != bonePaths.Length)
                     throw new InvalidDataException("Captured replay bone count varies by frame.");
@@ -645,18 +648,18 @@ namespace EndfieldGraphShaderLabEditor
             string failure = "data is absent";
             if (data == null || !data.Validate(out failure))
                 throw new InvalidDataException("Captured replay data is invalid: " + failure);
-            if (data.SampleCount != 145 || data.BoneCount != 74)
+            if (data.SampleCount != 144 || data.BoneCount != 80)
                 throw new InvalidDataException("Captured replay dimensions differ from the oracle.");
             if (!data.transparentCapeExtensionObserved ||
-                data.transparentCapeExtensionRuntimeEligible ||
-                data.transparentCapeSampleCount != 16 ||
-                data.transparentCapeMaximumSampleGapFrames != 96 ||
-                data.primaryMaximumSampleGapFrames != 33 ||
-                data.transparentCapeSameSessionPrimaryReplay ||
-                data.transparentCapeAdmissionFailures.Length != 3)
+                !data.transparentCapeExtensionRuntimeEligible ||
+                data.transparentCapeSampleCount != 144 ||
+                data.transparentCapeMaximumSampleGapFrames != 15 ||
+                data.primaryMaximumSampleGapFrames != 15 ||
+                !data.transparentCapeSameSessionPrimaryReplay ||
+                data.transparentCapeAdmissionFailures.Length != 0)
             {
                 throw new InvalidDataException(
-                    "Sparse transparent cape extension admission boundary drifted.");
+                    "Same-session transparent cape admission boundary drifted.");
             }
 
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(

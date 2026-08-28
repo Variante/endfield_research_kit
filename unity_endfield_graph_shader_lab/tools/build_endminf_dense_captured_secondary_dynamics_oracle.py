@@ -40,6 +40,10 @@ DEFAULT_TRANSPARENT_CAPE_DECODED = (
     REPO_ROOT / "scratch/character_recovery/endminf_skinning_20260828T045025Z"
     / "decoded_partial.json"
 )
+DEFAULT_COMPLETE_DECODED = (
+    REPO_ROOT / "scratch/character_recovery/capture_20260828T121603Z"
+    / "decoded_skinning.json"
+)
 DEFAULT_OUTPUT = (
     REPO_ROOT / "reports/assets/character_recovery"
     / "endminf_dense_captured_secondary_dynamics_oracle.json"
@@ -51,7 +55,7 @@ EXPECTED_DECODED_SCHEMA = (
     "endfield.charinfo.endminf-partial-captured-skin-palette-sequence.v1"
 )
 OUTPUT_SCHEMA = (
-    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v5"
+    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v6"
 )
 BODY_CLIP_REFERENCE_SOURCE_FRAME = 115
 BODY_CLIP_REFERENCE_SECONDS = 0.05090830227
@@ -61,6 +65,21 @@ EXPECTED_BONE_COUNT = 74
 EXPECTED_DENSE_SESSION = "20260826T231348Z"
 EXPECTED_REFERENCE_MATCHED_SESSION = "20260827T081152Z"
 EXPECTED_TRANSPARENT_CAPE_SESSION = "20260828T045025Z"
+EXPECTED_COMPLETE_SESSION = "20260828T121603Z"
+COMPLETE_MESH_NAMES = {
+    "body": "S_actor_endminf_body_01_lod0",
+    "cloth_01": "S_actor_endminf_cloth_01_lod0",
+    "cloth_02": "S_actor_endminf_cloth_02_lod0",
+    "cloth_03": "S_actor_endminf_cloth_03_lod0",
+    "cloth_04": "S_actor_endminf_cloth_04_lod0",
+    "hair": "S_actor_endminf_hair_01_lod0",
+}
+COMPLETE_DECODED_SCHEMA = (
+    "endfield.charinfo.endminf-captured-skin-palette-sequence.v1"
+)
+COMPLETE_PEAK_PRESENTED_FRAME = 1977
+COMPLETE_PEAK_PHASE_SECONDS = 4.35
+QPC_FREQUENCY = 10_000_000.0
 TRANSPARENT_CAPE_MESH_NAMES = {
     "cloth_02": "S_actor_endminf_cloth_02_lod0",
 }
@@ -277,6 +296,212 @@ def recover_dense_observations(decoded: dict[str, Any], paths: list[str]) -> tup
             }
     require(result, "dense decoded capture has no owner-bone observations")
     return result, worst_shared
+
+
+def build_complete_same_session_report(
+    base_path: Path,
+    decoded_path: Path,
+) -> dict[str, Any]:
+    """Build the replay from one capture containing every dynamic renderer.
+
+    Each retained palette carries the immediately previous and current retail
+    matrices. Package readback stalls make Present IDs non-uniform, so sample
+    time comes from QPC rather than from Present deltas.
+    """
+    oracle = load_json(base_path)
+    decoded = load_json(decoded_path)
+    require(oracle.get("schema") == EXPECTED_BASE_SCHEMA,
+            f"base oracle schema drifted: {oracle.get('schema')}")
+    require(decoded.get("schema") == COMPLETE_DECODED_SCHEMA,
+            f"complete decoded schema drifted: {decoded.get('schema')}")
+    session_root = Path(decoded.get("sessionRoot", ""))
+    require(session_root.name == EXPECTED_COMPLETE_SESSION,
+            f"complete capture session drifted: {session_root}")
+
+    manifest = base.load_json(base.MANIFEST)
+    contracts, mesh_hashes = base.mesh_contracts(manifest, COMPLETE_MESH_NAMES)
+    decoded_frames = decoded.get("frames", [])
+    require(len(decoded_frames) == 72, "complete capture must contain 72 palettes")
+    require(decoded.get("meshObservationCounts") == {
+        name: 72 for name in COMPLETE_MESH_NAMES
+    }, "complete capture renderer coverage drifted")
+
+    primary_paths = [
+        row["path"] for row in oracle["frames"][0]["ownerBoneMatrices"]
+    ]
+    cloth_02_paths = [path for path, _ in contracts["cloth_02"]]
+    extension_by_name = {
+        path.rsplit("/", 1)[-1]: path for path in cloth_02_paths
+        if path.rsplit("/", 1)[-1] in TRANSPARENT_CAPE_BONE_NAMES
+    }
+    extension_paths = [extension_by_name[name]
+                       for name in TRANSPARENT_CAPE_BONE_NAMES]
+    paths = primary_paths + extension_paths
+    require(len(primary_paths) == EXPECTED_BONE_COUNT,
+            "base oracle primary bone count drifted")
+    require(len(paths) == 80 and len(set(paths)) == len(paths),
+            "same-session replay must contain 80 unique bones")
+
+    metadata_root = session_root / "graphics/frames"
+    metadata_by_frame = {}
+    metadata_hashes = {}
+    for frame in decoded_frames:
+        presented = int(frame["frame"])
+        metadata_path = metadata_root / str(presented) / "metadata.json"
+        metadata = load_json(metadata_path)
+        require(int(metadata.get("frame", -1)) == presented,
+                f"metadata frame drifted for {presented}")
+        metadata_by_frame[presented] = metadata
+        metadata_hashes[str(presented)] = sha256(metadata_path)
+    require(COMPLETE_PEAK_PRESENTED_FRAME in metadata_by_frame,
+            "complete capture has no exact-Uber peak frame")
+    peak_qpc = int(metadata_by_frame[COMPLETE_PEAK_PRESENTED_FRAME]["timestampQpc"])
+
+    samples = []
+    validation = {
+        "sharedComparisons": 0,
+        "worstSharedDelta": 0.0,
+        "worstOrthonormalityError": 0.0,
+        "worstShared": None,
+        "worstOrthonormalBone": None,
+    }
+    for frame in decoded_frames:
+        presented = int(frame["frame"])
+        current, previous, row_validation = base.recover_frame(frame, contracts)
+        missing = [path for path in paths
+                   if path not in current or path not in previous]
+        require(not missing,
+                f"frame {presented} lacks replay bones: {missing[:3]}")
+        validation["sharedComparisons"] += row_validation["sharedComparisons"]
+        for key in ("worstSharedDelta", "worstOrthonormalityError"):
+            if row_validation[key] > validation[key]:
+                validation[key] = row_validation[key]
+                detail_key = ("worstShared" if key == "worstSharedDelta"
+                              else "worstOrthonormalBone")
+                validation[detail_key] = [presented, *row_validation[detail_key]]
+        phase = COMPLETE_PEAK_PHASE_SECONDS + (
+            int(metadata_by_frame[presented]["timestampQpc"]) - peak_qpc
+        ) / QPC_FREQUENCY
+        for palette, sample_phase, matrices in (
+            ("previous", phase - 1.0 / base.REFERENCE_FPS, previous),
+            ("current", phase, current),
+        ):
+            samples.append({
+                "capturePresentedFrame": presented,
+                "capturePalette": palette,
+                "phaseSeconds": sample_phase,
+                "playbackSourceFrame": (
+                    BODY_CLIP_REFERENCE_SOURCE_FRAME
+                    + sample_phase * base.REFERENCE_FPS
+                ),
+                "ownerBoneMatrices": [{
+                    "path": path,
+                    "currentRootSpace3x4": matrices[path][1][:3],
+                } for path in paths],
+            })
+    samples.sort(key=lambda row: row["phaseSeconds"])
+    require(all(right["phaseSeconds"] > left["phaseSeconds"]
+                for left, right in zip(samples, samples[1:])),
+            "QPC-derived palette times are not strictly increasing")
+    require(validation["worstSharedDelta"] <= base.SHARED_MATRIX_TOLERANCE,
+            f"shared renderer bones disagree by {validation['worstSharedDelta']}")
+    require(validation["worstOrthonormalityError"] <=
+            base.ORTHONORMALITY_TOLERANCE,
+            "complete capture contains a non-orthonormal reconstructed bone")
+    for index, row in enumerate(samples):
+        row["sampleIndex"] = index
+
+    gaps = [right["phaseSeconds"] - left["phaseSeconds"]
+            for left, right in zip(samples, samples[1:])]
+    package_phases = [
+        COMPLETE_PEAK_PHASE_SECONDS + (
+            int(metadata_by_frame[int(frame["frame"])]["timestampQpc"]) - peak_qpc
+        ) / QPC_FREQUENCY
+        for frame in decoded_frames
+    ]
+    package_gaps = [right - left for left, right in
+                    zip(package_phases, package_phases[1:])]
+    maximum_gap_frames = math.ceil(max(gaps) * base.REFERENCE_FPS)
+    extension = {
+        "runtimeEligible": True,
+        "runtimeAdmissionFailures": [],
+        "captureSession": EXPECTED_COMPLETE_SESSION,
+        "mesh": COMPLETE_MESH_NAMES["cloth_02"],
+        "applicationSpace": "root_space_same_session_primary_replay",
+        "boneCount": len(extension_paths),
+        "bonePaths": extension_paths,
+        "parentPaths": [path.rsplit("/", 1)[0] for path in extension_paths],
+        "weightedBoneAccounting": {
+            "meshBoneCount": len(contracts["cloth_02"]),
+            "primaryReplay": 19,
+            "transparentCapeExtension": 6,
+            "animatorBody": 4,
+        },
+        "sampleCount": len(samples),
+        "firstPhaseSeconds": samples[0]["phaseSeconds"],
+        "lastPhaseSeconds": samples[-1]["phaseSeconds"],
+        "maximumSampleGapFrames": maximum_gap_frames,
+        "primaryMaximumSampleGapFrames": maximum_gap_frames,
+        "sameSessionPrimaryReplay": True,
+    }
+    alignment = {
+        "recording": "videos/2026-08-26_21-25-50.mkv",
+        "sourceFps": base.REFERENCE_FPS,
+        "firstCapturePresentedFrame": int(decoded_frames[0]["frame"]),
+        "firstReferenceSourceFrame": BODY_CLIP_REFERENCE_SOURCE_FRAME,
+        "exactUberPeakCapturePresentedFrame": COMPLETE_PEAK_PRESENTED_FRAME,
+        "exactUberPeakPhaseSeconds": COMPLETE_PEAK_PHASE_SECONDS,
+        "qpcFrequency": QPC_FREQUENCY,
+        "mapping": (
+            "phaseSeconds = 4.35 + (timestampQpc - peakTimestampQpc) / 10000000"
+        ),
+        "evidence": (
+            "frame 1977 contains the exact combined Uber peak; QPC timestamps "
+            "preserve readback-stalled retail timing"
+        ),
+    }
+    return {
+        "schema": OUTPUT_SCHEMA,
+        "status": "complete_same_session_retail_skinning_replay",
+        "scope": (
+            "all 74 primary dynamic bones plus six transparent-cape bones; "
+            "previous/current palettes and QPC timing come from one retail session"
+        ),
+        "captureSessions": [EXPECTED_COMPLETE_SESSION],
+        "frameCount": len(samples),
+        "boneCount": len(paths),
+        "referenceAlignment": alignment,
+        "playback": {
+            "sourceFps": base.REFERENCE_FPS,
+            "firstPlaybackSourceFrame": samples[0]["playbackSourceFrame"],
+            "lastPlaybackSourceFrame": samples[-1]["playbackSourceFrame"],
+            "entranceBodyClipAnchorSeconds": BODY_CLIP_REFERENCE_SECONDS,
+            "entranceSequenceAnchorSeconds": 0.0,
+            "upperEndpointBehavior": "clamp_at_last_retail_sample",
+        },
+        "sources": {
+            relative(Path(__file__)): sha256(Path(__file__)),
+            relative(base_path): sha256(base_path),
+            relative(decoded_path): sha256(decoded_path),
+            relative(base.MANIFEST): sha256(base.MANIFEST),
+            **mesh_hashes,
+        },
+        "captureMetadataSha256": metadata_hashes,
+        "validation": {
+            **validation,
+            "meshObservationCounts": decoded.get("meshObservationCounts"),
+            "packageCount": len(decoded_frames),
+            "paletteSampleCount": len(samples),
+            "minimumPackageGapSeconds": min(package_gaps),
+            "medianPackageGapSeconds": sorted(package_gaps)[len(package_gaps) // 2],
+            "maximumPackageGapSeconds": max(package_gaps),
+            "maximumReplayGapSeconds": max(gaps),
+            "timingSource": "capture metadata timestampQpc",
+        },
+        "owners": oracle.get("owners", []),
+        "transparentCapeExtension": extension,
+        "frames": samples,
+    }
 
 
 def recover_transparent_cape_extension(
@@ -757,14 +982,18 @@ def main() -> int:
         type=Path,
         default=DEFAULT_TRANSPARENT_CAPE_DECODED,
     )
+    parser.add_argument(
+        "--complete-decoded",
+        type=Path,
+        default=DEFAULT_COMPLETE_DECODED,
+        help="same-session capture containing body, hair, and all cloth renderers",
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
-        report = build_report(
+        report = build_complete_same_session_report(
             args.base_oracle.resolve(),
-            args.dense_decoded.resolve(),
-            args.reference_matched_decoded.resolve(),
-            args.transparent_cape_decoded.resolve(),
+            args.complete_decoded.resolve(),
         )
     except (DenseOracleError, OSError, ValueError, KeyError, IndexError) as exc:
         print(f"error: {exc}")

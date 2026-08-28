@@ -9,7 +9,7 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldCapturedSecondaryDynamicsReplayData : ScriptableObject
     {
         public const string ExpectedSchema =
-            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v5";
+            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v6";
 
         public string sourceSchema;
         public string sourceSha256;
@@ -134,18 +134,20 @@ namespace EndfieldGraphShaderLab
                 string parent = transparentCapeParentPaths[bone];
                 if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(parent) ||
                     !path.StartsWith(parent + "/", StringComparison.Ordinal) ||
-                    Array.IndexOf(bonePaths, path) >= 0)
+                    (transparentCapeExtensionRuntimeEligible
+                        ? Array.IndexOf(bonePaths, path) < 0
+                        : Array.IndexOf(bonePaths, path) >= 0))
                 {
                     failure = "transparent cape extension ownership is invalid";
                     return false;
                 }
             }
-            if (transparentCapeExtensionRuntimeEligible ||
-                transparentCapeSameSessionPrimaryReplay ||
+            if (!transparentCapeExtensionRuntimeEligible ||
+                !transparentCapeSameSessionPrimaryReplay ||
                 transparentCapeAdmissionFailures == null ||
-                transparentCapeAdmissionFailures.Length == 0)
+                transparentCapeAdmissionFailures.Length != 0)
             {
-                failure = "sparse transparent cape extension was not kept fail-closed";
+                failure = "same-session transparent cape replay was not admitted exactly";
                 return false;
             }
 

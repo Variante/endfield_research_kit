@@ -7,8 +7,10 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Default-off exact two-draw M31 shell checkpoint captured at clean
-    /// reference frame 264 (body phase 4.35 seconds).
+    /// Default-off temporal admission for the exact two-draw M31 shell
+    /// transport. The source-backed envelope falls back to the ordinary
+    /// renderer when retail recorded a packet count the native payload cannot
+    /// reproduce exactly.
     /// </summary>
     public static class EndfieldRecoveredEndminfM31PeakExactRuntime
     {
@@ -17,10 +19,6 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_31";
         private const float ViewerLeadSeconds = 2.0f / 60.0f;
-        // Viewer capture advances the body Animator by two 60-Hz ticks before
-        // the requested presentation timestamp. Admit that measured lead while
-        // keeping this single-frame packet outside the neighboring 0.1 s bins.
-        private const float HalfWindowSeconds = 0.05f;
 
         private static readonly List<ParticleSystemRenderer> Renderers =
             new List<ParticleSystemRenderer>();
@@ -30,6 +28,8 @@ namespace EndfieldGraphShaderLab
         private static bool active;
         private static bool submissionPending;
         private static string failure = string.Empty;
+        private static int selectedPacket = -1;
+        private static uint validatedDrawCount;
         private static bool loggedActivation;
         private static bool loggedValidation;
         private static bool loggedFailure;
@@ -46,34 +46,48 @@ namespace EndfieldGraphShaderLab
         internal static bool PrepareBeforeCulling(Camera camera)
         {
             active = false;
-            if (!Requested || failed || camera == null)
+            selectedPacket = -1;
+            if (!Requested || failed)
+            {
+                RestoreRenderers();
                 return false;
+            }
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 return Fail("exact M31 peak transport requires Direct3D11");
+            if (camera == null ||
+                camera.GetComponent<EndfieldHGOperatorPresentation>() == null)
+            {
+                RestoreRenderers();
+                return false;
+            }
             EndfieldHGOperatorLightRig lightRig =
                 camera.GetComponent<EndfieldHGOperatorLightRig>();
             if (lightRig == null || lightRig.actorRoot == null ||
                 !string.Equals(lightRig.actorRoot.name, "Endminf",
                     StringComparison.OrdinalIgnoreCase))
+            {
+                RestoreRenderers();
                 return false;
+            }
             if (!prepared && !PrepareNative())
                 return false;
 
             float seconds = ResolveOverviewSeconds(lightRig.actorRoot);
-            active = !float.IsNaN(seconds) && Mathf.Abs(
-                seconds - EndfieldRecoveredM31PeakCaptureData.PhaseSeconds) <=
-                HalfWindowSeconds;
+            selectedPacket = float.IsNaN(seconds) ? -1 :
+                ResolveNearestPacket(Mathf.Max(0.0f,
+                    seconds - ViewerLeadSeconds));
+            active = selectedPacket >= 0 &&
+                EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket] ==
+                EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount;
             if (!loggedAdmission)
             {
-                Debug.Log("Recovered exact Endminf M31 peak admission: " +
+                Debug.Log("Recovered exact Endminf M31 temporal admission: " +
                     "renderers=" + Renderers.Count + ", phase=" +
-                    seconds.ToString("F6") + ", target=" +
-                    EndfieldRecoveredM31PeakCaptureData.PhaseSeconds.ToString("F6") +
-                    ", active=" + active + ".");
+                    seconds.ToString("F6") + ", packet=" + selectedPacket +
+                    ", nativeCompatible=" + active + ".");
                 loggedAdmission = true;
             }
-            foreach (ParticleSystemRenderer renderer in Renderers)
-                if (renderer != null) renderer.enabled = !active;
+            SetRendererSuppression(active);
             return active;
         }
 
@@ -99,6 +113,39 @@ namespace EndfieldGraphShaderLab
                 }
                 return false;
             }
+            float[] phases = EndfieldRecoveredM31PeakCaptureData.PhaseSeconds;
+            int[] frames = EndfieldRecoveredM31PeakCaptureData.SourceFrames;
+            int[] drawCounts = EndfieldRecoveredM31PeakCaptureData.DrawCounts;
+            string[] hashes =
+                EndfieldRecoveredM31PeakCaptureData.TemporalMetadataSha256;
+            int packetCount = EndfieldRecoveredM31PeakCaptureData.PacketCount;
+            if (!EndfieldRecoveredM31PeakCaptureData.PayloadPrepared ||
+                !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
+                phases == null || frames == null || drawCounts == null ||
+                hashes == null || packetCount < 2 ||
+                phases.Length != packetCount || frames.Length != packetCount ||
+                drawCounts.Length != packetCount || hashes.Length != packetCount)
+            {
+                return Fail("the generated M31 temporal contract is incomplete");
+            }
+            bool foundAnchor = false;
+            for (int index = 0; index < packetCount; ++index)
+            {
+                if (index > 0 && (phases[index] <= phases[index - 1] ||
+                                  frames[index] <= frames[index - 1]))
+                    return Fail("the generated M31 temporal order is invalid");
+                if (drawCounts[index] <= 0 || string.IsNullOrEmpty(hashes[index]))
+                    return Fail("the generated M31 packet identity is incomplete");
+                if (frames[index] ==
+                    EndfieldRecoveredM31PeakCaptureData.AnchorFrame)
+                {
+                    foundAnchor = Mathf.Abs(phases[index] -
+                        EndfieldRecoveredM31PeakCaptureData.AnchorPhaseSeconds) <=
+                        0.000001f;
+                }
+            }
+            if (!foundAnchor)
+                return Fail("the generated M31 QPC phase anchor drifted");
             try
             {
                 renderEvent = Native.GetRenderEventFunc();
@@ -111,8 +158,33 @@ namespace EndfieldGraphShaderLab
                 return Fail("the native M31 peak transport could not initialize: " +
                     exception.Message);
             }
+            validatedDrawCount = 0;
             prepared = true;
             return true;
+        }
+
+        private static int ResolveNearestPacket(float seconds)
+        {
+            float[] phases = EndfieldRecoveredM31PeakCaptureData.PhaseSeconds;
+            float leadingHalfSpacing = (phases[1] - phases[0]) * 0.5f;
+            float trailingHalfSpacing =
+                (phases[phases.Length - 1] - phases[phases.Length - 2]) * 0.5f;
+            if (seconds < phases[0] - leadingHalfSpacing ||
+                seconds > phases[phases.Length - 1] + trailingHalfSpacing)
+                return -1;
+
+            int nearest = 0;
+            float nearestDistance = Mathf.Abs(seconds - phases[0]);
+            for (int index = 1; index < phases.Length; ++index)
+            {
+                float distance = Mathf.Abs(seconds - phases[index]);
+                if (distance < nearestDistance)
+                {
+                    nearest = index;
+                    nearestDistance = distance;
+                }
+            }
+            return nearest;
         }
 
         private static float ResolveOverviewSeconds(Transform actorRoot)
@@ -131,7 +203,7 @@ namespace EndfieldGraphShaderLab
                     return float.NaN;
                 float seconds = animator.GetCurrentAnimatorStateInfo(0)
                     .normalizedTime * clips[0].clip.length;
-                return Mathf.Max(0.0f, seconds - ViewerLeadSeconds);
+                return Mathf.Max(0.0f, seconds);
             }
             Animation animation = actorRoot != null
                 ? actorRoot.GetComponentInChildren<Animation>(true)
@@ -140,7 +212,7 @@ namespace EndfieldGraphShaderLab
                 ? animation["ui_overview_start"] : null;
             if (state == null || !state.enabled)
                 return float.NaN;
-            return Mathf.Max(0.0f, state.time - ViewerLeadSeconds);
+            return Mathf.Max(0.0f, state.time);
         }
 
         internal static bool Render(
@@ -150,7 +222,8 @@ namespace EndfieldGraphShaderLab
             RenderTexture sceneMV,
             RenderTexture sceneDepth)
         {
-            if (!Requested || failed || !prepared || !active)
+            if (!Requested || failed || !prepared || !active ||
+                selectedPacket < 0)
                 return false;
             if (camera == null || sceneMV == null || sceneDepth == null ||
                 renderEvent == IntPtr.Zero)
@@ -183,10 +256,14 @@ namespace EndfieldGraphShaderLab
             if (!loggedActivation)
             {
                 Debug.Log(
-                    "Recovered exact Endminf M31 peak submitted: two retail " +
-                    "SceneColor/SceneMV draws from capture " +
-                    EndfieldRecoveredM31PeakCaptureData.SourceSession +
-                    " frame " + EndfieldRecoveredM31PeakCaptureData.SourceFrame + ".");
+                    "Recovered exact Endminf M31 submitted inside the " +
+                    EndfieldRecoveredM31PeakCaptureData.PacketCount +
+                    "-packet temporal envelope from capture " +
+                    EndfieldRecoveredM31PeakCaptureData.TemporalSourceSession +
+                    "; exact payload capture " +
+                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceSession +
+                    " frame " +
+                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceFrame + ".");
                 loggedActivation = true;
             }
             return true;
@@ -204,18 +281,25 @@ namespace EndfieldGraphShaderLab
                 uint draws = Native.GetDrawCount();
                 uint failures = Native.GetFailureCount();
                 int result = Native.GetLastResult();
-                if (draws < EndfieldRecoveredM31PeakCaptureData.DrawCount ||
+                uint submittedDraws = draws >= validatedDrawCount
+                    ? draws - validatedDrawCount
+                    : uint.MaxValue;
+                if (submittedDraws !=
+                        EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount ||
                     failures != 0 || result < 0)
                 {
                     validationFailure = "native M31 peak result drifted: draws=" +
                         draws + ", failures=" + failures + ", hresult=0x" +
-                        unchecked((uint)result).ToString("x8");
+                        unchecked((uint)result).ToString("x8") +
+                        ", previousValidatedDraws=" + validatedDrawCount +
+                        ", submittedDraws=" + submittedDraws;
                     return Fail(validationFailure);
                 }
+                validatedDrawCount = draws;
                 if (!loggedValidation)
                 {
                     Debug.Log("Recovered exact Endminf M31 peak validated: " +
-                        "both captured draws completed with S_OK.");
+                        "the selected two-draw packet completed with S_OK.");
                     loggedValidation = true;
                 }
                 return true;
@@ -231,9 +315,9 @@ namespace EndfieldGraphShaderLab
         {
             failed = true;
             active = false;
+            selectedPacket = -1;
             failure = reason ?? "unknown exact M31 peak failure";
-            foreach (ParticleSystemRenderer renderer in Renderers)
-                if (renderer != null) renderer.enabled = true;
+            RestoreRenderers();
             if (!loggedFailure)
             {
                 Debug.LogWarning("Recovered exact Endminf M31 peak failed closed: " +
@@ -241,6 +325,17 @@ namespace EndfieldGraphShaderLab
                 loggedFailure = true;
             }
             return false;
+        }
+
+        private static void SetRendererSuppression(bool suppress)
+        {
+            foreach (ParticleSystemRenderer renderer in Renderers)
+                if (renderer != null) renderer.enabled = !suppress;
+        }
+
+        private static void RestoreRenderers()
+        {
+            SetRendererSuppression(false);
         }
 
         private static class Native
