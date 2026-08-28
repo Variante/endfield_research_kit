@@ -11,6 +11,13 @@ import verify_endminf_combined_graphics_capture as subject
 
 
 class CombinedGraphicsCaptureTests(unittest.TestCase):
+    def test_combined_gate_includes_opening_owner_and_shader_archive(self) -> None:
+        self.assertEqual(
+            subject.opening.EXPECTED_INDEX_COUNTS,
+            [11610, 7998, 4176, 420],
+        )
+        self.assertTrue(callable(subject.shader_archive.build_report))
+
     def test_peak_owner_audit_requires_both_m20_and_m21(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             capture = Path(temporary)

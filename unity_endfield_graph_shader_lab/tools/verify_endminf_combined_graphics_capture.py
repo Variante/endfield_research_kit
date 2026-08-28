@@ -4,7 +4,9 @@
 The report deliberately keeps two independent gates visible:
 
 * exact M29/M30 draw-resource closure; and
-* render-boundary skin-palette coverage for the character meshes.
+* render-boundary skin-palette coverage for the character meshes;
+* the exact shrinking horizontal-quad opening owner; and
+* a complete immutable D3D11 shader-bytecode archive.
 
 Individual meshes are not necessarily retained in every graphics frame.  The
 palette gate therefore measures unambiguous per-mesh observations across the
@@ -23,6 +25,8 @@ from typing import Any
 
 import decode_endminf_endfield_capture_skinning as skinning
 import verify_endminf_m29_m30_capture_completeness as effects
+import verify_endminf_opening_strip_capture as opening
+import verify_endfield_shader_archive as shader_archive
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -316,16 +320,42 @@ def build_report(capture: Path) -> dict[str, Any]:
         effect_report = effects.build_report(capture)
     except (OSError, ValueError, effects.VerificationError) as exc:
         effect_error = str(exc)
+    opening_report = None
+    opening_error = None
+    try:
+        opening_report = opening.build_report(capture)
+    except (OSError, ValueError, opening.VerificationError) as exc:
+        opening_error = str(exc)
+    archive_report = None
+    archive_error = None
+    try:
+        archive_report = shader_archive.build_report(capture)
+    except (OSError, ValueError, shader_archive.VerificationError) as exc:
+        archive_error = str(exc)
     errors = [*palette["errors"], *peak["errors"]]
     if effect_error:
         errors.append(f"M29/M30: {effect_error}")
+    if opening_error:
+        errors.append(f"opening strip: {opening_error}")
+    elif opening_report is not None:
+        errors.extend(f"opening strip: {row}" for row in opening_report["errors"])
+    if archive_error:
+        errors.append(f"shader archive: {archive_error}")
+    elif archive_report is not None:
+        errors.extend(f"shader archive: {row}" for row in archive_report["errors"])
     return {
-        "schema": "endfield.endminf-combined-graphics-capture.v2",
+        "schema": "endfield.endminf-combined-graphics-capture.v3",
         "status": "validated" if not errors else "rejected",
         "capture": str(capture.resolve()),
         "peakOwners": peak,
         "effects": effect_report if effect_report is not None else {
             "status": "rejected", "error": effect_error,
+        },
+        "openingStrip": opening_report if opening_report is not None else {
+            "status": "rejected", "error": opening_error,
+        },
+        "shaderArchive": archive_report if archive_report is not None else {
+            "status": "rejected", "error": archive_error,
         },
         "skinning": palette,
         "errors": errors,

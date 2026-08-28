@@ -276,6 +276,19 @@ namespace EndfieldGraphShaderLabEditor
             public int admittedRenderers;
             public int activeAdmittedRenderers;
             public int admittedAliveParticles;
+            public bool sharedCharEffectActive;
+            public int sharedCharEffectAliveParticles;
+            public int sharedCharEffectTrailAliveParticles;
+            public Vector3 sharedCharEffectTrailPositionMin;
+            public Vector3 sharedCharEffectTrailPositionMax;
+            public Vector3 sharedCharEffectTrailFirstSize;
+            public Vector3 sharedCharEffectTrailFirstVelocity;
+            public Vector3 sharedCharEffectTrailRendererBoundsCenter;
+            public Vector3 sharedCharEffectTrailRendererBoundsExtents;
+            public bool sharedCharEffectTrailRendererEnabled;
+            public bool sharedCharEffectTrailRendererActive;
+            public string sharedCharEffectTrailShader;
+            public int sharedCharEffectTrailPassCount;
             public string activeBodyClip;
             public float activeBodyClipTime;
             public bool overviewTransitioning;
@@ -1154,6 +1167,45 @@ namespace EndfieldGraphShaderLabEditor
                 .GetComponent<EndfieldSecondaryDynamicsRuntime>();
             EndfieldCapturedSecondaryDynamicsReplay capturedReplay = actor
                 .GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
+            GameObject sharedCharEffect = UnityEngine.Object
+                .FindObjectsOfType<GameObject>(true)
+                .FirstOrDefault(value =>
+                    value.name == "CharEffect__CharacterInfoRuntime");
+            ParticleSystem[] sharedCharEffectSystems = sharedCharEffect == null
+                ? Array.Empty<ParticleSystem>()
+                : sharedCharEffect.GetComponentsInChildren<ParticleSystem>(true);
+            ParticleSystem sharedCharEffectTrail = sharedCharEffectSystems
+                .FirstOrDefault(value => value.gameObject.name == "trail");
+            ParticleSystemRenderer sharedCharEffectTrailRenderer =
+                sharedCharEffectTrail == null
+                    ? null
+                    : sharedCharEffectTrail.GetComponent<ParticleSystemRenderer>();
+            int sharedTrailCount = sharedCharEffectTrail == null
+                ? 0
+                : sharedCharEffectTrail.particleCount;
+            ParticleSystem.Particle[] sharedTrailParticles =
+                sharedTrailCount == 0
+                    ? Array.Empty<ParticleSystem.Particle>()
+                    : new ParticleSystem.Particle[sharedTrailCount];
+            if (sharedCharEffectTrail != null && sharedTrailCount != 0)
+                sharedTrailCount = sharedCharEffectTrail.GetParticles(
+                    sharedTrailParticles);
+            Vector3 sharedTrailPositionMin = Vector3.zero;
+            Vector3 sharedTrailPositionMax = Vector3.zero;
+            if (sharedTrailCount != 0)
+            {
+                sharedTrailPositionMin = sharedTrailParticles[0].position;
+                sharedTrailPositionMax = sharedTrailParticles[0].position;
+                for (int index = 1; index < sharedTrailCount; index++)
+                {
+                    sharedTrailPositionMin = Vector3.Min(
+                        sharedTrailPositionMin,
+                        sharedTrailParticles[index].position);
+                    sharedTrailPositionMax = Vector3.Max(
+                        sharedTrailPositionMax,
+                        sharedTrailParticles[index].position);
+                }
+            }
             Frames.Add(new FrameRow {
                 index = next, requestedSeconds = requested, actualSeconds = elapsed, file = file,
                 endminfPostSeconds = endminfPostSeconds,
@@ -1209,6 +1261,46 @@ namespace EndfieldGraphShaderLabEditor
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
                     .Sum(value => value.GetComponent<ParticleSystem>().particleCount),
+                sharedCharEffectActive = sharedCharEffect != null &&
+                    sharedCharEffect.activeInHierarchy,
+                sharedCharEffectAliveParticles = sharedCharEffectSystems
+                    .Sum(value => value.particleCount),
+                sharedCharEffectTrailAliveParticles =
+                    sharedTrailCount,
+                sharedCharEffectTrailPositionMin = sharedTrailPositionMin,
+                sharedCharEffectTrailPositionMax = sharedTrailPositionMax,
+                sharedCharEffectTrailFirstSize = sharedTrailCount == 0
+                    ? Vector3.zero
+                    : sharedTrailParticles[0].GetCurrentSize3D(
+                        sharedCharEffectTrail),
+                sharedCharEffectTrailFirstVelocity = sharedTrailCount == 0
+                    ? Vector3.zero
+                    : sharedTrailParticles[0].velocity,
+                sharedCharEffectTrailRendererBoundsCenter =
+                    sharedCharEffectTrailRenderer == null
+                        ? Vector3.zero
+                        : sharedCharEffectTrailRenderer.bounds.center,
+                sharedCharEffectTrailRendererBoundsExtents =
+                    sharedCharEffectTrailRenderer == null
+                        ? Vector3.zero
+                        : sharedCharEffectTrailRenderer.bounds.extents,
+                sharedCharEffectTrailRendererEnabled =
+                    sharedCharEffectTrailRenderer != null &&
+                    sharedCharEffectTrailRenderer.enabled,
+                sharedCharEffectTrailRendererActive =
+                    sharedCharEffectTrailRenderer != null &&
+                    sharedCharEffectTrailRenderer.gameObject.activeInHierarchy,
+                sharedCharEffectTrailShader =
+                    sharedCharEffectTrailRenderer == null ||
+                    sharedCharEffectTrailRenderer.sharedMaterial == null ||
+                    sharedCharEffectTrailRenderer.sharedMaterial.shader == null
+                        ? string.Empty
+                        : sharedCharEffectTrailRenderer.sharedMaterial.shader.name,
+                sharedCharEffectTrailPassCount =
+                    sharedCharEffectTrailRenderer == null ||
+                    sharedCharEffectTrailRenderer.sharedMaterial == null
+                        ? 0
+                        : sharedCharEffectTrailRenderer.sharedMaterial.passCount,
                 activeBodyClip = activeBodyClip,
                 activeBodyClipTime = activeBodyClipTime,
                 overviewTransitioning = overview != null && overview.IsTransitioning,
