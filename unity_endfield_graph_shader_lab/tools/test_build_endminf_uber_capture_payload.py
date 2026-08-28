@@ -39,6 +39,7 @@ def report() -> dict[str, object]:
     return {
         "status": BUILD.EXPECTED_STATUS,
         "capture": "D:/capture/session",
+        "compiledKeywords": ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
         "packets": [{
             "frame": 42,
             "fullscreenOrdinal": 9,

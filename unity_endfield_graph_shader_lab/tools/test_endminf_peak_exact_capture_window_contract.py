@@ -23,6 +23,17 @@ class EndminfPeakExactCaptureWindowContractTests(unittest.TestCase):
                 self.assertIn("Mathf.Abs(", source)
                 self.assertIn("<=\n                HalfWindowSeconds", source)
 
+        uber = (RUNTIME_ROOT / "EndfieldRecoveredEndminfUberExactRuntime.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertRegex(
+            uber,
+            r"HalfWindowSeconds\s*=\s*1\.0f\s*/\s*120\.0f;",
+        )
+        self.assertIn("if (!IsCapturedPhase(hasPost, post))", uber)
+        self.assertIn("post.mode == 6", uber)
+        self.assertIn("Mathf.Abs(post.elapsed - CapturePhaseSeconds)", uber)
+
     def test_inactive_exact_paths_restore_the_authored_renderer(self) -> None:
         for name in RUNTIMES[:2]:
             with self.subTest(runtime=name):

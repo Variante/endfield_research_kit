@@ -2354,6 +2354,16 @@ alpha/culling, or depth/material visibility--and needs same-frame retail
 post-skin positions or an object/depth silhouette mask rather than invented
 intermediate bone transforms.
 
+The first downstream renderer-state audit found two real compatibility
+regressions. `M_actor_endminf_cloth_03` is source-opaque alpha-test despite its
+legacy alpha-content hint and `BlendMode=4`; material setup must not normalize
+it into transparent blending. Pipeline disposal also must not overwrite the
+transparent hair shell's captured `ZTest Less` with the general `LessEqual`
+fallback. The global reset is now opaque-only, while the transparent cape
+retains queue 3000, `Cull Off`, and its captured depth state. The body-material
+and CharacterOutline verifiers pass, but this correct state does not by itself
+close the remaining post-skin silhouette/visibility gap.
+
 The corresponding camera/background audit also rejects a fixed portrait or
 camera-endpoint nudge. In settled frames Unity places the character about 50
 pixels left of retail but the farther portrait about 130 pixels left, a
@@ -2402,7 +2412,7 @@ tool architecture in tests, but the first real-game run must still prove
 accepted as native-cadence temporal evidence.
 
 The current split-M31/80-bone checkpoint has a complete 770-frame D3D11
-render and a 556-frame clean-reference comparison. Within the documented
+render and a 558-frame clean-reference comparison. Within the documented
 one-frame anchor uncertainty, offset -1 is best at 22.7765 actor-ROI MAE,
 23.5194 effect-ROI MAE, and 12.2248 effect temporal-delta MAE. Against the
 earlier clean-gyroscope checkpoint (23.7086/23.6431/13.7609), this improves
@@ -2417,6 +2427,30 @@ uses a one-tick lower bound for the first packet while preserving the
 established continuous nearest-packet suffix. A focused D3D11 comparison at
 4.35/4.4167/4.50 improves effect-ROI MAE to 33.8108 versus 34.4416 for
 fully sparse exact admission and 34.9943 for ordinary M13 rendering.
+
+The captured combined Uber packet is not a reusable animated post shader.
+Capture `20260827T183054Z` frame 1818 contains the active
+`BLOOM + RADIAL_BLUR + VIGNETTE` variant at overview phase 4.350000 s, while
+its PS constants retain frame-local values including chromatic intensity.
+Replaying it over the full sequence regresses 558-frame spatial and temporal
+metrics and visibly creates a severe full-character smear. The exact transport
+therefore remains default-off and admits only the nearest 60 Hz sample around
+4.35 s when explicitly requested; adjacent frames use the compatibility Uber.
+A focused D3D11 run proves submission only at 4.350000 s and no submission at
+4.333333/4.366667 s. Even that one exact frame is rejected from canonical
+presentation by the clean-reference visual boundary, not promoted on a small
+static-MAE improvement.
+
+The clean canonical cloth-state render at
+`exports/endminf_overview_20260828_cloth_state_fix/frames` completes 770/770
+with exact Uber disabled. At offset -1 its 558-frame scores are 22.9257 actor
+ROI, 23.8478 effect ROI, and 12.1997 temporal-delta MAE. The renderer-state
+correction slightly improves temporal behavior but increases raw spatial MAE;
+retain it because the state is source-backed, and do not compensate by
+inventing alpha or depth values. Five-stage peak diagnostics also reject a
+global bloom increase: the recovered peak crosses from under- to over-bright
+within adjacent samples, so the remaining gap is flash/gas ownership and pulse
+shape/timing rather than one global intensity scalar.
 
 ## Main animation gap
 
@@ -2451,7 +2485,7 @@ or shaders rather than hand-editing generated prefabs.
 ## Recovery queue
 
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
-   M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
+   M17 `baoshan` transport, now-timed M20 gas, source-compatible Uber path,
    and validated temporal M31 envelope. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
@@ -2476,8 +2510,8 @@ or shaders rather than hand-editing generated prefabs.
 3. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
    frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
    do not manually widen cloth; any residual silhouette error now belongs to
-   replay-clock registration or renderer/material behavior, not missing
-   transparent-cape bone ownership.
+   post-skin vertex output or remaining renderer/material visibility behavior,
+   not replay-clock registration or missing transparent-cape bone ownership.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under

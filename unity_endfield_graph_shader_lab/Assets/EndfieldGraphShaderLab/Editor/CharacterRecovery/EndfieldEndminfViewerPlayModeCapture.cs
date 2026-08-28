@@ -1571,10 +1571,20 @@ namespace EndfieldGraphShaderLabEditor
             bool exactEndminfUberRequested = Frames.Any(
                 value => value.exactEndminfUberRequested);
             bool observedExactEndminfUberSubmitted =
-                Frames.Count > 0 && Frames.All(
+                Frames.Count > 0 && Frames.Any(
                     value => value.exactEndminfUberSubmitted);
+            // Capture 20260827T183054Z frame 1818 is the sole certified Uber
+            // packet, at overview phase 4.350000 s. The runtime assembly keeps
+            // its transport internal, so mirror only this evidence constant in
+            // the editor-side report gate.
+            const float capturedUberPhaseSeconds = 4.35f;
+            bool capturedUberPhaseIncluded = Frames.Any(value =>
+                Mathf.Abs(
+                    value.endminfPostSeconds -
+                    capturedUberPhaseSeconds) <= 1.0f / 120.0f);
             bool exactEndminfUberRequirementReady =
                 !exactEndminfUberRequested ||
+                !capturedUberPhaseIncluded ||
                 observedExactEndminfUberSubmitted;
             string exactEndminfUberFailure = Frames
                 .Select(value => value.exactEndminfUberFailure)
