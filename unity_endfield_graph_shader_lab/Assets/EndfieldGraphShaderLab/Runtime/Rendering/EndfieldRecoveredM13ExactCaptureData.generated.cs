@@ -3,12 +3,12 @@ namespace EndfieldGraphShaderLab
 {
     internal static class EndfieldRecoveredM13ExactCaptureData
     {
-        internal const string SourceSession = "20260826T144934Z";
-        internal const int PacketCount = 2;
-        internal static readonly int[] SourceFrames = { 5395, 5404 };
-        internal static readonly float[] PhaseSeconds = { 4.383333f, 4.533333f };
-        internal static readonly int[] RingByteOffsets = { 971600, 1045520 };
-        internal static readonly string[] VertexSha256 = { "7fac2f4ddc05eb6b48af7f88dafcc1c092e08f51583ad876ca8ad5c42d1b40f0", "dbfbfbb704737959f51db01c1c3f96710604c51b89fe31d94f8d4fdf2130b454" };
+        internal const string SourceSession = "20260826T144934Z + 20260828T004942Z";
+        internal const int PacketCount = 3;
+        internal static readonly int[] SourceFrames = { 5395, 2775, 5404 };
+        internal static readonly float[] PhaseSeconds = { 4.383333f, 4.500000f, 4.533333f };
+        internal static readonly int[] RingByteOffsets = { 971600, 1060480, 1045520 };
+        internal static readonly string[] VertexSha256 = { "7fac2f4ddc05eb6b48af7f88dafcc1c092e08f51583ad876ca8ad5c42d1b40f0", "ea4c21c1598f366617417593c66428402f8d1e6f23219cf2620a011d74fd3e52", "dbfbfbb704737959f51db01c1c3f96710604c51b89fe31d94f8d4fdf2130b454" };
         internal static readonly string[] TextureSha256 = { "ab1fd8d5bfe1ea8f4990548088deacdaef827c359ad5334a729d77a67afdb40d", "3aea49b100cc6f5e4081ec267a3048a3a4b1db0ff42ea6e26db37e2c18364de9", "c8dfd6f4954922e72bc669845cd548c17ec1a40957b738c410c06604bdde86cb", "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3f164d381bc0", "64fa9966b343e4d1a9b5b323c6d8fdab00f54b22e0476425cafc8ff94e9b2882" };
     }
 }
