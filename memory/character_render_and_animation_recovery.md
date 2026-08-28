@@ -2343,16 +2343,19 @@ anchored by exact Uber frame 1977 at 4.35 s, and preserve the immediately
 previous 60 Hz palette. The generated 144-sample/80-bone asset validates and a
 targeted D3D11 run reports the replay bound and applied at every checkpoint.
 
-A focused post-integration audit rejects further hair/cape clock or bone-space
-tuning. All 80 recovered bones bind and apply, root-space transforms remain
-orthonormal at unit actor scale, and retail-versus-Unity motion correlation is
-0.78-0.90; the best temporal offsets stay within two frames. Despite that,
-thresholded visible motion is narrower in Unity by about 6.5% for hair, 16% for
-the left cape, and 32% for the right cape. The remaining silhouette gap is
-therefore downstream of palette replay--post-skin vertex output,
-alpha/culling, or depth/material visibility--and needs same-frame retail
-post-skin positions or an object/depth silhouette mask rather than invented
-intermediate bone transforms.
+A focused post-integration audit rejects another fixed hair/cape clock or
+bone-space offset, but does not close temporal fidelity. All 80 recovered bones
+bind and apply, root-space transforms remain orthonormal at unit actor scale,
+and retail-versus-Unity motion correlation is 0.78-0.90 with best offsets
+within two frames. However, the 144 retained states are 72 previous/current
+pairs spread across 13.87 seconds: 70 interpolation intervals exceed eight
+60-Hz frames and the worst hole is 14.03 frames. Linear position interpolation
+and quaternion Slerp suppress unsampled extrema and create the visibly
+constant-arc hair motion. Thresholded motion remains narrower by about 6.5%
+for hair, 16% for the left cape, and 32% for the right cape. Dense native
+palette cadence is therefore the primary missing owner; post-skin output,
+alpha/depth visibility, and temporal softness remain secondary silhouette
+gaps rather than justification for inventing intermediate bone transforms.
 
 The first downstream renderer-state audit found two real compatibility
 regressions. `M_actor_endminf_cloth_03` is source-opaque alpha-test despite its
@@ -2452,6 +2455,54 @@ global bloom increase: the recovered peak crosses from under- to over-bright
 within adjacent samples, so the remaining gap is flash/gas ownership and pulse
 shape/timing rather than one global intensity scalar.
 
+Automatic session `20260828T121603Z` contains the exact M21 shader pair in
+frames 1977, 1989, and 2000, but it does not close the stone texture binding.
+The capture hook did not classify M21 as a retained owner, so each M21 draw has
+an empty draw-local resource table even though unrelated frame-wide textures
+were read back. The serialized `M_fx_endminm_gfx_21` material has a null
+`_MainTex`, which supports but does not prove Unity's white fallback. The
+capture hook now recognizes the exact M21 VS/PS identities and retains its IA,
+constants, and PS t0-t5 in the same unattended sequence as M20 and the other
+peak owners. Release build and all 15 synthetic/WARP/proxy tests pass; one new
+real-game automatic sequence is still required to establish the live M21 t0
+resource and deferred 72/72 native cadence.
+
+The first deferred real-game attempt, `20260828T155751Z`, failed before any
+frame package was publishable. It staged 30 Full-profile frames, drained and
+published zero, reached 4,259,378,888 bytes of the 4-GiB staging budget, and
+then failed closed; `graphics/frames` is empty. The game subsequently exited,
+but the deterministic staging exhaustion is sufficient to reject the old
+architecture independently of the crash. Deferred capture now drains and
+publishes completed slots while later samples remain active, releasing each
+slot's GPU/readback allocation back to the bounded budget instead of waiting
+for all 72 samples. Release build and all 15 tests pass, including an explicit
+contract that draining begins while capture remains active. A new real-game
+run is still required; no M20/M21 evidence can be recovered from this failed
+session.
+
+The reported vertically inverted light appearance does not authorize another
+texture flip. All 70 source `ParticleSystemRenderer.m_Flip` vectors are zero,
+the recovered material Y scales are positive, exact post-VS packets preserve
+their captured UV lanes, and AnimeStudio already performs the required
+vertical row normalization. Peak trails travel toward the same upper-right
+quadrant in matched retail and Unity frames. The apparent orientation gap is
+instead missing/undersized M20 gas, glow, particles, and additive energy; a
+Unity-side `1-y` or negative Y scale would double-flip source assets.
+
+The body-shaped portrait contamination has one concrete owner. The exact
+`CLIP_SCENEDEPTH + HG_WORLD_UI` fragment clips the post-Uber portrait against
+the preserved primary depth containing CharacterPrePass, while compatibility
+Uber/temporal color shifts the visible actor without equivalently shifting
+depth. The resulting depth/color disagreement exposes the undistorted body
+silhouette. The clip math and post-Uber chronology are source-backed, but the
+specific full-scene depth SRV binding remains inferred; do not simply remove
+the clip. Validate either a synchronized post-Uber color/depth transport or a
+bounded alternate-depth experiment before changing the canonical portrait.
+
+After the next complete Unity sequence, wait for user visual review before
+accepting the render as an improvement or replacing the current canonical
+checkpoint.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
@@ -2491,9 +2542,12 @@ or shaders rather than hand-editing generated prefabs.
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
    M28 refractive sphere in their captured ordinal positions and resolve the
    equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
-   stone packet are now exact, and M21 is enabled only at its certified sample
-   in the normal reproduction. After those are integrated, obtain one focused
-   M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.
+   stone packet geometry/state are exact, while its live t0 fallback remains
+   unproven; M21 is enabled only at its certified sample in the normal
+   reproduction. After those are integrated, obtain one unattended automatic
+   sequence at clean frame 276-281. The patched capture must retain M20 smoke,
+   M21 t0-t5, and prove deferred 72/72 cadence in that single run; frame 2775
+   does not contain M20.
    Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording with the validated clean-reference gyroscope
