@@ -2530,33 +2530,40 @@ pooled 16-MiB buffers into otherwise redundant samples and could still outrun
 single-package publication during the dense prefix. Superseded-DLL session
 `20260828T160748Z` confirms that distinction: continuous drain published 18 of
 48 staged packages, but their 141-155-MiB broad payloads still reached
-4,269,389,000 staging bytes and failed closed. Its 18 consecutive opening
-packages have 16-89-ms QPC gaps and contain no M20/M21 peak draw, so they are
-not dense cloth/hair or peak evidence. Their 3840x2160 BGRA backbuffers do,
-however, decode correctly and preserve the retail opening-strip burst; retain
-them as visual shape evidence only. They do not contain resolver-local
-before/after SceneColor snapshots, so they cannot identify which pre-Uber
-fullscreen ordinal generates the strips. The pruned build passes all 15 native
-tests and writes `automaticExactDrawResourcesOnly=true` into its summary so a
-new session proves the active policy directly. The bounded fullscreen resolver
-census now also records metadata-only PS SRV and RTV object/view identities for
-every retained `DrawInstanced(3,1)` pass and writes
-`fullscreenResourceChainMetadata=true` into the summary. This adds no texture
-payload staging, but lets one automatic run prove which pre-Uber resolver
-writes the SceneColor resource subsequently consumed by normal Uber. The
-current `build-local` proxy SHA-256 is
-`AFD1865213FAB4F4740BB30845A5FE1967B76ACFB7C8FFCE186F3387E0873557` and all
-15 native tests pass. It now also gates production to three undrained Full
-packages and lowers the aggregate staging ceiling from 4 GiB to 1 GiB. This
-prevents another 30-package/4.27-GiB producer backlog while retaining the same
-72 exact-owner samples; new summaries expose
-`deferredMaxUndrainedSlots=3` so the active binary is verifiable from evidence
-rather than its timestamp. After capture, run
-`python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`;
-the analyzer fails closed on old/truncated metadata and recovers only exact
-same-frame object-identity edges from an earlier resolver RTV to a normal-Uber
-PS input. A new real-game run is still required; no M20/M21 evidence can be
-recovered from either failed session.
+4,269,389,000 staging bytes and failed closed. Its opening packages contain no
+M20/M21 peak draw, so they are not dense cloth/hair or peak evidence. Their
+3840x2160 DXGI-format-28 backbuffers are RGBA, not BGRA; decoding them as RGBA
+preserves the retail opening-strip burst and correct colors.
+
+The pruned automatic build is validated by session `20260828T181119Z`: all 72
+Full packages published with no pending slot, failure, or drop, and its exact
+M21/M27 packets, character palettes, and M29/M30/M31 closure are usable peak
+evidence. It still is not a complete peak-owner capture. Its tail samples are
+six Presents apart, and no package contains either exact M20 shader pair; the
+strict combined validator now requires M20 and M21 explicitly and rejects this
+session instead of accepting a superficially complete sequence. M21's live t0
+identity has zero captured bytes, so its existing white fallback remains
+source-compatible rather than byte-closed.
+
+The same session closes the fullscreen-strip hypothesis without staging more
+texture payload. Across all 71 normal-Uber samples, none of Uber's t0/t1/t2
+resource identities matches an earlier retained `DrawInstanced(3,1)` RTV in
+the frame. SceneColor therefore enters the retained fullscreen resolver chain
+already containing the opening strips; do not attribute them to or invent an
+additional pre-Uber fullscreen distortion pass. Recover their transport from
+the pre-Uber geometry/material owners, including M17 `baoshan`, while retaining
+the measured rectangles only as bounded visual evidence.
+
+EndfieldCapture now detects either exact M20 shader pair inside the indexed-draw
+callback and, when the ordinary three-slot producer gate would skip it, arms a
+fourth bounded deferred package before recording that same draw. Status and
+summary expose `graphicsSequencePriorityM20DrawArms` and
+`deferredPriorityM20DrawArms`. The current `build-local` proxy SHA-256 is
+`3BFDFC6E42D1AC9507745D858527490300C331DC7B40DCBFE24292B276FD7418`; all 15
+native tests pass. One real-game run is still required to prove the priority
+path and close exact M20 gas ownership. After capture, run the combined
+validator and
+`python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`.
 
 The exact-owner policy deliberately retains one compute exception: the unique
 8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
@@ -2661,9 +2668,11 @@ or shaders rather than hand-editing generated prefabs.
    stone packet geometry/state are exact, while its live t0 fallback remains
    unproven; M21 is enabled only at its certified sample in the normal
    reproduction. After those are integrated, obtain one unattended automatic
-   sequence at clean frame 276-281. The patched capture must retain M20 smoke,
-   M21 t0-t5, and prove deferred 72/72 cadence in that single run; frame 2775
-   does not contain M20.
+   sequence at clean frame 276-281. Session `20260828T181119Z` proves stable
+   72/72 publication and exact M21 but skips M20 between six-Present tail
+   samples. The draw-callback priority build must now retain M20 smoke and
+   report at least one priority M20 arm in a single run; frame 2775 does not
+   contain M20.
    Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording with the validated clean-reference gyroscope

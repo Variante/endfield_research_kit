@@ -11,6 +11,33 @@ import verify_endminf_combined_graphics_capture as subject
 
 
 class CombinedGraphicsCaptureTests(unittest.TestCase):
+    def test_peak_owner_audit_requires_both_m20_and_m21(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            frame = capture / "graphics/frames/1"
+            frame.mkdir(parents=True)
+            m20 = next(iter(subject.PEAK_SHADER_PAIRS["M20"]))
+            m21 = next(iter(subject.PEAK_SHADER_PAIRS["M21"]))
+            draws = []
+            for vertex, pixel in (m20, m21):
+                draws.append({"count": 6, "shaders": [
+                    {"stage": 0, "identityHash": vertex},
+                    {"stage": 4, "identityHash": pixel},
+                ]})
+            (frame / "metadata.json").write_text(
+                json.dumps({"frame": 1, "drawRecords": draws}),
+                encoding="utf-8")
+            report = subject.audit_peak_owner_presence(capture)
+            self.assertEqual("validated_peak_owner_presence", report["status"])
+            self.assertEqual([], report["errors"])
+
+            (frame / "metadata.json").write_text(
+                json.dumps({"frame": 1, "drawRecords": draws[1:]}),
+                encoding="utf-8")
+            report = subject.audit_peak_owner_presence(capture)
+            self.assertEqual("rejected", report["status"])
+            self.assertTrue(any("M20" in error for error in report["errors"]))
+
     def test_transparent_cape_is_a_required_palette_owner(self) -> None:
         self.assertEqual(subject.skinning.MESHES["cloth_02"], (2_286, 29))
         self.assertIn("cloth_02", subject.MINIMUM_TOTAL)
