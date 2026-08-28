@@ -84,7 +84,8 @@ def main() -> int:
         "primarySceneDepth.depthStencilFormat != selectedFormat",
         "camera.cullingMask & ~(1 << EndfieldRecoveredCharInfoBackgroundPortrait.SourceUiLayer)",
         "DrawRecoveredPostUberWorldUi(",
-        "commandBuffer.SetGlobalTexture(SceneDepthId, primarySceneDepth)",
+        "new RenderTargetIdentifier(primarySceneDepth)",
+        "commandBuffer.SetGlobalTexture(SceneDepthId, portraitSceneDepth)",
         "SortingCriteria.CommonTransparent",
         "1 << EndfieldRecoveredCharInfoBackgroundPortrait.SourceUiLayer",
         "commandBuffer.SetGlobalFloat(RecoveredPostUberWorldUiReadyId, 0.0f)",
@@ -116,12 +117,19 @@ def main() -> int:
         "post-Uber UI does not target the post color",
         failures,
     )
+    portrait_draw = pipeline[
+        pipeline.find("private void DrawRecoveredPostUberWorldUi"):pipeline.find(
+            "private int BuildRecoveredSceneBloomPyramid"
+        )
+    ]
+    post_ui_render_targets = re.findall(
+        r"commandBuffer\.SetRenderTarget\((.*?)\);",
+        portrait_draw,
+        flags=re.DOTALL,
+    )
     require(
-        "new RenderTargetIdentifier(primarySceneDepth)" not in pipeline[
-            pipeline.find("private void DrawRecoveredPostUberWorldUi"):pipeline.find(
-                "private int BuildRecoveredSceneBloomPyramid"
-            )
-        ],
+        all("primarySceneDepth" not in arguments
+            for arguments in post_ui_render_targets),
         "primary depth must not be rebound as a simultaneous post-UI DSV",
         failures,
     )
