@@ -27,6 +27,8 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertAlmostEqual(values["Peak"], 1.0 / 15.0, places=6)
         self.assertAlmostEqual(values["End"], 0.35, places=6)
         self.assertIn("elapsed >= OpeningStripEndSeconds", source)
+        self.assertIn("ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC", source)
+        self.assertIn("OpeningStripDiagnosticEnvironmentVariable", source)
         self.assertIn("if (!TryGetElapsed(out float elapsed))", source)
 
     def test_pass_is_opt_in_and_pre_uber(self) -> None:
