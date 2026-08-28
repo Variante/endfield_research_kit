@@ -32,11 +32,13 @@ DEFAULT_OUTPUT = (
 MINIMUM_TOTAL = {
     "body": 8,
     "cloth_01": 40,
+    "cloth_02": 8,
     "cloth_04": 24,
     "hair": 40,
 }
 MINIMUM_PER_SEQUENCE = {
     "cloth_01": 8,
+    "cloth_02": 4,
     "cloth_04": 4,
     "hair": 8,
 }
