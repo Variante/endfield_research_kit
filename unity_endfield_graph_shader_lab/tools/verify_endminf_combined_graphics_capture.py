@@ -54,6 +54,9 @@ PEAK_SHADER_PAIRS = {
     "M20": {
         (0xE8F38F2F7519383D, 0xFEA38543389B6FF4),
         (0x04BEF98C73CA34880, 0x246A0F4F2D3C34F4),
+        # Actual retail route observed on the 36-index smoke packet in
+        # automatic full captures 20260828T224210Z/20260828T224407Z.
+        (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188),
     },
     "M21": {
         (0xE7F5568D34FD467B, 0xC5B21FEE8E9936A6),
@@ -173,11 +176,16 @@ def audit_peak_owner_presence(capture: Path) -> dict[str, Any]:
             }
             pair = (identities.get(0, 0), identities.get(4, 0))
             for name, accepted in PEAK_SHADER_PAIRS.items():
-                if pair in accepted:
+                index_count = int(draw.get("count", -1))
+                # The retail M20 program is a shared VFXBaseV2 route. Its
+                # identity alone admits hundreds of unrelated particle
+                # packets; the recovered smoke (2) peak owner is the measured
+                # DrawIndexedInstanced(36, 1, ...) packet.
+                if pair in accepted and (name != "M20" or index_count == 36):
                     packets[name].append({
                         "frame": frame,
                         "drawIndex": draw_index,
-                        "indexCount": int(draw.get("count", -1)),
+                        "indexCount": index_count,
                     })
     errors = [
         f"automatic sequence contains no exact {name} owner packet"
