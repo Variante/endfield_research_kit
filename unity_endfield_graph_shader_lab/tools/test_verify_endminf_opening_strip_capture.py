@@ -43,9 +43,15 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
                 "resourcesFile": "resources.bin",
                 "selectedResourceRecords": [
                     {"captureKind": 0, "objectId": 10, "blobOffset": 0,
-                     "completed": True},
+                     "blobBytes": len(blob), "completed": True, "failure": 0},
                     {"captureKind": 1, "objectId": 10, "blobOffset": 0,
-                     "completed": True},
+                     "blobBytes": len(blob), "completed": True, "failure": 0},
+                    {"captureKind": 4, "objectId": 20, "blobOffset": 0,
+                     "blobBytes": 64, "completed": True, "failure": 0},
+                    {"captureKind": 3, "objectId": 30, "blobOffset": 0,
+                     "blobBytes": 64, "completed": True, "failure": 0},
+                    {"captureKind": 3, "objectId": 40, "blobOffset": 0,
+                     "blobBytes": 64, "completed": True, "failure": 0},
                 ],
                 "drawRecords": [{
                     "drawOrdinal": 9,
@@ -55,6 +61,11 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
                     "shaders": [
                         {"stage": 0, "identityHash": verifier.VS_IDENTITY},
                         {"stage": 4, "identityHash": verifier.PS_IDENTITY},
+                    ],
+                    "resources": [
+                        {"stage": 0, "slot": 0, "objectId": 20},
+                        {"stage": 4, "slot": 0, "objectId": 30},
+                        {"stage": 4, "slot": 1, "objectId": 40},
                     ],
                     "inputAssembler": {
                         "vertexBuffers": [{"objectId": 10,
@@ -83,6 +94,7 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
         self.assertEqual(report["status"], "validated")
         self.assertEqual(report["packetCount"], 4)
         self.assertGreater(report["packets"][0]["horizontalQuadFraction"], 0.99)
+        self.assertEqual(len(report["packets"][0]["ownerResources"]), 3)
 
     def test_missing_owner_rejects(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -103,6 +115,20 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
             )
         self.assertEqual(report["status"], "rejected")
         self.assertTrue(any("non-independent quad" in row
+                            for row in report["errors"]))
+
+    def test_missing_owner_resource_payload_rejects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            session = self.make_session(Path(temporary))
+            metadata_path = next(session.glob("graphics/frames/*/metadata.json"))
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["selectedResourceRecords"] = [row for row in
+                metadata["selectedResourceRecords"]
+                if row.get("objectId") != 40]
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+            report = verifier.build_report(session)
+        self.assertEqual(report["status"], "rejected")
+        self.assertTrue(any("stage 4 slot 1 payload is absent" in row
                             for row in report["errors"]))
 
 
