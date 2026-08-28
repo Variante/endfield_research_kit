@@ -637,7 +637,17 @@ namespace EndfieldGraphShaderLabEditor
                     !sourceRow.rendererFailClosedForUnrecoveredShader &&
                     renderer.sharedMaterials.Length == 1 &&
                     renderer.sharedMaterial == material && renderer.enabled;
-                L.Require(preIntegrationBoundary || integratedBoundary,
+                // Older broad imports preserved the authored enabled bit but
+                // correctly stripped the unresolved material and disabled the
+                // Unity renderer. This is the only other safe input state for
+                // the targeted, fully validated repair; it must not force the
+                // marker to claim that retail authored the renderer disabled.
+                bool staleFailClosedBoundary =
+                    sourceRow.sourceRendererEnabled &&
+                    sourceRow.rendererFailClosedForUnrecoveredShader &&
+                    renderer.sharedMaterials.Length == 0 && !renderer.enabled;
+                L.Require(preIntegrationBoundary || integratedBoundary ||
+                    staleFailClosedBoundary,
                     "Retained Endminf suikuai (1) admission boundary drifted: " +
                     "sourceEnabled=" + sourceRow.sourceRendererEnabled +
                     ", failClosed=" +
