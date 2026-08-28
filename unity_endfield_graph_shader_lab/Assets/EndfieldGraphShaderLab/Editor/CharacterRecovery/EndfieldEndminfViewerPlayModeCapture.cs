@@ -45,9 +45,11 @@ namespace EndfieldGraphShaderLabEditor
         // The canonical clean reference videos/2026-08-26_21-25-50.mkv keeps
         // the pointer at source pixel (1036,75) after its short initial move.
         // Convert that 3840x2160 top-left image coordinate to the source
-        // normalized mouse domain: x=2*1036/3840-1, y=1-2*75/2160.
-        // These are recording-specific live inputs, not game-data defaults;
-        // environment overrides preserve comparisons against older captures.
+        // normalized mouse domain: x=2*1036/3840-1, y=1-2*75/2160. Full
+        // capture 20260828T004942Z proves a different session endpoint
+        // (-0.000508373,-0.0000217753); substituting it moved the clean-video
+        // settled character and portrait left, so it is not this reference's
+        // camera state. Environment overrides preserve per-session evidence.
         private const string RecordingGyroscopeInputX = "-0.4604167";
         private const string RecordingGyroscopeInputY = "0.9305556";
         // Direct UI-free registration of the retained retail Uber output places

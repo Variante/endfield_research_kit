@@ -1884,6 +1884,40 @@ orientation, and coexistence with the source grid; any remaining bounded
 layout discrepancy must be measured against the mapped clean frames rather
 than corrected with a screenshot-only offset.
 
+Full capture `20260828T004942Z` closes its own Endminf camera endpoint, but not
+the endpoint of the clean reference recording used by the Unity harness.
+GridFar's `_TransformVariables` in complete frames 2187, 2262, 2702, and 2775
+publishes the identical world camera position
+`(-299.99887085,300.99005127,-296.50051880)`. Relative to the source camera
+`(0,0.998,3.5)`, actor root `(-300,300,-300)`, and look-at
+`(0.022,1.225,0)`, this is camera-local gyroscope correction
+`(-0.0011258671,-0.0079661010)` with only a negligible forward residual.
+Inverting the recovered input curves gives normalized inputs
+`(-0.000508373,-0.0000217753)`. The former pointer-coordinate guess
+`(-0.4604167,0.9305556)` generated the much larger correction
+`(0.2433200,0.1480061)`; a visible cursor position is therefore not the live
+gyroscope state. A focused Unity render using that exact input shifted the
+settled clean-video character about 50-60 pixels left and the portrait roughly
+200 pixels left, so the endpoint is session-specific rather than a replacement
+for the `2026-08-26_21-25-50.mkv` state. Canonical renders retain the clean
+video's pointer-derived input; use the two environment input overrides above
+when comparing directly with `20260828T004942Z`.
+
+The neutral gray compatibility plate is now registered to the clean settled
+recording independently of actor bounds. Its prior gradient was 9-16 display
+levels too dark through the upper/middle field, while its UV-space bottom
+vignette began too late and then fell to RGB 58-60 instead of retail 107. The
+plate now uses a neutral/slightly warm measured grade and applies only its
+empirical lower rolloff in normalized screen space; GridFar and the portrait
+remain source-authored world geometry. At 1920x1080, side-region medians for
+clean frame 407 versus the focused 7-second Unity render are respectively
+`136/133`, `171/171`, `186/184`, `192/192`, `181/187`, `126/133`,
+`111/110`, and `107/107` at y=`0,300,500,700,820,900,1020,1070`. The old Unity
+values were `127,157,170,178,178,165,100,58`. This closes the large gray-field
+grade/rolloff regression; the bounded y=820-900 delta remains downstream of
+the compatibility-wall approximation rather than evidence for moving the
+exact camera or GridFar transform.
+
 The Endminf capture harness now preserves Texture2D pixel order end to end.
 `ReadPixels`/`GetPixels32` and `SetPixels32` already share bottom-left ordering;
 the former writer and reader each applied an extra vertical flip, producing
