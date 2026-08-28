@@ -207,6 +207,16 @@ namespace EndfieldGraphShaderLabEditor
         [MenuItem("Endfield/Character Recovery Lab/Bind Endminf Overview Effects")]
         public static void BuildAndValidate()
         {
+            // The disposable broad importer stage may be absent between
+            // recovery batches, but the pinned suikuai (1) source material,
+            // BlendTex, four-mesh palette, and retained prefab are versioned.
+            // Re-establish that independently validated renderer before the
+            // actor stores its four direct effect-prefab references. Otherwise
+            // a focused character rebuild can preserve overview_02 while
+            // silently leaving this exact refract branch disabled and empty.
+            EndfieldEndminfOverviewEffectImporter
+                .RebuildAndValidateSuikuai1Material();
+
             GameObject actor = PrefabUtility.LoadPrefabContents(Actor);
             if (actor == null) throw new InvalidOperationException("Endminf actor is missing");
             try

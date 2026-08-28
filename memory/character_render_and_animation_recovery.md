@@ -2107,6 +2107,17 @@ request the native exact Uber. The full verifier still fails closed on the
 pre-existing incomplete eleven-row LitEffect plus exact `suikuai (1)` binding;
 successful image export alone does not close that admission gap.
 
+The retained exact `overview_02/all/suikuai (1)` branch now survives focused
+character/effect rebuilds even when the disposable broad importer stage is
+absent. Its targeted repair accepts the one known stale fail-closed boundary
+(authored-enabled marker, disabled renderer, empty material array) only after
+revalidating the pinned source material, BlendTex, four-mesh palette, shader,
+PathIDs, and particle contract. A canonical 41-frame Viewer run now passes
+`status=ok` with 68 admitted renderers, exactly the two expected blocked rows,
+and live `M_fx_common_teleport_03` VFXRefract shards through transition and
+cleanup. This closes the former misleading eleven-row LitEffect/`suikuai (1)`
+admission failure; it does not replace the still-needed M20 capture.
+
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
 at 4.46 seconds with six near-peak billboards and textures
