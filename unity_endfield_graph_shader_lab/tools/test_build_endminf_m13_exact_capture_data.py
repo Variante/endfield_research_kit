@@ -20,10 +20,12 @@ class BuildEndminfM13ExactCaptureDataTests(unittest.TestCase):
             output = Path(directory) / "capture.generated.cs"
             cpp_output = Path(directory) / "capture.generated.h"
             text = target.build(output, cpp_output)
-            self.assertIn("PacketCount = 2", text)
-            self.assertIn("SourceFrames = { 5395, 5404 }", text)
-            self.assertIn("PhaseSeconds = { 4.383333f, 4.533333f }", text)
-            self.assertIn("RingByteOffsets = { 971600, 1045520 }", text)
+            self.assertIn("PacketCount = 3", text)
+            self.assertIn("SourceFrames = { 5395, 2775, 5404 }", text)
+            self.assertIn(
+                "PhaseSeconds = { 4.383333f, 4.500000f, 4.533333f }", text)
+            self.assertIn(
+                "RingByteOffsets = { 971600, 1060480, 1045520 }", text)
             cpp = cpp_output.read_text(encoding="utf-8")
             self.assertIn("{2, 82, 20, 4094, 4}", cpp)
             self.assertIn("{28, 105, 4085, 50}", cpp)
@@ -41,7 +43,9 @@ class BuildEndminfM13ExactCaptureDataTests(unittest.TestCase):
 
     def test_both_packets_resolve_draw_owned_ring_geometry(self) -> None:
         for contract in target.PACKET_CONTRACTS:
-            frame = target.SESSION / "graphics/frames" / str(contract["frame"])
+            frame = (target.REPO / "scratch/reverse_engineering/endfield_capture" /
+                     contract["session"] / "graphics/frames" /
+                     str(contract["frame"]))
             metadata = target.load_json(frame / "metadata.json")
             resources = (frame / "resources.bin").read_bytes()
             geometry = target.collect_geometry(

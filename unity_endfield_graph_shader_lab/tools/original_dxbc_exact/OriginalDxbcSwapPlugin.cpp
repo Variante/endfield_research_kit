@@ -1063,9 +1063,12 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
 
     D3D11_SAMPLER_DESC sampler = {};
     sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    // Full retail frame 20260828T004942Z/2775 closes the formerly guessed
+    // M13 addressing contract: s0 wraps while s1 and s2 clamp. The authored
+    // auxiliary mask slots follow the same clamp policy as s1/s2.
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     sampler.MaxLOD = D3D11_FLOAT32_MAX;
     result = device->CreateSamplerState(&sampler, &g_m14Samplers[0]);
     if (FAILED(result))
@@ -1357,9 +1360,9 @@ HRESULT CreateM13RuntimeResources(ID3D11Device* device)
     result = device->CreateSamplerState(&sampler, &g_m13Samplers[0]);
     if (FAILED(result))
         return result;
-    sampler.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampler.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     for (std::size_t slot = 1; slot < 5; ++slot)
     {
         result = device->CreateSamplerState(&sampler, &g_m13Samplers[slot]);

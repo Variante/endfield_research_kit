@@ -213,7 +213,8 @@ namespace EndfieldGraphShaderLab
                 Debug.Log(
                     "Recovered exact Endminf M13 native draw submitted: frame " +
                     EndfieldRecoveredM13ExactCaptureData.SourceFrames[selectedPacket] + ", " +
-                    "SceneColor/SceneMV, capture 20260826T144934Z.");
+                    "SceneColor/SceneMV, captures " +
+                    EndfieldRecoveredM13ExactCaptureData.SourceSession + ".");
                 loggedActivation = true;
             }
             return true;

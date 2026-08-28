@@ -1978,24 +1978,49 @@ exact draw-local 60-byte packet geometry, so all nine packets are replay-safe.
 Direct clean-reference matches map source frames
 1732/1743/1753/1764/1775/2723/1785/1796/1807 to viewer-request phases
 2.5500/2.7333/2.9833/3.2000/3.4500/3.6000/3.6833/3.9167/4.1333. The prior
-presented-frame anchor was wrong. The exact M13 burst owner is likewise now a
-two-packet transport: capture frames 5395 and 5404 match clean frames 266 and
-275, use phases 4.3833 and 4.5333, retain distinct geometry/constants with the
-same five BC7 textures, and select the nearest packet without interpolation.
+presented-frame anchor was wrong. The exact M13 burst owner is now a
+three-packet transport. Targeted capture frames 5395 and 5404 match clean
+frames 266 and 275; Full frame 2775 matches clean frame 273. They use phases
+4.3833, 4.5000, and 4.5333, retain distinct draw-local geometry/constants with
+the same five BC7 textures, and select the nearest packet without interpolation.
+Full frame 2775 also closes the formerly guessed sampler contract: retail uses
+s0 Wrap and s1/s2 Clamp, while the native replay had those policies reversed.
+Correcting the addressing restores the large smooth amber ring; shader/layout,
+BC7 creation, and the runtime callback all validate `S_OK`.
 Focused `temporal_rephase_v2` renders validate M13, M29, M30, M31, the shared
 15-draw cohort, and the exact Uber transport. They remove the former broad
-open-palm contamination from the crystal peak, but the clean frame-269 outer
-amber loop, volumetric gas, physical stone surfaces, and complete particles
-remain visibly absent.
+open-palm contamination from the crystal peak. The M13 ring is now present;
+physical stones, gas, peripheral particles, retail temporal history, and exact
+equal-queue composition remain open.
 
 EndfieldCapture Full now retains up to 96 draw records, 64 resources, and a
 128-MiB resource payload. The 96-record temporary and per-frame storage is heap
 backed, avoiding the stack overflow that crashed the earlier Full prototype;
 all 15 Release/WARP/proxy tests pass with no game process owning the global
-events. The next evidence is two Full-profile Numpad-1 frames in one session:
-clean frame 219 (open palm/five stones) and clean frame 269 (maximum ring/core).
-Do not use the bounded Numpad-4 sequence with Full because repeated 128-MiB
-readback stalls are unnecessary and have already destabilized the game.
+events. Session `20260828T004942Z` validates that path with four complete
+Numpad-1 packages, no dropped events or truncation flags, and 100.6-105.8 MiB
+resource blobs. Frame 2262 directly matches the clean open-palm neighborhood
+(best match 222) and contains five physical stones plus their amber halo;
+frame 2775 matches the burst neighborhood (best match 273) and contains the
+large ring, core, stones, haze, and particles. Full retention exposes three
+peak-only non-priority draws omitted by Targeted: ordinal 74 (1,110 indices,
+shader pair `e7f5568d34fd467b/c5b21fee8e9936a6`), ordinal 82 (900,
+`7d1953e7b7d5310f/601242f701cb4380`), and ordinal 87 (1,764,
+`7f5111cf80387bee/a3c9bfc94f0caea9`). Their exact ownership/resource closure
+is the current integration target; no additional graphics capture is required
+until that classification is exhausted.
+
+Hair/cape replay remains source-incomplete independently of peak post effects.
+The dense oracle has no `cloth_02` observations even though
+`S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone
+chains; current `MC_Coat` closure covers only 52 of 71 authored proxy
+transforms. The clean-reference overrides disagree with the older session by
+about 12.1 mm and 4.87 degrees on average, so the cross-session merge is not a
+sound exact-motion source. Peak frame 269 must not judge raw geometry because
+Uber/temporal history shifts the final silhouette; use pre-Uber frames 219,
+257, 273, and settled loop 407. The next dynamics evidence must retain hair
+and all `cloth_01`-`cloth_04` LOD0 palettes in one initialization, then make
+complete renderer/bone coverage a fail-closed oracle gate.
 
 ## Main animation gap
 
@@ -2032,10 +2057,11 @@ or shaders rather than hand-editing generated prefabs.
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
    M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
    and validated two-draw M31 checkpoint. Validate the generated M29 temporal
-   presentation, preserve M31 before the retail 2999/3000 boundary, and use a
-   two Full-profile single-frame captures at clean frames 219 and 269 to retain
-   the smaller stone/gas/shell owners omitted by the 32-draw targeted set and
-   resolve the equal-queue M29/M30/M14 ordering. Then rerender the
+   presentation, preserve M31 before the retail 2999/3000 boundary, and use
+   Full frames 2262 and 2775 to classify/replay the smaller stone/gas/shell
+   owners omitted by the 32-draw targeted set and resolve the equal-queue
+   M29/M30/M14 ordering. The M13 ring packet and sampler policy are now exact.
+   Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording. Keep source tint, particle, bloom, and curve
    values fixed unless stronger evidence supersedes them.
@@ -2043,15 +2069,13 @@ or shaders rather than hand-editing generated prefabs.
    mosaic using its recovered owner and timing. Preserve the now-admitted exact
    `S_GridFar` route and source-animated portrait while final Uber/camera
    composition closes their remaining strength and bounded alignment gaps.
-3. Re-audit Endminf hair/cape silhouettes after the clean-reference gyroscope
-   correction and exact Uber import. The 145-sample, 74-bone draw-time retail
-   replay plus two clean-reference-matched capture palettes are bound, while the diagnostic
-   solver is rejected because it worsens all 40 certified checkpoints. Residual
-   late-loop narrowing survives at retained replay samples. Active-renderer
-   weighted-bone coverage is now validated for all 74 replay transforms; next
-   compare retained-sample baked meshes and GPU palettes against exact bindposes
-   or obtain stronger same-initialization retail trajectory evidence. Do not
-   retime the replay, enable the solver, or manually widen cloth without it.
+3. Replace the mixed-session Endminf dynamics replay with one same-initialization
+   capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin palette,
+   especially the absent `cloth_02` transparent cape chains. Make complete
+   renderer/weighted-bone coverage fail closed, then re-audit frames
+   219/257/273 pre-Uber and settled loop 407. Do not apply the candidate
+   one-frame clock advance, enable the diagnostic solver, or manually widen
+   cloth before that complete trajectory resolves the timing ambiguity.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under
