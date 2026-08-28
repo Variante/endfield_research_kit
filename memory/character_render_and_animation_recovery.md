@@ -2343,6 +2343,26 @@ anchored by exact Uber frame 1977 at 4.35 s, and preserve the immediately
 previous 60 Hz palette. The generated 144-sample/80-bone asset validates and a
 targeted D3D11 run reports the replay bound and applied at every checkpoint.
 
+A focused post-integration audit rejects further hair/cape clock or bone-space
+tuning. All 80 recovered bones bind and apply, root-space transforms remain
+orthonormal at unit actor scale, and retail-versus-Unity motion correlation is
+0.78-0.90; the best temporal offsets stay within two frames. Despite that,
+thresholded visible motion is narrower in Unity by about 6.5% for hair, 16% for
+the left cape, and 32% for the right cape. The remaining silhouette gap is
+therefore downstream of palette replay--post-skin vertex output,
+alpha/culling, or depth/material visibility--and needs same-frame retail
+post-skin positions or an object/depth silhouette mask rather than invented
+intermediate bone transforms.
+
+The corresponding camera/background audit also rejects a fixed portrait or
+camera-endpoint nudge. In settled frames Unity places the character about 50
+pixels left of retail but the farther portrait about 130 pixels left, a
+depth-dependent discrepancy consistent with missing gyroscope-camera parallax
+rather than one shared translation. Opening and peak frames are contaminated by
+motion/VFX, and GridFar registration is not stable enough to authorize a source
+transform change. Keep the source-derived endpoint and recover the temporal
+camera/parallax owner before changing portrait or grid placement.
+
 The same session strengthens but does not complete peak/opening effects. It
 retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
 4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. The unchanged native M31
