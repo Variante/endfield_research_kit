@@ -37,6 +37,11 @@ exit /b 2
   rem Exact temporal VFX owners improve the no-frame-generation UI-free sequence.
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
+  rem Frame 2775 closes the complete draw-local M21 stone-shell packet. It is
+  rem admitted only at its certified 4.5000 s sample and restores the authored
+  rem ParticleSystem on adjacent ticks, so this does not repeat a static packet
+  rem across the burst or replace the separately textured M01/M38 stones.
+  set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=1"

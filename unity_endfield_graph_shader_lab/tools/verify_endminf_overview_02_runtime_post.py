@@ -101,10 +101,11 @@ def verify() -> dict[str, object]:
         "(signedCenter.normalized + Vector2.one) * 0.5f",
         "Mathf.Clamp01(center.x)",
         "Mathf.Clamp01(center.y)",
-        "time <= 0.16666667f",
-        "time < 4.4f",
-        "time <= 4.4333334f",
-        "time <= 4.6f",
+        "time <= 0.1f",
+        "initialPeak * 0.45f",
+        "const float lateStartSeconds = 4.3166667f",
+        "const float latePeakSeconds = 4.35f",
+        "const float lateEndSeconds = 4.5166667f",
     ), "runtime clock")
 
     pipeline = PIPELINE.read_text(encoding="utf-8")
