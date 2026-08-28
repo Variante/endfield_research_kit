@@ -15,6 +15,7 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_13";
+        private const float ViewerLeadSeconds = 2.0f / 60.0f;
         private static readonly int ReadyId = Shader.PropertyToID(
             "_EndfieldRecoveredEndminfM13ExactReady");
 
@@ -29,7 +30,7 @@ namespace EndfieldGraphShaderLab
         private static int submittedFrame = -1;
         private static IntPtr renderEvent;
         private static ParticleSystemRenderer selectedRenderer;
-        private static float overviewEpoch = float.NaN;
+        private static int selectedPacket = -1;
 
         public static bool Requested => string.Equals(
             System.Environment.GetEnvironmentVariable(EnvironmentVariable),
@@ -83,6 +84,9 @@ namespace EndfieldGraphShaderLab
                     if (renderEvent == IntPtr.Zero)
                         return Fail("the native M13 render event is unavailable");
                     Native.ResetM13RuntimeState();
+                    if (Native.GetM13PacketCount() !=
+                        EndfieldRecoveredM13ExactCaptureData.PacketCount)
+                        return Fail("native M13 packet count does not match generated data");
                 }
                 catch (Exception exception)
                 {
@@ -97,54 +101,78 @@ namespace EndfieldGraphShaderLab
                 prepared = true;
             }
 
-            bool active = ResolvePhase(lightRig.actorRoot);
+            selectedPacket = ResolvePacket(lightRig.actorRoot);
+            bool active = selectedPacket >= 0;
+            if (active)
+            {
+                try
+                {
+                    if (Native.SetM13PacketIndex((uint)selectedPacket) != 1)
+                        return Fail("native M13 packet selector rejected the phase");
+                }
+                catch (Exception exception)
+                {
+                    return Fail("native M13 packet selection failed: " +
+                        exception.Message);
+                }
+            }
             if (selectedRenderer != null)
                 selectedRenderer.enabled = !active;
             return active;
         }
 
-        private static bool ResolvePhase(Transform actorRoot)
+        private static int ResolvePacket(Transform actorRoot)
         {
             float seconds;
-            if (!float.IsNaN(overviewEpoch))
+            EndfieldOverviewPlayback playback = actorRoot != null
+                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
+                : null;
+            Animator animator = playback != null ? playback.animatorSource : null;
+            if (playback != null && playback.AnimatorContractActive &&
+                animator != null && animator.enabled)
             {
-                seconds = Mathf.Max(0.0f, Time.time - overviewEpoch);
+                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
+                if (clips.Length == 0 || clips[0].clip == null ||
+                    clips[0].clip.name.IndexOf(
+                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
+                    return -1;
+                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+                seconds = info.normalizedTime * clips[0].clip.length;
             }
             else
             {
-                EndfieldOverviewPlayback playback = actorRoot != null
-                    ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
+                Animation animation = actorRoot != null
+                    ? actorRoot.GetComponentInChildren<Animation>(true)
                     : null;
-                Animator animator = playback != null ? playback.animatorSource : null;
-                if (playback != null && playback.AnimatorContractActive &&
-                    animator != null && animator.enabled)
+                AnimationState state = animation != null
+                    ? animation["ui_overview_start"]
+                    : null;
+                if (state == null || !state.enabled)
+                    return -1;
+                seconds = state.time;
+            }
+            seconds = Mathf.Max(0.0f, seconds - ViewerLeadSeconds);
+            float[] phases = EndfieldRecoveredM13ExactCaptureData.PhaseSeconds;
+            if (phases == null || phases.Length !=
+                    EndfieldRecoveredM13ExactCaptureData.PacketCount ||
+                phases.Length < 2)
+                return -1;
+            float halfSpacing = (phases[1] - phases[0]) * 0.5f;
+            if (seconds < phases[0] - halfSpacing ||
+                seconds > phases[phases.Length - 1] + halfSpacing)
+                return -1;
+            int nearest = 0;
+            float nearestDistance = Mathf.Abs(seconds - phases[0]);
+            for (int index = 1; index < phases.Length; ++index)
+            {
+                float distance = Mathf.Abs(seconds - phases[index]);
+                if (distance < nearestDistance)
                 {
-                    AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                    if (clips.Length == 0 || clips[0].clip == null ||
-                        clips[0].clip.name.IndexOf(
-                            "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                        return false;
-                    AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-                    seconds = info.normalizedTime * clips[0].clip.length;
-                    overviewEpoch = Time.time - seconds;
-                }
-                else
-                {
-                    Animation animation = actorRoot != null
-                        ? actorRoot.GetComponentInChildren<Animation>(true)
-                        : null;
-                    AnimationState state = animation != null
-                        ? animation["ui_overview_start"]
-                        : null;
-                    if (state == null || !state.enabled)
-                        return false;
-                    seconds = state.time;
-                    overviewEpoch = Time.time - seconds;
+                    nearest = index;
+                    nearestDistance = distance;
                 }
             }
-            return Mathf.Abs(seconds -
-                EndfieldRecoveredM13ExactCaptureData.PhaseSeconds) <=
-                EndfieldRecoveredM13ExactCaptureData.ActiveHalfWidthSeconds;
+            return nearest;
         }
 
         internal static bool Render(
@@ -183,7 +211,8 @@ namespace EndfieldGraphShaderLab
             if (!loggedActivation)
             {
                 Debug.Log(
-                    "Recovered exact Endminf M13 native draw submitted: frame 5404, " +
+                    "Recovered exact Endminf M13 native draw submitted: frame " +
+                    EndfieldRecoveredM13ExactCaptureData.SourceFrames[selectedPacket] + ", " +
                     "SceneColor/SceneMV, capture 20260826T144934Z.");
                 loggedActivation = true;
             }
@@ -263,6 +292,14 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetM13RuntimeState")]
             internal static extern void ResetM13RuntimeState();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM13PacketCount")]
+            internal static extern uint GetM13PacketCount();
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM13PacketIndex")]
+            internal static extern uint SetM13PacketIndex(uint packetIndex);
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM13DrawCount")]

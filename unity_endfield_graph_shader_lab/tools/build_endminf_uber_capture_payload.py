@@ -19,12 +19,12 @@ DEFAULT_OUTPUT = (
     REPO / "unity_endfield_graph_shader_lab/tools/original_dxbc_exact"
     / "EndminfUberCapturePayload.generated.h"
 )
-EXPECTED_STATUS = "validated_exact_live_uber_binding"
+EXPECTED_STATUS = "validated_exact_uber_constant_payload_only"
 EXPECTED_VERTEX_SHA256 = (
     "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e"
 )
 EXPECTED_PIXEL_SHA256 = (
-    "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
+    "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97"
 )
 
 
@@ -75,7 +75,10 @@ def render_bytes(name: str, payload: bytes) -> str:
 
 def build_header(report: dict[str, Any]) -> str:
     require(report.get("status") == EXPECTED_STATUS,
-            "Uber report is not a validated exact live binding")
+            "Uber report is not a validated exact constant-only payload")
+    require(report.get("compiledKeywords") ==
+            ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
+            "exact Uber keyword set drifted")
     packets = report.get("packets")
     require(isinstance(packets, list) and len(packets) == 1,
             "exact Uber payload requires one unambiguous captured packet")

@@ -58,8 +58,7 @@ int main(int argc, char** argv)
     using GetEvent = void* (*)();
     using SetTextures = std::uint32_t (*)(void*, void*, void*);
     using QueuePacket = std::uint32_t (*)(
-        float, float, float, float, float, float,
-        float, float, float, float, float);
+        float, float, float, float, float, float, float);
     using Reset = void (*)();
     const GetUint payloadReady = RequiredExport<GetUint>(
         module, "EndfieldOriginalDxbcGetEndminfUberPayloadReady");
@@ -104,8 +103,7 @@ int main(int argc, char** argv)
     reset();
     const std::uint32_t eventId = queue(
         1920.0f, 1080.0f, 1.0f,
-        0.5f, 0.5f, 0.1f, 1.0f,
-        3.0f, 0.1f, -1.0f, -1.0f);
+        0.5f, 0.5f, 0.1f, 1.0f);
     const std::uint32_t expectedStage = expectedReady == 0u ? 401u : 403u;
     if (eventId != 0u || failureCount() != 1u ||
         failureStage() != expectedStage || lastResult() == 0)
@@ -118,8 +116,7 @@ int main(int argc, char** argv)
     {
         if (queue(
                 1920.0f, 1080.0f, 1.0f,
-                0.5f, 0.5f, 0.1f, 1.0f,
-                3.0f, 0.1f, 0.5f, -1.0f) != 0u ||
+                0.5f, 0.5f, -0.1f, 1.0f) != 0u ||
             failureCount() != 1u || failureStage() != 402u)
         {
             FreeLibrary(module);
@@ -163,10 +160,9 @@ int main(int argc, char** argv)
         {
             queuedIds[index] = queue(
                 1920.0f, 1080.0f, 1.0f,
-                0.5f, 0.5f, 0.1f, 1.0f,
-                index == 0 ? 0.0f : 3.0f,
+                0.5f, 0.5f,
                 index == 0 ? 0.0f : 0.1f,
-                -1.0f, -1.0f);
+                1.0f);
             if (queuedIds[index] == 0u)
             {
                 FreeLibrary(module);
@@ -183,8 +179,7 @@ int main(int argc, char** argv)
         }
         if (queue(
                 1920.0f, 1080.0f, 1.0f,
-                0.5f, 0.5f, 0.1f, 1.0f,
-                3.0f, 0.1f, -1.0f, -1.0f) != 0u ||
+                0.5f, 0.5f, 0.1f, 1.0f) != 0u ||
             failureCount() != 1u || failureStage() != 404u)
         {
             FreeLibrary(module);

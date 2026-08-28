@@ -32,6 +32,10 @@ DEFAULT_DENSE_DECODED = (
     REPO_ROOT / "scratch/character_recovery/endminf_skinning_20260826T231348Z"
     / "decoded_partial.json"
 )
+DEFAULT_REFERENCE_MATCHED_DECODED = (
+    REPO_ROOT / "scratch/character_recovery/endminf_skinning_20260827T081152Z"
+    / "decoded_partial.json"
+)
 DEFAULT_OUTPUT = (
     REPO_ROOT / "reports/assets/character_recovery"
     / "endminf_dense_captured_secondary_dynamics_oracle.json"
@@ -43,7 +47,7 @@ EXPECTED_DECODED_SCHEMA = (
     "endfield.charinfo.endminf-partial-captured-skin-palette-sequence.v1"
 )
 OUTPUT_SCHEMA = (
-    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v3"
+    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v4"
 )
 BODY_CLIP_REFERENCE_SOURCE_FRAME = 115
 BODY_CLIP_REFERENCE_SECONDS = 0.05090830227
@@ -51,6 +55,8 @@ ALIGNMENT_CANDIDATES = range(100, 161)
 ROTATION_SCORE_METERS_PER_DEGREE = 0.002
 EXPECTED_BONE_COUNT = 74
 EXPECTED_DENSE_SESSION = "20260826T231348Z"
+EXPECTED_REFERENCE_MATCHED_SESSION = "20260827T081152Z"
+REFERENCE_MATCHED_SOURCE_FRAMES = {1845: 369, 2578: 385}
 
 
 class DenseOracleError(ValueError):
@@ -290,15 +296,27 @@ def align(
     return int(combined["firstReferenceSourceFrame"]), scores
 
 
-def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
+def build_report(
+    base_path: Path,
+    decoded_path: Path,
+    reference_matched_path: Path,
+) -> dict[str, Any]:
     oracle = load_json(base_path)
     decoded = load_json(decoded_path)
+    reference_matched = load_json(reference_matched_path)
     require(oracle.get("schema") == EXPECTED_BASE_SCHEMA,
             f"base oracle schema drifted: {oracle.get('schema')}")
     require(decoded.get("schema") == EXPECTED_DECODED_SCHEMA,
             f"decoded schema drifted: {decoded.get('schema')}")
     require(Path(decoded.get("sessionRoot", "")).name == EXPECTED_DENSE_SESSION,
             f"dense capture session drifted: {decoded.get('sessionRoot')}")
+    require(reference_matched.get("schema") == EXPECTED_DECODED_SCHEMA,
+            "reference-matched decoded capture schema drifted: "
+            f"{reference_matched.get('schema')}")
+    require(Path(reference_matched.get("sessionRoot", "")).name ==
+            EXPECTED_REFERENCE_MATCHED_SESSION,
+            "reference-matched capture session drifted: "
+            f"{reference_matched.get('sessionRoot')}")
 
     first_rows = oracle.get("frames", [])[0].get("ownerBoneMatrices", [])
     paths = [row.get("path") for row in first_rows]
@@ -306,6 +324,13 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
             f"base oracle must contain {EXPECTED_BONE_COUNT} unique bones")
     sparse, sparse_source_frames = old_series(oracle, paths)
     dense, worst_shared = recover_dense_observations(decoded, paths)
+    reference_matched_observations, reference_matched_worst_shared = (
+        recover_dense_observations(reference_matched, paths)
+    )
+    require(set(reference_matched_observations) ==
+            set(REFERENCE_MATCHED_SOURCE_FRAMES),
+            "reference-matched capture frame set drifted: "
+            f"{sorted(reference_matched_observations)}")
     dense_frames = sorted(dense)
     first_burst, second_burst = split_bursts(dense_frames)
     anchor, alignment_scores = align(sparse, dense, first_burst)
@@ -325,8 +350,13 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
     require(all(rows for rows in dense_series.values()),
             "dense capture does not cover every owner bone")
 
+    reference_matched_by_source = {
+        REFERENCE_MATCHED_SOURCE_FRAMES[presented]: rows
+        for presented, rows in reference_matched_observations.items()
+    }
     merged_series = {}
     direct_collisions = []
+    reference_matched_collisions = []
     for path in paths:
         by_source = {source: (pose, "sparse") for source, pose in sparse[path]}
         for source, pose in dense_series[path]:
@@ -334,12 +364,23 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
                 translation, rotation = pose_error(pose, by_source[source][0])
                 direct_collisions.append((translation, rotation))
             by_source[source] = (pose, "dense")
+        for source, rows in reference_matched_by_source.items():
+            if path not in rows:
+                continue
+            pose = rows[path]
+            if source in by_source:
+                translation, rotation = pose_error(pose, by_source[source][0])
+                reference_matched_collisions.append((translation, rotation))
+            # These palettes win at their two phases because their captured
+            # backbuffers independently match the clean target sequence.
+            by_source[source] = (pose, "reference_matched")
         merged_series[path] = [
             (source, pose) for source, (pose, _) in sorted(by_source.items())
         ]
 
     source_frames = sorted(set(
-        sparse_source_frames + list(dense_source_by_presented.values())
+        sparse_source_frames + list(dense_source_by_presented.values()) +
+        list(reference_matched_by_source)
     ))
     first_source = source_frames[0]
     last_source = source_frames[-1]
@@ -351,6 +392,7 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
         source: dense[presented]
         for presented, source in dense_source_by_presented.items()
     }
+    direct_reference_matched_by_source = reference_matched_by_source
     sparse_direct_sources = set(sparse_source_frames)
     first_presented = int(
         oracle["referenceAlignment"]["firstCapturePresentedFrame"]
@@ -358,6 +400,10 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
     frames = []
     for source in source_frames:
         direct_dense = dense_direct_by_source.get(source, {})
+        direct_reference_matched = direct_reference_matched_by_source.get(
+            source, {}
+        )
+        direct_paths = set(direct_dense) | set(direct_reference_matched)
         matrices = []
         for path in paths:
             pose = interpolate(merged_series[path], source)
@@ -369,9 +415,10 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
             "presentedFrame": first_presented + source - first_source,
             "playbackSourceFrame": source,
             "directDenseBoneCount": len(direct_dense),
+            "directReferenceMatchedBoneCount": len(direct_reference_matched),
             "directSparseFrame": source in sparse_direct_sources,
-            "interpolatedBoneCount": EXPECTED_BONE_COUNT - len(direct_dense)
-                if source in dense_direct_by_source else 0,
+            "interpolatedBoneCount": EXPECTED_BONE_COUNT - len(direct_paths)
+                if direct_paths else 0,
             "ownerBoneMatrices": matrices,
         })
 
@@ -390,15 +437,39 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
             f"playbackSourceFrame = {anchor} + "
             f"(presentedFrame - {first_dense_presented})"
         ),
+        "referenceMatchedMappings": [
+            {
+                "capturePresentedFrame": presented,
+                "playbackSourceFrame": source,
+                "cleanReferenceFrame": 257 if presented == 1845 else 273,
+                "anchorUncertaintyFrames": 1,
+                "evidence": (
+                    "grayscale ROI edge match to the clean reference and an "
+                    "independent 74-bone pose match agree within one frame"
+                ),
+            }
+            for presented, source in sorted(
+                REFERENCE_MATCHED_SOURCE_FRAMES.items()
+            )
+        ],
     })
     return {
         "schema": OUTPUT_SCHEMA,
-        "status": "owner_tagged_retail_skinning_trajectories_merged_dense",
-        "scope": (
-            "74 captured render-consumed owner bones; absent renderer draws are "
-            "interpolated only between bounded retail transform observations"
+        "status": (
+            "owner_tagged_retail_skinning_trajectories_merged_dense_"
+            "with_reference_matched_overrides"
         ),
-        "captureSessions": [oracle.get("captureSession"), EXPECTED_DENSE_SESSION],
+        "scope": (
+            "74 captured render-consumed owner bones; two retail palettes whose "
+            "backbuffers match clean reference frames override older-run dynamics "
+            "at those phases; absent draws are interpolated only between bounded "
+            "retail transform observations"
+        ),
+        "captureSessions": [
+            oracle.get("captureSession"),
+            EXPECTED_DENSE_SESSION,
+            EXPECTED_REFERENCE_MATCHED_SESSION,
+        ],
         "frameCount": len(frames),
         "boneCount": EXPECTED_BONE_COUNT,
         "referenceAlignment": alignment,
@@ -430,6 +501,7 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
             relative(Path(__file__)): sha256(Path(__file__)),
             relative(base_path): sha256(base_path),
             relative(decoded_path): sha256(decoded_path),
+            relative(reference_matched_path): sha256(reference_matched_path),
         },
         "validation": {
             "selectedDenseAnchor": selected,
@@ -437,6 +509,12 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
             "denseBurstObservationCounts": [len(first_burst), len(second_burst)],
             "denseMeshObservationCounts": decoded.get("meshObservationCounts"),
             "worstSameFrameSharedMatrixDelta": worst_shared,
+            "referenceMatchedMeshObservationCounts": (
+                reference_matched.get("meshObservationCounts")
+            ),
+            "referenceMatchedWorstSameFrameSharedMatrixDelta": (
+                reference_matched_worst_shared
+            ),
             "directSparseDenseCollisionCount": len(direct_collisions),
             "collisionMeanTranslationMeters": (
                 sum(collision_translation) / len(collision_translation)
@@ -447,6 +525,20 @@ def build_report(base_path: Path, decoded_path: Path) -> dict[str, Any]:
                 if collision_rotation else None
             ),
             "directDenseObservationCount": sum(len(row) for row in dense.values()),
+            "directReferenceMatchedObservationCount": sum(
+                len(row) for row in reference_matched_observations.values()
+            ),
+            "referenceMatchedCollisionCount": len(
+                reference_matched_collisions
+            ),
+            "referenceMatchedCollisionMeanTranslationMeters": (
+                sum(row[0] for row in reference_matched_collisions) /
+                len(reference_matched_collisions)
+            ),
+            "referenceMatchedCollisionMeanRotationDegrees": (
+                sum(row[1] for row in reference_matched_collisions) /
+                len(reference_matched_collisions)
+            ),
             "mergedSampleCount": len(frames),
             "interpolationBoundary": "retail observations only; no extrapolation",
         },
@@ -459,10 +551,19 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-oracle", type=Path, default=DEFAULT_BASE_ORACLE)
     parser.add_argument("--dense-decoded", type=Path, default=DEFAULT_DENSE_DECODED)
+    parser.add_argument(
+        "--reference-matched-decoded",
+        type=Path,
+        default=DEFAULT_REFERENCE_MATCHED_DECODED,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
-        report = build_report(args.base_oracle.resolve(), args.dense_decoded.resolve())
+        report = build_report(
+            args.base_oracle.resolve(),
+            args.dense_decoded.resolve(),
+            args.reference_matched_decoded.resolve(),
+        )
     except (DenseOracleError, OSError, ValueError, KeyError, IndexError) as exc:
         print(f"error: {exc}")
         return 2

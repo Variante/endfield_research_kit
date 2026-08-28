@@ -141,32 +141,32 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         self.assertIn("ParserBindChannels", report["bindChannels"]["reason"])
 
     def test_texture_register_attack_fails_closed(self) -> None:
-        original = MODULE._ruri_declarations
+        original = MODULE._hlsl_declarations
         def altered(path: Path):
             value = original(path)
             if path.name == "parallax_hgbuffer_fragment.hlsl":
                 value["resources"][0]["register"] = 6
             return value
-        MODULE._ruri_declarations = altered
+        MODULE._hlsl_declarations = altered
         try:
             with self.assertRaisesRegex(MODULE.VerificationError, "texture registers"):
                 MODULE.build_report()
         finally:
-            MODULE._ruri_declarations = original
+            MODULE._hlsl_declarations = original
 
     def test_sampler_declaration_attack_fails_closed(self) -> None:
-        original = MODULE._ruri_declarations
+        original = MODULE._hlsl_declarations
         def altered(path: Path):
             value = original(path)
             if path.name == "parallax_hgbuffer_fragment.hlsl":
                 value["samplers"][0]["name"] = "sampler_Tampered"
             return value
-        MODULE._ruri_declarations = altered
+        MODULE._hlsl_declarations = altered
         try:
             with self.assertRaisesRegex(MODULE.VerificationError, "sampler declarations"):
                 MODULE.build_report()
         finally:
-            MODULE._ruri_declarations = original
+            MODULE._hlsl_declarations = original
 
     def test_descriptor_name_attack_fails_closed(self) -> None:
         original = MODULE._compact_metadata
@@ -182,13 +182,13 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         finally:
             MODULE._compact_metadata = original
 
-    def test_ruri_hash_attack_fails_closed(self) -> None:
+    def test_historical_hlsl_hash_attack_fails_closed(self) -> None:
         original = MODULE._sha256
         def altered(path: Path):
             return "0" * 64 if path.suffix == ".hlsl" else original(path)
         MODULE._sha256 = altered
         try:
-            with self.assertRaisesRegex(MODULE.VerificationError, "Ruri output hash"):
+            with self.assertRaisesRegex(MODULE.VerificationError, "historical HLSL reference hash"):
                 MODULE.build_report()
         finally:
             MODULE._sha256 = original
@@ -247,19 +247,19 @@ class LitEffectResourceMappingTests(unittest.TestCase):
         finally:
             MODULE._compact_metadata = original
 
-    def test_ruri_wrong_resource_name_attack_fails_closed(self) -> None:
-        original = MODULE._ruri_declarations
+    def test_historical_hlsl_wrong_resource_name_attack_fails_closed(self) -> None:
+        original = MODULE._hlsl_declarations
         def altered(path: Path):
             value = original(path)
             if path.name == "parallax_hgbuffer_fragment.hlsl":
                 value["resources"][0]["name"] = "WRONG_RESOURCE"
             return value
-        MODULE._ruri_declarations = altered
+        MODULE._hlsl_declarations = altered
         try:
             with self.assertRaisesRegex(MODULE.VerificationError, "resource name mismatch"):
                 MODULE.build_report()
         finally:
-            MODULE._ruri_declarations = original
+            MODULE._hlsl_declarations = original
 
 
 if __name__ == "__main__":

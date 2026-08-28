@@ -17,13 +17,13 @@ DEFAULT_OUTPUT = (
     REPO / "reports/assets/character_recovery"
     / "endminf_uber_capture_latest.json"
 )
-PIXEL_IDENTITY = 0x3F490E1504C43554
+PIXEL_IDENTITY = 0x86A732CEF7EEDB15
 VERTEX_IDENTITY = 0xA8C084C37EBA0ECC
 VERTEX_SHA256 = (
     "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e"
 )
 PIXEL_SHA256 = (
-    "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
+    "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97"
 )
 MINIMUM_RESOURCE_BUDGET = 128 * 1024 * 1024
 
@@ -173,9 +173,11 @@ def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
 
 def inspect_resolver(frame: int, resolver_index: int,
                      resolver: dict[str, Any], metadata: dict[str, Any],
-                     resource_blob: bytes) -> dict[str, Any]:
-    require(resolver.get("priorityEndminfUber") is True,
-            f"frame {frame} resolver {resolver_index} lost Uber priority tagging")
+                     resource_blob: bytes,
+                     require_draw_pipeline: bool = True) -> dict[str, Any]:
+    if require_draw_pipeline:
+        require(resolver.get("priorityEndminfUber") is True,
+                f"frame {frame} resolver {resolver_index} lost Uber priority tagging")
     require(shader_identity(resolver, 0) == VERTEX_IDENTITY,
             f"frame {frame} resolver {resolver_index} has the wrong Uber VS")
     vs_b0 = constant_range(
@@ -218,8 +220,10 @@ def inspect_resolver(frame: int, resolver_index: int,
             f"frame {frame} exact Uber mode is unexpected: {radial2[0]}")
     require(radial2[2] in (0.0, 1.0) and radial2[3] in (0.0, 1.0),
             f"frame {frame} exact Uber average-step flags are invalid")
-    draw_pipeline_state = pipeline_state(resolver, frame)
-    return {
+    draw_pipeline_state = (
+        pipeline_state(resolver, frame) if require_draw_pipeline else None
+    )
+    result = {
         "frame": frame,
         "resolverIndex": resolver_index,
         "fullscreenOrdinal": int(resolver.get("fullscreenOrdinal", -1)),
@@ -227,7 +231,6 @@ def inspect_resolver(frame: int, resolver_index: int,
         "pixelSha256": PIXEL_SHA256,
         "vertexIdentity": f"{VERTEX_IDENTITY:016x}",
         "vertexSha256": VERTEX_SHA256,
-        "pipelineState": draw_pipeline_state,
         "vsB0": {
             "bufferId": int(vs_b0["bufferId"]),
             "firstConstant": int(vs_b0["firstConstant"]),
@@ -260,17 +263,22 @@ def inspect_resolver(frame: int, resolver_index: int,
             "values": b1_values,
         },
     }
+    if draw_pipeline_state is not None:
+        result["pipelineState"] = draw_pipeline_state
+    return result
 
 
-def build_report(capture: Path) -> dict[str, Any]:
+def build_report(capture: Path, constant_payload_only: bool = False,
+                 frame_filter: int | None = None) -> dict[str, Any]:
     session_path = capture / "session.json"
     require(session_path.is_file(), f"session manifest is absent: {session_path}")
     session = json.loads(session_path.read_text(encoding="utf-8"))
     require(session.get("graphicsProfile") == "targeted",
             "capture is not the targeted graphics profile")
-    require(int(session.get("graphicsResourceBudgetBytes", 0)) >=
-            MINIMUM_RESOURCE_BUDGET,
-            "capture predates the 128-MiB exact resource policy")
+    if not constant_payload_only:
+        require(int(session.get("graphicsResourceBudgetBytes", 0)) >=
+                MINIMUM_RESOURCE_BUDGET,
+                "capture predates the 128-MiB exact resource policy")
     require(int(session.get("qpcFrequency", 0)) > 0,
             "capture has no recorded QPC frequency")
 
@@ -282,6 +290,8 @@ def build_report(capture: Path) -> dict[str, Any]:
     for path in paths:
         metadata = json.loads(path.read_text(encoding="utf-8"))
         frame = int(metadata.get("frame", path.parent.name))
+        if frame_filter is not None and frame != frame_filter:
+            continue
         resources_path = path.parent / "resources.bin"
         resource_blob = (resources_path.read_bytes()
                          if resources_path.is_file() else b"")
@@ -292,17 +302,28 @@ def build_report(capture: Path) -> dict[str, Any]:
             if shader_identity(resolver, 4) != PIXEL_IDENTITY:
                 continue
             packets.append(inspect_resolver(
-                frame, resolver_index, resolver, metadata, resource_blob))
+                frame, resolver_index, resolver, metadata, resource_blob,
+                require_draw_pipeline=not constant_payload_only))
     require(packets,
             "capture contains no exact Endminf combined Uber pulse resolver")
     return {
-        "schema": "endfield.endminf-uber-capture.v1",
-        "status": "validated_exact_live_uber_binding",
+        "schema": "endfield.endminf-uber-capture.v2",
+        "status": (
+            "validated_exact_uber_constant_payload_only"
+            if constant_payload_only
+            else "validated_exact_live_uber_binding"
+        ),
         "capture": str(capture.resolve()),
         "frameCount": len(paths),
         "resourceBudgetBytes": int(session["graphicsResourceBudgetBytes"]),
         "qpcFrequency": int(session["qpcFrequency"]),
         "packetCount": len(packets),
+        "compiledKeywords": ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
+        "pipelineEvidenceBoundary": (
+            "draw-bound pipeline state retained"
+            if not constant_payload_only
+            else "constant ranges only; active shader predates priority tagging"
+        ),
         "packets": packets,
     }
 
@@ -311,12 +332,29 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--constant-payload-only",
+        action="store_true",
+        help=(
+            "validate only retained Uber constant ranges; does not claim "
+            "the 128-MiB resource or draw-state contract"
+        ),
+    )
+    parser.add_argument(
+        "--frame",
+        type=int,
+        help="restrict validation to one retained presented frame",
+    )
     args = parser.parse_args()
     try:
-        report = build_report(args.capture.resolve())
+        report = build_report(
+            args.capture.resolve(),
+            constant_payload_only=args.constant_payload_only,
+            frame_filter=args.frame,
+        )
     except (OSError, ValueError, VerificationError) as exc:
         report = {
-            "schema": "endfield.endminf-uber-capture.v1",
+            "schema": "endfield.endminf-uber-capture.v2",
             "status": "validation_failed",
             "capture": str(args.capture.resolve()),
             "diagnostic": str(exc),

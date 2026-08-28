@@ -44,8 +44,8 @@ EXPECTED = {
         "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e",
     ),
     "uber_pixel": (
-        4_836,
-        "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b",
+        4_216,
+        "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97",
     ),
 }
 

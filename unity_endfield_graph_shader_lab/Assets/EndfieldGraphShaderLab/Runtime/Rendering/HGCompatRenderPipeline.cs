@@ -975,8 +975,23 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM13Prepared =
                 EndfieldRecoveredEndminfM13ExactRuntime
                     .PrepareBeforeCulling(camera);
+            bool exactEndminfVFXBaseV2PeakPrepared =
+                EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM14Prepared =
+                !exactEndminfVFXBaseV2PeakPrepared &&
                 EndfieldRecoveredEndminfM14ExactRuntime
+                    .PrepareBeforeCulling(camera);
+            bool exactEndminfM29Prepared =
+                EndfieldRecoveredEndminfM29ExactRuntime
+                    .PrepareBeforeCulling(camera);
+            bool exactEndminfM30Prepared =
+                !exactEndminfVFXBaseV2PeakPrepared &&
+                EndfieldRecoveredEndminfM30ExactRuntime
+                    .PrepareBeforeCulling(camera);
+            bool exactEndminfM31PeakPrepared =
+                !exactEndminfVFXBaseV2PeakPrepared &&
+                EndfieldRecoveredEndminfM31PeakExactRuntime
                     .PrepareBeforeCulling(camera);
 
             float requestedShadowDistance =
@@ -1074,7 +1089,9 @@ namespace EndfieldGraphShaderLab
                 out recoveredPostUberWorldUiFailure);
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
-            if (exactEndminfM14Prepared && !recoveredSceneMVRequest.requested)
+            if ((exactEndminfM14Prepared || exactEndminfM29Prepared ||
+                    exactEndminfVFXBaseV2PeakPrepared) &&
+                !recoveredSceneMVRequest.requested)
             {
                 recoveredSceneMVRequest = new EndfieldRecoveredSceneMVRequest(
                     true,
@@ -2013,7 +2030,8 @@ namespace EndfieldGraphShaderLab
 
                 string compositorFailure;
                 EndfieldRecoveredSceneColorHandle composedSceneColor;
-                bool mainReady = recoveredSceneMVCompositor.CompositeMainTransparent(
+                bool mainReady =
+                    recoveredSceneMVCompositor.CompositeMainTransparentQueue2999(
                     context,
                     camera,
                     cullingResults,
@@ -2033,6 +2051,122 @@ namespace EndfieldGraphShaderLab
                 recoveredSceneColorPingAllocated = true;
                 if (mainReady)
                     recoveredCurrentSceneColor = composedSceneColor;
+                if (mainReady && exactEndminfVFXBaseV2PeakPrepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                        .RenderPreM29(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf VFXBaseV2 peak pre-M29 cohort failed " +
+                            "closed: " +
+                            EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                                .Failure;
+                    }
+                }
+                if (mainReady && exactEndminfM30Prepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM30ExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M30 transport failed closed: " +
+                            EndfieldRecoveredEndminfM30ExactRuntime.Failure;
+                    }
+                }
+                if (mainReady && exactEndminfM31PeakPrepared)
+                {
+                    mainReady =
+                        EndfieldRecoveredEndminfM31PeakExactRuntime.Render(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M31 peak transport failed closed: " +
+                            EndfieldRecoveredEndminfM31PeakExactRuntime.Failure;
+                    }
+                }
+                if (mainReady)
+                {
+                    EndfieldRecoveredSceneColorHandle queue3000Color;
+                    int queue3000OutputIdentifier =
+                        recoveredCurrentSceneColor.identifier ==
+                            EndfieldRecoveredSceneMVCompositor.PingColorId
+                            ? CameraColorId
+                            : EndfieldRecoveredSceneMVCompositor.PingColorId;
+                    mainReady = recoveredSceneMVCompositor
+                        .CompositeMainTransparentQueue3000(
+                            context,
+                            camera,
+                            cullingResults,
+                            recoveredCurrentSceneColor,
+                            queue3000OutputIdentifier,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth,
+                            recoveredPrimarySceneDepthFormat,
+                            ordinaryTransparentLayerMask,
+                            asset.dynamicBatching,
+                            asset.gpuInstancing,
+                            recoveredPreTransparentSceneColorReady,
+                            new RenderTargetIdentifier(
+                                RecoveredRefractionSceneColorId),
+                            out queue3000Color,
+                            out compositorFailure);
+                    if (mainReady)
+                        recoveredCurrentSceneColor = queue3000Color;
+                }
+                // M29 shares queue 3000 with the live transparent cohort. The
+                // old capture does not preserve equal-queue chronology, so
+                // replay it after the surviving live cohort and before the
+                // existing exact M14 replacement until drawOrdinal evidence
+                // closes their retail order.
+                if (mainReady && exactEndminfM29Prepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM29ExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M29 transport failed closed: " +
+                            EndfieldRecoveredEndminfM29ExactRuntime.Failure;
+                    }
+                }
+                if (mainReady && exactEndminfVFXBaseV2PeakPrepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                        .RenderPostM29(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf VFXBaseV2 peak post-M29 cohort failed " +
+                            "closed: " +
+                            EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                                .Failure;
+                    }
+                }
                 if (mainReady && exactEndminfM14Prepared)
                 {
                     mainReady = EndfieldRecoveredEndminfM14ExactRuntime.Render(
