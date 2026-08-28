@@ -1022,6 +1022,9 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM13Prepared =
                 EndfieldRecoveredEndminfM13ExactRuntime
                     .PrepareBeforeCulling(camera);
+            bool exactEndminfOpeningStripPrepared =
+                EndfieldRecoveredEndminfOpeningStripExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfVFXBaseV2PeakPrepared =
                 EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
                     .PrepareBeforeCulling(camera);
@@ -2262,6 +2265,22 @@ namespace EndfieldGraphShaderLab
                             EndfieldRecoveredEndminfM14ExactRuntime.Failure;
                     }
                 }
+                if (mainReady && exactEndminfOpeningStripPrepared)
+                {
+                    mainReady =
+                        EndfieldRecoveredEndminfOpeningStripExactRuntime.Render(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf opening-strip transport failed closed: " +
+                            EndfieldRecoveredEndminfOpeningStripExactRuntime.Failure;
+                    }
+                }
                 // Full frame 2775 records the M21 stone shell at ordinal 74,
                 // immediately before the exact M13 ring at ordinal 75.
                 if (mainReady && exactEndminfM21PeakPrepared)
@@ -3305,6 +3324,7 @@ namespace EndfieldGraphShaderLab
                     out openingStripSelectorFailure);
             bool useRecoveredEndminfOpeningStrip =
                 useRecoveredPostSemantics &&
+                !EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame &&
                 recoveredEndminfOpeningStripMaterial != null &&
                 hasOpeningStripSelector &&
                 EndfieldEndminfVisualCompatibilityClock.TryEvaluateOpeningStrip(
