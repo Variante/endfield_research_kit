@@ -2514,8 +2514,16 @@ Uber/temporal color shifts the visible actor without equivalently shifting
 depth. The resulting depth/color disagreement exposes the undistorted body
 silhouette. The clip math and post-Uber chronology are source-backed, but the
 specific full-scene depth SRV binding remains inferred; do not simply remove
-the clip. Validate either a synchronized post-Uber color/depth transport or a
-bounded alternate-depth experiment before changing the canonical portrait.
+the clip. A default-off
+`ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH=1` probe now warps primary
+depth over the exact compatibility-Uber color-sampling footprint and retains
+the nearest contributor only while radial/chromatic Uber is active. Controlled
+4.35-second runs with temporal resolve and exact Uber disabled reject that
+policy: clean-reference full-frame PSNR changes `18.5790 -> 18.5784 dB` and
+the portrait ROI changes `18.8917 -> 18.8844 dB`; the settled no-warp path
+continues to bind primary depth directly. Keep the probe diagnostic-only. The
+remaining source question is the retail `_SceneDepth` SRV owner/contents, not
+whether to remove clipping or blindly warp every contributing depth.
 
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical

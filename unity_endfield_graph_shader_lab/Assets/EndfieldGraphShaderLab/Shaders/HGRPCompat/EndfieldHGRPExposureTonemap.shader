@@ -410,6 +410,124 @@ Shader "Hidden/Endfield/HGRPCompat/ExposureTonemap"
             }
             ENDCG
         }
+
+        Pass
+        {
+            Name "ENDMINF_POST_UBER_DEPTH_SYNC"
+
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert_img
+            #pragma fragment EndminfPostUberDepthFrag
+            #include "UnityCG.cginc"
+
+            sampler2D _MainTex;
+            float4 _EndminfVisualCompatibilityParams;
+            float2 _EndminfVisualCompatibilityCenter;
+
+            float SampleEndminfRawDepth(float2 uv)
+            {
+                return tex2Dlod(
+                    _MainTex,
+                    float4(saturate(uv), 0.0, 0.0)).r;
+            }
+
+            void RetainNearestEndminfDepth(
+                float2 uv,
+                inout float nearestRawDepth,
+                inout float nearestLinearDepth)
+            {
+                float rawDepth = SampleEndminfRawDepth(uv);
+                float linearDepth = LinearEyeDepth(rawDepth);
+                if (linearDepth < nearestLinearDepth)
+                {
+                    nearestRawDepth = rawDepth;
+                    nearestLinearDepth = linearDepth;
+                }
+            }
+
+            float EndminfPostUberDepthFrag(v2f_img input) : SV_Target
+            {
+                float2 uv = input.uv;
+                float nearestRawDepth = SampleEndminfRawDepth(uv);
+                float nearestLinearDepth = LinearEyeDepth(nearestRawDepth);
+                float radialIntensity = _EndminfVisualCompatibilityParams.x;
+                float chromaticIntensity = _EndminfVisualCompatibilityParams.y;
+                bool warpActive =
+                    _EndminfVisualCompatibilityParams.z > 0.5 &&
+                    radialIntensity + chromaticIntensity > 0.00001;
+                if (!warpActive)
+                    return nearestRawDepth;
+
+                float2 delta = uv - _EndminfVisualCompatibilityCenter;
+                float distanceSquared = dot(delta, delta);
+                float2 poweredRadial = delta * pow(
+                    max(distanceSquared, 1e-8),
+                    _EndminfVisualCompatibilityParams.w * 0.5);
+
+                if (_EndminfVisualCompatibilityParams.z > 3.0)
+                {
+                    float combined = chromaticIntensity + radialIntensity;
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial * combined,
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial * (2.0 * combined),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial * chromaticIntensity,
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (2.0 * chromaticIntensity + radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (3.0 * chromaticIntensity +
+                             2.0 * radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial * (2.0 * chromaticIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (3.0 * chromaticIntensity + radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (4.0 * chromaticIntensity +
+                             2.0 * radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                }
+                else
+                {
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (2.0 * chromaticIntensity + radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                    RetainNearestEndminfDepth(
+                        uv - poweredRadial *
+                            (3.0 * chromaticIntensity +
+                             2.0 * radialIntensity),
+                        nearestRawDepth,
+                        nearestLinearDepth);
+                }
+
+                return nearestRawDepth;
+            }
+            ENDCG
+        }
     }
 
     Fallback Off
