@@ -2146,15 +2146,17 @@ EndfieldCapture now priority-retains both exact source-compiled M20 shader
 routes: non-instanced VS/PS `e8f38f2f7519383d`/`fea38543389b6ff4` and
 SRP-instanced VS/PS `4bef98c73ca34880`/`246a0f4f2d3c34f4`. The retained packet
 includes draw-local IA, constant-buffer allocations, samplers, and PS resources.
-The exact-Endminf trigger starts one 72-package sequence without human input
-(24 consecutive packages, then 48 at six-present spacing), in both the
-graphics-only proxy and general runtime. The earlier 64-package schedule ended
-at relative present 263 (about 4.38 seconds at 60 Hz), just before M20's first
-visible sample around 4.433 seconds. The corrected schedule ends at relative
-present 311 (about 5.18 seconds), covering M20's gas onset and cleanup without
-a keyboard trigger. Release x64 and all 15 native tests pass. The next live run
-must still prove which M20 route retail binds around clean frames 276-281;
-source-variant priority is not itself runtime evidence.
+The exact-Endminf trigger starts one 72-package sequence without human input in
+both the graphics-only proxy and general runtime: 24 opening requests as quickly
+as the complete-frame lifecycle permits, then 48 at six-Present target spacing.
+The request-target arithmetic ends at relative Present 311, but that is not the
+captured-frame span. Every request needs one Present to arm the following frame
+and another to complete it, so the ideal first-to-last package span is at least
+453 Presents (about 7.55 seconds), with full-profile readback able to widen it.
+This still crosses M20's 4.433-second onset and cleanup; keep the overview alive
+for at least ten seconds. The next live run must still prove which M20 route
+retail binds around clean frames 276-281; source-variant priority is not itself
+runtime evidence.
 
 The first automatic-trigger implementation admitted only source-combined Uber
 fragment prefix `3f490e1504c43554`. That is insufficient: validated live capture
@@ -2186,6 +2188,17 @@ table now retains 96 entries, matching the 96 indexed-draw records, while the
 aggregate payload remains bounded at 128 MiB. This leaves metadata capacity for
 late exact M20 IA/VS/PS owners after broad full-profile collection. Release x64
 and all 15 native tests pass with the enlarged bounded table.
+
+The combined graphics validator now recognizes that unattended workflow as a
+separate fail-closed policy instead of requiring the retired two-burst shape.
+An automatic session must report the exact Endminf trigger, automatic ownership,
+72 completed packages, inactive/quiescent sequence state, no pending frame,
+zero dropped events, and one 72-package logical sequence before the existing per-mesh
+palette and M29/M30/M31 resource-closure gates run. Runtime status owns the
+single logical window, so full-profile readback stalls cannot be mistaken for
+separate bursts merely because frame IDs have a large gap. Old 64-package
+sessions remain on the legacy two-burst policy and cannot accidentally certify
+the new workflow. The focused validator suite has ten passing tests.
 
 A focused M21 ablation also clarifies its presentation boundary. Its source
 material has no authored texture and the zero VS buffer is valid for the

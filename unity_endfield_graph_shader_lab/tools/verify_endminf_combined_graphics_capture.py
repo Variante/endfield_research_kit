@@ -7,8 +7,10 @@ The report deliberately keeps two independent gates visible:
 * render-boundary skin-palette coverage for the character meshes.
 
 Individual meshes are not necessarily retained in every graphics frame.  The
-palette gate therefore measures unambiguous per-mesh observations across both
-capture bursts instead of requiring every mesh in every frame.
+palette gate therefore measures unambiguous per-mesh observations across the
+capture sequence instead of requiring every mesh in every frame.  Both the
+retired two-burst workflow and the unattended 72-package workflow remain
+explicit, fail-closed policies.
 """
 
 from __future__ import annotations
@@ -43,6 +45,7 @@ MINIMUM_PER_SEQUENCE = {
     "hair": 8,
 }
 MINIMUM_SEQUENCE_FRAMES = 48
+AUTOMATIC_SEQUENCE_FRAMES = 72
 
 
 class VerificationError(RuntimeError):
@@ -71,6 +74,75 @@ def split_sequences(frames: list[int]) -> list[list[int]]:
     return result
 
 
+def sequence_policy(capture: Path) -> dict[str, Any]:
+    status_path = capture / "runtime.status.json"
+    if not status_path.is_file():
+        return {
+            "name": "legacy_two_burst",
+            "expectedSequenceCount": 2,
+            "minimumFramesPerSequence": MINIMUM_SEQUENCE_FRAMES,
+            "statusPath": None,
+            "errors": [],
+        }
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+    new_schedule = (
+        int(status.get("graphicsSequenceMaxFrames", 0))
+        == AUTOMATIC_SEQUENCE_FRAMES
+    )
+    if not new_schedule:
+        return {
+            "name": "legacy_two_burst",
+            "expectedSequenceCount": 2,
+            "minimumFramesPerSequence": MINIMUM_SEQUENCE_FRAMES,
+            "statusPath": str(status_path),
+            "errors": [],
+        }
+
+    errors = []
+    if status.get("endminfAutoTriggerObserved") is not True:
+        errors.append("automatic sequence did not observe the exact Endminf trigger")
+    if status.get("graphicsSequenceAutomatic") is not True:
+        errors.append("72-package sequence was not started automatically")
+    completed = int(status.get("graphicsSequenceFrames", -1))
+    if completed != AUTOMATIC_SEQUENCE_FRAMES:
+        errors.append(
+            f"automatic sequence completed {completed} packages; "
+            f"need {AUTOMATIC_SEQUENCE_FRAMES}"
+        )
+    if status.get("graphicsSequenceActive") is not False:
+        errors.append("automatic sequence is still active")
+    if status.get("framePending") is not False:
+        errors.append("automatic sequence still has a pending frame")
+    if status.get("graphicsSequenceCapturePending") is not False:
+        errors.append("automatic sequence still owns an unpublished package")
+    dropped = int(status.get("graphicsDropped", -1))
+    if dropped != 0:
+        errors.append(f"automatic sequence dropped {dropped} graphics events")
+    return {
+        "name": "automatic_endminf_72",
+        "expectedSequenceCount": 1,
+        "minimumFramesPerSequence": AUTOMATIC_SEQUENCE_FRAMES,
+        "statusPath": str(status_path),
+        "triggerObserved": True,
+        "automatic": True,
+        "completedPackages": completed,
+        "errors": errors,
+    }
+
+
+def logical_sequences(
+    frames: list[int], policy: dict[str, Any]
+) -> list[list[int]]:
+    if not frames:
+        return []
+    # Full-profile resource publication may stall for dozens of Presents.  A
+    # large frame-ID gap is therefore not a second user-triggered burst when
+    # runtime status already identifies one automatic 72-package window.
+    if policy.get("name") == "automatic_endminf_72":
+        return [frames]
+    return split_sequences(frames)
+
+
 def palette_resource(metadata: dict[str, Any], resources_path: Path) -> str | None:
     rows = [
         row for row in metadata.get("selectedResourceRecords", [])
@@ -96,7 +168,8 @@ def palette_resource(metadata: dict[str, Any], resources_path: Path) -> str | No
 def audit_palettes(capture: Path) -> dict[str, Any]:
     paths = frame_paths(capture)
     frame_ids = [int(path.parent.name) for path in paths]
-    sequences = split_sequences(frame_ids)
+    policy = sequence_policy(capture)
+    sequences = logical_sequences(frame_ids, policy)
     sequence_by_frame = {
         frame: index for index, sequence in enumerate(sequences) for frame in sequence
     }
@@ -129,13 +202,19 @@ def audit_palettes(capture: Path) -> dict[str, Any]:
                 "matchingDrawRecords": draw["matchingDrawRecords"],
             })
 
-    errors = []
-    if len(sequences) != 2:
-        errors.append(f"expected two graphics bursts, found {len(sequences)}")
+    errors = list(policy["errors"])
+    expected_sequences = int(policy["expectedSequenceCount"])
+    minimum_sequence_frames = int(policy["minimumFramesPerSequence"])
+    if len(sequences) != expected_sequences:
+        errors.append(
+            f"{policy['name']} expected {expected_sequences} graphics "
+            f"sequence(s), found {len(sequences)}"
+        )
     for index, sequence in enumerate(sequences):
-        if len(sequence) < MINIMUM_SEQUENCE_FRAMES:
+        if len(sequence) < minimum_sequence_frames:
             errors.append(
-                f"sequence {index} has {len(sequence)} frames; need {MINIMUM_SEQUENCE_FRAMES}"
+                f"sequence {index} has {len(sequence)} frames; "
+                f"need {minimum_sequence_frames} for {policy['name']}"
             )
     if ambiguous:
         errors.append(f"{len(ambiguous)} mesh observations have ambiguous/invalid b2 metadata")
@@ -167,6 +246,7 @@ def audit_palettes(capture: Path) -> dict[str, Any]:
     return {
         "status": "validated_render_boundary_palette_coverage" if not errors else "rejected",
         "frameCount": len(paths),
+        "sequencePolicy": policy,
         "sequences": [
             {"index": index, "frameCount": len(sequence),
              "firstFrame": sequence[0], "lastFrame": sequence[-1]}
@@ -193,7 +273,7 @@ def build_report(capture: Path) -> dict[str, Any]:
     if effect_error:
         errors.append(f"M29/M30: {effect_error}")
     return {
-        "schema": "endfield.endminf-combined-graphics-capture.v1",
+        "schema": "endfield.endminf-combined-graphics-capture.v2",
         "status": "validated" if not errors else "rejected",
         "capture": str(capture.resolve()),
         "effects": effect_report if effect_report is not None else {
