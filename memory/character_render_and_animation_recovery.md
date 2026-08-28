@@ -2091,6 +2091,12 @@ contract. Enabling all sparse exact peak transports together is rejected as a
 canonical default: over the 4.30-4.75 second window it improves temporal-delta
 MAE 23.470 to 22.662 but worsens ROI/effect MAE 24.211/29.160 to
 26.623/32.448 because one-tick packets suppress authored neighboring output.
+The corresponding 770-frame M21-only canonical render passes every sequence,
+background, VFX-cleanup, and no-foreground-UI gate, submits and validates M21
+exactly once at 4.5000 seconds, and improves aggregate ROI/effect/temporal MAE
+from 21.6325/22.7560/14.1828 to 21.6304/22.7547/14.1827. Canonical video
+exports therefore default this owner on; an explicit environment value of `0`
+remains a full-sequence A/B override.
 
 The Viewer report schema now records requested, active, submitted, validated,
 and failure state independently for the exact M18/M21/M28 packets. A focused
