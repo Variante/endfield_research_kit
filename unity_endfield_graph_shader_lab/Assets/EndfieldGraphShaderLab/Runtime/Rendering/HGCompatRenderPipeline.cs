@@ -171,6 +171,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredVFXSoftDepthReady");
         private static readonly int RecoveredPostUberWorldUiReadyId =
             Shader.PropertyToID("_EndfieldRecoveredPostUberWorldUiReady");
+        private static readonly int RecoveredPostUberPortraitDepthId =
+            Shader.PropertyToID("_EndfieldRecoveredPostUberPortraitDepth");
         private static readonly int NonJitteredViewNoTransProjMatrixId =
             Shader.PropertyToID("_NonJitteredViewNoTransProjMatrix");
         private static readonly int WorldSpaceCameraPosInternalId =
@@ -657,6 +659,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredLiveCharInfoAutoExposureDispatchFailure;
         private bool loggedRecoveredPostUberWorldUi;
         private bool loggedRecoveredPostUberWorldUiFailure;
+        private bool loggedRecoveredPostUberPortraitDepthSync;
+        private bool loggedRecoveredPostUberPortraitDepthSyncFailure;
         private bool loggedRecoveredPreGBufferDepthOwnerFailure;
         private bool loggedRecoveredSceneMV;
         private bool loggedRecoveredSceneMVFailure;
@@ -3754,7 +3758,11 @@ namespace EndfieldGraphShaderLab
                     postColorTarget,
                     recoveredPrimarySceneDepth,
                     width,
-                    height);
+                    height,
+                    hasEndminfPost &&
+                        endminfPost.mode > 0.5f &&
+                        endminfPost.radialIntensity +
+                            endminfPost.chromaticIntensity > 0.00001f);
             }
 
             commandBuffer = new CommandBuffer
@@ -3785,12 +3793,73 @@ namespace EndfieldGraphShaderLab
             RenderTargetIdentifier postColorTarget,
             RenderTexture primarySceneDepth,
             int width,
-            int height)
+            int height,
+            bool compatibilityUberWarpActive)
         {
             CommandBuffer commandBuffer = new CommandBuffer
             {
                 name = "Recovered post-Uber CharInfo world UI"
             };
+            bool diagnosticDepthSyncRequested = IsEnabledSelectorValue(
+                System.Environment.GetEnvironmentVariable(
+                    "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH"));
+            bool diagnosticDepthSyncReady = false;
+            RenderTargetIdentifier portraitSceneDepth =
+                new RenderTargetIdentifier(primarySceneDepth);
+            if (diagnosticDepthSyncRequested && compatibilityUberWarpActive)
+            {
+                int depthSyncPass = postProcessMaterial != null
+                    ? postProcessMaterial.FindPass("ENDMINF_POST_UBER_DEPTH_SYNC")
+                    : -1;
+                bool formatReady = SystemInfo.IsFormatSupported(
+                    GraphicsFormat.R32_SFloat,
+                    FormatUsage.Render);
+                if (depthSyncPass >= 0 && formatReady)
+                {
+                    var depthDescriptor = new RenderTextureDescriptor(
+                        width,
+                        height,
+                        GraphicsFormat.R32_SFloat,
+                        0)
+                    {
+                        msaaSamples = 1,
+                        sRGB = false,
+                        useMipMap = false,
+                        autoGenerateMips = false,
+                        enableRandomWrite = false,
+                        useDynamicScale = false
+                    };
+                    commandBuffer.GetTemporaryRT(
+                        RecoveredPostUberPortraitDepthId,
+                        depthDescriptor,
+                        FilterMode.Bilinear);
+                    // Diagnostic only: use the exact compatibility-Uber sample
+                    // footprint and retain the nearest raw scene depth among all
+                    // color contributors. This tests whether the body-shaped
+                    // portrait cutout is caused by post-Uber color sampling
+                    // against the untouched primary depth. It is not source
+                    // authority for changing the canonical _SceneDepth owner.
+                    commandBuffer.Blit(
+                        primarySceneDepth,
+                        RecoveredPostUberPortraitDepthId,
+                        postProcessMaterial,
+                        depthSyncPass);
+                    portraitSceneDepth = new RenderTargetIdentifier(
+                        RecoveredPostUberPortraitDepthId);
+                    diagnosticDepthSyncReady = true;
+                }
+                else if (!loggedRecoveredPostUberPortraitDepthSyncFailure)
+                {
+                    Debug.LogWarning(
+                        "Diagnostic post-Uber portrait-depth synchronization " +
+                        "failed closed: " +
+                        (depthSyncPass < 0
+                            ? "the ENDMINF_POST_UBER_DEPTH_SYNC shader pass is unavailable"
+                            : "R32_SFloat render targets are unavailable") +
+                        ". The portrait continues to sample primary scene depth.");
+                    loggedRecoveredPostUberPortraitDepthSyncFailure = true;
+                }
+            }
             // The retail pass samples the primary general scene depth while a
             // distinct generated output-depth target is paired with the post
             // color. The selected UI pass is ZTest Always/ZWrite Off, so this
@@ -3799,7 +3868,7 @@ namespace EndfieldGraphShaderLab
             // a read-only DSV, and the distinct retail output-depth descriptor
             // is not source-closed.
             commandBuffer.SetRenderTarget(postColorTarget);
-            commandBuffer.SetGlobalTexture(SceneDepthId, primarySceneDepth);
+            commandBuffer.SetGlobalTexture(SceneDepthId, portraitSceneDepth);
             commandBuffer.SetGlobalVector(
                 SceneDepthTexelSizeId,
                 new Vector4(1.0f / width, 1.0f / height, width, height));
@@ -3846,8 +3915,21 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetGlobalFloat(RenderPathInjectedId, 0.0f);
             commandBuffer.SetGlobalFloat(HGFlipXId, 0.0f);
             commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);
+            if (diagnosticDepthSyncReady)
+                commandBuffer.ReleaseTemporaryRT(RecoveredPostUberPortraitDepthId);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
+
+            if (diagnosticDepthSyncReady &&
+                !loggedRecoveredPostUberPortraitDepthSync)
+            {
+                Debug.Log(
+                    "Diagnostic post-Uber portrait-depth synchronization is " +
+                    "active: _SceneDepth contains the nearest primary depth " +
+                    "from the compatibility Uber color-sampling footprint. " +
+                    "This is a causality probe, not a canonical render change.");
+                loggedRecoveredPostUberPortraitDepthSync = true;
+            }
 
             if (!loggedRecoveredPostUberWorldUi)
             {
