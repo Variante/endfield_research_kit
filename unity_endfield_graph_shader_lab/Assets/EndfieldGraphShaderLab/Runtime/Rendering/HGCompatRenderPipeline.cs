@@ -550,6 +550,8 @@ namespace EndfieldGraphShaderLab
         private readonly EndfieldRecoveredCharInfoLut recoveredColorGradingLut;
         private readonly EndfieldRecoveredEndminfUberExactRuntime
             recoveredEndminfUberExactRuntime;
+        private readonly EndfieldRecoveredEndminfM28PeakExactRuntime
+            recoveredEndminfM28PeakExactRuntime;
         private readonly bool separateCharacterShadowDiagnosticEnabled;
         private readonly bool recoveredMultiCharacterShadowAtlasRequested;
         private readonly bool
@@ -758,6 +760,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredCombinedVelocityProducer();
             recoveredEndminfUberExactRuntime =
                 new EndfieldRecoveredEndminfUberExactRuntime();
+            recoveredEndminfM28PeakExactRuntime =
+                new EndfieldRecoveredEndminfM28PeakExactRuntime();
             GraphicsSettings.useScriptableRenderPipelineBatching = true;
 
             if (recoveredLiveCharInfoAutoExposureRequested)
@@ -872,6 +876,7 @@ namespace EndfieldGraphShaderLab
             recoveredLightBinning?.Dispose();
             recoveredColorGradingLut?.Dispose();
             recoveredEndminfUberExactRuntime?.Dispose();
+            recoveredEndminfM28PeakExactRuntime?.Dispose();
             recoveredSceneMVCompositor?.Dispose();
             ReleaseRecoveredPrimarySceneDepth(recoveredExactCameraDepth);
             recoveredExactCameraDepth = null;
@@ -1005,6 +1010,9 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM18PeakPrepared =
                 EndfieldRecoveredEndminfM18PeakExactRuntime
                     .PrepareBeforeCulling(camera);
+            bool exactEndminfM28PeakPrepared =
+                recoveredEndminfM28PeakExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM13Prepared =
                 EndfieldRecoveredEndminfM13ExactRuntime
                     .PrepareBeforeCulling(camera);
@@ -1123,6 +1131,7 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
             if ((exactEndminfM14Prepared || exactEndminfM29Prepared ||
+                    exactEndminfM28PeakPrepared ||
                     exactEndminfVFXBaseV2PeakPrepared) &&
                 !recoveredSceneMVRequest.requested)
             {
@@ -2331,6 +2340,25 @@ namespace EndfieldGraphShaderLab
                         recoveredCurrentSceneColor = distortionColor;
                     else
                         mainReady = false;
+                }
+                // Full frame 2775 records M28 at ordinal 87, after the broad
+                // M18 shell and the surviving queue-3005/distortion cohort.
+                // Its t2 SceneColor SRV is a persistent snapshot, so the exact
+                // draw can write the current SceneColor/SceneMV MRTs in place.
+                if (mainReady && exactEndminfM28PeakPrepared)
+                {
+                    mainReady = recoveredEndminfM28PeakExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M28 peak transport failed closed: " +
+                            recoveredEndminfM28PeakExactRuntime.Failure;
+                    }
                 }
                 if (!mainReady)
                 {
