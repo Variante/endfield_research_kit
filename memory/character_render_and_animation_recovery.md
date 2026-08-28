@@ -2136,7 +2136,13 @@ character ROI MAE falls from 21.632 to 19.256 and effect ROI MAE from 22.950
 to 19.278. The directly observed final clamp `(1,0.9962963)` is stronger than
 the bounded `(1,1)` alternative, whose effect ROI MAE is 20.226. Keep this
 recording-specific track opt-in and preserve the general source retarget API;
-do not replace it with a static camera or backdrop offset.
+do not replace it with a static camera or backdrop offset. A subsequent
+770-frame schema-v8 render completed `status=ok` with the track active and kept
+the global best phase offset at -1. Versus the immediately preceding exact-Uber
+full render, aggregate ROI/effect MAE improves 21.134/22.069 to 21.035/21.902;
+temporal-delta MAE changes 11.889 to 12.053, so the track closes the coordinated
+late composition drift but does not replace the remaining particle/Uber
+temporal work.
 
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The older dense oracle has no `cloth_02` observations even though
