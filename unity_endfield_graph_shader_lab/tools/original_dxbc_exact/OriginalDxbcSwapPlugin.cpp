@@ -271,7 +271,7 @@ ID3D11SamplerState* g_openingStripSamplers[2] = {};
 ID3D11BlendState* g_openingStripBlendState = nullptr;
 ID3D11DepthStencilState* g_openingStripDepthState = nullptr;
 ID3D11RasterizerState* g_openingStripRasterizerState = nullptr;
-std::atomic<std::uintptr_t> g_openingStripTextures[2] = {};
+std::atomic<std::uintptr_t> g_openingStripSceneColor{0};
 std::atomic<std::uint32_t> g_openingStripPacketIndex{0};
 std::atomic<std::uint32_t> g_openingStripDrawCount{0};
 std::atomic<std::uint32_t> g_openingStripFailureCount{0};
@@ -4548,7 +4548,7 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         return;
     }
     ID3D11Resource* sceneColor = reinterpret_cast<ID3D11Resource*>(
-        g_openingStripTextures[1].load(std::memory_order_acquire));
+        g_openingStripSceneColor.load(std::memory_order_acquire));
     if (g_openingStripMaskView == nullptr || sceneColor == nullptr)
     {
         g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
@@ -6165,15 +6165,12 @@ EndfieldOriginalDxbcGetM13LastResult()
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcSetOpeningStripTextureResources(
-    void* refractTexture, void* sceneColorTexture)
+    void* sceneColorTexture)
 {
-    g_openingStripTextures[0].store(
-        reinterpret_cast<std::uintptr_t>(refractTexture),
-        std::memory_order_release);
-    g_openingStripTextures[1].store(
+    g_openingStripSceneColor.store(
         reinterpret_cast<std::uintptr_t>(sceneColorTexture),
         std::memory_order_release);
-    return refractTexture != nullptr && sceneColorTexture != nullptr ? 1u : 0u;
+    return sceneColorTexture != nullptr ? 1u : 0u;
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
@@ -6197,8 +6194,7 @@ EndfieldOriginalDxbcResetOpeningStripRuntimeState()
     g_openingStripDrawCount.store(0, std::memory_order_relaxed);
     g_openingStripFailureCount.store(0, std::memory_order_relaxed);
     g_openingStripLastResult.store(S_OK, std::memory_order_relaxed);
-    for (std::atomic<std::uintptr_t>& value : g_openingStripTextures)
-        value.store(0, std::memory_order_relaxed);
+    g_openingStripSceneColor.store(0, std::memory_order_relaxed);
     ReleaseOpeningStripResources();
 }
 

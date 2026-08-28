@@ -17,7 +17,6 @@ namespace EndfieldGraphShaderLab
         private const float HalfWindowSeconds = 1.0f / 60.0f;
 
         private static ParticleSystemRenderer sourceRenderer;
-        private static Texture refractTexture;
         private static RenderTexture sceneColorSnapshot;
         private static IntPtr renderEvent;
         private static bool initialized;
@@ -101,9 +100,8 @@ namespace EndfieldGraphShaderLab
             try
             {
                 if (Native.SetTextureResources(
-                        refractTexture.GetNativeTexturePtr(),
                         sceneColorSnapshot.GetNativeTexturePtr()) != 1)
-                    return Fail("native opening-strip texture gate rejected t0/t1");
+                    return Fail("native opening-strip scene-color gate rejected t1");
             }
             catch (Exception exception)
             {
@@ -145,11 +143,7 @@ namespace EndfieldGraphShaderLab
                 if (sourceRenderer != null)
                     return Fail("multiple live opening-strip renderers were found");
                 sourceRenderer = renderer;
-                refractTexture = material.GetTexture("_RefractTex");
             }
-            if (sourceRenderer == null || refractTexture == null ||
-                refractTexture.name != "T_fx_mask_01_M")
-                return Fail("source-closed opening-strip material binding is absent");
             try
             {
                 renderEvent = Native.GetRenderEventFunc();
@@ -276,7 +270,7 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcGetOpeningStripRenderEventFunc")]
             internal static extern IntPtr GetRenderEventFunc();
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcSetOpeningStripTextureResources")]
-            internal static extern uint SetTextureResources(IntPtr refract, IntPtr sceneColor);
+            internal static extern uint SetTextureResources(IntPtr sceneColor);
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcSetOpeningStripPacketIndex")]
             internal static extern uint SetPacketIndex(uint index);
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcGetOpeningStripPacketCount")]

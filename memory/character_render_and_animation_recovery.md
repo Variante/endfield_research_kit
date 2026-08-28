@@ -2591,7 +2591,10 @@ but is an unsupported dynamic format with no retained static payload, and
 replay must supply the current Unity scene snapshot. The native replay now
 creates PS t0 directly from the captured BC7 blocks instead of sampling
 AnimeStudio's mismatched `T_fx_mask_01_M` extraction; the four reference packet
-geometries/constants and dynamic t1 remain unchanged. The strict verifier
+geometries/constants and dynamic t1 remain unchanged. Its runtime admission no
+longer depends on that superseded AnimeStudio material or texture being spawned;
+the optional ordinary source renderer is disabled when present, while the
+native API accepts only the live scene-color resource. The strict verifier
 requires VS t0 and PS t0 payload closure plus a bound dynamic PS t1 and accepts
 both particle-count realizations by their descending horizontal-quad shape.
 The old bounded rectangle compatibility pass remains the fail-closed fallback.
@@ -2603,13 +2606,18 @@ callback and, when the ordinary three-slot producer gate would skip it, arms a
 fourth bounded deferred package before recording that same draw. Status and
 summary expose `graphicsSequencePriorityM20DrawArms` and
 `deferredPriorityM20DrawArms`. The session now also archives every immutable
-D3D11 shader program created after attachment under `graphics/shaders/`,
-deduplicated by SHA-256, so a newly observed material owner can be decompiled
-without another capture. The current `build-local` proxy SHA-256 is
-`E8E2F0EB64FDBCB27313A6E99FC4239A72A0361E28F39FCD934F069FC85B2993`; all 15
-native tests pass, including real proxy publication of two bytecode payloads
-and their manifest. One real-game run is still required to prove the priority
-path and close exact M20 gas ownership. Stop that session cleanly so
+D3D11 shader program under `graphics/shaders/`, deduplicated by SHA-256, so a
+newly observed material owner can be decompiled without another capture.
+Session `20260828T212621Z` proved a startup race: all expected M20 bytecode
+identities were absent from its otherwise complete 413-file archive, so their
+objects were created before the asynchronous proxy bootstrap published capture
+state and the exact detector could never arm. The proxy device exports now join
+that bootstrap before forwarding device creation, then install device/context
+hooks before returning the game device. A real proxy regression creates a
+shader immediately before the ready handshake and requires its exact bytecode
+in the final archive. All 16 native tests pass in the launcher's `build-local`
+tree. One real-game run is still required to prove the corrected priority path
+and close exact M20 gas ownership. Stop that session cleanly so
 `shaderBytecodeArchiveComplete=true`, then run the combined validator and
 `python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`.
 
