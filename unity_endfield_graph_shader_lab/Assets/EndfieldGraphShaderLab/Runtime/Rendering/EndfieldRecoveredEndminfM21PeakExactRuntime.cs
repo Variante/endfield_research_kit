@@ -14,7 +14,10 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_21";
         private const float ViewerLeadSeconds = 2.0f / 60.0f;
-        private const float HalfWindowSeconds = 0.05f;
+        // Full frame 2775 supplies one authoritative 60 Hz packet, not a
+        // reusable multi-frame animation. Admit only the nearest simulation
+        // sample; adjacent ticks must fall back to the authored renderer.
+        private const float HalfWindowSeconds = 1.0f / 120.0f;
         private static readonly List<ParticleSystemRenderer> Renderers =
             new List<ParticleSystemRenderer>();
         private static IntPtr renderEvent;

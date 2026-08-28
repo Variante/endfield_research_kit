@@ -43,6 +43,7 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         gate_text = source[gate:blit]
         self.assertIn("useRecoveredPostSemantics", gate_text)
         self.assertIn("recoveredEndminfOpeningStripMaterial != null", gate_text)
+        self.assertIn("hasOpeningStripSelector", gate_text)
         self.assertIn("TryEvaluateOpeningStrip", gate_text)
 
     def test_shader_keeps_constant_band_x_and_restrained_rgb_split(self) -> None:
@@ -52,6 +53,17 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertIn("float chromaUv", source)
         self.assertIn("shiftedUv + float2(chromaUv, 0.0)", source)
         self.assertIn("shiftedUv - float2(chromaUv, 0.0)", source)
+
+    def test_shader_uses_shifted_character_selector_ownership(self) -> None:
+        source = SHADER.read_text(encoding="utf-8")
+        self.assertIn("sampler2D _EndminfOpeningStripSelector", source)
+        selector = source.index("float4 selector = tex2Dlod")
+        shifted_uv = source.index("float4(shiftedUv, 0.0, 0.0)", selector)
+        owner = source.index("float shiftedOwner = step", shifted_uv)
+        composite = source.index("return lerp(original, shifted, shiftedOwner)", owner)
+        self.assertLess(selector, shifted_uv)
+        self.assertLess(shifted_uv, owner)
+        self.assertLess(owner, composite)
         self.assertNotIn("uv.y + displacement", source)
 
 

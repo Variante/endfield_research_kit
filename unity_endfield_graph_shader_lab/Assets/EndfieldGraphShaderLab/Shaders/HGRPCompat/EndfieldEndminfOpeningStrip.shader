@@ -21,6 +21,7 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
+            sampler2D _EndminfOpeningStripSelector;
             // x=envelope, y=max X displacement in pixels,
             // z=RGB edge separation in pixels, w=effect-local elapsed seconds.
             float4 _EndminfOpeningStripParams;
@@ -73,7 +74,23 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
                 float alpha = tex2Dlod(
                     _MainTex,
                     float4(shiftedUv, 0.0, 0.0)).a;
-                return float4(red, green, blue, alpha);
+                float4 shifted = float4(red, green, blue, alpha);
+
+                // GBufferA is cleared to zero and receives selector bits only
+                // where the current CharacterPrePass owns a pixel. Sample it
+                // at the displaced coordinate: copied character bands may
+                // protrude into the static field, while portrait/GridFar
+                // samples remain untouched.
+                float4 selector = tex2Dlod(
+                    _EndminfOpeningStripSelector,
+                    float4(shiftedUv, 0.0, 0.0));
+                float shiftedOwner = step(
+                    1e-5,
+                    dot(abs(selector), float4(1.0, 1.0, 1.0, 1.0)));
+                float4 original = tex2Dlod(
+                    _MainTex,
+                    float4(uv, 0.0, 0.0));
+                return lerp(original, shifted, shiftedOwner);
             }
             ENDCG
         }
