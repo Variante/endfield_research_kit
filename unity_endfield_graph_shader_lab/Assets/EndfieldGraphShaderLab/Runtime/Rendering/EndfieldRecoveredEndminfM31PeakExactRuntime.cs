@@ -8,9 +8,10 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Default-off temporal admission for the exact two-draw M31 shell
-    /// transport. The source-backed envelope falls back to the ordinary
-    /// renderer when retail recorded a packet count the native payload cannot
-    /// reproduce exactly.
+    /// transport. Retail places M29/M30 and their surrounding transparent
+    /// cohort between the two M31 draws, so the native payload is submitted at
+    /// two pipeline insertion points. Unsupported packet shapes fall back to
+    /// the ordinary renderer.
     /// </summary>
     public static class EndfieldRecoveredEndminfM31PeakExactRuntime
     {
@@ -26,6 +27,7 @@ namespace EndfieldGraphShaderLab
         private static bool prepared;
         private static bool failed;
         private static bool active;
+        private static bool firstSubmissionPending;
         private static bool submissionPending;
         private static string failure = string.Empty;
         private static int selectedPacket = -1;
@@ -41,6 +43,7 @@ namespace EndfieldGraphShaderLab
             "1", StringComparison.Ordinal);
 
         internal static string Failure => failure;
+        internal static bool HasPendingFirstSubmission => firstSubmissionPending;
         public static bool HasPendingValidation => submissionPending;
 
         internal static bool PrepareBeforeCulling(Camera camera)
@@ -80,13 +83,13 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket] ==
                 EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
                 EndfieldRecoveredM31PeakCaptureData
-                    .NativeOrderCompatible[selectedPacket];
+                    .SplitOrderCompatible[selectedPacket];
             if (!loggedAdmission)
             {
                 Debug.Log("Recovered exact Endminf M31 temporal admission: " +
                     "renderers=" + Renderers.Count + ", phase=" +
                     seconds.ToString("F6") + ", packet=" + selectedPacket +
-                    ", nativeCompatible=" + active + ".");
+                    ", splitCompatible=" + active + ".");
                 loggedAdmission = true;
             }
             SetRendererSuppression(active);
@@ -124,6 +127,8 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredM31PeakCaptureData.LastDrawOrdinals;
             bool[] nativeOrderCompatible =
                 EndfieldRecoveredM31PeakCaptureData.NativeOrderCompatible;
+            bool[] splitOrderCompatible =
+                EndfieldRecoveredM31PeakCaptureData.SplitOrderCompatible;
             int[] interleavedM29M30Counts =
                 EndfieldRecoveredM31PeakCaptureData.InterleavedM29M30Counts;
             string[] hashes =
@@ -133,13 +138,15 @@ namespace EndfieldGraphShaderLab
                 !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
                 phases == null || frames == null || drawCounts == null ||
                 firstDrawOrdinals == null || lastDrawOrdinals == null ||
-                nativeOrderCompatible == null || hashes == null || packetCount < 2 ||
+                nativeOrderCompatible == null || splitOrderCompatible == null ||
+                hashes == null || packetCount < 2 ||
                 interleavedM29M30Counts == null ||
                 phases.Length != packetCount || frames.Length != packetCount ||
                 drawCounts.Length != packetCount ||
                 firstDrawOrdinals.Length != packetCount ||
                 lastDrawOrdinals.Length != packetCount ||
                 nativeOrderCompatible.Length != packetCount ||
+                splitOrderCompatible.Length != packetCount ||
                 interleavedM29M30Counts.Length != packetCount ||
                 hashes.Length != packetCount)
             {
@@ -161,6 +168,11 @@ namespace EndfieldGraphShaderLab
                     (lastDrawOrdinals[index] - firstDrawOrdinals[index] + 1 ==
                         drawCounts[index]))
                     return Fail("the generated M31 transport-order gate drifted");
+                bool expectedSplitOrder = drawCounts[index] ==
+                        EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
+                    interleavedM29M30Counts[index] == 2;
+                if (splitOrderCompatible[index] != expectedSplitOrder)
+                    return Fail("the generated M31 split-order gate drifted");
                 if (interleavedM29M30Counts[index] < 0 ||
                     nativeOrderCompatible[index] &&
                     interleavedM29M30Counts[index] != 0)
@@ -188,6 +200,8 @@ namespace EndfieldGraphShaderLab
                     exception.Message);
             }
             validatedDrawCount = 0;
+            firstSubmissionPending = false;
+            submissionPending = false;
             prepared = true;
             return true;
         }
@@ -244,12 +258,66 @@ namespace EndfieldGraphShaderLab
             return Mathf.Max(0.0f, state.time);
         }
 
-        internal static bool Render(
+        internal static bool RenderFirst(
             ScriptableRenderContext context,
             Camera camera,
             EndfieldRecoveredSceneColorHandle sceneColor,
             RenderTexture sceneMV,
             RenderTexture sceneDepth)
+        {
+            if (firstSubmissionPending)
+                return Fail("the previous M31 split submission is incomplete");
+            if (!RenderSplitEvent(
+                    context, camera, sceneColor, sceneMV, sceneDepth, 0))
+                return false;
+            firstSubmissionPending = true;
+            return true;
+        }
+
+        internal static bool RenderSecond(
+            ScriptableRenderContext context,
+            Camera camera,
+            EndfieldRecoveredSceneColorHandle sceneColor,
+            RenderTexture sceneMV,
+            RenderTexture sceneDepth)
+        {
+            if (!firstSubmissionPending)
+                return Fail("the second M31 split event has no first event");
+            if (!RenderSplitEvent(
+                    context, camera, sceneColor, sceneMV, sceneDepth, 1))
+                return false;
+            firstSubmissionPending = false;
+            submissionPending = true;
+            if (!loggedActivation)
+            {
+                Debug.Log(
+                    "Recovered exact Endminf M31 submitted around the retail " +
+                    "M29/M30 owner interval inside the " +
+                    EndfieldRecoveredM31PeakCaptureData.PacketCount +
+                    "-packet temporal envelope from capture " +
+                    EndfieldRecoveredM31PeakCaptureData.TemporalSourceSession +
+                    "; exact payload capture " +
+                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceSession +
+                    " frame " +
+                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceFrame + ".");
+                loggedActivation = true;
+            }
+            return true;
+        }
+
+        internal static void AbortPendingSplit(string reason)
+        {
+            if (firstSubmissionPending)
+                Fail(reason ?? "the M31 split owner interval failed");
+        }
+
+        private static bool RenderSplitEvent(
+            ScriptableRenderContext context,
+            Camera camera,
+            EndfieldRecoveredSceneColorHandle sceneColor,
+            RenderTexture sceneMV,
+            RenderTexture sceneDepth,
+            int eventId)
         {
             if (!Requested || failed || !prepared || !active ||
                 selectedPacket < 0)
@@ -273,28 +341,14 @@ namespace EndfieldGraphShaderLab
 
             var command = new CommandBuffer
             {
-                name = "Recovered exact Endminf M31 peak SceneColor/SceneMV draws"
+                name = "Recovered exact Endminf M31 split SceneColor/SceneMV draw"
             };
             command.SetRenderTarget(
                 new[] { sceneColor.Target, new RenderTargetIdentifier(sceneMV) },
                 new RenderTargetIdentifier(BuiltinRenderTextureType.None));
-            command.IssuePluginEvent(renderEvent, 0);
+            command.IssuePluginEvent(renderEvent, eventId);
             context.ExecuteCommandBuffer(command);
             command.Release();
-            submissionPending = true;
-            if (!loggedActivation)
-            {
-                Debug.Log(
-                    "Recovered exact Endminf M31 submitted inside the " +
-                    EndfieldRecoveredM31PeakCaptureData.PacketCount +
-                    "-packet temporal envelope from capture " +
-                    EndfieldRecoveredM31PeakCaptureData.TemporalSourceSession +
-                    "; exact payload capture " +
-                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceSession +
-                    " frame " +
-                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceFrame + ".");
-                loggedActivation = true;
-            }
             return true;
         }
 
@@ -328,7 +382,7 @@ namespace EndfieldGraphShaderLab
                 if (!loggedValidation)
                 {
                     Debug.Log("Recovered exact Endminf M31 peak validated: " +
-                        "the selected two-draw packet completed with S_OK.");
+                        "both split events completed with S_OK.");
                     loggedValidation = true;
                 }
                 return true;
@@ -345,6 +399,8 @@ namespace EndfieldGraphShaderLab
             failed = true;
             active = false;
             selectedPacket = -1;
+            firstSubmissionPending = false;
+            submissionPending = false;
             failure = reason ?? "unknown exact M31 peak failure";
             RestoreRenderers();
             if (!loggedFailure)

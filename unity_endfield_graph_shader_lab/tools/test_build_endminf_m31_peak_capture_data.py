@@ -50,12 +50,16 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
                 "NativeOrderCompatible = { false, false, false, false, false, false, false, false, true }",
                 cs)
             self.assertIn(
+                "SplitOrderCompatible = { true, true, true, true, true, true, true, false, false }",
+                cs)
+            self.assertIn(
                 "InterleavedM29M30Counts = { 2, 2, 2, 2, 2, 2, 2, 0, 0 }",
                 cs)
             self.assertIn("2.863329f", cs)
             self.assertIn("4.564017f", cs)
             self.assertIn("DepthContractReady = true", cs)
             self.assertIn("g_EndfieldM31PeakPacketCount", cpp)
+            self.assertIn("g_EndfieldM31PeakSplitEventCount = 2u", cpp)
             self.assertIn("g_EndfieldM31PeakTextureT1", cpp)
 
     def test_temporal_capture_has_exact_owner_resource_closure(self) -> None:
@@ -72,6 +76,8 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             for index, row in enumerate(packets[:-1])))
         self.assertEqual([False] * 8 + [True],
                          [row["native_order_compatible"] for row in packets])
+        self.assertEqual([True] * 7 + [False, False],
+                         [row["split_order_compatible"] for row in packets])
         self.assertEqual([2, 2, 2, 2, 2, 2, 2, 0, 0],
                          [len(row["interleaved_m29_m30"])
                           for row in packets])
@@ -108,7 +114,7 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             MODULE.validate_temporal_draw(
                 draw, 1977, draw_index, start, base_vertex)
 
-    def test_runtime_admits_only_native_compatible_temporal_packets(self) -> None:
+    def test_runtime_admits_only_split_compatible_temporal_packets(self) -> None:
         runtime = RUNTIME.read_text(encoding="utf-8")
         self.assertIn("ResolveNearestPacket", runtime)
         self.assertIn(
@@ -117,11 +123,70 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         self.assertIn(
             "EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount",
             runtime)
-        self.assertIn(".NativeOrderCompatible[selectedPacket]", runtime)
+        self.assertIn(".SplitOrderCompatible[selectedPacket]", runtime)
         self.assertIn("transport-order gate drifted", runtime)
         self.assertIn("M31/M29/M30 owner order drifted", runtime)
         self.assertIn("SetRendererSuppression(active)", runtime)
         self.assertIn("submittedDraws !=", runtime)
+
+    def test_pipeline_preserves_retail_split_owner_order(self) -> None:
+        pipeline = (HERE.parent / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+                    / "HGCompatRenderPipeline.cs").read_text(encoding="utf-8")
+        first = pipeline.index(
+            "EndfieldRecoveredEndminfM31PeakExactRuntime.RenderFirst(")
+        pre_m29 = pipeline.index(
+            "EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime\n"
+            "                        .RenderPreM29(")
+        m30 = pipeline.index("EndfieldRecoveredEndminfM30ExactRuntime.Render(")
+        queue3000 = pipeline.index(".CompositeMainTransparentQueue3000(")
+        m29 = pipeline.index("EndfieldRecoveredEndminfM29ExactRuntime.Render(")
+        second = pipeline.index(
+            "EndfieldRecoveredEndminfM31PeakExactRuntime.RenderSecond(")
+        post_m29 = pipeline.index(
+            "EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime\n"
+            "                        .RenderPostM29(")
+        self.assertLess(first, pre_m29)
+        self.assertLess(pre_m29, m30)
+        self.assertLess(m30, queue3000)
+        self.assertLess(queue3000, m29)
+        self.assertLess(m29, second)
+        self.assertLess(second, post_m29)
+
+    def test_native_callback_submits_one_payload_per_split_event(self) -> None:
+        plugin = (HERE / "original_dxbc_exact"
+                  / "OriginalDxbcSwapPlugin.cpp").read_text(encoding="utf-8")
+        self.assertIn(
+            "g_EndfieldM31PeakSplitEventCount ==\n"
+            "    g_EndfieldM31PeakPacketCount",
+            plugin)
+        callback_start = plugin.index(
+            "void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)")
+        callback_end = plugin.index(
+            "void UNITY_INTERFACE_API DrawVFXBaseV2PeakCohortRuntime",
+            callback_start)
+        callback = plugin[callback_start:callback_end]
+        self.assertIn(
+            "const std::uint32_t packetIndex = static_cast<std::uint32_t>(eventId);",
+            callback)
+        self.assertIn("g_EndfieldM31PeakPackets[packetIndex]", callback)
+        self.assertIn("g_m31PeakDrawCount.fetch_add(1u", callback)
+        self.assertNotIn(
+            "packetIndex < g_EndfieldM31PeakPacketCount", callback)
+
+    def test_runtime_submits_both_split_event_ids(self) -> None:
+        runtime = RUNTIME.read_text(encoding="utf-8")
+        first = runtime.index("internal static bool RenderFirst(")
+        second = runtime.index("internal static bool RenderSecond(")
+        split = runtime.index("private static bool RenderSplitEvent(")
+        self.assertLess(first, second)
+        self.assertLess(second, split)
+        self.assertIn(
+            "context, camera, sceneColor, sceneMV, sceneDepth, 0)",
+            runtime[first:second])
+        self.assertIn(
+            "context, camera, sceneColor, sceneMV, sceneDepth, 1)",
+            runtime[second:split])
+        self.assertIn("command.IssuePluginEvent(renderEvent, eventId)", runtime)
 
 
 if __name__ == "__main__":

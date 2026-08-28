@@ -64,6 +64,8 @@ M29_VS = 0xCE755059DEDDC2E0
 M29_PS = 0xF2AD2A14856044AC
 M30_C1 = (1.0, 0.0, 3.0, 0.5)
 EXPECTED_INTERLEAVED_M29_M30_COUNTS = (2, 2, 2, 2, 2, 2, 2, 0, 0)
+EXPECTED_SPLIT_ORDER_COMPATIBLE = (
+    True, True, True, True, True, True, True, False, False)
 
 
 def is_m31(draw: dict[str, Any]) -> bool:
@@ -250,6 +252,8 @@ def collect_temporal(capture: Path) -> list[dict[str, Any]]:
             "native_order_compatible": all(
                 right == left + 1 for left, right in zip(draws, draws[1:])),
             "interleaved_m29_m30": interleaved_m29_m30,
+            "split_order_compatible": (
+                len(draws) == 2 and len(interleaved_m29_m30) == 2),
             "metadata_sha256": EXPECTED_TEMPORAL_METADATA_SHA256[frame],
         })
     shared.require(abs(packets[TEMPORAL_FRAMES.index(ANCHOR_FRAME)]["phase"] -
@@ -259,6 +263,10 @@ def collect_temporal(capture: Path) -> list[dict[str, Any]]:
         tuple(len(row["interleaved_m29_m30"]) for row in packets) ==
         EXPECTED_INTERLEAVED_M29_M30_COUNTS,
         "M31/M29/M30 retained owner chronology drifted")
+    shared.require(
+        tuple(row["split_order_compatible"] for row in packets) ==
+        EXPECTED_SPLIT_ORDER_COMPATIBLE,
+        "M31 split owner chronology drifted")
     return packets
 
 
@@ -365,6 +373,7 @@ def render_cpp(packets: list[dict[str, Any]], texture: dict[str, Any],
         "inline constexpr std::uint32_t g_EndfieldM31PeakPacketCount = "
         "static_cast<std::uint32_t>(sizeof(g_EndfieldM31PeakPackets) / "
         "sizeof(g_EndfieldM31PeakPackets[0]));\n"
+        "inline constexpr std::uint32_t g_EndfieldM31PeakSplitEventCount = 2u;\n"
         f'inline constexpr char g_EndfieldM31PeakTextureT1Sha256[] = "{texture["sha256"]}";\n'
     )
 
@@ -380,6 +389,9 @@ def render_cs(temporal: list[dict[str, Any]], texture: dict[str, Any],
         str(row["draw_indices"][-1]) for row in temporal)
     native_order_compatible = ", ".join(
         "true" if row["native_order_compatible"] else "false"
+        for row in temporal)
+    split_order_compatible = ", ".join(
+        "true" if row["split_order_compatible"] else "false"
         for row in temporal)
     interleaved_m29_m30_counts = ", ".join(
         str(len(row["interleaved_m29_m30"])) for row in temporal)
@@ -407,6 +419,7 @@ namespace EndfieldGraphShaderLab
         internal static readonly int[] FirstDrawOrdinals = {{ {first_draw_ordinals} }};
         internal static readonly int[] LastDrawOrdinals = {{ {last_draw_ordinals} }};
         internal static readonly bool[] NativeOrderCompatible = {{ {native_order_compatible} }};
+        internal static readonly bool[] SplitOrderCompatible = {{ {split_order_compatible} }};
         internal static readonly int[] InterleavedM29M30Counts = {{ {interleaved_m29_m30_counts} }};
         internal static readonly string[] TemporalMetadataSha256 = {{ {hashes} }};
     }}

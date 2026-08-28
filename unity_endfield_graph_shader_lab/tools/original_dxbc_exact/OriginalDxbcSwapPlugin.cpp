@@ -315,6 +315,8 @@ static_assert(g_EndfieldM29TextureT1Size == 262144u);
 static_assert(g_EndfieldM31PeakPayloadPrepared);
 static_assert(g_EndfieldM31PeakDepthContractReady);
 static_assert(g_EndfieldM31PeakPacketCount == 2u);
+static_assert(g_EndfieldM31PeakSplitEventCount ==
+    g_EndfieldM31PeakPacketCount);
 static_assert(g_EndfieldM31PeakTextureT1Size == 65536u);
 static_assert(g_EndfieldVFXPeakPayloadPrepared);
 static_assert(g_EndfieldVFXPeakDrawCount == 15u);
@@ -3597,8 +3599,11 @@ void UNITY_INTERFACE_API DrawM21PeakExactRuntime(int eventId)
 
 void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
 {
-    if (eventId != 0)
+    if (eventId < 0 ||
+        static_cast<std::uint32_t>(eventId) >=
+            g_EndfieldM31PeakSplitEventCount)
         return;
+    const std::uint32_t packetIndex = static_cast<std::uint32_t>(eventId);
     IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
     ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
     if (device == nullptr)
@@ -3694,39 +3699,35 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     context->RSGetState(&oldRasterizerState);
 
     const FLOAT blendFactor[4] = {};
-    for (std::uint32_t packetIndex = 0;
-         packetIndex < g_EndfieldM31PeakPacketCount; ++packetIndex)
-    {
-        const EndfieldM31PeakPacketPayload& packet =
-            g_EndfieldM31PeakPackets[packetIndex];
-        ID3D11Buffer* vertexBuffers[2] = {
-            g_m31PeakVertexBuffers[packetIndex],
-            g_m31PeakSecondaryBuffers[packetIndex],
-        };
-        const UINT strides[2] = {g_EndfieldM31PeakVertexStride, 0u};
-        const UINT offsets[2] = {};
-        ID3D11ShaderResourceView* pixelViews[2] = {
-            depthView, g_m31PeakMainView,
-        };
-        context->IASetInputLayout(g_m14InputLayout);
-        context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
-        context->IASetIndexBuffer(
-            g_m31PeakIndexBuffers[packetIndex], DXGI_FORMAT_R16_UINT, 0);
-        context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        context->VSSetShader(g_m14RuntimeVertexShader, nullptr, 0);
-        context->PSSetShader(g_m14RuntimePixelShader, nullptr, 0);
-        context->VSSetConstantBuffers(
-            0, 5, g_m31PeakVertexConstantBuffers[packetIndex]);
-        context->PSSetConstantBuffers(
-            0, 4, g_m31PeakPixelConstantBuffers[packetIndex]);
-        context->VSSetShaderResources(0, 1, &g_m14SkinView);
-        context->PSSetShaderResources(0, 2, pixelViews);
-        context->PSSetSamplers(0, 2, g_m14Samplers);
-        context->OMSetBlendState(g_m14BlendState, blendFactor, 0xffffffffu);
-        context->OMSetDepthStencilState(g_m14DepthState, 0);
-        context->RSSetState(g_m14RasterizerState);
-        context->DrawIndexed(packet.indexCount, 0, 0);
-    }
+    const EndfieldM31PeakPacketPayload& packet =
+        g_EndfieldM31PeakPackets[packetIndex];
+    ID3D11Buffer* vertexBuffers[2] = {
+        g_m31PeakVertexBuffers[packetIndex],
+        g_m31PeakSecondaryBuffers[packetIndex],
+    };
+    const UINT strides[2] = {g_EndfieldM31PeakVertexStride, 0u};
+    const UINT offsets[2] = {};
+    ID3D11ShaderResourceView* pixelViews[2] = {
+        depthView, g_m31PeakMainView,
+    };
+    context->IASetInputLayout(g_m14InputLayout);
+    context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+    context->IASetIndexBuffer(
+        g_m31PeakIndexBuffers[packetIndex], DXGI_FORMAT_R16_UINT, 0);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(g_m14RuntimeVertexShader, nullptr, 0);
+    context->PSSetShader(g_m14RuntimePixelShader, nullptr, 0);
+    context->VSSetConstantBuffers(
+        0, 5, g_m31PeakVertexConstantBuffers[packetIndex]);
+    context->PSSetConstantBuffers(
+        0, 4, g_m31PeakPixelConstantBuffers[packetIndex]);
+    context->VSSetShaderResources(0, 1, &g_m14SkinView);
+    context->PSSetShaderResources(0, 2, pixelViews);
+    context->PSSetSamplers(0, 2, g_m14Samplers);
+    context->OMSetBlendState(g_m14BlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_m14DepthState, 0);
+    context->RSSetState(g_m14RasterizerState);
+    context->DrawIndexed(packet.indexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVertexView = nullptr;
     ID3D11ShaderResourceView* nullPixelViews[2] = {};
@@ -3772,8 +3773,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     ReleaseM14Object(depthView);
     context->Release();
 
-    g_m31PeakDrawCount.fetch_add(
-        g_EndfieldM31PeakPacketCount, std::memory_order_relaxed);
+    g_m31PeakDrawCount.fetch_add(1u, std::memory_order_relaxed);
     g_m31PeakLastResult.store(S_OK, std::memory_order_relaxed);
 }
 
