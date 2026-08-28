@@ -2533,8 +2533,16 @@ them as visual shape evidence only. They do not contain resolver-local
 before/after SceneColor snapshots, so they cannot identify which pre-Uber
 fullscreen ordinal generates the strips. The pruned build passes all 15 native
 tests and writes `automaticExactDrawResourcesOnly=true` into its summary so a
-new session proves the active policy directly. A new real-game run is still
-required; no M20/M21 evidence can be recovered from either failed session.
+new session proves the active policy directly. The bounded fullscreen resolver
+census now also records metadata-only PS SRV and RTV object/view identities for
+every retained `DrawInstanced(3,1)` pass and writes
+`fullscreenResourceChainMetadata=true` into the summary. This adds no texture
+payload staging, but lets one automatic run prove which pre-Uber resolver
+writes the SceneColor resource subsequently consumed by normal Uber. The
+current `build-local` proxy SHA-256 is
+`82D5714E1B9CF62A4680EC15BDCCC2CD600E1647F01C95B8944220DF19855397` and all
+15 native tests pass. A new real-game run is still required; no M20/M21
+evidence can be recovered from either failed session.
 
 The exact-owner policy deliberately retains one compute exception: the unique
 8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
