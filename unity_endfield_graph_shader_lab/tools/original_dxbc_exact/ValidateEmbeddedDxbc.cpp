@@ -8,6 +8,7 @@
 #include "M13CapturePayload.generated.h"
 #include "M18PeakCapturePayload.generated.h"
 #include "M21PeakCapturePayload.generated.h"
+#include "M28PeakCapturePayload.generated.h"
 
 int main()
 {
@@ -258,6 +259,41 @@ int main()
         g_EndfieldM21PeakVertexDxbc,
         g_EndfieldM21PeakVertexDxbcSize,
         &m21InputLayout);
+    ID3D11VertexShader* m28Vertex = nullptr;
+    HRESULT m28VertexResult = device->CreateVertexShader(
+        g_EndfieldM28PeakVertexDxbc,
+        g_EndfieldM28PeakVertexDxbcSize,
+        nullptr,
+        &m28Vertex);
+    ID3D11PixelShader* m28Pixel = nullptr;
+    HRESULT m28PixelResult = device->CreatePixelShader(
+        g_EndfieldM28PeakPixelDxbc,
+        g_EndfieldM28PeakPixelDxbcSize,
+        nullptr,
+        &m28Pixel);
+    const D3D11_INPUT_ELEMENT_DESC m28Elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 24,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    ID3D11InputLayout* m28InputLayout = nullptr;
+    HRESULT m28InputLayoutResult = device->CreateInputLayout(
+        m28Elements,
+        static_cast<UINT>(sizeof(m28Elements) / sizeof(m28Elements[0])),
+        g_EndfieldM28PeakVertexDxbc,
+        g_EndfieldM28PeakVertexDxbcSize,
+        &m28InputLayout);
     ID3D11Texture2D* m13Texture = nullptr;
     const auto& texturePayload = g_EndfieldM13Textures[0];
     D3D11_TEXTURE2D_DESC textureDescription = {};
@@ -296,7 +332,8 @@ int main()
         "m13_vertex=0x%08lx m13_pixel=0x%08lx m13_layout=0x%08lx "
         "m13_bc7=0x%08lx m18_vertex=0x%08lx m18_pixel=0x%08lx "
         "m18_layout=0x%08lx m21_vertex=0x%08lx m21_pixel=0x%08lx "
-        "m21_layout=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
+        "m21_layout=0x%08lx m28_vertex=0x%08lx m28_pixel=0x%08lx "
+        "m28_layout=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult),
@@ -317,6 +354,9 @@ int main()
         static_cast<unsigned long>(m21VertexResult),
         static_cast<unsigned long>(m21PixelResult),
         static_cast<unsigned long>(m21InputLayoutResult),
+        static_cast<unsigned long>(m28VertexResult),
+        static_cast<unsigned long>(m28PixelResult),
+        static_cast<unsigned long>(m28InputLayoutResult),
         static_cast<unsigned long>(uberVertexResult),
         static_cast<unsigned long>(uberPixelResult));
 
@@ -356,6 +396,12 @@ int main()
         m21Pixel->Release();
     if (m21Vertex != nullptr)
         m21Vertex->Release();
+    if (m28InputLayout != nullptr)
+        m28InputLayout->Release();
+    if (m28Pixel != nullptr)
+        m28Pixel->Release();
+    if (m28Vertex != nullptr)
+        m28Vertex->Release();
     if (uberPixel != nullptr)
         uberPixel->Release();
     if (uberVertex != nullptr)
@@ -375,6 +421,8 @@ int main()
             && SUCCEEDED(m18PixelResult) && SUCCEEDED(m18InputLayoutResult)
             && SUCCEEDED(m21VertexResult)
             && SUCCEEDED(m21PixelResult) && SUCCEEDED(m21InputLayoutResult)
+            && SUCCEEDED(m28VertexResult) && SUCCEEDED(m28PixelResult)
+            && SUCCEEDED(m28InputLayoutResult)
             && SUCCEEDED(uberVertexResult)
             && SUCCEEDED(uberPixelResult)
         ? 0
