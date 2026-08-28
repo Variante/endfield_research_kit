@@ -2230,6 +2230,18 @@ temporal-delta MAE changes 11.889 to 12.053, so the track closes the coordinated
 late composition drift but does not replace the remaining particle/Uber
 temporal work.
 
+The clean recording's initial pointer endpoint is also the best bounded
+source-native settled state; the near-zero endpoint from a different runtime
+session and an extreme `(-1,1)` input are both rejected. At requested times
+6.75/6.7833/6.8167 seconds and the established -1-frame alignment, moving from
+the clean pointer `(-0.4604167,0.9305556)` to the extreme endpoint worsens
+actor/effect ROI MAE from 15.0059/13.4783 to 16.5791/15.8456 and portrait-left
+ROI MAE from 13.8433 to 15.0397. The recovered curves are already saturated
+near the pointer state, so the residual portrait/grid mismatch is not evidence
+for another gyroscope, RectTransform, or screenshot-fit offset. Keep the clean
+pointer default and require new same-session camera evidence before changing
+composition again.
+
 The CharInfo portrait's remaining inversion was a tight-sprite UV error, not
 another RectTransform or camera offset. Generated portrait quads now swap
 `vMin`/`vMax` inside the sprite's asymmetric `textureRect`; a full-texture
