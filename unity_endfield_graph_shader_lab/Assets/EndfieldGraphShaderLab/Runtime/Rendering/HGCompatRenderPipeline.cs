@@ -1002,6 +1002,9 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM21PeakPrepared =
                 EndfieldRecoveredEndminfM21PeakExactRuntime
                     .PrepareBeforeCulling(camera);
+            bool exactEndminfM18PeakPrepared =
+                EndfieldRecoveredEndminfM18PeakExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM13Prepared =
                 EndfieldRecoveredEndminfM13ExactRuntime
                     .PrepareBeforeCulling(camera);
@@ -2240,6 +2243,23 @@ namespace EndfieldGraphShaderLab
                         compositorFailure =
                             "exact Endminf M13 transport failed closed: " +
                             EndfieldRecoveredEndminfM13ExactRuntime.Failure;
+                    }
+                }
+                // Full frame 2775 records the broad M18 diffusion shell at
+                // ordinal 82, after the M21/M13 peak owners and intervening
+                // live queue-3000 draws.
+                if (mainReady && exactEndminfM18PeakPrepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM18PeakExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M18 peak transport failed closed: " +
+                            EndfieldRecoveredEndminfM18PeakExactRuntime.Failure;
                     }
                 }
                 if (mainReady && recoveredSceneMVRequest.hasGlow902Queue3005)

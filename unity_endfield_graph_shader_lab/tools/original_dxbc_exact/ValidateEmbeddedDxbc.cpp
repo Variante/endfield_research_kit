@@ -6,6 +6,7 @@
 
 #include "EmbeddedDxbc.generated.h"
 #include "M13CapturePayload.generated.h"
+#include "M18PeakCapturePayload.generated.h"
 #include "M21PeakCapturePayload.generated.h"
 
 int main()
@@ -179,6 +180,45 @@ int main()
         g_EndfieldM13VertexDxbc,
         g_EndfieldM13VertexDxbcSize,
         &m13InputLayout);
+    ID3D11VertexShader* m18Vertex = nullptr;
+    HRESULT m18VertexResult = device->CreateVertexShader(
+        g_EndfieldM18PeakVertexDxbc,
+        g_EndfieldM18PeakVertexDxbcSize,
+        nullptr,
+        &m18Vertex);
+    ID3D11PixelShader* m18Pixel = nullptr;
+    HRESULT m18PixelResult = device->CreatePixelShader(
+        g_EndfieldM18PeakPixelDxbc,
+        g_EndfieldM18PeakPixelDxbcSize,
+        nullptr,
+        &m18Pixel);
+    const D3D11_INPUT_ELEMENT_DESC m18Elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 40,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 60,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 60,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    ID3D11InputLayout* m18InputLayout = nullptr;
+    HRESULT m18InputLayoutResult = device->CreateInputLayout(
+        m18Elements,
+        static_cast<UINT>(sizeof(m18Elements) / sizeof(m18Elements[0])),
+        g_EndfieldM18PeakVertexDxbc,
+        g_EndfieldM18PeakVertexDxbcSize,
+        &m18InputLayout);
     ID3D11VertexShader* m21Vertex = nullptr;
     HRESULT m21VertexResult = device->CreateVertexShader(
         g_EndfieldM21PeakVertexDxbc,
@@ -254,7 +294,8 @@ int main()
         "m27_layout68=0x%08lx "
         "m14_vertex=0x%08lx m14_pixel=0x%08lx m14_layout=0x%08lx "
         "m13_vertex=0x%08lx m13_pixel=0x%08lx m13_layout=0x%08lx "
-        "m13_bc7=0x%08lx m21_vertex=0x%08lx m21_pixel=0x%08lx "
+        "m13_bc7=0x%08lx m18_vertex=0x%08lx m18_pixel=0x%08lx "
+        "m18_layout=0x%08lx m21_vertex=0x%08lx m21_pixel=0x%08lx "
         "m21_layout=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
@@ -270,6 +311,9 @@ int main()
         static_cast<unsigned long>(m13PixelResult),
         static_cast<unsigned long>(m13InputLayoutResult),
         static_cast<unsigned long>(m13TextureResult),
+        static_cast<unsigned long>(m18VertexResult),
+        static_cast<unsigned long>(m18PixelResult),
+        static_cast<unsigned long>(m18InputLayoutResult),
         static_cast<unsigned long>(m21VertexResult),
         static_cast<unsigned long>(m21PixelResult),
         static_cast<unsigned long>(m21InputLayoutResult),
@@ -300,6 +344,12 @@ int main()
         m13Pixel->Release();
     if (m13Vertex != nullptr)
         m13Vertex->Release();
+    if (m18InputLayout != nullptr)
+        m18InputLayout->Release();
+    if (m18Pixel != nullptr)
+        m18Pixel->Release();
+    if (m18Vertex != nullptr)
+        m18Vertex->Release();
     if (m21InputLayout != nullptr)
         m21InputLayout->Release();
     if (m21Pixel != nullptr)
@@ -321,7 +371,9 @@ int main()
             SUCCEEDED(m14VertexResult) && SUCCEEDED(m14PixelResult)
             && SUCCEEDED(m14InputLayoutResult) && SUCCEEDED(m13VertexResult)
             && SUCCEEDED(m13PixelResult) && SUCCEEDED(m13InputLayoutResult)
-            && SUCCEEDED(m13TextureResult) && SUCCEEDED(m21VertexResult)
+            && SUCCEEDED(m13TextureResult) && SUCCEEDED(m18VertexResult)
+            && SUCCEEDED(m18PixelResult) && SUCCEEDED(m18InputLayoutResult)
+            && SUCCEEDED(m21VertexResult)
             && SUCCEEDED(m21PixelResult) && SUCCEEDED(m21InputLayoutResult)
             && SUCCEEDED(uberVertexResult)
             && SUCCEEDED(uberPixelResult)

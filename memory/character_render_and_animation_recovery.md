@@ -2015,8 +2015,17 @@ inspection closes its input layout as full-float position/normal/tangent,
 RGBA8 color at byte 40, and float2 UV at byte 44. WARP validates its two shader
 stages and layout, and the focused Viewer callback completes `S_OK`; the stones
 are restored. Their final-frame enlargement is downstream Uber/temporal trail,
-not a reason to resize the exact geometry. M18 and M28 remain the next ordered
-native packets.
+not a reason to resize the exact geometry. M18 now has the corresponding
+hash-pinned ordinal-82 packet: 204 draw-local 76-byte vertices, 900 R16
+indices, exact DXBC/constants, and the five source material texture slots from
+`M_fx_endminm_gfx_18`. Direct byte inspection closes its layout as full-float
+position/normal/tangent, RGBA8 color at byte 40, and two float4 UV lanes at
+bytes 44 and 60. WARP validates both shaders and the input layout, the focused
+Viewer callback completes `S_OK`, and an M18-on/off diagnostic changes every
+stage from the pre-temporal source through final Uber. The source texture
+closure is logical rather than capture-byte-identical because the Full frame
+did not retain this draw's SRV payloads; do not claim exact texture bytes.
+M28 remains the next ordered native packet.
 
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
@@ -2074,8 +2083,8 @@ or shaders rather than hand-editing generated prefabs.
    M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
    and validated two-draw M31 checkpoint. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
-   Full frames 2262 and 2775 to replay the classified M18 diffusion shell and
-   M28 refractive sphere in their captured ordinal positions and resolve the
+   Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
+   replay the M28 refractive sphere in their captured ordinal positions and resolve the
    equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
    stone packet are now exact. After those are integrated, obtain one focused
    M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.

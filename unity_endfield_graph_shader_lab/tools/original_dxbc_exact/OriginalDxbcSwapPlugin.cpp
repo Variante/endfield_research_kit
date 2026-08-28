@@ -19,6 +19,7 @@
 #include "EmbeddedDxbc.generated.h"
 #include "M13CapturePayload.generated.h"
 #include "M14CapturePayload.generated.h"
+#include "M18PeakCapturePayload.generated.h"
 #include "M21PeakCapturePayload.generated.h"
 #include "M27CapturePayload.generated.h"
 #include "M27TemporalCapturePayload.generated.h"
@@ -137,6 +138,23 @@ ID3D11RasterizerState* g_m21PeakRasterizerState = nullptr;
 std::atomic<std::uint32_t> g_m21PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m21PeakFailureCount{0};
 std::atomic<HRESULT> g_m21PeakLastResult{S_OK};
+
+ID3D11VertexShader* g_m18PeakVertexShader = nullptr;
+ID3D11PixelShader* g_m18PeakPixelShader = nullptr;
+ID3D11InputLayout* g_m18PeakInputLayout = nullptr;
+ID3D11Buffer* g_m18PeakVertexBuffer = nullptr;
+ID3D11Buffer* g_m18PeakSecondaryBuffer = nullptr;
+ID3D11Buffer* g_m18PeakIndexBuffer = nullptr;
+ID3D11Buffer* g_m18PeakVertexConstantBuffers[5] = {};
+ID3D11Buffer* g_m18PeakPixelConstantBuffers[4] = {};
+ID3D11SamplerState* g_m18PeakSamplers[5] = {};
+ID3D11BlendState* g_m18PeakBlendState = nullptr;
+ID3D11DepthStencilState* g_m18PeakDepthState = nullptr;
+ID3D11RasterizerState* g_m18PeakRasterizerState = nullptr;
+std::atomic<std::uintptr_t> g_m18PeakTextures[5] = {};
+std::atomic<std::uint32_t> g_m18PeakDrawCount{0};
+std::atomic<std::uint32_t> g_m18PeakFailureCount{0};
+std::atomic<HRESULT> g_m18PeakLastResult{S_OK};
 
 ID3D11Buffer* g_vfxPeakVertexBuffers[g_EndfieldVFXPeakDrawCount] = {};
 ID3D11Buffer* g_vfxPeakSecondaryBuffer = nullptr;
@@ -258,6 +276,9 @@ static_assert(g_EndfieldM30PayloadPrepared);
 static_assert(g_EndfieldM21PeakPayloadPrepared);
 static_assert(g_EndfieldM21PeakVertexStride == 52u);
 static_assert(g_EndfieldM21PeakIndexCount == 1110u);
+static_assert(g_EndfieldM18PeakPayloadPrepared);
+static_assert(g_EndfieldM18PeakVertexStride == 76u);
+static_assert(g_EndfieldM18PeakIndexCount == 900u);
 static_assert(g_EndfieldM30DepthContractReady);
 static_assert(g_EndfieldM30PacketCount == 6u);
 static_assert(g_EndfieldM30TextureT1Size == 65536u);
@@ -670,6 +691,21 @@ void ReleaseM14Object(T*& value)
 
 void ReleaseM14RuntimeResources()
 {
+    ReleaseM14Object(g_m18PeakRasterizerState);
+    ReleaseM14Object(g_m18PeakDepthState);
+    ReleaseM14Object(g_m18PeakBlendState);
+    for (ID3D11SamplerState*& sampler : g_m18PeakSamplers)
+        ReleaseM14Object(sampler);
+    for (ID3D11Buffer*& buffer : g_m18PeakPixelConstantBuffers)
+        ReleaseM14Object(buffer);
+    for (ID3D11Buffer*& buffer : g_m18PeakVertexConstantBuffers)
+        ReleaseM14Object(buffer);
+    ReleaseM14Object(g_m18PeakIndexBuffer);
+    ReleaseM14Object(g_m18PeakSecondaryBuffer);
+    ReleaseM14Object(g_m18PeakVertexBuffer);
+    ReleaseM14Object(g_m18PeakInputLayout);
+    ReleaseM14Object(g_m18PeakPixelShader);
+    ReleaseM14Object(g_m18PeakVertexShader);
     ReleaseM14Object(g_m21PeakRasterizerState);
     ReleaseM14Object(g_m21PeakDepthState);
     ReleaseM14Object(g_m21PeakBlendState);
@@ -963,6 +999,136 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
     if (FAILED(result)) return result;
     result = device->CreateShaderResourceView(
         g_m31PeakMainTexture, nullptr, &g_m31PeakMainView);
+    if (FAILED(result)) return result;
+
+    result = device->CreateVertexShader(
+        g_EndfieldM18PeakVertexDxbc, g_EndfieldM18PeakVertexDxbcSize,
+        nullptr, &g_m18PeakVertexShader);
+    if (FAILED(result)) return result;
+    result = device->CreatePixelShader(
+        g_EndfieldM18PeakPixelDxbc, g_EndfieldM18PeakPixelDxbcSize,
+        nullptr, &g_m18PeakPixelShader);
+    if (FAILED(result)) return result;
+    const D3D11_INPUT_ELEMENT_DESC m18Elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 40,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 60,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 60,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    result = device->CreateInputLayout(
+        m18Elements,
+        static_cast<UINT>(sizeof(m18Elements) / sizeof(m18Elements[0])),
+        g_EndfieldM18PeakVertexDxbc, g_EndfieldM18PeakVertexDxbcSize,
+        &g_m18PeakInputLayout);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_VERTEX_BUFFER, g_EndfieldM18PeakVertices,
+        static_cast<UINT>(g_EndfieldM18PeakVerticesSize),
+        &g_m18PeakVertexBuffer);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_VERTEX_BUFFER, g_EndfieldM18PeakSecondary,
+        static_cast<UINT>(g_EndfieldM18PeakSecondarySize),
+        &g_m18PeakSecondaryBuffer);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_INDEX_BUFFER, g_EndfieldM18PeakIndices,
+        static_cast<UINT>(g_EndfieldM18PeakIndicesSize),
+        &g_m18PeakIndexBuffer);
+    if (FAILED(result)) return result;
+    const std::uint8_t* m18VS[] = {
+        g_EndfieldM18PeakVSCB0, g_EndfieldM18PeakVSCB1,
+        g_EndfieldM18PeakVSCB2, g_EndfieldM18PeakVSCB3,
+        g_EndfieldM18PeakVSCB4,
+    };
+    const std::size_t m18VSBytes[] = {
+        g_EndfieldM18PeakVSCB0Size, g_EndfieldM18PeakVSCB1Size,
+        g_EndfieldM18PeakVSCB2Size, g_EndfieldM18PeakVSCB3Size,
+        g_EndfieldM18PeakVSCB4Size,
+    };
+    const std::uint8_t* m18PS[] = {
+        g_EndfieldM18PeakPSCB0, g_EndfieldM18PeakPSCB1,
+        g_EndfieldM18PeakPSCB2, g_EndfieldM18PeakPSCB3,
+    };
+    const std::size_t m18PSBytes[] = {
+        g_EndfieldM18PeakPSCB0Size, g_EndfieldM18PeakPSCB1Size,
+        g_EndfieldM18PeakPSCB2Size, g_EndfieldM18PeakPSCB3Size,
+    };
+    for (std::size_t slot = 0; slot < 5; ++slot)
+    {
+        result = CreateM14ConstantBuffer(
+            device, g_EndfieldM18PeakVSDeclaredFloat4Counts[slot],
+            m18VS[slot], m18VSBytes[slot],
+            &g_m18PeakVertexConstantBuffers[slot]);
+        if (FAILED(result)) return result;
+    }
+    for (std::size_t slot = 0; slot < 4; ++slot)
+    {
+        result = CreateM14ConstantBuffer(
+            device, g_EndfieldM18PeakPSDeclaredFloat4Counts[slot],
+            m18PS[slot], m18PSBytes[slot],
+            &g_m18PeakPixelConstantBuffers[slot]);
+        if (FAILED(result)) return result;
+    }
+    D3D11_SAMPLER_DESC m18Sampler = {};
+    m18Sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    m18Sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    m18Sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    m18Sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    m18Sampler.MaxLOD = 1000.0f;
+    for (ID3D11SamplerState*& sampler : g_m18PeakSamplers)
+    {
+        result = device->CreateSamplerState(&m18Sampler, &sampler);
+        if (FAILED(result)) return result;
+    }
+    D3D11_BLEND_DESC m18Blend = {};
+    m18Blend.RenderTarget[0].BlendEnable = TRUE;
+    m18Blend.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+    m18Blend.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    m18Blend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    m18Blend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    m18Blend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+    m18Blend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    m18Blend.RenderTarget[0].RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+    result = device->CreateBlendState(&m18Blend, &g_m18PeakBlendState);
+    if (FAILED(result)) return result;
+    D3D11_DEPTH_STENCIL_DESC m18Depth = {};
+    m18Depth.DepthEnable = TRUE;
+    m18Depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    m18Depth.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+    m18Depth.StencilEnable = TRUE;
+    m18Depth.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+    m18Depth.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+    m18Depth.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    m18Depth.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+    m18Depth.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    m18Depth.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    m18Depth.BackFace = m18Depth.FrontFace;
+    result = device->CreateDepthStencilState(&m18Depth, &g_m18PeakDepthState);
+    if (FAILED(result)) return result;
+    D3D11_RASTERIZER_DESC m18Rasterizer = {};
+    m18Rasterizer.FillMode = D3D11_FILL_SOLID;
+    m18Rasterizer.CullMode = D3D11_CULL_NONE;
+    m18Rasterizer.FrontCounterClockwise = TRUE;
+    m18Rasterizer.DepthClipEnable = TRUE;
+    m18Rasterizer.ScissorEnable = TRUE;
+    result = device->CreateRasterizerState(
+        &m18Rasterizer, &g_m18PeakRasterizerState);
     if (FAILED(result)) return result;
 
     result = device->CreateVertexShader(
@@ -2769,6 +2935,168 @@ void UNITY_INTERFACE_API DrawM14ExactRuntime(int eventId)
 
     g_m14DrawCount.fetch_add(1, std::memory_order_relaxed);
     g_m14LastResult.store(S_OK, std::memory_order_relaxed);
+}
+
+void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
+{
+    if (eventId != 0)
+        return;
+    IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
+    ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
+    if (device == nullptr)
+    {
+        g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m18PeakLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    HRESULT result = CreateM14RuntimeResources(device);
+    if (FAILED(result))
+    {
+        ReleaseM14RuntimeResources();
+        g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m18PeakLastResult.store(result, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11ShaderResourceView* textureViews[5] = {};
+    for (std::size_t slot = 0; slot < 5; ++slot)
+    {
+        ID3D11Resource* resource = reinterpret_cast<ID3D11Resource*>(
+            g_m18PeakTextures[slot].load(std::memory_order_acquire));
+        result = CreateDiagnosticShaderResourceView(
+            device, resource, &textureViews[slot]);
+        if (FAILED(result) || textureViews[slot] == nullptr)
+        {
+            for (ID3D11ShaderResourceView*& view : textureViews)
+                ReleaseM14Object(view);
+            g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+            g_m18PeakLastResult.store(
+                FAILED(result) ? result : E_POINTER, std::memory_order_relaxed);
+            return;
+        }
+    }
+    ID3D11DeviceContext* context = nullptr;
+    device->GetImmediateContext(&context);
+    if (context == nullptr)
+    {
+        for (ID3D11ShaderResourceView*& view : textureViews)
+            ReleaseM14Object(view);
+        g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m18PeakLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11RenderTargetView* renderTarget = nullptr;
+    ID3D11DepthStencilView* renderDepth = nullptr;
+    context->OMGetRenderTargets(1, &renderTarget, &renderDepth);
+    if (renderTarget == nullptr || renderDepth == nullptr ||
+        g_m14SkinView == nullptr)
+    {
+        ReleaseM14Object(renderDepth);
+        ReleaseM14Object(renderTarget);
+        context->Release();
+        for (ID3D11ShaderResourceView*& view : textureViews)
+            ReleaseM14Object(view);
+        g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m18PeakLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+
+    ID3D11VertexShader* oldVS = nullptr;
+    ID3D11PixelShader* oldPS = nullptr;
+    ID3D11InputLayout* oldLayout = nullptr;
+    ID3D11Buffer* oldVBs[2] = {};
+    ID3D11Buffer* oldIB = nullptr;
+    ID3D11Buffer* oldVSCBs[5] = {};
+    ID3D11Buffer* oldPSCBs[4] = {};
+    ID3D11ShaderResourceView* oldVSView = nullptr;
+    ID3D11ShaderResourceView* oldPSViews[5] = {};
+    ID3D11SamplerState* oldSamplers[5] = {};
+    ID3D11BlendState* oldBlend = nullptr;
+    ID3D11DepthStencilState* oldDepth = nullptr;
+    ID3D11RasterizerState* oldRasterizer = nullptr;
+    D3D11_PRIMITIVE_TOPOLOGY oldTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    DXGI_FORMAT oldIndexFormat = DXGI_FORMAT_UNKNOWN;
+    UINT oldStrides[2] = {};
+    UINT oldOffsets[2] = {};
+    UINT oldIndexOffset = 0;
+    FLOAT oldBlendFactor[4] = {};
+    UINT oldSampleMask = 0;
+    UINT oldStencilReference = 0;
+    context->VSGetShader(&oldVS, nullptr, nullptr);
+    context->PSGetShader(&oldPS, nullptr, nullptr);
+    context->IAGetInputLayout(&oldLayout);
+    context->IAGetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IAGetIndexBuffer(&oldIB, &oldIndexFormat, &oldIndexOffset);
+    context->IAGetPrimitiveTopology(&oldTopology);
+    context->VSGetConstantBuffers(0, 5, oldVSCBs);
+    context->PSGetConstantBuffers(0, 4, oldPSCBs);
+    context->VSGetShaderResources(0, 1, &oldVSView);
+    context->PSGetShaderResources(0, 5, oldPSViews);
+    context->PSGetSamplers(0, 5, oldSamplers);
+    context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
+    context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
+    context->RSGetState(&oldRasterizer);
+
+    ID3D11Buffer* vertexBuffers[2] = {
+        g_m18PeakVertexBuffer, g_m18PeakSecondaryBuffer,
+    };
+    const UINT strides[2] = {g_EndfieldM18PeakVertexStride, 0u};
+    const UINT offsets[2] = {};
+    const FLOAT blendFactor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    context->IASetInputLayout(g_m18PeakInputLayout);
+    context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+    context->IASetIndexBuffer(g_m18PeakIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(g_m18PeakVertexShader, nullptr, 0);
+    context->PSSetShader(g_m18PeakPixelShader, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, g_m18PeakVertexConstantBuffers);
+    context->PSSetConstantBuffers(0, 4, g_m18PeakPixelConstantBuffers);
+    context->VSSetShaderResources(0, 1, &g_m14SkinView);
+    context->PSSetShaderResources(0, 5, textureViews);
+    context->PSSetSamplers(0, 5, g_m18PeakSamplers);
+    context->OMSetBlendState(g_m18PeakBlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_m18PeakDepthState, 0);
+    context->RSSetState(g_m18PeakRasterizerState);
+    context->DrawIndexed(g_EndfieldM18PeakIndexCount, 0, 0);
+
+    ID3D11ShaderResourceView* nullVSView = nullptr;
+    ID3D11ShaderResourceView* nullPSViews[5] = {};
+    context->VSSetShaderResources(0, 1, &nullVSView);
+    context->PSSetShaderResources(0, 5, nullPSViews);
+    context->IASetInputLayout(oldLayout);
+    context->IASetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IASetIndexBuffer(oldIB, oldIndexFormat, oldIndexOffset);
+    context->IASetPrimitiveTopology(oldTopology);
+    context->VSSetShader(oldVS, nullptr, 0);
+    context->PSSetShader(oldPS, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, oldVSCBs);
+    context->PSSetConstantBuffers(0, 4, oldPSCBs);
+    context->VSSetShaderResources(0, 1, &oldVSView);
+    context->PSSetShaderResources(0, 5, oldPSViews);
+    context->PSSetSamplers(0, 5, oldSamplers);
+    context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
+    context->OMSetDepthStencilState(oldDepth, oldStencilReference);
+    context->RSSetState(oldRasterizer);
+
+    for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
+    for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
+    ReleaseM14Object(oldVSView);
+    for (ID3D11Buffer*& value : oldPSCBs) ReleaseM14Object(value);
+    for (ID3D11Buffer*& value : oldVSCBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldRasterizer);
+    ReleaseM14Object(oldDepth);
+    ReleaseM14Object(oldBlend);
+    ReleaseM14Object(oldIB);
+    for (ID3D11Buffer*& value : oldVBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldLayout);
+    ReleaseM14Object(oldPS);
+    ReleaseM14Object(oldVS);
+    ReleaseM14Object(renderDepth);
+    ReleaseM14Object(renderTarget);
+    context->Release();
+    for (ID3D11ShaderResourceView*& view : textureViews)
+        ReleaseM14Object(view);
+    g_m18PeakDrawCount.fetch_add(1, std::memory_order_relaxed);
+    g_m18PeakLastResult.store(S_OK, std::memory_order_relaxed);
 }
 
 void UNITY_INTERFACE_API DrawM21PeakExactRuntime(int eventId)
@@ -4721,6 +5049,12 @@ EndfieldOriginalDxbcGetM14RenderEventFunc()
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM18PeakRenderEventFunc()
+{
+    return DrawM18PeakExactRuntime;
+}
+
+extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetM21PeakRenderEventFunc()
 {
     return DrawM21PeakExactRuntime;
@@ -5200,6 +5534,55 @@ EndfieldOriginalDxbcGetVFXBaseV2PeakCohortLastResult()
 {
     return static_cast<std::int32_t>(
         g_vfxPeakLastResult.load(std::memory_order_relaxed));
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM18PeakTextureResources(
+    void* t0, void* t1, void* t2, void* t3, void* t4)
+{
+    void* values[5] = {t0, t1, t2, t3, t4};
+    for (std::size_t slot = 0; slot < 5; ++slot)
+    {
+        if (values[slot] == nullptr)
+            return 0u;
+    }
+    for (std::size_t slot = 0; slot < 5; ++slot)
+    {
+        g_m18PeakTextures[slot].store(
+            reinterpret_cast<std::uintptr_t>(values[slot]),
+            std::memory_order_release);
+    }
+    return 1u;
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcResetM18PeakRuntimeState()
+{
+    for (std::atomic<std::uintptr_t>& texture : g_m18PeakTextures)
+        texture.store(0, std::memory_order_release);
+    g_m18PeakDrawCount.store(0, std::memory_order_relaxed);
+    g_m18PeakFailureCount.store(0, std::memory_order_relaxed);
+    g_m18PeakLastResult.store(S_OK, std::memory_order_relaxed);
+    ReleaseM14RuntimeResources();
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM18PeakDrawCount()
+{
+    return g_m18PeakDrawCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM18PeakFailureCount()
+{
+    return g_m18PeakFailureCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM18PeakLastResult()
+{
+    return static_cast<std::int32_t>(
+        g_m18PeakLastResult.load(std::memory_order_relaxed));
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
