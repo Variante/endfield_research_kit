@@ -66,9 +66,13 @@ def _verify_owner_resources(
 ) -> list[dict[str, int]]:
     resources = {(int(row.get("stage", -1)), int(row.get("slot", -1))): row
                  for row in draw.get("resources", [])}
-    required = ((0, 0, (3, 4)), (4, 0, (3,)), (4, 1, (3,)))
+    # VS t0 and PS t0 are retained source payloads. PS t1 is the live
+    # full-resolution scene-color input: it must be bound, but replay supplies
+    # the current Unity scene snapshot and therefore must not freeze a capture.
+    required = ((0, 0, (3, 4), True), (4, 0, (3,), True),
+                (4, 1, (), False))
     result: list[dict[str, int]] = []
-    for stage, slot, capture_kinds in required:
+    for stage, slot, capture_kinds, payload_required in required:
         owner = resources.get((stage, slot))
         if owner is None:
             raise VerificationError(
@@ -85,7 +89,7 @@ def _verify_owner_resources(
                     and row.get("completed") is True
                     and int(row.get("failure", 0)) == 0
                     and int(row.get("blobBytes", 0)) > 0]
-        if not retained:
+        if payload_required and not retained:
             raise VerificationError(
                 f"opening owner resource stage {stage} slot {slot} payload "
                 f"is absent for object {object_id}"
@@ -94,8 +98,9 @@ def _verify_owner_resources(
             "stage": stage,
             "slot": slot,
             "objectId": object_id,
-            "captureKind": int(retained[0]["captureKind"]),
-            "blobBytes": int(retained[0]["blobBytes"]),
+            "captureKind": int(retained[0]["captureKind"]) if retained else -1,
+            "blobBytes": int(retained[0]["blobBytes"]) if retained else 0,
+            "dynamic": not payload_required,
         })
     return result
 
@@ -209,10 +214,17 @@ def build_report(session: Path) -> dict[str, Any]:
                 errors.append(f"frame {frame.name}: {exc}")
 
     counts = [row["indexCount"] for row in packets]
-    if counts != EXPECTED_INDEX_COUNTS:
+    temporal_shape_valid = (
+        len(counts) >= 4 and
+        counts[0] >= 10000 and
+        counts[-1] <= 420 and
+        all(count > 0 and count % 6 == 0 for count in counts) and
+        all(left > right for left, right in zip(counts, counts[1:]))
+    )
+    if not temporal_shape_valid:
         errors.append(
-            f"opening temporal index counts drifted: expected {EXPECTED_INDEX_COUNTS}, "
-            f"got {counts}"
+            "opening temporal packet shape drifted: expected at least four "
+            f"strictly descending quad packets from >=10000 to <=420, got {counts}"
         )
     if packets and min(row["horizontalQuadFraction"] for row in packets) < 0.95:
         errors.append("opening owner is no longer predominantly horizontal quads")

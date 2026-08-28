@@ -265,6 +265,8 @@ ID3D11Buffer* g_openingStripVertexConstantBuffers[g_EndfieldOpeningStripPacketCo
 ID3D11Buffer* g_openingStripPixelConstantBuffers[g_EndfieldOpeningStripPacketCount][4] = {};
 ID3D11Buffer* g_openingStripSkinBuffer = nullptr;
 ID3D11ShaderResourceView* g_openingStripSkinView = nullptr;
+ID3D11Texture2D* g_openingStripMaskTexture = nullptr;
+ID3D11ShaderResourceView* g_openingStripMaskView = nullptr;
 ID3D11SamplerState* g_openingStripSamplers[2] = {};
 ID3D11BlendState* g_openingStripBlendState = nullptr;
 ID3D11DepthStencilState* g_openingStripDepthState = nullptr;
@@ -1951,6 +1953,8 @@ void ReleaseOpeningStripResources()
     ReleaseM14Object(g_openingStripBlendState);
     for (ID3D11SamplerState*& value : g_openingStripSamplers)
         ReleaseM14Object(value);
+    ReleaseM14Object(g_openingStripMaskView);
+    ReleaseM14Object(g_openingStripMaskTexture);
     ReleaseM14Object(g_openingStripSkinView);
     ReleaseM14Object(g_openingStripSkinBuffer);
     for (auto& packet : g_openingStripPixelConstantBuffers)
@@ -2054,6 +2058,27 @@ HRESULT CreateOpeningStripResources(ID3D11Device* device)
     if (FAILED(result)) return result;
     result = device->CreateShaderResourceView(
         g_openingStripSkinBuffer, nullptr, &g_openingStripSkinView);
+    if (FAILED(result)) return result;
+    D3D11_TEXTURE2D_DESC maskDescription = {};
+    maskDescription.Width = g_EndfieldOpeningStripMaskWidth;
+    maskDescription.Height = g_EndfieldOpeningStripMaskHeight;
+    maskDescription.MipLevels = 1;
+    maskDescription.ArraySize = 1;
+    maskDescription.Format = DXGI_FORMAT_BC7_UNORM_SRGB;
+    maskDescription.SampleDesc.Count = 1;
+    maskDescription.Usage = D3D11_USAGE_IMMUTABLE;
+    maskDescription.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    D3D11_SUBRESOURCE_DATA maskInitial = {};
+    maskInitial.pSysMem = g_EndfieldOpeningStripMaskBc7;
+    maskInitial.SysMemPitch =
+        ((g_EndfieldOpeningStripMaskWidth + 3u) / 4u) * 16u;
+    maskInitial.SysMemSlicePitch =
+        static_cast<UINT>(g_EndfieldOpeningStripMaskBc7Size);
+    result = device->CreateTexture2D(
+        &maskDescription, &maskInitial, &g_openingStripMaskTexture);
+    if (FAILED(result)) return result;
+    result = device->CreateShaderResourceView(
+        g_openingStripMaskTexture, nullptr, &g_openingStripMaskView);
     if (FAILED(result)) return result;
     D3D11_SAMPLER_DESC sampler = {};
     sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -4522,13 +4547,9 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         g_openingStripLastResult.store(result, std::memory_order_relaxed);
         return;
     }
-    ID3D11Resource* textures[2] = {
-        reinterpret_cast<ID3D11Resource*>(
-            g_openingStripTextures[0].load(std::memory_order_acquire)),
-        reinterpret_cast<ID3D11Resource*>(
-            g_openingStripTextures[1].load(std::memory_order_acquire)),
-    };
-    if (textures[0] == nullptr || textures[1] == nullptr)
+    ID3D11Resource* sceneColor = reinterpret_cast<ID3D11Resource*>(
+        g_openingStripTextures[1].load(std::memory_order_acquire));
+    if (g_openingStripMaskView == nullptr || sceneColor == nullptr)
     {
         g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
         g_openingStripLastResult.store(E_POINTER, std::memory_order_relaxed);
@@ -4548,7 +4569,7 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
     ID3D11Resource* output = nullptr;
     if (targets[0] != nullptr) targets[0]->GetResource(&output);
     if (targets[0] == nullptr || targets[1] == nullptr || renderDepth == nullptr ||
-        output == textures[1])
+        output == sceneColor)
     {
         ReleaseM14Object(output);
         ReleaseM14Object(renderDepth);
@@ -4560,20 +4581,19 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         return;
     }
     ID3D11ShaderResourceView* views[2] = {};
-    for (std::size_t slot = 0; slot < 2; ++slot)
+    views[0] = g_openingStripMaskView;
+    views[0]->AddRef();
+    result = CreateDiagnosticShaderResourceView(device, sceneColor, &views[1]);
+    if (FAILED(result) || views[1] == nullptr)
     {
-        result = CreateDiagnosticShaderResourceView(device, textures[slot], &views[slot]);
-        if (FAILED(result) || views[slot] == nullptr)
-        {
-            ReleaseM14Object(views[1]); ReleaseM14Object(views[0]);
-            ReleaseM14Object(output); ReleaseM14Object(renderDepth);
-            ReleaseM14Object(targets[1]); ReleaseM14Object(targets[0]);
-            context->Release();
-            g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
-            g_openingStripLastResult.store(FAILED(result) ? result : E_POINTER,
-                std::memory_order_relaxed);
-            return;
-        }
+        ReleaseM14Object(views[1]); ReleaseM14Object(views[0]);
+        ReleaseM14Object(output); ReleaseM14Object(renderDepth);
+        ReleaseM14Object(targets[1]); ReleaseM14Object(targets[0]);
+        context->Release();
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(FAILED(result) ? result : E_POINTER,
+            std::memory_order_relaxed);
+        return;
     }
 
     ID3D11VertexShader* oldVS = nullptr; ID3D11PixelShader* oldPS = nullptr;

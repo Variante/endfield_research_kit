@@ -13,6 +13,15 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
 SESSION = REPO / "scratch/reverse_engineering/endfield_capture/20260828T181119Z"
+RESOURCE_SESSION = (REPO /
+    "scratch/reverse_engineering/endfield_capture/20260828T212621Z")
+RESOURCE_FRAME = 1128
+RESOURCE_METADATA_SHA256 = \
+    "ceaa70285e8c0c8ece5dd139c26bcebc75e313908ea65f9b0ba35480dadb52db"
+RESOURCE_BLOB_SHA256 = \
+    "8de7cc3bdd47eb6efd7aaf07e4c2134f45bc7b0b4722930eb9b379677170c144"
+MASK_SHA256 = \
+    "d25b9741808a5d8cbd9264d899091ac6af623a3f30d98bf2522a304130a8045f"
 OUTPUT = (REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab"
           / "Runtime/Rendering/EndfieldRecoveredOpeningStripCaptureData.generated.cs")
 CPP_OUTPUT = (REPO / "unity_endfield_graph_shader_lab/tools/original_dxbc_exact"
@@ -170,9 +179,11 @@ def cpp_array(name: str, payload: bytes) -> str:
             + f"\n}};\ninline constexpr std::size_t {name}Size = sizeof({name});\n")
 
 
-def render_cpp(packets: list[dict[str, Any]], vs: bytes, ps: bytes) -> str:
+def render_cpp(packets: list[dict[str, Any]], vs: bytes, ps: bytes,
+               mask: bytes) -> str:
     arrays = [cpp_array("g_EndfieldOpeningStripVertexDxbc", vs),
-              cpp_array("g_EndfieldOpeningStripPixelDxbc", ps)]
+              cpp_array("g_EndfieldOpeningStripPixelDxbc", ps),
+              cpp_array("g_EndfieldOpeningStripMaskBc7", mask)]
     descriptors = []
     for index, packet in enumerate(packets):
         prefix = f"g_EndfieldOpeningStripP{index}"
@@ -195,6 +206,8 @@ def render_cpp(packets: list[dict[str, Any]], vs: bytes, ps: bytes) -> str:
         "inline constexpr std::uint32_t g_EndfieldOpeningStripVertexStride = 60u;\n"
         "inline constexpr std::uint32_t g_EndfieldOpeningStripVSCounts[] = {2,82,20,4094,5};\n"
         "inline constexpr std::uint32_t g_EndfieldOpeningStripPSCounts[] = {28,104,4085,12};\n\n"
+        "inline constexpr std::uint32_t g_EndfieldOpeningStripMaskWidth = 256u;\n"
+        "inline constexpr std::uint32_t g_EndfieldOpeningStripMaskHeight = 256u;\n\n"
         + "\n".join(arrays) + "\n"
         "struct EndfieldOpeningStripPacket { std::uint32_t frame; float phaseSeconds; "
         "std::uint32_t indexCount; const std::uint8_t* vertices; std::size_t vertexBytes; "
@@ -217,6 +230,7 @@ namespace EndfieldGraphShaderLab
     internal static class EndfieldRecoveredOpeningStripCaptureData
     {{
         internal const string SourceSession = "20260828T181119Z";
+        internal const string ResourceSourceSession = "20260828T212621Z";
         internal const int PacketCount = {len(packets)};
         internal static readonly int[] SourceFrames = {{ {frames} }};
         internal static readonly float[] PhaseSeconds = {{ {phases} }};
@@ -231,6 +245,30 @@ def build(output: Path = OUTPUT, cpp_output: Path = CPP_OUTPUT) -> str:
     ps = PS_PATH.read_bytes()
     require(sha256(vs) == VS_SHA256 and sha256(ps) == PS_SHA256,
             "opening-strip shader bytecode drifted")
+    resource_frame = RESOURCE_SESSION / "graphics/frames" / str(RESOURCE_FRAME)
+    resource_metadata_bytes = (resource_frame / "metadata.json").read_bytes()
+    resource_blob = (resource_frame / "resources.bin").read_bytes()
+    require(sha256(resource_metadata_bytes) == RESOURCE_METADATA_SHA256,
+            "opening-strip resource metadata drifted")
+    require(sha256(resource_blob) == RESOURCE_BLOB_SHA256,
+            "opening-strip resource blob drifted")
+    resource_metadata = json.loads(resource_metadata_bytes)
+    resource_draws = [row for row in resource_metadata.get("drawRecords", [])
+                      if shader_pair(row) == (VS_IDENTITY, PS_IDENTITY)]
+    require(len(resource_draws) == 1,
+            "opening-strip resource owner is not unique")
+    ps_t0 = [row for row in resource_draws[0].get("resources", [])
+             if int(row.get("stage", -1)) == 4 and int(row.get("slot", -1)) == 0]
+    require(len(ps_t0) == 1, "opening-strip PS t0 owner is not unique")
+    mask_row = selected_record(resource_metadata, 3, int(ps_t0[0]["objectId"]))
+    require(int(mask_row.get("width", -1)) == 256 and
+            int(mask_row.get("height", -1)) == 256 and
+            int(mask_row.get("format", -1)) == 99 and
+            int(mask_row.get("viewFormat", -1)) == 99,
+            "opening-strip PS t0 is not 256x256 BC7 sRGB")
+    mask = slice_record(resource_blob, mask_row)
+    require(len(mask) == 65536 and sha256(mask) == MASK_SHA256,
+            "opening-strip PS t0 payload drifted")
     packets = []
     for frame_id, phase, metadata_hash, resources_hash in PACKETS:
         frame = SESSION / "graphics/frames" / str(frame_id)
@@ -253,7 +291,8 @@ def build(output: Path = OUTPUT, cpp_output: Path = CPP_OUTPUT) -> str:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(text, encoding="utf-8", newline="\n")
     cpp_output.parent.mkdir(parents=True, exist_ok=True)
-    cpp_output.write_text(render_cpp(packets, vs, ps), encoding="utf-8", newline="\n")
+    cpp_output.write_text(render_cpp(packets, vs, ps, mask),
+                          encoding="utf-8", newline="\n")
     return text
 
 

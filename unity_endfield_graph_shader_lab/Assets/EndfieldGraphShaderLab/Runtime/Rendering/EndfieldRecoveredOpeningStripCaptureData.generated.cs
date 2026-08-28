@@ -4,6 +4,7 @@ namespace EndfieldGraphShaderLab
     internal static class EndfieldRecoveredOpeningStripCaptureData
     {
         internal const string SourceSession = "20260828T181119Z";
+        internal const string ResourceSourceSession = "20260828T212621Z";
         internal const int PacketCount = 4;
         internal static readonly int[] SourceFrames = { 1034, 1035, 1036, 1037 };
         internal static readonly float[] PhaseSeconds = { 0.150000f, 0.183333f, 0.216667f, 0.250000f };
