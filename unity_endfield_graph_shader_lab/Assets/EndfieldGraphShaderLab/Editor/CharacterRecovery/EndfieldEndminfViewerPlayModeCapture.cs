@@ -257,6 +257,13 @@ namespace EndfieldGraphShaderLabEditor
             public bool exactEndminfUberRequested;
             public bool exactEndminfUberSubmitted;
             public string exactEndminfUberFailure;
+            public bool endminfOpeningStripExactRequested;
+            public bool endminfOpeningStripExactActive;
+            public bool endminfOpeningStripExactSubmitted;
+            public bool endminfOpeningStripExactValidated;
+            public int endminfOpeningStripExactPacket;
+            public int endminfOpeningStripExactSourceFrame;
+            public string endminfOpeningStripExactFailure;
             public bool endminfM18ExactRequested;
             public bool endminfM18ExactActive;
             public bool endminfM18ExactSubmitted;
@@ -1031,6 +1038,17 @@ namespace EndfieldGraphShaderLabEditor
                     "Exact Endminf M18 peak callback validation failed: " +
                     m18PeakValidationFailure);
             }
+            if (EndfieldRecoveredEndminfOpeningStripExactRuntime.Requested &&
+                EndfieldRecoveredEndminfOpeningStripExactRuntime
+                    .HasPendingValidation &&
+                !EndfieldRecoveredEndminfOpeningStripExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string openingStripValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf opening-strip callback validation failed: " +
+                    openingStripValidationFailure);
+            }
             if (EndfieldRecoveredEndminfM28PeakExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM28PeakExactRuntime
                     .HasPendingValidation &&
@@ -1228,6 +1246,22 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberSubmitted,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
+                endminfOpeningStripExactRequested =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime.Requested,
+                endminfOpeningStripExactActive =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame,
+                endminfOpeningStripExactSubmitted =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime.SubmittedThisFrame,
+                endminfOpeningStripExactValidated =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime.ValidatedThisFrame,
+                endminfOpeningStripExactPacket =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime
+                        .SelectedPacketThisFrame,
+                endminfOpeningStripExactSourceFrame =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime
+                        .SourceFrameThisFrame,
+                endminfOpeningStripExactFailure =
+                    EndfieldRecoveredEndminfOpeningStripExactRuntime.Failure,
                 endminfM18ExactRequested =
                     EndfieldRecoveredEndminfM18PeakExactRuntime.Requested,
                 endminfM18ExactActive =
