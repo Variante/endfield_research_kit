@@ -27,6 +27,7 @@
 #include "M29CapturePayload.generated.h"
 #include "M30CapturePayload.generated.h"
 #include "M31PeakCapturePayload.generated.h"
+#include "OpeningStripCapturePayload.generated.h"
 #include "VFXBaseV2PeakCohortPayload.generated.h"
 #include "M27SubstitutionRegistry.h"
 
@@ -253,6 +254,26 @@ std::atomic<std::uint32_t> g_m13DrawCount{0};
 std::atomic<std::uint32_t> g_m13FailureCount{0};
 std::atomic<HRESULT> g_m13LastResult{S_OK};
 std::atomic<std::uint32_t> g_m13PacketIndex{0};
+
+ID3D11VertexShader* g_openingStripVertexShader = nullptr;
+ID3D11PixelShader* g_openingStripPixelShader = nullptr;
+ID3D11InputLayout* g_openingStripInputLayout = nullptr;
+ID3D11Buffer* g_openingStripVertexBuffers[g_EndfieldOpeningStripPacketCount] = {};
+ID3D11Buffer* g_openingStripIndexBuffers[g_EndfieldOpeningStripPacketCount] = {};
+ID3D11Buffer* g_openingStripDefaultVertexBuffer = nullptr;
+ID3D11Buffer* g_openingStripVertexConstantBuffers[g_EndfieldOpeningStripPacketCount][5] = {};
+ID3D11Buffer* g_openingStripPixelConstantBuffers[g_EndfieldOpeningStripPacketCount][4] = {};
+ID3D11Buffer* g_openingStripSkinBuffer = nullptr;
+ID3D11ShaderResourceView* g_openingStripSkinView = nullptr;
+ID3D11SamplerState* g_openingStripSamplers[2] = {};
+ID3D11BlendState* g_openingStripBlendState = nullptr;
+ID3D11DepthStencilState* g_openingStripDepthState = nullptr;
+ID3D11RasterizerState* g_openingStripRasterizerState = nullptr;
+std::atomic<std::uintptr_t> g_openingStripTextures[2] = {};
+std::atomic<std::uint32_t> g_openingStripPacketIndex{0};
+std::atomic<std::uint32_t> g_openingStripDrawCount{0};
+std::atomic<std::uint32_t> g_openingStripFailureCount{0};
+std::atomic<HRESULT> g_openingStripLastResult{S_OK};
 
 ID3D11VertexShader* g_m27DrawVertexShader = nullptr;
 ID3D11PixelShader* g_m27DrawPixelShader = nullptr;
@@ -1921,6 +1942,166 @@ HRESULT CreateM13RuntimeResources(ID3D11Device* device)
     rasterizer.CullMode = D3D11_CULL_NONE;
     rasterizer.DepthClipEnable = TRUE;
     return device->CreateRasterizerState(&rasterizer, &g_m13RasterizerState);
+}
+
+void ReleaseOpeningStripResources()
+{
+    ReleaseM14Object(g_openingStripRasterizerState);
+    ReleaseM14Object(g_openingStripDepthState);
+    ReleaseM14Object(g_openingStripBlendState);
+    for (ID3D11SamplerState*& value : g_openingStripSamplers)
+        ReleaseM14Object(value);
+    ReleaseM14Object(g_openingStripSkinView);
+    ReleaseM14Object(g_openingStripSkinBuffer);
+    for (auto& packet : g_openingStripPixelConstantBuffers)
+        for (ID3D11Buffer*& value : packet) ReleaseM14Object(value);
+    for (auto& packet : g_openingStripVertexConstantBuffers)
+        for (ID3D11Buffer*& value : packet) ReleaseM14Object(value);
+    for (ID3D11Buffer*& value : g_openingStripIndexBuffers)
+        ReleaseM14Object(value);
+    for (ID3D11Buffer*& value : g_openingStripVertexBuffers)
+        ReleaseM14Object(value);
+    ReleaseM14Object(g_openingStripDefaultVertexBuffer);
+    ReleaseM14Object(g_openingStripInputLayout);
+    ReleaseM14Object(g_openingStripPixelShader);
+    ReleaseM14Object(g_openingStripVertexShader);
+}
+
+HRESULT CreateOpeningStripResources(ID3D11Device* device)
+{
+    if (device == nullptr)
+        return E_POINTER;
+    if (g_openingStripVertexShader != nullptr &&
+        g_openingStripPixelShader != nullptr)
+        return S_OK;
+    ReleaseOpeningStripResources();
+    HRESULT result = device->CreateVertexShader(
+        g_EndfieldOpeningStripVertexDxbc,
+        g_EndfieldOpeningStripVertexDxbcSize,
+        nullptr,
+        &g_openingStripVertexShader);
+    if (FAILED(result)) return result;
+    result = device->CreatePixelShader(
+        g_EndfieldOpeningStripPixelDxbc,
+        g_EndfieldOpeningStripPixelDxbcSize,
+        nullptr,
+        &g_openingStripPixelShader);
+    if (FAILED(result)) return result;
+    const D3D11_INPUT_ELEMENT_DESC elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 24,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 36,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 44,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    result = device->CreateInputLayout(
+        elements, static_cast<UINT>(sizeof(elements) / sizeof(elements[0])),
+        g_EndfieldOpeningStripVertexDxbc,
+        g_EndfieldOpeningStripVertexDxbcSize,
+        &g_openingStripInputLayout);
+    if (FAILED(result)) return result;
+    const unsigned char defaultVertex[20] = {};
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_VERTEX_BUFFER, defaultVertex,
+        sizeof(defaultVertex), &g_openingStripDefaultVertexBuffer);
+    if (FAILED(result)) return result;
+    for (std::uint32_t packet = 0;
+         packet < g_EndfieldOpeningStripPacketCount; ++packet)
+    {
+        const EndfieldOpeningStripPacket& source =
+            g_EndfieldOpeningStripPackets[packet];
+        result = CreateM14ImmutableBuffer(
+            device, D3D11_BIND_VERTEX_BUFFER, source.vertices,
+            static_cast<UINT>(source.vertexBytes),
+            &g_openingStripVertexBuffers[packet]);
+        if (FAILED(result)) return result;
+        result = CreateM14ImmutableBuffer(
+            device, D3D11_BIND_INDEX_BUFFER, source.indices,
+            static_cast<UINT>(source.indexBytes),
+            &g_openingStripIndexBuffers[packet]);
+        if (FAILED(result)) return result;
+        for (std::size_t slot = 0; slot < 5; ++slot)
+        {
+            result = CreateM14ConstantBuffer(
+                device, g_EndfieldOpeningStripVSCounts[slot],
+                source.vs[slot], source.vsBytes[slot],
+                &g_openingStripVertexConstantBuffers[packet][slot]);
+            if (FAILED(result)) return result;
+        }
+        for (std::size_t slot = 0; slot < 4; ++slot)
+        {
+            result = CreateM14ConstantBuffer(
+                device, g_EndfieldOpeningStripPSCounts[slot],
+                source.ps[slot], source.psBytes[slot],
+                &g_openingStripPixelConstantBuffers[packet][slot]);
+            if (FAILED(result)) return result;
+        }
+    }
+    const float zeroSkin[4] = {};
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_SHADER_RESOURCE, zeroSkin, sizeof(zeroSkin),
+        &g_openingStripSkinBuffer, D3D11_RESOURCE_MISC_BUFFER_STRUCTURED,
+        sizeof(zeroSkin));
+    if (FAILED(result)) return result;
+    result = device->CreateShaderResourceView(
+        g_openingStripSkinBuffer, nullptr, &g_openingStripSkinView);
+    if (FAILED(result)) return result;
+    D3D11_SAMPLER_DESC sampler = {};
+    sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    sampler.MaxLOD = 1000.0f;
+    result = device->CreateSamplerState(&sampler, &g_openingStripSamplers[0]);
+    if (FAILED(result)) return result;
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    result = device->CreateSamplerState(&sampler, &g_openingStripSamplers[1]);
+    if (FAILED(result)) return result;
+    D3D11_BLEND_DESC blend = {};
+    blend.IndependentBlendEnable = TRUE;
+    for (std::size_t target = 0; target < 2; ++target)
+    {
+        blend.RenderTarget[target].BlendEnable = TRUE;
+        blend.RenderTarget[target].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        blend.RenderTarget[target].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        blend.RenderTarget[target].BlendOp = D3D11_BLEND_OP_ADD;
+        blend.RenderTarget[target].SrcBlendAlpha = D3D11_BLEND_ONE;
+        blend.RenderTarget[target].DestBlendAlpha = D3D11_BLEND_ZERO;
+        blend.RenderTarget[target].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        blend.RenderTarget[target].RenderTargetWriteMask =
+            D3D11_COLOR_WRITE_ENABLE_ALL;
+    }
+    result = device->CreateBlendState(&blend, &g_openingStripBlendState);
+    if (FAILED(result)) return result;
+    D3D11_DEPTH_STENCIL_DESC depth = {};
+    depth.DepthEnable = TRUE;
+    depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    result = device->CreateDepthStencilState(&depth, &g_openingStripDepthState);
+    if (FAILED(result)) return result;
+    D3D11_RASTERIZER_DESC rasterizer = {};
+    rasterizer.FillMode = D3D11_FILL_SOLID;
+    // The retained draw used back-face culling plus a retail-owned scissor.
+    // Unity does not preserve that draw-local rectangle across plugin events;
+    // the independent particle quads are two-sided, so bind the equivalent
+    // unrestricted packet domain here.
+    rasterizer.CullMode = D3D11_CULL_NONE;
+    rasterizer.FrontCounterClockwise = TRUE;
+    rasterizer.DepthClipEnable = TRUE;
+    rasterizer.ScissorEnable = FALSE;
+    return device->CreateRasterizerState(
+        &rasterizer, &g_openingStripRasterizerState);
 }
 
 void ReleaseM27DrawResources()
@@ -4322,6 +4503,156 @@ void UNITY_INTERFACE_API DrawM30ExactRuntime(int eventId)
     g_m30LastResult.store(S_OK, std::memory_order_relaxed);
 }
 
+void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
+{
+    if (eventId != 0) return;
+    IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
+    ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
+    if (device == nullptr)
+    {
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    HRESULT result = CreateOpeningStripResources(device);
+    if (FAILED(result))
+    {
+        ReleaseOpeningStripResources();
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(result, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11Resource* textures[2] = {
+        reinterpret_cast<ID3D11Resource*>(
+            g_openingStripTextures[0].load(std::memory_order_acquire)),
+        reinterpret_cast<ID3D11Resource*>(
+            g_openingStripTextures[1].load(std::memory_order_acquire)),
+    };
+    if (textures[0] == nullptr || textures[1] == nullptr)
+    {
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11DeviceContext* context = nullptr;
+    device->GetImmediateContext(&context);
+    if (context == nullptr)
+    {
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11RenderTargetView* targets[2] = {};
+    ID3D11DepthStencilView* renderDepth = nullptr;
+    context->OMGetRenderTargets(2, targets, &renderDepth);
+    ID3D11Resource* output = nullptr;
+    if (targets[0] != nullptr) targets[0]->GetResource(&output);
+    if (targets[0] == nullptr || targets[1] == nullptr || renderDepth == nullptr ||
+        output == textures[1])
+    {
+        ReleaseM14Object(output);
+        ReleaseM14Object(renderDepth);
+        ReleaseM14Object(targets[1]);
+        ReleaseM14Object(targets[0]);
+        context->Release();
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11ShaderResourceView* views[2] = {};
+    for (std::size_t slot = 0; slot < 2; ++slot)
+    {
+        result = CreateDiagnosticShaderResourceView(device, textures[slot], &views[slot]);
+        if (FAILED(result) || views[slot] == nullptr)
+        {
+            ReleaseM14Object(views[1]); ReleaseM14Object(views[0]);
+            ReleaseM14Object(output); ReleaseM14Object(renderDepth);
+            ReleaseM14Object(targets[1]); ReleaseM14Object(targets[0]);
+            context->Release();
+            g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+            g_openingStripLastResult.store(FAILED(result) ? result : E_POINTER,
+                std::memory_order_relaxed);
+            return;
+        }
+    }
+
+    ID3D11VertexShader* oldVS = nullptr; ID3D11PixelShader* oldPS = nullptr;
+    ID3D11InputLayout* oldLayout = nullptr; ID3D11Buffer* oldVBs[2] = {};
+    ID3D11Buffer* oldIB = nullptr; ID3D11Buffer* oldVSCBs[5] = {};
+    ID3D11Buffer* oldPSCBs[4] = {}; ID3D11ShaderResourceView* oldVSView = nullptr;
+    ID3D11ShaderResourceView* oldPSViews[2] = {}; ID3D11SamplerState* oldSamplers[2] = {};
+    ID3D11BlendState* oldBlend = nullptr; ID3D11DepthStencilState* oldDepth = nullptr;
+    ID3D11RasterizerState* oldRasterizer = nullptr;
+    D3D11_PRIMITIVE_TOPOLOGY oldTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    DXGI_FORMAT oldIndexFormat = DXGI_FORMAT_UNKNOWN; UINT oldStrides[2] = {};
+    UINT oldOffsets[2] = {}; UINT oldIndexOffset = 0; FLOAT oldBlendFactor[4] = {};
+    UINT oldSampleMask = 0; UINT oldStencilReference = 0;
+    context->VSGetShader(&oldVS, nullptr, nullptr); context->PSGetShader(&oldPS, nullptr, nullptr);
+    context->IAGetInputLayout(&oldLayout);
+    context->IAGetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IAGetIndexBuffer(&oldIB, &oldIndexFormat, &oldIndexOffset);
+    context->IAGetPrimitiveTopology(&oldTopology);
+    context->VSGetConstantBuffers(0, 5, oldVSCBs);
+    context->PSGetConstantBuffers(0, 4, oldPSCBs);
+    context->VSGetShaderResources(0, 1, &oldVSView);
+    context->PSGetShaderResources(0, 2, oldPSViews);
+    context->PSGetSamplers(0, 2, oldSamplers);
+    context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
+    context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
+    context->RSGetState(&oldRasterizer);
+
+    const std::uint32_t packet = g_openingStripPacketIndex.load(std::memory_order_acquire);
+    const EndfieldOpeningStripPacket& source = g_EndfieldOpeningStripPackets[packet];
+    ID3D11Buffer* vertexBuffers[2] = {
+        g_openingStripVertexBuffers[packet], g_openingStripDefaultVertexBuffer};
+    const UINT strides[2] = {g_EndfieldOpeningStripVertexStride, 0u};
+    const UINT offsets[2] = {}; const FLOAT blendFactor[4] = {1, 1, 1, 1};
+    context->IASetInputLayout(g_openingStripInputLayout);
+    context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+    context->IASetIndexBuffer(g_openingStripIndexBuffers[packet], DXGI_FORMAT_R16_UINT, 0);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(g_openingStripVertexShader, nullptr, 0);
+    context->PSSetShader(g_openingStripPixelShader, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, g_openingStripVertexConstantBuffers[packet]);
+    context->PSSetConstantBuffers(0, 4, g_openingStripPixelConstantBuffers[packet]);
+    context->VSSetShaderResources(0, 1, &g_openingStripSkinView);
+    context->PSSetShaderResources(0, 2, views);
+    context->PSSetSamplers(0, 2, g_openingStripSamplers);
+    context->OMSetBlendState(g_openingStripBlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_openingStripDepthState, 0);
+    context->RSSetState(g_openingStripRasterizerState);
+    context->DrawIndexed(source.indexCount, 0, 0);
+
+    ID3D11ShaderResourceView* nullVS = nullptr; ID3D11ShaderResourceView* nullPS[2] = {};
+    context->VSSetShaderResources(0, 1, &nullVS); context->PSSetShaderResources(0, 2, nullPS);
+    context->IASetInputLayout(oldLayout);
+    context->IASetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IASetIndexBuffer(oldIB, oldIndexFormat, oldIndexOffset);
+    context->IASetPrimitiveTopology(oldTopology);
+    context->VSSetShader(oldVS, nullptr, 0); context->PSSetShader(oldPS, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, oldVSCBs);
+    context->PSSetConstantBuffers(0, 4, oldPSCBs);
+    context->VSSetShaderResources(0, 1, &oldVSView);
+    context->PSSetShaderResources(0, 2, oldPSViews);
+    context->PSSetSamplers(0, 2, oldSamplers);
+    context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
+    context->OMSetDepthStencilState(oldDepth, oldStencilReference);
+    context->RSSetState(oldRasterizer);
+    for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
+    for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
+    ReleaseM14Object(oldVSView);
+    for (ID3D11Buffer*& value : oldPSCBs) ReleaseM14Object(value);
+    for (ID3D11Buffer*& value : oldVSCBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldRasterizer); ReleaseM14Object(oldDepth); ReleaseM14Object(oldBlend);
+    ReleaseM14Object(oldIB); for (ID3D11Buffer*& value : oldVBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldLayout); ReleaseM14Object(oldPS); ReleaseM14Object(oldVS);
+    ReleaseM14Object(views[1]); ReleaseM14Object(views[0]); ReleaseM14Object(output);
+    ReleaseM14Object(renderDepth); ReleaseM14Object(targets[1]); ReleaseM14Object(targets[0]);
+    context->Release();
+    g_openingStripDrawCount.fetch_add(1, std::memory_order_relaxed);
+    g_openingStripLastResult.store(S_OK, std::memory_order_relaxed);
+}
+
 void UNITY_INTERFACE_API DrawM13ExactRuntime(int eventId)
 {
     if (eventId != 0)
@@ -5288,6 +5619,7 @@ UnityPluginLoad(IUnityInterfaces* unityInterfaces)
     ReleaseM27DrawResources();
     ReleaseM29RuntimeResources();
     ReleaseM13RuntimeResources();
+    ReleaseOpeningStripResources();
     ReleaseM14RuntimeResources();
     g_unityInterfaces = unityInterfaces;
     g_pluginLoadCount.fetch_add(1, std::memory_order_relaxed);
@@ -5305,6 +5637,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
     ReleaseM27DrawResources();
     ReleaseM29RuntimeResources();
     ReleaseM13RuntimeResources();
+    ReleaseOpeningStripResources();
     ReleaseM14RuntimeResources();
     g_unityInterfaces = nullptr;
 }
@@ -5452,6 +5785,12 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetM13RenderEventFunc()
 {
     return DrawM13ExactRuntime;
+}
+
+extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripRenderEventFunc()
+{
+    return DrawOpeningStripExactRuntime;
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
@@ -5802,6 +6141,64 @@ EndfieldOriginalDxbcGetM13LastResult()
 {
     return static_cast<std::int32_t>(
         g_m13LastResult.load(std::memory_order_relaxed));
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetOpeningStripTextureResources(
+    void* refractTexture, void* sceneColorTexture)
+{
+    g_openingStripTextures[0].store(
+        reinterpret_cast<std::uintptr_t>(refractTexture),
+        std::memory_order_release);
+    g_openingStripTextures[1].store(
+        reinterpret_cast<std::uintptr_t>(sceneColorTexture),
+        std::memory_order_release);
+    return refractTexture != nullptr && sceneColorTexture != nullptr ? 1u : 0u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetOpeningStripPacketIndex(std::uint32_t packetIndex)
+{
+    if (packetIndex >= g_EndfieldOpeningStripPacketCount) return 0u;
+    g_openingStripPacketIndex.store(packetIndex, std::memory_order_release);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripPacketCount()
+{
+    return g_EndfieldOpeningStripPacketCount;
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcResetOpeningStripRuntimeState()
+{
+    g_openingStripPacketIndex.store(0, std::memory_order_relaxed);
+    g_openingStripDrawCount.store(0, std::memory_order_relaxed);
+    g_openingStripFailureCount.store(0, std::memory_order_relaxed);
+    g_openingStripLastResult.store(S_OK, std::memory_order_relaxed);
+    for (std::atomic<std::uintptr_t>& value : g_openingStripTextures)
+        value.store(0, std::memory_order_relaxed);
+    ReleaseOpeningStripResources();
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripDrawCount()
+{
+    return g_openingStripDrawCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripFailureCount()
+{
+    return g_openingStripFailureCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripLastResult()
+{
+    return static_cast<std::int32_t>(
+        g_openingStripLastResult.load(std::memory_order_relaxed));
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

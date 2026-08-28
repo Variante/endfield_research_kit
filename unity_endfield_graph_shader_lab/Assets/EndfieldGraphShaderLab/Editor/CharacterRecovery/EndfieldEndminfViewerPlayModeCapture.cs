@@ -117,6 +117,7 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
             SphereOutsidePresentationEnvironment,
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
             EndminfM21ExactEnvironment,

@@ -35,6 +35,7 @@ exit /b 2
   set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=1"
   set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
   rem Exact temporal VFX owners improve the no-frame-generation UI-free sequence.
+  set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
   rem Frame 2775 closes the complete draw-local M21 stone-shell packet. It is

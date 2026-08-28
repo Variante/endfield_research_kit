@@ -2574,9 +2574,18 @@ material. Unity reproduces the fixed-seed particle population closely: 1,930,
 bracketing the retained six-Present retail samples. The renderer is active,
 has the exact material/pass, and is accepted by the Distortion request scan,
 but stock SRP submission emits no visible generated particle geometry; even a
-solid fragment and clip/depth probes remain absent. Retain the current bounded
-rectangle compatibility pass until a draw-local geometry replay replaces it;
-do not reinterpret this as a fullscreen post effect or recapture shader bytes.
+solid fragment and clip/depth probes remain absent. The retained D3D11 replay
+now closes that submission gap: generated payloads preserve all four IA and
+shader-used constant ranges, bind source `T_fx_mask_01_M` plus a non-aliasing
+SceneColor snapshot, and submit the exact 0546/0547 programs. Unity's plugin
+event has the opposite face-orientation boundary from the retail draw, so the
+runtime admits the independent two-sided quads without culling; retaining the
+captured back-face state culled every packet. A 3840x2160 targeted A/B validates
+nonzero native draws with `S_OK` and restores the dense horizontal mosaic/RGB
+edge breakup. The old bounded rectangle compatibility pass is suppressed only
+inside the exact retained packet window and remains the fail-closed fallback.
+Do not reinterpret this owner as a fullscreen post effect or recapture shader
+bytes.
 
 EndfieldCapture now detects either exact M20 shader pair inside the indexed-draw
 callback and, when the ordinary three-slot producer gate would skip it, arms a
@@ -2706,21 +2715,13 @@ or shaders rather than hand-editing generated prefabs.
    no-frame-generation recording with the validated clean-reference gyroscope
    track enabled. Keep source tint, particle, bloom, and curve values fixed
    unless stronger evidence supersedes them.
-2. Replace the localized opening compatibility pass with retained geometry for
-   shared `CharEffect/trail`. Replay the four exact independent-quad packets at
-   their source particle phases through VFXRefract 0546/0547 and
-   `M_UI_charChoose_12`; the shader programs, material, texture, timing, blend,
-   and geometry counts are closed. The remaining boundary is Unity submission
-   of the captured 60-byte particle vertices. Do not model this owner as a
-   fullscreen post effect, invent procedural bands, or move the static
-   portrait/GridFar field.
-3. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
+2. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
    frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
    do not manually widen cloth; any residual silhouette error now belongs to
    post-skin vertex output or remaining renderer/material visibility behavior,
    not replay-clock registration or missing transparent-cape bone ownership.
-4. Generalize the finished Endminf path and rebuild every playable character
+3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
-5. Keep changing inventories and exhaustive validation output under
+4. Keep changing inventories and exhaustive validation output under
    `reports/assets/character_recovery/`; update this file only when the durable
    conclusion or evidence boundary changes.
