@@ -32,6 +32,8 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
         public const string PreRollSecondsEnvironmentVariable =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS";
+        public const string OpeningStripDiagnosticEnvironmentVariable =
+            "ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC";
         public const float OpeningStripStartSeconds = 0.03333334f;
         public const float OpeningStripPeakSeconds = 0.06666667f;
         public const float OpeningStripEndSeconds = 0.35f;
@@ -154,6 +156,19 @@ namespace EndfieldGraphShaderLab
             out RecoveredOpeningStripState state)
         {
             state = default;
+            // The current shader proves placement/cadence only. Reference
+            // frames localize the fracture to the moving character boundary,
+            // whereas this diagnostic has no retail depth/velocity ownership
+            // mask and shifts the static grid. Keep it out of canonical output
+            // until that mask is recovered.
+            if (!string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        OpeningStripDiagnosticEnvironmentVariable),
+                    "1",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
             if (!TryGetElapsed(out float elapsed))
                 return false;
 

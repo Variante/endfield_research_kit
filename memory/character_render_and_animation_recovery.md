@@ -2104,8 +2104,11 @@ or shaders rather than hand-editing generated prefabs.
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording. Keep source tint, particle, bloom, and curve
    values fixed unless stronger evidence supersedes them.
-2. Validate the new 0.033-0.350-second pre-Uber horizontal-strip fracture pass
-   against clean frames 1-30. Preserve the now-admitted exact
+2. Recover the retail depth/velocity ownership mask for the localized opening
+   fracture against clean frames 1-30. The current 0.033-0.350-second pre-Uber
+   horizontal-strip shader proves timing and placement only; it disrupts the
+   static full-frame grid and is now diagnostic-only behind
+   `ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC=1`. Preserve the now-admitted exact
    `S_GridFar` route and source-animated portrait while final Uber/camera
    composition closes their remaining strength and bounded alignment gaps.
 3. Replace the mixed-session Endminf dynamics replay with one same-initialization
