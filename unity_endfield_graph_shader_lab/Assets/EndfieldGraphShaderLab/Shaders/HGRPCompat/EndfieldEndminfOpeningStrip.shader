@@ -27,40 +27,77 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
             float4 _EndminfOpeningStripParams;
             float4 _EndminfOpeningStripSourceSize; // width, height, 1/width, 1/height
 
-            float Hash11(float value)
+            bool TryGetMeasuredBand(
+                int frame,
+                int bandIndex,
+                out float4 rectangle,
+                out float2 shift)
             {
-                return frac(sin(value * 91.3458 + 17.17) * 47453.5453);
+                rectangle = 0.0;
+                shift = 0.0;
+                // rectangle = destination x0/x1/top-y0/top-y1 at the
+                // authoritative 1920x1080 comparison resolution;
+                // shift = rightward source displacement / RGB split pixels.
+                if (frame == 4 && bandIndex == 0) { rectangle=float4(902,1007,663,684); shift=float2(253,2.5); return true; }
+                if (frame == 6 && bandIndex == 0) { rectangle=float4(744,779,250,255); shift=float2(234,2.5); return true; }
+                if (frame == 7 && bandIndex == 0) { rectangle=float4(656,756,251,262); shift=float2(183,2.0); return true; }
+                if (frame == 7 && bandIndex == 1) { rectangle=float4(903,989,662,680); shift=float2(201,2.0); return true; }
+                if (frame == 7 && bandIndex == 2) { rectangle=float4(839,936,805,819); shift=float2(154,2.0); return true; }
+                if (frame == 8 && bandIndex == 0) { rectangle=float4(703,821,447,454); shift=float2(141,1.5); return true; }
+                if (frame == 8 && bandIndex == 1) { rectangle=float4(834,993,783,799); shift=float2(240,2.5); return true; }
+                if (frame == 9 && bandIndex == 0) { rectangle=float4(813,904,430,442); shift=float2(242,2.5); return true; }
+                if (frame == 9 && bandIndex == 1) { rectangle=float4(836,958,737,758); shift=float2(168,2.0); return true; }
+                if (frame == 10 && bandIndex == 0) { rectangle=float4(748,837,392,395); shift=float2(195,2.0); return true; }
+                if (frame == 10 && bandIndex == 1) { rectangle=float4(801,883,520,533); shift=float2(193,2.0); return true; }
+                if (frame == 11 && bandIndex == 0) { rectangle=float4(683,779,403,419); shift=float2(118,1.5); return true; }
+                if (frame == 11 && bandIndex == 1) { rectangle=float4(733,827,502,521); shift=float2(124,1.5); return true; }
+                if (frame == 12 && bandIndex == 0) { rectangle=float4(780,879,566,571); shift=float2(153,2.0); return true; }
+                if (frame == 18 && bandIndex == 0) { rectangle=float4(739,832,414,422); shift=float2(116,1.5); return true; }
+                if (frame == 19 && bandIndex == 0) { rectangle=float4(739,828,413,422); shift=float2(94,1.5); return true; }
+                if (frame == 20 && bandIndex == 0) { rectangle=float4(752,821,413,420); shift=float2(77,1.0); return true; }
+                return false;
             }
 
             float4 Frag(v2f_img input) : SV_Target
             {
                 float2 uv = input.uv;
-                float pixelY = uv.y * _EndminfOpeningStripSourceSize.y;
-
-                // Six-pixel cells are grouped by a slowly changing offset.
-                // The resulting boundaries stay perfectly horizontal while
-                // their authored-looking heights vary between roughly 6 and
-                // 30 pixels instead of becoming a regular scanline pattern.
-                float cell = floor(pixelY / 6.0);
-                float group = floor(cell / 4.0);
-                float groupingOffset = floor(Hash11(group + 2.0) * 3.0);
-                float band = floor((cell + groupingOffset) / 3.0);
-
-                // Retail changes fracture ownership on frame boundaries. Keep
-                // that cadence deterministic at 60 Hz; every pixel in a band
-                // receives exactly the same horizontal displacement.
-                float frame = floor(_EndminfOpeningStripParams.w * 60.0 + 0.5);
-                float signedOffset = Hash11(band * 5.13 + frame * 1.71) * 2.0 - 1.0;
-                float sparse = step(0.22, Hash11(band * 2.37 + frame * 0.43));
-                float displacementPixels = signedOffset * sparse *
-                    _EndminfOpeningStripParams.y;
+                float2 retailPixel = float2(
+                    uv.x * _EndminfOpeningStripSourceSize.x,
+                    (1.0 - uv.y) * _EndminfOpeningStripSourceSize.y) *
+                    float2(1920.0 / _EndminfOpeningStripSourceSize.x,
+                           1080.0 / _EndminfOpeningStripSourceSize.y);
+                int frame = (int)floor(
+                    _EndminfOpeningStripParams.w * 60.0 + 0.5);
+                float2 activeShift = 0.0;
+                float activeBand = 0.0;
+                [unroll]
+                for (int bandIndex = 0; bandIndex < 3; ++bandIndex)
+                {
+                    float4 rectangle;
+                    float2 shift;
+                    if (TryGetMeasuredBand(frame, bandIndex, rectangle, shift))
+                    {
+                        float inside = step(rectangle.x, retailPixel.x) *
+                            step(retailPixel.x, rectangle.y) *
+                            step(rectangle.z, retailPixel.y) *
+                            step(retailPixel.y, rectangle.w);
+                        if (inside > 0.5)
+                        {
+                            activeShift = shift;
+                            activeBand = 1.0;
+                        }
+                    }
+                }
+                float displacementPixels = activeShift.x *
+                    (_EndminfOpeningStripSourceSize.x / 1920.0);
                 float displacementUv = displacementPixels *
                     _EndminfOpeningStripSourceSize.z;
-                float chromaUv = _EndminfOpeningStripParams.z *
-                    _EndminfOpeningStripSourceSize.z * sign(signedOffset + 1e-5);
+                float chromaUv = activeShift.y *
+                    (_EndminfOpeningStripSourceSize.x / 1920.0) *
+                    _EndminfOpeningStripSourceSize.z;
 
                 float2 shiftedUv = float2(
-                    saturate(uv.x + displacementUv),
+                    saturate(uv.x - displacementUv),
                     uv.y);
                 float red = tex2Dlod(
                     _MainTex,
@@ -90,7 +127,7 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
                 float4 original = tex2Dlod(
                     _MainTex,
                     float4(uv, 0.0, 0.0));
-                return lerp(original, shifted, shiftedOwner);
+                return lerp(original, shifted, activeBand * shiftedOwner);
             }
             ENDCG
         }

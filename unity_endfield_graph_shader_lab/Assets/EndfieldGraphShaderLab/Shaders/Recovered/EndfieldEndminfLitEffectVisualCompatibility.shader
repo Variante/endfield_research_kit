@@ -105,27 +105,56 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 float2 parallaxDelta =
                     (viewTS.xy / max(abs(viewTS.z), 0.08)) *
                     (_ParallaxStrength / parallaxSteps);
-                float directParallax = tex2D(_ParallaxMap, input.uv).r;
+                float directParallax = tex2D(_ParallaxMap, input.uv).g;
                 float2 parallaxUV = input.uv * _ParallaxTilling;
                 float layerDepth = 0.0;
-                float parallax = tex2D(_ParallaxMap, parallaxUV).r;
+                float parallax = tex2D(_ParallaxMap, parallaxUV).g;
                 [unroll]
                 for (int stepIndex = 0; stepIndex < parallaxSteps; ++stepIndex)
                 {
                     float advance = step(layerDepth, 1.0 - parallax);
                     parallaxUV -= parallaxDelta * advance;
                     layerDepth += layerStep * advance;
-                    parallax = tex2D(_ParallaxMap, parallaxUV).r;
+                    parallax = tex2D(_ParallaxMap, parallaxUV).g;
                 }
+                // Decompiled retail M27 does not clamp the sampled parallax
+                // carrier up to _ParallaxMinBrightness. Its SceneColor term
+                // is gated by base alpha squared and NdotV before the sampled
+                // parallax color is applied. The old compatibility path used
+                // max(sample, 0.2) everywhere, which made every M01/M38 rock
+                // face a flat yellow emitter even though the authored base
+                // alpha is mostly zero.
                 parallax = lerp(
                     directParallax,
-                    max(parallax, _ParallaxMinBrightness),
+                    parallax,
                     saturate(_RecoveredParallaxMarchCompatibility));
                 float3 l = normalize(float3(-0.35, 0.8, 0.45));
-                float diffuse = 0.22 + 0.78 * saturate(dot(n, l));
-                float3 lit = baseSample.rgb * diffuse * lerp(0.65, 1.0, mro.b);
+                float3 h = normalize(l + viewWS);
+                float ndl = saturate(dot(n, l));
+                float ndv = saturate(dot(n, viewWS));
+                float ndh = saturate(dot(n, h));
+                float vdh = saturate(dot(viewWS, h));
+                float roughness = clamp(mro.r, 0.06, 1.0);
+                float metallic = saturate(mro.g);
+                float occlusion = saturate(mro.b);
+                float alphaRoughness = roughness * roughness;
+                float alphaRoughness2 = alphaRoughness * alphaRoughness;
+                float denominator = ndh * ndh * (alphaRoughness2 - 1.0) + 1.0;
+                float distribution = alphaRoughness2 /
+                    max(UNITY_PI * denominator * denominator, 0.001);
+                float geometryK = (roughness + 1.0) * (roughness + 1.0) * 0.125;
+                float geometryV = ndv / max(ndv * (1.0 - geometryK) + geometryK, 0.001);
+                float geometryL = ndl / max(ndl * (1.0 - geometryK) + geometryK, 0.001);
+                float3 f0 = lerp(0.04.xxx, baseSample.rgb, metallic);
+                float3 fresnel = f0 + (1.0 - f0) * pow(1.0 - vdh, 5.0);
+                float3 specular = distribution * geometryV * geometryL * fresnel * ndl;
+                float3 diffuse = baseSample.rgb * (1.0 - metallic) *
+                    (0.14 * occlusion + 0.86 * ndl) / UNITY_PI;
+                float3 lit = diffuse + specular;
+                float retailParallaxGate = baseSample.a * baseSample.a * ndv;
                 float3 emission = _ParallaxColor.rgb * parallax *
-                    _ParallaxIntensity * _RecoveredParallaxCompatibilityScale;
+                    retailParallaxGate * _ParallaxIntensity *
+                    (_RecoveredParallaxCompatibilityScale * 2.0);
                 return float4(lit + emission, baseSample.a);
             }
             ENDHLSL

@@ -32,10 +32,7 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
         public const string PreRollSecondsEnvironmentVariable =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS";
-        public const string OpeningStripDiagnosticEnvironmentVariable =
-            "ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC";
-        public const float OpeningStripStartSeconds = 0.03333334f;
-        public const float OpeningStripPeakSeconds = 0.06666667f;
+        public const float OpeningStripStartSeconds = 0.06666667f;
         public const float OpeningStripEndSeconds = 0.35f;
         private static float startTime = float.NaN;
         private static float configuredPreRollSeconds;
@@ -156,58 +153,48 @@ namespace EndfieldGraphShaderLab
             out RecoveredOpeningStripState state)
         {
             state = default;
-            // The current shader proves placement/cadence only. Reference
-            // frames localize the fracture to the moving character boundary,
-            // whereas this diagnostic has no retail depth/velocity ownership
-            // mask and shifts the static grid. Keep it out of canonical output
-            // until that mask is recovered.
-            if (!string.Equals(
-                    Environment.GetEnvironmentVariable(
-                        OpeningStripDiagnosticEnvironmentVariable),
-                    "1",
-                    StringComparison.Ordinal))
-            {
-                return false;
-            }
             if (!TryGetElapsed(out float elapsed))
                 return false;
-
-            float intensity = EvaluateOpeningStripEnvelope(elapsed);
-            if (intensity <= 0.0f)
-                return false;
-
-            state = new RecoveredOpeningStripState {
-                elapsed = elapsed,
-                intensity = intensity,
-                displacementPixels = 34.0f * intensity,
-                chromaticEdgePixels = 1.35f * intensity
-            };
-            return true;
-        }
-
-        public static float EvaluateOpeningStripEnvelope(float elapsed)
-        {
             if (float.IsNaN(elapsed) || float.IsInfinity(elapsed) ||
                 elapsed < OpeningStripStartSeconds ||
                 elapsed >= OpeningStripEndSeconds)
             {
-                return 0.0f;
+                return false;
             }
 
-            if (elapsed < OpeningStripPeakSeconds)
+            int frame = Mathf.FloorToInt(elapsed * 60.0f + 0.5f);
+            if (!IsMeasuredOpeningStripFrame(frame))
+                return false;
+
+            state = new RecoveredOpeningStripState {
+                elapsed = elapsed,
+                intensity = 1.0f,
+                displacementPixels = 274.0f,
+                chromaticEdgePixels = 3.0f
+            };
+            return true;
+        }
+
+        public static bool IsMeasuredOpeningStripFrame(int frame)
+        {
+            switch (frame)
             {
-                return Mathf.SmoothStep(
-                    0.0f,
-                    1.0f,
-                    (elapsed - OpeningStripStartSeconds) /
-                        (OpeningStripPeakSeconds - OpeningStripStartSeconds));
+                case 4:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                case 18:
+                case 19:
+                case 20:
+                    return true;
+                default:
+                    return false;
             }
-
-            return Mathf.SmoothStep(
-                1.0f,
-                0.0f,
-                (elapsed - OpeningStripPeakSeconds) /
-                    (OpeningStripEndSeconds - OpeningStripPeakSeconds));
         }
 
         private static float EvaluateSourceCurve(
@@ -215,8 +202,19 @@ namespace EndfieldGraphShaderLab
             float initialPeak,
             float latePeak)
         {
-            if (time <= 0.16666667f)
-                return Mathf.SmoothStep(initialPeak, 0.0f, time / 0.16666667f);
+            if (time <= 0.1f)
+            {
+                // Clean-reference frames 91-94 lose the broad camera pull in
+                // roughly three 60-Hz samples while the character-owned
+                // horizontal slices persist. The compatibility Uber magnifies
+                // the native scalar, so retain 45% of the authored peak and
+                // finish this broad response at 0.1 s. The separately measured
+                // late crystal pulse below keeps its captured magnitude.
+                return Mathf.SmoothStep(
+                    initialPeak * 0.45f,
+                    0.0f,
+                    time / 0.1f);
+            }
             // Retail frame 1818 registers the late Uber pulse peak at clean
             // frame 264 / overview phase 4.350000 s. The former curve was
             // five 60-Hz samples late. Preserve its captured rise/fall shape
