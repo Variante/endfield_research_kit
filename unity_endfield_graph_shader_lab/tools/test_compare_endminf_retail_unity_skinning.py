@@ -92,8 +92,30 @@ class ComparatorTests(unittest.TestCase):
                 "shaders": [{"stage": 0, "identityHash": 9, "bytecodeSize": 9}, {"stage": 4, "identityHash": 8, "bytecodeSize": 8}],
             }],
         }
-        with self.assertRaisesRegex(MODULE.ComparisonError, "shader identity"):
+        with self.assertRaisesRegex(MODULE.ComparisonError, "no gated hair draw"):
             MODULE.select_draw(metadata, "hair")
+
+    def test_cloth_02_contract_matches_retained_peak_draw(self):
+        contract = MODULE.MESHES["cloth_02"]
+        self.assertEqual(contract["indexCount"], 2_286)
+        self.assertEqual(contract["matrixCount"], 29)
+        self.assertIn((13_479_119_685_698_484_394, 8296), contract["vertexShaders"])
+
+    def test_select_draw_ignores_non_palette_shader_variants(self):
+        good_vs = next(iter(MODULE.MESHES["cloth_02"]["vertexShaders"]))
+        common = {
+            "indexedInstanced": True, "count": 2_286,
+            "vsCb2RangeValid": True, "vsCb2MetadataValid": True,
+            "vsCb2BufferId": 30,
+        }
+        metadata = {"frame": 1, "drawRecords": [
+            {**common, "vsCb2NumConstants": 16, "vsCb2CurrentPaletteRaw": 0, "vsCb2PreviousPaletteRaw": 0,
+             "shaders": [{"stage": 0, "identityHash": 1, "bytecodeSize": 6136}, {"stage": 4, "identityHash": 8, "bytecodeSize": 8}]},
+            {**common, "vsCb2NumConstants": MODULE.CB2_CONSTANTS, "vsCb2CurrentPaletteRaw": 10, "vsCb2PreviousPaletteRaw": 9,
+             "shaders": [{"stage": 0, "identityHash": good_vs[0], "bytecodeSize": good_vs[1]}, {"stage": 4, "identityHash": 8, "bytecodeSize": 8}]},
+        ]}
+        selected = MODULE.select_draw(metadata, "cloth_02")
+        self.assertEqual(selected["currentRaw"], 10)
 
 
 if __name__ == "__main__":
