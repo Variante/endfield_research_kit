@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build fail-closed M30 temporal payloads while retail scene depth is pending."""
+"""Build exact M30 temporal payloads with captured retail depth closure."""
 
 from __future__ import annotations
 
@@ -13,17 +13,38 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
-TEMPORAL_CAPTURE = REPO / "scratch/reverse_engineering/endfield_capture/20260826T162514Z"
+TEMPORAL_CAPTURE = REPO / "scratch/reverse_engineering/endfield_capture/20260827T183054Z"
 TEMPORAL_REPORT = (REPO / "reports/assets/character_recovery"
-                   / "endminf_m29_m30_temporal_capture_latest.json")
-RESOURCE_CAPTURE = REPO / "scratch/reverse_engineering/endfield_capture/20260827T081152Z"
+                   / "endminf_m29_m30_capture_completeness_latest.json")
+RESOURCE_CAPTURE = REPO / "scratch/reverse_engineering/endfield_capture/20260827T183054Z"
 CS_OUTPUT = (REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab"
              / "Runtime/Rendering/EndfieldRecoveredM30ExactCaptureData.generated.cs")
 CPP_OUTPUT = (REPO / "unity_endfield_graph_shader_lab/tools/original_dxbc_exact"
               / "M30CapturePayload.generated.h")
-EXPECTED_TEMPORAL_SESSION = "20260826T162514Z"
-EXPECTED_RESOURCE_SESSION = "20260827T081152Z"
-EXPECTED_RESOURCE_FRAME = 1845
+EXPECTED_TEMPORAL_SESSION = "20260827T183054Z"
+EXPECTED_RESOURCE_SESSION = "20260827T183054Z"
+EXPECTED_RESOURCE_FRAME = 1807
+EXPECTED_REPORT_SHA256 = "25f3cadc7ca27f18e4c420925cbf70a7566fb546966cbd8d5a541310ec5ccf20"
+CAPTURE_FPS = 60.0
+# Direct UI-bearing backbuffer matches against the clean extracted sequence.
+# Synchronous capture stalls make presented-frame deltas unsuitable as an
+# animation clock. Clean reference phase is (referenceFrame - 3) / 60.
+REFERENCE_FRAMES = {
+    1753: 182,
+    1764: 195,
+    1775: 210,
+    1785: 224,
+    1796: 238,
+    1807: 251,
+}
+EXPECTED_METADATA_SHA256 = {
+    1753: "b3ee04abff99125d0ec9dbbcc8c333a10f3f1a50e6bb17e3b776bd1a912f2aec",
+    1764: "aafde22806286d42e98517a0d01a19fb57c213b3a392a80b44d08aafdb8bf4a9",
+    1775: "51156b61aaf7735b3996cf490e433e31b5864a76f84b8c3243dbd7101a1a251d",
+    1785: "9944c0f286f0a4f3fc7f4568f82926dc177314958bd32493ca6634dfaf360da4",
+    1796: "968ba927d70065ccf4fcd427ea73e3bad314c29ab2c59d9de9eaaf4666033db8",
+    1807: "aea0bc35f7b9412968c6f9668168217291f023826b66afb76971321e49b88a46",
+}
 EXPECTED_VS = 0x62A5CE6C09171DE9
 EXPECTED_PS = 0x5558DEDDB1EE6188
 EXPECTED_C1 = (1.0, 0.0, 3.0, 0.5)
@@ -236,21 +257,33 @@ def collect_texture(capture: Path) -> dict[str, Any]:
 
 
 def collect_packets(capture: Path, report: dict[str, Any]) -> list[dict[str, Any]]:
-    require(report.get("sessionId") == EXPECTED_TEMPORAL_SESSION,
+    require(report.get("status") == "validated_exact_owner_resource_closure",
+            "M30 completeness report is not validated")
+    require(Path(str(report.get("capture", ""))).name == EXPECTED_TEMPORAL_SESSION,
             "M30 temporal report session drifted")
     owner = report.get("owners", {}).get("M30", {})
-    frames = owner.get("frames", [])
-    require(owner.get("packetCount") == len(frames) == 11,
+    frames = owner.get("packets", [])
+    require(owner.get("packetCount") == len(frames) == 6,
             "M30 temporal packet count drifted")
     packets = []
     secondary_hash: str | None = None
     for expected in frames:
-        frame_root = capture / "graphics/frames" / str(expected["frame"])
+        frame = int(expected["frame"])
+        frame_root = capture / "graphics/frames" / str(frame)
         metadata_path = frame_root / "metadata.json"
-        require(sha256_bytes(metadata_path.read_bytes()) == expected["metadataSha256"],
-                f"M30 frame {expected['frame']} metadata hash drifted")
+        require(sha256_bytes(metadata_path.read_bytes()) ==
+                EXPECTED_METADATA_SHA256.get(frame),
+                f"M30 frame {frame} metadata hash drifted")
         metadata = load_json(metadata_path)
-        draw = select_draw(metadata, expected)
+        draw_index = int(expected["drawIndex"])
+        rows = metadata.get("drawRecords", [])
+        require(0 <= draw_index < len(rows),
+                f"M30 frame {frame} draw index is out of range")
+        draw = rows[draw_index]
+        require(isinstance(draw, dict) and is_m30(draw),
+                f"M30 frame {frame} report owner identity drifted")
+        require(int(draw.get("count", -1)) == int(expected["indexCount"]),
+                f"M30 frame {frame} index count drifted")
         secondary = collect_secondary_stream(frame_root, metadata)
         current_secondary_hash = sha256_bytes(secondary)
         if secondary_hash is None:
@@ -258,8 +291,8 @@ def collect_packets(capture: Path, report: dict[str, Any]) -> list[dict[str, Any
         require(current_secondary_hash == secondary_hash,
                 "M30 secondary IA stream changed across temporal packets")
         packets.append({
-            "frame": int(expected["frame"]),
-            "phase": float(expected["phaseSeconds"]),
+            "frame": frame,
+            "phase": (REFERENCE_FRAMES[frame] - 3) / CAPTURE_FPS,
             "constants": collect_constants(draw),
             "geometry": collect_geometry(frame_root, metadata, draw),
             "secondary": secondary,
@@ -298,7 +331,7 @@ def render_cpp(packets: list[dict[str, Any]], texture: dict[str, Any]) -> str:
         "// Generated by tools/build_endminf_m30_exact_capture_data.py. Do not edit.\n"
         "#pragma once\n#include <cstddef>\n#include <cstdint>\n\n"
         "inline constexpr bool g_EndfieldM30PayloadPrepared = true;\n"
-        "inline constexpr bool g_EndfieldM30DepthContractReady = false;\n"
+        "inline constexpr bool g_EndfieldM30DepthContractReady = true;\n"
         "inline constexpr std::uint32_t g_EndfieldM30VertexStride = 36;\n"
         "inline constexpr std::uint32_t g_EndfieldM30TextureFormat = 99;\n"
         "inline constexpr std::uint32_t g_EndfieldM30TextureWidth = 256;\n"
@@ -334,7 +367,7 @@ namespace EndfieldGraphShaderLab
         internal const string TemporalReportSha256 = "{sha256_bytes(report_path.read_bytes())}";
         internal const string TextureT1Sha256 = "{texture['sha256']}";
         internal const bool PayloadPrepared = true;
-        internal const bool DepthContractReady = false;
+        internal const bool DepthContractReady = true;
         internal const int PacketCount = {len(packets)};
         internal static readonly int[] SourceFrames = {{ {frames} }};
         internal static readonly float[] PhaseSeconds = {{ {phases} }};
@@ -350,6 +383,8 @@ def build(temporal_capture: Path, report_path: Path, resource_capture: Path,
             "temporal capture session drifted")
     require(resource_capture.name == EXPECTED_RESOURCE_SESSION,
             "resource capture session drifted")
+    require(sha256_bytes(report_path.read_bytes()) == EXPECTED_REPORT_SHA256,
+            "M30 completeness report hash drifted")
     report = load_json(report_path)
     packets = collect_packets(temporal_capture, report)
     texture = collect_texture(resource_capture)

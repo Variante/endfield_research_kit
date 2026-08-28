@@ -51,7 +51,7 @@ def fixture(mode: float = 3.0, priority: bool = True,
                 "bytecodeSize": 608,
             }, {
                 "stage": 4, "identityHash": MODULE.PIXEL_IDENTITY,
-                "bytecodeSize": 4836,
+                "bytecodeSize": 4216,
             }],
             "vsConstantBuffers": [
                 {"slot": 0, "bufferId": 100, "firstConstant": vs_b0_first,
@@ -104,7 +104,8 @@ def fixture(mode: float = 3.0, priority: bool = True,
 
 class UberCaptureTests(unittest.TestCase):
     def build(self, session: dict[str, object], metadata: dict[str, object],
-              blob: bytes) -> dict[str, object]:
+              blob: bytes, constant_payload_only: bool = False,
+              frame_filter: int | None = None) -> dict[str, object]:
         with tempfile.TemporaryDirectory() as temporary:
             capture = Path(temporary)
             (capture / "session.json").write_text(
@@ -114,7 +115,11 @@ class UberCaptureTests(unittest.TestCase):
             (frame / "metadata.json").write_text(
                 json.dumps(metadata), encoding="utf-8")
             (frame / "resources.bin").write_bytes(blob)
-            return MODULE.build_report(capture)
+            return MODULE.build_report(
+                capture,
+                constant_payload_only=constant_payload_only,
+                frame_filter=frame_filter,
+            )
 
     def test_exact_live_binding_passes(self) -> None:
         report = self.build(*fixture())
@@ -128,6 +133,28 @@ class UberCaptureTests(unittest.TestCase):
     def test_old_budget_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "128-MiB"):
             self.build(*fixture(budget=96 * 1024 * 1024))
+
+    def test_constant_only_mode_keeps_old_budget_boundary_visible(self) -> None:
+        session, metadata, blob = fixture(budget=96 * 1024 * 1024)
+        del metadata["fullscreenResolvers"][0]["pipelineState"]
+        metadata["fullscreenResolvers"][0]["priorityEndminfUber"] = False
+        report = self.build(
+            session,
+            metadata,
+            blob,
+            constant_payload_only=True,
+            frame_filter=7,
+        )
+        self.assertEqual(
+            report["status"],
+            "validated_exact_uber_constant_payload_only",
+        )
+        self.assertNotIn("pipelineState", report["packets"][0])
+        self.assertEqual(report["resourceBudgetBytes"], 96 * 1024 * 1024)
+        self.assertEqual(
+            report["compiledKeywords"],
+            ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
+        )
 
     def test_missing_priority_tag_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "priority tagging"):

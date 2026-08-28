@@ -1907,6 +1907,96 @@ before/after each full-screen draw. Until then, any implementation must remain
 a narrowly timed pre-Uber scene-color slice pass and retain the broad ghost as
 an independent weaker layer.
 
+EndfieldCapture Numpad 4 now requests 24 one-present packages followed by 40
+packages at six-present spacing in one bounded session. Publication
+backpressure means the first 24 are not guaranteed consecutive: session
+`20260827T183054Z` completed all 64 packages but observed mostly 9-12 presented
+frames between early packages. It still spans gameplay through the complete
+overview burst and closes exact IA plus owned PS resources for M29 (8 packets),
+M30 (6), and M31 (15), including the formerly missing scene-depth payloads.
+The 64-package limit and 128-MiB targeted per-package cap remain unchanged;
+Release x64 and all 15 native tests pass.
+
+The same session corrects the final Uber identity. Active frames 1600 and 1818
+use VS `A8C084C37EBA0ECC` and PS `86A732CEF7EEDB15`, the retail
+`BLOOM + RADIAL_BLUR + VIGNETTE` variant, rather than the previously selected
+`RADIAL_BLUR_CHROMATIC_ABERRATION` variant. Frame 1818 captures exact VS b0,
+PS b0[28], and PS b1[26]; live c0 is approximately
+`(0.5100073,0.5330563,0.1088480,1)`. The Unity native transport now embeds that
+4,216-byte pixel program, preserves all captured vignette/bloom/LUT constants,
+patches only screen/exposure and dynamic c0 radial lanes, and creates explicit
+typed SRVs for Unity's typeless FP16 backing resources. The focused 4.4333 s
+render validates one native draw with no failure and removes the false RGB
+split. The broad M31 ring/shell, gas, and missing stones remain the dominant
+peak mismatch; the neutral radial average alone does not close those owners.
+
+Frame 1818 also closes a narrower exact M31 checkpoint: two owner-gated
+`M_fx_endminm_gfx_31` draws (metadata draw indices 13 and 20) share the captured
+scene-depth input and one 256x256 BC7-sRGB main texture, and use the exact
+`62A5CE6C09171DE9` / `5558DEDDB1EE6188` shader pair. The native Unity route
+suppresses exactly the two live M31 renderers, submits both captured IA,
+constant-buffer, texture, and depth packets to SceneColor/SceneMV, and validates
+two draws with `S_OK`. Direct backbuffer matching places frame 1818 at clean
+extracted frame 264, so the viewer-request clock is 4.3500 seconds (the body
+Animator is two 60-Hz ticks ahead at capture time), not the former inferred
+4.4333-second anchor. Its upright
+output is visually equivalent to the compatibility checkpoint and does not
+restore the clean reference's large smooth orange loop. A diagnostic that
+treated repeated 3840x2160 values in the shared vertex/pixel globals as freely
+patchable screen-size lanes produced a screen-wide invalid result and was
+reverted; those buffers are not a safe generic resolution-adaptation surface.
+This bounds M31 as a proven secondary checkpoint layer, not evidence that its
+two peak draws alone own the missing broad shell. Recover the temporal M29/M30
+composition and exact queue ordering before changing source tint, curves, or
+particle timing.
+
+The same capture now drives a coherent six-packet M30 replay from frames
+1753/1764/1775/1785/1796/1807, with captured IA, constants, one BC7 texture,
+and live scene depth. Direct backbuffer matching maps those packets to clean
+frames 182/195/210/224/238/251 and viewer-request phases
+2.9833/3.2000/3.4500/3.6833/3.9167/4.1333; capture frame deltas are not an
+animation clock because synchronous readback stalls presentation. Focused renders validate
+one native draw per active packet with `S_OK`, but M30's isolated final output
+is subtle and does not create the missing smooth peak loop. Retail queue
+ownership is now bounded as M31=2999 and M29/M30/M14=3000; the relative order
+inside queue 3000 is not preserved by the capture's priority-retention array.
+
+Session `20260827T225644Z` closes the formerly missing fixed-function and
+draw-local IA state for the open-palm stone-halo checkpoint. Its complete
+targeted frame 2723 retains 32 priority draws through retail ordinal 88, with
+valid topology, draw ordinals, IA offsets, constants, resources, samplers,
+blend, depth/stencil, rasterizer, viewport, and scissor. It proves exact M29 at
+ordinal 73 and a 15-draw shared VFXBaseV2 cohort at ordinals
+68,74-81,83-88. Both native transports validate `S_OK`; the cohort is replayed
+only at clean frame 219 / viewer-request phase 3.6000 and no longer contaminates
+the later burst. The targeted 32-draw priority set can still displace smaller
+stone, gas, and peripheral shell owners, so it is not full peak closure.
+
+M29 now combines the eight temporal packets from `20260827T183054Z` with the
+frame-2723 draw contract. Unsafe old shared-ring geometry is replaced by the
+exact draw-local 60-byte packet geometry, so all nine packets are replay-safe.
+Direct clean-reference matches map source frames
+1732/1743/1753/1764/1775/2723/1785/1796/1807 to viewer-request phases
+2.5500/2.7333/2.9833/3.2000/3.4500/3.6000/3.6833/3.9167/4.1333. The prior
+presented-frame anchor was wrong. The exact M13 burst owner is likewise now a
+two-packet transport: capture frames 5395 and 5404 match clean frames 266 and
+275, use phases 4.3833 and 4.5333, retain distinct geometry/constants with the
+same five BC7 textures, and select the nearest packet without interpolation.
+Focused `temporal_rephase_v2` renders validate M13, M29, M30, M31, the shared
+15-draw cohort, and the exact Uber transport. They remove the former broad
+open-palm contamination from the crystal peak, but the clean frame-269 outer
+amber loop, volumetric gas, physical stone surfaces, and complete particles
+remain visibly absent.
+
+EndfieldCapture Full now retains up to 96 draw records, 64 resources, and a
+128-MiB resource payload. The 96-record temporary and per-frame storage is heap
+backed, avoiding the stack overflow that crashed the earlier Full prototype;
+all 15 Release/WARP/proxy tests pass with no game process owning the global
+events. The next evidence is two Full-profile Numpad-1 frames in one session:
+clean frame 219 (open palm/five stones) and clean frame 269 (maximum ring/core).
+Do not use the bounded Numpad-4 sequence with Full because repeated 128-MiB
+readback stalls are unnecessary and have already destabilized the game.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
@@ -1940,8 +2030,12 @@ or shaders rather than hand-editing generated prefabs.
 ## Recovery queue
 
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
-   M17 `baoshan` transport and now-timed M20 gas, then import the remaining
-   128-MiB M30/M31 scene-depth and Uber draw-state capture. Then rerender the
+   M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
+   and validated two-draw M31 checkpoint. Validate the generated M29 temporal
+   presentation, preserve M31 before the retail 2999/3000 boundary, and use a
+   two Full-profile single-frame captures at clean frames 219 and 269 to retain
+   the smaller stone/gas/shell owners omitted by the 32-draw targeted set and
+   resolve the equal-queue M29/M30/M14 ordering. Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording. Keep source tint, particle, bloom, and curve
    values fixed unless stronger evidence supersedes them.

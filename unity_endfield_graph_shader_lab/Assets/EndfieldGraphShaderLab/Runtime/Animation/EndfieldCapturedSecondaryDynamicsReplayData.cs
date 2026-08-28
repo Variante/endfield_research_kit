@@ -9,7 +9,7 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldCapturedSecondaryDynamicsReplayData : ScriptableObject
     {
         public const string ExpectedSchema =
-            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v3";
+            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v4";
 
         public string sourceSchema;
         public string sourceSha256;

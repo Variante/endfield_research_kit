@@ -17,7 +17,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class BuildEndminfM30ExactCaptureDataTests(unittest.TestCase):
-    def test_builds_eleven_packets_but_keeps_depth_fail_closed(self) -> None:
+    def test_builds_six_coherent_packets_with_depth_contract_ready(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             cs_path = Path(folder) / "payload.cs"
             cpp_path = Path(folder) / "payload.h"
@@ -27,22 +27,26 @@ class BuildEndminfM30ExactCaptureDataTests(unittest.TestCase):
                 MODULE.RESOURCE_CAPTURE,
                 cs_path,
                 cpp_path)
-            self.assertIn("PacketCount = 11", cs)
-            self.assertIn("DepthContractReady = false", cs)
+            self.assertIn("PacketCount = 6", cs)
+            self.assertIn(
+                "PhaseSeconds = { 2.983333f, 3.200000f, 3.450000f, 3.683333f, 3.916667f, 4.133333f }",
+                cs)
+            self.assertIn("DepthContractReady = true", cs)
             self.assertIn("g_EndfieldM30PacketCount", cpp)
-            self.assertIn("g_EndfieldM30DepthContractReady = false", cpp)
+            self.assertIn("g_EndfieldM30DepthContractReady = true", cpp)
             self.assertIn("g_EndfieldM30TextureT1", cpp)
             self.assertEqual(cs_path.read_text(encoding="utf-8"), cs)
             self.assertEqual(cpp_path.read_text(encoding="utf-8"), cpp)
 
     def test_report_hash_drift_fails_closed(self) -> None:
         report = json.loads(MODULE.TEMPORAL_REPORT.read_text(encoding="utf-8"))
-        report["owners"]["M30"]["frames"][0]["metadataSha256"] = "0" * 64
+        report["owners"]["M30"]["packets"][0]["indexCount"] = 999
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             report_path = root / "report.json"
             report_path.write_text(json.dumps(report), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "metadata hash drifted"):
+            with self.assertRaisesRegex(
+                    ValueError, "completeness report hash drifted"):
                 MODULE.build(
                     MODULE.TEMPORAL_CAPTURE,
                     report_path,

@@ -8,7 +8,7 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Default-off D3D11 transport for Endminf's exact combined
-    /// BLOOM + RADIAL_BLUR_CHROMATIC_ABERRATION Uber draw. The native side
+    /// BLOOM + RADIAL_BLUR + VIGNETTE Uber draw. The native side
     /// owns the stage-local captured constant payload and exact DXBC objects;
     /// this bridge owns stable Unity textures and schedules their copies before
     /// the render-thread event.
@@ -22,7 +22,6 @@ namespace EndfieldGraphShaderLab
         private RenderTexture sourceTexture;
         private RenderTexture bloomTexture;
         private RenderTexture outputTexture;
-        private RenderTexture outputDepthTexture;
         private IntPtr renderEvent;
         private bool initialized;
         private bool failed;
@@ -81,8 +80,6 @@ namespace EndfieldGraphShaderLab
                 : new Vector2(0.5f, 0.5f);
             float radial = hasPost ? post.radialIntensity : 0.0f;
             float power = hasPost ? post.effectivePower : 1.0f;
-            float mode = hasPost ? post.mode : 0.0f;
-            float chromatic = hasPost ? post.chromaticIntensity : 0.0f;
             uint packet;
             try
             {
@@ -101,11 +98,7 @@ namespace EndfieldGraphShaderLab
                     center.x,
                     center.y,
                     radial,
-                    power,
-                    mode,
-                    chromatic,
-                    -1.0f,
-                    -1.0f);
+                    power);
             }
             catch (Exception exception)
             {
@@ -120,13 +113,11 @@ namespace EndfieldGraphShaderLab
             // persistent linear-UNorm output.
             command.CopyTexture(source, new RenderTargetIdentifier(sourceTexture));
             command.CopyTexture(bloom, new RenderTargetIdentifier(bloomTexture));
-            command.SetRenderTarget(
-                new RenderTargetIdentifier(outputTexture),
-                new RenderTargetIdentifier(outputDepthTexture));
-            // Retail Uber keeps a distinct full-resolution D24S8 attachment
-            // bound and clears it to reverse-Z far (0) / stencil 0 before the
-            // fullscreen draw. It is not the primary scene depth owner.
-            command.ClearRenderTarget(true, false, Color.clear, 0.0f);
+            // Unity 2022 promotes a requested D24S8 RenderTexture to D32S8 on
+            // this adapter. The native exact draw therefore creates, clears,
+            // binds, validates, and releases/restores its own R24G8/D24S8
+            // attachment around the retail fullscreen draw.
+            command.SetRenderTarget(new RenderTargetIdentifier(outputTexture));
             command.IssuePluginEvent(renderEvent, checked((int)packet));
             command.CopyTexture(
                 new RenderTargetIdentifier(outputTexture), destination);
@@ -148,7 +139,6 @@ namespace EndfieldGraphShaderLab
             ReleaseTexture(ref sourceTexture);
             ReleaseTexture(ref bloomTexture);
             ReleaseTexture(ref outputTexture);
-            ReleaseTexture(ref outputDepthTexture);
         }
 
         private bool Initialize()
@@ -242,43 +232,6 @@ namespace EndfieldGraphShaderLab
                 "Endfield Exact Uber Linear UNorm Output",
                 FilterMode.Point))
                 return false;
-            return EnsureDepthTexture(width, height);
-        }
-
-        private bool EnsureDepthTexture(int width, int height)
-        {
-            const GraphicsFormat format = GraphicsFormat.D24_UNorm_S8_UInt;
-            if (outputDepthTexture != null && outputDepthTexture.IsCreated() &&
-                outputDepthTexture.width == width &&
-                outputDepthTexture.height == height &&
-                outputDepthTexture.depthStencilFormat == format)
-                return true;
-            ReleaseTexture(ref outputDepthTexture);
-            if (!SystemInfo.IsFormatSupported(format, FormatUsage.Render))
-                return Fail("Endfield Exact Uber D24S8 attachment is unsupported");
-            var descriptor = new RenderTextureDescriptor(width, height)
-            {
-                graphicsFormat = GraphicsFormat.None,
-                depthStencilFormat = format,
-                msaaSamples = 1,
-                useMipMap = false,
-                autoGenerateMips = false,
-                sRGB = false,
-            };
-            outputDepthTexture = new RenderTexture(descriptor)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "Endfield Exact Uber D24S8 Output Attachment",
-                filterMode = FilterMode.Point,
-                wrapMode = TextureWrapMode.Clamp,
-                anisoLevel = 0,
-            };
-            if (!outputDepthTexture.Create() ||
-                outputDepthTexture.depthStencilFormat != format)
-            {
-                ReleaseTexture(ref outputDepthTexture);
-                return Fail("could not create exact Uber D24S8 attachment");
-            }
             return true;
         }
 
@@ -374,11 +327,7 @@ namespace EndfieldGraphShaderLab
                 float centerX,
                 float centerY,
                 float radialIntensity,
-                float power,
-                float mode,
-                float chromaticIntensity,
-                float averageStepFlagZ,
-                float averageStepFlagW);
+                float power);
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetEndminfUberRuntimeState")]

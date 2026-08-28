@@ -926,6 +926,47 @@ namespace EndfieldGraphShaderLabEditor
                     "Exact Endminf M14 callback validation failed: " +
                     m14ValidationFailure);
             }
+            if (EndfieldRecoveredEndminfM30ExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM30ExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM30ExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m30ValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M30 callback validation failed: " +
+                    m30ValidationFailure);
+            }
+            if (EndfieldRecoveredEndminfM29ExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM29ExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM29ExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m29ValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M29 callback validation failed: " +
+                    m29ValidationFailure);
+            }
+            if (EndfieldRecoveredEndminfM31PeakExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM31PeakExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM31PeakExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m31PeakValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M31 peak callback validation failed: " +
+                    m31PeakValidationFailure);
+            }
+            if (EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime.Requested &&
+                EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                    .HasPendingValidation &&
+                !EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string vfxPeakValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf VFXBaseV2 peak cohort callback validation " +
+                    "failed: " + vfxPeakValidationFailure);
+            }
             if (EndfieldRecoveredEndminfM27ExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM27ExactRuntime.HasPendingValidation &&
                 !EndfieldRecoveredEndminfM27ExactRuntime

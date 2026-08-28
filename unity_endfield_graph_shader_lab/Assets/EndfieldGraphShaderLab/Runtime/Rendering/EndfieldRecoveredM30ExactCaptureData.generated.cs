@@ -3,15 +3,15 @@ namespace EndfieldGraphShaderLab
 {
     internal static class EndfieldRecoveredM30ExactCaptureData
     {
-        internal const string TemporalSourceSession = "20260826T162514Z";
-        internal const string ResourceSourceSession = "20260827T081152Z";
-        internal const string TemporalReportSha256 = "d448a04d6e3daad9d07c85370c46783f67cd866fb4a6d1563c630b621c4e968f";
+        internal const string TemporalSourceSession = "20260827T183054Z";
+        internal const string ResourceSourceSession = "20260827T183054Z";
+        internal const string TemporalReportSha256 = "25f3cadc7ca27f18e4c420925cbf70a7566fb546966cbd8d5a541310ec5ccf20";
         internal const string TextureT1Sha256 = "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3f164d381bc0";
         internal const bool PayloadPrepared = true;
-        internal const bool DepthContractReady = false;
-        internal const int PacketCount = 11;
-        internal static readonly int[] SourceFrames = { 2880, 2888, 2896, 2905, 2913, 2921, 2929, 2937, 2945, 2953, 2962 };
-        internal static readonly float[] PhaseSeconds = { 2.800000f, 2.933333f, 3.066666f, 3.216666f, 3.350000f, 3.483333f, 3.616666f, 3.750000f, 3.883333f, 4.016666f, 4.166666f };
-        internal static readonly int[] IndexCounts = { 6, 12, 6, 12, 6, 12, 6, 6, 12, 6, 12 };
+        internal const bool DepthContractReady = true;
+        internal const int PacketCount = 6;
+        internal static readonly int[] SourceFrames = { 1753, 1764, 1775, 1785, 1796, 1807 };
+        internal static readonly float[] PhaseSeconds = { 2.983333f, 3.200000f, 3.450000f, 3.683333f, 3.916667f, 4.133333f };
+        internal static readonly int[] IndexCounts = { 12, 6, 6, 6, 6, 12 };
     }
 }

@@ -2,10 +2,11 @@
 """Fail-closed audit of the targeted HGRP/LitEffect raw subprogram export.
 
 This is deliberately a narrow evidence verifier, not a general AnimeStudio
-manifest reader.  It proves that one exact Shader object, exporter revision,
-installed source CAB, sidecar manifest, and two Ruri outputs still describe
-the same targeted run.  It never reads or publishes shader program bytes in
-the durable evidence file.
+manifest reader. It proves that one exact Shader object, exporter revision,
+installed source CAB, sidecar manifest, and an optional historical HLSL
+reference still describe the same targeted run. It never requires or invokes
+the historical Ruri project, and never reads or publishes shader program bytes
+in the durable evidence file.
 """
 
 from __future__ import annotations
@@ -41,12 +42,15 @@ DEFAULT_CLI = (
     / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/"
     "AnimeStudio.CLI.exe"
 )
-DEFAULT_RURI = UNITY / "tools/bin/Release/net10.0/Ruri.ShaderDecompiler.Endfield.exe"
+DEFAULT_REFERENCE_HLSL = (
+    REPO
+    / "scratch/animestudio/endminf_liteffect_shader/sidecars/Shader/"
+    "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode/ruri_final"
+)
 
 EXPECTED_SCHEMA = "animestudio.shader-subprogram.v1"
 EXPECTED_SUBMODULE_COMMIT = "8ca2a2671d5d775e7f5db68a9c6d874165ecb5ee"
 EXPECTED_CLI_SHA256 = "0af5f79d258580dd41466daefa5c0a7203f51c5ef35e982f54787f82bc1c2307"
-EXPECTED_RURI_SHA256 = "d42aced865043a724bf9e7a2bd9e5dc379a056a9a2b70e99aff81c4e0b7f7b06"
 EXPECTED_MANIFEST_SHA256 = "ad2bf8f1c7a78305ecb4d3f17702c07b36da018e2552b3ffced529fe1274ab99"
 
 EXPECTED_SOURCE = {
@@ -68,7 +72,7 @@ EXPECTED_COUNTS = {
     "entries": 2240,
     "encoding": {"DXBC": 680, "SMOL-V": 780, "SPIR-V": 780},
 }
-EXPECTED_RURI_OUTPUTS = {
+EXPECTED_REFERENCE_OUTPUTS = {
     "parallax_hgbuffer_vertex.hlsl": {
         "size": 23831,
         "sha256": "766bb181381150caf1e732abb67e885e3388f6a589e8685cc82b8435dd689d9c",
@@ -217,12 +221,6 @@ def _check_cli(path: Path) -> dict[str, Any]:
     return {"path": str(path), "size": path.stat().st_size, "sha256": digest}
 
 
-def _check_ruri(path: Path) -> dict[str, Any]:
-    digest = _hash_file(path)
-    _require(digest, EXPECTED_RURI_SHA256, "Ruri executable SHA-256 (stale decompiler)")
-    return {"path": str(path), "size": path.stat().st_size, "sha256": digest}
-
-
 def _check_source(path_text: str) -> dict[str, Any]:
     _require(path_text, EXPECTED_SOURCE["path"], "shader source path")
     path = Path(path_text)
@@ -348,7 +346,7 @@ def _validate_manifest(manifest_path: Path) -> dict[str, Any]:
     }
 
 
-def _validate_target_variant(manifest: dict[str, Any], ruri_dir: Path) -> dict[str, Any]:
+def _validate_target_variant(manifest: dict[str, Any], reference_hlsl_dir: Path) -> dict[str, Any]:
     rows = [
         row
         for row in manifest["entries"]
@@ -399,22 +397,22 @@ def _validate_target_variant(manifest: dict[str, Any], ruri_dir: Path) -> dict[s
             "endfieldConstantBufferTableParsed": True,
         })
 
-    ruri = []
-    for filename, expected in EXPECTED_RURI_OUTPUTS.items():
-        path = ruri_dir / filename
+    reference = []
+    for filename, expected in EXPECTED_REFERENCE_OUTPUTS.items():
+        path = reference_hlsl_dir / filename
         digest = _hash_file(path)
-        _require(path.stat().st_size, expected["size"], f"Ruri output {filename} size")
-        _require(digest, expected["sha256"], f"Ruri output {filename} SHA-256")
+        _require(path.stat().st_size, expected["size"], f"historical HLSL reference {filename} size")
+        _require(digest, expected["sha256"], f"historical HLSL reference {filename} SHA-256")
         text = path.read_text(encoding="utf-8", errors="replace")
         for marker in expected["markers"]:
             if marker not in text:
-                _fail(f"Ruri output {filename}: missing marker {marker}")
-        ruri.append({"fileName": filename, "size": path.stat().st_size, "sha256": digest})
+                _fail(f"historical HLSL reference {filename}: missing marker {marker}")
+        reference.append({"fileName": filename, "size": path.stat().st_size, "sha256": digest})
     return {
         "entryCount": len(rows),
         "representatives": EXPECTED_REPRESENTATIVES,
         "metadata": metadata,
-        "ruriOutputs": ruri,
+        "historicalHlslReferences": reference,
     }
 
 
@@ -430,12 +428,10 @@ def _build_evidence(
     raw_object: dict[str, Any],
     submodule_commit: str,
     cli: dict[str, Any],
-    ruri: dict[str, Any],
     target: dict[str, Any],
     manifest_path: Path,
     raw_evidence_path: Path,
     cli_path: Path,
-    ruri_path: Path,
 ) -> dict[str, Any]:
     representatives = []
     for stage in ("vertex", "fragment"):
@@ -472,7 +468,7 @@ def _build_evidence(
         "toolchain": {
             "animestudioSubmoduleCommit": submodule_commit,
             "cli": {"path": _relative(cli_path, REPO), "size": cli["size"], "sha256": cli["sha256"]},
-            "ruri": {"path": _relative(ruri_path, REPO), "size": ruri["size"], "sha256": ruri["sha256"]},
+            "historicalReference": "preserved HLSL fixture; no Ruri executable or project dependency",
         },
         "manifest": {
             "path": _relative(manifest_path, REPO),
@@ -486,7 +482,7 @@ def _build_evidence(
             "entryCount": target["entryCount"],
             "representatives": representatives,
             "metadata": target["metadata"],
-            "ruriOutputs": target["ruriOutputs"],
+            "historicalHlslReferences": target["historicalHlslReferences"],
         },
         "evidenceBoundary": [
             "CAB/PathID/name and serialized Shader object identity are exact.",
@@ -525,27 +521,23 @@ def verify(
     manifest_path: Path = DEFAULT_MANIFEST,
     raw_evidence_path: Path = DEFAULT_RAW_EVIDENCE,
     cli_path: Path = DEFAULT_CLI,
-    ruri_path: Path = DEFAULT_RURI,
+    reference_hlsl_dir: Path = DEFAULT_REFERENCE_HLSL,
     evidence_path: Path | None = DEFAULT_EVIDENCE,
     check_existing_evidence: bool = True,
 ) -> dict[str, Any]:
     manifest_path = manifest_path.resolve()
     raw_evidence_path = raw_evidence_path.resolve()
     cli_path = cli_path.resolve()
-    ruri_path = ruri_path.resolve()
-    submodule_commit = _check_submodule(REPO)
     cli = _check_cli(cli_path)
-    ruri = _check_ruri(ruri_path)
+    submodule_commit = _check_submodule(REPO)
     manifest = _validate_manifest(manifest_path)
     raw_object = _check_raw_object(raw_evidence_path, manifest["source"]["path"])
-    ruri_dir = manifest_path.parent / "ruri_final"
-    target = _validate_target_variant(manifest, ruri_dir)
+    target = _validate_target_variant(manifest, reference_hlsl_dir.resolve())
     result = {
         "manifest": manifest,
         "rawObject": raw_object,
         "submoduleCommit": submodule_commit,
         "cli": cli,
-        "ruri": ruri,
         "target": target,
     }
     if evidence_path is not None and check_existing_evidence:
@@ -563,7 +555,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--raw-evidence", type=Path, default=DEFAULT_RAW_EVIDENCE)
     parser.add_argument("--cli", type=Path, default=DEFAULT_CLI)
-    parser.add_argument("--ruri", type=Path, default=DEFAULT_RURI)
+    parser.add_argument(
+        "--reference-hlsl-dir",
+        type=Path,
+        default=DEFAULT_REFERENCE_HLSL,
+        help="historical HLSL fixture directory; never invokes or requires Ruri",
+    )
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--write-evidence", action="store_true", help="write the durable summary after verification")
     return parser.parse_args(argv)
@@ -576,7 +573,7 @@ def main(argv: list[str] | None = None) -> int:
             args.manifest,
             args.raw_evidence,
             args.cli,
-            args.ruri,
+            args.reference_hlsl_dir,
             args.evidence,
             check_existing_evidence=not args.write_evidence,
         )
@@ -586,12 +583,10 @@ def main(argv: list[str] | None = None) -> int:
                 result["rawObject"],
                 result["submoduleCommit"],
                 result["cli"],
-                result["ruri"],
                 result["target"],
                 args.manifest.resolve(),
                 args.raw_evidence.resolve(),
                 args.cli.resolve(),
-                args.ruri.resolve(),
             )
             write_evidence(args.evidence.resolve(), evidence)
             _check_existing_evidence(args.evidence.resolve(), result)

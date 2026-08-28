@@ -1092,6 +1092,87 @@ namespace EndfieldGraphShaderLab
                 out output,
                 out failure);
         }
+
+        internal bool CompositeMainTransparentQueue2999(
+            ScriptableRenderContext context,
+            Camera camera,
+            CullingResults cullingResults,
+            EndfieldRecoveredSceneColorHandle input,
+            int outputIdentifier,
+            bool allocateOutput,
+            RenderTexture sceneMV,
+            RenderTexture depth,
+            GraphicsFormat depthFormat,
+            int layerMask,
+            bool dynamicBatching,
+            bool gpuInstancing,
+            bool fallbackSceneColorReady,
+            RenderTargetIdentifier fallbackSceneColor,
+            out EndfieldRecoveredSceneColorHandle output,
+            out string failure)
+        {
+            return Composite(
+                context,
+                camera,
+                cullingResults,
+                input,
+                outputIdentifier,
+                allocateOutput,
+                sceneMV,
+                depth,
+                depthFormat,
+                new RenderQueueRange(2999, 2999),
+                MainTransparentPasses,
+                true,
+                RemoveWorldUILayer(layerMask),
+                dynamicBatching,
+                gpuInstancing,
+                fallbackSceneColorReady,
+                fallbackSceneColor,
+                "ForwardOnly queue 2999",
+                out output,
+                out failure);
+        }
+
+        internal bool CompositeMainTransparentQueue3000(
+            ScriptableRenderContext context,
+            Camera camera,
+            CullingResults cullingResults,
+            EndfieldRecoveredSceneColorHandle input,
+            int outputIdentifier,
+            RenderTexture sceneMV,
+            RenderTexture depth,
+            GraphicsFormat depthFormat,
+            int layerMask,
+            bool dynamicBatching,
+            bool gpuInstancing,
+            bool fallbackSceneColorReady,
+            RenderTargetIdentifier fallbackSceneColor,
+            out EndfieldRecoveredSceneColorHandle output,
+            out string failure)
+        {
+            return Composite(
+                context,
+                camera,
+                cullingResults,
+                input,
+                outputIdentifier,
+                false,
+                sceneMV,
+                depth,
+                depthFormat,
+                new RenderQueueRange(3000, 3000),
+                MainTransparentPasses,
+                true,
+                RemoveWorldUILayer(layerMask),
+                dynamicBatching,
+                gpuInstancing,
+                fallbackSceneColorReady,
+                fallbackSceneColor,
+                "ForwardOnly queue 3000",
+                out output,
+                out failure);
+        }
         internal bool CompositeDistortion(
             ScriptableRenderContext context,
             Camera camera,

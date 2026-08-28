@@ -3,7 +3,8 @@
 This verifier intentionally keeps physical D3D registers separate from Unity's
 descriptor names.  The representative DXBCs have no RDEF chunk, so constant
 buffer names and offsets come from the serialized Shader metadata while
-register arrays/signatures come from DXBC and the pinned Ruri output.  Any
+register arrays/signatures come from DXBC and a pinned historical HLSL
+reference. Any
 mapping that cannot be made unique is recorded as a gap rather than inferred.
 """
 
@@ -32,8 +33,8 @@ VERTEX_FILE = "0114_endfield_dxbc_0.dxbc"
 FRAGMENT_FILE = "0115_endfield_dxbc_1.dxbc"
 VERTEX_SPIRV_FILE = "0117_endfield_spirv_0.spv"
 FRAGMENT_SPIRV_FILE = "0119_endfield_spirv_1.spv"
-VERTEX_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_vertex.hlsl"
-FRAGMENT_RURI = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_fragment.hlsl"
+VERTEX_REFERENCE = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_vertex.hlsl"
+FRAGMENT_REFERENCE = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader.bytecode" / "ruri_final" / "parallax_hgbuffer_fragment.hlsl"
 SPIRV_CROSS = ROOT / "tools" / "RenderDoc_1.45" / "RenderDoc_1.45_64" / "plugins" / "spirv" / "spirv-cross.exe"
 
 EXPECTED_SPIRV = {
@@ -196,9 +197,9 @@ def _dxbc_reflection(path: Path) -> dict[str, Any]:
     }
 
 
-def _ruri_declarations(path: Path) -> dict[str, Any]:
+def _hlsl_declarations(path: Path) -> dict[str, Any]:
     if not path.is_file():
-        raise VerificationError(f"missing Ruri output: {path}")
+        raise VerificationError(f"missing historical HLSL reference: {path}")
     text = path.read_text(encoding="utf-8")
     cbuffer_pattern = re.compile(
         r"cbuffer\s+(?P<name>[^\s:{]+)\s*:\s*register\(b(?P<register>\d+)\s*,\s*space(?P<space>\d+)\)\s*\{(?P<body>.*?)\};",
@@ -210,7 +211,7 @@ def _ruri_declarations(path: Path) -> dict[str, Any]:
         for array in re.finditer(r"float4\s+(\w+)\[(\d+)(?:u)?\]\s*:\s*packoffset\(c0\)", match.group("body")):
             arrays.append({"name": array.group(1), "arraySize": int(array.group(2)), "sizeBytes": int(array.group(2)) * 16})
         if not arrays:
-            raise VerificationError(f"Ruri cbuffer has no float4 arrays: {path.name}:{match.group('name')}")
+            raise VerificationError(f"HLSL reference cbuffer has no float4 arrays: {path.name}:{match.group('name')}")
         cbuffer_aliases.append(
             {
                 "name": match.group("name"),
@@ -220,7 +221,7 @@ def _ruri_declarations(path: Path) -> dict[str, Any]:
             }
         )
     if not cbuffer_aliases:
-        raise VerificationError(f"Ruri output has no cbuffer declarations: {path}")
+        raise VerificationError(f"HLSL reference has no cbuffer declarations: {path}")
 
     resources: list[dict[str, Any]] = []
     resource_pattern = re.compile(
@@ -474,7 +475,7 @@ def _selected_material_fields(metadata: dict[str, Any]) -> dict[str, dict[str, A
                 "Endfield combined-program constant-buffer table",
                 "serialized PerMaterial descriptor binding 12",
                 "same-blob SPIR-V 576-byte layout",
-                "DXBC/Ruri fragment b3 496-byte used prefix",
+                "DXBC/historical HLSL reference fragment b3 496-byte used prefix",
             ],
         }
 
@@ -671,8 +672,8 @@ def build_report() -> dict[str, Any]:
     fragment_reflection = _dxbc_reflection(fragment_path)
     if vertex_reflection["hasRdef"] or fragment_reflection["hasRdef"]:
         raise VerificationError("RDEF unexpectedly present; do not mix RDEF and Endfield metadata paths")
-    vertex_ruri = _ruri_declarations(VERTEX_RURI)
-    fragment_ruri = _ruri_declarations(FRAGMENT_RURI)
+    vertex_reference = _hlsl_declarations(VERTEX_REFERENCE)
+    fragment_reference = _hlsl_declarations(FRAGMENT_REFERENCE)
     vertex_meta = _compact_metadata(BYTECODE_ROOT / (VERTEX_FILE + ".metadata.json"))
     fragment_meta = _compact_metadata(BYTECODE_ROOT / (FRAGMENT_FILE + ".metadata.json"))
     material_fields = _selected_material_fields(fragment_meta)
@@ -682,22 +683,24 @@ def build_report() -> dict[str, Any]:
     evidence = _target_evidence(vertex_reflection, fragment_reflection)
     _validate_stage_metadata(vertex_meta, vertex_reflection, evidence, VERTEX_FILE, "vertex")
     _validate_stage_metadata(fragment_meta, fragment_reflection, evidence, FRAGMENT_FILE, "fragment")
-    ruri_evidence = {row.get("fileName"): row for row in _read_json(EVIDENCE_PATH).get("target", {}).get("ruriOutputs", []) if isinstance(row, dict)}
-    for ruri_path in (VERTEX_RURI, FRAGMENT_RURI):
-        name = ruri_path.name
-        row = ruri_evidence.get(name)
-        if not row or row.get("size") != ruri_path.stat().st_size or row.get("sha256") != _sha256(ruri_path):
-            raise VerificationError(f"Ruri output hash/size mismatch for {name}")
+    evidence_target = _read_json(EVIDENCE_PATH).get("target", {})
+    reference_rows = evidence_target.get("historicalHlslReferences", evidence_target.get("ruriOutputs", []))
+    reference_evidence = {row.get("fileName"): row for row in reference_rows if isinstance(row, dict)}
+    for reference_path in (VERTEX_REFERENCE, FRAGMENT_REFERENCE):
+        name = reference_path.name
+        row = reference_evidence.get(name)
+        if not row or row.get("size") != reference_path.stat().st_size or row.get("sha256") != _sha256(reference_path):
+            raise VerificationError(f"historical HLSL reference hash/size mismatch for {name}")
     shader_source = SIDE_ROOT / "Shader" / "HGRP_LitEffect_p5936F49FA93F14DD.shader"
     texture_identities = _texture_identity_map()
     materials = _material_rows(shader_source, texture_identities, material_fields)
 
     expected_vertex = {0: 82, 1: 20, 2: 11}
     expected_fragment = {0: 45, 1: 106, 2: 5, 3: 31, 4: 1}
-    for actual, expected, label in ((vertex_ruri["physicalCbuffers"], expected_vertex, "vertex"), (fragment_ruri["physicalCbuffers"], expected_fragment, "fragment")):
+    for actual, expected, label in ((vertex_reference["physicalCbuffers"], expected_vertex, "vertex"), (fragment_reference["physicalCbuffers"], expected_fragment, "fragment")):
         found = {int(row["register"]): row["arraySizes"][-1] for row in actual}
         if found != expected:
-            raise VerificationError(f"{label} Ruri cbuffer sizes mismatch: {found!r}")
+            raise VerificationError(f"{label} historical HLSL cbuffer sizes mismatch: {found!r}")
 
     logical_descriptor_rows = {
         row["Name"]: row
@@ -756,30 +759,30 @@ def build_report() -> dict[str, Any]:
     if dynamic_samplers != {i: name for i, name in enumerate(TEXTURE_NAMES)}:
         raise VerificationError(f"PerMaterial sampler/name order mismatch: {dynamic_samplers!r}")
     vertex_resources = []
-    for resource in vertex_ruri["resources"]:
+    for resource in vertex_reference["resources"]:
         if resource["register"] == 0:
-            vertex_resources.append({**resource, "logicalName": "_VertexSkinMatrices", "status": "resolved", "basis": ["DXBC/Ruri t0", "serialized BufferParameters", "Global descriptor binding 19"]})
+            vertex_resources.append({**resource, "logicalName": "_VertexSkinMatrices", "status": "resolved", "basis": ["DXBC/historical HLSL t0", "serialized BufferParameters", "Global descriptor binding 19"]})
     if len(vertex_resources) != 1:
         raise VerificationError("expected exactly one vertex t0 resource")
     fragment_resources = []
-    if sorted(resource["register"] for resource in fragment_ruri["resources"]) != list(range(6)):
+    if sorted(resource["register"] for resource in fragment_reference["resources"]) != list(range(6)):
         raise VerificationError("fragment texture registers are not exactly t0..t5")
     expected_resource_names = {index: f"_{index + 8}" for index in range(6)}
-    for resource in fragment_ruri["resources"]:
+    for resource in fragment_reference["resources"]:
         slot = resource["register"]
         if resource.get("name") != expected_resource_names.get(slot):
             raise VerificationError(f"fragment texture resource name mismatch at t{slot}")
         logical = dynamic_samplers.get(slot)
-        fragment_resources.append({**resource, "logicalName": logical, "status": "resolved" if logical else "gap", "basis": ["Ruri register", "serialized SamplerParameters BindPoint 0..5", "PerMaterial descriptor texture binding 6..11"] if logical else []})
+        fragment_resources.append({**resource, "logicalName": logical, "status": "resolved" if logical else "gap", "basis": ["historical HLSL register", "serialized SamplerParameters BindPoint 0..5", "PerMaterial descriptor texture binding 6..11"] if logical else []})
     if len(fragment_resources) != 6:
         raise VerificationError(f"expected six fragment texture resources, got {len(fragment_resources)}")
 
-    static_samplers = [{**row, "status": "resolved_static_name"} for row in fragment_ruri["samplers"]]
+    static_samplers = [{**row, "status": "resolved_static_name"} for row in fragment_reference["samplers"]]
     if [row["register"] for row in static_samplers] != list(range(6)):
-        raise VerificationError("fragment Ruri samplers are not the six s0..s5 slots")
-    expected_ruri_samplers = ["sampler_LinearClamp", "sampler_LinearRepeat", "sampler_LinearMirror", "sampler_LinearMirrorOnce", "sampler_PointClamp", "sampler_PointRepeat"]
-    if [row["name"] for row in static_samplers] != expected_ruri_samplers:
-        raise VerificationError("fragment Ruri sampler declarations changed")
+        raise VerificationError("fragment historical HLSL samplers are not the six s0..s5 slots")
+    expected_reference_samplers = ["sampler_LinearClamp", "sampler_LinearRepeat", "sampler_LinearMirror", "sampler_LinearMirrorOnce", "sampler_PointClamp", "sampler_PointRepeat"]
+    if [row["name"] for row in static_samplers] != expected_reference_samplers:
+        raise VerificationError("fragment historical HLSL sampler declarations changed")
     static_metadata_names = {row.get("Name") for row in fragment_meta["samplers"] if isinstance(row.get("BindPoint"), int) and 5 <= row["BindPoint"] <= 10 and str(row.get("Name", "")).startswith("s_")}
     expected_metadata_names = {"s_trilinear_repeat_sampler", "s_trilinear_clamp_sampler", "s_point_repeat_sampler", "s_point_clamp_sampler", "s_linear_repeat_sampler", "s_linear_clamp_sampler"}
     if static_metadata_names != expected_metadata_names:
@@ -787,12 +790,12 @@ def build_report() -> dict[str, Any]:
 
     common_fields = _common_fields(vertex_meta)
     physical_vertex = [
-        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["vertex"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/Ruri used-prefix size"]}
-        for row in vertex_ruri["physicalCbuffers"]
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["vertex"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/historical HLSL used-prefix size"]}
+        for row in vertex_reference["physicalCbuffers"]
     ]
     physical_fragment = [
-        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["fragment"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/Ruri used-prefix size"]}
-        for row in fragment_ruri["physicalCbuffers"]
+        {"register": row["register"], "space": row["space"], "arraySize": row["arraySizes"][-1], "sizeBytes": row["sizeBytes"], "aliases": row["aliases"], "logicalName": expected_physical["fragment"][row["register"]], "status": "resolved_cross_platform_register", "basis": ["serialized PackedBinding stage/register bytes", "same-blob SPIR-V descriptor set/binding and block size", "DXBC/historical HLSL used-prefix size"]}
+        for row in fragment_reference["physicalCbuffers"]
     ]
 
     fragment_fields = []
@@ -825,8 +828,8 @@ def build_report() -> dict[str, Any]:
         "scope": {"shader": {"cab": "CAB-2c811ef28608ab220ecdb5c4e0629d2d", "pathId": 6428594484694422749, "name": "HGRP/LitEffect"}, "pass": "HGBuffer", "keywords": ["HG_ENABLE_MV", "_PARALLAX_MAP"], "subProgramIndex": 19, "platform": "d3d11"},
         "evidence": evidence,
         "reflection": {
-            "vertex": {**vertex_reflection, "ruri": vertex_ruri, "metadata": vertex_meta},
-            "fragment": {**fragment_reflection, "ruri": fragment_ruri, "metadata": fragment_meta},
+            "vertex": {**vertex_reflection, "historicalHlslReference": vertex_reference, "metadata": vertex_meta},
+            "fragment": {**fragment_reflection, "historicalHlslReference": fragment_reference, "metadata": fragment_meta},
         },
         "bindChannels": bind_channels,
         "vertexInputs": vertex_reflection["inputs"],
