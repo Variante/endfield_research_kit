@@ -2099,6 +2099,13 @@ puts the exact Uber at radial/chromatic 0.109/0.101 on 4.3500. Across the 11
 shared focused samples, character ROI MAE improves 27.935 to 27.581, effect ROI
 MAE improves 35.212 to 34.690, and temporal-delta MAE improves 29.301 to
 25.685. Keep temporal -> bloom -> actor-inclusive exact Uber ordering intact.
+The subsequent 770-frame exact-Uber render completed without a crash and kept
+the best global phase offset at -1; its aggregate ROI/effect/temporal MAE is
+21.134/22.069/11.889. Do not compare its first two aggregates directly with
+the older 20.972/21.937 compatibility-Uber run, because that baseline did not
+request the native exact Uber. The full verifier still fails closed on the
+pre-existing incomplete eleven-row LitEffect plus exact `suikuai (1)` binding;
+successful image export alone does not close that admission gap.
 
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
