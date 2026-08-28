@@ -2346,13 +2346,24 @@ targeted D3D11 run reports the replay bound and applied at every checkpoint.
 The same session strengthens but does not complete peak/opening effects. It
 retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
 4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. The unchanged native M31
-transport is admitted only for the seven exact two-draw packets; the
-three-draw peak and one-draw tail restore the ordinary renderer. No M20 shader
-identity occurs, and the only opening-strip package inside the maintained
-0.0667-0.35 s interval is frame 1758 at about 0.2325 s. This capture therefore
-must not be used to invent M20 ownership or expand the partial strip table.
-It also lacks M27's exact 1,080-index/15-copy peak, so the stronger older M27
-payload remains canonical.
+callback cannot submit those packets in retail order: all seven two-draw
+packets are `M31 -> M29/M30 -> M31`, not two contiguous M31 draws. They now
+fail closed to the ordinary renderer; the three-draw peak and one-draw tail
+remain unsupported by the two-draw callback as well. No M20 shader identity
+occurs, and the only opening-strip package inside the maintained 0.0667-0.35 s
+interval is frame 1758 at about 0.2325 s. This capture therefore must not be
+used to invent M20 ownership or expand the partial strip table. Runtime strip
+admission now exactly matches shader-backed frames and no longer issues the
+unsupported frame-13 no-op pass.
+
+The older canonical M27 payload remains authoritative because this session
+lacks its exact 1,080-index/15-copy peak. Its runtime clock is now normalized
+from the live actor animation every frame by the established two-tick viewer
+lead. Requested 4.5000 s therefore selects frame 2978's 15-stone peak rather
+than frame 2987's four-stone tail. A focused D3D11 run validates the native
+packet and preserves 921 deferred-presentation pixels into the saved frame;
+this fixes missing geometry but does not close the known dark/gray deferred
+lighting gap.
 
 ## Main animation gap
 

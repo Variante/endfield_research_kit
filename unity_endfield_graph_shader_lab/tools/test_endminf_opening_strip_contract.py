@@ -29,6 +29,23 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertNotIn("OPENING_STRIP_DIAGNOSTIC", source)
         self.assertIn("if (!TryGetElapsed(out float elapsed))", source)
 
+    def test_runtime_admits_exactly_shader_backed_frames(self) -> None:
+        clock_source = CLOCK.read_text(encoding="utf-8")
+        shader_source = SHADER.read_text(encoding="utf-8")
+        runtime_frames = {
+            int(frame)
+            for frame in re.findall(r"case ([0-9]+):", clock_source)
+        }
+        shader_frames = {
+            int(frame)
+            for frame in re.findall(r"frame == ([0-9]+)", shader_source)
+        }
+        self.assertEqual(runtime_frames, shader_frames)
+        self.assertEqual(
+            runtime_frames,
+            {4, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20},
+        )
+
     def test_pass_is_opt_in_and_pre_uber(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")
         gate = source.index("bool useRecoveredEndminfOpeningStrip")
