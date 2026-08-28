@@ -30,6 +30,8 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
                          cs_path, cpp_path)
             cs = cs_path.read_text(encoding="utf-8")
             cpp = cpp_path.read_text(encoding="utf-8")
+            self.assertEqual(cs, MODULE.CS_OUTPUT.read_text(encoding="utf-8"))
+            self.assertEqual(cpp, MODULE.CPP_OUTPUT.read_text(encoding="utf-8"))
             self.assertIn('TemporalSourceSession = "20260828T121603Z"', cs)
             self.assertIn("PayloadSourceFrame = 1818", cs)
             self.assertIn("AnchorFrame = 1977", cs)
@@ -38,6 +40,18 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             self.assertIn("NativePayloadDrawCount = 2", cs)
             self.assertIn(
                 "DrawCounts = { 2, 2, 2, 2, 2, 2, 2, 3, 1 }", cs)
+            self.assertIn(
+                "FirstDrawOrdinals = { 68, 68, 68, 77, 77, 68, 77, 66, 67 }",
+                cs)
+            self.assertIn(
+                "LastDrawOrdinals = { 77, 79, 79, 89, 89, 80, 89, 89, 67 }",
+                cs)
+            self.assertIn(
+                "NativeOrderCompatible = { false, false, false, false, false, false, false, false, true }",
+                cs)
+            self.assertIn(
+                "InterleavedM29M30Counts = { 2, 2, 2, 2, 2, 2, 2, 0, 0 }",
+                cs)
             self.assertIn("2.863329f", cs)
             self.assertIn("4.564017f", cs)
             self.assertIn("DepthContractReady = true", cs)
@@ -56,6 +70,11 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         self.assertTrue(all(
             row["phase"] < packets[index + 1]["phase"]
             for index, row in enumerate(packets[:-1])))
+        self.assertEqual([False] * 8 + [True],
+                         [row["native_order_compatible"] for row in packets])
+        self.assertEqual([2, 2, 2, 2, 2, 2, 2, 0, 0],
+                         [len(row["interleaved_m29_m30"])
+                          for row in packets])
 
     def test_owner_constant_drift_is_rejected(self) -> None:
         metadata_path = (MODULE.PAYLOAD_CAPTURE /
@@ -98,6 +117,9 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         self.assertIn(
             "EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount",
             runtime)
+        self.assertIn(".NativeOrderCompatible[selectedPacket]", runtime)
+        self.assertIn("transport-order gate drifted", runtime)
+        self.assertIn("M31/M29/M30 owner order drifted", runtime)
         self.assertIn("SetRendererSuppression(active)", runtime)
         self.assertIn("submittedDraws !=", runtime)
 

@@ -78,7 +78,9 @@ namespace EndfieldGraphShaderLab
                     seconds - ViewerLeadSeconds));
             active = selectedPacket >= 0 &&
                 EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket] ==
-                EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount;
+                EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
+                EndfieldRecoveredM31PeakCaptureData
+                    .NativeOrderCompatible[selectedPacket];
             if (!loggedAdmission)
             {
                 Debug.Log("Recovered exact Endminf M31 temporal admission: " +
@@ -116,15 +118,30 @@ namespace EndfieldGraphShaderLab
             float[] phases = EndfieldRecoveredM31PeakCaptureData.PhaseSeconds;
             int[] frames = EndfieldRecoveredM31PeakCaptureData.SourceFrames;
             int[] drawCounts = EndfieldRecoveredM31PeakCaptureData.DrawCounts;
+            int[] firstDrawOrdinals =
+                EndfieldRecoveredM31PeakCaptureData.FirstDrawOrdinals;
+            int[] lastDrawOrdinals =
+                EndfieldRecoveredM31PeakCaptureData.LastDrawOrdinals;
+            bool[] nativeOrderCompatible =
+                EndfieldRecoveredM31PeakCaptureData.NativeOrderCompatible;
+            int[] interleavedM29M30Counts =
+                EndfieldRecoveredM31PeakCaptureData.InterleavedM29M30Counts;
             string[] hashes =
                 EndfieldRecoveredM31PeakCaptureData.TemporalMetadataSha256;
             int packetCount = EndfieldRecoveredM31PeakCaptureData.PacketCount;
             if (!EndfieldRecoveredM31PeakCaptureData.PayloadPrepared ||
                 !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
                 phases == null || frames == null || drawCounts == null ||
-                hashes == null || packetCount < 2 ||
+                firstDrawOrdinals == null || lastDrawOrdinals == null ||
+                nativeOrderCompatible == null || hashes == null || packetCount < 2 ||
+                interleavedM29M30Counts == null ||
                 phases.Length != packetCount || frames.Length != packetCount ||
-                drawCounts.Length != packetCount || hashes.Length != packetCount)
+                drawCounts.Length != packetCount ||
+                firstDrawOrdinals.Length != packetCount ||
+                lastDrawOrdinals.Length != packetCount ||
+                nativeOrderCompatible.Length != packetCount ||
+                interleavedM29M30Counts.Length != packetCount ||
+                hashes.Length != packetCount)
             {
                 return Fail("the generated M31 temporal contract is incomplete");
             }
@@ -136,6 +153,18 @@ namespace EndfieldGraphShaderLab
                     return Fail("the generated M31 temporal order is invalid");
                 if (drawCounts[index] <= 0 || string.IsNullOrEmpty(hashes[index]))
                     return Fail("the generated M31 packet identity is incomplete");
+                if (firstDrawOrdinals[index] > lastDrawOrdinals[index] ||
+                    lastDrawOrdinals[index] - firstDrawOrdinals[index] + 1 <
+                        drawCounts[index])
+                    return Fail("the generated M31 owner order is invalid");
+                if (nativeOrderCompatible[index] !=
+                    (lastDrawOrdinals[index] - firstDrawOrdinals[index] + 1 ==
+                        drawCounts[index]))
+                    return Fail("the generated M31 transport-order gate drifted");
+                if (interleavedM29M30Counts[index] < 0 ||
+                    nativeOrderCompatible[index] &&
+                    interleavedM29M30Counts[index] != 0)
+                    return Fail("the generated M31/M29/M30 owner order drifted");
                 if (frames[index] ==
                     EndfieldRecoveredM31PeakCaptureData.AnchorFrame)
                 {

@@ -45,8 +45,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=1"
-  rem Replay the source-validated temporal M31 crystal envelope; unsupported
-  rem three-draw peak and one-draw tail packets deliberately use the ordinary renderer.
+  rem Retain the measured M31 temporal contract. The current native callback
+  rem cannot preserve retail's M31-M29/M30-M31 interleave, so incompatible
+  rem packets deliberately keep the ordinary renderer until split submission exists.
   set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"
   set "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER=1"
   set "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1"
