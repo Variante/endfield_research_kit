@@ -2156,6 +2156,22 @@ a keyboard trigger. Release x64 and all 15 native tests pass. The next live run
 must still prove which M20 route retail binds around clean frames 276-281;
 source-variant priority is not itself runtime evidence.
 
+Both decompiled M20 vertex variants declare a VS t0 `ByteAddressBuffer` and
+contain live structured loads for their skin/instance branches. EndfieldCapture
+now retains that draw-local VS t0 buffer in addition to M20's IA, VS/PS
+constants, samplers, and six PS resource slots. The WARP test covers vertex-SRV
+buffer readback, stage/slot ownership, coexistence with compute aliases, and IA
+alias publication; Release x64 and all 15 native tests pass. This closes a
+capture-tool omission before the next live run rather than discovering an
+unreplayable M20 packet afterward.
+
+A focused M21 ablation also clarifies its presentation boundary. Its source
+material has no authored texture and the zero VS buffer is valid for the
+non-skinned branch; the exact frame-2775 stones become most visible in following
+temporal-resolve samples. Disabling the one-frame packet removes those stones
+from the follow-up sequence, so M21 remains canonical. A single targeted PNG at
+the callback tick is not a valid M21 visibility test.
+
 Decompiling source variants 0876/0877 and 4950/4951 closes M20's static sampler
 ABI: t0 scene depth uses LinearClamp, t1 Main uses LinearRepeat, t2 Sample0
 uses LinearMirror, and t3 Sample1 uses LinearMirrorOnce. The recovered BaseV2
