@@ -188,6 +188,8 @@ namespace EndfieldGraphShaderLab
         private static readonly int CharacterBloomSourceId = Shader.PropertyToID("_EndfieldCharacterBloomSource");
         private static readonly int RecoveredEndminfPostSourceId =
             Shader.PropertyToID("_EndfieldRecoveredEndminfPostSource");
+        private static readonly int RecoveredEndminfOpeningStripSourceId =
+            Shader.PropertyToID("_EndfieldRecoveredEndminfOpeningStripSource");
         private static readonly int CharacterBloomAId = Shader.PropertyToID("_EndfieldCharacterBloomA");
         private static readonly int CharacterBloomBId = Shader.PropertyToID("_EndfieldCharacterBloomB");
         private static readonly int BloomTextureId = Shader.PropertyToID("_BloomTex");
@@ -326,6 +328,10 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndminfVisualCompatibilityParams");
         private static readonly int EndminfVisualCompatibilityCenterId =
             Shader.PropertyToID("_EndminfVisualCompatibilityCenter");
+        private static readonly int EndminfOpeningStripParamsId =
+            Shader.PropertyToID("_EndminfOpeningStripParams");
+        private static readonly int EndminfOpeningStripSourceSizeId =
+            Shader.PropertyToID("_EndminfOpeningStripSourceSize");
         private static readonly int TonemapModeId = Shader.PropertyToID("_TonemapMode");
         private static readonly int ToneCurveParams0Id = Shader.PropertyToID("_ToneCurveParams0");
         private static readonly int ToneCurveParams1Id = Shader.PropertyToID("_ToneCurveParams1");
@@ -668,6 +674,8 @@ namespace EndfieldGraphShaderLab
         private Material recoveredTemporalMaterial;
         private Material recoveredTemporalDilationMaterial;
         private Material recoveredTemporalMaskDilationMaterial;
+        private Material recoveredEndminfOpeningStripMaterial;
+        private bool loggedRecoveredEndminfOpeningStrip;
         private bool loggedRecoveredTemporalResolve;
 
         private static int[] CreateBloomMipIds(string prefix)
@@ -815,6 +823,17 @@ namespace EndfieldGraphShaderLab
                     name = "Endfield HGRP TAAU Mask Dilation (Pipeline)"
                 };
             }
+            Shader openingStripShader = Shader.Find(
+                "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip");
+            if (openingStripShader != null && openingStripShader.isSupported)
+            {
+                recoveredEndminfOpeningStripMaterial = new Material(
+                    openingStripShader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave,
+                    name = "Recovered Endminf Opening Strip (Pipeline)"
+                };
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -882,6 +901,14 @@ namespace EndfieldGraphShaderLab
                 else
                     Object.DestroyImmediate(recoveredTemporalMaskDilationMaterial);
                 recoveredTemporalMaskDilationMaterial = null;
+            }
+            if (recoveredEndminfOpeningStripMaterial != null)
+            {
+                if (Application.isPlaying)
+                    Object.Destroy(recoveredEndminfOpeningStripMaterial);
+                else
+                    Object.DestroyImmediate(recoveredEndminfOpeningStripMaterial);
+                recoveredEndminfOpeningStripMaterial = null;
             }
             if (postProcessMaterial == null)
                 return;
@@ -3155,6 +3182,46 @@ namespace EndfieldGraphShaderLab
                 LastRecoveredEndminfPostSourceGraphicsFormat =
                     recoveredPostSourceDescriptor.graphicsFormat;
             }
+            EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
+                openingStripState = default;
+            bool useRecoveredEndminfOpeningStrip =
+                useRecoveredPostSemantics &&
+                recoveredEndminfOpeningStripMaterial != null &&
+                EndfieldEndminfVisualCompatibilityClock.TryEvaluateOpeningStrip(
+                    out openingStripState);
+            if (useRecoveredEndminfOpeningStrip)
+            {
+                commandBuffer.GetTemporaryRT(
+                    RecoveredEndminfOpeningStripSourceId,
+                    recoveredPostSourceDescriptor,
+                    FilterMode.Bilinear);
+                commandBuffer.SetGlobalVector(
+                    EndminfOpeningStripParamsId,
+                    new Vector4(
+                        openingStripState.intensity,
+                        openingStripState.displacementPixels,
+                        openingStripState.chromaticEdgePixels,
+                        openingStripState.elapsed));
+                commandBuffer.SetGlobalVector(
+                    EndminfOpeningStripSourceSizeId,
+                    new Vector4(width, height, 1.0f / width, 1.0f / height));
+                commandBuffer.Blit(
+                    recoveredPostSource,
+                    RecoveredEndminfOpeningStripSourceId,
+                    recoveredEndminfOpeningStripMaterial,
+                    0);
+                recoveredPostSource = new RenderTargetIdentifier(
+                    RecoveredEndminfOpeningStripSourceId);
+
+                if (!loggedRecoveredEndminfOpeningStrip)
+                {
+                    Debug.Log(
+                        "Recovered Endminf opening horizontal-strip pass active " +
+                        "before bloom/Uber; the existing reduced radial/chromatic " +
+                        "compatibility response remains downstream.");
+                    loggedRecoveredEndminfOpeningStrip = true;
+                }
+            }
             if (useRecoveredPostSemantics)
             {
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
@@ -3553,6 +3620,9 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.ReleaseTemporaryRT(CameraColorId);
             if (useRecoveredEndminfRgba16PostSource)
                 commandBuffer.ReleaseTemporaryRT(RecoveredEndminfPostSourceId);
+            if (useRecoveredEndminfOpeningStrip)
+                commandBuffer.ReleaseTemporaryRT(
+                    RecoveredEndminfOpeningStripSourceId);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
