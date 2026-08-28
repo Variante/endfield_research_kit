@@ -2541,8 +2541,12 @@ payload staging, but lets one automatic run prove which pre-Uber resolver
 writes the SceneColor resource subsequently consumed by normal Uber. The
 current `build-local` proxy SHA-256 is
 `82D5714E1B9CF62A4680EC15BDCCC2CD600E1647F01C95B8944220DF19855397` and all
-15 native tests pass. A new real-game run is still required; no M20/M21
-evidence can be recovered from either failed session.
+15 native tests pass. After capture, run
+`python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`;
+the analyzer fails closed on old/truncated metadata and recovers only exact
+same-frame object-identity edges from an earlier resolver RTV to a normal-Uber
+PS input. A new real-game run is still required; no M20/M21 evidence can be
+recovered from either failed session.
 
 The exact-owner policy deliberately retains one compute exception: the unique
 8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
