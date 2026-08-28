@@ -2146,11 +2146,15 @@ EndfieldCapture now priority-retains both exact source-compiled M20 shader
 routes: non-instanced VS/PS `e8f38f2f7519383d`/`fea38543389b6ff4` and
 SRP-instanced VS/PS `4bef98c73ca34880`/`246a0f4f2d3c34f4`. The retained packet
 includes draw-local IA, constant-buffer allocations, samplers, and PS resources.
-The exact-Endminf trigger starts one 64-package sequence without human input
-(24 consecutive packages, then 40 at six-present spacing), in both the
-graphics-only proxy and general runtime. Release x64 and all 15 native tests
-pass. The next live run must still prove which M20 route retail binds around
-clean frames 276-281; source-variant priority is not itself runtime evidence.
+The exact-Endminf trigger starts one 72-package sequence without human input
+(24 consecutive packages, then 48 at six-present spacing), in both the
+graphics-only proxy and general runtime. The earlier 64-package schedule ended
+at relative present 263 (about 4.38 seconds at 60 Hz), just before M20's first
+visible sample around 4.433 seconds. The corrected schedule ends at relative
+present 311 (about 5.18 seconds), covering M20's gas onset and cleanup without
+a keyboard trigger. Release x64 and all 15 native tests pass. The next live run
+must still prove which M20 route retail binds around clean frames 276-281;
+source-variant priority is not itself runtime evidence.
 
 Decompiling source variants 0876/0877 and 4950/4951 closes M20's static sampler
 ABI: t0 scene depth uses LinearClamp, t1 Main uses LinearRepeat, t2 Sample0
