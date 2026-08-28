@@ -14,6 +14,10 @@ IMPORTER = ROOT / (
     "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
     "EndfieldEndminfOverviewEffectImporter.cs"
 )
+VIEWER_CAPTURE = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+    "EndfieldEndminfViewerPlayModeCapture.cs"
+)
 
 
 class EndminfSuikuaiBindingRepairContractTests(unittest.TestCase):
@@ -54,6 +58,22 @@ class EndminfSuikuaiBindingRepairContractTests(unittest.TestCase):
             "                    staleFailClosedBoundary",
             body,
         )
+
+    def test_viewer_verifies_the_exact_eleven_row_family_and_suikuai(self) -> None:
+        source = VIEWER_CAPTURE.read_text(encoding="utf-8")
+        self.assertIn("endfield.endminf-viewer-playmode-sequence.v7", source)
+        for token in (
+            "firstEntranceFrame.litEffectBindingRowCount == 11",
+            "firstEntranceFrame.primaryRockFamily.Length == 11",
+            "litEffectM01Count == 7",
+            "litEffectM38Count == 3",
+            "litEffectM27Count == 1",
+            "firstEntranceFrame.exactSuikuai1BindingReady",
+            "renderer.meshCount != 4",
+            "material.name == ExactSuikuai1MaterialName",
+            "material.shader.name == ExactRefractShader",
+        ):
+            self.assertIn(token, source)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ RUNTIME_ROOT = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v6", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v7", source)
         for material in ("M18", "M21", "M28"):
             for state in ("Requested", "Active", "Submitted", "Validated", "Failure"):
                 field = f"endminf{material}Exact{state}"

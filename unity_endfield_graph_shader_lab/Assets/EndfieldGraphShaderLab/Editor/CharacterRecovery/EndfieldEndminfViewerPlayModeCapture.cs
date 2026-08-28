@@ -68,6 +68,10 @@ namespace EndfieldGraphShaderLabEditor
         private const int FrameCount = 41;
         private const string LitEffectCompatibilityShader =
             "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax";
+        private const string ExactRefractShader =
+            "Hidden/Endfield/Recovered/Zhuangfy/VFXRefractMRT";
+        private const string ExactSuikuai1MaterialName =
+            "M_fx_common_teleport_03";
         private const string Suikuai1DiagnosticEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ADMIT_SUIKUAI1";
         private const string OutputEnvironment =
@@ -116,7 +120,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v6";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v7";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -252,6 +256,8 @@ namespace EndfieldGraphShaderLabEditor
             public ParticleRow[] liveRenderers;
             public ParticleRow[] handFamily;
             public ParticleRow[] primaryRockFamily;
+            public int litEffectBindingRowCount;
+            public bool exactSuikuai1BindingReady;
             public SecondaryDynamicsBoneRow[] secondaryDynamicsBones;
             public bool secondaryDynamicsSolverWriteback;
             public string secondaryDynamicsBindingFailure;
@@ -1206,6 +1212,15 @@ namespace EndfieldGraphShaderLabEditor
                     .Select(value => Particle(value.renderer))
                     .OrderBy(value => value.path, StringComparer.Ordinal)
                     .ToArray(),
+                litEffectBindingRowCount = roots
+                    .SelectMany(value => value.GetComponentsInChildren<
+                        EndfieldEndminfLitEffectCompatibilityBinding>(true))
+                    .Sum(value => (value.rows ?? Array.Empty<
+                        EndfieldEndminfLitEffectCompatibilityBinding.Row>())
+                        .Count(row => row != null && row.renderer != null &&
+                            row.material != null && row.mesh != null)),
+                exactSuikuai1BindingReady = renderers.Count(value =>
+                    IsExactSuikuai1BindingReady(value)) == 1,
                 secondaryDynamicsBones = captureSecondaryDynamics
                     ? CaptureSecondaryDynamicsBones(actor)
                     : Array.Empty<SecondaryDynamicsBoneRow>(),
@@ -1266,9 +1281,36 @@ namespace EndfieldGraphShaderLabEditor
                 Frames.All(value => value.rootMotionPositionDelta.sqrMagnitude <= 1.0e-10f);
             FrameRow firstEntranceFrame = Frames.FirstOrDefault(value =>
                 value.effectRootCount == 4);
+            int litEffectM01Count = firstEntranceFrame == null ||
+                firstEntranceFrame.primaryRockFamily == null
+                ? 0
+                : firstEntranceFrame.primaryRockFamily.Count(value =>
+                    value.materials != null &&
+                    value.materials.SequenceEqual(new[] {
+                        "M_fx_endminm_gfx_01" }));
+            int litEffectM38Count = firstEntranceFrame == null ||
+                firstEntranceFrame.primaryRockFamily == null
+                ? 0
+                : firstEntranceFrame.primaryRockFamily.Count(value =>
+                    value.materials != null &&
+                    value.materials.SequenceEqual(new[] {
+                        "M_fx_endminm_gfx_38" }));
+            int litEffectM27Count = firstEntranceFrame == null ||
+                firstEntranceFrame.primaryRockFamily == null
+                ? 0
+                : firstEntranceFrame.primaryRockFamily.Count(value =>
+                    value.materials != null &&
+                    value.materials.SequenceEqual(new[] {
+                        "M_fx_endminm_gfx_27" }));
             bool observedPrimaryRockCompatibilityBinding =
                 firstEntranceFrame != null &&
                 firstEntranceFrame.admittedRenderers == 68 &&
+                firstEntranceFrame.litEffectBindingRowCount == 11 &&
+                firstEntranceFrame.primaryRockFamily != null &&
+                firstEntranceFrame.primaryRockFamily.Length == 11 &&
+                litEffectM01Count == 7 && litEffectM38Count == 3 &&
+                litEffectM27Count == 1 &&
+                firstEntranceFrame.exactSuikuai1BindingReady &&
                 firstEntranceFrame.blockedRendererIdentities != null &&
                 firstEntranceFrame.blockedRendererIdentities.Length ==
                     ExpectedRemainingBlockedEffects.Length &&
@@ -1355,7 +1397,13 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedPrimaryRockCompatibilityBinding)
                 missingObservations.Add(
                     "eleven-row LitEffect crystal compatibility plus exact suikuai (1) " +
-                    "binding with two separate blocked effects");
+                    "binding with two separate blocked effects " +
+                    $"(rows={firstEntranceFrame?.litEffectBindingRowCount ?? 0}/11, " +
+                    $"M01={litEffectM01Count}/7, M38={litEffectM38Count}/3, " +
+                    $"M27={litEffectM27Count}/1, " +
+                    $"suikuai={firstEntranceFrame?.exactSuikuai1BindingReady ?? false}, " +
+                    $"admitted={firstEntranceFrame?.admittedRenderers ?? 0}/68, " +
+                    $"blocked={firstEntranceFrame?.blockedRendererIdentities?.Length ?? 0}/2)");
             if (!observedCanonicalSecondaryReplay)
                 missingObservations.Add(
                     "captured retail hair/cape trajectory without diagnostic solver ownership");
@@ -2023,6 +2071,27 @@ namespace EndfieldGraphShaderLabEditor
                 firstParticleRandomSeed = first.randomSeed,
                 firstParticleCustom1 = custom1.Count > 0 ? custom1[0] : Vector4.zero,
             };
+        }
+
+        private static bool IsExactSuikuai1BindingReady(
+            ParticleSystemRenderer renderer)
+        {
+            if (renderer == null || !renderer.enabled ||
+                renderer.transform.parent == null ||
+                renderer.gameObject.name != "suikuai (1)" ||
+                renderer.transform.parent.gameObject.name != "all" ||
+                renderer.renderMode != ParticleSystemRenderMode.Mesh ||
+                !renderer.enableGPUInstancing || renderer.meshCount != 4)
+                return false;
+
+            Material[] materials = renderer.sharedMaterials;
+            Material material = materials != null && materials.Length == 1
+                ? materials[0]
+                : null;
+            return material != null &&
+                material.name == ExactSuikuai1MaterialName &&
+                material.shader != null &&
+                material.shader.name == ExactRefractShader;
         }
 
         private static string Hierarchy(Transform value)
