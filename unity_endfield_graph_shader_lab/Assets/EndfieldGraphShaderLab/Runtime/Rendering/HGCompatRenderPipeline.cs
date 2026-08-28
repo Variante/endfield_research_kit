@@ -2100,6 +2100,25 @@ namespace EndfieldGraphShaderLab
                 recoveredSceneColorPingAllocated = true;
                 if (mainReady)
                     recoveredCurrentSceneColor = composedSceneColor;
+                // Frames 1896-1965 retain the retail owner interval as
+                // M31(first) -> transparent pre-M29/M30 work -> M31(second).
+                if (mainReady && exactEndminfM31PeakPrepared)
+                {
+                    mainReady =
+                        EndfieldRecoveredEndminfM31PeakExactRuntime.RenderFirst(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M31 first split transport failed " +
+                            "closed: " +
+                            EndfieldRecoveredEndminfM31PeakExactRuntime.Failure;
+                    }
+                }
                 if (mainReady && exactEndminfVFXBaseV2PeakPrepared)
                 {
                     mainReady = EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
@@ -2131,22 +2150,6 @@ namespace EndfieldGraphShaderLab
                         compositorFailure =
                             "exact Endminf M30 transport failed closed: " +
                             EndfieldRecoveredEndminfM30ExactRuntime.Failure;
-                    }
-                }
-                if (mainReady && exactEndminfM31PeakPrepared)
-                {
-                    mainReady =
-                        EndfieldRecoveredEndminfM31PeakExactRuntime.Render(
-                            context,
-                            camera,
-                            recoveredCurrentSceneColor,
-                            recoveredSceneMV,
-                            recoveredPrimarySceneDepth);
-                    if (!mainReady)
-                    {
-                        compositorFailure =
-                            "exact Endminf M31 peak transport failed closed: " +
-                            EndfieldRecoveredEndminfM31PeakExactRuntime.Failure;
                     }
                 }
                 if (mainReady)
@@ -2197,6 +2200,30 @@ namespace EndfieldGraphShaderLab
                             "exact Endminf M29 transport failed closed: " +
                             EndfieldRecoveredEndminfM29ExactRuntime.Failure;
                     }
+                }
+                if (mainReady && exactEndminfM31PeakPrepared)
+                {
+                    mainReady =
+                        EndfieldRecoveredEndminfM31PeakExactRuntime.RenderSecond(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M31 second split transport failed " +
+                            "closed: " +
+                            EndfieldRecoveredEndminfM31PeakExactRuntime.Failure;
+                    }
+                }
+                if (!mainReady && exactEndminfM31PeakPrepared &&
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .HasPendingFirstSubmission)
+                {
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.AbortPendingSplit(
+                        "the retail M31/M29/M30 owner interval failed");
                 }
                 if (mainReady && exactEndminfVFXBaseV2PeakPrepared)
                 {

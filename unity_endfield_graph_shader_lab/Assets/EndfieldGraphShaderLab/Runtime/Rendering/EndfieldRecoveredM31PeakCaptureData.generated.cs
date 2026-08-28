@@ -21,6 +21,7 @@ namespace EndfieldGraphShaderLab
         internal static readonly int[] FirstDrawOrdinals = { 68, 68, 68, 77, 77, 68, 77, 66, 67 };
         internal static readonly int[] LastDrawOrdinals = { 77, 79, 79, 89, 89, 80, 89, 89, 67 };
         internal static readonly bool[] NativeOrderCompatible = { false, false, false, false, false, false, false, false, true };
+        internal static readonly bool[] SplitOrderCompatible = { true, true, true, true, true, true, true, false, false };
         internal static readonly int[] InterleavedM29M30Counts = { 2, 2, 2, 2, 2, 2, 2, 0, 0 };
         internal static readonly string[] TemporalMetadataSha256 = { "0b3e01b79571ffefea96f8e85003175c5d84e19b13e6f36ada8ae732f63a0a3d", "670e3bb377b0543bd41ada162658b271de65126e9eeb3fc61353f87c5a99056f", "a11b69b7c272962d9fd520e669067ed85aa3a487d90681dca0bbd61e9d71b1f9", "2febf2b8d695a875e47a703bf257b41e40c839c01014353fdd85e7bd33a1359a", "80a27368912493b3174d16da456b886d21d40a26cc411a2961f24ca61fe15feb", "1b679b6812dd900601658215ded73a93b508e92fe59ee73874ef61fbf82745e9", "d5e2befceb977423b0f70cf54e1e8164f91a178f71dc928dd8c5b576026dd21e", "b5029723d017bb9a558eff0df96c58fedae7ffeeac6a92c03ffaae4ee32604e2", "65989294287f6c09b7f81257a55bda950c55acee089151cb294fd10b03412665" };
     }

@@ -5009,4 +5009,5 @@ inline constexpr EndfieldM31PeakPacketPayload g_EndfieldM31PeakPackets[] = {
     {20u, g_EndfieldM31PeakP1Vertices, g_EndfieldM31PeakP1VerticesSize, g_EndfieldM31PeakP1Indices, g_EndfieldM31PeakP1IndicesSize, 6u, g_EndfieldM31PeakP1Secondary, g_EndfieldM31PeakP1SecondarySize, {g_EndfieldM31PeakP1VSCB0, g_EndfieldM31PeakP1VSCB1, g_EndfieldM31PeakP1VSCB2, g_EndfieldM31PeakP1VSCB3, g_EndfieldM31PeakP1VSCB4}, {g_EndfieldM31PeakP1VSCB0Size, g_EndfieldM31PeakP1VSCB1Size, g_EndfieldM31PeakP1VSCB2Size, g_EndfieldM31PeakP1VSCB3Size, g_EndfieldM31PeakP1VSCB4Size}, {g_EndfieldM31PeakP1PSCB0, g_EndfieldM31PeakP1PSCB1, g_EndfieldM31PeakP1PSCB2, g_EndfieldM31PeakP1PSCB3}, {g_EndfieldM31PeakP1PSCB0Size, g_EndfieldM31PeakP1PSCB1Size, g_EndfieldM31PeakP1PSCB2Size, g_EndfieldM31PeakP1PSCB3Size}},
 };
 inline constexpr std::uint32_t g_EndfieldM31PeakPacketCount = static_cast<std::uint32_t>(sizeof(g_EndfieldM31PeakPackets) / sizeof(g_EndfieldM31PeakPackets[0]));
+inline constexpr std::uint32_t g_EndfieldM31PeakSplitEventCount = 2u;
 inline constexpr char g_EndfieldM31PeakTextureT1Sha256[] = "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3f164d381bc0";
