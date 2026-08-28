@@ -2330,30 +2330,29 @@ temporal behavior improve, but dark/gray recovered stones still worsen spatial
 color error. Treat the remaining M27 gap as deferred light/resource recovery,
 not as solved fidelity or a texture-substitution problem.
 
-Hair/cape replay remains source-incomplete independently of peak post effects.
-The older dense oracle has no `cloth_02` observations even though
-`S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone
-chains; current `MC_Coat` closure covers only 52 of 71 authored proxy
-transforms. The clean-reference overrides disagree with the older session by
-about 12.1 mm and 4.87 degrees on average, so the cross-session merge is not a
-sound exact-motion source. Full session `20260828T045025Z` is healthy and all
-eight frames contain complete body, hair, `cloth_01`-`cloth_04` palettes,
-including all 29 `cloth_02` matrices. This closes renderer/palette ownership
-and provides same-session pose anchors. The v5 oracle classifies those 29
-weighted bones as 19 existing primary witnesses, six missing
-`clothes_touming_{L,R}_b_{1,2,3}_jnt` extension bones, and four Animator-owned
-pelvis/spine witnesses. It retains 16 current/previous parent-local samples
-but keeps the extension runtime-ineligible: coverage is only source frames
-196-540, its maximum gap is 96 frames versus the primary gate of 33, and its
-parents are not from the same capture session as the primary trajectory.
-Eight isolated samples therefore do not establish a continuous 60 Hz
-trajectory. Its two peak attempts match clean
-frames 274 and 271, immediately before the required M20 interval, so it also
-does not close M20. Peak frame 269 must not judge raw geometry because
-Uber/temporal history shifts the final silhouette; use pre-Uber frames 219,
-257, 273, and settled loop 407. The next dynamics evidence must retain hair
-and all `cloth_01`-`cloth_04` LOD0 palettes in one initialization, then make
-complete renderer/bone coverage a fail-closed oracle gate.
+Automatic full session `20260828T121603Z` closes the hair/cape capture gap.
+All 72 packages contain one unambiguous body, hair, and every
+`cloth_01`-`cloth_04` LOD0 palette, with zero drops or incomplete packages.
+The v6 replay uses both previous/current palettes for 144 samples and writes
+all 74 primary dynamic bones plus the six transparent-cape
+`clothes_touming_{L,R}_b_{1,2,3}_jnt` bones. Their parent and child tracks now
+come from the same session, so the former fail-closed sparse extension is
+runtime-eligible. Present IDs are not a clock: full readback stalls produce
+0.135-0.250 s package gaps. Sample times therefore come from capture QPC,
+anchored by exact Uber frame 1977 at 4.35 s, and preserve the immediately
+previous 60 Hz palette. The generated 144-sample/80-bone asset validates and a
+targeted D3D11 run reports the replay bound and applied at every checkpoint.
+
+The same session strengthens but does not complete peak/opening effects. It
+retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
+4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. The unchanged native M31
+transport is admitted only for the seven exact two-draw packets; the
+three-draw peak and one-draw tail restore the ordinary renderer. No M20 shader
+identity occurs, and the only opening-strip package inside the maintained
+0.0667-0.35 s interval is frame 1758 at about 0.2325 s. This capture therefore
+must not be used to invent M20 ownership or expand the partial strip table.
+It also lacks M27's exact 1,080-index/15-copy peak, so the stronger older M27
+payload remains canonical.
 
 ## Main animation gap
 
@@ -2389,7 +2388,7 @@ or shaders rather than hand-editing generated prefabs.
 
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
    M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
-   and validated two-draw M31 checkpoint. Validate the generated M29 temporal
+   and validated temporal M31 envelope. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
    M28 refractive sphere in their captured ordinal positions and resolve the
@@ -2410,14 +2409,11 @@ or shaders rather than hand-editing generated prefabs.
    shader first appears, then recover the remaining hidden/source-overlapped
    bands and validate the complete table. Do not reintroduce procedural bands
    or move the static portrait/GridFar field.
-3. Extend the eight same-initialization `20260828T045025Z` pose anchors into a
-   dense capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin
-   palette. `cloth_02` ownership is now proven at all eight sparse frames, but
-   its transparent chains still lack a continuous trajectory. Make complete
-   renderer/weighted-bone coverage fail closed, then re-audit frames
-   219/257/273 pre-Uber and settled loop 407. Do not apply the candidate
-   one-frame clock advance, enable the diagnostic solver, or manually widen
-   cloth before that complete trajectory resolves the timing ambiguity.
+3. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
+   frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
+   do not manually widen cloth; any residual silhouette error now belongs to
+   replay-clock registration or renderer/material behavior, not missing
+   transparent-cape bone ownership.
 4. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 5. Keep changing inventories and exhaustive validation output under

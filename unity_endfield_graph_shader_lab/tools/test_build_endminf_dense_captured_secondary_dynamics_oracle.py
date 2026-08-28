@@ -16,11 +16,9 @@ SPEC.loader.exec_module(MODULE)
 class DenseCapturedSecondaryDynamicsOracleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.report = MODULE.build_report(
+        cls.report = MODULE.build_complete_same_session_report(
             MODULE.DEFAULT_BASE_ORACLE,
-            MODULE.DEFAULT_DENSE_DECODED,
-            MODULE.DEFAULT_REFERENCE_MATCHED_DECODED,
-            MODULE.DEFAULT_TRANSPARENT_CAPE_DECODED,
+            MODULE.DEFAULT_COMPLETE_DECODED,
         )
 
     def test_pose_matrix_round_trip(self):
@@ -53,10 +51,10 @@ class DenseCapturedSecondaryDynamicsOracleTests(unittest.TestCase):
         )
         self.assertEqual((len(first), len(second)), (50, 50))
 
-    def test_transparent_cape_extension_is_classified_without_primary_drift(self):
+    def test_complete_same_session_replay_covers_primary_and_transparent_cape(self):
         self.assertEqual(self.report["schema"], MODULE.OUTPUT_SCHEMA)
         self.assertEqual((self.report["frameCount"], self.report["boneCount"]),
-                         (145, 74))
+                         (144, 80))
         extension = self.report["transparentCapeExtension"]
         self.assertEqual(extension["weightedBoneAccounting"], {
             "meshBoneCount": 29,
@@ -68,39 +66,38 @@ class DenseCapturedSecondaryDynamicsOracleTests(unittest.TestCase):
             [path.rsplit("/", 1)[-1] for path in extension["bonePaths"]],
             MODULE.TRANSPARENT_CAPE_BONE_NAMES,
         )
-        self.assertFalse(set(extension["bonePaths"]).intersection(
+        self.assertTrue(set(extension["bonePaths"]).issubset(
             self.report["frames"][0]["ownerBoneMatrices"][index]["path"]
             for index in range(self.report["boneCount"])
         ))
 
-    def test_transparent_cape_samples_retain_explicit_two_replay_mapping(self):
+    def test_qpc_samples_retain_previous_current_palette_pairs(self):
         extension = self.report["transparentCapeExtension"]
-        expected_sources = sorted(
-            source + delta
-            for source in MODULE.TRANSPARENT_CAPE_CURRENT_SOURCE_FRAMES.values()
-            for delta in (-1, 0)
-        )
+        self.assertEqual(extension["sampleCount"], 144)
+        frames = self.report["frames"]
         self.assertEqual(
-            [row["playbackSourceFrame"] for row in extension["samples"]],
-            expected_sources,
+            [row["capturePalette"] for row in frames[:2]],
+            ["previous", "current"],
         )
-        for row in extension["samples"]:
-            self.assertEqual(len(row["boneLocalMatrices"]), 6)
-            for bone, parent in zip(
-                row["boneLocalMatrices"], extension["parentPaths"]
-            ):
-                self.assertEqual(bone["parentPath"], parent)
-                self.assertEqual(len(bone["localSpace3x4"]), 3)
-                self.assertTrue(all(len(matrix_row) == 4
-                                    for matrix_row in bone["localSpace3x4"]))
+        self.assertEqual(frames[0]["capturePresentedFrame"], 1747)
+        self.assertEqual(frames[1]["capturePresentedFrame"], 1747)
+        self.assertAlmostEqual(
+            frames[1]["phaseSeconds"] - frames[0]["phaseSeconds"],
+            1.0 / 60.0,
+        )
+        peak = [row for row in frames
+                if row["capturePresentedFrame"] == 1977
+                and row["capturePalette"] == "current"]
+        self.assertEqual(len(peak), 1)
+        self.assertAlmostEqual(peak[0]["phaseSeconds"], 4.35)
 
-    def test_sparse_extension_fails_closed_on_temporal_and_session_gates(self):
+    def test_same_session_extension_passes_temporal_and_session_gates(self):
         extension = self.report["transparentCapeExtension"]
-        self.assertFalse(extension["runtimeEligible"])
-        self.assertEqual(extension["maximumSampleGapFrames"], 96)
-        self.assertEqual(extension["primaryMaximumSampleGapFrames"], 33)
-        self.assertFalse(extension["sameSessionPrimaryReplay"])
-        self.assertEqual(len(extension["runtimeAdmissionFailures"]), 3)
+        self.assertTrue(extension["runtimeEligible"])
+        self.assertEqual(extension["maximumSampleGapFrames"], 15)
+        self.assertEqual(extension["primaryMaximumSampleGapFrames"], 15)
+        self.assertTrue(extension["sameSessionPrimaryReplay"])
+        self.assertEqual(extension["runtimeAdmissionFailures"], [])
 
 
 if __name__ == "__main__":
