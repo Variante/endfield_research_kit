@@ -2142,6 +2142,30 @@ M20 shader pair nor a 36-index draw appears in Full frame 2775, whose direct
 match is clean frame 273. Exact M20 replay therefore needs one priority capture
 around clean frames 276-281 after the current M18/M28 evidence is integrated.
 
+EndfieldCapture now priority-retains both exact source-compiled M20 shader
+routes: non-instanced VS/PS `e8f38f2f7519383d`/`fea38543389b6ff4` and
+SRP-instanced VS/PS `4bef98c73ca34880`/`246a0f4f2d3c34f4`. The retained packet
+includes draw-local IA, constant-buffer allocations, samplers, and PS resources.
+The exact-Endminf trigger starts one 64-package sequence without human input
+(24 consecutive packages, then 40 at six-present spacing), in both the
+graphics-only proxy and general runtime. Release x64 and all 15 native tests
+pass. The next live run must still prove which M20 route retail binds around
+clean frames 276-281; source-variant priority is not itself runtime evidence.
+
+Decompiling source variants 0876/0877 and 4950/4951 closes M20's static sampler
+ABI: t0 scene depth uses LinearClamp, t1 Main uses LinearRepeat, t2 Sample0
+uses LinearMirror, and t3 Sample1 uses LinearMirrorOnce. The recovered BaseV2
+shader previously used texture-paired samplers (and PointClamp depth) for this
+soft two-sample specialization. The exact routes improve the 13-sample clean
+peak window in every aggregate: ROI MAE 27.661668 -> 27.649139, effect ROI MAE
+32.967576 -> 32.960517, and temporal-delta MAE 23.156874 -> 23.089886. Extending
+the existing stock-Unity packed particle-color translation to M20 was tested
+separately and rejected: spatial metrics regressed to 27.658496/32.970445 and
+temporal delta regressed to 23.136627. Retail's c13 one-minus-color carrier is
+therefore not equivalent to multiplying Unity's already-colored procedural
+particle stream a second time. The admission verifier hash-gates both M20
+source pairs and the exact sampler translation.
+
 The clean recording also contains a late live-cursor move that the former
 single-endpoint gyroscope replay could not represent. Source-native behavior
 restarts a two-second OutQuad at PreLate whenever the evaluated input endpoint
