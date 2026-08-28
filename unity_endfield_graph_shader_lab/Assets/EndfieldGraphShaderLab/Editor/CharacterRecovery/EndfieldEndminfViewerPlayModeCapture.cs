@@ -120,6 +120,7 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",
             EndminfM21ExactEnvironment,
             "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
             "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
@@ -274,6 +275,11 @@ namespace EndfieldGraphShaderLabEditor
             public bool endminfM21ExactSubmitted;
             public bool endminfM21ExactValidated;
             public string endminfM21ExactFailure;
+            public bool endminfM20ExactRequested;
+            public bool endminfM20ExactActive;
+            public bool endminfM20ExactSubmitted;
+            public bool endminfM20ExactValidated;
+            public string endminfM20ExactFailure;
             public bool endminfM28ExactRequested;
             public bool endminfM28ExactActive;
             public bool endminfM28ExactSubmitted;
@@ -1070,6 +1076,16 @@ namespace EndfieldGraphShaderLabEditor
                     "Exact Endminf M21 peak callback validation failed: " +
                     m21PeakValidationFailure);
             }
+            if (EndfieldRecoveredEndminfM20PeakExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM20PeakExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM20PeakExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m20PeakValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M20 peak callback validation failed: " +
+                    m20PeakValidationFailure);
+            }
             if (EndfieldRecoveredEndminfM13ExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM13ExactRuntime.HasPendingValidation &&
                 !EndfieldRecoveredEndminfM13ExactRuntime
@@ -1282,6 +1298,16 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredEndminfM21PeakExactRuntime.ValidatedThisFrame,
                 endminfM21ExactFailure =
                     EndfieldRecoveredEndminfM21PeakExactRuntime.Failure,
+                endminfM20ExactRequested =
+                    EndfieldRecoveredEndminfM20PeakExactRuntime.Requested,
+                endminfM20ExactActive =
+                    EndfieldRecoveredEndminfM20PeakExactRuntime.ActiveThisFrame,
+                endminfM20ExactSubmitted =
+                    EndfieldRecoveredEndminfM20PeakExactRuntime.SubmittedThisFrame,
+                endminfM20ExactValidated =
+                    EndfieldRecoveredEndminfM20PeakExactRuntime.ValidatedThisFrame,
+                endminfM20ExactFailure =
+                    EndfieldRecoveredEndminfM20PeakExactRuntime.Failure,
                 endminfM28ExactRequested =
                     EndfieldRecoveredEndminfM28PeakExactRuntime.Requested,
                 endminfM28ExactActive =

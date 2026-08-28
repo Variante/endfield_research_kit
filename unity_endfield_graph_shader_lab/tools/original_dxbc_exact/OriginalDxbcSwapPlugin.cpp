@@ -20,6 +20,7 @@
 #include "M13CapturePayload.generated.h"
 #include "M14CapturePayload.generated.h"
 #include "M18PeakCapturePayload.generated.h"
+#include "M20PeakCapturePayload.generated.h"
 #include "M21PeakCapturePayload.generated.h"
 #include "M28PeakCapturePayload.generated.h"
 #include "M27CapturePayload.generated.h"
@@ -140,6 +141,27 @@ ID3D11RasterizerState* g_m21PeakRasterizerState = nullptr;
 std::atomic<std::uint32_t> g_m21PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m21PeakFailureCount{0};
 std::atomic<HRESULT> g_m21PeakLastResult{S_OK};
+
+ID3D11VertexShader* g_m20PeakVertexShader = nullptr;
+ID3D11PixelShader* g_m20PeakPixelShader = nullptr;
+ID3D11InputLayout* g_m20PeakInputLayout = nullptr;
+ID3D11Buffer* g_m20PeakVertexBuffer = nullptr;
+ID3D11Buffer* g_m20PeakSecondaryBuffer = nullptr;
+ID3D11Buffer* g_m20PeakIndexBuffer = nullptr;
+ID3D11Buffer* g_m20PeakVertexResource = nullptr;
+ID3D11ShaderResourceView* g_m20PeakVertexView = nullptr;
+ID3D11Buffer* g_m20PeakVertexConstantBuffers[5] = {};
+ID3D11Buffer* g_m20PeakPixelConstantBuffers[4] = {};
+ID3D11Texture2D* g_m20PeakAtlasTexture = nullptr;
+ID3D11ShaderResourceView* g_m20PeakAtlasView = nullptr;
+ID3D11SamplerState* g_m20PeakSamplers[2] = {};
+ID3D11BlendState* g_m20PeakBlendState = nullptr;
+ID3D11DepthStencilState* g_m20PeakDepthState = nullptr;
+ID3D11RasterizerState* g_m20PeakRasterizerState = nullptr;
+std::atomic<std::uintptr_t> g_m20PeakDepthTexture{0};
+std::atomic<std::uint32_t> g_m20PeakDrawCount{0};
+std::atomic<std::uint32_t> g_m20PeakFailureCount{0};
+std::atomic<HRESULT> g_m20PeakLastResult{S_OK};
 
 ID3D11VertexShader* g_m18PeakVertexShader = nullptr;
 ID3D11PixelShader* g_m18PeakPixelShader = nullptr;
@@ -317,6 +339,11 @@ static_assert(g_EndfieldM30PayloadPrepared);
 static_assert(g_EndfieldM21PeakPayloadPrepared);
 static_assert(g_EndfieldM21PeakVertexStride == 52u);
 static_assert(g_EndfieldM21PeakIndexCount == 1110u);
+static_assert(g_EndfieldM20PeakPayloadPrepared);
+static_assert(g_EndfieldM20PeakVertexStride == 36u);
+static_assert(g_EndfieldM20PeakVertexCount == 24u);
+static_assert(g_EndfieldM20PeakIndexCount == 36u);
+static_assert(g_EndfieldM20PeakAtlasBc7Size == 32768u);
 static_assert(g_EndfieldM18PeakPayloadPrepared);
 static_assert(g_EndfieldM18PeakVertexStride == 76u);
 static_assert(g_EndfieldM18PeakIndexCount == 900u);
@@ -738,6 +765,25 @@ void ReleaseM14Object(T*& value)
 
 void ReleaseM14RuntimeResources()
 {
+    ReleaseM14Object(g_m20PeakRasterizerState);
+    ReleaseM14Object(g_m20PeakDepthState);
+    ReleaseM14Object(g_m20PeakBlendState);
+    for (ID3D11SamplerState*& sampler : g_m20PeakSamplers)
+        ReleaseM14Object(sampler);
+    ReleaseM14Object(g_m20PeakAtlasView);
+    ReleaseM14Object(g_m20PeakAtlasTexture);
+    for (ID3D11Buffer*& buffer : g_m20PeakPixelConstantBuffers)
+        ReleaseM14Object(buffer);
+    for (ID3D11Buffer*& buffer : g_m20PeakVertexConstantBuffers)
+        ReleaseM14Object(buffer);
+    ReleaseM14Object(g_m20PeakVertexView);
+    ReleaseM14Object(g_m20PeakVertexResource);
+    ReleaseM14Object(g_m20PeakIndexBuffer);
+    ReleaseM14Object(g_m20PeakSecondaryBuffer);
+    ReleaseM14Object(g_m20PeakVertexBuffer);
+    ReleaseM14Object(g_m20PeakInputLayout);
+    ReleaseM14Object(g_m20PeakPixelShader);
+    ReleaseM14Object(g_m20PeakVertexShader);
     ReleaseM14Object(g_m28PeakRasterizerState);
     ReleaseM14Object(g_m28PeakDepthState);
     ReleaseM14Object(g_m28PeakBlendState);
@@ -1470,6 +1516,175 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
     m21Rasterizer.ScissorEnable = TRUE;
     result = device->CreateRasterizerState(
         &m21Rasterizer, &g_m21PeakRasterizerState);
+    if (FAILED(result)) return result;
+
+    result = device->CreateVertexShader(
+        g_EndfieldM20PeakVertexDxbc, g_EndfieldM20PeakVertexDxbcSize,
+        nullptr, &g_m20PeakVertexShader);
+    if (FAILED(result)) return result;
+    result = device->CreatePixelShader(
+        g_EndfieldM20PeakPixelDxbc, g_EndfieldM20PeakPixelDxbcSize,
+        nullptr, &g_m20PeakPixelShader);
+    if (FAILED(result)) return result;
+    const D3D11_INPUT_ELEMENT_DESC m20Elements[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 24,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 4, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDWEIGHTS", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 16,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 1, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+    result = device->CreateInputLayout(
+        m20Elements, static_cast<UINT>(sizeof(m20Elements) / sizeof(m20Elements[0])),
+        g_EndfieldM20PeakVertexDxbc, g_EndfieldM20PeakVertexDxbcSize,
+        &g_m20PeakInputLayout);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_VERTEX_BUFFER, g_EndfieldM20PeakVertices,
+        static_cast<UINT>(g_EndfieldM20PeakVerticesSize), &g_m20PeakVertexBuffer);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_VERTEX_BUFFER, g_EndfieldM20PeakSecondary,
+        static_cast<UINT>(g_EndfieldM20PeakSecondarySize),
+        &g_m20PeakSecondaryBuffer);
+    if (FAILED(result)) return result;
+    result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_INDEX_BUFFER, g_EndfieldM20PeakIndices,
+        static_cast<UINT>(g_EndfieldM20PeakIndicesSize), &g_m20PeakIndexBuffer);
+    if (FAILED(result)) return result;
+    D3D11_BUFFER_DESC m20VertexResource = {};
+    m20VertexResource.ByteWidth = static_cast<UINT>(g_EndfieldM20PeakVertexResourceSize);
+    m20VertexResource.Usage = D3D11_USAGE_IMMUTABLE;
+    m20VertexResource.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    m20VertexResource.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS;
+    D3D11_SUBRESOURCE_DATA m20VertexInitial = {};
+    m20VertexInitial.pSysMem = g_EndfieldM20PeakVertexResource;
+    result = device->CreateBuffer(
+        &m20VertexResource, &m20VertexInitial, &g_m20PeakVertexResource);
+    if (FAILED(result)) return result;
+    D3D11_SHADER_RESOURCE_VIEW_DESC m20VertexView = {};
+    m20VertexView.Format = DXGI_FORMAT_R32_TYPELESS;
+    m20VertexView.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+    m20VertexView.BufferEx.NumElements = m20VertexResource.ByteWidth / 4u;
+    m20VertexView.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+    result = device->CreateShaderResourceView(
+        g_m20PeakVertexResource, &m20VertexView, &g_m20PeakVertexView);
+    if (FAILED(result)) return result;
+    const std::uint8_t* m20VS[] = {
+        g_EndfieldM20PeakVSCB0, g_EndfieldM20PeakVSCB1,
+        g_EndfieldM20PeakVSCB2, g_EndfieldM20PeakVSCB3,
+        g_EndfieldM20PeakVSCB4,
+    };
+    const std::size_t m20VSBytes[] = {
+        g_EndfieldM20PeakVSCB0Size, g_EndfieldM20PeakVSCB1Size,
+        g_EndfieldM20PeakVSCB2Size, g_EndfieldM20PeakVSCB3Size,
+        g_EndfieldM20PeakVSCB4Size,
+    };
+    const std::uint8_t* m20PS[] = {
+        g_EndfieldM20PeakPSCB0, g_EndfieldM20PeakPSCB1,
+        g_EndfieldM20PeakPSCB2, g_EndfieldM20PeakPSCB3,
+    };
+    const std::size_t m20PSBytes[] = {
+        g_EndfieldM20PeakPSCB0Size, g_EndfieldM20PeakPSCB1Size,
+        g_EndfieldM20PeakPSCB2Size, g_EndfieldM20PeakPSCB3Size,
+    };
+    for (std::size_t slot = 0; slot < 5; ++slot)
+    {
+        result = CreateM14ConstantBuffer(
+            device, g_EndfieldM20PeakVSDeclaredFloat4Counts[slot],
+            m20VS[slot], m20VSBytes[slot], &g_m20PeakVertexConstantBuffers[slot]);
+        if (FAILED(result)) return result;
+    }
+    for (std::size_t slot = 0; slot < 4; ++slot)
+    {
+        result = CreateM14ConstantBuffer(
+            device, g_EndfieldM20PeakPSDeclaredFloat4Counts[slot],
+            m20PS[slot], m20PSBytes[slot], &g_m20PeakPixelConstantBuffers[slot]);
+        if (FAILED(result)) return result;
+    }
+    D3D11_TEXTURE2D_DESC m20Atlas = {};
+    m20Atlas.Width = g_EndfieldM20PeakAtlasWidth;
+    m20Atlas.Height = g_EndfieldM20PeakAtlasHeight;
+    m20Atlas.MipLevels = 1u;
+    m20Atlas.ArraySize = 1u;
+    m20Atlas.Format = DXGI_FORMAT_BC7_UNORM_SRGB;
+    m20Atlas.SampleDesc.Count = 1u;
+    m20Atlas.Usage = D3D11_USAGE_IMMUTABLE;
+    m20Atlas.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    D3D11_SUBRESOURCE_DATA m20AtlasInitial = {};
+    m20AtlasInitial.pSysMem = g_EndfieldM20PeakAtlasBc7;
+    m20AtlasInitial.SysMemPitch = ((m20Atlas.Width + 3u) / 4u) * 16u;
+    m20AtlasInitial.SysMemSlicePitch = static_cast<UINT>(g_EndfieldM20PeakAtlasBc7Size);
+    result = device->CreateTexture2D(
+        &m20Atlas, &m20AtlasInitial, &g_m20PeakAtlasTexture);
+    if (FAILED(result)) return result;
+    result = device->CreateShaderResourceView(
+        g_m20PeakAtlasTexture, nullptr, &g_m20PeakAtlasView);
+    if (FAILED(result)) return result;
+    const D3D11_FILTER m20Filters[2] = {
+        D3D11_FILTER_MIN_MAG_MIP_POINT,
+        D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+    };
+    const D3D11_TEXTURE_ADDRESS_MODE m20Addresses[2] = {
+        D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_WRAP,
+    };
+    for (std::size_t slot = 0; slot < 2; ++slot)
+    {
+        D3D11_SAMPLER_DESC sampler = {};
+        sampler.Filter = m20Filters[slot];
+        sampler.AddressU = m20Addresses[slot];
+        sampler.AddressV = m20Addresses[slot];
+        sampler.AddressW = m20Addresses[slot];
+        sampler.MaxLOD = 1000.0f;
+        result = device->CreateSamplerState(&sampler, &g_m20PeakSamplers[slot]);
+        if (FAILED(result)) return result;
+    }
+    D3D11_BLEND_DESC m20Blend = {};
+    m20Blend.IndependentBlendEnable = TRUE;
+    for (std::size_t target = 0; target < 2; ++target)
+    {
+        D3D11_RENDER_TARGET_BLEND_DESC& blend = m20Blend.RenderTarget[target];
+        blend.BlendEnable = TRUE;
+        blend.SrcBlend = D3D11_BLEND_ONE;
+        blend.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        blend.BlendOp = D3D11_BLEND_OP_ADD;
+        blend.SrcBlendAlpha = D3D11_BLEND_ONE;
+        blend.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+        blend.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        blend.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    }
+    result = device->CreateBlendState(&m20Blend, &g_m20PeakBlendState);
+    if (FAILED(result)) return result;
+    D3D11_DEPTH_STENCIL_DESC m20Depth = {};
+    m20Depth.DepthEnable = TRUE;
+    m20Depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    m20Depth.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
+    m20Depth.StencilEnable = TRUE;
+    m20Depth.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+    m20Depth.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+    m20Depth.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    m20Depth.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+    m20Depth.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    m20Depth.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    m20Depth.BackFace = m20Depth.FrontFace;
+    result = device->CreateDepthStencilState(&m20Depth, &g_m20PeakDepthState);
+    if (FAILED(result)) return result;
+    D3D11_RASTERIZER_DESC m20Rasterizer = {};
+    m20Rasterizer.FillMode = D3D11_FILL_SOLID;
+    m20Rasterizer.CullMode = D3D11_CULL_NONE;
+    m20Rasterizer.FrontCounterClockwise = TRUE;
+    m20Rasterizer.DepthClipEnable = TRUE;
+    m20Rasterizer.ScissorEnable = TRUE;
+    result = device->CreateRasterizerState(
+        &m20Rasterizer, &g_m20PeakRasterizerState);
     if (FAILED(result)) return result;
 
     for (std::uint32_t packetIndex = 0;
@@ -3803,6 +4018,163 @@ void UNITY_INTERFACE_API DrawM21PeakExactRuntime(int eventId)
     g_m21PeakLastResult.store(S_OK, std::memory_order_relaxed);
 }
 
+void UNITY_INTERFACE_API DrawM20PeakExactRuntime(int eventId)
+{
+    if (eventId != 0) return;
+    IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
+    ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
+    if (device == nullptr)
+    {
+        g_m20PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m20PeakLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    HRESULT result = CreateM14RuntimeResources(device);
+    if (FAILED(result))
+    {
+        ReleaseM14RuntimeResources();
+        g_m20PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m20PeakLastResult.store(result, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11Resource* depthResource = reinterpret_cast<ID3D11Resource*>(
+        g_m20PeakDepthTexture.load(std::memory_order_acquire));
+    ID3D11ShaderResourceView* depthView = nullptr;
+    result = CreateDiagnosticShaderResourceView(device, depthResource, &depthView);
+    if (FAILED(result) || depthView == nullptr || g_m20PeakAtlasView == nullptr ||
+        g_m20PeakVertexView == nullptr)
+    {
+        ReleaseM14Object(depthView);
+        g_m20PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m20PeakLastResult.store(FAILED(result) ? result : E_POINTER,
+                                  std::memory_order_relaxed);
+        return;
+    }
+    ID3D11DeviceContext* context = nullptr;
+    device->GetImmediateContext(&context);
+    if (context == nullptr)
+    {
+        ReleaseM14Object(depthView);
+        g_m20PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m20PeakLastResult.store(E_POINTER, std::memory_order_relaxed);
+        return;
+    }
+    ID3D11RenderTargetView* renderTargets[2] = {};
+    ID3D11DepthStencilView* renderDepth = nullptr;
+    context->OMGetRenderTargets(2, renderTargets, &renderDepth);
+    if (renderTargets[0] == nullptr || renderTargets[1] == nullptr ||
+        renderDepth == nullptr)
+    {
+        ReleaseM14Object(renderDepth);
+        ReleaseM14Object(renderTargets[1]);
+        ReleaseM14Object(renderTargets[0]);
+        ReleaseM14Object(depthView);
+        context->Release();
+        g_m20PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m20PeakLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+
+    ID3D11VertexShader* oldVS = nullptr;
+    ID3D11PixelShader* oldPS = nullptr;
+    ID3D11InputLayout* oldLayout = nullptr;
+    ID3D11Buffer* oldVBs[2] = {};
+    ID3D11Buffer* oldIB = nullptr;
+    ID3D11Buffer* oldVSCBs[5] = {};
+    ID3D11Buffer* oldPSCBs[4] = {};
+    ID3D11ShaderResourceView* oldVSView = nullptr;
+    ID3D11ShaderResourceView* oldPSViews[2] = {};
+    ID3D11SamplerState* oldSamplers[2] = {};
+    ID3D11BlendState* oldBlend = nullptr;
+    ID3D11DepthStencilState* oldDepth = nullptr;
+    ID3D11RasterizerState* oldRasterizer = nullptr;
+    D3D11_PRIMITIVE_TOPOLOGY oldTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    DXGI_FORMAT oldIndexFormat = DXGI_FORMAT_UNKNOWN;
+    UINT oldStrides[2] = {};
+    UINT oldOffsets[2] = {};
+    UINT oldIndexOffset = 0;
+    FLOAT oldBlendFactor[4] = {};
+    UINT oldSampleMask = 0;
+    UINT oldStencilReference = 0;
+    context->VSGetShader(&oldVS, nullptr, nullptr);
+    context->PSGetShader(&oldPS, nullptr, nullptr);
+    context->IAGetInputLayout(&oldLayout);
+    context->IAGetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IAGetIndexBuffer(&oldIB, &oldIndexFormat, &oldIndexOffset);
+    context->IAGetPrimitiveTopology(&oldTopology);
+    context->VSGetConstantBuffers(0, 5, oldVSCBs);
+    context->PSGetConstantBuffers(0, 4, oldPSCBs);
+    context->VSGetShaderResources(0, 1, &oldVSView);
+    context->PSGetShaderResources(0, 2, oldPSViews);
+    context->PSGetSamplers(0, 2, oldSamplers);
+    context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
+    context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
+    context->RSGetState(&oldRasterizer);
+
+    ID3D11Buffer* vertexBuffers[2] = {
+        g_m20PeakVertexBuffer, g_m20PeakSecondaryBuffer,
+    };
+    const UINT strides[2] = {g_EndfieldM20PeakVertexStride, 0u};
+    const UINT offsets[2] = {};
+    ID3D11ShaderResourceView* pixelViews[2] = {depthView, g_m20PeakAtlasView};
+    const FLOAT blendFactor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    context->IASetInputLayout(g_m20PeakInputLayout);
+    context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+    context->IASetIndexBuffer(g_m20PeakIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->VSSetShader(g_m20PeakVertexShader, nullptr, 0);
+    context->PSSetShader(g_m20PeakPixelShader, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, g_m20PeakVertexConstantBuffers);
+    context->PSSetConstantBuffers(0, 4, g_m20PeakPixelConstantBuffers);
+    context->VSSetShaderResources(0, 1, &g_m20PeakVertexView);
+    context->PSSetShaderResources(0, 2, pixelViews);
+    context->PSSetSamplers(0, 2, g_m20PeakSamplers);
+    context->OMSetBlendState(g_m20PeakBlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_m20PeakDepthState, 0);
+    context->RSSetState(g_m20PeakRasterizerState);
+    context->DrawIndexedInstanced(g_EndfieldM20PeakIndexCount, 1u, 0u, 0, 0u);
+
+    ID3D11ShaderResourceView* nullVSView = nullptr;
+    ID3D11ShaderResourceView* nullPSViews[2] = {};
+    context->VSSetShaderResources(0, 1, &nullVSView);
+    context->PSSetShaderResources(0, 2, nullPSViews);
+    context->IASetInputLayout(oldLayout);
+    context->IASetVertexBuffers(0, 2, oldVBs, oldStrides, oldOffsets);
+    context->IASetIndexBuffer(oldIB, oldIndexFormat, oldIndexOffset);
+    context->IASetPrimitiveTopology(oldTopology);
+    context->VSSetShader(oldVS, nullptr, 0);
+    context->PSSetShader(oldPS, nullptr, 0);
+    context->VSSetConstantBuffers(0, 5, oldVSCBs);
+    context->PSSetConstantBuffers(0, 4, oldPSCBs);
+    context->VSSetShaderResources(0, 1, &oldVSView);
+    context->PSSetShaderResources(0, 2, oldPSViews);
+    context->PSSetSamplers(0, 2, oldSamplers);
+    context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
+    context->OMSetDepthStencilState(oldDepth, oldStencilReference);
+    context->RSSetState(oldRasterizer);
+
+    for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
+    for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
+    ReleaseM14Object(oldVSView);
+    for (ID3D11Buffer*& value : oldPSCBs) ReleaseM14Object(value);
+    for (ID3D11Buffer*& value : oldVSCBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldRasterizer);
+    ReleaseM14Object(oldDepth);
+    ReleaseM14Object(oldBlend);
+    ReleaseM14Object(oldIB);
+    for (ID3D11Buffer*& value : oldVBs) ReleaseM14Object(value);
+    ReleaseM14Object(oldLayout);
+    ReleaseM14Object(oldPS);
+    ReleaseM14Object(oldVS);
+    ReleaseM14Object(renderDepth);
+    ReleaseM14Object(renderTargets[1]);
+    ReleaseM14Object(renderTargets[0]);
+    ReleaseM14Object(depthView);
+    context->Release();
+    g_m20PeakDrawCount.fetch_add(1, std::memory_order_relaxed);
+    g_m20PeakLastResult.store(S_OK, std::memory_order_relaxed);
+}
+
 void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
 {
     if (eventId < 0 ||
@@ -5778,6 +6150,12 @@ EndfieldOriginalDxbcGetM21PeakRenderEventFunc()
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM20PeakRenderEventFunc()
+{
+    return DrawM20PeakExactRuntime;
+}
+
+extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcGetM31PeakRenderEventFunc()
 {
     return DrawM31PeakExactRuntime;
@@ -6436,6 +6814,43 @@ EndfieldOriginalDxbcGetM21PeakLastResult()
 {
     return static_cast<std::int32_t>(
         g_m21PeakLastResult.load(std::memory_order_relaxed));
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM20PeakDepthResource(void* sceneDepth)
+{
+    g_m20PeakDepthTexture.store(
+        reinterpret_cast<std::uintptr_t>(sceneDepth), std::memory_order_release);
+    return sceneDepth != nullptr ? 1u : 0u;
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcResetM20PeakRuntimeState()
+{
+    g_m20PeakDepthTexture.store(0, std::memory_order_release);
+    g_m20PeakDrawCount.store(0, std::memory_order_relaxed);
+    g_m20PeakFailureCount.store(0, std::memory_order_relaxed);
+    g_m20PeakLastResult.store(S_OK, std::memory_order_relaxed);
+    ReleaseM14RuntimeResources();
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM20PeakDrawCount()
+{
+    return g_m20PeakDrawCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM20PeakFailureCount()
+{
+    return g_m20PeakFailureCount.load(std::memory_order_relaxed);
+}
+
+extern "C" std::int32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM20PeakLastResult()
+{
+    return static_cast<std::int32_t>(
+        g_m20PeakLastResult.load(std::memory_order_relaxed));
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

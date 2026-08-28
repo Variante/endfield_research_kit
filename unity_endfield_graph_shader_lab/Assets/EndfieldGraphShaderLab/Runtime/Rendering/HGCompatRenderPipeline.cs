@@ -1013,6 +1013,9 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM21PeakPrepared =
                 EndfieldRecoveredEndminfM21PeakExactRuntime
                     .PrepareBeforeCulling(camera);
+            bool exactEndminfM20PeakPrepared =
+                EndfieldRecoveredEndminfM20PeakExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM18PeakPrepared =
                 EndfieldRecoveredEndminfM18PeakExactRuntime
                     .PrepareBeforeCulling(camera);
@@ -2309,6 +2312,25 @@ namespace EndfieldGraphShaderLab
                         compositorFailure =
                             "exact Endminf M13 transport failed closed: " +
                             EndfieldRecoveredEndminfM13ExactRuntime.Failure;
+                    }
+                }
+                // Retail frame 1748 records the 36-index M20 gas plume after
+                // the M21 stone shell and adjacent M13 peak owner. Its live
+                // program writes SceneColor plus SceneMV and samples the
+                // current scene depth with the captured runtime atlas.
+                if (mainReady && exactEndminfM20PeakPrepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM20PeakExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredSceneMV,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M20 peak transport failed closed: " +
+                            EndfieldRecoveredEndminfM20PeakExactRuntime.Failure;
                     }
                 }
                 // Full frame 2775 records the broad M18 diffusion shell at

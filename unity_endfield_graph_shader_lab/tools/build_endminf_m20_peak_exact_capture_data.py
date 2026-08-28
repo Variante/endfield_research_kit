@@ -25,6 +25,7 @@ PS_SHA256 = "5558deddb1ee6188dfb530e5be89d86d67352362384fababc585e778b78b99e7"
 VERTEX_SHA256 = "ed1f2340d6212fe064857717b9ea45ffd96951e7e4f6f1dda36d542bac03e20b"
 INDEX_SHA256 = "111344a69a3f4c9c714bfdd23c3b16f9ad6beb430821bd310f33d9f795061012"
 SECONDARY_SHA256 = "d60dbf57189e6a16e14dc8e8a5ff123ff163334a32857641daeee7d46966bb76"
+VERTEX_RESOURCE_SHA256 = "1ad732535e415f4429cd7b791d82bc01ab82de8c7e5d64cf553ef84ba219b778"
 ATLAS_SHA256 = "c7d830bcee33bbd31367d2c7d40eeb9f0d5d808f94d66925fb4fda619fcc8bdd"
 EXPECTED_VS_IDENTITY = 0x62A5CE6C09171DE9
 EXPECTED_PS_IDENTITY = 0x5558DEDDB1EE6188
@@ -84,7 +85,7 @@ def collect_constants(draw: dict[str, Any]) -> dict[int, list[bytes]]:
 
 
 def collect_geometry(frame_root: Path, metadata: dict[str, Any],
-                     draw: dict[str, Any]) -> tuple[bytes, bytes, bytes]:
+                     draw: dict[str, Any]) -> tuple[bytes, bytes, bytes, bytes]:
     ia = draw["inputAssembler"]
     vertex = next(row for row in ia["vertexBuffers"] if int(row["slot"]) == 0)
     secondary = next(row for row in ia["vertexBuffers"] if int(row["slot"]) == 1)
@@ -100,6 +101,7 @@ def collect_geometry(frame_root: Path, metadata: dict[str, Any],
     secondary_row = selected_record(metadata, 0, 0, 1,
                                     int(secondary["objectId"]))
     blob = (frame_root / "resources.bin").read_bytes()
+    vertex_resource = resource_bytes(blob, vertex_row)
     index_start = (int(index_row["blobOffset"]) + int(index["offset"])
                    + int(draw["start"]) * 2)
     indices = blob[index_start:index_start + EXPECTED_INDEX_COUNT * 2]
@@ -119,7 +121,9 @@ def collect_geometry(frame_root: Path, metadata: dict[str, Any],
                    "M20 index slice hash drifted")
     shared.require(m21.sha256(secondary_bytes) == SECONDARY_SHA256,
                    "M20 secondary stream hash drifted")
-    return vertices, indices, secondary_bytes
+    shared.require(m21.sha256(vertex_resource) == VERTEX_RESOURCE_SHA256,
+                   "M20 VS t0 ByteAddressBuffer hash drifted")
+    return vertices, indices, secondary_bytes, vertex_resource
 
 
 def collect_atlas(frame_root: Path, metadata: dict[str, Any],
@@ -169,9 +173,11 @@ def collect(capture: Path) -> dict[str, Any]:
     ps = PS_DXBC.read_bytes()
     shared.require(m21.sha256(vs) == VS_SHA256, "M20 vertex DXBC hash drifted")
     shared.require(m21.sha256(ps) == PS_SHA256, "M20 pixel DXBC hash drifted")
-    vertices, indices, secondary = collect_geometry(frame_root, metadata, draw)
+    vertices, indices, secondary, vertex_resource = collect_geometry(
+        frame_root, metadata, draw)
     return {"vs": vs, "ps": ps, "vertices": vertices, "indices": indices,
-            "secondary": secondary, "atlas": collect_atlas(frame_root, metadata, draw),
+            "secondary": secondary, "vertex_resource": vertex_resource,
+            "atlas": collect_atlas(frame_root, metadata, draw),
             "constants": collect_constants(draw)}
 
 
@@ -182,6 +188,7 @@ def render_cpp(packet: dict[str, Any]) -> str:
         shared.cpp_array("g_EndfieldM20PeakVertices", packet["vertices"]),
         shared.cpp_array("g_EndfieldM20PeakIndices", packet["indices"]),
         shared.cpp_array("g_EndfieldM20PeakSecondary", packet["secondary"]),
+        shared.cpp_array("g_EndfieldM20PeakVertexResource", packet["vertex_resource"]),
         shared.cpp_array("g_EndfieldM20PeakAtlasBc7", packet["atlas"]),
     ]
     for stage, label in ((0, "VS"), (4, "PS")):

@@ -38,6 +38,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
+  rem Exact retail M20 gas-plume packet at the crystal-burst peak. This uses
+  rem the captured runtime BC7 atlas and draw-local ByteAddressBuffer.
+  set "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT=1"
   rem Frame 2775 closes the complete draw-local M21 stone-shell packet. It is
   rem admitted only at its certified 4.5000 s sample and restores the authored
   rem ParticleSystem on adjacent ticks, so this does not repeat a static packet
