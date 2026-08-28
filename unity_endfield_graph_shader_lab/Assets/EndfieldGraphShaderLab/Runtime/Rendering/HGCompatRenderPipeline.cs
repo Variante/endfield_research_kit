@@ -999,6 +999,9 @@ namespace EndfieldGraphShaderLab
             ScriptableCullingParameters cullingParameters;
             if (!camera.TryGetCullingParameters(out cullingParameters))
                 return;
+            bool exactEndminfM21PeakPrepared =
+                EndfieldRecoveredEndminfM21PeakExactRuntime
+                    .PrepareBeforeCulling(camera);
             bool exactEndminfM13Prepared =
                 EndfieldRecoveredEndminfM13ExactRuntime
                     .PrepareBeforeCulling(camera);
@@ -2207,6 +2210,22 @@ namespace EndfieldGraphShaderLab
                         compositorFailure =
                             "exact Endminf M14 transport failed closed: " +
                             EndfieldRecoveredEndminfM14ExactRuntime.Failure;
+                    }
+                }
+                // Full frame 2775 records the M21 stone shell at ordinal 74,
+                // immediately before the exact M13 ring at ordinal 75.
+                if (mainReady && exactEndminfM21PeakPrepared)
+                {
+                    mainReady = EndfieldRecoveredEndminfM21PeakExactRuntime.Render(
+                        context,
+                        camera,
+                        recoveredCurrentSceneColor,
+                        recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M21 peak transport failed closed: " +
+                            EndfieldRecoveredEndminfM21PeakExactRuntime.Failure;
                     }
                 }
                 if (mainReady && exactEndminfM13Prepared)

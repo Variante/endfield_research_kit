@@ -1990,8 +1990,8 @@ BC7 creation, and the runtime callback all validate `S_OK`.
 Focused `temporal_rephase_v2` renders validate M13, M29, M30, M31, the shared
 15-draw cohort, and the exact Uber transport. They remove the former broad
 open-palm contamination from the crystal peak. The M13 ring is now present;
-physical stones, gas, peripheral particles, retail temporal history, and exact
-equal-queue composition remain open.
+gas, peripheral particles, retail temporal history, and exact equal-queue
+composition remain open.
 
 EndfieldCapture Full now retains up to 96 draw records, 64 resources, and a
 128-MiB resource payload. The 96-record temporary and per-frame storage is heap
@@ -2006,9 +2006,25 @@ large ring, core, stones, haze, and particles. Full retention exposes three
 peak-only non-priority draws omitted by Targeted: ordinal 74 (1,110 indices,
 shader pair `e7f5568d34fd467b/c5b21fee8e9936a6`), ordinal 82 (900,
 `7d1953e7b7d5310f/601242f701cb4380`), and ordinal 87 (1,764,
-`7f5111cf80387bee/a3c9bfc94f0caea9`). Their exact ownership/resource closure
-is the current integration target; no additional graphics capture is required
-until that classification is exhausted.
+`7f5111cf80387bee/a3c9bfc94f0caea9`). They classify respectively as the
+M21 `_02 shitou shell` stones, M18 `_02 kuosan` amber diffusion shell, and
+M28 refractive sphere. M21 now has a hash-pinned frame-2775 native packet with
+1,080 draw-local 52-byte vertices, 1,110 R16 indices, exact DXBC/constants,
+white-texture default, premultiplied blend, and retail depth state. Direct byte
+inspection closes its input layout as full-float position/normal/tangent,
+RGBA8 color at byte 40, and float2 UV at byte 44. WARP validates its two shader
+stages and layout, and the focused Viewer callback completes `S_OK`; the stones
+are restored. Their final-frame enlargement is downstream Uber/temporal trail,
+not a reason to resize the exact geometry. M18 and M28 remain the next ordered
+native packets.
+
+The distinct drifting plume is not one of those three draws. Source evidence
+identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
+at 4.46 seconds with six near-peak billboards and textures
+`T_fx_smoke_100_M`, `T_fx_flow_01_M`, and `T_fx_flow_121_M`. Neither expected
+M20 shader pair nor a 36-index draw appears in Full frame 2775, whose direct
+match is clean frame 273. Exact M20 replay therefore needs one priority capture
+around clean frames 276-281 after the current M18/M28 evidence is integrated.
 
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The dense oracle has no `cloth_02` observations even though
@@ -2058,15 +2074,17 @@ or shaders rather than hand-editing generated prefabs.
    M17 `baoshan` transport, now-timed M20 gas, corrected exact Uber variant,
    and validated two-draw M31 checkpoint. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
-   Full frames 2262 and 2775 to classify/replay the smaller stone/gas/shell
-   owners omitted by the 32-draw targeted set and resolve the equal-queue
-   M29/M30/M14 ordering. The M13 ring packet and sampler policy are now exact.
+   Full frames 2262 and 2775 to replay the classified M18 diffusion shell and
+   M28 refractive sphere in their captured ordinal positions and resolve the
+   equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
+   stone packet are now exact. After those are integrated, obtain one focused
+   M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.
    Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording. Keep source tint, particle, bloom, and curve
    values fixed unless stronger evidence supersedes them.
-2. Replace the initial broad distortion with the reference horizontal-strip
-   mosaic using its recovered owner and timing. Preserve the now-admitted exact
+2. Validate the new 0.033-0.350-second pre-Uber horizontal-strip fracture pass
+   against clean frames 1-30. Preserve the now-admitted exact
    `S_GridFar` route and source-animated portrait while final Uber/camera
    composition closes their remaining strength and bounded alignment gaps.
 3. Replace the mixed-session Endminf dynamics replay with one same-initialization
