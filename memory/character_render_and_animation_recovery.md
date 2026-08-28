@@ -2551,18 +2551,23 @@ resource identities matches an earlier retained `DrawInstanced(3,1)` RTV in
 the frame. SceneColor therefore enters the retained fullscreen resolver chain
 already containing the opening strips; do not attribute them to or invent an
 additional pre-Uber fullscreen distortion pass. Recover their transport from
-the pre-Uber geometry/material owners, including M17 `baoshan`, while retaining
-the measured rectangles only as bounded visual evidence.
+the pre-Uber geometry/material owners while retaining the measured rectangles
+only as bounded visual evidence. M17 `baoshan` remains a separate crystal-peak
+owner and must not be conflated with the opening fracture.
 
 EndfieldCapture now detects either exact M20 shader pair inside the indexed-draw
 callback and, when the ordinary three-slot producer gate would skip it, arms a
 fourth bounded deferred package before recording that same draw. Status and
 summary expose `graphicsSequencePriorityM20DrawArms` and
-`deferredPriorityM20DrawArms`. The current `build-local` proxy SHA-256 is
-`3BFDFC6E42D1AC9507745D858527490300C331DC7B40DCBFE24292B276FD7418`; all 15
-native tests pass. One real-game run is still required to prove the priority
-path and close exact M20 gas ownership. After capture, run the combined
-validator and
+`deferredPriorityM20DrawArms`. The session now also archives every immutable
+D3D11 shader program created after attachment under `graphics/shaders/`,
+deduplicated by SHA-256, so a newly observed material owner can be decompiled
+without another capture. The current `build-local` proxy SHA-256 is
+`E8E2F0EB64FDBCB27313A6E99FC4239A72A0361E28F39FCD934F069FC85B2993`; all 15
+native tests pass, including real proxy publication of two bytecode payloads
+and their manifest. One real-game run is still required to prove the priority
+path and close exact M20 gas ownership. Stop that session cleanly so
+`shaderBytecodeArchiveComplete=true`, then run the combined validator and
 `python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`.
 
 The exact-owner policy deliberately retains one compute exception: the unique
