@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Default-off D3D11 transport for Endminf's exact combined
+    /// Source-sparse D3D11 transport for Endminf's exact combined
     /// BLOOM + RADIAL_BLUR + VIGNETTE Uber draw. The native side
     /// owns the stage-local captured constant payload and exact DXBC objects;
     /// this bridge owns stable Unity textures and schedules their copies before
@@ -18,6 +18,13 @@ namespace EndfieldGraphShaderLab
         internal const string EnvironmentVariable =
             "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
+        // Capture 20260827T183054Z frame 1818 supplies one authoritative
+        // combined-Uber packet at the late crystal peak. Its PS b1 retains
+        // frame-local values (including chromatic intensity) that the native
+        // transport cannot safely animate. Admit only the nearest 60 Hz
+        // simulation sample; adjacent ticks use the compatibility Uber.
+        internal const float CapturePhaseSeconds = 4.35f;
+        private const float HalfWindowSeconds = 1.0f / 120.0f;
 
         private RenderTexture sourceTexture;
         private RenderTexture bloomTexture;
@@ -54,6 +61,8 @@ namespace EndfieldGraphShaderLab
             EndfieldEndminfVisualCompatibilityClock.RecoveredPostState post)
         {
             if (!Requested || failed)
+                return false;
+            if (!IsCapturedPhase(hasPost, post))
                 return false;
             if (command == null || lut == null)
                 return Fail("exact Uber inputs are incomplete");
@@ -132,6 +141,18 @@ namespace EndfieldGraphShaderLab
                 loggedActivation = true;
             }
             return true;
+        }
+
+        internal static bool IsCapturedPhase(
+            bool hasPost,
+            EndfieldEndminfVisualCompatibilityClock.RecoveredPostState post)
+        {
+            return hasPost &&
+                post.mode == 6 &&
+                !float.IsNaN(post.elapsed) &&
+                !float.IsInfinity(post.elapsed) &&
+                Mathf.Abs(post.elapsed - CapturePhaseSeconds) <=
+                    HalfWindowSeconds;
         }
 
         public void Dispose()
