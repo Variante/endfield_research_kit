@@ -16,6 +16,12 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_13";
         private const float ViewerLeadSeconds = 2.0f / 60.0f;
+        // Repeating the first retained packet backward to the midpoint before
+        // 4.3833 s drew the large ring at clean-reference frames where retail
+        // had not emitted it yet. Bound only that unsupported prefix to the
+        // captured 60 Hz tick; the established nearest-packet transport still
+        // covers the evidenced continuous ring after its first sample.
+        private const float HalfWindowSeconds = 1.0f / 120.0f;
         private static readonly int ReadyId = Shader.PropertyToID(
             "_EndfieldRecoveredEndminfM13ExactReady");
 
@@ -158,7 +164,7 @@ namespace EndfieldGraphShaderLab
                 phases.Length < 2)
                 return -1;
             float halfSpacing = (phases[1] - phases[0]) * 0.5f;
-            if (seconds < phases[0] - halfSpacing ||
+            if (seconds < phases[0] - HalfWindowSeconds ||
                 seconds > phases[phases.Length - 1] + halfSpacing)
                 return -1;
             int nearest = 0;

@@ -52,6 +52,23 @@ class BuildEndminfM13ExactCaptureDataTests(unittest.TestCase):
                 target.select_draw(metadata), metadata, resources)
             self.assertEqual(len(geometry["vertices"]), 4 * target.VERTEX_STRIDE)
 
+    def test_runtime_does_not_repeat_first_packet_before_captured_tick(self) -> None:
+        runtime = (
+            target.REPO / "unity_endfield_graph_shader_lab/Assets"
+            / "EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredEndminfM13ExactRuntime.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "private const float HalfWindowSeconds = 1.0f / 120.0f;",
+            runtime,
+        )
+        self.assertIn(
+            "seconds < phases[0] - HalfWindowSeconds",
+            runtime,
+        )
+        self.assertIn("float halfSpacing", runtime)
+        self.assertIn("return nearest;", runtime)
+
 
 if __name__ == "__main__":
     unittest.main()

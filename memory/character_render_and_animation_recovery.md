@@ -2381,6 +2381,23 @@ tool architecture in tests, but the first real-game run must still prove
 `72/72` staged, drained, and published with `cadenceValid=true` before it is
 accepted as native-cadence temporal evidence.
 
+The current split-M31/80-bone checkpoint has a complete 770-frame D3D11
+render and a 556-frame clean-reference comparison. Within the documented
+one-frame anchor uncertainty, offset -1 is best at 22.7714 actor-ROI MAE,
+23.5195 effect-ROI MAE, and 12.2730 effect temporal-delta MAE. Against the
+earlier clean-gyroscope checkpoint (23.7086/23.6431/13.7609), this improves
+actor alignment, effect spatial error, and especially temporal behavior, but
+does not close fidelity. The peak window remains 25.640/29.513/19.923; its
+largest visible omissions are the broad flash/gas and shell composition.
+
+The first exact M13 packet is source-matched at 4.3833 s. Its former
+nearest-packet window repeated that ring backward to 4.325 s, producing the
+large white ring at 4.35 s where the clean reference has none. Admission now
+uses a one-tick lower bound for the first packet while preserving the
+established continuous nearest-packet suffix. A focused D3D11 comparison at
+4.35/4.4167/4.50 improves effect-ROI MAE to 33.8108 versus 34.4416 for
+fully sparse exact admission and 34.9943 for ordinary M13 rendering.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
