@@ -21,6 +21,78 @@ class CombinedGraphicsCaptureTests(unittest.TestCase):
         sequences = subject.split_sequences(frames)
         self.assertEqual([50, 50], [len(row) for row in sequences])
 
+    def test_automatic_sequence_policy_requires_complete_quiescent_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            (capture / "runtime.status.json").write_text(json.dumps({
+                "endminfAutoTriggerObserved": True,
+                "graphicsSequenceAutomatic": True,
+                "graphicsSequenceMaxFrames": 72,
+                "graphicsSequenceFrames": 72,
+                "graphicsSequenceActive": False,
+                "framePending": False,
+                "graphicsSequenceCapturePending": False,
+                "graphicsDropped": 0,
+            }), encoding="utf-8")
+            policy = subject.sequence_policy(capture)
+            self.assertEqual("automatic_endminf_72", policy["name"])
+            self.assertEqual(1, policy["expectedSequenceCount"])
+            self.assertEqual(72, policy["minimumFramesPerSequence"])
+            self.assertEqual([], policy["errors"])
+
+    def test_automatic_sequence_policy_rejects_partial_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            (capture / "runtime.status.json").write_text(json.dumps({
+                "endminfAutoTriggerObserved": True,
+                "graphicsSequenceAutomatic": True,
+                "graphicsSequenceMaxFrames": 72,
+                "graphicsSequenceFrames": 51,
+                "graphicsSequenceActive": False,
+                "framePending": True,
+                "graphicsSequenceCapturePending": True,
+                "graphicsDropped": 2,
+            }), encoding="utf-8")
+            errors = subject.sequence_policy(capture)["errors"]
+            self.assertTrue(any("completed 51" in row for row in errors))
+            self.assertTrue(any("pending" in row for row in errors))
+            self.assertTrue(any("dropped 2" in row for row in errors))
+
+    def test_automatic_sequence_does_not_split_on_backpressure_gap(self) -> None:
+        frames = list(range(100, 124)) + list(range(300, 348))
+        policy = {"name": "automatic_endminf_72"}
+        sequences = subject.logical_sequences(frames, policy)
+        self.assertEqual([72], [len(row) for row in sequences])
+
+    def test_old_status_retains_legacy_two_burst_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            (capture / "runtime.status.json").write_text(json.dumps({
+                "graphicsSequenceMaxFrames": 64,
+                "graphicsSequenceFrames": 0,
+            }), encoding="utf-8")
+            policy = subject.sequence_policy(capture)
+            self.assertEqual("legacy_two_burst", policy["name"])
+            self.assertEqual(2, policy["expectedSequenceCount"])
+
+    def test_manual_72_package_run_is_rejected_as_nonautomatic(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            (capture / "runtime.status.json").write_text(json.dumps({
+                "endminfAutoTriggerObserved": True,
+                "graphicsSequenceAutomatic": False,
+                "graphicsSequenceMaxFrames": 72,
+                "graphicsSequenceFrames": 72,
+                "graphicsSequenceActive": False,
+                "graphicsSequenceCapturePending": False,
+                "framePending": False,
+                "graphicsDropped": 0,
+            }), encoding="utf-8")
+            policy = subject.sequence_policy(capture)
+            self.assertEqual("automatic_endminf_72", policy["name"])
+            self.assertTrue(any("not started automatically" in row
+                                for row in policy["errors"]))
+
     def test_palette_resource_accepts_bounded_blob(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             resource = Path(temporary) / "resources.bin"
