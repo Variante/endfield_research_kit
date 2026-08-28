@@ -2346,10 +2346,12 @@ targeted D3D11 run reports the replay bound and applied at every checkpoint.
 The same session strengthens but does not complete peak/opening effects. It
 retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
 4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. The unchanged native M31
-callback cannot submit those packets in retail order: all seven two-draw
-packets are `M31 -> M29/M30 -> M31`, not two contiguous M31 draws. They now
-fail closed to the ordinary renderer; the three-draw peak and one-draw tail
-remain unsupported by the two-draw callback as well. No M20 shader identity
+callback originally could not submit those packets in retail order: all seven
+two-draw packets are `M31 -> M29/M30 -> M31`, not two contiguous M31 draws.
+The callback and render pipeline now split the packet into one native event on
+each side of pre-M29/M30 work, M30, queue 3000, and M29. A focused D3D11 run
+submits both events and validates two draws with `S_OK`. The three-draw peak
+and one-draw tail remain unsupported and restore the ordinary renderer. No M20 shader identity
 occurs, and the only opening-strip package inside the maintained 0.0667-0.35 s
 interval is frame 1758 at about 0.2325 s. This capture therefore must not be
 used to invent M20 ownership or expand the partial strip table. Runtime strip
@@ -2364,6 +2366,14 @@ than frame 2987's four-stone tail. A focused D3D11 run validates the native
 packet and preserves 921 deferred-presentation pixels into the saved frame;
 this fixes missing geometry but does not close the known dark/gray deferred
 lighting gap.
+
+Although all 72 automatic packages published, their QPC gaps are
+135.2-250.5 ms (195.1 ms mean), with every gap over the 25 ms native-cadence
+limit. Full-profile synchronous readback therefore makes this session valid
+for retained packet/resource closure and same-session palette identity, but
+not as a Present-spaced opening or short-lived M20 clock. Automatic capture
+must defer GPU staging readback before another sequence is accepted as
+native-cadence temporal evidence.
 
 ## Main animation gap
 
