@@ -45,9 +45,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=1"
-  rem Retain the measured M31 temporal contract. The current native callback
-  rem cannot preserve retail's M31-M29/M30-M31 interleave, so incompatible
-  rem packets deliberately keep the ordinary renderer until split submission exists.
+  rem Retain the measured M31 temporal contract. Seven two-draw phases split
+  rem native submission around retail's M29/M30 interval; unsupported packet
+  rem shapes deliberately keep the ordinary renderer.
   set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"
   set "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER=1"
   set "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1"
