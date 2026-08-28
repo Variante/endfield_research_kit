@@ -22,6 +22,10 @@ GBUFFER_FRAME = ROOT / (
 PIPELINE = ROOT / (
     "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs"
 )
+DEFERRED_CONSUMER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    "EndfieldRecoveredDeferredExactConsumer.cs"
+)
 
 
 class EndminfM27PeakPresentationDiagnosticContractTests(unittest.TestCase):
@@ -60,6 +64,35 @@ class EndminfM27PeakPresentationDiagnosticContractTests(unittest.TestCase):
             "_EndfieldM27ResolvedColor.Load(int3(resolvedPixel, 0))",
             shader,
         )
+
+    def test_diagnostic_reports_direct_and_mirrored_resolver_ranges(self) -> None:
+        presentation = PRESENTATION.read_text(encoding="utf-8")
+        self.assertIn("resolvedDirectRgbRange=", presentation)
+        self.assertIn("resolvedMirrorYRgbRange=", presentation)
+        self.assertIn(
+            "diagnosticResolvedBytes,\n"
+            "                        mirroredPixel * 16 + lane * 4",
+            presentation,
+        )
+
+    def test_final_transfer_is_linear_scene_emission_plus_resolve(self) -> None:
+        shader = PRESENTATION_SHADER.read_text(encoding="utf-8")
+        self.assertIn(
+            "return _EndfieldM27SourceSceneColor.Load(int3(pixel, 0)) +",
+            shader,
+        )
+        self.assertNotIn("LinearToSRGB", shader)
+        self.assertNotIn("SRGBToLinear", shader)
+
+    def test_exact_resolver_keeps_unclosed_lighting_inputs_explicit(self) -> None:
+        consumer = DEFERRED_CONSUMER.read_text(encoding="utf-8")
+        for token in (
+            "b6=HDPLS:zero-local-fallback",
+            "t12=LightCookie:black-zero-cookie",
+            "t13=IntegratedFog:black-disabled-1x1-ASTC",
+            "t16-t21=IrradianceV2:zero-inactive-fallback",
+        ):
+            self.assertIn(token, consumer)
 
     def test_depth_precedes_forward_and_color_follows_opaque_owner(self) -> None:
         pipeline = PIPELINE.read_text(encoding="utf-8")

@@ -488,8 +488,10 @@ namespace EndfieldGraphShaderLab
             int resolvedNonzeroPixels = 0;
             int resolvedMirrorYNonzeroPixels = 0;
             int canonicalEqualsSourcePixels = 0;
-            float resolvedMinimum = float.PositiveInfinity;
-            float resolvedMaximum = float.NegativeInfinity;
+            float resolvedDirectMinimum = float.PositiveInfinity;
+            float resolvedDirectMaximum = float.NegativeInfinity;
+            float resolvedMirrorYMinimum = float.PositiveInfinity;
+            float resolvedMirrorYMaximum = float.NegativeInfinity;
             for (int pixel = 0; pixel < pixels; pixel++)
             {
                 int maskOffset = pixel * 4;
@@ -515,8 +517,12 @@ namespace EndfieldGraphShaderLab
                         pixel * 16 + lane * 4);
                     if (float.IsNaN(value) || float.IsInfinity(value))
                         continue;
-                    resolvedMinimum = Math.Min(resolvedMinimum, value);
-                    resolvedMaximum = Math.Max(resolvedMaximum, value);
+                    resolvedDirectMinimum = Math.Min(
+                        resolvedDirectMinimum,
+                        value);
+                    resolvedDirectMaximum = Math.Max(
+                        resolvedDirectMaximum,
+                        value);
                     resolvedNonzero = resolvedNonzero || value != 0.0f;
                 }
                 if (resolvedNonzero)
@@ -531,10 +537,15 @@ namespace EndfieldGraphShaderLab
                     float value = BitConverter.ToSingle(
                         diagnosticResolvedBytes,
                         mirroredPixel * 16 + lane * 4);
-                    mirrorYNonzero = mirrorYNonzero ||
-                        (!float.IsNaN(value) &&
-                         !float.IsInfinity(value) &&
-                         value != 0.0f);
+                    if (float.IsNaN(value) || float.IsInfinity(value))
+                        continue;
+                    resolvedMirrorYMinimum = Math.Min(
+                        resolvedMirrorYMinimum,
+                        value);
+                    resolvedMirrorYMaximum = Math.Max(
+                        resolvedMirrorYMaximum,
+                        value);
+                    mirrorYNonzero = mirrorYNonzero || value != 0.0f;
                 }
                 if (mirrorYNonzero)
                     resolvedMirrorYNonzeroPixels++;
@@ -548,7 +559,10 @@ namespace EndfieldGraphShaderLab
                 $"canonicalEqualsSourcePixels={canonicalEqualsSourcePixels}, " +
                 $"resolvedNonzeroPixels={resolvedNonzeroPixels}, " +
                 $"resolvedMirrorYNonzeroPixels={resolvedMirrorYNonzeroPixels}, " +
-                $"resolvedRgbRange={resolvedMinimum:R}..{resolvedMaximum:R}, " +
+                $"resolvedDirectRgbRange={resolvedDirectMinimum:R}.." +
+                $"{resolvedDirectMaximum:R}, " +
+                $"resolvedMirrorYRgbRange={resolvedMirrorYMinimum:R}.." +
+                $"{resolvedMirrorYMaximum:R}, " +
                 $"clearScenePacked=0x{clearScenePacked:x8}, sameFrame=true.");
         }
 
