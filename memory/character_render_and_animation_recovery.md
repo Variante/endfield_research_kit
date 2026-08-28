@@ -2126,13 +2126,31 @@ M20 shader pair nor a 36-index draw appears in Full frame 2775, whose direct
 match is clean frame 273. Exact M20 replay therefore needs one priority capture
 around clean frames 276-281 after the current M18/M28 evidence is integrated.
 
+The clean recording also contains a late live-cursor move that the former
+single-endpoint gyroscope replay could not represent. Source-native behavior
+restarts a two-second OutQuad at PreLate whenever the evaluated input endpoint
+changes by more than `1e-10` squared. Replaying the observed clean-reference
+cursor samples from requested time 7.2333-7.4667 seconds improves every tested
+late checkpoint: across clean source frames 523/529/537/559/589/619/639, mean
+character ROI MAE falls from 21.632 to 19.256 and effect ROI MAE from 22.950
+to 19.278. The directly observed final clamp `(1,0.9962963)` is stronger than
+the bounded `(1,1)` alternative, whose effect ROI MAE is 20.226. Keep this
+recording-specific track opt-in and preserve the general source retarget API;
+do not replace it with a static camera or backdrop offset.
+
 Hair/cape replay remains source-incomplete independently of peak post effects.
-The dense oracle has no `cloth_02` observations even though
+The older dense oracle has no `cloth_02` observations even though
 `S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone
 chains; current `MC_Coat` closure covers only 52 of 71 authored proxy
 transforms. The clean-reference overrides disagree with the older session by
 about 12.1 mm and 4.87 degrees on average, so the cross-session merge is not a
-sound exact-motion source. Peak frame 269 must not judge raw geometry because
+sound exact-motion source. Full session `20260828T045025Z` is healthy and all
+eight frames contain complete body, hair, `cloth_01`-`cloth_04` palettes,
+including all 29 `cloth_02` matrices. This closes renderer/palette ownership
+and provides same-session pose anchors, but eight isolated samples do not
+establish a continuous 60 Hz trajectory. Its two peak attempts match clean
+frames 274 and 271, immediately before the required M20 interval, so it also
+does not close M20. Peak frame 269 must not judge raw geometry because
 Uber/temporal history shifts the final silhouette; use pre-Uber frames 219,
 257, 273, and settled loop 407. The next dynamics evidence must retain hair
 and all `cloth_01`-`cloth_04` LOD0 palettes in one initialization, then make
@@ -2181,8 +2199,9 @@ or shaders rather than hand-editing generated prefabs.
    M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.
    Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean
-   no-frame-generation recording. Keep source tint, particle, bloom, and curve
-   values fixed unless stronger evidence supersedes them.
+   no-frame-generation recording with the validated clean-reference gyroscope
+   track enabled. Keep source tint, particle, bloom, and curve values fixed
+   unless stronger evidence supersedes them.
 2. Close the localized opening fracture against clean frames 4-22. Its
    0.033-0.350-second pre-Uber diagnostic now samples the shifted
    CharacterPrePass selector before compositing, so character bands protrude
@@ -2191,9 +2210,10 @@ or shaders rather than hand-editing generated prefabs.
    visible steps to roughly 40-265 pixels but cannot uniquely recover the
    per-band sampler offsets, and the current 34-pixel amplitude remains only a
    placement/cadence proof.
-3. Replace the mixed-session Endminf dynamics replay with one same-initialization
-   capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin palette,
-   especially the absent `cloth_02` transparent cape chains. Make complete
+3. Extend the eight same-initialization `20260828T045025Z` pose anchors into a
+   dense capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin
+   palette. `cloth_02` ownership is now proven at all eight sparse frames, but
+   its transparent chains still lack a continuous trajectory. Make complete
    renderer/weighted-bone coverage fail closed, then re-audit frames
    219/257/273 pre-Uber and settled loop 407. Do not apply the candidate
    one-frame clock advance, enable the diagnostic solver, or manually widen

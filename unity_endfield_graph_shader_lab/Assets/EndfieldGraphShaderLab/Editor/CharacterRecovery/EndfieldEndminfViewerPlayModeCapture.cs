@@ -52,6 +52,23 @@ namespace EndfieldGraphShaderLabEditor
         // camera state. Environment overrides preserve per-session evidence.
         private const string RecordingGyroscopeInputX = "-0.4604167";
         private const string RecordingGyroscopeInputY = "0.9305556";
+        private const string CleanReferenceGyroscopeTrackEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_CLEAN_REFERENCE_GYROSCOPE_TRACK";
+        // Cursor observations from the UI-free 1920x1080 clean-reference
+        // decode. Source frame 90 is requested animation time zero. The
+        // retail UIGyroscopeEffect sees these changes at PreLate and replaces
+        // its active two-second OutQuad on every significant input change.
+        private static readonly GyroscopeTrackSample[] CleanReferenceGyroscopeTrack =
+        {
+            new GyroscopeTrackSample(7.2333333f, -0.4593750f, 0.9277778f),
+            new GyroscopeTrackSample(7.2666667f, -0.4489583f, 0.9388889f),
+            new GyroscopeTrackSample(7.3000000f, -0.4093750f, 0.9703704f),
+            new GyroscopeTrackSample(7.3333333f, -0.2697917f, 0.9962963f),
+            new GyroscopeTrackSample(7.3666667f,  0.0177083f, 0.9962963f),
+            new GyroscopeTrackSample(7.4000000f,  0.4156250f, 0.9962963f),
+            new GyroscopeTrackSample(7.4333333f,  0.7760417f, 0.9962963f),
+            new GyroscopeTrackSample(7.4666667f,  1.0000000f, 0.9962963f),
+        };
         // Direct UI-free registration of the retained retail Uber output places
         // the August 24 no-frame-generation pulse on the authored body clock.
         // The older August 21 route's 0.15-second offset remains available as
@@ -102,6 +119,25 @@ namespace EndfieldGraphShaderLabEditor
         private static Camera camera;
         private static string output;
         private static float[] requestedTimes;
+        private static bool replayCleanReferenceGyroscopeTrack;
+        private static int nextGyroscopeTrackSample;
+
+        private readonly struct GyroscopeTrackSample
+        {
+            public readonly float requestedSeconds;
+            public readonly float normalizedMouseX;
+            public readonly float normalizedMouseY;
+
+            public GyroscopeTrackSample(
+                float requestedSeconds,
+                float normalizedMouseX,
+                float normalizedMouseY)
+            {
+                this.requestedSeconds = requestedSeconds;
+                this.normalizedMouseX = normalizedMouseX;
+                this.normalizedMouseY = normalizedMouseY;
+            }
+        }
         private static float captureFps = Fps;
         private static int captureWidth = DefaultWidth;
         private static int captureHeight = DefaultHeight;
@@ -120,7 +156,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v7";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v8";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -174,6 +210,7 @@ namespace EndfieldGraphShaderLabEditor
             public string gyroscopeMode;
             public string gyroscopeInputX;
             public string gyroscopeInputY;
+            public bool cleanReferenceGyroscopeTrack;
             public float visualPostPreRollSeconds;
             public bool retainedSkinningDiagnostic;
             public FrameRow[] frames;
@@ -524,6 +561,10 @@ namespace EndfieldGraphShaderLabEditor
             next = 0;
             selected = false;
             selectionSettleFrames = 0;
+            replayCleanReferenceGyroscopeTrack =
+                Environment.GetEnvironmentVariable(
+                    CleanReferenceGyroscopeTrackEnvironment) == "1";
+            nextGyroscopeTrackSample = 0;
             bool fineWindow = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
             bool videoExport = Environment.GetEnvironmentVariable(
@@ -801,6 +842,7 @@ namespace EndfieldGraphShaderLabEditor
                 return;
             float requested = requestedTimes[next];
             float elapsed = Time.time - started;
+            ReplayCleanReferenceGyroscopeTrack(elapsed);
             if (elapsed + 0.0001f < requested) return;
             CharacterRecoveryViewerUI.TryGetSelectedActorRoot(out Transform actor);
             if (actor == null || camera == null) return;
@@ -1596,6 +1638,8 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredCharInfoGyroscopeCameraState.InputXEnvironmentVariable),
                 gyroscopeInputY = Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable),
+                cleanReferenceGyroscopeTrack =
+                    replayCleanReferenceGyroscopeTrack,
                 // The _02 owner is destroyed before the full sequence report
                 // is published, which deliberately clears the live clock.
                 // Preserve the observed first-frame phase difference instead.
@@ -1667,6 +1711,28 @@ namespace EndfieldGraphShaderLabEditor
                 ": roots=" + Frames.Last().effectRootCount +
                 " admitted=" + Frames.Last().admittedRenderers + " output=" + output);
             EditorApplication.ExitPlaymode();
+        }
+
+        private static void ReplayCleanReferenceGyroscopeTrack(float elapsed)
+        {
+            if (!replayCleanReferenceGyroscopeTrack || camera == null)
+                return;
+            EndfieldRecoveredCharInfoGyroscopeTween tween =
+                camera.GetComponent<EndfieldRecoveredCharInfoGyroscopeTween>();
+            if (tween == null)
+                return;
+            while (nextGyroscopeTrackSample <
+                   CleanReferenceGyroscopeTrack.Length)
+            {
+                GyroscopeTrackSample sample =
+                    CleanReferenceGyroscopeTrack[nextGyroscopeTrackSample];
+                if (elapsed + 0.0001f < sample.requestedSeconds)
+                    break;
+                tween.RetargetNormalizedMouseInput(
+                    sample.normalizedMouseX,
+                    sample.normalizedMouseY);
+                nextGyroscopeTrackSample++;
+            }
         }
 
         private static bool IsCharInfoBackgroundActive()
