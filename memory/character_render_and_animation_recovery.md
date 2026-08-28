@@ -2082,6 +2082,24 @@ and restore the authored particle renderer on adjacent ticks. A phase-matched
 `+/-0.05`-second repeated-packet control. Keep geometry, UVs, tint, and bloom
 fixed unless another captured frame supplies a different packet.
 
+The Viewer report schema now records requested, active, submitted, validated,
+and failure state independently for the exact M18/M21/M28 packets. A focused
+60 Hz run proves all three are submitted and callback-validated only at the
+4.5000-second sample, with adjacent rows inactive and failure-free. A separate
+exact-Uber A/B around 4.35-4.55 seconds retains the pre-Bloom temporal resolve:
+disabling it worsens mean character/effect ROI MAE from 27.935/35.212 to
+28.375/35.623. The broad peak blur is therefore not evidence for bypassing
+history or moving Uber ahead of the recovered temporal stage.
+
+The remaining broad late echoes were an Uber pulse-registration error, not a
+stage-order error. Retail frame 1818 maps the late radial peak to clean frame
+264 / phase 4.3500 seconds; the former curve peaked five 60 Hz samples later at
+4.4333. Advancing only that late pulse preserves the captured envelope and
+puts the exact Uber at radial/chromatic 0.109/0.101 on 4.3500. Across the 11
+shared focused samples, character ROI MAE improves 27.935 to 27.581, effect ROI
+MAE improves 35.212 to 34.690, and temporal-delta MAE improves 29.301 to
+25.685. Keep temporal -> bloom -> actor-inclusive exact Uber ordering intact.
+
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
 at 4.46 seconds with six near-peak billboards and textures

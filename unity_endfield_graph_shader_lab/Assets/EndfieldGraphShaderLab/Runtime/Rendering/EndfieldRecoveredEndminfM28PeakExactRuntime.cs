@@ -43,6 +43,8 @@ namespace EndfieldGraphShaderLab
         private bool active;
         private bool failed;
         private bool submissionPending;
+        private bool submittedThisFrame;
+        private bool validatedThisFrame;
         private uint validatedDrawCount;
         private string failure = string.Empty;
         private bool loggedActivation;
@@ -63,11 +65,22 @@ namespace EndfieldGraphShaderLab
         public static bool HasPendingValidation =>
             activeInstance != null && activeInstance.submissionPending;
 
+        public static bool ActiveThisFrame =>
+            activeInstance != null && activeInstance.active;
+        public static bool SubmittedThisFrame =>
+            activeInstance != null && activeInstance.submittedThisFrame;
+        public static bool ValidatedThisFrame =>
+            activeInstance != null && activeInstance.validatedThisFrame;
+        public static string CurrentFailure =>
+            activeInstance != null ? activeInstance.failure : string.Empty;
+
         internal string Failure => failure;
 
         internal bool PrepareBeforeCulling(Camera camera)
         {
             active = false;
+            submittedThisFrame = false;
+            validatedThisFrame = false;
             RestoreSourceRenderers();
             if (!Requested || failed || camera == null)
                 return false;
@@ -152,6 +165,7 @@ namespace EndfieldGraphShaderLab
             context.ExecuteCommandBuffer(command);
             command.Release();
             submissionPending = true;
+            submittedThisFrame = true;
 
             if (!loggedActivation)
             {
@@ -354,6 +368,7 @@ namespace EndfieldGraphShaderLab
                     return Fail(validationFailure);
                 }
                 validatedDrawCount = draws;
+                validatedThisFrame = true;
                 if (!loggedValidation)
                 {
                     Debug.Log(

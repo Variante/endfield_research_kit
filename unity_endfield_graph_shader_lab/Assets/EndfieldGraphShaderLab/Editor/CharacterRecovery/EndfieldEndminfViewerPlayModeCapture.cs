@@ -116,7 +116,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v5";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v6";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -192,6 +192,21 @@ namespace EndfieldGraphShaderLabEditor
             public bool exactEndminfUberRequested;
             public bool exactEndminfUberSubmitted;
             public string exactEndminfUberFailure;
+            public bool endminfM18ExactRequested;
+            public bool endminfM18ExactActive;
+            public bool endminfM18ExactSubmitted;
+            public bool endminfM18ExactValidated;
+            public string endminfM18ExactFailure;
+            public bool endminfM21ExactRequested;
+            public bool endminfM21ExactActive;
+            public bool endminfM21ExactSubmitted;
+            public bool endminfM21ExactValidated;
+            public string endminfM21ExactFailure;
+            public bool endminfM28ExactRequested;
+            public bool endminfM28ExactActive;
+            public bool endminfM28ExactSubmitted;
+            public bool endminfM28ExactValidated;
+            public string endminfM28ExactFailure;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -1079,6 +1094,36 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberSubmitted,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
+                endminfM18ExactRequested =
+                    EndfieldRecoveredEndminfM18PeakExactRuntime.Requested,
+                endminfM18ExactActive =
+                    EndfieldRecoveredEndminfM18PeakExactRuntime.ActiveThisFrame,
+                endminfM18ExactSubmitted =
+                    EndfieldRecoveredEndminfM18PeakExactRuntime.SubmittedThisFrame,
+                endminfM18ExactValidated =
+                    EndfieldRecoveredEndminfM18PeakExactRuntime.ValidatedThisFrame,
+                endminfM18ExactFailure =
+                    EndfieldRecoveredEndminfM18PeakExactRuntime.Failure,
+                endminfM21ExactRequested =
+                    EndfieldRecoveredEndminfM21PeakExactRuntime.Requested,
+                endminfM21ExactActive =
+                    EndfieldRecoveredEndminfM21PeakExactRuntime.ActiveThisFrame,
+                endminfM21ExactSubmitted =
+                    EndfieldRecoveredEndminfM21PeakExactRuntime.SubmittedThisFrame,
+                endminfM21ExactValidated =
+                    EndfieldRecoveredEndminfM21PeakExactRuntime.ValidatedThisFrame,
+                endminfM21ExactFailure =
+                    EndfieldRecoveredEndminfM21PeakExactRuntime.Failure,
+                endminfM28ExactRequested =
+                    EndfieldRecoveredEndminfM28PeakExactRuntime.Requested,
+                endminfM28ExactActive =
+                    EndfieldRecoveredEndminfM28PeakExactRuntime.ActiveThisFrame,
+                endminfM28ExactSubmitted =
+                    EndfieldRecoveredEndminfM28PeakExactRuntime.SubmittedThisFrame,
+                endminfM28ExactValidated =
+                    EndfieldRecoveredEndminfM28PeakExactRuntime.ValidatedThisFrame,
+                endminfM28ExactFailure =
+                    EndfieldRecoveredEndminfM28PeakExactRuntime.CurrentFailure,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)

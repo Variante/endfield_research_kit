@@ -25,6 +25,8 @@ namespace EndfieldGraphShaderLab
         private static bool failed;
         private static bool active;
         private static bool submissionPending;
+        private static bool submittedThisFrame;
+        private static bool validatedThisFrame;
         private static string failure = string.Empty;
         private static bool loggedActivation;
         private static bool loggedValidation;
@@ -33,12 +35,17 @@ namespace EndfieldGraphShaderLab
         public static bool Requested => string.Equals(
             Environment.GetEnvironmentVariable(EnvironmentVariable),
             "1", StringComparison.Ordinal);
-        internal static string Failure => failure;
+        public static string Failure => failure;
         public static bool HasPendingValidation => submissionPending;
+        public static bool ActiveThisFrame => active;
+        public static bool SubmittedThisFrame => submittedThisFrame;
+        public static bool ValidatedThisFrame => validatedThisFrame;
 
         internal static bool PrepareBeforeCulling(Camera camera)
         {
             active = false;
+            submittedThisFrame = false;
+            validatedThisFrame = false;
             if (!Requested || failed || camera == null)
                 return false;
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
@@ -139,6 +146,7 @@ namespace EndfieldGraphShaderLab
             context.ExecuteCommandBuffer(command);
             command.Release();
             submissionPending = true;
+            submittedThisFrame = true;
             if (!loggedActivation)
             {
                 Debug.Log("Recovered exact Endminf M21 stone shell submitted from " +
@@ -174,6 +182,7 @@ namespace EndfieldGraphShaderLab
                     Debug.Log("Recovered exact Endminf M21 stone shell validated S_OK.");
                     loggedValidation = true;
                 }
+                validatedThisFrame = true;
                 return true;
             }
             catch (Exception exception)
