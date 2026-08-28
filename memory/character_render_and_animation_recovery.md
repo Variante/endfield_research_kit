@@ -2163,8 +2163,12 @@ the existing stock-Unity packed particle-color translation to M20 was tested
 separately and rejected: spatial metrics regressed to 27.658496/32.970445 and
 temporal delta regressed to 23.136627. Retail's c13 one-minus-color carrier is
 therefore not equivalent to multiplying Unity's already-colored procedural
-particle stream a second time. The admission verifier hash-gates both M20
-source pairs and the exact sampler translation.
+particle stream a second time. Retail also routes M20's Sample0 custom-speed
+term from Custom1.Y, but applying that bytecode route to the current extracted
+Unity streams regresses the same aggregates to 27.658831/32.969730/23.137687;
+the extracted stream-channel transport is not yet equivalent to retail and the
+test is rejected. The admission verifier hash-gates both M20 source pairs and
+the exact sampler translation.
 
 The clean recording also contains a late live-cursor move that the former
 single-endpoint gyroscope replay could not represent. Source-native behavior
