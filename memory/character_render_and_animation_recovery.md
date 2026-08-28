@@ -2625,10 +2625,26 @@ that bootstrap before forwarding device creation, then install device/context
 hooks before returning the game device. A real proxy regression creates a
 shader immediately before the ready handshake and requires its exact bytecode
 in the final archive. All 16 native tests pass in the launcher's `build-local`
-tree. One real-game run is still required to prove the corrected priority path
-and close exact M20 gas ownership. Stop that session cleanly so
-`shaderBytecodeArchiveComplete=true`, then run the combined validator and
-`python unity_endfield_graph_shader_lab/tools/analyze_endminf_fullscreen_resource_chain.py <session>`.
+tree. Sessions `20260828T224210Z` and `20260828T224407Z` close the real-game
+gate with 72/72 automatic packages and no drops; `224210Z` is the cleaner
+authority. The live owner is the third VFXBaseV2 pair
+`62a5ce6c09171de9`/`5558deddb1ee6188`, admitted only with the measured 36-index
+packet shape because the programs are shared by unrelated effects. Frame 1748
+draw 77 closes exact IA, five VS and four PS constant buffers, the 4 MiB VS t0
+ByteAddressBuffer, scene-depth PS t0, and the runtime 256x128 BC7-sRGB PS t1
+atlas. The exact Unity transport submits and validates this packet once at
+4.433333 seconds; its native shader/layout validator and six-export ABI
+validator pass. No further M20 capture is required.
+
+The first complete M20-integrated review has 770/770 1920x1080 frames, report
+status `ok`, and one requested/active/submitted/validated M20 frame with zero
+failures. Dense comparison against the clean reference selects source offset
+-1, within the recorded plus-or-minus-one-frame anchor uncertainty. The burst
+window remains the largest measured error: at 4.433333 seconds actor ROI MAE is
+55.37 and effect ROI MAE is 53.15. Retail has broad overexposed radial/temporal
+smear across the actor while Unity remains sharp and darker around a localized
+burst. Treat the next crystal-peak work as Uber/temporal/bloom composition and
+remaining owner-order recovery, not another standalone M20 texture substitute.
 
 The exact-owner policy deliberately retains one compute exception: the unique
 8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
@@ -2724,7 +2740,7 @@ or shaders rather than hand-editing generated prefabs.
 ## Recovery queue
 
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
-   M17 `baoshan` transport, now-timed M20 gas, source-compatible Uber path,
+   M17 `baoshan` transport, integrated exact M20 gas, source-compatible Uber path,
    and validated temporal M31 envelope. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
@@ -2732,17 +2748,12 @@ or shaders rather than hand-editing generated prefabs.
    equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
    stone packet geometry/state are exact, while its live t0 fallback remains
    unproven; M21 is enabled only at its certified sample in the normal
-   reproduction. After those are integrated, obtain one unattended automatic
-   sequence at clean frame 276-281. Session `20260828T181119Z` proves stable
-   72/72 publication and exact M21 but skips M20 between six-Present tail
-   samples. The draw-callback priority build must now retain M20 smoke and
-   report at least one priority M20 arm in a single run; frame 2775 does not
-   contain M20.
-   Then rerender the
-   complete 770-frame background+portrait+actor/VFX sequence against the clean
-   no-frame-generation recording with the validated clean-reference gyroscope
-   track enabled. Keep source tint, particle, bloom, and curve values fixed
-   unless stronger evidence supersedes them.
+   reproduction. The unattended M20 evidence and first complete 770-frame
+   background+portrait+actor/VFX rerender are now closed. Use its measured
+   4.3-4.7-second burst gap to recover the broad retail Uber/temporal/bloom
+   envelope and remaining equal-queue ordering. Keep source tint, particle,
+   bloom, and curve values fixed unless stronger evidence supersedes them, and
+   wait for user review of this checkpoint before changing the render.
 2. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
    frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
    do not manually widen cloth; any residual silhouette error now belongs to
