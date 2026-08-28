@@ -2332,18 +2332,23 @@ deferred lighting/compositing and gas transport rather than texture extraction.
 
 M27's prior `presentationReady` signal was not visual proof. A peak-targeted
 same-command readback showed GBufferC claiming all 2,073,600 pixels while the
-presentation changed zero. The exact SceneColor output instead identifies 1,801
-authored peak pixels, and the exact Default Lit resolver has the opposite row
-orientation: zero resolved owner pixels at direct coordinates versus 1,730 at
-mirrored Y. SceneColor ownership, mirrored-Y resolver sampling, depth before
-ForwardOpaque, and color after ForwardOpaque now preserve 921 changed peak
-pixels into the saved frame. Frames 2978-3027 are identity-gated as M27; earlier
-M01/M38 draws sharing the shader pair remain excluded. The resulting complete
-770-frame sequence scores 21.4410 actor ROI, 22.2208 effect ROI, and 11.8080
-temporal-delta MAE versus the prior 21.2970/21.8941/11.9846. Thus transport and
-temporal behavior improve, but dark/gray recovered stones still worsen spatial
-color error. Treat the remaining M27 gap as deferred light/resource recovery,
-not as solved fidelity or a texture-substitution problem.
+presentation changed zero. SceneColor identifies only the 1,801 emissive
+fragments and is not a complete ownership mask: it discards deferred-lit stone
+faces. The exact Default Lit resolver has the opposite row orientation, with
+zero nonzero samples at direct coordinates versus 1,730 at mirrored Y. Both
+presentation passes now use the isolated sidecar's positive reversed-Z depth as
+the complete M27 owner while retaining mirrored-Y resolver sampling, depth
+before ForwardOpaque, and color after ForwardOpaque. A focused D3D11 probe at
+4.4833/4.5000/4.5167 seconds is `targeted_ok`; the joined diagnostic measures
+1,801 emissive pixels, and the peak same-command presentation changes 1,671,106
+pixels while visibly restoring dark angular stone pieces around the hand and
+burst. Frames 2978-3027 remain identity-gated as M27; earlier M01/M38 draws
+sharing the shader pair remain excluded. The preceding complete 770-frame
+sequence still scores 21.4410 actor ROI, 22.2208 effect ROI, and 11.8080
+temporal-delta MAE versus the prior 21.2970/21.8941/11.9846; the private-depth
+correction has not yet received a complete-sequence comparison or user review.
+Treat the remaining color/gas gap as deferred light/resource and transport
+recovery, not as solved fidelity or a texture-substitution problem.
 
 Automatic full session `20260828T121603Z` closes the hair/cape capture gap.
 All 72 packages contain one unambiguous body, hair, and every
