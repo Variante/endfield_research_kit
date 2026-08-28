@@ -1132,6 +1132,13 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT"
                 #elif defined(_SAMPLE_TEX1) && !defined(_SAMPLE_TEX2) && !defined(_USE_SOFTBLEND)
                 return _MainTex.SampleBias(
                     sampler_LinearClamp, uv, bias + _GlobalMipBias);
+                #elif defined(_SAMPLE_TEX0) && defined(_SAMPLE_TEX1) && \
+                    !defined(_SAMPLE_TEX2) && defined(_USE_SOFTBLEND)
+                // Exact M20 fragments 0877/4951 bind Main t1 to the static
+                // LinearRepeat sampler s1. The source texture descriptor is
+                // not authority for this shipped sampler route.
+                return _MainTex.SampleBias(
+                    sampler_LinearRepeat, uv, bias + _GlobalMipBias);
                 #elif !defined(_SAMPLE_TEX0) && !defined(_SAMPLE_TEX1) && \
                     !defined(_SAMPLE_TEX2) && !defined(_SAMPLE_TEX3) && \
                     !defined(_USE_SOFTBLEND)
@@ -1164,6 +1171,13 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT"
                 #elif defined(_SAMPLE_TEX1) && !defined(_SAMPLE_TEX2) && !defined(_USE_SOFTBLEND)
                 return _SampleTex0.SampleBias(
                     sampler_LinearRepeat, uv, bias + _GlobalMipBias);
+                #elif defined(_SAMPLE_TEX0) && defined(_SAMPLE_TEX1) && \
+                    !defined(_SAMPLE_TEX2) && defined(_USE_SOFTBLEND)
+                // Exact M20 fragments 0877/4951 bind Sample0 t2 to
+                // LinearMirror s2. Paired sampling incorrectly repeats this
+                // flow carrier and shifts the plume silhouette.
+                return _SampleTex0.SampleBias(
+                    sampler_LinearMirror, uv, bias + _GlobalMipBias);
                 #else
                 return _SampleTex0.SampleBias(
                     sampler_SampleTex0, uv, bias + _GlobalMipBias);
@@ -1179,6 +1193,12 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT"
                 #elif defined(_SAMPLE_TEX1) && !defined(_SAMPLE_TEX2) && !defined(_USE_SOFTBLEND)
                 return _SampleTex1.SampleBias(
                     sampler_LinearMirror, uv, bias + _GlobalMipBias);
+                #elif defined(_SAMPLE_TEX0) && defined(_SAMPLE_TEX1) && \
+                    !defined(_SAMPLE_TEX2) && defined(_USE_SOFTBLEND)
+                // Exact M20 fragments 0877/4951 bind Sample1 t3 to the
+                // distinct LinearMirrorOnce s3 route.
+                return _SampleTex1.SampleBias(
+                    sampler_LinearMirrorOnce, uv, bias + _GlobalMipBias);
                 #else
                 return _SampleTex1.SampleBias(
                     sampler_SampleTex1, uv, bias + _GlobalMipBias);
@@ -1781,8 +1801,17 @@ Shader "Hidden/Endfield/Recovered/Zhuangfy/VFXBaseV2MRT"
                         // translation for every non-Dian904 specialization.
                         float2 particlePixelUV = input.positionCS.xy *
                             _SceneDepth_TexelSize.xy;
-                        float sceneRawDepth = _SceneDepth.SampleLevel(
-                            s_point_clamp_float_sampler, particlePixelUV, 0.0);
+                        float sceneRawDepth;
+                        #if defined(_SAMPLE_TEX0) && defined(_SAMPLE_TEX1) && \
+                            !defined(_SAMPLE_TEX2)
+                            // Exact M20 fragments 0877/4951 use the static
+                            // LinearClamp sampler for scene depth t0/s0.
+                            sceneRawDepth = _SceneDepth.SampleLevel(
+                                sampler_LinearClamp, particlePixelUV, 0.0);
+                        #else
+                            sceneRawDepth = _SceneDepth.SampleLevel(
+                                s_point_clamp_float_sampler, particlePixelUV, 0.0);
+                        #endif
                         float sceneAbsoluteViewZ =
                             LinearEyeDepth(sceneRawDepth);
                         // The selected blob evaluates abs(ViewMatrix *
