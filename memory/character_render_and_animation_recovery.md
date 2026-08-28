@@ -2475,10 +2475,15 @@ but the deterministic staging exhaustion is sufficient to reject the old
 architecture independently of the crash. Deferred capture now drains and
 publishes completed slots while later samples remain active, releasing each
 slot's GPU/readback allocation back to the bounded budget instead of waiting
-for all 72 samples. Release build and all 15 tests pass, including an explicit
-contract that draining begins while capture remains active. A new real-game
-run is still required; no M20/M21 evidence can be recovered from this failed
-session.
+for all 72 samples. Automatic sequences also suppress the broad per-frame
+compute-resource sweep while retaining every draw/dispatch record, copied
+constant/palette slices, the 4K backbuffer, and resources selected by exact
+Endminf material owners. The rejected broad sweep copied a 63-MiB UAV plus
+pooled 16-MiB buffers into otherwise redundant samples and could still outrun
+single-package publication during the dense prefix. Focused provider/WARP
+tests pass; the proxy lifecycle test is waiting on the concurrently open live
+capture session. A new real-game run is still required; no M20/M21 evidence
+can be recovered from this failed session.
 
 The reported vertically inverted light appearance does not authorize another
 texture flip. All 70 source `ParticleSystemRenderer.m_Flip` vectors are zero,
