@@ -2372,8 +2372,14 @@ Although all 72 automatic packages published, their QPC gaps are
 limit. Full-profile synchronous readback therefore makes this session valid
 for retained packet/resource closure and same-session palette identity, but
 not as a Present-spaced opening or short-lived M20 clock. Automatic capture
-must defer GPU staging readback before another sequence is accepted as
-native-cadence temporal evidence.
+now has a bounded 72-slot/4-GiB deferred staging ring: Present callbacks copy
+per-slot backbuffer, selected resources, and metadata without synchronous
+mapping; later Presents drain with render-thread `DO_NOT_WAIT`, and the worker
+publishes only CPU-ready packages. Release builds and all 15 synthetic/WARP/
+proxy tests pass, including deferred copy/map byte validation. This closes the
+tool architecture in tests, but the first real-game run must still prove
+`72/72` staged, drained, and published with `cadenceValid=true` before it is
+accepted as native-cadence temporal evidence.
 
 ## Main animation gap
 
