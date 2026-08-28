@@ -50,33 +50,33 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             source,
         )
 
-    def test_canonical_video_defaults_m21_but_retains_an_explicit_override(
+    def test_canonical_video_defaults_to_the_interactive_exact_profile_but_retains_overrides(
         self,
     ) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn(
-            'private const string EndminfM21ExactEnvironment =',
-            source,
+        wrapper = OPEN_WRAPPER.read_text(encoding="utf-8")
+        expected = (
+            "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
+            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
+            "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
+            "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
         )
-        self.assertIn(
-            '"ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT";',
-            source,
-        )
-        self.assertIn(
-            "if (videoExportRequested && string.IsNullOrWhiteSpace(",
-            source,
-        )
-        self.assertIn(
-            "Environment.GetEnvironmentVariable(\n"
-            "                        EndminfM21ExactEnvironment)",
-            source,
-        )
-        self.assertIn(
-            "Environment.SetEnvironmentVariable(\n"
-            "                    EndminfM21ExactEnvironment,\n"
-            '                    "1");',
-            source,
-        )
+        self.assertIn("CanonicalVideoDefaultFlags", source)
+        self.assertIn("if (videoExportRequested)", source)
+        self.assertIn("Environment.GetEnvironmentVariable(flag)", source)
+        self.assertIn('Environment.SetEnvironmentVariable(flag, "1")', source)
+        for flag in expected:
+            self.assertIn(flag, source, flag)
+            self.assertIn(f'set "{flag}=1"', wrapper, flag)
 
 
 if __name__ == "__main__":
