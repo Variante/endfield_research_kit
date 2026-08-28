@@ -2165,6 +2165,12 @@ alias publication; Release x64 and all 15 native tests pass. This closes a
 capture-tool omission before the next live run rather than discovering an
 unreplayable M20 packet afterward.
 
+The unattended sequence should use the `full` profile. Its selected-resource
+table now retains 96 entries, matching the 96 indexed-draw records, while the
+aggregate payload remains bounded at 128 MiB. This leaves metadata capacity for
+late exact M20 IA/VS/PS owners after broad full-profile collection. Release x64
+and all 15 native tests pass with the enlarged bounded table.
+
 A focused M21 ablation also clarifies its presentation boundary. Its source
 material has no authored texture and the zero VS buffer is valid for the
 non-skinned branch; the exact frame-2775 stones become most visible in following
