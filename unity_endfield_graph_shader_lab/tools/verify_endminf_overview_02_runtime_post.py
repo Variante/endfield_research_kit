@@ -38,6 +38,9 @@ EXPECTED_CLIP_SHA256 = (
 EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256 = (
     "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
 )
+EXPECTED_ACTIVE_FRAGMENT_DXBC_SHA256 = (
+    "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97"
+)
 EXPECTED_KEYS = (
     ((0.0, 0.12700000405311584), (0.1666666716337204, 0.0),
      (4.400000095367432, 0.0), (4.433333396911621, 0.10100000351667404),
@@ -186,16 +189,20 @@ def verify() -> dict[str, object]:
 
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
-        EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256,
+        EXPECTED_ACTIVE_FRAGMENT_DXBC_SHA256,
         "float4 SampleEndminfSceneLod0(float2 uv)",
         "float effectivePower)",
-        "if (_EndminfVisualCompatibilityParams.z > 3.0)",
+        "radialIntensity * 0.5",
+        "radialIntensity * 1.5",
+        "radialIntensity * 2.0",
+        "radialIntensity * 2.5",
+        "accumulated * 0.166666672",
         "_EndminfVisualCompatibilityParams.w",
         "float3 bloom = max(tex2D(_BloomTex, presentUv).rgb, 0.0)",
         "source.rgb + bloom * bloomIntensity",
     ), "presentation shader")
     helper = re.search(
-        r"float3 SampleEndminfRecoveredRadialChromatic\(.*?\n\s*}\n\n\s*float4 Frag",
+        r"float3 SampleEndminfRecoveredRadial\(.*?\n\s*}\n\n\s*float3 DecodeEndminfUberBloomInput",
         shader,
         re.DOTALL,
     )
@@ -203,11 +210,14 @@ def verify() -> dict[str, object]:
         raise RuntimeError("could not isolate Effect-02 scene-warp helper")
     if "_BloomTex" in helper.group(0):
         raise RuntimeError("Effect-02 warped taps incorrectly resample bloom")
+    if "chromaticIntensity" in helper.group(0):
+        raise RuntimeError("active radial-only Uber helper still splits RGB taps")
 
     return {
-        "status": "verified_source_state_center_and_combined_uber_kernel",
+        "status": "verified_source_state_center_and_active_radial_uber_kernel",
         "clipSha256": EXPECTED_CLIP_SHA256,
         "combinedFragmentDxbcSha256": EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256,
+        "activeFragmentDxbcSha256": EXPECTED_ACTIVE_FRAGMENT_DXBC_SHA256,
         "curveCount": len(bindings),
         "runtime": {
             "radialPower": 1.0,
@@ -227,9 +237,11 @@ def verify() -> dict[str, object]:
         },
         "boundary": (
             "The animated values, ordinary/far-offscreen native center packing, "
-            "native mode/power packing, exact combined shipped Uber kernel, "
-            "source-only warp, and separate bloom sampling order are verified. "
-            "The public-Unity presentation/binding ABI remains unresolved."
+            "native mode/power packing, the captured active radial-only Uber "
+            "kernel, source-only warp, and separate bloom sampling order are "
+            "verified. The older combined radial/chromatic variant remains "
+            "asset evidence, not the active peak presentation. The public-Unity "
+            "presentation/binding ABI remains unresolved."
         ),
     }
 

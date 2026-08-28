@@ -1961,8 +1961,23 @@ PS b0[28], and PS b1[26]; live c0 is approximately
 patches only screen/exposure and dynamic c0 radial lanes, and creates explicit
 typed SRVs for Unity's typeless FP16 backing resources. The focused 4.4333 s
 render validates one native draw with no failure and removes the false RGB
-split. The broad M31 ring/shell, gas, and missing stones remain the dominant
-peak mismatch; the neutral radial average alone does not close those owners.
+split. Ruri decompilation closes its radial source kernel: center plus five
+same-RGB `SampleLevel` taps at factors `0.5,1,1.5,2,2.5`, averaged by `1/6`.
+The canonical compatibility shader now uses that kernel instead of the older
+per-channel combined variant. At matched 4.35-second phase the focused D3D11
+full-frame PSNR changes `18.5790 -> 18.7057 dB` and the conspicuous RGB
+silhouettes disappear. Keep chromatic curve transport for producer auditing,
+but do not apply it as channel-separated source taps at this captured peak.
+The broad M31 ring/shell, gas, and missing stones remain the dominant peak
+mismatch; the neutral radial average alone does not close those owners.
+
+The clean opening reference contains horizontal slices throughout ticks 4-20,
+while the current explicit rectangle table closes only ticks
+`4,6-12,18-20`. Do not fill the missing ticks with one repeated procedural
+band: their rectangles, displacements, and RGB edges vary per frame. The next
+valid automatic opening capture must retain the source before/after fullscreen
+surfaces needed to close ticks `5,13-17` and the additional bands on already
+admitted ticks.
 
 Frame 1818 also closes a narrower exact M31 checkpoint: two owner-gated
 `M_fx_endminm_gfx_31` draws (metadata draw indices 13 and 20) share the captured
@@ -2507,23 +2522,25 @@ quadrant in matched retail and Unity frames. The apparent orientation gap is
 instead missing/undersized M20 gas, glow, particles, and additive energy; a
 Unity-side `1-y` or negative Y scale would double-flip source assets.
 
-The body-shaped portrait contamination has one concrete owner. The exact
-`CLIP_SCENEDEPTH + HG_WORLD_UI` fragment clips the post-Uber portrait against
-the preserved primary depth containing CharacterPrePass, while compatibility
-Uber/temporal color shifts the visible actor without equivalently shifting
-depth. The resulting depth/color disagreement exposes the undistorted body
-silhouette. The clip math and post-Uber chronology are source-backed, but the
-specific full-scene depth SRV binding remains inferred; do not simply remove
-the clip. A default-off
+The body-shaped portrait contamination is a color-post mismatch, not an open
+depth-owner choice. Native `UberPass` data flow copies
+`HGRenderPathScene.sceneDepth` into `UberPostPassData.sceneDepthBuffer`; its
+registered callback draws fullscreen Uber, binds that preserved primary depth
+as `_SceneDepth`, then draws standard/ECS/HGUI world UI. The exact
+`CLIP_SCENEDEPTH + HG_WORLD_UI` fragment therefore intentionally clips the
+post-Uber portrait against unwarped primary depth containing CharacterPrePass.
+Compatibility Uber/temporal color currently shifts the visible actor more than
+retail, exposing that undistorted silhouette. Do not remove the clip or replace
+its source-backed owner. A default-off
 `ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH=1` probe now warps primary
 depth over the exact compatibility-Uber color-sampling footprint and retains
 the nearest contributor only while radial/chromatic Uber is active. Controlled
 4.35-second runs with temporal resolve and exact Uber disabled reject that
 policy: clean-reference full-frame PSNR changes `18.5790 -> 18.5784 dB` and
 the portrait ROI changes `18.8917 -> 18.8844 dB`; the settled no-warp path
-continues to bind primary depth directly. Keep the probe diagnostic-only. The
-remaining source question is the retail `_SceneDepth` SRV owner/contents, not
-whether to remove clipping or blindly warp every contributing depth.
+continues to bind primary depth directly. Keep the probe diagnostic-only. Fix
+the radial/chromatic color transport and temporal input instead of blindly
+warping every contributing depth.
 
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical

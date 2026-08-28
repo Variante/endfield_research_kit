@@ -356,7 +356,8 @@ def verify_static(actor: str) -> dict:
         "GraphicsFormat.D24_UNorm_S8_UInt",
         "camera.cullingMask & ~(1 << EndfieldRecoveredCharInfoBackgroundPortrait.SourceUiLayer)",
         "DrawRecoveredPostUberWorldUi(",
-        "commandBuffer.SetGlobalTexture(SceneDepthId, primarySceneDepth)",
+        "new RenderTargetIdentifier(primarySceneDepth)",
+        "commandBuffer.SetGlobalTexture(SceneDepthId, portraitSceneDepth)",
         "commandBuffer.SetRenderTarget(postColorTarget)",
     ):
         require(token in pipeline, f"post-Uber portrait pipeline contract missing {token!r}")
