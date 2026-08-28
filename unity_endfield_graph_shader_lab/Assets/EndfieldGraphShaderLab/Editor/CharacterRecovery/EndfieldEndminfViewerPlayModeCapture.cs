@@ -636,6 +636,7 @@ namespace EndfieldGraphShaderLabEditor
         {
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+                "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
@@ -906,6 +907,16 @@ namespace EndfieldGraphShaderLabEditor
             // the render-thread plugin callback must be observable here. Do
             // not accept a submitted event as proof that the exact M13 packet
             // actually drew.
+            if (EndfieldRecoveredEndminfM21PeakExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM21PeakExactRuntime.HasPendingValidation &&
+                !EndfieldRecoveredEndminfM21PeakExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m21PeakValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M21 peak callback validation failed: " +
+                    m21PeakValidationFailure);
+            }
             if (EndfieldRecoveredEndminfM13ExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM13ExactRuntime.HasPendingValidation &&
                 !EndfieldRecoveredEndminfM13ExactRuntime
