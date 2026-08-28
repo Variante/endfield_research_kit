@@ -2560,7 +2560,8 @@ the pre-Uber geometry/material owners while retaining the measured rectangles
 only as bounded visual evidence. M17 `baoshan` remains a separate crystal-peak
 owner and must not be conflated with the opening fracture.
 
-It also closes the opening owner itself. Exact VFXRefract pair
+It closes the opening owner's shader and geometry, but not yet its complete
+resource binding. Exact VFXRefract pair
 `297e7323cb0a7c42`/`76db04f0bc22dd3e` submits four shrinking independent-quad
 packets: 11,610, 7,998, 4,176, and 420 indices, or 1,935, 1,333, 696, and 70
 quads. Every packet is overwhelmingly horizontal, uses the 60-byte particle
@@ -2575,17 +2576,23 @@ bracketing the retained six-Present retail samples. The renderer is active,
 has the exact material/pass, and is accepted by the Distortion request scan,
 but stock SRP submission emits no visible generated particle geometry; even a
 solid fragment and clip/depth probes remain absent. The retained D3D11 replay
-now closes that submission gap: generated payloads preserve all four IA and
-shader-used constant ranges, bind source `T_fx_mask_01_M` plus a non-aliasing
-SceneColor snapshot, and submit the exact 0546/0547 programs. Unity's plugin
-event has the opposite face-orientation boundary from the retail draw, so the
-runtime admits the independent two-sided quads without culling; retaining the
-captured back-face state culled every packet. A 3840x2160 targeted A/B validates
-nonzero native draws with `S_OK` and restores the dense horizontal mosaic/RGB
-edge breakup. The old bounded rectangle compatibility pass is suppressed only
-inside the exact retained packet window and remains the fail-closed fallback.
-Do not reinterpret this owner as a fullscreen post effect or recapture shader
-bytes.
+closes submission transport: generated payloads preserve all four IA and
+shader-used constant ranges and submit the exact 0546/0547 programs. Per-frame
+diagnostics map requested phases 0.1500, 0.1833, 0.2167, and 0.2500 seconds to
+capture frames 1034-1037 and validate every native draw with `S_OK`; clean-video
+source frame 90 is requested phase zero, so those samples correspond to clean
+frames 99, 101, 103, and 105. Image comparison rejects the current resource
+substitution: no-cull replay with AnimeStudio's linear `T_fx_mask_01_M` PNG
+smears most of the body, while the original RGBA backbuffer at capture frame
+1034 has narrow strips. Rebinding the only frame-wide 256x256 BC7-sRGB slot-0
+candidate suppresses the strips and is also rejected because session
+`20260828T181119Z` did not retain owner-local SRV rows for this then-non-priority
+pair. EndfieldCapture now marks this exact pair as priority and retains
+owner-local IA, VS t0, and PS t0/t1 resources in every automatic Full package;
+all 15 native tests pass. One new automatic capture is required to close
+texture roles before changing the replay. The old bounded rectangle
+compatibility pass remains the fail-closed fallback. Do not reinterpret this
+owner as a fullscreen post effect or recapture shader bytes.
 
 EndfieldCapture now detects either exact M20 shader pair inside the indexed-draw
 callback and, when the ordinary three-slot producer gate would skip it, arms a

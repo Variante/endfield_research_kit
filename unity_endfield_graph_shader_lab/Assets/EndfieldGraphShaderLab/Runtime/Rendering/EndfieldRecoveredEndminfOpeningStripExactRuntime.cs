@@ -24,6 +24,8 @@ namespace EndfieldGraphShaderLab
         private static bool active;
         private static bool failed;
         private static bool submissionPending;
+        private static bool submittedThisFrame;
+        private static bool validatedThisFrame;
         private static int selectedPacket = -1;
         private static string failure = string.Empty;
         private static bool loggedActivation;
@@ -34,11 +36,23 @@ namespace EndfieldGraphShaderLab
             StringComparison.Ordinal);
         public static bool ActiveThisFrame => Requested && active && !failed;
         public static bool HasPendingValidation => submissionPending;
-        internal static string Failure => failure;
+        public static bool SubmittedThisFrame => submittedThisFrame;
+        public static bool ValidatedThisFrame => validatedThisFrame;
+        public static int SelectedPacketThisFrame => ActiveThisFrame
+            ? selectedPacket
+            : -1;
+        public static int SourceFrameThisFrame => SelectedPacketThisFrame >= 0
+            ? EndfieldRecoveredOpeningStripCaptureData.SourceFrames[
+                SelectedPacketThisFrame]
+            : -1;
+        public static string Failure => failure;
 
         internal static bool PrepareBeforeCulling(Camera camera)
         {
             active = false;
+            submittedThisFrame = false;
+            validatedThisFrame = false;
+            selectedPacket = -1;
             if (sourceRenderer != null)
                 sourceRenderer.enabled = true;
             if (!Requested || failed || camera == null)
@@ -108,6 +122,7 @@ namespace EndfieldGraphShaderLab
             context.ExecuteCommandBuffer(command);
             command.Release();
             submissionPending = true;
+            submittedThisFrame = true;
             if (!loggedActivation)
             {
                 Debug.Log("Recovered exact Endminf opening-strip packets active from " +
@@ -216,6 +231,12 @@ namespace EndfieldGraphShaderLab
             return sceneColorSnapshot.Create();
         }
 
+        public static bool ValidatePendingAfterSynchronizedRender(
+            out string reason)
+        {
+            return ValidatePending(out reason);
+        }
+
         private static bool ValidatePending(out string reason)
         {
             submissionPending = false; reason = string.Empty;
@@ -236,6 +257,7 @@ namespace EndfieldGraphShaderLab
                     Debug.Log("Recovered exact opening-strip native draw validated S_OK.");
                     loggedValidation = true;
                 }
+                validatedThisFrame = true;
                 return true;
             }
             catch (Exception exception) { reason = exception.Message; return false; }
