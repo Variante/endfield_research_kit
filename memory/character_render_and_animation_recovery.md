@@ -2343,7 +2343,12 @@ before ForwardOpaque, and color after ForwardOpaque. A focused D3D11 probe at
 1,801 emissive pixels, and the peak same-command presentation changes 1,671,106
 pixels while visibly restoring dark angular stone pieces around the hand and
 burst. Frames 2978-3027 remain identity-gated as M27; earlier M01/M38 draws
-sharing the shader pair remain excluded. The preceding complete 770-frame
+sharing the shader pair remain excluded. A controlled 1920x1080 A/B at
+0.5667/1.9833/4.1667 seconds proves that this exclusion is necessary: routing
+those early packets through the M27 private-depth presentation introduces
+large black/gray triangles across the backdrop, while the hand-gated control
+does not. Recover the early rows' distinct owner transforms/state before
+attempting exact deferred M01/M38 presentation. The preceding complete 770-frame
 sequence still scores 21.4410 actor ROI, 22.2208 effect ROI, and 11.8080
 temporal-delta MAE versus the prior 21.2970/21.8941/11.9846; the private-depth
 correction has not yet received a complete-sequence comparison or user review.
