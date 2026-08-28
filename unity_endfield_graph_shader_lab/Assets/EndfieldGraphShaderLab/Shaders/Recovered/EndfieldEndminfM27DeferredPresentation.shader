@@ -86,8 +86,22 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27DeferredPresentation"
                     _EndfieldM27OwnershipMask.Load(int3(pixel, 0)).rgb;
                 if (max(ownership.r, max(ownership.g, ownership.b)) <= 0.0)
                     discard;
+                uint resolvedWidth;
+                uint resolvedHeight;
+                _EndfieldM27ResolvedColor.GetDimensions(
+                    resolvedWidth,
+                    resolvedHeight);
+                // The exact Default Lit resolver is a native D3D11 packet and
+                // publishes its texture with D3D row orientation. Unity's
+                // camera MRT owner is addressed in Unity render-target space.
+                // The certified frame-2978 readback has zero resolved pixels
+                // at direct owner coordinates and 1,730 at mirrored-Y
+                // coordinates, so join only the resolver input across Y.
+                int2 resolvedPixel = int2(
+                    pixel.x,
+                    int(resolvedHeight) - 1 - pixel.y);
                 return _EndfieldM27SourceSceneColor.Load(int3(pixel, 0)) +
-                    _EndfieldM27ResolvedColor.Load(int3(pixel, 0));
+                    _EndfieldM27ResolvedColor.Load(int3(resolvedPixel, 0));
             }
             ENDHLSL
         }

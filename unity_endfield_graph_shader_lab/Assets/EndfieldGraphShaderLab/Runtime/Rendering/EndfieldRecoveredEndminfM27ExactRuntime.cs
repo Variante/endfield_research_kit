@@ -38,6 +38,21 @@ namespace EndfieldGraphShaderLab
         public static bool HasPendingValidation => submissionPending;
         internal static bool Initialized => prepared && !failed;
         internal static bool HasActivePacket => Initialized && selectedPacket >= 0;
+        // Frames before 2978 are M01/M38 draws that merely reuse the same
+        // LitEffect shader pair. The identity-specific hand-crystal M27 family
+        // begins at 2978 and continues through the retained tail at 3027.
+        internal static bool HandCrystalPacketSelected =>
+            selectedPacket >= 0 &&
+            selectedPacket < EndfieldRecoveredM27TemporalCaptureData.SourceFrames.Length &&
+            EndfieldRecoveredM27TemporalCaptureData.SourceFrames[selectedPacket] >= 2978;
+        // Capture frame 2978 is the first retained hand-crystal stone packet:
+        // one 1,080-index expanded-particle draw at overview phase 4.433333 s.
+        // Keep diagnostics tied to that source identity instead of consuming
+        // their one readback on an earlier M01/M38 LitEffect packet that shares
+        // this shader pair.
+        internal static bool PeakStonePacketSelected =>
+            HandCrystalPacketSelected &&
+            EndfieldRecoveredM27TemporalCaptureData.SourceFrames[selectedPacket] == 2978;
         public static string Failure => failure;
 
         internal static bool Prepare(
