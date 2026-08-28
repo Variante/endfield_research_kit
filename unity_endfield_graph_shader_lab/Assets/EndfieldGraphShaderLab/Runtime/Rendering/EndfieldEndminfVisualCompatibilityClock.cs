@@ -217,18 +217,27 @@ namespace EndfieldGraphShaderLab
         {
             if (time <= 0.16666667f)
                 return Mathf.SmoothStep(initialPeak, 0.0f, time / 0.16666667f);
-            if (time < 4.4f)
+            // Retail frame 1818 registers the late Uber pulse peak at clean
+            // frame 264 / overview phase 4.350000 s. The former curve was
+            // five 60-Hz samples late. Preserve its captured rise/fall shape
+            // and move only this pulse to the measured source phase.
+            const float lateStartSeconds = 4.3166667f;
+            const float latePeakSeconds = 4.35f;
+            const float lateEndSeconds = 4.5166667f;
+            if (time < lateStartSeconds)
                 return 0.0f;
-            if (time <= 4.4333334f)
+            if (time <= latePeakSeconds)
                 return Mathf.SmoothStep(
                     0.0f,
                     latePeak,
-                    (time - 4.4f) / 0.0333333f);
-            if (time <= 4.6f)
+                    (time - lateStartSeconds) /
+                        (latePeakSeconds - lateStartSeconds));
+            if (time <= lateEndSeconds)
                 return Mathf.SmoothStep(
                     latePeak,
                     0.0f,
-                    (time - 4.4333334f) / 0.1666665f);
+                    (time - latePeakSeconds) /
+                        (lateEndSeconds - latePeakSeconds));
             return 0.0f;
         }
 
