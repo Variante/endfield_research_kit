@@ -47,14 +47,26 @@ class EndminfM27PeakPresentationDiagnosticContractTests(unittest.TestCase):
             2,
         )
 
-    def test_visible_scene_color_not_full_carrier_gbuffer_owns_presentation(self) -> None:
+    def test_private_depth_owns_deferred_lit_stone_presentation(self) -> None:
         frame = GBUFFER_FRAME.read_text(encoding="utf-8")
         method = frame.split(
             "internal bool TryGetEndminfM27PresentationInputs(", 1
         )[1].split("internal bool TryGetSphereOutsidePresentationInputs(", 1)[0]
+        shader = PRESENTATION_SHADER.read_text(encoding="utf-8")
         self.assertIn("sourceSceneColor = sceneColor;", method)
-        self.assertIn("mask = sceneColor;", method)
-        self.assertNotIn("mask = gBufferC;", method)
+        self.assertIn("private reversed-Z", method)
+        self.assertEqual(
+            shader.count(
+                "_EndfieldM27PrivateDepth.Load(int3(pixel, 0))"
+            ),
+            2,
+        )
+        self.assertIn("if (privateDepth <= 0.0)", shader)
+        self.assertIn(
+            "if (_EndfieldM27PrivateDepth.Load(int3(pixel, 0)) <= 0.0)",
+            shader,
+        )
+        self.assertNotIn("float3 ownership", shader)
 
     def test_native_resolver_is_joined_with_its_proven_mirrored_y_orientation(self) -> None:
         shader = PRESENTATION_SHADER.read_text(encoding="utf-8")

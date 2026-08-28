@@ -237,7 +237,7 @@ namespace EndfieldGraphShaderLab
                 Debug.Log(
                     "Recovered Endminf M27 deferred presentation active: " +
                     $"camera={camera.name}, size={width}x{height}, " +
-                    "ownerMask=SceneColor.rgb, depthPrepass=Greater+write, " +
+                    "owner=privateDepth>0, depthPrepass=Greater+write, " +
                     "colorTest=Equal, colorDepthWrite=false, " +
                     "ordering=depth-before/color-after-ForwardOpaque, " +
                     "presented=true.");

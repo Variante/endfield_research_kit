@@ -17,7 +17,6 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27DeferredPresentation"
             #pragma vertex Vert
             #pragma fragment Frag
 
-            Texture2D<float4> _EndfieldM27OwnershipMask;
             Texture2D<float> _EndfieldM27PrivateDepth;
 
             struct Varyings
@@ -38,11 +37,14 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27DeferredPresentation"
             float Frag(float4 positionCS : SV_Position) : SV_Depth
             {
                 int2 pixel = int2(positionCS.xy);
-                float3 ownership =
-                    _EndfieldM27OwnershipMask.Load(int3(pixel, 0)).rgb;
-                if (max(ownership.r, max(ownership.g, ownership.b)) <= 0.0)
+                // The isolated sidecar clears reversed-Z depth to zero. Use
+                // the exact M27 depth write as ownership: MRT0 marks only
+                // emissive fragments and drops deferred-lit stone faces.
+                float privateDepth =
+                    _EndfieldM27PrivateDepth.Load(int3(pixel, 0));
+                if (privateDepth <= 0.0)
                     discard;
-                return _EndfieldM27PrivateDepth.Load(int3(pixel, 0));
+                return privateDepth;
             }
             ENDHLSL
         }
@@ -62,7 +64,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27DeferredPresentation"
 
             Texture2D<float4> _EndfieldM27ResolvedColor;
             Texture2D<float4> _EndfieldM27SourceSceneColor;
-            Texture2D<float4> _EndfieldM27OwnershipMask;
+            Texture2D<float> _EndfieldM27PrivateDepth;
 
             struct Varyings
             {
@@ -82,9 +84,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27DeferredPresentation"
             float4 Frag(float4 positionCS : SV_Position) : SV_Target0
             {
                 int2 pixel = int2(positionCS.xy);
-                float3 ownership =
-                    _EndfieldM27OwnershipMask.Load(int3(pixel, 0)).rgb;
-                if (max(ownership.r, max(ownership.g, ownership.b)) <= 0.0)
+                if (_EndfieldM27PrivateDepth.Load(int3(pixel, 0)) <= 0.0)
                     discard;
                 uint resolvedWidth;
                 uint resolvedHeight;
