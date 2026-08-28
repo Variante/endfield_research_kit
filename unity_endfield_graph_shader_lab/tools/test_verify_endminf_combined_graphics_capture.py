@@ -11,6 +11,12 @@ import verify_endminf_combined_graphics_capture as subject
 
 
 class CombinedGraphicsCaptureTests(unittest.TestCase):
+    def test_live_m20_retail_pair_is_admitted(self) -> None:
+        self.assertIn(
+            (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188),
+            subject.PEAK_SHADER_PAIRS["M20"],
+        )
+
     def test_combined_gate_includes_opening_owner_and_shader_archive(self) -> None:
         self.assertEqual(
             subject.opening.EXPECTED_INDEX_COUNTS,
@@ -26,8 +32,8 @@ class CombinedGraphicsCaptureTests(unittest.TestCase):
             m20 = next(iter(subject.PEAK_SHADER_PAIRS["M20"]))
             m21 = next(iter(subject.PEAK_SHADER_PAIRS["M21"]))
             draws = []
-            for vertex, pixel in (m20, m21):
-                draws.append({"count": 6, "shaders": [
+            for index, (vertex, pixel) in enumerate((m20, m21)):
+                draws.append({"count": 36 if index == 0 else 6, "shaders": [
                     {"stage": 0, "identityHash": vertex},
                     {"stage": 4, "identityHash": pixel},
                 ]})
@@ -44,6 +50,22 @@ class CombinedGraphicsCaptureTests(unittest.TestCase):
             report = subject.audit_peak_owner_presence(capture)
             self.assertEqual("rejected", report["status"])
             self.assertTrue(any("M20" in error for error in report["errors"]))
+
+    def test_live_m20_shared_shader_requires_peak_geometry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            frame = capture / "graphics/frames/1"
+            frame.mkdir(parents=True)
+            vertex, pixel = (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188)
+            (frame / "metadata.json").write_text(json.dumps({
+                "frame": 1,
+                "drawRecords": [{"count": 6, "shaders": [
+                    {"stage": 0, "identityHash": vertex},
+                    {"stage": 4, "identityHash": pixel},
+                ]}],
+            }), encoding="utf-8")
+            report = subject.audit_peak_owner_presence(capture)
+            self.assertEqual(0, report["owners"]["M20"]["packetCount"])
 
     def test_transparent_cape_is_a_required_palette_owner(self) -> None:
         self.assertEqual(subject.skinning.MESHES["cloth_02"], (2_286, 29))

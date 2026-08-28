@@ -2168,10 +2168,19 @@ The request-target arithmetic ends at relative Present 311, but that is not the
 captured-frame span. Every request needs one Present to arm the following frame
 and another to complete it, so the ideal first-to-last package span is at least
 453 Presents (about 7.55 seconds), with full-profile readback able to widen it.
-This still crosses M20's 4.433-second onset and cleanup; keep the overview alive
-for at least ten seconds. The next live run must still prove which M20 route
-retail binds around clean frames 276-281; source-variant priority is not itself
-runtime evidence.
+This crosses M20's 4.433-second onset and cleanup when the overview remains
+alive for at least ten seconds. Automatic full sessions `20260828T224210Z` and
+`20260828T224407Z` close the live identity gap: retail binds a third VFXBaseV2
+route, VS/PS `62a5ce6c09171de9`/`5558deddb1ee6188`, rather than either
+source-compiled pair. Session `224210Z` is the cleaner authority: it completed
+all 72 packages with zero drops and retains five 36-index packets, including
+frame 1748 near the expected plume onset, plus IA, VS t0, PS t0-t1, constants,
+samplers, and the complete shader archive. The retail program is shared by
+unrelated VFX draws, so identity-only admission is unsound; require the measured
+36-index peak geometry. Its pixel route samples only scene input t0 and one
+atlas-backed Main texture t1. This supersedes the extracted source-variant
+assumption that M20 necessarily samples the standalone Main/Sample0/Sample1
+texture trio and explains the shifted plume UV in the compatibility render.
 
 The first automatic-trigger implementation admitted only source-combined Uber
 fragment prefix `3f490e1504c43554`. That is insufficient: validated live capture
