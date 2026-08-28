@@ -2144,6 +2144,40 @@ temporal-delta MAE changes 11.889 to 12.053, so the track closes the coordinated
 late composition drift but does not replace the remaining particle/Uber
 temporal work.
 
+The CharInfo portrait's remaining inversion was a tight-sprite UV error, not
+another RectTransform or camera offset. Generated portrait quads now swap
+`vMin`/`vMax` inside the sprite's asymmetric `textureRect`; a full-texture
+`1-v` transform would select the wrong packed crop. A focused D3D11 render is
+upright and improves the portrait-left ROI MAE from about 29.7 to 27.5 against
+the clean reference despite a three-tick pose difference. Keep the recovered
+Lua/layout placement fixed.
+
+M01/M38 stone texture identity is closed: their Unity materials already bind
+the exact recovered base, RG normal, MRO, and parallax maps. The flat-yellow
+surface came from the forward compatibility shader. Decompiled LitEffect
+proves roughness/metallic/occlusion in MRO R/G/B, parallax color from the green
+sample, and SceneColor energy gated by base alpha squared and `NdotV`; it does
+not clamp every parallax sample up to `_ParallaxMinBrightness`. The
+compatibility shader now follows those gates and uses the recovered MRO
+channels for bounded GGX lighting. Focused 4.5-second output changes the ten
+primary rocks from solid yellow shards to dark textured faces with amber
+energy regions, matching the retail surface class. This remains a non-exact
+ForwardOnly substitute for the retail HGBuffer/deferred path, so owner shape,
+lighting, and peak composition remain open.
+
+The opening fracture is no longer a random 34-pixel distortion diagnostic.
+Clean-reference frames 91-109 establish a partial, high-confidence table for
+effect-clock frames 4-20: 3-21-pixel horizontal bands, 77-253-pixel rightward
+copies, and 1-2.5-pixel RGB separation at explicit destination rectangles.
+The canonical pre-Bloom/Uber pass samples `destinationX-offset` only where the
+shifted CharacterPrePass owns the source, leaving GridFar and the portrait
+stationary. The broad compatibility camera pull now retains 45% of its former
+opening magnitude and ends at 0.1 seconds, matching the clean recording's
+three-tick loss of broad ghosting while slices persist. Focused D3D11 renders
+compile and complete `targeted_ok`. The table intentionally omits bands whose
+source coordinates are not yet identifiable; exact closure needs the new
+automatic sequence rather than invented random rows.
+
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The older dense oracle has no `cloth_02` observations even though
 `S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone
@@ -2215,14 +2249,14 @@ or shaders rather than hand-editing generated prefabs.
    no-frame-generation recording with the validated clean-reference gyroscope
    track enabled. Keep source tint, particle, bloom, and curve values fixed
    unless stronger evidence supersedes them.
-2. Close the localized opening fracture against clean frames 4-22. Its
-   0.033-0.350-second pre-Uber diagnostic now samples the shifted
-   CharacterPrePass selector before compositing, so character bands protrude
-   while the portrait and `S_GridFar` remain stationary. Keep it diagnostic-only
-   behind `ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC=1`: the clean video bounds
-   visible steps to roughly 40-265 pixels but cannot uniquely recover the
-   per-band sampler offsets, and the current 34-pixel amplitude remains only a
-   placement/cadence proof.
+2. Complete the localized opening fracture against clean frames 4-22. The
+   random diagnostic is retired; canonical output replays the currently
+   measured explicit rectangles and rightward offsets behind the shifted
+   CharacterPrePass ownership gate. Use the patched EndfieldCapture automatic
+   trigger to retain one consecutive sequence when the exact Endminf Uber
+   shader first appears, then recover the remaining hidden/source-overlapped
+   bands and validate the complete table. Do not reintroduce procedural bands
+   or move the static portrait/GridFar field.
 3. Extend the eight same-initialization `20260828T045025Z` pose anchors into a
    dense capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin
    palette. `cloth_02` ownership is now proven at all eight sparse frames, but
