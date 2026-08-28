@@ -2082,6 +2082,16 @@ and restore the authored particle renderer on adjacent ticks. A phase-matched
 `+/-0.05`-second repeated-packet control. Keep geometry, UVs, tint, and bloom
 fixed unless another captured frame supplies a different packet.
 
+The complete M21 stone-shell packet is now enabled in the normal interactive
+Endminf reproduction profile. A fresh isolated three-frame targeted A/B at
+4.4833/4.5000/4.5167 seconds improves effect-ROI MAE on every row
+(35.684/34.622/33.270 to 35.463/34.550/33.233) and leaves M18/M28 opt-in;
+the latter still lack an equally complete temporal or captured-texture
+contract. Enabling all sparse exact peak transports together is rejected as a
+canonical default: over the 4.30-4.75 second window it improves temporal-delta
+MAE 23.470 to 22.662 but worsens ROI/effect MAE 24.211/29.160 to
+26.623/32.448 because one-tick packets suppress authored neighboring output.
+
 The Viewer report schema now records requested, active, submitted, validated,
 and failure state independently for the exact M18/M21/M28 packets. A focused
 60 Hz run proves all three are submitted and callback-validated only at the
@@ -2242,7 +2252,8 @@ or shaders rather than hand-editing generated prefabs.
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
    M28 refractive sphere in their captured ordinal positions and resolve the
    equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
-   stone packet are now exact. After those are integrated, obtain one focused
+   stone packet are now exact, and M21 is enabled only at its certified sample
+   in the normal reproduction. After those are integrated, obtain one focused
    M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.
    Then rerender the
    complete 770-frame background+portrait+actor/VFX sequence against the clean

@@ -8,12 +8,13 @@ CAPTURE = ROOT / (
     "EndfieldEndminfViewerPlayModeCapture.cs"
 )
 RUNTIME_ROOT = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+OPEN_WRAPPER = ROOT / "open_character_recovery_lab.bat"
 
 
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v7", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v8", source)
         for material in ("M18", "M21", "M28"):
             for state in ("Requested", "Active", "Submitted", "Validated", "Failure"):
                 field = f"endminf{material}Exact{state}"
@@ -31,6 +32,23 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             self.assertIn("validatedThisFrame = false", source[prepare:render])
             self.assertIn("submittedThisFrame = true", source[render:])
             self.assertIn("validatedThisFrame = true", source[render:])
+
+    def test_normal_reproduction_enables_only_the_complete_peak_stone_packet(
+        self,
+    ) -> None:
+        source = OPEN_WRAPPER.read_text(encoding="utf-8")
+        self.assertIn(
+            'set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"',
+            source,
+        )
+        self.assertNotIn(
+            'set "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT=1"',
+            source,
+        )
+        self.assertNotIn(
+            'set "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT=1"',
+            source,
+        )
 
 
 if __name__ == "__main__":
