@@ -2160,12 +2160,17 @@ The first automatic-trigger implementation admitted only source-combined Uber
 fragment prefix `3f490e1504c43554`. That is insufficient: validated live capture
 `20260827T183054Z` and the native Unity exact transport both use the independent
 Endminf `BLOOM + RADIAL_BLUR + VIGNETTE` fragment prefix
-`86a732cef7eedb15`. EndfieldCapture now classifies either source-proven route as
-an Endminf Uber trigger and priority fullscreen owner; adjacent identities fail
-the focused classifier test. Release x64 and all 15 native tests pass. Sequence
-intervals are target Present spacing rather than a promise of consecutive
-packages: the next request waits for prior readback/publication, so frame IDs in
-the live result remain the authority for actual cadence.
+`86a732cef7eedb15`. The live identity belongs to a reusable post-process family,
+so admitting it directly could consume the one-shot sequence before Endminf.
+The recovered Endminf LOD0 body has one 16,524-index submesh, that count is
+unique across the current playable-character mesh export, and live capture
+observes the exact `DrawIndexedInstanced(16524,1,0,0,0)` before its Uber pass.
+EndfieldCapture therefore lets the source-combined route arm directly but gates
+the validated live route on that prior body draw. Adjacent shader identities and
+nearby draw arguments fail focused tests; Release x64 and all 15 native tests
+pass. Sequence intervals are target Present spacing rather than a promise of
+consecutive packages: the next request waits for prior readback/publication, so
+frame IDs in the live result remain the authority for actual cadence.
 
 Both decompiled M20 vertex variants declare a VS t0 `ByteAddressBuffer` and
 contain live structured loads for their skin/instance branches. EndfieldCapture
@@ -2346,7 +2351,7 @@ or shaders rather than hand-editing generated prefabs.
    random diagnostic is retired; canonical output replays the currently
    measured explicit rectangles and rightward offsets behind the shifted
    CharacterPrePass ownership gate. Use the patched EndfieldCapture automatic
-   trigger to retain one consecutive sequence when the exact Endminf Uber
+   trigger to retain one target-spaced sequence when the exact Endminf Uber
    shader first appears, then recover the remaining hidden/source-overlapped
    bands and validate the complete table. Do not reintroduce procedural bands
    or move the static portrait/GridFar field.
