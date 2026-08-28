@@ -2147,8 +2147,15 @@ about 12.1 mm and 4.87 degrees on average, so the cross-session merge is not a
 sound exact-motion source. Full session `20260828T045025Z` is healthy and all
 eight frames contain complete body, hair, `cloth_01`-`cloth_04` palettes,
 including all 29 `cloth_02` matrices. This closes renderer/palette ownership
-and provides same-session pose anchors, but eight isolated samples do not
-establish a continuous 60 Hz trajectory. Its two peak attempts match clean
+and provides same-session pose anchors. The v5 oracle classifies those 29
+weighted bones as 19 existing primary witnesses, six missing
+`clothes_touming_{L,R}_b_{1,2,3}_jnt` extension bones, and four Animator-owned
+pelvis/spine witnesses. It retains 16 current/previous parent-local samples
+but keeps the extension runtime-ineligible: coverage is only source frames
+196-540, its maximum gap is 96 frames versus the primary gate of 33, and its
+parents are not from the same capture session as the primary trajectory.
+Eight isolated samples therefore do not establish a continuous 60 Hz
+trajectory. Its two peak attempts match clean
 frames 274 and 271, immediately before the required M20 interval, so it also
 does not close M20. Peak frame 269 must not judge raw geometry because
 Uber/temporal history shifts the final silhouette; use pre-Uber frames 219,
