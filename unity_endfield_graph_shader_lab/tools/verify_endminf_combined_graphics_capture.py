@@ -46,6 +46,15 @@ MINIMUM_PER_SEQUENCE = {
 }
 MINIMUM_SEQUENCE_FRAMES = 48
 AUTOMATIC_SEQUENCE_FRAMES = 72
+PEAK_SHADER_PAIRS = {
+    "M20": {
+        (0xE8F38F2F7519383D, 0xFEA38543389B6FF4),
+        (0x04BEF98C73CA34880, 0x246A0F4F2D3C34F4),
+    },
+    "M21": {
+        (0xE7F5568D34FD467B, 0xC5B21FEE8E9936A6),
+    },
+}
 
 
 class VerificationError(RuntimeError):
@@ -141,6 +150,43 @@ def logical_sequences(
     if policy.get("name") == "automatic_endminf_72":
         return [frames]
     return split_sequences(frames)
+
+
+def audit_peak_owner_presence(capture: Path) -> dict[str, Any]:
+    """Require the narrow M20 gas and M21 stone owners in an automatic run."""
+    packets: dict[str, list[dict[str, int]]] = {
+        name: [] for name in PEAK_SHADER_PAIRS
+    }
+    for path in frame_paths(capture):
+        metadata = json.loads(path.read_text(encoding="utf-8"))
+        frame = int(metadata.get("frame", path.parent.name))
+        for draw_index, draw in enumerate(metadata.get("drawRecords", [])):
+            if not isinstance(draw, dict):
+                continue
+            identities = {
+                int(row.get("stage", -1)): int(row.get("identityHash", 0))
+                for row in draw.get("shaders", []) if isinstance(row, dict)
+            }
+            pair = (identities.get(0, 0), identities.get(4, 0))
+            for name, accepted in PEAK_SHADER_PAIRS.items():
+                if pair in accepted:
+                    packets[name].append({
+                        "frame": frame,
+                        "drawIndex": draw_index,
+                        "indexCount": int(draw.get("count", -1)),
+                    })
+    errors = [
+        f"automatic sequence contains no exact {name} owner packet"
+        for name, rows in packets.items() if not rows
+    ]
+    return {
+        "status": "validated_peak_owner_presence" if not errors else "rejected",
+        "owners": {
+            name: {"packetCount": len(rows), "packets": rows}
+            for name, rows in packets.items()
+        },
+        "errors": errors,
+    }
 
 
 def palette_resource(metadata: dict[str, Any], resources_path: Path) -> str | None:
@@ -263,19 +309,21 @@ def audit_palettes(capture: Path) -> dict[str, Any]:
 
 def build_report(capture: Path) -> dict[str, Any]:
     palette = audit_palettes(capture)
+    peak = audit_peak_owner_presence(capture)
     effect_report = None
     effect_error = None
     try:
         effect_report = effects.build_report(capture)
     except (OSError, ValueError, effects.VerificationError) as exc:
         effect_error = str(exc)
-    errors = list(palette["errors"])
+    errors = [*palette["errors"], *peak["errors"]]
     if effect_error:
         errors.append(f"M29/M30: {effect_error}")
     return {
         "schema": "endfield.endminf-combined-graphics-capture.v2",
         "status": "validated" if not errors else "rejected",
         "capture": str(capture.resolve()),
+        "peakOwners": peak,
         "effects": effect_report if effect_report is not None else {
             "status": "rejected", "error": effect_error,
         },

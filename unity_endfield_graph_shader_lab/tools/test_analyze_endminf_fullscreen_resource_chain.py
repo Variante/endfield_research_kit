@@ -73,6 +73,20 @@ class ResourceChainTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.AnalysisError, "lacks resourceChain"):
                 MODULE.analyze(root)
 
+    def test_external_uber_input_is_a_bounded_negative_result(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.write_session(root, [
+                resolver(23, MODULE.NORMAL_UBER_VS, MODULE.NORMAL_UBER_PS,
+                         inputs=((0, 999, 301),), outputs=((0, 101, 400),)),
+            ])
+            result = MODULE.analyze(root)
+            self.assertEqual(
+                "normal_uber_inputs_external_to_retained_fullscreen_chain",
+                result["status"])
+            self.assertEqual(0, result["matchedEdgeCount"])
+            self.assertEqual(1, result["unmatchedInputCount"])
+
     def test_truncated_resolver_census_fails_closed(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

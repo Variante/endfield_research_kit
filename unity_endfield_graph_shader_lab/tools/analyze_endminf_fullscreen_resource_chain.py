@@ -147,17 +147,20 @@ def analyze(session_root: Path) -> dict:
     if not samples:
         raise AnalysisError("session has no exact normal-Uber resolver")
     matched = sum(sample["matchedInputCount"] for sample in samples)
-    if matched == 0:
-        raise AnalysisError("normal Uber was found, but no PS input matches an earlier resolver RTV")
+    input_count = sum(len(sample["edges"]) for sample in samples)
     return {
         "schema": "endfield.endminf-fullscreen-resource-chain.v1",
-        "status": "exact_object_identity_edges_recovered",
+        "status": (
+            "exact_object_identity_edges_recovered" if matched else
+            "normal_uber_inputs_external_to_retained_fullscreen_chain"
+        ),
         "session": str(session_root.resolve()),
         "sampleCount": len(samples),
         "matchedEdgeCount": matched,
+        "unmatchedInputCount": input_count - matched,
         "samples": samples,
         "limitations": [
-            "Object identity proves resource flow within one captured frame; it does not prove which shader operation created the visible strip pixels.",
+            "Object identity proves resource flow within one captured frame; an unmatched input proves only that no earlier retained DrawInstanced(3,1) resolver wrote it.",
             "Only retained DrawInstanced(3,1) resolvers participate in the producer search.",
             "Texture payloads are intentionally not duplicated by this metadata-only census.",
         ],
