@@ -2480,10 +2480,15 @@ compute-resource sweep while retaining every draw/dispatch record, copied
 constant/palette slices, the 4K backbuffer, and resources selected by exact
 Endminf material owners. The rejected broad sweep copied a 63-MiB UAV plus
 pooled 16-MiB buffers into otherwise redundant samples and could still outrun
-single-package publication during the dense prefix. Focused provider/WARP
-tests pass; the proxy lifecycle test is waiting on the concurrently open live
-capture session. A new real-game run is still required; no M20/M21 evidence
-can be recovered from this failed session.
+single-package publication during the dense prefix. Superseded-DLL session
+`20260828T160748Z` confirms that distinction: continuous drain published 18 of
+48 staged packages, but their 141-155-MiB broad payloads still reached
+4,269,389,000 staging bytes and failed closed. Its 18 consecutive opening
+packages have 16-89-ms QPC gaps and contain no M20/M21 peak draw, so they are
+not dense cloth/hair or peak evidence. The pruned build passes all 15 native
+tests and writes `automaticExactDrawResourcesOnly=true` into its summary so a
+new session proves the active policy directly. A new real-game run is still
+required; no M20/M21 evidence can be recovered from either failed session.
 
 The reported vertically inverted light appearance does not authorize another
 texture flip. All 70 source `ParticleSystemRenderer.m_Flip` vectors are zero,
