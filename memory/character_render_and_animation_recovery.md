@@ -2275,6 +2275,21 @@ therefore not a proven net fidelity gain. Keep the measured rows, but close the
 remaining opening transport from the automatic exact-Uber sequence rather than
 expanding rectangles from temporal-video heuristics.
 
+Canonical batch video export now defaults to the same source-backed deferred,
+M13/M14/M21/M27, binning, shadow, and SphereOutside presentation flags as the
+interactive launcher; an explicit environment value, including `0`, remains an
+A/B override. A fresh 770-frame render with that profile remains complete and
+UI-free. Against the clean recording at the established -1-frame alignment it
+scores 21.2970 actor-ROI MAE, 21.8941 effect-ROI MAE, and 11.9846 temporal-delta
+MAE. The exact profile improves the opening and crystal windows relative to the
+earlier batch that silently omitted parts of that profile (opening effect
+21.7863 versus 22.1516; crystal effect 23.5660 versus 24.4083; crystal temporal
+15.8459 versus 16.6837), while settled actor ROI regresses slightly. This is a
+real peak-presentation gain, not parity. M27 already consumes the four exact
+captured base/MRO/normal/parallax textures, and M21's textureless white default
+is source-valid, so the remaining visibly wrong stone appearance belongs to
+deferred lighting/compositing and gas transport rather than texture extraction.
+
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The older dense oracle has no `cloth_02` observations even though
 `S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone

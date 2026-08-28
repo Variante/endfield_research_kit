@@ -108,6 +108,26 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT";
         private const string SphereOutsidePresentationEnvironment =
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION";
+        // A canonical video export must exercise the same source-backed exact
+        // presentation as the maintained interactive launcher. Keep explicit
+        // environment values (including "0") for controlled A/B runs, but do
+        // not let an ordinary batch render silently omit recovered owners.
+        private static readonly string[] CanonicalVideoDefaultFlags =
+        {
+            "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+            SphereOutsidePresentationEnvironment,
+            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+            EndminfM21ExactEnvironment,
+            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
+            "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
+            "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+        };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
@@ -481,16 +501,14 @@ namespace EndfieldGraphShaderLabEditor
             // merely because its parent shell lacks these process variables.
             bool videoExportRequested = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
-            // The canonical video path includes the complete draw-local M21
-            // stone-shell packet by default, matching the interactive profile.
-            // Preserve an explicit 0 for controlled full-sequence A/B runs.
-            if (videoExportRequested && string.IsNullOrWhiteSpace(
-                    Environment.GetEnvironmentVariable(
-                        EndminfM21ExactEnvironment)))
+            if (videoExportRequested)
             {
-                Environment.SetEnvironmentVariable(
-                    EndminfM21ExactEnvironment,
-                    "1");
+                foreach (string flag in CanonicalVideoDefaultFlags)
+                {
+                    if (string.IsNullOrWhiteSpace(
+                            Environment.GetEnvironmentVariable(flag)))
+                        Environment.SetEnvironmentVariable(flag, "1");
+                }
             }
             bool exactEndminfM27 = Environment.GetEnvironmentVariable(
                 "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER") == "1";
