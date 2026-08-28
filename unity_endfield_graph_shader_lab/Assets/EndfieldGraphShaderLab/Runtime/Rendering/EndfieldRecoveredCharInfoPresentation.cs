@@ -374,10 +374,10 @@ namespace EndfieldGraphShaderLab
                 // SphereOutside material claim.
                 endminfBackdropProperties.SetColor(
                     "_TopColor",
-                    new Color(0.59f, 0.595f, 0.595f, 1.0f));
+                    new Color(0.61f, 0.61f, 0.605f, 1.0f));
                 endminfBackdropProperties.SetColor(
                     "_BottomColor",
-                    new Color(0.785f, 0.79f, 0.80f, 1.0f));
+                    new Color(0.85f, 0.85f, 0.845f, 1.0f));
                 // GridDeco/Far now owns all grid structure. Keep this plate a
                 // neutral gray carrier so procedural screen-space lines do not
                 // double or contradict the source mesh's perspective families.
@@ -394,7 +394,9 @@ namespace EndfieldGraphShaderLab
                 // The former 2.70 compatibility fit multiplied the bottom of
                 // the plate by a negative value before tone mapping, which
                 // surfaced as the non-retail cyan band at the lower edge.
-                endminfBackdropProperties.SetFloat("_BottomVignette", 1.0f);
+                endminfBackdropProperties.SetFloat("_BottomVignette", 0.58f);
+                endminfBackdropProperties.SetFloat(
+                    "_BottomVignetteFloor", 0.13f);
                 endminfBackdropProperties.SetFloat(
                     "_BottomVignetteHeight", 0.27f);
                 // This plate now really reaches the render list (the sky owner
