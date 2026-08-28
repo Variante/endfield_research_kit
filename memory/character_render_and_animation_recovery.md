@@ -2490,6 +2490,14 @@ tests and writes `automaticExactDrawResourcesOnly=true` into its summary so a
 new session proves the active policy directly. A new real-game run is still
 required; no M20/M21 evidence can be recovered from either failed session.
 
+The exact-owner policy deliberately retains one compute exception: the unique
+8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
+all four cloth palettes. A WARP byte test binds that palette beside an
+unrelated UAV, proves the palette's complete first/last bytes, and proves the
+unrelated buffer is excluded. Exact M13 now also retains IA, while the known
+M18 diffusion-shell and M28 refractive-sphere pairs retain IA, constants, and
+PS t0-t5. All 15 native tests pass after these owner-closure corrections.
+
 The reported vertically inverted light appearance does not authorize another
 texture flip. All 70 source `ParticleSystemRenderer.m_Flip` vectors are zero,
 the recovered material Y scales are positive, exact post-VS packets preserve
