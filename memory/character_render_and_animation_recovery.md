@@ -2073,6 +2073,15 @@ System (9) node by exact effect-root identity. Player-build resource
 publication for that otherwise-unreferenced material remains an explicit
 packaging gap, not a reason to re-enable the approximation.
 
+Full frame 2775 supplies one authoritative 60 Hz packet for each of M18, M21,
+and M28; it does not establish a seven-frame animation window. Their exact
+runtimes therefore admit only the nearest simulation sample (`+/-1/120` second)
+and restore the authored particle renderer on adjacent ticks. A phase-matched
+13-frame A/B against the clean recording improves mean effect-ROI MAE from
+34.214 to 34.018 and temporal-delta MAE from 28.157 to 27.978 versus the former
+`+/-0.05`-second repeated-packet control. Keep geometry, UVs, tint, and bloom
+fixed unless another captured frame supplies a different packet.
+
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
 at 4.46 seconds with six near-peak billboards and textures
@@ -2138,13 +2147,14 @@ or shaders rather than hand-editing generated prefabs.
    complete 770-frame background+portrait+actor/VFX sequence against the clean
    no-frame-generation recording. Keep source tint, particle, bloom, and curve
    values fixed unless stronger evidence supersedes them.
-2. Recover the retail depth/velocity ownership mask for the localized opening
-   fracture against clean frames 1-30. The current 0.033-0.350-second pre-Uber
-   horizontal-strip shader proves timing and placement only; it disrupts the
-   static full-frame grid and is now diagnostic-only behind
-   `ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC=1`. Preserve the now-admitted exact
-   `S_GridFar` route and source-animated portrait while final Uber/camera
-   composition closes their remaining strength and bounded alignment gaps.
+2. Close the localized opening fracture against clean frames 4-22. Its
+   0.033-0.350-second pre-Uber diagnostic now samples the shifted
+   CharacterPrePass selector before compositing, so character bands protrude
+   while the portrait and `S_GridFar` remain stationary. Keep it diagnostic-only
+   behind `ENDFIELD_ENDMINF_OPENING_STRIP_DIAGNOSTIC=1`: the clean video bounds
+   visible steps to roughly 40-265 pixels but cannot uniquely recover the
+   per-band sampler offsets, and the current 34-pixel amplitude remains only a
+   placement/cadence proof.
 3. Replace the mixed-session Endminf dynamics replay with one same-initialization
    capture containing hair and every `cloth_01`-`cloth_04` LOD0 skin palette,
    especially the absent `cloth_02` transparent cape chains. Make complete

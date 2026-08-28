@@ -332,6 +332,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndminfOpeningStripParams");
         private static readonly int EndminfOpeningStripSourceSizeId =
             Shader.PropertyToID("_EndminfOpeningStripSourceSize");
+        private static readonly int EndminfOpeningStripSelectorId =
+            Shader.PropertyToID("_EndminfOpeningStripSelector");
         private static readonly int TonemapModeId = Shader.PropertyToID("_TonemapMode");
         private static readonly int ToneCurveParams0Id = Shader.PropertyToID("_ToneCurveParams0");
         private static readonly int ToneCurveParams1Id = Shader.PropertyToID("_ToneCurveParams1");
@@ -3251,9 +3253,24 @@ namespace EndfieldGraphShaderLab
             }
             EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
                 openingStripState = default;
+            RenderTexture openingStripSelector = null;
+            RenderTexture unusedOpeningStripGBufferB;
+            RenderTexture unusedOpeningStripGBufferC;
+            string openingStripSelectorFailure;
+            bool hasOpeningStripSelector =
+                recoveredPreGBufferDepthOwner != null &&
+                recoveredPreGBufferDepthOwner.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out openingStripSelector,
+                    out unusedOpeningStripGBufferB,
+                    out unusedOpeningStripGBufferC,
+                    out openingStripSelectorFailure);
             bool useRecoveredEndminfOpeningStrip =
                 useRecoveredPostSemantics &&
                 recoveredEndminfOpeningStripMaterial != null &&
+                hasOpeningStripSelector &&
                 EndfieldEndminfVisualCompatibilityClock.TryEvaluateOpeningStrip(
                     out openingStripState);
             if (useRecoveredEndminfOpeningStrip)
@@ -3272,6 +3289,9 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalVector(
                     EndminfOpeningStripSourceSizeId,
                     new Vector4(width, height, 1.0f / width, 1.0f / height));
+                commandBuffer.SetGlobalTexture(
+                    EndminfOpeningStripSelectorId,
+                    openingStripSelector);
                 commandBuffer.Blit(
                     recoveredPostSource,
                     RecoveredEndminfOpeningStripSourceId,
