@@ -705,6 +705,7 @@ namespace EndfieldGraphShaderLab
                 foreach (Material material in renderer.sharedMaterials)
                 {
                     if (material == null || material.shader == null ||
+                        material.renderQueue > (int)RenderQueue.GeometryLast ||
                         !SupportedCharacterShaders.Contains(material.shader.name) ||
                         !material.HasProperty(ZTestId))
                     {

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 
@@ -13,6 +14,7 @@ REPO = LAB.parent
 MANIFEST = LAB / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/endminf_ui_recovery_manifest.json"
 REPORT = REPO / "reports/assets/endminf_body_material_admission.json"
 GENERATED_MATERIAL_ROOT = LAB / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Materials"
+PRE_GBUFFER_OWNER = LAB / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredPreGBufferDepthOwner.cs"
 
 EXPECTED = {
     "M_actor_endminf_body_01": (-8084013477027282831, 4484747192473637154, "face_skin"),
@@ -38,6 +40,16 @@ def require(value: bool, message: str) -> None:
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def generated_scalar(text: str, key: str) -> str:
+    match = re.search(
+        rf"^(?:  {re.escape(key)}|    - {re.escape(key)}):\s*([^\s#]+)\s*$",
+        text,
+        re.MULTILINE,
+    )
+    require(match is not None, f"generated material scalar absent: {key}")
+    return match.group(1)
 
 
 def main() -> int:
@@ -112,6 +124,81 @@ def main() -> int:
     ):
         require(fragment in generated_text, f"generated body admission drifted: {fragment}")
 
+    generated_state_contracts = {
+        # Source Material JSON: opaque alpha-test, despite the legacy alpha
+        # content hint and BlendMode=4.  This row must not be normalized into
+        # transparent blending by ConfigureMaterialSurface.
+        "actor_endminf_pathid_-5776609843457913041.mat": {
+            "m_Name": "M_actor_endminf_cloth_03",
+            "m_CustomRenderQueue": "2000",
+            "_SurfaceType": "0",
+            "_AlphaClip": "1",
+            "_EnableAlphaTest": "1",
+            "_Cull": "2",
+            "_SrcBlend": "1",
+            "_DstBlend": "0",
+            "_ZWrite": "1",
+        },
+        # The transparent hair shell is a second material on the source
+        # hair renderer.  Preserve its source Less depth comparison rather
+        # than the general transparent LessEqual compatibility fallback.
+        "actor_endminf_pathid_-3941236971230507885.mat": {
+            "m_Name": "M_actor_endminf_hairt_01",
+            "m_CustomRenderQueue": "2985",
+            "_AlphaClip": "0",
+            "_Cull": "2",
+            "_SrcBlend": "5",
+            "_DstBlend": "10",
+            "_ZTest": "2",
+            "_ZWrite": "1",
+        },
+        # Endminf's transparent cape sheet is explicitly double-sided.
+        "actor_endminf_pathid_8960951648682285338.mat": {
+            "m_Name": "M_actor_endminf_cloth_02",
+            "m_CustomRenderQueue": "3000",
+            "_SurfaceType": "1",
+            "_AlphaClip": "0",
+            "_Cull": "0",
+            "_SrcBlend": "5",
+            "_DstBlend": "10",
+            "_ZTest": "4",
+            "_ZWrite": "1",
+        },
+    }
+    generated_states = []
+    for filename, expected_state in generated_state_contracts.items():
+        path = GENERATED_MATERIAL_ROOT / filename
+        require(path.is_file(), f"generated material absent: {filename}")
+        text = path.read_text(encoding="utf-8")
+        actual_state = {
+            key: generated_scalar(text, key) for key in expected_state
+        }
+        require(
+            actual_state == expected_state,
+            f"{expected_state['m_Name']}: generated render state drifted: "
+            f"expected={expected_state} actual={actual_state}",
+        )
+        generated_states.append({
+            "file": str(path),
+            "sha256": sha256(path),
+            "state": actual_state,
+        })
+
+    require(PRE_GBUFFER_OWNER.is_file(), "PreGBuffer depth-owner runtime absent")
+    pre_gbuffer_owner_text = PRE_GBUFFER_OWNER.read_text(encoding="utf-8")
+    reset_all_match = re.search(
+        r"private static void ResetAllRecoveredCharacterZTestsToCompatibility\(\)"
+        r"(?P<body>.*?)\n\s*}\n\n\s*private bool LogFailure",
+        pre_gbuffer_owner_text,
+        re.DOTALL,
+    )
+    require(reset_all_match is not None, "global compatibility reset method drifted")
+    require(
+        "material.renderQueue > (int)RenderQueue.GeometryLast" in
+        reset_all_match.group("body"),
+        "global compatibility reset can overwrite transparent source Z-tests",
+    )
+
     report = {
         "schema": "endfield.endminf-body-material-admission.v1",
         "status": "exact_unity_admission_visual_ab_pass",
@@ -130,6 +217,12 @@ def main() -> int:
             "queue": 2000,
             "bump_scale": 0.6,
             "use_bump_map": 1,
+            "hair_cape_render_states": generated_states,
+            "pre_gbuffer_compatibility_reset": {
+                "file": str(PRE_GBUFFER_OWNER),
+                "sha256": sha256(PRE_GBUFFER_OWNER),
+                "opaque_only": True,
+            },
         },
         "graphical_exact_default_ab": {
             "time_seconds": 2.25,
