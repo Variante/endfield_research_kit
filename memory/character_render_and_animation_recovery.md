@@ -2560,6 +2560,24 @@ the pre-Uber geometry/material owners while retaining the measured rectangles
 only as bounded visual evidence. M17 `baoshan` remains a separate crystal-peak
 owner and must not be conflated with the opening fracture.
 
+It also closes the opening owner itself. Exact VFXRefract pair
+`297e7323cb0a7c42`/`76db04f0bc22dd3e` submits four shrinking independent-quad
+packets: 11,610, 7,998, 4,176, and 420 indices, or 1,935, 1,333, 696, and 70
+quads. Every packet is overwhelmingly horizontal, uses the 60-byte particle
+vertex layout, R16 indices, 3840x2160 target, and SrcAlpha/InvSrcAlpha blend.
+The byte-identical programs already exist in AnimeStudio's exported
+`HGRP_Effect_VFXRefract` variants 0546/0547 with `HG_ENABLE_MV +
+SRP_INSTANCING_ON + _USE_RBOFFSET`. Their source owner is the shared Character
+Info `CharEffect/trail` and `M_UI_charChoose_12`, not an Endminf overview
+material. Unity reproduces the fixed-seed particle population closely: 1,930,
+1,286, 608, and 10 live particles at 0.1500, 0.1833, 0.2167, and 0.2500 seconds,
+bracketing the retained six-Present retail samples. The renderer is active,
+has the exact material/pass, and is accepted by the Distortion request scan,
+but stock SRP submission emits no visible generated particle geometry; even a
+solid fragment and clip/depth probes remain absent. Retain the current bounded
+rectangle compatibility pass until a draw-local geometry replay replaces it;
+do not reinterpret this as a fullscreen post effect or recapture shader bytes.
+
 EndfieldCapture now detects either exact M20 shader pair inside the indexed-draw
 callback and, when the ordinary three-slot producer gate would skip it, arms a
 fourth bounded deferred package before recording that same draw. Status and
@@ -2688,14 +2706,14 @@ or shaders rather than hand-editing generated prefabs.
    no-frame-generation recording with the validated clean-reference gyroscope
    track enabled. Keep source tint, particle, bloom, and curve values fixed
    unless stronger evidence supersedes them.
-2. Complete the localized opening fracture against clean frames 4-22. The
-   random diagnostic is retired; canonical output replays the currently
-   measured explicit rectangles and rightward offsets behind the shifted
-   CharacterPrePass ownership gate. Use the patched EndfieldCapture automatic
-   trigger to retain one target-spaced sequence when the exact Endminf Uber
-   shader first appears, then recover the remaining hidden/source-overlapped
-   bands and validate the complete table. Do not reintroduce procedural bands
-   or move the static portrait/GridFar field.
+2. Replace the localized opening compatibility pass with retained geometry for
+   shared `CharEffect/trail`. Replay the four exact independent-quad packets at
+   their source particle phases through VFXRefract 0546/0547 and
+   `M_UI_charChoose_12`; the shader programs, material, texture, timing, blend,
+   and geometry counts are closed. The remaining boundary is Unity submission
+   of the captured 60-byte particle vertices. Do not model this owner as a
+   fullscreen post effect, invent procedural bands, or move the static
+   portrait/GridFar field.
 3. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
    frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
    do not manually widen cloth; any residual silhouette error now belongs to
