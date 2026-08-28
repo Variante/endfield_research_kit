@@ -2485,6 +2485,18 @@ this as a bounded source-correct transport improvement, not closure of the
 missing gas, stones, particles, opening-strip, hair, or cape gaps. Pause at
 this checkpoint for user visual review before another complete render.
 
+Frame-local M31 evidence does not justify admitting the three-draw 4.35-second
+packet at the current compositor boundaries. Session `20260828T121603Z` frame
+1977 closes all three M31 draw payloads, so a controlled native probe embedded
+those exact draws at the available pre-cohort, mid-cohort, and post-M18
+insertion points. Direct3D11 submitted and validated all three events, but the
+matched clean-reference frame regressed actor/effect ROI MAE from
+`25.1910/32.0855` to `27.2113/35.9731` and introduced a blue rectangular shell
+absent from retail. The experiment was fully reverted. Treat frame 1977 as
+valid packet evidence but keep its three-draw presentation blocked on exact
+SceneColor and intervening-owner chronology; do not substitute its constants
+into the older two-draw transport.
+
 Automatic session `20260828T121603Z` contains the exact M21 shader pair in
 frames 1977, 1989, and 2000, but it does not close the stone texture binding.
 The capture hook did not classify M21 as a retained owner, so each M21 draw has
@@ -2515,7 +2527,11 @@ single-package publication during the dense prefix. Superseded-DLL session
 48 staged packages, but their 141-155-MiB broad payloads still reached
 4,269,389,000 staging bytes and failed closed. Its 18 consecutive opening
 packages have 16-89-ms QPC gaps and contain no M20/M21 peak draw, so they are
-not dense cloth/hair or peak evidence. The pruned build passes all 15 native
+not dense cloth/hair or peak evidence. Their 3840x2160 BGRA backbuffers do,
+however, decode correctly and preserve the retail opening-strip burst; retain
+them as visual shape evidence only. They do not contain resolver-local
+before/after SceneColor snapshots, so they cannot identify which pre-Uber
+fullscreen ordinal generates the strips. The pruned build passes all 15 native
 tests and writes `automaticExactDrawResourcesOnly=true` into its summary so a
 new session proves the active policy directly. A new real-game run is still
 required; no M20/M21 evidence can be recovered from either failed session.
@@ -2556,6 +2572,26 @@ the portrait ROI changes `18.8917 -> 18.8844 dB`; the settled no-warp path
 continues to bind primary depth directly. Keep the probe diagnostic-only. Fix
 the radial/chromatic color transport and temporal input instead of blindly
 warping every contributing depth.
+
+Hair/cape motion remains primarily cadence-limited. The retained replay has 144
+palette states across 13.87 seconds; 70 interpolation intervals exceed eight
+60-Hz frames and the worst spans 14.03 frames. Measured motion width remains
+about 6.5% narrow for hair, 16% for the left cape, and 32% for the right cape.
+At 4.35 seconds the replay selects capture frame 1977 directly with effectively
+zero interpolation, so that phase separates sparse-motion error from renderer
+plumbing. The retained-skinning probe at exactly 4.35 seconds closes all six
+deforming renderer rows and directly compares frame 1977's retail palette with
+Unity's CPU-side renderer-local palette. The source mesh proves that cloth_02
+uses 2,286 indices and 29 bindposes; the nearby 16,524-index retail draw is the
+body and must not be used as a cape contract. With that mapping corrected,
+mean root rotation error is 6.78 degrees for cloth_02, 6.77 for hair, 12.09 for
+cloth_01, and 17.70 for cloth_04; mean root translation error is respectively
+0.0152, 0.0149, 0.0442, and 0.0911 model units. This rules out a wholesale
+cloth_02 bone-order or import failure and keeps sparse secondary-motion cadence
+as the primary motion gap. The capture omitted the older duplicate source-SRV
+alias row, so this comparison proves the complete source palette and exact draw
+b2 binding separately and reports that limitation; it is not a GPU-submitted
+Unity palette or baked-vertex equality proof.
 
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical

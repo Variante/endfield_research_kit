@@ -49,6 +49,14 @@ MESHES = {
             (10_167_811_038_498_854_955, 9400),
         },
     },
+    "cloth_02": {
+        "indexCount": 2_286,
+        "matrixCount": 29,
+        "rendererSuffix": "S_actor_endminf_cloth_02_lod0",
+        "vertexShaders": {
+            (13_479_119_685_698_484_394, 8296),
+        },
+    },
     "hair": {
         "indexCount": 27_615,
         "matrixCount": 28,
@@ -198,14 +206,23 @@ def rotation_error_degrees(a: tuple[float, ...], b: tuple[float, ...]) -> float:
 
 def select_draw(metadata: dict, mesh_name: str) -> dict:
     contract = MESHES[mesh_name]
-    candidates = [
-        row for row in metadata.get("drawRecords", [])
-        if row.get("indexedInstanced") is True
-        and int(row.get("count", -1)) == contract["indexCount"]
-        and row.get("vsCb2RangeValid") is True
-        and row.get("vsCb2MetadataValid") is True
-        and int(row.get("vsCb2NumConstants", -1)) == CB2_CONSTANTS
-    ]
+    candidates = []
+    for row in metadata.get("drawRecords", []):
+        shaders = row.get("shaders")
+        vs = [
+            (int(item.get("identityHash", 0)), int(item.get("bytecodeSize", 0)))
+            for item in shaders if item.get("stage") == 0
+        ] if isinstance(shaders, list) else []
+        if (
+            row.get("indexedInstanced") is True
+            and int(row.get("count", -1)) == contract["indexCount"]
+            and row.get("vsCb2RangeValid") is True
+            and row.get("vsCb2MetadataValid") is True
+            and int(row.get("vsCb2NumConstants", -1)) == CB2_CONSTANTS
+            and len(vs) == 1
+            and vs[0] in contract["vertexShaders"]
+        ):
+            candidates.append(row)
     if not candidates:
         raise ComparisonError(f"frame {metadata.get('frame')} has no gated {mesh_name} draw")
     palette_keys = {(int(row["vsCb2CurrentPaletteRaw"]), int(row["vsCb2PreviousPaletteRaw"])) for row in candidates}
@@ -226,7 +243,7 @@ def select_draw(metadata: dict, mesh_name: str) -> dict:
     return {"currentRaw": current, "previousRaw": previous, "cb2ObjectId": next(iter(cb2_ids)), "drawCount": len(candidates)}
 
 
-def select_resources(metadata: dict, cb2_object_ids: set[int]) -> dict:
+def select_resources(metadata: dict, cb2_object_ids: set[int], require_palette_srv_alias: bool = True) -> dict:
     records = metadata.get("selectedResourceRecords", [])
     palettes = [row for row in records if row.get("completed") is True and int(row.get("captureKind", -1)) == 5 and int(row.get("byteSize", -1)) == PALETTE_BYTES and int(row.get("blobBytes", -1)) == PALETTE_BYTES]
     if len(palettes) != 1:
@@ -234,7 +251,7 @@ def select_resources(metadata: dict, cb2_object_ids: set[int]) -> dict:
     palette = palettes[0]
     palette_id = int(palette.get("objectId", 0))
     aliases = [row for row in records if int(row.get("objectId", 0)) == palette_id and int(row.get("captureKind", -1)) == 3]
-    if palette_id == 0 or not aliases:
+    if palette_id == 0 or (require_palette_srv_alias and not aliases):
         raise ComparisonError(f"frame {metadata.get('frame')} source palette lacks its draw-visible SRV object alias")
     cb2_records = [
         row for row in records
@@ -249,6 +266,7 @@ def select_resources(metadata: dict, cb2_object_ids: set[int]) -> dict:
     return {
         "palette": palette,
         "paletteObjectId": palette_id,
+        "sourcePaletteSrvAliasProven": bool(aliases),
         "matchedDrawCb2ObjectIds": sorted(cb2_object_ids),
         "otherCompletedConstantBufferObjectIds": sorted(completed_ids - cb2_object_ids),
     }
@@ -261,12 +279,16 @@ def blob_slice(blob: bytes, record: dict, label: str) -> bytes:
     return blob[start:start + size]
 
 
-def decode_frame(frame_dir: Path, mesh_names: tuple[str, ...]) -> dict:
+def decode_frame(frame_dir: Path, mesh_names: tuple[str, ...], require_palette_srv_alias: bool = True) -> dict:
     metadata = load_json(frame_dir / "metadata.json")
     if metadata.get("captureIncomplete") or metadata.get("captureFailed"):
         raise ComparisonError(f"frame {metadata.get('frame')} is incomplete or failed")
     draws = {name: select_draw(metadata, name) for name in mesh_names}
-    resources = select_resources(metadata, {draw["cb2ObjectId"] for draw in draws.values()})
+    resources = select_resources(
+        metadata,
+        {draw["cb2ObjectId"] for draw in draws.values()},
+        require_palette_srv_alias=require_palette_srv_alias,
+    )
     try:
         blob = (frame_dir / metadata.get("resourcesFile", "resources.bin")).read_bytes()
     except OSError as exc:
@@ -489,14 +511,82 @@ def compare(session_root: Path, unity_report: Path, times: tuple[float, ...] = D
     }
 
 
+def compare_exact_frame(session_root: Path, unity_report: Path, target_time: float, retail_frame: int) -> dict:
+    """Compare one Unity pose directly with one fully retained retail frame."""
+    mesh_names = tuple(MESHES)
+    session = load_json(session_root / "session.json")
+    if session.get("gameBuild") != "endfield-2026-07-11-gameassembly-0c557367":
+        raise ComparisonError("retail session is not the pinned Endfield build")
+    if retail_frame < 0:
+        raise ComparisonError("retail frame must be non-negative")
+    unity = load_unity(unity_report, (target_time,), mesh_names)[target_time]
+    frame_dir = session_root / "graphics" / "frames" / str(retail_frame)
+    # The 20260828 peak frame retained the complete source palette and exact
+    # draw-visible b2 object but omitted the older capture's duplicate SRV
+    # alias row. Preserve that limitation explicitly instead of discarding the
+    # otherwise complete direct-palette diagnostic.
+    retail = decode_frame(frame_dir, mesh_names, require_palette_srv_alias=False)
+    if retail["frame"] != retail_frame:
+        raise ComparisonError(f"retail frame directory {retail_frame} contains frame {retail['frame']}")
+    meshes = {}
+    for name in mesh_names:
+        meshes[name] = {
+            "timing": {
+                "retailFrame": retail_frame,
+                "retailTimestampQpc": retail["timestampQpc"],
+                "interpolationAlpha": 0.0,
+            },
+            "resourceBinding": retail["resources"],
+            **compare_mesh(
+                name,
+                unity["meshes"][name],
+                retail["matrices"][name],
+                retail["matrices"][name],
+                0.0,
+            ),
+        }
+    return {
+        "schema": "endfield.endminf-retail-unity-retained-skinning-comparison.v1",
+        "status": "exact_frame_comparison",
+        "retailSession": str(session_root.resolve()),
+        "unityReport": str(unity_report.resolve()),
+        "samples": [{
+            "unityRequestedSeconds": target_time,
+            "unityActualSeconds": unity["actualSeconds"],
+            "timing": {
+                "mapping": "explicit user-selected retail frame; no interpolation",
+                "targetPresentedFrame": retail_frame,
+                "explicitUncertaintyFrames": 0.0,
+            },
+            "meshes": meshes,
+        }],
+        "limitations": [
+            "Unity palettes are CPU-computed after beauty rendering, not GPU readbacks of submitted VS constants.",
+            "The retained Unity pose is driven by the recovered retail replay oracle, so this validates reconstruction/plumbing but is not an independent solver-quality test.",
+            "Retail roots are recovered with Unity bindposes; exact-frame comparison assumes the selected retail and Unity samples describe the same animation phase.",
+            "Baked-vertex checksums are retained separately but are not directly comparable because the retail capture does not contain a matching CPU-baked vertex stream.",
+            "This peak capture omitted a duplicate draw-visible SRV alias row for the source palette; the complete palette and exact draw b2 object are retained, and sourcePaletteSrvAliasProven reports false.",
+        ],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("retail_session", type=Path)
     parser.add_argument("unity_report", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--retail-frame", type=int, help="compare directly against this retained retail frame")
+    parser.add_argument("--time", type=float, help="Unity requestedSeconds paired with --retail-frame")
     args = parser.parse_args(argv)
     try:
-        result = compare(args.retail_session.resolve(), args.unity_report.resolve())
+        if (args.retail_frame is None) != (args.time is None):
+            raise ComparisonError("--retail-frame and --time must be supplied together")
+        if args.retail_frame is not None:
+            result = compare_exact_frame(
+                args.retail_session.resolve(), args.unity_report.resolve(), args.time, args.retail_frame
+            )
+        else:
+            result = compare(args.retail_session.resolve(), args.unity_report.resolve())
     except (ComparisonError, OSError, ValueError, KeyError, struct.error) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
