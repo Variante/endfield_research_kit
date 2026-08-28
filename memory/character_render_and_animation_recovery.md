@@ -2383,11 +2383,11 @@ accepted as native-cadence temporal evidence.
 
 The current split-M31/80-bone checkpoint has a complete 770-frame D3D11
 render and a 556-frame clean-reference comparison. Within the documented
-one-frame anchor uncertainty, offset -1 is best at 22.7714 actor-ROI MAE,
-23.5195 effect-ROI MAE, and 12.2730 effect temporal-delta MAE. Against the
+one-frame anchor uncertainty, offset -1 is best at 22.7765 actor-ROI MAE,
+23.5194 effect-ROI MAE, and 12.2248 effect temporal-delta MAE. Against the
 earlier clean-gyroscope checkpoint (23.7086/23.6431/13.7609), this improves
 actor alignment, effect spatial error, and especially temporal behavior, but
-does not close fidelity. The peak window remains 25.640/29.513/19.923; its
+does not close fidelity. The peak window remains 25.4235/29.1226/19.8482; its
 largest visible omissions are the broad flash/gas and shell composition.
 
 The first exact M13 packet is source-matched at 4.3833 s. Its former
