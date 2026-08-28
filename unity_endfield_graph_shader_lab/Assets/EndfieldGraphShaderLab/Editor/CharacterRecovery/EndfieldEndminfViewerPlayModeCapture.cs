@@ -637,6 +637,7 @@ namespace EndfieldGraphShaderLabEditor
             string[] enabled = {
                 "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
                 "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
+                "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
@@ -917,6 +918,17 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidOperationException(
                     "Exact Endminf M18 peak callback validation failed: " +
                     m18PeakValidationFailure);
+            }
+            if (EndfieldRecoveredEndminfM28PeakExactRuntime.Requested &&
+                EndfieldRecoveredEndminfM28PeakExactRuntime
+                    .HasPendingValidation &&
+                !EndfieldRecoveredEndminfM28PeakExactRuntime
+                    .ValidatePendingAfterSynchronizedRender(
+                        out string m28PeakValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf M28 peak callback validation failed: " +
+                    m28PeakValidationFailure);
             }
             if (EndfieldRecoveredEndminfM21PeakExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM21PeakExactRuntime.HasPendingValidation &&
