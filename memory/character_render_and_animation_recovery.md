@@ -2470,6 +2470,21 @@ global bloom increase: the recovered peak crosses from under- to over-bright
 within adjacent samples, so the remaining gap is flash/gas ownership and pulse
 shape/timing rather than one global intensity scalar.
 
+The next complete D3D11 checkpoint at
+`exports/endminf_overview_20260828_radial_uber/frames` also completes 770/770
+with temporal resolve enabled, exact packet replay disabled, the Character Info
+background and portrait present, and foreground UI absent. Ruri decompilation
+of the active retail `BLOOM + RADIAL_BLUR + VIGNETTE` pixel shader proves that
+its radial path averages the center sample with five same-RGB taps at radial
+factors 0.5, 1.0, 1.5, 2.0, and 2.5; it does not apply the prior compatibility
+RGB channel split. Replacing only that sampling equation removes the invented
+colored silhouettes. At the same offset -1, the 558-frame scores become
+22.8468 actor ROI, 23.6537 effect ROI, and 12.4339 temporal-delta MAE: spatial
+error improves by 0.0788/0.1940 while temporal error regresses by 0.2342. Treat
+this as a bounded source-correct transport improvement, not closure of the
+missing gas, stones, particles, opening-strip, hair, or cape gaps. Pause at
+this checkpoint for user visual review before another complete render.
+
 Automatic session `20260828T121603Z` contains the exact M21 shader pair in
 frames 1977, 1989, and 2000, but it does not close the stone texture binding.
 The capture hook did not classify M21 as a retained owner, so each M21 draw has
