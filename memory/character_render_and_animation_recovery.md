@@ -2025,7 +2025,19 @@ Viewer callback completes `S_OK`, and an M18-on/off diagnostic changes every
 stage from the pre-temporal source through final Uber. The source texture
 closure is logical rather than capture-byte-identical because the Full frame
 did not retain this draw's SRV payloads; do not claim exact texture bytes.
-M28 remains the next ordered native packet.
+M28 now has the corresponding hash-pinned ordinal-87 packet: 344 draw-local
+60-byte vertices, 1,764 R16 indices, exact instanced VFXRefract DXBC/constants,
+the source `T_fx_flow_121_M` and `T_fx_mask_17_C_M` textures, and a persistent
+packed-HDR snapshot of SceneColor for t2. The snapshot is copied immediately
+before the draw, breaking the D3D11 SRV/RTV alias while the shader writes the
+live SceneColor+SceneMV MRT pair against the retained depth target. WARP
+validates both shaders and the input layout; the focused Viewer callback
+submits one draw and completes `S_OK`. The default scene deliberately omits
+the old approximate M28 material, so Editor validation resolves the pinned
+generated material asset directly while suppressing the source Particle
+System (9) node by exact effect-root identity. Player-build resource
+publication for that otherwise-unreferenced material remains an explicit
+packaging gap, not a reason to re-enable the approximation.
 
 The distinct drifting plume is not one of those three draws. Source evidence
 identifies `overview_02/all/smoke (2)`, material `M_fx_endminm_gfx_20`, starting
@@ -2084,7 +2096,7 @@ or shaders rather than hand-editing generated prefabs.
    and validated two-draw M31 checkpoint. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
-   replay the M28 refractive sphere in their captured ordinal positions and resolve the
+   M28 refractive sphere in their captured ordinal positions and resolve the
    equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
    stone packet are now exact. After those are integrated, obtain one focused
    M20 smoke capture at clean frame 276-281; frame 2775 does not contain it.

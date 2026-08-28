@@ -19,6 +19,10 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_28";
+        private const string EditorMaterialAsset =
+            "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/" +
+            "Endminf/Effects/Overview/Materials/" +
+            "M_fx_endminm_gfx_28_pBF7FEE87831B48FB.mat";
         private const float ViewerLeadSeconds = 2.0f / 60.0f;
         private const float HalfWindowSeconds = 0.05f;
 
@@ -66,8 +70,7 @@ namespace EndfieldGraphShaderLab
                 return false;
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 return Fail("exact M28 peak transport requires Direct3D11");
-            if (!EndfieldRecoveredM28PeakCaptureData.PayloadPrepared ||
-                EndfieldRecoveredM28PeakCaptureData.DrawCount <= 0)
+            if (EndfieldRecoveredM28PeakCaptureData.DrawCount <= 0)
             {
                 return Fail("generated M28 peak capture payload is unavailable");
             }
@@ -185,14 +188,35 @@ namespace EndfieldGraphShaderLab
                 if (renderer == null || !renderer.gameObject.scene.IsValid())
                     continue;
                 Material material = renderer.sharedMaterial;
-                if (material == null || material.name != MaterialName)
+                bool exactMaterial = material != null &&
+                    material.name == MaterialName;
+                bool exactSourceNode = IsM28SourceRenderer(renderer);
+                if (!exactMaterial && !exactSourceNode)
                     continue;
                 sourceRenderers.Add(renderer);
-                if (sourceMaterial == null)
+                if (sourceMaterial == null && exactMaterial)
                     sourceMaterial = material;
             }
-            if (sourceMaterial == null || sourceRenderers.Count == 0)
-                return Fail("the retained M28 source renderer/material is absent");
+            if (sourceMaterial == null)
+            {
+                foreach (Material material in Resources.FindObjectsOfTypeAll<Material>())
+                {
+                    if (material != null && material.name == MaterialName)
+                    {
+                        sourceMaterial = material;
+                        break;
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (sourceMaterial == null)
+                sourceMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+                    EditorMaterialAsset);
+#endif
+            if (sourceMaterial == null)
+                return Fail("the pinned M28 source material is not loaded");
+            if (sourceRenderers.Count == 0)
+                return Fail("the retained M28 source renderer is absent");
 
             refractTexture = ResolveTexture(sourceMaterial, "_RefractTex");
             dissolveTexture = ResolveTexture(sourceMaterial, "_DissolveTex");
@@ -214,6 +238,21 @@ namespace EndfieldGraphShaderLab
             }
             initialized = true;
             return true;
+        }
+
+        private static bool IsM28SourceRenderer(ParticleSystemRenderer renderer)
+        {
+            if (renderer == null || renderer.name != "Particle System (9)" ||
+                renderer.transform.parent == null ||
+                renderer.transform.parent.name != "all")
+            {
+                return false;
+            }
+            EndfieldRecoveredParticleEffectSource source =
+                renderer.GetComponentInParent<
+                    EndfieldRecoveredParticleEffectSource>(true);
+            return source != null && source.effectRoot ==
+                "P_fxui_endminm003_overview_02";
         }
 
         private bool ConfigureNativeTextures()
