@@ -7,6 +7,7 @@
 #include "EmbeddedDxbc.generated.h"
 #include "M13CapturePayload.generated.h"
 #include "M18PeakCapturePayload.generated.h"
+#include "M20PeakCapturePayload.generated.h"
 #include "M21PeakCapturePayload.generated.h"
 #include "M28PeakCapturePayload.generated.h"
 
@@ -259,6 +260,20 @@ int main()
         g_EndfieldM21PeakVertexDxbc,
         g_EndfieldM21PeakVertexDxbcSize,
         &m21InputLayout);
+    ID3D11VertexShader* m20Vertex = nullptr;
+    HRESULT m20VertexResult = device->CreateVertexShader(
+        g_EndfieldM20PeakVertexDxbc, g_EndfieldM20PeakVertexDxbcSize,
+        nullptr, &m20Vertex);
+    ID3D11PixelShader* m20Pixel = nullptr;
+    HRESULT m20PixelResult = device->CreatePixelShader(
+        g_EndfieldM20PeakPixelDxbc, g_EndfieldM20PeakPixelDxbcSize,
+        nullptr, &m20Pixel);
+    ID3D11InputLayout* m20InputLayout = nullptr;
+    HRESULT m20InputLayoutResult = device->CreateInputLayout(
+        m14Elements,
+        static_cast<UINT>(sizeof(m14Elements) / sizeof(m14Elements[0])),
+        g_EndfieldM20PeakVertexDxbc, g_EndfieldM20PeakVertexDxbcSize,
+        &m20InputLayout);
     ID3D11VertexShader* m28Vertex = nullptr;
     HRESULT m28VertexResult = device->CreateVertexShader(
         g_EndfieldM28PeakVertexDxbc,
@@ -332,7 +347,8 @@ int main()
         "m13_vertex=0x%08lx m13_pixel=0x%08lx m13_layout=0x%08lx "
         "m13_bc7=0x%08lx m18_vertex=0x%08lx m18_pixel=0x%08lx "
         "m18_layout=0x%08lx m21_vertex=0x%08lx m21_pixel=0x%08lx "
-        "m21_layout=0x%08lx m28_vertex=0x%08lx m28_pixel=0x%08lx "
+        "m21_layout=0x%08lx m20_vertex=0x%08lx m20_pixel=0x%08lx "
+        "m20_layout=0x%08lx m28_vertex=0x%08lx m28_pixel=0x%08lx "
         "m28_layout=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
@@ -354,6 +370,9 @@ int main()
         static_cast<unsigned long>(m21VertexResult),
         static_cast<unsigned long>(m21PixelResult),
         static_cast<unsigned long>(m21InputLayoutResult),
+        static_cast<unsigned long>(m20VertexResult),
+        static_cast<unsigned long>(m20PixelResult),
+        static_cast<unsigned long>(m20InputLayoutResult),
         static_cast<unsigned long>(m28VertexResult),
         static_cast<unsigned long>(m28PixelResult),
         static_cast<unsigned long>(m28InputLayoutResult),
@@ -396,6 +415,12 @@ int main()
         m21Pixel->Release();
     if (m21Vertex != nullptr)
         m21Vertex->Release();
+    if (m20InputLayout != nullptr)
+        m20InputLayout->Release();
+    if (m20Pixel != nullptr)
+        m20Pixel->Release();
+    if (m20Vertex != nullptr)
+        m20Vertex->Release();
     if (m28InputLayout != nullptr)
         m28InputLayout->Release();
     if (m28Pixel != nullptr)
@@ -421,6 +446,8 @@ int main()
             && SUCCEEDED(m18PixelResult) && SUCCEEDED(m18InputLayoutResult)
             && SUCCEEDED(m21VertexResult)
             && SUCCEEDED(m21PixelResult) && SUCCEEDED(m21InputLayoutResult)
+            && SUCCEEDED(m20VertexResult) && SUCCEEDED(m20PixelResult)
+            && SUCCEEDED(m20InputLayoutResult)
             && SUCCEEDED(m28VertexResult) && SUCCEEDED(m28PixelResult)
             && SUCCEEDED(m28InputLayoutResult)
             && SUCCEEDED(uberVertexResult)

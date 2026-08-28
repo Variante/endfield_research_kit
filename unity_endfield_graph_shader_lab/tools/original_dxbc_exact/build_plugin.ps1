@@ -23,6 +23,8 @@ $registryValidatorObject = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.o
 $registryValidatorExe = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.exe"
 $uberValidatorObject = Join-Path $buildRoot "VerifyEndminfUberTransport.obj"
 $uberValidatorExe = Join-Path $buildRoot "VerifyEndminfUberTransport.exe"
+$m20ValidatorObject = Join-Path $buildRoot "VerifyM20PeakTransport.obj"
+$m20ValidatorExe = Join-Path $buildRoot "VerifyM20PeakTransport.exe"
 $generatedHeader = Join-Path $buildRoot "EmbeddedDxbc.generated.h"
 $vertex = Join-Path $toolRoot "bytecode\selected_deferred_resolver_vs.dxbc"
 $pixel = Join-Path $toolRoot "bytecode\selected_deferred_resolver_ps.dxbc"
@@ -144,13 +146,32 @@ if ($LASTEXITCODE -ne 0) {
     throw "Endminf Uber transport validation failed with exit $LASTEXITCODE."
 }
 
+$m20ValidatorSource = Join-Path $toolRoot "VerifyM20PeakTransport.cpp"
+$m20ValidatorCompileCommand = @(
+    "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
+    "/Fo`"$m20ValidatorObject`" `"$m20ValidatorSource`"",
+    "/link /NOLOGO /Brepro /OUT:`"$m20ValidatorExe`""
+) -join " "
+$m20ValidatorCompile =
+    "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $m20ValidatorCompileCommand"
+cmd.exe /d /c $m20ValidatorCompile
+if ($LASTEXITCODE -ne 0) {
+    throw "M20 peak transport validator compilation failed with exit code $LASTEXITCODE."
+}
+
+& $m20ValidatorExe $outputDll
+if ($LASTEXITCODE -ne 0) {
+    throw "M20 peak transport validation failed with exit $LASTEXITCODE."
+}
+
 foreach ($intermediate in @(
     $outputImportLibrary,
     $outputExports,
     $pluginObject,
     $validatorObject,
     $registryValidatorObject,
-    $uberValidatorObject
+    $uberValidatorObject,
+    $m20ValidatorObject
 )) {
     [System.IO.File]::Delete($intermediate)
 }
@@ -162,6 +183,8 @@ $registryValidatorHash =
     (Get-FileHash -LiteralPath $registryValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $uberValidatorHash =
     (Get-FileHash -LiteralPath $uberValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$m20ValidatorHash =
+    (Get-FileHash -LiteralPath $m20ValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Output "plugin=$outputDll"
 Write-Output "plugin_sha256=$dllHash"
 Write-Output "validator=$validatorExe"
@@ -170,3 +193,5 @@ Write-Output "m27_registry_validator=$registryValidatorExe"
 Write-Output "m27_registry_validator_sha256=$registryValidatorHash"
 Write-Output "endminf_uber_validator=$uberValidatorExe"
 Write-Output "endminf_uber_validator_sha256=$uberValidatorHash"
+Write-Output "m20_peak_validator=$m20ValidatorExe"
+Write-Output "m20_peak_validator_sha256=$m20ValidatorHash"
