@@ -61,6 +61,45 @@ def _slice(payload: bytes, offset: int, size: int) -> bytes:
     return result
 
 
+def _verify_owner_resources(
+    metadata: dict[str, Any], draw: dict[str, Any]
+) -> list[dict[str, int]]:
+    resources = {(int(row.get("stage", -1)), int(row.get("slot", -1))): row
+                 for row in draw.get("resources", [])}
+    required = ((0, 0, (3, 4)), (4, 0, (3,)), (4, 1, (3,)))
+    result: list[dict[str, int]] = []
+    for stage, slot, capture_kinds in required:
+        owner = resources.get((stage, slot))
+        if owner is None:
+            raise VerificationError(
+                f"opening owner resource stage {stage} slot {slot} is absent"
+            )
+        object_id = int(owner.get("objectId", 0))
+        if object_id == 0:
+            raise VerificationError(
+                f"opening owner resource stage {stage} slot {slot} has no object"
+            )
+        retained = [row for row in metadata.get("selectedResourceRecords", [])
+                    if int(row.get("objectId", -1)) == object_id
+                    and int(row.get("captureKind", -1)) in capture_kinds
+                    and row.get("completed") is True
+                    and int(row.get("failure", 0)) == 0
+                    and int(row.get("blobBytes", 0)) > 0]
+        if not retained:
+            raise VerificationError(
+                f"opening owner resource stage {stage} slot {slot} payload "
+                f"is absent for object {object_id}"
+            )
+        result.append({
+            "stage": stage,
+            "slot": slot,
+            "objectId": object_id,
+            "captureKind": int(retained[0]["captureKind"]),
+            "blobBytes": int(retained[0]["blobBytes"]),
+        })
+    return result
+
+
 def _decode_packet(
     frame: Path, metadata: dict[str, Any], draw: dict[str, Any]
 ) -> dict[str, Any]:
@@ -134,6 +173,7 @@ def _decode_packet(
         "boundsMax": maxs,
         "medianWidthToHeight": statistics.median(horizontal_ratios),
         "horizontalQuadFraction": horizontal_fraction,
+        "ownerResources": _verify_owner_resources(metadata, draw),
     }
 
 
