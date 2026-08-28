@@ -11,7 +11,7 @@
     "overlay"
   ],
   "manifest": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\endminf_ui_recovery_manifest.json",
-  "manifest_sha256": "b6911a1ca9cd0aae8f055436942c5552099ef6c306a259ac84aff8616786b450",
+  "manifest_sha256": "3bfdb36b84f3c6f25315f630dc11c5b4bc1a6a23413f7f290ec30bb60369fcda",
   "materials": [
     {
       "name": "M_actor_endminf_body_01",
@@ -262,12 +262,63 @@
   ],
   "generated_unity_admission": {
     "material": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Materials\\actor_endminf_pathid_-8084013477027282831.mat",
-    "material_sha256": "4f2f0a9b445e21cfb393cbf668f83fb6daf8b55636721c6b991b8f75c1ed6924",
+    "material_sha256": "03e5917c9750d25da2ddddbcd1518e3616686419c2d834d2004636ab07440686",
     "recovered_shader": "Endfield/Recovered/CharacterSkin",
     "body_forward_variant": 1,
     "queue": 2000,
     "bump_scale": 0.6,
-    "use_bump_map": 1
+    "use_bump_map": 1,
+    "hair_cape_render_states": [
+      {
+        "file": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Materials\\actor_endminf_pathid_-5776609843457913041.mat",
+        "sha256": "ba71a7996259bc1636a435284b6e2c9d243f8870eb3aadc710e64ee3731b9ccc",
+        "state": {
+          "m_Name": "M_actor_endminf_cloth_03",
+          "m_CustomRenderQueue": "2000",
+          "_SurfaceType": "0",
+          "_AlphaClip": "1",
+          "_EnableAlphaTest": "1",
+          "_Cull": "2",
+          "_SrcBlend": "1",
+          "_DstBlend": "0",
+          "_ZWrite": "1"
+        }
+      },
+      {
+        "file": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Materials\\actor_endminf_pathid_-3941236971230507885.mat",
+        "sha256": "291139b65958eaf7ee9a3f982aa328edb74b62c8aa1d7c9367edd9c83e5f6bc6",
+        "state": {
+          "m_Name": "M_actor_endminf_hairt_01",
+          "m_CustomRenderQueue": "2985",
+          "_AlphaClip": "0",
+          "_Cull": "2",
+          "_SrcBlend": "5",
+          "_DstBlend": "10",
+          "_ZTest": "2",
+          "_ZWrite": "1"
+        }
+      },
+      {
+        "file": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Materials\\actor_endminf_pathid_8960951648682285338.mat",
+        "sha256": "e6f3f355f30cdd17dc95f0c8ea0f909c0205b930623a1fe0882f7813419e0bc1",
+        "state": {
+          "m_Name": "M_actor_endminf_cloth_02",
+          "m_CustomRenderQueue": "3000",
+          "_SurfaceType": "1",
+          "_AlphaClip": "0",
+          "_Cull": "0",
+          "_SrcBlend": "5",
+          "_DstBlend": "10",
+          "_ZTest": "4",
+          "_ZWrite": "1"
+        }
+      }
+    ],
+    "pre_gbuffer_compatibility_reset": {
+      "file": "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Runtime\\Rendering\\EndfieldRecoveredPreGBufferDepthOwner.cs",
+      "sha256": "04b4deda018fa46b9909dcaf2c3efcb6c29c87d7cf260b27da92897793f76765",
+      "opaque_only": true
+    }
   },
   "graphical_exact_default_ab": {
     "time_seconds": 2.25,

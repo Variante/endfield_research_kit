@@ -7983,7 +7983,15 @@ namespace EndfieldGraphShaderLabEditor
             string shaderName = Str(info.TryGetValue("shader_name", out object shaderNameObj) ? shaderNameObj : null);
             bool overlayShadow = IsOverlayShadow(info);
             bool vfx = shaderName.Contains("VFX") || material.shader.name.Contains("VFX");
-            bool transparent = surfaceType > 0.5f || vfx || overlayShadow || (legacyAlphaHint && blendMode > 0f);
+            // The legacy manifest alpha hint describes texture/content usage,
+            // not the installed shader's surface class.  In particular,
+            // Endminf cloth_03 carries alpha data and BlendMode=4 while the
+            // authoritative material state is opaque alpha-test
+            // (_SurfaceType=0, _EnableAlphaTest=1, _ALPHATEST_ON).  Let the
+            // explicit alpha-test state win so this source row is not changed
+            // into a blended transparent material.
+            bool transparent = surfaceType > 0.5f || vfx || overlayShadow ||
+                (!alphaTest && legacyAlphaHint && blendMode > 0f);
             string materialName = Str(
                 info.TryGetValue("name", out object materialNameObj)
                     ? materialNameObj
