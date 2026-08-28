@@ -573,7 +573,13 @@ namespace EndfieldGraphShaderLab
             out string failure)
         {
             sourceSceneColor = sceneColor;
-            mask = gBufferC;
+            // Exact LitEffect writes material GBufferC for every rasterized
+            // carrier, including alpha-zero portions of the expanded particle
+            // quads. At the certified peak this marks all 2,073,600 pixels and
+            // cannot identify the visible stone fragments. SceneColor is MRT0,
+            // is cleared to exact black, and has nonzero output only for the
+            // 1,801 authored pixels surviving the captured material path.
+            mask = sceneColor;
             depth = depthStencil;
             failure = string.Empty;
             if (!endminfM27Requested)

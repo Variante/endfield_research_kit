@@ -2290,6 +2290,21 @@ captured base/MRO/normal/parallax textures, and M21's textureless white default
 is source-valid, so the remaining visibly wrong stone appearance belongs to
 deferred lighting/compositing and gas transport rather than texture extraction.
 
+M27's prior `presentationReady` signal was not visual proof. A peak-targeted
+same-command readback showed GBufferC claiming all 2,073,600 pixels while the
+presentation changed zero. The exact SceneColor output instead identifies 1,801
+authored peak pixels, and the exact Default Lit resolver has the opposite row
+orientation: zero resolved owner pixels at direct coordinates versus 1,730 at
+mirrored Y. SceneColor ownership, mirrored-Y resolver sampling, depth before
+ForwardOpaque, and color after ForwardOpaque now preserve 921 changed peak
+pixels into the saved frame. Frames 2978-3027 are identity-gated as M27; earlier
+M01/M38 draws sharing the shader pair remain excluded. The resulting complete
+770-frame sequence scores 21.4410 actor ROI, 22.2208 effect ROI, and 11.8080
+temporal-delta MAE versus the prior 21.2970/21.8941/11.9846. Thus transport and
+temporal behavior improve, but dark/gray recovered stones still worsen spatial
+color error. Treat the remaining M27 gap as deferred light/resource recovery,
+not as solved fidelity or a texture-substitution problem.
+
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The older dense oracle has no `cloth_02` observations even though
 `S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone

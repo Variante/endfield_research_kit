@@ -1973,18 +1973,6 @@ namespace EndfieldGraphShaderLab
                 recoveredDeferredExactConsumer.RecoveredHlslOutput,
                 canonicalColorTarget,
                 canonicalDepthTarget);
-            recoveredEndminfM27DeferredPresentation.Render(
-                context,
-                camera,
-                renderWidth,
-                renderHeight,
-                recoveredDeferredExactConsumerReady,
-                recoveredDeferredGBufferFrame,
-                recoveredDeferredExactConsumer.RecoveredHlslOutput,
-                cameraColorDescriptor,
-                canonicalColorTarget,
-                canonicalDepthTarget);
-
             recoveredScreenDirectAudit.BeginForward(
                 context,
                 camera,
@@ -2041,6 +2029,23 @@ namespace EndfieldGraphShaderLab
                 canonicalColorTarget,
                 useRecoveredSceneMV ? recoveredSceneMV : null,
                 useRecoveredSceneMV ? recoveredPrimarySceneDepth : null);
+
+            // M27 depth is published before ForwardOpaque so the actor can
+            // occlude its exact deferred fragments. Present its resolved color
+            // only after ForwardOpaque: the CharInfo forward/background cohort
+            // otherwise overwrites all 921 certified peak pixels even though
+            // the deferred command itself succeeds.
+            recoveredEndminfM27DeferredPresentation.Render(
+                context,
+                camera,
+                renderWidth,
+                renderHeight,
+                recoveredDeferredExactConsumerReady,
+                recoveredDeferredGBufferFrame,
+                recoveredDeferredExactConsumer.RecoveredHlslOutput,
+                cameraColorDescriptor,
+                canonicalColorTarget,
+                canonicalDepthTarget);
 
             if (asset.drawSkybox || drawRecoveredCharInfoSky)
                 context.DrawSkybox(camera);
