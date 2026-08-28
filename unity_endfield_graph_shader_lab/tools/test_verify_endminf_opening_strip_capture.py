@@ -105,7 +105,7 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
                 metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
             report = verifier.build_report(session)
         self.assertEqual(report["status"], "rejected")
-        self.assertTrue(any("temporal index counts" in row
+        self.assertTrue(any("temporal packet shape" in row
                             for row in report["errors"]))
 
     def test_non_quad_topology_rejects(self) -> None:
@@ -117,7 +117,7 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
         self.assertTrue(any("non-independent quad" in row
                             for row in report["errors"]))
 
-    def test_missing_owner_resource_payload_rejects(self) -> None:
+    def test_dynamic_scene_color_requires_binding_not_payload(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             session = self.make_session(Path(temporary))
             metadata_path = next(session.glob("graphics/frames/*/metadata.json"))
@@ -127,8 +127,23 @@ class OpeningStripCaptureVerificationTests(unittest.TestCase):
                 if row.get("objectId") != 40]
             metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
             report = verifier.build_report(session)
+        self.assertEqual(report["status"], "validated")
+        dynamic = report["packets"][0]["ownerResources"][2]
+        self.assertTrue(dynamic["dynamic"])
+        self.assertEqual(dynamic["blobBytes"], 0)
+
+    def test_missing_static_mask_payload_rejects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            session = self.make_session(Path(temporary))
+            metadata_path = next(session.glob("graphics/frames/*/metadata.json"))
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["selectedResourceRecords"] = [row for row in
+                metadata["selectedResourceRecords"]
+                if row.get("objectId") != 30]
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+            report = verifier.build_report(session)
         self.assertEqual(report["status"], "rejected")
-        self.assertTrue(any("stage 4 slot 1 payload is absent" in row
+        self.assertTrue(any("stage 4 slot 0 payload is absent" in row
                             for row in report["errors"]))
 
 
