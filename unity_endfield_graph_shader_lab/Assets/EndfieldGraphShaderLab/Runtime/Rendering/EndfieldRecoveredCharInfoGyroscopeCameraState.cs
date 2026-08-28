@@ -379,6 +379,8 @@ namespace EndfieldGraphShaderLab
         private float duration;
         private float elapsed;
 
+        public Vector2 CurrentOffsets => EvaluateCurrentOffsets();
+
         public void Configure(
             Vector3 sourceBasePosition,
             Vector3 sourceReferenceLookAt,
@@ -402,6 +404,31 @@ namespace EndfieldGraphShaderLab
                 $"duration={duration:R}, ease=OutQuad.");
         }
 
+        /// <summary>
+        /// Reproduces UIGyroscopeEffect's PreLate input-change edge. DOTween
+        /// starts the replacement OutQuad from the value reached by the
+        /// preceding tween, rather than from the serialized actor entry.
+        /// </summary>
+        public bool RetargetNormalizedMouseInput(
+            float normalizedMouseX,
+            float normalizedMouseY)
+        {
+            Vector2 nextTarget =
+                EndfieldRecoveredCharInfoGyroscopeCameraState
+                    .EvaluateSourceMouseEndpoint(
+                        normalizedMouseX,
+                        normalizedMouseY);
+            if ((nextTarget - targetOffsets).sqrMagnitude <= 1e-10f)
+                return false;
+
+            entryOffsets = EvaluateCurrentOffsets();
+            targetOffsets = nextTarget;
+            elapsed = 0.0f;
+            enabled = true;
+            ApplyCurrent();
+            return true;
+        }
+
         private void LateUpdate()
         {
             elapsed = Mathf.Min(duration, elapsed + Time.unscaledDeltaTime);
@@ -414,17 +441,24 @@ namespace EndfieldGraphShaderLab
         {
             if (viewerCamera == null)
                 return;
-            float linear = Mathf.Clamp01(elapsed / duration);
-            float outQuad = 1.0f - (1.0f - linear) * (1.0f - linear);
-            Vector2 offsets = Vector2.LerpUnclamped(
-                entryOffsets,
-                targetOffsets,
-                outQuad);
+            Vector2 offsets = EvaluateCurrentOffsets();
             EndfieldRecoveredCharInfoGyroscopeCameraState.ApplyCenteredOverviewOffsets(
                 viewerCamera,
                 basePosition,
                 referenceLookAt,
                 offsets);
+        }
+
+        private Vector2 EvaluateCurrentOffsets()
+        {
+            if (duration <= 0.0f)
+                return targetOffsets;
+            float linear = Mathf.Clamp01(elapsed / duration);
+            float outQuad = 1.0f - (1.0f - linear) * (1.0f - linear);
+            return Vector2.LerpUnclamped(
+                entryOffsets,
+                targetOffsets,
+                outQuad);
         }
     }
 }
