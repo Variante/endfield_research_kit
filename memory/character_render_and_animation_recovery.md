@@ -2248,6 +2248,17 @@ compile and complete `targeted_ok`. The table intentionally omits bands whose
 source coordinates are not yet identifiable; exact closure needs the new
 automatic sequence rather than invented random rows.
 
+The first full-sequence comparison after the portrait flip, measured strip
+table, and canonical stone update uses the established -1-frame source
+alignment and 558 comparable samples. It scores 21.1617 actor-ROI MAE,
+21.9621 effect-ROI MAE, and 12.0616 temporal-delta MAE. The opening 0.0-0.8 s
+window remains 22.1516 effect-ROI MAE (the prior gyro build was 22.1368), and
+side-by-side frames show retail carrying many simultaneous horizontal copies
+while the compatibility table emits only isolated fragments. The change is
+therefore not a proven net fidelity gain. Keep the measured rows, but close the
+remaining opening transport from the automatic exact-Uber sequence rather than
+expanding rectangles from temporal-video heuristics.
+
 Hair/cape replay remains source-incomplete independently of peak post effects.
 The older dense oracle has no `cloth_02` observations even though
 `S_actor_endminf_cloth_02_lod0` weights both transparent left/right cape bone
