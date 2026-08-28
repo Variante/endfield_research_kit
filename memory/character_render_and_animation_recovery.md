@@ -2156,19 +2156,19 @@ Decompiling source variants 0876/0877 and 4950/4951 closes M20's static sampler
 ABI: t0 scene depth uses LinearClamp, t1 Main uses LinearRepeat, t2 Sample0
 uses LinearMirror, and t3 Sample1 uses LinearMirrorOnce. The recovered BaseV2
 shader previously used texture-paired samplers (and PointClamp depth) for this
-soft two-sample specialization. The exact routes improve the 13-sample clean
-peak window in every aggregate: ROI MAE 27.661668 -> 27.649139, effect ROI MAE
-32.967576 -> 32.960517, and temporal-delta MAE 23.156874 -> 23.089886. Extending
-the existing stock-Unity packed particle-color translation to M20 was tested
-separately and rejected: spatial metrics regressed to 27.658496/32.970445 and
-temporal delta regressed to 23.136627. Retail's c13 one-minus-color carrier is
-therefore not equivalent to multiplying Unity's already-colored procedural
-particle stream a second time. Retail also routes M20's Sample0 custom-speed
-term from Custom1.Y, but applying that bytecode route to the current extracted
-Unity streams regresses the same aggregates to 27.658831/32.969730/23.137687;
-the extracted stream-channel transport is not yet equivalent to retail and the
-test is rejected. The admission verifier hash-gates both M20 source pairs and
-the exact sampler translation.
+soft two-sample specialization. Keep these routes because bytecode proves the
+ABI, not because one noisy aggregate happens to improve. Focused runs have a
+three-image shader/mip warm-up boundary: images 3-12 and all reported M20
+particle states repeat byte-for-byte, while images 0-2 vary after every process
+start. On the stable ten-image suffix, paired versus exact samplers score
+26.642271/30.849221/21.745348 versus 26.650365/30.863199/21.739843
+(ROI/effect/temporal-delta MAE): spatial movement is a tiny regression and
+temporal movement a tiny improvement, both dwarfed by the unresolved transport
+gap. Extending stock Unity's packed particle-color translation to M20 and
+routing Sample0 custom speed through retail Custom1.Y were separately tested
+and rejected; retail c13/stream carriers are not equivalent to multiplying or
+reinterpreting the current extracted procedural streams. The admission
+verifier hash-gates both M20 source pairs and the exact sampler translation.
 
 The clean recording also contains a late live-cursor move that the former
 single-endpoint gyroscope replay could not represent. Source-native behavior
