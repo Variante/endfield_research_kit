@@ -11,6 +11,11 @@ import verify_endminf_combined_graphics_capture as subject
 
 
 class CombinedGraphicsCaptureTests(unittest.TestCase):
+    def test_transparent_cape_is_a_required_palette_owner(self) -> None:
+        self.assertEqual(subject.skinning.MESHES["cloth_02"], (2_286, 29))
+        self.assertIn("cloth_02", subject.MINIMUM_TOTAL)
+        self.assertIn("cloth_02", subject.MINIMUM_PER_SEQUENCE)
+
     def test_split_sequences_uses_large_gap(self) -> None:
         frames = list(range(100, 500, 8)) + list(range(900, 1300, 8))
         sequences = subject.split_sequences(frames)

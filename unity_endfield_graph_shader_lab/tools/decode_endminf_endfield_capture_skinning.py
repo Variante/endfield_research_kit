@@ -24,6 +24,11 @@ SKINNING_CB_CONSTANTS = 4_096
 MESHES = {
     "body": (16_524, 44),
     "cloth_01": (101_994, 156),
+    # Exact LOD0 source mesh
+    # S_actor_endminf_cloth_02_lod0_p2E18F8A093ADEF65: one 2,286-index
+    # submesh and 29 bind poses.  This transparent cape surface owns the
+    # clothes_touming_* chains missing from the older mixed-session oracle.
+    "cloth_02": (2_286, 29),
     "cloth_03": (4_524, 1),
     "cloth_04": (20_577, 14),
     "hair": (27_615, 28),
@@ -243,7 +248,9 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    meshes = args.mesh or ["cloth_01", "cloth_04", "cloth_03", "hair", "body"]
+    meshes = args.mesh or [
+        "cloth_01", "cloth_02", "cloth_04", "cloth_03", "hair", "body"
+    ]
     try:
         result = decode_session(
             args.session_root.resolve(), meshes, args.allow_partial_frames
