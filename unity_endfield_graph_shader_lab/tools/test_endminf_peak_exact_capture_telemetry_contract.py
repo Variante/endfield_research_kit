@@ -50,6 +50,34 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             source,
         )
 
+    def test_canonical_video_defaults_m21_but_retains_an_explicit_override(
+        self,
+    ) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        self.assertIn(
+            'private const string EndminfM21ExactEnvironment =',
+            source,
+        )
+        self.assertIn(
+            '"ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT";',
+            source,
+        )
+        self.assertIn(
+            "if (videoExportRequested && string.IsNullOrWhiteSpace(",
+            source,
+        )
+        self.assertIn(
+            "Environment.GetEnvironmentVariable(\n"
+            "                        EndminfM21ExactEnvironment)",
+            source,
+        )
+        self.assertIn(
+            "Environment.SetEnvironmentVariable(\n"
+            "                    EndminfM21ExactEnvironment,\n"
+            '                    "1");',
+            source,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

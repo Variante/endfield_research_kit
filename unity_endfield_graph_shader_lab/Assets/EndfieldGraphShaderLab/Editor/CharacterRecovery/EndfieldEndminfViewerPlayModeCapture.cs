@@ -104,6 +104,8 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_ENDMINF_CAPTURE_ENABLE_SECONDARY_DYNAMICS_SOLVER";
         private const string RetainedSkinningDiagnosticEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_RETAINED_SKINNING";
+        private const string EndminfM21ExactEnvironment =
+            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT";
         private const string SphereOutsidePresentationEnvironment =
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION";
         private const string Suikuai1Material =
@@ -477,6 +479,19 @@ namespace EndfieldGraphShaderLabEditor
             // open_character_recovery_lab.bat. Batch validation must not
             // silently fall back to the preserved gacha-room presentation
             // merely because its parent shell lacks these process variables.
+            bool videoExportRequested = Environment.GetEnvironmentVariable(
+                "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            // The canonical video path includes the complete draw-local M21
+            // stone-shell packet by default, matching the interactive profile.
+            // Preserve an explicit 0 for controlled full-sequence A/B runs.
+            if (videoExportRequested && string.IsNullOrWhiteSpace(
+                    Environment.GetEnvironmentVariable(
+                        EndminfM21ExactEnvironment)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndminfM21ExactEnvironment,
+                    "1");
+            }
             bool exactEndminfM27 = Environment.GetEnvironmentVariable(
                 "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER") == "1";
             string[] reproductionFlags = {
@@ -567,8 +582,7 @@ namespace EndfieldGraphShaderLabEditor
             nextGyroscopeTrackSample = 0;
             bool fineWindow = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
-            bool videoExport = Environment.GetEnvironmentVariable(
-                "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            bool videoExport = videoExportRequested;
             string requestedTimesText = Environment.GetEnvironmentVariable(
                 RequestedTimesEnvironment);
             bool targetedTimes = !string.IsNullOrWhiteSpace(requestedTimesText);
