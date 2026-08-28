@@ -354,7 +354,10 @@ namespace EndfieldGraphShaderLabEditor
                 Debug.Log(
                     "Validated bounded Endminf captured secondary-dynamics replay: " +
                     data.SampleCount + " samples, " + data.BoneCount +
-                    " unique hair/cape bones, clamped endpoints, and midpoint interpolation.");
+                    " unique hair/cape bones, clamped endpoints, midpoint interpolation, " +
+                    data.transparentCapeSampleCount +
+                    " transparent-cape samples, and a fail-closed sparse extension (" +
+                    data.transparentCapeAdmissionFailures.Length + " unmet gates).");
             }
             finally
             {
@@ -573,6 +576,37 @@ namespace EndfieldGraphShaderLabEditor
             data.sampleTimes = sampleTimes;
             data.rootSpacePositions = positions;
             data.rootSpaceRotations = rotations;
+            Dictionary<string, object> cape = Object(
+                Required(root, "transparentCapeExtension"),
+                "transparentCapeExtension");
+            data.transparentCapeExtensionObserved = true;
+            data.transparentCapeExtensionRuntimeEligible = Bool(
+                cape, "runtimeEligible", "transparentCapeExtension");
+            data.transparentCapeCaptureSession = Text(cape, "captureSession");
+            data.transparentCapeAdmissionFailures = Array(
+                cape, "runtimeAdmissionFailures")
+                .Select((value, index) => Convert.ToString(
+                    value, CultureInfo.InvariantCulture) ?? string.Empty)
+                .ToArray();
+            if (data.transparentCapeAdmissionFailures.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidDataException(
+                    "Transparent cape admission failure text is empty.");
+            data.transparentCapeBonePaths = Array(cape, "bonePaths")
+                .Select((value, index) => Convert.ToString(
+                    value, CultureInfo.InvariantCulture) ?? string.Empty)
+                .ToArray();
+            data.transparentCapeParentPaths = Array(cape, "parentPaths")
+                .Select((value, index) => Convert.ToString(
+                    value, CultureInfo.InvariantCulture) ?? string.Empty)
+                .ToArray();
+            data.transparentCapeSampleCount = Integer(
+                cape, "sampleCount", "transparentCapeExtension");
+            data.transparentCapeMaximumSampleGapFrames = Integer(
+                cape, "maximumSampleGapFrames", "transparentCapeExtension");
+            data.primaryMaximumSampleGapFrames = Integer(
+                cape, "primaryMaximumSampleGapFrames", "transparentCapeExtension");
+            data.transparentCapeSameSessionPrimaryReplay = Bool(
+                cape, "sameSessionPrimaryReplay", "transparentCapeExtension");
             return data;
         }
 
@@ -613,6 +647,17 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException("Captured replay data is invalid: " + failure);
             if (data.SampleCount != 145 || data.BoneCount != 74)
                 throw new InvalidDataException("Captured replay dimensions differ from the oracle.");
+            if (!data.transparentCapeExtensionObserved ||
+                data.transparentCapeExtensionRuntimeEligible ||
+                data.transparentCapeSampleCount != 16 ||
+                data.transparentCapeMaximumSampleGapFrames != 96 ||
+                data.primaryMaximumSampleGapFrames != 33 ||
+                data.transparentCapeSameSessionPrimaryReplay ||
+                data.transparentCapeAdmissionFailures.Length != 3)
+            {
+                throw new InvalidDataException(
+                    "Sparse transparent cape extension admission boundary drifted.");
+            }
 
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
                 data.sampleTimes, -1f, out int low, out int high, out float blend);

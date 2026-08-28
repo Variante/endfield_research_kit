@@ -9,7 +9,7 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldCapturedSecondaryDynamicsReplayData : ScriptableObject
     {
         public const string ExpectedSchema =
-            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v4";
+            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v5";
 
         public string sourceSchema;
         public string sourceSha256;
@@ -22,6 +22,16 @@ namespace EndfieldGraphShaderLab
         public float[] sampleTimes = Array.Empty<float>();
         public Vector3[] rootSpacePositions = Array.Empty<Vector3>();
         public Quaternion[] rootSpaceRotations = Array.Empty<Quaternion>();
+        public bool transparentCapeExtensionObserved;
+        public bool transparentCapeExtensionRuntimeEligible;
+        public string transparentCapeCaptureSession;
+        public string[] transparentCapeAdmissionFailures = Array.Empty<string>();
+        public string[] transparentCapeBonePaths = Array.Empty<string>();
+        public string[] transparentCapeParentPaths = Array.Empty<string>();
+        public int transparentCapeSampleCount;
+        public int transparentCapeMaximumSampleGapFrames;
+        public int primaryMaximumSampleGapFrames;
+        public bool transparentCapeSameSessionPrimaryReplay;
 
         public int BoneCount => bonePaths == null ? 0 : bonePaths.Length;
         public int SampleCount => sampleTimes == null ? 0 : sampleTimes.Length;
@@ -103,6 +113,40 @@ namespace EndfieldGraphShaderLab
                     failure = "captured oracle contains a non-finite or non-unit pose";
                     return false;
                 }
+            }
+
+            if (!transparentCapeExtensionObserved ||
+                string.IsNullOrEmpty(transparentCapeCaptureSession) ||
+                transparentCapeBonePaths == null ||
+                transparentCapeParentPaths == null ||
+                transparentCapeBonePaths.Length != 6 ||
+                transparentCapeParentPaths.Length != 6 ||
+                transparentCapeSampleCount < 2 ||
+                transparentCapeMaximumSampleGapFrames <= 0 ||
+                primaryMaximumSampleGapFrames <= 0)
+            {
+                failure = "transparent cape extension evidence is missing or malformed";
+                return false;
+            }
+            for (int bone = 0; bone < transparentCapeBonePaths.Length; bone++)
+            {
+                string path = transparentCapeBonePaths[bone];
+                string parent = transparentCapeParentPaths[bone];
+                if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(parent) ||
+                    !path.StartsWith(parent + "/", StringComparison.Ordinal) ||
+                    Array.IndexOf(bonePaths, path) >= 0)
+                {
+                    failure = "transparent cape extension ownership is invalid";
+                    return false;
+                }
+            }
+            if (transparentCapeExtensionRuntimeEligible ||
+                transparentCapeSameSessionPrimaryReplay ||
+                transparentCapeAdmissionFailures == null ||
+                transparentCapeAdmissionFailures.Length == 0)
+            {
+                failure = "sparse transparent cape extension was not kept fail-closed";
+                return false;
             }
 
             failure = string.Empty;

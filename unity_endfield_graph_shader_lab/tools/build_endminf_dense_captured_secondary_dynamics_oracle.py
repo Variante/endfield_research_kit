@@ -36,6 +36,10 @@ DEFAULT_REFERENCE_MATCHED_DECODED = (
     REPO_ROOT / "scratch/character_recovery/endminf_skinning_20260827T081152Z"
     / "decoded_partial.json"
 )
+DEFAULT_TRANSPARENT_CAPE_DECODED = (
+    REPO_ROOT / "scratch/character_recovery/endminf_skinning_20260828T045025Z"
+    / "decoded_partial.json"
+)
 DEFAULT_OUTPUT = (
     REPO_ROOT / "reports/assets/character_recovery"
     / "endminf_dense_captured_secondary_dynamics_oracle.json"
@@ -47,7 +51,7 @@ EXPECTED_DECODED_SCHEMA = (
     "endfield.charinfo.endminf-partial-captured-skin-palette-sequence.v1"
 )
 OUTPUT_SCHEMA = (
-    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v4"
+    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v5"
 )
 BODY_CLIP_REFERENCE_SOURCE_FRAME = 115
 BODY_CLIP_REFERENCE_SECONDS = 0.05090830227
@@ -56,6 +60,35 @@ ROTATION_SCORE_METERS_PER_DEGREE = 0.002
 EXPECTED_BONE_COUNT = 74
 EXPECTED_DENSE_SESSION = "20260826T231348Z"
 EXPECTED_REFERENCE_MATCHED_SESSION = "20260827T081152Z"
+EXPECTED_TRANSPARENT_CAPE_SESSION = "20260828T045025Z"
+TRANSPARENT_CAPE_MESH_NAMES = {
+    "cloth_02": "S_actor_endminf_cloth_02_lod0",
+}
+TRANSPARENT_CAPE_CURRENT_SOURCE_FRAMES = {
+    1946: 219,
+    2023: 299,
+    2105: 385,
+    2260: 540,
+    2624: 197,
+    2720: 295,
+    2805: 383,
+    2904: 482,
+}
+TRANSPARENT_CAPE_UNCERTAIN_CAPTURE_FRAMES = {2023, 2805}
+TRANSPARENT_CAPE_BONE_NAMES = [
+    "clothes_touming_L_b_1_jnt",
+    "clothes_touming_L_b_2_jnt",
+    "clothes_touming_L_b_3_jnt",
+    "clothes_touming_R_b_1_jnt",
+    "clothes_touming_R_b_2_jnt",
+    "clothes_touming_R_b_3_jnt",
+]
+ANIMATOR_BODY_BONE_NAMES = {
+    "Bip001_Pelvis",
+    "Bip001_Spine",
+    "Bip001_Spine1",
+    "Bip001_Spine2",
+}
 REFERENCE_MATCHED_SOURCE_FRAMES = {1845: 369, 2578: 385}
 
 
@@ -246,6 +279,151 @@ def recover_dense_observations(decoded: dict[str, Any], paths: list[str]) -> tup
     return result, worst_shared
 
 
+def recover_transparent_cape_extension(
+    decoded: dict[str, Any],
+    primary_paths: list[str],
+    primary_series: dict[str, list],
+    primary_source_frames: list[int],
+) -> dict[str, Any]:
+    manifest = base.load_json(base.MANIFEST)
+    contracts, _ = base.mesh_contracts(manifest, TRANSPARENT_CAPE_MESH_NAMES)
+    contract = contracts["cloth_02"]
+    contract_paths = [path for path, _ in contract]
+    primary = set(primary_paths)
+    extension_by_name = {
+        path.rsplit("/", 1)[-1]: path
+        for path in contract_paths
+        if path.rsplit("/", 1)[-1] in TRANSPARENT_CAPE_BONE_NAMES
+    }
+    extension_paths = [extension_by_name[name]
+                       for name in TRANSPARENT_CAPE_BONE_NAMES]
+    animator_paths = [
+        path for path in contract_paths
+        if path.rsplit("/", 1)[-1] in ANIMATOR_BODY_BONE_NAMES
+    ]
+    shared_paths = [path for path in contract_paths if path in primary]
+    require(len(contract_paths) == 29, "cloth_02 contract must contain 29 bones")
+    require(len(shared_paths) == 19, "cloth_02 must share 19 primary replay bones")
+    require(len(extension_paths) == 6, "cloth_02 must expose six transparent bones")
+    require(len(animator_paths) == 4, "cloth_02 must expose four Animator body bones")
+    require(set(contract_paths) == set(shared_paths) | set(extension_paths) |
+            set(animator_paths), "cloth_02 ownership classification is incomplete")
+    require(not primary.intersection(extension_paths),
+            "transparent extension overlaps the primary replay")
+
+    samples = []
+    witness_errors = []
+    observed_frames = {int(row.get("frame")): row
+                       for row in decoded.get("frames", [])}
+    require(set(observed_frames) == set(TRANSPARENT_CAPE_CURRENT_SOURCE_FRAMES),
+            "transparent cape capture frame set drifted")
+    for capture_frame, current_source in sorted(
+        TRANSPARENT_CAPE_CURRENT_SOURCE_FRAMES.items()
+    ):
+        mesh = observed_frames[capture_frame].get("meshes", {}).get("cloth_02")
+        require(mesh is not None, f"frame {capture_frame} has no cloth_02 palette")
+        for sample_kind, source_frame, key in (
+            ("previous", current_source - 1, "previousMatrices3x4"),
+            ("current", current_source, "currentMatrices3x4"),
+        ):
+            skin_matrices = mesh.get(key, [])
+            require(len(skin_matrices) == len(contract),
+                    f"frame {capture_frame} {sample_kind} cloth_02 matrix count drifted")
+            roots = {}
+            for (path, inverse_bindpose), skin_rows in zip(contract, skin_matrices):
+                root = base.multiply(base.skin_matrix(skin_rows), inverse_bindpose)
+                require(base.orthonormality_error(root) <=
+                        base.ORTHONORMALITY_TOLERANCE,
+                        f"frame {capture_frame} {path} is not orthonormal")
+                roots[path] = root
+
+            local_rows = []
+            for path in extension_paths:
+                parent_path = path.rsplit("/", 1)[0]
+                require(parent_path in roots,
+                        f"transparent cape parent is absent: {parent_path}")
+                local = base.multiply(base.inverse(roots[parent_path]), roots[path])
+                require(base.orthonormality_error(local) <=
+                        base.ORTHONORMALITY_TOLERANCE,
+                        f"transparent cape local matrix is not orthonormal: {path}")
+                local_rows.append({
+                    "path": path,
+                    "parentPath": parent_path,
+                    "localSpace3x4": local[:3],
+                })
+
+            for path in shared_paths:
+                translation, rotation = pose_error(
+                    matrix_pose(roots[path]),
+                    interpolate(primary_series[path], source_frame),
+                )
+                witness_errors.append((translation, rotation))
+            samples.append({
+                "playbackSourceFrame": source_frame,
+                "captureFrame": capture_frame,
+                "capturePalette": sample_kind,
+                "anchorUncertaintyFrames": (
+                    1 if capture_frame in TRANSPARENT_CAPE_UNCERTAIN_CAPTURE_FRAMES
+                    else 0
+                ),
+                "boneLocalMatrices": local_rows,
+            })
+
+    samples.sort(key=lambda row: row["playbackSourceFrame"])
+    sample_sources = [int(row["playbackSourceFrame"]) for row in samples]
+    require(len(sample_sources) == len(set(sample_sources)) == 16,
+            "transparent cape source samples must be 16 unique frames")
+    maximum_gap = max(right - left for left, right in
+                      zip(sample_sources, sample_sources[1:]))
+    primary_maximum_gap = max(right - left for left, right in
+                              zip(primary_source_frames,
+                                  primary_source_frames[1:]))
+    first_primary = min(primary_source_frames)
+    last_primary = max(primary_source_frames)
+    failures = []
+    if sample_sources[0] > first_primary or sample_sources[-1] < last_primary:
+        failures.append("extension does not cover the primary playback interval")
+    if maximum_gap > primary_maximum_gap:
+        failures.append(
+            "extension maximum sample gap exceeds the primary replay gate"
+        )
+    # All six children and their shared parent witnesses came from this one
+    # session, but the 74-bone primary replay did not. Root-space writes across
+    # those sessions would recreate the hybrid pose under a different name.
+    failures.append("extension and primary parent tracks are not same-session evidence")
+    return {
+        "runtimeEligible": not failures,
+        "runtimeAdmissionFailures": failures,
+        "captureSession": EXPECTED_TRANSPARENT_CAPE_SESSION,
+        "mesh": "S_actor_endminf_cloth_02_lod0",
+        "applicationSpace": "parent_local_after_primary_parent_first",
+        "boneCount": len(extension_paths),
+        "bonePaths": extension_paths,
+        "parentPaths": [path.rsplit("/", 1)[0] for path in extension_paths],
+        "sharedPrimaryWitnessPaths": shared_paths,
+        "animatorOwnedBodyWitnessPaths": animator_paths,
+        "weightedBoneAccounting": {
+            "meshBoneCount": len(contract_paths),
+            "primaryReplay": len(shared_paths),
+            "transparentCapeExtension": len(extension_paths),
+            "animatorBody": len(animator_paths),
+        },
+        "sampleCount": len(samples),
+        "firstPlaybackSourceFrame": sample_sources[0],
+        "lastPlaybackSourceFrame": sample_sources[-1],
+        "maximumSampleGapFrames": maximum_gap,
+        "primaryMaximumSampleGapFrames": primary_maximum_gap,
+        "sameSessionPrimaryReplay": False,
+        "sharedPrimaryWitnessMaxTranslationMeters": max(
+            value[0] for value in witness_errors
+        ),
+        "sharedPrimaryWitnessMaxRotationDegrees": max(
+            value[1] for value in witness_errors
+        ),
+        "samples": samples,
+    }
+
+
 def split_bursts(frames: list[int]) -> tuple[list[int], list[int]]:
     gaps = [(right - left, index) for index, (left, right)
             in enumerate(zip(frames, frames[1:]))]
@@ -300,10 +478,12 @@ def build_report(
     base_path: Path,
     decoded_path: Path,
     reference_matched_path: Path,
+    transparent_cape_path: Path,
 ) -> dict[str, Any]:
     oracle = load_json(base_path)
     decoded = load_json(decoded_path)
     reference_matched = load_json(reference_matched_path)
+    transparent_cape = load_json(transparent_cape_path)
     require(oracle.get("schema") == EXPECTED_BASE_SCHEMA,
             f"base oracle schema drifted: {oracle.get('schema')}")
     require(decoded.get("schema") == EXPECTED_DECODED_SCHEMA,
@@ -317,6 +497,13 @@ def build_report(
             EXPECTED_REFERENCE_MATCHED_SESSION,
             "reference-matched capture session drifted: "
             f"{reference_matched.get('sessionRoot')}")
+    require(transparent_cape.get("schema") == EXPECTED_DECODED_SCHEMA,
+            "transparent-cape decoded capture schema drifted: "
+            f"{transparent_cape.get('schema')}")
+    require(Path(transparent_cape.get("sessionRoot", "")).name ==
+            EXPECTED_TRANSPARENT_CAPE_SESSION,
+            "transparent-cape capture session drifted: "
+            f"{transparent_cape.get('sessionRoot')}")
 
     first_rows = oracle.get("frames", [])[0].get("ownerBoneMatrices", [])
     paths = [row.get("path") for row in first_rows]
@@ -382,6 +569,12 @@ def build_report(
         sparse_source_frames + list(dense_source_by_presented.values()) +
         list(reference_matched_by_source)
     ))
+    transparent_cape_extension = recover_transparent_cape_extension(
+        transparent_cape,
+        paths,
+        merged_series,
+        source_frames,
+    )
     first_source = source_frames[0]
     last_source = source_frames[-1]
     require(all(rows[0][0] <= first_source and rows[-1][0] >= last_source
@@ -469,6 +662,7 @@ def build_report(
             oracle.get("captureSession"),
             EXPECTED_DENSE_SESSION,
             EXPECTED_REFERENCE_MATCHED_SESSION,
+            EXPECTED_TRANSPARENT_CAPE_SESSION,
         ],
         "frameCount": len(frames),
         "boneCount": EXPECTED_BONE_COUNT,
@@ -502,6 +696,7 @@ def build_report(
             relative(base_path): sha256(base_path),
             relative(decoded_path): sha256(decoded_path),
             relative(reference_matched_path): sha256(reference_matched_path),
+            relative(transparent_cape_path): sha256(transparent_cape_path),
         },
         "validation": {
             "selectedDenseAnchor": selected,
@@ -543,6 +738,7 @@ def build_report(
             "interpolationBoundary": "retail observations only; no extrapolation",
         },
         "owners": oracle.get("owners", []),
+        "transparentCapeExtension": transparent_cape_extension,
         "frames": frames,
     }
 
@@ -556,6 +752,11 @@ def main() -> int:
         type=Path,
         default=DEFAULT_REFERENCE_MATCHED_DECODED,
     )
+    parser.add_argument(
+        "--transparent-cape-decoded",
+        type=Path,
+        default=DEFAULT_TRANSPARENT_CAPE_DECODED,
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
@@ -563,6 +764,7 @@ def main() -> int:
             args.base_oracle.resolve(),
             args.dense_decoded.resolve(),
             args.reference_matched_decoded.resolve(),
+            args.transparent_cape_decoded.resolve(),
         )
     except (DenseOracleError, OSError, ValueError, KeyError, IndexError) as exc:
         print(f"error: {exc}")

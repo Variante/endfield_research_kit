@@ -188,11 +188,14 @@ def reference_source_frame(presented_frame: int) -> int:
     )
 
 
-def mesh_contracts(manifest: dict) -> tuple[dict, dict[str, str]]:
+def mesh_contracts(
+    manifest: dict,
+    mesh_names: dict[str, str] | None = None,
+) -> tuple[dict, dict[str, str]]:
     manifest_meshes = {row["name"]: row for row in manifest.get("meshes", [])}
     contracts = {}
     hashes = {}
-    for token, name in MESH_NAMES.items():
+    for token, name in (mesh_names or MESH_NAMES).items():
         if name not in manifest_meshes:
             raise OracleError(f"manifest has no mesh {name}")
         source = manifest_meshes[name]
