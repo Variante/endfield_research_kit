@@ -110,6 +110,7 @@ class RecoveredAclPoseEvaluatorTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, evaluator)
         self.assertIn("Frame-major layout", data)
+        self.assertIn("sourceClipJsonSha256", data)
         self.assertIn("sourceAclSha256", data)
         self.assertIn("decodedSamplesSha256", data)
 

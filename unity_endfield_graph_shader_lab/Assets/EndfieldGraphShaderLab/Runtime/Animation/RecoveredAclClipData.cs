@@ -41,6 +41,7 @@ namespace EndfieldGraphShaderLab
 
         public int schemaVersion = CurrentSchemaVersion;
         public string sourceClipName;
+        public string sourceClipJsonSha256;
         public string sourceAclSha256;
         public string decodedSamplesSha256;
         public float sampleRate;
@@ -65,8 +66,9 @@ namespace EndfieldGraphShaderLab
                 return Fail("schema version is not supported", out failure);
             if (string.IsNullOrEmpty(sourceClipName))
                 return Fail("source clip name is empty", out failure);
-            if (!IsSha256(sourceAclSha256) || !IsSha256(decodedSamplesSha256))
-                return Fail("source ACL or decoded-sample SHA-256 is malformed", out failure);
+            if (!IsSha256(sourceClipJsonSha256) || !IsSha256(sourceAclSha256) ||
+                !IsSha256(decodedSamplesSha256))
+                return Fail("source clip, ACL, or decoded-sample SHA-256 is malformed", out failure);
             if (!Finite(sampleRate) || sampleRate <= 0f)
                 return Fail("sample rate is not positive and finite", out failure);
             if (!Finite(duration) || duration < 0f)
