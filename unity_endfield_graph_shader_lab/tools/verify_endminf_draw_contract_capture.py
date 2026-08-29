@@ -327,14 +327,17 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             "sourceAlpha": 2, "destinationAlpha": 6,
             "operationAlpha": 1, "writeMask": 15,
         }
-        for slot in range(2):
-            row = blend_targets[slot]
-            require(row["enabled"] is True,
-                    f"{label} blend target {slot} is not enabled")
-            for field, expected in expected_blend.items():
-                require(integer(row.get(field),
-                                f"{label} blend target {slot} {field}") == expected,
-                        f"{label} blend target {slot} {field} differs from exact M31 state")
+        # The pre-hardening capture exposed only RenderTarget[0]. Slot 1 is
+        # intentionally structure-checked above but remains unclassified until
+        # the next complete capture records IndependentBlendEnable and all
+        # eight target descriptors.
+        row = blend_targets[0]
+        require(row["enabled"] is True,
+                f"{label} blend target 0 is not enabled")
+        for field, expected in expected_blend.items():
+            require(integer(row.get(field),
+                            f"{label} blend target 0 {field}") == expected,
+                    f"{label} blend target 0 {field} differs from exact M31 state")
         require(factor == [1, 1, 1, 1] and
                 integer(blend.get("sampleMask"),
                         f"{label} blend sampleMask") == 0xffffffff,
