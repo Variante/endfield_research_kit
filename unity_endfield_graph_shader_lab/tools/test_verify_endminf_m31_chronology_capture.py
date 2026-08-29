@@ -84,8 +84,8 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             "census": [
                 {"kind": 3, "afterM31Draw": 1,
                  "arguments": [6, 1, 10, 20, 0],
-                 "vertexShaderIdentity": 0x1111222233334444,
-                 "pixelShaderIdentity": 0x5555666677778888,
+                 "vertexShaderIdentity": 0xE7F5568D34FD467B,
+                 "pixelShaderIdentity": 0xC5B21FEE8E9936A6,
                  "computeShaderIdentity": 0},
                 {"kind": 4, "afterM31Draw": 2,
                  "arguments": [8, 8, 1],
@@ -114,6 +114,8 @@ class M31ChronologyCaptureTests(unittest.TestCase):
                          "validated_m31_three_draw_chronology_boundary_evidence")
         self.assertTrue(all(row["changedBytes"] == 32
                             for row in report["drawDeltas"]))
+        self.assertEqual(report["census"][0]["owner"], "M21")
+        self.assertIsNone(report["census"][1]["owner"])
 
     def test_wrong_observer_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

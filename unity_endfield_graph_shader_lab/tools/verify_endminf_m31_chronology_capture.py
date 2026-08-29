@@ -26,6 +26,32 @@ class ChronologyError(RuntimeError):
     pass
 
 
+# Exact pairs already maintained by EndfieldCapture's owner gates. Shared
+# VFXBaseV2 bytecode is deliberately labelled as a family: constants and
+# resources, not the shader pair alone, distinguish M14/M20/M30/M31.
+OWNER_SHADER_PAIRS = {
+    (0xE8F38F2F7519383D, 0xFEA38543389B6FF4): "M20",
+    (0x04BEF98C73CA34880, 0x246A0F4F2D3C34F4): "M20Instanced",
+    (0xE7F5568D34FD467B, 0xC5B21FEE8E9936A6): "M21",
+    (0x7D1953E7B7D5310F, 0x601242F701CB4380): "M18",
+    (0x7F5111CF80387BEE, 0xA3C9BFC94F0CAEA9): "M28",
+    (0xCE755059DEDDC2E0, 0xF2AD2A14856044AC): "M29",
+    (0x96A93DCB3965CBED, 0x0265C7A6806A095F): "M13",
+    (0xC0266E7FAC0046C1, 0x92D80A93ADD9C714): "M27",
+    (0x297E7323CB0A7C42, 0x76DB04F0BC22DD3E): "OpeningStrip",
+    (0xA8C084C37EBA0ECC, 0xDE96A55F118305EA): "NormalUber",
+    (0xF246D3A8B632882E, 0x6481DAAB2B862054): "SphereOutside",
+    (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188): "VFXBaseV2Shared",
+}
+
+
+def classify_owner(kind: int, vertex_shader: int,
+                   pixel_shader: int) -> str | None:
+    if kind == 4:
+        return None
+    return OWNER_SHADER_PAIRS.get((vertex_shader, pixel_shader))
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ChronologyError(message)
@@ -216,6 +242,8 @@ def build_report(capture: Path, *,
                     f"census row {index} draw has no VS/PS identity")
         validated_census.append({"kind": kind, "afterM31Draw": after,
                                  "arguments": arguments,
+                                 "owner": classify_owner(
+                                     kind, vertex_shader, pixel_shader),
                                  "vertexShaderIdentity":
                                      f"{vertex_shader:016X}",
                                  "pixelShaderIdentity":
