@@ -3227,24 +3227,28 @@ writeback to reach the timeline's first settled loop wrap. The canonical
 all-character Unity build also runs the generated Endminf binding verifier
 before it reports success, so missing or hash-stale replay data can no longer
 pass through the ordinary rebuild path as a log-only warning.
-EndfieldCapture commit `4dd256c` closes the registration and effective-pose
-instrumentation boundary for the next run. Exact-build `AddCloth`/`RemoveCloth`
-lifecycle hooks join `ClothProcess`, TeamId, cloth component, and cloth root;
-the Transform overload of `AddTransform` retains its exact one-row `DataChunk`
-and Transform pointer. After the exact `CompleteMasterJob` return, the observer
-uses the pinned `ExTransformAccessArray.get_Item` wrapper and read-only Transform getters
-to retain the live effective world/local pose. Summary/window/trajectory
-v3 fail closed unless every retained row has a stable lifecycle join,
-the live Transform instance identity matches its registration, and all
-effective-pose lanes are finite with non-degenerate rotations. Transform
-removal invalidates the bounded registration slots before reuse; live reads
-also require the wrapper's native length and all four Unity getter slots.
-The independent verifier checks four distinct cloth owners, stable
-unique Transform identity per index, and post-job pose completeness.
-Length-only 6/30/20/70 labels remain candidates rather than human owner-name
-proof; certification stays false until a retail run passes these joins and a
-bounded name/path observation connects them to the existing 126-binding/
-100-unique-transform contract.
+EndfieldCapture commit `484aa62` closes the registration, effective-pose, and
+owner-identity instrumentation boundary for the next run. Exact-build
+`AddCloth`/`RemoveCloth` and `AddTransform`/`RemoveTransform` hooks retain
+generation-bound cloth and one-row Transform registrations, with invalidation
+bracketing each removal. After the exact `CompleteMasterJob` return, the
+observer uses the pinned `ExTransformAccessArray.get_Item` wrapper and
+read-only Transform getters to retain the live effective world/local pose.
+Registration callbacks call the additional pinned name/parent getters only on
+the uniquely resolved main-window thread, strictly decode bounded UTF-16, and
+copy full `Root/...` paths plus `MC_*` cloth names into immutable native
+records. The cloth objects and skeleton `Root` are siblings, so the join uses
+their common actor-parent instance ID rather than inventing a cloth-root path.
+Summary/window/trajectory v4 fail closed on stale generations, lifecycle or
+storage-capacity failure, thread drift, malformed/cyclic/truncated hierarchy,
+live-instance mismatch, or incomplete effective pose. The independent
+verifier pins the static contract and native hashes; requires the exact
+0/6/36/56 owner ranges and ordered 6/30/20/70 path vectors; checks 126 unique
+registration records, 100 runtime Transform identities with 26 cross-owner
+duplicates, four exact cloth names, one shared skeleton Root and actor parent;
+and joins the trajectory through the first settled exact Endminf overview-loop
+wrap. This is capture readiness, not recovered motion evidence; a fresh retail
+run must pass the gate.
 The maintained consumer gate is
 `unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact
@@ -3298,7 +3302,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `4dd256c` (including the earlier automatic-trigger,
+1. Run observer commit `484aa62` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
    wrap so the bounded trajectory buffer includes the required interval. First
