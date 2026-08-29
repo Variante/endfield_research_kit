@@ -346,7 +346,12 @@ complete frame without a client fault.
   cadence gaps remain, it predates the current Streamline observer, and its
   `R11G11B10_FLOAT` bloom input was not collected. A replacement bounded
   capture must close those three gates plus a unique peak-frame VS/PS constant
-  packet before the peak Uber header is refreshed.
+  packet before the peak Uber header is refreshed. The rebuilt observer now
+  reserves and requires the exact Uber `t0/t1/t2` closure, rejects selection
+  truncation, and admits `t1` only as a unique complete half-resolution
+  `R11G11B10_FLOAT` payload. Its Streamline gate uses the latest required tag
+  state, rejects null/zero-extent/non-finite evidence, revalidates the loaded
+  pinned modules, and cannot be bypassed through an absent game directory.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.
