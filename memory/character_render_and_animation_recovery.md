@@ -2922,6 +2922,13 @@ DSV/sampler/stencil/raster descriptors, and checks the already proven M31
 4K target/depth, sampler, blend, depth/stencil, viewport/scissor, and raster
 values. It rejects `20260829T024828Z` deterministically at the false graphics
 `complete` gate instead of publishing partial fixed-state evidence.
+The captured M31 c1/c4 fingerprint resolves directly to serialized material
+`M_fx_endminm_gfx_31` (PathID `602883BD6BB1831B`), not the unrelated mission
+alias returned by a bare source-graph query for `M31`. Its `_StencilComp=8`,
+`_StencilOp=0`, and 255 read/write masks map to D3D11 Always/Keep on both faces,
+matching the retained runtime stencil-enabled/reference-zero state. Verifier v2
+now rejects any different face operation/function or mask rather than waiting
+for those values to be guessed in the Unity callback.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every

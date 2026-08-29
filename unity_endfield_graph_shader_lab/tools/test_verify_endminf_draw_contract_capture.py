@@ -181,6 +181,14 @@ class DrawContractCaptureTests(unittest.TestCase):
                                     "all eight blend targets"):
             self.build(payload)
 
+    def test_m31_non_keep_stencil_face_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["depthStencil"] \
+            ["frontFace"]["passOperation"] = 2
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "frontFace differs from serialized M31"):
+            self.build(payload)
+
     def test_repeated_ordinal_fails_closed(self) -> None:
         payload = self.payload()
         payload["drawRecords"][1]["drawOrdinal"] = 20

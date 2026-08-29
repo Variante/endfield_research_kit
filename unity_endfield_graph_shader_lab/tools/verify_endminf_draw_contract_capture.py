@@ -348,6 +348,20 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
                 integer(depth_stencil.get("stencilReference"),
                         f"{label} stencilReference") == 0,
                 f"{label} depth/stencil differs from exact M31 state")
+        require(integer(depth_stencil.get("stencilReadMask"),
+                        f"{label} stencilReadMask") == 255 and
+                integer(depth_stencil.get("stencilWriteMask"),
+                        f"{label} stencilWriteMask") == 255,
+                f"{label} stencil masks differ from serialized M31 state")
+        for face_name in ("frontFace", "backFace"):
+            face = depth_stencil[face_name]
+            require([integer(face.get(field),
+                             f"{label} {face_name} {field}")
+                     for field in ("failOperation", "depthFailOperation",
+                                   "passOperation", "function")] ==
+                    [1, 1, 1, 8],
+                    f"{label} {face_name} differs from serialized M31 "
+                    "Always/Keep state")
         expected_raster = {
             "fillMode": 3, "cullMode": 1,
             "frontCounterClockwise": True, "depthClipEnabled": True,
