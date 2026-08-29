@@ -244,6 +244,20 @@ def build_report(capture: Path, *,
                                      f"{pixel_shader:016X}",
                                  "computeShaderIdentity":
                                      f"{compute_shader:016X}"})
+    intervals = [row["afterM31Draw"] for row in validated_census]
+    require(1 in intervals and 2 in intervals,
+            "M31 chronology census does not contain both owner intervals")
+    require(intervals == sorted(intervals),
+            "M31 chronology census owner intervals are not monotonic")
+    final_call = validated_census[-1]
+    require(
+        final_call["afterM31Draw"] == 2 and final_call["kind"] == 3 and
+        final_call["arguments"] == [900, 1, 3642, 1615, 0] and
+        final_call["vertexShaderIdentity"] == "7D1953E7B7D5310F" and
+        final_call["pixelShaderIdentity"] == "601242F701CB4380" and
+        final_call["computeShaderIdentity"] == "0000000000000000",
+        "the final call before M31 draw 3 is not exact M18 "
+        "DrawIndexedInstanced [900,1,3642,1615,0]")
 
     blobs = metadata.get("blobs")
     names = [f"draw{draw}_{phase}.bin" for draw in range(3)

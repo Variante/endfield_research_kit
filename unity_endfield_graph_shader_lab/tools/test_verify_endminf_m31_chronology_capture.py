@@ -53,7 +53,7 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             "m31ChronologyGpuComplete": True,
             "m31ChronologyPublished": True,
             "m31ChronologyFailed": False,
-            "m31ChronologyCensusCount": 2,
+            "m31ChronologyCensusCount": 3,
             "m31ChronologyCensusTruncated": False,
             "m31ChronologyStagingBytes": 192,
             "m31ChronologyFailureHresult": 0,
@@ -75,7 +75,7 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             "originalCallsForwardedExactlyOnce": True,
             "complete": True,
             "triad": [1082, 443, 32], "presentOrdinal": 9,
-            "censusCapacity": 64, "censusCount": 2,
+            "censusCapacity": 64, "censusCount": 3,
             "censusTruncated": False, "reservedStagingBytes": 192,
             "targets": [{"drawIndex": index,
                          "rtv0": target("rtv0"),
@@ -91,7 +91,12 @@ class M31ChronologyCaptureTests(unittest.TestCase):
                  "arguments": [8, 8, 1],
                  "vertexShaderIdentity": 0,
                  "pixelShaderIdentity": 0,
-                 "computeShaderIdentity": 0x9999AAAABBBBCCCC}],
+                 "computeShaderIdentity": 0x9999AAAABBBBCCCC},
+                {"kind": 3, "afterM31Draw": 2,
+                 "arguments": [900, 1, 3642, 1615, 0],
+                 "vertexShaderIdentity": 0x7D1953E7B7D5310F,
+                 "pixelShaderIdentity": 0x601242F701CB4380,
+                 "computeShaderIdentity": 0}],
             "blobs": blob_rows,
         }
         (sidecar / "metadata.json").write_text(
@@ -116,6 +121,38 @@ class M31ChronologyCaptureTests(unittest.TestCase):
                             for row in report["drawDeltas"]))
         self.assertEqual(report["census"][0]["owner"], "M21")
         self.assertIsNone(report["census"][1]["owner"])
+        self.assertEqual(report["census"][2]["owner"], "M18")
+
+    def test_nonmonotonic_owner_intervals_fail_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            data["census"][2]["afterM31Draw"] = 1
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(MODULE.ChronologyError,
+                                    "intervals are not monotonic"):
+            self.report(mutate)
+
+    def test_missing_second_owner_interval_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            for row in data["census"]:
+                row["afterM31Draw"] = 1
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(MODULE.ChronologyError,
+                                    "both owner intervals"):
+            self.report(mutate)
+
+    def test_wrong_final_m18_boundary_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            data["census"][-1]["arguments"][3] = 1616
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(MODULE.ChronologyError,
+                                    "final call before M31 draw 3"):
+            self.report(mutate)
 
     def test_wrong_observer_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

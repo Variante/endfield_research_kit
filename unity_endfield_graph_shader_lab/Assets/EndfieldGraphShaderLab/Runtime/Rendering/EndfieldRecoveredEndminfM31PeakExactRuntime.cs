@@ -7,11 +7,11 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Default-off temporal admission for the exact two-draw M31 shell
-    /// transport. Retail places M29/M30 and their surrounding transparent
-    /// cohort between the two M31 draws, so the native payload is submitted at
-    /// two pipeline insertion points. Unsupported packet shapes fall back to
-    /// the ordinary renderer.
+    /// Default-off temporal admission for the exact M31 shell transport.
+    /// Proven packets use two queue-3000 insertion points. The retained peak
+    /// packet has a third draw after M18, but remains inadmissible until the
+    /// corrected observer validates the SceneColor chronology for all three
+    /// events. Unsupported or unvalidated schedules use the ordinary renderer.
     /// </summary>
     public static class EndfieldRecoveredEndminfM31PeakExactRuntime
     {
@@ -27,7 +27,9 @@ namespace EndfieldGraphShaderLab
         private static bool prepared;
         private static bool failed;
         private static bool active;
-        private static bool firstSubmissionPending;
+        private static int nextEventId;
+        private static int expectedEventCount;
+        private static int selectedScheduleProfile;
         private static bool submissionPending;
         private static bool submittedThisFrame;
         private static bool validatedThisFrame;
@@ -58,7 +60,8 @@ namespace EndfieldGraphShaderLab
                 ? EndfieldRecoveredM31PeakCaptureData
                     .SourceFrames[selectedPacketThisFrame]
                 : -1;
-        internal static bool HasPendingFirstSubmission => firstSubmissionPending;
+        internal static bool HasPendingSchedule =>
+            nextEventId > 0 && nextEventId < expectedEventCount;
         public static bool HasPendingValidation => submissionPending;
 
         internal static bool PrepareBeforeCulling(Camera camera)
@@ -66,6 +69,10 @@ namespace EndfieldGraphShaderLab
             active = false;
             selectedPacket = -1;
             selectedPacketThisFrame = -1;
+            nextEventId = 0;
+            expectedEventCount = 0;
+            selectedScheduleProfile =
+                EndfieldRecoveredM31PeakCaptureData.ScheduleUnsupported;
             submittedThisFrame = false;
             validatedThisFrame = false;
             if (!Requested || failed)
@@ -98,13 +105,21 @@ namespace EndfieldGraphShaderLab
                 ResolveNearestPacket(Mathf.Max(0.0f,
                     seconds - ViewerLeadSeconds));
             selectedPacketThisFrame = selectedPacket;
-            active = selectedPacket >= 0 &&
-                EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket] ==
-                EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
+            active = selectedPacket >= 0 && IsSupportedSchedule(
                 EndfieldRecoveredM31PeakCaptureData
-                    .SplitOrderCompatible[selectedPacket];
+                    .ScheduleProfiles[selectedPacket],
+                EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket],
+                EndfieldRecoveredM31PeakCaptureData
+                    .ThirdEventAfterM18Observed[selectedPacket],
+                EndfieldRecoveredM31PeakCaptureData
+                    .ChronologyValidated[selectedPacket]);
             if (active)
             {
+                expectedEventCount =
+                    EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket];
+                selectedScheduleProfile =
+                    EndfieldRecoveredM31PeakCaptureData
+                        .ScheduleProfiles[selectedPacket];
                 try
                 {
                     if (Native.SetTemporalPacketIndex(
@@ -124,7 +139,8 @@ namespace EndfieldGraphShaderLab
                 Debug.Log("Recovered exact Endminf M31 temporal admission: " +
                     "renderers=" + Renderers.Count + ", phase=" +
                     seconds.ToString("F6") + ", packet=" + selectedPacket +
-                    ", splitCompatible=" + active + ".");
+                    ", schedule=" + selectedScheduleProfile +
+                    ", chronologyValidated=" + active + ".");
                 loggedAdmission = true;
             }
             SetRendererSuppression(active);
@@ -162,10 +178,15 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredM31PeakCaptureData.LastDrawOrdinals;
             bool[] nativeOrderCompatible =
                 EndfieldRecoveredM31PeakCaptureData.NativeOrderCompatible;
-            bool[] splitOrderCompatible =
-                EndfieldRecoveredM31PeakCaptureData.SplitOrderCompatible;
+            int[] scheduleProfiles =
+                EndfieldRecoveredM31PeakCaptureData.ScheduleProfiles;
+            bool[] chronologyValidated =
+                EndfieldRecoveredM31PeakCaptureData.ChronologyValidated;
             int[] interleavedM29M30Counts =
                 EndfieldRecoveredM31PeakCaptureData.InterleavedM29M30Counts;
+            bool[] thirdEventAfterM18Observed =
+                EndfieldRecoveredM31PeakCaptureData
+                    .ThirdEventAfterM18Observed;
             string[] hashes =
                 EndfieldRecoveredM31PeakCaptureData.TemporalMetadataSha256;
             int packetCount = EndfieldRecoveredM31PeakCaptureData.PacketCount;
@@ -173,16 +194,20 @@ namespace EndfieldGraphShaderLab
                 !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
                 phases == null || frames == null || drawCounts == null ||
                 firstDrawOrdinals == null || lastDrawOrdinals == null ||
-                nativeOrderCompatible == null || splitOrderCompatible == null ||
+                nativeOrderCompatible == null || scheduleProfiles == null ||
+                chronologyValidated == null ||
                 hashes == null || packetCount < 2 ||
                 interleavedM29M30Counts == null ||
+                thirdEventAfterM18Observed == null ||
                 phases.Length != packetCount || frames.Length != packetCount ||
                 drawCounts.Length != packetCount ||
                 firstDrawOrdinals.Length != packetCount ||
                 lastDrawOrdinals.Length != packetCount ||
                 nativeOrderCompatible.Length != packetCount ||
-                splitOrderCompatible.Length != packetCount ||
+                scheduleProfiles.Length != packetCount ||
+                chronologyValidated.Length != packetCount ||
                 interleavedM29M30Counts.Length != packetCount ||
+                thirdEventAfterM18Observed.Length != packetCount ||
                 hashes.Length != packetCount)
             {
                 return Fail("the generated M31 temporal contract is incomplete");
@@ -203,15 +228,34 @@ namespace EndfieldGraphShaderLab
                     (lastDrawOrdinals[index] - firstDrawOrdinals[index] + 1 ==
                         drawCounts[index]))
                     return Fail("the generated M31 transport-order gate drifted");
-                bool expectedSplitOrder = drawCounts[index] ==
-                        EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
-                    interleavedM29M30Counts[index] == 2;
-                if (splitOrderCompatible[index] != expectedSplitOrder)
-                    return Fail("the generated M31 split-order gate drifted");
+                int expectedSchedule = drawCounts[index] == 2 &&
+                        interleavedM29M30Counts[index] == 2
+                    ? EndfieldRecoveredM31PeakCaptureData
+                        .ScheduleQueue3000Interval2
+                    : drawCounts[index] == 3 &&
+                        thirdEventAfterM18Observed[index]
+                    ? EndfieldRecoveredM31PeakCaptureData
+                        .ScheduleQueue3000ThenPostM18_3
+                    : EndfieldRecoveredM31PeakCaptureData.ScheduleUnsupported;
+                if (scheduleProfiles[index] != expectedSchedule)
+                    return Fail("the generated M31 schedule profile drifted");
+                if ((expectedSchedule == EndfieldRecoveredM31PeakCaptureData
+                            .ScheduleQueue3000Interval2 &&
+                        !chronologyValidated[index]) ||
+                    (expectedSchedule == EndfieldRecoveredM31PeakCaptureData
+                            .ScheduleUnsupported &&
+                        chronologyValidated[index]))
+                    return Fail("the generated M31 chronology validation gate " +
+                        "drifted");
                 if (interleavedM29M30Counts[index] < 0 ||
                     nativeOrderCompatible[index] &&
                     interleavedM29M30Counts[index] != 0)
                     return Fail("the generated M31/M29/M30 owner order drifted");
+                bool expectedThirdEventAfterM18 = drawCounts[index] == 3;
+                if (thirdEventAfterM18Observed[index] !=
+                    expectedThirdEventAfterM18)
+                    return Fail("the generated M31 third-event M18 boundary " +
+                        "drifted");
                 if (frames[index] ==
                     EndfieldRecoveredM31PeakCaptureData.AnchorFrame)
                 {
@@ -235,7 +279,10 @@ namespace EndfieldGraphShaderLab
                     exception.Message);
             }
             validatedDrawCount = 0;
-            firstSubmissionPending = false;
+            nextEventId = 0;
+            expectedEventCount = 0;
+            selectedScheduleProfile =
+                EndfieldRecoveredM31PeakCaptureData.ScheduleUnsupported;
             submissionPending = false;
             prepared = true;
             return true;
@@ -269,24 +316,50 @@ namespace EndfieldGraphShaderLab
         {
             float[] phases = EndfieldRecoveredM31PeakCaptureData.PhaseSeconds;
             int[] drawCounts = EndfieldRecoveredM31PeakCaptureData.DrawCounts;
-            bool[] splitOrderCompatible =
-                EndfieldRecoveredM31PeakCaptureData.SplitOrderCompatible;
+            int[] scheduleProfiles =
+                EndfieldRecoveredM31PeakCaptureData.ScheduleProfiles;
+            bool[] chronologyValidated =
+                EndfieldRecoveredM31PeakCaptureData.ChronologyValidated;
+            bool[] thirdEventAfterM18Observed =
+                EndfieldRecoveredM31PeakCaptureData
+                    .ThirdEventAfterM18Observed;
             int packetCount = EndfieldRecoveredM31PeakCaptureData.PacketCount;
             if (float.IsNaN(overviewSeconds) ||
                 !EndfieldRecoveredM31PeakCaptureData.PayloadPrepared ||
                 !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
                 phases == null || drawCounts == null ||
-                splitOrderCompatible == null || packetCount < 2 ||
+                scheduleProfiles == null || chronologyValidated == null ||
+                thirdEventAfterM18Observed == null || packetCount < 2 ||
                 phases.Length != packetCount ||
                 drawCounts.Length != packetCount ||
-                splitOrderCompatible.Length != packetCount)
+                scheduleProfiles.Length != packetCount ||
+                chronologyValidated.Length != packetCount ||
+                thirdEventAfterM18Observed.Length != packetCount)
                 return false;
             int packet = ResolveNearestPacket(Mathf.Max(
                 0.0f, overviewSeconds - ViewerLeadSeconds));
-            return packet >= 0 &&
-                drawCounts[packet] ==
-                    EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
-                splitOrderCompatible[packet];
+            return packet >= 0 && IsSupportedSchedule(
+                scheduleProfiles[packet], drawCounts[packet],
+                thirdEventAfterM18Observed[packet],
+                chronologyValidated[packet]);
+        }
+
+        private static bool IsSupportedSchedule(
+            int profile,
+            int eventCount,
+            bool thirdEventAfterM18,
+            bool chronologyValidated)
+        {
+            if (!chronologyValidated || eventCount <= 0 ||
+                eventCount > EndfieldRecoveredM31PeakCaptureData.MaxEventCount)
+                return false;
+            if (profile == EndfieldRecoveredM31PeakCaptureData
+                    .ScheduleQueue3000Interval2)
+                return eventCount == 2 && !thirdEventAfterM18;
+            if (profile == EndfieldRecoveredM31PeakCaptureData
+                    .ScheduleQueue3000ThenPostM18_3)
+                return eventCount == 3 && thirdEventAfterM18;
+            return false;
         }
 
         private static float ResolveOverviewSeconds(Transform actorRoot)
@@ -324,13 +397,10 @@ namespace EndfieldGraphShaderLab
             RenderTexture sceneMV,
             RenderTexture sceneDepth)
         {
-            if (firstSubmissionPending)
-                return Fail("the previous M31 split submission is incomplete");
-            if (!RenderSplitEvent(
-                    context, camera, sceneColor, sceneMV, sceneDepth, 0))
-                return false;
-            firstSubmissionPending = true;
-            return true;
+            if (nextEventId != 0)
+                return Fail("the previous M31 schedule is incomplete");
+            return RenderScheduledEvent(
+                context, camera, sceneColor, sceneMV, sceneDepth, 0);
         }
 
         internal static bool RenderSecond(
@@ -340,19 +410,46 @@ namespace EndfieldGraphShaderLab
             RenderTexture sceneMV,
             RenderTexture sceneDepth)
         {
-            if (!firstSubmissionPending)
-                return Fail("the second M31 split event has no first event");
-            if (!RenderSplitEvent(
+            if (nextEventId != 1)
+                return Fail("the second M31 event has no first event");
+            if (!RenderScheduledEvent(
                     context, camera, sceneColor, sceneMV, sceneDepth, 1))
                 return false;
-            firstSubmissionPending = false;
+            return expectedEventCount == 2
+                ? CompleteScheduleSubmission()
+                : true;
+        }
+
+        internal static bool RenderAfterM18BeforeQueue3001(
+            ScriptableRenderContext context,
+            Camera camera,
+            EndfieldRecoveredSceneColorHandle sceneColor,
+            RenderTexture sceneMV,
+            RenderTexture sceneDepth)
+        {
+            if (selectedScheduleProfile != EndfieldRecoveredM31PeakCaptureData
+                    .ScheduleQueue3000ThenPostM18_3)
+                return true;
+            if (nextEventId != 2 || expectedEventCount != 3)
+                return Fail("the post-M18 M31 event has an incomplete " +
+                    "two-event prefix");
+            if (!RenderScheduledEvent(
+                    context, camera, sceneColor, sceneMV, sceneDepth, 2))
+                return false;
+            return CompleteScheduleSubmission();
+        }
+
+        private static bool CompleteScheduleSubmission()
+        {
+            if (nextEventId != expectedEventCount)
+                return Fail("the M31 schedule completed with a missing event");
             submissionPending = true;
             submittedThisFrame = true;
             if (!loggedActivation)
             {
                 Debug.Log(
-                    "Recovered exact Endminf M31 submitted around the retail " +
-                    "M29/M30 owner interval inside the " +
+                    "Recovered exact Endminf M31 submitted " +
+                    expectedEventCount + " scheduled events inside the " +
                     EndfieldRecoveredM31PeakCaptureData.PacketCount +
                     "-packet temporal envelope from capture " +
                     EndfieldRecoveredM31PeakCaptureData.TemporalSourceSession +
@@ -364,10 +461,28 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
-        internal static void AbortPendingSplit(string reason)
+        internal static void AbortPendingSchedule(string reason)
         {
-            if (firstSubmissionPending)
-                Fail(reason ?? "the M31 split owner interval failed");
+            if (HasPendingSchedule)
+                Fail(reason ?? "the M31 owner schedule failed");
+        }
+
+        private static bool RenderScheduledEvent(
+            ScriptableRenderContext context,
+            Camera camera,
+            EndfieldRecoveredSceneColorHandle sceneColor,
+            RenderTexture sceneMV,
+            RenderTexture sceneDepth,
+            int eventId)
+        {
+            if (eventId != nextEventId || eventId < 0 ||
+                eventId >= expectedEventCount)
+                return Fail("the M31 schedule event order drifted");
+            if (!RenderSplitEvent(
+                    context, camera, sceneColor, sceneMV, sceneDepth, eventId))
+                return false;
+            nextEventId++;
+            return true;
         }
 
         private static bool RenderSplitEvent(
@@ -426,8 +541,7 @@ namespace EndfieldGraphShaderLab
                 uint submittedDraws = draws >= validatedDrawCount
                     ? draws - validatedDrawCount
                     : uint.MaxValue;
-                if (submittedDraws !=
-                        EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount ||
+                if (submittedDraws != expectedEventCount ||
                     failures != 0 || result < 0)
                 {
                     validationFailure = "native M31 peak result drifted: draws=" +
@@ -442,7 +556,8 @@ namespace EndfieldGraphShaderLab
                 if (!loggedValidation)
                 {
                     Debug.Log("Recovered exact Endminf M31 peak validated: " +
-                        "both split events completed with S_OK.");
+                        expectedEventCount +
+                        " scheduled events completed with S_OK.");
                     loggedValidation = true;
                 }
                 return true;
@@ -459,7 +574,10 @@ namespace EndfieldGraphShaderLab
             failed = true;
             active = false;
             selectedPacket = -1;
-            firstSubmissionPending = false;
+            nextEventId = 0;
+            expectedEventCount = 0;
+            selectedScheduleProfile =
+                EndfieldRecoveredM31PeakCaptureData.ScheduleUnsupported;
             submissionPending = false;
             submittedThisFrame = false;
             validatedThisFrame = false;

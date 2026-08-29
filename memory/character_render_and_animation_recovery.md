@@ -2967,10 +2967,29 @@ combination (`independent=1`, RTV1 `3/4`, depth func `7`, stencil on, DSV flags
 `3`). The hardened retail recapture must still confirm its live DSV flags and
 RTV1 formats before this is treated as final runtime parity.
 
+The retained frame-1977 owner order now has an explicit fail-closed schedule
+contract. M31 draws at ordinals 66, 74, and 89; ordinal 88 is the exact M18
+`DrawIndexedInstanced(900,1,3642,1615,0)` owner, so the third M31 event belongs
+immediately after M18 and before Unity's queue-3001 continuation. Generated
+M31 data distinguishes the proven two-event queue-3000 schedule, the observed
+three-event queue-3000-plus-post-M18 schedule, and unsupported packets. A
+separate per-packet chronology-validation gate remains false for the
+three-event packet, so both managed and native selectors reject it and retain
+the ordinary renderer until a corrected observer capture proves the three
+SceneColor boundaries. The managed state machine and native callback support
+up to three ordered events, complete validation only after the selected event
+count, and abort partial schedules. The native tool-only build, WARP shader
+validation, M31 fixed-state validator, and direct selector probe pass; the
+selector accepts the seven proven two-event packets and rejects the pending
+three-event and unsupported packets. The chronology verifier additionally
+requires nonempty monotonic owner intervals and the exact M18 call as the final
+census entry before draw 3; well-shaped but owner-ambiguous census data no
+longer passes.
+
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every
 captured row records whether its body-clock phase lies in the recovered M31
-envelope, whether the runtime admitted and submitted both split events, the
+envelope, whether the runtime admitted and submitted every scheduled event, the
 selected packet/source frame, and whether the synchronized native draw-count
 gate validated. A requested targeted capture fails closed when any expected
 M31 row lacks active, submitted, and validated evidence. The focused contract
