@@ -401,11 +401,17 @@ static_assert(g_EndfieldM31PeakPayloadPrepared);
 static_assert(g_EndfieldM31PeakDepthContractReady);
 static_assert(g_EndfieldM31PeakTemporalPacketCount == 9u);
 static_assert(g_EndfieldM31PeakDrawPayloadCount == 18u);
-static_assert(g_EndfieldM31PeakSplitEventCount == 2u);
-static_assert(g_EndfieldM31PeakTemporalPackets[0].splitOrderCompatible);
-static_assert(g_EndfieldM31PeakTemporalPackets[6].splitOrderCompatible);
+static_assert(g_EndfieldM31PeakMaxEventCount == 3u);
+static_assert(g_EndfieldM31PeakTemporalPackets[0].scheduleProfile ==
+        g_EndfieldM31PeakScheduleQueue3000Interval2 &&
+    g_EndfieldM31PeakTemporalPackets[0].chronologyValidated);
+static_assert(g_EndfieldM31PeakTemporalPackets[6].scheduleProfile ==
+        g_EndfieldM31PeakScheduleQueue3000Interval2 &&
+    g_EndfieldM31PeakTemporalPackets[6].chronologyValidated);
 static_assert(g_EndfieldM31PeakTemporalPackets[7].drawCount == 3u &&
-    !g_EndfieldM31PeakTemporalPackets[7].splitOrderCompatible);
+    g_EndfieldM31PeakTemporalPackets[7].scheduleProfile ==
+        g_EndfieldM31PeakScheduleQueue3000ThenPostM18_3 &&
+    !g_EndfieldM31PeakTemporalPackets[7].chronologyValidated);
 static_assert(g_EndfieldM31PeakTextureT1Size == 65536u);
 static_assert(g_EndfieldVFXPeakPayloadPrepared);
 static_assert(g_EndfieldVFXPeakDrawCount == 15u);
@@ -4942,7 +4948,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
 {
     if (eventId < 0 ||
         static_cast<std::uint32_t>(eventId) >=
-            g_EndfieldM31PeakSplitEventCount)
+            g_EndfieldM31PeakMaxEventCount)
         return;
     const std::uint32_t temporalPacketIndex =
         g_m31PeakTemporalPacketIndex.load(std::memory_order_acquire);
@@ -4954,8 +4960,14 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     }
     const EndfieldM31PeakTemporalPacket& temporalPacket =
         g_EndfieldM31PeakTemporalPackets[temporalPacketIndex];
-    if (!temporalPacket.splitOrderCompatible ||
-        temporalPacket.drawCount != g_EndfieldM31PeakSplitEventCount ||
+    const bool supportedSchedule =
+        (temporalPacket.scheduleProfile ==
+                g_EndfieldM31PeakScheduleQueue3000Interval2 &&
+            temporalPacket.drawCount == 2u) ||
+        (temporalPacket.scheduleProfile ==
+                g_EndfieldM31PeakScheduleQueue3000ThenPostM18_3 &&
+            temporalPacket.drawCount == 3u);
+    if (!temporalPacket.chronologyValidated || !supportedSchedule ||
         static_cast<std::uint32_t>(eventId) >= temporalPacket.drawCount ||
         temporalPacket.firstDrawPayload + temporalPacket.drawCount >
             g_EndfieldM31PeakDrawPayloadCount)
@@ -8044,8 +8056,14 @@ EndfieldOriginalDxbcSetM31PeakTemporalPacketIndex(std::uint32_t packetIndex)
         return 0u;
     const EndfieldM31PeakTemporalPacket& packet =
         g_EndfieldM31PeakTemporalPackets[packetIndex];
-    if (!packet.splitOrderCompatible ||
-        packet.drawCount != g_EndfieldM31PeakSplitEventCount ||
+    const bool supportedSchedule =
+        (packet.scheduleProfile ==
+                g_EndfieldM31PeakScheduleQueue3000Interval2 &&
+            packet.drawCount == 2u) ||
+        (packet.scheduleProfile ==
+                g_EndfieldM31PeakScheduleQueue3000ThenPostM18_3 &&
+            packet.drawCount == 3u);
+    if (!packet.chronologyValidated || !supportedSchedule ||
         packet.firstDrawPayload + packet.drawCount >
             g_EndfieldM31PeakDrawPayloadCount)
         return 0u;

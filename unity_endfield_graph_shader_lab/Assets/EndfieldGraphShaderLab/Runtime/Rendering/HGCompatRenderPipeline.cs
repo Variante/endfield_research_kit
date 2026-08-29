@@ -2301,9 +2301,10 @@ namespace EndfieldGraphShaderLab
                 }
                 if (!mainReady && exactEndminfM31PeakPrepared &&
                     EndfieldRecoveredEndminfM31PeakExactRuntime
-                        .HasPendingFirstSubmission)
+                        .HasPendingSchedule)
                 {
-                    EndfieldRecoveredEndminfM31PeakExactRuntime.AbortPendingSplit(
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .AbortPendingSchedule(
                         "the retail M31/M29/M30 owner interval failed");
                 }
                 if (mainReady && exactEndminfVFXBaseV2PeakPrepared)
@@ -2420,6 +2421,37 @@ namespace EndfieldGraphShaderLab
                             "exact Endminf M18 peak transport failed closed: " +
                             EndfieldRecoveredEndminfM18PeakExactRuntime.Failure;
                     }
+                }
+                // Retained frame 1977 places the third M31 owner immediately
+                // after exact M18 (ordinal 88 -> 89). Packet 7 remains
+                // fail-closed until the corrected observer validates the
+                // SceneColor version at all three schedule boundaries.
+                if (mainReady && exactEndminfM31PeakPrepared &&
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .HasPendingSchedule)
+                {
+                    mainReady = EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .RenderAfterM18BeforeQueue3001(
+                            context,
+                            camera,
+                            recoveredCurrentSceneColor,
+                            recoveredSceneMV,
+                            recoveredPrimarySceneDepth);
+                    if (!mainReady)
+                    {
+                        compositorFailure =
+                            "exact Endminf M31 post-M18 transport failed " +
+                            "closed: " +
+                            EndfieldRecoveredEndminfM31PeakExactRuntime.Failure;
+                    }
+                }
+                if (!mainReady && exactEndminfM31PeakPrepared &&
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .HasPendingSchedule)
+                {
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .AbortPendingSchedule(
+                            "the retail M31 post-M18 owner interval failed");
                 }
                 if (mainReady && recoveredSceneMVRequest.hasGlow902Queue3005)
                 {

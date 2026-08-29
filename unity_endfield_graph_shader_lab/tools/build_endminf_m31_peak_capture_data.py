@@ -60,9 +60,19 @@ EXPECTED_TEXTURE_SHA256 = "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3
 M29_VS = 0xCE755059DEDDC2E0
 M29_PS = 0xF2AD2A14856044AC
 M30_C1 = (1.0, 0.0, 3.0, 0.5)
+M18_VS = 0x7D1953E7B7D5310F
+M18_PS = 0x601242F701CB4380
 EXPECTED_INTERLEAVED_M29_M30_COUNTS = (2, 2, 2, 2, 2, 2, 2, 0, 0)
-EXPECTED_SPLIT_ORDER_COMPATIBLE = (
+SCHEDULE_UNSUPPORTED = 0
+SCHEDULE_QUEUE3000_INTERVAL_2 = 1
+SCHEDULE_QUEUE3000_THEN_POST_M18_3 = 2
+EXPECTED_SCHEDULE_PROFILES = (
+    SCHEDULE_QUEUE3000_INTERVAL_2,) * 7 + (
+    SCHEDULE_QUEUE3000_THEN_POST_M18_3, SCHEDULE_UNSUPPORTED)
+EXPECTED_CHRONOLOGY_VALIDATED = (
     True, True, True, True, True, True, True, False, False)
+EXPECTED_THIRD_EVENT_AFTER_M18 = (
+    False, False, False, False, False, False, False, True, False)
 
 
 def is_m31(draw: dict[str, Any]) -> bool:
@@ -92,6 +102,20 @@ def is_m29_or_m30(draw: dict[str, Any]) -> bool:
                             M30_C1)
     except ValueError:
         return False
+
+
+def is_m18_third_event_boundary(draw: dict[str, Any]) -> bool:
+    """Identify the exact frame-1977 M18 draw immediately before M31 #3."""
+    pair = {int(row.get("stage", -1)): int(row.get("identityHash", 0))
+            for row in draw.get("shaders", []) if isinstance(row, dict)}
+    return (
+        pair.get(0) == M18_VS and pair.get(4) == M18_PS and
+        int(draw.get("count", -1)) == 900 and
+        int(draw.get("start", -1)) == 3642 and
+        int(draw.get("baseVertex", -1)) == 1615 and
+        int(draw.get("instanceCount", -1)) == 1 and
+        int(draw.get("startInstance", -1)) == 0 and
+        int(draw.get("topology", -1)) == 4)
 
 
 def selected_resource(metadata: dict[str, Any], *, capture_kind: int,
@@ -256,6 +280,15 @@ def collect_temporal(
             index for index in range(draw_indices[0] + 1, draw_indices[-1])
             if is_m29_or_m30(metadata["drawRecords"][index])
         ]
+        third_event_after_m18 = False
+        if len(draw_indices) == 3:
+            third_draw = draw_indices[2]
+            shared.require(
+                frame == ANCHOR_FRAME and third_draw > 0 and
+                is_m18_third_event_boundary(
+                    metadata["drawRecords"][third_draw - 1]),
+                f"M31 frame {frame} third-event M18 boundary drifted")
+            third_event_after_m18 = True
         packets.append({
             "frame": frame,
             "phase": PHASE_SECONDS + (qpc - anchor_qpc) / QPC_FREQUENCY,
@@ -270,8 +303,21 @@ def collect_temporal(
                 right == left + 1
                 for left, right in zip(draw_indices, draw_indices[1:])),
             "interleaved_m29_m30": interleaved_m29_m30,
-            "split_order_compatible": (
+            "schedule_profile": (
+                SCHEDULE_QUEUE3000_INTERVAL_2
+                if len(draw_indices) == 2 and len(interleaved_m29_m30) == 2
+                else SCHEDULE_QUEUE3000_THEN_POST_M18_3
+                if len(draw_indices) == 3 and third_event_after_m18
+                else SCHEDULE_UNSUPPORTED),
+            # The seven two-event packets have their complete retained owner
+            # interval. Packet 7's three owner draws are retained, but the old
+            # capture does not prove which SceneColor version each event saw.
+            "chronology_validated": (
                 len(draw_indices) == 2 and len(interleaved_m29_m30) == 2),
+            # This is an observed owner-order fact only. It does not establish
+            # that the three callbacks see the required SceneColor versions;
+            # the corrected chronology observer owns that separate gate.
+            "third_event_after_m18": third_event_after_m18,
             "metadata_sha256": EXPECTED_TEMPORAL_METADATA_SHA256[frame],
         })
     shared.require(abs(packets[TEMPORAL_FRAMES.index(ANCHOR_FRAME)]["phase"] -
@@ -282,9 +328,17 @@ def collect_temporal(
         EXPECTED_INTERLEAVED_M29_M30_COUNTS,
         "M31/M29/M30 retained owner chronology drifted")
     shared.require(
-        tuple(row["split_order_compatible"] for row in packets) ==
-        EXPECTED_SPLIT_ORDER_COMPATIBLE,
-        "M31 split owner chronology drifted")
+        tuple(row["schedule_profile"] for row in packets) ==
+        EXPECTED_SCHEDULE_PROFILES,
+        "M31 schedule profile chronology drifted")
+    shared.require(
+        tuple(row["chronology_validated"] for row in packets) ==
+        EXPECTED_CHRONOLOGY_VALIDATED,
+        "M31 chronology validation gate drifted")
+    shared.require(
+        tuple(row["third_event_after_m18"] for row in packets) ==
+        EXPECTED_THIRD_EVENT_AFTER_M18,
+        "M31 third-event M18 placement drifted")
     shared.require(shared_texture is not None,
                    "M31 temporal capture has no shared PS t1 payload")
     return packets, shared_texture
@@ -349,10 +403,11 @@ def render_cpp(temporal: list[dict[str, Any]], texture: dict[str, Any]) -> str:
                 f"{{{', '.join(prefix + 'VSCB' + str(i) + 'Size' for i in range(5))}}}, "
                 f"{{{', '.join(prefix + 'PSCB' + str(i) for i in range(4))}}}, "
                 f"{{{', '.join(prefix + 'PSCB' + str(i) + 'Size' for i in range(4))}}}}},")
-        compatible = "true" if packet["split_order_compatible"] else "false"
+        validated = "true" if packet["chronology_validated"] else "false"
         temporal_descriptors.append(
             f"    {{{packet['frame']}u, {packet['phase']:.6f}f, "
-            f"{first_draw_payload}u, {packet['draw_count']}u, {compatible}}},")
+            f"{first_draw_payload}u, {packet['draw_count']}u, "
+            f"{packet['schedule_profile']}u, {validated}}},")
         first_draw_payload += packet["draw_count"]
     return (
         "// Generated by tools/build_endminf_m31_peak_capture_data.py. Do not edit.\n"
@@ -379,13 +434,17 @@ def render_cpp(temporal: list[dict[str, Any]], texture: dict[str, Any]) -> str:
         "sizeof(g_EndfieldM31PeakDrawPayloads[0]));\n"
         "struct EndfieldM31PeakTemporalPacket { std::uint32_t frame; "
         "float phaseSeconds; std::uint32_t firstDrawPayload; "
-        "std::uint32_t drawCount; bool splitOrderCompatible; };\n"
+        "std::uint32_t drawCount; std::uint32_t scheduleProfile; "
+        "bool chronologyValidated; };\n"
         "inline constexpr EndfieldM31PeakTemporalPacket g_EndfieldM31PeakTemporalPackets[] = {\n" +
         "\n".join(temporal_descriptors) + "\n};\n"
         "inline constexpr std::uint32_t g_EndfieldM31PeakTemporalPacketCount = "
         "static_cast<std::uint32_t>(sizeof(g_EndfieldM31PeakTemporalPackets) / "
         "sizeof(g_EndfieldM31PeakTemporalPackets[0]));\n"
-        "inline constexpr std::uint32_t g_EndfieldM31PeakSplitEventCount = 2u;\n"
+        "inline constexpr std::uint32_t g_EndfieldM31PeakScheduleUnsupported = 0u;\n"
+        "inline constexpr std::uint32_t g_EndfieldM31PeakScheduleQueue3000Interval2 = 1u;\n"
+        "inline constexpr std::uint32_t g_EndfieldM31PeakScheduleQueue3000ThenPostM18_3 = 2u;\n"
+        "inline constexpr std::uint32_t g_EndfieldM31PeakMaxEventCount = 3u;\n"
         f'inline constexpr char g_EndfieldM31PeakTextureT1Sha256[] = "{texture["sha256"]}";\n'
     )
 
@@ -401,11 +460,17 @@ def render_cs(temporal: list[dict[str, Any]], texture: dict[str, Any]) -> str:
     native_order_compatible = ", ".join(
         "true" if row["native_order_compatible"] else "false"
         for row in temporal)
-    split_order_compatible = ", ".join(
-        "true" if row["split_order_compatible"] else "false"
+    schedule_profiles = ", ".join(
+        str(row["schedule_profile"])
+        for row in temporal)
+    chronology_validated = ", ".join(
+        "true" if row["chronology_validated"] else "false"
         for row in temporal)
     interleaved_m29_m30_counts = ", ".join(
         str(len(row["interleaved_m29_m30"])) for row in temporal)
+    third_event_after_m18 = ", ".join(
+        "true" if row["third_event_after_m18"] else "false"
+        for row in temporal)
     hashes = ", ".join(f'"{row["metadata_sha256"]}"' for row in temporal)
     return f'''// Generated by tools/build_endminf_m31_peak_capture_data.py. Do not edit.
 namespace EndfieldGraphShaderLab
@@ -418,9 +483,15 @@ namespace EndfieldGraphShaderLab
         internal const float AnchorPhaseSeconds = {PHASE_SECONDS:.6f}f;
         internal const int QpcFrequency = {QPC_FREQUENCY};
         internal const int PacketCount = {len(temporal)};
-        internal const int NativePayloadDrawCount = 2;
+        internal const int ScheduleUnsupported = {SCHEDULE_UNSUPPORTED};
+        internal const int ScheduleQueue3000Interval2 = {SCHEDULE_QUEUE3000_INTERVAL_2};
+        internal const int ScheduleQueue3000ThenPostM18_3 = {SCHEDULE_QUEUE3000_THEN_POST_M18_3};
+        internal const int MaxEventCount = 3;
         internal const bool PayloadPrepared = true;
         internal const bool DepthContractReady = true;
+        // The retained frame metadata proves the owner boundary below, but
+        // not the SceneColor version seen by each event. A corrected observer
+        // capture must explicitly replace this fail-closed gate.
         internal const string TextureT1Sha256 = "{texture['sha256']}";
         internal static readonly int[] SourceFrames = {{ {frames} }};
         internal static readonly float[] PhaseSeconds = {{ {phases} }};
@@ -428,8 +499,10 @@ namespace EndfieldGraphShaderLab
         internal static readonly int[] FirstDrawOrdinals = {{ {first_draw_ordinals} }};
         internal static readonly int[] LastDrawOrdinals = {{ {last_draw_ordinals} }};
         internal static readonly bool[] NativeOrderCompatible = {{ {native_order_compatible} }};
-        internal static readonly bool[] SplitOrderCompatible = {{ {split_order_compatible} }};
+        internal static readonly int[] ScheduleProfiles = {{ {schedule_profiles} }};
+        internal static readonly bool[] ChronologyValidated = {{ {chronology_validated} }};
         internal static readonly int[] InterleavedM29M30Counts = {{ {interleaved_m29_m30_counts} }};
+        internal static readonly bool[] ThirdEventAfterM18Observed = {{ {third_event_after_m18} }};
         internal static readonly string[] TemporalMetadataSha256 = {{ {hashes} }};
     }}
 }}

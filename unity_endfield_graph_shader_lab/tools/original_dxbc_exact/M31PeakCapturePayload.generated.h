@@ -12143,18 +12143,21 @@ inline constexpr EndfieldM31PeakPacketPayload g_EndfieldM31PeakDrawPayloads[] = 
     {67u, g_EndfieldM31PeakT8D0Vertices, g_EndfieldM31PeakT8D0VerticesSize, g_EndfieldM31PeakT8D0Indices, g_EndfieldM31PeakT8D0IndicesSize, 6u, g_EndfieldM31PeakT8D0Secondary, g_EndfieldM31PeakT8D0SecondarySize, {g_EndfieldM31PeakT8D0VSCB0, g_EndfieldM31PeakT8D0VSCB1, g_EndfieldM31PeakT8D0VSCB2, g_EndfieldM31PeakT8D0VSCB3, g_EndfieldM31PeakT8D0VSCB4}, {g_EndfieldM31PeakT8D0VSCB0Size, g_EndfieldM31PeakT8D0VSCB1Size, g_EndfieldM31PeakT8D0VSCB2Size, g_EndfieldM31PeakT8D0VSCB3Size, g_EndfieldM31PeakT8D0VSCB4Size}, {g_EndfieldM31PeakT8D0PSCB0, g_EndfieldM31PeakT8D0PSCB1, g_EndfieldM31PeakT8D0PSCB2, g_EndfieldM31PeakT8D0PSCB3}, {g_EndfieldM31PeakT8D0PSCB0Size, g_EndfieldM31PeakT8D0PSCB1Size, g_EndfieldM31PeakT8D0PSCB2Size, g_EndfieldM31PeakT8D0PSCB3Size}},
 };
 inline constexpr std::uint32_t g_EndfieldM31PeakDrawPayloadCount = static_cast<std::uint32_t>(sizeof(g_EndfieldM31PeakDrawPayloads) / sizeof(g_EndfieldM31PeakDrawPayloads[0]));
-struct EndfieldM31PeakTemporalPacket { std::uint32_t frame; float phaseSeconds; std::uint32_t firstDrawPayload; std::uint32_t drawCount; bool splitOrderCompatible; };
+struct EndfieldM31PeakTemporalPacket { std::uint32_t frame; float phaseSeconds; std::uint32_t firstDrawPayload; std::uint32_t drawCount; std::uint32_t scheduleProfile; bool chronologyValidated; };
 inline constexpr EndfieldM31PeakTemporalPacket g_EndfieldM31PeakTemporalPackets[] = {
-    {1896u, 2.863329f, 0u, 2u, true},
-    {1907u, 3.063143f, 2u, 2u, true},
-    {1918u, 3.263229f, 4u, 2u, true},
-    {1929u, 3.462984f, 6u, 2u, true},
-    {1941u, 3.679626f, 8u, 2u, true},
-    {1954u, 3.929817f, 10u, 2u, true},
-    {1965u, 4.129770f, 12u, 2u, true},
-    {1977u, 4.350000f, 14u, 3u, false},
-    {1989u, 4.564017f, 17u, 1u, false},
+    {1896u, 2.863329f, 0u, 2u, 1u, true},
+    {1907u, 3.063143f, 2u, 2u, 1u, true},
+    {1918u, 3.263229f, 4u, 2u, 1u, true},
+    {1929u, 3.462984f, 6u, 2u, 1u, true},
+    {1941u, 3.679626f, 8u, 2u, 1u, true},
+    {1954u, 3.929817f, 10u, 2u, 1u, true},
+    {1965u, 4.129770f, 12u, 2u, 1u, true},
+    {1977u, 4.350000f, 14u, 3u, 2u, false},
+    {1989u, 4.564017f, 17u, 1u, 0u, false},
 };
 inline constexpr std::uint32_t g_EndfieldM31PeakTemporalPacketCount = static_cast<std::uint32_t>(sizeof(g_EndfieldM31PeakTemporalPackets) / sizeof(g_EndfieldM31PeakTemporalPackets[0]));
-inline constexpr std::uint32_t g_EndfieldM31PeakSplitEventCount = 2u;
+inline constexpr std::uint32_t g_EndfieldM31PeakScheduleUnsupported = 0u;
+inline constexpr std::uint32_t g_EndfieldM31PeakScheduleQueue3000Interval2 = 1u;
+inline constexpr std::uint32_t g_EndfieldM31PeakScheduleQueue3000ThenPostM18_3 = 2u;
+inline constexpr std::uint32_t g_EndfieldM31PeakMaxEventCount = 3u;
 inline constexpr char g_EndfieldM31PeakTextureT1Sha256[] = "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3f164d381bc0";
