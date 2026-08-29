@@ -7014,6 +7014,11 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
     PatchEndminfUberFloat(
         packet->psB0, sizeof(packet->psB0), 3u, 1.0f / screenHeight);
     PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 27u * 4u, exposure);
+    // ShaderVariablesGlobal c27.z is the target aspect ratio. Both captured
+    // Uber variants read it, so it must follow the live output dimensions.
+    PatchEndminfUberFloat(
+        packet->psB0, sizeof(packet->psB0), 27u * 4u + 2u,
+        screenWidth / screenHeight);
     PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 0u, centerX);
     PatchEndminfUberFloat(packet->psB1, sizeof(packet->psB1), 1u, centerY);
     PatchEndminfUberFloat(
