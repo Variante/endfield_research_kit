@@ -164,14 +164,20 @@ def decode_frame(frame_dir: Path, meshes: list[str], allow_partial: bool = False
     if metadata.get("captureIncomplete") or metadata.get("captureFailed"):
         raise CaptureError(f"{frame_dir} is incomplete or failed")
     try:
-        blob = (frame_dir / metadata.get("resourcesFile", "resources.bin")).read_bytes()
-    except OSError as exc:
-        raise CaptureError(f"cannot read resources for {frame_dir}: {exc}") from exc
-    try:
+        resource_file = metadata.get("resourcesFile")
+        if not isinstance(resource_file, str) or not resource_file:
+            raise CaptureError(
+                f"{frame_dir} has no retained resource payload"
+            )
+        blob = (frame_dir / resource_file).read_bytes()
         palette = resource_bytes(blob, select_resource(metadata, PALETTE_BYTES))
-    except CaptureError as exc:
+    except (CaptureError, OSError) as exc:
         if not allow_partial:
-            raise
+            if isinstance(exc, CaptureError):
+                raise
+            raise CaptureError(
+                f"cannot read resources for {frame_dir}: {exc}"
+            ) from exc
         return {
             "frame": int(metadata["frame"]),
             "frameDirectory": str(frame_dir.resolve()),
