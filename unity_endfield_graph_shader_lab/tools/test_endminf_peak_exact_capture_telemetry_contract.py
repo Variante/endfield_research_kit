@@ -25,7 +25,7 @@ EXACT_LUT_CONTRACT = ROOT / (
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v11", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v12", source)
         for field in (
             "exactEndminfUberRequested",
             "exactEndminfUberSubmitted",

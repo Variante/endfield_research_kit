@@ -76,8 +76,10 @@ namespace EndfieldGraphShaderLabEditor
         private const string RecordingVisualPostPreRollSeconds = "0";
         // RestartOverviewFromSelection is invoked on an editor update edge;
         // the body Animation has advanced by two 60-Hz simulation ticks before
-        // the first renderable sample. Offset later requested timestamps so
-        // saved frame N observes clip phase N/Fps instead of N/Fps + 2/60.
+        // the first renderable sample. The ordinary/video sequences therefore
+        // use an internal threshold two ticks before their authored target.
+        // The initial clamped thresholds can drain over several editor updates,
+        // so reports must keep target, threshold, and actual clocks distinct.
         private const float PlayModeClipLeadSeconds = 2f / SimulationFps;
         // The recovered entrance is almost six seconds long. Capture far
         // enough past its handoff to prove that the actual viewer reaches and
@@ -138,6 +140,7 @@ namespace EndfieldGraphShaderLabEditor
         private static Camera camera;
         private static string output;
         private static float[] requestedTimes;
+        private static float[] targetTimes;
         private static bool replayCleanReferenceGyroscopeTrack;
         private static int nextGyroscopeTrackSample;
 
@@ -175,7 +178,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v11";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v12";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -244,8 +247,10 @@ namespace EndfieldGraphShaderLabEditor
         private sealed class FrameRow
         {
             public int index;
+            public float targetSeconds;
             public float requestedSeconds;
             public float actualSeconds;
+            public float phaseErrorSeconds;
             public float endminfPostSeconds;
             public float endminfPostChromaticIntensity;
             public float endminfPostRadialIntensity;
@@ -702,20 +707,23 @@ namespace EndfieldGraphShaderLabEditor
                         ? "../scratch/character_recovery/endminf_viewer_playmode_fine_window"
                         : "../scratch/character_recovery/endminf_viewer_playmode_sequence"))
                 : Path.GetFullPath(requestedOutput);
-            requestedTimes = targetedTimes
+            targetTimes = targetedTimes
                 ? ParseRequestedTimes(requestedTimesText)
                 : capturePostStages
                 ? new[] { 4.40f, 4.4333334f, 4.4666667f, 4.50f, 4.55f }
                 : capturePrePostHdr
-                ? Enumerable.Range(0, 19).Select(value =>
-                    Mathf.Max(0f, value / Fps - PlayModeClipLeadSeconds)).ToArray()
+                ? Enumerable.Range(0, 19).Select(value => value / Fps).ToArray()
                 : videoExport
                 ? Enumerable.Range(0, VideoFrameCount).Select(value =>
-                    Mathf.Max(0f, value / SimulationFps - PlayModeClipLeadSeconds)).ToArray()
+                    value / SimulationFps).ToArray()
                 : fineWindow
                 ? Enumerable.Range(0, 25).Select(value => 4.30f + value / 60f).ToArray()
-                : Enumerable.Range(0, FrameCount).Select(value =>
-                    Mathf.Max(0f, value / Fps - PlayModeClipLeadSeconds)).ToArray();
+                : Enumerable.Range(0, FrameCount).Select(value => value / Fps).ToArray();
+            requestedTimes = capturePrePostHdr || videoExport ||
+                (!targetedTimes && !capturePostStages && !fineWindow)
+                ? targetTimes.Select(value =>
+                    Mathf.Max(0f, value - PlayModeClipLeadSeconds)).ToArray()
+                : targetTimes.ToArray();
             Directory.CreateDirectory(output);
             EditorApplication.playModeStateChanged += State;
             EditorApplication.EnterPlaymode();
@@ -906,6 +914,7 @@ namespace EndfieldGraphShaderLabEditor
             if (requestedTimes == null || next >= requestedTimes.Length)
                 return;
             float requested = requestedTimes[next];
+            float target = targetTimes[next];
             float elapsed = Time.time - started;
             ReplayCleanReferenceGyroscopeTrack(elapsed);
             if (elapsed + 0.0001f < requested) return;
@@ -1276,7 +1285,12 @@ namespace EndfieldGraphShaderLabEditor
                 }
             }
             Frames.Add(new FrameRow {
-                index = next, requestedSeconds = requested, actualSeconds = elapsed, file = file,
+                index = next,
+                targetSeconds = target,
+                requestedSeconds = requested,
+                actualSeconds = elapsed,
+                phaseErrorSeconds = elapsed - target,
+                file = file,
                 endminfPostSeconds = endminfPostSeconds,
                 endminfPostChromaticIntensity =
                     endminfPostState.chromaticIntensity,
