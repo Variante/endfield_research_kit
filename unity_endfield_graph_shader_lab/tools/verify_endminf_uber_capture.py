@@ -25,6 +25,24 @@ VERTEX_SHA256 = (
 PIXEL_SHA256 = (
     "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97"
 )
+NORMAL_PIXEL_IDENTITY = 0xDE96A55F118305EA
+NORMAL_PIXEL_SHA256 = (
+    "de96a55f118305ea6145db7aae1789640b1f5b3355cfae87b342e05adaee80dd"
+)
+VARIANTS = {
+    "normal": {
+        "identity": NORMAL_PIXEL_IDENTITY,
+        "sha256": NORMAL_PIXEL_SHA256,
+        "b1Constants": 12,
+        "keywords": ["BLOOM", "VIGNETTE"],
+    },
+    "peak": {
+        "identity": PIXEL_IDENTITY,
+        "sha256": PIXEL_SHA256,
+        "b1Constants": 26,
+        "keywords": ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
+    },
+}
 MINIMUM_RESOURCE_BUDGET = 128 * 1024 * 1024
 EXACT_CHARINFO_LUT_SHA256 = (
     "717c1d483662c00abe55e1c56a9d024f45e5c84c430ed9dd2854cb386f372482"
@@ -230,12 +248,18 @@ def pipeline_state(resolver: dict[str, Any], frame: int) -> dict[str, Any]:
 def inspect_resolver(frame: int, resolver_index: int,
                      resolver: dict[str, Any], metadata: dict[str, Any],
                      resource_blob: bytes,
-                     require_draw_pipeline: bool = True) -> dict[str, Any]:
+                     require_draw_pipeline: bool = True,
+                     variant: str = "peak") -> dict[str, Any]:
+    require(variant in VARIANTS, f"unknown exact Uber variant: {variant}")
+    variant_contract = VARIANTS[variant]
     if require_draw_pipeline:
         require(resolver.get("priorityEndminfUber") is True,
                 f"frame {frame} resolver {resolver_index} lost Uber priority tagging")
     require(shader_identity(resolver, 0) == VERTEX_IDENTITY,
             f"frame {frame} resolver {resolver_index} has the wrong Uber VS")
+    require(shader_identity(resolver, 4) == variant_contract["identity"],
+            f"frame {frame} resolver {resolver_index} has the wrong "
+            f"{variant} Uber PS")
     vs_b0 = constant_range(
         resolver, "vsConstantBuffers", "VS", 0)
     b0 = constant_range(resolver, "psConstantBuffers", "PS", 0)
@@ -244,8 +268,10 @@ def inspect_resolver(frame: int, resolver_index: int,
             f"frame {frame} exact Uber VS b0 does not expose c0")
     require(int(b0.get("numConstants", 0)) >= 28,
             f"frame {frame} exact Uber PS b0 does not expose c27")
-    require(int(b1.get("numConstants", 0)) >= 26,
-            f"frame {frame} exact Uber PS b1 does not expose c25")
+    b1_constants = int(variant_contract["b1Constants"])
+    require(int(b1.get("numConstants", 0)) >= b1_constants,
+            f"frame {frame} {variant} Uber PS b1 does not expose "
+            f"{b1_constants} constants")
     vs_b0_payload = selected_payload(
         metadata, int(vs_b0["bufferId"]), resource_blob)
     b0_payload = (vs_b0_payload
@@ -258,24 +284,32 @@ def inspect_resolver(frame: int, resolver_index: int,
     vertex_params = vector(
         vs_b0_payload, int(vs_b0["firstConstant"]), 0)
     exposure = vector(b0_payload, int(b0["firstConstant"]), 27)
-    radial = vector(b1_payload, int(b1["firstConstant"]), 0)
-    radial2 = vector(b1_payload, int(b1["firstConstant"]), 25)
+    radial = (vector(b1_payload, int(b1["firstConstant"]), 0)
+              if variant == "peak" else None)
+    radial2 = (vector(b1_payload, int(b1["firstConstant"]), 25)
+               if variant == "peak" else None)
     vs_b0_values = declared_vectors(
         vs_b0_payload, int(vs_b0["firstConstant"]), 1)
     b0_values = declared_vectors(
         b0_payload, int(b0["firstConstant"]), 28)
     b1_values = declared_vectors(
-        b1_payload, int(b1["firstConstant"]), 26)
-    require(finite(vertex_params + exposure + radial + radial2),
+        b1_payload, int(b1["firstConstant"]), b1_constants)
+    finite_values = tuple(
+        lane for row in (vs_b0_values + b0_values + b1_values)
+        for lane in row
+    )
+    require(finite(finite_values),
             f"frame {frame} exact Uber constants are non-finite")
-    require(0.0 <= radial[0] <= 1.0 and 0.0 <= radial[1] <= 1.0,
-            f"frame {frame} exact Uber center is outside viewport space")
-    require(radial[2] >= 0.0 and radial[3] > 0.0 and radial2[1] >= 0.0,
-            f"frame {frame} exact Uber intensity/power lanes are invalid")
-    require(radial2[0] in (3.0, 6.0),
-            f"frame {frame} exact Uber mode is unexpected: {radial2[0]}")
-    require(radial2[2] in (0.0, 1.0) and radial2[3] in (0.0, 1.0),
-            f"frame {frame} exact Uber average-step flags are invalid")
+    if variant == "peak":
+        assert radial is not None and radial2 is not None
+        require(0.0 <= radial[0] <= 1.0 and 0.0 <= radial[1] <= 1.0,
+                f"frame {frame} exact Uber center is outside viewport space")
+        require(radial[2] >= 0.0 and radial[3] > 0.0 and radial2[1] >= 0.0,
+                f"frame {frame} exact Uber intensity/power lanes are invalid")
+        require(radial2[0] in (3.0, 6.0),
+                f"frame {frame} exact Uber mode is unexpected: {radial2[0]}")
+        require(radial2[2] in (0.0, 1.0) and radial2[3] in (0.0, 1.0),
+                f"frame {frame} exact Uber average-step flags are invalid")
     draw_pipeline_state = (
         pipeline_state(resolver, frame) if require_draw_pipeline else None
     )
@@ -303,10 +337,12 @@ def inspect_resolver(frame: int, resolver_index: int,
         )
     result = {
         "frame": frame,
+        "variant": variant,
         "resolverIndex": resolver_index,
         "fullscreenOrdinal": int(resolver.get("fullscreenOrdinal", -1)),
-        "pixelIdentity": f"{PIXEL_IDENTITY:016x}",
-        "pixelSha256": PIXEL_SHA256,
+        "pixelIdentity": f"{int(variant_contract['identity']):016x}",
+        "pixelSha256": variant_contract["sha256"],
+        "compiledKeywords": variant_contract["keywords"],
         "vertexIdentity": f"{VERTEX_IDENTITY:016x}",
         "vertexSha256": VERTEX_SHA256,
         "vsB0": {
@@ -333,14 +369,15 @@ def inspect_resolver(frame: int, resolver_index: int,
             "bufferId": int(b1["bufferId"]),
             "firstConstant": int(b1["firstConstant"]),
             "numConstants": int(b1["numConstants"]),
-            "c0RadialBlurParams": list(radial),
-            "c25RadialBlurParams2": list(radial2),
-            "declaredConstants": 26,
+            "declaredConstants": b1_constants,
             "declaredRangeSha256": range_sha256(b1_values),
             "declaredRangeHex": range_hex(b1_values),
             "values": b1_values,
         },
     }
+    if radial is not None and radial2 is not None:
+        result["b1"]["c0RadialBlurParams"] = list(radial)
+        result["b1"]["c25RadialBlurParams2"] = list(radial2)
     if draw_pipeline_state is not None:
         result["pipelineState"] = draw_pipeline_state
         result["textures"] = textures
@@ -412,6 +449,154 @@ def build_report(capture: Path, constant_payload_only: bool = False,
     }
 
 
+def archived_shader(capture: Path, sha256: str, stage: int,
+                    expected_size: int) -> dict[str, Any]:
+    path = capture / "graphics/shaders" / f"{sha256}-s{stage}.dxbc"
+    require(path.is_file(), f"exact Uber archived shader is absent: {path}")
+    payload = path.read_bytes()
+    actual = hashlib.sha256(payload).hexdigest()
+    require(len(payload) == expected_size and actual == sha256,
+            f"exact Uber archived shader drifted: stage={stage} "
+            f"size={len(payload)}/{expected_size} sha256={actual}/{sha256}")
+    return {
+        "stage": stage,
+        "path": str(path.relative_to(capture)).replace("\\", "/"),
+        "byteLength": len(payload),
+        "sha256": actual,
+    }
+
+
+def packet_lane_bits(packet: dict[str, Any], buffer_name: str,
+                     register: int, lane: int) -> str:
+    values = packet[buffer_name]["values"]
+    require(register < len(values) and lane < len(values[register]),
+            f"frame {packet['frame']} {buffer_name}.c{register}."
+            f"{'xyzw'[lane]} is outside the retained range")
+    return struct.pack("<f", float(values[register][lane])).hex()
+
+
+def build_sequence_report(capture: Path) -> dict[str, Any]:
+    session_path = capture / "session.json"
+    summary_path = capture / "graphics/summary.json"
+    require(session_path.is_file(), f"session manifest is absent: {session_path}")
+    require(summary_path.is_file(),
+            f"graphics completion summary is absent: {summary_path}")
+    session = json.loads(session_path.read_text(encoding="utf-8"))
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    require(session.get("graphicsProfile") == "full",
+            "exact Uber sequence requires graphicsProfile=full")
+    require(int(session.get("graphicsResourceBudgetBytes", 0)) >=
+            MINIMUM_RESOURCE_BUDGET,
+            "capture predates the 128-MiB exact resource policy")
+    require(summary.get("complete") is True,
+            "graphics summary is incomplete")
+    require(summary.get("cadenceValid") is True,
+            "graphics cadence is invalid")
+    require(summary.get("deferredFailed") is False,
+            "deferred readback reported failure")
+    require(summary.get("shaderBytecodeArchiveComplete") is True,
+            "shader bytecode archive is incomplete")
+    require(int(summary.get("deferredStagedSlots", -1)) ==
+            int(summary.get("deferredPublishedSlots", -2)),
+            "staged/published deferred slot counts differ")
+
+    frame_root = capture / "graphics/frames"
+    paths = sorted(frame_root.glob("*/metadata.json"),
+                   key=lambda path: int(path.parent.name))
+    require(paths, "capture has no graphics metadata")
+    require(int(summary.get("sequenceFrames", 0)) == len(paths),
+            f"graphics sequence/frame-directory count drifted: "
+            f"summary={summary.get('sequenceFrames')} directories={len(paths)}")
+
+    packets: list[dict[str, Any]] = []
+    for path in paths:
+        metadata = json.loads(path.read_text(encoding="utf-8"))
+        frame = int(metadata.get("frame", path.parent.name))
+        resolvers = [
+            (index, resolver)
+            for index, resolver in enumerate(
+                metadata.get("fullscreenResolvers", []))
+            if isinstance(resolver, dict) and
+            resolver.get("priorityEndminfUber") is True
+        ]
+        require(len(resolvers) == 1,
+                f"frame {frame} exact Uber priority resolver is not unique")
+        resolver_index, resolver = resolvers[0]
+        pixel = shader_identity(resolver, 4)
+        variants = [name for name, contract in VARIANTS.items()
+                    if int(contract["identity"]) == pixel]
+        require(len(variants) == 1,
+                f"frame {frame} exact Uber pixel identity is unsupported: "
+                f"{pixel!r}")
+        resources_path = path.parent / "resources.bin"
+        require(resources_path.is_file(),
+                f"frame {frame} resources.bin is absent")
+        packets.append(inspect_resolver(
+            frame, resolver_index, resolver, metadata,
+            resources_path.read_bytes(), variant=variants[0]))
+
+    variant_counts = {
+        name: sum(packet["variant"] == name for packet in packets)
+        for name in VARIANTS
+    }
+    require(variant_counts["peak"] == 1,
+            f"exact Uber sequence requires one peak packet, got "
+            f"{variant_counts['peak']}")
+    require(variant_counts["normal"] == len(packets) - 1,
+            "every non-peak sequence packet must use the ordinary shader")
+    peak_index = next(index for index, packet in enumerate(packets)
+                      if packet["variant"] == "peak")
+    require(0 < peak_index < len(packets) - 1,
+            "peak packet is not bracketed by ordinary packets")
+    require(packets[peak_index - 1]["variant"] == "normal" and
+            packets[peak_index + 1]["variant"] == "normal",
+            "peak packet lacks immediate ordinary neighbors")
+
+    shared_lanes = [
+        ("b0", 0, 0), ("b0", 0, 1),
+        ("b0", 27, 0), ("b0", 27, 2),
+    ] + [
+        ("b1", register, lane)
+        for register in (1, 2, 4, 7, 9, 10, 11)
+        for lane in range(4)
+    ]
+    shared_signatures = {}
+    for buffer_name, register, lane in shared_lanes:
+        label = f"{buffer_name}.c{register}.{'xyzw'[lane]}"
+        values = [packet_lane_bits(packet, buffer_name, register, lane)
+                  for packet in packets]
+        require(len(set(values)) == 1,
+                f"shader-read ordinary Uber lane varies: {label}")
+        shared_signatures[label] = values[0]
+    vs_signatures = {packet["vsB0"]["declaredRangeSha256"]
+                     for packet in packets}
+    require(len(vs_signatures) == 1,
+            "exact Uber VS b0 varies across the sequence")
+
+    shaders = {
+        "vertex": archived_shader(capture, VERTEX_SHA256, 0, 608),
+        "normalPixel": archived_shader(
+            capture, NORMAL_PIXEL_SHA256, 4, 3416),
+        "peakPixel": archived_shader(capture, PIXEL_SHA256, 4, 4216),
+    }
+    return {
+        "schema": "endfield.endminf-uber-sequence-capture.v1",
+        "status": "validated_exact_live_uber_sequence",
+        "capture": str(capture.resolve()),
+        "graphicsProfile": session["graphicsProfile"],
+        "resourceBudgetBytes": int(session["graphicsResourceBudgetBytes"]),
+        "frameCount": len(paths),
+        "variantCounts": variant_counts,
+        "peakFrame": packets[peak_index]["frame"],
+        "peakPreviousFrame": packets[peak_index - 1]["frame"],
+        "peakNextFrame": packets[peak_index + 1]["frame"],
+        "vsB0Sha256": next(iter(vs_signatures)),
+        "sharedOrdinaryReadLaneBits": shared_signatures,
+        "shaders": shaders,
+        "packets": packets,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture", type=Path)
@@ -425,20 +610,36 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--sequence-contract",
+        action="store_true",
+        help=(
+            "require one complete ordinary/peak/ordinary Full sequence, "
+            "valid cadence, exact t0/t1/t2, and archived shader payloads"
+        ),
+    )
+    parser.add_argument(
         "--frame",
         type=int,
         help="restrict validation to one retained presented frame",
     )
     args = parser.parse_args()
+    if args.sequence_contract and (args.constant_payload_only or
+                                   args.frame is not None):
+        parser.error(
+            "--sequence-contract cannot be combined with "
+            "--constant-payload-only or --frame")
     try:
-        report = build_report(
-            args.capture.resolve(),
-            constant_payload_only=args.constant_payload_only,
-            frame_filter=args.frame,
-        )
+        report = (build_sequence_report(args.capture.resolve())
+                  if args.sequence_contract else build_report(
+                      args.capture.resolve(),
+                      constant_payload_only=args.constant_payload_only,
+                      frame_filter=args.frame,
+                  ))
     except (OSError, ValueError, VerificationError) as exc:
         report = {
-            "schema": "endfield.endminf-uber-capture.v2",
+            "schema": ("endfield.endminf-uber-sequence-capture.v1"
+                       if args.sequence_contract
+                       else "endfield.endminf-uber-capture.v2"),
             "status": "validation_failed",
             "capture": str(args.capture.resolve()),
             "diagnostic": str(exc),
