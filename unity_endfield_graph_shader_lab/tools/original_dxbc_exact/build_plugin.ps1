@@ -23,6 +23,8 @@ $registryValidatorObject = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.o
 $registryValidatorExe = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.exe"
 $uberValidatorObject = Join-Path $buildRoot "VerifyEndminfUberTransport.obj"
 $uberValidatorExe = Join-Path $buildRoot "VerifyEndminfUberTransport.exe"
+$uberShaderValidatorObject = Join-Path $buildRoot "ValidateEndminfUberShaders.obj"
+$uberShaderValidatorExe = Join-Path $buildRoot "ValidateEndminfUberShaders.exe"
 $m20ValidatorObject = Join-Path $buildRoot "VerifyM20PeakTransport.obj"
 $m20ValidatorExe = Join-Path $buildRoot "VerifyM20PeakTransport.exe"
 $generatedHeader = Join-Path $buildRoot "EmbeddedDxbc.generated.h"
@@ -148,6 +150,25 @@ if ($LASTEXITCODE -ne 0) {
     throw "Endminf Uber transport validation failed with exit $LASTEXITCODE."
 }
 
+$uberShaderValidatorSource = Join-Path $toolRoot "ValidateEndminfUberShaders.cpp"
+$uberShaderValidatorCompileCommand = @(
+    "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
+    "/I`"$buildRoot`" /I`"$toolRoot`"",
+    "/Fo`"$uberShaderValidatorObject`" `"$uberShaderValidatorSource`"",
+    "/link /NOLOGO /Brepro /OUT:`"$uberShaderValidatorExe`" d3d11.lib"
+) -join " "
+$uberShaderValidatorCompile =
+    "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $uberShaderValidatorCompileCommand"
+cmd.exe /d /c $uberShaderValidatorCompile
+if ($LASTEXITCODE -ne 0) {
+    throw "Endminf Uber shader validator compilation failed with exit code $LASTEXITCODE."
+}
+
+& $uberShaderValidatorExe
+if ($LASTEXITCODE -ne 0) {
+    throw "Endminf Uber shader draw validation failed with exit $LASTEXITCODE."
+}
+
 $m20ValidatorSource = Join-Path $toolRoot "VerifyM20PeakTransport.cpp"
 $m20ValidatorCompileCommand = @(
     "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
@@ -173,6 +194,7 @@ foreach ($intermediate in @(
     $validatorObject,
     $registryValidatorObject,
     $uberValidatorObject,
+    $uberShaderValidatorObject,
     $m20ValidatorObject
 )) {
     [System.IO.File]::Delete($intermediate)
@@ -185,6 +207,8 @@ $registryValidatorHash =
     (Get-FileHash -LiteralPath $registryValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $uberValidatorHash =
     (Get-FileHash -LiteralPath $uberValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$uberShaderValidatorHash =
+    (Get-FileHash -LiteralPath $uberShaderValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $m20ValidatorHash =
     (Get-FileHash -LiteralPath $m20ValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Output "plugin=$outputDll"
@@ -195,5 +219,7 @@ Write-Output "m27_registry_validator=$registryValidatorExe"
 Write-Output "m27_registry_validator_sha256=$registryValidatorHash"
 Write-Output "endminf_uber_validator=$uberValidatorExe"
 Write-Output "endminf_uber_validator_sha256=$uberValidatorHash"
+Write-Output "endminf_uber_shader_validator=$uberShaderValidatorExe"
+Write-Output "endminf_uber_shader_validator_sha256=$uberShaderValidatorHash"
 Write-Output "m20_peak_validator=$m20ValidatorExe"
 Write-Output "m20_peak_validator_sha256=$m20ValidatorHash"
