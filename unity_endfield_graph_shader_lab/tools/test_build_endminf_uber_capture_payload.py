@@ -60,6 +60,8 @@ class PayloadBuilderTests(unittest.TestCase):
         self.assertIn("g_EndfieldUberPsB0Size = sizeof", header)
         self.assertIn("g_EndfieldUberPsB1Size = sizeof", header)
         self.assertIn("g_EndfieldUberCaptureFrame = 42u", header)
+        self.assertIn("g_EndfieldUberEarlyCaptureFrame = 42u", header)
+        self.assertIn("g_EndfieldUberEarlyPsB1Size = sizeof", header)
 
     def test_ambiguous_packets_fail_closed(self) -> None:
         value = report()

@@ -66,12 +66,17 @@ runs. Runtime submission fails closed before drawing when the generated live
 payload is unavailable. It selects the peak pixel shader only in the
 source-certified 4.35-second window and uses the ordinary shader elsewhere.
 Capture `20260827T183054Z`, frame 1818, supplies the active shader identities
-and stage-qualified VS b0 plus PS b0/b1 payloads. Its generic-fullscreen record
-predates active-variant priority tagging, so this is live constant/resource
-evidence but does not claim draw-bound fixed pipeline state.
-`build_endminf_uber_capture_payload.py` converts only that validated report
-into immutable native constant bytes; the older unbound 3DMigoto arena is not
-accepted as runtime state.
+and stage-qualified VS b0 plus PS b0/b1 payloads. Frame 1600 supplies a second
+valid constant payload whose radial/chromatic values register to 0.02256267 s.
+That packet is retained only behind
+`ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC=1`: a full 770-frame A/B
+worsened first-frame character/effect ROI MAE by 6.53/1.85 and first-30-frame
+temporal delta MAE by 0.48, so it is rejected from presentation policy. These
+generic-fullscreen records predate active-variant priority tagging, so they are
+live constant/resource evidence but do not claim draw-bound fixed pipeline
+state. `build_endminf_uber_capture_payload.py` converts only the two
+frame-filtered validated reports into immutable native constant bytes; the
+older unbound 3DMigoto arena is not accepted as runtime state.
 Capture `20260829T024828Z` contributes the ordinary pixel shader and 35
 complete ordinary PS-constant witnesses. Every lane read by that shader is
 bit-stable and matches the corresponding peak-template lane, so the ordinary

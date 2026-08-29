@@ -11,9 +11,13 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_REPORT = (
+DEFAULT_EARLY_REPORT = (
     REPO / "reports/assets/character_recovery"
-    / "endminf_uber_capture_latest.json"
+    / "endminf_uber_early_constant_payload_20260827T183054Z.json"
+)
+DEFAULT_LATE_REPORT = (
+    REPO / "reports/assets/character_recovery"
+    / "endminf_uber_late_constant_payload_20260827T183054Z.json"
 )
 DEFAULT_OUTPUT = (
     REPO / "unity_endfield_graph_shader_lab/tools/original_dxbc_exact"
@@ -73,7 +77,7 @@ def render_bytes(name: str, payload: bytes) -> str:
     )
 
 
-def build_header(report: dict[str, Any]) -> str:
+def packet_from_report(report: dict[str, Any], expected_frame: int) -> dict[str, Any]:
     require(report.get("status") == EXPECTED_STATUS,
             "Uber report is not a validated exact constant-only payload")
     require(report.get("compiledKeywords") ==
@@ -84,42 +88,77 @@ def build_header(report: dict[str, Any]) -> str:
             "exact Uber payload requires one unambiguous captured packet")
     packet = packets[0]
     require(isinstance(packet, dict), "exact Uber packet is invalid")
+    require(int(packet.get("frame", -1)) == expected_frame,
+            f"exact Uber packet frame drifted from {expected_frame}")
     require(packet.get("vertexSha256") == EXPECTED_VERTEX_SHA256,
             "exact Uber vertex shader identity drifted")
     require(packet.get("pixelSha256") == EXPECTED_PIXEL_SHA256,
             "exact Uber pixel shader identity drifted")
-    vs_b0 = exact_range(packet, "vsB0", 1)
-    ps_b0 = exact_range(packet, "b0", 28)
-    ps_b1 = exact_range(packet, "b1", 26)
-    capture = str(report.get("capture", "")).replace("\\", "/")
-    frame = int(packet.get("frame", -1))
-    ordinal = int(packet.get("fullscreenOrdinal", -1))
-    require(frame >= 0 and ordinal >= 0,
+    return packet
+
+
+def build_header(early_report: dict[str, Any],
+                 late_report: dict[str, Any] | None = None) -> str:
+    # Preserve the one-report API for focused unit tests; production generation
+    # always supplies independently validated early and late packets.
+    if late_report is None:
+        late_report = early_report
+        expected_early_frame = int(early_report["packets"][0]["frame"])
+        expected_late_frame = expected_early_frame
+    else:
+        expected_early_frame = 1600
+        expected_late_frame = 1818
+    early = packet_from_report(early_report, expected_early_frame)
+    late = packet_from_report(late_report, expected_late_frame)
+    early_vs_b0 = exact_range(early, "vsB0", 1)
+    early_ps_b0 = exact_range(early, "b0", 28)
+    early_ps_b1 = exact_range(early, "b1", 26)
+    late_vs_b0 = exact_range(late, "vsB0", 1)
+    late_ps_b0 = exact_range(late, "b0", 28)
+    late_ps_b1 = exact_range(late, "b1", 26)
+    early_capture = str(early_report.get("capture", "")).replace("\\", "/")
+    late_capture = str(late_report.get("capture", "")).replace("\\", "/")
+    early_frame = int(early.get("frame", -1))
+    late_frame = int(late.get("frame", -1))
+    early_ordinal = int(early.get("fullscreenOrdinal", -1))
+    late_ordinal = int(late.get("fullscreenOrdinal", -1))
+    require(min(early_frame, late_frame, early_ordinal, late_ordinal) >= 0,
             "exact Uber packet has no frame/ordinal provenance")
     return (
         "#pragma once\n"
         "#include <cstddef>\n"
         "#include <cstdint>\n\n"
         "inline constexpr bool g_EndfieldUberCapturePayloadAvailable = true;\n"
-        f'inline constexpr char g_EndfieldUberCapture[] = "{capture}";\n'
-        f"inline constexpr std::uint32_t g_EndfieldUberCaptureFrame = {frame}u;\n"
-        f"inline constexpr std::uint32_t g_EndfieldUberFullscreenOrdinal = {ordinal}u;\n\n"
-        + render_bytes("g_EndfieldUberVsB0", vs_b0)
+        f'inline constexpr char g_EndfieldUberEarlyCapture[] = "{early_capture}";\n'
+        f"inline constexpr std::uint32_t g_EndfieldUberEarlyCaptureFrame = {early_frame}u;\n"
+        f"inline constexpr std::uint32_t g_EndfieldUberEarlyFullscreenOrdinal = {early_ordinal}u;\n"
+        f'inline constexpr char g_EndfieldUberCapture[] = "{late_capture}";\n'
+        f"inline constexpr std::uint32_t g_EndfieldUberCaptureFrame = {late_frame}u;\n"
+        f"inline constexpr std::uint32_t g_EndfieldUberFullscreenOrdinal = {late_ordinal}u;\n\n"
+        + render_bytes("g_EndfieldUberEarlyVsB0", early_vs_b0)
         + "\n"
-        + render_bytes("g_EndfieldUberPsB0", ps_b0)
+        + render_bytes("g_EndfieldUberEarlyPsB0", early_ps_b0)
         + "\n"
-        + render_bytes("g_EndfieldUberPsB1", ps_b1)
+        + render_bytes("g_EndfieldUberEarlyPsB1", early_ps_b1)
+        + "\n"
+        + render_bytes("g_EndfieldUberVsB0", late_vs_b0)
+        + "\n"
+        + render_bytes("g_EndfieldUberPsB0", late_ps_b0)
+        + "\n"
+        + render_bytes("g_EndfieldUberPsB1", late_ps_b1)
     )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+    parser.add_argument("--early-report", type=Path, default=DEFAULT_EARLY_REPORT)
+    parser.add_argument("--late-report", type=Path, default=DEFAULT_LATE_REPORT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
-        report = json.loads(args.report.read_text(encoding="utf-8"))
-        header = build_header(report)
+        early_report = json.loads(args.early_report.read_text(encoding="utf-8"))
+        late_report = json.loads(args.late_report.read_text(encoding="utf-8"))
+        header = build_header(early_report, late_report)
     except (OSError, ValueError, ContractError) as exc:
         print(f"ERROR: {exc}")
         return 1
