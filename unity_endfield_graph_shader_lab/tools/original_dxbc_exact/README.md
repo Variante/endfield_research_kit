@@ -53,15 +53,18 @@ Do not enable the keyword or arm the plugin outside this disposable diagnostic.
 ## Endminf combined Uber transport
 
 The build also hash-checks and embeds the exact active Endminf CharInfo
-`BLOOM + RADIAL_BLUR + VIGNETTE` fullscreen pair. WARP validation
-must create both shader objects successfully. The native transport
+ordinary `BLOOM + VIGNETTE` pixel shader and the captured
+`BLOOM + RADIAL_BLUR + VIGNETTE` peak variant with their shared fullscreen
+vertex shader. WARP validation must create all three shader objects
+successfully. The native transport
 uses an immutable 64-packet render-thread ring, stage-local VS/PS constants,
 strict source/bloom/LUT/output descriptors, and complete touched-state restore.
 Canonical Endminf video export enables
 `ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1` for the source-certified peak tick;
 an explicit environment value still overrides that default for controlled A/B
 runs. Runtime submission fails closed before drawing when the generated live
-payload or its exact phase gate is unavailable.
+payload is unavailable. It selects the peak pixel shader only in the
+source-certified 4.35-second window and uses the ordinary shader elsewhere.
 Capture `20260827T183054Z`, frame 1818, supplies the active shader identities
 and stage-qualified VS b0 plus PS b0/b1 payloads. Its generic-fullscreen record
 predates active-variant priority tagging, so this is live constant/resource
@@ -69,6 +72,12 @@ evidence but does not claim draw-bound fixed pipeline state.
 `build_endminf_uber_capture_payload.py` converts only that validated report
 into immutable native constant bytes; the older unbound 3DMigoto arena is not
 accepted as runtime state.
+Capture `20260829T024828Z` contributes the ordinary pixel shader and 35
+complete ordinary PS-constant witnesses. Every lane read by that shader is
+bit-stable and matches the corresponding peak-template lane, so the ordinary
+variant safely binds the same larger buffers. That cadence-invalid,
+pre-hardening session does not certify current VS b0 or t1 texture bytes;
+those remain explicit recapture gaps rather than parity claims.
 
 ## M27 Unity-owned draw substitution
 

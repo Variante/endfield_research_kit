@@ -332,6 +332,12 @@ int main()
         g_EndfieldUberVertexDxbcSize,
         nullptr,
         &uberVertex);
+    ID3D11PixelShader* uberNormalPixel = nullptr;
+    HRESULT uberNormalPixelResult = device->CreatePixelShader(
+        g_EndfieldUberNormalPixelDxbc,
+        g_EndfieldUberNormalPixelDxbcSize,
+        nullptr,
+        &uberNormalPixel);
     ID3D11PixelShader* uberPixel = nullptr;
     HRESULT uberPixelResult = device->CreatePixelShader(
         g_EndfieldUberPixelDxbc,
@@ -349,7 +355,8 @@ int main()
         "m18_layout=0x%08lx m21_vertex=0x%08lx m21_pixel=0x%08lx "
         "m21_layout=0x%08lx m20_vertex=0x%08lx m20_pixel=0x%08lx "
         "m20_layout=0x%08lx m28_vertex=0x%08lx m28_pixel=0x%08lx "
-        "m28_layout=0x%08lx uber_vertex=0x%08lx uber_pixel=0x%08lx\n",
+        "m28_layout=0x%08lx uber_vertex=0x%08lx "
+        "uber_normal_pixel=0x%08lx uber_pixel=0x%08lx\n",
         static_cast<unsigned int>(featureLevel),
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult),
@@ -377,6 +384,7 @@ int main()
         static_cast<unsigned long>(m28PixelResult),
         static_cast<unsigned long>(m28InputLayoutResult),
         static_cast<unsigned long>(uberVertexResult),
+        static_cast<unsigned long>(uberNormalPixelResult),
         static_cast<unsigned long>(uberPixelResult));
 
     if (pixel != nullptr)
@@ -429,6 +437,8 @@ int main()
         m28Vertex->Release();
     if (uberPixel != nullptr)
         uberPixel->Release();
+    if (uberNormalPixel != nullptr)
+        uberNormalPixel->Release();
     if (uberVertex != nullptr)
         uberVertex->Release();
     if (vertex != nullptr)
@@ -451,6 +461,7 @@ int main()
             && SUCCEEDED(m28VertexResult) && SUCCEEDED(m28PixelResult)
             && SUCCEEDED(m28InputLayoutResult)
             && SUCCEEDED(uberVertexResult)
+            && SUCCEEDED(uberNormalPixelResult)
             && SUCCEEDED(uberPixelResult)
         ? 0
         : 3;

@@ -7,8 +7,8 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Source-sparse D3D11 transport for Endminf's exact combined
-    /// BLOOM + RADIAL_BLUR + VIGNETTE Uber draw. The native side
+    /// Source-sparse D3D11 transport for Endminf's exact ordinary and
+    /// BLOOM + RADIAL_BLUR + VIGNETTE peak Uber draws. The native side
     /// owns the stage-local captured constant payload and exact DXBC objects;
     /// this bridge owns stable Unity textures and schedules their copies before
     /// the render-thread event.
@@ -20,9 +20,9 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         // Capture 20260827T183054Z frame 1818 supplies one authoritative
         // combined-Uber packet at the late crystal peak. Its PS b1 retains
-        // frame-local values (including chromatic intensity) that the native
-        // transport cannot safely animate. Admit only the nearest 60 Hz
-        // simulation sample; adjacent ticks use the compatibility Uber.
+        // frame-local radial values, so only the nearest 60 Hz simulation
+        // sample selects Peak. Every other frame uses the separately captured
+        // ordinary retail pixel shader, which does not read those c0 lanes.
         internal const float CapturePhaseSeconds = 4.35f;
         private const float HalfWindowSeconds = 1.0f / 120.0f;
 
@@ -47,6 +47,8 @@ namespace EndfieldGraphShaderLab
         internal string Failure => failure;
 
         internal bool HasPendingValidation => submissionPending;
+
+        internal string LastSubmittedVariant { get; private set; } = string.Empty;
 
         internal bool ValidatePendingAfterSynchronizedRender(
             out string validationFailure)
@@ -76,8 +78,6 @@ namespace EndfieldGraphShaderLab
         {
             if (!Requested || failed)
                 return false;
-            if (!IsCapturedPhase(hasPost, post))
-                return false;
             if (command == null || lut == null)
                 return Fail("exact Uber inputs are incomplete");
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
@@ -103,6 +103,7 @@ namespace EndfieldGraphShaderLab
                 : new Vector2(0.5f, 0.5f);
             float radial = hasPost ? post.radialIntensity : 0.0f;
             float power = hasPost ? post.effectivePower : 1.0f;
+            uint variant = IsCapturedPhase(hasPost, post) ? 1u : 0u;
             uint packet;
             try
             {
@@ -114,7 +115,8 @@ namespace EndfieldGraphShaderLab
                 {
                     return Fail("native exact Uber texture gate rejected its inputs");
                 }
-                packet = Native.QueuePacket(
+                packet = Native.QueuePacketVariant(
+                    variant,
                     width,
                     height,
                     exposure,
@@ -129,6 +131,7 @@ namespace EndfieldGraphShaderLab
             }
             if (packet == 0 || packet > int.MaxValue)
                 return Fail("native exact Uber packet ring rejected the frame");
+            LastSubmittedVariant = variant == 1u ? "peak" : "normal";
 
             // The temporary SRP identifiers cannot expose stable native
             // pointers. Copy them into persistent exact-format resources first;
@@ -150,6 +153,7 @@ namespace EndfieldGraphShaderLab
             {
                 Debug.Log(
                     "Recovered exact Endminf Uber native draw submitted: " +
+                    (variant == 1u ? "Peak" : "Normal") + "; " +
                     "RGBA16F source, packed half-resolution bloom, FP16 LogLut2D, " +
                     "linear R8G8B8A8_UNorm output.");
                 loggedActivation = true;
@@ -354,8 +358,9 @@ namespace EndfieldGraphShaderLab
                 IntPtr lut);
 
             [DllImport(NativeLibrary, EntryPoint =
-                "EndfieldOriginalDxbcQueueEndminfUberPacket")]
-            internal static extern uint QueuePacket(
+                "EndfieldOriginalDxbcQueueEndminfUberPacketVariant")]
+            internal static extern uint QueuePacketVariant(
+                uint variant,
                 float screenWidth,
                 float screenHeight,
                 float exposure,

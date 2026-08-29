@@ -175,7 +175,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v10";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v11";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -257,6 +257,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool exactEndminfUberRequested;
             public bool exactEndminfUberSubmitted;
             public bool exactEndminfUberValidated;
+            public string exactEndminfUberVariant;
             public string exactEndminfUberFailure;
             public bool unityPublicNgxProxyRequested;
             public bool unityPublicNgxProxySubmitted;
@@ -1295,6 +1296,8 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberSubmitted,
                 exactEndminfUberValidated = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberValidated,
+                exactEndminfUberVariant = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactUberVariant,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
                 unityPublicNgxProxyRequested = HGCompatRenderPipeline
