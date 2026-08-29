@@ -2929,6 +2929,10 @@ alias returned by a bare source-graph query for `M31`. Its `_StencilComp=8`,
 matching the retained runtime stencil-enabled/reference-zero state. Verifier v2
 now rejects any different face operation/function or mask rather than waiting
 for those values to be guessed in the Unity callback.
+The old runtime record exposes blend state only for RTV0. Verifier v2 therefore
+pins its proven ONE/INV_SRC_ALPHA state but deliberately leaves RTV1's complete
+blend descriptor and `IndependentBlendEnable` value unclassified until the
+hardened capture supplies them.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every

@@ -189,6 +189,18 @@ class DrawContractCaptureTests(unittest.TestCase):
                                     "frontFace differs from serialized M31"):
             self.build(payload)
 
+    def test_m31_rtv1_blend_remains_unclassified(self) -> None:
+        payload = self.payload()
+        target = payload["drawRecords"][0]["pipelineState"]["blend"] \
+            ["targets"][1]
+        target["enabled"] = False
+        target["source"] = 1
+        target["destination"] = 1
+        report = self.build(payload)
+        recorded = report["owners"]["M31"]["draws"][0] \
+            ["pipelineState"]["blend"]["targets"][1]
+        self.assertFalse(recorded["enabled"])
+
     def test_repeated_ordinal_fails_closed(self) -> None:
         payload = self.payload()
         payload["drawRecords"][1]["drawOrdinal"] = 20
