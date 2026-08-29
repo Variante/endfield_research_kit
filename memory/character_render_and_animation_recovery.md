@@ -3037,6 +3037,17 @@ publication explicit diagnostic-only. The exact retained packet transport does
 use the recovered independent Target1 blend state, which corrects its previous
 RT0-state reuse without promoting the compatibility approximation.
 
+A fresh complete schema-v18 checkpoint under
+`scratch/character_recovery/endminf_full_clean_presentation_v10_20260829`
+passes all canonical D3D11, animation, cleanup, and exact-Uber gates across 770
+frames. At the established chronological -1-frame alignment its actor, effect,
+and temporal means are 23.8688/25.6961/15.5843, only
+0.0186/0.0039/0.0116 below v8 and inside the larger startup-history variance
+measured by the controlled SceneMV repeats. Retain v8 as the review baseline;
+v10 is a schema-v18 checkpoint, not evidence for a beauty-default change. Its
+sheet still localizes the dominant residual to the missing broad retail
+opening multi-exposure strips.
+
 Presented-frame registration does not authorize moving M13. Its recovered
 shell fits `(1229.5,427.5)`, radius 251.2 px, while adjacent retail frames fit
 `(1205.5,443.5)`, radius 253.4 px and `(1208.5,441.5)`, radius 272.1 px.
@@ -3141,6 +3152,16 @@ are size/hash gated, and deferred, M31, and Streamline allocations share the
 authoritative 1-GiB staging ceiling. These are capture-readiness facts, not
 evidence that the missing retail temporal boundary is closed; that still
 requires a newly collected complete session.
+The maintained consumer gate is
+`unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
+It independently rechecks the collected/runtime/graphics summaries, exact
+Streamline options/token/constants/tag/evaluate/Present joins, the supported
+1x1 exposure descriptor and payload, both packet schemas, formats, extents,
+sizes, chronology, and all eight file hashes before publishing a compact
+validation report. It deliberately creates no Unity assets from rejected or
+absent evidence. Session `20260829T115328Z` exits at the expected missing-pair
+boundary; run the verifier on the next capture before importing any temporal
+diagnostic data.
 Capture runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
 older runtime is not an evidence-safe ABI for newer observer synchronization
 objects, and injected-runtime dependency tests fail if that boundary regresses.
@@ -3181,7 +3202,9 @@ or shaders rather than hand-editing generated prefabs.
    exposure, and options-join commits) on the next game session and close the
    retail temporal boundary with consecutive pre/post Streamline surfaces,
    depth, velocity, jitter/reset, frame token, formats, extents, and resource
-   tags.
+   tags. Validate it with
+   `python unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py SESSION`
+   before generating any Unity diagnostic assets.
    The compatibility opening strip is now ordered correctly before temporal,
    but v9 proves that ordering alone does not reproduce retail's broad
    multi-exposure strips. Keep the rejected public NGX proxy and M31 replay

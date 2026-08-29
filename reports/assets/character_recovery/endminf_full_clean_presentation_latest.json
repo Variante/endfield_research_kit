@@ -1,6 +1,6 @@
 {
   "schema": "endfield.character-recovery.full-clean-presentation-review.v2",
-  "generatedAt": "2026-08-29T15:36:00Z",
+  "generatedAt": "2026-08-29T17:03:36Z",
   "reference": "videos/2026-08-26_21-25-50.mkv",
   "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
   "current": {
@@ -42,6 +42,24 @@
       "meanEffectRoiMae": 25.774483798683935,
       "meanEffectTemporalDeltaMae": 15.561747972219829
     }
+  },
+  "schemaV18Checkpoint": {
+    "report": "scratch/character_recovery/endminf_full_clean_presentation_v10_20260829/report.json",
+    "video": "scratch/character_recovery/endminf_full_clean_presentation_v10_20260829/endminf_full_clean_presentation_v10.mp4",
+    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v10_20260829/reference_full_comparison_v4.json",
+    "comparisonSheet": "scratch/character_recovery/endminf_full_clean_presentation_v10_20260829/reference_full_comparison_v4_sheet.png",
+    "captureSchema": "endfield.endminf-viewer-playmode-sequence.v18",
+    "status": "ok",
+    "frameCount": 770,
+    "bestSourceOffsetFrames": -1,
+    "boundedComparisonFrames": 554,
+    "meanActorRoiMae": 23.8687608804929,
+    "meanEffectRoiMae": 25.696089135890016,
+    "meanEffectTemporalDeltaMae": 15.584253040175284,
+    "m31Requested": false,
+    "unityPublicNgxProxyRequested": false,
+    "openingStripSceneMVRequested": false,
+    "interpretation": "A fresh complete schema-v18 D3D11 run passes every canonical gate and changes v8's actor/effect/temporal means by -0.0186/-0.0039/-0.0116. Controlled repeated startup captures already span larger variation, so this remains a checkpoint rather than a promoted baseline or a new fidelity claim. The comparison sheet still localizes the dominant residual to the missing retail opening multi-exposure strips."
   },
   "preTemporalOpeningStripAudit": {
     "report": "scratch/character_recovery/endminf_full_clean_presentation_v9_20260829/report.json",
@@ -114,6 +132,9 @@
     "earlyArmDeltaPresents": 389,
     "automaticTriggerCommit": "19ddaaa",
     "captureReadyCommit": "4139de0",
+    "consumerVerifierCommit": "1d71f58c",
+    "consumerVerifier": "unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py",
+    "priorSessionVerifierResult": "rejected: missing graphics/streamline_surfaces/metadata.json",
     "captureToolingCommits": ["325b632", "b1e5e2f", "7656c5e", "4139de0"],
     "nextCaptureSurfaceFormats": [26, 10, 19, 34],
     "nextCaptureSurfaceBytesPerPacket": [33177600, 66355200, 66355200, 33177600],
@@ -219,6 +240,7 @@
     "The compatibility opening-strip pass now composes into packed SceneColor before temporal reconstruction. v9 proves submission on ten opening frames and improves temporal MAE slightly, but is not promoted over v8 because actor/effect MAE regress slightly.",
     "A controlled two-frame peak audit keeps exact M13 canonical: disabling it worsens actor, effect, and temporal metrics. M21 remains the small palm-centered stone owner and is not a valid target for compensatory resizing or retiming.",
     "The source-backed opening-strip SceneMV Target1 marker is implemented, but its controlled v18 A/B is indistinguishable from disabled startup-history variance and therefore remains diagnostic-only. The exact retained packet transport now uses the captured independent Target1 blend state.",
+    "A fresh 770-frame schema-v18 checkpoint passes all canonical gates and is within established startup-history variance of v8/v9. It is retained for review but does not authorize a default change; the opening retail multi-exposure strips remain absent.",
     "Capture 20260829T115328Z armed roughly 389 Presents too early during loading. Observer commit 19ddaaa adds the exact early overview_start Animator-to-graphics join required before the next retail capture.",
     "The dominant visible residual is the retail temporal multi-exposure/strip composition and upstream palm-owned VFX chronology, not animation timing or static camera framing."
   ]
