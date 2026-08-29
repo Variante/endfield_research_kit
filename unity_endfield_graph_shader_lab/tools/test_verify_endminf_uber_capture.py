@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import copy
 import hashlib
 import json
 import struct
@@ -15,6 +16,7 @@ ROOT_LUT = HERE.parent / (
     "Assets/EndfieldGraphShaderLab/Resources/EndfieldCharInfo/"
     "EndminfCharInfoLut1024x32Rgba16f.bytes"
 )
+BYTECODE = HERE / "original_dxbc_exact/bytecode"
 MODULE_PATH = HERE / "verify_endminf_uber_capture.py"
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_uber_capture", MODULE_PATH)
@@ -172,6 +174,66 @@ class UberCaptureTests(unittest.TestCase):
                 frame_filter=frame_filter,
             )
 
+    def build_sequence(
+        self,
+        session: dict[str, object],
+        rows: list[tuple[dict[str, object], bytes]],
+        summary_overrides: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            session = dict(session)
+            session["graphicsProfile"] = "full"
+            (capture / "session.json").write_text(
+                json.dumps(session), encoding="utf-8")
+            summary = {
+                "complete": True,
+                "cadenceValid": True,
+                "deferredFailed": False,
+                "shaderBytecodeArchiveComplete": True,
+                "deferredStagedSlots": len(rows),
+                "deferredPublishedSlots": len(rows),
+                "sequenceFrames": len(rows),
+            }
+            if summary_overrides:
+                summary.update(summary_overrides)
+            graphics = capture / "graphics"
+            graphics.mkdir(parents=True)
+            (graphics / "summary.json").write_text(
+                json.dumps(summary), encoding="utf-8")
+            for metadata, blob in rows:
+                frame = graphics / "frames" / str(metadata["frame"])
+                frame.mkdir(parents=True)
+                (frame / "metadata.json").write_text(
+                    json.dumps(metadata), encoding="utf-8")
+                (frame / "resources.bin").write_bytes(blob)
+            shader_root = graphics / "shaders"
+            shader_root.mkdir()
+            shader_sources = (
+                ("endminf_uber_post_vs.dxbc", MODULE.VERTEX_SHA256, 0),
+                ("endminf_uber_post_normal_ps.dxbc",
+                 MODULE.NORMAL_PIXEL_SHA256, 4),
+                ("endminf_uber_post_ps.dxbc", MODULE.PIXEL_SHA256, 4),
+            )
+            for source_name, digest, stage in shader_sources:
+                (shader_root / f"{digest}-s{stage}.dxbc").write_bytes(
+                    (BYTECODE / source_name).read_bytes())
+            return MODULE.build_sequence_report(capture)
+
+    def sequence_fixture(self) -> tuple[
+            dict[str, object], list[tuple[dict[str, object], bytes]]]:
+        session, peak, blob = fixture()
+        rows = []
+        for frame, variant in ((6, "normal"), (7, "peak"), (8, "normal")):
+            metadata = copy.deepcopy(peak)
+            metadata["frame"] = frame
+            shader = metadata["fullscreenResolvers"][0]["shaders"][1]
+            if variant == "normal":
+                shader["identityHash"] = MODULE.NORMAL_PIXEL_IDENTITY
+                shader["bytecodeSize"] = 3416
+            rows.append((metadata, blob))
+        return session, rows
+
     def test_exact_live_binding_passes(self) -> None:
         report = self.build(*fixture())
         self.assertEqual(report["status"], "validated_exact_live_uber_binding")
@@ -271,6 +333,46 @@ class UberCaptureTests(unittest.TestCase):
                 MODULE.VerificationError,
                 "t2 CharInfo LUT hash drifted"):
             self.build(session, metadata, bytes(corrupted))
+
+    def test_complete_ordinary_peak_sequence_passes(self) -> None:
+        report = self.build_sequence(*self.sequence_fixture())
+        self.assertEqual(
+            report["status"], "validated_exact_live_uber_sequence")
+        self.assertEqual(report["variantCounts"], {"normal": 2, "peak": 1})
+        self.assertEqual(report["peakFrame"], 7)
+        self.assertEqual(report["peakPreviousFrame"], 6)
+        self.assertEqual(report["peakNextFrame"], 8)
+        self.assertEqual(report["packets"][0]["b1"]["declaredConstants"], 12)
+        self.assertEqual(report["packets"][1]["b1"]["declaredConstants"], 26)
+
+    def test_sequence_invalid_cadence_fails_closed(self) -> None:
+        with self.assertRaisesRegex(MODULE.VerificationError,
+                                    "cadence is invalid"):
+            self.build_sequence(
+                *self.sequence_fixture(),
+                summary_overrides={"cadenceValid": False},
+            )
+
+    def test_sequence_duplicate_peak_fails_closed(self) -> None:
+        session, rows = self.sequence_fixture()
+        metadata, blob = rows[2]
+        metadata["fullscreenResolvers"][0]["shaders"][1][
+            "identityHash"] = MODULE.PIXEL_IDENTITY
+        metadata["fullscreenResolvers"][0]["shaders"][1][
+            "bytecodeSize"] = 4216
+        with self.assertRaisesRegex(MODULE.VerificationError,
+                                    "requires one peak packet, got 2"):
+            self.build_sequence(session, rows)
+
+    def test_sequence_shader_read_lane_drift_fails_closed(self) -> None:
+        session, rows = self.sequence_fixture()
+        metadata, blob = rows[2]
+        drifted = bytearray(blob)
+        struct.pack_into("<f", drifted, (64 + 1) * 16, 0.25)
+        rows[2] = (metadata, bytes(drifted))
+        with self.assertRaisesRegex(MODULE.VerificationError,
+                                    "shader-read ordinary Uber lane varies"):
+            self.build_sequence(session, rows)
 
 
 if __name__ == "__main__":

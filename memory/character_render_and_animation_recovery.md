@@ -2724,8 +2724,8 @@ low temporal error but persistent scale, placement, secondary-settle, and grey
 composition differences. This localizes the remaining work without treating a
 whole-window average as evidence for any one renderer owner.
 
-The exact Uber transport now embeds the ordinary retail `de96a55f118305ea`
-pixel shader as well as the peak-only `86a732cef7eedb15` variant. Thirty-five
+The exact Uber transport now embeds the ordinary retail pixel shader as well
+as the peak-only radial variant. Thirty-five
 complete ordinary packets in session `20260829T024828Z` are bit-stable in every
 shader-read lane and match the corresponding lanes of the retained peak
 template, so ordinary frames safely reuse the larger captured constant buffers

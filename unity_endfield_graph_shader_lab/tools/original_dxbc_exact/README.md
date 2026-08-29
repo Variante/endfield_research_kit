@@ -79,6 +79,20 @@ variant safely binds the same larger buffers. That cadence-invalid,
 pre-hardening session does not certify current VS b0 or t1 texture bytes;
 those remain explicit recapture gaps rather than parity claims.
 
+Validate the next hardened Full session as one ordinary/peak/ordinary contract:
+
+```powershell
+python unity_endfield_graph_shader_lab\tools\verify_endminf_uber_capture.py `
+  D:\fluffy-dump\scratch\reverse_engineering\endfield_capture\SESSION `
+  --sequence-contract `
+  --output D:\fluffy-dump\tmp\character_recovery\SESSION_uber_sequence.json
+```
+
+The sequence mode requires a complete cadence-valid graphics summary, every
+published frame's exact VS/PS constants and t0/t1/t2 bytes, one peak shader
+bracketed by ordinary shaders, stable shader-read ordinary lanes, and exact
+archived VS/Normal-PS/Peak-PS hashes.
+
 ## M27 Unity-owned draw substitution
 
 The same plugin now contains a separate, default-off M27 compiler-callback
