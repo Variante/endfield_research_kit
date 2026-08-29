@@ -1505,6 +1505,15 @@ Its dense comparison moves ROI/effect-ROI/temporal MAE from
 29.7657/34.5757/27.1143 to 29.8295/34.6175/27.1543. That small regression does
 not override the direct resource descriptor; it indicates remaining upstream
 effect-shape/timing differences can still dominate whole-ROI scores.
+The later retained peak proves the active `86a732cef7eedb15` Uber is already
+the Unity exact-transport payload. Relative to the ordinary `de96a55f118305ea`
+variant it adds only six-tap radial averaging, not a hue or chromatic transform,
+so the amber-versus-blue-white gap belongs to its inputs, grade, or phase. The
+retail `t2` is now a stable exact 1024x32 RGBA16F LUT and differs materially
+from the procedural replay LUT; keep it as a build/CharInfo-gated raw oracle
+until row orientation is validated. The peak `t1` bytes were absent because
+the observer did not size `R11G11B10_FLOAT`; four-byte readback support and a
+WARP regression now make the next bounded capture authoritative for bloom.
 
 A fresh five-stage 4.40-4.55-second diagnostic against the clean August 26
 reference localizes the apparent shifted hair, cape, portrait, and particle
