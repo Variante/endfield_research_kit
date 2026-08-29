@@ -335,6 +335,17 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             self.assertIn("frame0 exposure.descriptor.width", text)
             self.assertIn("frame0 exposure.commandBuffer", text)
 
+    def test_exposure_frame_token_reference_address_may_differ(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["exposureSampleRecords"][0]["frameToken"] += 64
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertEqual("validated", report["status"], report["errors"])
+
     def test_missing_initialization_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
