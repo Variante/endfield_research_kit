@@ -110,6 +110,8 @@ def source_frames_from_sequence_elapsed(
     frame_rows: list[dict],
     comparison: dict,
     fps: float,
+    sequence_origin_actual_seconds: float | None = None,
+    sequence_origin_source_frame: int | None = None,
 ) -> list[tuple[int, float, float, str]]:
     """Map a chronological Unity sequence onto chronological retail frames.
 
@@ -136,6 +138,19 @@ def source_frames_from_sequence_elapsed(
             "reference comparison has an incomplete loop-clip anchor"
         )
     has_loop_anchor = all(loop_anchor_presence)
+    origin_presence = (
+        sequence_origin_actual_seconds is not None,
+        sequence_origin_source_frame is not None,
+    )
+    if any(origin_presence) and not all(origin_presence):
+        raise ValueError(
+            "sequence origin requires both actual seconds and source frame"
+        )
+    has_sequence_origin = all(origin_presence)
+    if has_sequence_origin and not math.isfinite(
+        float(sequence_origin_actual_seconds)
+    ):
+        raise ValueError("sequence origin actual seconds must be finite")
 
     first = frame_rows[0]
     if "actualSeconds" not in first:
@@ -147,20 +162,26 @@ def source_frames_from_sequence_elapsed(
     first_clip = str(first.get("activeBodyClip", ""))
     first_is_loop = "overview_loop" in first_clip.lower()
     if first_is_loop:
-        if not has_loop_anchor:
+        if has_sequence_origin:
+            active_origin_actual = float(sequence_origin_actual_seconds)
+            active_origin_source = float(sequence_origin_source_frame)
+            active_mode = "explicit_sequence_origin"
+            loop_origin_selected = True
+        elif not has_loop_anchor:
             raise ValueError(
                 "loop-only Unity sequence requires an independent loop-clip anchor"
             )
-        first_phase = float(first.get("activeBodyClipTime", float("nan")))
-        loop_phase = float(comparison["loopClipPhaseSeconds"])
-        first_continuous_source = (
-            int(comparison["loopClipStartSourceFrame"])
-            + (first_phase - loop_phase) * fps
-        )
-        active_origin_actual = first_actual
-        active_origin_source = first_continuous_source
-        active_mode = "loop_anchor_elapsed"
-        loop_origin_selected = True
+        else:
+            first_phase = float(first.get("activeBodyClipTime", float("nan")))
+            loop_phase = float(comparison["loopClipPhaseSeconds"])
+            first_continuous_source = (
+                int(comparison["loopClipStartSourceFrame"])
+                + (first_phase - loop_phase) * fps
+            )
+            active_origin_actual = first_actual
+            active_origin_source = first_continuous_source
+            active_mode = "loop_anchor_elapsed"
+            loop_origin_selected = True
     else:
         first_source, first_phase, first_error = source_frame_from_body_phase(
             first, comparison, fps
@@ -227,6 +248,8 @@ def main() -> int:
     parser.add_argument("--reference-sidecar", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-offsets", type=int, nargs="+", default=[-1, 0, 1])
+    parser.add_argument("--sequence-origin-actual-seconds", type=float)
+    parser.add_argument("--sequence-origin-source-frame", type=int)
     # The retail recording contains foreground Character Info controls that
     # are intentionally absent from the reproduction. Keep both comparison
     # windows inside the shared grey gameplay/portrait field: below the roster,
@@ -255,7 +278,11 @@ def main() -> int:
 
     reference_frame_count = int(sidecar["output"]["frameCount"])
     sequence_mappings = source_frames_from_sequence_elapsed(
-        unity_report["frames"], comparison, fps
+        unity_report["frames"],
+        comparison,
+        fps,
+        args.sequence_origin_actual_seconds,
+        args.sequence_origin_source_frame,
     )
     unity_frames = []
     bounded_mappings = []

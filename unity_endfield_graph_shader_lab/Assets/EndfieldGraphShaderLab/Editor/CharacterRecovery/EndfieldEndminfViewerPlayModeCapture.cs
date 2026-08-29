@@ -54,6 +54,8 @@ namespace EndfieldGraphShaderLabEditor
         private const string RecordingGyroscopeInputY = "0.9305556";
         private const string CleanReferenceGyroscopeTrackEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_CLEAN_REFERENCE_GYROSCOPE_TRACK";
+        private const string CleanReferenceGyroscopeTrackOffsetFramesEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_GYROSCOPE_TRACK_OFFSET_FRAMES";
         // Cursor observations from the UI-free 1920x1080 clean-reference
         // decode. Source frame 90 is requested animation time zero. The
         // retail UIGyroscopeEffect sees these changes at PreLate and replaces
@@ -144,6 +146,7 @@ namespace EndfieldGraphShaderLabEditor
         private static float[] requestedTimes;
         private static float[] targetTimes;
         private static bool replayCleanReferenceGyroscopeTrack;
+        private static int cleanReferenceGyroscopeTrackOffsetFrames;
         private static int nextGyroscopeTrackSample;
 
         private readonly struct GyroscopeTrackSample
@@ -180,7 +183,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v15";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v16";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -244,6 +247,7 @@ namespace EndfieldGraphShaderLabEditor
             public string gyroscopeInputX;
             public string gyroscopeInputY;
             public bool cleanReferenceGyroscopeTrack;
+            public int cleanReferenceGyroscopeTrackOffsetFrames;
             public float visualPostPreRollSeconds;
             public bool retainedSkinningDiagnostic;
             public FrameRow[] frames;
@@ -655,6 +659,8 @@ namespace EndfieldGraphShaderLabEditor
             replayCleanReferenceGyroscopeTrack =
                 Environment.GetEnvironmentVariable(
                     CleanReferenceGyroscopeTrackEnvironment) == "1";
+            cleanReferenceGyroscopeTrackOffsetFrames =
+                ParseGyroscopeTrackOffsetFrames();
             nextGyroscopeTrackSample = 0;
             bool fineWindow = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_FINE_WINDOW") == "1";
@@ -2034,6 +2040,8 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredCharInfoGyroscopeCameraState.InputYEnvironmentVariable),
                 cleanReferenceGyroscopeTrack =
                     replayCleanReferenceGyroscopeTrack,
+                cleanReferenceGyroscopeTrackOffsetFrames =
+                    cleanReferenceGyroscopeTrackOffsetFrames,
                 // The _02 owner is destroyed before the full sequence report
                 // is published, which deliberately clears the live clock.
                 // Preserve the observed first-frame phase difference instead.
@@ -2125,7 +2133,9 @@ namespace EndfieldGraphShaderLabEditor
             {
                 GyroscopeTrackSample sample =
                     CleanReferenceGyroscopeTrack[nextGyroscopeTrackSample];
-                if (elapsed + 0.0001f < sample.requestedSeconds)
+                float scheduledSeconds = sample.requestedSeconds +
+                    cleanReferenceGyroscopeTrackOffsetFrames / SimulationFps;
+                if (elapsed + 0.0001f < scheduledSeconds)
                     break;
                 tween.RetargetNormalizedMouseInput(
                     sample.normalizedMouseX,
@@ -2623,6 +2633,26 @@ namespace EndfieldGraphShaderLabEditor
                     environment + " must be an integer from 64 through 8192.");
             }
             return dimension;
+        }
+
+        private static int ParseGyroscopeTrackOffsetFrames()
+        {
+            string value = Environment.GetEnvironmentVariable(
+                CleanReferenceGyroscopeTrackOffsetFramesEnvironment);
+            if (string.IsNullOrWhiteSpace(value))
+                return 0;
+            if (!int.TryParse(
+                    value.Trim(),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int frames) ||
+                frames < -2 || frames > 2)
+            {
+                throw new InvalidOperationException(
+                    CleanReferenceGyroscopeTrackOffsetFramesEnvironment +
+                    " must be an integer from -2 through 2.");
+            }
+            return frames;
         }
 
         private static float[] ParseRequestedTimes(string value)
