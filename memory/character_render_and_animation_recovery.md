@@ -2460,7 +2460,18 @@ callback originally could not submit those packets in retail order: all seven
 two-draw packets are `M31 -> M29/M30 -> M31`, not two contiguous M31 draws.
 The callback and render pipeline now split the packet into one native event on
 each side of pre-M29/M30 work, M30, queue 3000, and M29. A focused D3D11 run
-submits both events and validates two draws with `S_OK`. The three-draw peak
+submits both events and validates two draws with `S_OK`, proving callback
+transport but not exact fixed-function state. The native M31 callback still
+borrows M14's wrap samplers, disabled depth test, and incomplete raster state,
+while retained M31 state requires point-clamp s0, linear-wrap s1, read-only
+greater-equal depth, stencil, front-CCW, and scissor. It also samples the live
+depth resource without binding its captured read-only DSV. The old metadata
+recorded only `stencilEnabled` and reference, not the masks and front/back
+operations needed to recreate that state without guessing. EndfieldCapture now
+serializes the complete raw D3D11 stencil descriptor in both runtime and proxy
+metadata; Release build and all 17 native tests pass. A new capture must close
+those fields before the supported two-draw route is promoted from exact-shader
+transport to exact PSO replay. The three-draw peak
 and one-draw tail remain unsupported and restore the ordinary renderer. No M20 shader identity
 occurs, and the only opening-strip package inside the maintained 0.0667-0.35 s
 interval is frame 1758 at about 0.2325 s. This capture therefore must not be
@@ -2775,7 +2786,13 @@ three-frame exact-Uber A/B selects residual offset -1 within the reference's
 recorded anchor uncertainty and changes mean actor/effect ROI MAE from
 24.5409/30.1609 to 24.3816/29.5874. Temporal-delta MAE changes from 28.2466 to
 28.9995 because the exact packet is one measured tick, not a recovered
-neighboring-frame temporal sequence. The resulting
+neighboring-frame temporal sequence. The two separately launched runs also
+differ on adjacent rows where exact Uber reports no submission, so the
+three-frame mean is not a clean causal A/B. At the source-registered offset-0
+tick against retail frame 351, the submitted exact packet changes actor/effect
+ROI MAE from 25.1415/31.4593 to 24.7693/30.5054, gains of 0.3722/0.9538; use
+that bounded tick rather than the neighboring-frame mean when attributing the
+exact draw. The resulting
 `endminf_full_clean_presentation_v5_20260829` render completes 770/770 frames
 with report status `ok`, observes start-to-loop, settled-loop, and VFX-cleanup
 contracts, and submits the peak exact Uber once with no failure. It remains the
