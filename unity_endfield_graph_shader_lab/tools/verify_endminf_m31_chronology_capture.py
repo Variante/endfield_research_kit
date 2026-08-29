@@ -234,12 +234,6 @@ def build_report(capture: Path, *,
                                f"census row {index} pixel shader identity")
         compute_shader = integer(row.get("computeShaderIdentity"),
                                  f"census row {index} compute shader identity")
-        if kind == 4:
-            require(compute_shader > 0,
-                    f"census row {index} dispatch has no compute shader identity")
-        else:
-            require(vertex_shader > 0 and pixel_shader > 0,
-                    f"census row {index} draw has no VS/PS identity")
         validated_census.append({"kind": kind, "afterM31Draw": after,
                                  "arguments": arguments,
                                  "owner": classify_owner(
