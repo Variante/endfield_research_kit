@@ -2909,10 +2909,13 @@ first and final dense packages so intermediate readback cannot accumulate the
 observed stall. The observer's exact fullscreen state record now closes every
 bound RTV descriptor, DSV view dimension/flags, sampler border colors,
 alpha-to-coverage and all per-target blend descriptors, full stencil faces,
-and depth-bias/forced-sample raster state. The Release DLL built at 02:41 local
-has SHA-256 `4884A76A...00C674B`, and all 17 native tests pass. The next capture
-must use this build and pass cadence, resource, and completeness gates before
-its palettes or M31 pipeline state enter replay.
+and depth-bias/forced-sample raster state. A real WARP integration test binds
+two distinct RTVs, a read-only depth/stencil DSV, three samplers, independent
+blend targets, asymmetric stencil faces, and nondefault raster bias, then
+asserts the production collector returns each descriptor. The Release DLL
+built at 02:49 local has SHA-256 `8983E5B8...DC1883B8`, and all 17 native tests
+pass. The next capture must use this build and pass cadence, resource, and
+completeness gates before its palettes or M31 pipeline state enter replay.
 `verify_endminf_draw_contract_capture.py` schema v2 now enforces those session
 gates before draw inspection, requires the complete eight-slot RTV/blend and
 DSV/sampler/stencil/raster descriptors, and checks the already proven M31
