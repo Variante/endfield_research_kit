@@ -23,6 +23,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     directory.mkdir(parents=True)
     sample_count = sum(MODULE.OWNER_LENGTHS.values()) * 2 - (1 if omit_last_coat else 0)
     window = {
+        "schema": "endfieldCapture.secondaryDynamicsWindow.v3",
         "windowId": 1,
         "automaticTriggerPriorPresent": 100,
         "automaticTriggerGraphicsPresent": 101,
@@ -33,6 +34,8 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
         "transformWriteCalls": 2,
         "endminfTrajectoryFourChunkCandidateCoverage": True,
         "endminfTrajectoryFourOwnerCoverage": False,
+        "registrationLifecycleJoinComplete": True,
+        "effectivePostJobPoseComplete": True,
         "transformWriteUnreadableCalls": 0,
         "transformSampleOverflow": overflow,
         "transformSampleCount": sample_count,
@@ -40,12 +43,15 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     (directory / "windows.jsonl").write_text(
         json.dumps(window) + "\n", encoding="utf-8")
     summary = {
-        "schema": "endfieldCapture.secondaryDynamicsSummary.v2",
+        "schema": "endfieldCapture.secondaryDynamicsSummary.v3",
         "hooksInstalled": True,
         "clothUpdateHookInstalled": True,
         "alwaysTeamUpdateHookInstalled": True,
         "writeTransformHookInstalled": True,
         "completeMasterJobHookInstalled": True,
+        "addClothHookInstalled": True,
+        "removeClothHookInstalled": True,
+        "addTransformHookInstalled": True,
         "windowsCompleted": 1,
         "windowsFailed": 0,
         "evidenceCompleteWindows": 1,
@@ -74,6 +80,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                     if omit_last_coat and owner == "Coat" and writeback == 2 and local == length - 1:
                         continue
                     output.write(json.dumps({
+                        "schema": "endfieldCapture.secondaryDynamicsTransform.v2",
                         "windowId": 1,
                         "writebackId": writeback,
                         "timestampNs": 1000 + writeback * 100,
@@ -87,6 +94,19 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                         "rotation": [0.0, 0.0, 0.0, 1.0],
                         "localPosition": [0.1, 0.2, 0.3],
                         "localRotation": [0.0, 0.0, 0.0, 1.0],
+                        "registrationJoined": True,
+                        "clothProcess": f"0x{0x1000 + owner_index:x}",
+                        "clothComponent": f"0x{0x2000 + owner_index:x}",
+                        "clothTransform": f"0x{0x3000 + owner_index:x}",
+                        "registeredTransform": f"0x{0x4000 + start + local:x}",
+                        "liveTransform": f"0x{0x4000 + start + local:x}",
+                        "registrationStart": start + local,
+                        "registrationLength": 1,
+                        "effectivePoseReadable": True,
+                        "effectivePosition": [1.0, 2.0, 3.0],
+                        "effectiveRotation": [0.0, 0.0, 0.0, 1.0],
+                        "effectiveLocalPosition": [0.1, 0.2, 0.3],
+                        "effectiveLocalRotation": [0.0, 0.0, 0.0, 1.0],
                     }) + "\n")
             start += length
 
@@ -99,7 +119,7 @@ class TrajectoryCaptureTests(unittest.TestCase):
             report = MODULE.build_report(root, minimum_writebacks=2)
             self.assertEqual(
                 report["status"],
-                "validated_unique_four_chunk_candidate_trajectory")
+                "validated_four_lifecycle_joined_post_job_trajectories")
             self.assertEqual(report["writebackCount"], 2)
             self.assertEqual(report["sampleCount"], 252)
 
@@ -165,6 +185,34 @@ class TrajectoryCaptureTests(unittest.TestCase):
             root = Path(temporary)
             write_capture(root, omit_last_coat=True)
             with self.assertRaisesRegex(MODULE.VerificationError, "Coat"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_missing_registration_join_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            rows[0]["registrationJoined"] = False
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "registration lifecycle join"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_missing_effective_pose_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            rows[0]["effectivePoseReadable"] = False
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "effective post-job pose"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
 

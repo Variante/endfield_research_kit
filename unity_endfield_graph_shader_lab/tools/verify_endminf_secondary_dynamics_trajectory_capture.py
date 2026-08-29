@@ -78,11 +78,13 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
     first_loop_wrap_ns = load_first_loop_wrap_ns(capture)
     summary = load_summary(capture)
     require(summary.get("schema") ==
-            "endfieldCapture.secondaryDynamicsSummary.v2",
-            "secondary-dynamics summary schema is not v2")
+            "endfieldCapture.secondaryDynamicsSummary.v3",
+            "secondary-dynamics summary schema is not v3")
     for field in ("hooksInstalled", "clothUpdateHookInstalled",
                   "alwaysTeamUpdateHookInstalled", "writeTransformHookInstalled",
-                  "completeMasterJobHookInstalled", "quiescentCleanup",
+                  "completeMasterJobHookInstalled", "addClothHookInstalled",
+                  "removeClothHookInstalled", "addTransformHookInstalled",
+                  "quiescentCleanup",
                   "automaticTriggerCallbackQuiescent", "complete"):
         require(summary.get(field) is True,
                 f"secondary-dynamics summary {field} is not true")
@@ -99,6 +101,9 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             int(summary.get("automaticTriggerLifecycleFailures", -1)) == 0,
             "secondary-dynamics trigger lifecycle reported a failure")
     window = load_last_window(capture)
+    require(window.get("schema") ==
+            "endfieldCapture.secondaryDynamicsWindow.v3",
+            "secondary-dynamics window schema is not v3")
     prior_present = int(window.get("automaticTriggerPriorPresent", 0))
     graphics_present = int(window.get("automaticTriggerGraphicsPresent", 0))
     require(window.get("automaticTriggerComplete") is True and
@@ -107,6 +112,10 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             "window is not joined to the exact Animator/graphics trigger")
     require(window.get("trajectoryComplete") is True,
             "window does not certify complete trajectory retention")
+    require(window.get("registrationLifecycleJoinComplete") is True,
+            "window does not join every sample to its cloth registration")
+    require(window.get("effectivePostJobPoseComplete") is True,
+            "window does not contain every effective post-job Transform pose")
     scheduled = int(window.get("transformScheduledCalls", -1))
     completed = int(window.get("transformCompletedCalls", -1))
     recorded = int(window.get("transformWriteCalls", -1))
@@ -144,6 +153,29 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             finite_vector(row, "rotation", 4)
             finite_vector(row, "localPosition", 3)
             finite_vector(row, "localRotation", 4)
+            require(row.get("schema") ==
+                    "endfieldCapture.secondaryDynamicsTransform.v2",
+                    f"line {line_number} trajectory schema is not v2")
+            require(row.get("registrationJoined") is True,
+                    f"line {line_number} has no registration lifecycle join")
+            require(row.get("effectivePoseReadable") is True,
+                    f"line {line_number} has no effective post-job pose")
+            finite_vector(row, "effectivePosition", 3)
+            finite_vector(row, "effectiveRotation", 4)
+            finite_vector(row, "effectiveLocalPosition", 3)
+            finite_vector(row, "effectiveLocalRotation", 4)
+            for pointer in ("clothProcess", "clothComponent", "clothTransform",
+                            "registeredTransform", "liveTransform"):
+                value = row.get(pointer)
+                require(isinstance(value, str) and value.startswith("0x") and
+                        int(value, 16) != 0,
+                        f"line {line_number} {pointer} is absent")
+            require(row["liveTransform"] == row["registeredTransform"],
+                    f"line {line_number} live Transform differs from registration")
+            require(int(row.get("registrationStart", -1)) ==
+                    int(row.get("transformIndex", -2)) and
+                    int(row.get("registrationLength", -1)) == 1,
+                    f"line {line_number} registration chunk does not name its row")
             writeback = int(row["writebackId"])
             timestamp = int(row["timestampNs"])
             prior = writeback_timestamps.setdefault(writeback, timestamp)
@@ -198,17 +230,41 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
         require(len(candidates) == 1,
                 f"{owner} has {len(candidates)} complete team candidates")
         team_id, component_id, chunk_start = candidates[0]
+        candidate_rows = [row for rows in by_candidate[
+            (owner, team_id, component_id)].values() for row in rows]
+        cloth_processes = {row["clothProcess"] for row in candidate_rows}
+        cloth_components = {row["clothComponent"] for row in candidate_rows}
+        cloth_transforms = {row["clothTransform"] for row in candidate_rows}
+        require(len(cloth_processes) == len(cloth_components) ==
+                len(cloth_transforms) == 1,
+                f"{owner} registration identity changes across writebacks")
+        registered_by_index: dict[int, set[str]] = defaultdict(set)
+        for row in candidate_rows:
+            registered_by_index[int(row["transformIndex"])].add(
+                row["registeredTransform"])
+        require(all(len(values) == 1 for values in registered_by_index.values()) and
+                len({next(iter(values)) for values in
+                     registered_by_index.values()}) == length,
+                f"{owner} registered Transform identity is not stable and unique")
         owners[owner] = {
             "teamId": team_id,
             "componentId": component_id,
             "proxyTransformStart": chunk_start,
             "proxyTransformLength": length,
             "sampleCount": length * len(ordered_writebacks),
+            "clothProcess": next(iter(cloth_processes)),
+            "clothComponent": next(iter(cloth_components)),
+            "clothTransform": next(iter(cloth_transforms)),
         }
+
+    require(len({row["clothProcess"] for row in owners.values()}) == 4 and
+            len({row["clothComponent"] for row in owners.values()}) == 4 and
+            len({row["clothTransform"] for row in owners.values()}) == 4,
+            "the four chunk candidates do not map to four distinct cloth owners")
 
     return {
         "schema": "endfield.endminf-secondary-dynamics-trajectory-capture.v2",
-        "status": "validated_unique_four_chunk_candidate_trajectory",
+        "status": "validated_four_lifecycle_joined_post_job_trajectories",
         "capture": str(capture.resolve()),
         "windowId": window_id,
         "automaticTriggerPriorPresent": prior_present,
