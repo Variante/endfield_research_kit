@@ -39,6 +39,7 @@ $m13Pixel = Join-Path $toolRoot "bytecode\endminf_m13_vfxbasev2_ps.dxbc"
 $uberVertex = Join-Path $toolRoot "bytecode\endminf_uber_post_vs.dxbc"
 $uberNormalPixel = Join-Path $toolRoot "bytecode\endminf_uber_post_normal_ps.dxbc"
 $uberPixel = Join-Path $toolRoot "bytecode\endminf_uber_post_ps.dxbc"
+$uberLut = Join-Path $projectRoot "Assets\EndfieldGraphShaderLab\Resources\EndfieldCharInfo\EndminfCharInfoLut1024x32Rgba16f.bytes"
 $pluginApi = "D:\Program Files\2022.3.62f3\Editor\Data\PluginAPI"
 $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 
@@ -155,7 +156,7 @@ $uberShaderValidatorCompileCommand = @(
     "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
     "/I`"$buildRoot`" /I`"$toolRoot`"",
     "/Fo`"$uberShaderValidatorObject`" `"$uberShaderValidatorSource`"",
-    "/link /NOLOGO /Brepro /OUT:`"$uberShaderValidatorExe`" d3d11.lib"
+    "/link /NOLOGO /Brepro /OUT:`"$uberShaderValidatorExe`" d3d11.lib bcrypt.lib"
 ) -join " "
 $uberShaderValidatorCompile =
     "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $uberShaderValidatorCompileCommand"
@@ -164,7 +165,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Endminf Uber shader validator compilation failed with exit code $LASTEXITCODE."
 }
 
-& $uberShaderValidatorExe
+& $uberShaderValidatorExe $uberLut
 if ($LASTEXITCODE -ne 0) {
     throw "Endminf Uber shader draw validation failed with exit $LASTEXITCODE."
 }

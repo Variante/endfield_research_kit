@@ -1,11 +1,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <bcrypt.h>
 #include <d3d11.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <vector>
 
 #include "EmbeddedDxbc.generated.h"
@@ -15,8 +18,14 @@ namespace
 {
 constexpr UINT kWidth = 32;
 constexpr UINT kHeight = 16;
-constexpr std::uint64_t kExpectedNormalHash = 0x8451b46dee2ea3c4ull;
-constexpr std::uint64_t kExpectedPeakHash = 0x8b4b47e098f06882ull;
+constexpr std::uint64_t kExpectedNormalHash = 0xc9a020a5e66757f2ull;
+constexpr std::uint64_t kExpectedPeakHash = 0x07186ed30b54b6abull;
+constexpr std::uint8_t kExpectedLutSha256[32] = {
+    0x71, 0x7c, 0x1d, 0x48, 0x36, 0x62, 0xc0, 0x0a,
+    0xbe, 0x55, 0xe1, 0xc5, 0x6a, 0x9d, 0x02, 0x4f,
+    0x45, 0xe5, 0xc8, 0x4c, 0x43, 0x0e, 0xd9, 0xdd,
+    0x28, 0x54, 0xcb, 0x38, 0x6f, 0x37, 0x24, 0x82,
+};
 
 template <typename T>
 void Release(T*& value)
@@ -118,6 +127,45 @@ std::uint64_t Fnv1a(const std::vector<std::uint8_t>& bytes)
         value *= 1099511628211ull;
     }
     return value;
+}
+
+bool HasExactLutDigest(const std::vector<std::uint8_t>& bytes)
+{
+    BCRYPT_ALG_HANDLE algorithm = nullptr;
+    BCRYPT_HASH_HANDLE hash = nullptr;
+    DWORD objectBytes = 0;
+    DWORD hashBytes = 0;
+    DWORD returned = 0;
+    bool valid = BCryptOpenAlgorithmProvider(
+        &algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) == 0;
+    if (valid)
+        valid = BCryptGetProperty(
+            algorithm, BCRYPT_OBJECT_LENGTH,
+            reinterpret_cast<PUCHAR>(&objectBytes), sizeof(objectBytes),
+            &returned, 0) == 0;
+    if (valid)
+        valid = BCryptGetProperty(
+            algorithm, BCRYPT_HASH_LENGTH,
+            reinterpret_cast<PUCHAR>(&hashBytes), sizeof(hashBytes),
+            &returned, 0) == 0 && hashBytes == 32u;
+    std::vector<std::uint8_t> object(objectBytes);
+    std::uint8_t digest[32] = {};
+    if (valid)
+        valid = BCryptCreateHash(
+            algorithm, &hash, object.data(), objectBytes,
+            nullptr, 0, 0) == 0;
+    if (valid)
+        valid = BCryptHashData(
+            hash, const_cast<PUCHAR>(bytes.data()),
+            static_cast<ULONG>(bytes.size()), 0) == 0;
+    if (valid)
+        valid = BCryptFinishHash(hash, digest, sizeof(digest), 0) == 0;
+    if (hash != nullptr)
+        BCryptDestroyHash(hash);
+    if (algorithm != nullptr)
+        BCryptCloseAlgorithmProvider(algorithm, 0);
+    return valid && std::memcmp(
+        digest, kExpectedLutSha256, sizeof(digest)) == 0;
 }
 
 HRESULT Render(
@@ -238,8 +286,25 @@ HRESULT Render(
 }
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc != 2)
+    {
+        std::fprintf(stderr, "usage: ValidateEndminfUberShaders LUT_BYTES\n");
+        return 2;
+    }
+    std::ifstream lutStream(argv[1], std::ios::binary);
+    const std::vector<std::uint8_t> lutBytes(
+        (std::istreambuf_iterator<char>(lutStream)),
+        std::istreambuf_iterator<char>());
+    if (lutBytes.size() != 1024u * 32u * 8u ||
+        !HasExactLutDigest(lutBytes))
+    {
+        std::fprintf(stderr, "exact_lut_validation=failed bytes=%zu\n",
+                     lutBytes.size());
+        return 3;
+    }
+
     ID3D11Device* device = nullptr;
     ID3D11DeviceContext* context = nullptr;
     D3D_FEATURE_LEVEL level = D3D_FEATURE_LEVEL_11_0;
@@ -277,17 +342,8 @@ int main()
                        0.03f + 0.4f * (1.0f - fx), 1.0f);
         }
     }
-    std::vector<std::uint16_t> lut(1024u * 32u * 4u);
-    for (UINT y = 0; y < 32u; ++y)
-    {
-        for (UINT x = 0; x < 1024u; ++x)
-        {
-            const float fx = static_cast<float>(x) / 1023.0f;
-            const float fy = static_cast<float>(y) / 31.0f;
-            StoreHalf4(&lut[(y * 1024u + x) * 4u],
-                       fx, fy, 0.2f + 0.6f * fx, 1.0f);
-        }
-    }
+    std::vector<std::uint16_t> lut(lutBytes.size() / sizeof(std::uint16_t));
+    std::memcpy(lut.data(), lutBytes.data(), lutBytes.size());
     ID3D11Texture2D* textures[3] = {};
     ID3D11ShaderResourceView* resources[3] = {};
     if (SUCCEEDED(result))
@@ -418,7 +474,8 @@ int main()
         peakHash == kExpectedPeakHash;
     std::printf(
         "feature_level=0x%x normal=0x%016llx peak=0x%016llx "
-        "normal_nonzero=%u peak_nonzero=%u distinct=%u hashes_match=%u\n",
+        "normal_nonzero=%u peak_nonzero=%u distinct=%u hashes_match=%u "
+        "exact_lut=1\n",
         static_cast<unsigned int>(level),
         static_cast<unsigned long long>(normalHash),
         static_cast<unsigned long long>(peakHash),
