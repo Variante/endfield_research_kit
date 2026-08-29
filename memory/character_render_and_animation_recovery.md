@@ -3164,7 +3164,16 @@ around the original evaluation. Each packet contains input color format 26
 (66,355,200), and motion format 34 (33,177,600); the pair is 398,131,200 bytes
 and exactly eight `CopyResource` calls. Readback is `DO_NOT_WAIT`, packet files
 are size/hash gated, and deferred, M31, and Streamline allocations share the
-authoritative 1-GiB staging ceiling. These are capture-readiness facts, not
+authoritative 1-GiB staging ceiling. Failed session `20260829T115328Z` reached
+654,590,032 bytes of deferred staging before the surface-pair observer existed;
+it completed collection cleanly but supplied no crash artifact, so that memory
+pressure is a risk signal rather than a proven crash cause. EndfieldCapture
+commit `db2b915` now serializes the two workloads in both the general runtime
+and graphics-only proxy: the complete 398,131,200-byte pair must be published
+and its staging released before the independent 72-frame/M31 sequence can arm.
+The summary and collector require
+`streamlineSurfacesPublishedBeforeDeferredSequence:true`, and surface failure
+stops before the heavyweight sequence. These are capture-readiness facts, not
 evidence that the missing retail temporal boundary is closed; that still
 requires a newly collected complete session.
 The maintained consumer gate is
@@ -3213,8 +3222,9 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `4139de0` (including the earlier automatic-trigger,
-   exposure, and options-join commits) on the next game session and close the
+1. Run observer commit `db2b915` (including the earlier automatic-trigger,
+   exposure, options/init-join, and serialized-staging commits) on the next
+   game session and close the
    retail temporal boundary with consecutive pre/post Streamline surfaces,
    depth, velocity, jitter/reset, frame token, formats, extents, and resource
    tags. Validate it with

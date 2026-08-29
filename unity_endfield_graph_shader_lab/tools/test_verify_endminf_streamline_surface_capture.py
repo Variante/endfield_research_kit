@@ -85,6 +85,7 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "streamlineSurfacesTriggerPresent": 100,
             "streamlineSurfacesPeakStagingBytes": 12,
             "streamlineSurfacesSummaryWritten": True,
+            "streamlineSurfacesPublishedBeforeDeferredSequence": True,
         }
         (graphics / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
 
@@ -280,6 +281,18 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             self.assertEqual("validated", report["status"], report["errors"])
             self.assertEqual([], report["errors"])
 
+    def test_graphics_proxy_does_not_claim_an_animator_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/summary.json"
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            summary["runtimeMode"] = "d3d11-proxy"
+            summary.pop("animatorSequenceTriggerGateMatched")
+            path.write_text(json.dumps(summary), encoding="utf-8")
+            report = self.build(root)
+            self.assertEqual("validated", report["status"], report["errors"])
+
     def test_hash_mismatch_is_actionable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -337,6 +350,20 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             self.assertIn("Streamline.initObserved", text)
             self.assertIn("Streamline.initCalls", text)
             self.assertIn("Streamline.initialization.features", text)
+
+    def test_overlapping_deferred_sequence_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/summary.json"
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            summary["streamlineSurfacesPublishedBeforeDeferredSequence"] = False
+            path.write_text(json.dumps(summary), encoding="utf-8")
+            report = self.build(root)
+            self.assertIn(
+                "graphics summary.streamlineSurfacesPublishedBeforeDeferredSequence",
+                "\n".join(report["errors"]),
+            )
 
     def test_incomplete_graphics_summary_is_rejected_first(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
