@@ -283,8 +283,8 @@ def validate_exposure(
     row = matches[0]
     require_equal(errors, f"{label} exposure.viewport",
                   integer(row.get("viewport")), 3)
-    require_equal(errors, f"{label} exposure.frameToken",
-                  integer(row.get("frameToken")), integer(packet.get("frameToken")))
+    if integer(row.get("frameToken")) == 0:
+        errors.append(f"{label} exposure.frameToken: expected a retained nonzero reference address")
     require_equal(errors, f"{label} exposure.commandBuffer",
                   integer(row.get("commandBuffer")),
                   integer(packet.get("commandBuffer")))

@@ -46,6 +46,22 @@ wrapper now keeps those methods untouched in its lifecycle regression test,
 but remains uncertified until a new retail session captures and collects one
 complete frame without a client fault.
 
+Failed session `20260829T220238Z` exposed a separate Streamline observer
+lifetime defect: the game cached an observer-owned `slDLSSSetOptions` detour,
+then bounded shutdown removed the direct MinHook trampoline still called by
+that escaped pointer, producing a native access violation. The observer now
+hooks only the exact plugin entry point, never replaces pointers returned by
+`slGetFeatureFunction`, never maps the immediate context during control-thread
+cleanup, and limits exposure staging to the exact armed two-packet window.
+Exposure joins use accepted-packet order, viewport, and command-buffer identity
+rather than the unstable address of a `SlFrameToken` reference. Build and all
+20 native tests pass. Follow-up session `20260829T222954Z` exited without a
+client crash and proved the remaining surface scheduler error: retail DLSS
+evaluation precedes the final Uber pass, so the same-interval body+Uber
+conjunction becomes known only after that interval's DLSS call. The observer
+now arms the immediately following Present interval; another clean session is
+still required to close evidence completeness.
+
 ## Stable conclusions
 
 - Playable post-models, LOD0 mesh bindings, materials, textures, cameras,
@@ -109,6 +125,17 @@ complete frame without a client fault.
   from 2.29 degrees/1.22 percent scale to 1.20 degrees/0.09 percent without
   eliminating the cloth silhouette gap. Rock cadence and peak burst timing are
   also substantially aligned, while temporal VFX shape remains open. Captured
+  ACL-to-Unity validation now checks every retained key rather than spot
+  samples: the start clip has 134,140 exact key values and the loop has 40,202,
+  with every manifest-flagged position and rotation curve present. The
+  validator reports fractional-frame quaternion interpolation separately; its
+  current worst midpoint differences are 6.4803 degrees in the start and
+  1.12324 degrees in the loop. Those measurements are an open runtime
+  interpolation-semantics question, not permission to hand-author corrective
+  positions, tangents, or curves. A trial tangent rewrite was rejected because
+  it produced antipodal near-180-degree errors; the generated clips remain the
+  direct recovered ACL keys.
+  Captured
   Forward vertex streams are undeformed and duplicated; retail skinning lives
   in structured SRV `vs-t0`. Decompiled CharacterNPR Skin PreGBuffer vertex
   code closes its layout: each bone is three `float4` rows, while b2
@@ -3315,7 +3342,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `484aa62` (including the earlier automatic-trigger,
+1. Run observer commit `a063f32` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
    wrap so the bounded trajectory buffer includes the required interval. Use
