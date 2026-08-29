@@ -24,7 +24,13 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     sample_count = sum(MODULE.OWNER_LENGTHS.values()) * 2 - (1 if omit_last_coat else 0)
     window = {
         "windowId": 1,
+        "automaticTriggerPriorPresent": 100,
+        "automaticTriggerGraphicsPresent": 101,
+        "automaticTriggerComplete": True,
         "trajectoryComplete": overflow == 0,
+        "transformScheduledCalls": 2,
+        "transformCompletedCalls": 2,
+        "transformWriteCalls": 2,
         "endminfTrajectoryFourChunkCandidateCoverage": True,
         "endminfTrajectoryFourOwnerCoverage": False,
         "transformWriteUnreadableCalls": 0,
@@ -33,6 +39,25 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     }
     (directory / "windows.jsonl").write_text(
         json.dumps(window) + "\n", encoding="utf-8")
+    summary = {
+        "schema": "endfieldCapture.secondaryDynamicsSummary.v2",
+        "hooksInstalled": True,
+        "clothUpdateHookInstalled": True,
+        "alwaysTeamUpdateHookInstalled": True,
+        "writeTransformHookInstalled": True,
+        "completeMasterJobHookInstalled": True,
+        "windowsCompleted": 1,
+        "windowsFailed": 0,
+        "evidenceCompleteWindows": 1,
+        "evidenceIncompleteWindows": 0,
+        "automaticTriggerArmFailures": 0,
+        "automaticTriggerLifecycleFailures": 0,
+        "automaticTriggerCallbackQuiescent": True,
+        "quiescentCleanup": True,
+        "complete": True,
+    }
+    (directory / "summary.json").write_text(
+        json.dumps(summary) + "\n", encoding="utf-8")
     with (directory / "trajectories.jsonl").open("w", encoding="utf-8") as output:
         start = 0
         for owner_index, (owner, length) in enumerate(MODULE.OWNER_LENGTHS.items(), 1):
@@ -75,6 +100,44 @@ class TrajectoryCaptureTests(unittest.TestCase):
             root = Path(temporary)
             write_capture(root, overflow=1)
             with self.assertRaisesRegex(MODULE.VerificationError, "complete trajectory"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_unjoined_automatic_trigger_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/windows.jsonl"
+            window = json.loads(path.read_text(encoding="utf-8"))
+            window["automaticTriggerGraphicsPresent"] = 103
+            window["automaticTriggerComplete"] = False
+            path.write_text(json.dumps(window) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "Animator/graphics trigger"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_incomplete_provider_summary_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/summary.json"
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            summary["completeMasterJobHookInstalled"] = False
+            summary["complete"] = False
+            path.write_text(json.dumps(summary) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "completeMasterJobHookInstalled"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_unmatched_transform_chronology_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/windows.jsonl"
+            window = json.loads(path.read_text(encoding="utf-8"))
+            window["transformCompletedCalls"] = 1
+            path.write_text(json.dumps(window) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "writebacks differ"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_incomplete_owner_writeback_fails_closed(self) -> None:

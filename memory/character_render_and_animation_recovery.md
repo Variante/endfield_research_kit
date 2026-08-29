@@ -3188,6 +3188,20 @@ The summary and collector require
 stops before the heavyweight sequence. These are capture-readiness facts, not
 evidence that the missing retail temporal boundary is closed; that still
 requires a newly collected complete session.
+The same session's secondary-dynamics v1 summary was also falsely optimistic:
+it reported complete despite zero Transform write calls/samples and 60,704
+relative-slot overflows. EndfieldCapture commit `7a09410` replaces that lane.
+The exact early Animator sample now arms the dynamics window synchronously;
+stable TeamData indices are retained through serialized, epoch-bound whole-
+array scans; and the exact `ClothUpdate` `WriteTransform` schedule is sampled
+only after its later `CompleteMasterJob` returns. Scheduled, completed, and
+recorded writebacks must match; empty writes, unequal arrays, cache contention,
+overflow, unreadable data, trigger drift, failed finalization, and cleanup
+failure all keep summary v2 incomplete. The independent trajectory verifier
+requires one exact Animator/graphics-joined complete window and unique complete
+6/30/20/70-transform candidates before publishing evidence. These fixes make
+the next capture diagnostic-ready; they do not retrofit trajectory evidence
+into `20260829T115328Z`, whose v1 summary is rejected.
 The maintained consumer gate is
 `unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact
@@ -3241,7 +3255,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `db2b915` (including the earlier automatic-trigger,
+1. Run observer commits `db2b915` and `7a09410` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session and close the
    retail temporal boundary with consecutive pre/post Streamline surfaces,

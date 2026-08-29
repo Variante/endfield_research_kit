@@ -45,10 +45,49 @@ def load_last_window(capture: Path) -> dict[str, Any]:
     return json.loads(rows[-1])
 
 
+def load_summary(capture: Path) -> dict[str, Any]:
+    path = capture / "secondary-dynamics/summary.json"
+    require(path.is_file(), f"dynamics summary is absent: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
+    summary = load_summary(capture)
+    require(summary.get("schema") ==
+            "endfieldCapture.secondaryDynamicsSummary.v2",
+            "secondary-dynamics summary schema is not v2")
+    for field in ("hooksInstalled", "clothUpdateHookInstalled",
+                  "alwaysTeamUpdateHookInstalled", "writeTransformHookInstalled",
+                  "completeMasterJobHookInstalled", "quiescentCleanup",
+                  "automaticTriggerCallbackQuiescent", "complete"):
+        require(summary.get(field) is True,
+                f"secondary-dynamics summary {field} is not true")
+    windows_completed = int(summary.get("windowsCompleted", -1))
+    require(windows_completed == 1,
+            f"expected one completed dynamics window, observed {windows_completed}")
+    require(int(summary.get("windowsFailed", -1)) == 0,
+            "secondary-dynamics window finalization reported a failure")
+    require(int(summary.get("evidenceCompleteWindows", -1)) ==
+            windows_completed and
+            int(summary.get("evidenceIncompleteWindows", -1)) == 0,
+            "secondary-dynamics evidence-window counts are incomplete")
+    require(int(summary.get("automaticTriggerArmFailures", -1)) == 0 and
+            int(summary.get("automaticTriggerLifecycleFailures", -1)) == 0,
+            "secondary-dynamics trigger lifecycle reported a failure")
     window = load_last_window(capture)
+    prior_present = int(window.get("automaticTriggerPriorPresent", 0))
+    graphics_present = int(window.get("automaticTriggerGraphicsPresent", 0))
+    require(window.get("automaticTriggerComplete") is True and
+            prior_present > 0 and graphics_present > prior_present and
+            graphics_present - prior_present <= 2,
+            "window is not joined to the exact Animator/graphics trigger")
     require(window.get("trajectoryComplete") is True,
             "window does not certify complete trajectory retention")
+    scheduled = int(window.get("transformScheduledCalls", -1))
+    completed = int(window.get("transformCompletedCalls", -1))
+    recorded = int(window.get("transformWriteCalls", -1))
+    require(scheduled > 0 and scheduled == completed == recorded,
+            "scheduled, completed, and recorded transform writebacks differ")
     require(window.get("endminfTrajectoryFourChunkCandidateCoverage") is True,
             "window does not contain all four Endminf chunk candidates")
     require(window.get("endminfTrajectoryFourOwnerCoverage") is not True,
@@ -146,7 +185,10 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
         "status": "validated_unique_four_chunk_candidate_trajectory",
         "capture": str(capture.resolve()),
         "windowId": window_id,
+        "automaticTriggerPriorPresent": prior_present,
+        "automaticTriggerGraphicsPresent": graphics_present,
         "writebackCount": len(ordered_writebacks),
+        "scheduledWritebackCount": scheduled,
         "firstTimestampNs": timestamps[0],
         "lastTimestampNs": timestamps[-1],
         "sampleCount": retained_rows,
