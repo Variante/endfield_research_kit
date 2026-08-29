@@ -3137,13 +3137,20 @@ camera/framing gap: actor and portrait scale are within a few tenths of one
 percent and displacement is sub-pixel before the late cursor move. Do not
 change FOV, actor root scale, static camera position, portrait placement, or
 GridFar to fit the old clip-wrapped comparison. The remaining late offset is a
-small gyroscope timing/state gap. A bounded nine-sample late-track probe tests
-the visible-cursor replay at minus one, zero, and plus one 60-Hz frame; the
-current zero-frame schedule wins actor, effect, and temporal metrics. Keep the
-default unchanged. Resolving the remaining few-pixel tail requires same-session
-runtime gyroscope state rather than a global one-frame retime. Loop-only
-diagnostics can now supply an explicit paired sequence origin to the comparator;
-the tool rejects partial origins and continues to require chronological output.
+small gyroscope timing/state gap. The retained cursor samples are labeled in
+the clean reference's requested-animation clock, but their first implementation
+scheduled on editor wall/play elapsed time, which leads requested time by three
+60-Hz samples in canonical capture. Replay now uses the requested clock. A
+corrected 770-frame A/B at source offset -1 improves full actor/effect ROI MAE
+by 0.079/0.229 and the tween-tail actor/effect ROI MAE by 0.757/1.523, but it
+worsens full temporal-delta MAE by 0.139 and the bounded retarget window's
+actor/effect/temporal MAE by 1.129/1.669/3.174. Keep the track opt-in. The old
+minus-one/zero/plus-one sweep described the superseded elapsed-clock schedule;
+any future offset sweep must use the corrected requested clock. Resolving the
+remaining few-pixel tail requires same-session runtime gyroscope state rather
+than a global camera, portrait, or screenshot-fit offset. Loop-only diagnostics
+can supply an explicit paired sequence origin to the comparator; the tool
+rejects partial origins and continues to require chronological output.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip

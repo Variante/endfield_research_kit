@@ -52,6 +52,12 @@ class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
             "cleanReferenceGyroscopeTrackOffsetFrames / SimulationFps",
             source,
         )
+        self.assertIn("ReplayCleanReferenceGyroscopeTrack(requested);", source)
+        self.assertIn(
+            "if (requestedClockSeconds + 0.0001f < scheduledSeconds)",
+            source,
+        )
+        self.assertNotIn("ReplayCleanReferenceGyroscopeTrack(elapsed);", source)
         self.assertGreaterEqual(
             source.count("cleanReferenceGyroscopeTrackOffsetFrames"),
             5,

@@ -956,7 +956,11 @@ namespace EndfieldGraphShaderLabEditor
             float requested = requestedTimes[next];
             float target = targetTimes[next];
             float elapsed = Time.time - started;
-            ReplayCleanReferenceGyroscopeTrack(elapsed);
+            // The retained cursor samples are keyed to the clean reference's
+            // requested animation clock (source frame 90 = requested zero),
+            // not to editor wall/play elapsed time. The latter leads requested
+            // time by three samples in canonical video capture.
+            ReplayCleanReferenceGyroscopeTrack(requested);
             if (elapsed + 0.0001f < requested) return;
             CharacterRecoveryViewerUI.TryGetSelectedActorRoot(out Transform actor);
             if (actor == null || camera == null) return;
@@ -2197,7 +2201,8 @@ namespace EndfieldGraphShaderLabEditor
             EditorApplication.ExitPlaymode();
         }
 
-        private static void ReplayCleanReferenceGyroscopeTrack(float elapsed)
+        private static void ReplayCleanReferenceGyroscopeTrack(
+            float requestedClockSeconds)
         {
             if (!replayCleanReferenceGyroscopeTrack || camera == null)
                 return;
@@ -2212,7 +2217,7 @@ namespace EndfieldGraphShaderLabEditor
                     CleanReferenceGyroscopeTrack[nextGyroscopeTrackSample];
                 float scheduledSeconds = sample.requestedSeconds +
                     cleanReferenceGyroscopeTrackOffsetFrames / SimulationFps;
-                if (elapsed + 0.0001f < scheduledSeconds)
+                if (requestedClockSeconds + 0.0001f < scheduledSeconds)
                     break;
                 tween.RetargetNormalizedMouseInput(
                     sample.normalizedMouseX,
