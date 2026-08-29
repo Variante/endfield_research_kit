@@ -3009,17 +3009,24 @@ The exact-build observer now supplies that missing lane. In a Full general-
 runtime capture it hooks only `CharUIModelMono.Tick`, filters copied runtime
 owner identity to exact `chr_0003_endminf`, and reads current state,
 transition-only next state, normalized/local timing, transition progress, Tick
-delta, thread, and a lock-free Present ordinal/QPC pair through Unity's
-explicit-out Animator query shims. Both native inputs and all hooked/query
-entry bytes are gated; ownership changes, unreadable exact-owner fields,
-nonfinite payloads, missing Present association, cadence gaps or duplicates,
-overflow, or non-quiescent cleanup keep the artifact incomplete. Publication
-additionally requires a non-loop start, monotonic transition into a distinct
-loop state, three settled loop samples, and the first adjacent unwrapped loop-
-cycle rise. Raw state hashes remain unnamed until joined to exact controller
-state evidence. Do not use the current wall-clock extrapolation to claim exact
-loop-phase visual equality; replace it only after the next complete observer
-run passes this contract.
+delta, thread, and a seqlock-published prior Present ordinal/QPC pair through
+Unity's explicit-out Animator query shims. Schema v2 also derives the next
+Present pair observed by a later Tick while keeping Tick and Present as
+different clocks. Both native inputs and all hooked/query entry bytes are
+gated; ownership changes, any active owner-read or pre-Tick failure, reentrant
+Tick, nonfinite payloads, missing/inconsistent Present association, clock
+regression, overflow, or non-quiescent cleanup keep the artifact incomplete.
+Duplicate or skipped prior-Present associations are accepted only when their
+ordinal/QPC pair remains coherent and monotonic. Publication additionally
+requires the exact source-controller full-path hashes
+`Base Layer.Overview.FromOveview` (`0x5D0225EB`) and
+`Base Layer.Overview.OverviewIdle` (`0xAFC694A7`), positive state lengths,
+monotonic start/transition/loop clocks, three settled loop samples, and the
+first adjacent unwrapped loop-cycle rise. The independent Python verifier
+re-derives every boundary from raw samples and separates tick-quantized QPC
+intervals from the Animator transition contract. Do not use the current
+wall-clock extrapolation to claim exact loop-phase visual equality; replace it
+only after the next complete observer run passes this contract.
 
 ## Main animation gap
 
