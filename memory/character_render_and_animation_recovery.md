@@ -3046,7 +3046,13 @@ camera/framing gap: actor and portrait scale are within a few tenths of one
 percent and displacement is sub-pixel before the late cursor move. Do not
 change FOV, actor root scale, static camera position, portrait placement, or
 GridFar to fit the old clip-wrapped comparison. The remaining late offset is a
-small gyroscope timing/state gap.
+small gyroscope timing/state gap. A bounded nine-sample late-track probe tests
+the visible-cursor replay at minus one, zero, and plus one 60-Hz frame; the
+current zero-frame schedule wins actor, effect, and temporal metrics. Keep the
+default unchanged. Resolving the remaining few-pixel tail requires same-session
+runtime gyroscope state rather than a global one-frame retime. Loop-only
+diagnostics can now supply an explicit paired sequence origin to the comparator;
+the tool rejects partial origins and continues to require chronological output.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
