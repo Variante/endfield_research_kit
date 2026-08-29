@@ -192,6 +192,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredEndminfPostSource");
         private static readonly int RecoveredEndminfOpeningStripSourceId =
             Shader.PropertyToID("_EndfieldRecoveredEndminfOpeningStripSource");
+        private static readonly int RecoveredEndminfOpeningStripSceneMVId =
+            Shader.PropertyToID("_EndfieldRecoveredEndminfOpeningStripSceneMV");
         private static readonly int CharacterBloomAId = Shader.PropertyToID("_EndfieldCharacterBloomA");
         private static readonly int CharacterBloomBId = Shader.PropertyToID("_EndfieldCharacterBloomB");
         private static readonly int BloomTextureId = Shader.PropertyToID("_BloomTex");
@@ -390,6 +392,8 @@ namespace EndfieldGraphShaderLab
         public static string LastRecoveredEndminfExactUberFailure
             { get; private set; } = string.Empty;
         public static bool LastRecoveredEndminfOpeningStripCompatibilityApplied
+            { get; private set; }
+        public static bool LastRecoveredEndminfOpeningStripSceneMVApplied
             { get; private set; }
         public static bool LastRecoveredUnityPublicNgxProxyRequested
             { get; private set; }
@@ -2690,7 +2694,8 @@ namespace EndfieldGraphShaderLab
                     context,
                     camera,
                     useRecoveredPostSemantics,
-                    cameraColorDescriptor);
+                    cameraColorDescriptor,
+                    useRecoveredSceneMV ? recoveredSceneMV : null);
                 EndfieldRecoveredPostStageDiagnostic
                     .CaptureBeforeTemporalIfArmed(
                         context,
@@ -4095,9 +4100,11 @@ namespace EndfieldGraphShaderLab
             ScriptableRenderContext context,
             Camera camera,
             bool useRecoveredPostSemantics,
-            RenderTextureDescriptor sceneColorDescriptor)
+            RenderTextureDescriptor sceneColorDescriptor,
+            RenderTexture recoveredSceneMV)
         {
             LastRecoveredEndminfOpeningStripCompatibilityApplied = false;
+            LastRecoveredEndminfOpeningStripSceneMVApplied = false;
             int width = Mathf.Max(sceneColorDescriptor.width, 1);
             int height = Mathf.Max(sceneColorDescriptor.height, 1);
             EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
@@ -4158,6 +4165,38 @@ namespace EndfieldGraphShaderLab
                 CameraColorId);
             commandBuffer.ReleaseTemporaryRT(
                 RecoveredEndminfOpeningStripSourceId);
+            // The Target1 write is source-backed, but the focused A/B remains
+            // inside startup temporal-history variance. Keep it diagnostic
+            // until a deterministic dense sequence demonstrates improvement.
+            bool publishSceneMV = recoveredSceneMV != null &&
+                System.String.Equals(
+                    System.Environment.GetEnvironmentVariable(
+                        "ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV"),
+                    "1",
+                    System.StringComparison.Ordinal);
+            if (publishSceneMV)
+            {
+                RenderTextureDescriptor sceneMVDescriptor =
+                    recoveredSceneMV.descriptor;
+                sceneMVDescriptor.depthBufferBits = 0;
+                sceneMVDescriptor.msaaSamples = 1;
+                sceneMVDescriptor.bindMS = false;
+                commandBuffer.GetTemporaryRT(
+                    RecoveredEndminfOpeningStripSceneMVId,
+                    sceneMVDescriptor,
+                    FilterMode.Point);
+                commandBuffer.Blit(
+                    recoveredSceneMV,
+                    RecoveredEndminfOpeningStripSceneMVId,
+                    recoveredEndminfOpeningStripMaterial,
+                    1);
+                commandBuffer.CopyTexture(
+                    RecoveredEndminfOpeningStripSceneMVId,
+                    recoveredSceneMV);
+                commandBuffer.ReleaseTemporaryRT(
+                    RecoveredEndminfOpeningStripSceneMVId);
+                LastRecoveredEndminfOpeningStripSceneMVApplied = true;
+            }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
             LastRecoveredEndminfOpeningStripCompatibilityApplied = true;
@@ -4167,6 +4206,8 @@ namespace EndfieldGraphShaderLab
                 Debug.Log(
                     "Recovered Endminf opening horizontal-strip compatibility " +
                     "pass active in packed SceneColor before temporal resolve; " +
+                    "captured Target1 SceneMV-B publication remains an " +
+                    "explicit diagnostic; " +
                     "the separately gated exact retained packet path remains " +
                     "authoritative.");
                 loggedRecoveredEndminfOpeningStrip = true;

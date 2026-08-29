@@ -1,6 +1,6 @@
 {
   "schema": "endfield.character-recovery.full-clean-presentation-review.v2",
-  "generatedAt": "2026-08-29T15:06:06Z",
+  "generatedAt": "2026-08-29T15:36:00Z",
   "reference": "videos/2026-08-26_21-25-50.mkv",
   "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
   "current": {
@@ -59,6 +59,30 @@
     "meanEffectTemporalDeltaMae": 15.571582190277656,
     "interpretation": "The compatibility strip now enters packed SceneColor before temporal reconstruction, matching retained retail ordering. It slightly improves temporal MAE but slightly regresses actor/effect MAE versus v8, so v8 remains the review baseline while the source-backed ordering correction stays in code."
   },
+  "openingStripSceneMVAudit": {
+    "requestedSeconds": [0.066667, 0.083333, 0.1, 0.116667, 0.133333, 0.15, 0.166667, 0.183333, 0.2, 0.216667, 0.233333, 0.25, 0.266667, 0.283333, 0.3, 0.316667, 0.333333],
+    "captureSchema": "endfield.endminf-viewer-playmode-sequence.v18",
+    "disabledReport": "scratch/character_recovery/endminf_opening_strip_scenemv_ab_20260829/off/report.json",
+    "enabledReport": "scratch/character_recovery/endminf_opening_strip_scenemv_ab_20260829/on/report.json",
+    "disabledRepeatReport": "scratch/character_recovery/endminf_opening_strip_scenemv_ab_20260829/off_repeat/report.json",
+    "bestSourceOffsetFrames": -1,
+    "disabled": {
+      "meanActorRoiMae": 25.113247892993193,
+      "meanEffectRoiMae": 14.275755135387486,
+      "meanEffectTemporalDeltaMae": 7.59458824198082
+    },
+    "enabled": {
+      "meanActorRoiMae": 25.227100963665595,
+      "meanEffectRoiMae": 14.271993755835666,
+      "meanEffectTemporalDeltaMae": 7.764380787037037
+    },
+    "disabledRepeat": {
+      "meanActorRoiMae": 25.266431172909446,
+      "meanEffectRoiMae": 14.2447551451136,
+      "meanEffectTemporalDeltaMae": 7.80582935474537
+    },
+    "interpretation": "Retail Target1 publication is source-backed: preserve SceneMV XY/A and set B=1 on opening-strip coverage. The enabled result remains inside independent disabled-run startup-history variance, and frames 4-16 are byte-identical across all runs. Keep the compatibility SceneMV publication explicit diagnostic-only; the exact native packet transport now uses the recovered independent Target1 blend state."
+  },
   "m13PeakAudit": {
     "requestedSeconds": [4.483333, 4.5],
     "sequenceOriginSourceFrame": 274,
@@ -75,6 +99,21 @@
       "meanEffectTemporalDeltaMae": 27.143179563492062
     },
     "interpretation": "M13 owns the broad peak shell, but exact M13 improves all three aligned peak metrics. Keep it canonical; do not resize or retime the separately palm-centered M21 stone burst."
+  },
+  "m13RegistrationAudit": {
+    "unityPresentedShell": {"center": [1229.5, 427.5], "radiusPixels": 251.2},
+    "retailPresentedShellFrame272": {"center": [1205.5, 443.5], "radiusPixels": 253.4},
+    "retailPresentedShellFrame273": {"center": [1208.5, 441.5], "radiusPixels": 272.1},
+    "candidatePresentedDeltasPixels": [[-23, 32], [-32, 14]],
+    "interpretation": "The candidate deltas disagree by 9 pixels horizontally and 18 pixels vertically across one retail tick, while the retail shell radius changes 18.7 pixels from temporal composition and both Unity samples reuse one captured packet. Current-body feature registration is within roughly five pixels. No translation, scale, or timing correction is authorized without same-session pre-temporal packet and palm registration."
+  },
+  "observerAdmissionAudit": {
+    "session": "scratch/reverse_engineering/endfield_capture/20260829T115328Z",
+    "graphicsTriggerPresent": 1305,
+    "exactOverviewStartBeginsNearPresent": 1694,
+    "earlyArmDeltaPresents": 389,
+    "observerCommit": "19ddaaa",
+    "interpretation": "The failed session armed on loading-era body/post resources roughly 389 Presents before exact Endminf overview_start. Full automatic capture now requires the same-Present exact body+Uber conjunction one or two Presents after an exact early non-looping overview_start Animator sample."
   },
   "controlledExactUberProbe": {
     "requestedSeconds": [0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 4.35, 4.5, 5.0, 6.0, 8.0, 10.0, 12.0],
@@ -172,6 +211,8 @@
     "The corrected native-resolution bloom layout matches the retained 3840x2160-to-1920x1080 retail t1 descriptor and passes the exact peak Uber gate.",
     "The compatibility opening-strip pass now composes into packed SceneColor before temporal reconstruction. v9 proves submission on ten opening frames and improves temporal MAE slightly, but is not promoted over v8 because actor/effect MAE regress slightly.",
     "A controlled two-frame peak audit keeps exact M13 canonical: disabling it worsens actor, effect, and temporal metrics. M21 remains the small palm-centered stone owner and is not a valid target for compensatory resizing or retiming.",
+    "The source-backed opening-strip SceneMV Target1 marker is implemented, but its controlled v18 A/B is indistinguishable from disabled startup-history variance and therefore remains diagnostic-only. The exact retained packet transport now uses the captured independent Target1 blend state.",
+    "Capture 20260829T115328Z armed roughly 389 Presents too early during loading. Observer commit 19ddaaa adds the exact early overview_start Animator-to-graphics join required before the next retail capture.",
     "The dominant visible residual is the retail temporal multi-exposure/strip composition and upstream palm-owned VFX chronology, not animation timing or static camera framing."
   ]
 }

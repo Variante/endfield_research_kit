@@ -314,8 +314,9 @@
       "preExposure": 1.0,
       "exposureScale": 1.0,
       "colorBuffersHDR": true,
-      "indicatorInvertAxisX": true,
+      "indicatorInvertAxisX": false,
       "indicatorInvertAxisY": true,
+      "indicatorInversionRuntimeEvidence": "Capture 20260829T115328Z records X/Y 0/1 across the Endminf viewport-3 Streamline evaluations; this supersedes the earlier static 1/1 assumption.",
       "alphaUpscaling": false,
       "useAutoExposure": "HG setting byte",
       "modelPresets": {
@@ -388,7 +389,7 @@
       "reset": "per-frame integer",
       "preExposure": 1.0,
       "sharpness": 0.0,
-      "indicatorInvertAxisX": 1,
+      "indicatorInvertAxisX": 0,
       "indicatorInvertAxisY": 1,
       "reactiveInputs": "transparencyMask and biasColorMask null; ExecuteDLSS clears the native table before binding non-null slots"
     },

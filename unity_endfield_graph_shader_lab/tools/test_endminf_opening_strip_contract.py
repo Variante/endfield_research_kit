@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLOCK = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfVisualCompatibilityClock.cs"
 PIPELINE = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs"
 SHADER = ROOT / "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldEndminfOpeningStrip.shader"
+PLUGIN = ROOT / "tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp"
 
 
 class EndminfOpeningStripContractTests(unittest.TestCase):
@@ -82,6 +83,38 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
             method,
         )
 
+    def test_compatibility_publishes_retail_target1_scene_mv_marker(self) -> None:
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        shader = SHADER.read_text(encoding="utf-8")
+        self.assertIn("RecoveredEndminfOpeningStripSceneMVId", pipeline)
+        self.assertIn("recoveredSceneMV.descriptor", pipeline)
+        self.assertIn("ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV", pipeline)
+        selector = pipeline.index("ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV")
+        selector_end = pipeline.index("System.StringComparison.Ordinal", selector)
+        self.assertIn('"1"', pipeline[selector:selector_end])
+        self.assertIn("LastRecoveredEndminfOpeningStripSceneMVApplied = true", pipeline)
+        self.assertIn("#pragma fragment FragSceneMV", shader)
+        self.assertIn("original.b = max(original.b, coverage)", shader)
+        self.assertIn("preserve XY/A and set B=1", shader)
+
+    def test_exact_transport_uses_independent_target1_blend(self) -> None:
+        source = PLUGIN.read_text(encoding="utf-8")
+        start = source.index("D3D11_BLEND_DESC blend = {};")
+        end = source.index(
+            "device->CreateBlendState(&blend, &g_openingStripBlendState)",
+            start,
+        )
+        block = source[start:end]
+        self.assertIn(
+            "blend.RenderTarget[1].SrcBlend = D3D11_BLEND_SRC_COLOR", block
+        )
+        self.assertIn(
+            "blend.RenderTarget[1].DestBlend = D3D11_BLEND_INV_SRC_COLOR", block
+        )
+        self.assertIn(
+            "blend.RenderTarget[1].DestBlendAlpha = D3D11_BLEND_ONE", block
+        )
+
     def test_capture_reports_pre_temporal_compatibility_submission(self) -> None:
         pipeline = PIPELINE.read_text(encoding="utf-8")
         capture = (
@@ -101,6 +134,8 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
             "observedOpeningStripCompatibilityBeforeTemporal",
             capture,
         )
+        self.assertIn("openingStripSceneMVBeforeTemporal", capture)
+        self.assertIn("observedOpeningStripSceneMVBeforeTemporal", capture)
 
     def test_compatibility_call_precedes_temporal_input_diagnostics(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")

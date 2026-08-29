@@ -2297,6 +2297,14 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
         blend.RenderTarget[target].RenderTargetWriteMask =
             D3D11_COLOR_WRITE_ENABLE_ALL;
     }
+    // The live M_UI_charChoose_12 draw uses independent Target1 motion-vector
+    // blending. Its pixel shader publishes (0,0,1,0), so SrcColor/InvSrcColor
+    // preserves motion XY and replaces the B validity marker with one; One/One
+    // preserves destination alpha because source alpha is zero.
+    blend.RenderTarget[1].SrcBlend = D3D11_BLEND_SRC_COLOR;
+    blend.RenderTarget[1].DestBlend = D3D11_BLEND_INV_SRC_COLOR;
+    blend.RenderTarget[1].SrcBlendAlpha = D3D11_BLEND_ONE;
+    blend.RenderTarget[1].DestBlendAlpha = D3D11_BLEND_ONE;
     result = device->CreateBlendState(&blend, &g_m14BlendState);
     if (FAILED(result))
         return result;
