@@ -3065,17 +3065,12 @@ strip population but remains too dark without retail temporal accumulation.
 Keep v8 as the beauty baseline; retain the exact bounded owner as canonical
 source fidelity and close its downstream temporal history separately.
 
-The same v10 report bounds how much of the opening residual can be assigned to
-sparse secondary motion. Clean-reference source frames 120 and 150, the two
-largest opening actor-ROI errors, fall inside rejected long interpolation gaps:
-runtime replay clamps them to retained samples 5 and 10, respectively, about
-3.21 and 4.94 source frames from the requested phase. Through source frame 155,
-clamped rows average actor/effect ROI MAE 36.915/38.075 versus
-35.793/34.394 for rows that are exact or within a certified adjacent pair.
-Sparse hair/cape coverage therefore contributes to the entrance mismatch but
-does not explain its dominant temporal/compositing error. Keep the long-gap
-endpoint clamp; obtain denser same-session palettes rather than inventing
-motion between unobserved retail poses.
+Sparse secondary-motion samples do not justify endpoint snapping in the
+presentation path. That experiment introduced visible hair and cloth steps at
+every retained-sample boundary and is rejected. Until a dense same-session
+runtime trajectory is captured, compatibility replay interpolates positions
+and rotations continuously across sparse intervals; the remaining uncertainty
+is an evidence gap, not permission to add discontinuities.
 
 Directly transplanting the retail Streamline path into the Unity lab remains
 fail-closed. Unity's D3D11 plugin interface exposes both the native device and

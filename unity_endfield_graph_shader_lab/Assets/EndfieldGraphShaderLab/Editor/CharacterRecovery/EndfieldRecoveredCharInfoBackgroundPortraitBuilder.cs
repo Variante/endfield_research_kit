@@ -461,10 +461,10 @@ namespace EndfieldGraphShaderLabEditor
             };
             mesh.uv = new[]
             {
-                new Vector2(uMin, vMin),
-                new Vector2(uMax, vMin),
-                new Vector2(uMax, vMax),
                 new Vector2(uMin, vMax),
+                new Vector2(uMax, vMax),
+                new Vector2(uMax, vMin),
+                new Vector2(uMin, vMin),
             };
             mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
             mesh.RecalculateBounds();
@@ -495,10 +495,10 @@ namespace EndfieldGraphShaderLabEditor
             };
             Vector2[] expectedUv =
             {
-                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMin / SourceTextureSize),
-                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMin / SourceTextureSize),
-                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize),
                 new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMax / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMin / SourceTextureSize),
             };
 
             Vector3[] vertices = mesh.vertices;
