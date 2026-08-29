@@ -1,6 +1,6 @@
 {
   "schema": "endfield.character-recovery.full-clean-presentation-review.v2",
-  "generatedAt": "2026-08-29T14:20:37Z",
+  "generatedAt": "2026-08-29T14:30:09Z",
   "reference": "videos/2026-08-26_21-25-50.mkv",
   "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
   "current": {
@@ -105,6 +105,30 @@
     "settledPortraitScale": 0.9977,
     "settledPortraitDisplacementPixels": [0.6, 0.2],
     "interpretation": "No static FOV, actor-root, camera, portrait, or GridFar adjustment is authorized. The former large settled mismatch was a clip-wrapped comparison artifact; only a small late gyroscope timing residual remains."
+  },
+  "gyroscopeTimingProbe": {
+    "requestedSeconds": [7.2166667, 7.2333333, 7.2666667, 7.3333333, 7.4666667, 7.5, 7.9666667, 8.4666667, 9.4666667],
+    "sequenceOriginActualSeconds": 0.0166666694,
+    "sequenceOriginSourceFrame": 91,
+    "minusOneFrame": {
+      "report": "scratch/character_recovery/endminf_gyro_offset_minus1_probe_20260829/report.json",
+      "meanActorRoiMae": 18.464930116033756,
+      "meanEffectRoiMae": 18.754296875,
+      "meanEffectTemporalDeltaMae": 12.81438704648526
+    },
+    "zeroFrames": {
+      "report": "scratch/character_recovery/endminf_gyro_offset_0_probe_20260829/report.json",
+      "meanActorRoiMae": 18.18713997431664,
+      "meanEffectRoiMae": 18.294171937003966,
+      "meanEffectTemporalDeltaMae": 12.70229119425548
+    },
+    "plusOneFrame": {
+      "report": "scratch/character_recovery/endminf_gyro_offset_plus1_probe_20260829/report.json",
+      "meanActorRoiMae": 18.27073209044212,
+      "meanEffectRoiMae": 18.505134135251325,
+      "meanEffectTemporalDeltaMae": 13.31430472883598
+    },
+    "interpretation": "The current zero-frame schedule wins all three metrics. Keep it unchanged; the remaining late residual requires same-session runtime gyroscope state rather than a global one-frame retime."
   },
   "interpretation": [
     "The ordinary-plus-peak exact Uber transport is operational and fail-closed validation passes on every current frame.",
