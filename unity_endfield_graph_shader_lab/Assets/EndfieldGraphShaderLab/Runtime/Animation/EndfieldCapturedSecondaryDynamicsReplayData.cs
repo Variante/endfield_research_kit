@@ -9,7 +9,7 @@ namespace EndfieldGraphShaderLab
     public sealed class EndfieldCapturedSecondaryDynamicsReplayData : ScriptableObject
     {
         public const string ExpectedSchema =
-            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v6";
+            "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v7";
 
         public string sourceSchema;
         public string sourceSha256;
@@ -19,9 +19,10 @@ namespace EndfieldGraphShaderLab
         public float entranceBodyClipAnchorSeconds;
         public float entranceSequenceAnchorSeconds;
         public string[] bonePaths = Array.Empty<string>();
+        public string[] applicationAnchorPaths = Array.Empty<string>();
         public float[] sampleTimes = Array.Empty<float>();
-        public Vector3[] rootSpacePositions = Array.Empty<Vector3>();
-        public Quaternion[] rootSpaceRotations = Array.Empty<Quaternion>();
+        public Vector3[] anchorSpacePositions = Array.Empty<Vector3>();
+        public Quaternion[] anchorSpaceRotations = Array.Empty<Quaternion>();
         public bool transparentCapeExtensionObserved;
         public bool transparentCapeExtensionRuntimeEligible;
         public string transparentCapeCaptureSession;
@@ -68,8 +69,10 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             int poseCount = BoneCount * SampleCount;
-            if (rootSpacePositions == null || rootSpacePositions.Length != poseCount ||
-                rootSpaceRotations == null || rootSpaceRotations.Length != poseCount)
+            if (applicationAnchorPaths == null ||
+                applicationAnchorPaths.Length != BoneCount ||
+                anchorSpacePositions == null || anchorSpacePositions.Length != poseCount ||
+                anchorSpaceRotations == null || anchorSpaceRotations.Length != poseCount)
             {
                 failure = "captured oracle pose arrays differ from its declared dimensions";
                 return false;
@@ -80,6 +83,14 @@ namespace EndfieldGraphShaderLab
                 if (string.IsNullOrEmpty(bonePaths[bone]))
                 {
                     failure = "captured oracle contains an empty bone path";
+                    return false;
+                }
+                if (string.IsNullOrEmpty(applicationAnchorPaths[bone]) ||
+                    !bonePaths[bone].StartsWith(
+                        applicationAnchorPaths[bone] + "/",
+                        StringComparison.Ordinal))
+                {
+                    failure = "captured replay application anchor does not own its bone";
                     return false;
                 }
                 for (int other = 0; other < bone; other++)
@@ -103,8 +114,8 @@ namespace EndfieldGraphShaderLab
             }
             for (int pose = 0; pose < poseCount; pose++)
             {
-                Vector3 position = rootSpacePositions[pose];
-                Quaternion rotation = rootSpaceRotations[pose];
+                Vector3 position = anchorSpacePositions[pose];
+                Quaternion rotation = anchorSpaceRotations[pose];
                 if (!IsFinite(position.x) || !IsFinite(position.y) || !IsFinite(position.z) ||
                     !IsFinite(rotation.x) || !IsFinite(rotation.y) ||
                     !IsFinite(rotation.z) || !IsFinite(rotation.w) ||

@@ -26,6 +26,8 @@ namespace EndfieldGraphShaderLab
         public bool PoseAppliedThisFrame { get; private set; }
 
         private Transform[] bones = Array.Empty<Transform>();
+        private Transform[] applicationAnchors = Array.Empty<Transform>();
+        private int[] applicationOrder = Array.Empty<int>();
         private EndfieldOverviewPlayback overview;
         private int observedPlaybackGeneration = int.MinValue;
         private float sequenceElapsedSeconds;
@@ -103,12 +105,21 @@ namespace EndfieldGraphShaderLab
                 return Fail("captured replay and solver writeback cannot own the same bones");
 
             bones = new Transform[data.BoneCount];
+            applicationAnchors = new Transform[data.BoneCount];
+            applicationOrder = new int[data.BoneCount];
             for (int index = 0; index < bones.Length; index++)
             {
                 bones[index] = transform.Find(data.bonePaths[index]);
                 if (bones[index] == null)
                     return Fail("captured replay bone is missing: " + data.bonePaths[index]);
+                applicationAnchors[index] = transform.Find(data.applicationAnchorPaths[index]);
+                if (applicationAnchors[index] == null)
+                    return Fail("captured replay anchor is missing: " +
+                        data.applicationAnchorPaths[index]);
+                applicationOrder[index] = index;
             }
+            Array.Sort(applicationOrder, (left, right) =>
+                PathDepth(data.bonePaths[left]).CompareTo(PathDepth(data.bonePaths[right])));
 
             BindingValid = true;
             BindingFailure = string.Empty;
@@ -120,27 +131,56 @@ namespace EndfieldGraphShaderLab
             if (!BindingValid && !TryBind())
                 return;
             ResolveSample(data.sampleTimes, seconds, out int lower, out int upper, out float blend);
+            RejectUncapturedGap(
+                data.sampleTimes,
+                data.sourceFps,
+                seconds,
+                ref lower,
+                ref upper,
+                ref blend);
             LowerSampleIndex = lower;
             UpperSampleIndex = upper;
             SampleBlend = blend;
 
-            Matrix4x4 rootToWorld = transform.localToWorldMatrix;
-            Quaternion rootRotation = transform.rotation;
             int boneCount = data.BoneCount;
             int lowerOffset = lower * boneCount;
             int upperOffset = upper * boneCount;
-            for (int bone = 0; bone < boneCount; bone++)
+            for (int order = 0; order < applicationOrder.Length; order++)
             {
-                Vector3 rootPosition = Vector3.LerpUnclamped(
-                    data.rootSpacePositions[lowerOffset + bone],
-                    data.rootSpacePositions[upperOffset + bone], blend);
-                Quaternion rootBoneRotation = Quaternion.SlerpUnclamped(
-                    data.rootSpaceRotations[lowerOffset + bone],
-                    data.rootSpaceRotations[upperOffset + bone], blend);
+                int bone = applicationOrder[order];
+                Vector3 anchorPosition = Vector3.LerpUnclamped(
+                    data.anchorSpacePositions[lowerOffset + bone],
+                    data.anchorSpacePositions[upperOffset + bone], blend);
+                Quaternion anchorBoneRotation = Quaternion.SlerpUnclamped(
+                    data.anchorSpaceRotations[lowerOffset + bone],
+                    data.anchorSpaceRotations[upperOffset + bone], blend);
+                Transform anchor = applicationAnchors[bone];
                 bones[bone].SetPositionAndRotation(
-                    rootToWorld.MultiplyPoint3x4(rootPosition),
-                    rootRotation * rootBoneRotation);
+                    anchor.localToWorldMatrix.MultiplyPoint3x4(anchorPosition),
+                    anchor.rotation * anchorBoneRotation);
             }
+        }
+
+        public static void RejectUncapturedGap(
+            float[] times,
+            float sourceFps,
+            float seconds,
+            ref int lower,
+            ref int upper,
+            ref float blend)
+        {
+            if (lower == upper ||
+                (times[upper] - times[lower]) * sourceFps <= 1.5f)
+                return;
+
+            // Each package contains a measured previous/current pair. A longer
+            // interval is an unobserved retail gap, not permission to blend two
+            // unrelated absolute poses. Select the nearest measured endpoint.
+            if (seconds - times[lower] <= times[upper] - seconds)
+                upper = lower;
+            else
+                lower = upper;
+            blend = 0f;
         }
 
         public static void ResolveSample(
@@ -185,6 +225,8 @@ namespace EndfieldGraphShaderLab
         {
             BindingFailure = failure;
             bones = Array.Empty<Transform>();
+            applicationAnchors = Array.Empty<Transform>();
+            applicationOrder = Array.Empty<int>();
             if (!warned)
             {
                 warned = true;
@@ -192,6 +234,17 @@ namespace EndfieldGraphShaderLab
                     name + ": " + failure, this);
             }
             return false;
+        }
+
+        private static int PathDepth(string path)
+        {
+            int depth = 0;
+            for (int index = 0; index < path.Length; index++)
+            {
+                if (path[index] == '/')
+                    depth++;
+            }
+            return depth;
         }
     }
 }

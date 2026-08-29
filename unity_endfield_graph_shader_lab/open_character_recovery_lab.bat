@@ -34,8 +34,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME=1"
   set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=1"
   set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
-  rem Exact temporal VFX owners improve the no-frame-generation UI-free sequence.
-  set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=1"
+  rem The retained opening-strip packets remain diagnostic-only: their native
+  rem transport is screen-size-correct, but the current replay still shreds a
+  rem broad cape block instead of the retail trailing horizontal slices.
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
   set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
   rem Exact retail M20 gas-plume packet at the crystal-burst peak. This uses

@@ -117,7 +117,10 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
             SphereOutsidePresentationEnvironment,
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
-            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+            // The retained native packets validate transport, but their
+            // unculled geometry grossly overdraws the clean-reference opening.
+            // Keep them explicit diagnostic-only; canonical output uses the
+            // measured, owner-masked horizontal-band reconstruction.
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",

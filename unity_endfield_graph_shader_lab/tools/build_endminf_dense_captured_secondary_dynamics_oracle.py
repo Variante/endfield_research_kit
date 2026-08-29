@@ -55,7 +55,7 @@ EXPECTED_DECODED_SCHEMA = (
     "endfield.charinfo.endminf-partial-captured-skin-palette-sequence.v1"
 )
 OUTPUT_SCHEMA = (
-    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v6"
+    "endfield.charinfo.endminf-dense-captured-secondary-dynamics-oracle.v7"
 )
 BODY_CLIP_REFERENCE_SOURCE_FRAME = 115
 BODY_CLIP_REFERENCE_SECONDS = 0.05090830227
@@ -108,6 +108,10 @@ ANIMATOR_BODY_BONE_NAMES = {
     "Bip001_Spine1",
     "Bip001_Spine2",
 }
+SPINE2_PATH = (
+    "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2"
+)
+HEAD_PATH = SPINE2_PATH + "/Bip001_Neck/Bip001_Head"
 REFERENCE_MATCHED_SOURCE_FRAMES = {1845: 369, 2578: 385}
 
 
@@ -341,6 +345,12 @@ def build_complete_same_session_report(
             "base oracle primary bone count drifted")
     require(len(paths) == 80 and len(set(paths)) == len(paths),
             "same-session replay must contain 80 unique bones")
+    application_anchor_by_path = {
+        path: HEAD_PATH if path.startswith(HEAD_PATH + "/") else SPINE2_PATH
+        for path in paths
+    }
+    require(set(application_anchor_by_path.values()) == {HEAD_PATH, SPINE2_PATH},
+            "same-session replay must contain both head- and spine-anchored bones")
 
     metadata_root = session_root / "graphics/frames"
     metadata_by_frame = {}
@@ -386,6 +396,12 @@ def build_complete_same_session_report(
             ("previous", phase - 1.0 / base.REFERENCE_FPS, previous),
             ("current", phase, current),
         ):
+            missing_anchors = [
+                path for path in (HEAD_PATH, SPINE2_PATH) if path not in matrices
+            ]
+            require(not missing_anchors,
+                    f"frame {presented} {palette} lacks application anchors: "
+                    f"{missing_anchors}")
             samples.append({
                 "capturePresentedFrame": presented,
                 "capturePalette": palette,
@@ -396,7 +412,12 @@ def build_complete_same_session_report(
                 ),
                 "ownerBoneMatrices": [{
                     "path": path,
+                    "applicationAnchorPath": application_anchor_by_path[path],
                     "currentRootSpace3x4": matrices[path][1][:3],
+                    "currentAnchorSpace3x4": base.multiply(
+                        base.inverse(matrices[application_anchor_by_path[path]][1]),
+                        matrices[path][1],
+                    )[:3],
                 } for path in paths],
             })
     samples.sort(key=lambda row: row["phaseSeconds"])
@@ -465,7 +486,8 @@ def build_complete_same_session_report(
         "status": "complete_same_session_retail_skinning_replay",
         "scope": (
             "all 74 primary dynamic bones plus six transparent-cape bones; "
-            "previous/current palettes and QPC timing come from one retail session"
+            "previous/current palettes, Head/Spine2 application anchors, and "
+            "QPC timing come from one retail session"
         ),
         "captureSessions": [EXPECTED_COMPLETE_SESSION],
         "frameCount": len(samples),

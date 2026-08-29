@@ -70,6 +70,10 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertIn("float chromaUv", source)
         self.assertIn("shiftedUv + float2(chromaUv, 0.0)", source)
         self.assertIn("shiftedUv - float2(chromaUv, 0.0)", source)
+        self.assertIn("OpeningStripHash", source)
+        self.assertIn("floor(retailPixel.y / 8.0)", source)
+        self.assertIn("rowSelector > 0.88", source)
+        self.assertIn("lerp(110.0, 420.0, shiftSelector)", source)
         self.assertNotIn("Hash11", source)
 
     def test_shader_uses_shifted_character_selector_ownership(self) -> None:
@@ -78,10 +82,12 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         selector = source.index("float4 selector = tex2Dlod")
         shifted_uv = source.index("float4(shiftedUv, 0.0, 0.0)", selector)
         owner = source.index("float shiftedOwner = step", shifted_uv)
-        composite = source.index("return lerp(original, shifted, activeBand * shiftedOwner)", owner)
+        destination = source.index("float destinationOwner = step", owner)
+        composite = source.index("activeBand * shiftedOwner * (1.0 - destinationOwner)", destination)
         self.assertLess(selector, shifted_uv)
         self.assertLess(shifted_uv, owner)
-        self.assertLess(owner, composite)
+        self.assertLess(owner, destination)
+        self.assertLess(destination, composite)
         self.assertNotIn("uv.y + displacement", source)
 
 
