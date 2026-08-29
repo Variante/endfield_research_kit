@@ -123,6 +123,7 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             EndminfM21ExactEnvironment,
             "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
         };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";

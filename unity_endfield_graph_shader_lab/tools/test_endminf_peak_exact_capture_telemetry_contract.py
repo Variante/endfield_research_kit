@@ -78,6 +78,12 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             self.assertIn(flag, source, flag)
             self.assertIn(f'set "{flag}=1"', wrapper, flag)
 
+    def test_canonical_video_admits_the_source_certified_uber_tick(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        start = source.index("CanonicalVideoDefaultFlags")
+        defaults = source[start:source.index("};", start)]
+        self.assertIn("ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT", defaults)
+
 
 if __name__ == "__main__":
     unittest.main()
