@@ -13,7 +13,7 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_OBSERVER_SHA256 = (
-    "F4D0A5136F9CAEBF91A7A01987084CF247C3E448B558C010906276B5EC95990B")
+    "3EFF5BCDD2F130D7344148D4812E57ABFB60D34747A6D8BCB589AB80876DAF6E")
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_draw_contract_capture",
     HERE / "verify_endminf_draw_contract_capture.py")

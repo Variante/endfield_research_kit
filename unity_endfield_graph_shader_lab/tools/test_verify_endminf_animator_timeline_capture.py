@@ -147,6 +147,7 @@ class AnimatorTimelineCaptureTests(unittest.TestCase):
             "qpcFailures": 0,
             "presentClockFailures": 0,
             "ownershipChanges": 0,
+            "identitySegments": 1,
             "sampleOverflow": 0,
             "reentrantCalls": 0,
             "recorderComplete": True,
@@ -157,6 +158,11 @@ class AnimatorTimelineCaptureTests(unittest.TestCase):
             "loopSettled": True,
             "firstWrapObserved": True,
             "sequenceComplete": True,
+            "classifiedIdentitySegments": 1,
+            "completeIdentitySegments": 1,
+            "selectedIdentitySegment": 0,
+            "selectedSegmentOffset": 0,
+            "selectedSegmentSampleCount": len(samples),
             "indices": {"start": 0, "transitionStart": 2,
                         "transitionEnd": 4, "firstWrap": 7},
             "stateHashes": {"startFullPath": START_HASH,
@@ -301,14 +307,87 @@ class AnimatorTimelineCaptureTests(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.TimelineError, expected):
                     self.report(mutate)
 
-    def test_ownership_change_fails(self) -> None:
+    def test_fragmented_identities_without_complete_segment_fail(self) -> None:
         def mutate(capture: Path) -> None:
             path, data = self.metadata(capture)
             data["samples"][5]["animator"] = "0x9999"
             path.write_text(json.dumps(data), encoding="utf-8")
         with self.assertRaisesRegex(MODULE.TimelineError,
-                                    "ownership identity changes"):
+                                    "no identity segment contains"):
             self.report(mutate)
+
+    def test_incomplete_identity_then_complete_recreation_passes(self) -> None:
+        def mutate(capture: Path) -> None:
+            path, data = self.metadata(capture)
+            rows = data["samples"]
+            for row in rows:
+                row["ordinal"] += 1
+            prefix = sample(0, state(LOOP_HASH, 0.4, 1))
+            prefix["qpcTick"] = 900
+            prefix["priorPresentOrdinal"] = 9
+            prefix["priorPresentQpc"] = 800
+            prefix["nextObservedPresentOrdinal"] = rows[0][
+                "priorPresentOrdinal"]
+            prefix["nextObservedPresentQpc"] = rows[0]["priorPresentQpc"]
+            prefix["owner"] = "0xaaaa"
+            prefix["animator"] = "0xbbbb"
+            data["samples"] = [prefix, *rows]
+            data["sampleCount"] = 9
+            data["originalCalls"] = 11
+            data["candidateCalls"] = 11
+            data["ownerMatches"] = 9
+            data["ownershipChanges"] = 1
+            data["identitySegments"] = 2
+            data["classifiedIdentitySegments"] = 2
+            data["completeIdentitySegments"] = 1
+            data["selectedIdentitySegment"] = 1
+            data["selectedSegmentOffset"] = 1
+            data["selectedSegmentSampleCount"] = 8
+            data["indices"] = {key: value + 1
+                               for key, value in data["indices"].items()}
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+        report = self.report(mutate)
+        self.assertEqual(report["metadata"]["classifiedIdentitySegments"], 2)
+        self.assertEqual(report["metadata"]["selectedIdentitySegment"], 1)
+        self.assertEqual(report["classification"]["indices"]["firstWrap"], 8)
+
+    def test_two_complete_sequential_identities_pass_and_select_first(self) -> None:
+        def mutate(capture: Path) -> None:
+            path, data = self.metadata(capture)
+            first = data["samples"]
+            second = json.loads(json.dumps(first))
+            for row in second:
+                row["ordinal"] += len(first)
+                row["qpcTick"] += 1000
+                row["priorPresentOrdinal"] += 20
+                row["priorPresentQpc"] += 1000
+                row["owner"] = "0xaaaa"
+                row["animator"] = "0xbbbb"
+            rows = [*first, *second]
+            for row_index, row in enumerate(rows):
+                later = next((candidate for candidate in rows[row_index + 1:]
+                              if candidate["priorPresentOrdinal"] >
+                              row["priorPresentOrdinal"]), None)
+                row["nextObservedPresentOrdinal"] = (None if later is None else
+                    later["priorPresentOrdinal"])
+                row["nextObservedPresentQpc"] = (None if later is None else
+                    later["priorPresentQpc"])
+            data["samples"] = rows
+            data["sampleCount"] = 16
+            data["originalCalls"] = 18
+            data["candidateCalls"] = 18
+            data["ownerMatches"] = 16
+            data["ownershipChanges"] = 1
+            data["identitySegments"] = 2
+            data["classifiedIdentitySegments"] = 2
+            data["completeIdentitySegments"] = 2
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+        report = self.report(mutate)
+        self.assertEqual(report["metadata"]["completeIdentitySegments"], 2)
+        self.assertEqual(report["metadata"]["selectedIdentitySegment"], 0)
+        self.assertEqual(report["classification"]["indices"]["firstWrap"], 7)
 
     def test_missing_wrap_fails(self) -> None:
         def mutate(capture: Path) -> None:

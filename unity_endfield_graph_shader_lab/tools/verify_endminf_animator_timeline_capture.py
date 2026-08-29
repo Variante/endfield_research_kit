@@ -15,7 +15,7 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_OBSERVER_SHA256 = (
-    "F4D0A5136F9CAEBF91A7A01987084CF247C3E448B558C010906276B5EC95990B")
+    "3EFF5BCDD2F130D7344148D4812E57ABFB60D34747A6D8BCB589AB80876DAF6E")
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_draw_contract_capture",
     HERE / "verify_endminf_draw_contract_capture.py")
@@ -23,7 +23,7 @@ assert SPEC and SPEC.loader
 BASE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BASE)
 
-EXPECTED_SCHEMA = "endfieldCapture.endminfAnimatorTimeline.v2"
+EXPECTED_SCHEMA = "endfieldCapture.endminfAnimatorTimeline.v3"
 EXPECTED_CHARACTER = "chr_0003_endminf"
 EXPECTED_CAPACITY = 8192
 HEX_IDENTITY = re.compile(r"0x[1-9a-fA-F][0-9a-fA-F]*\Z")
@@ -206,6 +206,40 @@ def validate_samples(value: Any) -> list[dict[str, Any]]:
     return samples
 
 
+def validate_global_chronology(samples: list[dict[str, Any]]) -> None:
+    for index in range(1, len(samples)):
+        before = samples[index - 1]
+        after = samples[index]
+        require(after["ordinal"] > before["ordinal"],
+                f"sample ordinal does not increase at sample {index}")
+        require(after["qpcTick"] > before["qpcTick"],
+                f"QPC cadence does not increase at sample {index}")
+        require(after["presentOrdinal"] >= before["presentOrdinal"],
+                f"Present ordinal regresses at sample {index}")
+        require(after["lastPresentQpc"] >= before["lastPresentQpc"],
+                f"associated Present QPC regresses at sample {index}")
+        if after["presentOrdinal"] == before["presentOrdinal"]:
+            require(after["lastPresentQpc"] == before["lastPresentQpc"],
+                    f"same Present ordinal has inconsistent QPC at sample {index}")
+        else:
+            require(after["lastPresentQpc"] > before["lastPresentQpc"],
+                    f"new Present ordinal lacks a new QPC at sample {index}")
+
+    # Runtime serialization derives these pairs across the entire retained
+    # sample vector, including an identity-segment boundary.
+    for index, sample in enumerate(samples):
+        next_index = next((later for later in range(index + 1, len(samples))
+                           if samples[later]["presentOrdinal"] >
+                           sample["presentOrdinal"]), None)
+        expected_ordinal = (None if next_index is None else
+                            samples[next_index]["presentOrdinal"])
+        expected_qpc = (None if next_index is None else
+                        samples[next_index]["lastPresentQpc"])
+        require(sample["nextObservedPresentOrdinal"] == expected_ordinal and
+                sample["nextObservedPresentQpc"] == expected_qpc,
+                f"derived next observed Present disagrees at sample {index}")
+
+
 def classify(samples: list[dict[str, Any]]) -> dict[str, Any]:
     first = samples[0]
     identity = (first["owner"], first["animator"], first["threadId"],
@@ -338,21 +372,6 @@ def classify(samples: list[dict[str, Any]]) -> dict[str, Any]:
             require(after["lastPresentQpc"] > before["lastPresentQpc"],
                     f"new Present ordinal lacks a new QPC at sample {index}")
 
-    # Runtime serialization labels the callback result as the prior Present.
-    # Independently derive only the first later observed Present boundary; do
-    # not claim that an Animator tick belongs to a same-frame Present.
-    for index, sample in enumerate(samples):
-        next_index = next((later for later in range(index + 1, len(samples))
-                           if samples[later]["presentOrdinal"] >
-                           sample["presentOrdinal"]), None)
-        expected_ordinal = (None if next_index is None else
-                            samples[next_index]["presentOrdinal"])
-        expected_qpc = (None if next_index is None else
-                        samples[next_index]["lastPresentQpc"])
-        require(sample["nextObservedPresentOrdinal"] == expected_ordinal and
-                sample["nextObservedPresentQpc"] == expected_qpc,
-                f"derived next observed Present disagrees at sample {index}")
-
     return {
         "stableIdentity": True,
         "stateHashesValid": True,
@@ -371,9 +390,65 @@ def classify(samples: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def classify_segments(samples: list[dict[str, Any]]) -> dict[str, Any]:
+    segments: list[dict[str, Any]] = []
+    offset = 0
+    while offset < len(samples):
+        end = offset + 1
+        identity = (samples[offset]["owner"], samples[offset]["animator"])
+        while (end < len(samples) and
+               (samples[end]["owner"], samples[end]["animator"]) == identity):
+            end += 1
+        try:
+            classification = classify(samples[offset:end])
+        except TimelineError as exc:
+            segments.append({
+                "offset": offset,
+                "sampleCount": end - offset,
+                "owner": identity[0],
+                "animator": identity[1],
+                "complete": False,
+                "diagnostic": str(exc),
+            })
+        else:
+            segments.append({
+                "offset": offset,
+                "sampleCount": end - offset,
+                "owner": identity[0],
+                "animator": identity[1],
+                "complete": True,
+                "classification": classification,
+            })
+        offset = end
+
+    complete = [index for index, segment in enumerate(segments)
+                if segment["complete"]]
+    if not complete and len(segments) == 1:
+        raise TimelineError(segments[0]["diagnostic"])
+    require(complete, "no identity segment contains a complete exact "
+            "Endminf start-to-loop-wrap sequence")
+    selected_index = complete[0]
+    selected = segments[selected_index]
+    local = selected["classification"]
+    derived = {**local, "indices": {
+        key: value + selected["offset"]
+        for key, value in local["indices"].items()
+    }}
+    return {
+        "classification": derived,
+        "classifiedIdentitySegments": len(segments),
+        "completeIdentitySegments": len(complete),
+        "selectedIdentitySegment": selected_index,
+        "selectedSegmentOffset": selected["offset"],
+        "selectedSegmentSampleCount": selected["sampleCount"],
+        "segments": segments,
+    }
+
+
 def validate_metadata(metadata: dict[str, Any],
                       samples: list[dict[str, Any]],
-                      derived: dict[str, Any]) -> dict[str, Any]:
+                      segmented: dict[str, Any]) -> dict[str, Any]:
+    derived = segmented["classification"]
     require(metadata.get("schema") == EXPECTED_SCHEMA,
             "animator timeline metadata schema is invalid")
     require(metadata.get("characterId") == EXPECTED_CHARACTER,
@@ -398,7 +473,7 @@ def validate_metadata(metadata: dict[str, Any],
                   "exactOwnerReadFailures", "tickNotStarted",
                   "invalidAnimator", "stateApiFailures", "qpcFailures",
                   "presentClockFailures", "ownershipChanges",
-                  "sampleOverflow"):
+                  "identitySegments", "sampleOverflow"):
         counters[field] = integer(metadata.get(field), field)
     require(counters["originalCalls"] == counters["candidateCalls"],
             "originalCalls and candidateCalls differ")
@@ -410,10 +485,13 @@ def validate_metadata(metadata: dict[str, Any],
     for field in ("ownerReadFailures", "exactOwnerReadFailures",
                   "tickNotStarted", "invalidAnimator",
                   "stateApiFailures", "qpcFailures",
-                  "presentClockFailures", "ownershipChanges",
-                  "sampleOverflow"):
+                  "presentClockFailures", "sampleOverflow"):
         require(counters[field] == 0,
                 f"animator timeline metadata {field} is nonzero")
+    require(counters["identitySegments"] ==
+            segmented["classifiedIdentitySegments"] and
+            counters["ownershipChanges"] == counters["identitySegments"] - 1,
+            "animator identity-segment lifecycle counters disagree")
     reentrant_calls = integer(metadata.get("reentrantCalls"), "reentrantCalls")
     require(reentrant_calls == 0,
             "animator timeline metadata reentrantCalls is nonzero")
@@ -423,12 +501,25 @@ def validate_metadata(metadata: dict[str, Any],
             "metadata indices disagree with independently derived indices")
     require(metadata.get("stateHashes") == derived["stateHashes"],
             "metadata stateHashes disagree with independently derived hashes")
+    for field in ("classifiedIdentitySegments", "completeIdentitySegments",
+                  "selectedIdentitySegment", "selectedSegmentOffset",
+                  "selectedSegmentSampleCount"):
+        require(integer(metadata.get(field), field) == segmented[field],
+                f"metadata {field} disagrees with independent segmentation")
     for field in ("stableIdentity", "stateHashesValid", "cadenceValid", "transitionObserved",
                   "loopSettled", "firstWrapObserved", "sequenceComplete"):
         require(metadata.get(field) == derived[field],
                 f"metadata {field} disagrees with independent classification")
-    return {"sampleCapacity": EXPECTED_CAPACITY,
-            "sampleCount": sample_count, "counters": counters}
+    return {
+        "sampleCapacity": EXPECTED_CAPACITY,
+        "sampleCount": sample_count,
+        "counters": counters,
+        "classifiedIdentitySegments": segmented["classifiedIdentitySegments"],
+        "completeIdentitySegments": segmented["completeIdentitySegments"],
+        "selectedIdentitySegment": segmented["selectedIdentitySegment"],
+        "selectedSegmentOffset": segmented["selectedSegmentOffset"],
+        "selectedSegmentSampleCount": segmented["selectedSegmentSampleCount"],
+    }
 
 
 def build_report(capture: Path, *,
@@ -456,8 +547,10 @@ def build_report(capture: Path, *,
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     require(isinstance(metadata, dict), "animator metadata is not an object")
     samples = validate_samples(metadata.get("samples"))
-    derived = classify(samples)
-    validated_metadata = validate_metadata(metadata, samples, derived)
+    validate_global_chronology(samples)
+    segmented = classify_segments(samples)
+    derived = segmented["classification"]
+    validated_metadata = validate_metadata(metadata, samples, segmented)
 
     start = derived["indices"]["start"]
     transition_start = derived["indices"]["transitionStart"]
@@ -530,6 +623,7 @@ def build_report(capture: Path, *,
                     "endminfAnimatorComplete": True},
         "metadata": validated_metadata,
         "classification": derived,
+        "identitySegments": segmented["segments"],
         "timing": timing,
         "stateHashes": derived["stateHashes"],
         "controllerStateEvidence": {
