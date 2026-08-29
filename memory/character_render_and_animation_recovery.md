@@ -3025,6 +3025,27 @@ removing exact M13: enabled improves actor/effect/temporal MAE from
 canonical; M21 remains the compact palm-centered ten-stone owner and must not be
 resized or retimed to compensate for the broad shell.
 
+The retail opening owner also writes SceneMV Target1 independently: its
+`(0,0,1,0)` source with SrcColor/InvSrcColor RGB and One/One alpha preserves
+motion XY/A while setting the B validity marker. Capture schema v18 exposes a
+compatibility implementation of that publication. A controlled 17-frame
+on/off/repeated-off audit cannot distinguish it from startup temporal-history
+variance: the enabled result scores 25.2271/14.2720/7.7644 actor/effect/temporal
+MAE, while two disabled runs span 25.1132-25.2664, 14.2448-14.2758, and
+7.5946-7.8058; frames 4-16 are byte-identical. Keep the compatibility Target1
+publication explicit diagnostic-only. The exact retained packet transport does
+use the recovered independent Target1 blend state, which corrects its previous
+RT0-state reuse without promoting the compatibility approximation.
+
+Presented-frame registration does not authorize moving M13. Its recovered
+shell fits `(1229.5,427.5)`, radius 251.2 px, while adjacent retail frames fit
+`(1205.5,443.5)`, radius 253.4 px and `(1208.5,441.5)`, radius 272.1 px.
+Palm/cuff proxies yield inconsistent candidate translations `(-23,+32)` and
+`(-32,+14)` pixels, and both Unity samples reuse one packet while retail is a
+changing temporal composite. Current-body features are already within roughly
+five pixels. Require same-session pre-temporal packet and current-palm evidence
+before any M13 translation, scaling, or retiming.
+
 The retained exact Uber resource also exposed a native-resolution bloom-layout
 bug in the reproduction. The old builder capped a 3840x2160 source to
 1920x1080 and then halved it again, yielding an invalid 960x540 first mip. The
@@ -3094,9 +3115,12 @@ repeats the recovered 0.75 exit, 0.25 normalized non-fixed transition, zero
 destination offset, start/loop lengths, and first settled wrap. This is strong
 corroboration, but the session does not certify the lane: automatic graphics
 capture armed during loading, cadence failed, and the second owner recreation
-invalidated the old single-identity summary. The observer now segments
-sequential identities, requires the body candidate and exact Endminf Uber in
-the same Present before automatic arming, excludes unscheduled priority M20
+invalidated the old single-identity summary. More specifically, its graphics
+trigger armed at Present 1305 while exact Endminf `overview_start` begins near
+Present 1694, roughly 389 Presents later. The observer now segments sequential
+identities, requires the same-Present body candidate and exact Endminf Uber one
+or two Presents after an exact early non-looping `overview_start` Animator
+sample before automatic arming, excludes unscheduled priority M20
 packages from scheduled cadence, and admits priority M20 only for an exact
 matched shader route with `DrawIndexedInstanced(36,1,...)`. Do not use the
 wall-clock extrapolation to claim exact loop-phase visual equality; replace it
@@ -3137,7 +3161,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run the corrected observer on the next game session and close the retail
+1. Run observer commit `19ddaaa` on the next game session and close the retail
    temporal boundary with consecutive pre/post Streamline surfaces, depth,
    velocity, jitter/reset, frame token, formats, extents, and resource tags.
    The compatibility opening strip is now ordered correctly before temporal,
