@@ -3007,10 +3007,14 @@ suite and the complete v7 Unity sequence pass. Retail chronology evidence still
 requires the next hardened D3D11 game capture; Unity submission validates the
 replay transport, not the missing live SceneColor boundaries.
 
-The complete v7 Unity sequence is ready for user visual review. Do not accept
-it as a fidelity improvement or replace the comparison authority solely because
-its exact transports validate; the same-schema visual metrics remain slightly
-worse than v4.
+The complete v8 Unity sequence supersedes v7 for user review. It preserves the
+validated exact Uber/M13/M21 presentation but removes M31 from maintained
+defaults: a formal ten-sample toggle holds the animation clocks byte-for-byte
+equal while M31-on worsens actor, effect, and temporal comparison metrics. M31
+transport remains available and validates as a diagnostic, but is not visual
+admission evidence until the live SceneColor chronology is closed. v8 improves
+slightly over v7, while the older v4 remains visually better overall; treat v8
+as the evidence-correct current build, not a parity claim.
 
 The retained exact Uber resource also exposed a native-resolution bloom-layout
 bug in the reproduction. The old builder capped a 3840x2160 source to
@@ -3033,11 +3037,16 @@ repeating eight-sample pixel-jitter cycle and indicator inversion X/Y `0/1`,
 while v7 still uses the zero-jitter compatibility temporal resolve. Preserve
 those distinctions and do not retune the body animation to compensate.
 
-The schema-v3 full-sequence comparator has one additional evidence limit: its
-active-clip mapping resets the retail source when the dominant clip changes to
-`overview_loop`. Until a separate loop anchor is added, use chronological
-mapping for settled-loop metrics rather than treating those reset rows as
-phase-authoritative.
+The full-sequence comparator now uses elapsed sequence time from the established
+start anchor rather than reusing wrapped clip-local time after the dominant
+clip changes to `overview_loop`. It supports a separate paired loop anchor when
+one is independently recovered and fails closed on incomplete or backwards
+mappings. The corrected chronological pairing disproves the apparent settled
+camera/framing gap: actor and portrait scale are within a few tenths of one
+percent and displacement is sub-pixel before the late cursor move. Do not
+change FOV, actor root scale, static camera position, portrait placement, or
+GridFar to fit the old clip-wrapped comparison. The remaining late offset is a
+small gyroscope timing/state gap.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
