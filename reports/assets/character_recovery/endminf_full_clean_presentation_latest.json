@@ -1,16 +1,16 @@
 {
-  "schema": "endfield.character-recovery.full-clean-presentation-review.v1",
-  "generatedAt": "2026-08-29T13:45:00Z",
+  "schema": "endfield.character-recovery.full-clean-presentation-review.v2",
+  "generatedAt": "2026-08-29T14:20:37Z",
   "reference": "videos/2026-08-26_21-25-50.mkv",
   "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
   "current": {
-    "label": "endminf_full_clean_presentation_v7_20260829",
-    "report": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/report.json",
-    "video": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/endminf_full_clean_presentation_v7.mp4",
-    "reviewSheet": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/review_sheet.png",
-    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/reference_full_comparison.json",
-    "comparisonSheet": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/reference_full_comparison_sheet.png",
-    "sideBySideVideo": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/retail_left_unity_v7_right.mp4",
+    "label": "endminf_full_clean_presentation_v8_20260829",
+    "report": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/report.json",
+    "video": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/endminf_full_clean_presentation_v8.mp4",
+    "reviewSheet": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/review_sheet.png",
+    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/reference_full_comparison_v4.json",
+    "comparisonSheet": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/reference_full_comparison_v4_sheet.png",
+    "sideBySideVideo": "scratch/character_recovery/endminf_full_clean_presentation_v8_20260829/retail_left_unity_v8_right.mp4",
     "status": "ok",
     "frameCount": 770,
     "fps": 60.0,
@@ -20,19 +20,28 @@
       "peakFrames": 1,
       "failureCount": 0
     },
-    "m31ValidatedFrames": 89,
+    "m31Requested": false,
+    "unityPublicNgxProxyRequested": false,
     "bestSourceOffsetFrames": -1,
-    "meanActorRoiMae": 32.32018144457974,
-    "meanEffectRoiMae": 37.7205187386915,
-    "meanEffectTemporalDeltaMae": 24.644008866299046
+    "boundedComparisonFrames": 554,
+    "meanActorRoiMae": 23.887383868557883,
+    "meanEffectRoiMae": 25.699980710871394,
+    "meanEffectTemporalDeltaMae": 15.595813471133882
   },
-  "sameSchemaBaseline": {
-    "label": "endminf_full_clean_presentation_v4_20260829",
-    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v4_20260829/reference_full_comparison_v3.json",
-    "bestSourceOffsetFrames": -1,
-    "meanActorRoiMae": 31.616432418874517,
-    "meanEffectRoiMae": 36.8730951588501,
-    "meanEffectTemporalDeltaMae": 24.588498086734695
+  "chronologicalBaselines": {
+    "comparisonSchema": "endfield.endminf-dense-window-comparison.v4",
+    "v4": {
+      "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v4_20260829/reference_full_comparison_v4.json",
+      "meanActorRoiMae": 23.321838919199404,
+      "meanEffectRoiMae": 25.063306785785915,
+      "meanEffectTemporalDeltaMae": 15.554831814142675
+    },
+    "v7": {
+      "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/reference_full_comparison_v4.json",
+      "meanActorRoiMae": 23.914714165817287,
+      "meanEffectRoiMae": 25.774483798683935,
+      "meanEffectTemporalDeltaMae": 15.561747972219829
+    }
   },
   "controlledExactUberProbe": {
     "requestedSeconds": [0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 4.35, 4.5, 5.0, 6.0, 8.0, 10.0, 12.0],
@@ -62,27 +71,48 @@
     "exactUberValidated": true
   },
   "m31WindowAudit": {
-    "activeFrameRange": [165, 253],
-    "materialFrameRange": [189, 253],
-    "actorRoiMaeWithoutM31": 45.2564,
-    "actorRoiMaeWithM31": 45.6332,
-    "effectRoiMaeWithoutM31": 56.2729,
-    "effectRoiMaeWithM31": 56.9436,
-    "interpretation": "The exact transport validates, but packets 2-6 regress the current retail comparison. Keep visual admission provisional until live SceneColor chronology is recovered."
+    "requestedSeconds": [2.7333333, 2.8333333, 2.8833334, 3.0666667, 3.2333333, 3.45, 3.6666667, 3.9, 4.1166667, 4.2333333],
+    "disabledReport": "scratch/character_recovery/endminf_m31_formal_ab_off_v15_20260829/report.json",
+    "enabledReport": "scratch/character_recovery/endminf_m31_formal_ab_on_20260829/report.json",
+    "maximumActualSecondsDelta": 0.0,
+    "maximumBodyClipTimeDelta": 0.0,
+    "disabled": {
+      "meanActorRoiMae": 22.769815813612183,
+      "meanEffectRoiMae": 26.429601603835984,
+      "meanEffectTemporalDeltaMae": 29.848666225749557
+    },
+    "enabled": {
+      "meanActorRoiMae": 23.044102549990825,
+      "meanEffectRoiMae": 26.927771660052912,
+      "meanEffectTemporalDeltaMae": 29.870738076866548
+    },
+    "interpretation": "The exact transport validates, but its current replay regresses all three aligned metrics. M31 is diagnostic-only until live SceneColor chronology is recovered."
   },
   "publicNgxProxyProbe": {
-    "report": "scratch/character_recovery/endminf_public_ngx_proxy_probe_20260829/report.json",
-    "meanActorRoiMae": 119.988,
-    "meanEffectRoiMae": 114.574,
-    "meanEffectTemporalDeltaMae": 45.916,
-    "interpretation": "The public Unity NGX wrapper validates technically but produces a severely dark output and is rejected as a presentation path."
+    "report": "scratch/character_recovery/endminf_public_ngx_captured_jitter_probe_20260829/report.json",
+    "capturedJitterCycleApplied": true,
+    "indicatorInvertAxisX": 0,
+    "indicatorInvertAxisY": 1,
+    "meanActorRoiMae": 121.14715844465569,
+    "meanEffectRoiMae": 114.19625661375662,
+    "meanEffectTemporalDeltaMae": 45.227826636904766,
+    "interpretation": "The source-backed jitter and axis constants validate technically, but Unity's public MaximumQuality NGX wrapper remains severely dark and is rejected as a presentation path."
   },
-  "comparisonLimit": "The schema-v3 activeBodyClip mapping resets the source mapping when the dominant clip flips to overview_loop at Unity frame 305. Settled-loop metrics must use chronological mapping or a separate loop anchor.",
+  "cameraFramingAudit": {
+    "mapping": "chronological",
+    "settledActorScale": 0.9992,
+    "settledActorDisplacementPixels": [0.2, -0.4],
+    "settledPortraitScale": 0.9977,
+    "settledPortraitDisplacementPixels": [0.6, 0.2],
+    "interpretation": "No static FOV, actor-root, camera, portrait, or GridFar adjustment is authorized. The former large settled mismatch was a clip-wrapped comparison artifact; only a small late gyroscope timing residual remains."
+  },
   "interpretation": [
     "The ordinary-plus-peak exact Uber transport is operational and fail-closed validation passes on every current frame.",
     "The controlled current-code probe makes exact Uber neutral to slightly favorable overall: actor and temporal MAE improve slightly while effect MAE changes by less than one tenth.",
-    "The full v4-to-v7 difference cannot be attributed to ordinary Uber alone. The dominant visible residual remains the missing retail temporal/ghost composition and upstream owner ordering.",
-    "The latest observer capture proves a repeating nonzero eight-sample Streamline jitter cycle and X/Y indicator inversion 0/1; v7 still uses a zero-jitter compatibility temporal resolve.",
-    "The corrected native-resolution bloom layout now matches the retained 3840x2160-to-1920x1080 retail t1 descriptor and passes the exact peak Uber gate."
+    "The chronological comparator removes the false loop reset and proves current static framing is effectively exact.",
+    "v8 removes M31 from presentation defaults and slightly improves actor/effect agreement over v7, but v4 remains visually better overall; v8 is the evidence-correct current build, not a parity claim.",
+    "The latest observer capture proves a repeating nonzero eight-sample Streamline jitter cycle and X/Y indicator inversion 0/1. The public NGX proxy remains rejected, while the canonical reproduction still uses a compatibility temporal resolve.",
+    "The corrected native-resolution bloom layout matches the retained 3840x2160-to-1920x1080 retail t1 descriptor and passes the exact peak Uber gate.",
+    "The dominant visible residual is the retail temporal multi-exposure/strip composition and upstream palm-owned VFX chronology, not animation timing or static camera framing."
   ]
 }
