@@ -2367,20 +2367,15 @@ therefore not a proven net fidelity gain. Keep the measured rows, but close the
 remaining opening transport from the automatic exact-Uber sequence rather than
 expanding rectangles from temporal-video heuristics.
 
-Canonical batch video export now defaults to the same source-backed deferred,
-M13/M14/M21/M27, binning, shadow, and SphereOutside presentation flags as the
-interactive launcher; an explicit environment value, including `0`, remains an
-A/B override. A fresh 770-frame render with that profile remains complete and
-UI-free. Against the clean recording at the established -1-frame alignment it
-scores 21.2970 actor-ROI MAE, 21.8941 effect-ROI MAE, and 11.9846 temporal-delta
-MAE. The exact profile improves the opening and crystal windows relative to the
-earlier batch that silently omitted parts of that profile (opening effect
-21.7863 versus 22.1516; crystal effect 23.5660 versus 24.4083; crystal temporal
-15.8459 versus 16.6837), while settled actor ROI regresses slightly. This is a
-real peak-presentation gain, not parity. M27 already consumes the four exact
-captured base/MRO/normal/parallax textures, and M21's textureless white default
-is source-valid, so the remaining visibly wrong stone appearance belongs to
-deferred lighting/compositing and gas transport rather than texture extraction.
+Canonical batch video export currently defaults only to the validated exact
+M13, one-sample M21, and ordinary/peak Uber paths. M14, M20, M27 deferred
+presentation, M29/M30, M31, and the public NGX proxy remain controlled
+diagnostics; transport submission alone is not visual admission. An explicit
+environment value, including `0`, remains an A/B override. M27 already consumes
+the four exact captured base/MRO/normal/parallax textures, and M21's textureless
+white default is source-valid, so the remaining visibly wrong stone appearance
+belongs to deferred lighting/compositing and gas transport rather than texture
+extraction.
 
 M27's prior `presentationReady` signal was not visual proof. A peak-targeted
 same-command readback showed GBufferC claiming all 2,073,600 pixels while the
@@ -2444,14 +2439,13 @@ retains queue 3000, `Cull Off`, and its captured depth state. The body-material
 and CharacterOutline verifiers pass, but this correct state does not by itself
 close the remaining post-skin silhouette/visibility gap.
 
-The corresponding camera/background audit also rejects a fixed portrait or
-camera-endpoint nudge. In settled frames Unity places the character about 50
-pixels left of retail but the farther portrait about 130 pixels left, a
-depth-dependent discrepancy consistent with missing gyroscope-camera parallax
-rather than one shared translation. Opening and peak frames are contaminated by
-motion/VFX, and GridFar registration is not stable enough to authorize a source
-transform change. Keep the source-derived endpoint and recover the temporal
-camera/parallax owner before changing portrait or grid placement.
+The corrected chronological camera/background audit rejects every fixed
+portrait, actor-root, camera, FOV, or GridFar nudge. The earlier apparent
+50/130-pixel settled displacement was caused by pairing wrapped loop-local time
+as though it were continuous sequence time. With chronological pairs, actor
+scale is 0.9992 with about (+0.2,-0.4) pixel displacement and portrait scale is
+0.9977 with about (+0.6,+0.2) pixel displacement. Static framing is effectively
+closed; only a small late same-session gyroscope state residual remains.
 
 The same session strengthens but does not complete peak/opening effects. It
 retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
@@ -3016,6 +3010,21 @@ admission evidence until the live SceneColor chronology is closed. v8 improves
 slightly over v7, while the older v4 remains visually better overall; treat v8
 as the evidence-correct current build, not a parity claim.
 
+The subsequent schema-v17 v9 diagnostic corrects the compatibility opening
+strip's consumer order: it now composites into packed SceneColor before the
+temporal/DLSS boundary, while the separately gated exact retained packet remains
+authoritative. A complete 770-frame run observes this compatibility submission
+on ten opening frames and passes transition, cleanup, exact Uber, and output
+format gates. Against the same chronological -1-frame alignment, v9 scores
+23.9181 actor, 25.7429 effect, and 15.5716 temporal MAE versus v8's
+23.8874/25.7000/15.5958. Keep the evidence-backed ordering correction, but do
+not promote v9 over v8 for review: its small temporal gain accompanies small
+actor/effect regressions. A paired 4.4833/4.5000-second audit also rejects
+removing exact M13: enabled improves actor/effect/temporal MAE from
+31.3171/37.3131/28.6593 to 29.9246/36.2230/27.1432. M13 therefore remains
+canonical; M21 remains the compact palm-centered ten-stone owner and must not be
+resized or retimed to compensate for the broad shell.
+
 The retained exact Uber resource also exposed a native-resolution bloom-layout
 bug in the reproduction. The old builder capped a 3840x2160 source to
 1920x1080 and then halved it again, yielding an invalid 960x540 first mip. The
@@ -3128,34 +3137,21 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Close the crystal peak in owner order: retain the exact static-LinearClamp
-   M17 `baoshan` transport, integrated exact M20 gas, and render/validate the
-   ordinary+peak exact Uber path,
-   and validated temporal M31 envelope. Validate the generated M29 temporal
-   presentation, preserve M31 before the retail 2999/3000 boundary, and use
-   Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
-   M28 refractive sphere in their captured ordinal positions and resolve the
-   equal-queue M29/M30/M14 ordering. The M13 ring packet/sampler policy and M21
-   stone packet geometry/state are exact, while its live t0 fallback remains
-   unproven; M21 is enabled only at its certified sample in the normal
-   reproduction. The unattended M20 evidence and first complete 770-frame
-   background+portrait+actor/VFX rerender are now closed. Use its measured
-   4.3-4.7-second burst gap to recover the broad retail temporal-consumer and
-   bloom envelope and remaining equal-queue ordering. Capture the actual live
-   temporal boundary before retuning already source-backed M13/M21 or bloom:
-   distinguish Streamline DLAA mode 6 from TAAU, retain consecutive pre/post
-   temporal surfaces plus depth/velocity, jitter/reset, frame token, formats,
-   extents, and resource tags, then stage pre-temporal, bloom-input, bloom, and
-   final-Uber comparisons. Keep source tint, particle,
-   bloom, and curve values fixed unless stronger evidence supersedes them, and
-   wait for user review of this checkpoint before changing the render.
-2. Replace the opening-incomplete 144-sample replay with one unattended Full
-   capture from the earlier-triggered, two-checkpoint 36-frame palette-focused
-   prefix, verify that its first retained palette covers clean source frame 90
-   rather than 115, and retain same-run retail animation-state anchors through
-   transition entry, loop dominance/completion, and the first settled wrap.
-   Then compare it against pre-Uber frames 219/257/273 and settled loop 407.
-   Keep the diagnostic solver off and do not manually widen cloth.
+1. Run the corrected observer on the next game session and close the retail
+   temporal boundary with consecutive pre/post Streamline surfaces, depth,
+   velocity, jitter/reset, frame token, formats, extents, and resource tags.
+   The compatibility opening strip is now ordered correctly before temporal,
+   but v9 proves that ordering alone does not reproduce retail's broad
+   multi-exposure strips. Keep the rejected public NGX proxy and M31 replay
+   diagnostic-only until the live consumer chronology is complete.
+2. Close the palm/crystal owner order from same-session evidence. Retain M13
+   exact and the certified one-sample M21 stone packet; their controlled A/Bs
+   reject compensatory resizing, retiming, or removal. Use the corrected M20
+   observer route to recover its live gas packet, then visually certify M29,
+   M30, and M14 one at a time before changing defaults or suppressing their
+   compatibility renderers. Preserve the captured hierarchy transforms and
+   equal-queue ordering unless a same-session packet-to-palm registration proves
+   a specific delta.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
