@@ -2646,6 +2646,31 @@ smear across the actor while Unity remains sharp and darker around a localized
 burst. Treat the next crystal-peak work as Uber/temporal/bloom composition and
 remaining owner-order recovery, not another standalone M20 texture substitute.
 
+The M13, M14, M20, and M21 native BaseV2 transports previously replayed captured
+3840x2160 `_ScreenSize`/viewport vectors at the 1920x1080 review target. Their
+reflected VS b2 and PS b1 rows c0/c1/c5 are now patched fail-closed to the live
+target, with explicit viewport/scissor ownership and restoration. Native builds
+and focused callback validation pass. Earlier M13/M20 visual scores were invalid:
+the clean August 26 MKV begins with another character, so treating video frame
+zero as Endminf phase zero compared the packets against the wrong frames. Peak
+pose/effect cross-correlation selects local offset +86. At that alignment M13
+packets 1/2 improve the effect ROI by 0.50/0.36 dB at 4.5000/4.5333 seconds;
+packet 0 regresses its pre-peak checkpoint and is rejected by maintained replay.
+M14 remains neutral/slightly worse, and M20's isolated gain is only about 0.01 dB,
+so both remain diagnostic-only. Corrected M21 remains admitted at its one
+certified stone-shell tick.
+
+The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
+explicitly content-invalid screen-shadow R attachment produces the reported
+vertically inverted body mask over the background portrait. Disabling that one
+attachment restores the correctly oriented portrait and improves the aligned
+4.5000-second full actor/effect crop from 12.69 to 15.75 dB, while making the
+incomplete exact deferred chain fail closed. The maintained launcher and video
+profile therefore omit that diagnostic chain rather than publishing a green
+readiness state with corrupted pixels. Across five aligned 4.3833-4.5833 peak
+checkpoints, the cleaned M13/M21 presentation averages 16.99 dB versus 13.08 dB
+for the former diagnostic-heavy profile.
+
 The exact-owner policy deliberately retains one compute exception: the unique
 8,413,184-byte slot-0 skin-palette UAV required to reconstruct body, hair, and
 all four cloth palettes. A WARP byte test binds that palette beside an

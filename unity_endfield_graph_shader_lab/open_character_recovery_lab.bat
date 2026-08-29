@@ -30,41 +30,31 @@ exit /b 2
   set "ENDFIELD_RECOVERED_VISIBILITY_SH=1"
   set "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1"
   set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"
-  rem Source-closed SphereOutside + exact Default Lit resolve, presented before ForwardOpaque.
-  set "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME=1"
-  set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=1"
-  set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=1"
+  rem Deferred/SphereOutside remains a default-off diagnostic. Its current
+  rem screen-shadow prerequisite is content-invalid and vertically masks the
+  rem portrait, so the maintained visual path does not request that chain.
   rem The retained opening-strip packets remain diagnostic-only: their native
   rem transport is screen-size-correct, but the current replay still shreds a
   rem broad cape block instead of the retail trailing horizontal slices.
+  rem Corrected M13 packets 1/2 improve the aligned peak shell. Packet 0 is
+  rem rejected by the runtime; M14 and M20 remain transport diagnostics.
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
-  set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=1"
-  rem Exact retail M20 gas-plume packet at the crystal-burst peak. This uses
-  rem the captured runtime BC7 atlas and draw-local ByteAddressBuffer.
-  set "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT=1"
   rem Frame 2775 closes the complete draw-local M21 stone-shell packet. It is
   rem admitted only at its certified 4.5000 s sample and restores the authored
   rem ParticleSystem on adjacent ticks, so this does not repeat a static packet
   rem across the burst or replace the separately textured M01/M38 stones.
   set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"
-  set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=1"
-  set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=1"
-  set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=1"
   rem Retain the measured M31 temporal contract. Seven two-draw phases split
   rem native submission around retail's M29/M30 interval; unsupported packet
   rem shapes deliberately keep the ordinary renderer.
   set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"
-  set "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER=1"
-  set "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW=1"
-  set "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW=1"
-  set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=1"
   rem Recording-specific live cursor endpoint measured from the canonical clean
   rem videos/2026-08-26_21-25-50.mkv reference at source pixel (1036,75).
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=recorded-input"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=-0.4604167"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=0.9305556"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
-  echo Opening Endminf reproduction with physical SphereOutside and exact M13/M14/M27 presentation.
+  echo Opening Endminf reproduction with aligned exact M13/M21 peak presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
 
