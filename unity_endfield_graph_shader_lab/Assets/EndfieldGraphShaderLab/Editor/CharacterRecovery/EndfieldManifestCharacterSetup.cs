@@ -871,6 +871,7 @@ namespace EndfieldGraphShaderLabEditor
                 previewFileName: "all_character_recovery_viewer.png",
                 viewerLabel: "All-character resident viewer",
                 neutralWhiteBackground: true);
+            EndfieldSecondaryDynamicsBindingBuilder.VerifyGeneratedEndminfBinding();
             Debug.Log(
                 $"All-character model viewer complete: catalogActors={characters.Length}, " +
                 $"catalog={AllCharacterModelCatalogAssetPath}.");

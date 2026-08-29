@@ -51,7 +51,31 @@ def load_summary(capture: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_first_loop_wrap_ns(capture: Path) -> int:
+    path = capture / "graphics/endminf_animator/metadata.json"
+    require(path.is_file(), f"Endminf animator metadata is absent: {path}")
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    require(metadata.get("schema") ==
+            "endfieldCapture.endminfAnimatorTimeline.v3" and
+            metadata.get("sequenceComplete") is True,
+            "Endminf animator timeline does not certify a complete sequence")
+    indices = metadata.get("indices")
+    samples = metadata.get("samples")
+    require(isinstance(indices, dict) and isinstance(samples, list),
+            "Endminf animator timeline structure is incomplete")
+    wrap = int(indices.get("firstWrap", -1))
+    require(0 <= wrap < len(samples),
+            "Endminf animator first-wrap index is outside the sample array")
+    sample = samples[wrap]
+    tick = int(sample.get("qpcTick", 0))
+    frequency = int(sample.get("qpcFrequency", 0))
+    require(tick > 0 and frequency > 0,
+            "Endminf animator first-wrap clock is invalid")
+    return (tick * 1_000_000_000 + frequency - 1) // frequency
+
+
 def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
+    first_loop_wrap_ns = load_first_loop_wrap_ns(capture)
     summary = load_summary(capture)
     require(summary.get("schema") ==
             "endfieldCapture.secondaryDynamicsSummary.v2",
@@ -140,6 +164,8 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
     timestamps = [writeback_timestamps[item] for item in ordered_writebacks]
     require(all(right > left for left, right in zip(timestamps, timestamps[1:])),
             "writeback timestamps are not strictly increasing")
+    require(timestamps[-1] >= first_loop_wrap_ns,
+            "secondary-dynamics trajectory ends before the first settled loop wrap")
 
     owners: dict[str, dict[str, Any]] = {}
     for owner, length in OWNER_LENGTHS.items():
@@ -191,6 +217,7 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
         "scheduledWritebackCount": scheduled,
         "firstTimestampNs": timestamps[0],
         "lastTimestampNs": timestamps[-1],
+        "firstSettledLoopWrapNs": first_loop_wrap_ns,
         "sampleCount": retained_rows,
         "owners": owners,
     }
