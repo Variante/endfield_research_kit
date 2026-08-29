@@ -2679,6 +2679,28 @@ failure. A 12.833-second H.264 review render and eight-frame contact sheet live
 beside the generated report in scratch. This supersedes v3 for visual review,
 but not the fail-closed evidence limitations above.
 
+Full clean-reference comparison over 555 shared frames selects the allowed
+source offset -1 and measures mean actor/effect ROI MAE 21.5466/22.3183 with
+temporal-delta MAE 12.1147. The largest residual is opening motion from about
+0.50-1.23 seconds (body yaw, arms, cape, and hair); the second is the
+4.25-4.73-second peak, where retail has broad soft bloom/radial temporal smear
+and Unity retains a harder ring/streak; the settled 7.50-9.22-second loop has
+low temporal error but persistent scale, placement, secondary-settle, and grey
+composition differences. This localizes the remaining work without treating a
+whole-window average as evidence for any one renderer owner.
+
+The captured combined Uber packet is now admitted by default only for canonical
+video export at its already certified 4.3500-second phase; explicit environment
+values retain controlled A/B behavior and missing payload/phase fails closed.
+With M13/M18/M20/M21/M28/M31 held constant, a three-frame exact-Uber A/B changes
+mean actor/effect ROI MAE from 27.5229/35.6204 to 27.2709/34.9728. Temporal-delta
+MAE changes from 32.1515 to 32.6694 because the exact packet is one measured
+tick, not a recovered neighboring-frame temporal sequence. The resulting
+`endminf_full_clean_presentation_v5_20260829` render completes 770/770 frames
+with report status `ok`, observes start-to-loop, settled-loop, and VFX-cleanup
+contracts, and submits the exact Uber once with no failure. It supersedes v4 as
+the review candidate while preserving the broader temporal-consumer gap.
+
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported
 vertically inverted body mask over the background portrait. Disabling that one
@@ -2764,16 +2786,21 @@ alias row, so this comparison proves the complete source palette and exact draw
 b2 binding separately and reports that limitation; it is not a GPU-submitted
 Unity palette or baked-vertex equality proof.
 
-Session `20260829T020746Z` is diagnostic-only and does not close that gap. It
-published 72 packages without drops, but failed cadence/completeness validation;
-only the first five packages contain the exact palette, and pose matching places
-them around clean source frames 113-117 rather than 90-114. The repaired capture
-path now accepts the same exact palette from the Endminf body VS t0 binding when
-the compute UAV is no longer rebound, permits the lightweight 36-slot dense
-prefix to drain asynchronously, rejects a dense package without exactly one
-complete palette, and derives package failure flags from finalized readbacks.
-All 16 native tests pass. The next capture must use this repaired build and pass
-its cadence, resource, and completeness gates before its palettes enter replay.
+Sessions `20260829T020746Z` and `20260829T024828Z` are diagnostic-only and do
+not close that gap. The former published 72 packages without drops but retained
+only five exact palettes around clean source frames 113-117. The latter retains
+all six meshes and 74 owner bones in every dense package 1823-1858, with its
+first visual checkpoint aligned around clean source frame 94 plus or minus one,
+but a 347 ms QPC gap between packages 1834 and 1835 skips about 21 nominal 60-Hz
+frames. Consecutive package IDs therefore do not prove continuous frames 94-129.
+The capture path accepts the exact palette from the Endminf body VS t0 binding,
+permits asynchronous dense draining, rejects incomplete dense palettes, and
+derives failure flags from finalized readbacks. It now also arms on the unique
+16,524-index Endminf body draw before Uber and stages 4K backbuffers only at the
+first and final dense packages so intermediate readback cannot accumulate the
+observed stall. All 16 native tests pass. The next capture must use this build
+and pass cadence, resource, and completeness gates before its palettes enter
+replay.
 
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical
@@ -2822,12 +2849,18 @@ or shaders rather than hand-editing generated prefabs.
    unproven; M21 is enabled only at its certified sample in the normal
    reproduction. The unattended M20 evidence and first complete 770-frame
    background+portrait+actor/VFX rerender are now closed. Use its measured
-   4.3-4.7-second burst gap to recover the broad retail Uber/temporal/bloom
-   envelope and remaining equal-queue ordering. Keep source tint, particle,
+   4.3-4.7-second burst gap to recover the broad retail temporal-consumer and
+   bloom envelope and remaining equal-queue ordering. Capture the actual live
+   temporal boundary before retuning already source-backed M13/M21 or bloom:
+   distinguish Streamline DLAA mode 6 from TAAU, retain consecutive pre/post
+   temporal surfaces plus depth/velocity, jitter/reset, frame token, formats,
+   extents, and resource tags, then stage pre-temporal, bloom-input, bloom, and
+   final-Uber comparisons. Keep source tint, particle,
    bloom, and curve values fixed unless stronger evidence supersedes them, and
    wait for user review of this checkpoint before changing the render.
 2. Replace the opening-incomplete 144-sample replay with one unattended Full
-   capture from the patched 36-frame palette-focused prefix, verify that its
+   capture from the earlier-triggered, two-checkpoint 36-frame palette-focused
+   prefix, verify that its
    first retained palette covers clean source frame 90 rather than 115, then
    compare it against pre-Uber frames 219/257/273 and settled loop 407. Keep
    the diagnostic solver off and do not manually widen cloth.

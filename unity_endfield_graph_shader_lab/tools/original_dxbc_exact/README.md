@@ -54,11 +54,14 @@ Do not enable the keyword or arm the plugin outside this disposable diagnostic.
 
 The build also hash-checks and embeds the exact active Endminf CharInfo
 `BLOOM + RADIAL_BLUR + VIGNETTE` fullscreen pair. WARP validation
-must create both shader objects successfully. The default-off native transport
+must create both shader objects successfully. The native transport
 uses an immutable 64-packet render-thread ring, stage-local VS/PS constants,
 strict source/bloom/LUT/output descriptors, and complete touched-state restore.
-Set `ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1` only after the generated live
-payload exists. Runtime submission otherwise fails closed before drawing.
+Canonical Endminf video export enables
+`ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1` for the source-certified peak tick;
+an explicit environment value still overrides that default for controlled A/B
+runs. Runtime submission fails closed before drawing when the generated live
+payload or its exact phase gate is unavailable.
 Capture `20260827T183054Z`, frame 1818, supplies the active shader identities
 and stage-qualified VS b0 plus PS b0/b1 payloads. Its generic-fullscreen record
 predates active-variant priority tagging, so this is live constant/resource
