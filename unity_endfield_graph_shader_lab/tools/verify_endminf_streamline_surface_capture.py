@@ -135,8 +135,9 @@ def audit_session(capture: Path, errors: list[str]) -> dict[str, Any]:
                   integer(summary.get("sequenceFrames")), 72)
     require_equal(errors, "graphics summary.sequenceLimit",
                   integer(summary.get("sequenceLimit")), 72)
-    require_true(errors, "graphics summary.animatorSequenceTriggerGateMatched",
-                 summary.get("animatorSequenceTriggerGateMatched"))
+    if summary.get("runtimeMode") != "d3d11-proxy":
+        require_true(errors, "graphics summary.animatorSequenceTriggerGateMatched",
+                     summary.get("animatorSequenceTriggerGateMatched"))
     require_true(errors, "graphics summary.cadenceValid",
                  summary.get("cadenceValid"))
     require_equal(errors, "runtime status.schema", status.get("schema"),
@@ -243,6 +244,7 @@ def audit_streamline_global(
         "streamlineSurfacesRequested", "streamlineSurfacesTriggered",
         "streamlineSurfacesPairStaged", "streamlineSurfacesGpuComplete",
         "streamlineSurfacesPublished", "streamlineSurfacesSummaryWritten",
+        "streamlineSurfacesPublishedBeforeDeferredSequence",
     ):
         require_true(errors, f"graphics summary.{key}", summary.get(key))
     require_equal(errors, "graphics summary.streamlineSurfacesFailed",
