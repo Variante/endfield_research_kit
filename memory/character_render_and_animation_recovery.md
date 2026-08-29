@@ -2455,24 +2455,19 @@ camera/parallax owner before changing portrait or grid placement.
 
 The same session strengthens but does not complete peak/opening effects. It
 retains exact M29/M30 resource closure and nine M31 phases from 2.863329 to
-4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. The unchanged native M31
-callback originally could not submit those packets in retail order: all seven
-two-draw packets are `M31 -> M29/M30 -> M31`, not two contiguous M31 draws.
-The callback and render pipeline now split the packet into one native event on
-each side of pre-M29/M30 work, M30, queue 3000, and M29. A focused D3D11 run
-submits both events and validates two draws with `S_OK`, proving callback
-transport but not exact fixed-function state. The native M31 callback still
-borrows M14's wrap samplers, disabled depth test, and incomplete raster state,
-while retained M31 state requires point-clamp s0, linear-wrap s1, read-only
-greater-equal depth, stencil, front-CCW, and scissor. It also samples the live
-depth resource without binding its captured read-only DSV. The old metadata
-recorded only `stencilEnabled` and reference, not the masks and front/back
-operations needed to recreate that state without guessing. EndfieldCapture now
-serializes the complete raw D3D11 stencil descriptor in both runtime and proxy
-metadata; Release build and all 17 native tests pass. A new capture must close
-those fields before the supported two-draw route is promoted from exact-shader
-transport to exact PSO replay. The three-draw peak
-and one-draw tail remain unsupported and restore the ordinary renderer. No M20 shader identity
+4.564017 s with draw counts `2,2,2,2,2,2,2,3,1`. All 18 M31 draws now own
+their exact temporal-frame geometry, constants, and secondary stream in the
+generated native contract instead of replaying frame 1818 at every phase; the
+shared BC7 texture remains byte/hash pinned. The native temporal selector
+accepts only rows 0-6, whose two draws have the proven
+`M31 -> M29/M30 -> M31` split, and maps event 0/1 to that row's own payloads.
+It rejects the encoded three-draw peak, one-draw tail, and out-of-range rows
+before renderer suppression or submission. Those unsupported rows therefore
+restore the ordinary renderer rather than substituting constants or geometry
+across incompatible packet shapes. Fixed-function replay for the supported
+route is now owned by the dedicated M31 contract described below; a hardened
+retail recapture still has to close the remaining live view descriptors and
+runtime validation. No M20 shader identity
 occurs, and the only opening-strip package inside the maintained 0.0667-0.35 s
 interval is frame 1758 at about 0.2325 s. This capture therefore must not be
 used to invent M20 ownership or expand the partial strip table. Runtime strip

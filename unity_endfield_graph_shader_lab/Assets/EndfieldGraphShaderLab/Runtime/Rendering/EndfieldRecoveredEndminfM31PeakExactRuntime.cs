@@ -103,6 +103,22 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
                 EndfieldRecoveredM31PeakCaptureData
                     .SplitOrderCompatible[selectedPacket];
+            if (active)
+            {
+                try
+                {
+                    if (Native.SetTemporalPacketIndex(
+                            unchecked((uint)selectedPacket)) != 1)
+                        return Fail("the native M31 temporal packet selector " +
+                            "rejected split-compatible packet " +
+                            selectedPacket);
+                }
+                catch (Exception exception)
+                {
+                    return Fail("the native M31 temporal packet selector " +
+                        "failed: " + exception.Message);
+                }
+            }
             if (!loggedAdmission)
             {
                 Debug.Log("Recovered exact Endminf M31 temporal admission: " +
@@ -340,10 +356,9 @@ namespace EndfieldGraphShaderLab
                     EndfieldRecoveredM31PeakCaptureData.PacketCount +
                     "-packet temporal envelope from capture " +
                     EndfieldRecoveredM31PeakCaptureData.TemporalSourceSession +
-                    "; exact payload capture " +
-                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceSession +
-                    " frame " +
-                    EndfieldRecoveredM31PeakCaptureData.PayloadSourceFrame + ".");
+                    "; selected exact temporal payload frame " +
+                    EndfieldRecoveredM31PeakCaptureData
+                        .SourceFrames[selectedPacket] + ".");
                 loggedActivation = true;
             }
             return true;
@@ -479,6 +494,10 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcSetM31PeakDepthResource")]
             internal static extern uint SetDepthResource(IntPtr sceneDepth);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM31PeakTemporalPacketIndex")]
+            internal static extern uint SetTemporalPacketIndex(uint packetIndex);
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetM31PeakRuntimeState")]
