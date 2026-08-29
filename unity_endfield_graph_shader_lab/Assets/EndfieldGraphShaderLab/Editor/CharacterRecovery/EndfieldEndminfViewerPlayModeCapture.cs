@@ -1882,6 +1882,11 @@ namespace EndfieldGraphShaderLabEditor
                         "endminf_overview_start_and_loop_no_framegen",
                         "reference_no_framegen_vs_unity_4fps.png",
                         "reference_no_framegen_comparison.json");
+                    BuildSideBySideComparison(
+                        "endminf_overview_clean_2026-08-26",
+                        "endminf_overview_start_and_loop_clean",
+                        "reference_clean_vs_unity_4fps.png",
+                        "reference_clean_comparison.json");
                 }
                 catch (Exception error)
                 {

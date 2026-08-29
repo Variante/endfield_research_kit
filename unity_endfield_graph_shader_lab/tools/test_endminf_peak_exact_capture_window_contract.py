@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_ROOT = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+PLUGIN = ROOT / "tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp"
 RUNTIMES = (
     "EndfieldRecoveredEndminfM18PeakExactRuntime.cs",
     "EndfieldRecoveredEndminfM21PeakExactRuntime.cs",
@@ -47,6 +48,20 @@ class EndminfPeakExactCaptureWindowContractTests(unittest.TestCase):
         suppress = m28.index("SuppressSourceRenderers();", active)
         self.assertLess(restore, active)
         self.assertLess(active, suppress)
+
+    def test_shared_native_release_invalidates_m18_m28_screen_patches(self) -> None:
+        source = PLUGIN.read_text(encoding="utf-8")
+        release = source.split("void ReleaseM14RuntimeResources()", 1)[1].split(
+            "HRESULT CreateM14RuntimeResources", 1
+        )[0]
+        for owner in ("m18Peak", "m28Peak"):
+            with self.subTest(owner=owner):
+                self.assertIn(
+                    f"g_{owner}ScreenSizePatched.store(0, std::memory_order_release);",
+                    release,
+                )
+                self.assertIn(f"g_{owner}ResourceWidth = 0;", release)
+                self.assertIn(f"g_{owner}ResourceHeight = 0;", release)
 
 
 if __name__ == "__main__":

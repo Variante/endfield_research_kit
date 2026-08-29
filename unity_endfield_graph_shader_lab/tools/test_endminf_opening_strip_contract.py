@@ -70,10 +70,11 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertIn("float chromaUv", source)
         self.assertIn("shiftedUv + float2(chromaUv, 0.0)", source)
         self.assertIn("shiftedUv - float2(chromaUv, 0.0)", source)
-        self.assertIn("OpeningStripHash", source)
-        self.assertIn("floor(retailPixel.y / 8.0)", source)
-        self.assertIn("rowSelector > 0.88", source)
-        self.assertIn("lerp(110.0, 420.0, shiftSelector)", source)
+        self.assertNotIn("OpeningStripHash", source)
+        self.assertNotIn("floor(retailPixel.y / 8.0)", source)
+        self.assertNotIn("rowSelector > 0.88", source)
+        self.assertNotIn("lerp(110.0, 420.0, shiftSelector)", source)
+        self.assertIn("saturate(_EndminfOpeningStripParams.x)", source)
         self.assertNotIn("Hash11", source)
 
     def test_shader_uses_shifted_character_selector_ownership(self) -> None:

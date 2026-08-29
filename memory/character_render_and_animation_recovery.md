@@ -2660,6 +2660,16 @@ M14 remains neutral/slightly worse, and M20's isolated gain is only about 0.01 d
 so both remain diagnostic-only. Corrected M21 remains admitted at its one
 certified stone-shell tick.
 
+A six-frame clean-reference A/B across 4.406667-4.516667 seconds keeps accepted
+M13/M31 constant and toggles M18/M20/M21/M28 together. The exact group produces
+a small net gain at the best bounded source offset: mean actor/effect ROI MAE
+changes from 28.6668/36.3826 to 28.5186/36.1777. Almost all improvement is at
+the first M20-onset sample, whose actor/effect ROI MAE improves by 0.7457/1.1033;
+the 4.5000-second sample slightly regresses by 0.1008/0.1509 and the final sample
+is pixel-identical. Keep the group available for the next complete review, but
+do not describe this narrow gain as closure of the visibly missing soft bloom,
+gas, and temporal smear.
+
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported
 vertically inverted body mask over the background portrait. Disabling that one
@@ -2708,8 +2718,9 @@ continues to bind primary depth directly. Keep the probe diagnostic-only. Fix
 the radial/chromatic color transport and temporal input instead of blindly
 warping every contributing depth.
 
-The opening hair/cape defect was an application-space error, not a corrupt
-retail pose. The old runtime wrote captured actor-root-space matrices after an
+The opening hair/cape defect includes an application-space error, but the
+current evidence also has a hard opening-coverage gap. The old runtime wrote
+captured actor-root-space matrices after an
 independently evaluated Unity body pose and interpolated them across 0.12-0.23
 second package gaps. The v7 oracle now stores each hair pose relative to the
 same captured Head and each cape pose relative to the same captured Spine2;
@@ -2717,8 +2728,17 @@ runtime publication applies those residuals to Unity's current Head/Spine2
 after Animator evaluation, parent-first. Only measured previous/current 60-Hz
 pairs interpolate; longer unobserved intervals select the nearest retained
 endpoint. A five-checkpoint D3D11 capture validates the 144-sample/80-bone
-binding and keeps the opening hair attached to the head. Sparse cadence still
-limits unsampled extrema, so this is not exact dynamics recovery. At 4.35
+binding and keeps the opening hair attached to the head. Its first retained
+palette aligns to clean-reference source frame 115, while the entrance becomes
+visible around source frame 90; frames 90-114 therefore remain uncaptured and
+Unity necessarily holds a later pose at the start. Sparse cadence still limits
+unsampled extrema, so this is not exact dynamics recovery. EndfieldCapture now
+uses 36 palette-focused consecutive opening packages (the unique 8,413,184-byte
+skin-palette UAV every Present and a 4K visual checkpoint every sixth package),
+followed by 36 bounded full-owner packages at eight-Present spacing through the
+peak/loop. Both `build-final` and
+the launcher-owned `build-local` pass all 16 tests. One new unattended Full
+capture is required before further opening-hair tuning. At 4.35
 seconds the replay selects capture frame 1977 directly with effectively zero
 interpolation, so that phase separates sparse-motion error from renderer
 plumbing. The retained-skinning probe at exactly 4.35 seconds closes all six
@@ -2734,6 +2754,17 @@ as the primary motion gap. The capture omitted the older duplicate source-SRV
 alias row, so this comparison proves the complete source palette and exact draw
 b2 binding separately and reports that limitation; it is not a GPU-submitted
 Unity palette or baked-vertex equality proof.
+
+Session `20260829T020746Z` is diagnostic-only and does not close that gap. It
+published 72 packages without drops, but failed cadence/completeness validation;
+only the first five packages contain the exact palette, and pose matching places
+them around clean source frames 113-117 rather than 90-114. The repaired capture
+path now accepts the same exact palette from the Endminf body VS t0 binding when
+the compute UAV is no longer rebound, permits the lightweight 36-slot dense
+prefix to drain asynchronously, rejects a dense package without exactly one
+complete palette, and derives package failure flags from finalized readbacks.
+All 16 native tests pass. The next capture must use this repaired build and pass
+its cadence, resource, and completeness gates before its palettes enter replay.
 
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical
@@ -2786,11 +2817,11 @@ or shaders rather than hand-editing generated prefabs.
    envelope and remaining equal-queue ordering. Keep source tint, particle,
    bloom, and curve values fixed unless stronger evidence supersedes them, and
    wait for user review of this checkpoint before changing the render.
-2. Compare the admitted QPC-timed 144-sample/80-bone replay against pre-Uber
-   frames 219/257/273 and settled loop 407. Keep the diagnostic solver off and
-   do not manually widen cloth; any residual silhouette error now belongs to
-   post-skin vertex output or remaining renderer/material visibility behavior,
-   not replay-clock registration or missing transparent-cape bone ownership.
+2. Replace the opening-incomplete 144-sample replay with one unattended Full
+   capture from the patched 36-frame palette-focused prefix, verify that its
+   first retained palette covers clean source frame 90 rather than 115, then
+   compare it against pre-Uber frames 219/257/273 and settled loop 407. Keep
+   the diagnostic solver off and do not manually widen cloth.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
