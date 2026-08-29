@@ -397,6 +397,14 @@ namespace EndfieldGraphShaderLab
             { get; private set; }
         public static string LastRecoveredUnityPublicNgxProxyFailure
             { get; private set; } = string.Empty;
+        public static Vector2 LastRecoveredUnityPublicNgxProxyJitterOffset
+            { get; private set; }
+        public static int LastRecoveredUnityPublicNgxProxyJitterPhase
+            { get; private set; } = -1;
+        public static int LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisX
+            { get; private set; } = -1;
+        public static int LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisY
+            { get; private set; } = -1;
         public static EndfieldRecoveredSceneMVDiagnosticState
             LastRecoveredSceneMVDiagnostic { get; } =
                 new EndfieldRecoveredSceneMVDiagnosticState();
@@ -4158,6 +4166,10 @@ namespace EndfieldGraphShaderLab
             LastRecoveredUnityPublicNgxProxySubmitted = false;
             LastRecoveredUnityPublicNgxProxyValidated = false;
             LastRecoveredUnityPublicNgxProxyFailure = string.Empty;
+            LastRecoveredUnityPublicNgxProxyJitterOffset = Vector2.zero;
+            LastRecoveredUnityPublicNgxProxyJitterPhase = -1;
+            LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisX = -1;
+            LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisY = -1;
             if (recoveredTemporalMaterial == null ||
                 System.String.Equals(
                     System.Environment.GetEnvironmentVariable(
@@ -4189,6 +4201,16 @@ namespace EndfieldGraphShaderLab
                 }
                 if (!LastRecoveredUnityPublicNgxProxySubmitted)
                     return false;
+                LastRecoveredUnityPublicNgxProxyJitterOffset =
+                    recoveredUnityPublicNgxProxy.LastJitterOffset;
+                LastRecoveredUnityPublicNgxProxyJitterPhase =
+                    recoveredUnityPublicNgxProxy.LastJitterPhase;
+                LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisX =
+                    EndfieldRecoveredUnityPublicNgxProxy
+                        .CapturedIndicatorInvertAxisX;
+                LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisY =
+                    EndfieldRecoveredUnityPublicNgxProxy
+                        .CapturedIndicatorInvertAxisY;
                 if (!recoveredUnityPublicNgxProxy.TryGetOutputDescriptor(
                         out temporalPostSourceDescriptor))
                 {

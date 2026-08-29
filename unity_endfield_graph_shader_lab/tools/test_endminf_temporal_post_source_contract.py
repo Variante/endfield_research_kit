@@ -71,6 +71,59 @@ class EndminfTemporalPostSourceContractTests(unittest.TestCase):
         self.assertIn("SetGlobalTexture(OutputTextureId, outputColor)", source)
         self.assertNotIn("commandBuffer.Blit(outputColor, sourceColor)", source)
 
+    def test_public_ngx_proxy_uses_the_captured_pixel_jitter_and_axis_contract(
+        self,
+    ) -> None:
+        source = NGX_PROXY.read_text(encoding="utf-8")
+        expected_samples = (
+            "new Vector2(-0.25f, 0.388888896f)",
+            "new Vector2(0.375f, 0.0555555522f)",
+            "new Vector2(-0.125f, -0.277777791f)",
+            "new Vector2(0.125f, 0.277777791f)",
+            "new Vector2(-0.375f, -0.055555582f)",
+            "new Vector2(0.4375f, -0.388888896f)",
+            "new Vector2(0.0f, 0.166666657f)",
+            "new Vector2(0.25f, -0.166666687f)",
+        )
+        positions = [source.index(sample) for sample in expected_samples]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("CapturedPixelJitterSampleCount = 8", source)
+        self.assertIn("CapturedIndicatorInvertAxisX = 0", source)
+        self.assertIn("CapturedIndicatorInvertAxisY = 1", source)
+        self.assertIn("executeData.jitterOffsetX = jitterOffset.x", source)
+        self.assertIn("executeData.jitterOffsetY = jitterOffset.y", source)
+        self.assertIn(
+            "executeData.invertXAxis = CapturedIndicatorInvertAxisX",
+            source,
+        )
+        self.assertIn(
+            "executeData.invertYAxis = CapturedIndicatorInvertAxisY",
+            source,
+        )
+        self.assertIn("jitterSampleIndex = 0", source)
+
+    def test_public_ngx_proxy_reports_the_applied_temporal_constants(self) -> None:
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        capture = (
+            ROOT
+            / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+            "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        for field in (
+            "LastRecoveredUnityPublicNgxProxyJitterOffset",
+            "LastRecoveredUnityPublicNgxProxyJitterPhase",
+            "LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisX",
+            "LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisY",
+        ):
+            self.assertGreaterEqual(pipeline.count(field), 2, field)
+        for field in (
+            "unityPublicNgxProxyJitterOffset",
+            "unityPublicNgxProxyJitterPhase",
+            "unityPublicNgxProxyIndicatorInvertAxisX",
+            "unityPublicNgxProxyIndicatorInvertAxisY",
+        ):
+            self.assertGreaterEqual(capture.count(field), 2, field)
+
     def test_public_ngx_proxy_validates_each_synchronized_output(self) -> None:
         proxy = NGX_PROXY.read_text(encoding="utf-8")
         pipeline = PIPELINE.read_text(encoding="utf-8")

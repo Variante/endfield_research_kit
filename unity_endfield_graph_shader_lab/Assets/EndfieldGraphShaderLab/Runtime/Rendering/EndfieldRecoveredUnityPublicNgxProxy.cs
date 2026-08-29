@@ -27,6 +27,28 @@ namespace EndfieldGraphShaderLab
         private const string ExpectedNvngxDlssSha256 =
             "a8f23de8116727a160a196f9f43604284cd973d801a62bb68c19c828f78e5f3b";
 
+        // All 2,146 readable slSetConstants packets in capture
+        // 20260829T115328Z repeat this exact pixel-space sequence. The
+        // capture begins on the first row below, but does not establish a
+        // global phase relative to Character Info entry. This opt-in proxy
+        // therefore restarts the observed order whenever its resources are
+        // recreated; that local phase is experiment telemetry, not parity.
+        private static readonly Vector2[] CapturedPixelJitterCycle =
+        {
+            new Vector2(-0.25f, 0.388888896f),
+            new Vector2(0.375f, 0.0555555522f),
+            new Vector2(-0.125f, -0.277777791f),
+            new Vector2(0.125f, 0.277777791f),
+            new Vector2(-0.375f, -0.055555582f),
+            new Vector2(0.4375f, -0.388888896f),
+            new Vector2(0.0f, 0.166666657f),
+            new Vector2(0.25f, -0.166666687f)
+        };
+
+        internal const int CapturedIndicatorInvertAxisX = 0;
+        internal const int CapturedIndicatorInvertAxisY = 1;
+        internal const int CapturedPixelJitterSampleCount = 8;
+
         private readonly EndfieldRecoveredCombinedVelocityProducer
             combinedVelocityProducer;
         private GraphicsDevice device;
@@ -37,6 +59,7 @@ namespace EndfieldGraphShaderLab
         private RenderTexture combinedVelocity;
         private int width;
         private int height;
+        private int jitterSampleIndex;
         private bool firstFrame = true;
         private bool pendingExecutionValidation;
         private bool initializationAttempted;
@@ -45,6 +68,8 @@ namespace EndfieldGraphShaderLab
         private string failure = string.Empty;
 
         internal bool HasPendingValidation => pendingExecutionValidation;
+        internal Vector2 LastJitterOffset { get; private set; }
+        internal int LastJitterPhase { get; private set; } = -1;
 
         internal EndfieldRecoveredUnityPublicNgxProxy(
             EndfieldRecoveredCombinedVelocityProducer combinedVelocityProducer)
@@ -137,19 +162,21 @@ namespace EndfieldGraphShaderLab
             }
 
             ref DLSSCommandExecutionData executeData = ref context.executeData;
+            int jitterPhase = jitterSampleIndex % CapturedPixelJitterCycle.Length;
+            Vector2 jitterOffset = CapturedPixelJitterCycle[jitterPhase];
             executeData.reset = firstFrame ? 1 : 0;
             executeData.sharpness = 0.0f;
             executeData.mvScaleX = 1.0f;
             executeData.mvScaleY = 1.0f;
-            executeData.jitterOffsetX = 0.0f;
-            executeData.jitterOffsetY = 0.0f;
+            executeData.jitterOffsetX = jitterOffset.x;
+            executeData.jitterOffsetY = jitterOffset.y;
             executeData.preExposure = 1.0f;
             executeData.subrectOffsetX = 0;
             executeData.subrectOffsetY = 0;
             executeData.subrectWidth = (uint)requestedWidth;
             executeData.subrectHeight = (uint)requestedHeight;
-            executeData.invertXAxis = 1;
-            executeData.invertYAxis = 1;
+            executeData.invertXAxis = CapturedIndicatorInvertAxisX;
+            executeData.invertYAxis = CapturedIndicatorInvertAxisY;
 
             var textures = new DLSSTextureTable
             {
@@ -165,6 +192,10 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetGlobalTexture(OutputTextureId, outputColor);
             pendingExecutionValidation = true;
             firstFrame = false;
+            LastJitterOffset = jitterOffset;
+            LastJitterPhase = jitterPhase;
+            jitterSampleIndex = (jitterPhase + 1) %
+                CapturedPixelJitterCycle.Length;
 
             if (!loggedActive)
             {
@@ -173,7 +204,8 @@ namespace EndfieldGraphShaderLab
                     $"experiment at {requestedWidth}x{requestedHeight}: " +
                     "R11G11B10 HDR input, RGBA16F output, reverse depth, " +
                     "exact R16G16 combined velocity, " +
-                    "zero jitter/sharpness, unit motion scale, and no masks. " +
+                    "captured 8-sample pixel jitter, zero sharpness, unit " +
+                    "motion scale, indicator axes X=0/Y=1, and no masks. " +
                     "This public MaximumQuality wrapper is not Streamline " +
                     "DLAA mode 6 and is not parity evidence.");
                 loggedActive = true;
@@ -511,6 +543,9 @@ namespace EndfieldGraphShaderLab
             DestroyTexture(ref combinedVelocity);
             width = 0;
             height = 0;
+            jitterSampleIndex = 0;
+            LastJitterOffset = Vector2.zero;
+            LastJitterPhase = -1;
             firstFrame = true;
             pendingExecutionValidation = false;
         }

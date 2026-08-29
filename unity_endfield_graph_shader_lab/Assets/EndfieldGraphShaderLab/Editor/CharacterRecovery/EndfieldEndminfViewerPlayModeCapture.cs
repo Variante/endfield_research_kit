@@ -121,10 +121,12 @@ namespace EndfieldGraphShaderLabEditor
             // produces an upside-down body mask over the portrait and regresses
             // the aligned peak substantially, so it is not presentation policy.
             // M13 packets 1/2 measurably close the aligned burst shell. Packet
-            // 0 is rejected by the runtime; M14 remains diagnostic-only.
+            // 0 is rejected by the runtime; M14 remains diagnostic-only. M31
+            // transport validates, but its current replay sees unclosed live
+            // SceneColor chronology and mildly regresses the aligned result,
+            // so it remains an explicit diagnostic rather than presentation.
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             EndminfM21ExactEnvironment,
-            "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
         };
         private const string Suikuai1Material =
@@ -178,7 +180,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v14";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v15";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -274,6 +276,10 @@ namespace EndfieldGraphShaderLabEditor
             public bool unityPublicNgxProxySubmitted;
             public bool unityPublicNgxProxyValidated;
             public string unityPublicNgxProxyFailure;
+            public Vector2 unityPublicNgxProxyJitterOffset;
+            public int unityPublicNgxProxyJitterPhase;
+            public int unityPublicNgxProxyIndicatorInvertAxisX;
+            public int unityPublicNgxProxyIndicatorInvertAxisY;
             public bool endminfOpeningStripExactRequested;
             public bool endminfOpeningStripExactActive;
             public bool endminfOpeningStripExactSubmitted;
@@ -1340,6 +1346,14 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredUnityPublicNgxProxyValidated,
                 unityPublicNgxProxyFailure = HGCompatRenderPipeline
                     .LastRecoveredUnityPublicNgxProxyFailure,
+                unityPublicNgxProxyJitterOffset = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyJitterOffset,
+                unityPublicNgxProxyJitterPhase = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyJitterPhase,
+                unityPublicNgxProxyIndicatorInvertAxisX = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisX,
+                unityPublicNgxProxyIndicatorInvertAxisY = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyIndicatorInvertAxisY,
                 endminfOpeningStripExactRequested =
                     EndfieldRecoveredEndminfOpeningStripExactRuntime.Requested,
                 endminfOpeningStripExactActive =
