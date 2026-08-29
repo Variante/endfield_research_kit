@@ -44,10 +44,10 @@ exit /b 2
   rem ParticleSystem on adjacent ticks, so this does not repeat a static packet
   rem across the burst or replace the separately textured M01/M38 stones.
   set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"
-  rem Retain the measured M31 temporal contract. Seven two-draw phases split
-  rem native submission around retail's M29/M30 interval; unsupported packet
-  rem shapes deliberately keep the ordinary renderer.
-  set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"
+  rem M31 stays diagnostic-only until a corrected observer capture closes the
+  rem live SceneColor chronology; its current replay validates transport but
+  rem mildly regresses the aligned reference comparison.
+  set "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1"
   rem Recording-specific live cursor endpoint measured from the canonical clean
   rem videos/2026-08-26_21-25-50.mkv reference at source pixel (1036,75).
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=recorded-input"

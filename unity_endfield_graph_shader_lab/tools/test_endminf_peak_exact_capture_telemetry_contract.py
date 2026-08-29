@@ -25,7 +25,7 @@ EXACT_LUT_CONTRACT = ROOT / (
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v14", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v15", source)
         for field in (
             "exactEndminfUberRequested",
             "exactEndminfUberSubmitted",
@@ -90,19 +90,9 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         source = CAPTURE.read_text(encoding="utf-8")
         wrapper = OPEN_WRAPPER.read_text(encoding="utf-8")
         expected = (
-            "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
-            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
-            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
-            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
-            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
-            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
-            "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
-            "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
-            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
         )
         self.assertIn("CanonicalVideoDefaultFlags", source)
         self.assertIn("if (videoExportRequested)", source)
@@ -111,6 +101,14 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         for flag in expected:
             self.assertIn(flag, source, flag)
             self.assertIn(f'set "{flag}=1"', wrapper, flag)
+        self.assertNotIn(
+            "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
+            source[source.index("CanonicalVideoDefaultFlags"):source.index("};", source.index("CanonicalVideoDefaultFlags"))],
+        )
+        self.assertNotIn(
+            'set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"',
+            wrapper,
+        )
 
     def test_canonical_video_admits_the_source_certified_uber_tick(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")

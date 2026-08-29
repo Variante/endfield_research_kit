@@ -67,6 +67,88 @@ class DenseWindowComparisonTests(unittest.TestCase):
                 60.0,
             )
 
+    def test_sequence_mapping_stays_chronological_across_loop_reset(self) -> None:
+        mappings = MODULE.source_frames_from_sequence_elapsed(
+            [
+                {
+                    "actualSeconds": 0.05,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_start",
+                    "activeBodyClipTime": 0.05,
+                },
+                {
+                    "actualSeconds": 5.05,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_start",
+                    "activeBodyClipTime": 5.05,
+                },
+                {
+                    "actualSeconds": 5.0666666667,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.7333333333,
+                },
+                {
+                    "actualSeconds": 7.15,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.7333333333,
+                },
+            ],
+            {
+                "bodyClipStartSourceFrame": 91,
+                "bodyClipPhaseSeconds": 0.05,
+            },
+            60.0,
+        )
+        self.assertEqual([row[0] for row in mappings], [91, 391, 392, 517])
+        self.assertTrue(all(row[3] == "start_anchor_elapsed" for row in mappings))
+
+    def test_independent_loop_anchor_uses_elapsed_time_after_transition(self) -> None:
+        mappings = MODULE.source_frames_from_sequence_elapsed(
+            [
+                {
+                    "actualSeconds": 0.05,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_start",
+                    "activeBodyClipTime": 0.05,
+                },
+                {
+                    "actualSeconds": 5.05,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.75,
+                },
+                {
+                    "actualSeconds": 7.1333333333,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.75,
+                },
+            ],
+            {
+                "bodyClipStartSourceFrame": 91,
+                "bodyClipPhaseSeconds": 0.05,
+                "loopClipStartSourceFrame": 350,
+                "loopClipPhaseSeconds": 0.0,
+            },
+            60.0,
+        )
+        self.assertEqual([row[0] for row in mappings], [91, 395, 520])
+        self.assertEqual(
+            [row[3] for row in mappings],
+            ["start_anchor_elapsed", "loop_anchor_elapsed", "loop_anchor_elapsed"],
+        )
+
+    def test_partial_loop_anchor_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "incomplete loop-clip anchor"):
+            MODULE.source_frames_from_sequence_elapsed(
+                [{
+                    "actualSeconds": 0.05,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_start",
+                    "activeBodyClipTime": 0.05,
+                }],
+                {
+                    "bodyClipStartSourceFrame": 91,
+                    "bodyClipPhaseSeconds": 0.05,
+                    "loopClipStartSourceFrame": 350,
+                },
+                60.0,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
