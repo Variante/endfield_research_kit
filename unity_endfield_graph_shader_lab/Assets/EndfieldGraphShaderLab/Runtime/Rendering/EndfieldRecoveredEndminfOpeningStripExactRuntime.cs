@@ -66,7 +66,7 @@ namespace EndfieldGraphShaderLab
                 return false;
             if (submissionPending && !ValidatePending(out string validationFailure))
                 return Fail(validationFailure);
-            if (!initialized && !Initialize())
+            if (!RefreshOptionalSourceRendererAndInitializeTransport())
                 return false;
             selectedPacket = ResolvePacket(rig.actorRoot);
             active = selectedPacket >= 0;
@@ -81,7 +81,8 @@ namespace EndfieldGraphShaderLab
             {
                 return Fail("native opening-strip selection failed: " + exception.Message);
             }
-            sourceRenderer.enabled = false;
+            if (sourceRenderer != null)
+                sourceRenderer.enabled = false;
             return true;
         }
 
@@ -133,20 +134,25 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
-        private static bool Initialize()
+        private static bool RefreshOptionalSourceRendererAndInitializeTransport()
         {
-            foreach (ParticleSystemRenderer renderer in
-                     UnityEngine.Object.FindObjectsOfType<ParticleSystemRenderer>(true))
+            if (sourceRenderer == null)
             {
-                if (renderer == null || !renderer.gameObject.scene.IsValid())
-                    continue;
-                Material material = renderer.sharedMaterial;
-                if (material == null || material.name != MaterialName)
-                    continue;
-                if (sourceRenderer != null)
-                    return Fail("multiple live opening-strip renderers were found");
-                sourceRenderer = renderer;
+                foreach (ParticleSystemRenderer renderer in
+                         UnityEngine.Object.FindObjectsOfType<ParticleSystemRenderer>(true))
+                {
+                    if (renderer == null || !renderer.gameObject.scene.IsValid())
+                        continue;
+                    Material material = renderer.sharedMaterial;
+                    if (material == null || material.name != MaterialName)
+                        continue;
+                    if (sourceRenderer != null)
+                        return Fail("multiple live opening-strip renderers were found");
+                    sourceRenderer = renderer;
+                }
             }
+            if (initialized)
+                return true;
             try
             {
                 renderEvent = Native.GetRenderEventFunc();

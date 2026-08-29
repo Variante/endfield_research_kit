@@ -61,6 +61,25 @@
     "openingStripSceneMVRequested": false,
     "interpretation": "A fresh complete schema-v18 D3D11 run passes every canonical gate and changes v8's actor/effect/temporal means by -0.0186/-0.0039/-0.0116. Controlled repeated startup captures already span larger variation, so this remains a checkpoint rather than a promoted baseline or a new fidelity claim. The comparison sheet still localizes the dominant residual to the missing retail opening multi-exposure strips."
   },
+  "exactOpeningStripCheckpoint": {
+    "report": "scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829/report.json",
+    "video": "scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829/endminf_full_clean_presentation_v12.mp4",
+    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829/reference_full_comparison_v4.json",
+    "comparisonSheet": "scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829/reference_full_comparison_v4_sheet.png",
+    "sideBySideVideo": "scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829/retail_left_unity_v12_right.mp4",
+    "captureSchema": "endfield.endminf-viewer-playmode-sequence.v18",
+    "status": "ok",
+    "frameCount": 770,
+    "bestSourceOffsetFrames": -1,
+    "boundedComparisonFrames": 554,
+    "meanActorRoiMae": 23.56776308864851,
+    "meanEffectRoiMae": 25.73777693024152,
+    "meanEffectTemporalDeltaMae": 15.602346204835788,
+    "exactPacketCount": 4,
+    "exactPacketSourceFrames": [1034, 1035, 1036, 1037],
+    "allActivePacketsSubmittedAndValidated": true,
+    "interpretation": "The repaired exact CharEffect/trail transport forces its required SceneMV path, refreshes the optional source renderer after actor replacement, and validates every bounded native draw. Versus v10 it improves actor ROI MAE by 0.3010 while effect/temporal means regress by 0.0417/0.0181. The sheet now carries the broad source-authentic strip population but remains too dark without retail temporal accumulation, so v8 stays the beauty baseline while the exact four-packet owner becomes canonical."
+  },
   "preTemporalOpeningStripAudit": {
     "report": "scratch/character_recovery/endminf_full_clean_presentation_v9_20260829/report.json",
     "video": "scratch/character_recovery/endminf_full_clean_presentation_v9_20260829/endminf_full_clean_presentation_v9.mp4",
