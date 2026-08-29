@@ -93,6 +93,7 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
             "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
         )
         self.assertIn("CanonicalVideoDefaultFlags", source)
         self.assertIn("if (videoExportRequested)", source)

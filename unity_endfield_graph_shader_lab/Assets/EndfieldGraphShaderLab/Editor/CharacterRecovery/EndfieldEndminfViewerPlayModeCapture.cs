@@ -122,6 +122,10 @@ namespace EndfieldGraphShaderLabEditor
             // content-invalid screen-shadow attachment diagnostic. Enabling it
             // produces an upside-down body mask over the portrait and regresses
             // the aligned peak substantially, so it is not presentation policy.
+            // The four retained opening-strip packets now own only their exact
+            // bounded phases and validate the native draw synchronously. Their
+            // unresolved temporal accumulation remains a visible downstream
+            // gap, not a reason to substitute the rectangle approximation.
             // M13 packets 1/2 measurably close the aligned burst shell. Packet
             // 0 is rejected by the runtime; M14 remains diagnostic-only. M31
             // transport validates, but its current replay sees unclosed live
@@ -130,6 +134,7 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
             EndminfM21ExactEnvironment,
             "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
         };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
@@ -232,6 +237,11 @@ namespace EndfieldGraphShaderLabEditor
             public string exactEndminfUberFailure;
             public bool observedOpeningStripCompatibilityBeforeTemporal;
             public bool observedOpeningStripSceneMVBeforeTemporal;
+            public bool endminfOpeningStripExactRequested;
+            public bool observedEndminfOpeningStripExactActive;
+            public bool observedEndminfOpeningStripExactSubmitted;
+            public bool observedEndminfOpeningStripExactValidated;
+            public string endminfOpeningStripExactFailure;
             public bool unityPublicNgxProxyRequested;
             public bool observedUnityPublicNgxProxySubmitted;
             public bool observedUnityPublicNgxProxyValidated;
@@ -1886,6 +1896,46 @@ namespace EndfieldGraphShaderLabEditor
                 value => value.openingStripCompatibilityBeforeTemporal);
             bool observedOpeningStripSceneMVBeforeTemporal = Frames.Any(
                 value => value.openingStripSceneMVBeforeTemporal);
+            bool endminfOpeningStripExactRequested = Frames.Any(
+                value => value.endminfOpeningStripExactRequested);
+            FrameRow[] expectedEndminfOpeningStripExactFrames = Frames.Where(
+                value => value.endminfOpeningStripExactRequested &&
+                    value.endminfOpeningStripExactActive).ToArray();
+            bool observedEndminfOpeningStripExactActive =
+                expectedEndminfOpeningStripExactFrames.Length > 0;
+            bool observedEndminfOpeningStripExactSubmitted =
+                observedEndminfOpeningStripExactActive &&
+                expectedEndminfOpeningStripExactFrames.All(value =>
+                    value.endminfOpeningStripExactSubmitted);
+            bool observedEndminfOpeningStripExactValidated =
+                observedEndminfOpeningStripExactActive &&
+                expectedEndminfOpeningStripExactFrames.All(value =>
+                    value.endminfOpeningStripExactValidated);
+            string endminfOpeningStripExactFailure = Frames
+                .Select(value => value.endminfOpeningStripExactFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            // The exact retained packet range is 0.1500 through 0.2500 s.
+            // Mirror only its endpoints here so a full/video capture cannot
+            // pass merely because a clock or selection defect activated no
+            // packet. Focused captures wholly outside that range remain valid.
+            bool endminfOpeningStripExactRangeIncluded =
+                Frames.Any(value => value.targetSeconds <= 0.15001f) &&
+                Frames.Any(value => value.targetSeconds >= 0.24999f);
+            bool endminfOpeningStripExactRequirementReady =
+                !endminfOpeningStripExactRequested ||
+                !endminfOpeningStripExactRangeIncluded ||
+                (observedEndminfOpeningStripExactActive &&
+                 observedEndminfOpeningStripExactSubmitted &&
+                 observedEndminfOpeningStripExactValidated);
+            if (!endminfOpeningStripExactRequirementReady)
+            {
+                missingObservations.Add(
+                    "exact Endminf opening-strip submission and synchronized validation" +
+                    (string.IsNullOrWhiteSpace(endminfOpeningStripExactFailure)
+                        ? string.Empty
+                        : " (" + endminfOpeningStripExactFailure + ")"));
+            }
             if (!exactEndminfUberRequirementReady)
             {
                 missingObservations.Add(
@@ -1957,6 +2007,7 @@ namespace EndfieldGraphShaderLabEditor
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
                 exactEndminfUberRequirementReady &&
+                endminfOpeningStripExactRequirementReady &&
                 endminfM31ExactRequirementReady &&
                 unityPublicNgxProxyRequirementReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
@@ -2027,6 +2078,16 @@ namespace EndfieldGraphShaderLabEditor
                     observedOpeningStripCompatibilityBeforeTemporal,
                 observedOpeningStripSceneMVBeforeTemporal =
                     observedOpeningStripSceneMVBeforeTemporal,
+                endminfOpeningStripExactRequested =
+                    endminfOpeningStripExactRequested,
+                observedEndminfOpeningStripExactActive =
+                    observedEndminfOpeningStripExactActive,
+                observedEndminfOpeningStripExactSubmitted =
+                    observedEndminfOpeningStripExactSubmitted,
+                observedEndminfOpeningStripExactValidated =
+                    observedEndminfOpeningStripExactValidated,
+                endminfOpeningStripExactFailure =
+                    endminfOpeningStripExactFailure,
                 endminfM31ExactRequested = endminfM31ExactRequested,
                 observedEndminfM31ExactSubmitted =
                     observedEndminfM31ExactSubmitted,

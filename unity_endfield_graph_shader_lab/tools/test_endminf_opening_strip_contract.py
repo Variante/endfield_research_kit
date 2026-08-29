@@ -11,6 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CLOCK = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfVisualCompatibilityClock.cs"
 PIPELINE = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs"
+CAPTURE = (
+    ROOT / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+    / "EndfieldEndminfViewerPlayModeCapture.cs"
+)
 SHADER = ROOT / "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldEndminfOpeningStrip.shader"
 PLUGIN = ROOT / "tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp"
 
@@ -162,6 +166,55 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
             "ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal("
         )
         self.assertLess(exact, compatibility)
+
+    def test_exact_packet_forces_its_required_scene_mv_transport(self) -> None:
+        source = PIPELINE.read_text(encoding="utf-8")
+        collect = source.index(
+            "EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest ="
+        )
+        reset = source.index("ResetRecoveredSceneMVDiagnostic", collect)
+        request_gate = source[collect:reset]
+        self.assertIn("exactEndminfOpeningStripPrepared", request_gate)
+        self.assertIn(
+            "recoveredSceneMVRequest = new EndfieldRecoveredSceneMVRequest(",
+            request_gate,
+        )
+
+    def test_requested_exact_packets_must_submit_and_validate(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        self.assertIn("endminfOpeningStripExactRequirementReady", source)
+        self.assertIn("endminfOpeningStripExactRangeIncluded", source)
+        self.assertIn("observedEndminfOpeningStripExactActive &&", source)
+        self.assertIn(
+            "observedEndminfOpeningStripExactSubmitted &&", source
+        )
+        self.assertIn("observedEndminfOpeningStripExactValidated", source)
+        required = source[source.index("bool requiredCaptureContractReady") :]
+        self.assertIn("endminfOpeningStripExactRequirementReady", required)
+
+    def test_exact_transport_refreshes_and_guards_optional_source_renderer(self) -> None:
+        runtime = (
+            ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredEndminfOpeningStripExactRuntime.cs"
+        ).read_text(encoding="utf-8")
+        prepare = runtime[
+            runtime.index("internal static bool PrepareBeforeCulling") :
+            runtime.index("internal static bool Render(")
+        ]
+        self.assertIn(
+            "RefreshOptionalSourceRendererAndInitializeTransport()", prepare
+        )
+        self.assertIn("if (sourceRenderer != null)", prepare)
+        self.assertIn("sourceRenderer.enabled = false;", prepare)
+        refresh = runtime[
+            runtime.index(
+                "private static bool "
+                "RefreshOptionalSourceRendererAndInitializeTransport"
+            ) :
+            runtime.index("private static int ResolvePacket")
+        ]
+        self.assertIn("if (sourceRenderer == null)", refresh)
+        self.assertIn("if (initialized)", refresh)
 
     def test_shader_uses_measured_rightward_bands_and_restrained_rgb_split(self) -> None:
         source = SHADER.read_text(encoding="utf-8")

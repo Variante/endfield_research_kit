@@ -1232,6 +1232,7 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredSceneMVRequest recoveredSceneMVRequest =
                 recoveredSceneMVCompositor.CollectRequest(camera);
             if ((exactEndminfM14Prepared || exactEndminfM29Prepared ||
+                    exactEndminfOpeningStripPrepared ||
                     exactEndminfM28PeakPrepared ||
                     exactEndminfVFXBaseV2PeakPrepared) &&
                 !recoveredSceneMVRequest.requested)

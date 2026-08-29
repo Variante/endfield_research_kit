@@ -3048,6 +3048,23 @@ v10 is a schema-v18 checkpoint, not evidence for a beauty-default change. Its
 sheet still localizes the dominant residual to the missing broad retail
 opening multi-exposure strips.
 
+The exact four-packet `CharEffect/trail` path is now canonical only at its
+captured phases. A full v11 probe exposed two fail-open integration defects:
+packet activation disabled the compatibility owner without forcing the SceneMV
+transport, and actor replacement left a destroyed optional source-renderer
+reference. The capture report also accepted active packets with zero submitted
+or validated draws. The repaired path forces SceneMV, refreshes and guards the
+optional renderer, and requires every active packet to submit and validate.
+The targeted 0.1500/0.1833/0.2167/0.2500-second probe closes packets 0-3 and
+source frames 1034-1037 with `S_OK`; the 770-frame v12 checkpoint under
+`scratch/character_recovery/endminf_full_clean_presentation_v12_exact_strip_fixed_20260829`
+passes the same gate. At offset -1 its actor/effect/temporal means are
+23.5678/25.7378/15.6023: actor ROI improves 0.3010 versus v10, while effect and
+temporal means regress 0.0417/0.0181. The exact geometry now restores the broad
+strip population but remains too dark without retail temporal accumulation.
+Keep v8 as the beauty baseline; retain the exact bounded owner as canonical
+source fidelity and close its downstream temporal history separately.
+
 The same v10 report bounds how much of the opening residual can be assigned to
 sparse secondary motion. Clean-reference source frames 120 and 150, the two
 largest opening actor-ROI errors, fall inside rejected long interpolation gaps:
@@ -3210,6 +3227,12 @@ writeback to reach the timeline's first settled loop wrap. The canonical
 all-character Unity build also runs the generated Endminf binding verifier
 before it reports success, so missing or hash-stale replay data can no longer
 pass through the ordinary rebuild path as a log-only warning.
+Length-only 6/30/20/70 chunks remain owner candidates, not identities. The next
+observer increment must join cloth registration name and lifecycle to TeamId,
+the registered AddTransform chunk and ordered hierarchy-path hash, then sample
+the live TransformAccess entry after `CompleteMasterJob` for the effective
+final world/local pose. Certification stays false until a retail session proves
+all four exact joins and the existing 126-binding/100-unique-transform contract.
 The maintained consumer gate is
 `unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact

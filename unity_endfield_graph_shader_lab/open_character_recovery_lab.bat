@@ -33,9 +33,10 @@ exit /b 2
   rem Deferred/SphereOutside remains a default-off diagnostic. Its current
   rem screen-shadow prerequisite is content-invalid and vertically masks the
   rem portrait, so the maintained visual path does not request that chain.
-  rem The retained opening-strip packets remain diagnostic-only: their native
-  rem transport is screen-size-correct, but the current replay still shreds a
-  rem broad cape block instead of the retail trailing horizontal slices.
+  rem Use the four exact retained opening-strip packets only at their certified
+  rem phases. Their source geometry/shaders/resources and native submission are
+  rem closed; retail temporal accumulation remains a separate visible gap.
+  set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=1"
   rem Corrected M13 packets 1/2 improve the aligned peak shell. Packet 0 is
   rem rejected by the runtime; M14 and M20 remain transport diagnostics.
   set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
@@ -54,7 +55,7 @@ exit /b 2
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=-0.4604167"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=0.9305556"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
-  echo Opening Endminf reproduction with aligned exact M13/M21 peak presentation.
+  echo Opening Endminf reproduction with exact opening-strip and aligned M13/M21 peak presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
 
