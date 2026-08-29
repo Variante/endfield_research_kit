@@ -13,7 +13,7 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_OBSERVER_SHA256 = (
-    "D312264E9D390E34C8C756F4CDDB81CACE711710B257C8016D2B36F518EADD9D")
+    "3EC03A67FD2ACE782AF51DD34483EDD75468A0A829851E7C23344BC9FEE1B35B")
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_draw_contract_capture",
     HERE / "verify_endminf_draw_contract_capture.py")
@@ -202,8 +202,26 @@ def build_report(capture: Path, *,
                 all(isinstance(value, int) and not isinstance(value, bool)
                     for value in arguments),
                 f"census row {index} arguments do not match call kind {kind}")
+        vertex_shader = integer(row.get("vertexShaderIdentity"),
+                                f"census row {index} vertex shader identity")
+        pixel_shader = integer(row.get("pixelShaderIdentity"),
+                               f"census row {index} pixel shader identity")
+        compute_shader = integer(row.get("computeShaderIdentity"),
+                                 f"census row {index} compute shader identity")
+        if kind == 4:
+            require(compute_shader > 0,
+                    f"census row {index} dispatch has no compute shader identity")
+        else:
+            require(vertex_shader > 0 and pixel_shader > 0,
+                    f"census row {index} draw has no VS/PS identity")
         validated_census.append({"kind": kind, "afterM31Draw": after,
-                                 "arguments": arguments})
+                                 "arguments": arguments,
+                                 "vertexShaderIdentity":
+                                     f"{vertex_shader:016X}",
+                                 "pixelShaderIdentity":
+                                     f"{pixel_shader:016X}",
+                                 "computeShaderIdentity":
+                                     f"{compute_shader:016X}"})
 
     blobs = metadata.get("blobs")
     names = [f"draw{draw}_{phase}.bin" for draw in range(3)

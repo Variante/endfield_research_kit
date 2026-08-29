@@ -83,9 +83,15 @@ class M31ChronologyCaptureTests(unittest.TestCase):
                          "dsv": target("dsv")} for index in range(3)],
             "census": [
                 {"kind": 3, "afterM31Draw": 1,
-                 "arguments": [6, 1, 10, 20, 0]},
+                 "arguments": [6, 1, 10, 20, 0],
+                 "vertexShaderIdentity": 0x1111222233334444,
+                 "pixelShaderIdentity": 0x5555666677778888,
+                 "computeShaderIdentity": 0},
                 {"kind": 4, "afterM31Draw": 2,
-                 "arguments": [8, 8, 1]}],
+                 "arguments": [8, 8, 1],
+                 "vertexShaderIdentity": 0,
+                 "pixelShaderIdentity": 0,
+                 "computeShaderIdentity": 0x9999AAAABBBBCCCC}],
             "blobs": blob_rows,
         }
         (sidecar / "metadata.json").write_text(
@@ -146,6 +152,26 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             path.write_text(json.dumps(data))
         with self.assertRaisesRegex(MODULE.ChronologyError,
                                     "depth read-only"):
+            self.report(mutate)
+
+    def test_draw_without_shader_identity_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            data["census"][0]["pixelShaderIdentity"] = 0
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(MODULE.ChronologyError,
+                                    "draw has no VS/PS identity"):
+            self.report(mutate)
+
+    def test_dispatch_without_shader_identity_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            data["census"][1]["computeShaderIdentity"] = 0
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(MODULE.ChronologyError,
+                                    "dispatch has no compute shader identity"):
             self.report(mutate)
 
     def test_unchanged_draw_fails_closed(self) -> None:
