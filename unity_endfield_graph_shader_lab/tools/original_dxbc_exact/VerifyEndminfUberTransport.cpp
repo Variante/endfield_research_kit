@@ -3,6 +3,7 @@
 #include <d3d11.h>
 
 #include <cstdint>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -61,6 +62,8 @@ int main(int argc, char** argv)
         float, float, float, float, float, float, float);
     using QueuePacketVariant = std::uint32_t (*)(
         std::uint32_t, float, float, float, float, float, float, float);
+    using InspectPacket = std::uint32_t (*)(
+        std::uint32_t, std::uint32_t*, float*);
     using Reset = void (*)();
     const GetUint payloadReady = RequiredExport<GetUint>(
         module, "EndfieldOriginalDxbcGetEndminfUberPayloadReady");
@@ -72,6 +75,8 @@ int main(int argc, char** argv)
         module, "EndfieldOriginalDxbcQueueEndminfUberPacket");
     const QueuePacketVariant queueVariant = RequiredExport<QueuePacketVariant>(
         module, "EndfieldOriginalDxbcQueueEndminfUberPacketVariant");
+    const InspectPacket inspectPacket = RequiredExport<InspectPacket>(
+        module, "EndfieldOriginalDxbcInspectEndminfUberQueuedPacket");
     const Reset reset = RequiredExport<Reset>(
         module, "EndfieldOriginalDxbcResetEndminfUberRuntimeState");
     const GetUint drawCount = RequiredExport<GetUint>(
@@ -83,7 +88,8 @@ int main(int argc, char** argv)
     const GetUint failureStage = RequiredExport<GetUint>(
         module, "EndfieldOriginalDxbcGetEndminfUberFailureStage");
     if (payloadReady == nullptr || getEvent == nullptr || setTextures == nullptr ||
-        queue == nullptr || queueVariant == nullptr || reset == nullptr ||
+        queue == nullptr || queueVariant == nullptr || inspectPacket == nullptr ||
+        reset == nullptr ||
         drawCount == nullptr ||
         failureCount == nullptr || lastResult == nullptr || failureStage == nullptr)
     {
@@ -149,11 +155,11 @@ int main(int argc, char** argv)
         ID3D11Texture2D* textures[3] = {};
         if (SUCCEEDED(result))
             result = CreateTexture(
-                device, 1920u, 1080u, DXGI_FORMAT_R16G16B16A16_FLOAT,
+                device, 1280u, 1024u, DXGI_FORMAT_R16G16B16A16_FLOAT,
                 &textures[0]);
         if (SUCCEEDED(result))
             result = CreateTexture(
-                device, 960u, 540u, DXGI_FORMAT_R11G11B10_FLOAT,
+                device, 640u, 512u, DXGI_FORMAT_R11G11B10_FLOAT,
                 &textures[1]);
         if (SUCCEEDED(result))
             result = CreateTexture(
@@ -175,7 +181,7 @@ int main(int argc, char** argv)
         {
             queuedIds[index] = queueVariant(
                 static_cast<std::uint32_t>(index & 1u),
-                1920.0f, 1080.0f, 1.0f,
+                1280.0f, 1024.0f, 1.0f,
                 0.5f, 0.5f,
                 index == 0 ? 0.0f : 0.1f,
                 1.0f);
@@ -192,14 +198,24 @@ int main(int argc, char** argv)
                     return 12;
                 }
             }
+            std::uint32_t queuedVariant = 99u;
+            float queuedAspect = 0.0f;
+            if (inspectPacket(
+                    queuedIds[index], &queuedVariant, &queuedAspect) != 1u ||
+                queuedVariant != static_cast<std::uint32_t>(index & 1u) ||
+                std::fabs(queuedAspect - 1.25f) > 0.000001f)
+            {
+                FreeLibrary(module);
+                return 13;
+            }
         }
         if (queue(
-                1920.0f, 1080.0f, 1.0f,
+                1280.0f, 1024.0f, 1.0f,
                 0.5f, 0.5f, 0.1f, 1.0f) != 0u ||
             failureCount() != 1u || failureStage() != 404u)
         {
             FreeLibrary(module);
-            return 13;
+            return 14;
         }
         reset();
         for (ID3D11Texture2D* texture : textures)
@@ -211,11 +227,13 @@ int main(int argc, char** argv)
         lastResult() != 0 || failureStage() != 0u)
     {
         FreeLibrary(module);
-        return 13;
+        return 15;
     }
     std::printf(
-        "payload_ready=%u exports=10 fail_closed_stage=%u ring_tested=%u reset=1\n",
-        expectedReady, expectedStage, expectedReady != 0u ? 64u : 0u);
+        "payload_ready=%u exports=11 fail_closed_stage=%u ring_tested=%u "
+        "variants_inspected=%u aspect_1280x1024=1.25 reset=1\n",
+        expectedReady, expectedStage, expectedReady != 0u ? 64u : 0u,
+        expectedReady != 0u ? 64u : 0u);
     FreeLibrary(module);
     return 0;
 }

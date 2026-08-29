@@ -7089,6 +7089,33 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
         power);
 }
 
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcInspectEndminfUberQueuedPacket(
+    std::uint32_t eventId,
+    std::uint32_t* variant,
+    float* aspect)
+{
+    if (eventId == 0u || variant == nullptr || aspect == nullptr)
+        return 0u;
+    std::lock_guard<std::mutex> lock(g_endminfUberMutex);
+    for (const EndminfUberPacket& packet : g_endminfUberPackets)
+    {
+        if (packet.state.load(std::memory_order_acquire) !=
+                EndminfUberPacketState::Ready ||
+            packet.eventId.load(std::memory_order_relaxed) != eventId)
+        {
+            continue;
+        }
+        *variant = static_cast<std::uint32_t>(packet.variant);
+        std::memcpy(
+            aspect,
+            packet.psB0 + (27u * 4u + 2u) * sizeof(float),
+            sizeof(float));
+        return 1u;
+    }
+    return 0u;
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcResetEndminfUberRuntimeState()
 {
