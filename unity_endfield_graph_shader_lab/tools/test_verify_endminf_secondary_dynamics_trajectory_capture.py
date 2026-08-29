@@ -52,6 +52,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
         "addClothHookInstalled": True,
         "removeClothHookInstalled": True,
         "addTransformHookInstalled": True,
+        "removeTransformHookInstalled": True,
         "windowsCompleted": 1,
         "windowsFailed": 0,
         "evidenceCompleteWindows": 1,
@@ -80,7 +81,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                     if omit_last_coat and owner == "Coat" and writeback == 2 and local == length - 1:
                         continue
                     output.write(json.dumps({
-                        "schema": "endfieldCapture.secondaryDynamicsTransform.v2",
+                        "schema": "endfieldCapture.secondaryDynamicsTransform.v3",
                         "windowId": 1,
                         "writebackId": writeback,
                         "timestampNs": 1000 + writeback * 100,
@@ -99,7 +100,10 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                         "clothComponent": f"0x{0x2000 + owner_index:x}",
                         "clothTransform": f"0x{0x3000 + owner_index:x}",
                         "registeredTransform": f"0x{0x4000 + start + local:x}",
-                        "liveTransform": f"0x{0x4000 + start + local:x}",
+                        "liveTransform": f"0x{0x8000 + start + local:x}",
+                        "clothInstanceId": 100 + owner_index,
+                        "registeredTransformInstanceId": 1000 + start + local,
+                        "liveTransformInstanceId": 1000 + start + local,
                         "registrationStart": start + local,
                         "registrationLength": 1,
                         "effectivePoseReadable": True,
@@ -213,6 +217,34 @@ class TrajectoryCaptureTests(unittest.TestCase):
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
                                         "effective post-job pose"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_live_transform_instance_identity_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            rows[0]["liveTransformInstanceId"] += 1
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "identity differs"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_degenerate_effective_quaternion_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            rows[0]["effectiveRotation"] = [0.0, 0.0, 0.0, 0.0]
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "effectiveRotation is degenerate"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
 

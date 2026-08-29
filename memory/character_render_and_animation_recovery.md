@@ -3227,16 +3227,19 @@ writeback to reach the timeline's first settled loop wrap. The canonical
 all-character Unity build also runs the generated Endminf binding verifier
 before it reports success, so missing or hash-stale replay data can no longer
 pass through the ordinary rebuild path as a log-only warning.
-EndfieldCapture commit `f694bd9` closes the registration and effective-pose
+EndfieldCapture commit `4dd256c` closes the registration and effective-pose
 instrumentation boundary for the next run. Exact-build `AddCloth`/`RemoveCloth`
 lifecycle hooks join `ClothProcess`, TeamId, cloth component, and cloth root;
 the Transform overload of `AddTransform` retains its exact one-row `DataChunk`
 and Transform pointer. After the exact `CompleteMasterJob` return, the observer
-uses the pinned `TransformAccessArray.get_Item` and read-only Transform getters
+uses the pinned `ExTransformAccessArray.get_Item` wrapper and read-only Transform getters
 to retain the live effective world/local pose. Summary/window/trajectory
-v3/v3/v2 fail closed unless every retained row has a stable lifecycle join,
-the live Transform equals its registration, and all effective-pose lanes are
-finite. The independent verifier checks four distinct cloth owners, stable
+v3 fail closed unless every retained row has a stable lifecycle join,
+the live Transform instance identity matches its registration, and all
+effective-pose lanes are finite with non-degenerate rotations. Transform
+removal invalidates the bounded registration slots before reuse; live reads
+also require the wrapper's native length and all four Unity getter slots.
+The independent verifier checks four distinct cloth owners, stable
 unique Transform identity per index, and post-job pose completeness.
 Length-only 6/30/20/70 labels remain candidates rather than human owner-name
 proof; certification stays false until a retail run passes these joins and a
@@ -3295,7 +3298,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `f694bd9` (including the earlier automatic-trigger,
+1. Run observer commit `4dd256c` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
    wrap so the bounded trajectory buffer includes the required interval. First
