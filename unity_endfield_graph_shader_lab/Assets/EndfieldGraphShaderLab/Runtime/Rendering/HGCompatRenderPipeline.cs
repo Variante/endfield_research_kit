@@ -375,6 +375,10 @@ namespace EndfieldGraphShaderLab
             { get; private set; } = GraphicsFormat.None;
         public static GraphicsFormat LastRecoveredEndminfBloomGraphicsFormat
             { get; private set; } = GraphicsFormat.None;
+        public static int LastRecoveredEndminfBloomWidth
+            { get; private set; }
+        public static int LastRecoveredEndminfBloomHeight
+            { get; private set; }
         public static bool LastRecoveredEndminfExactUberRequested
             { get; private set; }
         public static bool LastRecoveredEndminfExactUberSubmitted
@@ -4621,22 +4625,28 @@ namespace EndfieldGraphShaderLab
             float serializedScatter,
             bool useRecoveredGachaRoomPostProfile)
         {
-            float capScale = sourceHeight > RecoveredBloomHeightCap
-                ? RecoveredBloomHeightCap / sourceHeight
-                : 1.0f;
-            int cappedWidth = Mathf.Max(1, Mathf.RoundToInt(sourceWidth * capScale));
-            int cappedHeight = Mathf.Max(1, Mathf.RoundToInt(sourceHeight * capScale));
+            // Bloom starts at half source resolution, then caps that working
+            // image to 1080 pixels high. The retained 3840x2160 Uber t1 is
+            // therefore 1920x1080, not 960x540.
+            float workingScale = Mathf.Min(
+                0.5f,
+                RecoveredBloomHeightCap / Mathf.Max(sourceHeight, 1));
+            int cappedWidth = Mathf.Max(
+                1,
+                Mathf.RoundToInt(sourceWidth * workingScale));
+            int cappedHeight = Mathf.Max(
+                1,
+                Mathf.RoundToInt(sourceHeight * workingScale));
 
-            // The shipped desktop rule derives the count from the capped scene
-            // size and then starts Half resolution. 3840x2160 therefore becomes
-            // a 1920x1080 working size and exactly eight bloom mips.
+            // Derive the count from the actual first bloom mip. At the native
+            // 3840x2160 source this produces exactly eight bloom mips.
             int maxSize = Mathf.Max(cappedWidth, cappedHeight);
             int iterations = Mathf.FloorToInt(Mathf.Log(maxSize, 2.0f) - 2.0f);
             int mipCount = Mathf.Clamp(iterations, 1, MaxRecoveredBloomMipCount);
 
             for (int i = 0; i < mipCount; i++)
             {
-                float mipScale = 0.5f / Mathf.Pow(2.0f, i);
+                float mipScale = 1.0f / Mathf.Pow(2.0f, i);
                 recoveredBloomMipWidths[i] = Mathf.Max(
                     1,
                     Mathf.RoundToInt(cappedWidth * mipScale));
@@ -4666,6 +4676,11 @@ namespace EndfieldGraphShaderLab
                 }
                 LastRecoveredEndminfBloomGraphicsFormat =
                     descriptor.graphicsFormat;
+                if (i == 0)
+                {
+                    LastRecoveredEndminfBloomWidth = descriptor.width;
+                    LastRecoveredEndminfBloomHeight = descriptor.height;
+                }
             }
 
             // The recovered rotated-grid prefilter uses the first bloom mip's

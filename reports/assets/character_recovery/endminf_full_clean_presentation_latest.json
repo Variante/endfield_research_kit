@@ -1,6 +1,6 @@
 {
   "schema": "endfield.character-recovery.full-clean-presentation-review.v1",
-  "generatedAt": "2026-08-29T13:00:00Z",
+  "generatedAt": "2026-08-29T13:45:00Z",
   "reference": "videos/2026-08-26_21-25-50.mkv",
   "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
   "current": {
@@ -50,9 +50,39 @@
       "meanEffectTemporalDeltaMae": 49.063429646164025
     }
   },
+  "nativeBloomLayoutProbe": {
+    "report": "scratch/character_recovery/endminf_native_bloom_layout_probe_v14_20260829/report.json",
+    "sourceWidth": 3840,
+    "sourceHeight": 2160,
+    "bloomWidth": 1920,
+    "bloomHeight": 1080,
+    "bloomFormat": "B10G11R11_UFloatPack32",
+    "exactUberVariant": "peak",
+    "exactUberSubmitted": true,
+    "exactUberValidated": true
+  },
+  "m31WindowAudit": {
+    "activeFrameRange": [165, 253],
+    "materialFrameRange": [189, 253],
+    "actorRoiMaeWithoutM31": 45.2564,
+    "actorRoiMaeWithM31": 45.6332,
+    "effectRoiMaeWithoutM31": 56.2729,
+    "effectRoiMaeWithM31": 56.9436,
+    "interpretation": "The exact transport validates, but packets 2-6 regress the current retail comparison. Keep visual admission provisional until live SceneColor chronology is recovered."
+  },
+  "publicNgxProxyProbe": {
+    "report": "scratch/character_recovery/endminf_public_ngx_proxy_probe_20260829/report.json",
+    "meanActorRoiMae": 119.988,
+    "meanEffectRoiMae": 114.574,
+    "meanEffectTemporalDeltaMae": 45.916,
+    "interpretation": "The public Unity NGX wrapper validates technically but produces a severely dark output and is rejected as a presentation path."
+  },
+  "comparisonLimit": "The schema-v3 activeBodyClip mapping resets the source mapping when the dominant clip flips to overview_loop at Unity frame 305. Settled-loop metrics must use chronological mapping or a separate loop anchor.",
   "interpretation": [
     "The ordinary-plus-peak exact Uber transport is operational and fail-closed validation passes on every current frame.",
     "The controlled current-code probe makes exact Uber neutral to slightly favorable overall: actor and temporal MAE improve slightly while effect MAE changes by less than one tenth.",
-    "The full v4-to-v7 difference cannot be attributed to ordinary Uber alone. The dominant visible residual remains the missing retail temporal/ghost composition and upstream owner ordering."
+    "The full v4-to-v7 difference cannot be attributed to ordinary Uber alone. The dominant visible residual remains the missing retail temporal/ghost composition and upstream owner ordering.",
+    "The latest observer capture proves a repeating nonzero eight-sample Streamline jitter cycle and X/Y indicator inversion 0/1; v7 still uses a zero-jitter compatibility temporal resolve.",
+    "The corrected native-resolution bloom layout now matches the retained 3840x2160-to-1920x1080 retail t1 descriptor and passes the exact peak Uber gate."
   ]
 }

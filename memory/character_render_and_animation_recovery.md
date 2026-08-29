@@ -3012,6 +3012,33 @@ it as a fidelity improvement or replace the comparison authority solely because
 its exact transports validate; the same-schema visual metrics remain slightly
 worse than v4.
 
+The retained exact Uber resource also exposed a native-resolution bloom-layout
+bug in the reproduction. The old builder capped a 3840x2160 source to
+1920x1080 and then halved it again, yielding an invalid 960x540 first mip. The
+working scale is now `min(0.5, 1080/sourceHeight)`, capture schema v14 publishes
+the live first-mip dimensions, and a focused 3840x2160 probe observes the exact
+1920x1080 packed bloom texture with the peak Uber submitted and validated. At
+the maintained 1920x1080 review resolution this preserves the existing
+960x540 first mip; it corrects native-resolution evidence rather than claiming
+a new visual improvement.
+
+The same v7 audit narrows two unresolved presentation boundaries. M31 packets
+submit and validate across their certified window, but packets 2-6 mildly
+worsen the aligned actor/effect comparison; transport execution does not prove
+that the replay sees the correct live SceneColor chronology. The current
+public Unity NGX proxy is likewise rejected as a presentation path: it
+validates technically but produces a severely dark result. Capture
+`20260829T115328Z` instead proves the retail Streamline lane uses a nonzero
+repeating eight-sample pixel-jitter cycle and indicator inversion X/Y `0/1`,
+while v7 still uses the zero-jitter compatibility temporal resolve. Preserve
+those distinctions and do not retune the body animation to compensate.
+
+The schema-v3 full-sequence comparator has one additional evidence limit: its
+active-clip mapping resets the retail source when the dominant clip changes to
+`overview_loop`. Until a separate loop anchor is added, use chronological
+mapping for settled-loop metrics rather than treating those reset rows as
+phase-authoritative.
+
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
 phase 0.0509083 at source frame 91 with plus-or-minus-one-frame uncertainty,

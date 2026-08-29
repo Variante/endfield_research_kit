@@ -178,7 +178,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v13";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v14";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -263,6 +263,8 @@ namespace EndfieldGraphShaderLabEditor
             public Vector2 endminfPostCenterViewport;
             public string endminfPostSourceGraphicsFormat;
             public string endminfBloomGraphicsFormat;
+            public int endminfBloomWidth;
+            public int endminfBloomHeight;
             public bool exactEndminfUberRequested;
             public bool exactEndminfUberSubmitted;
             public bool exactEndminfUberValidated;
@@ -1316,6 +1318,10 @@ namespace EndfieldGraphShaderLabEditor
                 endminfBloomGraphicsFormat =
                     HGCompatRenderPipeline
                         .LastRecoveredEndminfBloomGraphicsFormat.ToString(),
+                endminfBloomWidth = HGCompatRenderPipeline
+                    .LastRecoveredEndminfBloomWidth,
+                endminfBloomHeight = HGCompatRenderPipeline
+                    .LastRecoveredEndminfBloomHeight,
                 exactEndminfUberRequested = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberRequested,
                 exactEndminfUberSubmitted = HGCompatRenderPipeline
@@ -1811,6 +1817,16 @@ namespace EndfieldGraphShaderLabEditor
             {
                 missingObservations.Add(
                     "retail R11G11B10_FLOAT Uber bloom handoff");
+            }
+            bool observedEndminfBloomDimensions =
+                Frames.Count > 0 && Frames.All(value =>
+                    value.endminfBloomWidth == Mathf.Max(captureWidth / 2, 1) &&
+                    value.endminfBloomHeight == Mathf.Max(captureHeight / 2, 1));
+            if (EndfieldEndminfVisualCompatibilityClock.Requested &&
+                !observedEndminfBloomDimensions)
+            {
+                missingObservations.Add(
+                    "half-source Endminf Uber bloom dimensions");
             }
             bool exactEndminfUberRequested = Frames.Any(
                 value => value.exactEndminfUberRequested);
