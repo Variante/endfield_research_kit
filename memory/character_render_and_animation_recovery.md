@@ -3048,6 +3048,18 @@ v10 is a schema-v18 checkpoint, not evidence for a beauty-default change. Its
 sheet still localizes the dominant residual to the missing broad retail
 opening multi-exposure strips.
 
+The same v10 report bounds how much of the opening residual can be assigned to
+sparse secondary motion. Clean-reference source frames 120 and 150, the two
+largest opening actor-ROI errors, fall inside rejected long interpolation gaps:
+runtime replay clamps them to retained samples 5 and 10, respectively, about
+3.21 and 4.94 source frames from the requested phase. Through source frame 155,
+clamped rows average actor/effect ROI MAE 36.915/38.075 versus
+35.793/34.394 for rows that are exact or within a certified adjacent pair.
+Sparse hair/cape coverage therefore contributes to the entrance mismatch but
+does not explain its dominant temporal/compositing error. Keep the long-gap
+endpoint clamp; obtain denser same-session palettes rather than inventing
+motion between unobserved retail poses.
+
 Directly transplanting the retail Streamline path into the Unity lab remains
 fail-closed. Unity's D3D11 plugin interface exposes both the native device and
 active swapchain, so the resource/evaluation lane is technically reachable,
