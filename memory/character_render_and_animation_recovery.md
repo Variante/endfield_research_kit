@@ -2790,9 +2790,20 @@ that bounded tick rather than the neighboring-frame mean when attributing the
 exact draw. The resulting
 `endminf_full_clean_presentation_v5_20260829` render completes 770/770 frames
 with report status `ok`, observes start-to-loop, settled-loop, and VFX-cleanup
-contracts, and submits the peak exact Uber once with no failure. It remains the
-review candidate until the ordinary+peak transport is rendered, while
-preserving the broader temporal-consumer gap.
+contracts, and submits the peak exact Uber once with no failure.
+
+The superseding `endminf_full_clean_presentation_v7_20260829` checkpoint renders
+the ordinary exact Uber on every non-peak frame and the peak variant on its one
+certified tick. Its schema-v13 report is `ok`; every exact-Uber submission and
+the active split M31 schedule validate without a frame failure. A same-schema
+full-reference comparison shows v7 slightly worse than v4, but a controlled
+current-code 13-sample Uber on/off probe slightly improves actor and temporal
+MAE while changing effect MAE by less than one tenth. Therefore the exact
+ordinary shader is not the cause of the remaining full-sequence gap and stays
+enabled. The durable residual is upstream: retail temporal/ghost composition,
+pre-Uber scene color, and equal-queue owner ordering. Exact changing metrics
+and artifact paths live in
+`reports/assets/character_recovery/endminf_full_clean_presentation_latest.json`.
 
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported
@@ -2992,12 +3003,14 @@ envelope, whether the runtime admitted and submitted every scheduled event, the
 selected packet/source frame, and whether the synchronized native draw-count
 gate validated. A requested targeted capture fails closed when any expected
 M31 row lacks active, submitted, and validated evidence. The focused contract
-suite passes; runtime evidence remains pending the next safe D3D11 capture
-because the shared Unity project lock is still present.
+suite and the complete v7 Unity sequence pass. Retail chronology evidence still
+requires the next hardened D3D11 game capture; Unity submission validates the
+replay transport, not the missing live SceneColor boundaries.
 
-After the next complete Unity sequence, wait for user visual review before
-accepting the render as an improvement or replacing the current canonical
-checkpoint.
+The complete v7 Unity sequence is ready for user visual review. Do not accept
+it as a fidelity improvement or replace the comparison authority solely because
+its exact transports validate; the same-schema visual metrics remain slightly
+worse than v4.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
@@ -3010,7 +3023,7 @@ runtime capture it hooks only `CharUIModelMono.Tick`, filters copied runtime
 owner identity to exact `chr_0003_endminf`, and reads current state,
 transition-only next state, normalized/local timing, transition progress, Tick
 delta, thread, and a seqlock-published prior Present ordinal/QPC pair through
-Unity's explicit-out Animator query shims. Schema v2 also derives the next
+Unity's explicit-out Animator query shims. Schema v3 also derives the next
 Present pair observed by a later Tick while keeping Tick and Present as
 different clocks. Both native inputs and all hooked/query entry bytes are
 gated; ownership changes, any active owner-read or pre-Tick failure, reentrant
@@ -3024,10 +3037,20 @@ requires the exact source-controller full-path hashes
 monotonic start/transition/loop clocks, three settled loop samples, and the
 first adjacent unwrapped loop-cycle rise. The independent Python verifier
 re-derives every boundary from raw samples and separates tick-quantized QPC
-intervals from the Animator transition contract. Do not use the current
+intervals from the Animator transition contract. Session `20260829T115328Z`
+contains two sequential native owner/Animator identities; each independently
+repeats the recovered 0.75 exit, 0.25 normalized non-fixed transition, zero
+destination offset, start/loop lengths, and first settled wrap. This is strong
+corroboration, but the session does not certify the lane: automatic graphics
+capture armed during loading, cadence failed, and the second owner recreation
+invalidated the old single-identity summary. The observer now segments
+sequential identities, requires the body candidate and exact Endminf Uber in
+the same Present before automatic arming, excludes unscheduled priority M20
+packages from scheduled cadence, and admits priority M20 only for an exact
+matched shader route with `DrawIndexedInstanced(36,1,...)`. Do not use the
 wall-clock extrapolation to claim exact loop-phase visual equality; replace it
-only after the next complete observer run passes this contract. Capture
-runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
+only after the next complete observer run passes this corrected contract.
+Capture runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
 older runtime is not an evidence-safe ABI for newer observer synchronization
 objects, and injected-runtime dependency tests fail if that boundary regresses.
 

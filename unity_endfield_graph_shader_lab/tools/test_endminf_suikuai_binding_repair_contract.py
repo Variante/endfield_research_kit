@@ -61,7 +61,7 @@ class EndminfSuikuaiBindingRepairContractTests(unittest.TestCase):
 
     def test_viewer_verifies_the_exact_eleven_row_family_and_suikuai(self) -> None:
         source = VIEWER_CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endfield.endminf-viewer-playmode-sequence.v7", source)
+        self.assertIn("endfield.endminf-viewer-playmode-sequence.v13", source)
         for token in (
             "firstEntranceFrame.litEffectBindingRowCount == 11",
             "firstEntranceFrame.primaryRockFamily.Length == 11",

@@ -1,0 +1,57 @@
+{
+  "schema": "endfield.character-recovery.full-clean-presentation-review.v1",
+  "generatedAt": "2026-08-29T13:00:00Z",
+  "reference": "videos/2026-08-26_21-25-50.mkv",
+  "referenceSequence": "endminf_overview_clean_2026-08-26/endminf_overview_start_and_loop_clean",
+  "current": {
+    "label": "endminf_full_clean_presentation_v7_20260829",
+    "report": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/report.json",
+    "video": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/endminf_full_clean_presentation_v7.mp4",
+    "reviewSheet": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/review_sheet.png",
+    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/reference_full_comparison.json",
+    "comparisonSheet": "scratch/character_recovery/endminf_full_clean_presentation_v7_20260829/reference_full_comparison_sheet.png",
+    "status": "ok",
+    "frameCount": 770,
+    "fps": 60.0,
+    "exactUber": {
+      "validatedFrames": 770,
+      "normalFrames": 769,
+      "peakFrames": 1,
+      "failureCount": 0
+    },
+    "m31ValidatedFrames": 89,
+    "bestSourceOffsetFrames": -1,
+    "meanActorRoiMae": 32.32018144457974,
+    "meanEffectRoiMae": 37.7205187386915,
+    "meanEffectTemporalDeltaMae": 24.644008866299046
+  },
+  "sameSchemaBaseline": {
+    "label": "endminf_full_clean_presentation_v4_20260829",
+    "comparison": "scratch/character_recovery/endminf_full_clean_presentation_v4_20260829/reference_full_comparison_v3.json",
+    "bestSourceOffsetFrames": -1,
+    "meanActorRoiMae": 31.616432418874517,
+    "meanEffectRoiMae": 36.8730951588501,
+    "meanEffectTemporalDeltaMae": 24.588498086734695
+  },
+  "controlledExactUberProbe": {
+    "requestedSeconds": [0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 4.35, 4.5, 5.0, 6.0, 8.0, 10.0, 12.0],
+    "bestSourceOffsetFrames": -1,
+    "enabled": {
+      "report": "scratch/character_recovery/endminf_ordinary_uber_ab_on_20260829/report.json",
+      "meanActorRoiMae": 33.79541449698714,
+      "meanEffectRoiMae": 38.367826045482296,
+      "meanEffectTemporalDeltaMae": 48.93411988811729
+    },
+    "disabled": {
+      "report": "scratch/character_recovery/endminf_ordinary_uber_ab_off_20260829/report.json",
+      "meanActorRoiMae": 33.82881073338696,
+      "meanEffectRoiMae": 38.288245319495324,
+      "meanEffectTemporalDeltaMae": 49.063429646164025
+    }
+  },
+  "interpretation": [
+    "The ordinary-plus-peak exact Uber transport is operational and fail-closed validation passes on every current frame.",
+    "The controlled current-code probe makes exact Uber neutral to slightly favorable overall: actor and temporal MAE improve slightly while effect MAE changes by less than one tenth.",
+    "The full v4-to-v7 difference cannot be attributed to ordinary Uber alone. The dominant visible residual remains the missing retail temporal/ghost composition and upstream owner ordering."
+  ]
+}
