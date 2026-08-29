@@ -178,7 +178,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v12";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v13";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -229,6 +229,10 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedUnityPublicNgxProxySubmitted;
             public bool observedUnityPublicNgxProxyValidated;
             public string unityPublicNgxProxyFailure;
+            public bool endminfM31ExactRequested;
+            public bool observedEndminfM31ExactSubmitted;
+            public bool observedEndminfM31ExactValidated;
+            public string endminfM31ExactFailure;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerRequested;
@@ -295,6 +299,14 @@ namespace EndfieldGraphShaderLabEditor
             public bool endminfM28ExactSubmitted;
             public bool endminfM28ExactValidated;
             public string endminfM28ExactFailure;
+            public bool endminfM31ExactRequested;
+            public bool endminfM31ExactExpected;
+            public bool endminfM31ExactActive;
+            public bool endminfM31ExactSubmitted;
+            public bool endminfM31ExactValidated;
+            public int endminfM31ExactPacket;
+            public int endminfM31ExactSourceFrame;
+            public string endminfM31ExactFailure;
             public string file;
             public int effectRootCount;
             public int admittedRenderers;
@@ -1378,6 +1390,25 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredEndminfM28PeakExactRuntime.ValidatedThisFrame,
                 endminfM28ExactFailure =
                     EndfieldRecoveredEndminfM28PeakExactRuntime.CurrentFailure,
+                endminfM31ExactRequested =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.Requested,
+                endminfM31ExactExpected =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .IsCapturedPhase(activeBodyClipTime),
+                endminfM31ExactActive =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.ActiveThisFrame,
+                endminfM31ExactSubmitted =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.SubmittedThisFrame,
+                endminfM31ExactValidated =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.ValidatedThisFrame,
+                endminfM31ExactPacket =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .SelectedPacketThisFrame,
+                endminfM31ExactSourceFrame =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime
+                        .SourceFrameThisFrame,
+                endminfM31ExactFailure =
+                    EndfieldRecoveredEndminfM31PeakExactRuntime.Failure,
                 effectRootCount = roots.Length, admittedRenderers = renderers.Count(value => value.enabled),
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
@@ -1815,6 +1846,37 @@ namespace EndfieldGraphShaderLabEditor
                         ? string.Empty
                         : " (" + exactEndminfUberFailure + ")"));
             }
+            bool endminfM31ExactRequested = Frames.Any(
+                value => value.endminfM31ExactRequested);
+            FrameRow[] expectedEndminfM31Frames = Frames.Where(value =>
+                value.endminfM31ExactRequested &&
+                value.endminfM31ExactExpected).ToArray();
+            bool observedEndminfM31ExactSubmitted =
+                expectedEndminfM31Frames.Length > 0 &&
+                expectedEndminfM31Frames.All(value =>
+                    value.endminfM31ExactActive &&
+                    value.endminfM31ExactSubmitted);
+            bool observedEndminfM31ExactValidated =
+                expectedEndminfM31Frames.Length > 0 &&
+                expectedEndminfM31Frames.All(value =>
+                    value.endminfM31ExactValidated);
+            string endminfM31ExactFailure = Frames
+                .Select(value => value.endminfM31ExactFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            bool endminfM31ExactRequirementReady =
+                !endminfM31ExactRequested ||
+                expectedEndminfM31Frames.Length == 0 ||
+                (observedEndminfM31ExactSubmitted &&
+                 observedEndminfM31ExactValidated);
+            if (!endminfM31ExactRequirementReady)
+            {
+                missingObservations.Add(
+                    "exact Endminf M31 split submission and synchronized validation" +
+                    (string.IsNullOrWhiteSpace(endminfM31ExactFailure)
+                        ? string.Empty
+                        : " (" + endminfM31ExactFailure + ")"));
+            }
             bool unityPublicNgxProxyRequested = Frames.Any(
                 value => value.unityPublicNgxProxyRequested);
             bool observedUnityPublicNgxProxySubmitted =
@@ -1847,6 +1909,7 @@ namespace EndfieldGraphShaderLabEditor
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
                 exactEndminfUberRequirementReady &&
+                endminfM31ExactRequirementReady &&
                 unityPublicNgxProxyRequirementReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
@@ -1912,6 +1975,12 @@ namespace EndfieldGraphShaderLabEditor
                 observedExactEndminfUberValidated =
                     observedExactEndminfUberValidated,
                 exactEndminfUberFailure = exactEndminfUberFailure,
+                endminfM31ExactRequested = endminfM31ExactRequested,
+                observedEndminfM31ExactSubmitted =
+                    observedEndminfM31ExactSubmitted,
+                observedEndminfM31ExactValidated =
+                    observedEndminfM31ExactValidated,
+                endminfM31ExactFailure = endminfM31ExactFailure,
                 unityPublicNgxProxyRequested = unityPublicNgxProxyRequested,
                 observedUnityPublicNgxProxySubmitted =
                     observedUnityPublicNgxProxySubmitted,
