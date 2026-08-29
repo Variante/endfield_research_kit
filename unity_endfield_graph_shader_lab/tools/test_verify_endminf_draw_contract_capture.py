@@ -77,8 +77,10 @@ def pipeline_state() -> dict[str, object]:
         for slot in range(8)]
     blend_targets = [
         {"slot": slot, "enabled": slot < 2, "source": 2,
-         "destination": 6, "operation": 1, "sourceAlpha": 2,
-         "destinationAlpha": 6, "operationAlpha": 1, "writeMask": 15}
+         "destination": 6 if slot < 2 else 1, "operation": 1,
+         "sourceAlpha": 2,
+         "destinationAlpha": 6 if slot < 2 else 1,
+         "operationAlpha": 1, "writeMask": 15}
         for slot in range(8)]
     blend_targets[1].update({
         "source": 3, "destination": 4,
@@ -202,6 +204,47 @@ class DrawContractCaptureTests(unittest.TestCase):
         target["destination"] = 1
         with self.assertRaisesRegex(MODULE.ContractError,
                                     "blend target 1 is not enabled"):
+            self.build(payload)
+
+    def test_m31_rtv1_descriptor_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["renderTargets"][1] \
+            ["viewDimension"] = 99
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "RTV 1 viewDimension"):
+            self.build(payload)
+
+    def test_m31_dsv_dimension_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["depthTarget"] \
+            ["viewDimension"] = 99
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "depthTarget viewDimension"):
+            self.build(payload)
+
+    def test_m31_dsv_must_be_read_only_depth(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["depthTarget"] \
+            ["viewFlags"] = 0
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "must make depth read-only"):
+            self.build(payload)
+
+    def test_m31_read_only_depth_without_stencil_is_recorded(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["depthTarget"] \
+            ["viewFlags"] = 1
+        report = self.build(payload)
+        observed = report["owners"]["M31"]["draws"][0] \
+            ["pipelineState"]["depthTarget"]["viewFlags"]
+        self.assertEqual(observed, 1)
+
+    def test_m31_disabled_blend_slot_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["blend"]["targets"][2] \
+            ["destination"] = 6
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "blend target 2 destination"):
             self.build(payload)
 
     def test_m31_alpha_to_coverage_fails_closed(self) -> None:

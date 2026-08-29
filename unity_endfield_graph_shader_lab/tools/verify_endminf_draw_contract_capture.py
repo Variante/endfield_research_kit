@@ -283,8 +283,20 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             require(integer(render_targets[0].get(field),
                             f"{label} RTV 0 {field}") == expected,
                     f"{label} RTV 0 {field} differs from exact M31 state")
+        require(integer(render_targets[0].get("viewDimension"),
+                        f"{label} RTV 0 viewDimension") == 4,
+                f"{label} RTV 0 viewDimension differs from exact M31 state")
         require(target["renderTargetCount"] == 2,
                 f"{label} does not bind the exact two M31 render targets")
+        expected_motion_target = {
+            "width": 3840, "height": 2160, "sampleCount": 1,
+            "viewDimension": 4,
+        }
+        for field, expected in expected_motion_target.items():
+            require(integer(render_targets[1].get(field),
+                            f"{label} RTV 1 {field}") == expected,
+                    f"{label} RTV 1 {field} differs from exact M31 output "
+                    "compatibility state")
         expected_depth = {
             "width": 3840, "height": 2160, "textureFormat": 19,
             "viewFormat": 20, "sampleCount": 1,
@@ -293,6 +305,14 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             require(integer(depth_target.get(field),
                             f"{label} depthTarget {field}") == expected,
                     f"{label} depthTarget {field} differs from exact M31 state")
+        require(integer(depth_target.get("viewDimension"),
+                        f"{label} depthTarget viewDimension") == 3,
+                f"{label} depthTarget viewDimension differs from exact M31 state")
+        depth_view_flags = integer(
+            depth_target.get("viewFlags"), f"{label} depthTarget viewFlags")
+        require(depth_view_flags in (1, 3),
+                f"{label} depthTarget viewFlags must make depth read-only "
+                "without unknown DSV flags")
         expected_viewport = {
             "x": 0.0, "y": 0.0, "width": 3840.0, "height": 2160.0,
             "minDepth": 0.0, "maxDepth": 1.0,
@@ -355,6 +375,20 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
                             f"{label} blend target 1 {field}") == expected,
                     f"{label} blend target 1 {field} differs from serialized "
                     "M31 motion-vector state")
+        for slot in range(2, 8):
+            row = blend_targets[slot]
+            require(row["enabled"] is False,
+                    f"{label} blend target {slot} must remain disabled")
+            expected_disabled = {
+                "source": 2, "destination": 1, "operation": 1,
+                "sourceAlpha": 2, "destinationAlpha": 1,
+                "operationAlpha": 1, "writeMask": 15,
+            }
+            for field, expected in expected_disabled.items():
+                require(integer(row.get(field),
+                                f"{label} blend target {slot} {field}") == expected,
+                        f"{label} blend target {slot} {field} differs from "
+                        "serialized disabled M31 state")
         require(factor == [1, 1, 1, 1] and
                 integer(blend.get("sampleMask"),
                         f"{label} blend sampleMask") == 0xffffffff,

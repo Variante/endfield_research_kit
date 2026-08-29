@@ -2936,16 +2936,24 @@ saved properties gives RTV0 ONE/INV_SRC_ALPHA for color and alpha, while RTV1
 uses SRC_COLOR/INV_SRC_COLOR for color and ONE/ONE for alpha; both use Add and
 write mask 15. The same pass fixes zero depth bias and no conservative raster,
 and the retained runtime record closes scissor, reversed-Z GREATER_EQUAL,
-point-clamp s0, linear-wrap s1, and the two target/depth formats. Verifier v2
-now rejects drift in RTV1, independent blend, alpha-to-coverage, bias, and
-forced-sample state. The exact native M31 callback no longer borrows M14's
+point-clamp s0, linear-wrap s1, RTV0, and the depth formats. Verifier v2 now
+rejects incompatible RTV1 dimensions/view type/sample count, a writable or
+malformed DSV, drift in either active blend target or disabled targets 2-7,
+independent blend, alpha-to-coverage, bias, and forced-sample state. RTV1's
+live resource/view formats and whether retail marks stencil read-only remain
+explicit recapture fields rather than guessed constants. The exact native M31
+callback no longer borrows M14's
 wrap/linear samplers, disabled depth, or duplicated MRT blend: it owns the M31
 descriptors, binds the D32/S8 resource through a read-only depth/stencil view
-while sampling its depth plane, and restores all displaced state. A dedicated
-WARP validator proves creation of every state object plus simultaneous DSV/SRV
-binding (`independent=1`, RTV1 `3/4`, depth func `7`, stencil on, DSV flags
-`3`). The hardened retail recapture must still confirm those live DSV flags and
-the serialized RTV1 submission before this is treated as final runtime parity.
+while sampling its depth plane, and restores the captured shader, resource,
+output, and fixed-function bindings. It queries the live context after every
+void D3D11 setter and suppresses the draw with `E_FAIL` unless both RTVs, the
+DSV/SRV pair, samplers, state objects, blend factor/mask, and stencil reference
+all remain bound exactly. A dedicated WARP validator now binds two distinct
+RTVs with the read-only DSV/depth SRV and query-checks the production
+combination (`independent=1`, RTV1 `3/4`, depth func `7`, stencil on, DSV flags
+`3`). The hardened retail recapture must still confirm its live DSV flags and
+RTV1 formats before this is treated as final runtime parity.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every

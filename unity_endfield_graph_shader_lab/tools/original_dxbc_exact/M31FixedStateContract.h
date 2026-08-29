@@ -27,6 +27,19 @@ inline D3D11_BLEND_DESC Blend()
     D3D11_BLEND_DESC value = {};
     value.AlphaToCoverageEnable = FALSE;
     value.IndependentBlendEnable = TRUE;
+    for (UINT target = 0u; target < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+         ++target)
+    {
+        D3D11_RENDER_TARGET_BLEND_DESC& row = value.RenderTarget[target];
+        row.BlendEnable = FALSE;
+        row.SrcBlend = D3D11_BLEND_ONE;
+        row.DestBlend = D3D11_BLEND_ZERO;
+        row.BlendOp = D3D11_BLEND_OP_ADD;
+        row.SrcBlendAlpha = D3D11_BLEND_ONE;
+        row.DestBlendAlpha = D3D11_BLEND_ZERO;
+        row.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        row.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    }
     D3D11_RENDER_TARGET_BLEND_DESC& color = value.RenderTarget[0];
     color.BlendEnable = TRUE;
     color.SrcBlend = D3D11_BLEND_ONE;
