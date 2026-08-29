@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,44 @@ def integer(value: Any, label: str, minimum: int = 0) -> int:
     require(isinstance(value, int) and not isinstance(value, bool) and
             value >= minimum, f"{label} is not an integer >= {minimum}")
     return value
+
+
+def number(value: Any, label: str) -> float:
+    require(isinstance(value, (int, float)) and not isinstance(value, bool) and
+            math.isfinite(float(value)), f"{label} is not a finite number")
+    return float(value)
+
+
+def boolean(value: Any, label: str) -> bool:
+    require(isinstance(value, bool), f"{label} is not a boolean")
+    return value
+
+
+def validate_session(capture: Path) -> dict[str, Any]:
+    path = capture / "graphics/summary.json"
+    require(path.is_file(), f"graphics summary is absent: {path}")
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    require(summary.get("complete") is True,
+            "graphics summary complete gate is false")
+    require(summary.get("cadenceValid") is True,
+            "graphics summary cadenceValid gate is false")
+    require(integer(summary.get("dropped"), "graphics dropped events") == 0,
+            "graphics summary reports dropped events")
+    require(summary.get("deferredFailed") is False,
+            "graphics deferred readback failed")
+    for field in ("deferredStagedSlots", "deferredDrainedSlots",
+                  "deferredPublishedSlots"):
+        require(integer(summary.get(field), f"graphics {field}") == 72,
+                f"graphics {field} is not 72")
+    return {
+        "complete": True,
+        "cadenceValid": True,
+        "dropped": 0,
+        "deferredStagedSlots": 72,
+        "deferredDrainedSlots": 72,
+        "deferredPublishedSlots": 72,
+        "deferredFailed": False,
+    }
 
 
 def owner_resource_ids(draw: dict[str, Any]) -> set[int]:
@@ -121,12 +160,43 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             f"{label} render target descriptor is incomplete")
     require(target.get("depthBound") is True and isinstance(depth_target, dict),
             f"{label} depth attachment is not recorded")
+    render_targets = state.get("renderTargets")
+    require(isinstance(render_targets, list) and len(render_targets) == 8,
+            f"{label} does not record all eight RTV slots")
+    bound_targets = 0
+    for slot, row in enumerate(render_targets):
+        require(isinstance(row, dict) and
+                integer(row.get("slot"), f"{label} RTV slot") == slot,
+                f"{label} RTV slot {slot} is malformed")
+        bound = boolean(row.get("bound"), f"{label} RTV {slot} bound")
+        for field in ("width", "height", "textureFormat", "viewFormat",
+                      "viewDimension", "sampleCount"):
+            integer(row.get(field), f"{label} RTV {slot} {field}")
+        if bound:
+            bound_targets += 1
+            for field in ("width", "height", "textureFormat", "viewFormat",
+                          "viewDimension", "sampleCount"):
+                require(integer(row.get(field),
+                                f"{label} RTV {slot} {field}") > 0,
+                        f"{label} bound RTV {slot} has zero {field}")
+    require(bound_targets == target["renderTargetCount"],
+            f"{label} bound RTV count differs from renderTargetCount")
+    for field in ("width", "height", "textureFormat", "viewFormat",
+                  "viewDimension", "sampleCount"):
+        require(integer(depth_target.get(field),
+                        f"{label} depthTarget {field}") > 0,
+                f"{label} depthTarget has zero {field}")
+    integer(depth_target.get("viewFlags"), f"{label} depthTarget viewFlags")
     require(isinstance(viewport, dict) and
             integer(viewport.get("count"), f"{label} viewport count", 1) > 0,
             f"{label} viewport is absent")
+    for field in ("x", "y", "width", "height", "minDepth", "maxDepth"):
+        number(viewport.get(field), f"{label} viewport {field}")
     require(isinstance(scissor, dict) and
             integer(scissor.get("count"), f"{label} scissor count", 1) > 0,
             f"{label} scissor is absent")
+    for field in ("left", "top", "right", "bottom"):
+        integer(scissor.get(field), f"{label} scissor {field}")
     samplers = state.get("samplers")
     require(isinstance(samplers, list) and len(samplers) >= 3,
             f"{label} does not record PS samplers 0-2")
@@ -146,22 +216,162 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
         for field in ("filter", "addressU", "addressV", "addressW",
                       "comparison", "maxAnisotropy"):
             integer(row.get(field), f"{label} sampler {slot} {field}")
-    for field in ("blend", "depthStencil", "rasterizer"):
-        require(isinstance(state.get(field), dict),
-                f"{label} {field} descriptor is absent")
+        for field in ("mipBias", "minLod", "maxLod"):
+            number(row.get(field), f"{label} sampler {slot} {field}")
+        border = row.get("borderColor")
+        require(isinstance(border, list) and len(border) == 4,
+                f"{label} sampler {slot} borderColor is incomplete")
+        for component, value in enumerate(border):
+            number(value, f"{label} sampler {slot} borderColor {component}")
+    blend = state.get("blend")
+    require(isinstance(blend, dict), f"{label} blend descriptor is absent")
+    boolean(blend.get("alphaToCoverageEnabled"),
+            f"{label} blend alphaToCoverageEnabled")
+    boolean(blend.get("independentBlendEnabled"),
+            f"{label} blend independentBlendEnabled")
+    factor = blend.get("factor")
+    require(isinstance(factor, list) and len(factor) == 4,
+            f"{label} blend factor is incomplete")
+    for component, value in enumerate(factor):
+        number(value, f"{label} blend factor {component}")
+    integer(blend.get("sampleMask"), f"{label} blend sampleMask")
+    blend_targets = blend.get("targets")
+    require(isinstance(blend_targets, list) and len(blend_targets) == 8,
+            f"{label} does not record all eight blend targets")
+    for slot, row in enumerate(blend_targets):
+        require(isinstance(row, dict) and
+                integer(row.get("slot"), f"{label} blend target slot") == slot,
+                f"{label} blend target {slot} is malformed")
+        boolean(row.get("enabled"), f"{label} blend target {slot} enabled")
+        for field in ("source", "destination", "operation", "sourceAlpha",
+                      "destinationAlpha", "operationAlpha", "writeMask"):
+            integer(row.get(field), f"{label} blend target {slot} {field}")
+    depth_stencil = state.get("depthStencil")
+    require(isinstance(depth_stencil, dict),
+            f"{label} depthStencil descriptor is absent")
+    for field in ("depthEnabled", "stencilEnabled"):
+        boolean(depth_stencil.get(field), f"{label} depthStencil {field}")
+    for field in ("writeMask", "function", "stencilReference",
+                  "stencilReadMask", "stencilWriteMask"):
+        integer(depth_stencil.get(field), f"{label} depthStencil {field}")
+    for face_name in ("frontFace", "backFace"):
+        face = depth_stencil.get(face_name)
+        require(isinstance(face, dict),
+                f"{label} depthStencil {face_name} is absent")
+        for field in ("failOperation", "depthFailOperation",
+                      "passOperation", "function"):
+            integer(face.get(field),
+                    f"{label} depthStencil {face_name} {field}")
+    rasterizer = state.get("rasterizer")
+    require(isinstance(rasterizer, dict),
+            f"{label} rasterizer descriptor is absent")
+    for field in ("fillMode", "cullMode", "depthBias", "forcedSampleCount"):
+        integer(rasterizer.get(field), f"{label} rasterizer {field}",
+                -(2 ** 31) if field == "depthBias" else 0)
+    for field in ("depthBiasClamp", "slopeScaledDepthBias"):
+        number(rasterizer.get(field), f"{label} rasterizer {field}")
+    for field in ("frontCounterClockwise", "depthClipEnabled",
+                  "scissorEnabled", "multisampleEnabled",
+                  "antialiasedLineEnabled"):
+        boolean(rasterizer.get(field), f"{label} rasterizer {field}")
+    if owner == "M31":
+        expected_target = {
+            "width": 3840, "height": 2160, "textureFormat": 26,
+            "viewFormat": 26, "sampleCount": 1,
+        }
+        for field, expected in expected_target.items():
+            require(integer(render_targets[0].get(field),
+                            f"{label} RTV 0 {field}") == expected,
+                    f"{label} RTV 0 {field} differs from exact M31 state")
+        require(target["renderTargetCount"] == 2,
+                f"{label} does not bind the exact two M31 render targets")
+        expected_depth = {
+            "width": 3840, "height": 2160, "textureFormat": 19,
+            "viewFormat": 20, "sampleCount": 1,
+        }
+        for field, expected in expected_depth.items():
+            require(integer(depth_target.get(field),
+                            f"{label} depthTarget {field}") == expected,
+                    f"{label} depthTarget {field} differs from exact M31 state")
+        expected_viewport = {
+            "x": 0.0, "y": 0.0, "width": 3840.0, "height": 2160.0,
+            "minDepth": 0.0, "maxDepth": 1.0,
+        }
+        for field, expected in expected_viewport.items():
+            require(number(viewport.get(field),
+                           f"{label} viewport {field}") == expected,
+                    f"{label} viewport {field} differs from exact M31 state")
+        require([integer(scissor.get(field), f"{label} scissor {field}")
+                 for field in ("left", "top", "right", "bottom")] ==
+                [0, 0, 3840, 2160],
+                f"{label} scissor differs from exact M31 state")
+        expected_samplers = (
+            {"filter": 0, "addressU": 3, "addressV": 3,
+             "addressW": 3, "comparison": 1},
+            {"filter": 20, "addressU": 1, "addressV": 1,
+             "addressW": 1, "comparison": 1},
+        )
+        for slot, expected_fields in enumerate(expected_samplers):
+            row = by_slot[slot]
+            for field, expected in expected_fields.items():
+                require(integer(row.get(field),
+                                f"{label} sampler {slot} {field}") == expected,
+                        f"{label} sampler {slot} {field} differs from exact M31 state")
+            require(number(row.get("minLod"),
+                           f"{label} sampler {slot} minLod") == 0.0 and
+                    number(row.get("maxLod"),
+                           f"{label} sampler {slot} maxLod") == 1000.0,
+                    f"{label} sampler {slot} LOD range differs from exact M31 state")
+        expected_blend = {
+            "source": 2, "destination": 6, "operation": 1,
+            "sourceAlpha": 2, "destinationAlpha": 6,
+            "operationAlpha": 1, "writeMask": 15,
+        }
+        for slot in range(2):
+            row = blend_targets[slot]
+            require(row["enabled"] is True,
+                    f"{label} blend target {slot} is not enabled")
+            for field, expected in expected_blend.items():
+                require(integer(row.get(field),
+                                f"{label} blend target {slot} {field}") == expected,
+                        f"{label} blend target {slot} {field} differs from exact M31 state")
+        require(factor == [1, 1, 1, 1] and
+                integer(blend.get("sampleMask"),
+                        f"{label} blend sampleMask") == 0xffffffff,
+                f"{label} blend factor/sample mask differs from exact M31 state")
+        require(depth_stencil["depthEnabled"] is True and
+                integer(depth_stencil.get("writeMask"),
+                        f"{label} depth writeMask") == 0 and
+                integer(depth_stencil.get("function"),
+                        f"{label} depth function") == 7 and
+                depth_stencil["stencilEnabled"] is True and
+                integer(depth_stencil.get("stencilReference"),
+                        f"{label} stencilReference") == 0,
+                f"{label} depth/stencil differs from exact M31 state")
+        expected_raster = {
+            "fillMode": 3, "cullMode": 1,
+            "frontCounterClockwise": True, "depthClipEnabled": True,
+            "scissorEnabled": True, "multisampleEnabled": False,
+            "antialiasedLineEnabled": False,
+        }
+        for field, expected in expected_raster.items():
+            require(rasterizer.get(field) == expected,
+                    f"{label} rasterizer {field} differs from exact M31 state")
     return {
         "target": target,
         "depthTarget": depth_target,
         "viewport": viewport,
         "scissor": scissor,
         "samplers": [by_slot[index] for index in range(3)],
-        "blend": state["blend"],
-        "depthStencil": state["depthStencil"],
-        "rasterizer": state["rasterizer"],
+        "renderTargets": render_targets,
+        "blend": blend,
+        "depthStencil": depth_stencil,
+        "rasterizer": rasterizer,
     }
 
 
 def build_report(capture: Path) -> dict[str, Any]:
+    session = validate_session(capture)
     frame_root = capture / "graphics/frames"
     require(frame_root.is_dir(), f"graphics frame directory is absent: {frame_root}")
     paths = sorted(frame_root.glob("*/metadata.json"),
@@ -208,10 +418,11 @@ def build_report(capture: Path) -> dict[str, Any]:
     for owner, rows in owners.items():
         require(rows, f"capture contains no state-complete exact {owner} draw")
     return {
-        "schema": "endfield.endminf-draw-contract-capture.v1",
+        "schema": "endfield.endminf-draw-contract-capture.v2",
         "status": "validated_draw_local_ia_state_and_chronology",
         "capture": str(capture.resolve()),
         "frameCount": len(paths),
+        "session": session,
         "owners": {owner: {"drawCount": len(rows), "draws": rows}
                    for owner, rows in owners.items()},
         "chronology": chronological_frames,
@@ -228,7 +439,7 @@ def main() -> int:
     except (OSError, ValueError, ContractError,
             CLOSURE.VerificationError) as exc:
         report = {
-            "schema": "endfield.endminf-draw-contract-capture.v1",
+            "schema": "endfield.endminf-draw-contract-capture.v2",
             "status": "validation_failed",
             "capture": str(args.capture.resolve()),
             "diagnostic": str(exc),

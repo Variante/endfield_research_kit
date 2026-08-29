@@ -2913,6 +2913,12 @@ and depth-bias/forced-sample raster state. The Release DLL built at 02:41 local
 has SHA-256 `4884A76A...00C674B`, and all 17 native tests pass. The next capture
 must use this build and pass cadence, resource, and completeness gates before
 its palettes or M31 pipeline state enter replay.
+`verify_endminf_draw_contract_capture.py` schema v2 now enforces those session
+gates before draw inspection, requires the complete eight-slot RTV/blend and
+DSV/sampler/stencil/raster descriptors, and checks the already proven M31
+4K target/depth, sampler, blend, depth/stencil, viewport/scissor, and raster
+values. It rejects `20260829T024828Z` deterministically at the false graphics
+`complete` gate instead of publishing partial fixed-state evidence.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every

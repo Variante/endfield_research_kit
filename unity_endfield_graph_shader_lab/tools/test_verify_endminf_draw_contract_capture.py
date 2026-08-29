@@ -57,21 +57,66 @@ def draw(owner_name: str, ordinal: int) -> dict[str, object]:
 
 
 def pipeline_state() -> dict[str, object]:
-    samplers = [{"slot": slot, "bound": True, "filter": 21,
-                 "addressU": 1, "addressV": 1, "addressW": 1,
-                 "comparison": 1, "maxAnisotropy": 1}
+    samplers = [{"slot": slot, "bound": True,
+                 "filter": (0, 20, 21)[slot],
+                 "addressU": 3 if slot == 0 else 1,
+                 "addressV": 3 if slot == 0 else 1,
+                 "addressW": 3 if slot == 0 else 1,
+                 "comparison": 1, "maxAnisotropy": 1,
+                 "mipBias": 0.0, "minLod": 0.0, "maxLod": 1000.0,
+                 "borderColor": [0.0, 0.0, 0.0, 0.0]}
                 for slot in range(3)]
+    render_targets = [
+        {"slot": slot, "bound": slot < 2,
+         "width": 3840 if slot < 2 else 0,
+         "height": 2160 if slot < 2 else 0,
+         "textureFormat": 26 if slot < 2 else 0,
+         "viewFormat": 26 if slot < 2 else 0,
+         "viewDimension": 4 if slot < 2 else 0,
+         "sampleCount": 1 if slot < 2 else 0}
+        for slot in range(8)]
+    blend_targets = [
+        {"slot": slot, "enabled": slot < 2, "source": 2,
+         "destination": 6, "operation": 1, "sourceAlpha": 2,
+         "destinationAlpha": 6, "operationAlpha": 1, "writeMask": 15}
+        for slot in range(8)]
     return {
         "valid": True,
-        "target": {"width": 1920, "height": 1080,
+        "target": {"width": 3840, "height": 2160,
                    "renderTargetCount": 2, "depthBound": True},
-        "depthTarget": {"width": 1920, "height": 1080},
-        "viewport": {"count": 1},
-        "scissor": {"count": 1},
+        "renderTargets": render_targets,
+        "depthTarget": {"width": 3840, "height": 2160,
+                        "textureFormat": 19, "viewFormat": 20,
+                        "viewDimension": 3, "viewFlags": 3,
+                        "sampleCount": 1},
+        "viewport": {"count": 1, "x": 0.0, "y": 0.0,
+                     "width": 3840.0, "height": 2160.0,
+                     "minDepth": 0.0, "maxDepth": 1.0},
+        "scissor": {"count": 1, "left": 0, "top": 0,
+                    "right": 3840, "bottom": 2160},
         "samplers": samplers,
-        "blend": {"enabled": True},
-        "depthStencil": {"depthEnabled": False},
-        "rasterizer": {"fillMode": 3},
+        "blend": {"alphaToCoverageEnabled": False,
+                  "independentBlendEnabled": True,
+                  "factor": [1.0, 1.0, 1.0, 1.0],
+                  "sampleMask": 0xffffffff, "targets": blend_targets},
+        "depthStencil": {"depthEnabled": True, "writeMask": 0,
+                         "function": 7, "stencilEnabled": True,
+                         "stencilReference": 0, "stencilReadMask": 255,
+                         "stencilWriteMask": 255,
+                         "frontFace": {"failOperation": 1,
+                                       "depthFailOperation": 1,
+                                       "passOperation": 1, "function": 8},
+                         "backFace": {"failOperation": 1,
+                                      "depthFailOperation": 1,
+                                      "passOperation": 1, "function": 8}},
+        "rasterizer": {"fillMode": 3, "cullMode": 1,
+                       "frontCounterClockwise": True,
+                       "depthClipEnabled": True, "scissorEnabled": True,
+                       "multisampleEnabled": False,
+                       "antialiasedLineEnabled": False, "depthBias": 0,
+                       "depthBiasClamp": 0.0,
+                       "slopeScaledDepthBias": 0.0,
+                       "forcedSampleCount": 0},
     }
 
 
@@ -81,6 +126,12 @@ class DrawContractCaptureTests(unittest.TestCase):
             capture = Path(temporary)
             frame = capture / "graphics/frames/1"
             frame.mkdir(parents=True)
+            (capture / "graphics/summary.json").write_text(json.dumps({
+                "complete": True, "cadenceValid": True, "dropped": 0,
+                "deferredFailed": False, "deferredStagedSlots": 72,
+                "deferredDrainedSlots": 72,
+                "deferredPublishedSlots": 72,
+            }), encoding="utf-8")
             (frame / "metadata.json").write_text(
                 json.dumps(metadata), encoding="utf-8")
             return MODULE.build_report(capture)
@@ -114,6 +165,20 @@ class DrawContractCaptureTests(unittest.TestCase):
             payload["drawRecords"][1]["pipelineState"]["samplers"][:2]
         with self.assertRaisesRegex(MODULE.ContractError,
                                     "PS samplers 0-2"):
+            self.build(payload)
+
+    def test_missing_dsv_flags_fails_closed(self) -> None:
+        payload = self.payload()
+        del payload["drawRecords"][0]["pipelineState"]["depthTarget"]["viewFlags"]
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "depthTarget viewFlags"):
+            self.build(payload)
+
+    def test_missing_blend_target_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["blend"]["targets"].pop()
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "all eight blend targets"):
             self.build(payload)
 
     def test_repeated_ordinal_fails_closed(self) -> None:
