@@ -58,6 +58,14 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     }
     (directory / "summary.json").write_text(
         json.dumps(summary) + "\n", encoding="utf-8")
+    animator = root / "graphics/endminf_animator"
+    animator.mkdir(parents=True)
+    (animator / "metadata.json").write_text(json.dumps({
+        "schema": "endfieldCapture.endminfAnimatorTimeline.v3",
+        "sequenceComplete": True,
+        "indices": {"firstWrap": 0},
+        "samples": [{"qpcTick": 1150, "qpcFrequency": 1_000_000_000}],
+    }) + "\n", encoding="utf-8")
     with (directory / "trajectories.jsonl").open("w", encoding="utf-8") as output:
         start = 0
         for owner_index, (owner, length) in enumerate(MODULE.OWNER_LENGTHS.items(), 1):
@@ -138,6 +146,18 @@ class TrajectoryCaptureTests(unittest.TestCase):
             path.write_text(json.dumps(window) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
                                         "writebacks differ"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_trajectory_must_reach_first_loop_wrap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "graphics/endminf_animator/metadata.json"
+            metadata = json.loads(path.read_text(encoding="utf-8"))
+            metadata["samples"][0]["qpcTick"] = 1250
+            path.write_text(json.dumps(metadata) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "first settled loop wrap"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_incomplete_owner_writeback_fails_closed(self) -> None:

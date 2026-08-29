@@ -3201,7 +3201,15 @@ failure all keep summary v2 incomplete. The independent trajectory verifier
 requires one exact Animator/graphics-joined complete window and unique complete
 6/30/20/70-transform candidates before publishing evidence. These fixes make
 the next capture diagnostic-ready; they do not retrofit trajectory evidence
-into `20260829T115328Z`, whose v1 summary is rejected.
+into `20260829T115328Z`, whose v1 summary is rejected. EndfieldCapture commit
+`6eb9788` closes the remaining duration/clock contract: the automatic
+secondary-dynamics window now stays active after the shorter graphics sequence
+and closes only on clean session stop, while trajectory timestamps use the
+same QPC epoch as the Animator timeline. The verifier now requires the last
+writeback to reach the timeline's first settled loop wrap. The canonical
+all-character Unity build also runs the generated Endminf binding verifier
+before it reports success, so missing or hash-stale replay data can no longer
+pass through the ordinary rebuild path as a log-only warning.
 The maintained consumer gate is
 `unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact
@@ -3255,9 +3263,10 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commits `db2b915` and `7a09410` (including the earlier automatic-trigger,
+1. Run observer commits `db2b915`, `7a09410`, and `6eb9788` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
-   game session and close the
+   game session; stop cleanly shortly after the first settled overview-loop
+   wrap so the bounded trajectory buffer includes the required interval. Close the
    retail temporal boundary with consecutive pre/post Streamline surfaces,
    depth, velocity, jitter/reset, frame token, formats, extents, and resource
    tags. Validate it with
