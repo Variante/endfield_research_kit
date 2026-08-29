@@ -93,6 +93,12 @@ published frame's exact VS/PS constants and t0/t1/t2 bytes, one peak shader
 bracketed by ordinary shaders, stable shader-read ordinary lanes, and exact
 archived VS/Normal-PS/Peak-PS hashes.
 
+The native build also executes both retail Uber variants on WARP against one
+small deterministic synthetic RGBA16F/R11/LUT fixture and pins the two output
+hashes. This proves shader execution, constant-buffer ABI, fixed state, and
+variant distinction; it is deliberately not presented as a retail-image
+fidelity fixture.
+
 ## M27 Unity-owned draw substitution
 
 The same plugin now contains a separate, default-off M27 compiler-callback

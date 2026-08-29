@@ -2732,8 +2732,9 @@ template, so ordinary frames safely reuse the larger captured constant buffers
 while preserving live source/bloom/LUT textures. Native selection uses the
 ordinary shader throughout the sequence and the peak shader only in the
 already certified 4.3500-second window; it also patches live screen size,
-exposure, and the previously omitted `b0.c27.z` aspect ratio. Both shader
-objects and a 64-packet alternating-variant ring pass WARP validation. This is
+exposure, and the previously omitted `b0.c27.z` aspect ratio. Both shaders
+execute to distinct pinned pixels on a deterministic WARP fixture, and a
+64-packet alternating-variant ring passes transport validation. This is
 source-sparse transport, not a new parity claim: that session failed cadence
 and predates complete t1 and latest VS-b0 retention, so a hardened recapture
 and Unity image comparison remain required.
