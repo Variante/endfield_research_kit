@@ -2765,15 +2765,22 @@ t1 as a required final-evidence input, but prioritize differences already
 present in Unity's pre-Uber temporal scene color, actor/VFX composition, and
 equal-queue owner ordering.
 
-With M13/M18/M20/M21/M28/M31 held constant, the earlier three-frame peak-only
-exact-Uber A/B changes mean actor/effect ROI MAE from 27.5229/35.6204 to
-27.2709/34.9728. Temporal-delta MAE changes from 32.1515 to 32.6694 because the
-exact packet is one measured tick, not a recovered neighboring-frame temporal
-sequence. The resulting `endminf_full_clean_presentation_v5_20260829` render
-completes 770/770 frames with report status `ok`, observes start-to-loop,
-settled-loop, and VFX-cleanup contracts, and submits the peak exact Uber once
-with no failure. It remains the review candidate until the ordinary+peak
-transport is rendered, while preserving the broader temporal-consumer gap.
+Dense-window comparison schema v3 now derives retail frames from each report
+row's measured `activeBodyClipTime` and the reference's nonzero
+`bodyClipPhaseSeconds`, rather than treating requested/post time as animation
+phase. Target 4.3500 therefore maps to source frame 351 instead of the former
+heuristic frame 352. Do not compare v2 and v3 offset labels directly: v2 baked
+in a one-frame shift. With M13/M18/M20/M21/M28/M31 held constant, the corrected
+three-frame exact-Uber A/B selects residual offset -1 within the reference's
+recorded anchor uncertainty and changes mean actor/effect ROI MAE from
+24.5409/30.1609 to 24.3816/29.5874. Temporal-delta MAE changes from 28.2466 to
+28.9995 because the exact packet is one measured tick, not a recovered
+neighboring-frame temporal sequence. The resulting
+`endminf_full_clean_presentation_v5_20260829` render completes 770/770 frames
+with report status `ok`, observes start-to-loop, settled-loop, and VFX-cleanup
+contracts, and submits the peak exact Uber once with no failure. It remains the
+review candidate until the ordinary+peak transport is rendered, while
+preserving the broader temporal-consumer gap.
 
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported

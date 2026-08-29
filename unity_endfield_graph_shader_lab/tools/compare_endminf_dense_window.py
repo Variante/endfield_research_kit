@@ -80,6 +80,32 @@ def sheet_indices(frame_count: int) -> list[int]:
     })
 
 
+def source_frame_from_body_phase(
+    frame_row: dict,
+    comparison: dict,
+    fps: float,
+) -> tuple[int, float, float]:
+    if "activeBodyClipTime" not in frame_row:
+        raise ValueError(
+            "Unity frame is missing activeBodyClipTime; target/requested time "
+            "cannot establish retail animation phase"
+        )
+    if "bodyClipPhaseSeconds" not in comparison:
+        raise ValueError(
+            "reference comparison is missing bodyClipPhaseSeconds"
+        )
+    body_phase = float(frame_row["activeBodyClipTime"])
+    anchor_phase = float(comparison["bodyClipPhaseSeconds"])
+    body_anchor = int(comparison["bodyClipStartSourceFrame"])
+    if not math.isfinite(body_phase) or not math.isfinite(anchor_phase):
+        raise ValueError("body-clip phase mapping contains a non-finite value")
+    if not math.isfinite(fps) or fps <= 0.0:
+        raise ValueError("reference fps must be finite and positive")
+    continuous_source = body_anchor + (body_phase - anchor_phase) * fps
+    source_frame = int(math.floor(continuous_source + 0.5))
+    return source_frame, body_phase, continuous_source - source_frame
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--unity-dir", type=Path, required=True)
@@ -110,16 +136,17 @@ def main() -> int:
     roi = parse_box(args.roi)
     effect_roi = parse_box(args.effect_roi)
     comparison = sidecar["segment"]["comparison"]
-    body_anchor = int(comparison["bodyClipStartSourceFrame"])
     first_source = int(sidecar["output"]["firstSourceFrame"])
     fps = float(sidecar["output"]["fps"])
 
     reference_frame_count = int(sidecar["output"]["frameCount"])
     unity_frames = []
     for frame_row in unity_report["frames"]:
-        requested = float(frame_row["requestedSeconds"])
+        source_frame, _, _ = source_frame_from_body_phase(
+            frame_row, comparison, fps
+        )
         extracted = [
-            body_anchor + round(requested * fps) + offset - first_source + 1
+            source_frame + offset - first_source + 1
             for offset in args.source_offsets
         ]
         if min(extracted) < 1 or max(extracted) > reference_frame_count:
@@ -142,7 +169,10 @@ def main() -> int:
         )
         for offset in args.source_offsets:
             requested = float(frame_row["requestedSeconds"])
-            source_frame = body_anchor + round(requested * fps) + offset
+            mapped_source_frame, body_phase, phase_error_frames = (
+                source_frame_from_body_phase(frame_row, comparison, fps)
+            )
+            source_frame = mapped_source_frame + offset
             extracted_frame = source_frame - first_source + 1
             reference_path = args.reference_dir / f"frame_{extracted_frame:06d}.png"
             reference = load_rgb(reference_path, (width, height))
@@ -169,6 +199,8 @@ def main() -> int:
             row = {
                     "index": index,
                     "requestedSeconds": requested,
+                    "activeBodyClipSeconds": body_phase,
+                    "bodyPhaseQuantizationErrorFrames": phase_error_frames,
                     "postSeconds": float(frame_row["endminfPostSeconds"]),
                     "postChromatic": float(frame_row["endminfPostChromaticIntensity"]),
                     "postRadial": float(frame_row["endminfPostRadialIntensity"]),
@@ -227,12 +259,16 @@ def main() -> int:
             row.pop("_recovered", None)
             row.pop("_difference", None)
     report = {
-        "schema": "endfield.endminf-dense-window-comparison.v2",
+        "schema": "endfield.endminf-dense-window-comparison.v3",
         "unityReport": str(args.unity_dir / "report.json"),
         "referenceSidecar": str(args.reference_sidecar),
         "roi": list(roi),
         "effectRoi": list(effect_roi),
         "anchorUncertaintyFrames": int(comparison["anchorUncertaintyFrames"]),
+        "sourceFrameMapping": (
+            "bodyClipStartSourceFrame + round_half_up((activeBodyClipTime - "
+            "bodyClipPhaseSeconds) * referenceFps)"
+        ),
         "bestOffsetByMeanEffectRoiMae": best_offset,
         "sheet": str(sheet_path),
         "alignments": alignments,
