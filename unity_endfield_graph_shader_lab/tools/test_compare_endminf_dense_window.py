@@ -149,6 +149,49 @@ class DenseWindowComparisonTests(unittest.TestCase):
                 60.0,
             )
 
+    def test_loop_only_diagnostic_accepts_explicit_sequence_origin(self) -> None:
+        mappings = MODULE.source_frames_from_sequence_elapsed(
+            [
+                {
+                    "actualSeconds": 7.2166666667,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.7675893,
+                },
+                {
+                    "actualSeconds": 7.2333333333,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.7842560,
+                },
+            ],
+            {
+                "bodyClipStartSourceFrame": 91,
+                "bodyClipPhaseSeconds": 0.05090830227,
+            },
+            60.0,
+            sequence_origin_actual_seconds=0.0166666667,
+            sequence_origin_source_frame=91,
+        )
+        self.assertEqual([row[0] for row in mappings], [523, 524])
+        self.assertTrue(
+            all(row[3] == "explicit_sequence_origin" for row in mappings)
+        )
+
+    def test_partial_explicit_sequence_origin_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires both"):
+            MODULE.source_frames_from_sequence_elapsed(
+                [{
+                    "actualSeconds": 7.2166666667,
+                    "activeBodyClip": "A_actor_endminf_ui_overview_loop",
+                    "activeBodyClipTime": 0.7675893,
+                }],
+                {
+                    "bodyClipStartSourceFrame": 91,
+                    "bodyClipPhaseSeconds": 0.05090830227,
+                },
+                60.0,
+                sequence_origin_actual_seconds=0.0166666667,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

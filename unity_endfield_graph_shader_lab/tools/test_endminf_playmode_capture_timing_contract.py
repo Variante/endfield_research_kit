@@ -12,7 +12,7 @@ CAPTURE = (
 class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
     def test_report_separates_target_threshold_and_actual_clocks(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v15", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v16", source)
         for field in (
             "public float targetSeconds;",
             "public float requestedSeconds;",
@@ -40,6 +40,22 @@ class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
         self.assertIn("float requested = requestedTimes[next];", source)
         self.assertIn("float target = targetTimes[next];", source)
         self.assertIn("if (elapsed + 0.0001f < requested) return;", source)
+
+    def test_clean_gyroscope_track_offset_is_bounded_and_reported(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        self.assertIn(
+            "ENDFIELD_ENDMINF_CAPTURE_GYROSCOPE_TRACK_OFFSET_FRAMES",
+            source,
+        )
+        self.assertIn("frames < -2 || frames > 2", source)
+        self.assertIn(
+            "cleanReferenceGyroscopeTrackOffsetFrames / SimulationFps",
+            source,
+        )
+        self.assertGreaterEqual(
+            source.count("cleanReferenceGyroscopeTrackOffsetFrames"),
+            5,
+        )
 
 
 if __name__ == "__main__":
