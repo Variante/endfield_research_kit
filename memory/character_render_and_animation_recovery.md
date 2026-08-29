@@ -2917,9 +2917,8 @@ and six immediate pre/post RTV0 copies. Readback is deferred with
 `DO_NOT_WAIT`, shares the existing 1-GiB aggregate ceiling, and publishes only
 after metadata plus all six blobs reach disk; wrong order, target drift,
 capacity, budget, copy/map, device, or publication failures keep the dedicated
-sidecar incomplete. The Release DLL has SHA-256
-`3EC03A67...9FEE1B35B`, and all 18 native tests pass. This supersedes
-`D312264E...F518EADD9D`: the census now retains bound VS/PS/CS identities so
+sidecar incomplete. The current Release observer passes all 19 native tests.
+Its census retains bound VS/PS/CS identities so
 each intervening call can be mapped to a retail owner instead of inferred from
 arguments alone. The earlier final rebuild fixes
 the live route to the retail `DrawIndexedInstanced` signature; the prior build
@@ -3006,10 +3005,21 @@ phase 0.0509083 at source frame 91 with plus-or-minus-one-frame uncertainty,
 and can therefore pair only Unity rows 0-554 by elapsed time. Transition entry,
 loop dominance/completion, later loop wraps, and Unity rows 555-769 are
 controller-timing extrapolations rather than observed retail animation state.
-The next exact-build capture should retain active state/clip identity, local or
-normalized time, transition progress, and the first settled loop wrap in the
-same cadence-valid run as its presented-frame identity. Do not use the current
-wall-clock extrapolation to claim exact loop-phase visual equality.
+The exact-build observer now supplies that missing lane. In a Full general-
+runtime capture it hooks only `CharUIModelMono.Tick`, filters copied runtime
+owner identity to exact `chr_0003_endminf`, and reads current state,
+transition-only next state, normalized/local timing, transition progress, Tick
+delta, thread, and a lock-free Present ordinal/QPC pair through Unity's
+explicit-out Animator query shims. Both native inputs and all hooked/query
+entry bytes are gated; ownership changes, unreadable exact-owner fields,
+nonfinite payloads, missing Present association, cadence gaps or duplicates,
+overflow, or non-quiescent cleanup keep the artifact incomplete. Publication
+additionally requires a non-loop start, monotonic transition into a distinct
+loop state, three settled loop samples, and the first adjacent unwrapped loop-
+cycle rise. Raw state hashes remain unnamed until joined to exact controller
+state evidence. Do not use the current wall-clock extrapolation to claim exact
+loop-phase visual equality; replace it only after the next complete observer
+run passes this contract.
 
 ## Main animation gap
 
