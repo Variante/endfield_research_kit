@@ -3186,6 +3186,13 @@ validation report. It deliberately creates no Unity assets from rejected or
 absent evidence. Session `20260829T115328Z` exits at the expected missing-pair
 boundary; run the verifier on the next capture before importing any temporal
 diagnostic data.
+After that gate passes,
+`unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
+decodes the captured R11G11B10 input and RGBA16F output without third-party
+packages, writes fixed-exposure input/output/difference PNGs for both frames,
+and reports sampled consecutive input-versus-output temporal change. It is an
+offline diagnostic only: its tonemap and aggregate deltas localize the consumer
+boundary but do not claim an internal DLSS algorithm or Unity parity.
 Capture runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
 older runtime is not an evidence-safe ABI for newer observer synchronization
 objects, and injected-runtime dependency tests fail if that boundary regresses.
@@ -3229,7 +3236,9 @@ or shaders rather than hand-editing generated prefabs.
    depth, velocity, jitter/reset, frame token, formats, extents, and resource
    tags. Validate it with
    `python unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py SESSION`
-   before generating any Unity diagnostic assets.
+   before generating any Unity diagnostic assets, then run
+   `python unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py SESSION`
+   to compare the exact input/output pair offline.
    The compatibility opening strip is now ordered correctly before temporal,
    but v9 proves that ordering alone does not reproduce retail's broad
    multi-exposure strips. Keep the rejected public NGX proxy and M31 replay
