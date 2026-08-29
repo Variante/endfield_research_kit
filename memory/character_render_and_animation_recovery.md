@@ -2740,6 +2740,14 @@ source-sparse transport, not a new parity claim: that session failed cadence
 and predates complete t1 and latest VS-b0 retention, so a hardened recapture
 and Unity image comparison remain required.
 
+The retained peak t0 can nevertheless execute offline through the exact retail
+Uber shader with its frame-local PS ranges and exact CharInfo LUT. This confirms
+that Uber writes a vertically inverted intermediate which the immediately
+following fullscreen copy resolves into the upright swap-chain image. A
+fail-closed diagnostic replay requires matching external b0/b1 and labels the
+missing R11 t1 as zero; it localizes the remaining bloom and downstream-UI
+residual without promoting the incomplete session to sequence evidence.
+
 With M13/M18/M20/M21/M28/M31 held constant, the earlier three-frame peak-only
 exact-Uber A/B changes mean actor/effect ROI MAE from 27.5229/35.6204 to
 27.2709/34.9728. Temporal-delta MAE changes from 32.1515 to 32.6694 because the
