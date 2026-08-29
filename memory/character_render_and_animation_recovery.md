@@ -248,6 +248,14 @@ complete frame without a client fault.
   every retail sample three frames late. The canonical D3D11 capture maps frames
   1110 through 1512 with less than 0.000046 source-frame residue; the corrected
   central comparison improves 24 of 28 pairs over the old three-frame-late map.
+- Unity diagnostic phase labels must use the captured `actualSeconds`, not
+  `frameIndex / 60`. The full-sequence scheduler advances on an editor update,
+  and its initial clamped thresholds drain one per update, so saved frame 263
+  is post phase 4.4000 seconds rather than 4.3833. Explicit targeted timestamps
+  are direct elapsed-time thresholds and are not subject to that startup
+  backlog. Capture schema v12 records the authored `targetSeconds`, internal
+  `requestedSeconds` threshold, actual phase, and signed phase error separately;
+  this is telemetry clarification and does not retime the animation or VFX.
 - The reference recording enters Endminf through a same-page Wolfgd character
   replacement, so the authored `weapon_overview` dolly is correctly excluded.
   Its visible lower-right pointer selects the otherwise external gyroscope
