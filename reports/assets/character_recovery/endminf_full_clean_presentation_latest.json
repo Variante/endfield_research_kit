@@ -112,8 +112,15 @@
     "graphicsTriggerPresent": 1305,
     "exactOverviewStartBeginsNearPresent": 1694,
     "earlyArmDeltaPresents": 389,
-    "observerCommit": "19ddaaa",
-    "interpretation": "The failed session armed on loading-era body/post resources roughly 389 Presents before exact Endminf overview_start. Full automatic capture now requires the same-Present exact body+Uber conjunction one or two Presents after an exact early non-looping overview_start Animator sample."
+    "automaticTriggerCommit": "19ddaaa",
+    "captureReadyCommit": "4139de0",
+    "captureToolingCommits": ["325b632", "b1e5e2f", "7656c5e", "4139de0"],
+    "nextCaptureSurfaceFormats": [26, 10, 19, 34],
+    "nextCaptureSurfaceBytesPerPacket": [33177600, 66355200, 66355200, 33177600],
+    "nextCapturePacketBytes": 199065600,
+    "nextCapturePairBytes": 398131200,
+    "nextCaptureCopyResourceCalls": 8,
+    "interpretation": "The failed session armed on loading-era body/post resources roughly 389 Presents before exact Endminf overview_start. Full automatic capture now requires the same-Present exact body+Uber conjunction one or two Presents after an exact early non-looping overview_start Animator sample. The capture-ready observer also directly hooks viewport-3 options, records the actual 1x1 exposure texel asynchronously, and retains two consecutive exact pre/post Streamline packets under one fail-closed 1-GiB graphics staging budget. These changes prepare the next session; they do not retroactively complete this failed capture."
   },
   "controlledExactUberProbe": {
     "requestedSeconds": [0.0, 0.5, 1.0, 2.0, 3.0, 4.0, 4.35, 4.5, 5.0, 6.0, 8.0, 10.0, 12.0],

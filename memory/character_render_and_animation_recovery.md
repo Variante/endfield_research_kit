@@ -3125,6 +3125,22 @@ packages from scheduled cadence, and admits priority M20 only for an exact
 matched shader route with `DrawIndexedInstanced(36,1,...)`. Do not use the
 wall-clock extrapolation to claim exact loop-phase visual equality; replace it
 only after the next complete observer run passes this corrected contract.
+The same failed session exposed two collection gaps rather than retail-render
+conclusions: a cached viewport-3 `slDLSSSetOptions` caller bypassed the
+returned-pointer detour, and no actual 1x1 exposure texel or pre/post DLSS
+surfaces were retained. EndfieldCapture commits `325b632`, `b1e5e2f`,
+`7656c5e`, and `4139de0` close those observer gaps. Full capture now directly
+hooks the validated options target, joins options/token/constants/tags/evaluate
+to one prior and immediate-next Present, asynchronously records the viewport-3
+type-13 descriptor and payload, and retains two consecutive exact DLSS packets
+around the original evaluation. Each packet contains input color format 26
+(33,177,600 bytes), output color format 10 (66,355,200), depth format 19
+(66,355,200), and motion format 34 (33,177,600); the pair is 398,131,200 bytes
+and exactly eight `CopyResource` calls. Readback is `DO_NOT_WAIT`, packet files
+are size/hash gated, and deferred, M31, and Streamline allocations share the
+authoritative 1-GiB staging ceiling. These are capture-readiness facts, not
+evidence that the missing retail temporal boundary is closed; that still
+requires a newly collected complete session.
 Capture runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
 older runtime is not an evidence-safe ABI for newer observer synchronization
 objects, and injected-runtime dependency tests fail if that boundary regresses.
@@ -3161,9 +3177,11 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `19ddaaa` on the next game session and close the retail
-   temporal boundary with consecutive pre/post Streamline surfaces, depth,
-   velocity, jitter/reset, frame token, formats, extents, and resource tags.
+1. Run observer commit `4139de0` (including the earlier automatic-trigger,
+   exposure, and options-join commits) on the next game session and close the
+   retail temporal boundary with consecutive pre/post Streamline surfaces,
+   depth, velocity, jitter/reset, frame token, formats, extents, and resource
+   tags.
    The compatibility opening strip is now ordered correctly before temporal,
    but v9 proves that ordering alone does not reproduce retail's broad
    multi-exposure strips. Keep the rejected public NGX proxy and M31 replay
