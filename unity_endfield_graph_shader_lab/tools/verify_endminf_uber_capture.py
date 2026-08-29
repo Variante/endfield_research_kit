@@ -26,6 +26,9 @@ PIXEL_SHA256 = (
     "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97"
 )
 MINIMUM_RESOURCE_BUDGET = 128 * 1024 * 1024
+EXACT_CHARINFO_LUT_SHA256 = (
+    "717c1d483662c00abe55e1c56a9d024f45e5c84c430ed9dd2854cb386f372482"
+)
 
 
 class VerificationError(RuntimeError):
@@ -74,6 +77,59 @@ def selected_payload(metadata: dict[str, Any], object_id: int,
     require(offset >= 0 and size > 0 and offset + size <= len(resource_blob),
             f"constant buffer {object_id} payload bounds are invalid")
     return resource_blob[offset:offset + size]
+
+
+def texture_binding(resolver: dict[str, Any], slot: int) -> int:
+    chain = resolver.get("resourceChain")
+    require(isinstance(chain, dict), "exact Uber resource chain is absent")
+    rows = [row for row in chain.get("psInputs", [])
+            if isinstance(row, dict) and int(row.get("slot", -1)) == slot]
+    require(len(rows) == 1,
+            f"exact Uber PS t{slot} binding is not unique")
+    object_id = int(rows[0].get("objectId", 0))
+    require(object_id != 0, f"exact Uber PS t{slot} has no texture identity")
+    return object_id
+
+
+def selected_texture(metadata: dict[str, Any], object_id: int,
+                     resource_blob: bytes, label: str, width: int,
+                     height: int, format_value: int,
+                     bytes_per_pixel: int) -> dict[str, Any]:
+    rows = [row for row in metadata.get("selectedResourceRecords", [])
+            if isinstance(row, dict)
+            and int(row.get("objectId", 0)) == object_id
+            and int(row.get("captureKind", -1)) == 3]
+    require(len(rows) == 1,
+            f"exact Uber {label} selected texture payload is not unique")
+    row = rows[0]
+    require(row.get("completed") is True and int(row.get("failure", -1)) == 0,
+            f"exact Uber {label} texture payload is incomplete")
+    require(int(row.get("width", 0)) == width and
+            int(row.get("height", 0)) == height and
+            int(row.get("format", -1)) == format_value and
+            int(row.get("viewFormat", -1)) == format_value,
+            f"exact Uber {label} descriptor drifted: expected "
+            f"{width}x{height} format {format_value}, got "
+            f"{row.get('width')}x{row.get('height')} "
+            f"format {row.get('format')}/{row.get('viewFormat')}")
+    expected_bytes = width * height * bytes_per_pixel
+    require(int(row.get("requestedBytes", 0)) == expected_bytes and
+            int(row.get("blobBytes", 0)) == expected_bytes,
+            f"exact Uber {label} byte count drifted: expected "
+            f"{expected_bytes}, got requested={row.get('requestedBytes')} "
+            f"blob={row.get('blobBytes')}")
+    offset = int(row.get("blobOffset", -1))
+    require(offset >= 0 and offset + expected_bytes <= len(resource_blob),
+            f"exact Uber {label} payload bounds are invalid")
+    payload = resource_blob[offset:offset + expected_bytes]
+    return {
+        "objectId": object_id,
+        "width": width,
+        "height": height,
+        "format": format_value,
+        "byteLength": expected_bytes,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+    }
 
 
 def vector(payload: bytes, first_constant: int,
@@ -223,6 +279,28 @@ def inspect_resolver(frame: int, resolver_index: int,
     draw_pipeline_state = (
         pipeline_state(resolver, frame) if require_draw_pipeline else None
     )
+    textures = None
+    if draw_pipeline_state is not None:
+        target = draw_pipeline_state["target"]
+        target_width = int(target["width"])
+        target_height = int(target["height"])
+        textures = {
+            "sourceT0": selected_texture(
+                metadata, texture_binding(resolver, 0), resource_blob,
+                "t0 source", target_width, target_height, 10, 8),
+            "bloomT1": selected_texture(
+                metadata, texture_binding(resolver, 1), resource_blob,
+                "t1 bloom", (target_width + 1) // 2,
+                (target_height + 1) // 2, 26, 4),
+            "charInfoLutT2": selected_texture(
+                metadata, texture_binding(resolver, 2), resource_blob,
+                "t2 CharInfo LUT", 1024, 32, 10, 8),
+        }
+        require(
+            textures["charInfoLutT2"]["sha256"] ==
+            EXACT_CHARINFO_LUT_SHA256,
+            "exact Uber t2 CharInfo LUT hash drifted",
+        )
     result = {
         "frame": frame,
         "resolverIndex": resolver_index,
@@ -265,6 +343,7 @@ def inspect_resolver(frame: int, resolver_index: int,
     }
     if draw_pipeline_state is not None:
         result["pipelineState"] = draw_pipeline_state
+        result["textures"] = textures
     return result
 
 

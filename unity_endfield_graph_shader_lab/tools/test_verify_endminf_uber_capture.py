@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import struct
 import sys
@@ -10,6 +11,10 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
+ROOT_LUT = HERE.parent / (
+    "Assets/EndfieldGraphShaderLab/Resources/EndfieldCharInfo/"
+    "EndminfCharInfoLut1024x32Rgba16f.bytes"
+)
 MODULE_PATH = HERE / "verify_endminf_uber_capture.py"
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_uber_capture", MODULE_PATH)
@@ -30,7 +35,27 @@ def fixture(mode: float = 3.0, priority: bool = True,
     values[(b0_first + 27) * 4:(b0_first + 28) * 4] = [1.0, 1.0, 0.0, 0.0]
     values[b1_first * 4:(b1_first + 1) * 4] = [0.51, 0.53, 0.10, 1.0]
     values[(b1_first + 25) * 4:(b1_first + 26) * 4] = [mode, 0.09, 0.0, 0.0]
-    blob = struct.pack(f"<{len(values)}f", *values)
+    constant_blob = struct.pack(f"<{len(values)}f", *values)
+    target_width = 8
+    target_height = 4
+    source = bytes(target_width * target_height * 8)
+    bloom = bytes((target_width // 2) * (target_height // 2) * 4)
+    lut = bytearray(1024 * 32 * 8)
+    # The fixture needs the production LUT digest because exact live validation
+    # deliberately rejects any other t2 payload.
+    production_lut = (
+        ROOT_LUT.read_bytes() if ROOT_LUT.is_file() else bytes(lut)
+    )
+    assert hashlib.sha256(production_lut).hexdigest() == (
+        MODULE.EXACT_CHARINFO_LUT_SHA256
+    )
+    offsets = {
+        "constants": 0,
+        "source": len(constant_blob),
+        "bloom": len(constant_blob) + len(source),
+        "lut": len(constant_blob) + len(source) + len(bloom),
+    }
+    blob = constant_blob + source + bloom + production_lut
     session = {
         "graphicsProfile": "targeted",
         "graphicsResourceBudgetBytes": budget,
@@ -40,7 +65,27 @@ def fixture(mode: float = 3.0, priority: bool = True,
         "frame": 7,
         "selectedResourceRecords": [{
             "captureKind": 2, "objectId": 100,
-            "blobOffset": 0, "blobBytes": len(blob),
+            "blobOffset": offsets["constants"],
+            "blobBytes": len(constant_blob),
+            "completed": True, "failure": 0,
+        }, {
+            "captureKind": 3, "objectId": 200,
+            "blobOffset": offsets["source"], "blobBytes": len(source),
+            "requestedBytes": len(source), "width": target_width,
+            "height": target_height, "format": 10, "viewFormat": 10,
+            "completed": True, "failure": 0,
+        }, {
+            "captureKind": 3, "objectId": 201,
+            "blobOffset": offsets["bloom"], "blobBytes": len(bloom),
+            "requestedBytes": len(bloom), "width": target_width // 2,
+            "height": target_height // 2, "format": 26, "viewFormat": 26,
+            "completed": True, "failure": 0,
+        }, {
+            "captureKind": 3, "objectId": 202,
+            "blobOffset": offsets["lut"],
+            "blobBytes": len(production_lut),
+            "requestedBytes": len(production_lut), "width": 1024,
+            "height": 32, "format": 10, "viewFormat": 10,
             "completed": True, "failure": 0,
         }],
         "fullscreenResolvers": [{
@@ -53,6 +98,11 @@ def fixture(mode: float = 3.0, priority: bool = True,
                 "stage": 4, "identityHash": MODULE.PIXEL_IDENTITY,
                 "bytecodeSize": 4216,
             }],
+            "resourceChain": {"psInputs": [
+                {"slot": 0, "objectId": 200, "viewId": 300},
+                {"slot": 1, "objectId": 201, "viewId": 301},
+                {"slot": 2, "objectId": 202, "viewId": 302},
+            ]},
             "vsConstantBuffers": [
                 {"slot": 0, "bufferId": 100, "firstConstant": vs_b0_first,
                  "numConstants": 1, "rangeValid": True},
@@ -65,18 +115,19 @@ def fixture(mode: float = 3.0, priority: bool = True,
             ],
             "pipelineState": {
                 "valid": True,
-                "target": {"width": 3840, "height": 2160,
+                "target": {"width": target_width, "height": target_height,
                            "textureFormat": 28, "viewFormat": 28,
                            "sampleCount": 1, "renderTargetCount": 1,
                            "depthBound": True},
-                "depthTarget": {"width": 3840, "height": 2160,
+                "depthTarget": {"width": target_width, "height": target_height,
                                 "textureFormat": 44, "viewFormat": 45,
                                 "sampleCount": 1},
                 "viewport": {"count": 1, "x": 0.0, "y": 0.0,
-                             "width": 3840.0, "height": 2160.0,
+                             "width": float(target_width),
+                             "height": float(target_height),
                              "minDepth": 0.0, "maxDepth": 1.0},
                 "scissor": {"count": 1, "left": 0, "top": 0,
-                            "right": 3840, "bottom": 2160},
+                            "right": target_width, "bottom": target_height},
                 "sampler": {"filter": 21, "addressU": 3, "addressV": 3,
                             "addressW": 3, "comparison": 1,
                             "mipBias": 0.0, "maxAnisotropy": 1,
@@ -200,6 +251,26 @@ class UberCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.VerificationError,
                                     "pipeline state is absent"):
             self.build(session, metadata, blob)
+
+    def test_missing_bloom_payload_names_t1_gate(self) -> None:
+        session, metadata, blob = fixture()
+        metadata["selectedResourceRecords"] = [
+            row for row in metadata["selectedResourceRecords"]
+            if row["objectId"] != 201
+        ]
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "t1 bloom selected texture payload is not unique"):
+            self.build(session, metadata, blob)
+
+    def test_charinfo_lut_hash_drift_fails_closed(self) -> None:
+        session, metadata, blob = fixture()
+        corrupted = bytearray(blob)
+        corrupted[-1] ^= 0x01
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "t2 CharInfo LUT hash drifted"):
+            self.build(session, metadata, bytes(corrupted))
 
 
 if __name__ == "__main__":
