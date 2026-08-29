@@ -2906,9 +2906,13 @@ permits asynchronous dense draining, rejects incomplete dense palettes, and
 derives failure flags from finalized readbacks. It now also arms on the unique
 16,524-index Endminf body draw before Uber and stages 4K backbuffers only at the
 first and final dense packages so intermediate readback cannot accumulate the
-observed stall. All 16 native tests pass. The next capture must use this build
-and pass cadence, resource, and completeness gates before its palettes enter
-replay.
+observed stall. The observer's exact fullscreen state record now closes every
+bound RTV descriptor, DSV view dimension/flags, sampler border colors,
+alpha-to-coverage and all per-target blend descriptors, full stencil faces,
+and depth-bias/forced-sample raster state. The Release DLL built at 02:41 local
+has SHA-256 `4884A76A...00C674B`, and all 17 native tests pass. The next capture
+must use this build and pass cadence, resource, and completeness gates before
+its palettes or M31 pipeline state enter replay.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every
