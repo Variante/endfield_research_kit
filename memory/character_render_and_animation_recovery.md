@@ -2886,6 +2886,16 @@ observed stall. All 16 native tests pass. The next capture must use this build
 and pass cadence, resource, and completeness gates before its palettes enter
 replay.
 
+Unity sequence report schema v13 now makes the split M31 transport observable
+per frame instead of treating an enabled environment flag as proof. Every
+captured row records whether its body-clock phase lies in the recovered M31
+envelope, whether the runtime admitted and submitted both split events, the
+selected packet/source frame, and whether the synchronized native draw-count
+gate validated. A requested targeted capture fails closed when any expected
+M31 row lacks active, submitted, and validated evidence. The focused contract
+suite passes; runtime evidence remains pending the next safe D3D11 capture
+because the shared Unity project lock is still present.
+
 After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical
 checkpoint.

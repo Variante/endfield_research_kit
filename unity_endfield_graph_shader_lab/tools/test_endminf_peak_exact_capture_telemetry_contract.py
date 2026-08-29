@@ -25,7 +25,7 @@ EXACT_LUT_CONTRACT = ROOT / (
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v12", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v13", source)
         for field in (
             "exactEndminfUberRequested",
             "exactEndminfUberSubmitted",
@@ -36,23 +36,36 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             "observedExactEndminfUberValidated",
         ):
             self.assertGreaterEqual(source.count(field), 2, field)
-        for material in ("M18", "M21", "M28"):
+        for material in ("M18", "M21", "M28", "M31"):
             for state in ("Requested", "Active", "Submitted", "Validated", "Failure"):
                 field = f"endminf{material}Exact{state}"
                 self.assertGreaterEqual(source.count(field), 2, field)
 
     def test_runtimes_reset_and_publish_per_frame_submission_state(self) -> None:
-        for material in ("M18", "M21", "M28"):
+        for material in ("M18", "M21", "M28", "M31"):
             path = RUNTIME_ROOT / (
                 f"EndfieldRecoveredEndminf{material}PeakExactRuntime.cs"
             )
             source = path.read_text(encoding="utf-8")
             prepare = source.index("PrepareBeforeCulling")
-            render = source.index("Render(", prepare)
+            render = source.index(
+                "RenderSecond(" if material == "M31" else "Render(",
+                prepare,
+            )
             self.assertIn("submittedThisFrame = false", source[prepare:render])
             self.assertIn("validatedThisFrame = false", source[prepare:render])
             self.assertIn("submittedThisFrame = true", source[render:])
             self.assertIn("validatedThisFrame = true", source[render:])
+
+    def test_m31_expected_phase_is_fail_closed_in_the_report(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        runtime = (
+            RUNTIME_ROOT / "EndfieldRecoveredEndminfM31PeakExactRuntime.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("IsCapturedPhase(activeBodyClipTime)", source)
+        self.assertIn("expectedEndminfM31Frames.All", source)
+        self.assertIn("endminfM31ExactRequirementReady", source)
+        self.assertIn("IsCapturedPhase(float overviewSeconds)", runtime)
 
     def test_normal_reproduction_enables_only_the_complete_peak_stone_packet(
         self,

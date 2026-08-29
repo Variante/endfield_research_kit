@@ -29,8 +29,11 @@ namespace EndfieldGraphShaderLab
         private static bool active;
         private static bool firstSubmissionPending;
         private static bool submissionPending;
+        private static bool submittedThisFrame;
+        private static bool validatedThisFrame;
         private static string failure = string.Empty;
         private static int selectedPacket = -1;
+        private static int selectedPacketThisFrame = -1;
         private static uint validatedDrawCount;
         private static bool loggedActivation;
         private static bool loggedValidation;
@@ -42,7 +45,19 @@ namespace EndfieldGraphShaderLab
             System.Environment.GetEnvironmentVariable(EnvironmentVariable),
             "1", StringComparison.Ordinal);
 
-        internal static string Failure => failure;
+        public static string Failure => failure;
+        public static bool ActiveThisFrame => active;
+        public static bool SubmittedThisFrame => submittedThisFrame;
+        public static bool ValidatedThisFrame => validatedThisFrame;
+        public static int SelectedPacketThisFrame => selectedPacketThisFrame;
+        public static int SourceFrameThisFrame =>
+            selectedPacketThisFrame >= 0 &&
+            EndfieldRecoveredM31PeakCaptureData.SourceFrames != null &&
+            selectedPacketThisFrame <
+                EndfieldRecoveredM31PeakCaptureData.SourceFrames.Length
+                ? EndfieldRecoveredM31PeakCaptureData
+                    .SourceFrames[selectedPacketThisFrame]
+                : -1;
         internal static bool HasPendingFirstSubmission => firstSubmissionPending;
         public static bool HasPendingValidation => submissionPending;
 
@@ -50,6 +65,9 @@ namespace EndfieldGraphShaderLab
         {
             active = false;
             selectedPacket = -1;
+            selectedPacketThisFrame = -1;
+            submittedThisFrame = false;
+            validatedThisFrame = false;
             if (!Requested || failed)
             {
                 RestoreRenderers();
@@ -79,6 +97,7 @@ namespace EndfieldGraphShaderLab
             selectedPacket = float.IsNaN(seconds) ? -1 :
                 ResolveNearestPacket(Mathf.Max(0.0f,
                     seconds - ViewerLeadSeconds));
+            selectedPacketThisFrame = selectedPacket;
             active = selectedPacket >= 0 &&
                 EndfieldRecoveredM31PeakCaptureData.DrawCounts[selectedPacket] ==
                 EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
@@ -230,6 +249,30 @@ namespace EndfieldGraphShaderLab
             return nearest;
         }
 
+        public static bool IsCapturedPhase(float overviewSeconds)
+        {
+            float[] phases = EndfieldRecoveredM31PeakCaptureData.PhaseSeconds;
+            int[] drawCounts = EndfieldRecoveredM31PeakCaptureData.DrawCounts;
+            bool[] splitOrderCompatible =
+                EndfieldRecoveredM31PeakCaptureData.SplitOrderCompatible;
+            int packetCount = EndfieldRecoveredM31PeakCaptureData.PacketCount;
+            if (float.IsNaN(overviewSeconds) ||
+                !EndfieldRecoveredM31PeakCaptureData.PayloadPrepared ||
+                !EndfieldRecoveredM31PeakCaptureData.DepthContractReady ||
+                phases == null || drawCounts == null ||
+                splitOrderCompatible == null || packetCount < 2 ||
+                phases.Length != packetCount ||
+                drawCounts.Length != packetCount ||
+                splitOrderCompatible.Length != packetCount)
+                return false;
+            int packet = ResolveNearestPacket(Mathf.Max(
+                0.0f, overviewSeconds - ViewerLeadSeconds));
+            return packet >= 0 &&
+                drawCounts[packet] ==
+                    EndfieldRecoveredM31PeakCaptureData.NativePayloadDrawCount &&
+                splitOrderCompatible[packet];
+        }
+
         private static float ResolveOverviewSeconds(Transform actorRoot)
         {
             EndfieldOverviewPlayback playback = actorRoot != null
@@ -288,6 +331,7 @@ namespace EndfieldGraphShaderLab
                 return false;
             firstSubmissionPending = false;
             submissionPending = true;
+            submittedThisFrame = true;
             if (!loggedActivation)
             {
                 Debug.Log(
@@ -379,6 +423,7 @@ namespace EndfieldGraphShaderLab
                     return Fail(validationFailure);
                 }
                 validatedDrawCount = draws;
+                validatedThisFrame = true;
                 if (!loggedValidation)
                 {
                     Debug.Log("Recovered exact Endminf M31 peak validated: " +
@@ -401,6 +446,8 @@ namespace EndfieldGraphShaderLab
             selectedPacket = -1;
             firstSubmissionPending = false;
             submissionPending = false;
+            submittedThisFrame = false;
+            validatedThisFrame = false;
             failure = reason ?? "unknown exact M31 peak failure";
             RestoreRenderers();
             if (!loggedFailure)

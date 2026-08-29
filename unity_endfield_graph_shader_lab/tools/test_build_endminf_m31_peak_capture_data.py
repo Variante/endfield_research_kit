@@ -188,6 +188,27 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             runtime[second:split])
         self.assertIn("command.IssuePluginEvent(renderEvent, eventId)", runtime)
 
+    def test_runtime_publishes_frame_local_submission_evidence(self) -> None:
+        runtime = RUNTIME.read_text(encoding="utf-8")
+        prepare = runtime.index("PrepareBeforeCulling")
+        first = runtime.index("internal static bool RenderFirst(", prepare)
+        second = runtime.index("internal static bool RenderSecond(", first)
+        validation = runtime.index(
+            "ValidatePendingAfterSynchronizedRender", second)
+        self.assertIn("submittedThisFrame = false", runtime[prepare:first])
+        self.assertIn("validatedThisFrame = false", runtime[prepare:first])
+        self.assertIn("selectedPacketThisFrame = selectedPacket", runtime[prepare:first])
+        self.assertIn("submittedThisFrame = true", runtime[second:validation])
+        self.assertIn("validatedThisFrame = true", runtime[validation:])
+        for member in (
+            "ActiveThisFrame",
+            "SubmittedThisFrame",
+            "ValidatedThisFrame",
+            "SelectedPacketThisFrame",
+            "SourceFrameThisFrame",
+        ):
+            self.assertIn(member, runtime)
+
 
 if __name__ == "__main__":
     unittest.main()
