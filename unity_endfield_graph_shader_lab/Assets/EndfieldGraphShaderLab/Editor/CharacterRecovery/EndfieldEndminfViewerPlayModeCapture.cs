@@ -183,7 +183,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v16";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v17";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -230,6 +230,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedExactEndminfUberSubmitted;
             public bool observedExactEndminfUberValidated;
             public string exactEndminfUberFailure;
+            public bool observedOpeningStripCompatibilityBeforeTemporal;
             public bool unityPublicNgxProxyRequested;
             public bool observedUnityPublicNgxProxySubmitted;
             public bool observedUnityPublicNgxProxyValidated;
@@ -276,6 +277,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool exactEndminfUberValidated;
             public string exactEndminfUberVariant;
             public string exactEndminfUberFailure;
+            public bool openingStripCompatibilityBeforeTemporal;
             public bool unityPublicNgxProxyRequested;
             public bool unityPublicNgxProxySubmitted;
             public bool unityPublicNgxProxyValidated;
@@ -1344,6 +1346,8 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberVariant,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
+                openingStripCompatibilityBeforeTemporal = HGCompatRenderPipeline
+                    .LastRecoveredEndminfOpeningStripCompatibilityApplied,
                 unityPublicNgxProxyRequested = HGCompatRenderPipeline
                     .LastRecoveredUnityPublicNgxProxyRequested,
                 unityPublicNgxProxySubmitted = HGCompatRenderPipeline
@@ -1874,6 +1878,8 @@ namespace EndfieldGraphShaderLabEditor
                 .Select(value => value.exactEndminfUberFailure)
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
                 string.Empty;
+            bool observedOpeningStripCompatibilityBeforeTemporal = Frames.Any(
+                value => value.openingStripCompatibilityBeforeTemporal);
             if (!exactEndminfUberRequirementReady)
             {
                 missingObservations.Add(
@@ -2011,6 +2017,8 @@ namespace EndfieldGraphShaderLabEditor
                 observedExactEndminfUberValidated =
                     observedExactEndminfUberValidated,
                 exactEndminfUberFailure = exactEndminfUberFailure,
+                observedOpeningStripCompatibilityBeforeTemporal =
+                    observedOpeningStripCompatibilityBeforeTemporal,
                 endminfM31ExactRequested = endminfM31ExactRequested,
                 observedEndminfM31ExactSubmitted =
                     observedEndminfM31ExactSubmitted,

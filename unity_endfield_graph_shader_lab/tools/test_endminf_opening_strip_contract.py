@@ -46,20 +46,87 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
             {4, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20},
         )
 
-    def test_pass_is_opt_in_and_pre_uber(self) -> None:
+    def test_compatibility_pass_is_opt_in_and_pre_temporal(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")
-        gate = source.index("bool useRecoveredEndminfOpeningStrip")
-        blit = source.index("RecoveredEndminfOpeningStripSourceId,\n                    recoveredEndminfOpeningStripMaterial", gate)
-        bloom = source.index("BuildRecoveredSceneBloomPyramid", blit)
-        uber = source.index("recoveredEndminfUberExactRuntime.Enqueue", bloom)
+        method_start = source.index(
+            "private bool ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal"
+        )
+        method_end = source.index(
+            "private bool EnqueueRecoveredEndminfTemporalResolve", method_start
+        )
+        method = source[method_start:method_end]
+        gate = method.index("bool useRecoveredEndminfOpeningStripCompatibility")
+        blit = method.index(
+            "commandBuffer.Blit(\n                CameraColorId", gate
+        )
+        publish = method.index(
+            "commandBuffer.CopyTexture(\n                "
+            "RecoveredEndminfOpeningStripSourceId", blit
+        )
+        release = method.index("commandBuffer.ReleaseTemporaryRT", publish)
         self.assertLess(gate, blit)
-        self.assertLess(blit, bloom)
-        self.assertLess(bloom, uber)
-        gate_text = source[gate:blit]
+        self.assertLess(blit, publish)
+        self.assertLess(publish, release)
+        gate_text = method[gate:blit]
         self.assertIn("useRecoveredPostSemantics", gate_text)
+        self.assertIn(
+            "!EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame",
+            gate_text,
+        )
         self.assertIn("recoveredEndminfOpeningStripMaterial != null", gate_text)
         self.assertIn("hasOpeningStripSelector", gate_text)
         self.assertIn("TryEvaluateOpeningStrip", gate_text)
+        self.assertIn("compatibility before temporal", method)
+        self.assertIn(
+            "LastRecoveredEndminfOpeningStripCompatibilityApplied = true",
+            method,
+        )
+
+    def test_capture_reports_pre_temporal_compatibility_submission(self) -> None:
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        capture = (
+            ROOT
+            / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+            / "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "LastRecoveredEndminfOpeningStripCompatibilityApplied",
+            pipeline,
+        )
+        self.assertIn(
+            "openingStripCompatibilityBeforeTemporal = HGCompatRenderPipeline",
+            capture,
+        )
+        self.assertIn(
+            "observedOpeningStripCompatibilityBeforeTemporal",
+            capture,
+        )
+
+    def test_compatibility_call_precedes_temporal_input_diagnostics(self) -> None:
+        source = PIPELINE.read_text(encoding="utf-8")
+        render_start = source.index("private void RenderPreparedCamera")
+        render_end = source.index("private void ApplyCharacterPostProcess", render_start)
+        render = source[render_start:render_end]
+        compatibility = render.index(
+            "ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal("
+        )
+        before_temporal = render.index("CaptureBeforeTemporalIfArmed", compatibility)
+        post = render.index("ApplyCharacterPostProcess(", before_temporal)
+        self.assertLess(compatibility, before_temporal)
+        self.assertLess(before_temporal, post)
+
+    def test_exact_packet_path_remains_in_scene_render_before_compatibility(self) -> None:
+        source = PIPELINE.read_text(encoding="utf-8")
+        render_start = source.index("private void RenderPreparedCamera")
+        render_end = source.index("private void ApplyCharacterPostProcess", render_start)
+        render = source[render_start:render_end]
+        exact = render.index(
+            "EndfieldRecoveredEndminfOpeningStripExactRuntime.Render("
+        )
+        compatibility = render.index(
+            "ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal("
+        )
+        self.assertLess(exact, compatibility)
 
     def test_shader_uses_measured_rightward_bands_and_restrained_rgb_split(self) -> None:
         source = SHADER.read_text(encoding="utf-8")
