@@ -327,10 +327,14 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             "sourceAlpha": 2, "destinationAlpha": 6,
             "operationAlpha": 1, "writeMask": 15,
         }
-        # The pre-hardening capture exposed only RenderTarget[0]. Slot 1 is
-        # intentionally structure-checked above but remains unclassified until
-        # the next complete capture records IndependentBlendEnable and all
-        # eight target descriptors.
+        # The serialized HGRP/Effect/VFXBaseV2 ForwardOnly pass makes the two
+        # targets independent. M_fx_endminm_gfx_31 supplies One /
+        # OneMinusSrcAlpha for target 0 and SrcColor / OneMinusSrcColor for
+        # target 1; target-1 alpha is the pass-fixed One / One pair.
+        require(blend["alphaToCoverageEnabled"] is False and
+                blend["independentBlendEnabled"] is True,
+                f"{label} alpha-to-coverage/independent blend differs from "
+                "serialized M31 state")
         row = blend_targets[0]
         require(row["enabled"] is True,
                 f"{label} blend target 0 is not enabled")
@@ -338,6 +342,19 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
             require(integer(row.get(field),
                             f"{label} blend target 0 {field}") == expected,
                     f"{label} blend target 0 {field} differs from exact M31 state")
+        expected_motion_blend = {
+            "source": 3, "destination": 4, "operation": 1,
+            "sourceAlpha": 2, "destinationAlpha": 2,
+            "operationAlpha": 1, "writeMask": 15,
+        }
+        row = blend_targets[1]
+        require(row["enabled"] is True,
+                f"{label} blend target 1 is not enabled")
+        for field, expected in expected_motion_blend.items():
+            require(integer(row.get(field),
+                            f"{label} blend target 1 {field}") == expected,
+                    f"{label} blend target 1 {field} differs from serialized "
+                    "M31 motion-vector state")
         require(factor == [1, 1, 1, 1] and
                 integer(blend.get("sampleMask"),
                         f"{label} blend sampleMask") == 0xffffffff,
@@ -374,6 +391,16 @@ def validate_pipeline(frame: int, draw_index: int, owner: str,
         for field, expected in expected_raster.items():
             require(rasterizer.get(field) == expected,
                     f"{label} rasterizer {field} differs from exact M31 state")
+        require(integer(rasterizer.get("depthBias"),
+                        f"{label} rasterizer depthBias") == 0 and
+                number(rasterizer.get("depthBiasClamp"),
+                       f"{label} rasterizer depthBiasClamp") == 0.0 and
+                number(rasterizer.get("slopeScaledDepthBias"),
+                       f"{label} rasterizer slopeScaledDepthBias") == 0.0 and
+                integer(rasterizer.get("forcedSampleCount"),
+                        f"{label} rasterizer forcedSampleCount") == 0,
+                f"{label} rasterizer bias/forced-sample state differs from "
+                "serialized M31 state")
     return {
         "target": target,
         "depthTarget": depth_target,

@@ -170,3 +170,16 @@ and PS
 `465a86bc25083537c7cfa6d8f481253d907a29e4097fc5ce378d080083e25b57`.
 Unknown hashes remain fail-closed. `RunM14Observation` validates live Unity
 substitution and writes its callback inventory under project-local scratch.
+
+## Endminf M31 fixed state
+
+The split M31 native draw has its own fixed-function contract; it must not
+reuse M14 state. `M31FixedStateContract.h` owns the exact point-clamp and
+linear-wrap samplers, independent SceneColor/SceneMV blends, reversed-Z
+read-only depth/stencil state, and raster state recovered from the serialized
+`HGRP/Effect/VFXBaseV2` pass, `M_fx_endminm_gfx_31`, and retained runtime
+evidence. `VerifyM31FixedState.exe`, run by `build_plugin.ps1`, creates all of
+those objects on WARP and proves the D32/S8 read-only DSV can remain bound while
+its depth plane is simultaneously sampled. The next complete hardened retail
+capture remains the authority for admitting the exact live DSV flags and MRT1
+descriptor.

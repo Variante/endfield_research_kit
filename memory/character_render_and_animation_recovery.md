@@ -2929,10 +2929,23 @@ alias returned by a bare source-graph query for `M31`. Its `_StencilComp=8`,
 matching the retained runtime stencil-enabled/reference-zero state. Verifier v2
 now rejects any different face operation/function or mask rather than waiting
 for those values to be guessed in the Unity callback.
-The old runtime record exposes blend state only for RTV0. Verifier v2 therefore
-pins its proven ONE/INV_SRC_ALPHA state but deliberately leaves RTV1's complete
-blend descriptor and `IndependentBlendEnable` value unclassified until the
-hardened capture supplies them.
+Targeted extraction of the exact `HGRP/Effect/VFXBaseV2` Shader object closes
+the serialized half of the remaining fixed-state gap. Its `ForwardOnly` pass
+sets separate MRT blending and alpha-to-coverage off. Substitution of M31's
+saved properties gives RTV0 ONE/INV_SRC_ALPHA for color and alpha, while RTV1
+uses SRC_COLOR/INV_SRC_COLOR for color and ONE/ONE for alpha; both use Add and
+write mask 15. The same pass fixes zero depth bias and no conservative raster,
+and the retained runtime record closes scissor, reversed-Z GREATER_EQUAL,
+point-clamp s0, linear-wrap s1, and the two target/depth formats. Verifier v2
+now rejects drift in RTV1, independent blend, alpha-to-coverage, bias, and
+forced-sample state. The exact native M31 callback no longer borrows M14's
+wrap/linear samplers, disabled depth, or duplicated MRT blend: it owns the M31
+descriptors, binds the D32/S8 resource through a read-only depth/stencil view
+while sampling its depth plane, and restores all displaced state. A dedicated
+WARP validator proves creation of every state object plus simultaneous DSV/SRV
+binding (`independent=1`, RTV1 `3/4`, depth func `7`, stencil on, DSV flags
+`3`). The hardened retail recapture must still confirm those live DSV flags and
+the serialized RTV1 submission before this is treated as final runtime parity.
 
 Unity sequence report schema v13 now makes the split M31 transport observable
 per frame instead of treating an enabled environment flag as proof. Every
