@@ -691,12 +691,9 @@ namespace EndfieldGraphShaderLabEditor
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
                 data.sampleTimes, uncapturedMidpoint,
                 out low, out high, out blend);
-            EndfieldCapturedSecondaryDynamicsReplay.RejectUncapturedGap(
-                data.sampleTimes, data.sourceFps, uncapturedMidpoint,
-                ref low, ref high, ref blend);
-            if (low != 11 || high != 11 || blend != 0f)
+            if (low != 11 || high != 12 || Mathf.Abs(blend - 0.5f) > 1e-5f)
                 throw new InvalidDataException(
-                    "Captured replay interpolates across an unobserved package gap.");
+                    "Captured replay sparse-interval interpolation drifted.");
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
                 data.sampleTimes, float.MaxValue, out low, out high, out blend);
             int last = data.SampleCount - 1;

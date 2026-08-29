@@ -131,13 +131,6 @@ namespace EndfieldGraphShaderLab
             if (!BindingValid && !TryBind())
                 return;
             ResolveSample(data.sampleTimes, seconds, out int lower, out int upper, out float blend);
-            RejectUncapturedGap(
-                data.sampleTimes,
-                data.sourceFps,
-                seconds,
-                ref lower,
-                ref upper,
-                ref blend);
             LowerSampleIndex = lower;
             UpperSampleIndex = upper;
             SampleBlend = blend;
@@ -159,28 +152,6 @@ namespace EndfieldGraphShaderLab
                     anchor.localToWorldMatrix.MultiplyPoint3x4(anchorPosition),
                     anchor.rotation * anchorBoneRotation);
             }
-        }
-
-        public static void RejectUncapturedGap(
-            float[] times,
-            float sourceFps,
-            float seconds,
-            ref int lower,
-            ref int upper,
-            ref float blend)
-        {
-            if (lower == upper ||
-                (times[upper] - times[lower]) * sourceFps <= 1.5f)
-                return;
-
-            // Each package contains a measured previous/current pair. A longer
-            // interval is an unobserved retail gap, not permission to blend two
-            // unrelated absolute poses. Select the nearest measured endpoint.
-            if (seconds - times[lower] <= times[upper] - seconds)
-                upper = lower;
-            else
-                lower = upper;
-            blend = 0f;
         }
 
         public static void ResolveSample(
