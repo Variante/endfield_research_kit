@@ -3048,6 +3048,21 @@ v10 is a schema-v18 checkpoint, not evidence for a beauty-default change. Its
 sheet still localizes the dominant residual to the missing broad retail
 opening multi-exposure strips.
 
+Directly transplanting the retail Streamline path into the Unity lab remains
+fail-closed. Unity's D3D11 plugin interface exposes both the native device and
+active swapchain, so the resource/evaluation lane is technically reachable,
+but Unity retains and presents through its own native swapchain pointer. A
+late native plugin cannot replace that pointer with Streamline's upgraded
+proxy or prove the required once-per-Present `presentCommon()` lifecycle.
+Calling only `slInit`, `slSetD3DDevice`, and `slEvaluateFeature` would therefore
+be an invalid host. EndfieldCapture schema v4 now observes the original
+prelaunch `slInit` call and requires one readable successful non-truncated DLSS
+request, retaining its SDK version, flags, feature list, application/project
+identity, engine/version, render API, and plugin paths. The next exact retail
+capture must close that initialization record plus the consecutive Streamline
+surface pair before any direct-host experiment is reconsidered. Retail NVIDIA
+binaries remain local inputs and are not packaged by this repository.
+
 Presented-frame registration does not authorize moving M13. Its recovered
 shell fits `(1229.5,427.5)`, radius 251.2 px, while adjacent retail frames fit
 `(1205.5,443.5)`, radius 253.4 px and `(1208.5,441.5)`, radius 272.1 px.

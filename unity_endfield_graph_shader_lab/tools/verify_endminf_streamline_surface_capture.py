@@ -184,11 +184,12 @@ def audit_streamline_global(
     streamline: dict[str, Any], summary: dict[str, Any], errors: list[str]
 ) -> None:
     require_equal(errors, "Streamline.schema", streamline.get("schema"),
-                  "endfieldCapture.streamlineDlss.v3")
+                  "endfieldCapture.streamlineDlss.v4")
     for key in (
         "observationOnly", "requested", "configured", "exactBuildValidated",
         "coreModuleLoaded", "coreModuleValidated", "dlssModuleLoaded",
         "dlssModuleValidated", "coreHooksInstalled",
+        "initHookInstalled", "initObserved",
         "dlssOptionsHookInstalled", "dlssOptionsDirectHookInstalled",
         "presentClockConfigured", "callbacksQuiescent",
         "exposureCaptureRequested", "exposureCaptureComplete",
@@ -200,12 +201,27 @@ def audit_streamline_global(
         require_equal(errors, f"Streamline.{key}", streamline.get(key), False)
     for key in (
         "presentClockFailures", "droppedFrameTokenCalls", "droppedOptionsCalls",
+        "droppedInitCalls",
         "droppedTagCalls", "droppedConstantsCalls", "droppedEvaluateCalls",
         "truncatedTagPayloads", "truncatedEvaluatePayloads",
         "rejectedTargetViewportDlssSequences", "pendingDlssSequences",
         "droppedExposureSamples",
     ):
         require_equal(errors, f"Streamline.{key}", integer(streamline.get(key)), 0)
+    require_equal(errors, "Streamline.initCalls",
+                  integer(streamline.get("initCalls")), 1)
+    initialization_value = streamline.get("initialization")
+    initialization = (initialization_value
+                      if isinstance(initialization_value, dict) else {})
+    require_equal(errors, "Streamline.initialization.result",
+                  integer(initialization.get("result")), 0)
+    require_true(errors, "Streamline.initialization.readable",
+                 initialization.get("readable"))
+    require_equal(errors, "Streamline.initialization.truncated",
+                  initialization.get("truncated"), False)
+    features = initialization.get("features")
+    if not isinstance(features, list) or 0 not in features:
+        errors.append("Streamline.initialization.features: expected DLSS feature 0")
     samples = integer(streamline.get("exposureSamples"))
     require_equal(errors, "Streamline.matchedExposureSamples",
                   integer(streamline.get("matchedExposureSamples")), samples)
@@ -215,6 +231,14 @@ def audit_streamline_global(
         errors.append("Streamline.matchedTargetViewportDlssSequences: expected > 0")
     require_true(errors, "graphics summary.streamlineDlssObservationComplete",
                  summary.get("streamlineDlssObservationComplete"))
+    require_true(errors, "graphics summary.streamlineDlssInitHookInstalled",
+                 summary.get("streamlineDlssInitHookInstalled"))
+    require_true(errors, "graphics summary.streamlineDlssInitObserved",
+                 summary.get("streamlineDlssInitObserved"))
+    require_equal(errors, "graphics summary.streamlineDlssInitCalls",
+                  integer(summary.get("streamlineDlssInitCalls")), 1)
+    require_equal(errors, "graphics summary.streamlineDlssDroppedInitCalls",
+                  integer(summary.get("streamlineDlssDroppedInitCalls")), 0)
     for key in (
         "streamlineSurfacesRequested", "streamlineSurfacesTriggered",
         "streamlineSurfacesPairStaged", "streamlineSurfacesGpuComplete",
