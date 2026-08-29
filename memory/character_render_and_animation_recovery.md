@@ -2907,10 +2907,20 @@ alpha-to-coverage and all per-target blend descriptors, full stencil faces,
 and depth-bias/forced-sample raster state. A real WARP integration test binds
 two distinct RTVs, a read-only depth/stencil DSV, three samplers, independent
 blend targets, asymmetric stencil faces, and nondefault raster bias, then
-asserts the production collector returns each descriptor. The Release DLL
-built at 02:49 local has SHA-256 `8983E5B8...DC1883B8`, and all 17 native tests
-pass. The next capture must use this build and pass cadence, resource, and
-completeness gates before its palettes or M31 pipeline state enter replay.
+asserts the production collector returns each descriptor. The observer now
+adds an automatic-Full-only M31 chronology sidecar. The exact first
+`DrawIndexed(6,4542,1082)` signature arms one bounded candidate and must
+continue as base vertices `443` then `32` in the same Present. It retains a
+64-call draw/dispatch census, stable RTV0/RTV1/DSV identities and descriptors,
+and six immediate pre/post RTV0 copies. Readback is deferred with
+`DO_NOT_WAIT`, shares the existing 1-GiB aggregate ceiling, and publishes only
+after metadata plus all six blobs reach disk; wrong order, target drift,
+capacity, budget, copy/map, device, or publication failures keep the dedicated
+sidecar incomplete. The Release DLL has SHA-256
+`83F07B21...EA4F674F2`, and all 18 native tests pass. The next capture must use
+this build and pass cadence, resource, base completeness, and M31 chronology
+gates before its palettes, fixed state, or three-draw boundary evidence enter
+replay.
 `verify_endminf_draw_contract_capture.py` schema v2 now enforces those session
 gates before draw inspection, requires the complete eight-slot RTV/blend and
 DSV/sampler/stencil/raster descriptors, and checks the already proven M31
