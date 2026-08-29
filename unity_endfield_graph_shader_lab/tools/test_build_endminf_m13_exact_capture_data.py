@@ -67,7 +67,7 @@ class BuildEndminfM13ExactCaptureDataTests(unittest.TestCase):
             runtime,
         )
         self.assertIn("float halfSpacing", runtime)
-        self.assertIn("return nearest;", runtime)
+        self.assertIn("return nearest == 0 ? -1 : nearest;", runtime)
 
 
 if __name__ == "__main__":

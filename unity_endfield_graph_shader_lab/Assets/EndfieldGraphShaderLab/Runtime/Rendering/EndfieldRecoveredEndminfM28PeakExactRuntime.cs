@@ -146,6 +146,20 @@ namespace EndfieldGraphShaderLab
                 return Fail(
                     "the live M28 SceneColor descriptor does not match its native snapshot");
             }
+            try
+            {
+                if (sceneColor.descriptor.width <= 0 ||
+                    sceneColor.descriptor.height <= 0 ||
+                    Native.SetOutputDimensions(
+                        (uint)sceneColor.descriptor.width,
+                        (uint)sceneColor.descriptor.height) != 1)
+                    return Fail("the native M28 output-size gate rejected its input");
+            }
+            catch (Exception exception)
+            {
+                return Fail("the native M28 output-size gate failed: " +
+                    exception.Message);
+            }
 
             var command = new CommandBuffer
             {
@@ -367,6 +381,12 @@ namespace EndfieldGraphShaderLab
                         unchecked((uint)result).ToString("x8");
                     return Fail(validationFailure);
                 }
+                if (Native.GetScreenSizePatchStatus() != 1)
+                {
+                    validationFailure =
+                        "native M28 screen constants were not patched";
+                    return Fail(validationFailure);
+                }
                 validatedDrawCount = draws;
                 validatedThisFrame = true;
                 if (!loggedValidation)
@@ -507,6 +527,14 @@ namespace EndfieldGraphShaderLab
                 IntPtr t0,
                 IntPtr t1,
                 IntPtr t2);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM28PeakOutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM28PeakScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetM28PeakRuntimeState")]

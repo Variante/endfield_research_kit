@@ -188,6 +188,10 @@ ID3D11BlendState* g_m18PeakBlendState = nullptr;
 ID3D11DepthStencilState* g_m18PeakDepthState = nullptr;
 ID3D11RasterizerState* g_m18PeakRasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_m18PeakTextures[5] = {};
+std::atomic<std::uint64_t> g_m18PeakOutputDimensions{0};
+std::atomic<std::uint32_t> g_m18PeakScreenSizePatched{0};
+std::uint32_t g_m18PeakResourceWidth = 0;
+std::uint32_t g_m18PeakResourceHeight = 0;
 std::atomic<std::uint32_t> g_m18PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m18PeakFailureCount{0};
 std::atomic<HRESULT> g_m18PeakLastResult{S_OK};
@@ -205,6 +209,10 @@ ID3D11BlendState* g_m28PeakBlendState = nullptr;
 ID3D11DepthStencilState* g_m28PeakDepthState = nullptr;
 ID3D11RasterizerState* g_m28PeakRasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_m28PeakTextures[3] = {};
+std::atomic<std::uint64_t> g_m28PeakOutputDimensions{0};
+std::atomic<std::uint32_t> g_m28PeakScreenSizePatched{0};
+std::uint32_t g_m28PeakResourceWidth = 0;
+std::uint32_t g_m28PeakResourceHeight = 0;
 std::atomic<std::uint32_t> g_m28PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m28PeakFailureCount{0};
 std::atomic<HRESULT> g_m28PeakLastResult{S_OK};
@@ -785,6 +793,12 @@ void ReleaseM14Object(T*& value)
 
 void ReleaseM14RuntimeResources()
 {
+    g_m18PeakScreenSizePatched.store(0, std::memory_order_release);
+    g_m18PeakResourceWidth = 0;
+    g_m18PeakResourceHeight = 0;
+    g_m28PeakScreenSizePatched.store(0, std::memory_order_release);
+    g_m28PeakResourceWidth = 0;
+    g_m28PeakResourceHeight = 0;
     g_m14ScreenSizePatched.store(0, std::memory_order_release);
     g_m14ResourceWidth = 0;
     g_m14ResourceHeight = 0;
@@ -1153,6 +1167,80 @@ HRESULT EnsureM20ScreenConstantBuffers(ID3D11Device* device)
     g_m20PeakResourceWidth = width;
     g_m20PeakResourceHeight = height;
     g_m20PeakScreenSizePatched.store(1u, std::memory_order_release);
+    return S_OK;
+}
+
+HRESULT EnsureM18ScreenConstantBuffers(ID3D11Device* device)
+{
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    UnpackOpeningStripDimensions(
+        g_m18PeakOutputDimensions.load(std::memory_order_acquire), width, height);
+    if (width == 0 || height == 0) return E_INVALIDARG;
+    if (g_m18PeakScreenSizePatched.load(std::memory_order_acquire) == 1u &&
+        g_m18PeakResourceWidth == width && g_m18PeakResourceHeight == height)
+        return S_OK;
+    ID3D11Buffer* patchedVS = nullptr;
+    ID3D11Buffer* patchedPS = nullptr;
+    HRESULT result = CreateM20ScreenConstantBuffer(
+        device, g_EndfieldM18PeakVSDeclaredFloat4Counts[2],
+        g_EndfieldM18PeakVSCB2, g_EndfieldM18PeakVSCB2Size,
+        width, height, &patchedVS);
+    if (SUCCEEDED(result))
+        result = CreateM20ScreenConstantBuffer(
+            device, g_EndfieldM18PeakPSDeclaredFloat4Counts[1],
+            g_EndfieldM18PeakPSCB1, g_EndfieldM18PeakPSCB1Size,
+            width, height, &patchedPS);
+    if (FAILED(result))
+    {
+        ReleaseM14Object(patchedPS);
+        ReleaseM14Object(patchedVS);
+        return result;
+    }
+    ReleaseM14Object(g_m18PeakVertexConstantBuffers[2]);
+    ReleaseM14Object(g_m18PeakPixelConstantBuffers[1]);
+    g_m18PeakVertexConstantBuffers[2] = patchedVS;
+    g_m18PeakPixelConstantBuffers[1] = patchedPS;
+    g_m18PeakResourceWidth = width;
+    g_m18PeakResourceHeight = height;
+    g_m18PeakScreenSizePatched.store(1u, std::memory_order_release);
+    return S_OK;
+}
+
+HRESULT EnsureM28ScreenConstantBuffers(ID3D11Device* device)
+{
+    std::uint32_t width = 0;
+    std::uint32_t height = 0;
+    UnpackOpeningStripDimensions(
+        g_m28PeakOutputDimensions.load(std::memory_order_acquire), width, height);
+    if (width == 0 || height == 0) return E_INVALIDARG;
+    if (g_m28PeakScreenSizePatched.load(std::memory_order_acquire) == 1u &&
+        g_m28PeakResourceWidth == width && g_m28PeakResourceHeight == height)
+        return S_OK;
+    ID3D11Buffer* patchedVS = nullptr;
+    ID3D11Buffer* patchedPS = nullptr;
+    HRESULT result = CreateM20ScreenConstantBuffer(
+        device, g_EndfieldM28PeakVSDeclaredFloat4Counts[2],
+        g_EndfieldM28PeakVSCB2, g_EndfieldM28PeakVSCB2Size,
+        width, height, &patchedVS);
+    if (SUCCEEDED(result))
+        result = CreateM20ScreenConstantBuffer(
+            device, g_EndfieldM28PeakPSDeclaredFloat4Counts[1],
+            g_EndfieldM28PeakPSCB1, g_EndfieldM28PeakPSCB1Size,
+            width, height, &patchedPS);
+    if (FAILED(result))
+    {
+        ReleaseM14Object(patchedPS);
+        ReleaseM14Object(patchedVS);
+        return result;
+    }
+    ReleaseM14Object(g_m28PeakVertexConstantBuffers[2]);
+    ReleaseM14Object(g_m28PeakPixelConstantBuffers[1]);
+    g_m28PeakVertexConstantBuffers[2] = patchedVS;
+    g_m28PeakPixelConstantBuffers[1] = patchedPS;
+    g_m28PeakResourceWidth = width;
+    g_m28PeakResourceHeight = height;
+    g_m28PeakScreenSizePatched.store(1u, std::memory_order_release);
     return S_OK;
 }
 
@@ -2470,10 +2558,22 @@ HRESULT CreateM13RuntimeResources(ID3D11Device* device)
     result = device->CreateSamplerState(&sampler, &g_m13Samplers[0]);
     if (FAILED(result))
         return result;
+    // Retail M13 draw 75 binds Clamp at s0 and Wrap at s1/s2. The
+    // recovered replay previously left every slot clamped, which turns the
+    // burst shell into an unnaturally continuous outer ring.
+    sampler.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    for (std::size_t slot = 1; slot <= 2; ++slot)
+    {
+        result = device->CreateSamplerState(&sampler, &g_m13Samplers[slot]);
+        if (FAILED(result))
+            return result;
+    }
     sampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    for (std::size_t slot = 1; slot < 5; ++slot)
+    for (std::size_t slot = 3; slot < 5; ++slot)
     {
         result = device->CreateSamplerState(&sampler, &g_m13Samplers[slot]);
         if (FAILED(result))
@@ -3934,6 +4034,13 @@ void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
         g_m18PeakLastResult.store(result, std::memory_order_relaxed);
         return;
     }
+    result = EnsureM18ScreenConstantBuffers(device);
+    if (FAILED(result))
+    {
+        g_m18PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m18PeakLastResult.store(result, std::memory_order_relaxed);
+        return;
+    }
     ID3D11ShaderResourceView* textureViews[5] = {};
     for (std::size_t slot = 0; slot < 5; ++slot)
     {
@@ -3998,6 +4105,12 @@ void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
     FLOAT oldBlendFactor[4] = {};
     UINT oldSampleMask = 0;
     UINT oldStencilReference = 0;
+    UINT oldViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_VIEWPORT oldViewports[
+        D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldScissorCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_RECT oldScissors[
+        D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
     context->VSGetShader(&oldVS, nullptr, nullptr);
     context->PSGetShader(&oldPS, nullptr, nullptr);
     context->IAGetInputLayout(&oldLayout);
@@ -4012,6 +4125,8 @@ void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
     context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
     context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
     context->RSGetState(&oldRasterizer);
+    context->RSGetViewports(&oldViewportCount, oldViewports);
+    context->RSGetScissorRects(&oldScissorCount, oldScissors);
 
     ID3D11Buffer* vertexBuffers[2] = {
         g_m18PeakVertexBuffer, g_m18PeakSecondaryBuffer,
@@ -4033,6 +4148,14 @@ void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
     context->OMSetBlendState(g_m18PeakBlendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(g_m18PeakDepthState, 0);
     context->RSSetState(g_m18PeakRasterizerState);
+    const D3D11_VIEWPORT viewport = {
+        0.0f, 0.0f, static_cast<float>(g_m18PeakResourceWidth),
+        static_cast<float>(g_m18PeakResourceHeight), 0.0f, 1.0f};
+    const D3D11_RECT scissor = {
+        0, 0, static_cast<LONG>(g_m18PeakResourceWidth),
+        static_cast<LONG>(g_m18PeakResourceHeight)};
+    context->RSSetViewports(1, &viewport);
+    context->RSSetScissorRects(1, &scissor);
     context->DrawIndexed(g_EndfieldM18PeakIndexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVSView = nullptr;
@@ -4053,6 +4176,8 @@ void UNITY_INTERFACE_API DrawM18PeakExactRuntime(int eventId)
     context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
     context->OMSetDepthStencilState(oldDepth, oldStencilReference);
     context->RSSetState(oldRasterizer);
+    context->RSSetViewports(oldViewportCount, oldViewports);
+    context->RSSetScissorRects(oldScissorCount, oldScissors);
 
     for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
     for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
@@ -4092,6 +4217,13 @@ void UNITY_INTERFACE_API DrawM28PeakExactRuntime(int eventId)
     if (FAILED(result))
     {
         ReleaseM14RuntimeResources();
+        g_m28PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_m28PeakLastResult.store(result, std::memory_order_relaxed);
+        return;
+    }
+    result = EnsureM28ScreenConstantBuffers(device);
+    if (FAILED(result))
+    {
         g_m28PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
         g_m28PeakLastResult.store(result, std::memory_order_relaxed);
         return;
@@ -4187,6 +4319,12 @@ void UNITY_INTERFACE_API DrawM28PeakExactRuntime(int eventId)
     FLOAT oldBlendFactor[4] = {};
     UINT oldSampleMask = 0;
     UINT oldStencilReference = 0;
+    UINT oldViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_VIEWPORT oldViewports[
+        D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldScissorCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_RECT oldScissors[
+        D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
     context->VSGetShader(&oldVS, nullptr, nullptr);
     context->PSGetShader(&oldPS, nullptr, nullptr);
     context->IAGetInputLayout(&oldLayout);
@@ -4201,6 +4339,8 @@ void UNITY_INTERFACE_API DrawM28PeakExactRuntime(int eventId)
     context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
     context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
     context->RSGetState(&oldRasterizer);
+    context->RSGetViewports(&oldViewportCount, oldViewports);
+    context->RSGetScissorRects(&oldScissorCount, oldScissors);
 
     ID3D11Buffer* vertexBuffers[2] = {
         g_m28PeakVertexBuffer, g_m28PeakSecondaryBuffer,
@@ -4222,6 +4362,14 @@ void UNITY_INTERFACE_API DrawM28PeakExactRuntime(int eventId)
     context->OMSetBlendState(g_m28PeakBlendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(g_m28PeakDepthState, 0);
     context->RSSetState(g_m28PeakRasterizerState);
+    const D3D11_VIEWPORT viewport = {
+        0.0f, 0.0f, static_cast<float>(g_m28PeakResourceWidth),
+        static_cast<float>(g_m28PeakResourceHeight), 0.0f, 1.0f};
+    const D3D11_RECT scissor = {
+        0, 0, static_cast<LONG>(g_m28PeakResourceWidth),
+        static_cast<LONG>(g_m28PeakResourceHeight)};
+    context->RSSetViewports(1, &viewport);
+    context->RSSetScissorRects(1, &scissor);
     context->DrawIndexedInstanced(
         g_EndfieldM28PeakIndexCount, 1u, 0u, 0, 0u);
 
@@ -4243,6 +4391,8 @@ void UNITY_INTERFACE_API DrawM28PeakExactRuntime(int eventId)
     context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
     context->OMSetDepthStencilState(oldDepth, oldStencilReference);
     context->RSSetState(oldRasterizer);
+    context->RSSetViewports(oldViewportCount, oldViewports);
+    context->RSSetScissorRects(oldScissorCount, oldScissors);
 
     for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
     for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
@@ -7315,10 +7465,40 @@ EndfieldOriginalDxbcResetM18PeakRuntimeState()
 {
     for (std::atomic<std::uintptr_t>& texture : g_m18PeakTextures)
         texture.store(0, std::memory_order_release);
+    g_m18PeakOutputDimensions.store(0, std::memory_order_release);
+    g_m18PeakScreenSizePatched.store(0, std::memory_order_release);
+    g_m18PeakResourceWidth = 0;
+    g_m18PeakResourceHeight = 0;
     g_m18PeakDrawCount.store(0, std::memory_order_relaxed);
     g_m18PeakFailureCount.store(0, std::memory_order_relaxed);
     g_m18PeakLastResult.store(S_OK, std::memory_order_relaxed);
     ReleaseM14RuntimeResources();
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM18PeakOutputDimensions(
+    std::uint32_t width, std::uint32_t height)
+{
+    if (width == 0 || height == 0 ||
+        width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        !IsCapturedM20ScreenConstants(
+            g_EndfieldM18PeakVSCB2, g_EndfieldM18PeakVSCB2Size) ||
+        !IsCapturedM20ScreenConstants(
+            g_EndfieldM18PeakPSCB1, g_EndfieldM18PeakPSCB1Size))
+        return 0u;
+    const std::uint64_t packed = PackOpeningStripDimensions(width, height);
+    const std::uint64_t previous = g_m18PeakOutputDimensions.exchange(
+        packed, std::memory_order_acq_rel);
+    if (previous != packed)
+        g_m18PeakScreenSizePatched.store(0u, std::memory_order_release);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM18PeakScreenSizePatchStatus()
+{
+    return g_m18PeakScreenSizePatched.load(std::memory_order_acquire);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
@@ -7363,10 +7543,40 @@ EndfieldOriginalDxbcResetM28PeakRuntimeState()
 {
     for (std::atomic<std::uintptr_t>& texture : g_m28PeakTextures)
         texture.store(0, std::memory_order_release);
+    g_m28PeakOutputDimensions.store(0, std::memory_order_release);
+    g_m28PeakScreenSizePatched.store(0, std::memory_order_release);
+    g_m28PeakResourceWidth = 0;
+    g_m28PeakResourceHeight = 0;
     g_m28PeakDrawCount.store(0, std::memory_order_relaxed);
     g_m28PeakFailureCount.store(0, std::memory_order_relaxed);
     g_m28PeakLastResult.store(S_OK, std::memory_order_relaxed);
     ReleaseM14RuntimeResources();
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM28PeakOutputDimensions(
+    std::uint32_t width, std::uint32_t height)
+{
+    if (width == 0 || height == 0 ||
+        width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        !IsCapturedM20ScreenConstants(
+            g_EndfieldM28PeakVSCB2, g_EndfieldM28PeakVSCB2Size) ||
+        !IsCapturedM20ScreenConstants(
+            g_EndfieldM28PeakPSCB1, g_EndfieldM28PeakPSCB1Size))
+        return 0u;
+    const std::uint64_t packed = PackOpeningStripDimensions(width, height);
+    const std::uint64_t previous = g_m28PeakOutputDimensions.exchange(
+        packed, std::memory_order_acq_rel);
+    if (previous != packed)
+        g_m28PeakScreenSizePatched.store(0u, std::memory_order_release);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetM28PeakScreenSizePatchStatus()
+{
+    return g_m28PeakScreenSizePatched.load(std::memory_order_acquire);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

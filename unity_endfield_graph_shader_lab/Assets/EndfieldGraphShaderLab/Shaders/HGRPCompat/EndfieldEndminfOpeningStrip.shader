@@ -58,11 +58,6 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
                 return false;
             }
 
-            float OpeningStripHash(float value)
-            {
-                return frac(sin(value * 12.9898) * 43758.5453);
-            }
-
             float4 Frag(v2f_img input) : SV_Target
             {
                 float2 uv = input.uv;
@@ -94,24 +89,6 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
                     }
                 }
 
-                // The first bounded reconstruction retained only the largest
-                // hand-measured rectangles. Retail draws many additional thin
-                // quads across the current character silhouette. Reconstruct
-                // that owner-relative packet shape from eight-pixel row cells;
-                // the displaced selector below still prevents background and
-                // portrait pixels from becoming strip sources.
-                float rowCell = floor(retailPixel.y / 8.0);
-                float rowSelector = OpeningStripHash(
-                    rowCell + (float)frame * 173.0);
-                if (activeBand < 0.5 && rowSelector > 0.88)
-                {
-                    float shiftSelector = OpeningStripHash(
-                        rowCell * 7.0 + (float)frame * 59.0);
-                    activeBand = 1.0;
-                    activeShift.x = lerp(110.0, 420.0, shiftSelector);
-                    activeShift.y = lerp(1.0, 3.0, OpeningStripHash(
-                        rowCell * 11.0 + (float)frame * 31.0));
-                }
                 float displacementPixels = activeShift.x *
                     (_EndminfOpeningStripSourceSize.x / 1920.0);
                 float displacementUv = displacementPixels *
@@ -161,6 +138,7 @@ Shader "Hidden/Endfield/HGRPCompat/EndminfOpeningStrip"
                 return lerp(
                     original,
                     shifted,
+                    saturate(_EndminfOpeningStripParams.x) *
                     activeBand * shiftedOwner * (1.0 - destinationOwner));
             }
             ENDCG
