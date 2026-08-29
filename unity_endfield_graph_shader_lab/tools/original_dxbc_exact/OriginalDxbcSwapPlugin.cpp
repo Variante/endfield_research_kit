@@ -294,10 +294,14 @@ ID3D11BlendState* g_openingStripBlendState = nullptr;
 ID3D11DepthStencilState* g_openingStripDepthState = nullptr;
 ID3D11RasterizerState* g_openingStripRasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_openingStripSceneColor{0};
+std::atomic<std::uint64_t> g_openingStripOutputDimensions{0};
+std::atomic<std::uint32_t> g_openingStripScreenSizePatched{0};
 std::atomic<std::uint32_t> g_openingStripPacketIndex{0};
 std::atomic<std::uint32_t> g_openingStripDrawCount{0};
 std::atomic<std::uint32_t> g_openingStripFailureCount{0};
 std::atomic<HRESULT> g_openingStripLastResult{S_OK};
+std::uint32_t g_openingStripResourceWidth = 0;
+std::uint32_t g_openingStripResourceHeight = 0;
 
 ID3D11VertexShader* g_m27DrawVertexShader = nullptr;
 ID3D11PixelShader* g_m27DrawPixelShader = nullptr;
@@ -939,6 +943,94 @@ HRESULT CreateM14ConstantBuffer(
         payload,
         byteWidth,
         output);
+    delete[] payload;
+    return result;
+}
+
+std::uint64_t PackOpeningStripDimensions(
+    std::uint32_t width,
+    std::uint32_t height)
+{
+    return (static_cast<std::uint64_t>(width) << 32u) |
+        static_cast<std::uint64_t>(height);
+}
+
+void UnpackOpeningStripDimensions(
+    std::uint64_t packed,
+    std::uint32_t& width,
+    std::uint32_t& height)
+{
+    width = static_cast<std::uint32_t>(packed >> 32u);
+    height = static_cast<std::uint32_t>(packed & 0xffffffffu);
+}
+
+bool IsCapturedOpeningStripScreenSize(
+    const std::uint8_t* captured,
+    std::size_t capturedBytes)
+{
+    if (captured == nullptr || capturedBytes < sizeof(float) * 4u)
+        return false;
+    float capturedScreenSize[4] = {};
+    std::memcpy(capturedScreenSize, captured, sizeof(capturedScreenSize));
+    constexpr float kCapturedWidth = 3840.0f;
+    constexpr float kCapturedHeight = 2160.0f;
+    constexpr float kTolerance = 0.000001f;
+    return capturedScreenSize[0] == kCapturedWidth &&
+        capturedScreenSize[1] == kCapturedHeight &&
+        std::fabs(capturedScreenSize[2] - 1.0f / kCapturedWidth) <= kTolerance &&
+        std::fabs(capturedScreenSize[3] - 1.0f / kCapturedHeight) <= kTolerance;
+}
+
+HRESULT CreateOpeningStripConstantBuffer(
+    ID3D11Device* device,
+    std::uint32_t declaredFloat4Count,
+    const std::uint8_t* captured,
+    std::size_t capturedBytes,
+    bool patchScreenSize,
+    std::uint32_t outputWidth,
+    std::uint32_t outputHeight,
+    ID3D11Buffer** output)
+{
+    if (!patchScreenSize)
+    {
+        return CreateM14ConstantBuffer(
+            device, declaredFloat4Count, captured, capturedBytes, output);
+    }
+    if (device == nullptr || output == nullptr || captured == nullptr ||
+        declaredFloat4Count == 0 || declaredFloat4Count > 4096 ||
+        capturedBytes < sizeof(float) * 4u ||
+        capturedBytes > declaredFloat4Count * 16u ||
+        outputWidth == 0 || outputHeight == 0)
+    {
+        return E_INVALIDARG;
+    }
+
+    if (!IsCapturedOpeningStripScreenSize(captured, capturedBytes))
+    {
+        // Reflection identifies ShaderVariablesGlobal._ScreenSize at byte
+        // offset zero. Refuse a different capture layout instead of modifying
+        // an unverified constant.
+        return E_INVALIDARG;
+    }
+
+    const UINT byteWidth = declaredFloat4Count * 16u;
+    unsigned char* payload = new (std::nothrow) unsigned char[byteWidth]();
+    if (payload == nullptr)
+        return E_OUTOFMEMORY;
+    std::memcpy(payload, captured, capturedBytes);
+    const float patchedScreenSize[4] = {
+        static_cast<float>(outputWidth),
+        static_cast<float>(outputHeight),
+        1.0f / static_cast<float>(outputWidth),
+        1.0f / static_cast<float>(outputHeight)};
+    std::memcpy(payload, patchedScreenSize, sizeof(patchedScreenSize));
+    if (std::memcmp(payload, patchedScreenSize, sizeof(patchedScreenSize)) != 0)
+    {
+        delete[] payload;
+        return E_FAIL;
+    }
+    const HRESULT result = CreateM14ImmutableBuffer(
+        device, D3D11_BIND_CONSTANT_BUFFER, payload, byteWidth, output);
     delete[] payload;
     return result;
 }
@@ -2163,6 +2255,9 @@ HRESULT CreateM13RuntimeResources(ID3D11Device* device)
 
 void ReleaseOpeningStripResources()
 {
+    g_openingStripScreenSizePatched.store(0, std::memory_order_release);
+    g_openingStripResourceWidth = 0;
+    g_openingStripResourceHeight = 0;
     ReleaseM14Object(g_openingStripRasterizerState);
     ReleaseM14Object(g_openingStripDepthState);
     ReleaseM14Object(g_openingStripBlendState);
@@ -2190,8 +2285,21 @@ HRESULT CreateOpeningStripResources(ID3D11Device* device)
 {
     if (device == nullptr)
         return E_POINTER;
+    std::uint32_t outputWidth = 0;
+    std::uint32_t outputHeight = 0;
+    UnpackOpeningStripDimensions(
+        g_openingStripOutputDimensions.load(std::memory_order_acquire),
+        outputWidth,
+        outputHeight);
+    if (outputWidth == 0 || outputHeight == 0 ||
+        outputWidth > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        outputHeight > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+        return E_INVALIDARG;
     if (g_openingStripVertexShader != nullptr &&
-        g_openingStripPixelShader != nullptr)
+        g_openingStripPixelShader != nullptr &&
+        g_openingStripResourceWidth == outputWidth &&
+        g_openingStripResourceHeight == outputHeight &&
+        g_openingStripScreenSizePatched.load(std::memory_order_acquire) == 1u)
         return S_OK;
     ReleaseOpeningStripResources();
     HRESULT result = device->CreateVertexShader(
@@ -2250,17 +2358,19 @@ HRESULT CreateOpeningStripResources(ID3D11Device* device)
         if (FAILED(result)) return result;
         for (std::size_t slot = 0; slot < 5; ++slot)
         {
-            result = CreateM14ConstantBuffer(
+            result = CreateOpeningStripConstantBuffer(
                 device, g_EndfieldOpeningStripVSCounts[slot],
                 source.vs[slot], source.vsBytes[slot],
+                slot == 2u, outputWidth, outputHeight,
                 &g_openingStripVertexConstantBuffers[packet][slot]);
             if (FAILED(result)) return result;
         }
         for (std::size_t slot = 0; slot < 4; ++slot)
         {
-            result = CreateM14ConstantBuffer(
+            result = CreateOpeningStripConstantBuffer(
                 device, g_EndfieldOpeningStripPSCounts[slot],
                 source.ps[slot], source.psBytes[slot],
+                slot == 1u, outputWidth, outputHeight,
                 &g_openingStripPixelConstantBuffers[packet][slot]);
             if (FAILED(result)) return result;
         }
@@ -2332,16 +2442,17 @@ HRESULT CreateOpeningStripResources(ID3D11Device* device)
     if (FAILED(result)) return result;
     D3D11_RASTERIZER_DESC rasterizer = {};
     rasterizer.FillMode = D3D11_FILL_SOLID;
-    // The retained draw used back-face culling plus a retail-owned scissor.
-    // Unity does not preserve that draw-local rectangle across plugin events;
-    // the independent particle quads are two-sided, so bind the equivalent
-    // unrestricted packet domain here.
-    rasterizer.CullMode = D3D11_CULL_NONE;
+    rasterizer.CullMode = D3D11_CULL_BACK;
     rasterizer.FrontCounterClockwise = TRUE;
     rasterizer.DepthClipEnable = TRUE;
-    rasterizer.ScissorEnable = FALSE;
-    return device->CreateRasterizerState(
+    rasterizer.ScissorEnable = TRUE;
+    result = device->CreateRasterizerState(
         &rasterizer, &g_openingStripRasterizerState);
+    if (FAILED(result)) return result;
+    g_openingStripResourceWidth = outputWidth;
+    g_openingStripResourceHeight = outputHeight;
+    g_openingStripScreenSizePatched.store(1u, std::memory_order_release);
+    return S_OK;
 }
 
 void ReleaseM27DrawResources()
@@ -4919,6 +5030,20 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         g_openingStripLastResult.store(result, std::memory_order_relaxed);
         return;
     }
+    std::uint32_t outputWidth = 0;
+    std::uint32_t outputHeight = 0;
+    UnpackOpeningStripDimensions(
+        g_openingStripOutputDimensions.load(std::memory_order_acquire),
+        outputWidth,
+        outputHeight);
+    if (g_openingStripScreenSizePatched.load(std::memory_order_acquire) != 1u ||
+        outputWidth != g_openingStripResourceWidth ||
+        outputHeight != g_openingStripResourceHeight)
+    {
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_FAIL, std::memory_order_relaxed);
+        return;
+    }
     ID3D11Resource* sceneColor = reinterpret_cast<ID3D11Resource*>(
         g_openingStripSceneColor.load(std::memory_order_acquire));
     if (g_openingStripMaskView == nullptr || sceneColor == nullptr)
@@ -4952,6 +5077,38 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         g_openingStripLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
         return;
     }
+    ID3D11Texture2D* outputTexture = nullptr;
+    ID3D11Texture2D* sceneColorTexture = nullptr;
+    D3D11_TEXTURE2D_DESC outputDescription = {};
+    D3D11_TEXTURE2D_DESC sceneColorDescription = {};
+    const HRESULT outputTextureResult = output->QueryInterface(
+        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&outputTexture));
+    const HRESULT sceneColorTextureResult = sceneColor->QueryInterface(
+        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&sceneColorTexture));
+    if (SUCCEEDED(outputTextureResult) && outputTexture != nullptr)
+        outputTexture->GetDesc(&outputDescription);
+    if (SUCCEEDED(sceneColorTextureResult) && sceneColorTexture != nullptr)
+        sceneColorTexture->GetDesc(&sceneColorDescription);
+    const bool dimensionsMatch =
+        SUCCEEDED(outputTextureResult) && SUCCEEDED(sceneColorTextureResult) &&
+        outputTexture != nullptr && sceneColorTexture != nullptr &&
+        outputDescription.Width == outputWidth &&
+        outputDescription.Height == outputHeight &&
+        sceneColorDescription.Width == outputWidth &&
+        sceneColorDescription.Height == outputHeight;
+    ReleaseM14Object(sceneColorTexture);
+    ReleaseM14Object(outputTexture);
+    if (!dimensionsMatch)
+    {
+        ReleaseM14Object(output);
+        ReleaseM14Object(renderDepth);
+        ReleaseM14Object(targets[1]);
+        ReleaseM14Object(targets[0]);
+        context->Release();
+        g_openingStripFailureCount.fetch_add(1, std::memory_order_relaxed);
+        g_openingStripLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
     ID3D11ShaderResourceView* views[2] = {};
     views[0] = g_openingStripMaskView;
     views[0]->AddRef();
@@ -4975,6 +5132,10 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
     ID3D11ShaderResourceView* oldPSViews[2] = {}; ID3D11SamplerState* oldSamplers[2] = {};
     ID3D11BlendState* oldBlend = nullptr; ID3D11DepthStencilState* oldDepth = nullptr;
     ID3D11RasterizerState* oldRasterizer = nullptr;
+    D3D11_VIEWPORT oldViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldViewportCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    D3D11_RECT oldScissors[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE] = {};
+    UINT oldScissorCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
     D3D11_PRIMITIVE_TOPOLOGY oldTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
     DXGI_FORMAT oldIndexFormat = DXGI_FORMAT_UNKNOWN; UINT oldStrides[2] = {};
     UINT oldOffsets[2] = {}; UINT oldIndexOffset = 0; FLOAT oldBlendFactor[4] = {};
@@ -4992,6 +5153,8 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
     context->OMGetBlendState(&oldBlend, oldBlendFactor, &oldSampleMask);
     context->OMGetDepthStencilState(&oldDepth, &oldStencilReference);
     context->RSGetState(&oldRasterizer);
+    context->RSGetViewports(&oldViewportCount, oldViewports);
+    context->RSGetScissorRects(&oldScissorCount, oldScissors);
 
     const std::uint32_t packet = g_openingStripPacketIndex.load(std::memory_order_acquire);
     const EndfieldOpeningStripPacket& source = g_EndfieldOpeningStripPackets[packet];
@@ -4999,6 +5162,12 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
         g_openingStripVertexBuffers[packet], g_openingStripDefaultVertexBuffer};
     const UINT strides[2] = {g_EndfieldOpeningStripVertexStride, 0u};
     const UINT offsets[2] = {}; const FLOAT blendFactor[4] = {1, 1, 1, 1};
+    const D3D11_VIEWPORT viewport = {
+        0.0f, 0.0f,
+        static_cast<FLOAT>(outputWidth), static_cast<FLOAT>(outputHeight),
+        0.0f, 1.0f};
+    const D3D11_RECT scissor = {
+        0, 0, static_cast<LONG>(outputWidth), static_cast<LONG>(outputHeight)};
     context->IASetInputLayout(g_openingStripInputLayout);
     context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
     context->IASetIndexBuffer(g_openingStripIndexBuffers[packet], DXGI_FORMAT_R16_UINT, 0);
@@ -5013,6 +5182,8 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
     context->OMSetBlendState(g_openingStripBlendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(g_openingStripDepthState, 0);
     context->RSSetState(g_openingStripRasterizerState);
+    context->RSSetViewports(1, &viewport);
+    context->RSSetScissorRects(1, &scissor);
     context->DrawIndexed(source.indexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVS = nullptr; ID3D11ShaderResourceView* nullPS[2] = {};
@@ -5030,6 +5201,8 @@ void UNITY_INTERFACE_API DrawOpeningStripExactRuntime(int eventId)
     context->OMSetBlendState(oldBlend, oldBlendFactor, oldSampleMask);
     context->OMSetDepthStencilState(oldDepth, oldStencilReference);
     context->RSSetState(oldRasterizer);
+    context->RSSetViewports(oldViewportCount, oldViewports);
+    context->RSSetScissorRects(oldScissorCount, oldScissors);
     for (ID3D11SamplerState*& value : oldSamplers) ReleaseM14Object(value);
     for (ID3D11ShaderResourceView*& value : oldPSViews) ReleaseM14Object(value);
     ReleaseM14Object(oldVSView);
@@ -6552,6 +6725,35 @@ EndfieldOriginalDxbcSetOpeningStripTextureResources(
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetOpeningStripOutputDimensions(
+    std::uint32_t width,
+    std::uint32_t height)
+{
+    if (width == 0 || height == 0 ||
+        width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION ||
+        height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+        return 0u;
+    for (const EndfieldOpeningStripPacket& packet : g_EndfieldOpeningStripPackets)
+    {
+        if (!IsCapturedOpeningStripScreenSize(packet.vs[2], packet.vsBytes[2]) ||
+            !IsCapturedOpeningStripScreenSize(packet.ps[1], packet.psBytes[1]))
+            return 0u;
+    }
+    const std::uint64_t packed = PackOpeningStripDimensions(width, height);
+    const std::uint64_t previous = g_openingStripOutputDimensions.exchange(
+        packed, std::memory_order_acq_rel);
+    if (previous != packed)
+        g_openingStripScreenSizePatched.store(0u, std::memory_order_release);
+    return 1u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetOpeningStripScreenSizePatchStatus()
+{
+    return g_openingStripScreenSizePatched.load(std::memory_order_acquire);
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcSetOpeningStripPacketIndex(std::uint32_t packetIndex)
 {
     if (packetIndex >= g_EndfieldOpeningStripPacketCount) return 0u;
@@ -6573,6 +6775,8 @@ EndfieldOriginalDxbcResetOpeningStripRuntimeState()
     g_openingStripFailureCount.store(0, std::memory_order_relaxed);
     g_openingStripLastResult.store(S_OK, std::memory_order_relaxed);
     g_openingStripSceneColor.store(0, std::memory_order_relaxed);
+    g_openingStripOutputDimensions.store(0, std::memory_order_relaxed);
+    g_openingStripScreenSizePatched.store(0, std::memory_order_relaxed);
     ReleaseOpeningStripResources();
 }
 

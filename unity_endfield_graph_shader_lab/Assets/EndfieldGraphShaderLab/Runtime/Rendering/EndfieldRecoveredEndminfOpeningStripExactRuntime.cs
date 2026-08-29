@@ -99,6 +99,9 @@ namespace EndfieldGraphShaderLab
                 return Fail("exact opening-strip render resources are incomplete");
             try
             {
+                if (Native.SetOutputDimensions(
+                        (uint)camera.pixelWidth, (uint)camera.pixelHeight) != 1)
+                    return Fail("native opening-strip output-dimension gate rejected the target");
                 if (Native.SetTextureResources(
                         sceneColorSnapshot.GetNativeTexturePtr()) != 1)
                     return Fail("native opening-strip scene-color gate rejected t1");
@@ -239,11 +242,14 @@ namespace EndfieldGraphShaderLab
                 uint draws = Native.GetDrawCount();
                 uint failures = Native.GetFailureCount();
                 int result = Native.GetLastResult();
-                if (draws == 0 || failures != 0 || result < 0)
+                uint screenSizePatched = Native.GetScreenSizePatchStatus();
+                if (draws == 0 || failures != 0 || result < 0 ||
+                    screenSizePatched != 1)
                 {
                     reason = "native opening-strip result drifted: draws=" + draws +
                         ", failures=" + failures + ", hresult=0x" +
-                        unchecked((uint)result).ToString("x8");
+                        unchecked((uint)result).ToString("x8") +
+                        ", screenSizePatched=" + screenSizePatched;
                     return false;
                 }
                 if (!loggedValidation)
@@ -271,6 +277,10 @@ namespace EndfieldGraphShaderLab
             internal static extern IntPtr GetRenderEventFunc();
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcSetOpeningStripTextureResources")]
             internal static extern uint SetTextureResources(IntPtr sceneColor);
+            [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcSetOpeningStripOutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+            [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcGetOpeningStripScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcSetOpeningStripPacketIndex")]
             internal static extern uint SetPacketIndex(uint index);
             [DllImport(NativeLibrary, EntryPoint = "EndfieldOriginalDxbcGetOpeningStripPacketCount")]

@@ -530,6 +530,10 @@ namespace EndfieldGraphShaderLabEditor
             string[] bonePaths = firstMatrices.Select((value, index) =>
                 Text(Object(value, "frames[0].ownerBoneMatrices[" + index + "]"), "path"))
                 .ToArray();
+            string[] anchorPaths = firstMatrices.Select((value, index) =>
+                Text(Object(value, "frames[0].ownerBoneMatrices[" + index + "]"),
+                    "applicationAnchorPath"))
+                .ToArray();
             if (bonePaths.Length == 0 ||
                 bonePaths.Distinct(StringComparer.Ordinal).Count() != bonePaths.Length)
                 throw new InvalidDataException("Captured replay bone paths are empty or duplicated.");
@@ -560,8 +564,14 @@ namespace EndfieldGraphShaderLabEditor
                         matrices[bone], "frames[" + sample + "].ownerBoneMatrices[" + bone + "]");
                     if (!string.Equals(Text(row, "path"), bonePaths[bone], StringComparison.Ordinal))
                         throw new InvalidDataException("Captured replay bone order varies by frame.");
-                    DecodeRootSpacePose(row, sample * bonePaths.Length + bone,
-                        positions, rotations);
+                    if (!string.Equals(
+                            Text(row, "applicationAnchorPath"),
+                            anchorPaths[bone],
+                            StringComparison.Ordinal))
+                        throw new InvalidDataException(
+                            "Captured replay application anchors vary by frame.");
+                    DecodePose(row, "currentAnchorSpace3x4",
+                        sample * bonePaths.Length + bone, positions, rotations);
                 }
             }
 
@@ -576,9 +586,10 @@ namespace EndfieldGraphShaderLabEditor
             data.entranceSequenceAnchorSeconds = Float(
                 playback, "entranceSequenceAnchorSeconds", "playback");
             data.bonePaths = bonePaths;
+            data.applicationAnchorPaths = anchorPaths;
             data.sampleTimes = sampleTimes;
-            data.rootSpacePositions = positions;
-            data.rootSpaceRotations = rotations;
+            data.anchorSpacePositions = positions;
+            data.anchorSpaceRotations = rotations;
             Dictionary<string, object> cape = Object(
                 Required(root, "transparentCapeExtension"),
                 "transparentCapeExtension");
@@ -613,13 +624,14 @@ namespace EndfieldGraphShaderLabEditor
             return data;
         }
 
-        private static void DecodeRootSpacePose(
+        private static void DecodePose(
             Dictionary<string, object> row,
+            string matrixKey,
             int poseIndex,
             Vector3[] positions,
             Quaternion[] rotations)
         {
-            List<object> matrix = Array(row, "currentRootSpace3x4");
+            List<object> matrix = Array(row, matrixKey);
             if (matrix.Count != 3)
                 throw new InvalidDataException("Captured replay matrix is not 3x4.");
             var values = new float[3, 4];
@@ -650,6 +662,9 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException("Captured replay data is invalid: " + failure);
             if (data.SampleCount != 144 || data.BoneCount != 80)
                 throw new InvalidDataException("Captured replay dimensions differ from the oracle.");
+            if (data.applicationAnchorPaths.Distinct(StringComparer.Ordinal).Count() != 2)
+                throw new InvalidDataException(
+                    "Captured replay must use exactly the captured Head and Spine2 anchors.");
             if (!data.transparentCapeExtensionObserved ||
                 !data.transparentCapeExtensionRuntimeEligible ||
                 data.transparentCapeSampleCount != 144 ||
@@ -671,6 +686,17 @@ namespace EndfieldGraphShaderLabEditor
                 data.sampleTimes, midpoint, out low, out high, out blend);
             if (low != 10 || high != 11 || Mathf.Abs(blend - 0.5f) > 1e-5f)
                 throw new InvalidDataException("Captured replay midpoint interpolation drifted.");
+            float uncapturedMidpoint =
+                (data.sampleTimes[11] + data.sampleTimes[12]) * 0.5f;
+            EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
+                data.sampleTimes, uncapturedMidpoint,
+                out low, out high, out blend);
+            EndfieldCapturedSecondaryDynamicsReplay.RejectUncapturedGap(
+                data.sampleTimes, data.sourceFps, uncapturedMidpoint,
+                ref low, ref high, ref blend);
+            if (low != 11 || high != 11 || blend != 0f)
+                throw new InvalidDataException(
+                    "Captured replay interpolates across an unobserved package gap.");
             EndfieldCapturedSecondaryDynamicsReplay.ResolveSample(
                 data.sampleTimes, float.MaxValue, out low, out high, out blend);
             int last = data.SampleCount - 1;

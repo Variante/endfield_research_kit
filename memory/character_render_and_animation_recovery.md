@@ -2683,12 +2683,19 @@ continues to bind primary depth directly. Keep the probe diagnostic-only. Fix
 the radial/chromatic color transport and temporal input instead of blindly
 warping every contributing depth.
 
-Hair/cape motion remains primarily cadence-limited. The retained replay has 144
-palette states across 13.87 seconds; 70 interpolation intervals exceed eight
-60-Hz frames and the worst spans 14.03 frames. Measured motion width remains
-about 6.5% narrow for hair, 16% for the left cape, and 32% for the right cape.
-At 4.35 seconds the replay selects capture frame 1977 directly with effectively
-zero interpolation, so that phase separates sparse-motion error from renderer
+The opening hair/cape defect was an application-space error, not a corrupt
+retail pose. The old runtime wrote captured actor-root-space matrices after an
+independently evaluated Unity body pose and interpolated them across 0.12-0.23
+second package gaps. The v7 oracle now stores each hair pose relative to the
+same captured Head and each cape pose relative to the same captured Spine2;
+runtime publication applies those residuals to Unity's current Head/Spine2
+after Animator evaluation, parent-first. Only measured previous/current 60-Hz
+pairs interpolate; longer unobserved intervals select the nearest retained
+endpoint. A five-checkpoint D3D11 capture validates the 144-sample/80-bone
+binding and keeps the opening hair attached to the head. Sparse cadence still
+limits unsampled extrema, so this is not exact dynamics recovery. At 4.35
+seconds the replay selects capture frame 1977 directly with effectively zero
+interpolation, so that phase separates sparse-motion error from renderer
 plumbing. The retained-skinning probe at exactly 4.35 seconds closes all six
 deforming renderer rows and directly compares frame 1977's retail palette with
 Unity's CPU-side renderer-local palette. The source mesh proves that cloth_02

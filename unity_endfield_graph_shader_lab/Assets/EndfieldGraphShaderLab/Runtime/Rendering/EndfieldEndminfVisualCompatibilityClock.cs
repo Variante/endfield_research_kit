@@ -162,12 +162,15 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
-            int frame = Mathf.FloorToInt(elapsed * 60.0f + 0.5f);
+            // The maintained clean-reference registration maps rendered Unity
+            // frame N to extracted retail frame N+1 (bounded to +/-1 by the
+            // decode anchor). The measured rectangles are retail-frame keyed.
+            int frame = Mathf.FloorToInt(elapsed * 60.0f + 0.5f) + 1;
             if (!IsMeasuredOpeningStripFrame(frame))
                 return false;
 
             state = new RecoveredOpeningStripState {
-                elapsed = elapsed,
+                elapsed = elapsed + 1.0f / 60.0f,
                 intensity = 1.0f,
                 displacementPixels = 274.0f,
                 chromaticEdgePixels = 3.0f

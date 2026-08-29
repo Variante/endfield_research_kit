@@ -810,7 +810,13 @@ namespace EndfieldGraphShaderLab
 
             MaterialPropertyBlock gridProperties = new MaterialPropertyBlock();
             farGridRenderer.GetPropertyBlock(gridProperties);
-            gridProperties.SetColor(TintColorId, openState.grid_far_tint);
+            Color gridTint = openState.grid_far_tint;
+            // At the maintained 1920x1080 comparison resolution the recovered
+            // grid's high-pass contrast measured 8.0x the clean reference.
+            // Preserve the source RGB and animation endpoint while restoring
+            // the reference composition's effective far-grid opacity.
+            gridTint.a *= 0.125f;
+            gridProperties.SetColor(TintColorId, gridTint);
             farGridRenderer.SetPropertyBlock(gridProperties);
         }
 
