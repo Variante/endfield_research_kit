@@ -156,6 +156,30 @@ class UberCaptureTests(unittest.TestCase):
             ["BLOOM", "RADIAL_BLUR", "VIGNETTE"],
         )
 
+    def test_full_profile_constant_payload_passes(self) -> None:
+        session, metadata, blob = fixture()
+        session["graphicsProfile"] = "full"
+        report = self.build(
+            session,
+            metadata,
+            blob,
+            constant_payload_only=True,
+            frame_filter=7,
+        )
+        self.assertEqual(
+            report["status"],
+            "validated_exact_uber_constant_payload_only",
+        )
+        self.assertEqual(report["graphicsProfile"], "full")
+
+    def test_unknown_profile_fails_with_expected_and_actual(self) -> None:
+        session, metadata, blob = fixture()
+        session["graphicsProfile"] = "debug"
+        with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "expected targeted or full, got 'debug'"):
+            self.build(session, metadata, blob)
+
     def test_missing_priority_tag_fails_closed(self) -> None:
         with self.assertRaisesRegex(MODULE.VerificationError, "priority tagging"):
             self.build(*fixture(priority=False))

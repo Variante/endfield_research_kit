@@ -293,8 +293,8 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_RecoveredTemporalResponsiveTransparency");
         private static readonly int RecoveredTemporalResolveId =
             Shader.PropertyToID("_EndfieldRecoveredTemporalResolve");
-        private static readonly int RecoveredCombinedVelocityId =
-            Shader.PropertyToID("_CombinedVelocity");
+        private static readonly int RecoveredTemporalPresentationId =
+            Shader.PropertyToID("_EndfieldRecoveredTemporalPresentation");
         private static readonly int RecoveredPostSemanticsId = Shader.PropertyToID("_EndfieldRecoveredPostSemantics");
         private static readonly int RecoveredColorGradingLutId = Shader.PropertyToID("_RecoveredColorGradingLut");
         private static readonly int RecoveredColorGradingLutReadyId = Shader.PropertyToID("_RecoveredColorGradingLutReady");
@@ -379,7 +379,17 @@ namespace EndfieldGraphShaderLab
             { get; private set; }
         public static bool LastRecoveredEndminfExactUberSubmitted
             { get; private set; }
+        public static bool LastRecoveredEndminfExactUberValidated
+            { get; private set; }
         public static string LastRecoveredEndminfExactUberFailure
+            { get; private set; } = string.Empty;
+        public static bool LastRecoveredUnityPublicNgxProxyRequested
+            { get; private set; }
+        public static bool LastRecoveredUnityPublicNgxProxySubmitted
+            { get; private set; }
+        public static bool LastRecoveredUnityPublicNgxProxyValidated
+            { get; private set; }
+        public static string LastRecoveredUnityPublicNgxProxyFailure
             { get; private set; } = string.Empty;
         public static EndfieldRecoveredSceneMVDiagnosticState
             LastRecoveredSceneMVDiagnostic { get; } =
@@ -611,6 +621,8 @@ namespace EndfieldGraphShaderLab
             recoveredSceneMVCompositor;
         private readonly EndfieldRecoveredCombinedVelocityProducer
             recoveredCombinedVelocityProducer;
+        private readonly EndfieldRecoveredUnityPublicNgxProxy
+            recoveredUnityPublicNgxProxy;
         private RenderTexture recoveredExactCameraDepth;
         private sealed class RecoveredTemporalCameraState
         {
@@ -664,7 +676,6 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredPreGBufferDepthOwnerFailure;
         private bool loggedRecoveredSceneMV;
         private bool loggedRecoveredSceneMVFailure;
-        private bool loggedRecoveredCombinedVelocityFailure;
         private bool loggedRecoveredVFXGlobalsFailure;
         private bool loggedRecoveredSceneColorFormatFailure;
         private bool loggedRecoveredPreTransparentSceneColorFormatFailure;
@@ -764,6 +775,9 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredSceneMVCompositor();
             recoveredCombinedVelocityProducer =
                 new EndfieldRecoveredCombinedVelocityProducer();
+            recoveredUnityPublicNgxProxy =
+                new EndfieldRecoveredUnityPublicNgxProxy(
+                    recoveredCombinedVelocityProducer);
             recoveredEndminfUberExactRuntime =
                 new EndfieldRecoveredEndminfUberExactRuntime();
             recoveredEndminfM28PeakExactRuntime =
@@ -884,6 +898,7 @@ namespace EndfieldGraphShaderLab
             recoveredEndminfUberExactRuntime?.Dispose();
             recoveredEndminfM28PeakExactRuntime?.Dispose();
             recoveredSceneMVCompositor?.Dispose();
+            recoveredUnityPublicNgxProxy?.Dispose();
             ReleaseRecoveredPrimarySceneDepth(recoveredExactCameraDepth);
             recoveredExactCameraDepth = null;
             foreach (RecoveredTemporalCameraState state in recoveredTemporalStates.Values)
@@ -964,6 +979,60 @@ namespace EndfieldGraphShaderLab
             averageEV = state.LastAverageEV;
             readbackLatencyFrames = state.LastReadbackLatencyFrames;
             return true;
+        }
+
+        /// <summary>
+        /// Validates the exact public-NGX execution submitted by the most
+        /// recent synchronized diagnostic render. This does not enable the
+        /// proxy or make it canonical; it only closes capture telemetry over
+        /// the output that was actually read back.
+        /// </summary>
+        public static bool ValidateRecoveredUnityPublicNgxProxyAfterSynchronizedRender(
+            out string failure)
+        {
+            failure = string.Empty;
+            HDRenderPipeline pipeline = activeInstance;
+            if (pipeline == null || pipeline.recoveredUnityPublicNgxProxy == null)
+            {
+                failure = "active recovered render pipeline is unavailable";
+                LastRecoveredUnityPublicNgxProxyValidated = false;
+                LastRecoveredUnityPublicNgxProxyFailure = failure;
+                return false;
+            }
+            bool valid = pipeline.recoveredUnityPublicNgxProxy
+                .ValidatePendingAfterSynchronizedRender(out failure);
+            LastRecoveredUnityPublicNgxProxyValidated = valid;
+            LastRecoveredUnityPublicNgxProxyFailure = valid
+                ? string.Empty
+                : failure;
+            return valid;
+        }
+
+        /// <summary>
+        /// Validates the exact Endminf Uber plugin event after the capture's
+        /// ReadPixels synchronization point. Submission alone is not evidence
+        /// that the retained native draw executed successfully.
+        /// </summary>
+        public static bool ValidateRecoveredEndminfExactUberAfterSynchronizedRender(
+            out string failure)
+        {
+            failure = string.Empty;
+            HDRenderPipeline pipeline = activeInstance;
+            if (pipeline == null ||
+                pipeline.recoveredEndminfUberExactRuntime == null)
+            {
+                failure = "active recovered render pipeline is unavailable";
+                LastRecoveredEndminfExactUberValidated = false;
+                LastRecoveredEndminfExactUberFailure = failure;
+                return false;
+            }
+            bool valid = pipeline.recoveredEndminfUberExactRuntime
+                .ValidatePendingAfterSynchronizedRender(out failure);
+            LastRecoveredEndminfExactUberValidated = valid;
+            LastRecoveredEndminfExactUberFailure = valid
+                ? string.Empty
+                : failure;
+            return valid;
         }
 
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
@@ -3224,6 +3293,7 @@ namespace EndfieldGraphShaderLab
             LastRecoveredEndminfExactUberRequested =
                 recoveredEndminfUberExactRuntime.Requested;
             LastRecoveredEndminfExactUberSubmitted = false;
+            LastRecoveredEndminfExactUberValidated = false;
             LastRecoveredEndminfExactUberFailure = string.Empty;
             EndfieldHGOperatorPresentation operatorPresentation =
                 camera.GetComponent<EndfieldHGOperatorPresentation>();
@@ -3276,8 +3346,12 @@ namespace EndfieldGraphShaderLab
             {
                 name = "HGCompat Character Post"
             };
-            if (useRecoveredPostSemantics)
-            {
+            int recoveredTemporalPostSourceId = 0;
+            bool releaseRecoveredTemporalPostSource = false;
+            RenderTextureDescriptor recoveredTemporalPostSourceDescriptor =
+                default;
+            bool hasRecoveredTemporalPostSource =
+                useRecoveredPostSemantics &&
                 EnqueueRecoveredEndminfTemporalResolve(
                     commandBuffer,
                     camera,
@@ -3285,22 +3359,29 @@ namespace EndfieldGraphShaderLab
                     height,
                     recoveredPrimarySceneDepth,
                     recoveredSceneMV,
-                    recoveredSceneColorDescriptor);
-            }
+                    out recoveredTemporalPostSourceId,
+                    out recoveredTemporalPostSourceDescriptor,
+                    out releaseRecoveredTemporalPostSource);
             // The retained retail Uber draw binds full-resolution
             // R16G16B16A16_FLOAT t0 after the packed B10G11R11 sceneColor
             // owner. Preserve that post-handoff promotion for Endminf before
             // bloom and Uber sample the source.
             bool useRecoveredEndminfRgba16PostSource =
                 useRecoveredPostSemantics &&
+                !hasRecoveredTemporalPostSource &&
                 EndfieldEndminfVisualCompatibilityClock.Requested &&
                 SystemInfo.IsFormatSupported(
                     GraphicsFormat.R16G16B16A16_SFloat,
                     FormatUsage.Render);
             RenderTargetIdentifier recoveredPostSource =
-                new RenderTargetIdentifier(CameraColorId);
+                hasRecoveredTemporalPostSource
+                    ? new RenderTargetIdentifier(
+                        recoveredTemporalPostSourceId)
+                    : new RenderTargetIdentifier(CameraColorId);
             RenderTextureDescriptor recoveredPostSourceDescriptor =
-                recoveredSceneColorDescriptor;
+                hasRecoveredTemporalPostSource
+                    ? recoveredTemporalPostSourceDescriptor
+                    : recoveredSceneColorDescriptor;
             LastRecoveredEndminfPostSourceGraphicsFormat =
                 recoveredPostSourceDescriptor.graphicsFormat;
             if (useRecoveredEndminfRgba16PostSource)
@@ -3327,6 +3408,17 @@ namespace EndfieldGraphShaderLab
                     RecoveredEndminfPostSourceId);
                 LastRecoveredEndminfPostSourceGraphicsFormat =
                     recoveredPostSourceDescriptor.graphicsFormat;
+            }
+            if (useRecoveredPostSemantics)
+            {
+                // This checkpoint owns the pure temporal/DLAA handoff. Keep it
+                // before Endminf's separate opening-strip distortion so the
+                // diagnostic name and captured surface have one exact owner.
+                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
+                    commandBuffer,
+                    EndfieldRecoveredPostStageDiagnostic.AfterTemporal,
+                    recoveredPostSource,
+                    recoveredPostSourceDescriptor);
             }
             EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
                 openingStripState = default;
@@ -3386,14 +3478,6 @@ namespace EndfieldGraphShaderLab
                         "compatibility response remains downstream.");
                     loggedRecoveredEndminfOpeningStrip = true;
                 }
-            }
-            if (useRecoveredPostSemantics)
-            {
-                EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
-                    commandBuffer,
-                    EndfieldRecoveredPostStageDiagnostic.AfterTemporal,
-                    recoveredPostSource,
-                    recoveredPostSourceDescriptor);
             }
             if (!useRecoveredPostSemantics)
             {
@@ -3541,6 +3625,15 @@ namespace EndfieldGraphShaderLab
                 useRecoveredPostSemantics &&
                 recoveredColorGradingLut != null &&
                 recoveredColorGradingLut.EnqueueBuild(commandBuffer);
+            Texture exactEndminfLut = null;
+            if (useRecoveredPostSemantics &&
+                recoveredEndminfUberExactRuntime.Requested &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.EnsureExactEndminfTexture())
+            {
+                exactEndminfLut =
+                    recoveredColorGradingLut.ExactEndminfTexture;
+            }
             // In the recovered live path _ExposureParams.x was used to divide
             // character HDR during ForwardLit. The shipped Uber multiplies the
             // same current camera value back before the authored post exposure
@@ -3631,12 +3724,11 @@ namespace EndfieldGraphShaderLab
                 bool exactDeferredUber =
                     useRecoveredLinearUnormFinalTarget &&
                     useRecoveredPostSemantics &&
-                    recoveredLutReady &&
                     recoveredEndminfUberExactRuntime.Enqueue(
                         commandBuffer,
                         recoveredPostSource,
                         new RenderTargetIdentifier(bloomOutputId),
-                        recoveredColorGradingLut.Texture,
+                        exactEndminfLut,
                         deferredPostTarget,
                         width,
                         height,
@@ -3655,8 +3747,15 @@ namespace EndfieldGraphShaderLab
                 }
                 LastRecoveredEndminfExactUberSubmitted = exactDeferredUber;
                 if (LastRecoveredEndminfExactUberRequested && !exactDeferredUber)
+                {
                     LastRecoveredEndminfExactUberFailure =
-                        recoveredEndminfUberExactRuntime.Failure;
+                        exactEndminfLut == null &&
+                        recoveredColorGradingLut != null &&
+                        !string.IsNullOrEmpty(
+                            recoveredColorGradingLut.ExactEndminfFailure)
+                        ? recoveredColorGradingLut.ExactEndminfFailure
+                        : recoveredEndminfUberExactRuntime.Failure;
+                }
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
                     commandBuffer,
                     EndfieldRecoveredPostStageDiagnostic.FinalUber,
@@ -3693,12 +3792,11 @@ namespace EndfieldGraphShaderLab
                     RecoveredFinalDisplayId);
                 bool exactDisplayUber =
                     useRecoveredPostSemantics &&
-                    recoveredLutReady &&
                     recoveredEndminfUberExactRuntime.Enqueue(
                         commandBuffer,
                         recoveredPostSource,
                         new RenderTargetIdentifier(bloomOutputId),
-                        recoveredColorGradingLut.Texture,
+                        exactEndminfLut,
                         finalDisplayTarget,
                         width,
                         height,
@@ -3717,8 +3815,15 @@ namespace EndfieldGraphShaderLab
                 }
                 LastRecoveredEndminfExactUberSubmitted = exactDisplayUber;
                 if (LastRecoveredEndminfExactUberRequested && !exactDisplayUber)
+                {
                     LastRecoveredEndminfExactUberFailure =
-                        recoveredEndminfUberExactRuntime.Failure;
+                        exactEndminfLut == null &&
+                        recoveredColorGradingLut != null &&
+                        !string.IsNullOrEmpty(
+                            recoveredColorGradingLut.ExactEndminfFailure)
+                        ? recoveredColorGradingLut.ExactEndminfFailure
+                        : recoveredEndminfUberExactRuntime.Failure;
+                }
                 EndfieldRecoveredPostStageDiagnostic.EnqueueStageIfActive(
                     commandBuffer,
                     EndfieldRecoveredPostStageDiagnostic.FinalUber,
@@ -3788,6 +3893,10 @@ namespace EndfieldGraphShaderLab
             if (useRecoveredEndminfOpeningStrip)
                 commandBuffer.ReleaseTemporaryRT(
                     RecoveredEndminfOpeningStripSourceId);
+            if (hasRecoveredTemporalPostSource &&
+                releaseRecoveredTemporalPostSource)
+                commandBuffer.ReleaseTemporaryRT(
+                    recoveredTemporalPostSourceId);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
@@ -3984,15 +4093,26 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private void EnqueueRecoveredEndminfTemporalResolve(
+        private bool EnqueueRecoveredEndminfTemporalResolve(
             CommandBuffer commandBuffer,
             Camera camera,
             int width,
             int height,
             RenderTexture recoveredPrimarySceneDepth,
             RenderTexture recoveredSceneMV,
-            RenderTextureDescriptor sceneDescriptor)
+            out int temporalPostSourceId,
+            out RenderTextureDescriptor temporalPostSourceDescriptor,
+            out bool releaseTemporalPostSource)
         {
+            temporalPostSourceId = 0;
+            temporalPostSourceDescriptor = default;
+            releaseTemporalPostSource = false;
+            LastRecoveredUnityPublicNgxProxyRequested =
+                recoveredUnityPublicNgxProxy != null &&
+                recoveredUnityPublicNgxProxy.Requested;
+            LastRecoveredUnityPublicNgxProxySubmitted = false;
+            LastRecoveredUnityPublicNgxProxyValidated = false;
+            LastRecoveredUnityPublicNgxProxyFailure = string.Empty;
             if (recoveredTemporalMaterial == null ||
                 System.String.Equals(
                     System.Environment.GetEnvironmentVariable(
@@ -4001,7 +4121,40 @@ namespace EndfieldGraphShaderLab
                     System.StringComparison.Ordinal) ||
                 !EndfieldEndminfVisualCompatibilityClock.Requested)
             {
-                return;
+                return false;
+            }
+
+            if (LastRecoveredUnityPublicNgxProxyRequested)
+            {
+                LastRecoveredUnityPublicNgxProxySubmitted =
+                    recoveredUnityPublicNgxProxy.TryEnqueue(
+                        commandBuffer,
+                        new RenderTargetIdentifier(CameraColorId),
+                        recoveredPrimarySceneDepth,
+                        recoveredSceneMV,
+                        width,
+                        height);
+                if (!LastRecoveredUnityPublicNgxProxySubmitted)
+                {
+                    LastRecoveredUnityPublicNgxProxyFailure =
+                        recoveredUnityPublicNgxProxy.Failure;
+                    Debug.LogWarning(
+                        "UnityPublicNgxProxy failed closed: " +
+                        LastRecoveredUnityPublicNgxProxyFailure + ".");
+                }
+                if (!LastRecoveredUnityPublicNgxProxySubmitted)
+                    return false;
+                if (!recoveredUnityPublicNgxProxy.TryGetOutputDescriptor(
+                        out temporalPostSourceDescriptor))
+                {
+                    LastRecoveredUnityPublicNgxProxySubmitted = false;
+                    LastRecoveredUnityPublicNgxProxyFailure =
+                        "public DLSS output descriptor is unavailable or inexact";
+                    return false;
+                }
+                temporalPostSourceId =
+                    EndfieldRecoveredUnityPublicNgxProxy.OutputTextureId;
+                return true;
             }
 
             bool temporalResolveActive =
@@ -4020,26 +4173,11 @@ namespace EndfieldGraphShaderLab
                 recoveredTemporalDilationMaterial != null &&
                 recoveredPrimarySceneDepth != null &&
                 recoveredSceneMV != null;
-            bool combinedVelocityProduced =
-                recoveredCombinedVelocityProducer.TryEnqueue(
-                    commandBuffer,
-                    recoveredSceneMV,
-                    width,
-                    height,
-                    RecoveredCombinedVelocityId,
-                    out string combinedVelocityFailure);
-            if (!combinedVelocityProduced &&
-                !string.IsNullOrEmpty(combinedVelocityFailure) &&
-                !loggedRecoveredCombinedVelocityFailure)
-            {
-                Debug.LogWarning(
-                    "Recovered DLSS velocity combine failed closed: " +
-                    combinedVelocityFailure + ".");
-                loggedRecoveredCombinedVelocityFailure = true;
-            }
             bool invalidHistory = state.history == null ||
                 state.history.width != width ||
                 state.history.height != height ||
+                state.history.graphicsFormat !=
+                    GraphicsFormat.R16G16B16A16_SFloat ||
                 (canRunDilation &&
                     (state.historyDilatedDepth == null ||
                      state.historyDilatedDepth.width != width ||
@@ -4053,14 +4191,17 @@ namespace EndfieldGraphShaderLab
             if (invalidHistory)
             {
                 ReleaseRecoveredTemporalHistory(state);
-                RenderTextureDescriptor historyDescriptor = sceneDescriptor;
-                historyDescriptor.width = width;
-                historyDescriptor.height = height;
-                historyDescriptor.depthBufferBits = 0;
-                historyDescriptor.depthStencilFormat = GraphicsFormat.None;
-                historyDescriptor.msaaSamples = 1;
-                historyDescriptor.useMipMap = false;
-                historyDescriptor.autoGenerateMips = false;
+                var historyDescriptor = new RenderTextureDescriptor(
+                    width,
+                    height)
+                {
+                    graphicsFormat = GraphicsFormat.R16G16B16A16_SFloat,
+                    depthStencilFormat = GraphicsFormat.None,
+                    msaaSamples = 1,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    sRGB = false
+                };
                 state.history = new RenderTexture(historyDescriptor)
                 {
                     name = "Endfield Recovered TAAU History " + camera.name,
@@ -4069,7 +4210,7 @@ namespace EndfieldGraphShaderLab
                     hideFlags = HideFlags.HideAndDontSave
                 };
                 state.history.Create();
-                commandBuffer.CopyTexture(
+                commandBuffer.Blit(
                     new RenderTargetIdentifier(CameraColorId),
                     state.history);
 
@@ -4204,14 +4345,17 @@ namespace EndfieldGraphShaderLab
             if (!invalidHistory && temporalResolveActive)
             {
 
-                RenderTextureDescriptor resolveDescriptor = sceneDescriptor;
-                resolveDescriptor.width = width;
-                resolveDescriptor.height = height;
-                resolveDescriptor.depthBufferBits = 0;
-                resolveDescriptor.depthStencilFormat = GraphicsFormat.None;
-                resolveDescriptor.msaaSamples = 1;
-                resolveDescriptor.useMipMap = false;
-                resolveDescriptor.autoGenerateMips = false;
+                var resolveDescriptor = new RenderTextureDescriptor(
+                    width,
+                    height)
+                {
+                    graphicsFormat = GraphicsFormat.R16G16B16A16_SFloat,
+                    depthStencilFormat = GraphicsFormat.None,
+                    msaaSamples = 1,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    sRGB = false
+                };
                 commandBuffer.GetTemporaryRT(
                     RecoveredTemporalResolveId,
                     resolveDescriptor,
@@ -4288,22 +4432,29 @@ namespace EndfieldGraphShaderLab
                     commandBuffer.CopyTexture(
                         new RenderTargetIdentifier(RecoveredTemporalResolveId),
                         state.history);
+                    commandBuffer.GetTemporaryRT(
+                        RecoveredTemporalPresentationId,
+                        resolveDescriptor,
+                        FilterMode.Bilinear);
                     commandBuffer.Blit(
                         RecoveredTemporalResolveId,
-                        CameraColorId,
+                        RecoveredTemporalPresentationId,
                         recoveredTemporalMaterial,
                         1);
+                    commandBuffer.ReleaseTemporaryRT(
+                        RecoveredTemporalResolveId);
+                    temporalPostSourceId =
+                        RecoveredTemporalPresentationId;
                 }
                 else
                 {
                     commandBuffer.CopyTexture(
                         new RenderTargetIdentifier(RecoveredTemporalResolveId),
-                        new RenderTargetIdentifier(CameraColorId));
-                    commandBuffer.CopyTexture(
-                        new RenderTargetIdentifier(RecoveredTemporalResolveId),
                         state.history);
+                    temporalPostSourceId = RecoveredTemporalResolveId;
                 }
-                commandBuffer.ReleaseTemporaryRT(RecoveredTemporalResolveId);
+                temporalPostSourceDescriptor = resolveDescriptor;
+                releaseTemporalPostSource = true;
 
                 if (!loggedRecoveredTemporalResolve)
                 {
@@ -4324,7 +4475,7 @@ namespace EndfieldGraphShaderLab
                 // effect clock. Keep the latest pre-selection scene color so
                 // the first visible actor frame can consume the immediately
                 // preceding blank model-swap frame observed in retail.
-                commandBuffer.CopyTexture(
+                commandBuffer.Blit(
                     new RenderTargetIdentifier(CameraColorId),
                     state.history);
             }
@@ -4361,8 +4512,7 @@ namespace EndfieldGraphShaderLab
             state.hasPreviousNonJitteredViewProjection = true;
             state.lastElapsed = temporalResolveActive ? elapsed : float.NaN;
             state.lastFrame = Time.frameCount;
-            if (combinedVelocityProduced)
-                commandBuffer.ReleaseTemporaryRT(RecoveredCombinedVelocityId);
+            return temporalPostSourceId != 0;
         }
 
         private static void ReleaseRecoveredTemporalHistory(

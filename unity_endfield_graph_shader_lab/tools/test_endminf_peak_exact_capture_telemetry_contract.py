@@ -1,3 +1,5 @@
+import hashlib
+import json
 import unittest
 from pathlib import Path
 
@@ -9,12 +11,30 @@ CAPTURE = ROOT / (
 )
 RUNTIME_ROOT = ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
 OPEN_WRAPPER = ROOT / "open_character_recovery_lab.bat"
+EXACT_LUT_RUNTIME = RUNTIME_ROOT / "EndfieldRecoveredCharInfoLut.cs"
+EXACT_LUT_BYTES = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Resources/EndfieldCharInfo/"
+    "EndminfCharInfoLut1024x32Rgba16f.bytes"
+)
+EXACT_LUT_CONTRACT = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/"
+    "endminf_charinfo_lut_contract.json"
+)
 
 
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v8", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v10", source)
+        for field in (
+            "exactEndminfUberRequested",
+            "exactEndminfUberSubmitted",
+            "exactEndminfUberValidated",
+            "exactEndminfUberFailure",
+            "observedExactEndminfUberSubmitted",
+            "observedExactEndminfUberValidated",
+        ):
+            self.assertGreaterEqual(source.count(field), 2, field)
         for material in ("M18", "M21", "M28"):
             for state in ("Requested", "Active", "Submitted", "Validated", "Failure"):
                 field = f"endminf{material}Exact{state}"
@@ -83,6 +103,78 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         start = source.index("CanonicalVideoDefaultFlags")
         defaults = source[start:source.index("};", start)]
         self.assertIn("ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT", defaults)
+
+    def test_public_ngx_proxy_is_reported_and_never_a_canonical_default(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        start = source.index("CanonicalVideoDefaultFlags")
+        defaults = source[start:source.index("};", start)]
+        self.assertNotIn("ENDFIELD_RECOVERED_UNITY_PUBLIC_NGX_PROXY", defaults)
+        for field in (
+            "unityPublicNgxProxyRequested",
+            "unityPublicNgxProxySubmitted",
+            "unityPublicNgxProxyValidated",
+            "unityPublicNgxProxyFailure",
+            "observedUnityPublicNgxProxySubmitted",
+            "observedUnityPublicNgxProxyValidated",
+        ):
+            self.assertGreaterEqual(source.count(field), 2, field)
+
+    def test_exact_uber_validates_after_readback_before_telemetry(self) -> None:
+        capture = CAPTURE.read_text(encoding="utf-8")
+        pipeline = (
+            RUNTIME_ROOT / "HGCompatRenderPipeline.cs"
+        ).read_text(encoding="utf-8")
+        runtime = (
+            RUNTIME_ROOT / "EndfieldRecoveredEndminfUberExactRuntime.cs"
+        ).read_text(encoding="utf-8")
+        render = capture.index("Color32[] pixels = Render(camera)")
+        validation = capture.index(
+            "ValidateRecoveredEndminfExactUberAfterSynchronizedRender",
+            render,
+        )
+        frame_row = capture.index("Frames.Add(new FrameRow", validation)
+        self.assertLess(render, validation)
+        self.assertLess(validation, frame_row)
+        self.assertIn("ValidatePendingAfterSynchronizedRender", runtime)
+        self.assertIn(
+            "LastRecoveredEndminfExactUberValidated = valid",
+            pipeline,
+        )
+        self.assertIn(
+            "observedExactEndminfUberSubmitted &&\n"
+            "                 observedExactEndminfUberValidated",
+            capture,
+        )
+
+    def test_exact_charinfo_lut_bytes_and_orientation_contract(self) -> None:
+        payload = EXACT_LUT_BYTES.read_bytes()
+        contract = json.loads(EXACT_LUT_CONTRACT.read_text(encoding="utf-8"))
+        self.assertEqual(len(payload), 1024 * 32 * 8)
+        self.assertEqual(
+            hashlib.sha256(payload).hexdigest(),
+            "717c1d483662c00abe55e1c56a9d024f45e5c84c430ed9dd2854cb386f372482",
+        )
+        self.assertEqual(contract["graphicsFormat"], "R16G16B16A16_SFloat")
+        self.assertEqual(
+            contract["orientation"],
+            "no flip; offset=((greenRow*1024)+(blueSlice*32)+redIndex)*8",
+        )
+        for sentinel in contract["sentinels"]:
+            offset = (sentinel["y"] * 1024 + sentinel["x"]) * 8
+            self.assertEqual(payload[offset : offset + 8].hex(), sentinel["hex"])
+
+    def test_exact_uber_uses_captured_lut_and_compatibility_keeps_builder(self) -> None:
+        runtime = EXACT_LUT_RUNTIME.read_text(encoding="utf-8")
+        pipeline = (
+            RUNTIME_ROOT / "HGCompatRenderPipeline.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("GraphicsFormat.R16G16B16A16_SFloat", runtime)
+        self.assertIn("SetPixelData<byte>(payload, 0)", runtime)
+        self.assertIn("Apply(false, true)", runtime)
+        self.assertIn("HasSentinel(payload, 1023, 31", runtime)
+        self.assertIn("recoveredColorGradingLut.EnqueueBuild(commandBuffer)", pipeline)
+        self.assertIn("recoveredColorGradingLut.ExactEndminfTexture", pipeline)
+        self.assertGreaterEqual(pipeline.count("exactEndminfLut,"), 2)
 
 
 if __name__ == "__main__":

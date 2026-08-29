@@ -337,6 +337,16 @@ complete frame without a client fault.
   scale `(1,1)`, but it cannot select Streamline DLAA mode 6, model presets, or
   the game's constants/tag schedule. Any future experiment must be labeled
   `UnityPublicNgxProxy`, stay opt-in, and never count as parity evidence.
+- Full-profile capture `20260829T024828Z` closes the retained Endminf Uber
+  `t2` resource itself: object `120495531488` is a stable 1024x32 linear
+  `R16G16B16A16_SFloat` CharInfo LUT with no row or channel transform. Its raw
+  payload is retained behind a byte-length, SHA-256, and five-sentinel gate and
+  is used only by the exact Endminf Uber path; compatibility rendering keeps
+  the procedural LUT. The session is not complete temporal evidence: 36
+  cadence gaps remain, it predates the current Streamline observer, and its
+  `R11G11B10_FLOAT` bloom input was not collected. A replacement bounded
+  capture must close those three gates plus a unique peak-frame VS/PS constant
+  packet before the peak Uber header is refreshed.
 - Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
   mode/effective-power packing, signed/clamped post-projection center transform,
   source-only warped taps, and separate bloom sampling order are source-backed.

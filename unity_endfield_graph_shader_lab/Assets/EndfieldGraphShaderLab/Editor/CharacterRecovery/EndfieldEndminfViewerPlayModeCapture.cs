@@ -175,7 +175,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v8";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v10";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -220,7 +220,12 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedEndminfBloomR11;
             public bool exactEndminfUberRequested;
             public bool observedExactEndminfUberSubmitted;
+            public bool observedExactEndminfUberValidated;
             public string exactEndminfUberFailure;
+            public bool unityPublicNgxProxyRequested;
+            public bool observedUnityPublicNgxProxySubmitted;
+            public bool observedUnityPublicNgxProxyValidated;
+            public string unityPublicNgxProxyFailure;
             public bool observedPreGBufferDepthOwnerReady;
             public bool observedCanonicalCharacterPreGBufferReady;
             public bool deferredExactConsumerRequested;
@@ -251,7 +256,12 @@ namespace EndfieldGraphShaderLabEditor
             public string endminfBloomGraphicsFormat;
             public bool exactEndminfUberRequested;
             public bool exactEndminfUberSubmitted;
+            public bool exactEndminfUberValidated;
             public string exactEndminfUberFailure;
+            public bool unityPublicNgxProxyRequested;
+            public bool unityPublicNgxProxySubmitted;
+            public bool unityPublicNgxProxyValidated;
+            public string unityPublicNgxProxyFailure;
             public bool endminfOpeningStripExactRequested;
             public bool endminfOpeningStripExactActive;
             public bool endminfOpeningStripExactSubmitted;
@@ -1026,8 +1036,37 @@ namespace EndfieldGraphShaderLabEditor
             Color32[] pixels = Render(camera);
             // ReadPixels in Render synchronizes this focused D3D11 capture, so
             // the render-thread plugin callback must be observable here. Do
-            // not accept a submitted event as proof that the exact M13 packet
-            // actually drew.
+            // not accept a submitted event as proof that an exact packet drew.
+            if (HGCompatRenderPipeline.LastRecoveredEndminfExactUberRequested &&
+                HGCompatRenderPipeline.LastRecoveredEndminfExactUberSubmitted &&
+                !HGCompatRenderPipeline
+                    .ValidateRecoveredEndminfExactUberAfterSynchronizedRender(
+                        out string exactUberValidationFailure))
+            {
+                throw new InvalidOperationException(
+                    "Exact Endminf Uber synchronized validation failed: " +
+                    exactUberValidationFailure);
+            }
+            if (HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyRequested)
+            {
+                if (!HGCompatRenderPipeline
+                        .LastRecoveredUnityPublicNgxProxySubmitted)
+                {
+                    throw new InvalidOperationException(
+                        "UnityPublicNgxProxy submission failed: " +
+                        HGCompatRenderPipeline
+                            .LastRecoveredUnityPublicNgxProxyFailure);
+                }
+                if (!HGCompatRenderPipeline
+                        .ValidateRecoveredUnityPublicNgxProxyAfterSynchronizedRender(
+                            out string ngxValidationFailure))
+                {
+                    throw new InvalidOperationException(
+                        "UnityPublicNgxProxy synchronized validation failed: " +
+                        ngxValidationFailure);
+                }
+            }
             if (EndfieldRecoveredEndminfM18PeakExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM18PeakExactRuntime.HasPendingValidation &&
                 !EndfieldRecoveredEndminfM18PeakExactRuntime
@@ -1254,8 +1293,18 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberRequested,
                 exactEndminfUberSubmitted = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberSubmitted,
+                exactEndminfUberValidated = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactUberValidated,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
+                unityPublicNgxProxyRequested = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyRequested,
+                unityPublicNgxProxySubmitted = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxySubmitted,
+                unityPublicNgxProxyValidated = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyValidated,
+                unityPublicNgxProxyFailure = HGCompatRenderPipeline
+                    .LastRecoveredUnityPublicNgxProxyFailure,
                 endminfOpeningStripExactRequested =
                     EndfieldRecoveredEndminfOpeningStripExactRuntime.Requested,
                 endminfOpeningStripExactActive =
@@ -1720,6 +1769,9 @@ namespace EndfieldGraphShaderLabEditor
             bool observedExactEndminfUberSubmitted =
                 Frames.Count > 0 && Frames.Any(
                     value => value.exactEndminfUberSubmitted);
+            bool observedExactEndminfUberValidated =
+                Frames.Count > 0 && Frames.Any(
+                    value => value.exactEndminfUberValidated);
             // Capture 20260827T183054Z frame 1818 is the sole certified Uber
             // packet, at overview phase 4.350000 s. The runtime assembly keeps
             // its transport internal, so mirror only this evidence constant in
@@ -1732,7 +1784,8 @@ namespace EndfieldGraphShaderLabEditor
             bool exactEndminfUberRequirementReady =
                 !exactEndminfUberRequested ||
                 !capturedUberPhaseIncluded ||
-                observedExactEndminfUberSubmitted;
+                (observedExactEndminfUberSubmitted &&
+                 observedExactEndminfUberValidated);
             string exactEndminfUberFailure = Frames
                 .Select(value => value.exactEndminfUberFailure)
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
@@ -1740,17 +1793,44 @@ namespace EndfieldGraphShaderLabEditor
             if (!exactEndminfUberRequirementReady)
             {
                 missingObservations.Add(
-                    "exact Endminf Uber native submission" +
+                    "exact Endminf Uber native submission and synchronized validation" +
                     (string.IsNullOrWhiteSpace(exactEndminfUberFailure)
                         ? string.Empty
                         : " (" + exactEndminfUberFailure + ")"));
+            }
+            bool unityPublicNgxProxyRequested = Frames.Any(
+                value => value.unityPublicNgxProxyRequested);
+            bool observedUnityPublicNgxProxySubmitted =
+                unityPublicNgxProxyRequested && Frames
+                    .Where(value => value.unityPublicNgxProxyRequested)
+                    .All(value => value.unityPublicNgxProxySubmitted);
+            bool observedUnityPublicNgxProxyValidated =
+                unityPublicNgxProxyRequested && Frames
+                    .Where(value => value.unityPublicNgxProxyRequested)
+                    .All(value => value.unityPublicNgxProxyValidated);
+            string unityPublicNgxProxyFailure = Frames
+                .Select(value => value.unityPublicNgxProxyFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            bool unityPublicNgxProxyRequirementReady =
+                !unityPublicNgxProxyRequested ||
+                (observedUnityPublicNgxProxySubmitted &&
+                 observedUnityPublicNgxProxyValidated);
+            if (!unityPublicNgxProxyRequirementReady)
+            {
+                missingObservations.Add(
+                    "UnityPublicNgxProxy submission and post-execution debug validation" +
+                    (string.IsNullOrWhiteSpace(unityPublicNgxProxyFailure)
+                        ? string.Empty
+                        : " (" + unityPublicNgxProxyFailure + ")"));
             }
             bool requiredCaptureContractReady =
                 charInfoBackgroundIncluded &&
                 backgroundPortraitIncluded &&
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
-                exactEndminfUberRequirementReady;
+                exactEndminfUberRequirementReady &&
+                unityPublicNgxProxyRequirementReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             Report report = new Report {
@@ -1812,7 +1892,15 @@ namespace EndfieldGraphShaderLabEditor
                 exactEndminfUberRequested = exactEndminfUberRequested,
                 observedExactEndminfUberSubmitted =
                     observedExactEndminfUberSubmitted,
+                observedExactEndminfUberValidated =
+                    observedExactEndminfUberValidated,
                 exactEndminfUberFailure = exactEndminfUberFailure,
+                unityPublicNgxProxyRequested = unityPublicNgxProxyRequested,
+                observedUnityPublicNgxProxySubmitted =
+                    observedUnityPublicNgxProxySubmitted,
+                observedUnityPublicNgxProxyValidated =
+                    observedUnityPublicNgxProxyValidated,
+                unityPublicNgxProxyFailure = unityPublicNgxProxyFailure,
                 observedPreGBufferDepthOwnerReady =
                     observedPreGBufferDepthOwnerReady,
                 observedCanonicalCharacterPreGBufferReady =
