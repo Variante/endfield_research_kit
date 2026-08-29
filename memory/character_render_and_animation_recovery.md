@@ -2748,6 +2748,15 @@ fail-closed diagnostic replay requires matching external b0/b1 and labels the
 missing R11 t1 as zero; it localizes the remaining bloom and downstream-UI
 residual without promoting the incomplete session to sequence evidence.
 
+A seven-frame frame-local replay spanning ordinary/peak/ordinary packets keeps
+the central actor/effect crop closely aligned with the corresponding retail
+backbuffers even while t1 remains zero. The peak residual rises only modestly
+relative to its ordinary neighbors, so missing Uber bloom is a bounded parity
+gap rather than an explanation for the broad Unity peak mismatch. Keep exact
+t1 as a required final-evidence input, but prioritize differences already
+present in Unity's pre-Uber temporal scene color, actor/VFX composition, and
+equal-queue owner ordering.
+
 With M13/M18/M20/M21/M28/M31 held constant, the earlier three-frame peak-only
 exact-Uber A/B changes mean actor/effect ROI MAE from 27.5229/35.6204 to
 27.2709/34.9728. Temporal-delta MAE changes from 32.1515 to 32.6694 because the
