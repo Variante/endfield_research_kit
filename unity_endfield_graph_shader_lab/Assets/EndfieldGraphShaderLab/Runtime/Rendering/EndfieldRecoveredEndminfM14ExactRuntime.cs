@@ -219,6 +219,12 @@ namespace EndfieldGraphShaderLab
                 return Fail("the exact M14 D3D11 texture pointers are null");
             try
             {
+                if (sceneColor.descriptor.width <= 0 ||
+                    sceneColor.descriptor.height <= 0 ||
+                    Native.SetOutputDimensions(
+                        (uint)sceneColor.descriptor.width,
+                        (uint)sceneColor.descriptor.height) != 1)
+                    return Fail("the native M14 output-size gate rejected its input");
                 if (Native.SetM14TextureResources(depthPointer, mainPointer) != 1)
                     return Fail("the native M14 texture gate rejected its inputs");
             }
@@ -297,6 +303,12 @@ namespace EndfieldGraphShaderLab
                         unchecked((uint)result).ToString("x8");
                     return false;
                 }
+                if (Native.GetScreenSizePatchStatus() != 1)
+                {
+                    validationFailure =
+                        "native M14 screen constants were not patched";
+                    return false;
+                }
                 return true;
             }
             catch (Exception exception)
@@ -337,6 +349,14 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcSetM14PacketIndex")]
             internal static extern uint SetM14PacketIndex(uint packetIndex);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM14OutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM14ScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM14PacketCount")]

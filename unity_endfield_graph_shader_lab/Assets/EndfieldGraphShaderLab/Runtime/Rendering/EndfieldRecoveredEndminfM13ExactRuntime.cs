@@ -178,7 +178,13 @@ namespace EndfieldGraphShaderLab
                     nearestDistance = distance;
                 }
             }
-            return nearest;
+            // The first retained packet is transport-valid but replaces the
+            // authored pre-peak shell too early. Against the correctly
+            // aligned clean 60 Hz recording it regresses the effect ROI,
+            // while packets 1 and 2 improve the actual burst and gas-edge
+            // checkpoints. Keep packet 0 available in generated/native
+            // diagnostics without admitting it in the maintained replay.
+            return nearest == 0 ? -1 : nearest;
         }
 
         internal static bool Render(
@@ -196,6 +202,20 @@ namespace EndfieldGraphShaderLab
             {
                 Shader.SetGlobalFloat(ReadyId, 1.0f);
                 return true;
+            }
+            try
+            {
+                if (sceneColor.descriptor.width <= 0 ||
+                    sceneColor.descriptor.height <= 0 ||
+                    Native.SetOutputDimensions(
+                        (uint)sceneColor.descriptor.width,
+                        (uint)sceneColor.descriptor.height) != 1)
+                    return Fail("the native M13 output-size gate rejected its input");
+            }
+            catch (Exception exception)
+            {
+                return Fail("the native M13 output-size gate failed: " +
+                    exception.Message);
             }
             var command = new CommandBuffer
             {
@@ -265,6 +285,12 @@ namespace EndfieldGraphShaderLab
                         unchecked((uint)result).ToString("x8");
                     return false;
                 }
+                if (Native.GetScreenSizePatchStatus() != 1)
+                {
+                    validationFailure =
+                        "native M13 screen constants were not patched";
+                    return false;
+                }
                 return true;
             }
             catch (Exception exception)
@@ -307,6 +333,12 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcSetM13PacketIndex")]
             internal static extern uint SetM13PacketIndex(uint packetIndex);
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM13OutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM13ScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM13DrawCount")]

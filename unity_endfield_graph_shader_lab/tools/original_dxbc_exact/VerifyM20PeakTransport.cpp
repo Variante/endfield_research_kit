@@ -32,6 +32,7 @@ int main(int argc, char** argv)
 
     using GetEvent = void* (*)();
     using SetDepth = std::uint32_t (*)(void*);
+    using SetDimensions = std::uint32_t (*)(std::uint32_t, std::uint32_t);
     using Reset = void (*)();
     using GetUint = std::uint32_t (*)();
     using GetInt = std::int32_t (*)();
@@ -39,6 +40,10 @@ int main(int argc, char** argv)
         module, "EndfieldOriginalDxbcGetM20PeakRenderEventFunc");
     const SetDepth setDepth = RequiredExport<SetDepth>(
         module, "EndfieldOriginalDxbcSetM20PeakDepthResource");
+    const SetDimensions setDimensions = RequiredExport<SetDimensions>(
+        module, "EndfieldOriginalDxbcSetM20PeakOutputDimensions");
+    const GetUint patchStatus = RequiredExport<GetUint>(
+        module, "EndfieldOriginalDxbcGetM20PeakScreenSizePatchStatus");
     const Reset reset = RequiredExport<Reset>(
         module, "EndfieldOriginalDxbcResetM20PeakRuntimeState");
     const GetUint drawCount = RequiredExport<GetUint>(
@@ -47,7 +52,8 @@ int main(int argc, char** argv)
         module, "EndfieldOriginalDxbcGetM20PeakFailureCount");
     const GetInt lastResult = RequiredExport<GetInt>(
         module, "EndfieldOriginalDxbcGetM20PeakLastResult");
-    if (getEvent == nullptr || setDepth == nullptr || reset == nullptr ||
+    if (getEvent == nullptr || setDepth == nullptr || setDimensions == nullptr ||
+        patchStatus == nullptr || reset == nullptr ||
         drawCount == nullptr || failureCount == nullptr || lastResult == nullptr)
     {
         FreeLibrary(module);
@@ -56,12 +62,15 @@ int main(int argc, char** argv)
 
     reset();
     if (getEvent() == nullptr || setDepth(nullptr) != 0u ||
+        setDimensions(0u, 1080u) != 0u ||
+        setDimensions(1920u, 0u) != 0u ||
+        setDimensions(1920u, 1080u) != 1u || patchStatus() != 0u ||
         drawCount() != 0u || failureCount() != 0u || lastResult() != 0)
     {
         FreeLibrary(module);
         return 5;
     }
-    std::printf("exports=6 initial_state=clean null_depth_rejected=1\n");
+    std::printf("exports=8 initial_state=clean null_depth_rejected=1 output_1920x1080_accepted=1\n");
     FreeLibrary(module);
     return 0;
 }

@@ -119,6 +119,12 @@ namespace EndfieldGraphShaderLab
             {
                 if (Native.SetDepthResource(depthPointer) != 1)
                     return Fail("the native M20 depth gate rejected its input");
+                if (sceneColor.descriptor.width <= 0 ||
+                    sceneColor.descriptor.height <= 0 ||
+                    Native.SetOutputDimensions(
+                        (uint)sceneColor.descriptor.width,
+                        (uint)sceneColor.descriptor.height) != 1)
+                    return Fail("the native M20 output-size gate rejected its input");
             }
             catch (Exception exception)
             {
@@ -168,6 +174,8 @@ namespace EndfieldGraphShaderLab
                         unchecked((uint)result).ToString("x8");
                     return Fail(validationFailure);
                 }
+                if (Native.GetScreenSizePatchStatus() != 1)
+                    return Fail("native M20 screen constants were not patched");
                 validatedThisFrame = true;
                 if (!loggedValidation)
                 {
@@ -232,6 +240,12 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcSetM20PeakDepthResource")]
             internal static extern uint SetDepthResource(IntPtr sceneDepth);
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM20PeakOutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM20PeakScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetM20PeakRuntimeState")]
             internal static extern void ResetRuntimeState();

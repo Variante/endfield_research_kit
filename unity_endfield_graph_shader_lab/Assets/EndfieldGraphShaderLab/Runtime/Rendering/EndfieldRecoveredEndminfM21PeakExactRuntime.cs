@@ -135,6 +135,20 @@ namespace EndfieldGraphShaderLab
                 return false;
             if (camera == null || sceneDepth == null || renderEvent == IntPtr.Zero)
                 return Fail("the exact M21 peak render resources are incomplete");
+            try
+            {
+                if (sceneColor.descriptor.width <= 0 ||
+                    sceneColor.descriptor.height <= 0 ||
+                    Native.SetOutputDimensions(
+                        (uint)sceneColor.descriptor.width,
+                        (uint)sceneColor.descriptor.height) != 1)
+                    return Fail("the native M21 output-size gate rejected its input");
+            }
+            catch (Exception exception)
+            {
+                return Fail("the native M21 output-size gate failed: " +
+                    exception.Message);
+            }
             var command = new CommandBuffer
             {
                 name = "Recovered exact Endminf M21 stone-shell draw"
@@ -177,6 +191,8 @@ namespace EndfieldGraphShaderLab
                         unchecked((uint)result).ToString("x8");
                     return Fail(validationFailure);
                 }
+                if (Native.GetScreenSizePatchStatus() != 1)
+                    return Fail("native M21 screen constants were not patched");
                 if (!loggedValidation)
                 {
                     Debug.Log("Recovered exact Endminf M21 stone shell validated S_OK.");
@@ -213,6 +229,12 @@ namespace EndfieldGraphShaderLab
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM21PeakRenderEventFunc")]
             internal static extern IntPtr GetRenderEventFunc();
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM21PeakOutputDimensions")]
+            internal static extern uint SetOutputDimensions(uint width, uint height);
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcGetM21PeakScreenSizePatchStatus")]
+            internal static extern uint GetScreenSizePatchStatus();
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcResetM21PeakRuntimeState")]
             internal static extern void ResetRuntimeState();

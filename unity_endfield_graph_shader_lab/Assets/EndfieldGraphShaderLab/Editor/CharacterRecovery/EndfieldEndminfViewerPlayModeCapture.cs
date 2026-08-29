@@ -114,25 +114,15 @@ namespace EndfieldGraphShaderLabEditor
         // not let an ordinary batch render silently omit recovered owners.
         private static readonly string[] CanonicalVideoDefaultFlags =
         {
-            "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
-            SphereOutsidePresentationEnvironment,
-            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
-            // The retained native packets validate transport, but their
-            // unculled geometry grossly overdraws the clean-reference opening.
-            // Keep them explicit diagnostic-only; canonical output uses the
-            // measured, owner-masked horizontal-band reconstruction.
+            // The deferred/SphereOutside chain still depends on the explicitly
+            // content-invalid screen-shadow attachment diagnostic. Enabling it
+            // produces an upside-down body mask over the portrait and regresses
+            // the aligned peak substantially, so it is not presentation policy.
+            // M13 packets 1/2 measurably close the aligned burst shell. Packet
+            // 0 is rejected by the runtime; M14 remains diagnostic-only.
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",
             EndminfM21ExactEnvironment,
-            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
-            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
-            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
             "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
-            "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
-            "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
-            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
         };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
