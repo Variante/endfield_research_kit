@@ -36,6 +36,13 @@ def finite_vector(row: dict[str, Any], key: str, lanes: int) -> None:
                 for item in value), f"{key} contains a non-finite lane")
 
 
+def usable_quaternion(row: dict[str, Any], key: str) -> None:
+    finite_vector(row, key, 4)
+    value = row[key]
+    require(sum(float(item) * float(item) for item in value) > 1.0e-8,
+            f"{key} is degenerate")
+
+
 def load_last_window(capture: Path) -> dict[str, Any]:
     path = capture / "secondary-dynamics/windows.jsonl"
     require(path.is_file(), f"dynamics window file is absent: {path}")
@@ -84,6 +91,7 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
                   "alwaysTeamUpdateHookInstalled", "writeTransformHookInstalled",
                   "completeMasterJobHookInstalled", "addClothHookInstalled",
                   "removeClothHookInstalled", "addTransformHookInstalled",
+                  "removeTransformHookInstalled",
                   "quiescentCleanup",
                   "automaticTriggerCallbackQuiescent", "complete"):
         require(summary.get(field) is True,
@@ -154,24 +162,29 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             finite_vector(row, "localPosition", 3)
             finite_vector(row, "localRotation", 4)
             require(row.get("schema") ==
-                    "endfieldCapture.secondaryDynamicsTransform.v2",
-                    f"line {line_number} trajectory schema is not v2")
+                    "endfieldCapture.secondaryDynamicsTransform.v3",
+                    f"line {line_number} trajectory schema is not v3")
             require(row.get("registrationJoined") is True,
                     f"line {line_number} has no registration lifecycle join")
             require(row.get("effectivePoseReadable") is True,
                     f"line {line_number} has no effective post-job pose")
             finite_vector(row, "effectivePosition", 3)
-            finite_vector(row, "effectiveRotation", 4)
+            usable_quaternion(row, "effectiveRotation")
             finite_vector(row, "effectiveLocalPosition", 3)
-            finite_vector(row, "effectiveLocalRotation", 4)
+            usable_quaternion(row, "effectiveLocalRotation")
             for pointer in ("clothProcess", "clothComponent", "clothTransform",
                             "registeredTransform", "liveTransform"):
                 value = row.get(pointer)
                 require(isinstance(value, str) and value.startswith("0x") and
                         int(value, 16) != 0,
                         f"line {line_number} {pointer} is absent")
-            require(row["liveTransform"] == row["registeredTransform"],
-                    f"line {line_number} live Transform differs from registration")
+            cloth_instance_id = int(row.get("clothInstanceId", 0))
+            registered_instance_id = int(
+                row.get("registeredTransformInstanceId", 0))
+            live_instance_id = int(row.get("liveTransformInstanceId", 0))
+            require(cloth_instance_id != 0 and registered_instance_id != 0 and
+                    live_instance_id == registered_instance_id,
+                    f"line {line_number} live Transform identity differs from registration")
             require(int(row.get("registrationStart", -1)) ==
                     int(row.get("transformIndex", -2)) and
                     int(row.get("registrationLength", -1)) == 1,
@@ -235,13 +248,15 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
         cloth_processes = {row["clothProcess"] for row in candidate_rows}
         cloth_components = {row["clothComponent"] for row in candidate_rows}
         cloth_transforms = {row["clothTransform"] for row in candidate_rows}
+        cloth_instance_ids = {int(row["clothInstanceId"])
+                              for row in candidate_rows}
         require(len(cloth_processes) == len(cloth_components) ==
-                len(cloth_transforms) == 1,
+                len(cloth_transforms) == len(cloth_instance_ids) == 1,
                 f"{owner} registration identity changes across writebacks")
-        registered_by_index: dict[int, set[str]] = defaultdict(set)
+        registered_by_index: dict[int, set[int]] = defaultdict(set)
         for row in candidate_rows:
             registered_by_index[int(row["transformIndex"])].add(
-                row["registeredTransform"])
+                int(row["registeredTransformInstanceId"]))
         require(all(len(values) == 1 for values in registered_by_index.values()) and
                 len({next(iter(values)) for values in
                      registered_by_index.values()}) == length,
@@ -255,11 +270,13 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             "clothProcess": next(iter(cloth_processes)),
             "clothComponent": next(iter(cloth_components)),
             "clothTransform": next(iter(cloth_transforms)),
+            "clothInstanceId": next(iter(cloth_instance_ids)),
         }
 
     require(len({row["clothProcess"] for row in owners.values()}) == 4 and
             len({row["clothComponent"] for row in owners.values()}) == 4 and
-            len({row["clothTransform"] for row in owners.values()}) == 4,
+            len({row["clothTransform"] for row in owners.values()}) == 4 and
+            len({row["clothInstanceId"] for row in owners.values()}) == 4,
             "the four chunk candidates do not map to four distinct cloth owners")
 
     return {
