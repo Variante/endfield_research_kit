@@ -27,6 +27,8 @@ $uberShaderValidatorObject = Join-Path $buildRoot "ValidateEndminfUberShaders.ob
 $uberShaderValidatorExe = Join-Path $buildRoot "ValidateEndminfUberShaders.exe"
 $m20ValidatorObject = Join-Path $buildRoot "VerifyM20PeakTransport.obj"
 $m20ValidatorExe = Join-Path $buildRoot "VerifyM20PeakTransport.exe"
+$m31StateValidatorObject = Join-Path $buildRoot "VerifyM31FixedState.obj"
+$m31StateValidatorExe = Join-Path $buildRoot "VerifyM31FixedState.exe"
 $generatedHeader = Join-Path $buildRoot "EmbeddedDxbc.generated.h"
 $vertex = Join-Path $toolRoot "bytecode\selected_deferred_resolver_vs.dxbc"
 $pixel = Join-Path $toolRoot "bytecode\selected_deferred_resolver_ps.dxbc"
@@ -188,6 +190,24 @@ if ($LASTEXITCODE -ne 0) {
     throw "M20 peak transport validation failed with exit $LASTEXITCODE."
 }
 
+$m31StateValidatorSource = Join-Path $toolRoot "VerifyM31FixedState.cpp"
+$m31StateValidatorCompileCommand = @(
+    "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
+    "/I`"$toolRoot`" /Fo`"$m31StateValidatorObject`" `"$m31StateValidatorSource`"",
+    "/link /NOLOGO /Brepro /OUT:`"$m31StateValidatorExe`" d3d11.lib"
+) -join " "
+$m31StateValidatorCompile =
+    "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $m31StateValidatorCompileCommand"
+cmd.exe /d /c $m31StateValidatorCompile
+if ($LASTEXITCODE -ne 0) {
+    throw "M31 fixed-state validator compilation failed with exit code $LASTEXITCODE."
+}
+
+& $m31StateValidatorExe
+if ($LASTEXITCODE -ne 0) {
+    throw "M31 fixed-state validation failed with exit $LASTEXITCODE."
+}
+
 foreach ($intermediate in @(
     $outputImportLibrary,
     $outputExports,
@@ -196,7 +216,8 @@ foreach ($intermediate in @(
     $registryValidatorObject,
     $uberValidatorObject,
     $uberShaderValidatorObject,
-    $m20ValidatorObject
+    $m20ValidatorObject,
+    $m31StateValidatorObject
 )) {
     [System.IO.File]::Delete($intermediate)
 }
@@ -212,6 +233,8 @@ $uberShaderValidatorHash =
     (Get-FileHash -LiteralPath $uberShaderValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $m20ValidatorHash =
     (Get-FileHash -LiteralPath $m20ValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$m31StateValidatorHash =
+    (Get-FileHash -LiteralPath $m31StateValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Output "plugin=$outputDll"
 Write-Output "plugin_sha256=$dllHash"
 Write-Output "validator=$validatorExe"
@@ -224,3 +247,5 @@ Write-Output "endminf_uber_shader_validator=$uberShaderValidatorExe"
 Write-Output "endminf_uber_shader_validator_sha256=$uberShaderValidatorHash"
 Write-Output "m20_peak_validator=$m20ValidatorExe"
 Write-Output "m20_peak_validator_sha256=$m20ValidatorHash"
+Write-Output "m31_fixed_state_validator=$m31StateValidatorExe"
+Write-Output "m31_fixed_state_validator_sha256=$m31StateValidatorHash"

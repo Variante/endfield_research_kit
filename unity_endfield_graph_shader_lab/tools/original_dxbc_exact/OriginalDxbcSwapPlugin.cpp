@@ -28,6 +28,7 @@
 #include "M29CapturePayload.generated.h"
 #include "M30CapturePayload.generated.h"
 #include "M31PeakCapturePayload.generated.h"
+#include "M31FixedStateContract.h"
 #include "OpeningStripCapturePayload.generated.h"
 #include "VFXBaseV2PeakCohortPayload.generated.h"
 #include "M27SubstitutionRegistry.h"
@@ -123,6 +124,10 @@ ID3D11Buffer* g_m31PeakVertexConstantBuffers[g_EndfieldM31PeakPacketCount][5] = 
 ID3D11Buffer* g_m31PeakPixelConstantBuffers[g_EndfieldM31PeakPacketCount][4] = {};
 ID3D11Texture2D* g_m31PeakMainTexture = nullptr;
 ID3D11ShaderResourceView* g_m31PeakMainView = nullptr;
+ID3D11SamplerState* g_m31PeakSamplers[2] = {};
+ID3D11BlendState* g_m31PeakBlendState = nullptr;
+ID3D11DepthStencilState* g_m31PeakDepthState = nullptr;
+ID3D11RasterizerState* g_m31PeakRasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_m31PeakDepthTexture{0};
 std::atomic<std::uint32_t> g_m31PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m31PeakFailureCount{0};
@@ -912,6 +917,11 @@ void ReleaseM14RuntimeResources()
         ReleaseM14Object(g_m30SecondaryBuffers[packet]);
         ReleaseM14Object(g_m30VertexBuffers[packet]);
     }
+    ReleaseM14Object(g_m31PeakRasterizerState);
+    ReleaseM14Object(g_m31PeakDepthState);
+    ReleaseM14Object(g_m31PeakBlendState);
+    for (ID3D11SamplerState*& sampler : g_m31PeakSamplers)
+        ReleaseM14Object(sampler);
     ReleaseM14Object(g_m31PeakMainView);
     ReleaseM14Object(g_m31PeakMainTexture);
     for (std::uint32_t packet = 0;
@@ -1501,6 +1511,34 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
     if (FAILED(result)) return result;
     result = device->CreateShaderResourceView(
         g_m31PeakMainTexture, nullptr, &g_m31PeakMainView);
+    if (FAILED(result)) return result;
+
+    // Exact M_fx_endminm_gfx_31 fixed state. The VFXBaseV2 ForwardOnly
+    // serialized pass supplies independent MRT blend declarations, while the
+    // material supplies the property-backed blend/depth/stencil/cull values.
+    D3D11_SAMPLER_DESC m31Sampler = EndfieldM31FixedState::Sampler(0u);
+    result = device->CreateSamplerState(
+        &m31Sampler, &g_m31PeakSamplers[0]);
+    if (FAILED(result)) return result;
+    m31Sampler = EndfieldM31FixedState::Sampler(1u);
+    result = device->CreateSamplerState(
+        &m31Sampler, &g_m31PeakSamplers[1]);
+    if (FAILED(result)) return result;
+
+    D3D11_BLEND_DESC m31Blend = EndfieldM31FixedState::Blend();
+    result = device->CreateBlendState(&m31Blend, &g_m31PeakBlendState);
+    if (FAILED(result)) return result;
+
+    D3D11_DEPTH_STENCIL_DESC m31Depth =
+        EndfieldM31FixedState::DepthStencil();
+    result = device->CreateDepthStencilState(
+        &m31Depth, &g_m31PeakDepthState);
+    if (FAILED(result)) return result;
+
+    D3D11_RASTERIZER_DESC m31Rasterizer =
+        EndfieldM31FixedState::Rasterizer();
+    result = device->CreateRasterizerState(
+        &m31Rasterizer, &g_m31PeakRasterizerState);
     if (FAILED(result)) return result;
 
     result = device->CreateVertexShader(
@@ -3535,6 +3573,32 @@ HRESULT CreateDiagnosticShaderResourceView(
     return result;
 }
 
+HRESULT CreateM31ReadOnlyDepthStencilView(
+    ID3D11Device* device,
+    ID3D11Resource* resource,
+    ID3D11DepthStencilView** view)
+{
+    if (device == nullptr || resource == nullptr || view == nullptr)
+        return E_POINTER;
+    *view = nullptr;
+    ID3D11Texture2D* texture = nullptr;
+    HRESULT result = resource->QueryInterface(
+        __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&texture));
+    if (FAILED(result) || texture == nullptr)
+        return FAILED(result) ? result : E_NOINTERFACE;
+    D3D11_TEXTURE2D_DESC textureDescription = {};
+    texture->GetDesc(&textureDescription);
+    texture->Release();
+    if (textureDescription.Format != DXGI_FORMAT_R32G8X24_TYPELESS ||
+        textureDescription.ArraySize != 1u ||
+        textureDescription.SampleDesc.Count != 1u ||
+        (textureDescription.BindFlags & D3D11_BIND_DEPTH_STENCIL) == 0u)
+        return E_INVALIDARG;
+    D3D11_DEPTH_STENCIL_VIEW_DESC description =
+        EndfieldM31FixedState::ReadOnlyDepthView();
+    return device->CreateDepthStencilView(resource, &description, view);
+}
+
 void DrawExactRuntimeShader()
 {
     if (!g_armed.load(std::memory_order_acquire) ||
@@ -4787,10 +4851,18 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     ID3D11Resource* depthResource = reinterpret_cast<ID3D11Resource*>(
         g_m31PeakDepthTexture.load(std::memory_order_acquire));
     ID3D11ShaderResourceView* depthView = nullptr;
+    ID3D11DepthStencilView* m31DepthView = nullptr;
     result = CreateDiagnosticShaderResourceView(
         device, depthResource, &depthView);
-    if (FAILED(result) || depthView == nullptr || g_m31PeakMainView == nullptr)
+    if (SUCCEEDED(result))
+        result = CreateM31ReadOnlyDepthStencilView(
+            device, depthResource, &m31DepthView);
+    if (FAILED(result) || depthView == nullptr || m31DepthView == nullptr ||
+        g_m31PeakMainView == nullptr || g_m31PeakSamplers[0] == nullptr ||
+        g_m31PeakSamplers[1] == nullptr || g_m31PeakBlendState == nullptr ||
+        g_m31PeakDepthState == nullptr || g_m31PeakRasterizerState == nullptr)
     {
+        ReleaseM14Object(m31DepthView);
         ReleaseM14Object(depthView);
         g_m31PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
         g_m31PeakLastResult.store(
@@ -4802,6 +4874,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     device->GetImmediateContext(&context);
     if (context == nullptr)
     {
+        ReleaseM14Object(m31DepthView);
         ReleaseM14Object(depthView);
         g_m31PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
         g_m31PeakLastResult.store(E_POINTER, std::memory_order_relaxed);
@@ -4816,6 +4889,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
         ReleaseM14Object(renderDepth);
         ReleaseM14Object(renderTargets[1]);
         ReleaseM14Object(renderTargets[0]);
+        ReleaseM14Object(m31DepthView);
         ReleaseM14Object(depthView);
         context->Release();
         g_m31PeakFailureCount.fetch_add(1, std::memory_order_relaxed);
@@ -4861,7 +4935,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     context->OMGetDepthStencilState(&oldDepthState, &oldStencilReference);
     context->RSGetState(&oldRasterizerState);
 
-    const FLOAT blendFactor[4] = {};
+    const FLOAT blendFactor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const EndfieldM31PeakPacketPayload& packet =
         g_EndfieldM31PeakPackets[packetIndex];
     ID3D11Buffer* vertexBuffers[2] = {
@@ -4884,18 +4958,20 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
         0, 5, g_m31PeakVertexConstantBuffers[packetIndex]);
     context->PSSetConstantBuffers(
         0, 4, g_m31PeakPixelConstantBuffers[packetIndex]);
+    context->OMSetRenderTargets(2, renderTargets, m31DepthView);
     context->VSSetShaderResources(0, 1, &g_m14SkinView);
     context->PSSetShaderResources(0, 2, pixelViews);
-    context->PSSetSamplers(0, 2, g_m14Samplers);
-    context->OMSetBlendState(g_m14BlendState, blendFactor, 0xffffffffu);
-    context->OMSetDepthStencilState(g_m14DepthState, 0);
-    context->RSSetState(g_m14RasterizerState);
+    context->PSSetSamplers(0, 2, g_m31PeakSamplers);
+    context->OMSetBlendState(g_m31PeakBlendState, blendFactor, 0xffffffffu);
+    context->OMSetDepthStencilState(g_m31PeakDepthState, 0);
+    context->RSSetState(g_m31PeakRasterizerState);
     context->DrawIndexed(packet.indexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVertexView = nullptr;
     ID3D11ShaderResourceView* nullPixelViews[2] = {};
     context->VSSetShaderResources(0, 1, &nullVertexView);
     context->PSSetShaderResources(0, 2, nullPixelViews);
+    context->OMSetRenderTargets(2, renderTargets, renderDepth);
     context->IASetInputLayout(oldInputLayout);
     context->IASetVertexBuffers(
         0, 2, oldVertexBuffers, oldVertexStrides, oldVertexOffsets);
@@ -4933,6 +5009,7 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     ReleaseM14Object(renderDepth);
     ReleaseM14Object(renderTargets[1]);
     ReleaseM14Object(renderTargets[0]);
+    ReleaseM14Object(m31DepthView);
     ReleaseM14Object(depthView);
     context->Release();
 

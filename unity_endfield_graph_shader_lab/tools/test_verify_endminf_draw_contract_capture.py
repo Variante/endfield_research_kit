@@ -80,6 +80,10 @@ def pipeline_state() -> dict[str, object]:
          "destination": 6, "operation": 1, "sourceAlpha": 2,
          "destinationAlpha": 6, "operationAlpha": 1, "writeMask": 15}
         for slot in range(8)]
+    blend_targets[1].update({
+        "source": 3, "destination": 4,
+        "sourceAlpha": 2, "destinationAlpha": 2,
+    })
     return {
         "valid": True,
         "target": {"width": 3840, "height": 2160,
@@ -189,17 +193,32 @@ class DrawContractCaptureTests(unittest.TestCase):
                                     "frontFace differs from serialized M31"):
             self.build(payload)
 
-    def test_m31_rtv1_blend_remains_unclassified(self) -> None:
+    def test_m31_rtv1_blend_fails_closed_on_serialized_state_drift(self) -> None:
         payload = self.payload()
         target = payload["drawRecords"][0]["pipelineState"]["blend"] \
             ["targets"][1]
         target["enabled"] = False
         target["source"] = 1
         target["destination"] = 1
-        report = self.build(payload)
-        recorded = report["owners"]["M31"]["draws"][0] \
-            ["pipelineState"]["blend"]["targets"][1]
-        self.assertFalse(recorded["enabled"])
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "blend target 1 is not enabled"):
+            self.build(payload)
+
+    def test_m31_alpha_to_coverage_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["blend"] \
+            ["alphaToCoverageEnabled"] = True
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "alpha-to-coverage/independent blend"):
+            self.build(payload)
+
+    def test_m31_raster_bias_fails_closed(self) -> None:
+        payload = self.payload()
+        payload["drawRecords"][0]["pipelineState"]["rasterizer"] \
+            ["depthBias"] = 1
+        with self.assertRaisesRegex(MODULE.ContractError,
+                                    "bias/forced-sample state"):
+            self.build(payload)
 
     def test_repeated_ordinal_fails_closed(self) -> None:
         payload = self.payload()
