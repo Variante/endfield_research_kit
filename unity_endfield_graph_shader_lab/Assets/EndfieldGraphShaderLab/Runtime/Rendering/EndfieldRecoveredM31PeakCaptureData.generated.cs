@@ -4,8 +4,7 @@ namespace EndfieldGraphShaderLab
     internal static class EndfieldRecoveredM31PeakCaptureData
     {
         internal const string TemporalSourceSession = "20260828T121603Z";
-        internal const string PayloadSourceSession = "20260827T183054Z";
-        internal const int PayloadSourceFrame = 1818;
+        internal const string PayloadSourceSession = "20260828T121603Z";
         internal const int AnchorFrame = 1977;
         internal const float AnchorPhaseSeconds = 4.350000f;
         internal const int QpcFrequency = 10000000;
@@ -13,7 +12,6 @@ namespace EndfieldGraphShaderLab
         internal const int NativePayloadDrawCount = 2;
         internal const bool PayloadPrepared = true;
         internal const bool DepthContractReady = true;
-        internal const string PayloadMetadataSha256 = "e1e5402c043c51bc5e32e7619357884fc505b2aca29425a2577dfeaa571ca04b";
         internal const string TextureT1Sha256 = "faa8e27acd0e887456212f4f281b5cc897442ad7ebf8415db2fe3f164d381bc0";
         internal static readonly int[] SourceFrames = { 1896, 1907, 1918, 1929, 1941, 1954, 1965, 1977, 1989 };
         internal static readonly float[] PhaseSeconds = { 2.863329f, 3.063143f, 3.263229f, 3.462984f, 3.679626f, 3.929817f, 4.129770f, 4.350000f, 4.564017f };

@@ -117,11 +117,11 @@ std::atomic<std::uint32_t> g_m14DrawCount{0};
 std::atomic<std::uint32_t> g_m14FailureCount{0};
 std::atomic<HRESULT> g_m14LastResult{S_OK};
 
-ID3D11Buffer* g_m31PeakVertexBuffers[g_EndfieldM31PeakPacketCount] = {};
-ID3D11Buffer* g_m31PeakSecondaryBuffers[g_EndfieldM31PeakPacketCount] = {};
-ID3D11Buffer* g_m31PeakIndexBuffers[g_EndfieldM31PeakPacketCount] = {};
-ID3D11Buffer* g_m31PeakVertexConstantBuffers[g_EndfieldM31PeakPacketCount][5] = {};
-ID3D11Buffer* g_m31PeakPixelConstantBuffers[g_EndfieldM31PeakPacketCount][4] = {};
+ID3D11Buffer* g_m31PeakVertexBuffers[g_EndfieldM31PeakDrawPayloadCount] = {};
+ID3D11Buffer* g_m31PeakSecondaryBuffers[g_EndfieldM31PeakDrawPayloadCount] = {};
+ID3D11Buffer* g_m31PeakIndexBuffers[g_EndfieldM31PeakDrawPayloadCount] = {};
+ID3D11Buffer* g_m31PeakVertexConstantBuffers[g_EndfieldM31PeakDrawPayloadCount][5] = {};
+ID3D11Buffer* g_m31PeakPixelConstantBuffers[g_EndfieldM31PeakDrawPayloadCount][4] = {};
 ID3D11Texture2D* g_m31PeakMainTexture = nullptr;
 ID3D11ShaderResourceView* g_m31PeakMainView = nullptr;
 ID3D11SamplerState* g_m31PeakSamplers[2] = {};
@@ -129,6 +129,8 @@ ID3D11BlendState* g_m31PeakBlendState = nullptr;
 ID3D11DepthStencilState* g_m31PeakDepthState = nullptr;
 ID3D11RasterizerState* g_m31PeakRasterizerState = nullptr;
 std::atomic<std::uintptr_t> g_m31PeakDepthTexture{0};
+std::atomic<std::uint32_t> g_m31PeakTemporalPacketIndex{
+    (std::numeric_limits<std::uint32_t>::max)()};
 std::atomic<std::uint32_t> g_m31PeakDrawCount{0};
 std::atomic<std::uint32_t> g_m31PeakFailureCount{0};
 std::atomic<HRESULT> g_m31PeakLastResult{S_OK};
@@ -397,9 +399,13 @@ static_assert(g_EndfieldM29TextureT0Size == 65536u);
 static_assert(g_EndfieldM29TextureT1Size == 262144u);
 static_assert(g_EndfieldM31PeakPayloadPrepared);
 static_assert(g_EndfieldM31PeakDepthContractReady);
-static_assert(g_EndfieldM31PeakPacketCount == 2u);
-static_assert(g_EndfieldM31PeakSplitEventCount ==
-    g_EndfieldM31PeakPacketCount);
+static_assert(g_EndfieldM31PeakTemporalPacketCount == 9u);
+static_assert(g_EndfieldM31PeakDrawPayloadCount == 18u);
+static_assert(g_EndfieldM31PeakSplitEventCount == 2u);
+static_assert(g_EndfieldM31PeakTemporalPackets[0].splitOrderCompatible);
+static_assert(g_EndfieldM31PeakTemporalPackets[6].splitOrderCompatible);
+static_assert(g_EndfieldM31PeakTemporalPackets[7].drawCount == 3u &&
+    !g_EndfieldM31PeakTemporalPackets[7].splitOrderCompatible);
 static_assert(g_EndfieldM31PeakTextureT1Size == 65536u);
 static_assert(g_EndfieldVFXPeakPayloadPrepared);
 static_assert(g_EndfieldVFXPeakDrawCount == 15u);
@@ -925,7 +931,7 @@ void ReleaseM14RuntimeResources()
     ReleaseM14Object(g_m31PeakMainView);
     ReleaseM14Object(g_m31PeakMainTexture);
     for (std::uint32_t packet = 0;
-         packet < g_EndfieldM31PeakPacketCount; ++packet)
+         packet < g_EndfieldM31PeakDrawPayloadCount; ++packet)
     {
         for (ID3D11Buffer*& buffer : g_m31PeakPixelConstantBuffers[packet])
             ReleaseM14Object(buffer);
@@ -1454,11 +1460,11 @@ HRESULT CreateM14RuntimeResources(ID3D11Device* device)
     }
 
     for (std::uint32_t packetIndex = 0;
-         packetIndex < g_EndfieldM31PeakPacketCount;
+         packetIndex < g_EndfieldM31PeakDrawPayloadCount;
          ++packetIndex)
     {
         const EndfieldM31PeakPacketPayload& packet =
-            g_EndfieldM31PeakPackets[packetIndex];
+            g_EndfieldM31PeakDrawPayloads[packetIndex];
         result = CreateM14ImmutableBuffer(
             device, D3D11_BIND_VERTEX_BUFFER, packet.vertices,
             static_cast<UINT>(packet.vertexBytes),
@@ -4938,7 +4944,28 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
         static_cast<std::uint32_t>(eventId) >=
             g_EndfieldM31PeakSplitEventCount)
         return;
-    const std::uint32_t packetIndex = static_cast<std::uint32_t>(eventId);
+    const std::uint32_t temporalPacketIndex =
+        g_m31PeakTemporalPacketIndex.load(std::memory_order_acquire);
+    if (temporalPacketIndex >= g_EndfieldM31PeakTemporalPacketCount)
+    {
+        g_m31PeakFailureCount.fetch_add(1u, std::memory_order_relaxed);
+        g_m31PeakLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+    const EndfieldM31PeakTemporalPacket& temporalPacket =
+        g_EndfieldM31PeakTemporalPackets[temporalPacketIndex];
+    if (!temporalPacket.splitOrderCompatible ||
+        temporalPacket.drawCount != g_EndfieldM31PeakSplitEventCount ||
+        static_cast<std::uint32_t>(eventId) >= temporalPacket.drawCount ||
+        temporalPacket.firstDrawPayload + temporalPacket.drawCount >
+            g_EndfieldM31PeakDrawPayloadCount)
+    {
+        g_m31PeakFailureCount.fetch_add(1u, std::memory_order_relaxed);
+        g_m31PeakLastResult.store(E_INVALIDARG, std::memory_order_relaxed);
+        return;
+    }
+    const std::uint32_t drawPayloadIndex =
+        temporalPacket.firstDrawPayload + static_cast<std::uint32_t>(eventId);
     IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
     ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
     if (device == nullptr)
@@ -5046,10 +5073,10 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
 
     const FLOAT blendFactor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const EndfieldM31PeakPacketPayload& packet =
-        g_EndfieldM31PeakPackets[packetIndex];
+        g_EndfieldM31PeakDrawPayloads[drawPayloadIndex];
     ID3D11Buffer* vertexBuffers[2] = {
-        g_m31PeakVertexBuffers[packetIndex],
-        g_m31PeakSecondaryBuffers[packetIndex],
+        g_m31PeakVertexBuffers[drawPayloadIndex],
+        g_m31PeakSecondaryBuffers[drawPayloadIndex],
     };
     const UINT strides[2] = {g_EndfieldM31PeakVertexStride, 0u};
     const UINT offsets[2] = {};
@@ -5059,14 +5086,14 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     context->IASetInputLayout(g_m14InputLayout);
     context->IASetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
     context->IASetIndexBuffer(
-        g_m31PeakIndexBuffers[packetIndex], DXGI_FORMAT_R16_UINT, 0);
+        g_m31PeakIndexBuffers[drawPayloadIndex], DXGI_FORMAT_R16_UINT, 0);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(g_m14RuntimeVertexShader, nullptr, 0);
     context->PSSetShader(g_m14RuntimePixelShader, nullptr, 0);
     context->VSSetConstantBuffers(
-        0, 5, g_m31PeakVertexConstantBuffers[packetIndex]);
+        0, 5, g_m31PeakVertexConstantBuffers[drawPayloadIndex]);
     context->PSSetConstantBuffers(
-        0, 4, g_m31PeakPixelConstantBuffers[packetIndex]);
+        0, 4, g_m31PeakPixelConstantBuffers[drawPayloadIndex]);
     context->OMSetRenderTargets(2, renderTargets, m31DepthView);
     context->VSSetShaderResources(0, 1, &g_m14SkinView);
     context->PSSetShaderResources(0, 2, pixelViews);
@@ -8008,10 +8035,30 @@ EndfieldOriginalDxbcSetM31PeakDepthResource(void* sceneDepth)
     return sceneDepth != nullptr ? 1u : 0u;
 }
 
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM31PeakTemporalPacketIndex(std::uint32_t packetIndex)
+{
+    g_m31PeakTemporalPacketIndex.store(
+        (std::numeric_limits<std::uint32_t>::max)(), std::memory_order_release);
+    if (packetIndex >= g_EndfieldM31PeakTemporalPacketCount)
+        return 0u;
+    const EndfieldM31PeakTemporalPacket& packet =
+        g_EndfieldM31PeakTemporalPackets[packetIndex];
+    if (!packet.splitOrderCompatible ||
+        packet.drawCount != g_EndfieldM31PeakSplitEventCount ||
+        packet.firstDrawPayload + packet.drawCount >
+            g_EndfieldM31PeakDrawPayloadCount)
+        return 0u;
+    g_m31PeakTemporalPacketIndex.store(packetIndex, std::memory_order_release);
+    return 1u;
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcResetM31PeakRuntimeState()
 {
     g_m31PeakDepthTexture.store(0, std::memory_order_release);
+    g_m31PeakTemporalPacketIndex.store(
+        (std::numeric_limits<std::uint32_t>::max)(), std::memory_order_release);
     g_m31PeakDrawCount.store(0, std::memory_order_relaxed);
     g_m31PeakFailureCount.store(0, std::memory_order_relaxed);
     g_m31PeakLastResult.store(S_OK, std::memory_order_relaxed);

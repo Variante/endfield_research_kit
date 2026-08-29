@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
 import sys
@@ -26,14 +27,15 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             cs_path = Path(folder) / "payload.cs"
             cpp_path = Path(folder) / "payload.h"
-            MODULE.build(MODULE.TEMPORAL_CAPTURE, MODULE.PAYLOAD_CAPTURE,
-                         cs_path, cpp_path)
+            MODULE.build(MODULE.TEMPORAL_CAPTURE, cs_path, cpp_path)
             cs = cs_path.read_text(encoding="utf-8")
             cpp = cpp_path.read_text(encoding="utf-8")
             self.assertEqual(cs, MODULE.CS_OUTPUT.read_text(encoding="utf-8"))
             self.assertEqual(cpp, MODULE.CPP_OUTPUT.read_text(encoding="utf-8"))
             self.assertIn('TemporalSourceSession = "20260828T121603Z"', cs)
-            self.assertIn("PayloadSourceFrame = 1818", cs)
+            self.assertIn(
+                'PayloadSourceSession = "20260828T121603Z"', cs)
+            self.assertNotIn("PayloadSourceFrame", cs)
             self.assertIn("AnchorFrame = 1977", cs)
             self.assertIn("AnchorPhaseSeconds = 4.350000f", cs)
             self.assertIn("PacketCount = 9", cs)
@@ -58,12 +60,19 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             self.assertIn("2.863329f", cs)
             self.assertIn("4.564017f", cs)
             self.assertIn("DepthContractReady = true", cs)
-            self.assertIn("g_EndfieldM31PeakPacketCount", cpp)
+            self.assertIn("g_EndfieldM31PeakTemporalPacketCount", cpp)
+            self.assertIn("g_EndfieldM31PeakDrawPayloadCount", cpp)
+            self.assertIn("g_EndfieldM31PeakDrawPayloads", cpp)
+            self.assertIn("g_EndfieldM31PeakTemporalPackets", cpp)
             self.assertIn("g_EndfieldM31PeakSplitEventCount = 2u", cpp)
             self.assertIn("g_EndfieldM31PeakTextureT1", cpp)
+            self.assertIn("{1896u, 2.863329f, 0u, 2u, true}", cpp)
+            self.assertIn("{1965u, 4.129770f, 12u, 2u, true}", cpp)
+            self.assertIn("{1977u, 4.350000f, 14u, 3u, false}", cpp)
+            self.assertIn("{1989u, 4.564017f, 17u, 1u, false}", cpp)
 
     def test_temporal_capture_has_exact_owner_resource_closure(self) -> None:
-        packets = MODULE.collect_temporal(MODULE.TEMPORAL_CAPTURE)
+        packets, texture = MODULE.collect_temporal(MODULE.TEMPORAL_CAPTURE)
         self.assertEqual(list(MODULE.TEMPORAL_FRAMES),
                          [row["frame"] for row in packets])
         self.assertEqual([2, 2, 2, 2, 2, 2, 2, 3, 1],
@@ -81,10 +90,30 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         self.assertEqual([2, 2, 2, 2, 2, 2, 2, 0, 0],
                          [len(row["interleaved_m29_m30"])
                           for row in packets])
+        self.assertEqual(MODULE.EXPECTED_TEXTURE_SHA256, texture["sha256"])
+
+    def test_every_temporal_draw_has_its_own_exact_payload(self) -> None:
+        packets, _ = MODULE.collect_temporal(MODULE.TEMPORAL_CAPTURE)
+        self.assertEqual(18, sum(len(row["payloads"]) for row in packets))
+        identities: list[str] = []
+        for packet in packets:
+            self.assertEqual(packet["draw_count"], len(packet["payloads"]))
+            self.assertEqual(
+                packet["draw_indices"],
+                [payload["drawIndex"] for payload in packet["payloads"]])
+            for payload in packet["payloads"]:
+                self.assertEqual(6, payload["geometry"]["index_count"])
+                digest = hashlib.sha256()
+                digest.update(payload["geometry"]["vertices"])
+                for stage in (0, 4):
+                    for constant in payload["constants"][stage]:
+                        digest.update(constant)
+                identities.append(digest.hexdigest())
+        self.assertEqual(18, len(set(identities)))
 
     def test_owner_constant_drift_is_rejected(self) -> None:
-        metadata_path = (MODULE.PAYLOAD_CAPTURE /
-                         "graphics/frames/1818/metadata.json")
+        metadata_path = (MODULE.TEMPORAL_CAPTURE /
+                         "graphics/frames/1896/metadata.json")
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         draw = next(row for row in metadata["drawRecords"]
                     if MODULE.is_m31(row))
@@ -155,23 +184,44 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
     def test_native_callback_submits_one_payload_per_split_event(self) -> None:
         plugin = (HERE / "original_dxbc_exact"
                   / "OriginalDxbcSwapPlugin.cpp").read_text(encoding="utf-8")
-        self.assertIn(
-            "g_EndfieldM31PeakSplitEventCount ==\n"
-            "    g_EndfieldM31PeakPacketCount",
-            plugin)
+        self.assertIn("g_EndfieldM31PeakTemporalPacketCount == 9u", plugin)
+        self.assertIn("g_EndfieldM31PeakDrawPayloadCount == 18u", plugin)
         callback_start = plugin.index(
             "void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)")
         callback_end = plugin.index(
             "void UNITY_INTERFACE_API DrawVFXBaseV2PeakCohortRuntime",
             callback_start)
         callback = plugin[callback_start:callback_end]
+        self.assertIn("g_m31PeakTemporalPacketIndex.load", callback)
         self.assertIn(
-            "const std::uint32_t packetIndex = static_cast<std::uint32_t>(eventId);",
+            "g_EndfieldM31PeakTemporalPackets[temporalPacketIndex]", callback)
+        self.assertIn("!temporalPacket.splitOrderCompatible", callback)
+        self.assertIn(
+            "temporalPacket.drawCount != g_EndfieldM31PeakSplitEventCount",
             callback)
-        self.assertIn("g_EndfieldM31PeakPackets[packetIndex]", callback)
+        self.assertIn(
+            "temporalPacket.firstDrawPayload + static_cast<std::uint32_t>(eventId)",
+            callback)
+        self.assertIn(
+            "g_EndfieldM31PeakDrawPayloads[drawPayloadIndex]", callback)
         self.assertIn("g_m31PeakDrawCount.fetch_add(1u", callback)
-        self.assertNotIn(
-            "packetIndex < g_EndfieldM31PeakPacketCount", callback)
+
+    def test_native_selector_rejects_non_split_temporal_packets(self) -> None:
+        plugin = (HERE / "original_dxbc_exact"
+                  / "OriginalDxbcSwapPlugin.cpp").read_text(encoding="utf-8")
+        selector_start = plugin.index(
+            "EndfieldOriginalDxbcSetM31PeakTemporalPacketIndex")
+        selector_end = plugin.index(
+            "EndfieldOriginalDxbcResetM31PeakRuntimeState", selector_start)
+        selector = plugin[selector_start:selector_end]
+        self.assertIn("max)(), std::memory_order_release", selector)
+        self.assertIn("packetIndex >= g_EndfieldM31PeakTemporalPacketCount",
+                      selector)
+        self.assertIn("!packet.splitOrderCompatible", selector)
+        self.assertIn(
+            "packet.drawCount != g_EndfieldM31PeakSplitEventCount", selector)
+        self.assertIn(
+            "g_m31PeakTemporalPacketIndex.store(packetIndex", selector)
 
     def test_runtime_submits_both_split_event_ids(self) -> None:
         runtime = RUNTIME.read_text(encoding="utf-8")
@@ -187,6 +237,9 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             "context, camera, sceneColor, sceneMV, sceneDepth, 1)",
             runtime[second:split])
         self.assertIn("command.IssuePluginEvent(renderEvent, eventId)", runtime)
+        self.assertIn("Native.SetTemporalPacketIndex(", runtime)
+        self.assertIn(
+            '"EndfieldOriginalDxbcSetM31PeakTemporalPacketIndex"', runtime)
 
     def test_runtime_publishes_frame_local_submission_evidence(self) -> None:
         runtime = RUNTIME.read_text(encoding="utf-8")
