@@ -3599,6 +3599,114 @@ HRESULT CreateM31ReadOnlyDepthStencilView(
     return device->CreateDepthStencilView(resource, &description, view);
 }
 
+bool ValidateM31OutputCompatibility(
+    ID3D11RenderTargetView* const renderTargets[2],
+    ID3D11Resource* depthResource)
+{
+    if (renderTargets == nullptr || renderTargets[0] == nullptr ||
+        renderTargets[1] == nullptr || depthResource == nullptr)
+        return false;
+
+    D3D11_TEXTURE2D_DESC descriptions[3] = {};
+    for (UINT target = 0u; target < 2u; ++target)
+    {
+        D3D11_RENDER_TARGET_VIEW_DESC viewDescription = {};
+        renderTargets[target]->GetDesc(&viewDescription);
+        if (viewDescription.ViewDimension != D3D11_RTV_DIMENSION_TEXTURE2D)
+            return false;
+        ID3D11Resource* resource = nullptr;
+        ID3D11Texture2D* texture = nullptr;
+        renderTargets[target]->GetResource(&resource);
+        const HRESULT result = resource == nullptr ? E_POINTER :
+            resource->QueryInterface(
+                __uuidof(ID3D11Texture2D),
+                reinterpret_cast<void**>(&texture));
+        ReleaseM14Object(resource);
+        if (FAILED(result) || texture == nullptr)
+        {
+            ReleaseM14Object(texture);
+            return false;
+        }
+        texture->GetDesc(&descriptions[target]);
+        ReleaseM14Object(texture);
+    }
+    ID3D11Texture2D* depthTexture = nullptr;
+    const HRESULT depthResult = depthResource->QueryInterface(
+        __uuidof(ID3D11Texture2D),
+        reinterpret_cast<void**>(&depthTexture));
+    if (FAILED(depthResult) || depthTexture == nullptr)
+    {
+        ReleaseM14Object(depthTexture);
+        return false;
+    }
+    depthTexture->GetDesc(&descriptions[2]);
+    ReleaseM14Object(depthTexture);
+
+    for (UINT index = 0u; index < 3u; ++index)
+    {
+        const D3D11_TEXTURE2D_DESC& row = descriptions[index];
+        if (row.Width == 0u || row.Height == 0u || row.ArraySize != 1u ||
+            row.SampleDesc.Count != 1u)
+            return false;
+        if (index > 0u &&
+            (row.Width != descriptions[0].Width ||
+             row.Height != descriptions[0].Height ||
+             row.SampleDesc.Count != descriptions[0].SampleDesc.Count ||
+             row.SampleDesc.Quality != descriptions[0].SampleDesc.Quality))
+            return false;
+    }
+    return true;
+}
+
+bool ValidateM31BoundState(
+    ID3D11DeviceContext* context,
+    ID3D11RenderTargetView* const expectedTargets[2],
+    ID3D11DepthStencilView* expectedDepth,
+    ID3D11ShaderResourceView* const expectedViews[2])
+{
+    if (context == nullptr || expectedTargets == nullptr ||
+        expectedDepth == nullptr || expectedViews == nullptr)
+        return false;
+
+    ID3D11RenderTargetView* targets[2] = {};
+    ID3D11DepthStencilView* depth = nullptr;
+    ID3D11ShaderResourceView* views[2] = {};
+    ID3D11SamplerState* samplers[2] = {};
+    ID3D11BlendState* blend = nullptr;
+    ID3D11DepthStencilState* depthState = nullptr;
+    ID3D11RasterizerState* rasterizer = nullptr;
+    FLOAT factor[4] = {};
+    UINT sampleMask = 0u;
+    UINT stencilReference = ~0u;
+    context->OMGetRenderTargets(2, targets, &depth);
+    context->PSGetShaderResources(0, 2, views);
+    context->PSGetSamplers(0, 2, samplers);
+    context->OMGetBlendState(&blend, factor, &sampleMask);
+    context->OMGetDepthStencilState(&depthState, &stencilReference);
+    context->RSGetState(&rasterizer);
+    bool valid = targets[0] == expectedTargets[0] &&
+        targets[1] == expectedTargets[1] && depth == expectedDepth &&
+        views[0] == expectedViews[0] && views[1] == expectedViews[1] &&
+        samplers[0] == g_m31PeakSamplers[0] &&
+        samplers[1] == g_m31PeakSamplers[1] &&
+        blend == g_m31PeakBlendState && depthState == g_m31PeakDepthState &&
+        rasterizer == g_m31PeakRasterizerState &&
+        factor[0] == 1.0f && factor[1] == 1.0f &&
+        factor[2] == 1.0f && factor[3] == 1.0f &&
+        sampleMask == 0xffffffffu && stencilReference == 0u;
+    ReleaseM14Object(rasterizer);
+    ReleaseM14Object(depthState);
+    ReleaseM14Object(blend);
+    for (ID3D11SamplerState*& value : samplers)
+        ReleaseM14Object(value);
+    for (ID3D11ShaderResourceView*& value : views)
+        ReleaseM14Object(value);
+    ReleaseM14Object(depth);
+    for (ID3D11RenderTargetView*& value : targets)
+        ReleaseM14Object(value);
+    return valid;
+}
+
 void DrawExactRuntimeShader()
 {
     if (!g_armed.load(std::memory_order_acquire) ||
@@ -4884,7 +4992,8 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     ID3D11RenderTargetView* renderTargets[2] = {};
     ID3D11DepthStencilView* renderDepth = nullptr;
     context->OMGetRenderTargets(2, renderTargets, &renderDepth);
-    if (renderTargets[0] == nullptr || renderTargets[1] == nullptr)
+    if (renderTargets[0] == nullptr || renderTargets[1] == nullptr ||
+        !ValidateM31OutputCompatibility(renderTargets, depthResource))
     {
         ReleaseM14Object(renderDepth);
         ReleaseM14Object(renderTargets[1]);
@@ -4965,7 +5074,10 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     context->OMSetBlendState(g_m31PeakBlendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(g_m31PeakDepthState, 0);
     context->RSSetState(g_m31PeakRasterizerState);
-    context->DrawIndexed(packet.indexCount, 0, 0);
+    const bool boundStateValid = ValidateM31BoundState(
+        context, renderTargets, m31DepthView, pixelViews);
+    if (boundStateValid)
+        context->DrawIndexed(packet.indexCount, 0, 0);
 
     ID3D11ShaderResourceView* nullVertexView = nullptr;
     ID3D11ShaderResourceView* nullPixelViews[2] = {};
@@ -5013,8 +5125,16 @@ void UNITY_INTERFACE_API DrawM31PeakExactRuntime(int eventId)
     ReleaseM14Object(depthView);
     context->Release();
 
-    g_m31PeakDrawCount.fetch_add(1u, std::memory_order_relaxed);
-    g_m31PeakLastResult.store(S_OK, std::memory_order_relaxed);
+    if (boundStateValid)
+    {
+        g_m31PeakDrawCount.fetch_add(1u, std::memory_order_relaxed);
+        g_m31PeakLastResult.store(S_OK, std::memory_order_relaxed);
+    }
+    else
+    {
+        g_m31PeakFailureCount.fetch_add(1u, std::memory_order_relaxed);
+        g_m31PeakLastResult.store(E_FAIL, std::memory_order_relaxed);
+    }
 }
 
 void UNITY_INTERFACE_API DrawVFXBaseV2PeakCohortRuntime(int eventId)

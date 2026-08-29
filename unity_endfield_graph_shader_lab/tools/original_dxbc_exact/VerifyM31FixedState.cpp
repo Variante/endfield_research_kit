@@ -27,6 +27,8 @@ int main()
     ID3D11BlendState* blend = nullptr;
     ID3D11DepthStencilState* depth = nullptr;
     ID3D11RasterizerState* rasterizer = nullptr;
+    ID3D11Texture2D* renderTextures[2] = {};
+    ID3D11RenderTargetView* renderViews[2] = {};
     ID3D11Texture2D* depthTexture = nullptr;
     ID3D11DepthStencilView* depthView = nullptr;
     ID3D11ShaderResourceView* depthSrv = nullptr;
@@ -49,6 +51,26 @@ int main()
         EndfieldM31FixedState::Rasterizer();
     valid &= SUCCEEDED(device->CreateRasterizerState(
         &rasterizerDescription, &rasterizer));
+
+    for (UINT target = 0u; target < 2u; ++target)
+    {
+        D3D11_TEXTURE2D_DESC renderDescription = {};
+        renderDescription.Width = 64u;
+        renderDescription.Height = 64u;
+        renderDescription.MipLevels = 1u;
+        renderDescription.ArraySize = 1u;
+        renderDescription.Format = target == 0u
+            ? DXGI_FORMAT_R11G11B10_FLOAT
+            : DXGI_FORMAT_R16G16_FLOAT;
+        renderDescription.SampleDesc.Count = 1u;
+        renderDescription.Usage = D3D11_USAGE_DEFAULT;
+        renderDescription.BindFlags = D3D11_BIND_RENDER_TARGET;
+        valid &= SUCCEEDED(device->CreateTexture2D(
+            &renderDescription, nullptr, &renderTextures[target]));
+        valid &= renderTextures[target] != nullptr &&
+            SUCCEEDED(device->CreateRenderTargetView(
+                renderTextures[target], nullptr, &renderViews[target]));
+    }
 
     D3D11_TEXTURE2D_DESC textureDescription = {};
     textureDescription.Width = 64u;
@@ -103,6 +125,19 @@ int main()
         motion.DestBlend == D3D11_BLEND_INV_SRC_COLOR &&
         motion.SrcBlendAlpha == D3D11_BLEND_ONE &&
         motion.DestBlendAlpha == D3D11_BLEND_ONE;
+    for (UINT target = 2u; target < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+         ++target)
+    {
+        const D3D11_RENDER_TARGET_BLEND_DESC& row =
+            actualBlend.RenderTarget[target];
+        valid &= !row.BlendEnable && row.SrcBlend == D3D11_BLEND_ONE &&
+            row.DestBlend == D3D11_BLEND_ZERO &&
+            row.BlendOp == D3D11_BLEND_OP_ADD &&
+            row.SrcBlendAlpha == D3D11_BLEND_ONE &&
+            row.DestBlendAlpha == D3D11_BLEND_ZERO &&
+            row.BlendOpAlpha == D3D11_BLEND_OP_ADD &&
+            row.RenderTargetWriteMask == D3D11_COLOR_WRITE_ENABLE_ALL;
+    }
     valid &= actualDepth.DepthEnable &&
         actualDepth.DepthWriteMask == D3D11_DEPTH_WRITE_MASK_ZERO &&
         actualDepth.DepthFunc == D3D11_COMPARISON_GREATER_EQUAL &&
@@ -127,12 +162,50 @@ int main()
 
     if (valid)
     {
-        context->OMSetRenderTargets(0, nullptr, depthView);
+        const FLOAT factor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        context->OMSetRenderTargets(2, renderViews, depthView);
         context->PSSetShaderResources(0, 1, &depthSrv);
-        ID3D11ShaderResourceView* observed = nullptr;
-        context->PSGetShaderResources(0, 1, &observed);
-        valid = observed != nullptr;
-        Release(observed);
+        context->PSSetSamplers(0, 2, samplers);
+        context->OMSetBlendState(blend, factor, 0xffffffffu);
+        context->OMSetDepthStencilState(depth, 0u);
+        context->RSSetState(rasterizer);
+        ID3D11RenderTargetView* observedTargets[2] = {};
+        ID3D11DepthStencilView* observedDepth = nullptr;
+        ID3D11ShaderResourceView* observedSrv = nullptr;
+        ID3D11SamplerState* observedSamplers[2] = {};
+        ID3D11BlendState* observedBlend = nullptr;
+        ID3D11DepthStencilState* observedDepthState = nullptr;
+        ID3D11RasterizerState* observedRasterizer = nullptr;
+        FLOAT observedFactor[4] = {};
+        UINT observedMask = 0u;
+        UINT observedReference = ~0u;
+        context->OMGetRenderTargets(2, observedTargets, &observedDepth);
+        context->PSGetShaderResources(0, 1, &observedSrv);
+        context->PSGetSamplers(0, 2, observedSamplers);
+        context->OMGetBlendState(
+            &observedBlend, observedFactor, &observedMask);
+        context->OMGetDepthStencilState(
+            &observedDepthState, &observedReference);
+        context->RSGetState(&observedRasterizer);
+        valid = observedTargets[0] == renderViews[0] &&
+            observedTargets[1] == renderViews[1] &&
+            observedDepth == depthView && observedSrv == depthSrv &&
+            observedSamplers[0] == samplers[0] &&
+            observedSamplers[1] == samplers[1] &&
+            observedBlend == blend && observedDepthState == depth &&
+            observedRasterizer == rasterizer && observedMask == 0xffffffffu &&
+            observedReference == 0u && observedFactor[0] == 1.0f &&
+            observedFactor[1] == 1.0f && observedFactor[2] == 1.0f &&
+            observedFactor[3] == 1.0f;
+        Release(observedRasterizer);
+        Release(observedDepthState);
+        Release(observedBlend);
+        Release(observedSamplers[1]);
+        Release(observedSamplers[0]);
+        Release(observedSrv);
+        Release(observedDepth);
+        Release(observedTargets[1]);
+        Release(observedTargets[0]);
         ID3D11ShaderResourceView* clear = nullptr;
         context->PSSetShaderResources(0, 1, &clear);
         context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -152,6 +225,10 @@ int main()
     Release(depthSrv);
     Release(depthView);
     Release(depthTexture);
+    Release(renderViews[1]);
+    Release(renderViews[0]);
+    Release(renderTextures[1]);
+    Release(renderTextures[0]);
     Release(rasterizer);
     Release(depth);
     Release(blend);
