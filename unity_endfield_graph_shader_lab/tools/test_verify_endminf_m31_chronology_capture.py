@@ -156,24 +156,24 @@ class M31ChronologyCaptureTests(unittest.TestCase):
                                     "depth read-only"):
             self.report(mutate)
 
-    def test_draw_without_shader_identity_fails_closed(self) -> None:
+    def test_draw_without_shader_identity_field_fails_closed(self) -> None:
         def mutate(capture: Path) -> None:
             path = capture / "graphics/m31_chronology/metadata.json"
             data = json.loads(path.read_text())
-            data["census"][0]["pixelShaderIdentity"] = 0
+            del data["census"][0]["pixelShaderIdentity"]
             path.write_text(json.dumps(data))
         with self.assertRaisesRegex(MODULE.ChronologyError,
-                                    "draw has no VS/PS identity"):
+                                    "pixel shader identity"):
             self.report(mutate)
 
-    def test_dispatch_without_shader_identity_fails_closed(self) -> None:
+    def test_dispatch_without_shader_identity_field_fails_closed(self) -> None:
         def mutate(capture: Path) -> None:
             path = capture / "graphics/m31_chronology/metadata.json"
             data = json.loads(path.read_text())
-            data["census"][1]["computeShaderIdentity"] = 0
+            del data["census"][1]["computeShaderIdentity"]
             path.write_text(json.dumps(data))
         with self.assertRaisesRegex(MODULE.ChronologyError,
-                                    "dispatch has no compute shader identity"):
+                                    "compute shader identity"):
             self.report(mutate)
 
     def test_unchanged_draw_fails_closed(self) -> None:
