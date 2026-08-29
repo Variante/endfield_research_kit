@@ -3326,7 +3326,21 @@ the observer attached after `slInit`, its global Streamline chronology tables
 overflowed before the Endminf trigger, and the options-to-Present association
 is consequently one Present stale. These are observer lifetime/association
 gaps, not retail-render conclusions. Keep the raw pair quarantined until a new
-session passes the unchanged strict verifier.
+session passes the unchanged strict verifier. EndfieldCapture commit `18aed6a`
+now resets the per-call chronology at the exact trigger, retains only the
+bounded readable options warm-up, preserves initialization as independent
+lifetime evidence, and freezes the completed pair. It deliberately does not
+synthesize a missed `slInit`: the general injector has a pre-attachment launch
+gap, while the existing early D3D11 proxy is graphics-only and rejects the Full
+multi-provider mask.
+
+The same session is not secondary-motion evidence. It observed 32,097
+cross-frame cloth updates but zero scheduled, completed, or written Transform
+jobs and one registration-lifecycle failure. Late adapter installation explains
+the stale registration lifecycle, but does not prove whether cross-frame mode
+bypasses the pinned inner calls or those call-site offsets are stale. Preserve
+the fail-closed result and recover the active publication call path before
+changing the observer or the Unity solver.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
@@ -3370,9 +3384,10 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Bound/reset the observer's Streamline chronology around the exact Endminf
-   trigger and retain exact initialization identity without weakening the
-   existing gate. Then run the resulting observer (including the earlier
+1. Add a provably pre-`slInit` load path that can coexist with the Full
+   multi-provider runtime; do not infer initialization preferences from later
+   state or weaken the existing gate. Then run observer commit `18aed6a`
+   (including the earlier
    automatic-trigger, exposure, options/init-join, next-Present scheduling,
    and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
