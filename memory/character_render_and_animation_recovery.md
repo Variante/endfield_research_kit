@@ -3110,6 +3110,27 @@ runtime trajectory is captured, compatibility replay interpolates positions
 and rotations continuously across sparse intervals; the remaining uncertainty
 is an evidence gap, not permission to add discontinuities.
 
+The compatibility replay clock itself is continuous: all 770 presentation
+frames advance without repeated requested times. Its remaining visible jerk is
+caused by a sparse 144-pose oracle (72 adjacent previous/current pairs, with
+many multi-frame gaps) joined by piecewise interpolation, which is only C0 at
+sample boundaries and suppresses extrema. Do not replace that limitation with
+authored per-bone positions or smoothing curves. The recovery target is the
+already identified BeyondBoneCloth solver and publication path; captured pose
+replay remains a diagnostic bridge.
+
+The original `ui_overview_start` and `ui_overview_loop` sources contain no
+ordinary Unity transform or float curves. Their poses are stored in ACL 2.1
+transform buffers and the pinned UnityPlayer samples those buffers directly.
+Fractional samples use non-negative floor, adjacent sample selection, float32
+stable endpoint vector interpolation, and shortest-hemisphere normalized
+stable quaternion nlerp; controller time wrapping occurs before the ACL clamp
+seek. Unity auto-tangent curves, Hermite interpolation, `Quaternion.Slerp`, and
+generic `Quaternion.Lerp` are therefore not source-faithful replacements. The
+lab now has inert decoded-ACL data and sampling primitives with source/payload
+hash gates; transform publication and controller integration remain separate
+unimplemented steps.
+
 Directly transplanting the retail Streamline path into the Unity lab remains
 fail-closed. Unity's D3D11 plugin interface exposes both the native device and
 active swapchain, so the resource/evaluation lane is technically reachable,
@@ -3299,6 +3320,13 @@ validation report. It deliberately creates no Unity assets from rejected or
 absent evidence. Session `20260829T115328Z` exits at the expected missing-pair
 boundary; run the verifier on the next capture before importing any temporal
 diagnostic data.
+Session `20260829T224523Z` retained and hash-validated both four-surface
+packets, proving the next-Present surface scheduler, but it is still rejected:
+the observer attached after `slInit`, its global Streamline chronology tables
+overflowed before the Endminf trigger, and the options-to-Present association
+is consequently one Present stale. These are observer lifetime/association
+gaps, not retail-render conclusions. Keep the raw pair quarantined until a new
+session passes the unchanged strict verifier.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
@@ -3342,8 +3370,11 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commit `a063f32` (including the earlier automatic-trigger,
-   exposure, options/init-join, and serialized-staging commits) on the next
+1. Bound/reset the observer's Streamline chronology around the exact Endminf
+   trigger and retain exact initialization identity without weakening the
+   existing gate. Then run the resulting observer (including the earlier
+   automatic-trigger, exposure, options/init-join, next-Present scheduling,
+   and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
    wrap so the bounded trajectory buffer includes the required interval. Use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
