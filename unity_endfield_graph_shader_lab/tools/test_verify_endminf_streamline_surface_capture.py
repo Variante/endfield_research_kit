@@ -68,6 +68,10 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "cadenceValid": True,
             "graphicsSequenceTriggerPresent": 100,
             "streamlineDlssObservationComplete": True,
+            "streamlineDlssInitHookInstalled": True,
+            "streamlineDlssInitObserved": True,
+            "streamlineDlssInitCalls": 1,
+            "streamlineDlssDroppedInitCalls": 0,
             "streamlineSurfacesRequested": True,
             "streamlineSurfacesTriggered": True,
             "streamlineSurfacesPairStaged": True,
@@ -213,11 +217,17 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
                 "closingPresentOrdinal")})
 
         streamline = {
-            "schema": "endfieldCapture.streamlineDlss.v3",
+            "schema": "endfieldCapture.streamlineDlss.v4",
             "observationOnly": True, "requested": True, "configured": True,
             "exactBuildValidated": True, "coreModuleLoaded": True,
             "coreModuleValidated": True, "dlssModuleLoaded": True,
             "dlssModuleValidated": True, "coreHooksInstalled": True,
+            "initHookInstalled": True, "initObserved": True,
+            "initCalls": 1, "droppedInitCalls": 0,
+            "initialization": {
+                "result": 0, "readable": True, "truncated": False,
+                "features": [0],
+            },
             "dlssOptionsHookInstalled": True,
             "dlssOptionsDirectHookInstalled": True,
             "presentClockConfigured": True, "callbacksQuiescent": True,
@@ -311,6 +321,22 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             text = "\n".join(report["errors"])
             self.assertIn("frame0 exposure.descriptor.width", text)
             self.assertIn("frame0 exposure.commandBuffer", text)
+
+    def test_missing_initialization_identity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["initObserved"] = False
+            streamline["initCalls"] = 0
+            streamline["initialization"] = {}
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            text = "\n".join(report["errors"])
+            self.assertIn("Streamline.initObserved", text)
+            self.assertIn("Streamline.initCalls", text)
+            self.assertIn("Streamline.initialization.features", text)
 
     def test_incomplete_graphics_summary_is_rejected_first(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
