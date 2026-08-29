@@ -2670,6 +2670,15 @@ is pixel-identical. Keep the group available for the next complete review, but
 do not describe this narrow gain as closure of the visibly missing soft bloom,
 gas, and temporal smear.
 
+The resulting `endminf_full_clean_presentation_v4_20260829` checkpoint completes
+770/770 1920x1080 frames with report status `ok`. It observes the authored
+start-to-loop transition, settled loop, entrance VFX cleanup, and animator/root
+motion contracts; foreground UI remains absent. M18, M20, M21, and M28 each
+activate, submit, and validate at their one certified tick with no native
+failure. A 12.833-second H.264 review render and eight-frame contact sheet live
+beside the generated report in scratch. This supersedes v3 for visual review,
+but not the fail-closed evidence limitations above.
+
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported
 vertically inverted body mask over the background portrait. Disabling that one
