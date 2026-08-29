@@ -370,6 +370,9 @@ constexpr std::size_t kEndminfUberPsB1Bytes = 26u * 16u;
 static_assert(g_EndfieldUberVsB0Size == kEndminfUberVsB0Bytes);
 static_assert(g_EndfieldUberPsB0Size == kEndminfUberPsB0Bytes);
 static_assert(g_EndfieldUberPsB1Size == kEndminfUberPsB1Bytes);
+static_assert(g_EndfieldUberEarlyVsB0Size == kEndminfUberVsB0Bytes);
+static_assert(g_EndfieldUberEarlyPsB0Size == kEndminfUberPsB0Bytes);
+static_assert(g_EndfieldUberEarlyPsB1Size == kEndminfUberPsB1Bytes);
 static_assert(g_EndfieldM30PayloadPrepared);
 static_assert(g_EndfieldM21PeakPayloadPrepared);
 static_assert(g_EndfieldM21PeakVertexStride == 52u);
@@ -428,6 +431,7 @@ enum class EndminfUberVariant : std::uint32_t
 {
     Normal = 0,
     Peak = 1,
+    Early = 2,
 };
 
 struct EndminfUberPacket
@@ -7222,7 +7226,7 @@ EndfieldOriginalDxbcQueueEndminfUberPacketVariant(
         return 0u;
     }
     const bool validVariant =
-        variant <= static_cast<std::uint32_t>(EndminfUberVariant::Peak);
+        variant <= static_cast<std::uint32_t>(EndminfUberVariant::Early);
     const bool finite = std::isfinite(screenWidth) &&
         std::isfinite(screenHeight) && std::isfinite(exposure) &&
         std::isfinite(centerX) && std::isfinite(centerY) &&
@@ -7273,9 +7277,20 @@ EndfieldOriginalDxbcQueueEndminfUberPacketVariant(
         return 0u;
     }
 
-    std::memcpy(packet->vsB0, g_EndfieldUberVsB0, sizeof(packet->vsB0));
-    std::memcpy(packet->psB0, g_EndfieldUberPsB0, sizeof(packet->psB0));
-    std::memcpy(packet->psB1, g_EndfieldUberPsB1, sizeof(packet->psB1));
+    const bool early = variant ==
+        static_cast<std::uint32_t>(EndminfUberVariant::Early);
+    std::memcpy(
+        packet->vsB0,
+        early ? g_EndfieldUberEarlyVsB0 : g_EndfieldUberVsB0,
+        sizeof(packet->vsB0));
+    std::memcpy(
+        packet->psB0,
+        early ? g_EndfieldUberEarlyPsB0 : g_EndfieldUberPsB0,
+        sizeof(packet->psB0));
+    std::memcpy(
+        packet->psB1,
+        early ? g_EndfieldUberEarlyPsB1 : g_EndfieldUberPsB1,
+        sizeof(packet->psB1));
     // ShaderVariablesGlobal._ScreenSize = (width, height, rcpWidth, rcpHeight).
     PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 0u, screenWidth);
     PatchEndminfUberFloat(packet->psB0, sizeof(packet->psB0), 1u, screenHeight);

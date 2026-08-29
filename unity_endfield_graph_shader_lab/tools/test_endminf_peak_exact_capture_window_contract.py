@@ -32,13 +32,17 @@ class EndminfPeakExactCaptureWindowContractTests(unittest.TestCase):
             r"HalfWindowSeconds\s*=\s*1\.0f\s*/\s*120\.0f;",
         )
         self.assertNotIn("if (!IsCapturedPhase(hasPost, post))", uber)
+        self.assertIn("EarlyCapturePhaseSeconds = 0.02256267f", uber)
         self.assertIn(
-            "uint variant = IsCapturedPhase(hasPost, post) ? 1u : 0u;",
+            '"ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC"',
             uber,
         )
+        self.assertIn("uint variant = EarlyDiagnosticRequested &&", uber)
+        self.assertIn("? 2u", uber)
         self.assertIn("QueuePacketVariant(", uber)
         self.assertIn("post.mode == 6", uber)
         self.assertIn("Mathf.Abs(post.elapsed - CapturePhaseSeconds)", uber)
+        self.assertIn("Mathf.Abs(post.elapsed - EarlyCapturePhaseSeconds)", uber)
 
     def test_inactive_exact_paths_restore_the_authored_renderer(self) -> None:
         for name in RUNTIMES[:2]:

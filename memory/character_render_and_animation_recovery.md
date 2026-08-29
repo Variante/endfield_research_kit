@@ -2521,6 +2521,17 @@ A focused D3D11 run proves submission only at 4.350000 s and no submission at
 presentation by the clean-reference visual boundary, not promoted on a small
 static-MAE improvement.
 
+Frame 1600 from the same capture closes a second exact combined-Uber constant
+payload. Its retained radial/chromatic lanes solve the authored curves to
+0.02256267 s, while its accumulated UI-bearing backbuffer registers to clean
+reference frame 8. A one-sample native replay is technically valid but is also
+rejected from presentation: versus the restored smooth/upright 770-frame
+baseline at source offset -1, first-frame character/effect ROI MAE worsens by
+6.53/1.85, and first-30-frame temporal-delta MAE worsens by 0.48. Preserve it
+only behind `ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC=1`; canonical
+video export and the interactive presentation continue to use the ordinary
+Uber shader at this early sample.
+
 The clean canonical cloth-state render at
 `exports/endminf_overview_20260828_cloth_state_fix/frames` completes 770/770
 with exact Uber disabled. At offset -1 its 558-frame scores are 22.9257 actor

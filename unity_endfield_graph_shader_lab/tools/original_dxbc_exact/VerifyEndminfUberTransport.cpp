@@ -136,7 +136,7 @@ int main(int argc, char** argv)
         reset();
 
         if (queueVariant(
-                2u, 1920.0f, 1080.0f, 1.0f,
+                3u, 1920.0f, 1080.0f, 1.0f,
                 0.5f, 0.5f, 0.1f, 1.0f) != 0u ||
             failureCount() != 1u || failureStage() != 402u)
         {
@@ -179,8 +179,10 @@ int main(int argc, char** argv)
         std::uint32_t queuedIds[64] = {};
         for (std::size_t index = 0; index < 64; ++index)
         {
+            const std::uint32_t variant =
+                static_cast<std::uint32_t>(index % 3u);
             queuedIds[index] = queueVariant(
-                static_cast<std::uint32_t>(index & 1u),
+                variant,
                 1280.0f, 1024.0f, 1.0f,
                 0.5f, 0.5f,
                 index == 0 ? 0.0f : 0.1f,
@@ -202,7 +204,7 @@ int main(int argc, char** argv)
             float queuedAspect = 0.0f;
             if (inspectPacket(
                     queuedIds[index], &queuedVariant, &queuedAspect) != 1u ||
-                queuedVariant != static_cast<std::uint32_t>(index & 1u) ||
+                queuedVariant != variant ||
                 std::fabs(queuedAspect - 1.25f) > 0.000001f)
             {
                 FreeLibrary(module);
