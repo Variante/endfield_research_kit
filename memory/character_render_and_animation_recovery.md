@@ -55,12 +55,22 @@ hooks only the exact plugin entry point, never replaces pointers returned by
 cleanup, and limits exposure staging to the exact armed two-packet window.
 Exposure joins use accepted-packet order, viewport, and command-buffer identity
 rather than the unstable address of a `SlFrameToken` reference. Build and all
-20 native tests pass. Follow-up session `20260829T222954Z` exited without a
-client crash and proved the remaining surface scheduler error: retail DLSS
-evaluation precedes the final Uber pass, so the same-interval body+Uber
-conjunction becomes known only after that interval's DLSS call. The observer
-now arms the immediately following Present interval; another clean session is
-still required to close evidence completeness.
+20 native tests pass. Follow-up session `20260829T224523Z` exited without a
+client crash and retained two complete Streamline packets with matching
+input/output/depth/motion hashes, but remains failed evidence: post-launch
+attachment missed `slInit`, pre-trigger chronology overflowed, and the option
+association was stale. Per-call chronology now resets at the exact trigger and
+freezes after the bounded pair, while initialization lifetime remains separate;
+a guaranteed pre-`slInit` observation still requires an explicitly approved,
+exact-build-gated prelaunch lifecycle rather than synthesized evidence.
+
+The same session proved why the secondary observer recorded 32,097
+`crossFrame=true` cloth updates but no writes. That branch bypasses the former
+`WriteTransform`/`CompleteMasterJob` hooks and publishes through
+`WriteDoubleBufferTransform`, then completes its returned job handle before the
+outer `ClothUpdate` returns. The observer now identity-gates that exact call,
+accepts only a nonzero handle, and samples the proven `last*` arrays only after
+the outer return; the false path remains intact and all 20 native tests pass.
 
 ## Stable conclusions
 
@@ -135,6 +145,19 @@ still required to close evidence completeness.
   positions, tangents, or curves. A trial tangent rewrite was rejected because
   it produced antipodal near-180-degree errors; the generated clips remain the
   direct recovered ACL keys.
+  A character-neutral runtime bridge now imports validated ACL sample contracts
+  as generated `RecoveredAclClipData` assets and drives Animator states with the
+  recovered clamp/wrap clock, stable endpoint vector interpolation, and
+  shortest-hemisphere normalized quaternion interpolation. The bridge preserves
+  each manifest binding's position/rotation/scale mask and fails closed on
+  source, decoded-payload, hierarchy, or state mismatch; it contains no
+  Endminf pose constants or corrective curves. A canonical 770-frame render
+  with this driver passes start-to-loop, settled-loop, upright portrait, exact
+  effect, and captured-secondary gates. Its best retail alignment is effectively
+  unchanged from the dense-key baseline (ROI MAE 23.8907 versus 23.8872;
+  temporal delta MAE 15.4863 versus 15.4818), confirming that the visible
+  remaining jerk belongs to sparse secondary replay/unsolved cloth history,
+  not permission to tune the body trajectory.
   Captured
   Forward vertex streams are undeformed and duplicated; retail skinning lives
   in structured SRV `vs-t0`. Decompiled CharacterNPR Skin PreGBuffer vertex

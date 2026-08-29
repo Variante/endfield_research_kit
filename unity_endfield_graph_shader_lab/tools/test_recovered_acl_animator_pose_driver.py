@@ -13,6 +13,14 @@ SOURCE = (
     / "Animation"
     / "RecoveredAclAnimatorPoseDriver.cs"
 )
+IMPORTER = (
+    ROOT
+    / "Assets"
+    / "EndfieldGraphShaderLab"
+    / "Editor"
+    / "CharacterRecovery"
+    / "RecoveredAclClipDataImporter.cs"
+)
 
 
 class RecoveredAclAnimatorPoseDriverTests(unittest.TestCase):
@@ -49,6 +57,13 @@ class RecoveredAclAnimatorPoseDriverTests(unittest.TestCase):
         self.assertIn("[DefaultExecutionOrder(-70)]", source)
         self.assertIn("private void LateUpdate()", source)
         self.assertNotIn("PlayerLoop.SetPlayerLoop", source)
+
+    def test_importer_is_job_driven_and_runtime_validated(self):
+        source = IMPORTER.read_text(encoding="utf-8")
+        self.assertIn("ENDFIELD_RECOVERED_ACL_IMPORT_JOB", source)
+        self.assertIn("JsonUtility.FromJsonOverwrite", source)
+        self.assertIn("imported.TryValidate(out string failure)", source)
+        self.assertNotIn("endminf", source.lower())
 
 
 if __name__ == "__main__":

@@ -10327,6 +10327,43 @@ namespace EndfieldGraphShaderLabEditor
                 playback.requireAnimatorContract = true;
                 playback.animatorStartStatePath = "Base Layer.Overview.FromOveview";
                 playback.animatorLoopStatePath = "Base Layer.Overview.OverviewIdle";
+                string aclAssetRoot = $"{actorGeneratedRoot}/Animations/ACL";
+                RecoveredAclClipData startAcl = AssetDatabase.LoadAssetAtPath<
+                    RecoveredAclClipData>($"{aclAssetRoot}/{Safe(startClip)}.asset");
+                RecoveredAclClipData loopAcl = AssetDatabase.LoadAssetAtPath<
+                    RecoveredAclClipData>($"{aclAssetRoot}/{Safe(loopClip)}.asset");
+                RecoveredAclAnimatorPoseDriver aclDriver =
+                    root.GetComponent<RecoveredAclAnimatorPoseDriver>();
+                if (startAcl != null && loopAcl != null)
+                {
+                    aclDriver = aclDriver != null
+                        ? aclDriver
+                        : root.AddComponent<RecoveredAclAnimatorPoseDriver>();
+                    aclDriver.animatorSource = animator;
+                    aclDriver.poseRoot = root.transform;
+                    aclDriver.states = new[]
+                    {
+                        new RecoveredAclAnimatorState
+                        {
+                            fullStatePath = playback.animatorStartStatePath,
+                            clip = startAcl,
+                        },
+                        new RecoveredAclAnimatorState
+                        {
+                            fullStatePath = playback.animatorLoopStatePath,
+                            clip = loopAcl,
+                        },
+                    };
+                    if (!aclDriver.Rebind())
+                        throw new InvalidDataException(
+                            "Generated ACL Animator driver failed closed: " +
+                            aclDriver.BindingFailure);
+                    EditorUtility.SetDirty(aclDriver);
+                }
+                else if (aclDriver != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(aclDriver);
+                }
                 EditorUtility.SetDirty(animator);
             }
             playback.weaponHide = Float(
