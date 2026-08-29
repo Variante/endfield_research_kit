@@ -46,6 +46,20 @@ namespace EndfieldGraphShaderLab
 
         internal string Failure => failure;
 
+        internal bool HasPendingValidation => submissionPending;
+
+        internal bool ValidatePendingAfterSynchronizedRender(
+            out string validationFailure)
+        {
+            validationFailure = string.Empty;
+            if (!submissionPending)
+                return true;
+            bool valid = ValidatePending();
+            if (!valid)
+                validationFailure = failure;
+            return valid;
+        }
+
         internal bool Enqueue(
             CommandBuffer command,
             RenderTargetIdentifier source,

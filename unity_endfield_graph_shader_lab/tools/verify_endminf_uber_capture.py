@@ -273,8 +273,12 @@ def build_report(capture: Path, constant_payload_only: bool = False,
     session_path = capture / "session.json"
     require(session_path.is_file(), f"session manifest is absent: {session_path}")
     session = json.loads(session_path.read_text(encoding="utf-8"))
-    require(session.get("graphicsProfile") == "targeted",
-            "capture is not the targeted graphics profile")
+    graphics_profile = session.get("graphicsProfile")
+    require(
+        graphics_profile in {"targeted", "full"},
+        "capture graphics profile is unsupported: "
+        f"expected targeted or full, got {graphics_profile!r}",
+    )
     if not constant_payload_only:
         require(int(session.get("graphicsResourceBudgetBytes", 0)) >=
                 MINIMUM_RESOURCE_BUDGET,
@@ -314,6 +318,7 @@ def build_report(capture: Path, constant_payload_only: bool = False,
             else "validated_exact_live_uber_binding"
         ),
         "capture": str(capture.resolve()),
+        "graphicsProfile": graphics_profile,
         "frameCount": len(paths),
         "resourceBudgetBytes": int(session["graphicsResourceBudgetBytes"]),
         "qpcFrequency": int(session["qpcFrequency"]),

@@ -160,5 +160,125 @@ namespace EndfieldGraphShaderLab
             }
             return true;
         }
+
+        internal bool TryEnqueue(
+            CommandBuffer commandBuffer,
+            RenderTexture packedSceneMV,
+            int width,
+            int height,
+            RenderTexture destination,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (!ValidateSource(
+                    commandBuffer,
+                    packedSceneMV,
+                    width,
+                    height,
+                    out failure))
+            {
+                return false;
+            }
+            if (destination == null || !destination.IsCreated())
+            {
+                failure = "persistent combined-velocity destination is unavailable";
+                return false;
+            }
+            if (destination.width != width || destination.height != height ||
+                destination.graphicsFormat != OutputFormat ||
+                !destination.enableRandomWrite)
+            {
+                failure =
+                    $"persistent combined-velocity destination is " +
+                    $"{destination.width}x{destination.height} " +
+                    $"{destination.graphicsFormat}, randomWrite=" +
+                    destination.enableRandomWrite + "; expected " +
+                    $"{width}x{height} {OutputFormat}, randomWrite=true";
+                return false;
+            }
+
+            commandBuffer.SetComputeTextureParam(
+                compute,
+                kernel,
+                VelocityId,
+                packedSceneMV);
+            commandBuffer.SetComputeTextureParam(
+                compute,
+                kernel,
+                CombinedVelocityId,
+                destination);
+            inputExtent[0] = width;
+            inputExtent[1] = height;
+            commandBuffer.SetComputeIntParams(
+                compute,
+                InputExtentId,
+                inputExtent);
+            commandBuffer.DispatchCompute(
+                compute,
+                kernel,
+                Mathf.CeilToInt(width / (float)ThreadGroupSize),
+                Mathf.CeilToInt(height / (float)ThreadGroupSize),
+                1);
+            commandBuffer.SetGlobalTexture(CombinedVelocityId, destination);
+            return true;
+        }
+
+        private bool ValidateSource(
+            CommandBuffer commandBuffer,
+            RenderTexture packedSceneMV,
+            int width,
+            int height,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (commandBuffer == null)
+            {
+                failure = "command buffer is missing";
+                return false;
+            }
+            if (compute == null || kernel < 0)
+            {
+                failure = string.IsNullOrEmpty(lastFailure)
+                    ? "velocity-combine compute resource is unavailable"
+                    : "velocity-combine kernel lookup failed: " + lastFailure;
+                return false;
+            }
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                failure = "compute shaders are unsupported";
+                return false;
+            }
+            if (!SystemInfo.IsFormatSupported(
+                    OutputFormat,
+                    FormatUsage.LoadStore))
+            {
+                failure = OutputFormat + " does not support UAV load/store";
+                return false;
+            }
+            if (packedSceneMV == null || !packedSceneMV.IsCreated())
+            {
+                failure = "packed SceneMV is unavailable";
+                return false;
+            }
+            if (packedSceneMV.graphicsFormat !=
+                EndfieldRecoveredSceneMVCompositor.SceneMVFormat)
+            {
+                failure =
+                    "packed SceneMV format is " + packedSceneMV.graphicsFormat +
+                    ", expected " +
+                    EndfieldRecoveredSceneMVCompositor.SceneMVFormat;
+                return false;
+            }
+            if (width <= 0 || height <= 0 ||
+                packedSceneMV.width != width || packedSceneMV.height != height)
+            {
+                failure =
+                    $"packed SceneMV extent {packedSceneMV.width}x" +
+                    $"{packedSceneMV.height} does not match requested " +
+                    $"{width}x{height}";
+                return false;
+            }
+            return true;
+        }
     }
 }
