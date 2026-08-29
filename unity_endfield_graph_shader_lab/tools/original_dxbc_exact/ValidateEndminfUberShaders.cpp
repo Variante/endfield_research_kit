@@ -129,7 +129,9 @@ HRESULT Render(
     ID3D11SamplerState* sampler,
     ID3D11RasterizerState* rasterizer,
     ID3D11DepthStencilState* depthState,
+    ID3D11BlendState* blendState,
     ID3D11RenderTargetView* target,
+    ID3D11DepthStencilView* depthTarget,
     ID3D11Texture2D* output,
     bool peak,
     std::vector<std::uint8_t>& pixels)
@@ -177,11 +179,18 @@ HRESULT Render(
     const D3D11_VIEWPORT viewport = {
         0.0f, 0.0f, static_cast<FLOAT>(kWidth),
         static_cast<FLOAT>(kHeight), 0.0f, 1.0f};
+    const D3D11_RECT scissor = {
+        0, 0, static_cast<LONG>(kWidth), static_cast<LONG>(kHeight)};
+    const FLOAT blendFactor[4] = {};
     context->ClearRenderTargetView(target, clear);
-    context->OMSetRenderTargets(1, &target, nullptr);
+    context->ClearDepthStencilView(
+        depthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0u);
+    context->OMSetRenderTargets(1, &target, depthTarget);
+    context->OMSetBlendState(blendState, blendFactor, 0xffffffffu);
     context->OMSetDepthStencilState(depthState, 0u);
     context->RSSetState(rasterizer);
     context->RSSetViewports(1, &viewport);
+    context->RSSetScissorRects(1, &scissor);
     context->IASetInputLayout(nullptr);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(vertexShader, nullptr, 0);
@@ -328,6 +337,26 @@ int main()
     if (SUCCEEDED(result))
         result = device->CreateRenderTargetView(output, nullptr, &target);
 
+    D3D11_TEXTURE2D_DESC depthTextureDescription = {};
+    depthTextureDescription.Width = kWidth;
+    depthTextureDescription.Height = kHeight;
+    depthTextureDescription.MipLevels = 1;
+    depthTextureDescription.ArraySize = 1;
+    depthTextureDescription.Format = DXGI_FORMAT_R24G8_TYPELESS;
+    depthTextureDescription.SampleDesc.Count = 1;
+    depthTextureDescription.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    ID3D11Texture2D* depthTexture = nullptr;
+    ID3D11DepthStencilView* depthTarget = nullptr;
+    if (SUCCEEDED(result))
+        result = device->CreateTexture2D(
+            &depthTextureDescription, nullptr, &depthTexture);
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthViewDescription = {};
+    depthViewDescription.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthViewDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    if (SUCCEEDED(result))
+        result = device->CreateDepthStencilView(
+            depthTexture, &depthViewDescription, &depthTarget);
+
     D3D11_SAMPLER_DESC samplerDescription = {};
     samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -342,6 +371,7 @@ int main()
     rasterizerDescription.FillMode = D3D11_FILL_SOLID;
     rasterizerDescription.CullMode = D3D11_CULL_NONE;
     rasterizerDescription.DepthClipEnable = TRUE;
+    rasterizerDescription.ScissorEnable = TRUE;
     ID3D11RasterizerState* rasterizer = nullptr;
     if (SUCCEEDED(result))
         result = device->CreateRasterizerState(
@@ -354,19 +384,27 @@ int main()
     if (SUCCEEDED(result))
         result = device->CreateDepthStencilState(
             &depthDescription, &depthState);
+    D3D11_BLEND_DESC blendDescription = {};
+    blendDescription.RenderTarget[0].BlendEnable = FALSE;
+    blendDescription.RenderTarget[0].RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+    ID3D11BlendState* blendState = nullptr;
+    if (SUCCEEDED(result))
+        result = device->CreateBlendState(
+            &blendDescription, &blendState);
 
     std::vector<std::uint8_t> normalPixels;
     std::vector<std::uint8_t> peakPixels;
     if (SUCCEEDED(result))
         result = Render(
             device, context, vertex, normal, resources, sampler,
-            rasterizer, depthState,
-            target, output, false, normalPixels);
+            rasterizer, depthState, blendState,
+            target, depthTarget, output, false, normalPixels);
     if (SUCCEEDED(result))
         result = Render(
             device, context, vertex, peak, resources, sampler,
-            rasterizer, depthState,
-            target, output, true, peakPixels);
+            rasterizer, depthState, blendState,
+            target, depthTarget, output, true, peakPixels);
 
     const std::uint64_t normalHash = Fnv1a(normalPixels);
     const std::uint64_t peakHash = Fnv1a(peakPixels);
@@ -387,11 +425,14 @@ int main()
         normalNonzero ? 1u : 0u, peakNonzero ? 1u : 0u,
         normalHash != peakHash ? 1u : 0u, hashesMatch ? 1u : 0u);
 
+    Release(blendState);
     Release(depthState);
     Release(rasterizer);
     Release(sampler);
     Release(target);
     Release(output);
+    Release(depthTarget);
+    Release(depthTexture);
     Release(resources[2]);
     Release(resources[1]);
     Release(resources[0]);
