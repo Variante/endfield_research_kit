@@ -3026,7 +3026,10 @@ first adjacent unwrapped loop-cycle rise. The independent Python verifier
 re-derives every boundary from raw samples and separates tick-quantized QPC
 intervals from the Animator transition contract. Do not use the current
 wall-clock extrapolation to claim exact loop-phase visual equality; replace it
-only after the next complete observer run passes this contract.
+only after the next complete observer run passes this contract. Capture
+runtime builds are statically linked to the MSVC CRT/STL: Endfield's app-local
+older runtime is not an evidence-safe ABI for newer observer synchronization
+objects, and injected-runtime dependency tests fail if that boundary regresses.
 
 ## Main animation gap
 
