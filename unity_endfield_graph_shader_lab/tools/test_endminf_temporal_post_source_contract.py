@@ -54,14 +54,27 @@ class EndminfTemporalPostSourceContractTests(unittest.TestCase):
             method,
         )
 
-    def test_after_temporal_diagnostic_precedes_opening_strip(self) -> None:
+    def test_opening_strip_compatibility_precedes_temporal_resolve(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")
-        start = source.index("bool hasRecoveredTemporalPostSource")
-        end = source.index("if (!useRecoveredPostSemantics)", start)
-        post = source[start:end]
+        render_start = source.index("private void RenderPreparedCamera")
+        render_end = source.index("private void ApplyCharacterPostProcess", render_start)
+        render = source[render_start:render_end]
         self.assertLess(
+            render.index(
+                "ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal("
+            ),
+            render.index("CaptureBeforeTemporalIfArmed"),
+        )
+        post_start = source.index("private void ApplyCharacterPostProcess")
+        post_end = source.index(
+            "private bool ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal",
+            post_start,
+        )
+        post = source[post_start:post_end]
+        self.assertNotIn("TryEvaluateOpeningStrip", post)
+        self.assertLess(
+            post.index("EnqueueRecoveredEndminfTemporalResolve("),
             post.index("EndfieldRecoveredPostStageDiagnostic.AfterTemporal"),
-            post.index("TryEvaluateOpeningStrip"),
         )
 
     def test_public_ngx_proxy_preserves_the_observed_format_handoff(self) -> None:

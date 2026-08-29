@@ -389,6 +389,8 @@ namespace EndfieldGraphShaderLab
             { get; private set; } = string.Empty;
         public static string LastRecoveredEndminfExactUberFailure
             { get; private set; } = string.Empty;
+        public static bool LastRecoveredEndminfOpeningStripCompatibilityApplied
+            { get; private set; }
         public static bool LastRecoveredUnityPublicNgxProxyRequested
             { get; private set; }
         public static bool LastRecoveredUnityPublicNgxProxySubmitted
@@ -2684,6 +2686,11 @@ namespace EndfieldGraphShaderLab
             }
             if (applyPostProcess)
             {
+                ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal(
+                    context,
+                    camera,
+                    useRecoveredPostSemantics,
+                    cameraColorDescriptor);
                 EndfieldRecoveredPostStageDiagnostic
                     .CaptureBeforeTemporalIfArmed(
                         context,
@@ -3467,65 +3474,6 @@ namespace EndfieldGraphShaderLab
                     recoveredPostSource,
                     recoveredPostSourceDescriptor);
             }
-            EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
-                openingStripState = default;
-            RenderTexture openingStripSelector = null;
-            RenderTexture unusedOpeningStripGBufferB;
-            RenderTexture unusedOpeningStripGBufferC;
-            string openingStripSelectorFailure;
-            bool hasOpeningStripSelector =
-                recoveredPreGBufferDepthOwner != null &&
-                recoveredPreGBufferDepthOwner.TryGetCurrentPublication(
-                    camera,
-                    width,
-                    height,
-                    out openingStripSelector,
-                    out unusedOpeningStripGBufferB,
-                    out unusedOpeningStripGBufferC,
-                    out openingStripSelectorFailure);
-            bool useRecoveredEndminfOpeningStrip =
-                useRecoveredPostSemantics &&
-                !EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame &&
-                recoveredEndminfOpeningStripMaterial != null &&
-                hasOpeningStripSelector &&
-                EndfieldEndminfVisualCompatibilityClock.TryEvaluateOpeningStrip(
-                    out openingStripState);
-            if (useRecoveredEndminfOpeningStrip)
-            {
-                commandBuffer.GetTemporaryRT(
-                    RecoveredEndminfOpeningStripSourceId,
-                    recoveredPostSourceDescriptor,
-                    FilterMode.Bilinear);
-                commandBuffer.SetGlobalVector(
-                    EndminfOpeningStripParamsId,
-                    new Vector4(
-                        openingStripState.intensity,
-                        openingStripState.displacementPixels,
-                        openingStripState.chromaticEdgePixels,
-                        openingStripState.elapsed));
-                commandBuffer.SetGlobalVector(
-                    EndminfOpeningStripSourceSizeId,
-                    new Vector4(width, height, 1.0f / width, 1.0f / height));
-                commandBuffer.SetGlobalTexture(
-                    EndminfOpeningStripSelectorId,
-                    openingStripSelector);
-                commandBuffer.Blit(
-                    recoveredPostSource,
-                    RecoveredEndminfOpeningStripSourceId,
-                    recoveredEndminfOpeningStripMaterial,
-                    0);
-                recoveredPostSource = new RenderTargetIdentifier(
-                    RecoveredEndminfOpeningStripSourceId);
-
-                if (!loggedRecoveredEndminfOpeningStrip)
-                {
-                    Debug.Log(
-                        "Recovered Endminf opening horizontal-strip pass active " +
-                        "before bloom/Uber; the existing reduced radial/chromatic " +
-                        "compatibility response remains downstream.");
-                    loggedRecoveredEndminfOpeningStrip = true;
-                }
-            }
             if (!useRecoveredPostSemantics)
             {
                 // Keep the original compatibility path byte-for-byte equivalent:
@@ -3943,9 +3891,6 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.ReleaseTemporaryRT(CameraColorId);
             if (useRecoveredEndminfRgba16PostSource)
                 commandBuffer.ReleaseTemporaryRT(RecoveredEndminfPostSourceId);
-            if (useRecoveredEndminfOpeningStrip)
-                commandBuffer.ReleaseTemporaryRT(
-                    RecoveredEndminfOpeningStripSourceId);
             if (hasRecoveredTemporalPostSource &&
                 releaseRecoveredTemporalPostSource)
                 commandBuffer.ReleaseTemporaryRT(
@@ -4144,6 +4089,89 @@ namespace EndfieldGraphShaderLab
                     $"full-scene primary {primarySceneDepth.depthStencilFormat} depth/stencil.");
                 loggedRecoveredPostUberWorldUi = true;
             }
+        }
+
+        private bool ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal(
+            ScriptableRenderContext context,
+            Camera camera,
+            bool useRecoveredPostSemantics,
+            RenderTextureDescriptor sceneColorDescriptor)
+        {
+            LastRecoveredEndminfOpeningStripCompatibilityApplied = false;
+            int width = Mathf.Max(sceneColorDescriptor.width, 1);
+            int height = Mathf.Max(sceneColorDescriptor.height, 1);
+            EndfieldEndminfVisualCompatibilityClock.RecoveredOpeningStripState
+                openingStripState = default;
+            RenderTexture openingStripSelector = null;
+            RenderTexture unusedOpeningStripGBufferB;
+            RenderTexture unusedOpeningStripGBufferC;
+            string openingStripSelectorFailure;
+            bool hasOpeningStripSelector =
+                recoveredPreGBufferDepthOwner != null &&
+                recoveredPreGBufferDepthOwner.TryGetCurrentPublication(
+                    camera,
+                    width,
+                    height,
+                    out openingStripSelector,
+                    out unusedOpeningStripGBufferB,
+                    out unusedOpeningStripGBufferC,
+                    out openingStripSelectorFailure);
+            bool useRecoveredEndminfOpeningStripCompatibility =
+                useRecoveredPostSemantics &&
+                !EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame &&
+                recoveredEndminfOpeningStripMaterial != null &&
+                hasOpeningStripSelector &&
+                EndfieldEndminfVisualCompatibilityClock.TryEvaluateOpeningStrip(
+                    out openingStripState);
+            if (!useRecoveredEndminfOpeningStripCompatibility)
+                return false;
+
+            var commandBuffer = new CommandBuffer
+            {
+                name =
+                    "Recovered Endminf opening-strip compatibility before temporal"
+            };
+            commandBuffer.GetTemporaryRT(
+                RecoveredEndminfOpeningStripSourceId,
+                sceneColorDescriptor,
+                FilterMode.Bilinear);
+            commandBuffer.SetGlobalVector(
+                EndminfOpeningStripParamsId,
+                new Vector4(
+                    openingStripState.intensity,
+                    openingStripState.displacementPixels,
+                    openingStripState.chromaticEdgePixels,
+                    openingStripState.elapsed));
+            commandBuffer.SetGlobalVector(
+                EndminfOpeningStripSourceSizeId,
+                new Vector4(width, height, 1.0f / width, 1.0f / height));
+            commandBuffer.SetGlobalTexture(
+                EndminfOpeningStripSelectorId,
+                openingStripSelector);
+            commandBuffer.Blit(
+                CameraColorId,
+                RecoveredEndminfOpeningStripSourceId,
+                recoveredEndminfOpeningStripMaterial,
+                0);
+            commandBuffer.CopyTexture(
+                RecoveredEndminfOpeningStripSourceId,
+                CameraColorId);
+            commandBuffer.ReleaseTemporaryRT(
+                RecoveredEndminfOpeningStripSourceId);
+            context.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Release();
+            LastRecoveredEndminfOpeningStripCompatibilityApplied = true;
+
+            if (!loggedRecoveredEndminfOpeningStrip)
+            {
+                Debug.Log(
+                    "Recovered Endminf opening horizontal-strip compatibility " +
+                    "pass active in packed SceneColor before temporal resolve; " +
+                    "the separately gated exact retained packet path remains " +
+                    "authoritative.");
+                loggedRecoveredEndminfOpeningStrip = true;
+            }
+            return true;
         }
 
         private bool EnqueueRecoveredEndminfTemporalResolve(
