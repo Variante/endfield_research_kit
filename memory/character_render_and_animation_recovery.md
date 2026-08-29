@@ -309,7 +309,18 @@ complete frame without a client fault.
   evidence for combined velocity. Four full retail D3D11 FrameAnalysis captures
   independently close the transient output as full-native-resolution
   `R16G16_FLOAT` with SRV, RTV, and UAV bindings: the 3840x2160 packed input is
-  decoded by a 480x270 dispatch of the 8x8 kernel. Unity now publishes the same
+  decoded by a 480x270 dispatch of the 8x8 kernel. Four retained retail peak
+  frames also close the actual consumer route rather than merely its producer:
+  full-resolution `R11G11B10_FLOAT` scene color flows through that exact
+  velocity-combine dispatch into a Streamline evaluation with reverse-Z
+  `D32S8` depth/exposure, producing full-resolution `RGBA16_FLOAT`; bloom then
+  reads that RGBA16 surface into a half-resolution `R11G11B10_FLOAT` chain and
+  the exact Uber resolves it to `RGBA8_UNorm`. None of those frames executes
+  any of the three ordinary TAAU shader hashes. This proves the retained-frame
+  consumer is Streamline and excludes the ordinary TAAU path; the static
+  quality mapping makes DLAA mode 6 overwhelmingly likely, but exact-frame
+  `slDLSSSetOptions` evidence is still required before labeling that invocation
+  mode-exact. Unity now publishes the same
   temporary `R16G16_SFloat` `_CombinedVelocity` producer without enabling a
   DLSS/DLAA consumer or changing beauty. Direct attachment of every retail
   non-character motion producer remains open. The same-frame reset is exactly large de-jittered camera
@@ -2769,8 +2780,18 @@ skin-palette UAV every Present and a 4K visual checkpoint every sixth package),
 followed by 36 bounded full-owner packages at eight-Present spacing through the
 peak/loop. Both `build-final` and
 the launcher-owned `build-local` pass all 16 tests. One new unattended Full
-capture is required before further opening-hair tuning. At 4.35
-seconds the replay selects capture frame 1977 directly with effectively zero
+capture is required before further opening-hair tuning. Session
+`20260829T024828Z` did publish all 72 unattended packages with zero dropped
+graphics events and preserves individually complete opening, peak, Uber, and
+settled-loop frames. It does not close the sequence: cadence validation failed
+with 36 unexpected Present gaps, including a 347.262-ms opening gap and a
+2.006-second opening-to-peak gap, so the exact start-to-loop transition remains
+bounded only after retained dispersal frame 2142 and by loop-like frame 2164.
+That session also began before the compute-boundary-enabled observer DLLs were
+rebuilt and therefore contains no `dispatchRecords` or per-frame
+compute-completeness gate. Recapture rather than interpreting its sparse
+extrema or transition timing. At 4.35 seconds the replay selects capture frame
+1977 directly with effectively zero
 interpolation, so that phase separates sparse-motion error from renderer
 plumbing. The retained-skinning probe at exactly 4.35 seconds closes all six
 deforming renderer rows and directly compares frame 1977's retail palette with
