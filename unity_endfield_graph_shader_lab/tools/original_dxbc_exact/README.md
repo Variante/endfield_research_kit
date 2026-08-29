@@ -100,6 +100,22 @@ execution, constant-buffer ABI, fixed state, and
 variant distinction; it is deliberately not presented as a retail-image
 fidelity fixture.
 
+`ValidateEndminfUberShaders.exe` also has a fail-closed full-resolution replay
+mode for diagnostic captures:
+
+```text
+ValidateEndminfUberShaders.exe LUT SOURCE_RGBA16F WIDTH HEIGHT OUTPUT_RGBA8 peak PS_B0 PS_B1
+```
+
+`PS_B0` and `PS_B1` are mandatory frame-local shader-declared ranges; replay
+never silently combines a retained source with the embedded packet from a
+different frame. Until the exact half-resolution R11 bloom payload is present,
+the replay binds a zero t1 and prints `bloom=zero`. The raw output is the
+pre-copy Uber render target and therefore retains the retail fullscreen
+orientation; vertically resolve it, or replay the following retail copy pass,
+before comparing it with the final backbuffer. This mode isolates missing
+bloom/downstream composition and is not a parity claim.
+
 ## M27 Unity-owned draw substitution
 
 The same plugin now contains a separate, default-off M27 compiler-callback

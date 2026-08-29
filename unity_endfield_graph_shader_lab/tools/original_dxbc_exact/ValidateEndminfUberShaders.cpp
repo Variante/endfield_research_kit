@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -16,8 +17,8 @@
 
 namespace
 {
-constexpr UINT kWidth = 32;
-constexpr UINT kHeight = 16;
+constexpr UINT kFixtureWidth = 32;
+constexpr UINT kFixtureHeight = 16;
 constexpr std::uint64_t kExpectedNormalHash = 0xc9a020a5e66757f2ull;
 constexpr std::uint64_t kExpectedPeakHash = 0x07186ed30b54b6abull;
 constexpr std::uint8_t kExpectedLutSha256[32] = {
@@ -181,6 +182,11 @@ HRESULT Render(
     ID3D11RenderTargetView* target,
     ID3D11DepthStencilView* depthTarget,
     ID3D11Texture2D* output,
+    UINT width,
+    UINT height,
+    bool patchFixtureConstants,
+    const std::vector<std::uint8_t>* replayPsB0,
+    const std::vector<std::uint8_t>* replayPsB1,
     bool peak,
     std::vector<std::uint8_t>& pixels)
 {
@@ -190,17 +196,24 @@ HRESULT Render(
     std::vector<std::uint8_t> psB1(
         g_EndfieldUberPsB1,
         g_EndfieldUberPsB1 + g_EndfieldUberPsB1Size);
-    PatchFloat(psB0, 0, static_cast<float>(kWidth));
-    PatchFloat(psB0, 1, static_cast<float>(kHeight));
-    PatchFloat(psB0, 2, 1.0f / static_cast<float>(kWidth));
-    PatchFloat(psB0, 3, 1.0f / static_cast<float>(kHeight));
-    PatchFloat(psB0, 27u * 4u, 1.0f);
-    PatchFloat(psB0, 27u * 4u + 2u,
-               static_cast<float>(kWidth) / static_cast<float>(kHeight));
-    PatchFloat(psB1, 0, 0.5f);
-    PatchFloat(psB1, 1, 0.5f);
-    PatchFloat(psB1, 2, peak ? 0.18f : 0.0f);
-    PatchFloat(psB1, 3, 1.0f);
+    if (replayPsB0 != nullptr)
+        psB0 = *replayPsB0;
+    if (replayPsB1 != nullptr)
+        psB1 = *replayPsB1;
+    if (patchFixtureConstants)
+    {
+        PatchFloat(psB0, 0, static_cast<float>(width));
+        PatchFloat(psB0, 1, static_cast<float>(height));
+        PatchFloat(psB0, 2, 1.0f / static_cast<float>(width));
+        PatchFloat(psB0, 3, 1.0f / static_cast<float>(height));
+        PatchFloat(psB0, 27u * 4u, 1.0f);
+        PatchFloat(psB0, 27u * 4u + 2u,
+                   static_cast<float>(width) / static_cast<float>(height));
+        PatchFloat(psB1, 0, 0.5f);
+        PatchFloat(psB1, 1, 0.5f);
+        PatchFloat(psB1, 2, peak ? 0.18f : 0.0f);
+        PatchFloat(psB1, 3, 1.0f);
+    }
 
     ID3D11Buffer* vsConstant = nullptr;
     ID3D11Buffer* psConstants[2] = {};
@@ -225,10 +238,10 @@ HRESULT Render(
 
     const FLOAT clear[4] = {};
     const D3D11_VIEWPORT viewport = {
-        0.0f, 0.0f, static_cast<FLOAT>(kWidth),
-        static_cast<FLOAT>(kHeight), 0.0f, 1.0f};
+        0.0f, 0.0f, static_cast<FLOAT>(width),
+        static_cast<FLOAT>(height), 0.0f, 1.0f};
     const D3D11_RECT scissor = {
-        0, 0, static_cast<LONG>(kWidth), static_cast<LONG>(kHeight)};
+        0, 0, static_cast<LONG>(width), static_cast<LONG>(height)};
     const FLOAT blendFactor[4] = {};
     context->ClearRenderTargetView(target, clear);
     context->ClearDepthStencilView(
@@ -266,14 +279,15 @@ HRESULT Render(
         result = context->Map(staging, 0, D3D11_MAP_READ, 0, &mapped);
         if (SUCCEEDED(result))
         {
-            pixels.resize(kWidth * kHeight * 4u);
-            for (UINT row = 0; row < kHeight; ++row)
+            pixels.resize(static_cast<std::size_t>(width) * height * 4u);
+            for (UINT row = 0; row < height; ++row)
             {
                 std::memcpy(
-                    pixels.data() + row * kWidth * 4u,
+                    pixels.data() +
+                        static_cast<std::size_t>(row) * width * 4u,
                     static_cast<const std::uint8_t*>(mapped.pData) +
                         row * mapped.RowPitch,
-                    kWidth * 4u);
+                    width * 4u);
             }
             context->Unmap(staging, 0);
         }
@@ -288,9 +302,14 @@ HRESULT Render(
 
 int main(int argc, char** argv)
 {
-    if (argc != 2)
+    const bool replay = argc == 9;
+    if (argc != 2 && !replay)
     {
-        std::fprintf(stderr, "usage: ValidateEndminfUberShaders LUT_BYTES\n");
+        std::fprintf(
+            stderr,
+            "usage: ValidateEndminfUberShaders LUT_BYTES "
+            "[SOURCE_RGBA16F WIDTH HEIGHT OUTPUT_RGBA8 normal|peak "
+            "PS_B0 PS_B1]\n");
         return 2;
     }
     std::ifstream lutStream(argv[1], std::ios::binary);
@@ -303,6 +322,61 @@ int main(int argc, char** argv)
         std::fprintf(stderr, "exact_lut_validation=failed bytes=%zu\n",
                      lutBytes.size());
         return 3;
+    }
+
+    UINT width = kFixtureWidth;
+    UINT height = kFixtureHeight;
+    bool replayPeak = false;
+    std::vector<std::uint8_t> sourceBytes;
+    std::vector<std::uint8_t> replayPsB0;
+    std::vector<std::uint8_t> replayPsB1;
+    if (replay)
+    {
+        const unsigned long parsedWidth = std::strtoul(argv[3], nullptr, 10);
+        const unsigned long parsedHeight = std::strtoul(argv[4], nullptr, 10);
+        if (parsedWidth == 0 || parsedHeight == 0 ||
+            parsedWidth > 16384 || parsedHeight > 16384 ||
+            (std::strcmp(argv[6], "normal") != 0 &&
+             std::strcmp(argv[6], "peak") != 0))
+        {
+            std::fprintf(stderr, "replay_arguments=invalid\n");
+            return 3;
+        }
+        width = static_cast<UINT>(parsedWidth);
+        height = static_cast<UINT>(parsedHeight);
+        replayPeak = std::strcmp(argv[6], "peak") == 0;
+        std::ifstream sourceStream(argv[2], std::ios::binary);
+        sourceBytes.assign(
+            (std::istreambuf_iterator<char>(sourceStream)),
+            std::istreambuf_iterator<char>());
+        const std::size_t expectedSourceBytes =
+            static_cast<std::size_t>(width) * height * 8u;
+        if (sourceBytes.size() != expectedSourceBytes)
+        {
+            std::fprintf(
+                stderr, "source_validation=failed bytes=%zu expected=%zu\n",
+                sourceBytes.size(), expectedSourceBytes);
+            return 3;
+        }
+        std::ifstream b0Stream(argv[7], std::ios::binary);
+        replayPsB0.assign(
+            (std::istreambuf_iterator<char>(b0Stream)),
+            std::istreambuf_iterator<char>());
+        std::ifstream b1Stream(argv[8], std::ios::binary);
+        replayPsB1.assign(
+            (std::istreambuf_iterator<char>(b1Stream)),
+            std::istreambuf_iterator<char>());
+        if (replayPsB0.size() != g_EndfieldUberPsB0Size ||
+            replayPsB1.size() != g_EndfieldUberPsB1Size)
+        {
+            std::fprintf(
+                stderr,
+                "replay_constant_validation=failed b0=%zu/%zu "
+                "b1=%zu/%zu\n",
+                replayPsB0.size(), g_EndfieldUberPsB0Size,
+                replayPsB1.size(), g_EndfieldUberPsB1Size);
+            return 3;
+        }
     }
 
     ID3D11Device* device = nullptr;
@@ -329,14 +403,17 @@ int main(int argc, char** argv)
             g_EndfieldUberPixelDxbc, g_EndfieldUberPixelDxbcSize,
             nullptr, &peak);
 
-    std::vector<std::uint16_t> source(kWidth * kHeight * 4u);
-    for (UINT y = 0; y < kHeight; ++y)
+    std::vector<std::uint16_t> source(
+        static_cast<std::size_t>(width) * height * 4u);
+    if (replay)
+        std::memcpy(source.data(), sourceBytes.data(), sourceBytes.size());
+    for (UINT y = 0; !replay && y < height; ++y)
     {
-        for (UINT x = 0; x < kWidth; ++x)
+        for (UINT x = 0; x < width; ++x)
         {
-            const float fx = static_cast<float>(x) / (kWidth - 1u);
-            const float fy = static_cast<float>(y) / (kHeight - 1u);
-            StoreHalf4(&source[(y * kWidth + x) * 4u],
+            const float fx = static_cast<float>(x) / (width - 1u);
+            const float fy = static_cast<float>(y) / (height - 1u);
+            StoreHalf4(&source[(y * width + x) * 4u],
                        0.05f + 1.5f * fx,
                        0.04f + 0.7f * fy,
                        0.03f + 0.4f * (1.0f - fx), 1.0f);
@@ -348,11 +425,11 @@ int main(int argc, char** argv)
     ID3D11ShaderResourceView* resources[3] = {};
     if (SUCCEEDED(result))
         result = CreateHalfTexture(
-            device, kWidth, kHeight, source, &textures[0], &resources[0]);
+            device, width, height, source, &textures[0], &resources[0]);
 
     D3D11_TEXTURE2D_DESC bloomDescription = {};
-    bloomDescription.Width = kWidth / 2u;
-    bloomDescription.Height = kHeight / 2u;
+    bloomDescription.Width = (width + 1u) / 2u;
+    bloomDescription.Height = (height + 1u) / 2u;
     bloomDescription.MipLevels = 1;
     bloomDescription.ArraySize = 1;
     bloomDescription.Format = DXGI_FORMAT_R11G11B10_FLOAT;
@@ -371,15 +448,17 @@ int main(int argc, char** argv)
             textures[1], nullptr, &bloomTarget);
     if (SUCCEEDED(result))
     {
-        const FLOAT bloomClear[4] = {0.08f, 0.04f, 0.02f, 1.0f};
+        const FLOAT fixtureBloom[4] = {0.08f, 0.04f, 0.02f, 1.0f};
+        const FLOAT zeroBloom[4] = {};
+        const FLOAT* bloomClear = replay ? zeroBloom : fixtureBloom;
         context->ClearRenderTargetView(bloomTarget, bloomClear);
         result = CreateHalfTexture(
             device, 1024u, 32u, lut, &textures[2], &resources[2]);
     }
 
     D3D11_TEXTURE2D_DESC outputDescription = {};
-    outputDescription.Width = kWidth;
-    outputDescription.Height = kHeight;
+    outputDescription.Width = width;
+    outputDescription.Height = height;
     outputDescription.MipLevels = 1;
     outputDescription.ArraySize = 1;
     outputDescription.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -394,8 +473,8 @@ int main(int argc, char** argv)
         result = device->CreateRenderTargetView(output, nullptr, &target);
 
     D3D11_TEXTURE2D_DESC depthTextureDescription = {};
-    depthTextureDescription.Width = kWidth;
-    depthTextureDescription.Height = kHeight;
+    depthTextureDescription.Width = width;
+    depthTextureDescription.Height = height;
     depthTextureDescription.MipLevels = 1;
     depthTextureDescription.ArraySize = 1;
     depthTextureDescription.Format = DXGI_FORMAT_R24G8_TYPELESS;
@@ -451,16 +530,44 @@ int main(int argc, char** argv)
 
     std::vector<std::uint8_t> normalPixels;
     std::vector<std::uint8_t> peakPixels;
-    if (SUCCEEDED(result))
+    if (SUCCEEDED(result) && (!replay || !replayPeak))
         result = Render(
             device, context, vertex, normal, resources, sampler,
             rasterizer, depthState, blendState,
-            target, depthTarget, output, false, normalPixels);
-    if (SUCCEEDED(result))
+            target, depthTarget, output, width, height, !replay,
+            replayPsB0.empty() ? nullptr : &replayPsB0,
+            replayPsB1.empty() ? nullptr : &replayPsB1,
+            false, normalPixels);
+    if (SUCCEEDED(result) && (!replay || replayPeak))
         result = Render(
             device, context, vertex, peak, resources, sampler,
             rasterizer, depthState, blendState,
-            target, depthTarget, output, true, peakPixels);
+            target, depthTarget, output, width, height, !replay,
+            replayPsB0.empty() ? nullptr : &replayPsB0,
+            replayPsB1.empty() ? nullptr : &replayPsB1,
+            true, peakPixels);
+
+    if (SUCCEEDED(result) && replay)
+    {
+        const std::vector<std::uint8_t>& replayPixels =
+            replayPeak ? peakPixels : normalPixels;
+        std::ofstream replayOutput(
+            argv[5], std::ios::binary | std::ios::trunc);
+        replayOutput.write(
+            reinterpret_cast<const char*>(replayPixels.data()),
+            static_cast<std::streamsize>(replayPixels.size()));
+        if (!replayOutput)
+            result = E_FAIL;
+        else
+            std::printf(
+                "replay=1 variant=%s width=%u height=%u bloom=zero "
+                "frame_constants=%s "
+                "output_bytes=%zu output_fnv1a=0x%016llx exact_lut=1\n",
+                replayPeak ? "peak" : "normal", width, height,
+                "external",
+                replayPixels.size(),
+                static_cast<unsigned long long>(Fnv1a(replayPixels)));
+    }
 
     const std::uint64_t normalHash = Fnv1a(normalPixels);
     const std::uint64_t peakHash = Fnv1a(peakPixels);
@@ -470,9 +577,11 @@ int main(int argc, char** argv)
     const bool peakNonzero = std::any_of(
         peakPixels.begin(), peakPixels.end(),
         [](std::uint8_t value) { return value != 0; });
-    const bool hashesMatch = normalHash == kExpectedNormalHash &&
+    const bool hashesMatch = !replay &&
+        normalHash == kExpectedNormalHash &&
         peakHash == kExpectedPeakHash;
-    std::printf(
+    if (!replay)
+        std::printf(
         "feature_level=0x%x normal=0x%016llx peak=0x%016llx "
         "normal_nonzero=%u peak_nonzero=%u distinct=%u hashes_match=%u "
         "exact_lut=1\n",
@@ -502,6 +611,8 @@ int main(int argc, char** argv)
     Release(vertex);
     Release(context);
     Release(device);
+    if (replay)
+        return SUCCEEDED(result) ? 0 : 3;
     return SUCCEEDED(result) && normalNonzero && peakNonzero &&
             normalHash != peakHash && hashesMatch
         ? 0
