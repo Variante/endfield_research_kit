@@ -3227,12 +3227,21 @@ writeback to reach the timeline's first settled loop wrap. The canonical
 all-character Unity build also runs the generated Endminf binding verifier
 before it reports success, so missing or hash-stale replay data can no longer
 pass through the ordinary rebuild path as a log-only warning.
-Length-only 6/30/20/70 chunks remain owner candidates, not identities. The next
-observer increment must join cloth registration name and lifecycle to TeamId,
-the registered AddTransform chunk and ordered hierarchy-path hash, then sample
-the live TransformAccess entry after `CompleteMasterJob` for the effective
-final world/local pose. Certification stays false until a retail session proves
-all four exact joins and the existing 126-binding/100-unique-transform contract.
+EndfieldCapture commit `f694bd9` closes the registration and effective-pose
+instrumentation boundary for the next run. Exact-build `AddCloth`/`RemoveCloth`
+lifecycle hooks join `ClothProcess`, TeamId, cloth component, and cloth root;
+the Transform overload of `AddTransform` retains its exact one-row `DataChunk`
+and Transform pointer. After the exact `CompleteMasterJob` return, the observer
+uses the pinned `TransformAccessArray.get_Item` and read-only Transform getters
+to retain the live effective world/local pose. Summary/window/trajectory
+v3/v3/v2 fail closed unless every retained row has a stable lifecycle join,
+the live Transform equals its registration, and all effective-pose lanes are
+finite. The independent verifier checks four distinct cloth owners, stable
+unique Transform identity per index, and post-job pose completeness.
+Length-only 6/30/20/70 labels remain candidates rather than human owner-name
+proof; certification stays false until a retail run passes these joins and a
+bounded name/path observation connects them to the existing 126-binding/
+100-unique-transform contract.
 The maintained consumer gate is
 `unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact
@@ -3286,10 +3295,13 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run observer commits `db2b915`, `7a09410`, and `6eb9788` (including the earlier automatic-trigger,
+1. Run observer commit `f694bd9` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
-   wrap so the bounded trajectory buffer includes the required interval. Close the
+   wrap so the bounded trajectory buffer includes the required interval. First
+   validate the lifecycle-joined effective trajectories with
+   `python unity_endfield_graph_shader_lab/tools/verify_endminf_secondary_dynamics_trajectory_capture.py SESSION`.
+   Close the
    retail temporal boundary with consecutive pre/post Streamline surfaces,
    depth, velocity, jitter/reset, frame token, formats, extents, and resource
    tags. Validate it with
