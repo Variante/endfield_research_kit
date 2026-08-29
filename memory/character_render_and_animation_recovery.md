@@ -3305,7 +3305,9 @@ or shaders rather than hand-editing generated prefabs.
 1. Run observer commit `484aa62` (including the earlier automatic-trigger,
    exposure, options/init-join, and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
-   wrap so the bounded trajectory buffer includes the required interval. First
+   wrap so the bounded trajectory buffer includes the required interval. Use
+   `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
+   omits secondary dynamics and Full graphics. First
    validate the lifecycle-joined effective trajectories with
    `python unity_endfield_graph_shader_lab/tools/verify_endminf_secondary_dynamics_trajectory_capture.py SESSION`.
    Close the
