@@ -2911,14 +2911,17 @@ asserts the production collector returns each descriptor. The observer now
 adds an automatic-Full-only M31 chronology sidecar. The exact first
 `DrawIndexedInstanced(6,1,4542,1082,0)` signature arms one bounded candidate
 and must continue as base vertices `443` then `32` in the same Present. It
-retains a
-64-call draw/dispatch census, stable RTV0/RTV1/DSV identities and descriptors,
+retains a 64-call draw/dispatch census with the bound VS/PS/CS identities,
+stable RTV0/RTV1/DSV identities and descriptors,
 and six immediate pre/post RTV0 copies. Readback is deferred with
 `DO_NOT_WAIT`, shares the existing 1-GiB aggregate ceiling, and publishes only
 after metadata plus all six blobs reach disk; wrong order, target drift,
 capacity, budget, copy/map, device, or publication failures keep the dedicated
 sidecar incomplete. The Release DLL has SHA-256
-`D312264E...F518EADD9D`, and all 18 native tests pass. The final rebuild fixes
+`3EC03A67...9FEE1B35B`, and all 18 native tests pass. This supersedes
+`D312264E...F518EADD9D`: the census now retains bound VS/PS/CS identities so
+each intervening call can be mapped to a retail owner instead of inferred from
+arguments alone. The earlier final rebuild fixes
 the live route to the retail `DrawIndexedInstanced` signature; the prior build
 matched the non-instanced API and cannot produce this evidence. The next
 capture must use
