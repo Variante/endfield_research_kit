@@ -2909,15 +2909,19 @@ two distinct RTVs, a read-only depth/stencil DSV, three samplers, independent
 blend targets, asymmetric stencil faces, and nondefault raster bias, then
 asserts the production collector returns each descriptor. The observer now
 adds an automatic-Full-only M31 chronology sidecar. The exact first
-`DrawIndexed(6,4542,1082)` signature arms one bounded candidate and must
-continue as base vertices `443` then `32` in the same Present. It retains a
+`DrawIndexedInstanced(6,1,4542,1082,0)` signature arms one bounded candidate
+and must continue as base vertices `443` then `32` in the same Present. It
+retains a
 64-call draw/dispatch census, stable RTV0/RTV1/DSV identities and descriptors,
 and six immediate pre/post RTV0 copies. Readback is deferred with
 `DO_NOT_WAIT`, shares the existing 1-GiB aggregate ceiling, and publishes only
 after metadata plus all six blobs reach disk; wrong order, target drift,
 capacity, budget, copy/map, device, or publication failures keep the dedicated
 sidecar incomplete. The Release DLL has SHA-256
-`83F07B21...EA4F674F2`, and all 18 native tests pass. The next capture must use
+`D312264E...F518EADD9D`, and all 18 native tests pass. The final rebuild fixes
+the live route to the retail `DrawIndexedInstanced` signature; the prior build
+matched the non-instanced API and cannot produce this evidence. The next
+capture must use
 this build and pass cadence, resource, base completeness, and M31 chronology
 gates before its palettes, fixed state, or three-draw boundary evidence enter
 replay.
