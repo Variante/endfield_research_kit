@@ -2981,6 +2981,17 @@ After the next complete Unity sequence, wait for user visual review before
 accepting the render as an improvement or replacing the current canonical
 checkpoint.
 
+The current clean-video bridge does not prove the complete 770-frame animation
+schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
+phase 0.0509083 at source frame 91 with plus-or-minus-one-frame uncertainty,
+and can therefore pair only Unity rows 0-554 by elapsed time. Transition entry,
+loop dominance/completion, later loop wraps, and Unity rows 555-769 are
+controller-timing extrapolations rather than observed retail animation state.
+The next exact-build capture should retain active state/clip identity, local or
+normalized time, transition progress, and the first settled loop wrap in the
+same cadence-valid run as its presented-frame identity. Do not use the current
+wall-clock extrapolation to claim exact loop-phase visual equality.
+
 ## Main animation gap
 
 The remaining runtime systems are generalized controller and rotation-only
@@ -3036,10 +3047,11 @@ or shaders rather than hand-editing generated prefabs.
    wait for user review of this checkpoint before changing the render.
 2. Replace the opening-incomplete 144-sample replay with one unattended Full
    capture from the earlier-triggered, two-checkpoint 36-frame palette-focused
-   prefix, verify that its
-   first retained palette covers clean source frame 90 rather than 115, then
-   compare it against pre-Uber frames 219/257/273 and settled loop 407. Keep
-   the diagnostic solver off and do not manually widen cloth.
+   prefix, verify that its first retained palette covers clean source frame 90
+   rather than 115, and retain same-run retail animation-state anchors through
+   transition entry, loop dominance/completion, and the first settled wrap.
+   Then compare it against pre-Uber frames 219/257/273 and settled loop 407.
+   Keep the diagnostic solver off and do not manually widen cloth.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under
