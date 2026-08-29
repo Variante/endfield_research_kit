@@ -26,10 +26,19 @@
       "sha256": "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97",
       "profile": "ps_5_0"
     },
-    "abi": "VS b0[1]; PS b0[28], b1[26], t0-t2, s0; Draw(3,0)",
+    "normal_pixel": {
+      "file": "bytecode/endminf_uber_post_normal_ps.dxbc",
+      "retail_source_file": "20260829T024828Z/graphics/shaders/de96a55f118305ea6145db7aae1789640b1f5b3355cfae87b342e05adaee80dd-s4.dxbc",
+      "size": 3416,
+      "sha256": "de96a55f118305ea6145db7aae1789640b1f5b3355cfae87b342e05adaee80dd",
+      "profile": "ps_5_0"
+    },
+    "abi": "VS b0[1]; PS b0[28], peak b1[26]/normal declaration b1[12], t0-t2, s0; Draw(3,0)",
     "constant_evidence": "reports/assets/character_recovery/endminf_uber_capture_latest.json",
     "source_evidence": "scratch/reverse_engineering/endfield_capture/20260827T183054Z/graphics/frames/1818",
-    "pipeline_evidence_boundary": "active draw constants and shader identities are live; fixed pipeline state is inherited from the same UberPost pass because this capture predates active-variant priority tagging"
+    "normal_constant_evidence": "scratch/reverse_engineering/endfield_capture/20260829T024828Z/normal_uber_constant_audit.json",
+    "normal_constant_boundary": "35 complete ordinary packets agree bitwise on every de96 shader-read lane; the transport reuses the larger peak b0/b1 templates because those read lanes match, while the incomplete session does not certify cadence, latest VS b0, or t1 bytes",
+    "pipeline_evidence_boundary": "active draw constants and shader identities are live; fixed pipeline state is inherited from the same UberPost pass because the peak payload capture predates active-variant priority tagging"
   },
   "reserved_local_keyword": "ENDFIELD_ORIGINAL_DXBC_EXACT",
   "m27_substitution": {

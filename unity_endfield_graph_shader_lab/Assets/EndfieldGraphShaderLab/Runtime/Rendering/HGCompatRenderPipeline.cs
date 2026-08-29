@@ -381,6 +381,8 @@ namespace EndfieldGraphShaderLab
             { get; private set; }
         public static bool LastRecoveredEndminfExactUberValidated
             { get; private set; }
+        public static string LastRecoveredEndminfExactUberVariant
+            { get; private set; } = string.Empty;
         public static string LastRecoveredEndminfExactUberFailure
             { get; private set; } = string.Empty;
         public static bool LastRecoveredUnityPublicNgxProxyRequested
@@ -3294,6 +3296,7 @@ namespace EndfieldGraphShaderLab
                 recoveredEndminfUberExactRuntime.Requested;
             LastRecoveredEndminfExactUberSubmitted = false;
             LastRecoveredEndminfExactUberValidated = false;
+            LastRecoveredEndminfExactUberVariant = string.Empty;
             LastRecoveredEndminfExactUberFailure = string.Empty;
             EndfieldHGOperatorPresentation operatorPresentation =
                 camera.GetComponent<EndfieldHGOperatorPresentation>();
@@ -3746,6 +3749,9 @@ namespace EndfieldGraphShaderLab
                         0);
                 }
                 LastRecoveredEndminfExactUberSubmitted = exactDeferredUber;
+                if (exactDeferredUber)
+                    LastRecoveredEndminfExactUberVariant =
+                        recoveredEndminfUberExactRuntime.LastSubmittedVariant;
                 if (LastRecoveredEndminfExactUberRequested && !exactDeferredUber)
                 {
                     LastRecoveredEndminfExactUberFailure =
@@ -3814,6 +3820,9 @@ namespace EndfieldGraphShaderLab
                         0);
                 }
                 LastRecoveredEndminfExactUberSubmitted = exactDisplayUber;
+                if (exactDisplayUber)
+                    LastRecoveredEndminfExactUberVariant =
+                        recoveredEndminfUberExactRuntime.LastSubmittedVariant;
                 if (LastRecoveredEndminfExactUberRequested && !exactDisplayUber)
                 {
                     LastRecoveredEndminfExactUberFailure =

@@ -407,10 +407,17 @@ enum class EndminfUberPacketState : std::uint32_t
     Consuming = 2,
 };
 
+enum class EndminfUberVariant : std::uint32_t
+{
+    Normal = 0,
+    Peak = 1,
+};
+
 struct EndminfUberPacket
 {
     std::atomic<EndminfUberPacketState> state{EndminfUberPacketState::Empty};
     std::atomic<std::uint32_t> eventId{0};
+    EndminfUberVariant variant = EndminfUberVariant::Peak;
     std::uint32_t width = 0;
     std::uint32_t height = 0;
     std::uint8_t vsB0[kEndminfUberVsB0Bytes] = {};
@@ -424,6 +431,7 @@ std::mutex g_endminfUberMutex;
 ID3D11Texture2D* g_endminfUberConfiguredTextures[3] = {};
 std::uint32_t g_endminfUberNextEventId = 1;
 ID3D11VertexShader* g_endminfUberVertexShader = nullptr;
+ID3D11PixelShader* g_endminfUberNormalPixelShader = nullptr;
 ID3D11PixelShader* g_endminfUberPixelShader = nullptr;
 ID3D11SamplerState* g_endminfUberSampler = nullptr;
 ID3D11BlendState* g_endminfUberBlendState = nullptr;
@@ -5876,6 +5884,7 @@ void ReleaseEndminfUberRuntimeResources()
     ReleaseM14Object(g_endminfUberBlendState);
     ReleaseM14Object(g_endminfUberSampler);
     ReleaseM14Object(g_endminfUberPixelShader);
+    ReleaseM14Object(g_endminfUberNormalPixelShader);
     ReleaseM14Object(g_endminfUberVertexShader);
     std::lock_guard<std::mutex> lock(g_endminfUberMutex);
     for (ID3D11Texture2D*& texture : g_endminfUberConfiguredTextures)
@@ -5930,6 +5939,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     if (device == nullptr)
         return E_POINTER;
     if (g_endminfUberVertexShader != nullptr &&
+        g_endminfUberNormalPixelShader != nullptr &&
         g_endminfUberPixelShader != nullptr &&
         g_endminfUberSampler != nullptr &&
         g_endminfUberBlendState != nullptr &&
@@ -5944,6 +5954,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     ReleaseM14Object(g_endminfUberBlendState);
     ReleaseM14Object(g_endminfUberSampler);
     ReleaseM14Object(g_endminfUberPixelShader);
+    ReleaseM14Object(g_endminfUberNormalPixelShader);
     ReleaseM14Object(g_endminfUberVertexShader);
 
     g_endminfUberFailureStage.store(101u, std::memory_order_relaxed);
@@ -5955,6 +5966,14 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     if (FAILED(result))
         return result;
     g_endminfUberFailureStage.store(102u, std::memory_order_relaxed);
+    result = device->CreatePixelShader(
+        g_EndfieldUberNormalPixelDxbc,
+        g_EndfieldUberNormalPixelDxbcSize,
+        nullptr,
+        &g_endminfUberNormalPixelShader);
+    if (FAILED(result))
+        return result;
+    g_endminfUberFailureStage.store(103u, std::memory_order_relaxed);
     result = device->CreatePixelShader(
         g_EndfieldUberPixelDxbc,
         g_EndfieldUberPixelDxbcSize,
@@ -5970,7 +5989,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     sampler.MinLOD = 0.0f;
     sampler.MaxLOD = D3D11_FLOAT32_MAX;
-    g_endminfUberFailureStage.store(103u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(104u, std::memory_order_relaxed);
     result = device->CreateSamplerState(&sampler, &g_endminfUberSampler);
     if (FAILED(result))
         return result;
@@ -5978,7 +5997,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     D3D11_BLEND_DESC blend = {};
     blend.RenderTarget[0].BlendEnable = FALSE;
     blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-    g_endminfUberFailureStage.store(104u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(105u, std::memory_order_relaxed);
     result = device->CreateBlendState(&blend, &g_endminfUberBlendState);
     if (FAILED(result))
         return result;
@@ -5988,7 +6007,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
     depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
     depth.StencilEnable = FALSE;
-    g_endminfUberFailureStage.store(105u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(106u, std::memory_order_relaxed);
     result = device->CreateDepthStencilState(&depth, &g_endminfUberDepthState);
     if (FAILED(result))
         return result;
@@ -5998,7 +6017,7 @@ HRESULT CreateEndminfUberRuntimeResources(ID3D11Device* device)
     rasterizer.CullMode = D3D11_CULL_NONE;
     rasterizer.DepthClipEnable = TRUE;
     rasterizer.ScissorEnable = TRUE;
-    g_endminfUberFailureStage.store(106u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(107u, std::memory_order_relaxed);
     result = device->CreateRasterizerState(
         &rasterizer, &g_endminfUberRasterizerState);
     if (SUCCEEDED(result))
@@ -6037,7 +6056,7 @@ HRESULT EnsureEndminfUberOutputDepth(
     texture.SampleDesc.Count = 1u;
     texture.Usage = D3D11_USAGE_DEFAULT;
     texture.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    g_endminfUberFailureStage.store(107u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(108u, std::memory_order_relaxed);
     HRESULT result = device->CreateTexture2D(
         &texture, nullptr, &g_endminfUberOutputDepthTexture);
     if (FAILED(result))
@@ -6047,7 +6066,7 @@ HRESULT EnsureEndminfUberOutputDepth(
     view.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     view.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     view.Texture2D.MipSlice = 0u;
-    g_endminfUberFailureStage.store(108u, std::memory_order_relaxed);
+    g_endminfUberFailureStage.store(109u, std::memory_order_relaxed);
     result = device->CreateDepthStencilView(
         g_endminfUberOutputDepthTexture,
         &view,
@@ -6391,7 +6410,11 @@ void UNITY_INTERFACE_API DrawEndminfUberExactRuntime(int eventId)
     context->IASetInputLayout(nullptr);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(g_endminfUberVertexShader, nullptr, 0);
-    context->PSSetShader(g_endminfUberPixelShader, nullptr, 0);
+    ID3D11PixelShader* selectedPixelShader =
+        packet->variant == EndminfUberVariant::Normal
+        ? g_endminfUberNormalPixelShader
+        : g_endminfUberPixelShader;
+    context->PSSetShader(selectedPixelShader, nullptr, 0);
     context->GSSetShader(nullptr, nullptr, 0);
     context->HSSetShader(nullptr, nullptr, 0);
     context->DSSetShader(nullptr, nullptr, 0);
@@ -6938,7 +6961,8 @@ EndfieldOriginalDxbcSetEndminfUberTextureResources(
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
-EndfieldOriginalDxbcQueueEndminfUberPacket(
+EndfieldOriginalDxbcQueueEndminfUberPacketVariant(
+    std::uint32_t variant,
     float screenWidth,
     float screenHeight,
     float exposure,
@@ -6953,6 +6977,8 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
             HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND), 401u);
         return 0u;
     }
+    const bool validVariant =
+        variant <= static_cast<std::uint32_t>(EndminfUberVariant::Peak);
     const bool finite = std::isfinite(screenWidth) &&
         std::isfinite(screenHeight) && std::isfinite(exposure) &&
         std::isfinite(centerX) && std::isfinite(centerY) &&
@@ -6965,7 +6991,7 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
     const bool validParams = centerX >= 0.0f && centerX <= 1.0f &&
         centerY >= 0.0f && centerY <= 1.0f &&
         radialIntensity >= 0.0f && power > 0.0f;
-    if (!finite || !validDimensions || !validParams)
+    if (!validVariant || !finite || !validDimensions || !validParams)
     {
         RecordEndminfUberFailure(E_INVALIDARG, 402u);
         return 0u;
@@ -7033,11 +7059,34 @@ EndfieldOriginalDxbcQueueEndminfUberPacket(
     }
     packet->width = width;
     packet->height = height;
+    packet->variant = static_cast<EndminfUberVariant>(variant);
     packet->eventId.store(eventId, std::memory_order_relaxed);
     packet->state.store(EndminfUberPacketState::Ready, std::memory_order_release);
     g_endminfUberLastResult.store(S_OK, std::memory_order_relaxed);
     g_endminfUberFailureStage.store(0u, std::memory_order_relaxed);
     return eventId;
+}
+
+// ABI-compatible peak-only entry point retained for older managed clients.
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcQueueEndminfUberPacket(
+    float screenWidth,
+    float screenHeight,
+    float exposure,
+    float centerX,
+    float centerY,
+    float radialIntensity,
+    float power)
+{
+    return EndfieldOriginalDxbcQueueEndminfUberPacketVariant(
+        static_cast<std::uint32_t>(EndminfUberVariant::Peak),
+        screenWidth,
+        screenHeight,
+        exposure,
+        centerX,
+        centerY,
+        radialIntensity,
+        power);
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

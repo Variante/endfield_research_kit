@@ -59,6 +59,8 @@ int main(int argc, char** argv)
     using SetTextures = std::uint32_t (*)(void*, void*, void*);
     using QueuePacket = std::uint32_t (*)(
         float, float, float, float, float, float, float);
+    using QueuePacketVariant = std::uint32_t (*)(
+        std::uint32_t, float, float, float, float, float, float, float);
     using Reset = void (*)();
     const GetUint payloadReady = RequiredExport<GetUint>(
         module, "EndfieldOriginalDxbcGetEndminfUberPayloadReady");
@@ -68,6 +70,8 @@ int main(int argc, char** argv)
         module, "EndfieldOriginalDxbcSetEndminfUberTextureResources");
     const QueuePacket queue = RequiredExport<QueuePacket>(
         module, "EndfieldOriginalDxbcQueueEndminfUberPacket");
+    const QueuePacketVariant queueVariant = RequiredExport<QueuePacketVariant>(
+        module, "EndfieldOriginalDxbcQueueEndminfUberPacketVariant");
     const Reset reset = RequiredExport<Reset>(
         module, "EndfieldOriginalDxbcResetEndminfUberRuntimeState");
     const GetUint drawCount = RequiredExport<GetUint>(
@@ -79,7 +83,8 @@ int main(int argc, char** argv)
     const GetUint failureStage = RequiredExport<GetUint>(
         module, "EndfieldOriginalDxbcGetEndminfUberFailureStage");
     if (payloadReady == nullptr || getEvent == nullptr || setTextures == nullptr ||
-        queue == nullptr || reset == nullptr || drawCount == nullptr ||
+        queue == nullptr || queueVariant == nullptr || reset == nullptr ||
+        drawCount == nullptr ||
         failureCount == nullptr || lastResult == nullptr || failureStage == nullptr)
     {
         FreeLibrary(module);
@@ -124,6 +129,16 @@ int main(int argc, char** argv)
         }
         reset();
 
+        if (queueVariant(
+                2u, 1920.0f, 1080.0f, 1.0f,
+                0.5f, 0.5f, 0.1f, 1.0f) != 0u ||
+            failureCount() != 1u || failureStage() != 402u)
+        {
+            FreeLibrary(module);
+            return 9;
+        }
+        reset();
+
         ID3D11Device* device = nullptr;
         ID3D11DeviceContext* context = nullptr;
         D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
@@ -152,13 +167,14 @@ int main(int argc, char** argv)
             if (context != nullptr) context->Release();
             if (device != nullptr) device->Release();
             FreeLibrary(module);
-            return 9;
+            return 10;
         }
 
         std::uint32_t queuedIds[64] = {};
         for (std::size_t index = 0; index < 64; ++index)
         {
-            queuedIds[index] = queue(
+            queuedIds[index] = queueVariant(
+                static_cast<std::uint32_t>(index & 1u),
                 1920.0f, 1080.0f, 1.0f,
                 0.5f, 0.5f,
                 index == 0 ? 0.0f : 0.1f,
@@ -166,14 +182,14 @@ int main(int argc, char** argv)
             if (queuedIds[index] == 0u)
             {
                 FreeLibrary(module);
-                return 10;
+                return 11;
             }
             for (std::size_t prior = 0; prior < index; ++prior)
             {
                 if (queuedIds[index] == queuedIds[prior])
                 {
                     FreeLibrary(module);
-                    return 11;
+                    return 12;
                 }
             }
         }
@@ -183,7 +199,7 @@ int main(int argc, char** argv)
             failureCount() != 1u || failureStage() != 404u)
         {
             FreeLibrary(module);
-            return 12;
+            return 13;
         }
         reset();
         for (ID3D11Texture2D* texture : textures)
@@ -198,7 +214,7 @@ int main(int argc, char** argv)
         return 13;
     }
     std::printf(
-        "payload_ready=%u exports=9 fail_closed_stage=%u ring_tested=%u reset=1\n",
+        "payload_ready=%u exports=10 fail_closed_stage=%u ring_tested=%u reset=1\n",
         expectedReady, expectedStage, expectedReady != 0u ? 64u : 0u);
     FreeLibrary(module);
     return 0;

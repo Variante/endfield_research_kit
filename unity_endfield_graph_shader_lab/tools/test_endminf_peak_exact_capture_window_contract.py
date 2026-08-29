@@ -31,7 +31,12 @@ class EndminfPeakExactCaptureWindowContractTests(unittest.TestCase):
             uber,
             r"HalfWindowSeconds\s*=\s*1\.0f\s*/\s*120\.0f;",
         )
-        self.assertIn("if (!IsCapturedPhase(hasPost, post))", uber)
+        self.assertNotIn("if (!IsCapturedPhase(hasPost, post))", uber)
+        self.assertIn(
+            "uint variant = IsCapturedPhase(hasPost, post) ? 1u : 0u;",
+            uber,
+        )
+        self.assertIn("QueuePacketVariant(", uber)
         self.assertIn("post.mode == 6", uber)
         self.assertIn("Mathf.Abs(post.elapsed - CapturePhaseSeconds)", uber)
 

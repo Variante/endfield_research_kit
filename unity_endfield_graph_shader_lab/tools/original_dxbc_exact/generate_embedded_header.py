@@ -43,6 +43,10 @@ EXPECTED = {
         608,
         "a8c084c37eba0ecc78f26d984a2b8c658f8d743002048c84431807d9dee0ce4e",
     ),
+    "uber_normal_pixel": (
+        3_416,
+        "de96a55f118305ea6145db7aae1789640b1f5b3355cfae87b342e05adaee80dd",
+    ),
     "uber_pixel": (
         4_216,
         "86a732cef7eedb150cbcafb35a994c1e3f7b1ef837dc618131a95e9dfe030c97",
@@ -91,6 +95,7 @@ def main() -> int:
     parser.add_argument("--m13-vertex", type=Path, required=True)
     parser.add_argument("--m13-pixel", type=Path, required=True)
     parser.add_argument("--uber-vertex", type=Path, required=True)
+    parser.add_argument("--uber-normal-pixel", type=Path, required=True)
     parser.add_argument("--uber-pixel", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -104,6 +109,8 @@ def main() -> int:
     m13_vertex = checked(args.m13_vertex, "m13_vertex")
     m13_pixel = checked(args.m13_pixel, "m13_pixel")
     uber_vertex = checked(args.uber_vertex, "uber_vertex")
+    uber_normal_pixel = checked(
+        args.uber_normal_pixel, "uber_normal_pixel")
     uber_pixel = checked(args.uber_pixel, "uber_pixel")
     text = (
         "#pragma once\n"
@@ -147,10 +154,16 @@ def main() -> int:
         + "\n"
         + render_array("g_EndfieldUberVertexDxbc", uber_vertex)
         + "\n"
+        + render_array("g_EndfieldUberNormalPixelDxbc", uber_normal_pixel)
+        + "\n"
         + render_array("g_EndfieldUberPixelDxbc", uber_pixel)
         + "\n"
         + render_digest(
             "g_EndfieldUberVertexDxbcSha256", hashlib.sha256(uber_vertex).digest()
+        )
+        + render_digest(
+            "g_EndfieldUberNormalPixelDxbcSha256",
+            hashlib.sha256(uber_normal_pixel).digest(),
         )
         + render_digest(
             "g_EndfieldUberPixelDxbcSha256", hashlib.sha256(uber_pixel).digest()

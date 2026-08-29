@@ -2724,17 +2724,29 @@ low temporal error but persistent scale, placement, secondary-settle, and grey
 composition differences. This localizes the remaining work without treating a
 whole-window average as evidence for any one renderer owner.
 
-The captured combined Uber packet is now admitted by default only for canonical
-video export at its already certified 4.3500-second phase; explicit environment
-values retain controlled A/B behavior and missing payload/phase fails closed.
-With M13/M18/M20/M21/M28/M31 held constant, a three-frame exact-Uber A/B changes
-mean actor/effect ROI MAE from 27.5229/35.6204 to 27.2709/34.9728. Temporal-delta
-MAE changes from 32.1515 to 32.6694 because the exact packet is one measured
-tick, not a recovered neighboring-frame temporal sequence. The resulting
-`endminf_full_clean_presentation_v5_20260829` render completes 770/770 frames
-with report status `ok`, observes start-to-loop, settled-loop, and VFX-cleanup
-contracts, and submits the exact Uber once with no failure. It supersedes v4 as
-the review candidate while preserving the broader temporal-consumer gap.
+The exact Uber transport now embeds the ordinary retail `de96a55f118305ea`
+pixel shader as well as the peak-only `86a732cef7eedb15` variant. Thirty-five
+complete ordinary packets in session `20260829T024828Z` are bit-stable in every
+shader-read lane and match the corresponding lanes of the retained peak
+template, so ordinary frames safely reuse the larger captured constant buffers
+while preserving live source/bloom/LUT textures. Native selection uses the
+ordinary shader throughout the sequence and the peak shader only in the
+already certified 4.3500-second window; it also patches live screen size,
+exposure, and the previously omitted `b0.c27.z` aspect ratio. Both shader
+objects and a 64-packet alternating-variant ring pass WARP validation. This is
+source-sparse transport, not a new parity claim: that session failed cadence
+and predates complete t1 and latest VS-b0 retention, so a hardened recapture
+and Unity image comparison remain required.
+
+With M13/M18/M20/M21/M28/M31 held constant, the earlier three-frame peak-only
+exact-Uber A/B changes mean actor/effect ROI MAE from 27.5229/35.6204 to
+27.2709/34.9728. Temporal-delta MAE changes from 32.1515 to 32.6694 because the
+exact packet is one measured tick, not a recovered neighboring-frame temporal
+sequence. The resulting `endminf_full_clean_presentation_v5_20260829` render
+completes 770/770 frames with report status `ok`, observes start-to-loop,
+settled-loop, and VFX-cleanup contracts, and submits the peak exact Uber once
+with no failure. It remains the review candidate until the ordinary+peak
+transport is rendered, while preserving the broader temporal-consumer gap.
 
 The full deferred/SphereOutside diagnostic path is not presentation-ready. Its
 explicitly content-invalid screen-shadow R attachment produces the reported
@@ -2884,7 +2896,8 @@ or shaders rather than hand-editing generated prefabs.
 ## Recovery queue
 
 1. Close the crystal peak in owner order: retain the exact static-LinearClamp
-   M17 `baoshan` transport, integrated exact M20 gas, source-compatible Uber path,
+   M17 `baoshan` transport, integrated exact M20 gas, and render/validate the
+   ordinary+peak exact Uber path,
    and validated temporal M31 envelope. Validate the generated M29 temporal
    presentation, preserve M31 before the retail 2999/3000 boundary, and use
    Full frames 2262 and 2775 to retain the recovered M18 diffusion shell and
