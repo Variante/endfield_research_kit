@@ -297,7 +297,6 @@ namespace EndfieldGraphShaderLab
 
             preparedCamera = null;
             preparedLightCount = 0;
-            preparedSerial = 0;
             PublishGlobalsImmediate(0);
             Shader.SetGlobalFloat(RecoveredLightBinningAvailableId, 0.0f);
         }
@@ -602,7 +601,11 @@ namespace EndfieldGraphShaderLab
                     packedIndex = packedIndex,
                     light = lights[sourceIndex],
                     worldPosition = worldPosition,
-                    worldForward = worldForward.normalized,
+                    // LightCulling consumes VisibleLight.localToWorldMatrix
+                    // column 2 directly. The prepared rotation already
+                    // produced this unit forward; a second normalization
+                    // changes the recovered oct-encoded binary32 lanes.
+                    worldForward = worldForward,
                     worldRotation = worldRotation
                 };
             }
@@ -908,7 +911,9 @@ namespace EndfieldGraphShaderLab
                 }
                 else
                 {
-                    worldForward = worldRotation * Vector3.forward;
+                    worldForward =
+                        EndfieldRecoveredNativeLightMath.RotationMatrixColumn2(
+                            worldRotation);
                 }
                 if (
                     sourceBackedClusteredNprLightLoop &&
@@ -932,7 +937,9 @@ namespace EndfieldGraphShaderLab
                             }
                             worldPosition =
                                 bone.position + bone.rotation * sourceLight.followerLocalPosition;
-                            worldForward = worldRotation * Vector3.forward;
+                            worldForward =
+                                EndfieldRecoveredNativeLightMath.RotationMatrixColumn2(
+                                    worldRotation);
                             break;
                         default:
                             throw new InvalidOperationException(
@@ -1005,8 +1012,10 @@ namespace EndfieldGraphShaderLab
                     forward.z,
                     light.spot ? 1.0f : 0.0f);
                 spotNpr[index] = new Vector4(
-                    Mathf.Cos(light.outerSpotAngle * 0.5f * Mathf.Deg2Rad),
-                    Mathf.Cos(light.innerSpotAngle * 0.5f * Mathf.Deg2Rad),
+                    EndfieldRecoveredNativeLightMath.CosHalfFullConeDegrees(
+                        light.outerSpotAngle),
+                    EndfieldRecoveredNativeLightMath.CosHalfFullConeDegrees(
+                        light.innerSpotAngle),
                     light.nprType,
                     light.rimWidth * light.rimAlpha);
                 nprData[index] = light.nprData;
@@ -1083,7 +1092,7 @@ namespace EndfieldGraphShaderLab
                 }
 
                 float coneTangent = Mathf.Tan(
-                    light.outerSpotAngle * 0.5f * Mathf.Deg2Rad);
+                    (light.outerSpotAngle / 360.0f) * Mathf.PI);
                 if (light.outerSpotAngle > 90.0f)
                 {
                     sphereRadius = coneTangent * range;
@@ -1217,27 +1226,10 @@ namespace EndfieldGraphShaderLab
 
         private static bool TryNormalizeQuaternion(
             Quaternion value,
-            out Quaternion normalized)
-        {
-            float magnitudeSquared =
-                value.x * value.x + value.y * value.y +
-                value.z * value.z + value.w * value.w;
-            if (!(magnitudeSquared > 1e-12f) ||
-                float.IsNaN(magnitudeSquared) ||
-                float.IsInfinity(magnitudeSquared))
-            {
-                normalized = Quaternion.identity;
-                return false;
-            }
-
-            float inverseMagnitude = 1.0f / Mathf.Sqrt(magnitudeSquared);
-            normalized = new Quaternion(
-                value.x * inverseMagnitude,
-                value.y * inverseMagnitude,
-                value.z * inverseMagnitude,
-                value.w * inverseMagnitude);
-            return true;
-        }
+            out Quaternion normalized) =>
+            EndfieldRecoveredNativeLightMath.TryNormalizeQuaternion(
+                value,
+                out normalized);
 
         [StructLayout(LayoutKind.Explicit)]
         private struct FloatUIntBits
@@ -1328,7 +1320,6 @@ namespace EndfieldGraphShaderLab
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             preparedCamera = null;
             preparedLightCount = 0;
-            preparedSerial = 0;
             Shader.SetGlobalInt(CountId, 0);
             Shader.SetGlobalFloat(RecoveredClusteredNprLightLoopId, 0.0f);
             Shader.SetGlobalFloat(RecoveredLightBinningAvailableId, 0.0f);

@@ -3307,27 +3307,43 @@ Its b4 direct-light scalar is likewise source-derived as
 requires a current asynchronous readback with nonzero RGB content; alpha-only
 black output fails closed instead of replacing the ordinary source renderers.
 The isolated Endminf deferred gate confirms the recovered 12-light operator
-fixture, punctual ShadowData/atlas, HGBuffer frame, and exact resolver consumer
-can all publish in one frame. Its M27 probe had separately requested the
-presentation consumer without requesting the recovered M27 HGBuffer producer;
-the probe now connects both selectors. At the authored 4.50-second peak the
-isolated gate reports LightData, ShadowData, input subset, HGBuffer, resolver,
-and M27 all ready. The earlier combined diagnostic also enabled the generic
-SphereOutside producer in the same depth/GBuffer set, then used shared depth as
-M27 ownership; that routed an inverted body-shaped resolve behind the upright
+fixture, same-frame punctual ShadowData/atlas, HGBuffer frame, and exact
+resolver consumer can all publish together. The full-LightData verifier also
+GPU-compares all six published headers and twelve live-light records against
+the source-derived packing contract instead of accepting a truncated subset.
+Its M27 probe had separately requested the presentation consumer without
+requesting the recovered M27 HGBuffer producer; the probe now connects both
+selectors. The cached viewer rebuild now preserves the fingerprint-validated
+playable prefabs instead of overwriting Endminf from the incomplete generated
+manifest. A targeted exact capture fails closed unless the four Overview
+effect roots, primary rock binding, LightData, ShadowData, pass-0 subset,
+five-MRT GBuffer, and M27 HGBuffer are all observed. The repaired 4.60-second
+D3D11 probe restores four roots and 68 admitted renderers, publishes every
+deferred prerequisite, submits and reads back the native consumer, and exits
+without a Unity crash.
+
+The earlier combined diagnostic also enabled the generic SphereOutside
+producer in the same depth/GBuffer set, then used shared depth as M27
+ownership; that routed an inverted body-shaped resolve behind the upright
 portrait. The Endminf exact-consumer probe now excludes SphereOutside and the
 generic producer, and the identity-only A/B removes the contamination without
-an image flip. This does not yet promote the chain to the maintained
-presentation. The retail attachment owner is now recovered:
+an image flip. Physical resource validity and presentation validity are kept
+separate: the current full-resolution t11 attachment can be allocated and
+bound while `t11ContentValid` and `screenContentValid` remain false. The exact
+consumer may execute for transport validation, but M27 presentation stays
+withheld until the retail producer content is certified. This does not yet
+promote the chain to the maintained presentation. The retail attachment owner
+is now recovered:
 `ScreenSpaceShadowMaskPassConstructor` publishes a full-resolution bilinear,
 clamped `R8G8_UNorm` target through two ordinary fullscreen `Draw(3,0)` calls.
 The first writes scene-shadow R as
 `1 + strength * (min(sceneShadow, 1) - 1)` and the second preserves that R
 while adding character-shadow G; neutral R is 1. Capture `20260829T224523Z`
 retains the deferred consumer but missed those ordinary-draw producer payloads.
-EndfieldCapture now observes and descriptor-gates both fullscreen draw forms;
-a fresh bounded graphics capture is required before the RG attachment can be
-admitted to presentation.
+EndfieldCapture now observes and descriptor-gates both fullscreen producer
+draws plus the current PS t11/s1 consumer, retains the shared RG8 payload, and
+requires their same-frame identity and chronology. A fresh bounded graphics
+capture is required before the RG attachment can be admitted to presentation.
 
 The captured Endminf Uber packet remains diagnostic-only. Its native draw and
 resources validate, but the current input chronology regresses the three
@@ -3460,7 +3476,11 @@ Session `20260829T224523Z` retained and hash-validated both four-surface
 packets, proving the next-Present surface scheduler, but it is still rejected:
 the observer attached after `slInit`, its global Streamline chronology tables
 overflowed before the Endminf trigger, and the options-to-Present association
-is consequently one Present stale. These are observer lifetime/association
+is consequently one Present stale. The session has no crash artifact or D3D11
+device-removal evidence. Its 398,131,200-byte Streamline pair plus the
+664,355,624-byte deferred staging peak totals 1,062,486,824 bytes, however, so
+the old concurrent schedule was a credible near-ceiling memory risk, not a
+proven crash cause. These are observer lifetime/association and capture-budget
 gaps, not retail-render conclusions. Keep the raw pair quarantined until a new
 session passes the unchanged strict verifier. EndfieldCapture commit `18aed6a`
 now resets the per-call chronology at the exact trigger, retains only the
@@ -3477,12 +3497,17 @@ identified `WriteDoubleBufferTransform` as the active `last`-array publication
 route. EndfieldCapture commit `fc37afc` retains the `4cac2fc` route and array
 source evidence while bounding every observer callback stack frame; it requires
 complete scheduled/completed/write counts, trajectory, publication, lifecycle,
-hierarchy, effective-pose, and four-owner coverage.
+hierarchy, effective-pose, and four-owner coverage. Commit `4f23c03` corrects
+the deferred screen-shadow observer from the obsolete t13 assumption to the
+current two-producer/t11-consumer chain and reserves its shared RG8 payload
+without exceeding the bounded automatic resource budget.
 Collect the next bounded run with
 `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`: start with Endfield
-closed, wait for all four providers, open Endminf without manually triggering,
-keep it visible through the first settled loop wrap, then stop immediately.
-This is a capture-readiness gate, not recovered solver output.
+closed, wait for all four providers, open Endminf Character Info without a
+manual graphics trigger, keep it visible through the first settled loop wrap,
+then press Numpad 9 immediately to stop and collect. Do not press Numpad 5 in
+this automatic run. This is a capture-readiness gate, not recovered solver
+output.
 
 The current 770-frame canonical source-authored Unity run keeps both captured
 secondary replay and the unverified source solver disabled. It completes the
@@ -3538,7 +3563,7 @@ or shaders rather than hand-editing generated prefabs.
 
 1. Add a provably pre-`slInit` load path that can coexist with the Full
    multi-provider runtime; do not infer initialization preferences from later
-   state or weaken the existing gate. Then run observer commit `18aed6a`
+   state or weaken the existing gate. Then run observer commit `4f23c03`
    (including the earlier
    automatic-trigger, exposure, options/init-join, next-Present scheduling,
    and serialized-staging commits) on the next

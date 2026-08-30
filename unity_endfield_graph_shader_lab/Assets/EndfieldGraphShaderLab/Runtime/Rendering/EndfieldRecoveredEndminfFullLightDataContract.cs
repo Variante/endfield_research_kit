@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace EndfieldGraphShaderLab
@@ -53,7 +54,9 @@ namespace EndfieldGraphShaderLab
                 failure = "the full Endminf contract requires two same-frame shadow assignments";
                 return false;
             }
-            if (!TryNormalize(directionalForward, out directionalForward) ||
+            if (!TryNormalize(
+                    directionalForward,
+                    out Vector3 normalizedDirectionalForward) ||
                 !IsFinite(unitIntensityFinalColor) ||
                 !IsFinite(sourceDirectColor) ||
                 !IsFinite(sourceDirectIntensityDividePi) ||
@@ -63,7 +66,12 @@ namespace EndfieldGraphShaderLab
                 failure = "the recovered directional-light descriptor is invalid";
                 return false;
             }
-            if ((directionalForward -
+            if (!MatchesRecoveredSourceDirectColor(sourceDirectColor))
+            {
+                failure = "the CharInfo_Env direct color no longer matches exact white RGBA source data";
+                return false;
+            }
+            if ((normalizedDirectionalForward -
                  EndfieldRecoveredDeferredLightDataContract.SourceDirectionalForward)
                 .sqrMagnitude > 1.0e-8f)
             {
@@ -204,11 +212,18 @@ namespace EndfieldGraphShaderLab
                 Vector2 octForward = PackNormalOctRectEncode(prepared.worldForward);
                 if (light.spot)
                 {
-                    float outerCos = Mathf.Cos(
-                        0.5f * light.outerSpotAngle * Mathf.Deg2Rad);
-                    float innerCos = Mathf.Cos(
-                        0.5f * light.innerSpotAngle * Mathf.Deg2Rad);
-                    float coneDenominator = innerCos - outerCos;
+                    // Native PrepareCPUData divides the authored full cone
+                    // angle by 360 before multiplying by float PI. Folding
+                    // this into Deg2Rad changes binary32 inputs to cosf for
+                    // the recovered source rows.
+                    float outerCos =
+                        EndfieldRecoveredNativeLightMath.CosHalfFullConeDegrees(
+                            light.outerSpotAngle);
+                    float innerCos =
+                        EndfieldRecoveredNativeLightMath.CosHalfFullConeDegrees(
+                            light.innerSpotAngle);
+                    float coneDenominator =
+                        EndfieldRecoveredNativeLightMath.Sub(innerCos, outerCos);
                     if (!(coneDenominator > 0.0f) || !IsFinite(coneDenominator))
                     {
                         failure = $"spot row {prepared.sourceIndex} has an invalid cone";
@@ -223,7 +238,7 @@ namespace EndfieldGraphShaderLab
                         octForward.x,
                         octForward.y,
                         outerCos,
-                        1.0f / coneDenominator);
+                        EndfieldRecoveredNativeLightMath.Div(1.0f, coneDenominator));
                     destination[record + 3] = new Vector4(
                         hasAssignment ? assignment.shadowBaseIndex : -1.0f,
                         light.volumetricScatteringIntensity,
@@ -291,16 +306,44 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        internal static bool MatchesRecoveredSourceDirectColor(Color value) =>
+            value.r == 1.0f && value.g == 1.0f &&
+            value.b == 1.0f && value.a == 1.0f;
+
         internal static Vector2 PackNormalOctRectEncode(Vector3 value)
         {
-            float denominator =
-                Mathf.Abs(value.x) + Mathf.Abs(value.y) + Mathf.Abs(value.z);
-            Vector3 projected = value / denominator;
-            float folded = Mathf.Clamp01(
-                0.5f * (1.0f - projected.x + projected.y));
+            float sumYX = EndfieldRecoveredNativeLightMath.Add(
+                Mathf.Abs(value.y),
+                Mathf.Abs(value.x));
+            float denominator = EndfieldRecoveredNativeLightMath.Add(
+                sumYX,
+                Mathf.Abs(value.z));
+            // HGUtils.PackNormalOctRectEncode evaluates one reciprocal and
+            // multiplies the vector by it. Component-wise division is close,
+            // but not binary32-equivalent for the source rotations.
+            float reciprocalDenominator =
+                EndfieldRecoveredNativeLightMath.Div(1.0f, denominator);
+            float projectedX = EndfieldRecoveredNativeLightMath.Mul(
+                value.x,
+                reciprocalDenominator);
+            float projectedY = EndfieldRecoveredNativeLightMath.Mul(
+                value.y,
+                reciprocalDenominator);
+            float projectedZ = EndfieldRecoveredNativeLightMath.Mul(
+                value.z,
+                reciprocalDenominator);
+            float foldedLeft = EndfieldRecoveredNativeLightMath.Sub(
+                0.5f,
+                EndfieldRecoveredNativeLightMath.Mul(projectedX, 0.5f));
+            float folded = Mathf.Clamp(
+                EndfieldRecoveredNativeLightMath.Add(
+                    foldedLeft,
+                    EndfieldRecoveredNativeLightMath.Mul(projectedY, 0.5f)),
+                0.0f,
+                1.0f);
             return new Vector2(
-                projected.z < 0.0f ? -Mathf.Abs(folded) : Mathf.Abs(folded),
-                projected.x + projected.y);
+                projectedZ < 0.0f ? -Mathf.Abs(folded) : Mathf.Abs(folded),
+                EndfieldRecoveredNativeLightMath.Add(projectedY, projectedX));
         }
 
         internal static Vector4 BuildCharacterLightHeader(
@@ -412,5 +455,94 @@ namespace EndfieldGraphShaderLab
 
         private static bool IsFinite(float value) =>
             !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    /// <summary>
+    /// Binary32 operation order recovered from the installed HGRP native
+    /// consumers. These helpers consume authored values; they do not contain
+    /// capture-derived output words or per-light corrections.
+    /// </summary>
+    public static class EndfieldRecoveredNativeLightMath
+    {
+        /// <summary>
+        /// Materializes a CLI internal floating-point value as binary32. The
+        /// installed native bodies use scalar SS instructions, so every
+        /// recovered arithmetic stage rounds here instead of depending on the
+        /// current Mono/JIT internal-float policy.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static float F32(float value) =>
+            BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(value));
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static float Add(float left, float right) => F32(left + right);
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static float Sub(float left, float right) => F32(left - right);
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static float Mul(float left, float right) => F32(left * right);
+
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public static float Div(float left, float right) => F32(left / right);
+
+        /// <summary>
+        /// Rebuilds column 2 of the rotation matrix. Native GetForward reads
+        /// VisibleLight.localToWorldMatrix.GetColumn(2); spelling its scalar
+        /// stages here preserves the native binary32 boundaries across JITs.
+        /// </summary>
+        public static Vector3 RotationMatrixColumn2(Quaternion rotation)
+        {
+            float x2 = Add(rotation.x, rotation.x);
+            float y2 = Add(rotation.y, rotation.y);
+            float z2 = Add(rotation.z, rotation.z);
+            float xx2 = Mul(rotation.x, x2);
+            float yy2 = Mul(rotation.y, y2);
+            float xz2 = Mul(rotation.x, z2);
+            float yz2 = Mul(rotation.y, z2);
+            float wx2 = Mul(rotation.w, x2);
+            float wy2 = Mul(rotation.w, y2);
+            return new Vector3(
+                Add(xz2, wy2),
+                Sub(yz2, wx2),
+                Sub(1.0f, Add(xx2, yy2)));
+        }
+
+        public static bool TryNormalizeQuaternion(
+            Quaternion value,
+            out Quaternion normalized)
+        {
+            float xy = Add(Mul(value.x, value.x), Mul(value.y, value.y));
+            float xyz = Add(xy, Mul(value.z, value.z));
+            float magnitudeSquared = Add(xyz, Mul(value.w, value.w));
+            if (!(magnitudeSquared > 1.0e-12f) ||
+                float.IsNaN(magnitudeSquared) ||
+                float.IsInfinity(magnitudeSquared))
+            {
+                normalized = Quaternion.identity;
+                return false;
+            }
+
+            float magnitude = F32(Mathf.Sqrt(magnitudeSquared));
+            float inverseMagnitude = Div(1.0f, magnitude);
+            normalized = new Quaternion(
+                Mul(value.x, inverseMagnitude),
+                Mul(value.y, inverseMagnitude),
+                Mul(value.z, inverseMagnitude),
+                Mul(value.w, inverseMagnitude));
+            return true;
+        }
+
+        /// <summary>
+        /// Replays PrepareCPUData's DIVSS-by-360, MULSS-by-float-PI, then
+        /// native cosf route. The installed cosf promotes that rounded input
+        /// to double for range reduction before converting its result to float.
+        /// </summary>
+        public static float CosHalfFullConeDegrees(float fullConeDegrees)
+        {
+            float turns = Div(fullConeDegrees, 360.0f);
+            float radians = Mul(turns, Mathf.PI);
+            return F32((float)Math.Cos((double)radians));
+        }
     }
 }

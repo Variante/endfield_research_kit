@@ -20,9 +20,43 @@ EXACT_LUT_CONTRACT = ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/"
     "endminf_charinfo_lut_contract.json"
 )
+MANIFEST_SETUP = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+    "EndfieldManifestCharacterSetup.cs"
+)
 
 
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
+    def test_cached_viewer_rebuild_preserves_enriched_actor_prefabs(self) -> None:
+        source = MANIFEST_SETUP.read_text(encoding="utf-8")
+        rebuild = source.split(
+            "public static void RebuildSharedViewerSceneFromCachedAssets()", 1
+        )[1].split(
+            "public static void RebuildSharedViewerSceneFromOriginalMeshes()", 1
+        )[0]
+        self.assertIn("BuildCharacterViewer(", rebuild)
+        self.assertIn("preserveExistingGeneratedAssets: true", rebuild)
+        self.assertNotIn("RebuildSharedViewerScene(rebuildMeshAssets: false)", rebuild)
+
+    def test_targeted_exact_probe_fails_when_source_fixture_is_missing(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        self.assertIn("bool exactConsumerSourceFixtureReady", source)
+        for gate in (
+            "observedEntranceVfx",
+            "observedPrimaryRockCompatibilityBinding",
+            "observedDeferredLightDataReady",
+            "observedDeferredShadowDataReady",
+            "observedDeferredPass0InputSubsetReady",
+            "observedDeferredGBufferFrameReady",
+            "observedEndminfM27HGBufferReady",
+        ):
+            self.assertIn(gate, source)
+        self.assertIn(
+            "requiredCaptureContractReady &&\n"
+            "                exactConsumerSourceFixtureReady",
+            source,
+        )
+
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
         self.assertIn("endminf-viewer-playmode-sequence.v18", source)
@@ -67,24 +101,23 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         self.assertIn("endminfM31ExactRequirementReady", source)
         self.assertIn("IsCapturedPhase(float overviewSeconds)", runtime)
 
-    def test_normal_reproduction_enables_only_the_complete_peak_stone_packet(
+    def test_normal_reproduction_keeps_captured_packet_replays_diagnostic_only(
         self,
     ) -> None:
         source = OPEN_WRAPPER.read_text(encoding="utf-8")
-        self.assertIn(
-            'set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"',
-            source,
-        )
-        self.assertNotIn(
-            'set "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT=1"',
-            source,
-        )
-        self.assertNotIn(
-            'set "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT=1"',
-            source,
-        )
+        for flag in (
+            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+        ):
+            self.assertNotIn(f'set "{flag}=1"', source, flag)
+        self.assertIn("fixed geometry", source)
+        self.assertIn("source runtime", source)
 
-    def test_canonical_video_defaults_to_the_interactive_exact_profile_but_retains_overrides(
+    def test_canonical_video_keeps_packet_replays_opt_in_and_retains_overrides(
         self,
     ) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
@@ -99,23 +132,26 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         self.assertIn("if (videoExportRequested)", source)
         self.assertIn("Environment.GetEnvironmentVariable(flag)", source)
         self.assertIn('Environment.SetEnvironmentVariable(flag, "1")', source)
+        start = source.index("CanonicalVideoDefaultFlags")
+        defaults = source[start:source.index("};", start)]
         for flag in expected:
-            self.assertIn(flag, source, flag)
-            self.assertIn(f'set "{flag}=1"', wrapper, flag)
+            self.assertNotIn(flag, defaults, flag)
+            self.assertNotIn(f'set "{flag}=1"', wrapper, flag)
         self.assertNotIn(
             "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
-            source[source.index("CanonicalVideoDefaultFlags"):source.index("};", source.index("CanonicalVideoDefaultFlags"))],
+            defaults,
         )
         self.assertNotIn(
             'set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"',
             wrapper,
         )
 
-    def test_canonical_video_admits_the_source_certified_uber_tick(self) -> None:
+    def test_canonical_video_rejects_unclosed_uber_input_chronology(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
         start = source.index("CanonicalVideoDefaultFlags")
         defaults = source[start:source.index("};", start)]
-        self.assertIn("ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT", defaults)
+        self.assertNotIn("ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT", defaults)
+        self.assertIn("input chronology is not source-closed", defaults)
 
     def test_public_ngx_proxy_is_reported_and_never_a_canonical_default(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")

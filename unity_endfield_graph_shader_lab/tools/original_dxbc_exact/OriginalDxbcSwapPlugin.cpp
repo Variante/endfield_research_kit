@@ -46,6 +46,8 @@ constexpr const char* kM27ReservedKeyword = "ENDFIELD_ORIGINAL_DXBC_M27_EXACT";
 constexpr std::uint32_t kContractVersion = 2;
 constexpr std::uint32_t kTextureSlotCount = 26;
 constexpr std::uint32_t kConstantBufferSlotCount = 9;
+constexpr std::uint32_t kDiagnosticRetainedResourceCapacity =
+    kTextureSlotCount + kConstantBufferSlotCount + 2;
 
 enum class SubstitutionRoute : std::uint32_t
 {
@@ -82,6 +84,13 @@ std::atomic<std::uint32_t> g_postDrawShaderResourceMask{0};
 std::atomic<std::uint32_t> g_samplerMask{0};
 std::uintptr_t g_texturePointers[kTextureSlotCount] = {};
 std::atomic<std::uint32_t> g_texturePointerCount{0};
+std::mutex g_diagnosticSubmissionMutex;
+IUnknown* g_diagnosticRetainedResources[kDiagnosticRetainedResourceCapacity] = {};
+std::uint32_t g_diagnosticRetainedResourceCount = 0;
+std::uint64_t g_nextDiagnosticSubmissionSerial = 0;
+std::atomic<std::uint64_t> g_configuredDiagnosticSubmissionSerial{0};
+std::atomic<std::uint64_t> g_activeDiagnosticSubmissionSerial{0};
+std::atomic<std::uint64_t> g_completedDiagnosticSubmissionSerial{0};
 std::atomic<std::uint32_t> g_m27MatchCount{0};
 std::atomic<std::uint32_t> g_m27MismatchCount{0};
 std::atomic<std::uint32_t> g_m27VariantHashConflictCount{0};
@@ -607,6 +616,71 @@ IUnityGraphicsD3D11* GetD3D11()
     return g_unityInterfaces == nullptr
         ? nullptr
         : g_unityInterfaces->Get<IUnityGraphicsD3D11>();
+}
+
+void ReleaseRuntimeShaders();
+
+void ReleaseDiagnosticRetainedResourcesLocked()
+{
+    for (std::uint32_t index = 0;
+         index < g_diagnosticRetainedResourceCount;
+         ++index)
+    {
+        if (g_diagnosticRetainedResources[index] != nullptr)
+        {
+            g_diagnosticRetainedResources[index]->Release();
+            g_diagnosticRetainedResources[index] = nullptr;
+        }
+    }
+    g_diagnosticRetainedResourceCount = 0;
+}
+
+void ClearDiagnosticSubmissionLocked(std::uint64_t completedSerial)
+{
+    std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
+    g_texturePointerCount.store(0, std::memory_order_release);
+    ReleaseDiagnosticRetainedResourcesLocked();
+    g_activeDiagnosticSubmissionSerial.store(0, std::memory_order_release);
+    g_configuredDiagnosticSubmissionSerial.store(0, std::memory_order_release);
+    if (completedSerial != 0)
+    {
+        g_completedDiagnosticSubmissionSerial.store(
+            completedSerial,
+            std::memory_order_release);
+    }
+}
+
+void CompleteDiagnosticSubmissionOnRenderThread()
+{
+    {
+        std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+        std::uint64_t serial =
+            g_activeDiagnosticSubmissionSerial.load(std::memory_order_acquire);
+        if (serial == 0)
+        {
+            serial = g_configuredDiagnosticSubmissionSerial.load(
+                std::memory_order_acquire);
+        }
+        ClearDiagnosticSubmissionLocked(serial);
+    }
+    g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(
+        SubstitutionRoute::None,
+        std::memory_order_release);
+    ReleaseRuntimeShaders();
+}
+
+void AbandonDiagnosticSubmission()
+{
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    std::uint64_t serial =
+        g_activeDiagnosticSubmissionSerial.load(std::memory_order_acquire);
+    if (serial == 0)
+    {
+        serial = g_configuredDiagnosticSubmissionSerial.load(
+            std::memory_order_acquire);
+    }
+    ClearDiagnosticSubmissionLocked(serial);
 }
 
 void ResetDiagnosticState()
@@ -3866,8 +3940,21 @@ void DrawExactRuntimeShader()
 
 void ArmDiagnosticOnRenderThread()
 {
-    if (g_armed.load(std::memory_order_acquire))
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    const std::uint64_t submissionSerial =
+        g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire);
+    if (submissionSerial == 0 ||
+        g_activeDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
         return;
+    g_activeDiagnosticSubmissionSerial.store(
+        submissionSerial,
+        std::memory_order_release);
+    if (g_armed.load(std::memory_order_acquire))
+    {
+        g_failureCount.fetch_add(1, std::memory_order_relaxed);
+        g_lastResult.store(E_UNEXPECTED, std::memory_order_relaxed);
+        return;
+    }
     std::uintptr_t pointers[kTextureSlotCount] = {};
     const std::uint32_t pointerCount =
         g_texturePointerCount.load(std::memory_order_acquire);
@@ -3894,6 +3981,14 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
         ArmDiagnosticOnRenderThread();
         return;
     }
+    if (eventId == 2)
+    {
+        // Event 2 is queued after the exact draw and both readback copies.
+        // It is the sole normal completion edge for the submission serial and
+        // the native AddRef ownership acquired before command submission.
+        CompleteDiagnosticSubmissionOnRenderThread();
+        return;
+    }
     if (!g_armed.load(std::memory_order_acquire))
         return;
 
@@ -3903,23 +3998,7 @@ void UNITY_INTERFACE_API InspectPostDrawBindings(int eventId)
         return;
     }
     if (eventId != 1)
-    {
-        if (eventId == 2)
-        {
-            // Event 2 is queued after the exact draw and its readback copy.
-            // Clear the native resource-pointer lifetime only on the render
-            // thread; clearing it from C# immediately after ExecuteCommandBuffer
-            // can race a deferred SRP submission.
-            std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
-            g_texturePointerCount.store(0, std::memory_order_release);
-            g_armed.store(false, std::memory_order_release);
-            g_substitutionRoute.store(
-                SubstitutionRoute::None,
-                std::memory_order_release);
-            ReleaseRuntimeShaders();
-        }
         return;
-    }
 
     IUnityGraphicsD3D11* unityD3D11 = GetD3D11();
     ID3D11Device* device = unityD3D11 == nullptr ? nullptr : unityD3D11->GetDevice();
@@ -6934,6 +7013,7 @@ void UNITY_INTERFACE_API DrawM27ExactRuntime(int eventId)
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
+    AbandonDiagnosticSubmission();
     ReleaseRuntimeShaders();
     ReleaseEndminfUberRuntimeResources();
     ReleaseM27DrawResources();
@@ -6950,6 +7030,7 @@ UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
+    AbandonDiagnosticSubmission();
     g_armed.store(false, std::memory_order_release);
     g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
     ReleaseRuntimeShaders();
@@ -7012,6 +7093,9 @@ EndfieldOriginalDxbcGetConfigureCount()
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
 {
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
+        return 0;
     if (armed != 0)
     {
         g_armed.store(false, std::memory_order_release);
@@ -7034,6 +7118,9 @@ EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 EndfieldOriginalDxbcSetM27SubstitutionArmed(std::uint32_t armed)
 {
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
+        return 0;
     g_armed.store(false, std::memory_order_release);
     g_substitutionRoute.store(
         armed != 0
@@ -8319,6 +8406,9 @@ EndfieldOriginalDxbcSetDiagnosticTexturePointers(
     const std::uint64_t* texturePointers,
     std::uint32_t count)
 {
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
+        return;
     std::memset(g_texturePointers, 0, sizeof(g_texturePointers));
     if (texturePointers != nullptr && count != 0)
     {
@@ -8333,6 +8423,93 @@ EndfieldOriginalDxbcSetDiagnosticTexturePointers(
     g_texturePointerCount.store(
         texturePointers == nullptr ? 0 : count,
         std::memory_order_release);
+}
+
+extern "C" std::uint64_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcBeginDiagnosticSubmission(
+    const std::uint64_t* texturePointers,
+    std::uint32_t texturePointerCount,
+    const std::uint64_t* retainedResourcePointers,
+    std::uint32_t retainedResourceCount)
+{
+    if (texturePointers == nullptr || texturePointerCount != kTextureSlotCount ||
+        retainedResourcePointers == nullptr ||
+        retainedResourceCount != kDiagnosticRetainedResourceCapacity)
+    {
+        return 0;
+    }
+
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0 ||
+        g_activeDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0 ||
+        g_armed.load(std::memory_order_acquire))
+    {
+        return 0;
+    }
+    if (g_nextDiagnosticSubmissionSerial ==
+        (std::numeric_limits<std::uint64_t>::max)())
+    {
+        // Submission serials are compared monotonically by the managed
+        // consumer. Exhaustion is terminal: never wrap and make a new pending
+        // submission appear older than the completed serial.
+        return 0;
+    }
+
+    for (std::uint32_t index = 0; index < texturePointerCount; ++index)
+    {
+        if (texturePointers[index] == 0)
+            return 0;
+    }
+    for (std::uint32_t index = 0; index < retainedResourceCount; ++index)
+    {
+        if (retainedResourcePointers[index] == 0)
+            return 0;
+    }
+
+    ReleaseDiagnosticRetainedResourcesLocked();
+    std::memcpy(
+        g_texturePointers,
+        texturePointers,
+        sizeof(g_texturePointers));
+    g_texturePointerCount.store(texturePointerCount, std::memory_order_release);
+    for (std::uint32_t index = 0; index < retainedResourceCount; ++index)
+    {
+        IUnknown* resource = reinterpret_cast<IUnknown*>(
+            static_cast<std::uintptr_t>(retainedResourcePointers[index]));
+        resource->AddRef();
+        g_diagnosticRetainedResources[index] = resource;
+    }
+    g_diagnosticRetainedResourceCount = retainedResourceCount;
+
+    ++g_nextDiagnosticSubmissionSerial;
+    g_activeDiagnosticSubmissionSerial.store(0, std::memory_order_release);
+    g_configuredDiagnosticSubmissionSerial.store(
+        g_nextDiagnosticSubmissionSerial,
+        std::memory_order_release);
+    return g_nextDiagnosticSubmissionSerial;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcCancelDiagnosticSubmission(std::uint64_t submissionSerial)
+{
+    if (submissionSerial == 0)
+        return 0;
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) !=
+            submissionSerial ||
+        g_activeDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0 ||
+        g_armed.load(std::memory_order_acquire))
+    {
+        return 0;
+    }
+    ClearDiagnosticSubmissionLocked(submissionSerial);
+    return 1;
+}
+
+extern "C" std::uint64_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial()
+{
+    return g_completedDiagnosticSubmissionSerial.load(std::memory_order_acquire);
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
