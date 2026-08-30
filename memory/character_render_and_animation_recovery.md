@@ -3509,7 +3509,10 @@ complete scheduled/completed/write counts, trajectory, publication, lifecycle,
 hierarchy, effective-pose, and four-owner coverage. Commit `4f23c03` corrects
 the deferred screen-shadow observer from the obsolete t13 assumption to the
 current two-producer/t11-consumer chain and reserves its shared RG8 payload
-without exceeding the bounded automatic resource budget.
+without exceeding the bounded automatic resource budget. EndfieldCapture commit
+`d67f942` also retains pixel-sampler slots s0-s5 for the targeted LitEffect draw
+while preserving the existing payload/resource bounds; all 21 native tests
+pass. This is observer coverage only, not renderer admission.
 Collect the next bounded run with
 `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`: start with Endfield
 closed, wait for all four providers, open Endminf Character Info without a
@@ -3532,6 +3535,28 @@ The opening temporal composition and stone/light peak remain the largest gaps;
 the settled post-cleanup motion is temporally stable while hair/coat silhouettes
 remain spatially different. Treat this as the stable non-crashing baseline, not
 retail parity or secondary-motion certification.
+
+The source-backed secondary-dynamics dependency chain is current, but the
+recovered solver remains disabled. Its 40-checkpoint comparison diverges at the
+first post-publication sample (36.45 mm/6.82 degrees mean) and reaches
+104.20 mm/10.89 degrees overall versus 20.24 mm/7.19 degrees with the solver
+off. Current observation closes `ClothUpdate` chronology and final
+TransformAccess publication only; it does not observe the internal numeric
+stages. Before changing the solver, pin the exact CalcDisplayPosition and
+PostProxy worker entries and add a bounded, joined enter/exit stage sidecar.
+Record runtime state arrays only; do not capture or fit parameter arrays,
+authored curves, sampled curve tables, or replay trajectories.
+
+The M27 live exact-ABI admission verifier validates the source subprogram-113
+shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
+IA layouts, five MRT/depth descriptors, full t0-t3 texture mip payloads, and the
+full b0-b4 logical producer contract. It still fails closed because no live
+generative ParticleSystemRenderer observation joins those contracts. The
+current captured constant-buffer packet route and obsolete t2-t5 diagnostic
+bindings are not admissible presentation. The smallest source step is to bind
+the recovered t0-t3 resources, bridge the existing full b0/b1 publishers by
+name, keep UnityPerDraw b2 engine-produced, and observe that live draw before
+enabling anything.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
@@ -3577,8 +3602,9 @@ or shaders rather than hand-editing generated prefabs.
 
 1. Add a provably pre-`slInit` load path that can coexist with the Full
    multi-provider runtime; do not infer initialization preferences from later
-   state or weaken the existing gate. Then run observer commit `4f23c03`
-   (including the earlier
+   state or weaken the existing gate. Then run observer commit `d67f942`
+   (including the screen-shadow correction from `4f23c03`, s0-s5 LitEffect
+   sampler retention, and the earlier
    automatic-trigger, exposure, options/init-join, next-Present scheduling,
    and serialized-staging commits) on the next
    game session; stop cleanly shortly after the first settled overview-loop
@@ -3607,7 +3633,10 @@ or shaders rather than hand-editing generated prefabs.
    M30, and M14 one at a time before changing defaults or suppressing their
    compatibility renderers. Preserve the captured hierarchy transforms and
    equal-queue ordering unless a same-session packet-to-palm registration proves
-   a specific delta.
+   a specific delta. For M27, replace captured packet constants and obsolete
+   t2-t5 bindings with the source t0-t3 and full b0/b1 publisher bridge, retain
+   engine-produced b2, and require the live exact-ABI verifier to admit the
+   generative ParticleSystemRenderer draw before presentation.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under

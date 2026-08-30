@@ -1,0 +1,213 @@
+{
+  "schema": "endfield.endminf-m27-live-exact-abi-admission.v1",
+  "status": "fail_closed_live_particle_renderer_observation_missing",
+  "admitted": false,
+  "presentationEnabled": false,
+  "capturedPacketDataAuthorized": false,
+  "staticContractsValidated": true,
+  "contract": {
+    "shader": {
+      "subProgramIndex": 113,
+      "vertexSha256": "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+      "pixelSha256": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+      "vertexIdentity": "0xC0266E7FAC0046C1",
+      "pixelIdentity": "0x92D80A93ADD9C714",
+      "shellVertexSha256": "b6ffa6a650c43fa86cfed1a146ecdfb046d6c92c7e866ff6f51ac79a6c7d4833",
+      "shellPixelSha256": "9a6803527679aa4d4822ca38a4257c2dafcbce2748a67c7e3387f63e3ee54707"
+    },
+    "renderer": {
+      "type": "ParticleSystemRenderer",
+      "hierarchy": "all/suikuai (2)",
+      "rendererPathId": 59284134265994738,
+      "materialPathId": -6543263480174539080,
+      "meshPathId": -8157825361227167527,
+      "activeVertexStreams": [
+        "Position",
+        "Normal",
+        "Color",
+        "UV",
+        "UV2",
+        "Custom1XYZW"
+      ]
+    },
+    "inputAssembler": {
+      "allowedVertexStrides": [
+        60,
+        68
+      ]
+    },
+    "fiveMrtDescriptor": {
+      "textureFormat": 26,
+      "viewFormat": 26,
+      "sampleCount": 1,
+      "renderTargetCount": 5,
+      "depthBound": true
+    },
+    "depthDescriptor": {
+      "textureFormat": 19,
+      "viewFormat": 20,
+      "sampleCount": 1
+    },
+    "textures": [
+      {
+        "slot": 0,
+        "property": "_BaseColorMap",
+        "width": 1024,
+        "height": 1024,
+        "dxgiFormat": 99,
+        "mipCount": 11,
+        "payloadSha256": "9f5255c1a12b2a17586362f864097453db9158288dafaf0b234ea81e964e88ba",
+        "payloadBytes": 1398128,
+        "fullMipChainRequired": true
+      },
+      {
+        "slot": 1,
+        "property": "_NormalMap",
+        "width": 1024,
+        "height": 1024,
+        "dxgiFormat": 83,
+        "mipCount": 11,
+        "payloadSha256": "ee27e904469e3879349ac52a5e7eac9247c150914a7d9a940d0c0c16ec512af7",
+        "payloadBytes": 1398128,
+        "fullMipChainRequired": true
+      },
+      {
+        "slot": 2,
+        "property": "_MROMap",
+        "width": 1024,
+        "height": 1024,
+        "dxgiFormat": 83,
+        "mipCount": 11,
+        "payloadSha256": "da6f07ae91303fe587f0e363e4f37f3df2631bac6a47c95ac55bbbedd9e4e434",
+        "payloadBytes": 1398128,
+        "fullMipChainRequired": true
+      },
+      {
+        "slot": 3,
+        "property": "_ParallaxMap",
+        "width": 128,
+        "height": 128,
+        "dxgiFormat": 99,
+        "mipCount": 8,
+        "payloadSha256": "9bdc2187bbc5ee1c2c74c4b0486060fa46c3aba2a1860c3221693f77b00a27e8",
+        "payloadBytes": 21872,
+        "fullMipChainRequired": true
+      }
+    ],
+    "constantBuffers": [
+      {
+        "slot": 0,
+        "logicalName": "_TransformVariables",
+        "fullPublisherOrLogicalBytes": 1312,
+        "exactUsedPrefixBytes": 1312,
+        "producer": "EndfieldRecoveredDeferredTransformVariables"
+      },
+      {
+        "slot": 1,
+        "logicalName": "ShaderVariablesGlobal",
+        "fullPublisherOrLogicalBytes": 3200,
+        "exactUsedPrefixBytes": 1696,
+        "producer": "EndfieldRecoveredShaderVariablesGlobal"
+      },
+      {
+        "slot": 2,
+        "logicalName": "UnityPerDraw",
+        "fullPublisherOrLogicalBytes": 256,
+        "exactUsedPrefixBytes": 256,
+        "producer": "ParticleSystemRenderer"
+      },
+      {
+        "slot": 3,
+        "logicalName": "UnityPerMaterial",
+        "fullPublisherOrLogicalBytes": 576,
+        "exactUsedPrefixBytes": 496,
+        "producer": "Material"
+      },
+      {
+        "slot": 4,
+        "logicalName": "_TerrainSubsurfaceConstants",
+        "fullPublisherOrLogicalBytes": 16,
+        "exactUsedPrefixBytes": 16,
+        "producer": "global"
+      }
+    ],
+    "sources": {
+      "reports/assets/character_recovery/endminf_m27_particle_abi.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_particle_abi.json",
+        "sha256": "e6d6af6d6fd55368cffc5c2451f76fa64e691cfb81685f0f3f18dd68eee7f9db"
+      },
+      "reports/assets/character_recovery/endminf_m27_particle_abi_unity_probe.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_particle_abi_unity_probe.json",
+        "sha256": "6ea0e8f61ced8591b2f11e962719e774f99c34d1e9fbb3bb3a3106ffd66a4b06"
+      },
+      "reports/assets/character_recovery/endminf_m27_fixed_state_capture_latest.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_fixed_state_capture_latest.json",
+        "sha256": "36028507dd19921fb1f91d262e183fc1e31577c326ed299bce8b45235e82837b"
+      },
+      "scratch/reverse_engineering/endfield_capture/20260827T225644Z/graphics/frames/2723/metadata.json": {
+        "path": "scratch/reverse_engineering/endfield_capture/20260827T225644Z/graphics/frames/2723/metadata.json",
+        "sha256": "23b8256ca23339dd77cfea103caef13520744c96fcba47add8b4d00eddd4bffe"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/endminf_liteffect_native_texture_payload_contract.json": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/endminf_liteffect_native_texture_payload_contract.json",
+        "sha256": "71ed29acf3f4713ab72048657ee2a0b4a263ea65879d7fd366c6034a60de1c52"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_liteffect_resource_mapping.json": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/ExternalUiEffects/endminf_liteffect_resource_mapping.json",
+        "sha256": "f53f85bb3c4857a511896ac014fe1e6bf2df7eb352003de86b0c26e0a5a9e083"
+      },
+      "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/M27SubstitutionRegistry.h": {
+        "path": "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/M27SubstitutionRegistry.h",
+        "sha256": "3a3fadda0844fe9e57a14224172d28edd7bfa93ef99a11b22c429b561e9d3dc4"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27ExactAbiShell.shader": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27ExactAbiShell.shader",
+        "sha256": "d9ac7856cb9797d9351911bc8fe4d2733449c662bf366fd00aac5338af9eafbf"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs",
+        "sha256": "152fb8b7c6c63bd7e6c5f0fb0e8222b37e92e431bcb35557acdd60d062d44089"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs",
+        "sha256": "c115fc5c7eb83add2d5e64c27bdc158bda699ac7adbf364b477e9777d956e35e"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs",
+        "sha256": "6a9dba4552546da194db1d582c1a6232bd7026fa326aeb2aee1ee642eb1032bf"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs",
+        "sha256": "ce3a0849b0677d67a27ebcf8985c81db7ecc4bd43ff350fa4c25a84b6cd3ce83"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs",
+        "sha256": "8bdef5d2e81376ed4d882375eb43239c44f87e5aa9e616ef7decb3dab9929be9"
+      }
+    }
+  },
+  "currentImplementationAudit": {
+    "activeExactRouteUsesCapturedConstantBufferArrays": true,
+    "activeExactRouteUsesCapturedPacketIssue": true,
+    "activeExactMaterialUsesObsoleteRepresentativeTextureSlots": true,
+    "fullPublishersConnectedToM27ShellCbufferNames": false,
+    "admissibleGenerativeParticleRendererPathExists": false,
+    "boundary": "These flags audit the current implementation only. They do not alter the packet replay, enable the shell, or promote it to presentation."
+  },
+  "liveObservation": {
+    "provided": false,
+    "schema": null,
+    "checks": [
+      {
+        "name": "live.observation",
+        "passed": false,
+        "expected": "endfield.endminf-m27-live-exact-particle-draw.v1",
+        "actual": null
+      }
+    ],
+    "failureCount": 1,
+    "firstFailure": "live.observation"
+  },
+  "smallestRemainingSourceGap": "No generative live observation joins the compiler-substituted subprogram-113 pair to the actual M27 ParticleSystemRenderer draw. Before observing it, the diagnostic path must replace the old t2-t5 and captured _M27CB* bindings with source-driven t0-t3 bindings and a named bridge to the existing full b0/b1 publishers; UnityPerDraw b2 must remain engine-produced.",
+  "boundary": "Admission is diagnostic only. It never enables canonical presentation, never consumes captured VB/IB/CB arrays, and never tunes transforms, positions, curves, lighting, or texture sampling."
+}
