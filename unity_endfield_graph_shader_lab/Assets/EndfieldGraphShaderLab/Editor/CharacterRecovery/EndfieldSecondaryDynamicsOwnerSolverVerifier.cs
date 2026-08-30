@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using CD = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsCalcDisplayPosition;
 using K = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels;
 using Solver = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsOwnerSolver;
 using T = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsTimeStepper;
@@ -22,12 +23,14 @@ namespace EndfieldGraphShaderLabEditor
         {
             Verify();
             Debug.Log(
-                "Verified inert pure-managed Endminf owner solver: explicit initialization, " +
+                "Verified inert pure-managed Endminf owner solver: source-derived Reset initialization, " +
                 "retail 1/2-step cadence surface, ordered two-pass Distance, and Hair no-collider path.");
         }
 
         public static void Verify()
         {
+            VerifyResetSeedingAndConsumption();
+
             Trace trace = new Trace();
             Solver.BaseTransformFrame pose = Pose();
             var team = new T.TeamState { TimeScale = 1f, FrameInterpolation = 1f };
@@ -72,6 +75,61 @@ namespace EndfieldGraphShaderLabEditor
                 new T.TeamState { TimeScale = 1f, FrameInterpolation = 1f });
             Require(anchoredSolver.AdvanceFrame(FrameClock(), Pose(), Steps(1)) == 1,
                 "external baseline anchor closure");
+        }
+
+        private static void VerifyResetSeedingAndConsumption()
+        {
+            Solver.BaseTransformFrame pose = ResetPose();
+            var solver = new Solver(
+                HairOwner(),
+                pose,
+                new T.TeamState
+                {
+                    Flag = T.FlagValid | CD.FlagProcess | T.FlagReset |
+                        T.FlagTimeReset | CD.FlagRunning,
+                    TimeScale = 1f,
+                    FrameInterpolation = 1f,
+                });
+
+            RequireBits((float)solver.SimulationPositions[1].x, 0U,
+                "RegisterProxyMesh allocation remains default before Reset is consumed");
+
+            int steps = solver.AdvanceFrame(
+                new T.TeamFrameInput(true, false, false, false,
+                    1f / 120f, 1f / 120f, 1f / 120f),
+                pose,
+                Steps(0));
+            Require(steps == 0, "Reset is consumed on a zero-substep ClothUpdate");
+
+            for (int index = 0; index < pose.CurrentPositions.Length; index++)
+            {
+                RequireDouble3Bits(solver.SimulationPositions[index], pose.CurrentPositions[index],
+                    "Reset seeds collapsed nextPos/oldPos from current positions");
+                RequireDouble3Bits(solver.BasePositions[index], pose.CurrentPositions[index],
+                    "Reset seeds basePos from current positions");
+                RequireDouble3Bits(solver.DisplayOldPositions[index], pose.CurrentPositions[index],
+                    "Reset seeds oldPosition from current positions");
+                RequireDouble3Bits(solver.VelocityPositions[index], pose.CurrentPositions[index],
+                    "Reset seeds velocityPos from current positions");
+                RequireDouble3Bits(solver.DisplayPositions[index], pose.CurrentPositions[index],
+                    "Reset seeds dispPos from current positions");
+                RequireFloat4Bits(solver.SimulationRotations[index], pose.CurrentRotations[index],
+                    "Reset seeds oldRot from current rotations");
+                RequireFloat4Bits(solver.BaseRotations[index], pose.CurrentRotations[index],
+                    "Reset seeds baseRot from current rotations");
+                RequireFloat4Bits(solver.DisplayOldRotations[index], pose.CurrentRotations[index],
+                    "Reset seeds oldRotation from current rotations");
+                RequireFloat3Zero(solver.Velocities[index], "Reset clears velocity");
+                RequireFloat3Zero(solver.RealVelocities[index], "Reset clears realVelocity");
+                RequireBits(solver.Frictions[index], 0U, "Reset clears friction");
+                RequireBits(solver.StaticFrictions[index], 0U, "Reset clears staticFriction");
+                RequireFloat3Zero(solver.CollisionNormals[index], "Reset clears collisionNormal");
+            }
+
+            Require((solver.TeamState.Flag & (T.FlagReset | T.FlagTimeReset)) == 0UL,
+                "PostTeam consumes Reset and TimeReset after publication");
+            Require(solver.TeamState.Flag == (T.FlagValid | CD.FlagProcess | CD.FlagRunning),
+                "PostTeam preserves non-transient lifecycle flags");
         }
 
         private static void RequireTrace(List<string> rows, int firstSubstep, int count)
@@ -144,6 +202,26 @@ namespace EndfieldGraphShaderLabEditor
                 CurrentRotations = (K.Float4[])rotations.Clone(),
                 PreviousPositions = (K.Double3[])positions.Clone(),
                 PreviousRotations = (K.Float4[])rotations.Clone(),
+            };
+        }
+
+        private static Solver.BaseTransformFrame ResetPose()
+        {
+            K.Double3[] current = { D3(10, 20, 30), D3(11, 21, 31), D3(12, 22, 32) };
+            K.Double3[] previous = { D3(-10, -20, -30), D3(-11, -21, -31), D3(-12, -22, -32) };
+            K.Float4[] currentRotations =
+            {
+                Q(),
+                new K.Float4(0f, 0f, 0.5f, 0.8660254f),
+                new K.Float4(0.5f, 0f, 0f, 0.8660254f),
+            };
+            K.Float4[] previousRotations = { Q(), Q(), Q() };
+            return new Solver.BaseTransformFrame
+            {
+                CurrentPositions = current,
+                CurrentRotations = currentRotations,
+                PreviousPositions = previous,
+                PreviousRotations = previousRotations,
             };
         }
 
@@ -226,6 +304,28 @@ namespace EndfieldGraphShaderLabEditor
             if (Bits(actual) != expected)
                 throw new InvalidOperationException(
                     "Inert Endminf owner solver verification failed: " + message);
+        }
+
+        private static void RequireDouble3Bits(K.Double3 actual, K.Double3 expected, string message)
+        {
+            RequireBits((float)actual.x, Bits((float)expected.x), message + " x");
+            RequireBits((float)actual.y, Bits((float)expected.y), message + " y");
+            RequireBits((float)actual.z, Bits((float)expected.z), message + " z");
+        }
+
+        private static void RequireFloat4Bits(K.Float4 actual, K.Float4 expected, string message)
+        {
+            RequireBits(actual.x, Bits(expected.x), message + " x");
+            RequireBits(actual.y, Bits(expected.y), message + " y");
+            RequireBits(actual.z, Bits(expected.z), message + " z");
+            RequireBits(actual.w, Bits(expected.w), message + " w");
+        }
+
+        private static void RequireFloat3Zero(K.Float3 actual, string message)
+        {
+            RequireBits(actual.x, 0U, message + " x");
+            RequireBits(actual.y, 0U, message + " y");
+            RequireBits(actual.z, 0U, message + " z");
         }
 
         private static void Expect<TException>(Action action) where TException : Exception

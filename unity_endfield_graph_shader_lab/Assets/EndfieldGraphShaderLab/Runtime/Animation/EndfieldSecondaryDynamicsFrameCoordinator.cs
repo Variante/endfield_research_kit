@@ -152,7 +152,11 @@ namespace EndfieldGraphShaderLab
                 _solvers[owner] = new S(_owners[owner], BaseFrame(snapshot),
                     new T.TeamState
                     {
-                        Flag = ActiveTeamFlag(_owners[owner]),
+                        // TeamManager.AddTeam starts with Valid|Reset|TimeReset;
+                        // ClothProcess.StartUse -> UpdateUse -> SetEnable(true)
+                        // adds Process/Enable and reasserts Reset before the first
+                        // PreSimulationUpdate.
+                        Flag = InitialTeamFlag(_owners[owner]),
                         TimeScale = 1f,
                         FrameInterpolation = 1f,
                     },
@@ -248,6 +252,12 @@ namespace EndfieldGraphShaderLab
             (owner.solverInputs.springEnabled
                 ? EndfieldSecondaryDynamicsCalcDisplayPosition.FlagSpring
                 : 0UL);
+
+        private static ulong InitialTeamFlag(EndfieldSecondaryDynamicsData.Owner owner) =>
+            T.FlagValid |
+            ActiveTeamFlag(owner) |
+            T.FlagReset |
+            T.FlagTimeReset;
 
         private static float[] ParticleRadii(EndfieldSecondaryDynamicsData.Owner owner)
         {

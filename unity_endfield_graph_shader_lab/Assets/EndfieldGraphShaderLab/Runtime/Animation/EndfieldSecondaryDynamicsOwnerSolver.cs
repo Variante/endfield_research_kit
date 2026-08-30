@@ -197,6 +197,13 @@ namespace EndfieldGraphShaderLab
             K.Float4[] candidateOldColliderRotations = preparedCapsules == null
                 ? null : (K.Float4[])preparedCapsules.OldRotations.Clone();
 
+            // SimulationManager.PreSimulationUpdateJob consumes TeamData.Reset
+            // once per ClothUpdate, before any SimulationStepUpdate. It seeds
+            // persistent simulation/display history from the current VirtualMesh
+            // transform-read pose and clears all accumulated motion/contact state.
+            if ((candidateTeam.Flag & T.FlagReset) != 0UL)
+                SeedResetState(candidate, baseTransforms.CurrentPositions, baseTransforms.CurrentRotations);
+
             for (int step = 0; step < stepCount; step++)
             {
                 if (!T.ExecuteTeamStepClock(
@@ -230,6 +237,10 @@ namespace EndfieldGraphShaderLab
                 candidateTeam,
                 stepCount > 0);
             Notify(Stage.CalcDisplayPosition, -1, -1);
+
+            // TeamManager.PostTeamUpdateJob consumes these transient flags only
+            // after display/post-proxy work for the frame has completed.
+            candidateTeam.Flag &= ~(T.FlagReset | T.FlagTimeReset);
 
             Commit(candidate);
             _team = candidateTeam;
@@ -565,6 +576,36 @@ namespace EndfieldGraphShaderLab
             Frictions = new float[count];
             StaticFrictions = new float[count];
             CollisionNormals = new K.Float3[count];
+        }
+
+        private static void SeedResetState(
+            State state,
+            K.Double3[] positions,
+            K.Float4[] rotations)
+        {
+            int count = positions.Length;
+
+            // Exact PreSimulationUpdateJob position destinations:
+            // nextPos, oldPos, basePos, oldPosition, velocityPos, dispPos.
+            // The managed slice intentionally collapses native nextPos/oldPos
+            // into SimulationPositions because EndSimulation commits the
+            // corrected particle position in place.
+            Array.Copy(positions, state.SimulationPositions, count);
+            Array.Copy(positions, state.BasePositions, count);
+            Array.Copy(positions, state.DisplayOldPositions, count);
+            Array.Copy(positions, state.VelocityPositions, count);
+            Array.Copy(positions, state.DisplayPositions, count);
+
+            // Exact rotation destinations: oldRot, baseRot, oldRotation.
+            Array.Copy(rotations, state.SimulationRotations, count);
+            Array.Copy(rotations, state.BaseRotations, count);
+            Array.Copy(rotations, state.DisplayOldRotations, count);
+
+            Array.Clear(state.Velocities, 0, count);
+            Array.Clear(state.RealVelocities, 0, count);
+            Array.Clear(state.Frictions, 0, count);
+            Array.Clear(state.StaticFrictions, 0, count);
+            Array.Clear(state.CollisionNormals, 0, count);
         }
 
         private sealed class State
