@@ -17,6 +17,9 @@ CAPTURE = (
 )
 SHADER = ROOT / "Assets/EndfieldGraphShaderLab/Shaders/HGRPCompat/EndfieldEndminfOpeningStrip.shader"
 PLUGIN = ROOT / "tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp"
+OPENING_STRIP_DIAGNOSTIC = (
+    "ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC"
+)
 
 
 class EndminfOpeningStripContractTests(unittest.TestCase):
@@ -31,8 +34,12 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertAlmostEqual(values["Start"], 4.0 / 60.0, places=6)
         self.assertAlmostEqual(values["End"], 0.35, places=6)
         self.assertIn("IsMeasuredOpeningStripFrame(frame)", source)
-        self.assertNotIn("OPENING_STRIP_DIAGNOSTIC", source)
-        self.assertIn("if (!TryGetElapsed(out float elapsed))", source)
+        self.assertIn(OPENING_STRIP_DIAGNOSTIC, source)
+        self.assertIn("MeasuredOpeningStripDiagnosticRequested", source)
+        self.assertIn(
+            "if (!MeasuredOpeningStripDiagnosticRequested ||", source
+        )
+        self.assertIn("!TryGetElapsed(out float elapsed)", source)
 
     def test_runtime_admits_exactly_shader_backed_frames(self) -> None:
         clock_source = CLOCK.read_text(encoding="utf-8")
@@ -51,7 +58,7 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
             {4, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20},
         )
 
-    def test_compatibility_pass_is_opt_in_and_pre_temporal(self) -> None:
+    def test_compatibility_pass_is_explicit_diagnostic_and_pre_temporal(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")
         method_start = source.index(
             "private bool ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal"
@@ -74,6 +81,7 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertLess(publish, release)
         gate_text = method[gate:blit]
         self.assertIn("useRecoveredPostSemantics", gate_text)
+        self.assertIn("MeasuredOpeningStripDiagnosticRequested", gate_text)
         self.assertIn(
             "!EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame",
             gate_text,
@@ -85,6 +93,16 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         self.assertIn(
             "LastRecoveredEndminfOpeningStripCompatibilityApplied = true",
             method,
+        )
+
+    def test_presentation_profiles_do_not_enable_measured_strip(self) -> None:
+        wrapper = (ROOT / "open_character_recovery_lab.bat").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn(OPENING_STRIP_DIAGNOSTIC, wrapper)
+        self.assertNotIn(
+            OPENING_STRIP_DIAGNOSTIC,
+            CAPTURE.read_text(encoding="utf-8"),
         )
 
     def test_compatibility_publishes_retail_target1_scene_mv_marker(self) -> None:

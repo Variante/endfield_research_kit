@@ -25,6 +25,11 @@ DEFAULT_OUTPUT = (
     REPO / "reports/assets/character_recovery"
     / "endminf_secondary_dynamics_trajectory_comparison.json"
 )
+SUPPORTED_UNITY_SCHEMAS = frozenset({
+    "endfield.endminf-viewer-playmode-sequence.v4",
+    "endfield.endminf-viewer-playmode-sequence.v5",
+    "endfield.endminf-viewer-playmode-sequence.v18",
+})
 
 
 class ComparisonError(ValueError):
@@ -112,10 +117,7 @@ def compare(retail: dict, unity: dict) -> dict:
         "endfield.charinfo.endminf-captured-secondary-dynamics-oracle.v1"
     ):
         raise ComparisonError("retail oracle schema differs")
-    if unity.get("schema") not in {
-        "endfield.endminf-viewer-playmode-sequence.v4",
-        "endfield.endminf-viewer-playmode-sequence.v5",
-    }:
+    if unity.get("schema") not in SUPPORTED_UNITY_SCHEMAS:
         raise ComparisonError("Unity sequence schema differs")
     retail_frames = retail.get("frames", [])
     unity_frames = unity.get("frames", [])

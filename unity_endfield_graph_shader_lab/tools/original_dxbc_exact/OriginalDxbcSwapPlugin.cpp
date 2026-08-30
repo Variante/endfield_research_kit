@@ -25,6 +25,7 @@
 #include "M28PeakCapturePayload.generated.h"
 #include "M27CapturePayload.generated.h"
 #include "M27TemporalCapturePayload.generated.h"
+#include "M27FixedStateContract.h"
 #include "M29CapturePayload.generated.h"
 #include "M30CapturePayload.generated.h"
 #include "M31PeakCapturePayload.generated.h"
@@ -3214,27 +3215,13 @@ HRESULT CreateM27DrawResources(ID3D11Device* device)
     if (FAILED(result))
         return result;
 
-    D3D11_DEPTH_STENCIL_DESC depth = {};
-    depth.DepthEnable = TRUE;
-    depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    depth.StencilEnable = TRUE;
-    depth.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
-    depth.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
-    depth.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    depth.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-    depth.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-    depth.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-    depth.BackFace = depth.FrontFace;
+    D3D11_DEPTH_STENCIL_DESC depth = EndfieldM27FixedState::DepthStencil();
     g_m27DrawFailureStage.store(2023u, std::memory_order_relaxed);
     result = device->CreateDepthStencilState(&depth, &g_m27DrawDepthState);
     if (FAILED(result))
         return result;
 
-    D3D11_RASTERIZER_DESC rasterizer = {};
-    rasterizer.FillMode = D3D11_FILL_SOLID;
-    rasterizer.CullMode = D3D11_CULL_NONE;
-    rasterizer.DepthClipEnable = TRUE;
+    D3D11_RASTERIZER_DESC rasterizer = EndfieldM27FixedState::Rasterizer();
     g_m27DrawFailureStage.store(2024u, std::memory_order_relaxed);
     result = device->CreateRasterizerState(
         &rasterizer, &g_m27DrawRasterizerState);

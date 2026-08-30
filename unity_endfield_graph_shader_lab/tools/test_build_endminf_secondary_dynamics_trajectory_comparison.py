@@ -20,6 +20,16 @@ SPEC.loader.exec_module(MODULE)
 
 
 class TrajectoryComparisonTests(unittest.TestCase):
+    def test_current_capture_schema_is_admitted_explicitly(self) -> None:
+        self.assertIn(
+            "endfield.endminf-viewer-playmode-sequence.v18",
+            MODULE.SUPPORTED_UNITY_SCHEMAS,
+        )
+        self.assertNotIn(
+            "endfield.endminf-viewer-playmode-sequence.v17",
+            MODULE.SUPPORTED_UNITY_SCHEMAS,
+        )
+
     def test_translation_error_uses_matrix_translation_column(self) -> None:
         identity = [
             [1.0, 0.0, 0.0, 0.0],

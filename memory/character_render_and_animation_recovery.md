@@ -1434,6 +1434,20 @@ the retained inactive PathID binding before the approximate renderer spawns.
 Rise, peak, decay, and the later no-M27 tail therefore pass one continuous
 capture instead of requiring a peak-only probe.
 
+The replay's fixed-function state is now independently source-gated. Globally
+complete targeted session `20260827T225644Z` contains four draws of the exact
+LitEffect VS/PS pair at frame 2723 with five MRTs, writable reversed-Z
+`GREATER_EQUAL` depth, back-face culling, front-CCW winding, and scissor enabled.
+The focused report
+`reports/assets/character_recovery/endminf_m27_fixed_state_capture_latest.json`
+fails closed on session, frame, shader, IA, sampler, target, and state drift.
+The native replay control uses that captured state and a WARP validator instead
+of its former `ALWAYS`/no-cull substitute. This corrects diagnostic transport
+only: it remains immutable packet replay, is not canonical presentation, and
+does not close the source textures' full mip chains or the unrecorded s3-s5
+samplers. The generative target remains the exact compiler-substituted shader
+over live ParticleSystemRenderer geometry and source-authored state.
+
 The same `20260826T162514Z` packages close the selected-view exposure boundary.
 Across frames 2970-3027, the relevant PS b1 c27 global is consistently
 `_ExposureWithMiscParams=(1, 1, 1.7777778, 0.1002004)`: adapted exposure and
@@ -2433,29 +2447,20 @@ energy regions, matching the retail surface class. This remains a non-exact
 ForwardOnly substitute for the retail HGBuffer/deferred path, so owner shape,
 lighting, and peak composition remain open.
 
-The opening fracture is no longer a random 34-pixel distortion diagnostic.
-Clean-reference frames 91-109 establish a partial, high-confidence table for
-effect-clock frames 4-20: 3-21-pixel horizontal bands, 77-253-pixel rightward
-copies, and 1-2.5-pixel RGB separation at explicit destination rectangles.
-The canonical pre-Bloom/Uber pass samples `destinationX-offset` only where the
-shifted CharacterPrePass owns the source, leaving GridFar and the portrait
-stationary. The broad compatibility camera pull now retains 45% of its former
-opening magnitude and ends at 0.1 seconds, matching the clean recording's
-three-tick loss of broad ghosting while slices persist. Focused D3D11 renders
-compile and complete `targeted_ok`. The table intentionally omits bands whose
-source coordinates are not yet identifiable; exact closure needs the new
-automatic sequence rather than invented random rows.
-
-The first full-sequence comparison after the portrait flip, measured strip
-table, and canonical stone update uses the established -1-frame source
-alignment and 558 comparable samples. It scores 21.1617 actor-ROI MAE,
-21.9621 effect-ROI MAE, and 12.0616 temporal-delta MAE. The opening 0.0-0.8 s
-window remains 22.1516 effect-ROI MAE (the prior gyro build was 22.1368), and
-side-by-side frames show retail carrying many simultaneous horizontal copies
-while the compatibility table emits only isolated fragments. The change is
-therefore not a proven net fidelity gain. Keep the measured rows, but close the
-remaining opening transport from the automatic exact-Uber sequence rather than
-expanding rectangles from temporal-video heuristics.
+The measured opening-fracture reconstruction is diagnostic-only. Clean-reference
+frames 91-109 establish a bounded table for effect-clock frames 4-20, but its
+explicit destination rectangles, pixel offsets, and RGB separations describe
+screenshots rather than the missing retail producer. The table did not produce
+a proven full-sequence gain and the retained fullscreen chronology places the
+strips in SceneColor before Uber. Canonical batch capture and the interactive
+launcher therefore leave
+`ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC` unset; the evaluator and
+pre-temporal pass both fail closed without that explicit diagnostic flag. A
+41-frame and a complete 770-frame D3D11 render apply the measured pass in zero
+frames while preserving the source-authored transition, loop, portrait, and
+VFX gates, with no crash or device-removal signal. Recover the pre-Uber
+geometry/material owner and its temporal consumer instead of expanding or
+tuning the rectangle table.
 
 Canonical batch video export currently defaults only to the validated exact
 M13, one-sample M21, and ordinary/peak Uber paths. M14, M20, M27 deferred
@@ -3182,15 +3187,19 @@ after final Simulation End it extrapolates `oldPos` by binary32 velocity and
 timestep, lerps persistent display state with the retained team clock, applies
 the source 1.3x root-distance clamp, stores display state, applies independent
 `blendWeight`, and captures running history before PostProxy/writeback. Exact
-golden vectors and integrated owner/coordinator order pass. A separate
-`frameOldTime`/`oldTime` coordinator alias was then corrected; the native
-120 Hz render/90 Hz solver cadence is about two-thirds rather than one-third.
-That correction improves the early aligned solver ROI/effect error from
-43.3768/54.1451 to 41.8214/52.4223, but the three-sample solver still trails
-the maintained captured replay by 5.70%/5.84%. Keep it diagnostic-only while
-the remaining reset/start-use, EndSimulation, PostProxy, and writeback state
-owners are recovered. Do not publish raw Angle/nextPos scratch or invent
-smoothing curves as a substitute.
+golden vectors and integrated owner/coordinator order pass. The transform-read
+and duplicate-write dependency chain now follows the source-backed componentwise
+quaternion-value publication fix; maintained generation refreshes the Unity
+binding identities while leaving solver and replay defaults off. A current v18
+diagnostic compares all 74 rendered owner bones at the accepted 40 checkpoints.
+The first proven divergence is already post-publication at requested 0.05 s:
+36.45 mm/6.82 degrees mean and 78.00 mm/24.51 degrees maximum. At 0.35 s the
+mean reaches 141.64 mm/14.38 degrees. Overall the solver averages
+104.20 mm/10.89 degrees, versus 20.24 mm/7.19 degrees with the solver disabled.
+This capture does not retain internal stage snapshots, so it cannot attribute
+the first error to Start, Tether, Angle, CalcDisplayPosition, or another kernel.
+Keep the solver diagnostic-only and recover that internal stage boundary; do
+not publish scratch state or invent smoothing curves.
 
 The compatibility replay clock itself is continuous: all 770 presentation
 frames advance without repeated requested times. Its remaining visible jerk is
@@ -3509,15 +3518,20 @@ then press Numpad 9 immediately to stop and collect. Do not press Numpad 5 in
 this automatic run. This is a capture-readiness gate, not recovered solver
 output.
 
-The current 770-frame canonical source-authored Unity run keeps both captured
-secondary replay and the unverified source solver disabled. It completes the
-ACL-backed start-to-loop sequence with an upright portrait and improves the
-best dense clean-reference ROI/effect MAE to 22.7242/24.5920 from the prior
-23.5678/25.7378. The effect temporal-delta MAE is slightly worse
-(15.7358 versus 15.6023), and visual inspection still shows sparse/displaced
-golden stone fragments, rough light/glitch structure, and divergent hair/coat
-silhouettes. Treat this as a stable non-crashing baseline, not retail parity or
-secondary-motion certification.
+The current 770-frame canonical source-authored Unity run keeps captured
+secondary replay, the unverified source solver, measured opening rectangles,
+and content-invalid deferred presentation disabled. It completes the ACL-backed
+start-to-loop sequence with an upright portrait, all four VFX roots, 68 admitted
+entrance renderers, and no crash or device-removal signal. Across 554 bounded
+clean-reference rows its best -1-frame alignment is 22.8884 actor ROI,
+24.8199 effect ROI, and 15.3423 effect temporal-delta MAE. The immediately prior
+measured-strip run scored 22.8848/24.8188/15.3412; the negligible
+0.0036/0.0011/0.0010 difference confirms that the screenshot rectangle pass
+provided no material fidelity and should remain explicit diagnostic evidence.
+The opening temporal composition and stone/light peak remain the largest gaps;
+the settled post-cleanup motion is temporally stable while hair/coat silhouettes
+remain spatially different. Treat this as the stable non-crashing baseline, not
+retail parity or secondary-motion certification.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
@@ -3581,10 +3595,11 @@ or shaders rather than hand-editing generated prefabs.
    before generating any Unity diagnostic assets, then run
    `python unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py SESSION`
    to compare the exact input/output pair offline.
-   The compatibility opening strip is now ordered correctly before temporal,
-   but v9 proves that ordering alone does not reproduce retail's broad
-   multi-exposure strips. Keep the rejected public NGX proxy and M31 replay
-   diagnostic-only until the live consumer chronology is complete.
+   The screenshot-measured opening strip is now default-off in canonical and
+   interactive presentation; its correctly ordered pre-temporal diagnostic did
+   not reproduce retail's broad multi-exposure history. Recover the live
+   pre-Uber owner and consumer chronology instead. Keep the rejected public NGX
+   proxy and M31 replay diagnostic-only until that chronology is complete.
 2. Close the palm/crystal owner order from same-session evidence. Retain M13
    exact and the certified one-sample M21 stone packet; their controlled A/Bs
    reject compensatory resizing, retiming, or removal. Use the corrected M20
