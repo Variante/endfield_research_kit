@@ -233,6 +233,21 @@ the outer return; the false path remains intact and all 20 native tests pass.
   The maintained Endminf launcher now enables this proven compatibility path;
   it had incorrectly forced the flag off even though canonical batch captures
   enabled it, which made the ten M01/M38 stones disappear in interactive use.
+  Their shared four-texture family now imports the installed compressed mip
+  chains rather than PNG-derived pixels while preserving the existing texture
+  asset paths, GUIDs, local file IDs, and M01/M27/M38 material PPtrs. The
+  transport is gated by the installed AssetMap identities, serialized
+  Texture2D descriptors, full BC7-sRGB/BC5-linear mip-chain hashes, and exact
+  material property-to-PPtr mappings; it has no live-capture dependency. The
+  selected runtime sessions remain diagnostic only: `20260828T224210Z` has an
+  incomplete graphics-provider summary, while `20260826T231028Z` has complete
+  provider summaries but a truncated/failed full-frame resource selection.
+  They corroborate the four complete top mips but do not close the conflicting
+  logical LitEffect register names. Unity D3D11 validation confirms the full
+  payloads, mip counts, normal-map typing, stable identities, and all twelve
+  material-property bindings. This closes source texture transport only;
+  LitEffect lighting, deferred composition, and particle placement still
+  require their own source/runtime evidence.
   Runtime spawning now explicitly restarts recovered `playAutomatically`
   legacy effect clips after its inactive staging step. The composite
   `effect_nanguan` clip uses a capture-closed 2.7667-second (30-fps tick 83)

@@ -1,0 +1,541 @@
+{
+  "schema": "endfield.native-texture-payload-contract.v2",
+  "status": "source_closed_current_build",
+  "scope": "Endminf LitEffect M01/M27/M38 exact BC5/BC7 compressed mip transport",
+  "sourceContract": "reports/assets/character_recovery/endminf_m27_suikuai_source_contract.json",
+  "sourceContractSha256": "009F46BCFE1E36E91C1E0E8410DED270A4CA08221B8D4FAB4792A1972D4C5B3F",
+  "textureImportContractAssetPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/endminf_liteffect_texture_import_contract.json",
+  "textureImportContractSha256": "2165FD2D8BC1286CFB5454538AED88E29F18B2C90AA0C3B5085E1659854CED1A",
+  "textureCount": 4,
+  "generatedCopyCount": 4,
+  "logicalPayloadBytes": 4216256,
+  "uniquePayloadCount": 4,
+  "uniquePayloadBytes": 4216256,
+  "deduplicatedPayloadBytes": 0,
+  "materialBindings": [
+    {
+      "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
+      "sha256": "626DC677675FEA1A3A0F2F0079C9755455D37336CFE8CD682E3332669606F509",
+      "textureBindings": [
+        {
+          "property": "_BaseColorMap",
+          "guid": "1d3078e5db7ffe34f8a341bf35124bd9",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_MROMap",
+          "guid": "228eb15c4b8a6b141b58388771e7a741",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_NormalMap",
+          "guid": "5d01f5bba99e52047b397a4080701078",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_ParallaxMap",
+          "guid": "077f47a1a84a8294a9cb4ef3d245b53d",
+          "localFileId": 2800000
+        }
+      ]
+    },
+    {
+      "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
+      "sha256": "696BF7DC65D7B4E4A591980AD95FAEEC80077FAED0213CCC74EA5BC539EAB8A7",
+      "textureBindings": [
+        {
+          "property": "_BaseColorMap",
+          "guid": "1d3078e5db7ffe34f8a341bf35124bd9",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_MROMap",
+          "guid": "228eb15c4b8a6b141b58388771e7a741",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_NormalMap",
+          "guid": "5d01f5bba99e52047b397a4080701078",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_ParallaxMap",
+          "guid": "077f47a1a84a8294a9cb4ef3d245b53d",
+          "localFileId": 2800000
+        }
+      ]
+    },
+    {
+      "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
+      "sha256": "B52F21342F56DD8B7801FE31217CC806A88553F5CBA1CC688084DD229EDCD38A",
+      "textureBindings": [
+        {
+          "property": "_BaseColorMap",
+          "guid": "1d3078e5db7ffe34f8a341bf35124bd9",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_MROMap",
+          "guid": "228eb15c4b8a6b141b58388771e7a741",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_NormalMap",
+          "guid": "5d01f5bba99e52047b397a4080701078",
+          "localFileId": 2800000
+        },
+        {
+          "property": "_ParallaxMap",
+          "guid": "077f47a1a84a8294a9cb4ef3d245b53d",
+          "localFileId": 2800000
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "fileName": "Compatibility_T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+      "name": "T_fx_sourcerocks+2_D",
+      "property": "_BaseColorMap",
+      "pathId": 5406992154111209049,
+      "sourceObjectHash": "4ee72f8501a3baa3",
+      "sourceDescriptorSha256": "DE66569A12234ED65F2F57547E8C6A542076ADA03ADEA89660DEB6029ED7AC53",
+      "payloadAssetPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/TexturePayloads/EndminfLitEffect/sha256_9F5255C1A12B2A17586362F864097453DB9158288DAFAF0B234EA81E964E88BA.bytes",
+      "payloadSha256": "9F5255C1A12B2A17586362F864097453DB9158288DAFAF0B234EA81E964E88BA",
+      "payloadSize": 1398128,
+      "width": 1024,
+      "height": 1024,
+      "textureFormat": 25,
+      "dxgiFormat": 99,
+      "mipCount": 11,
+      "sourceColorSpace": 1,
+      "importProfile": {
+        "textureType": 0,
+        "sRGBTexture": true,
+        "mipmapEnabled": true,
+        "streamingMipmaps": false,
+        "streamingMipmapsPriority": 0,
+        "filterMode": 1,
+        "anisoLevel": 1,
+        "mipMapBias": 0.0,
+        "wrapU": 0,
+        "wrapV": 0,
+        "wrapW": 0
+      },
+      "mipLayout": [
+        {
+          "mip": 0,
+          "width": 1024,
+          "height": 1024,
+          "offset": 0,
+          "byteSize": 1048576
+        },
+        {
+          "mip": 1,
+          "width": 512,
+          "height": 512,
+          "offset": 1048576,
+          "byteSize": 262144
+        },
+        {
+          "mip": 2,
+          "width": 256,
+          "height": 256,
+          "offset": 1310720,
+          "byteSize": 65536
+        },
+        {
+          "mip": 3,
+          "width": 128,
+          "height": 128,
+          "offset": 1376256,
+          "byteSize": 16384
+        },
+        {
+          "mip": 4,
+          "width": 64,
+          "height": 64,
+          "offset": 1392640,
+          "byteSize": 4096
+        },
+        {
+          "mip": 5,
+          "width": 32,
+          "height": 32,
+          "offset": 1396736,
+          "byteSize": 1024
+        },
+        {
+          "mip": 6,
+          "width": 16,
+          "height": 16,
+          "offset": 1397760,
+          "byteSize": 256
+        },
+        {
+          "mip": 7,
+          "width": 8,
+          "height": 8,
+          "offset": 1398016,
+          "byteSize": 64
+        },
+        {
+          "mip": 8,
+          "width": 4,
+          "height": 4,
+          "offset": 1398080,
+          "byteSize": 16
+        },
+        {
+          "mip": 9,
+          "width": 2,
+          "height": 2,
+          "offset": 1398096,
+          "byteSize": 16
+        },
+        {
+          "mip": 10,
+          "width": 1,
+          "height": 1,
+          "offset": 1398112,
+          "byteSize": 16
+        }
+      ],
+      "generatedCopies": [
+        {
+          "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/Compatibility_T_fx_sourcerocks+2_D_p4B097EB7791F6E59.png",
+          "guid": "1d3078e5db7ffe34f8a341bf35124bd9",
+          "pngSha256": "60D79E89F47F7E019ABF56AC51317E51BED21D2ACEF059C246E4928F841E1F91"
+        }
+      ]
+    },
+    {
+      "fileName": "Compatibility_T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+      "name": "T_fx_sourcerocks+3_N",
+      "property": "_MROMap",
+      "pathId": 5597062348073817015,
+      "sourceObjectHash": "3f08fb2a1f925ccf",
+      "sourceDescriptorSha256": "B99981E0F18737492033D507D8ACA02F0F8F99BECE98CCC32702E32FDA86CD3A",
+      "payloadAssetPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/TexturePayloads/EndminfLitEffect/sha256_DA6F07AE91303FE587F0E363E4F37F3DF2631BAC6A47C95AC55BBBEDD9E4E434.bytes",
+      "payloadSha256": "DA6F07AE91303FE587F0E363E4F37F3DF2631BAC6A47C95AC55BBBEDD9E4E434",
+      "payloadSize": 1398128,
+      "width": 1024,
+      "height": 1024,
+      "textureFormat": 27,
+      "dxgiFormat": 83,
+      "mipCount": 11,
+      "sourceColorSpace": 0,
+      "importProfile": {
+        "textureType": 0,
+        "sRGBTexture": false,
+        "mipmapEnabled": true,
+        "streamingMipmaps": false,
+        "streamingMipmapsPriority": 0,
+        "filterMode": 1,
+        "anisoLevel": 1,
+        "mipMapBias": 0.0,
+        "wrapU": 0,
+        "wrapV": 0,
+        "wrapW": 0
+      },
+      "mipLayout": [
+        {
+          "mip": 0,
+          "width": 1024,
+          "height": 1024,
+          "offset": 0,
+          "byteSize": 1048576
+        },
+        {
+          "mip": 1,
+          "width": 512,
+          "height": 512,
+          "offset": 1048576,
+          "byteSize": 262144
+        },
+        {
+          "mip": 2,
+          "width": 256,
+          "height": 256,
+          "offset": 1310720,
+          "byteSize": 65536
+        },
+        {
+          "mip": 3,
+          "width": 128,
+          "height": 128,
+          "offset": 1376256,
+          "byteSize": 16384
+        },
+        {
+          "mip": 4,
+          "width": 64,
+          "height": 64,
+          "offset": 1392640,
+          "byteSize": 4096
+        },
+        {
+          "mip": 5,
+          "width": 32,
+          "height": 32,
+          "offset": 1396736,
+          "byteSize": 1024
+        },
+        {
+          "mip": 6,
+          "width": 16,
+          "height": 16,
+          "offset": 1397760,
+          "byteSize": 256
+        },
+        {
+          "mip": 7,
+          "width": 8,
+          "height": 8,
+          "offset": 1398016,
+          "byteSize": 64
+        },
+        {
+          "mip": 8,
+          "width": 4,
+          "height": 4,
+          "offset": 1398080,
+          "byteSize": 16
+        },
+        {
+          "mip": 9,
+          "width": 2,
+          "height": 2,
+          "offset": 1398096,
+          "byteSize": 16
+        },
+        {
+          "mip": 10,
+          "width": 1,
+          "height": 1,
+          "offset": 1398112,
+          "byteSize": 16
+        }
+      ],
+      "generatedCopies": [
+        {
+          "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/Compatibility_T_fx_sourcerocks+3_N_p4DACC28D12A753B7.png",
+          "guid": "228eb15c4b8a6b141b58388771e7a741",
+          "pngSha256": "5E9B53832EC20C6E461C9920FF7576DD5F29299E1AD1D9CCF9E66D262A058144"
+        }
+      ]
+    },
+    {
+      "fileName": "Compatibility_T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+      "name": "T_fx_sourcerocks+1_N",
+      "property": "_NormalMap",
+      "pathId": -8583694459516385401,
+      "sourceObjectHash": "bf4152785bc36853",
+      "sourceDescriptorSha256": "1A0E062BE9AA14B268138087D9235FCC42070E44025ECF61918FAFC7182D6B28",
+      "payloadAssetPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/TexturePayloads/EndminfLitEffect/sha256_EE27E904469E3879349AC52A5E7EAC9247C150914A7D9A940D0C0C16EC512AF7.bytes",
+      "payloadSha256": "EE27E904469E3879349AC52A5E7EAC9247C150914A7D9A940D0C0C16EC512AF7",
+      "payloadSize": 1398128,
+      "width": 1024,
+      "height": 1024,
+      "textureFormat": 27,
+      "dxgiFormat": 83,
+      "mipCount": 11,
+      "sourceColorSpace": 0,
+      "importProfile": {
+        "textureType": 1,
+        "sRGBTexture": false,
+        "mipmapEnabled": true,
+        "streamingMipmaps": false,
+        "streamingMipmapsPriority": 0,
+        "filterMode": 1,
+        "anisoLevel": 1,
+        "mipMapBias": 0.0,
+        "wrapU": 0,
+        "wrapV": 0,
+        "wrapW": 0
+      },
+      "mipLayout": [
+        {
+          "mip": 0,
+          "width": 1024,
+          "height": 1024,
+          "offset": 0,
+          "byteSize": 1048576
+        },
+        {
+          "mip": 1,
+          "width": 512,
+          "height": 512,
+          "offset": 1048576,
+          "byteSize": 262144
+        },
+        {
+          "mip": 2,
+          "width": 256,
+          "height": 256,
+          "offset": 1310720,
+          "byteSize": 65536
+        },
+        {
+          "mip": 3,
+          "width": 128,
+          "height": 128,
+          "offset": 1376256,
+          "byteSize": 16384
+        },
+        {
+          "mip": 4,
+          "width": 64,
+          "height": 64,
+          "offset": 1392640,
+          "byteSize": 4096
+        },
+        {
+          "mip": 5,
+          "width": 32,
+          "height": 32,
+          "offset": 1396736,
+          "byteSize": 1024
+        },
+        {
+          "mip": 6,
+          "width": 16,
+          "height": 16,
+          "offset": 1397760,
+          "byteSize": 256
+        },
+        {
+          "mip": 7,
+          "width": 8,
+          "height": 8,
+          "offset": 1398016,
+          "byteSize": 64
+        },
+        {
+          "mip": 8,
+          "width": 4,
+          "height": 4,
+          "offset": 1398080,
+          "byteSize": 16
+        },
+        {
+          "mip": 9,
+          "width": 2,
+          "height": 2,
+          "offset": 1398096,
+          "byteSize": 16
+        },
+        {
+          "mip": 10,
+          "width": 1,
+          "height": 1,
+          "offset": 1398112,
+          "byteSize": 16
+        }
+      ],
+      "generatedCopies": [
+        {
+          "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/Compatibility_T_fx_sourcerocks+1_N_p88E0975E10098787.png",
+          "guid": "5d01f5bba99e52047b397a4080701078",
+          "pngSha256": "AA4CA97D0104DD7830398C52CB125603F192DD0851E2E861A2FAF30ECA813870"
+        }
+      ]
+    },
+    {
+      "fileName": "Compatibility_T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+      "name": "T_fx_flow_04_02_M",
+      "property": "_ParallaxMap",
+      "pathId": -2770956563882859728,
+      "sourceObjectHash": "ae79f95a9a3a9ae1",
+      "sourceDescriptorSha256": "F6C09366C2DFDB4BBECC80F06553EDDEA81D35A16E8D8A95F80B7F442568C558",
+      "payloadAssetPath": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/TexturePayloads/EndminfLitEffect/sha256_9BDC2187BBC5EE1C2C74C4B0486060FA46C3ABA2A1860C3221693F77B00A27E8.bytes",
+      "payloadSha256": "9BDC2187BBC5EE1C2C74C4B0486060FA46C3ABA2A1860C3221693F77B00A27E8",
+      "payloadSize": 21872,
+      "width": 128,
+      "height": 128,
+      "textureFormat": 25,
+      "dxgiFormat": 99,
+      "mipCount": 8,
+      "sourceColorSpace": 1,
+      "importProfile": {
+        "textureType": 0,
+        "sRGBTexture": true,
+        "mipmapEnabled": true,
+        "streamingMipmaps": false,
+        "streamingMipmapsPriority": 0,
+        "filterMode": 1,
+        "anisoLevel": 1,
+        "mipMapBias": 0.0,
+        "wrapU": 0,
+        "wrapV": 0,
+        "wrapW": 0
+      },
+      "mipLayout": [
+        {
+          "mip": 0,
+          "width": 128,
+          "height": 128,
+          "offset": 0,
+          "byteSize": 16384
+        },
+        {
+          "mip": 1,
+          "width": 64,
+          "height": 64,
+          "offset": 16384,
+          "byteSize": 4096
+        },
+        {
+          "mip": 2,
+          "width": 32,
+          "height": 32,
+          "offset": 20480,
+          "byteSize": 1024
+        },
+        {
+          "mip": 3,
+          "width": 16,
+          "height": 16,
+          "offset": 21504,
+          "byteSize": 256
+        },
+        {
+          "mip": 4,
+          "width": 8,
+          "height": 8,
+          "offset": 21760,
+          "byteSize": 64
+        },
+        {
+          "mip": 5,
+          "width": 4,
+          "height": 4,
+          "offset": 21824,
+          "byteSize": 16
+        },
+        {
+          "mip": 6,
+          "width": 2,
+          "height": 2,
+          "offset": 21840,
+          "byteSize": 16
+        },
+        {
+          "mip": 7,
+          "width": 1,
+          "height": 1,
+          "offset": 21856,
+          "byteSize": 16
+        }
+      ],
+      "generatedCopies": [
+        {
+          "assetPath": "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Textures/Compatibility_T_fx_flow_04_02_M_pD98B95AFB1B9A330.png",
+          "guid": "077f47a1a84a8294a9cb4ef3d245b53d",
+          "pngSha256": "D7AC4B741F76D3EF0CCFD732CAAF3D2069EC3839E0190472BAF900D54E1090C5"
+        }
+      ]
+    }
+  ],
+  "boundary": "The exact installed compressed mip chains replace only the PNG-derived bytes at existing texture asset paths. Existing GUIDs, local file IDs, material PPtrs, particle transforms, authored curves, and runtime placement remain unchanged. This transport is source-contract and material-PPtr driven and has no live-capture dependency."
+}
