@@ -23,6 +23,7 @@ namespace EndfieldGraphShaderLab
         private readonly Vector4[] vectors = new Vector4[
             EndfieldRecoveredShaderVariablesGlobalContract.VectorCount];
         private ComputeBuffer buffer;
+        private bool currentM27SourceReady;
         private bool disposed;
 
         public static bool IsRequested
@@ -43,6 +44,29 @@ namespace EndfieldGraphShaderLab
             int height,
             Vector4 environmentParams,
             bool prerequisitesReady,
+            CommandBuffer commandBuffer,
+            out string failure)
+        {
+            return PrepareAndPublish(
+                camera,
+                width,
+                height,
+                environmentParams,
+                prerequisitesReady,
+                EndfieldRecoveredShaderVariablesGlobalContract
+                    .M27SourceInputs.CurrentTargetAndPerspectiveCameraOnly,
+                commandBuffer,
+                out failure);
+        }
+
+        public bool PrepareAndPublish(
+            Camera camera,
+            int width,
+            int height,
+            Vector4 environmentParams,
+            bool prerequisitesReady,
+            EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs
+                m27Inputs,
             CommandBuffer commandBuffer,
             out string failure)
         {
@@ -68,6 +92,7 @@ namespace EndfieldGraphShaderLab
                     height,
                     environmentParams,
                     prerequisitesReady,
+                    m27Inputs,
                     vectors,
                     out failure))
             {
@@ -90,6 +115,11 @@ namespace EndfieldGraphShaderLab
                     EndfieldRecoveredShaderVariablesGlobalContract
                         .D3D11SelectedSizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
+                currentM27SourceReady =
+                    EndfieldRecoveredShaderVariablesGlobalContract
+                        .TryValidateM27SourceReadiness(
+                            m27Inputs,
+                            out _);
                 return true;
             }
             catch (Exception exception)
@@ -107,13 +137,14 @@ namespace EndfieldGraphShaderLab
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
+            currentM27SourceReady = false;
         }
 
         internal ComputeBuffer CurrentBuffer => buffer;
-        // The current publisher lacks authenticated exposure and VFX clock/
-        // anchor producers for the selected M27 reads. Keep the exact draw
-        // closed even though the broader diagnostic buffer can be published.
-        internal bool CurrentM27SourceReady => false;
+        // The default overload supplies only current target/camera state.
+        // Unresolved HGCamera and HGVFX owners therefore keep this false even
+        // though the broader diagnostic buffer can still be published.
+        internal bool CurrentM27SourceReady => currentM27SourceReady;
 
         public void Dispose()
         {
@@ -126,6 +157,7 @@ namespace EndfieldGraphShaderLab
                 buffer = null;
             }
             Shader.SetGlobalFloat(ReadyId, 0.0f);
+            currentM27SourceReady = false;
         }
 
         private void EnsureBuffer()

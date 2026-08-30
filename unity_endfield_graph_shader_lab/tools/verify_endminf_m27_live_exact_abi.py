@@ -51,15 +51,20 @@ ACTIVE_STREAMS = [
 ALLOWED_IA_STRIDES = [60, 68]
 
 # The exact VS gates its optional t0 skin palette from UnityPerDraw record
-# c4.w.  This source mesh is unskinned, and the selected retail draw proves
-# bit 5 clear with no VS t0 resource bound.  Keep these as observation fields
-# instead of manufacturing an identity StructuredBuffer for a dead branch.
+# c4.w. The selected unskinned draw proves bit 5 clear, but retail may still
+# retain the real global palette binding. Authenticate the explicit draw-local
+# outcome; never manufacture an identity buffer for the inactive branch.
 VERTEX_SKIN_CB_SLOT = 2
 VERTEX_SKIN_RECORD_INDEX = 0
 VERTEX_SKIN_RECORD_STRIDE_FLOAT4 = 16
 VERTEX_SKIN_FLAG_REGISTER_OFFSET = 4
 VERTEX_SKIN_FLAG_LANE = "w"
 VERTEX_SKIN_FLAG_MASK = 32
+VERTEX_SKIN_BUFFER_BYTES = 8_413_184
+VERTEX_SKIN_BUFFER_ELEMENTS = 525_824
+VERTEX_SKIN_VIEW_DIMENSION = 1
+VERTEX_SKIN_BIND_FLAGS = 136
+VERTEX_SKIN_MISC_FLAGS = 64
 
 TARGET = {
     "textureFormat": 26,
@@ -236,6 +241,173 @@ def _validate_runtime_source_connections(
         "b0ReadinessReachesExactDraw": (
             b0_pipeline_connection and b0_frame_connection),
         "b3RetainedMaterialReachesExactShell": b3_material_connection,
+    }
+
+
+def _call_argument_count(expression: str) -> int:
+    opening = expression.find("(")
+    if opening < 0:
+        return 0
+    depth = 0
+    count = 1
+    has_argument = False
+    for character in expression[opening + 1:]:
+        if character == "(":
+            depth += 1
+            has_argument = True
+        elif character == ")":
+            if depth == 0:
+                return count if has_argument else 0
+            depth -= 1
+            has_argument = True
+        elif character == "," and depth == 0:
+            count += 1
+        elif not character.isspace():
+            has_argument = True
+    return 0
+
+
+def _call_arguments(expression: str) -> list[str]:
+    """Return top-level call arguments, or an empty list if malformed."""
+    opening = expression.find("(")
+    if opening < 0:
+        return []
+    depth = 0
+    start = opening + 1
+    arguments: list[str] = []
+    for index, character in enumerate(expression[start:], start=start):
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            if depth == 0:
+                tail = expression[start:index].strip()
+                if tail or arguments:
+                    arguments.append(tail)
+                return arguments
+            depth -= 1
+        elif character == "," and depth == 0:
+            arguments.append(expression[start:index].strip())
+            start = index + 1
+    return []
+
+
+def _validate_b1_source_contract(
+        contract_text: str,
+        owner_text: str,
+        pipeline_text: str) -> dict[str, Any]:
+    """Audit source-owned M27 b1 equations separately from live owners."""
+    compact_contract = re.sub(r"\s+", "", contract_text)
+    compact_owner = re.sub(r"\s+", "", owner_text)
+    default_inputs = re.sub(
+        r"\s+", "", _call_text(
+            contract_text, "return new M27SourceInputs"))
+    pipeline_publish = _call_text(
+        pipeline_text, "recoveredShaderVariablesGlobal.PrepareAndPublish")
+    pipeline_publish_arguments = _call_arguments(pipeline_publish)
+
+    readiness_fields = {
+        "c0.zw": "public readonly bool targetDimensionsReady;",
+        "c4.w": "public readonly bool perspectiveCameraReady;",
+        "c19.zw": "public readonly bool taaJitterReady;",
+        "c26.xy": (
+            "public readonly bool physicalCameraMaterialMipBiasReady;"),
+        "c27.y": "public readonly bool exposureReady;",
+        "c103.xyzw": "public readonly bool vfxParams0Ready;",
+        "c105.xyzw": "public readonly bool vfxParams2Ready;",
+    }
+    readiness = {
+        register: declaration in contract_text
+        for register, declaration in readiness_fields.items()
+    }
+    equations = {
+        "currentTargetDimensionsAndReciprocals": (
+            "destination[ScreenSizeVector]=newVector4(width,height,"
+            "1.0f/width,1.0f/height);" in compact_contract),
+        "currentPerspectiveFlag": (
+            "camera.orthographic?1.0f:0.0f" in compact_contract),
+        "haltonJitterInputGuarded": (
+            "if(m27Inputs.taaJitterReady)" in compact_contract and
+            "m27Inputs.taaJitterStrength" in compact_contract),
+        "physicalCameraMipBiasInputGuarded": (
+            "if(m27Inputs.physicalCameraMaterialMipBiasReady)" in
+            compact_contract and
+            "Mathf.Pow(2.0f,m27Inputs.physicalCameraMaterialMipBias)" in
+            compact_contract),
+        "exposureReciprocalInputGuarded": (
+            "if(m27Inputs.exposureReady)" in compact_contract and
+            "1.0f/m27Inputs.exposureAdaptation" in compact_contract),
+        "playerCenterAndClockInputGuarded": (
+            "if(m27Inputs.vfxParams0Ready)" in compact_contract and
+            "m27Inputs.vfxClockSeconds%1024.0f" in compact_contract),
+        "anchorStateInputGuarded": (
+            "if(m27Inputs.vfxParams2Ready)" in compact_contract and
+            "destination[VFXParams2Vector]=m27Inputs.vfxParams2" in
+            compact_contract),
+    }
+    validation_mentions_all_reads = all(
+        f'M27 b1 {register}' in contract_text for register in readiness)
+    default_unresolved_inputs_are_not_ready = (
+        default_inputs ==
+        "returnnewM27SourceInputs(true,true,Vector4.zero,false,0.0f,"
+        "false,0.0f,false,Vector3.zero,0.0f,false,Vector4.zero,false)" and
+        "M27SourceInputs.CurrentTargetAndPerspectiveCameraOnly" in owner_text)
+    owner_tracks_validated_readiness = (
+        "currentM27SourceReady=EndfieldRecoveredShaderVariablesGlobalContract"
+        ".TryValidateM27SourceReadiness(m27Inputs,out_);" in compact_owner and
+        "internalboolCurrentM27SourceReady=>currentM27SourceReady;" in
+        compact_owner and
+        "currentM27SourceReady=false;" in compact_owner)
+    complete = (
+        all(readiness.values()) and all(equations.values()) and
+        validation_mentions_all_reads and
+        default_unresolved_inputs_are_not_ready and
+        owner_tracks_validated_readiness)
+    source_input_expression = (
+        pipeline_publish_arguments[5]
+        if len(pipeline_publish_arguments) == 8 else None)
+    inline_default_input = bool(
+        source_input_expression and re.search(
+            r"\bdefault\s*(?:\(|$)", source_input_expression))
+    inline_constructed_input = bool(
+        source_input_expression and re.search(
+            r"\bnew\s+(?:[A-Za-z_]\w*\.)*M27SourceInputs\s*\(",
+            source_input_expression))
+    named_source_owner_expression = bool(
+        source_input_expression and re.fullmatch(
+            r"[A-Za-z_]\w*\.CurrentM27SourceInputs",
+            source_input_expression.strip()))
+    # A named expression is only a connection candidate. Source closure also
+    # requires a separate audit of that owner's per-field readiness and
+    # lifecycle. No such owner exists yet, so do not promote text shape into
+    # runtime provenance.
+    named_source_owner_contract_audited = False
+    explicit_inputs_reach_runtime = (
+        len(pipeline_publish_arguments) == 8 and
+        named_source_owner_expression and
+        not inline_default_input and
+        not inline_constructed_input and
+        named_source_owner_contract_audited)
+    return {
+        "selectedReads": list(readiness),
+        "readinessBits": readiness,
+        "sourceEquations": equations,
+        "defaultRuntimeFailsClosed": (
+            default_unresolved_inputs_are_not_ready and
+            owner_tracks_validated_readiness),
+        "sourceOwnedInputContractComplete": complete,
+        "runtimeSourceInputConnection": {
+            "argumentCount": len(pipeline_publish_arguments),
+            "sourceInputExpression": source_input_expression,
+            "inlineDefaultRejected": inline_default_input,
+            "inlineConstructorRejected": inline_constructed_input,
+            "namedSourceOwnerExpression": named_source_owner_expression,
+            "namedSourceOwnerContractAudited":
+                named_source_owner_contract_audited,
+        },
+        "explicitInputsReachRuntimePublisher": explicit_inputs_reach_runtime,
+        "allSelectedReadsRuntimeSourcePopulated": (
+            complete and explicit_inputs_reach_runtime),
+        "capturedValuesAuthorized": False,
     }
 
 
@@ -1026,6 +1198,10 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     runtime_source_connections = _validate_runtime_source_connections(
         pipeline_text,
         frame_runtime_text)
+    b1_source_contract = _validate_b1_source_contract(
+        global_contract,
+        global_owner,
+        pipeline_text)
     compatibility_text = compatibility_binding_path.read_text(encoding="utf-8")
     shell_observer_text = shell_observer_path.read_text(encoding="utf-8")
     generative_forbidden_packet_data = (
@@ -1146,6 +1322,7 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             "schema": b0_source_contract.get("schema"),
             "status": b0_source_contract.get("status"),
         },
+        "selectedB1SourceContract": b1_source_contract,
         "orderedMrtDescriptors": [
             {
                 "slot": slot,
@@ -1193,9 +1370,12 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         "generativeShellIndependentlyPinnedFromD3D11Callback": True,
         "runtimePipelineTagCompileReflectionAndSetPassProven": True,
         "b0SelectedReadsFullySourcePopulated": b0_source_closed,
-        "b1SelectedReadsFullySourcePopulated": False,
+        "b1SourceOwnedInputContractComplete": b1_source_contract[
+            "sourceOwnedInputContractComplete"],
+        "b1SelectedReadsFullySourcePopulated": b1_source_contract[
+            "allSelectedReadsRuntimeSourcePopulated"],
         "b2ActualParticleRecordRangeAndGeometryObserved": False,
-        "vertexSkinInactiveNullT0DependencyAuthenticated": False,
+        "vertexSkinDrawLocalT0OutcomeAuthenticated": False,
         "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": (
             b3_material_contract["usedWordCount"] == 50 and
             b3_material_contract["bitExactMatches"] == 50 and
@@ -1437,8 +1617,45 @@ def _live_checks(observation: dict[str, Any] | None) -> list[dict[str, Any]]:
     add("live.vertex.t0.synchronizedDrawId",
         vertex_skin.get("synchronizedDrawId"),
         authentication.get("synchronizedDrawId"))
-    add("live.vertex.t0.bound", vertex_skin.get("bound"), False)
-    add("live.vertex.t0.objectId", vertex_skin.get("objectId"), 0)
+    vertex_t0_bound = vertex_skin.get("bound")
+    add("live.vertex.t0.boundStatePresent",
+        isinstance(vertex_t0_bound, bool), True)
+    if vertex_t0_bound is True:
+        add("live.vertex.t0.kind", vertex_skin.get("kind"), "StructuredBuffer")
+        add("live.vertex.t0.logicalName",
+            vertex_skin.get("logicalName"), "_VertexSkinMatrices")
+        add("live.vertex.t0.objectIdPresent",
+            isinstance(vertex_skin.get("objectId"), int) and
+            not isinstance(vertex_skin.get("objectId"), bool) and
+            vertex_skin.get("objectId") != 0, True)
+        add("live.vertex.t0.viewIdPresent",
+            isinstance(vertex_skin.get("viewId"), int) and
+            not isinstance(vertex_skin.get("viewId"), bool) and
+            vertex_skin.get("viewId") != 0, True)
+        add("live.vertex.t0.descriptorHashPresent",
+            isinstance(vertex_skin.get("descriptorHash"), int) and
+            not isinstance(vertex_skin.get("descriptorHash"), bool) and
+            vertex_skin.get("descriptorHash") != 0, True)
+        add("live.vertex.t0.byteSize",
+            vertex_skin.get("byteSize"), VERTEX_SKIN_BUFFER_BYTES)
+        add("live.vertex.t0.viewDimension",
+            vertex_skin.get("viewDimension"), VERTEX_SKIN_VIEW_DIMENSION)
+        add("live.vertex.t0.bindFlags",
+            vertex_skin.get("bindFlags"), VERTEX_SKIN_BIND_FLAGS)
+        add("live.vertex.t0.miscFlags",
+            vertex_skin.get("miscFlags"), VERTEX_SKIN_MISC_FLAGS)
+        add("live.vertex.t0.stride", vertex_skin.get("stride"), 16)
+        add("live.vertex.t0.viewFirstElement",
+            vertex_skin.get("viewFirstElement"), 0)
+        add("live.vertex.t0.viewNumElements",
+            vertex_skin.get("viewNumElements"), VERTEX_SKIN_BUFFER_ELEMENTS)
+        add("live.vertex.t0.payloadBytes",
+            vertex_skin.get("payloadBytes"), VERTEX_SKIN_BUFFER_BYTES)
+        add("live.vertex.t0.payloadSha256",
+            _is_sha256(vertex_skin.get("payloadSha256")), True)
+    elif vertex_t0_bound is False:
+        add("live.vertex.t0.objectId", vertex_skin.get("objectId"), 0)
+        add("live.vertex.t0.viewId", vertex_skin.get("viewId"), 0)
 
     cbuffers = observation.get("constantBuffers", [])
     for slot, name, full_bytes, used_bytes, producer in CBUFFERS:
@@ -1504,7 +1721,7 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
         "b0SelectedReadsFullySourcePopulated",
         "b1SelectedReadsFullySourcePopulated",
         "b2ActualParticleRecordRangeAndGeometryObserved",
-        "vertexSkinInactiveNullT0DependencyAuthenticated",
+        "vertexSkinDrawLocalT0OutcomeAuthenticated",
         "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
         "b4SelectedFrameProducerValueAuthenticated",
         "orderedMrtSlotsObserved",
@@ -1555,7 +1772,7 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
                 "DrawRenderer submission and authenticate the post-baseline shell "
                 "callback/pin, substitution counters, IA/PSO, ordered MRT/depth, "
                 "samplers/resources, full publisher readiness, PSR b2 geometry/"
-                "range, inactive b2 skin gate/null VS t0 dependency, and b4 "
+                "range, inactive b2 skin gate/explicit draw-local VS t0 outcome, and b4 "
                 "selected-frame provenance. The route currently "
                 "fails before submission, so no observation fields are synthesized."
             ),

@@ -48,8 +48,12 @@ namespace EndfieldGraphShaderLab
         /// </summary>
         public readonly struct M27SourceInputs
         {
-            public readonly float globalMipBias;
+            public readonly bool targetDimensionsReady;
+            public readonly bool perspectiveCameraReady;
             public readonly Vector4 taaJitterStrength;
+            public readonly bool taaJitterReady;
+            public readonly float physicalCameraMaterialMipBias;
+            public readonly bool physicalCameraMaterialMipBiasReady;
             public readonly float exposureAdaptation;
             public readonly bool exposureReady;
             public readonly Vector3 vfxPlayerPosition;
@@ -59,8 +63,12 @@ namespace EndfieldGraphShaderLab
             public readonly bool vfxParams2Ready;
 
             public M27SourceInputs(
-                float globalMipBias,
+                bool targetDimensionsReady,
+                bool perspectiveCameraReady,
                 Vector4 taaJitterStrength,
+                bool taaJitterReady,
+                float physicalCameraMaterialMipBias,
+                bool physicalCameraMaterialMipBiasReady,
                 float exposureAdaptation,
                 bool exposureReady,
                 Vector3 vfxPlayerPosition,
@@ -69,8 +77,14 @@ namespace EndfieldGraphShaderLab
                 Vector4 vfxParams2,
                 bool vfxParams2Ready)
             {
-                this.globalMipBias = globalMipBias;
+                this.targetDimensionsReady = targetDimensionsReady;
+                this.perspectiveCameraReady = perspectiveCameraReady;
                 this.taaJitterStrength = taaJitterStrength;
+                this.taaJitterReady = taaJitterReady;
+                this.physicalCameraMaterialMipBias =
+                    physicalCameraMaterialMipBias;
+                this.physicalCameraMaterialMipBiasReady =
+                    physicalCameraMaterialMipBiasReady;
                 this.exposureAdaptation = exposureAdaptation;
                 this.exposureReady = exposureReady;
                 this.vfxPlayerPosition = vfxPlayerPosition;
@@ -78,6 +92,33 @@ namespace EndfieldGraphShaderLab
                 this.vfxParams0Ready = vfxParams0Ready;
                 this.vfxParams2 = vfxParams2;
                 this.vfxParams2Ready = vfxParams2Ready;
+            }
+
+            /// <summary>
+            /// The default publisher owns only the current render target and
+            /// perspective Camera arguments. Zero-valued fields below are
+            /// placeholders guarded by false readiness bits, not recovered
+            /// runtime values.
+            /// </summary>
+            public static M27SourceInputs CurrentTargetAndPerspectiveCameraOnly
+            {
+                get
+                {
+                    return new M27SourceInputs(
+                        true,
+                        true,
+                        Vector4.zero,
+                        false,
+                        0.0f,
+                        false,
+                        0.0f,
+                        false,
+                        Vector3.zero,
+                        0.0f,
+                        false,
+                        Vector4.zero,
+                        false);
+                }
             }
         }
 
@@ -113,26 +154,13 @@ namespace EndfieldGraphShaderLab
             Vector4[] destination,
             out string failure)
         {
-            // The selected ExternalCamera serializes material mip bias 0 and
-            // the recovered non-jittered route deliberately publishes neutral
-            // TAA strength. Runtime-only exposure/VFX state remains absent.
-            var m27Inputs = new M27SourceInputs(
-                0.0f,
-                Vector4.zero,
-                0.0f,
-                false,
-                Vector3.zero,
-                0.0f,
-                false,
-                Vector4.zero,
-                false);
             return TryBuild(
                 camera,
                 width,
                 height,
                 environmentParams,
                 prerequisitesReady,
-                m27Inputs,
+                M27SourceInputs.CurrentTargetAndPerspectiveCameraOnly,
                 destination,
                 out failure);
         }
@@ -192,10 +220,17 @@ namespace EndfieldGraphShaderLab
                     "destination must contain exactly 200 float4 vectors";
                 return false;
             }
-            if (!IsFinite(m27Inputs.globalMipBias) ||
+            if (m27Inputs.taaJitterReady &&
                 !IsFinite(m27Inputs.taaJitterStrength))
             {
-                failure = "M27 mip-bias and TAA inputs must be finite";
+                failure = "M27 b1 c19 Halton TAA jitter must be finite";
+                return false;
+            }
+            if (m27Inputs.physicalCameraMaterialMipBiasReady &&
+                !IsFinite(m27Inputs.physicalCameraMaterialMipBias))
+            {
+                failure =
+                    "M27 b1 c26 physical-camera material mip bias must be finite";
                 return false;
             }
             if (m27Inputs.exposureReady &&
@@ -232,8 +267,8 @@ namespace EndfieldGraphShaderLab
 
             Array.Clear(destination, 0, destination.Length);
             destination[ScreenSizeVector] = new Vector4(
-                0.0f,
-                0.0f,
+                width,
+                height,
                 1.0f / width,
                 1.0f / height);
             destination[ProjectionParamsVector] = new Vector4(
@@ -241,24 +276,37 @@ namespace EndfieldGraphShaderLab
                 camera.nearClipPlane,
                 0.0f,
                 0.0f);
-            // c4.w is the selected perspective flag and is exactly zero.
-            destination[OrthoParamsVector] = Vector4.zero;
-            destination[TaaJitterStrengthVector] = m27Inputs.taaJitterStrength;
-            float globalMipBiasPow2 = Mathf.Pow(
-                2.0f,
-                m27Inputs.globalMipBias);
-            if (!IsFinite(globalMipBiasPow2))
-            {
-                failure = "M27 b1 c26.y mip-bias pow2 overflowed";
-                return false;
-            }
-            // Retail publishes c26.y=pow(2,c26.x). c26.w remains branch-dead
-            // behind the source-backed disabled-volumetric c83.z=0.
-            destination[GlobalMipBiasVector] = new Vector4(
-                m27Inputs.globalMipBias,
-                globalMipBiasPow2,
+            // c4.w is derived from the current camera mode. The selected M27
+            // path rejects orthographic cameras above, so its value is zero.
+            destination[OrthoParamsVector] = new Vector4(
                 0.0f,
-                0.0f);
+                0.0f,
+                0.0f,
+                camera.orthographic ? 1.0f : 0.0f);
+            if (m27Inputs.taaJitterReady)
+            {
+                destination[TaaJitterStrengthVector] =
+                    m27Inputs.taaJitterStrength;
+            }
+            if (m27Inputs.physicalCameraMaterialMipBiasReady)
+            {
+                float globalMipBiasPow2 = Mathf.Pow(
+                    2.0f,
+                    m27Inputs.physicalCameraMaterialMipBias);
+                if (!IsFinite(globalMipBiasPow2))
+                {
+                    failure = "M27 b1 c26.y mip-bias pow2 overflowed";
+                    return false;
+                }
+                // Retail publishes c26.y=pow(2,c26.x). c26.w remains
+                // branch-dead behind the source-backed disabled-volumetric
+                // c83.z=0.
+                destination[GlobalMipBiasVector] = new Vector4(
+                    m27Inputs.physicalCameraMaterialMipBias,
+                    globalMipBiasPow2,
+                    0.0f,
+                    0.0f);
+            }
             if (m27Inputs.exposureReady)
             {
                 destination[ExposureWithMiscParamsVector] = new Vector4(
@@ -327,26 +375,48 @@ namespace EndfieldGraphShaderLab
         }
 
         public static bool TryValidateM27SourceReadiness(
-            bool exposureReady,
-            bool vfxParams0Ready,
-            bool vfxParams2Ready,
+            M27SourceInputs m27Inputs,
             out string failure)
         {
-            if (!exposureReady)
+            if (!m27Inputs.targetDimensionsReady)
+            {
+                failure =
+                    "M27 b1 c0.zw requires current target dimensions and reciprocals";
+                return false;
+            }
+            if (!m27Inputs.perspectiveCameraReady)
+            {
+                failure =
+                    "M27 b1 c4.w requires the current physical-camera perspective flag";
+                return false;
+            }
+            if (!m27Inputs.taaJitterReady)
+            {
+                failure =
+                    "M27 b1 c19.zw requires authoritative live HGCamera Halton jitter";
+                return false;
+            }
+            if (!m27Inputs.physicalCameraMaterialMipBiasReady)
+            {
+                failure =
+                    "M27 b1 c26.xy requires authoritative physical-camera material mip bias";
+                return false;
+            }
+            if (!m27Inputs.exposureReady)
             {
                 failure =
                     "M27 b1 c27.y (_ExposureWithMiscParams reciprocal exposure) " +
                     "requires authoritative live camera exposure history";
                 return false;
             }
-            if (!vfxParams0Ready)
+            if (!m27Inputs.vfxParams0Ready)
             {
                 failure =
                     "M27 b1 c103.xyzw (_VFXParams0) requires the unique live " +
                     "VFX player center and Time.time modulo 1024";
                 return false;
             }
-            if (!vfxParams2Ready)
+            if (!m27Inputs.vfxParams2Ready)
             {
                 failure =
                     "M27 b1 c105.xyzw (_VFXParams2) requires authoritative " +
@@ -361,9 +431,7 @@ namespace EndfieldGraphShaderLab
             out string failure)
         {
             return TryValidateM27SourceReadiness(
-                false,
-                false,
-                false,
+                M27SourceInputs.CurrentTargetAndPerspectiveCameraOnly,
                 out failure);
         }
 

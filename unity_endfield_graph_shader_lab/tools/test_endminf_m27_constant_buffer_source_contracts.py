@@ -23,6 +23,9 @@ TRANSFORM_OWNER = TRANSFORM.with_name(
 GLOBALS = TRANSFORM.with_name(
     "EndfieldRecoveredShaderVariablesGlobalContract.cs"
 )
+GLOBALS_OWNER = TRANSFORM.with_name(
+    "EndfieldRecoveredShaderVariablesGlobal.cs"
+)
 GENERATIVE = TRANSFORM.with_name(
     "EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs"
 )
@@ -178,15 +181,42 @@ class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
     def test_b1_source_equations_and_missing_registers_are_explicit(self) -> None:
         source = GLOBALS.read_text(encoding="utf-8")
         for token in (
+            "destination[ScreenSizeVector] = new Vector4(",
+            "camera.orthographic ? 1.0f : 0.0f",
             "Mathf.Pow(",
             "1.0f / m27Inputs.exposureAdaptation",
             "m27Inputs.vfxClockSeconds % 1024.0f",
+            "M27 b1 c0.zw",
+            "M27 b1 c4.w",
+            "M27 b1 c19.zw",
+            "M27 b1 c26.xy",
             "M27 b1 c27.y",
             "M27 b1 c103.xyzw",
             "M27 b1 c105.xyzw",
             "TryValidateM27SourceReadiness",
         ):
             self.assertIn(token, source)
+        for readiness in (
+            "targetDimensionsReady",
+            "perspectiveCameraReady",
+            "taaJitterReady",
+            "physicalCameraMaterialMipBiasReady",
+            "exposureReady",
+            "vfxParams0Ready",
+            "vfxParams2Ready",
+        ):
+            self.assertIn(f"public readonly bool {readiness};", source)
+
+        owner = GLOBALS_OWNER.read_text(encoding="utf-8")
+        self.assertIn(
+            ".M27SourceInputs.CurrentTargetAndPerspectiveCameraOnly",
+            owner,
+        )
+        self.assertIn(
+            "CurrentM27SourceReady => currentM27SourceReady",
+            owner,
+        )
+        self.assertNotIn("CurrentM27SourceReady => false", owner)
 
     def test_generative_gate_checks_source_closure_before_binding(self) -> None:
         source = GENERATIVE.read_text(encoding="utf-8")

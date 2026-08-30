@@ -667,6 +667,48 @@
       "schema": "endfield.endminf-m27-b0-source-contract.v1",
       "status": "source_closed_runtime_values_not_captured"
     },
+    "selectedB1SourceContract": {
+      "selectedReads": [
+        "c0.zw",
+        "c4.w",
+        "c19.zw",
+        "c26.xy",
+        "c27.y",
+        "c103.xyzw",
+        "c105.xyzw"
+      ],
+      "readinessBits": {
+        "c0.zw": true,
+        "c4.w": true,
+        "c19.zw": true,
+        "c26.xy": true,
+        "c27.y": true,
+        "c103.xyzw": true,
+        "c105.xyzw": true
+      },
+      "sourceEquations": {
+        "currentTargetDimensionsAndReciprocals": true,
+        "currentPerspectiveFlag": true,
+        "haltonJitterInputGuarded": true,
+        "physicalCameraMipBiasInputGuarded": true,
+        "exposureReciprocalInputGuarded": true,
+        "playerCenterAndClockInputGuarded": true,
+        "anchorStateInputGuarded": true
+      },
+      "defaultRuntimeFailsClosed": true,
+      "sourceOwnedInputContractComplete": true,
+      "runtimeSourceInputConnection": {
+        "argumentCount": 7,
+        "sourceInputExpression": null,
+        "inlineDefaultRejected": false,
+        "inlineConstructorRejected": false,
+        "namedSourceOwnerExpression": false,
+        "namedSourceOwnerContractAudited": false
+      },
+      "explicitInputsReachRuntimePublisher": false,
+      "allSelectedReadsRuntimeSourcePopulated": false,
+      "capturedValuesAuthorized": false
+    },
     "orderedMrtDescriptors": [
       {
         "slot": 0,
@@ -897,11 +939,11 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs",
-        "sha256": "1132101f26dd71b4586f2705b17c5530552dbbf87f7fc85b20ce167c4359dbdb"
+        "sha256": "50623fe136a5d3fcf7eb520919ece1a78bf86032f27589d1546ebfa9510986fe"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs",
-        "sha256": "ada736ac6fa9d2317be6e4648d8c489aad4568cdb4cc2cde51392936d839f4e4"
+        "sha256": "5c82125a7935175bd1fb232574c5bc3aaa8e560fb6bfcb1871b1a5ba49902e30"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs",
@@ -939,9 +981,10 @@
     "generativeShellIndependentlyPinnedFromD3D11Callback": true,
     "runtimePipelineTagCompileReflectionAndSetPassProven": true,
     "b0SelectedReadsFullySourcePopulated": true,
+    "b1SourceOwnedInputContractComplete": true,
     "b1SelectedReadsFullySourcePopulated": false,
     "b2ActualParticleRecordRangeAndGeometryObserved": false,
-    "vertexSkinInactiveNullT0DependencyAuthenticated": false,
+    "vertexSkinDrawLocalT0OutcomeAuthenticated": false,
     "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": true,
     "b4SelectedFrameProducerValueAuthenticated": false,
     "orderedMrtSlotsObserved": false,
@@ -953,7 +996,7 @@
   "staticAdmissionBlockers": [
     "b1SelectedReadsFullySourcePopulated",
     "b2ActualParticleRecordRangeAndGeometryObserved",
-    "vertexSkinInactiveNullT0DependencyAuthenticated",
+    "vertexSkinDrawLocalT0OutcomeAuthenticated",
     "b4SelectedFrameProducerValueAuthenticated",
     "orderedMrtSlotsObserved",
     "activeSamplerSlotsObserved",
@@ -976,8 +1019,8 @@
   },
   "observationProducer": {
     "status": "blocked_before_draw_submission",
-    "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, inactive b2 skin gate/null VS t0 dependency, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
+    "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, inactive b2 skin gate/explicit draw-local VS t0 outcome, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
   },
-  "smallestRemainingSourceGap": "Static admission remains fail-closed at: b1SelectedReadsFullySourcePopulated, b2ActualParticleRecordRangeAndGeometryObserved, vertexSkinInactiveNullT0DependencyAuthenticated, b4SelectedFrameProducerValueAuthenticated, orderedMrtSlotsObserved, activeSamplerSlotsObserved, authenticatedObservationWriterAvailable, admissibleGenerativeParticleRendererPathExists. A synchronized live observation is also required before any diagnostic draw can be admitted.",
+  "smallestRemainingSourceGap": "Static admission remains fail-closed at: b1SelectedReadsFullySourcePopulated, b2ActualParticleRecordRangeAndGeometryObserved, vertexSkinDrawLocalT0OutcomeAuthenticated, b4SelectedFrameProducerValueAuthenticated, orderedMrtSlotsObserved, activeSamplerSlotsObserved, authenticatedObservationWriterAvailable, admissibleGenerativeParticleRendererPathExists. A synchronized live observation is also required before any diagnostic draw can be admitted.",
   "boundary": "Admission is diagnostic only. It never enables canonical presentation, never consumes captured VB/IB/CB arrays, and never tunes transforms, positions, curves, lighting, or texture sampling."
 }
