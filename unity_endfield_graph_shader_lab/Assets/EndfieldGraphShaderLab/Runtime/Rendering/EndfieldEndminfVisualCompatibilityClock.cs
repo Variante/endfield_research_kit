@@ -32,6 +32,8 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY";
         public const string PreRollSecondsEnvironmentVariable =
             "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS";
+        public const string MeasuredOpeningStripDiagnosticEnvironmentVariable =
+            "ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC";
         public const float OpeningStripStartSeconds = 0.06666667f;
         public const float OpeningStripEndSeconds = 0.35f;
         private static float startTime = float.NaN;
@@ -50,6 +52,13 @@ namespace EndfieldGraphShaderLab
                     string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
             }
         }
+
+        public static bool MeasuredOpeningStripDiagnosticRequested =>
+            string.Equals(
+                Environment.GetEnvironmentVariable(
+                    MeasuredOpeningStripDiagnosticEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal);
 
         public static void MarkOverview02Start(Transform effectRoot)
         {
@@ -153,7 +162,12 @@ namespace EndfieldGraphShaderLab
             out RecoveredOpeningStripState state)
         {
             state = default;
-            if (!TryGetElapsed(out float elapsed))
+            // This evaluator reconstructs bounded rectangles measured from the
+            // clean reference rather than the missing retail producer. Keep it
+            // available for A/B diagnostics, but never admit it implicitly in
+            // the canonical or interactive presentation.
+            if (!MeasuredOpeningStripDiagnosticRequested ||
+                !TryGetElapsed(out float elapsed))
                 return false;
             if (float.IsNaN(elapsed) || float.IsInfinity(elapsed) ||
                 elapsed < OpeningStripStartSeconds ||

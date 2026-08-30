@@ -1,0 +1,470 @@
+{
+  "schema": "endfield.endminf-m27-fixed-state-capture.v1",
+  "status": "validated_exact_m27_liteffect_fixed_state",
+  "capture": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z",
+  "session": {
+    "sessionId": "20260827T225644Z",
+    "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+    "targetSha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99",
+    "runtimeMode": "d3d11-proxy",
+    "graphicsProfile": "targeted",
+    "evidenceLabel": "forced-d3d11",
+    "complete": true,
+    "dropped": 0,
+    "pendingRequest": false,
+    "quiescentCleanup": true,
+    "sourceFiles": {
+      "session": {
+        "path": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z\\session.json",
+        "sha256": "39372f7489117b444babe5614ce3bc9d0d42c61b3a1065e49bddd8ea3f0b71e8"
+      },
+      "runtimeStatus": {
+        "path": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z\\runtime.status.json",
+        "sha256": "06d4d7f6dd36614794c8a013b873cc10d791ee5338d338cbba1d43c552318a68"
+      },
+      "collectorSummary": {
+        "path": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z\\collected\\summary.json",
+        "sha256": "b806d02b2536c88544078f59ec2e8e3ebe6f1740c2b219f09b7dff403d90e9d6"
+      },
+      "graphicsSummary": {
+        "path": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z\\graphics\\summary.json",
+        "sha256": "97cb1e4e9a7ff751183491c514bd17f7dd90d306fa3b7490ec34215e8de1f868"
+      }
+    }
+  },
+  "shaderPair": {
+    "vertexIdentity": "0xC0266E7FAC0046C1",
+    "pixelIdentity": "0x92D80A93ADD9C714",
+    "pass": "HGRP/LitEffect HGBuffer subprogram 113"
+  },
+  "scopeBoundary": "The captured pair is shared by M01/M38/M27. These rows close the pair's fixed D3D11 state; they do not claim material identity, particle chronology, or presentation parity.",
+  "frameSources": [
+    {
+      "frame": 2723,
+      "path": "D:\\fluffy-dump\\scratch\\reverse_engineering\\endfield_capture\\20260827T225644Z\\graphics\\frames\\2723\\metadata.json",
+      "sha256": "23b8256ca23339dd77cfea103caef13520744c96fcba47add8b4d00eddd4bffe",
+      "drawOrdinals": [
+        38,
+        39,
+        40,
+        42
+      ]
+    }
+  ],
+  "drawCount": 4,
+  "draws": [
+    {
+      "frame": 2723,
+      "drawIndex": 4,
+      "drawOrdinal": 38,
+      "indexCount": 72,
+      "instanceCount": 1,
+      "startInstance": 0,
+      "vertexStride": 68,
+      "renderTargetCount": 5,
+      "viewport": {
+        "count": 1,
+        "x": 0,
+        "y": 0,
+        "width": 3840,
+        "height": 2160,
+        "minDepth": 0,
+        "maxDepth": 1
+      },
+      "scissor": {
+        "count": 1,
+        "left": 0,
+        "top": 0,
+        "right": 3840,
+        "bottom": 2160
+      },
+      "samplersS0ThroughS2": [
+        {
+          "slot": 0,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 1,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 2,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        }
+      ],
+      "blend": {
+        "enabled": false,
+        "source": 2,
+        "destination": 1,
+        "operation": 1,
+        "sourceAlpha": 2,
+        "destinationAlpha": 1,
+        "operationAlpha": 1,
+        "writeMask": 15,
+        "factor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "sampleMask": 4294967295
+      },
+      "depthStencil": {
+        "depthEnabled": true,
+        "writeMask": 1,
+        "function": 7,
+        "stencilEnabled": true,
+        "stencilReference": 0
+      },
+      "rasterizer": {
+        "fillMode": 3,
+        "cullMode": 3,
+        "frontCounterClockwise": true,
+        "depthClipEnabled": true,
+        "scissorEnabled": true,
+        "multisampleEnabled": false,
+        "antialiasedLineEnabled": false
+      }
+    },
+    {
+      "frame": 2723,
+      "drawIndex": 13,
+      "drawOrdinal": 39,
+      "indexCount": 72,
+      "instanceCount": 1,
+      "startInstance": 0,
+      "vertexStride": 68,
+      "renderTargetCount": 5,
+      "viewport": {
+        "count": 1,
+        "x": 0,
+        "y": 0,
+        "width": 3840,
+        "height": 2160,
+        "minDepth": 0,
+        "maxDepth": 1
+      },
+      "scissor": {
+        "count": 1,
+        "left": 0,
+        "top": 0,
+        "right": 3840,
+        "bottom": 2160
+      },
+      "samplersS0ThroughS2": [
+        {
+          "slot": 0,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 1,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 2,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        }
+      ],
+      "blend": {
+        "enabled": false,
+        "source": 2,
+        "destination": 1,
+        "operation": 1,
+        "sourceAlpha": 2,
+        "destinationAlpha": 1,
+        "operationAlpha": 1,
+        "writeMask": 15,
+        "factor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "sampleMask": 4294967295
+      },
+      "depthStencil": {
+        "depthEnabled": true,
+        "writeMask": 1,
+        "function": 7,
+        "stencilEnabled": true,
+        "stencilReference": 0
+      },
+      "rasterizer": {
+        "fillMode": 3,
+        "cullMode": 3,
+        "frontCounterClockwise": true,
+        "depthClipEnabled": true,
+        "scissorEnabled": true,
+        "multisampleEnabled": false,
+        "antialiasedLineEnabled": false
+      }
+    },
+    {
+      "frame": 2723,
+      "drawIndex": 21,
+      "drawOrdinal": 40,
+      "indexCount": 72,
+      "instanceCount": 1,
+      "startInstance": 0,
+      "vertexStride": 68,
+      "renderTargetCount": 5,
+      "viewport": {
+        "count": 1,
+        "x": 0,
+        "y": 0,
+        "width": 3840,
+        "height": 2160,
+        "minDepth": 0,
+        "maxDepth": 1
+      },
+      "scissor": {
+        "count": 1,
+        "left": 0,
+        "top": 0,
+        "right": 3840,
+        "bottom": 2160
+      },
+      "samplersS0ThroughS2": [
+        {
+          "slot": 0,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 1,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 2,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        }
+      ],
+      "blend": {
+        "enabled": false,
+        "source": 2,
+        "destination": 1,
+        "operation": 1,
+        "sourceAlpha": 2,
+        "destinationAlpha": 1,
+        "operationAlpha": 1,
+        "writeMask": 15,
+        "factor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "sampleMask": 4294967295
+      },
+      "depthStencil": {
+        "depthEnabled": true,
+        "writeMask": 1,
+        "function": 7,
+        "stencilEnabled": true,
+        "stencilReference": 0
+      },
+      "rasterizer": {
+        "fillMode": 3,
+        "cullMode": 3,
+        "frontCounterClockwise": true,
+        "depthClipEnabled": true,
+        "scissorEnabled": true,
+        "multisampleEnabled": false,
+        "antialiasedLineEnabled": false
+      }
+    },
+    {
+      "frame": 2723,
+      "drawIndex": 27,
+      "drawOrdinal": 42,
+      "indexCount": 72,
+      "instanceCount": 1,
+      "startInstance": 0,
+      "vertexStride": 68,
+      "renderTargetCount": 5,
+      "viewport": {
+        "count": 1,
+        "x": 0,
+        "y": 0,
+        "width": 3840,
+        "height": 2160,
+        "minDepth": 0,
+        "maxDepth": 1
+      },
+      "scissor": {
+        "count": 1,
+        "left": 0,
+        "top": 0,
+        "right": 3840,
+        "bottom": 2160
+      },
+      "samplersS0ThroughS2": [
+        {
+          "slot": 0,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 1,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        },
+        {
+          "slot": 2,
+          "bound": true,
+          "filter": 20,
+          "addressU": 1,
+          "addressV": 1,
+          "addressW": 1,
+          "comparison": 1,
+          "mipBias": 0,
+          "maxAnisotropy": 0,
+          "minLod": 0,
+          "maxLod": 1000
+        }
+      ],
+      "blend": {
+        "enabled": false,
+        "source": 2,
+        "destination": 1,
+        "operation": 1,
+        "sourceAlpha": 2,
+        "destinationAlpha": 1,
+        "operationAlpha": 1,
+        "writeMask": 15,
+        "factor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "sampleMask": 4294967295
+      },
+      "depthStencil": {
+        "depthEnabled": true,
+        "writeMask": 1,
+        "function": 7,
+        "stencilEnabled": true,
+        "stencilReference": 0
+      },
+      "rasterizer": {
+        "fillMode": 3,
+        "cullMode": 3,
+        "frontCounterClockwise": true,
+        "depthClipEnabled": true,
+        "scissorEnabled": true,
+        "multisampleEnabled": false,
+        "antialiasedLineEnabled": false
+      }
+    }
+  ],
+  "closedReplayState": {
+    "depthEnabled": true,
+    "depthWriteMask": 1,
+    "depthFunction": 7,
+    "depthFunctionName": "D3D11_COMPARISON_GREATER_EQUAL",
+    "fillMode": 3,
+    "cullMode": 3,
+    "cullModeName": "D3D11_CULL_BACK",
+    "frontCounterClockwise": true,
+    "depthClipEnabled": true,
+    "scissorEnabled": true
+  },
+  "unresolvedBoundary": "The observer retained PS samplers s0-s2 only. This report does not infer s3-s5 and does not authorize texture, mip, constant-buffer, geometry, chronology, or presentation changes."
+}

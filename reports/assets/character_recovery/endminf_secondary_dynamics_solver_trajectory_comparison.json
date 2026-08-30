@@ -7,62 +7,62 @@
   "ownerMetrics": {
     "MC_Ribbon2": {
       "sampleCount": 200,
-      "translationMean": 0.08719764463230675,
-      "translationMaximum": 0.6787008553497376,
+      "translationMean": 0.21832808786814198,
+      "translationMaximum": 0.9283463703130822,
       "translationWorst": {
         "frame": 1957,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt"
       },
-      "rotationDegreesMean": 22.734445933283396,
-      "rotationDegreesMaximum": 123.8739143186306,
+      "rotationDegreesMean": 11.806731098192353,
+      "rotationDegreesMaximum": 87.14978668755542,
       "rotationWorst": {
-        "frame": 1905,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "frame": 1957,
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt"
       }
     },
     "MC_Hair": {
       "sampleCount": 880,
-      "translationMean": 0.017024639482115394,
-      "translationMaximum": 0.17129023330267307,
+      "translationMean": 0.04378958634105182,
+      "translationMaximum": 0.30780705756243404,
       "translationWorst": {
         "frame": 1923,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
       },
-      "rotationDegreesMean": 18.741516804509324,
-      "rotationDegreesMaximum": 104.39658733627296,
+      "rotationDegreesMean": 11.18919694220054,
+      "rotationDegreesMaximum": 122.37844448497945,
       "rotationWorst": {
-        "frame": 1923,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_h_01_jnt/hair_L_h_02_jnt"
+        "frame": 2095,
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt"
       }
     },
     "MC_Ribbon": {
       "sampleCount": 640,
-      "translationMean": 0.05124307038203992,
-      "translationMaximum": 0.38841262764019385,
+      "translationMean": 0.15034100521146743,
+      "translationMaximum": 0.821867682092312,
       "translationWorst": {
-        "frame": 1992,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "frame": 1923,
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 22.74615032796961,
-      "rotationDegreesMaximum": 117.18030315642562,
+      "rotationDegreesMean": 13.75035283521201,
+      "rotationDegreesMaximum": 121.89017817352894,
       "rotationWorst": {
-        "frame": 1905,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "frame": 1957,
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     "MC_Coat": {
       "sampleCount": 2080,
-      "translationMean": 0.04041653669361613,
-      "translationMaximum": 0.6787008553497376,
+      "translationMean": 0.1297566979886116,
+      "translationMaximum": 0.9283463703130822,
       "translationWorst": {
         "frame": 1957,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt"
       },
-      "rotationDegreesMean": 15.598174995921147,
-      "rotationDegreesMaximum": 123.8739143186306,
+      "rotationDegreesMean": 10.757653867337073,
+      "rotationDegreesMaximum": 121.89017817352894,
       "rotationWorst": {
-        "frame": 1905,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "frame": 1957,
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     }
   },
@@ -72,17 +72,17 @@
       "presentedFrame": 1887,
       "requestedSeconds": 0.05000000074505806,
       "sampleCount": 74,
-      "translationMean": 0.03477619473629138,
-      "translationMaximum": 0.10623615195118823,
+      "translationMean": 0.03644667933312104,
+      "translationMaximum": 0.07799596706038717,
       "translationWorst": {
         "frame": 1887,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_b_0_jnt/clothes_pifeng_R_b_1_jnt/piaodai_hou_R_0_skin_jnt/piaodai_hou_R_1_skin_jnt"
       },
-      "rotationDegreesMean": 10.522537687711521,
-      "rotationDegreesMaximum": 37.897737396963194,
+      "rotationDegreesMean": 6.81880763510378,
+      "rotationDegreesMaximum": 24.508204157334017,
       "rotationWorst": {
         "frame": 1887,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt/hair_L_j_02_jnt/hair_L_j_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_k_01_jnt/hair_L_k_02_jnt"
       }
     },
     {
@@ -90,17 +90,17 @@
       "presentedFrame": 1905,
       "requestedSeconds": 0.3499999940395355,
       "sampleCount": 74,
-      "translationMean": 0.10384555129251681,
-      "translationMaximum": 0.6651849276706758,
+      "translationMean": 0.1416368341799843,
+      "translationMaximum": 0.5473736277761617,
       "translationWorst": {
         "frame": 1905,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 40.677935979091465,
-      "rotationDegreesMaximum": 123.8739143186306,
+      "rotationDegreesMean": 14.382934066962262,
+      "rotationDegreesMaximum": 52.03163506940191,
       "rotationWorst": {
         "frame": 1905,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -108,17 +108,17 @@
       "presentedFrame": 1923,
       "requestedSeconds": 0.6499999761581421,
       "sampleCount": 74,
-      "translationMean": 0.15931613994071464,
-      "translationMaximum": 0.3905623733234467,
+      "translationMean": 0.31223170297939756,
+      "translationMaximum": 0.821867682092312,
       "translationWorst": {
         "frame": 1923,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt/clothes_pifeng_M_a_3_jnt/clothes_pifeng_M_a_4_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 31.499553462857538,
-      "rotationDegreesMaximum": 104.39658733627296,
+      "rotationDegreesMean": 45.125037490655956,
+      "rotationDegreesMaximum": 99.817441078428,
       "rotationWorst": {
         "frame": 1923,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_h_01_jnt/hair_L_h_02_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/piaodai_hou_L_0_skin_jnt/piaodai_hou_L_1_skin_jnt/piaodai_hou_L_2_skin_jnt/piaodai_hou_L_3_skin_jnt"
       }
     },
     {
@@ -126,17 +126,17 @@
       "presentedFrame": 1940,
       "requestedSeconds": 0.9333333373069763,
       "sampleCount": 74,
-      "translationMean": 0.08325832102499653,
-      "translationMaximum": 0.3800394997696281,
+      "translationMean": 0.2084681394110265,
+      "translationMaximum": 0.7734121602781829,
       "translationWorst": {
         "frame": 1940,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 27.54985174091452,
-      "rotationDegreesMaximum": 87.00280609856253,
+      "rotationDegreesMean": 17.99865820756099,
+      "rotationDegreesMaximum": 41.9946962282029,
       "rotationWorst": {
         "frame": 1940,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt/hair_L_g_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
       }
     },
     {
@@ -144,17 +144,17 @@
       "presentedFrame": 1957,
       "requestedSeconds": 1.2166666984558105,
       "sampleCount": 74,
-      "translationMean": 0.15777185160719315,
-      "translationMaximum": 0.6787008553497376,
+      "translationMean": 0.31073741018866385,
+      "translationMaximum": 0.9283463703130822,
       "translationWorst": {
         "frame": 1957,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt"
       },
-      "rotationDegreesMean": 38.3497136668121,
-      "rotationDegreesMaximum": 122.02629107993559,
+      "rotationDegreesMean": 50.33552942546932,
+      "rotationDegreesMaximum": 121.89017817352894,
       "rotationWorst": {
         "frame": 1957,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -162,17 +162,17 @@
       "presentedFrame": 1974,
       "requestedSeconds": 1.5,
       "sampleCount": 74,
-      "translationMean": 0.06777147707010055,
-      "translationMaximum": 0.24859755943078848,
+      "translationMean": 0.2181453735337469,
+      "translationMaximum": 0.7495952001340074,
       "translationWorst": {
         "frame": 1974,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/clothes_pifeng_M_a_2_jnt/clothes_pifeng_M_a_3_jnt/clothes_pifeng_M_a_4_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 27.82995413522602,
-      "rotationDegreesMaximum": 90.37834751114086,
+      "rotationDegreesMean": 26.223443700503438,
+      "rotationDegreesMaximum": 55.01328721129508,
       "rotationWorst": {
         "frame": 1974,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt/hair_L_g_03_jnt"
       }
     },
     {
@@ -180,17 +180,17 @@
       "presentedFrame": 1992,
       "requestedSeconds": 1.7999999523162842,
       "sampleCount": 74,
-      "translationMean": 0.0705622866753864,
-      "translationMaximum": 0.460341102738151,
+      "translationMean": 0.1626174856904576,
+      "translationMaximum": 0.6321729163006654,
       "translationWorst": {
         "frame": 1992,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 25.131336636697874,
-      "rotationDegreesMaximum": 96.38989611106328,
+      "rotationDegreesMean": 29.805981454759078,
+      "rotationDegreesMaximum": 100.53644657838949,
       "rotationWorst": {
         "frame": 1992,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -198,14 +198,14 @@
       "presentedFrame": 2009,
       "requestedSeconds": 2.0833332538604736,
       "sampleCount": 74,
-      "translationMean": 0.03828444067727305,
-      "translationMaximum": 0.3103404440800606,
+      "translationMean": 0.13109763608848343,
+      "translationMaximum": 0.2899741446255363,
       "translationWorst": {
         "frame": 2009,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 20.006648253678016,
-      "rotationDegreesMaximum": 93.79312936656142,
+      "rotationDegreesMean": 16.399086875151045,
+      "rotationDegreesMaximum": 52.64419048635879,
       "rotationWorst": {
         "frame": 2009,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
@@ -216,17 +216,17 @@
       "presentedFrame": 2026,
       "requestedSeconds": 2.366666555404663,
       "sampleCount": 74,
-      "translationMean": 0.0192889910257704,
-      "translationMaximum": 0.09081940288520797,
+      "translationMean": 0.11566349721532564,
+      "translationMaximum": 0.23964467545774729,
       "translationWorst": {
         "frame": 2026,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt/clothes_pifeng_L_b_3_jnt/clothes_pifeng_L_b_4_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 14.693835198610165,
-      "rotationDegreesMaximum": 90.88473786082481,
+      "rotationDegreesMean": 7.232994365128744,
+      "rotationDegreesMaximum": 29.873949669470754,
       "rotationWorst": {
         "frame": 2026,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -234,17 +234,17 @@
       "presentedFrame": 2043,
       "requestedSeconds": 2.6500000953674316,
       "sampleCount": 74,
-      "translationMean": 0.03920416748849782,
-      "translationMaximum": 0.33086637825257637,
+      "translationMean": 0.12055330228468039,
+      "translationMaximum": 0.25605961923273785,
       "translationWorst": {
         "frame": 2043,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 23.11373992493234,
-      "rotationDegreesMaximum": 93.53626547848441,
+      "rotationDegreesMean": 21.19276401716103,
+      "rotationDegreesMaximum": 57.9900764586166,
       "rotationWorst": {
         "frame": 2043,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt"
       }
     },
     {
@@ -252,17 +252,17 @@
       "presentedFrame": 2061,
       "requestedSeconds": 2.950000047683716,
       "sampleCount": 74,
-      "translationMean": 0.047833850375183395,
-      "translationMaximum": 0.3979516518749018,
+      "translationMean": 0.06506454406764052,
+      "translationMaximum": 0.3067868533842841,
       "translationWorst": {
         "frame": 2061,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 25.23982238369239,
-      "rotationDegreesMaximum": 88.93115740279141,
+      "rotationDegreesMean": 27.777495074115023,
+      "rotationDegreesMaximum": 89.35829393954987,
       "rotationWorst": {
         "frame": 2061,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -270,17 +270,17 @@
       "presentedFrame": 2078,
       "requestedSeconds": 3.2333333492279053,
       "sampleCount": 74,
-      "translationMean": 0.04542792643603289,
-      "translationMaximum": 0.3789836088365291,
+      "translationMean": 0.08675274258632554,
+      "translationMaximum": 0.34448395143097793,
       "translationWorst": {
         "frame": 2078,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 21.812432335169472,
-      "rotationDegreesMaximum": 88.94042744501287,
+      "rotationDegreesMean": 22.814829928792253,
+      "rotationDegreesMaximum": 69.11449075629297,
       "rotationWorst": {
         "frame": 2078,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt"
       }
     },
     {
@@ -288,17 +288,17 @@
       "presentedFrame": 2095,
       "requestedSeconds": 3.5166666507720947,
       "sampleCount": 74,
-      "translationMean": 0.03674133685237041,
-      "translationMaximum": 0.21770358080534719,
+      "translationMean": 0.07250903134306762,
+      "translationMaximum": 0.2840305216379946,
       "translationWorst": {
         "frame": 2095,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt"
       },
-      "rotationDegreesMean": 21.940415240216296,
-      "rotationDegreesMaximum": 75.24452590706763,
+      "rotationDegreesMean": 25.952778227894285,
+      "rotationDegreesMaximum": 122.37844448497945,
       "rotationWorst": {
         "frame": 2095,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt"
       }
     },
     {
@@ -306,17 +306,17 @@
       "presentedFrame": 2112,
       "requestedSeconds": 3.799999952316284,
       "sampleCount": 74,
-      "translationMean": 0.02899682450669935,
-      "translationMaximum": 0.20982856889947582,
+      "translationMean": 0.07233255091358409,
+      "translationMaximum": 0.15886487010720735,
       "translationWorst": {
         "frame": 2112,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_b_0_jnt/clothes_pifeng_L_b_1_jnt/clothes_pifeng_L_b_2_jnt/clothes_pifeng_L_b_3_jnt/clothes_pifeng_L_b_4_jnt"
       },
-      "rotationDegreesMean": 19.609695975442524,
-      "rotationDegreesMaximum": 73.39826633376123,
+      "rotationDegreesMean": 22.756966904631128,
+      "rotationDegreesMaximum": 113.86508684399318,
       "rotationWorst": {
         "frame": 2112,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt"
       }
     },
     {
@@ -324,17 +324,17 @@
       "presentedFrame": 2129,
       "requestedSeconds": 4.083333492279053,
       "sampleCount": 74,
-      "translationMean": 0.027764276942492748,
-      "translationMaximum": 0.19613210196133748,
+      "translationMean": 0.07602379710717201,
+      "translationMaximum": 0.24203355219742867,
       "translationWorst": {
         "frame": 2129,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 18.12117594232116,
-      "rotationDegreesMaximum": 74.51670323280084,
+      "rotationDegreesMean": 16.960821234460163,
+      "rotationDegreesMaximum": 58.05106310529158,
       "rotationWorst": {
         "frame": 2129,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -342,17 +342,17 @@
       "presentedFrame": 2146,
       "requestedSeconds": 4.366666793823242,
       "sampleCount": 74,
-      "translationMean": 0.05150207469676289,
-      "translationMaximum": 0.3206005841067492,
+      "translationMean": 0.09553378587528148,
+      "translationMaximum": 0.24719456656009706,
       "translationWorst": {
         "frame": 2146,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 24.306339796794482,
-      "rotationDegreesMaximum": 85.49119155913388,
+      "rotationDegreesMean": 25.748572151250933,
+      "rotationDegreesMaximum": 97.43648731979937,
       "rotationWorst": {
         "frame": 2146,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_g_01_jnt/hair_L_g_02_jnt/hair_L_g_03_jnt"
       }
     },
     {
@@ -360,17 +360,17 @@
       "presentedFrame": 2163,
       "requestedSeconds": 4.650000095367432,
       "sampleCount": 74,
-      "translationMean": 0.027255905416199894,
-      "translationMaximum": 0.31673310072376976,
+      "translationMean": 0.08569486876676655,
+      "translationMaximum": 0.2606853582062627,
       "translationWorst": {
         "frame": 2163,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 17.303723125618543,
-      "rotationDegreesMaximum": 64.87658713998286,
+      "rotationDegreesMean": 11.886131540904668,
+      "rotationDegreesMaximum": 46.302288459757655,
       "rotationWorst": {
         "frame": 2163,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt"
       }
     },
     {
@@ -378,17 +378,17 @@
       "presentedFrame": 2180,
       "requestedSeconds": 4.933333396911621,
       "sampleCount": 74,
-      "translationMean": 0.014345523533015745,
-      "translationMaximum": 0.11207296740988407,
+      "translationMean": 0.07659483221707768,
+      "translationMaximum": 0.16213719838809365,
       "translationWorst": {
         "frame": 2180,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       },
-      "rotationDegreesMean": 11.193540771274312,
-      "rotationDegreesMaximum": 61.69111784492381,
+      "rotationDegreesMean": 6.223678629096641,
+      "rotationDegreesMaximum": 23.125986294746255,
       "rotationWorst": {
         "frame": 2180,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
       }
     },
     {
@@ -396,17 +396,17 @@
       "presentedFrame": 2197,
       "requestedSeconds": 5.2166666984558105,
       "sampleCount": 74,
-      "translationMean": 0.01077228225840337,
-      "translationMaximum": 0.09117947930360831,
+      "translationMean": 0.06681529303500648,
+      "translationMaximum": 0.1582531902513899,
       "translationWorst": {
         "frame": 2197,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 8.840277258788602,
-      "rotationDegreesMaximum": 55.98714461048953,
+      "rotationDegreesMean": 4.073591935082916,
+      "rotationDegreesMaximum": 15.327052866431453,
       "rotationWorst": {
         "frame": 2197,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -414,17 +414,17 @@
       "presentedFrame": 2214,
       "requestedSeconds": 5.5,
       "sampleCount": 74,
-      "translationMean": 0.01240995769081599,
-      "translationMaximum": 0.19628683909411618,
+      "translationMean": 0.06434327446848305,
+      "translationMaximum": 0.15655502327890478,
       "translationWorst": {
         "frame": 2214,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.677982819683889,
-      "rotationDegreesMaximum": 54.168359119254106,
+      "rotationDegreesMean": 2.179426008308331,
+      "rotationDegreesMaximum": 10.742335029051416,
       "rotationWorst": {
         "frame": 2214,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_e_01_jnt/hair_L_e_02_jnt/hair_L_e_03_jnt/hair_L_e_04_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
       }
     },
     {
@@ -432,17 +432,17 @@
       "presentedFrame": 2232,
       "requestedSeconds": 5.800000190734863,
       "sampleCount": 74,
-      "translationMean": 0.011892685620892428,
-      "translationMaximum": 0.21793510942186584,
+      "translationMean": 0.06268084323858793,
+      "translationMaximum": 0.1582657508346022,
       "translationWorst": {
         "frame": 2232,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.194157089435548,
-      "rotationDegreesMaximum": 61.24653348371282,
+      "rotationDegreesMean": 1.3288338684434702,
+      "rotationDegreesMaximum": 4.266986529999081,
       "rotationWorst": {
         "frame": 2232,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt"
       }
     },
     {
@@ -450,17 +450,17 @@
       "presentedFrame": 2249,
       "requestedSeconds": 6.083333492279053,
       "sampleCount": 74,
-      "translationMean": 0.014194719269278656,
-      "translationMaximum": 0.16311096548583062,
+      "translationMean": 0.0617683992333104,
+      "translationMaximum": 0.1591371214556927,
       "translationWorst": {
         "frame": 2249,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.02677946607231,
-      "rotationDegreesMaximum": 60.39061555206811,
+      "rotationDegreesMean": 1.3547504267925505,
+      "rotationDegreesMaximum": 9.28577695400066,
       "rotationWorst": {
         "frame": 2249,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -468,17 +468,17 @@
       "presentedFrame": 2266,
       "requestedSeconds": 6.366666793823242,
       "sampleCount": 74,
-      "translationMean": 0.016277461573835333,
-      "translationMaximum": 0.19639364597359005,
+      "translationMean": 0.06156913905507516,
+      "translationMaximum": 0.15605949643601713,
       "translationWorst": {
         "frame": 2266,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 12.259375040523027,
-      "rotationDegreesMaximum": 51.87573308981956,
+      "rotationDegreesMean": 1.3586631452962972,
+      "rotationDegreesMaximum": 7.654966427257822,
       "rotationWorst": {
         "frame": 2266,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -486,17 +486,17 @@
       "presentedFrame": 2283,
       "requestedSeconds": 6.650000095367432,
       "sampleCount": 74,
-      "translationMean": 0.01407084894927203,
-      "translationMaximum": 0.18864549622928387,
+      "translationMean": 0.06135177946941622,
+      "translationMaximum": 0.15129929001047057,
       "translationWorst": {
         "frame": 2283,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.771008099202836,
-      "rotationDegreesMaximum": 74.36245155966728,
+      "rotationDegreesMean": 1.5114755452329758,
+      "rotationDegreesMaximum": 5.050336013103979,
       "rotationWorst": {
         "frame": 2283,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt"
       }
     },
     {
@@ -504,17 +504,17 @@
       "presentedFrame": 2300,
       "requestedSeconds": 6.933333396911621,
       "sampleCount": 74,
-      "translationMean": 0.0110685332627264,
-      "translationMaximum": 0.11920480254538286,
+      "translationMean": 0.06071240258979372,
+      "translationMaximum": 0.1489903509258421,
       "translationWorst": {
         "frame": 2300,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.080372052353445,
-      "rotationDegreesMaximum": 65.98530668266928,
+      "rotationDegreesMean": 1.6752592663078683,
+      "rotationDegreesMaximum": 7.181746106357539,
       "rotationWorst": {
         "frame": 2300,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt"
       }
     },
     {
@@ -522,17 +522,17 @@
       "presentedFrame": 2318,
       "requestedSeconds": 7.233333110809326,
       "sampleCount": 74,
-      "translationMean": 0.011235514214900506,
-      "translationMaximum": 0.17274975807673748,
+      "translationMean": 0.06223873883181466,
+      "translationMaximum": 0.15168990486095751,
       "translationWorst": {
         "frame": 2318,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.388176090708056,
-      "rotationDegreesMaximum": 53.99939041969156,
+      "rotationDegreesMean": 1.528442971937918,
+      "rotationDegreesMaximum": 8.613022154671391,
       "rotationWorst": {
         "frame": 2318,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -540,17 +540,17 @@
       "presentedFrame": 2335,
       "requestedSeconds": 7.516666889190674,
       "sampleCount": 74,
-      "translationMean": 0.012752043733788758,
-      "translationMaximum": 0.21301292992083815,
+      "translationMean": 0.06482985263359543,
+      "translationMaximum": 0.156393819929029,
       "translationWorst": {
         "frame": 2335,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.21680351011961,
-      "rotationDegreesMaximum": 54.905884616235014,
+      "rotationDegreesMean": 1.3262094816716645,
+      "rotationDegreesMaximum": 7.029197735127194,
       "rotationWorst": {
         "frame": 2335,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -558,17 +558,17 @@
       "presentedFrame": 2352,
       "requestedSeconds": 7.800000190734863,
       "sampleCount": 74,
-      "translationMean": 0.012104629274131196,
-      "translationMaximum": 0.22823243674128194,
+      "translationMean": 0.06229197335209757,
+      "translationMaximum": 0.15942223058749197,
       "translationWorst": {
         "frame": 2352,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.464325816948149,
-      "rotationDegreesMaximum": 57.66551352238922,
+      "rotationDegreesMean": 1.5451505831577128,
+      "rotationDegreesMaximum": 5.2471744448481195,
       "rotationWorst": {
         "frame": 2352,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt"
       }
     },
     {
@@ -576,17 +576,17 @@
       "presentedFrame": 2370,
       "requestedSeconds": 8.100000381469727,
       "sampleCount": 74,
-      "translationMean": 0.013343004110455548,
-      "translationMaximum": 0.1772350574508343,
+      "translationMean": 0.06052810500600867,
+      "translationMaximum": 0.15971742839116929,
       "translationWorst": {
         "frame": 2370,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.823446910651448,
-      "rotationDegreesMaximum": 62.39726064708997,
+      "rotationDegreesMean": 1.5058432064116396,
+      "rotationDegreesMaximum": 9.140268140944745,
       "rotationWorst": {
         "frame": 2370,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -594,17 +594,17 @@
       "presentedFrame": 2387,
       "requestedSeconds": 8.383333206176758,
       "sampleCount": 74,
-      "translationMean": 0.01609997981417881,
-      "translationMaximum": 0.1796874598191245,
+      "translationMean": 0.06564622827165414,
+      "translationMaximum": 0.1662636171275565,
       "translationWorst": {
         "frame": 2387,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 12.031224737107218,
-      "rotationDegreesMaximum": 51.79046876496756,
+      "rotationDegreesMean": 1.6358159116673001,
+      "rotationDegreesMaximum": 10.885116037987142,
       "rotationWorst": {
         "frame": 2387,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -612,17 +612,17 @@
       "presentedFrame": 2404,
       "requestedSeconds": 8.666666984558105,
       "sampleCount": 74,
-      "translationMean": 0.014787706915829172,
-      "translationMaximum": 0.1969501108901277,
+      "translationMean": 0.0903277837308806,
+      "translationMaximum": 0.2080795758918918,
       "translationWorst": {
         "frame": 2404,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 12.042247348984382,
-      "rotationDegreesMaximum": 71.41606198176206,
+      "rotationDegreesMean": 1.7830657188811694,
+      "rotationDegreesMaximum": 5.766406358055738,
       "rotationWorst": {
         "frame": 2404,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -630,17 +630,17 @@
       "presentedFrame": 2421,
       "requestedSeconds": 8.949999809265137,
       "sampleCount": 74,
-      "translationMean": 0.01147457951584098,
-      "translationMaximum": 0.13936030769292237,
+      "translationMean": 0.09440757896784563,
+      "translationMaximum": 0.21900304412481392,
       "translationWorst": {
         "frame": 2421,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.443269853996938,
-      "rotationDegreesMaximum": 70.36532548045868,
+      "rotationDegreesMean": 2.132864538623207,
+      "rotationDegreesMaximum": 8.499157625379901,
       "rotationWorst": {
         "frame": 2421,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -648,17 +648,17 @@
       "presentedFrame": 2438,
       "requestedSeconds": 9.233333587646484,
       "sampleCount": 74,
-      "translationMean": 0.0110949326792166,
-      "translationMaximum": 0.15572186004396601,
+      "translationMean": 0.09735954327966696,
+      "translationMaximum": 0.2276865984798133,
       "translationWorst": {
         "frame": 2438,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.128987347218697,
-      "rotationDegreesMaximum": 53.15861982360316,
+      "rotationDegreesMean": 1.8697963829519402,
+      "rotationDegreesMaximum": 8.369879764404923,
       "rotationWorst": {
         "frame": 2438,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -666,17 +666,17 @@
       "presentedFrame": 2456,
       "requestedSeconds": 9.533333778381348,
       "sampleCount": 74,
-      "translationMean": 0.012562529016044792,
-      "translationMaximum": 0.2030036570500051,
+      "translationMean": 0.10266409915999455,
+      "translationMaximum": 0.24338104851069176,
       "translationWorst": {
         "frame": 2456,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.02865482099011,
-      "rotationDegreesMaximum": 54.85746607693497,
+      "rotationDegreesMean": 1.6919206739164654,
+      "rotationDegreesMaximum": 9.23925365784813,
       "rotationWorst": {
         "frame": 2456,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -684,17 +684,17 @@
       "presentedFrame": 2473,
       "requestedSeconds": 9.816666603088379,
       "sampleCount": 74,
-      "translationMean": 0.012160615885284037,
-      "translationMaximum": 0.22833550945830128,
+      "translationMean": 0.107744668395681,
+      "translationMaximum": 0.2649870551222807,
       "translationWorst": {
         "frame": 2473,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.521022572767468,
-      "rotationDegreesMaximum": 53.77832641374993,
+      "rotationDegreesMean": 1.9447920703914414,
+      "rotationDegreesMaximum": 6.38465640880548,
       "rotationWorst": {
         "frame": 2473,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_j_01_jnt/hair_L_j_02_jnt/hair_L_j_03_jnt"
       }
     },
     {
@@ -702,17 +702,17 @@
       "presentedFrame": 2491,
       "requestedSeconds": 10.116666793823242,
       "sampleCount": 74,
-      "translationMean": 0.012538577801385892,
-      "translationMaximum": 0.19089513013790121,
+      "translationMean": 0.10636295138146813,
+      "translationMaximum": 0.26774866505437744,
       "translationWorst": {
         "frame": 2491,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.783927161865751,
-      "rotationDegreesMaximum": 63.221374288147466,
+      "rotationDegreesMean": 1.909836723848581,
+      "rotationDegreesMaximum": 9.940645599053921,
       "rotationWorst": {
         "frame": 2491,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt"
       }
     },
     {
@@ -720,17 +720,17 @@
       "presentedFrame": 2508,
       "requestedSeconds": 10.399999618530273,
       "sampleCount": 74,
-      "translationMean": 0.015737344639976007,
-      "translationMaximum": 0.1590313018115301,
+      "translationMean": 0.10596939551400998,
+      "translationMaximum": 0.26871615813099764,
       "translationWorst": {
         "frame": 2508,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 11.747106542751274,
-      "rotationDegreesMaximum": 52.86402262862015,
+      "rotationDegreesMean": 1.5903135137749287,
+      "rotationDegreesMaximum": 11.021563263700248,
       "rotationWorst": {
         "frame": 2508,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     },
     {
@@ -738,17 +738,17 @@
       "presentedFrame": 2526,
       "requestedSeconds": 10.699999809265137,
       "sampleCount": 74,
-      "translationMean": 0.01522587033027412,
-      "translationMaximum": 0.19956993947214877,
+      "translationMean": 0.10663499119766146,
+      "translationMaximum": 0.26494808423222255,
       "translationWorst": {
         "frame": 2526,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 12.159341896465584,
-      "rotationDegreesMaximum": 68.26295239835453,
+      "rotationDegreesMean": 1.6966069075189807,
+      "rotationDegreesMaximum": 5.810712985652062,
       "rotationWorst": {
         "frame": 2526,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
@@ -756,41 +756,41 @@
       "presentedFrame": 2543,
       "requestedSeconds": 10.983333587646484,
       "sampleCount": 74,
-      "translationMean": 0.01186335960748143,
-      "translationMaximum": 0.15274975164317284,
+      "translationMean": 0.10686209337424876,
+      "translationMaximum": 0.26080540400258934,
       "translationWorst": {
         "frame": 2543,
         "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.738721961096026,
-      "rotationDegreesMaximum": 72.81258529422033,
+      "rotationDegreesMean": 2.130295431268398,
+      "rotationDegreesMaximum": 8.346538695117621,
       "rotationWorst": {
         "frame": 2543,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_d_01_jnt/hair_L_d_02_jnt/hair_L_d_03_jnt/hair_L_d_04_jnt"
       }
     },
     {
       "index": 39,
       "presentedFrame": 2561,
-      "requestedSeconds": 11.283333778381348,
+      "requestedSeconds": 11.283332824707031,
       "sampleCount": 74,
-      "translationMean": 0.010873238497721075,
-      "translationMaximum": 0.15009164620364887,
+      "translationMean": 0.10674297360538013,
+      "translationMaximum": 0.25744415995268,
       "translationWorst": {
         "frame": 2561,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_R_a_0_jnt/clothes_pifeng_R_a_1_jnt/clothes_pifeng_R_a_2_jnt/clothes_pifeng_R_a_3_jnt/piaodai_a_1_ctrl_jnt/piaodai_a_2_ctrl_jnt/piaodai_a_3_ctrl_jnt/piaodai_a_4_ctrl_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_M_a_0_jnt/clothes_pifeng_M_a_1_jnt/piaodai_back_L_0_skin_jnt/piaodai_back_L_1_skin_jnt/piaodai_back_L_2_skin_jnt/piaodai_back_L_3_skin_jnt/piaodai_back_L_4_skin_jnt"
       },
-      "rotationDegreesMean": 10.03782014904928,
-      "rotationDegreesMaximum": 52.87980424784487,
+      "rotationDegreesMean": 2.0285530453673895,
+      "rotationDegreesMaximum": 8.664538004885012,
       "rotationWorst": {
         "frame": 2561,
-        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/Bip001_Neck/Bip001_Head/hair_L_f_01_jnt/hair_L_f_02_jnt/hair_L_f_03_jnt"
+        "path": "Root/Bip001/Bip001_Pelvis/Bip001_Spine/Bip001_Spine1/Bip001_Spine2/clothes_pifeng_L_a_0_jnt/clothes_pifeng_L_a_1_jnt/clothes_pifeng_L_a_2_jnt/clothes_pifeng_L_a_3_jnt/piaodai_b_1_ctrl_jnt/piaodai_b_2_ctrl_jnt/piaodai_b_3_ctrl_jnt/piaodai_b_4_ctrl_jnt"
       }
     }
   ],
   "sources": {
     "D:\\fluffy-dump\\reports\\assets\\character_recovery\\endminf_captured_secondary_dynamics_oracle.json": "273a218b20e4f59c2588b6abcc85fd92639378d497d13bcf36a98c510e727317",
-    "D:\\fluffy-dump\\scratch\\character_recovery\\endminf_unity_secondary_dynamics_solver_aligned\\report.json": "9a7af3b88386448ff8cdd57e03efff356194e3ee7bc6ffb5b12bd154127b2668",
-    "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\tools\\build_endminf_secondary_dynamics_trajectory_comparison.py": "1c347d0d8d50f5c12c0a622a119772386d361a3371a466fc81f6a5dcd6d3b07c"
+    "D:\\fluffy-dump\\scratch\\character_recovery\\endminf_unity_secondary_dynamics_solver_aligned_current\\report.json": "2ee0b56ba98f1f1fe781929bd059bb5289b71f4b34a0262624eaf4e11e8ea7fa",
+    "D:\\fluffy-dump\\unity_endfield_graph_shader_lab\\tools\\build_endminf_secondary_dynamics_trajectory_comparison.py": "9dc59095669399bcab7a01949a6dbf651f2bd90381ec39c85d46d26eaa88edf3"
   }
 }

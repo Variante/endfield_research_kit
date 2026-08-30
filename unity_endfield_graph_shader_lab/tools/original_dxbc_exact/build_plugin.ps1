@@ -21,6 +21,8 @@ $validatorObject = Join-Path $buildRoot "ValidateEmbeddedDxbc.obj"
 $validatorExe = Join-Path $buildRoot "ValidateEmbeddedDxbc.exe"
 $registryValidatorObject = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.obj"
 $registryValidatorExe = Join-Path $buildRoot "VerifyM27SubstitutionRegistry.exe"
+$m27StateValidatorObject = Join-Path $buildRoot "VerifyM27FixedState.obj"
+$m27StateValidatorExe = Join-Path $buildRoot "VerifyM27FixedState.exe"
 $uberValidatorObject = Join-Path $buildRoot "VerifyEndminfUberTransport.obj"
 $uberValidatorExe = Join-Path $buildRoot "VerifyEndminfUberTransport.exe"
 $uberShaderValidatorObject = Join-Path $buildRoot "ValidateEndminfUberShaders.obj"
@@ -133,6 +135,24 @@ if ($LASTEXITCODE -ne 0) {
     throw "M27 substitution registry validation failed with exit $LASTEXITCODE."
 }
 
+$m27StateValidatorSource = Join-Path $toolRoot "VerifyM27FixedState.cpp"
+$m27StateValidatorCompileCommand = @(
+    "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
+    "/I`"$toolRoot`" /Fo`"$m27StateValidatorObject`" `"$m27StateValidatorSource`"",
+    "/link /NOLOGO /Brepro /OUT:`"$m27StateValidatorExe`" d3d11.lib"
+) -join " "
+$m27StateValidatorCompile =
+    "call `"$vsDevCmd`" -arch=x64 -host_arch=x64 && $m27StateValidatorCompileCommand"
+cmd.exe /d /c $m27StateValidatorCompile
+if ($LASTEXITCODE -ne 0) {
+    throw "M27 fixed-state validator compilation failed with exit code $LASTEXITCODE."
+}
+
+& $m27StateValidatorExe
+if ($LASTEXITCODE -ne 0) {
+    throw "M27 fixed-state validation failed with exit $LASTEXITCODE."
+}
+
 $uberValidatorSource = Join-Path $toolRoot "VerifyEndminfUberTransport.cpp"
 $uberValidatorCompileCommand = @(
     "cl.exe /nologo /std:c++17 /O2 /EHsc /Brepro",
@@ -214,6 +234,7 @@ foreach ($intermediate in @(
     $pluginObject,
     $validatorObject,
     $registryValidatorObject,
+    $m27StateValidatorObject,
     $uberValidatorObject,
     $uberShaderValidatorObject,
     $m20ValidatorObject,
@@ -227,6 +248,8 @@ $validatorHash =
     (Get-FileHash -LiteralPath $validatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $registryValidatorHash =
     (Get-FileHash -LiteralPath $registryValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
+$m27StateValidatorHash =
+    (Get-FileHash -LiteralPath $m27StateValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $uberValidatorHash =
     (Get-FileHash -LiteralPath $uberValidatorExe -Algorithm SHA256).Hash.ToLowerInvariant()
 $uberShaderValidatorHash =
@@ -241,6 +264,8 @@ Write-Output "validator=$validatorExe"
 Write-Output "validator_sha256=$validatorHash"
 Write-Output "m27_registry_validator=$registryValidatorExe"
 Write-Output "m27_registry_validator_sha256=$registryValidatorHash"
+Write-Output "m27_fixed_state_validator=$m27StateValidatorExe"
+Write-Output "m27_fixed_state_validator_sha256=$m27StateValidatorHash"
 Write-Output "endminf_uber_validator=$uberValidatorExe"
 Write-Output "endminf_uber_validator_sha256=$uberValidatorHash"
 Write-Output "endminf_uber_shader_validator=$uberShaderValidatorExe"

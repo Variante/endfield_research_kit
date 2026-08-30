@@ -4264,6 +4264,8 @@ namespace EndfieldGraphShaderLab
                     out openingStripSelectorFailure);
             bool useRecoveredEndminfOpeningStripCompatibility =
                 useRecoveredPostSemantics &&
+                EndfieldEndminfVisualCompatibilityClock
+                    .MeasuredOpeningStripDiagnosticRequested &&
                 !EndfieldRecoveredEndminfOpeningStripExactRuntime.ActiveThisFrame &&
                 recoveredEndminfOpeningStripMaterial != null &&
                 hasOpeningStripSelector &&
@@ -4343,7 +4345,7 @@ namespace EndfieldGraphShaderLab
             if (!loggedRecoveredEndminfOpeningStrip)
             {
                 Debug.Log(
-                    "Recovered Endminf opening horizontal-strip compatibility " +
+                    "Diagnostic measured Endminf opening horizontal-strip " +
                     "pass active in packed SceneColor before temporal resolve; " +
                     "captured Target1 SceneMV-B publication remains an " +
                     "explicit diagnostic; " +
