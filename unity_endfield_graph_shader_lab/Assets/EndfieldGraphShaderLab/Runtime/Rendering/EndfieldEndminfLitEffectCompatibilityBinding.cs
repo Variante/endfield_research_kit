@@ -14,6 +14,8 @@ namespace EndfieldGraphShaderLab
     {
         public const string EnvironmentVariable =
             "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT";
+        public const string LiveHGBufferEnvironmentVariable =
+            "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER";
         public const string ContractSchema =
             "endfield.endminf-liteffect-runtime-binding.v1";
         private const string ExactM27EnvironmentVariable =
@@ -43,7 +45,10 @@ namespace EndfieldGraphShaderLab
                     ExactM27EnvironmentVariable),
                 "1",
                 StringComparison.Ordinal);
-            if (!compatibility && !exactM27)
+            bool liveHGBuffer = IsEnabled(
+                Environment.GetEnvironmentVariable(
+                    LiveHGBufferEnvironmentVariable));
+            if (!compatibility && !exactM27 && !liveHGBuffer)
                 return;
 
             foreach (Row row in rows)
@@ -58,12 +63,17 @@ namespace EndfieldGraphShaderLab
                 }
 
                 bool isM27 = row.particleRendererPathId == M27RendererPathId;
-                if (!isM27 && !compatibility)
+                if (!isM27 && !compatibility && !liveHGBuffer)
                     continue;
 
                 row.renderer.renderMode = ParticleSystemRenderMode.Mesh;
                 row.renderer.SetMeshes(new[] { row.mesh }, 1);
                 row.renderer.sharedMaterials = new[] { row.material };
+                // The live HGBuffer route remains a non-presented diagnostic
+                // until the original deferred output proves non-empty source
+                // content. Keep the ordinary source renderer visible while
+                // that proof is incomplete; otherwise a black diagnostic
+                // resolve replaces an already useful compatibility result.
                 if (exactM27 && isM27)
                     row.renderer.gameObject.layer = ExactM27Layer;
                 row.renderer.enabled = true;
@@ -79,6 +89,14 @@ namespace EndfieldGraphShaderLab
                     string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        private static bool IsEnabled(string value)
+        {
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

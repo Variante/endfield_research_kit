@@ -69,6 +69,9 @@ namespace EndfieldGraphShaderLab
         private float[] exactReadbackFloats;
         private float[] recoveredHlslReadbackFloats;
         private bool comparisonLogged;
+        private bool exactContentValidationComplete;
+        private bool exactContentValid;
+        private int contentValidationGeneration = 1;
         private bool nativeEventPending;
         private bool disposed;
 
@@ -82,7 +85,21 @@ namespace EndfieldGraphShaderLab
 
         internal bool Requested => requested;
 
-        internal RenderTexture RecoveredHlslOutput => recoveredHlslOutput;
+        internal RenderTexture ExactOutput => output;
+
+        internal bool PresentationReady =>
+            exactContentValidationComplete && exactContentValid &&
+            output != null && output.IsCreated();
+
+        internal void SuppressInactiveFrame()
+        {
+            // Presentation authority belongs to one continuous source-owner
+            // interval. Never carry an asynchronous positive content result
+            // across an inactive gap, where the private depth/output belong
+            // to an earlier effect frame.
+            InvalidateContentValidation();
+            Shader.SetGlobalFloat(ReadyId, 0.0f);
+        }
 
         internal bool Render(
             ScriptableRenderContext context,
@@ -707,20 +724,8 @@ namespace EndfieldGraphShaderLab
                 }
                 if (multiscatteringLut == null)
                 {
-                    multiscatteringLut = new Texture2D(
-                        1,
-                        1,
-                        TextureFormat.RGBAFloat,
-                        false,
-                        true)
-                    {
-                        name = "Recovered exact resolver neutral multiscattering LUT",
-                        filterMode = FilterMode.Point,
-                        wrapMode = TextureWrapMode.Clamp,
-                        hideFlags = HideFlags.HideAndDontSave,
-                    };
-                    multiscatteringLut.SetPixel(0, 0, Color.clear);
-                    multiscatteringLut.Apply(false, true);
+                    multiscatteringLut =
+                        EndfieldRecoveredMultiscatteringLut.Create();
                 }
                 return true;
             }
@@ -806,10 +811,16 @@ namespace EndfieldGraphShaderLab
             if (readbackRequested || !SystemInfo.supportsAsyncGPUReadback)
                 return;
             readbackRequested = true;
+            int generation = contentValidationGeneration;
             command.RequestAsyncReadback(output, 0, request =>
             {
+                if (disposed || generation != contentValidationGeneration)
+                    return;
                 if (request.hasError)
                 {
+                    readbackRequested = false;
+                    exactContentValidationComplete = false;
+                    exactContentValid = false;
                     Debug.LogWarning(
                         "Recovered exact deferred resolver consumer readback failed closed.");
                     return;
@@ -828,6 +839,7 @@ namespace EndfieldGraphShaderLab
                 exactReadbackFloats = floats.ToArray();
                 int finiteFloats = 0;
                 int nonFiniteFloats = 0;
+                int nonzeroRgbFloats = 0;
                 float minimum = float.PositiveInfinity;
                 float maximum = float.NegativeInfinity;
                 for (int index = 0; index < floats.Length; index++)
@@ -841,7 +853,11 @@ namespace EndfieldGraphShaderLab
                     finiteFloats++;
                     minimum = Mathf.Min(minimum, value);
                     maximum = Mathf.Max(maximum, value);
+                    if ((index & 3) != 3 && Mathf.Abs(value) > 1.0e-6f)
+                        nonzeroRgbFloats++;
                 }
+                exactContentValidationComplete = true;
+                exactContentValid = nonFiniteFloats == 0 && nonzeroRgbFloats > 0;
                 Debug.Log(
                     "Recovered exact deferred resolver consumer readback: " +
                     $"camera={cameraName}, size={width}x{height}, " +
@@ -854,6 +870,8 @@ namespace EndfieldGraphShaderLab
                     $"rgbaFloatSha256={sha256}, " +
                     $"finiteFloats={finiteFloats}, " +
                     $"nonFiniteFloats={nonFiniteFloats}, " +
+                    $"nonzeroRgbFloats={nonzeroRgbFloats}, " +
+                    $"screenContentValid={exactContentValid}, " +
                     $"min={minimum.ToString("R", CultureInfo.InvariantCulture)}, " +
                     $"max={maximum.ToString("R", CultureInfo.InvariantCulture)}, " +
                     $"failureCount={Native.GetFailureCount()}, " +
@@ -872,10 +890,14 @@ namespace EndfieldGraphShaderLab
                 !SystemInfo.supportsAsyncGPUReadback)
                 return;
             recoveredHlslReadbackRequested = true;
+            int generation = contentValidationGeneration;
             command.RequestAsyncReadback(recoveredHlslOutput, 0, request =>
             {
+                if (disposed || generation != contentValidationGeneration)
+                    return;
                 if (request.hasError)
                 {
+                    recoveredHlslReadbackRequested = false;
                     Debug.LogWarning(
                         "Recovered deferred pass-0 HLSL sidecar readback failed closed.");
                     return;
@@ -1107,8 +1129,24 @@ namespace EndfieldGraphShaderLab
             }
             output = null;
             recoveredHlslOutput = null;
+            InvalidateContentValidation();
             allocatedWidth = 0;
             allocatedHeight = 0;
+        }
+
+        private void InvalidateContentValidation()
+        {
+            unchecked
+            {
+                contentValidationGeneration++;
+            }
+            readbackRequested = false;
+            recoveredHlslReadbackRequested = false;
+            exactReadbackFloats = null;
+            recoveredHlslReadbackFloats = null;
+            comparisonLogged = false;
+            exactContentValidationComplete = false;
+            exactContentValid = false;
         }
 
         private static void DisposeUnityObject(UnityEngine.Object value)

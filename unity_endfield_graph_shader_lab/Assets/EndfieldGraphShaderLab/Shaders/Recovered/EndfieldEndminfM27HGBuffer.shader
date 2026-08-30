@@ -59,6 +59,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
         [HideInInspector] _RecoveredM27InstanceRecordC3 ("Captured Instance Record c3", Vector) = (0, 0, 0, 1)
         [HideInInspector] _RecoveredM27InstanceRecordC4 ("Captured Instance Record c4", Vector) = (1000, 0, 0, 0)
         [HideInInspector] _RecoveredM27ParallaxGradientScale ("Captured Parallax Gradient Scale", Float) = 0.5
+        [HideInInspector] _RecoveredSourceAuthoredLitEffect ("Source-authored live LitEffect", Float) = 0
     }
 
     SubShader
@@ -165,6 +166,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
             float4 _RecoveredM27InstanceRecordC3;
             float4 _RecoveredM27InstanceRecordC4;
             float _RecoveredM27ParallaxGradientScale;
+            float _RecoveredSourceAuthoredLitEffect;
 
             struct Attributes
             {
@@ -190,6 +192,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 float3 currentScreenPosition : TEXCOORD5;
                 float3 previousScreenPosition : TEXCOORD6;
                 nointerpolation uint instanceIndex : TEXCOORD7;
+                nointerpolation float particlePhase : TEXCOORD8;
             };
 
             struct M27HGBufferOutput
@@ -222,7 +225,16 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 float4 positionWS = mul(unity_ObjectToWorld, float4(input.positionOS, 1.0));
                 float4 positionCS = mul(UNITY_MATRIX_VP, positionWS);
 
-                float3 previousPositionOS = input.previousPositionOS.xyz;
+                // The diagnostic M27 packet carries previous position in the
+                // retained TEXCOORD4 envelope. The maintained route instead
+                // consumes Unity's live source ParticleSystem; its Custom1.x
+                // is the authored per-particle phase and motion comes from the
+                // current geometry until the original particle history
+                // carrier is recovered.
+                float3 previousPositionOS = lerp(
+                    input.previousPositionOS.xyz,
+                    input.positionOS,
+                    saturate(_RecoveredSourceAuthoredLitEffect));
                 float4 previousPositionWS = mul(
                     unity_ObjectToWorld,
                     float4(previousPositionOS, 1.0));
@@ -239,6 +251,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 output.currentScreenPosition = positionCS.xyw;
                 output.previousScreenPosition = previousPositionCS.xyw;
                 output.instanceIndex = 0u;
+                output.particlePhase = input.previousPositionOS.x;
                 return output;
             }
 
@@ -388,10 +401,14 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
 
                 // Captured record c3.xyz is the retail per-particle animation
                 // phase. The selected M27 draw publishes zero for record 0.
-                float randomPhase =
+                float capturedRandomPhase =
                     _RecoveredM27InstanceRecordC3.x +
                     _RecoveredM27InstanceRecordC3.y +
                     _RecoveredM27InstanceRecordC3.z;
+                float randomPhase = lerp(
+                    capturedRandomPhase,
+                    input.particlePhase,
+                    saturate(_RecoveredSourceAuthoredLitEffect));
                 float minimumComplement = 1.0 - _ParallaxMinBrightness;
                 float animatedBrightness = minimumComplement * 0.5 *
                     (((_ParallaxMinBrightness + 1.0) / minimumComplement) +
@@ -454,6 +471,8 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                         _RecoveredM27InstanceRecordC4.y,
                         _RecoveredM27InstanceRecordC4.z) -
                     0.10000002384185791));
+                modelMotion *= 1.0 -
+                    saturate(_RecoveredSourceAuthoredLitEffect);
                 encodedMotion = lerp(encodedMotion, 0.5.xx, modelMotion);
 
                 float taaNormal = lerp(

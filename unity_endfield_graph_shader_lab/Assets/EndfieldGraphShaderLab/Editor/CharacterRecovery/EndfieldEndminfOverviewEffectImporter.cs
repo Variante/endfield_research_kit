@@ -1522,10 +1522,17 @@ namespace EndfieldGraphShaderLabEditor
             if (importer == null)
                 return;
 
+            // The retail SRVs prove both BC7 payloads are sRGB:
+            // BaseColorMap t0 and ParallaxMap t3 use DXGI_FORMAT 99
+            // (BC7_UNORM_SRGB). MRO/Normal use linear BC5_UNORM (83).
             bool colorData = string.Equals(
-                materialSlot,
-                "_BaseColorMap",
-                StringComparison.Ordinal);
+                    materialSlot,
+                    "_BaseColorMap",
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    materialSlot,
+                    "_ParallaxMap",
+                    StringComparison.Ordinal);
             bool normalData = string.Equals(
                 materialSlot,
                 "_NormalMap",
@@ -1534,6 +1541,18 @@ namespace EndfieldGraphShaderLabEditor
             importer.textureType = normalData
                 ? TextureImporterType.NormalMap
                 : TextureImporterType.Default;
+            // The selected source Texture2D payloads all serialize
+            // FilterMode=Bilinear, Aniso=1, WrapMode=Repeat and complete mip
+            // chains. Unity's PNG defaults were Clamp/Trilinear/Aniso=2 and
+            // alpha-is-transparency, which visibly changed the rock atlas at
+            // UV seams and during the parallax march.
+            importer.filterMode = FilterMode.Bilinear;
+            importer.anisoLevel = 1;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Repeat;
+            importer.wrapModeW = TextureWrapMode.Repeat;
+            importer.mipmapEnabled = true;
+            importer.alphaIsTransparency = false;
             importer.SaveAndReimport();
 
             TextureImporter loaded = AssetImporter.GetAtPath(assetPath)
@@ -1543,8 +1562,15 @@ namespace EndfieldGraphShaderLabEditor
                 loaded.sRGBTexture == colorData &&
                 loaded.textureType == (normalData
                     ? TextureImporterType.NormalMap
-                    : TextureImporterType.Default),
-                "LitEffect compatibility texture color-space/type drifted: " +
+                    : TextureImporterType.Default) &&
+                loaded.filterMode == FilterMode.Bilinear &&
+                loaded.anisoLevel == 1 &&
+                loaded.wrapModeU == TextureWrapMode.Repeat &&
+                loaded.wrapModeV == TextureWrapMode.Repeat &&
+                loaded.wrapModeW == TextureWrapMode.Repeat &&
+                loaded.mipmapEnabled &&
+                !loaded.alphaIsTransparency,
+                "LitEffect compatibility texture source settings drifted: " +
                 materialSlot + " -> " + assetPath);
         }
     }

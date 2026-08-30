@@ -18,7 +18,7 @@ validate_log = MODULE.validate_log
 GOOD_LOG = """
 Exiting batchmode successfully now!
 Recovered exact deferred resolver consumer submitted: camera=MainCamera, size=640x720, publicationSerial=1, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, failureCount=0, presented=false, retailPass0=false, screenContentValid=false.
-Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
+Recovered exact deferred resolver consumer readback: camera=MainCamera, size=640x720, bytes=7372800, nonzeroBytes=6430845, exactBound=1, resourceMask=0x3ffffff, resourceFailureMask=0x0, resourceFailureResults=none, constantBufferMask=0x1ff, rgbaFloatSha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, finiteFloats=1843200, nonFiniteFloats=0, nonzeroRgbFloats=123456, screenContentValid=true, min=0, max=1, failureCount=0, presented=false, retailPass0=false.
 Recovered deferred pass-0 HLSL vs exact DXBC comparison: camera=MainCamera, size=640x720, floatCount=1843200, maxAbs=1.1920929E-07, rmse=4.8E-09, over1e-6=0, over1e-4=0, over1e-3=0, presented=false.
 """
 
@@ -59,15 +59,18 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         )[0]
         self.assertIn("SubstitutionRoute::None", cleanup)
 
-    def test_canonical_capture_rejects_diagnostic_solver_ownership(self):
+    def test_canonical_capture_rejects_both_diagnostic_dynamics_owners(self):
         capture = (
             LAB_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Editor" /
             "CharacterRecovery" / "EndfieldEndminfViewerPlayModeCapture.cs"
         ).read_text(encoding="utf-8")
         self.assertIn("videoExport && enableSecondaryDynamicsSolver", capture)
-        self.assertIn("Canonical Endminf video export requires the captured retail", capture)
-        self.assertIn("secondary-dynamics replay. The diagnostic solver", capture)
-        self.assertIn("observedCanonicalSecondaryReplay", capture)
+        self.assertIn("videoExport && enableCapturedSecondaryDynamicsReplay", capture)
+        self.assertIn("cannot use the unverified", capture)
+        self.assertIn("cannot use a captured hair/cape", capture)
+        self.assertIn("observedCanonicalSecondaryDynamicsOwnership", capture)
+        self.assertIn("!value.capturedSecondaryReplayEnabled", capture)
+        self.assertIn("!value.capturedSecondaryReplayPoseAppliedThisFrame", capture)
 
     def test_exact_consumer_requires_current_cookie_publication_provenance(self):
         consumer = (
@@ -107,7 +110,8 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn(
             "((!useRecoveredPostUberWorldUi && !useRecoveredSceneMV) ||\n"
-            "                 recoveredDeferredExactConsumer.Requested)",
+            "                 recoveredDeferredExactConsumer.Requested &&\n"
+            "                 recoveredEndminfLitEffectOwnerActive)",
             pipeline,
         )
 
@@ -138,6 +142,42 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         self.assertFalse(report["valid"])
         self.assertTrue(
             any("readback_resource_mask_all_t0_t25" in failure
+                for failure in report["failures"])
+        )
+
+    def test_reports_zero_rgb_content(self):
+        report = validate_log(
+            GOOD_LOG.replace("nonzeroRgbFloats=123456", "nonzeroRgbFloats=0"),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(
+            any("readback_nonzero_rgb" in failure
+                for failure in report["failures"])
+        )
+
+    def test_reports_invalid_screen_content(self):
+        report = validate_log(
+            GOOD_LOG.replace("screenContentValid=true, min=", "screenContentValid=false, min="),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(
+            any("readback_screen_content_valid" in failure
+                for failure in report["failures"])
+        )
+
+    def test_missing_rgb_validity_fields_fails_closed(self):
+        report = validate_log(
+            GOOD_LOG.replace(
+                "nonzeroRgbFloats=123456, screenContentValid=true, ",
+                "",
+            ),
+            Path("fixture.log"),
+        )
+        self.assertFalse(report["valid"])
+        self.assertTrue(
+            any("readback_record_count" in failure
                 for failure in report["failures"])
         )
 

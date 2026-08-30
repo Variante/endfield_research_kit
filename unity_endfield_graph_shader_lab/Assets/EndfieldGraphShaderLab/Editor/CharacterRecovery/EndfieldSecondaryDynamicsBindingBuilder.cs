@@ -416,15 +416,10 @@ namespace EndfieldGraphShaderLabEditor
                     "Generated Endminf secondary-dynamics coordinator is missing, uncertified, or not default-off.");
             EndfieldCapturedSecondaryDynamicsReplay replay =
                 prefab.GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
-            string replayFailure = "component or data is absent";
-            bool replayValid = replay != null && replay.useCapturedReplay && replay.data != null &&
-                replay.data.Validate(out replayFailure) &&
-                string.Equals(replay.data.sourceSha256, Sha256Absolute(CapturedReplayReportPath()),
-                    StringComparison.OrdinalIgnoreCase);
-            if (!replayValid)
+            if (replay != null && replay.useCapturedReplay)
             {
                 throw new InvalidDataException(
-                    "Generated Endminf captured replay is missing or stale: " + replayFailure);
+                    "Generated Endminf captured trajectory diagnostic must be default-off.");
             }
             EndfieldSecondaryDynamicsOwnerContract.BindingAudit audit =
                 EndfieldSecondaryDynamicsOwnerContract.Verify(prefab, "Endminf", SolverInputsPath);
@@ -442,8 +437,8 @@ namespace EndfieldGraphShaderLabEditor
             Debug.Log(
                 "Verified Endminf secondary dynamics: 4 owners, 126 bindings, " +
                 "100 unique transforms, 26 overlaps, a certified retail settings route, " +
-                "default-off solver writeback, and a default QPC-timed 144-sample/80-bone " +
-                "captured replay path.");
+                "default-off source-code solver writeback, and no default captured-trajectory " +
+                "ownership. Captured samples remain a separately validated diagnostic oracle.");
         }
 
         private static void ConfigureCapturedReplay(
@@ -455,16 +450,20 @@ namespace EndfieldGraphShaderLabEditor
                 actor.GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
             if (replay == null)
                 replay = actor.AddComponent<EndfieldCapturedSecondaryDynamicsReplay>();
-            replay.useCapturedReplay = true;
+            // A captured trajectory freezes one observed outcome. Keep the
+            // data available for explicit solver diagnostics, but never make
+            // it the generated character's animation implementation.
+            replay.useCapturedReplay = false;
 
             string reportPath = CapturedReplayReportPath();
             if (!File.Exists(reportPath))
             {
                 replay.data = null;
                 EditorUtility.SetDirty(replay);
-                Debug.LogError(
-                    "Endminf captured secondary-dynamics replay report is absent; " +
-                    "the generated runtime will fail closed: " + reportPath);
+                Debug.Log(
+                    "Optional Endminf captured secondary-dynamics diagnostic is absent; " +
+                    "canonical generated animation remains source-code-solver default-off: " +
+                    reportPath);
                 return;
             }
 
@@ -843,6 +842,7 @@ namespace EndfieldGraphShaderLabEditor
                     ownerPath + ".gravityDirection"),
                 gravityFalloff = Float(parameters, "gravityFalloff", ownerPath),
                 animationPoseRatio = Float(parameters, "animationPoseRatio", ownerPath),
+                blendWeight = Float(parameters, "blendWeight", ownerPath),
                 dampingValue = Float(damping, "value", ownerPath),
                 dampingUsesCurve = Toggle(damping, "useCurve", ownerPath),
                 radiusValue = Float(radius, "value", ownerPath),

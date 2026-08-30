@@ -104,6 +104,11 @@ namespace EndfieldGraphShaderLab
         private readonly IStageObserver _observer;
         private readonly T.TimeManagerScalars _time = T.CreateRetailDefault();
 
+        // This TeamData field is a component-wise quaternion sign mask, not a
+        // rotation quaternion. Positive scale therefore uses four +1 lanes.
+        public static K.Float4 PositiveScaleQuaternionSignMask =>
+            new K.Float4(1f, 1f, 1f, 1f);
+
         public K.Double3[][] PublicationPositions
         {
             get
@@ -124,6 +129,9 @@ namespace EndfieldGraphShaderLab
             }
         }
 
+        public U.CenterState[] CenterStates =>
+            (U.CenterState[])_centers.Clone();
+
         public EndfieldSecondaryDynamicsFrameCoordinator(EndfieldSecondaryDynamicsData data,
             OwnerTransformSnapshot[] initialSnapshots, IStageObserver observer = null)
         {
@@ -142,7 +150,12 @@ namespace EndfieldGraphShaderLab
                     snapshot.PreviousWorldRotations);
                 _centers[owner] = InitialCenter(center);
                 _solvers[owner] = new S(_owners[owner], BaseFrame(snapshot),
-                    new T.TeamState { TimeScale = 1f, FrameInterpolation = 1f },
+                    new T.TeamState
+                    {
+                        Flag = ActiveTeamFlag(_owners[owner]),
+                        TimeScale = 1f,
+                        FrameInterpolation = 1f,
+                    },
                     new ForwardObserver(this, owner));
             }
         }
@@ -180,7 +193,10 @@ namespace EndfieldGraphShaderLab
                     U.Execute(ref center, new U.FrameInput
                     {
                         Time = preview.Time,
-                        FrameOldTime = preview.OldTime,
+                        // TeamData.frameOldTime is a distinct retained-frame
+                        // clock. Passing oldTime halves the first interpolated
+                        // 90 Hz step after a zero-step 120 Hz render frame.
+                        FrameOldTime = preview.FrameOldTime,
                         OldFrameWorldPosition = previous.Position,
                         FrameWorldPosition = current.Position,
                         OldFrameWorldRotation = previous.Rotation,
@@ -218,11 +234,20 @@ namespace EndfieldGraphShaderLab
 
         private static S.CenterTeamStepInput MakeCenterInput(EndfieldSecondaryDynamicsData.Owner owner,
             U.CenterState center) => new S.CenterTeamStepInput(
-                1f, 1f, 1f, 0, 0, F3(0f, 0f, 0f), center.OldWorldPosition,
+                1f, 1f, 1f, (int)ActiveTeamFlag(owner), 0,
+                F3(0f, 0f, 0f), center.OldWorldPosition,
                 center.StepVector, center.StepRotation, center.InertiaVector, center.InertiaRotation,
                 center.NowWorldPosition, center.AngularVelocity, center.RotationAxis, 1f, true,
-                owner.solverInputs.springEnabled, F3(1f, 1f, 1f), F3(1f, 1f, 1f), Identity(),
+                owner.solverInputs.springEnabled, F3(1f, 1f, 1f), F3(1f, 1f, 1f),
+                PositiveScaleQuaternionSignMask,
                 owner.colliderCount == 0 ? null : ParticleRadii(owner));
+
+        private static ulong ActiveTeamFlag(EndfieldSecondaryDynamicsData.Owner owner) =>
+            EndfieldSecondaryDynamicsCalcDisplayPosition.FlagProcess |
+            EndfieldSecondaryDynamicsCalcDisplayPosition.FlagRunning |
+            (owner.solverInputs.springEnabled
+                ? EndfieldSecondaryDynamicsCalcDisplayPosition.FlagSpring
+                : 0UL);
 
         private static float[] ParticleRadii(EndfieldSecondaryDynamicsData.Owner owner)
         {

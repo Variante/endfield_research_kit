@@ -259,7 +259,7 @@ namespace EndfieldGraphShaderLab
             int destination = source.team.proxyTransformChunk.start + local;
             _ = bone; // The caller supplies vertexToTransformRotation at this exact bone index.
 
-            Quaternion correction = HamiltonF32(
+            Quaternion correction = ComponentwiseF32(
                 source.team.negativeScaleQuaternionValue,
                 source.vertexToTransformRotation);
             Quaternion rotation = HamiltonF32(source.rotationPostSolver, correction);
@@ -370,6 +370,15 @@ namespace EndfieldGraphShaderLab
                 ((left.w * right.y - left.x * right.z) + left.y * right.w) + left.z * right.x,
                 ((left.w * right.z + left.x * right.y) - left.y * right.x) + left.z * right.w,
                 ((left.w * right.w - left.x * right.x) - left.y * right.y) - left.z * right.z);
+        }
+
+        private static Quaternion ComponentwiseF32(Quaternion left, Quaternion right)
+        {
+            return new Quaternion(
+                left.x * right.x,
+                left.y * right.y,
+                left.z * right.z,
+                left.w * right.w);
         }
 
         private static Quaternion InverseWithoutZeroGuard(Quaternion value)

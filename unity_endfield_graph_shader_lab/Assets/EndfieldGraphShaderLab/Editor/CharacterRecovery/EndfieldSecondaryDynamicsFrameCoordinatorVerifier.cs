@@ -6,7 +6,9 @@ using F = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsFrameCoordinator;
 using K = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels;
 using P = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsEndminfColliderPreparation;
 using D = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsData;
+using CD = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsCalcDisplayPosition;
 using S = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsOwnerSolver;
+using T = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsTimeStepper;
 
 namespace EndfieldGraphShaderLabEditor
 {
@@ -43,6 +45,8 @@ namespace EndfieldGraphShaderLabEditor
                 int[] counts = coordinator.AdvanceFrame(frame);
                 for (int owner = 0; owner < 4; owner++) Require(counts[owner] == 1, "retail first-frame count");
                 RequireTrace(trace.Rows);
+                VerifyDistinctFrameOldTime(data, snapshots);
+                VerifyPositiveScaleQuaternionSignMask();
 
                 // The coordinator consumes snapshots as values and never writes their arrays.
                 for (int owner = 0; owner < 4; owner++)
@@ -67,6 +71,108 @@ namespace EndfieldGraphShaderLabEditor
             finally { UnityEngine.Object.DestroyImmediate(data); }
         }
 
+        private static void VerifyDistinctFrameOldTime(
+            D data,
+            F.OwnerTransformSnapshot[] snapshots)
+        {
+            var coordinator = new F(data, snapshots);
+            F.FrameInput frame = Frame(snapshots);
+            frame.Timing = new F.FrameTiming(
+                true,
+                false,
+                false,
+                false,
+                1f / 120f,
+                1f / 120f,
+                1f / 120f);
+            int[] firstCounts = coordinator.AdvanceFrame(frame);
+            int[] secondCounts = coordinator.AdvanceFrame(frame);
+            for (int owner = 0; owner < 4; owner++)
+            {
+                Require(firstCounts[owner] == 0, "120 Hz first frame must accumulate zero steps");
+                Require(secondCounts[owner] == 1, "120 Hz second frame must accumulate one step");
+            }
+
+            T.TimeManagerScalars time = T.CreateRetailDefault();
+            var expectedTeam = new T.TeamState
+            {
+                Flag = CD.FlagProcess | CD.FlagRunning,
+                TimeScale = 1f,
+                FrameInterpolation = 1f,
+            };
+            var clock = new T.TeamFrameInput(
+                true,
+                false,
+                false,
+                false,
+                1f / 120f,
+                1f / 120f,
+                1f / 120f);
+            Require(T.AccumulateTeam(ref expectedTeam, clock, time) == 0,
+                "reference 120 Hz first frame count");
+            Require(T.AccumulateTeam(ref expectedTeam, clock, time) == 1,
+                "reference 120 Hz second frame count");
+            Require(
+                T.ExecuteTeamStepClock(
+                    ref expectedTeam,
+                    0,
+                    time.SimulationDeltaTime),
+                "reference 120 Hz first substep");
+
+            float actual = coordinator.CenterStates[0].FrameInterpolation;
+            Require(
+                BitConverter.SingleToInt32Bits(actual) ==
+                BitConverter.SingleToInt32Bits(expectedTeam.FrameInterpolation),
+                "coordinator must use TeamData.frameOldTime for the 120/90 Hz center interpolation");
+            Require(actual > 0.6f && actual < 0.7f,
+                "120/90 Hz center interpolation must be the native two-thirds cadence, not oldTime's one-third alias");
+        }
+
+        private static void VerifyPositiveScaleQuaternionSignMask()
+        {
+            const float qz90 = 0.70710677f;
+            var stepPositions = new[]
+            {
+                F3(0f, 0f, 0f),
+                F3(0f, 0f, 0f),
+            };
+            var stepRotations = new[]
+            {
+                Q(),
+                Q(),
+            };
+            K.UpdateBasicPosture(
+                new[] { -1, 0 },
+                new byte[] { 2, 2 },
+                new[] { F3(0f, 0f, 0f), F3(0f, 0f, 0f) },
+                new[] { Q(), new K.Float4(0f, 0f, qz90, qz90) },
+                new[] { F3(0f, 0f, 0f), F3(0f, 0f, 0f) },
+                new[] { Q(), Q() },
+                stepPositions,
+                stepRotations,
+                F3(1f, 1f, 1f),
+                1f,
+                F3(1f, 1f, 1f),
+                F.PositiveScaleQuaternionSignMask,
+                0f);
+            RequireFloatBits(stepRotations[1].x, 0f,
+                "positive-scale posture rotation x");
+            RequireFloatBits(stepRotations[1].y, 0f,
+                "positive-scale posture rotation y");
+            RequireFloatBits(stepRotations[1].z, qz90,
+                "positive-scale posture rotation z");
+            RequireFloatBits(stepRotations[1].w, qz90,
+                "positive-scale posture rotation w");
+        }
+
+        private static void RequireFloatBits(float actual, float expected, string message)
+        {
+            Require(
+                BitConverter.SingleToInt32Bits(actual) ==
+                BitConverter.SingleToInt32Bits(expected),
+                message);
+        }
+
         private static void RequireTrace(List<string> rows)
         {
             int cursor = 0;
@@ -86,8 +192,11 @@ namespace EndfieldGraphShaderLabEditor
                 foreach (string stage in stages)
                     Require(rows[cursor++].StartsWith(owner + ":0:OwnerSolver:" + stage + ":"),
                         "owner solver stage " + owner + "/" + stage);
+                Require(
+                    rows[cursor++] == owner + ":-1:OwnerSolver:CalcDisplayPosition:-1",
+                    "owner CalcDisplayPosition publication order " + owner);
             }
-            Require(cursor == rows.Count && rows.Count == 46, "exact four-owner stage count");
+            Require(cursor == rows.Count && rows.Count == 50, "exact four-owner stage count");
             Require(!rows.Exists(row => row.StartsWith("1:0:OwnerSolver:PointCollision")),
                 "Hair exact no-collider path");
         }

@@ -33,29 +33,23 @@ exit /b 2
   rem Deferred/SphereOutside remains a default-off diagnostic. Its current
   rem screen-shadow prerequisite is content-invalid and vertically masks the
   rem portrait, so the maintained visual path does not request that chain.
-  rem Use the four exact retained opening-strip packets only at their certified
-  rem phases. Their source geometry/shaders/resources and native submission are
-  rem closed; retail temporal accumulation remains a separate visible gap.
-  set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=1"
-  rem Corrected M13 packets 1/2 improve the aligned peak shell. Packet 0 is
-  rem rejected by the runtime; M14 and M20 remain transport diagnostics.
-  set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=1"
-  rem Frame 2775 closes the complete draw-local M21 stone-shell packet. It is
-  rem admitted only at its certified 4.5000 s sample and restores the authored
-  rem ParticleSystem on adjacent ticks, so this does not repeat a static packet
-  rem across the burst or replace the separately textured M01/M38 stones.
-  set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=1"
+  rem Captured opening-strip, M13, and M21 packets remain opt-in ABI probes.
+  rem They are not maintained presentation: replaying one or a few observed
+  rem particle states substitutes fixed geometry for the source runtime that
+  rem generates the authored motion, placement, and material evolution.
   rem M31 stays diagnostic-only until a corrected observer capture closes the
   rem live SceneColor chronology; its current replay validates transport but
   rem mildly regresses the aligned reference comparison.
-  set "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1"
+  rem The exact Uber packet remains an explicit diagnostic. Its native draw is
+  rem validated, but the captured SceneColor/input chronology is not yet closed
+  rem and the current replay regresses every aligned effect sample versus off.
   rem Recording-specific live cursor endpoint measured from the canonical clean
   rem videos/2026-08-26_21-25-50.mkv reference at source pixel (1036,75).
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=recorded-input"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=-0.4604167"
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=0.9305556"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
-  echo Opening Endminf reproduction with exact opening-strip and aligned M13/M21 peak presentation.
+  echo Opening Endminf reproduction with authored effect timelines and source-backed presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode
   exit /b %ERRORLEVEL%
 
