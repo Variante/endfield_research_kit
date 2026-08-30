@@ -29,6 +29,9 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC";
         internal const string EndminfM27CommandLineArgument =
             "-endfield-recovered-endminf-m27-hgbuffer";
+        internal const string EndminfLitEffectEnvironmentVariable =
+            EndfieldEndminfLitEffectCompatibilityBinding
+                .LiveHGBufferEnvironmentVariable;
 
         internal const string ShaderName =
             "Hidden/Endfield/Recovered/CharInfo/HGRPLitUnavailable";
@@ -48,6 +51,9 @@ namespace EndfieldGraphShaderLab
             unchecked((long)0xA531A88850690EB8UL);
         private const long EndminfM27MeshPathId =
             unchecked((long)0x8EC9950E5461C8D9UL);
+        private const long EndminfMaterial01PathId = 0x5A6341E8A834E421L;
+        private const long EndminfMaterial38PathId =
+            unchecked((long)0xAFCE491DD7BC5724UL);
 
         internal static readonly int ReadyId =
             Shader.PropertyToID("_EndfieldRecoveredDeferredGBufferFrameReady");
@@ -107,9 +113,12 @@ namespace EndfieldGraphShaderLab
         private readonly bool requested;
         private readonly bool sphereOutsideRequested;
         private readonly bool endminfM27Requested;
+        private readonly bool endminfLitEffectRequested;
         private readonly bool endminfM27ExactDxbcRequested;
         private Material endminfM27Material;
         private int endminfM27SourceMaterialId;
+        private readonly Dictionary<int, Material> endminfLitEffectMaterials =
+            new Dictionary<int, Material>();
         private RenderTexture sceneColor;
         private RenderTexture sceneMV;
         private RenderTexture gBufferA;
@@ -150,13 +159,24 @@ namespace EndfieldGraphShaderLab
         private int previousWidth;
         private int previousHeight;
 
+        private sealed class EndminfLitEffectDraw
+        {
+            internal EndfieldEndminfLitEffectCompatibilityBinding.Row row;
+            internal Material material;
+            internal int passIndex;
+        }
+
         internal bool Requested => requested;
+        internal bool EndminfLitEffectRequested => endminfLitEffectRequested;
 
         internal EndfieldRecoveredDeferredGBufferFrame()
         {
+            endminfLitEffectRequested =
+                ReadBooleanEnvironment(EndminfLitEffectEnvironmentVariable);
             endminfM27Requested =
                 ReadBooleanEnvironment(EndminfM27EnvironmentVariable) ||
-                HasCommandLineArgument(EndminfM27CommandLineArgument);
+                HasCommandLineArgument(EndminfM27CommandLineArgument) ||
+                endminfLitEffectRequested;
             endminfM27ExactDxbcRequested =
                 endminfM27Requested &&
                 ReadBooleanEnvironment(EndminfM27ExactDxbcEnvironmentVariable);
@@ -170,7 +190,8 @@ namespace EndfieldGraphShaderLab
                 ReadBooleanEnvironment(EnvironmentVariable) ||
                 HasCommandLineArgument(CommandLineArgument) ||
                 EndfieldRecoveredDeferredResolverBindingPolicy.IsRequested &&
-                !endminfM27Requested;
+                !endminfM27Requested &&
+                !endminfLitEffectRequested;
             requested = sphereOutsideRequested || endminfM27Requested;
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             Shader.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
@@ -187,6 +208,9 @@ namespace EndfieldGraphShaderLab
             ReleaseObject(endminfM27Material);
             endminfM27Material = null;
             endminfM27SourceMaterialId = 0;
+            foreach (Material value in endminfLitEffectMaterials.Values)
+                ReleaseObject(value);
+            endminfLitEffectMaterials.Clear();
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             Shader.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
             PublishBlackFallbacks();
@@ -242,7 +266,18 @@ namespace EndfieldGraphShaderLab
             Material endminfM27SourceMaterial = null;
             Mesh endminfM27Mesh = null;
             int endminfM27PassIndex = -1;
+            List<EndminfLitEffectDraw> endminfLitEffectDraws = null;
+            if (endminfLitEffectRequested &&
+                !TryResolveEndminfLitEffectSources(
+                    camera,
+                    out endminfLitEffectDraws,
+                    out failure))
+            {
+                FailClosed(context, failure);
+                return false;
+            }
             if (endminfM27Requested &&
+                !endminfLitEffectRequested &&
                 (!TryResolveEndminfM27Source(
                     camera,
                     out endminfM27Renderer,
@@ -290,6 +325,9 @@ namespace EndfieldGraphShaderLab
             Renderer motionOwner = renderer != null
                 ? renderer
                 : endminfM27Renderer;
+            if (motionOwner == null && endminfLitEffectDraws != null &&
+                endminfLitEffectDraws.Count != 0)
+                motionOwner = endminfLitEffectDraws[0].row.renderer;
             if (motionOwner == null && exactM27Active)
                 motionOwner = ResolveSelectedActorMotionOwner(camera);
             if (motionOwner == null)
@@ -378,6 +416,31 @@ namespace EndfieldGraphShaderLab
                     motionVectorsParams);
                 if (renderer != null)
                     command.DrawRenderer(renderer, material, 0, passIndex);
+                if (endminfLitEffectDraws != null)
+                {
+                    var updatedMaterials = new HashSet<int>();
+                    foreach (EndminfLitEffectDraw draw in endminfLitEffectDraws)
+                    {
+                        ParticleSystemRenderer liveRenderer = draw.row.renderer;
+                        if (updatedMaterials.Add(draw.material.GetInstanceID()))
+                            UpdateEndminfLitEffectRuntimeInputs(
+                                camera,
+                                draw.material);
+                        if (liveRenderer.mesh != draw.row.mesh)
+                        {
+                            liveRenderer.renderMode =
+                                ParticleSystemRenderMode.Mesh;
+                            liveRenderer.SetMeshes(
+                                new[] { draw.row.mesh },
+                                1);
+                        }
+                        command.DrawRenderer(
+                            liveRenderer,
+                            draw.material,
+                            0,
+                            draw.passIndex);
+                    }
+                }
                 if (endminfM27Renderer != null || exactM27Active)
                 {
                     if (endminfM27ExactDxbcRequested)
@@ -406,6 +469,14 @@ namespace EndfieldGraphShaderLab
                             0,
                             endminfM27PassIndex);
                     }
+                }
+                bool endminfLitEffectActive =
+                    endminfLitEffectDraws != null &&
+                    endminfLitEffectDraws.Count != 0;
+                bool endminfProducerActive = endminfLitEffectActive ||
+                    endminfM27Renderer != null || exactM27Active;
+                if (endminfProducerActive)
+                {
                     command.SetGlobalFloat(EndminfM27ReadyId, 1.0f);
                     RequestEndminfM27Readbacks(command, camera.name);
                 }
@@ -435,7 +506,7 @@ namespace EndfieldGraphShaderLab
                 command.SetViewport(new Rect(0.0f, 0.0f, width, height));
                 context.ExecuteCommandBuffer(command);
                 PublishFrame(camera, width, height);
-                if (endminfM27Renderer != null || exactM27Active)
+                if (endminfProducerActive)
                 {
                     endminfM27PublishedFrame = Time.frameCount;
                     endminfM27PublishedCameraInstanceId = camera.GetInstanceID();
@@ -470,6 +541,19 @@ namespace EndfieldGraphShaderLab
                 activationLogged = true;
             }
             failureLogged = false;
+            if (endminfLitEffectDraws != null &&
+                endminfLitEffectDraws.Count != 0 &&
+                !endminfM27ActivationLogged)
+            {
+                Debug.Log(
+                    "Recovered Endminf source-authored LitEffect five-MRT " +
+                    "sidecar active: camera=" + camera.name +
+                    ", draws=" + endminfLitEffectDraws.Count +
+                    ", liveParticleSystems=true, capturedPackets=false, " +
+                    "ordinaryCameraVisible=true, sidecarCommandDraw=true, " +
+                    "presented=false.");
+                endminfM27ActivationLogged = true;
+            }
             if ((endminfM27Renderer != null || exactM27Active) &&
                 !endminfM27ActivationLogged)
             {
@@ -502,6 +586,36 @@ namespace EndfieldGraphShaderLab
                 endminfM27ActivationLogged = true;
             }
             return true;
+        }
+
+        private static void UpdateEndminfLitEffectRuntimeInputs(
+            Camera camera,
+            Material material)
+        {
+            if (material == null)
+                return;
+            Vector4 vfxParams = Shader.GetGlobalVector("_VFXParams0");
+            EndfieldHGOperatorLightRig lightRig = camera != null
+                ? camera.GetComponent<EndfieldHGOperatorLightRig>()
+                : null;
+            if (lightRig != null && lightRig.actorRoot != null)
+            {
+                Vector3 actorPosition = lightRig.actorRoot.position;
+                vfxParams.x = actorPosition.x;
+                vfxParams.y = actorPosition.y;
+                vfxParams.z = actorPosition.z;
+            }
+            // Installed VFX globals use one bounded 1024-second clock. This
+            // keeps material animation driven by the maintained simulation,
+            // rather than by a captured frame's b3 constant.
+            vfxParams.w = Time.time % 1024.0f;
+            material.SetVector("_VFXParams0", vfxParams);
+            material.SetFloat(
+                "_GlobalMipBias",
+                Shader.GetGlobalFloat("_GlobalMipBias"));
+            material.SetVector(
+                "_AnchorWaveBright",
+                Shader.GetGlobalVector("_AnchorWaveBright"));
         }
 
         internal bool TryGetResolverInputs(
@@ -904,6 +1018,231 @@ namespace EndfieldGraphShaderLab
             renderer = row.renderer;
             sourceMaterial = row.material;
             mesh = row.mesh;
+            return true;
+        }
+
+        internal bool HasActiveEndminfLitEffectProducer(Camera camera)
+        {
+            if (!endminfLitEffectRequested || camera == null)
+                return false;
+            return Resources.FindObjectsOfTypeAll<
+                    EndfieldEndminfLitEffectCompatibilityBinding>()
+                .Where(binding =>
+                    binding != null &&
+                    binding.gameObject.scene.IsValid() &&
+                    binding.gameObject.scene == camera.gameObject.scene &&
+                    binding.rows != null)
+                .SelectMany(binding => binding.rows)
+                .Any(row =>
+                    row != null &&
+                    row.renderer != null &&
+                    (row.materialPathId == EndminfMaterial01PathId ||
+                     row.materialPathId == EndminfMaterial38PathId ||
+                     row.materialPathId == EndminfM27MaterialPathId) &&
+                    row.meshPathId == EndminfM27MeshPathId &&
+                    row.material != null &&
+                    row.mesh != null &&
+                    row.renderer.enabled &&
+                    row.renderer.gameObject.activeInHierarchy &&
+                    // The source-authored live route command-draws the same
+                    // ParticleSystemRenderer into the private five-MRT
+                    // sidecar while its compatibility material remains
+                    // visible in ordinary camera beauty. Layer-31 isolation
+                    // belongs only to the separate exact-M27 packet route.
+                    (camera.cullingMask &
+                        (1 << row.renderer.gameObject.layer)) != 0 &&
+                    row.renderer.GetComponent<ParticleSystem>() is
+                        ParticleSystem particles &&
+                    particles.isPlaying &&
+                    particles.particleCount != 0);
+        }
+
+        internal void SuppressInactiveEndminfLitEffectFrame(
+            ScriptableRenderContext context)
+        {
+            if (!endminfLitEffectRequested)
+                return;
+            InvalidatePublication();
+            InvalidateMotionHistory();
+            var command = new CommandBuffer
+            {
+                name = "Suppress inactive Endminf LitEffect deferred sidecar"
+            };
+            command.SetGlobalFloat(ReadyId, 0.0f);
+            command.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
+            command.SetGlobalTexture(SceneColorId, Texture2D.blackTexture);
+            command.SetGlobalTexture(SceneMVId, Texture2D.blackTexture);
+            command.SetGlobalTexture(GBufferAId, Texture2D.blackTexture);
+            command.SetGlobalTexture(GBufferBId, Texture2D.blackTexture);
+            command.SetGlobalTexture(GBufferCId, Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverGBufferT23Id,
+                Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverGBufferT24Id,
+                Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverGBufferT25Id,
+                Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverSourceTextureT23Id,
+                Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverSourceTextureT24Id,
+                Texture2D.blackTexture);
+            command.SetGlobalTexture(
+                ResolverSourceTextureT25Id,
+                Texture2D.blackTexture);
+            context.ExecuteCommandBuffer(command);
+            command.Release();
+        }
+
+        private bool TryResolveEndminfLitEffectSources(
+            Camera camera,
+            out List<EndminfLitEffectDraw> draws,
+            out string failure)
+        {
+            draws = new List<EndminfLitEffectDraw>();
+            failure = string.Empty;
+            if (camera == null)
+            {
+                failure = "the Endminf LitEffect owner received no camera";
+                return false;
+            }
+
+            EndfieldEndminfLitEffectCompatibilityBinding.Row[] rows =
+                Resources.FindObjectsOfTypeAll<
+                        EndfieldEndminfLitEffectCompatibilityBinding>()
+                    .Where(binding =>
+                        binding != null &&
+                        binding.gameObject.scene.IsValid() &&
+                        binding.gameObject.scene == camera.gameObject.scene &&
+                        binding.rows != null)
+                    .SelectMany(binding => binding.rows)
+                    .Where(row =>
+                        row != null &&
+                        row.renderer != null &&
+                        row.renderer.gameObject.activeInHierarchy)
+                    .ToArray();
+            var rendererIdentities = new HashSet<long>();
+            foreach (EndfieldEndminfLitEffectCompatibilityBinding.Row row in rows)
+            {
+                if (!rendererIdentities.Add(row.particleRendererPathId))
+                {
+                    failure =
+                        "the active Endminf LitEffect renderer identity is duplicated: " +
+                        row.particleRendererPathId;
+                    return false;
+                }
+                bool materialIdentityValid =
+                    row.materialPathId == EndminfMaterial01PathId ||
+                    row.materialPathId == EndminfMaterial38PathId ||
+                    row.materialPathId == EndminfM27MaterialPathId;
+                if (!materialIdentityValid ||
+                    row.meshPathId != EndminfM27MeshPathId ||
+                    row.material == null || row.mesh == null)
+                {
+                    failure =
+                        "an active Endminf LitEffect direct material/mesh " +
+                        "identity drifted: rendererPathId=" +
+                        row.particleRendererPathId;
+                    return false;
+                }
+                if (!row.renderer.enabled ||
+                    (camera.cullingMask &
+                        (1 << row.renderer.gameObject.layer)) == 0)
+                {
+                    failure =
+                        "the authored Endminf LitEffect owner is not visible " +
+                        "to the ordinary camera beauty route: rendererPathId=" +
+                        row.particleRendererPathId;
+                    return false;
+                }
+                if (row.material.shader == null ||
+                    row.material.shader.name !=
+                        "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax")
+                {
+                    failure =
+                        "the retained Endminf LitEffect source material shader " +
+                        "drifted: rendererPathId=" + row.particleRendererPathId;
+                    return false;
+                }
+                ParticleSystem particles =
+                    row.renderer.GetComponent<ParticleSystem>();
+                if (particles == null)
+                {
+                    failure =
+                        "the Endminf LitEffect row has no ParticleSystem: " +
+                        row.particleRendererPathId;
+                    return false;
+                }
+                if (!particles.isPlaying || particles.particleCount == 0)
+                    continue;
+                if (!TryEnsureEndminfLitEffectMaterial(
+                        row.material,
+                        out Material recoveredMaterial,
+                        out int passIndex,
+                        out failure))
+                    return false;
+                draws.Add(new EndminfLitEffectDraw
+                {
+                    row = row,
+                    material = recoveredMaterial,
+                    passIndex = passIndex,
+                });
+            }
+            return true;
+        }
+
+        private bool TryEnsureEndminfLitEffectMaterial(
+            Material sourceMaterial,
+            out Material recoveredMaterial,
+            out int passIndex,
+            out string failure)
+        {
+            recoveredMaterial = null;
+            passIndex = -1;
+            failure = string.Empty;
+            if (sourceMaterial == null)
+            {
+                failure = "the Endminf LitEffect source material is absent";
+                return false;
+            }
+            int sourceId = sourceMaterial.GetInstanceID();
+            if (!endminfLitEffectMaterials.TryGetValue(
+                    sourceId,
+                    out recoveredMaterial) ||
+                recoveredMaterial == null)
+            {
+                Shader shader = Shader.Find(EndminfM27ShaderName);
+                if (shader == null || !shader.isSupported)
+                {
+                    failure =
+                        "the recovered Endminf LitEffect five-MRT shader is " +
+                        "unavailable: " + EndminfM27ShaderName;
+                    return false;
+                }
+                recoveredMaterial = new Material(shader)
+                {
+                    name = "Recovered authored " + sourceMaterial.name +
+                        " HGBuffer",
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                CopyExactM27SourceProperties(
+                    sourceMaterial,
+                    recoveredMaterial);
+                recoveredMaterial.SetFloat(
+                    "_RecoveredSourceAuthoredLitEffect",
+                    1.0f);
+                endminfLitEffectMaterials[sourceId] = recoveredMaterial;
+            }
+            passIndex = recoveredMaterial.FindPass(EndminfM27PassName);
+            if (passIndex < 0)
+            {
+                failure =
+                    "the recovered Endminf LitEffect HGBuffer pass is unavailable";
+                return false;
+            }
             return true;
         }
 

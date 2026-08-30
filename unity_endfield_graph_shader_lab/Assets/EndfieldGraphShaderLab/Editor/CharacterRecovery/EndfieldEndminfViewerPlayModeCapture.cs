@@ -106,6 +106,8 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_ENDMINF_CAPTURE_SECONDARY_DYNAMICS";
         private const string SecondaryDynamicsSolverEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_ENABLE_SECONDARY_DYNAMICS_SOLVER";
+        private const string CapturedSecondaryDynamicsReplayEnvironment =
+            "ENDFIELD_ENDMINF_CAPTURE_ENABLE_CAPTURED_SECONDARY_REPLAY";
         private const string RetainedSkinningDiagnosticEnvironment =
             "ENDFIELD_ENDMINF_CAPTURE_RETAINED_SKINNING";
         private const string EndminfM21ExactEnvironment =
@@ -122,19 +124,16 @@ namespace EndfieldGraphShaderLabEditor
             // content-invalid screen-shadow attachment diagnostic. Enabling it
             // produces an upside-down body mask over the portrait and regresses
             // the aligned peak substantially, so it is not presentation policy.
-            // The four retained opening-strip packets now own only their exact
-            // bounded phases and validate the native draw synchronously. Their
-            // unresolved temporal accumulation remains a visible downstream
-            // gap, not a reason to substitute the rectangle approximation.
-            // M13 packets 1/2 measurably close the aligned burst shell. Packet
-            // 0 is rejected by the runtime; M14 remains diagnostic-only. M31
-            // transport validates, but its current replay sees unclosed live
-            // SceneColor chronology and mildly regresses the aligned result,
-            // so it remains an explicit diagnostic rather than presentation.
-            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
-            EndminfM21ExactEnvironment,
-            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+            // Captured opening-strip, M13, and M21 draw packets remain useful
+            // ABI diagnostics, but they freeze one or a few observed particle
+            // states. The maintained reproduction must keep the authored
+            // ParticleSystem/material timeline until the generating runtime
+            // behavior is recovered; do not promote packet snapshots based on
+            // a local frame comparison.
+            // The captured Uber packet validates its native draw, but its
+            // current SceneColor/input chronology is not source-closed and it
+            // regresses every aligned effect sample versus the exact-off
+            // control. Keep it available as an explicit diagnostic only.
         };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
@@ -179,6 +178,7 @@ namespace EndfieldGraphShaderLabEditor
         private static bool captureSecondaryDynamics;
         private static bool captureRetainedSkinningDiagnostic;
         private static bool enableSecondaryDynamicsSolver;
+        private static bool enableCapturedSecondaryDynamicsReplay;
         private static string prePostHdrCohort;
         private static string prePostHdrOutput;
         private static string postStagesCohort;
@@ -586,8 +586,9 @@ namespace EndfieldGraphShaderLabEditor
                         Environment.SetEnvironmentVariable(flag, "1");
                 }
             }
-            bool exactEndminfM27 = Environment.GetEnvironmentVariable(
-                "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER") == "1";
+            bool isolatedEndminfLitEffect =
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER") == "1";
             string[] reproductionFlags = {
                 "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY",
                 "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT",
@@ -654,7 +655,7 @@ namespace EndfieldGraphShaderLabEditor
                     RecordingGyroscopeInputY);
             }
             EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
-            if (exactEndminfM27)
+            if (isolatedEndminfLitEffect)
             {
                 int exactM27LayerMask = 1 << 31;
                 foreach (Camera sceneCamera in
@@ -689,13 +690,29 @@ namespace EndfieldGraphShaderLabEditor
                     RetainedSkinningDiagnosticEnvironment) == "1";
             enableSecondaryDynamicsSolver = Environment.GetEnvironmentVariable(
                 SecondaryDynamicsSolverEnvironment) == "1";
+            enableCapturedSecondaryDynamicsReplay =
+                Environment.GetEnvironmentVariable(
+                    CapturedSecondaryDynamicsReplayEnvironment) == "1";
             if (videoExport && enableSecondaryDynamicsSolver)
             {
                 throw new InvalidOperationException(
-                    "Canonical Endminf video export requires the captured retail " +
-                    "secondary-dynamics replay. The diagnostic solver cannot own " +
-                    "the same hair/cape bones; unset " +
+                    "Canonical Endminf video export cannot use the unverified " +
+                    "secondary-dynamics solver; unset " +
                     SecondaryDynamicsSolverEnvironment + ".");
+            }
+            if (videoExport && enableCapturedSecondaryDynamicsReplay)
+            {
+                throw new InvalidOperationException(
+                    "Canonical Endminf video export cannot use a captured hair/cape " +
+                    "trajectory as its animation implementation; unset " +
+                    CapturedSecondaryDynamicsReplayEnvironment + ".");
+            }
+            if (enableSecondaryDynamicsSolver &&
+                enableCapturedSecondaryDynamicsReplay)
+            {
+                throw new InvalidOperationException(
+                    "The secondary-dynamics solver and captured-trajectory diagnostic " +
+                    "cannot own the same hair/cape bones.");
             }
             if (capturePrePostHdr && capturePostStages)
                 throw new InvalidOperationException(
@@ -816,8 +833,6 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
-                "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
-                SphereOutsidePresentationEnvironment,
                 "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
                 "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
                 "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
@@ -827,7 +842,12 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.SetEnvironmentVariable(flag, "1");
             string[] excluded = {
                 "ENDFIELD_ENDMINF_DEFERRED_B31_PROBE",
-                "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE"
+                "ENDFIELD_RECOVERED_DEFERRED_RESOLVER_RESOURCE_PROBE",
+                // The SphereOutside and M27 producers may share the resolver
+                // ABI, but their presentation ownership is not interchangeable.
+                // M27 must not inherit SphereOutside depth/GBuffer pixels.
+                "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
+                SphereOutsidePresentationEnvironment
             };
             foreach (string flag in excluded)
                 Environment.SetEnvironmentVariable(flag, null);
@@ -900,6 +920,37 @@ namespace EndfieldGraphShaderLabEditor
                 if (camera != null)
                     Render(camera);
                 select.Invoke(viewer, new object[] { index });
+                if (CharacterRecoveryViewerUI.TryGetSelectedActorRoot(
+                        out Transform selectedDynamicsActor))
+                {
+                    EndfieldCapturedSecondaryDynamicsReplay selectedReplay =
+                        selectedDynamicsActor.GetComponent<
+                            EndfieldCapturedSecondaryDynamicsReplay>();
+                    if (selectedReplay != null)
+                    {
+                        // Existing generated prefabs may still carry the
+                        // diagnostic component. Apply capture policy before
+                        // the first selected-actor LateUpdate so an ordinary
+                        // or canonical run can never inherit fixed samples.
+                        selectedReplay.enabled = false;
+                        selectedReplay.useCapturedReplay =
+                            enableCapturedSecondaryDynamicsReplay;
+                        selectedReplay.enabled = true;
+                        if (enableCapturedSecondaryDynamicsReplay &&
+                            !selectedReplay.TryBind())
+                        {
+                            throw new InvalidOperationException(
+                                "Captured secondary-dynamics diagnostic failed to bind: " +
+                                selectedReplay.BindingFailure);
+                        }
+                    }
+                    else if (enableCapturedSecondaryDynamicsReplay)
+                    {
+                        throw new InvalidOperationException(
+                            "Captured secondary-dynamics diagnostic was explicitly " +
+                            "requested, but the selected Endminf actor has no replay component.");
+                    }
+                }
                 if (enableSecondaryDynamicsSolver &&
                     CharacterRecoveryViewerUI.TryGetSelectedActorRoot(
                         out Transform dynamicsActor))
@@ -1740,16 +1791,13 @@ namespace EndfieldGraphShaderLabEditor
                         "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER"),
                     "1",
                     StringComparison.Ordinal);
-            bool observedCanonicalSecondaryReplay =
+            bool observedCanonicalSecondaryDynamicsOwnership =
                 Environment.GetEnvironmentVariable(
                     "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") != "1" ||
                 (Frames.Count > 0 && Frames.All(value =>
                     !value.secondaryDynamicsSolverWriteback &&
-                    value.capturedSecondaryReplayEnabled &&
-                    value.capturedSecondaryReplayBindingValid &&
-                    string.IsNullOrEmpty(
-                        value.capturedSecondaryReplayBindingFailure) &&
-                    value.capturedSecondaryReplayPoseAppliedThisFrame));
+                    !value.capturedSecondaryReplayEnabled &&
+                    !value.capturedSecondaryReplayPoseAppliedThisFrame));
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
@@ -1768,9 +1816,10 @@ namespace EndfieldGraphShaderLabEditor
                     $"suikuai={firstEntranceFrame?.exactSuikuai1BindingReady ?? false}, " +
                     $"admitted={firstEntranceFrame?.admittedRenderers ?? 0}/68, " +
                     $"blocked={firstEntranceFrame?.blockedRendererIdentities?.Length ?? 0}/2)");
-            if (!observedCanonicalSecondaryReplay)
+            if (!observedCanonicalSecondaryDynamicsOwnership)
                 missingObservations.Add(
-                    "captured retail hair/cape trajectory without diagnostic solver ownership");
+                    "source-code secondary-dynamics ownership with both unverified solver " +
+                    "writeback and captured-trajectory replay disabled");
             if (exactEndminfM27Requested && !observedEndminfM27HGBufferReady)
                 missingObservations.Add(
                     "exact Endminf M27 five-MRT HGBuffer publication");

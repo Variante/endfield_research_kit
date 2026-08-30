@@ -737,7 +737,7 @@ def build_contract(
                     "abi": ["int* jobVertexIndexList", "TeamData* teamDataArray (stride 464)", "double3* transformPositionArray", "quaternion* transformRotationArray", "int16* teamIdArray", "double3* positionsPostSolver", "quaternion* rotationsPostSolver", "quaternion* vertexToTransformRotations", "int* lengthPtr"],
                     "guards": ["v = jobVertexIndexList[index]", "teamId = teamIdArray[v]", "return when teamId == 0"],
                     "indexEquations": ["local = v - team.proxyCommonChunk.start", "bone = team.proxyBoneChunk.start + local", "dst = team.proxyTransformChunk.start + local"],
-                    "equations": ["transformPositionArray[dst] = positionsPostSolver[v]", "correction = hamilton_f32(team.negativeScaleQuaternionValue, vertexToTransformRotations[bone])", "transformRotationArray[dst] = hamilton_f32(rotationsPostSolver[v], correction)"],
+                    "equations": ["transformPositionArray[dst] = positionsPostSolver[v]", "correction.value = team.negativeScaleQuaternionValue.value * vertexToTransformRotations[bone].value  # componentwise", "transformRotationArray[dst] = hamilton_f32(rotationsPostSolver[v], correction)"],
                     "excludedOperations": ["normalization", "interpolation", "attribute filtering", "blend weighting"],
                 },
                 "localPublication": {

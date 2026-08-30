@@ -74,6 +74,7 @@ namespace EndfieldGraphShaderLab
             public Vector3 gravityDirection;
             public float gravityFalloff;
             public float animationPoseRatio;
+            public float blendWeight;
 
             public float dampingValue;
             public bool dampingUsesCurve;

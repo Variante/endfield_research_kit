@@ -82,12 +82,15 @@ namespace EndfieldGraphShaderLabEditor
                 "AngleBaseline:0", "DistancePass2:-1", "End:-1",
                 "ColliderSnapshotBoundary:-1",
             };
-            Require(rows.Count == stages.Length * count, "stage trace count");
+            Require(rows.Count == stages.Length * count + 1, "stage trace count");
             int cursor = 0;
             for (int step = firstSubstep; step < firstSubstep + count; step++)
                 for (int stage = 0; stage < stages.Length; stage++)
                     Require(rows[cursor++] == step + ":" + stages[stage],
                         "recovered stage order at substep " + step + ", stage " + stage);
+            Require(
+                rows[cursor] == "-1:CalcDisplayPosition:-1",
+                "CalcDisplayPosition must follow the final Simulation End/collider boundary.");
             Require(!rows.Exists(row => row.Contains("PointCollision")),
                 "Hair follows the authored no-collider path");
             int distance1 = rows.FindIndex(row => row.Contains("DistancePass1"));

@@ -76,6 +76,10 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         writeback = self.payload["writeback"]
         self.assertEqual(writeback["publicationSchedule"]["postProxyOrder"][-2:], ["WriteTransformData", "WriteTransformLocalData"])
         self.assertIn(
+            "correction.value = team.negativeScaleQuaternionValue.value * vertexToTransformRotations[bone].value  # componentwise",
+            writeback["worldPublication"]["equations"],
+        )
+        self.assertIn(
             "transformRotationArray[dst] = hamilton_f32(rotationsPostSolver[v], correction)",
             writeback["worldPublication"]["equations"],
         )

@@ -12,6 +12,11 @@ namespace EndfieldGraphShaderLab
     /// </summary>
     public sealed class EndfieldSecondaryDynamicsTransformPublicationAdapter
     {
+        // TeamData.negativeScaleQuaternionValue is a float4 sign mask. It is
+        // deliberately not Quaternion.identity in the positive-scale route.
+        public static readonly Quaternion PositiveScaleQuaternionSignMask =
+            new Quaternion(1f, 1f, 1f, 1f);
+
         private readonly EndfieldSecondaryDynamicsData _data;
         private readonly Transform[][] _transforms;
         private readonly Vector3[][] _initialLocalPositions;
@@ -92,7 +97,7 @@ namespace EndfieldGraphShaderLab
                     proxyCommonChunk = new T.Chunk(0),
                     proxyBoneChunk = new T.Chunk(0),
                     proxyTransformChunk = new T.Chunk(0),
-                    negativeScaleQuaternionValue = Quaternion.identity,
+                    negativeScaleQuaternionValue = PositiveScaleQuaternionSignMask,
                     clothSimulateWeight = clothSimulateWeight,
                     clothLodFadeWeight = 1f,
                 };

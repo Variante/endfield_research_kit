@@ -13,6 +13,7 @@ namespace EndfieldGraphShaderLabEditor
         {
             VerifyWorldEquation();
             VerifyLocalEquationAndGuards();
+            VerifyPositiveScaleQuaternionSignMask();
             VerifyFinalWorldAndFixedBranches();
             VerifyFinalLocalAndWeightBranches();
             VerifyEntryGatesAndPrecedence();
@@ -22,18 +23,28 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void VerifyWorldEquation()
         {
-            var team = Team(10, 30, 50, new Quaternion(1.0f, 0.0f, 0.0f, 0.0f), 1.0f, 1.0f);
+            const float qz90 = 0.70710677f;
+            var team = Team(
+                10,
+                30,
+                50,
+                EndfieldSecondaryDynamicsTransformPublicationAdapter.PositiveScaleQuaternionSignMask,
+                1.0f,
+                1.0f);
             var value = EndfieldSecondaryDynamicsTransformPublication.CalculateWorld(
                 new EndfieldSecondaryDynamicsTransformPublication.WorldSource(
                     12, 1, team,
                     new EndfieldSecondaryDynamicsTransformPublication.Double3(1.25, -2.5, 3.75),
-                    new Quaternion(0.0f, 0.0f, 1.0f, 0.0f),
-                    new Quaternion(0.0f, 1.0f, 0.0f, 0.0f)));
+                    Quaternion.identity,
+                    new Quaternion(0.0f, 0.0f, qz90, qz90)));
             Require(value.publish, "world row was rejected");
             Require(value.destinationIndex == 52, "world destination equation");
             Require(value.position.x == 1.25 && value.position.y == -2.5 && value.position.z == 3.75,
                 "world position publication");
-            RequireQuaternionExact(value.rotation, new Quaternion(0.0f, 0.0f, 0.0f, -1.0f), "world rotation equation");
+            RequireFloatBits(value.rotation.x, 0.0f, "world componentwise sign-mask x");
+            RequireFloatBits(value.rotation.y, 0.0f, "world componentwise sign-mask y");
+            RequireFloatBits(value.rotation.z, qz90, "world componentwise sign-mask z");
+            RequireFloatBits(value.rotation.w, qz90, "world componentwise sign-mask w");
 
             var skipped = EndfieldSecondaryDynamicsTransformPublication.CalculateWorld(
                 new EndfieldSecondaryDynamicsTransformPublication.WorldSource(
@@ -68,6 +79,43 @@ namespace EndfieldGraphShaderLabEditor
             Require(!EndfieldSecondaryDynamicsTransformPublication.CalculateLocal(
                 new EndfieldSecondaryDynamicsTransformPublication.LocalSource(12, 1, 0x01, 1, team),
                 positions, rotations, scales).publish, "local attribute guard");
+        }
+
+        private static void VerifyPositiveScaleQuaternionSignMask()
+        {
+            const float qz90 = 0.70710677f;
+            var team = Team(
+                0,
+                0,
+                0,
+                EndfieldSecondaryDynamicsTransformPublicationAdapter
+                    .PositiveScaleQuaternionSignMask,
+                1f,
+                1f);
+            var positions = FilledDouble3(2);
+            var rotations = FilledQuaternion(2, Quaternion.identity);
+            rotations[1] = new Quaternion(0f, 0f, qz90, qz90);
+            var scales = FilledVector3(2, Vector3.one);
+            EndfieldSecondaryDynamicsTransformPublication.LocalValue value =
+                EndfieldSecondaryDynamicsTransformPublication.CalculateLocal(
+                    new EndfieldSecondaryDynamicsTransformPublication.LocalSource(
+                        1,
+                        1,
+                        0x02,
+                        0,
+                        team),
+                    positions,
+                    rotations,
+                    scales);
+            Require(value.publish, "positive-scale local publication");
+            RequireFloatBits(value.rotation.x, 0f,
+                "positive-scale local rotation x");
+            RequireFloatBits(value.rotation.y, 0f,
+                "positive-scale local rotation y");
+            RequireFloatBits(value.rotation.z, qz90,
+                "positive-scale local rotation z");
+            RequireFloatBits(value.rotation.w, qz90,
+                "positive-scale local rotation w");
         }
 
         private static void VerifyFinalWorldAndFixedBranches()
@@ -264,6 +312,16 @@ namespace EndfieldGraphShaderLabEditor
         {
             Require(actual.x == expected.x && actual.y == expected.y && actual.z == expected.z && actual.w == expected.w,
                 label + ": expected exact " + expected + ", got " + actual);
+        }
+
+        private static void RequireFloatBits(float actual, float expected, string label)
+        {
+            Require(
+                BitConverter.SingleToInt32Bits(actual) ==
+                BitConverter.SingleToInt32Bits(expected),
+                label + ": expected exact bits " +
+                BitConverter.SingleToInt32Bits(expected).ToString("x8") +
+                ", got " + BitConverter.SingleToInt32Bits(actual).ToString("x8"));
         }
 
         private static void Require(bool condition, string message)

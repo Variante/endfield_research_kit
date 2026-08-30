@@ -37,7 +37,7 @@ which lazily calls `SetupMultiscatteringLut` and publishes pipeline field `+0x17
 to `_MultiscatteringLUT` (shader-ID slot `+0x180`). The payload is fixed and
 environment-independent:
 
-- 32x32 `RHalf` texture (`TextureFormat 15`);
+- 32x32 `R16_UNorm` texture (`GraphicsFormat 21`);
 - no mip chain, linear disabled, Clamp wrap, Bilinear filter;
 - 2,048 raw bytes, SHA-256
   `1A15AFE25B25E7AA64DCF17D74F5375DD1B692B3805CD00AA4F531AD289F030E`.

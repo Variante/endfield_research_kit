@@ -30,6 +30,8 @@ namespace EndfieldGraphShaderLab
         // CharInfo_Env PathID 1201129019072041203, raw-data SHA-256
         // f9d1384c29f1e54599cd55e5f9c5c6d7eb9bd6f678d9fd104c7c329e6f1a66f9.
         public const float SourceDirectIntensity = 8.631674f;
+        public const float SourceDirectIntensityDividePi =
+            SourceDirectIntensity / Mathf.PI;
         public const float SourceDirectSpecularIntensity = 1.0f;
         public const float SourceDirectSoftRadiusDegrees = 0.0f;
         public static readonly Vector3 SourceDirectionalForward = new Vector3(
@@ -84,10 +86,10 @@ namespace EndfieldGraphShaderLab
                 normalizedForward.z,
                 0.0f);
             destination[DirectionalColorVector] = new Vector4(
-                unitIntensityFinalColor.r * SourceDirectIntensity,
-                unitIntensityFinalColor.g * SourceDirectIntensity,
-                unitIntensityFinalColor.b * SourceDirectIntensity,
-                unitIntensityFinalColor.a * SourceDirectIntensity);
+                unitIntensityFinalColor.r * SourceDirectIntensityDividePi,
+                unitIntensityFinalColor.g * SourceDirectIntensityDividePi,
+                unitIntensityFinalColor.b * SourceDirectIntensityDividePi,
+                unitIntensityFinalColor.a * SourceDirectIntensityDividePi);
 
             float softRadiusRadians =
                 SourceDirectSoftRadiusDegrees * Mathf.Deg2Rad;

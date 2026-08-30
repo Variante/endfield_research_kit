@@ -4,9 +4,10 @@ using UnityEngine;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Replays the bounded, captured Endminf hair/cape trajectory after the
-    /// Animator has evaluated. It does not extrapolate or pretend to recover
-    /// uncaptured solver state.
+    /// Diagnostic-only replay of a bounded, captured Endminf hair/cape
+    /// trajectory after the Animator has evaluated. The fixed samples are an
+    /// oracle for solver recovery; they are not the maintained reproduction
+    /// and are never enabled by default.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(32000)]
@@ -14,8 +15,8 @@ namespace EndfieldGraphShaderLab
     {
         public EndfieldCapturedSecondaryDynamicsReplayData data;
 
-        [Tooltip("Source-backed Endminf-only opt-in. Invalid or absent captured data performs no writes.")]
-        public bool useCapturedReplay = true;
+        [Tooltip("Diagnostic-only explicit opt-in. Invalid or absent captured data performs no writes.")]
+        public bool useCapturedReplay = false;
 
         public bool BindingValid { get; private set; }
         public string BindingFailure { get; private set; } = "not validated";

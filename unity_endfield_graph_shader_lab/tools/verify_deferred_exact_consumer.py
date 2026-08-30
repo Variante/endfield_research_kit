@@ -39,6 +39,8 @@ READBACK_RE = re.compile(
     r"rgbaFloatSha256=(?P<sha>[0-9a-f]{64}),\s*"
     r"finiteFloats=(?P<finite>\d+),\s*"
     r"nonFiniteFloats=(?P<nonfinite>\d+),\s*"
+    r"nonzeroRgbFloats=(?P<nonzero_rgb>\d+),\s*"
+    r"screenContentValid=(?P<screen>false|true),\s*"
     r"min=(?P<minimum>[^,]+),\s*"
     r"max=(?P<maximum>[^,]+),\s*"
     r"failureCount=(?P<failures>\d+),\s*"
@@ -140,6 +142,8 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
             "rgbaFloatSha256": match["sha"],
             "finiteFloats": int(match["finite"]),
             "nonFiniteFloats": int(match["nonfinite"]),
+            "nonzeroRgbFloats": int(match["nonzero_rgb"]),
+            "screenContentValid": match["screen"].lower() == "true",
             "min": match["minimum"],
             "max": match["maximum"],
             "failureCount": int(match["failures"]),
@@ -162,6 +166,8 @@ def validate_log(text: str, source: Path) -> dict[str, object]:
         require("readback_constant_buffer_mask_all_b0_b8", readback["constantBufferMask"], 0x1FF)
         require("readback_finite_float_count", readback["finiteFloats"], expected_pixels * 4)
         require("readback_nonfinite_float_count", readback["nonFiniteFloats"], 0)
+        require("readback_nonzero_rgb", readback["nonzeroRgbFloats"] > 0, True)
+        require("readback_screen_content_valid", readback["screenContentValid"], True)
         require("readback_native_failures", readback["failureCount"], 0)
         require("readback_presented", readback["presented"], False)
         require("readback_retail_pass0", readback["retailPass0"], False)

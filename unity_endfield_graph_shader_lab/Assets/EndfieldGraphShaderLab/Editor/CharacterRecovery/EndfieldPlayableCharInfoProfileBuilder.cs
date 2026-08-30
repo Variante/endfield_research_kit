@@ -41,6 +41,16 @@ namespace EndfieldGraphShaderLabEditor
                 $"Built {profiles.Count} source-recovered playable CharInfo presentation profiles.");
         }
 
+        [MenuItem("Endfield/Character Recovery Lab/Verify Playable CharInfo Portrait Orientation")]
+        public static void VerifyPortraitOrientationMenu()
+        {
+            int verifiedCount = VerifyPortraitOrientation();
+            Debug.Log(
+                $"Playable CharInfo portrait orientation verification passed: " +
+                $"profiles={verifiedCount}, display-upright PNG rows map to " +
+                "bottom=vMin/top=vMax with no second vertical flip.");
+        }
+
         public static Dictionary<string, CharacterRecoveryPresentationProfile>
             BuildAllProfiles()
         {
@@ -110,7 +120,34 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException(
                     $"Built {result.Count} CharInfo profiles; expected {expectedCount}.");
             AssetDatabase.SaveAssets();
+            VerifyPortraitOrientation(payload, result);
             return result;
+        }
+
+        public static int VerifyPortraitOrientation()
+        {
+            string sourceFullPath = AssetPathToFullPath(SourceManifestAssetPath);
+            if (!File.Exists(sourceFullPath))
+                throw new FileNotFoundException(
+                    "Playable CharInfo source profiles are missing.",
+                    sourceFullPath);
+            Dictionary<string, object> payload = Dict(
+                ManifestMiniJson.Deserialize(
+                    File.ReadAllText(sourceFullPath, Encoding.UTF8)));
+            IList rows = List(Get(payload, "characters"));
+            var profiles = new Dictionary<string, CharacterRecoveryPresentationProfile>(
+                StringComparer.OrdinalIgnoreCase);
+            foreach (object rowObject in rows)
+            {
+                Dictionary<string, object> row = Dict(rowObject);
+                string rootName = Str(Get(row, "root_name"));
+                CharacterRecoveryPresentationProfile profile = LoadProfile(rootName);
+                if (profile == null || !profiles.TryAdd(rootName, profile))
+                    throw new InvalidDataException(
+                        $"Playable CharInfo portrait profile is missing or duplicated: {rootName}.");
+            }
+            VerifyPortraitOrientation(payload, profiles);
+            return profiles.Count;
         }
 
         public static CharacterRecoveryPresentationProfile LoadProfile(
@@ -362,6 +399,126 @@ namespace EndfieldGraphShaderLabEditor
             mesh.UploadMeshData(false);
             EditorUtility.SetDirty(mesh);
             return mesh;
+        }
+
+        private static void VerifyPortraitOrientation(
+            Dictionary<string, object> payload,
+            Dictionary<string, CharacterRecoveryPresentationProfile> profiles)
+        {
+            if (!string.Equals(
+                    Str(Get(payload, "schema")),
+                    ExpectedSchema,
+                    StringComparison.Ordinal) ||
+                !Bool(Get(Dict(Get(payload, "validation")), "ok")))
+            {
+                throw new InvalidDataException(
+                    "Playable CharInfo source profile payload failed orientation validation.");
+            }
+
+            IList rows = List(Get(payload, "characters"));
+            int expectedCount = Int(Get(payload, "character_count"));
+            if (expectedCount <= 0 || rows.Count != expectedCount ||
+                profiles.Count != expectedCount)
+            {
+                throw new InvalidDataException(
+                    "Playable CharInfo portrait orientation input count is inconsistent.");
+            }
+
+            foreach (object rowObject in rows)
+            {
+                Dictionary<string, object> row = Dict(rowObject);
+                string rootName = Str(Get(row, "root_name"));
+                if (!profiles.TryGetValue(rootName, out CharacterRecoveryPresentationProfile profile) ||
+                    profile == null || profile.portraitTexture == null ||
+                    profile.portraitMesh == null)
+                {
+                    throw new InvalidDataException(
+                        $"{rootName} playable portrait assets are incomplete.");
+                }
+
+                Dictionary<string, object> portrait = Dict(Get(row, "portrait"));
+                Dictionary<string, object> logicalRect = Dict(Get(portrait, "logical_rect"));
+                Dictionary<string, object> textureRectRecord =
+                    Dict(Get(portrait, "texture_rect"));
+                float logicalWidth = Float(Get(logicalRect, "width"));
+                Rect textureRect = new Rect(
+                    Float(Get(textureRectRecord, "x")),
+                    Float(Get(textureRectRecord, "y")),
+                    Float(Get(textureRectRecord, "width")),
+                    Float(Get(textureRectRecord, "height")));
+                VerifyPortraitMeshOrientation(
+                    profile.portraitMesh,
+                    logicalWidth,
+                    textureRect,
+                    rootName);
+
+                TextureImporter importer =
+                    AssetImporter.GetAtPath(TextureAssetPath(portrait)) as TextureImporter;
+                if (importer == null ||
+                    importer.textureType != TextureImporterType.Default ||
+                    importer.textureShape != TextureImporterShape.Texture2D ||
+                    importer.alphaSource != TextureImporterAlphaSource.FromInput ||
+                    importer.mipmapEnabled ||
+                    importer.wrapMode != TextureWrapMode.Clamp)
+                {
+                    throw new InvalidDataException(
+                        $"{rootName} portrait importer no longer preserves the display-upright PNG contract.");
+                }
+            }
+        }
+
+        private static void VerifyPortraitMeshOrientation(
+            Mesh mesh,
+            float logicalSpriteSize,
+            Rect textureRect,
+            string rootName)
+        {
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uv = mesh.uv;
+            int[] triangles = mesh.triangles;
+            if (vertices.Length != 4 || uv.Length != 4 || triangles.Length != 6)
+                throw new InvalidDataException(
+                    $"{rootName} portrait tight quad is malformed.");
+
+            float left = -0.5f + textureRect.xMin / logicalSpriteSize;
+            float bottom = -0.5f + textureRect.yMin / logicalSpriteSize;
+            float right = -0.5f + textureRect.xMax / logicalSpriteSize;
+            float top = -0.5f + textureRect.yMax / logicalSpriteSize;
+            Vector3[] expectedVertices =
+            {
+                new Vector3(left, bottom, 0.0f),
+                new Vector3(right, bottom, 0.0f),
+                new Vector3(right, top, 0.0f),
+                new Vector3(left, top, 0.0f),
+            };
+            Vector2[] expectedUv =
+            {
+                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize),
+                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMax / SourceTextureSize),
+            };
+            int[] expectedTriangles = { 0, 2, 1, 0, 3, 2 };
+            for (int index = 0; index < 4; index++)
+            {
+                if (Vector3.SqrMagnitude(vertices[index] - expectedVertices[index]) >= 1e-12f ||
+                    Vector2.SqrMagnitude(uv[index] - expectedUv[index]) >= 1e-12f)
+                {
+                    throw new InvalidDataException(
+                        $"{rootName} portrait vertex/UV row {index} violates the recovered tight-sprite contract.");
+                }
+            }
+            for (int index = 0; index < expectedTriangles.Length; index++)
+            {
+                if (triangles[index] != expectedTriangles[index])
+                    throw new InvalidDataException(
+                        $"{rootName} portrait triangle row {index} drifted.");
+            }
+            if (!(vertices[0].y < vertices[2].y && uv[0].y < uv[2].y))
+            {
+                throw new InvalidDataException(
+                    $"{rootName} portrait is vertically inverted: bottom must sample vMin and top vMax.");
+            }
         }
 
         private static string TextureAssetPath(Dictionary<string, object> portrait)

@@ -57,6 +57,9 @@ namespace EndfieldGraphShaderLab
 
         internal EndfieldRecoveredEndminfM27DeferredPresentation()
         {
+            // Live source HGBuffer recovery is intentionally diagnostic-only.
+            // Physical presentation requires its own explicit selector after
+            // exact-resolver content has been validated.
             requested = IsEnabled(Environment.GetEnvironmentVariable(
                 EnvironmentVariable));
             Shader.SetGlobalFloat(ReadyId, 0.0f);
