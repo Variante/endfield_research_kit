@@ -1938,7 +1938,272 @@
         "instructionBytes": "e8 c7 f9 ff ff",
         "instructionVa": "0x186755db8"
       }
-    ]
+    ],
+    "stageObserverEntries": {
+      "status": "route_independent_gameassembly_worker_entries_closed_selected_burst_route_unobserved",
+      "stages": [
+        {
+          "stage": "CalcDisplayPosition",
+          "worker": {
+            "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJob",
+            "method": "UnsafeDo",
+            "methodIndex": 385713,
+            "role": "calc_display_worker",
+            "methodPointerVa": "0x18676b3c4",
+            "fileOffset": "0x67699c4",
+            "section": "il2cpp",
+            "bytes": 368,
+            "sha256": "f87adbb7832b3946c707e34684602cbc77dcaef3d46bb93b2eba792a26446817",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "routeIndependentDispatcher": {
+            "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels",
+            "method": "CalcDisplayPositionRangeKernel",
+            "methodIndex": 385650,
+            "role": "calc_display_route_independent_dispatcher",
+            "methodPointerVa": "0x18676accc",
+            "fileOffset": "0x67692cc",
+            "section": "il2cpp",
+            "bytes": 240,
+            "sha256": "0c269791256da59e5e178d55df90241dd95d9e7af2776f6276aef02b00b6ef6a",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "burstDirectCall": {
+            "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels+CalcDisplayPositionRangeKernel_00000411$BurstDirectCall",
+            "method": "Invoke",
+            "methodIndex": 385672,
+            "role": "calc_display_burst_directcall",
+            "methodPointerVa": "0x18676bbf8",
+            "fileOffset": "0x676a1f8",
+            "section": "il2cpp",
+            "bytes": 428,
+            "sha256": "81486ab95a6b2f028640fb77dddd7ce15f391ddec07607a7377d214370c56094",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "callEdges": [
+            {
+              "ownerMethodIndex": 385713,
+              "offset": 286,
+              "instructionVa": "0x18676b4e2",
+              "instructionBytes": "e8 e5 f7 ff ff",
+              "targetMethodIndex": 385650,
+              "targetVa": "0x18676accc",
+              "role": "worker_to_route_independent_dispatcher"
+            },
+            {
+              "ownerMethodIndex": 385650,
+              "offset": 208,
+              "instructionVa": "0x18676ad9c",
+              "instructionBytes": "e8 57 0e 00 00",
+              "targetMethodIndex": 385672,
+              "targetVa": "0x18676bbf8",
+              "role": "dispatcher_to_burst_directcall"
+            },
+            {
+              "ownerMethodIndex": 385672,
+              "offset": 260,
+              "instructionVa": "0x18676bcfc",
+              "instructionBytes": "41 ff d2",
+              "operand": "r10",
+              "targetVa": null,
+              "role": "runtime_selected_burst_function_pointer"
+            },
+            {
+              "ownerMethodIndex": 385672,
+              "offset": 395,
+              "instructionVa": "0x18676bd83",
+              "instructionBytes": "e8 70 83 ff ff",
+              "targetMethodIndex": 385652,
+              "targetVa": "0x1867640f8",
+              "role": "managed_fallback"
+            }
+          ],
+          "managedFallback": {
+            "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels",
+            "method": "CalcDisplayPositionRangeKernel$BurstManaged",
+            "methodIndex": 385652,
+            "methodPointerVa": "0x1867640f8"
+          },
+          "captureBoundary": "observe the GameAssembly route-independent range dispatcher at entry/return; do not hook or replay a guessed Burst implementation"
+        },
+        {
+          "stage": "PostProxyMeshUpdate.WriteTransformData",
+          "worker": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
+            "method": "UnsafeDo",
+            "methodIndex": 385063,
+            "role": "post_proxy_world_worker",
+            "methodPointerVa": "0x186754b30",
+            "fileOffset": "0x6753130",
+            "section": "il2cpp",
+            "bytes": 280,
+            "sha256": "7b1212e8ed5eda8f98c63d49a09dca1c4f2254a67eac7136e5f0e59fd927bad3",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "routeIndependentDispatcher": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJobKernels",
+            "method": "WriteTransformDataRangeKernel",
+            "methodIndex": 384879,
+            "role": "post_proxy_world_route_independent_dispatcher",
+            "methodPointerVa": "0x186754680",
+            "fileOffset": "0x6752c80",
+            "section": "il2cpp",
+            "bytes": 184,
+            "sha256": "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "burstDirectCall": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJobKernels+WriteTransformDataRangeKernel_000002ED$BurstDirectCall",
+            "method": "Invoke",
+            "methodIndex": 384901,
+            "role": "post_proxy_world_burst_directcall",
+            "methodPointerVa": "0x1867550e4",
+            "fileOffset": "0x67536e4",
+            "section": "il2cpp",
+            "bytes": 340,
+            "sha256": "7e15e27032cea2ab2ac74f248af07a56f502027d0e05370d206aa41b0c4abfe7",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "callEdges": [
+            {
+              "ownerMethodIndex": 385063,
+              "offset": 211,
+              "instructionVa": "0x186754c03",
+              "instructionBytes": "e8 78 fa ff ff",
+              "targetMethodIndex": 384879,
+              "targetVa": "0x186754680",
+              "role": "worker_to_route_independent_dispatcher"
+            },
+            {
+              "ownerMethodIndex": 384879,
+              "offset": 155,
+              "instructionVa": "0x18675471b",
+              "instructionBytes": "e8 c4 09 00 00",
+              "targetMethodIndex": 384901,
+              "targetVa": "0x1867550e4",
+              "role": "dispatcher_to_burst_directcall"
+            },
+            {
+              "ownerMethodIndex": 384901,
+              "offset": 204,
+              "instructionVa": "0x1867551b0",
+              "instructionBytes": "ff d0",
+              "operand": "rax",
+              "targetVa": null,
+              "role": "runtime_selected_burst_function_pointer"
+            },
+            {
+              "ownerMethodIndex": 384901,
+              "offset": 298,
+              "instructionVa": "0x18675520e",
+              "instructionBytes": "e8 0d f3 ff ff",
+              "targetMethodIndex": 384878,
+              "targetVa": "0x186754520",
+              "role": "managed_fallback"
+            }
+          ],
+          "managedFallback": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJobKernels",
+            "method": "WriteTransformDataKernel",
+            "methodIndex": 384878,
+            "methodPointerVa": "0x186754520"
+          },
+          "captureBoundary": "observe the GameAssembly route-independent range dispatcher at entry/return; do not hook or replay a guessed Burst implementation"
+        },
+        {
+          "stage": "PostProxyMeshUpdate.WriteTransformLocalData",
+          "worker": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
+            "method": "UnsafeDo",
+            "methodIndex": 385067,
+            "role": "post_proxy_local_worker",
+            "methodPointerVa": "0x186755ca8",
+            "fileOffset": "0x67542a8",
+            "section": "il2cpp",
+            "bytes": 356,
+            "sha256": "a060e53d3a5bb005cdeae8e597bb7e9bfc2176ddad93070d225578b904e298fd",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "routeIndependentDispatcher": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJobKernels",
+            "method": "WriteTransformLocalDataRangeKernel",
+            "methodIndex": 384903,
+            "role": "post_proxy_local_route_independent_dispatcher",
+            "methodPointerVa": "0x186755784",
+            "fileOffset": "0x6753d84",
+            "section": "il2cpp",
+            "bytes": 208,
+            "sha256": "b3798e37d293ce37ebc5460db6ce424e40f217ce617057ae96421f3c69a05d9e",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "burstDirectCall": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJobKernels+WriteTransformLocalDataRangeKernel_000002EF$BurstDirectCall",
+            "method": "Invoke",
+            "methodIndex": 384925,
+            "role": "post_proxy_local_burst_directcall",
+            "methodPointerVa": "0x1867563d0",
+            "fileOffset": "0x67549d0",
+            "section": "il2cpp",
+            "bytes": 400,
+            "sha256": "6ab6d3fe1ebeb9e74eefd7233fdeda8dda0a339f3843425f605154f56757fb4d",
+            "hashSource": "current metadata method pointer + PE executable section span to next pointer"
+          },
+          "callEdges": [
+            {
+              "ownerMethodIndex": 385067,
+              "offset": 272,
+              "instructionVa": "0x186755db8",
+              "instructionBytes": "e8 c7 f9 ff ff",
+              "targetMethodIndex": 384903,
+              "targetVa": "0x186755784",
+              "role": "worker_to_route_independent_dispatcher"
+            },
+            {
+              "ownerMethodIndex": 384903,
+              "offset": 181,
+              "instructionVa": "0x186755839",
+              "instructionBytes": "e8 92 0b 00 00",
+              "targetMethodIndex": 384925,
+              "targetVa": "0x1867563d0",
+              "role": "dispatcher_to_burst_directcall"
+            },
+            {
+              "ownerMethodIndex": 384925,
+              "offset": 237,
+              "instructionVa": "0x1867564bd",
+              "instructionBytes": "41 ff d2",
+              "operand": "r10",
+              "targetVa": null,
+              "role": "runtime_selected_burst_function_pointer"
+            },
+            {
+              "ownerMethodIndex": 384925,
+              "offset": 358,
+              "instructionVa": "0x186756536",
+              "instructionBytes": "e8 ad f0 ff ff",
+              "targetMethodIndex": 384902,
+              "targetVa": "0x1867555e8",
+              "role": "managed_fallback"
+            }
+          ],
+          "managedFallback": {
+            "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJobKernels",
+            "method": "WriteTransformLocalDataKernel",
+            "methodIndex": 384902,
+            "methodPointerVa": "0x1867555e8"
+          },
+          "captureBoundary": "observe the GameAssembly route-independent range dispatcher at entry/return; do not hook or replay a guessed Burst implementation"
+        }
+      ],
+      "selectedBurstCpuRoute": {
+        "status": "unresolved",
+        "runtimeSelectedPointerObserved": false,
+        "selectedExport": null,
+        "selectedCpuVariant": null,
+        "reason": "the current GameAssembly bodies perform an indirect call through a runtime function pointer; the installed static image does not identify the returned lib_burst_generated.dll address or selected CPU variant",
+        "requiredEvidence": "observation-only BurstDirectCall returned-pointer/GetProcAddress telemetry from the exact gated process; no authored curve, parameter, sampled trajectory, or game-state modification"
+      }
+    }
   },
   "writeback": {
     "publicationSchedule": {
@@ -2425,6 +2690,8 @@
     "transform_access_property_writes_closed": true,
     "job_managed_field_shapes_closed": true,
     "burst_range_dispatch_edges_closed": true,
+    "stage_observer_gameassembly_entries_closed": true,
+    "selected_burst_cpu_route_closed": false,
     "result_array_pointer_provenance_closed": true,
     "world_publication_equations_closed": true,
     "local_publication_equations_closed": true,

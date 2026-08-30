@@ -81,6 +81,147 @@ PINNED_NATIVE_SPANS: tuple[dict[str, Any], ...] = (
 )
 
 
+# Route-independent GameAssembly worker boundaries for observation-only stage
+# telemetry.  Each entry is reached before the BurstDirectCall wrapper chooses
+# its runtime function pointer or managed fallback, so a capture observer does
+# not need to guess a lib_burst_generated.dll export or CPU variant.  The
+# selected Burst route remains explicitly unresolved below.
+STAGE_OBSERVER_METHOD_SPECS: dict[int, dict[str, Any]] = {
+    385713: {
+        "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJob",
+        "method": "UnsafeDo",
+        "role": "calc_display_worker",
+        "va": "0x18676b3c4",
+        "fileOffset": "0x67699c4",
+        "bytes": 368,
+        "sha256": "f87adbb7832b3946c707e34684602cbc77dcaef3d46bb93b2eba792a26446817",
+    },
+    385650: {
+        "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels",
+        "method": "CalcDisplayPositionRangeKernel",
+        "role": "calc_display_route_independent_dispatcher",
+        "va": "0x18676accc",
+        "fileOffset": "0x67692cc",
+        "bytes": 240,
+        "sha256": "0c269791256da59e5e178d55df90241dd95d9e7af2776f6276aef02b00b6ef6a",
+    },
+    385672: {
+        "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels+CalcDisplayPositionRangeKernel_00000411$BurstDirectCall",
+        "method": "Invoke",
+        "role": "calc_display_burst_directcall",
+        "va": "0x18676bbf8",
+        "fileOffset": "0x676a1f8",
+        "bytes": 428,
+        "sha256": "81486ab95a6b2f028640fb77dddd7ce15f391ddec07607a7377d214370c56094",
+    },
+    385063: {
+        "type": VIRTUAL_WRITE_JOB,
+        "method": "UnsafeDo",
+        "role": "post_proxy_world_worker",
+        "va": "0x186754b30",
+        "fileOffset": "0x6753130",
+        "bytes": 280,
+        "sha256": "7b1212e8ed5eda8f98c63d49a09dca1c4f2254a67eac7136e5f0e59fd927bad3",
+    },
+    384879: {
+        "type": VIRTUAL_WRITE_KERNELS,
+        "method": "WriteTransformDataRangeKernel",
+        "role": "post_proxy_world_route_independent_dispatcher",
+        "va": "0x186754680",
+        "fileOffset": "0x6752c80",
+        "bytes": 184,
+        "sha256": "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923",
+    },
+    384901: {
+        "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJobKernels+WriteTransformDataRangeKernel_000002ED$BurstDirectCall",
+        "method": "Invoke",
+        "role": "post_proxy_world_burst_directcall",
+        "va": "0x1867550e4",
+        "fileOffset": "0x67536e4",
+        "bytes": 340,
+        "sha256": "7e15e27032cea2ab2ac74f248af07a56f502027d0e05370d206aa41b0c4abfe7",
+    },
+    385067: {
+        "type": VIRTUAL_LOCAL_WRITE_JOB,
+        "method": "UnsafeDo",
+        "role": "post_proxy_local_worker",
+        "va": "0x186755ca8",
+        "fileOffset": "0x67542a8",
+        "bytes": 356,
+        "sha256": "a060e53d3a5bb005cdeae8e597bb7e9bfc2176ddad93070d225578b904e298fd",
+    },
+    384903: {
+        "type": VIRTUAL_LOCAL_WRITE_KERNELS,
+        "method": "WriteTransformLocalDataRangeKernel",
+        "role": "post_proxy_local_route_independent_dispatcher",
+        "va": "0x186755784",
+        "fileOffset": "0x6753d84",
+        "bytes": 208,
+        "sha256": "b3798e37d293ce37ebc5460db6ce424e40f217ce617057ae96421f3c69a05d9e",
+    },
+    384925: {
+        "type": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJobKernels+WriteTransformLocalDataRangeKernel_000002EF$BurstDirectCall",
+        "method": "Invoke",
+        "role": "post_proxy_local_burst_directcall",
+        "va": "0x1867563d0",
+        "fileOffset": "0x67549d0",
+        "bytes": 400,
+        "sha256": "6ab6d3fe1ebeb9e74eefd7233fdeda8dda0a339f3843425f605154f56757fb4d",
+    },
+}
+
+STAGE_OBSERVER_CHAINS: tuple[dict[str, Any], ...] = (
+    {
+        "stage": "CalcDisplayPosition",
+        "worker": 385713,
+        "dispatcher": 385650,
+        "directCall": 385672,
+        "workerCallOffset": 286,
+        "dispatcherCallOffset": 208,
+        "indirectCall": {"offset": 260, "instructionBytes": "41 ff d2", "operand": "r10"},
+        "managedFallback": {
+            "type": "BeyondDynamicBone.SimulationManager+CalcDisplayPositionJobKernels",
+            "method": "CalcDisplayPositionRangeKernel$BurstManaged",
+            "methodIndex": 385652,
+            "va": "0x1867640f8",
+            "callOffset": 395,
+        },
+    },
+    {
+        "stage": "PostProxyMeshUpdate.WriteTransformData",
+        "worker": 385063,
+        "dispatcher": 384879,
+        "directCall": 384901,
+        "workerCallOffset": 211,
+        "dispatcherCallOffset": 155,
+        "indirectCall": {"offset": 204, "instructionBytes": "ff d0", "operand": "rax"},
+        "managedFallback": {
+            "type": VIRTUAL_WRITE_KERNELS,
+            "method": "WriteTransformDataKernel",
+            "methodIndex": 384878,
+            "va": "0x186754520",
+            "callOffset": 298,
+        },
+    },
+    {
+        "stage": "PostProxyMeshUpdate.WriteTransformLocalData",
+        "worker": 385067,
+        "dispatcher": 384903,
+        "directCall": 384925,
+        "workerCallOffset": 272,
+        "dispatcherCallOffset": 181,
+        "indirectCall": {"offset": 237, "instructionBytes": "41 ff d2", "operand": "r10"},
+        "managedFallback": {
+            "type": VIRTUAL_LOCAL_WRITE_KERNELS,
+            "method": "WriteTransformLocalDataKernel",
+            "methodIndex": 384902,
+            "va": "0x1867555e8",
+            "callOffset": 358,
+        },
+    },
+)
+
+
 # Metadata method identities required by this contract.  The index disambiguates
 # overloaded Execute/AddTransform methods and is checked against the catalog.
 METHODS: tuple[tuple[str, int], ...] = (
@@ -375,6 +516,63 @@ def _metadata_identity(md: Any, type_name: str, method_index: int) -> tuple[str,
     return actual_type, actual_method
 
 
+def _method_pointer(
+    method_index: int,
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+) -> int:
+    pointers = [
+        pointer
+        for pointer, rows in method_by_pointer.items()
+        if any(int(row.get("methodIndex", -1)) == method_index for row in rows)
+    ]
+    if len(pointers) != 1:
+        raise ContractError(f"independent method pointer is ambiguous for method index {method_index}")
+    return pointers[0]
+
+
+def _stage_observer_identity(
+    method_index: int,
+    spec: dict[str, Any],
+    pe: Any,
+    md: Any,
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    pointers: list[int],
+) -> dict[str, Any]:
+    actual_type, actual_method = _metadata_identity(md, str(spec["type"]), method_index)
+    if actual_method != spec["method"]:
+        raise ContractError(f"stage observer method name drift for method index {method_index}: {actual_method}")
+    pointer = _method_pointer(method_index, method_by_pointer)
+    if pointer != int(spec["va"], 16):
+        raise ContractError(f"stage observer method pointer drift for method index {method_index}: 0x{pointer:x}")
+    file_offset, section, _ = pe.file_offset_for_va(pointer)
+    if file_offset is None or section not in {".text", "il2cpp"}:
+        raise ContractError(f"stage observer method is not executable for method index {method_index}")
+    if file_offset != int(spec["fileOffset"], 16):
+        raise ContractError(f"stage observer file offset drift for method index {method_index}: 0x{file_offset:x}")
+    next_pointer = next(
+        (candidate for candidate in pointers if candidate > pointer and pe.file_offset_for_va(candidate)[1] == section),
+        None,
+    )
+    if next_pointer is None or next_pointer - pointer != int(spec["bytes"]):
+        raise ContractError(f"stage observer method span drift for method index {method_index}")
+    body = pe.bytes_at_va(pointer, next_pointer - pointer)
+    actual_hash = hashlib.sha256(body).hexdigest()
+    if actual_hash != spec["sha256"]:
+        raise ContractError(f"stage observer method hash drift for method index {method_index}: {actual_hash}")
+    return {
+        "type": actual_type,
+        "method": actual_method,
+        "methodIndex": method_index,
+        "role": spec["role"],
+        "methodPointerVa": f"0x{pointer:x}",
+        "fileOffset": f"0x{file_offset:x}",
+        "section": section,
+        "bytes": len(body),
+        "sha256": actual_hash,
+        "hashSource": "current metadata method pointer + PE executable section span to next pointer",
+    }
+
+
 def _validate_catalog_against_metadata(catalog: dict[str, Any], md: Any) -> None:
     """Reject catalog self-reported indexes unless raw metadata agrees."""
     for type_name in set(type_name for type_name, _ in METHODS):
@@ -545,10 +743,15 @@ def _resolved(call: dict[str, Any]) -> set[tuple[str, str]]:
     return {(str(row.get("type")), str(row.get("method"))) for row in call.get("resolved", [])}
 
 
-def _decoded_calls(pe: Any, identity: dict[str, Any]) -> dict[int, dict[str, Any]]:
+def _decoded_calls(
+    pe: Any,
+    identity: dict[str, Any],
+    native_parser: Any | None = None,
+) -> dict[int, dict[str, Any]]:
     # Decode directly from the current image; the ignored directCalls list is
     # never consulted.
-    native_parser, _ = _load_il2cpp_helpers()
+    if native_parser is None:
+        native_parser, _ = _load_il2cpp_helpers()
     pointer = int(identity["methodPointerVa"], 16)
     body = pe.bytes_at_va(pointer, int(identity["bytes"]))
     instructions = native_parser.decode_x64_subset(body, pointer, stop_offset=len(body))
@@ -570,6 +773,137 @@ def _decoded_calls(pe: Any, identity: dict[str, Any]) -> dict[int, dict[str, Any
             "va": instruction.get("va"),
         }
     return calls
+
+
+def _stage_observer_contract(
+    pe: Any,
+    md: Any,
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    pointers: list[int],
+) -> dict[str, Any]:
+    identities = {
+        method_index: _stage_observer_identity(
+            method_index,
+            spec,
+            pe,
+            md,
+            method_by_pointer,
+            pointers,
+        )
+        for method_index, spec in STAGE_OBSERVER_METHOD_SPECS.items()
+    }
+    native_parser, _ = _load_il2cpp_helpers()
+
+    def direct_edge(owner_index: int, offset: int, target_index: int, role: str) -> dict[str, Any]:
+        owner = identities[owner_index]
+        target = identities[target_index]
+        call = _decoded_calls(pe, owner, native_parser).get(offset)
+        if call is None or str(call.get("targetVa", "")).lower() != target["methodPointerVa"]:
+            raise ContractError(
+                f"stage observer direct-call edge drift for method {owner_index} at offset {offset}"
+            )
+        return {
+            "ownerMethodIndex": owner_index,
+            "offset": offset,
+            "instructionVa": call["va"],
+            "instructionBytes": call["bytes"],
+            "targetMethodIndex": target_index,
+            "targetVa": target["methodPointerVa"],
+            "role": role,
+        }
+
+    stages: list[dict[str, Any]] = []
+    for chain in STAGE_OBSERVER_CHAINS:
+        worker_index = int(chain["worker"])
+        dispatcher_index = int(chain["dispatcher"])
+        direct_call_index = int(chain["directCall"])
+        fallback = dict(chain["managedFallback"])
+        fallback_index = int(fallback["methodIndex"])
+        fallback_type, fallback_method = _metadata_identity(md, str(fallback["type"]), fallback_index)
+        if fallback_method != fallback["method"]:
+            raise ContractError(f"stage observer fallback method name drift for method index {fallback_index}")
+        fallback_pointer = _method_pointer(fallback_index, method_by_pointer)
+        if fallback_pointer != int(fallback["va"], 16):
+            raise ContractError(f"stage observer fallback pointer drift for method index {fallback_index}")
+
+        worker_edge = direct_edge(
+            worker_index,
+            int(chain["workerCallOffset"]),
+            dispatcher_index,
+            "worker_to_route_independent_dispatcher",
+        )
+        dispatcher_edge = direct_edge(
+            dispatcher_index,
+            int(chain["dispatcherCallOffset"]),
+            direct_call_index,
+            "dispatcher_to_burst_directcall",
+        )
+        direct_identity = identities[direct_call_index]
+        fallback_call = _decoded_calls(pe, direct_identity, native_parser).get(int(fallback["callOffset"]))
+        if fallback_call is None or str(fallback_call.get("targetVa", "")).lower() != f"0x{fallback_pointer:x}":
+            raise ContractError(f"stage observer managed-fallback edge drift for method index {direct_call_index}")
+
+        pointer = int(direct_identity["methodPointerVa"], 16)
+        body = pe.bytes_at_va(pointer, int(direct_identity["bytes"]))
+        instructions = native_parser.decode_x64_subset(body, pointer, stop_offset=len(body))
+        indirect_spec = dict(chain["indirectCall"])
+        indirect_rows = [row for row in instructions if int(row.get("offset", -1)) == int(indirect_spec["offset"])]
+        expected_text = f"call {indirect_spec['operand']}"
+        if (
+            len(indirect_rows) != 1
+            or str(indirect_rows[0].get("bytes", "")).lower() != str(indirect_spec["instructionBytes"]).lower()
+            or str(indirect_rows[0].get("text", "")).lower() != expected_text.lower()
+        ):
+            raise ContractError(f"stage observer Burst function-pointer call drift for method index {direct_call_index}")
+
+        stages.append({
+            "stage": chain["stage"],
+            "worker": identities[worker_index],
+            "routeIndependentDispatcher": identities[dispatcher_index],
+            "burstDirectCall": identities[direct_call_index],
+            "callEdges": [
+                worker_edge,
+                dispatcher_edge,
+                {
+                    "ownerMethodIndex": direct_call_index,
+                    "offset": int(indirect_spec["offset"]),
+                    "instructionVa": indirect_rows[0]["va"],
+                    "instructionBytes": indirect_rows[0]["bytes"],
+                    "operand": indirect_spec["operand"],
+                    "targetVa": None,
+                    "role": "runtime_selected_burst_function_pointer",
+                },
+                {
+                    "ownerMethodIndex": direct_call_index,
+                    "offset": int(fallback["callOffset"]),
+                    "instructionVa": fallback_call["va"],
+                    "instructionBytes": fallback_call["bytes"],
+                    "targetMethodIndex": fallback_index,
+                    "targetVa": f"0x{fallback_pointer:x}",
+                    "role": "managed_fallback",
+                },
+            ],
+            "managedFallback": {
+                "type": fallback_type,
+                "method": fallback_method,
+                "methodIndex": fallback_index,
+                "methodPointerVa": f"0x{fallback_pointer:x}",
+            },
+            "captureBoundary": "observe the GameAssembly route-independent range dispatcher at entry/return; do not hook or replay a guessed Burst implementation",
+        })
+
+    return {
+        "status": "route_independent_gameassembly_worker_entries_closed_selected_burst_route_unobserved",
+        "stages": stages,
+        "selectedBurstCpuRoute": {
+            "status": "unresolved",
+            "runtimeSelectedPointerObserved": False,
+            "selectedExport": None,
+            "selectedCpuVariant": None,
+            "reason": "the current GameAssembly bodies perform an indirect call through a runtime function pointer; the installed static image does not identify the returned lib_burst_generated.dll address or selected CPU variant",
+            "requiredEvidence": "observation-only BurstDirectCall returned-pointer/GetProcAddress telemetry from the exact gated process; no authored curve, parameter, sampled trajectory, or game-state modification",
+        },
+    }
 
 
 def _call_record(
@@ -640,6 +974,7 @@ def build_contract(
         _validate_catalog_against_metadata(catalog, md)
         dummy = _dummy_record(dummy_generation, game_path, metadata_path)
         pinned_spans = _validate_pinned_spans(game_path)
+        stage_observer = _stage_observer_contract(pe, md, method_by_pointer, pointers)
 
         method_identities = [
             _body_identity(native, type_name, index, game_path, pe, md, method_by_pointer, pointers)
@@ -710,6 +1045,7 @@ def build_contract(
                 "transformAccessArrayLifecycle": manager_calls,
                 "transformAccessProperties": transform_access_calls,
                 "burstRangeDispatch": burst_dispatch_calls,
+                "stageObserverEntries": stage_observer,
             },
             "writeback": {
                 "publicationSchedule": {
@@ -783,6 +1119,8 @@ def build_contract(
                 "transform_access_property_writes_closed": True,
                 "job_managed_field_shapes_closed": True,
                 "burst_range_dispatch_edges_closed": bool(burst_dispatch_calls),
+                "stage_observer_gameassembly_entries_closed": True,
+                "selected_burst_cpu_route_closed": False,
                 "result_array_pointer_provenance_closed": True,
                 "world_publication_equations_closed": True,
                 "local_publication_equations_closed": True,
@@ -807,6 +1145,8 @@ def build_contract(
                 "schedule_closed": False,
                 "transform_access_property_reads_closed": False,
                 "transform_access_property_writes_closed": False,
+                "stage_observer_gameassembly_entries_closed": False,
+                "selected_burst_cpu_route_closed": False,
                 "reason": "Native/evidence gate failed closed; no transform writeback claim is published.",
             },
         }
