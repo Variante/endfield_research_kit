@@ -149,28 +149,44 @@ namespace EndfieldGraphShaderLab
 
             foreach (string property in FloatProperties)
             {
-                if (source.HasProperty(property) &&
-                    destination.HasProperty(property))
+                if (!destination.HasProperty(property))
                 {
-                    destination.SetFloat(property, source.GetFloat(property));
+                    failure = property +
+                        " is absent from the generative exact shell";
+                    return false;
                 }
+                if (source.HasProperty(property))
+                    destination.SetFloat(property, source.GetFloat(property));
             }
             foreach (string property in ColorProperties)
             {
-                if (source.HasProperty(property) &&
-                    destination.HasProperty(property))
+                if (!destination.HasProperty(property))
                 {
-                    destination.SetColor(property, source.GetColor(property));
+                    failure = property +
+                        " is absent from the generative exact shell";
+                    return false;
                 }
+                if (source.HasProperty(property))
+                    destination.SetColor(property, source.GetColor(property));
             }
             if (!destination.HasProperty("_ParallaxMarchNum"))
             {
                 failure = "the exact shell lost _ParallaxMarchNum b3 identity";
                 return false;
             }
-            int marchCount = source.HasProperty("_ParallaxMarchNum")
-                ? Mathf.RoundToInt(source.GetFloat("_ParallaxMarchNum"))
+            float marchValue = source.HasProperty("_ParallaxMarchNum")
+                ? source.GetFloat("_ParallaxMarchNum")
                 : destination.GetInteger("_ParallaxMarchNum");
+            if (float.IsNaN(marchValue) || float.IsInfinity(marchValue) ||
+                marchValue < 0.0f || marchValue > int.MaxValue ||
+                Mathf.Floor(marchValue) != marchValue)
+            {
+                failure =
+                    "_ParallaxMarchNum must be an exact non-negative uint " +
+                    "representable by Unity Material.SetInteger";
+                return false;
+            }
+            int marchCount = (int)marchValue;
             destination.SetInteger("_ParallaxMarchNum", marchCount);
             destination.EnableKeyword("ENDFIELD_ORIGINAL_DXBC_M27_EXACT");
             return true;
@@ -181,8 +197,10 @@ namespace EndfieldGraphShaderLab
             bool compilerSubstitutionReady,
             ComputeBuffer transformVariables,
             bool transformVariablesReady,
+            bool transformVariablesM27SourceReady,
             ComputeBuffer shaderVariablesGlobal,
             bool shaderVariablesGlobalReady,
+            bool shaderVariablesGlobalM27SourceReady,
             EndfieldRecoveredTerrainSubsurfaceConstants.PublisherState
                 terrainSubsurfaceConstants,
             CommandBuffer command,
@@ -206,23 +224,23 @@ namespace EndfieldGraphShaderLab
                     "hash-pinned and compiler-substituted";
                 return false;
             }
-            bool transformSourceReady =
-                EndfieldRecoveredDeferredTransformVariablesContract
-                    .TryValidateCurrentPublisherForM27(
-                        out string transformSourceFailure);
-            bool globalSourceReady =
-                EndfieldRecoveredShaderVariablesGlobalContract
-                    .TryValidateCurrentPublisherForM27(
-                        out string globalSourceFailure);
-            if (!transformSourceReady || !globalSourceReady)
+            if (!transformVariablesM27SourceReady ||
+                !shaderVariablesGlobalM27SourceReady)
             {
                 failure = "M27 generative constant-buffer source closure failed: ";
-                if (!transformSourceReady)
-                    failure += transformSourceFailure;
-                if (!transformSourceReady && !globalSourceReady)
+                if (!transformVariablesM27SourceReady)
+                {
+                    failure +=
+                        "b0 selected reads lack current-frame source history";
+                }
+                if (!transformVariablesM27SourceReady &&
+                    !shaderVariablesGlobalM27SourceReady)
                     failure += "; ";
-                if (!globalSourceReady)
-                    failure += globalSourceFailure;
+                if (!shaderVariablesGlobalM27SourceReady)
+                {
+                    failure +=
+                        "b1 selected reads lack authoritative exposure/VFX state";
+                }
                 return false;
             }
             if (!transformVariablesReady || transformVariables == null ||

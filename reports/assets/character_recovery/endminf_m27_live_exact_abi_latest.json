@@ -48,6 +48,625 @@
       "renderTargetCount": 5,
       "depthBound": true
     },
+    "selectedMaterialB3": {
+      "shaderStage": "pixel",
+      "bufferSlot": 3,
+      "logicalName": "UnityPerMaterial",
+      "sourceMaterial": "M_fx_endminm_gfx_27",
+      "usedWordCount": 50,
+      "mappedFieldCount": 37,
+      "bitExactMatches": 50,
+      "unmappedUsedWords": [],
+      "capturedPayloadUsedAtRuntime": false,
+      "usedWords": [
+        {
+          "register": 0,
+          "lane": "x",
+          "byteOffset": 0,
+          "field": "_NormalScale",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 0,
+          "lane": "z",
+          "byteOffset": 8,
+          "field": "_RoughnessMin",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 0,
+          "lane": "w",
+          "byteOffset": 12,
+          "field": "_RoughnessMax",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 1,
+          "lane": "x",
+          "byteOffset": 16,
+          "field": "_OcclusionStrength",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 1,
+          "lane": "w",
+          "byteOffset": 28,
+          "field": "_TwoSidedNormal",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 2,
+          "lane": "w",
+          "byteOffset": 44,
+          "field": "_BaseUVSet",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 3,
+          "lane": "x",
+          "byteOffset": 48,
+          "field": "_BasePbrMapUVSet",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 3,
+          "lane": "y",
+          "byteOffset": 52,
+          "field": "_TAAUNormalBiasReverse",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 3,
+          "lane": "w",
+          "byteOffset": 60,
+          "field": "_BaseTextureMapCount",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 4,
+          "lane": "x",
+          "byteOffset": 64,
+          "field": "_BaseColorTintCover",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 4,
+          "lane": "y",
+          "byteOffset": 68,
+          "field": "_Metallic",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 4,
+          "lane": "z",
+          "byteOffset": 72,
+          "field": "_BaseColorBrighterScale",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 7,
+          "lane": "x",
+          "byteOffset": 112,
+          "field": "_AntiFlicker",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 7,
+          "lane": "z",
+          "byteOffset": 120,
+          "field": "_TaauMaskModeValue",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 8,
+          "lane": "x",
+          "byteOffset": 128,
+          "field": "_BaseColor",
+          "fieldComponent": 0,
+          "sourceKind": "material_color",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 8,
+          "lane": "y",
+          "byteOffset": 132,
+          "field": "_BaseColor",
+          "fieldComponent": 1,
+          "sourceKind": "material_color",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 8,
+          "lane": "z",
+          "byteOffset": 136,
+          "field": "_BaseColor",
+          "fieldComponent": 2,
+          "sourceKind": "material_color",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 8,
+          "lane": "w",
+          "byteOffset": 140,
+          "field": "_BaseColor",
+          "fieldComponent": 3,
+          "sourceKind": "material_color",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 11,
+          "lane": "x",
+          "byteOffset": 176,
+          "field": "_BaseColorMap_ST",
+          "fieldComponent": 0,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 11,
+          "lane": "y",
+          "byteOffset": 180,
+          "field": "_BaseColorMap_ST",
+          "fieldComponent": 1,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 11,
+          "lane": "z",
+          "byteOffset": 184,
+          "field": "_BaseColorMap_ST",
+          "fieldComponent": 2,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 11,
+          "lane": "w",
+          "byteOffset": 188,
+          "field": "_BaseColorMap_ST",
+          "fieldComponent": 3,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 12,
+          "lane": "x",
+          "byteOffset": 192,
+          "field": "_NormalMap_ST",
+          "fieldComponent": 0,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 12,
+          "lane": "y",
+          "byteOffset": 196,
+          "field": "_NormalMap_ST",
+          "fieldComponent": 1,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 12,
+          "lane": "z",
+          "byteOffset": 200,
+          "field": "_NormalMap_ST",
+          "fieldComponent": 2,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 12,
+          "lane": "w",
+          "byteOffset": 204,
+          "field": "_NormalMap_ST",
+          "fieldComponent": 3,
+          "sourceKind": "material_texenv_st",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 22,
+          "lane": "x",
+          "byteOffset": 352,
+          "field": "_ParallaxStrength",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3dc49ba6",
+          "observedWord": "0x3dc49ba6",
+          "bitExact": true
+        },
+        {
+          "register": 24,
+          "lane": "x",
+          "byteOffset": 384,
+          "field": "_ParallaxMarchNum",
+          "fieldComponent": 0,
+          "sourceKind": "material_float_to_uint",
+          "expectedWord": "0x00000005",
+          "observedWord": "0x00000005",
+          "bitExact": true
+        },
+        {
+          "register": 24,
+          "lane": "y",
+          "byteOffset": 388,
+          "field": "_ParallaxTilling",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x40570a3d",
+          "observedWord": "0x40570a3d",
+          "bitExact": true
+        },
+        {
+          "register": 24,
+          "lane": "z",
+          "byteOffset": 392,
+          "field": "_ParallaxAnimSpeed",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 24,
+          "lane": "w",
+          "byteOffset": 396,
+          "field": "_ParallaxAnimRandom",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 25,
+          "lane": "x",
+          "byteOffset": 400,
+          "field": "_ParallaxMinBrightness",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3e4ccccd",
+          "observedWord": "0x3e4ccccd",
+          "bitExact": true
+        },
+        {
+          "register": 25,
+          "lane": "y",
+          "byteOffset": 404,
+          "field": "_ParallaxFresnelStrength",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 25,
+          "lane": "z",
+          "byteOffset": 408,
+          "field": "_ParallaxIgnorePostExposure",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 25,
+          "lane": "w",
+          "byteOffset": 412,
+          "field": "_ParallaxMaskChannel",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 26,
+          "lane": "x",
+          "byteOffset": 416,
+          "field": "_ParallaxMapUVType",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 26,
+          "lane": "y",
+          "byteOffset": 420,
+          "field": "_ParallaxMaskByLayerBlend",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 26,
+          "lane": "z",
+          "byteOffset": 424,
+          "field": "_ParallaxNoiseMapTilling",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 26,
+          "lane": "w",
+          "byteOffset": 428,
+          "field": "_ParallaxCharPos",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 27,
+          "lane": "x",
+          "byteOffset": 432,
+          "field": "_ParallaxBrightOuterRadius",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x41a00000",
+          "observedWord": "0x41a00000",
+          "bitExact": true
+        },
+        {
+          "register": 27,
+          "lane": "y",
+          "byteOffset": 436,
+          "field": "_ParallaxBrightInnerRadius",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x41200000",
+          "observedWord": "0x41200000",
+          "bitExact": true
+        },
+        {
+          "register": 27,
+          "lane": "z",
+          "byteOffset": 440,
+          "field": "_ParallaxBrightStrength",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 28,
+          "lane": "y",
+          "byteOffset": 452,
+          "field": "_UseParallaxMask",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 28,
+          "lane": "w",
+          "byteOffset": 460,
+          "field": "_ParallaxIntensity",
+          "fieldComponent": 0,
+          "sourceKind": "material_float",
+          "expectedWord": "0x3f800000",
+          "observedWord": "0x3f800000",
+          "bitExact": true
+        },
+        {
+          "register": 29,
+          "lane": "x",
+          "byteOffset": 464,
+          "field": "_ParallaxColor",
+          "fieldComponent": 0,
+          "sourceKind": "material_color",
+          "expectedWord": "0x44712e3f",
+          "observedWord": "0x44712e3f",
+          "bitExact": true
+        },
+        {
+          "register": 29,
+          "lane": "y",
+          "byteOffset": 468,
+          "field": "_ParallaxColor",
+          "fieldComponent": 1,
+          "sourceKind": "material_color",
+          "expectedWord": "0x43a570da",
+          "observedWord": "0x43a570da",
+          "bitExact": true
+        },
+        {
+          "register": 29,
+          "lane": "z",
+          "byteOffset": 472,
+          "field": "_ParallaxColor",
+          "fieldComponent": 2,
+          "sourceKind": "material_color",
+          "expectedWord": "0x42ab1a06",
+          "observedWord": "0x42ab1a06",
+          "bitExact": true
+        },
+        {
+          "register": 30,
+          "lane": "x",
+          "byteOffset": 480,
+          "field": "_ParallaxColorDark",
+          "fieldComponent": 0,
+          "sourceKind": "material_color",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 30,
+          "lane": "y",
+          "byteOffset": 484,
+          "field": "_ParallaxColorDark",
+          "fieldComponent": 1,
+          "sourceKind": "material_color",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        },
+        {
+          "register": 30,
+          "lane": "z",
+          "byteOffset": 488,
+          "field": "_ParallaxColorDark",
+          "fieldComponent": 2,
+          "sourceKind": "material_color",
+          "expectedWord": "0x00000000",
+          "observedWord": "0x00000000",
+          "bitExact": true
+        }
+      ]
+    },
+    "runtimeMaterialB3Source": {
+      "name": "M_fx_endminm_gfx_27",
+      "selectedB3OverrideCount": 9,
+      "allEffectiveOverridesMatchOriginalMaterial": true,
+      "capturedPayloadUsedAtRuntime": false,
+      "properties": [
+        {
+          "property": "_BaseColor",
+          "source": "generated_mat_color"
+        },
+        {
+          "property": "_BaseColorMap_ST",
+          "source": "generated_mat_texenv"
+        },
+        {
+          "property": "_NormalMap_ST",
+          "source": "generated_mat_texenv"
+        },
+        {
+          "property": "_ParallaxColor",
+          "source": "generated_mat_color"
+        },
+        {
+          "property": "_ParallaxIntensity",
+          "source": "generated_mat_float"
+        },
+        {
+          "property": "_ParallaxMarchNum",
+          "source": "generated_mat_float"
+        },
+        {
+          "property": "_ParallaxMinBrightness",
+          "source": "generated_mat_float"
+        },
+        {
+          "property": "_ParallaxStrength",
+          "source": "generated_mat_float"
+        },
+        {
+          "property": "_ParallaxTilling",
+          "source": "generated_mat_float"
+        }
+      ],
+      "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
+      "sha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7"
+    },
+    "runtimeSourceConnections": {
+      "b0ReadinessReachesExactDraw": true,
+      "b3RetainedMaterialReachesExactShell": true
+    },
+    "selectedB0SourceContract": {
+      "path": "reports/assets/character_recovery/endminf_m27_b0_source_contract.json",
+      "sha256": "4ba38b099d2ff3d893529cd90fabf234002b9c542868090ec3113e4b1b2c9f5f",
+      "schema": "endfield.endminf-m27-b0-source-contract.v1",
+      "status": "source_closed_runtime_values_not_captured"
+    },
     "orderedMrtDescriptors": [
       {
         "slot": 0,
@@ -252,13 +871,29 @@
         "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
         "sha256": "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46"
       },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
+        "sha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader",
+        "sha256": "d6eb311f77cef2628e3ad1f7541ae2f11d53b6c91653eccdfbdba01128975879"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader.meta": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader.meta",
+        "sha256": "c7c6df7c26dcd35b0deae7ffbb8db758cb7f1ead9316ebc7d45a666571a47a25"
+      },
+      "reports/assets/character_recovery/endminf_m27_b0_source_contract.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_b0_source_contract.json",
+        "sha256": "4ba38b099d2ff3d893529cd90fabf234002b9c542868090ec3113e4b1b2c9f5f"
+      },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs",
-        "sha256": "66170f5632f6bd6349f99722da1d8d715be0921ad4c903252c7e1ee9f5b7c7d4"
+        "sha256": "01460a99ff69b59bac954bc7dbbc331e741509efa5f86358f6bb4d6885379c48"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs",
-        "sha256": "c115fc5c7eb83add2d5e64c27bdc158bda699ac7adbf364b477e9777d956e35e"
+        "sha256": "eabc10c5bf6b43c5a3079cae83ae9807407b562a0a33baeea2fe86a30e3897fa"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs",
@@ -266,15 +901,23 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs",
-        "sha256": "ce3a0849b0677d67a27ebcf8985c81db7ecc4bd43ff350fa4c25a84b6cd3ce83"
+        "sha256": "ada736ac6fa9d2317be6e4648d8c489aad4568cdb4cc2cde51392936d839f4e4"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs",
-        "sha256": "67f0ca5cd3a7f5d3d8a12c9cafe54ee336128c314af3caba5b927c97cd433cab"
+        "sha256": "af5b617a509dbffb97aa17210e02ba46b93436b3efb0770ef421934e3565cbc9"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs",
-        "sha256": "cb0e70cb403437184009f9302c81d03dafb94cbfbd89db74d2d6e3a596d958b5"
+        "sha256": "00cb2e34178ca1b51ad2c74ee68479ee4064b0a09ba65e316d58849da60818a7"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
+        "sha256": "afae0928d5faf28827b262598abbcb2131cc8ac5683c95d4087d4a8b4f661249"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs",
+        "sha256": "5d5229350a67ae30600355d89094b2552db0941f1756983c8c0ac626b50319ec"
       }
     }
   },
@@ -295,11 +938,11 @@
     "generativeSelectorEnablesRetainedRenderer": true,
     "generativeShellIndependentlyPinnedFromD3D11Callback": true,
     "runtimePipelineTagCompileReflectionAndSetPassProven": true,
-    "b0SelectedReadsFullySourcePopulated": false,
+    "b0SelectedReadsFullySourcePopulated": true,
     "b1SelectedReadsFullySourcePopulated": false,
     "b2ActualParticleRecordRangeAndGeometryObserved": false,
     "vertexSkinStructuredResourceAuthenticated": false,
-    "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": false,
+    "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": true,
     "b4SelectedFrameProducerValueAuthenticated": false,
     "orderedMrtSlotsObserved": false,
     "activeSamplerSlotsObserved": false,
@@ -308,15 +951,14 @@
     "boundary": "These flags audit the current implementation only. They do not alter the packet replay, enable the shell, or promote it to presentation."
   },
   "staticAdmissionBlockers": [
-    "b0SelectedReadsFullySourcePopulated",
     "b1SelectedReadsFullySourcePopulated",
     "b2ActualParticleRecordRangeAndGeometryObserved",
     "vertexSkinStructuredResourceAuthenticated",
-    "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
     "b4SelectedFrameProducerValueAuthenticated",
     "orderedMrtSlotsObserved",
     "activeSamplerSlotsObserved",
-    "authenticatedObservationWriterAvailable"
+    "authenticatedObservationWriterAvailable",
+    "admissibleGenerativeParticleRendererPathExists"
   ],
   "liveObservation": {
     "provided": false,
@@ -336,6 +978,6 @@
     "status": "blocked_before_draw_submission",
     "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
   },
-  "smallestRemainingSourceGap": "The named generative shell and default-off ParticleSystemRenderer route now have independently pinned compiler identities and SetPass proof, but admission still requires source-complete selected b0/b1 reads, actual PSR b2 range/geometry and vertex structured-resource authentication, complete b3 word provenance, fresh selected-frame b4 value provenance, ordered MRT/sampler observation, and an authenticated synchronized writer.",
+  "smallestRemainingSourceGap": "Static admission remains fail-closed at: b1SelectedReadsFullySourcePopulated, b2ActualParticleRecordRangeAndGeometryObserved, vertexSkinStructuredResourceAuthenticated, b4SelectedFrameProducerValueAuthenticated, orderedMrtSlotsObserved, activeSamplerSlotsObserved, authenticatedObservationWriterAvailable, admissibleGenerativeParticleRendererPathExists. A synchronized live observation is also required before any diagnostic draw can be admitted.",
   "boundary": "Admission is diagnostic only. It never enables canonical presentation, never consumes captured VB/IB/CB arrays, and never tunes transforms, positions, curves, lighting, or texture sampling."
 }

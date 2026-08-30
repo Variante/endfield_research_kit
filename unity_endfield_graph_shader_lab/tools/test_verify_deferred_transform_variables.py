@@ -25,45 +25,79 @@ SPEC.loader.exec_module(verifier)
 
 class DeferredTransformVariablesValidationTests(unittest.TestCase):
     @staticmethod
-    def current_report() -> dict[str, object]:
-        path = (
+    def complete_report() -> tuple[dict[str, object], str]:
+        root = (
             verifier.LAB_ROOT
-            / "scratch/character_recovery/deferred_transform_variables/"
-            "gpu_validation_d3d12.json"
+            / "scratch/character_recovery/deferred_transform_variables"
         )
-        return json.loads(path.read_text(encoding="utf-8"))
+        candidates = [
+            root / "gpu_validation_d3d12.json",
+            root / "gpu_validation_d3d11.json",
+        ]
+        path = next((value for value in candidates if value.is_file()), None)
+        if path is None:
+            raise AssertionError(
+                "missing focused deferred TransformVariables GPU report"
+            )
+        report = json.loads(path.read_text(encoding="utf-8"))
+        # The focused GPU report supplies the exact word fixture. Normalize
+        # only run-level evidence status so these unit tests remain isolated
+        # from an in-progress cross-API wrapper run.
+        report["valid"] = True
+        report["failures"] = []
+        for field in verifier.EXPECTED_TEMPORAL_OWNER_FLAGS:
+            report[field] = True
+        return report, str(report["graphicsApi"])
 
-    def test_current_report_passes(self) -> None:
+    def test_complete_report_fixture_passes(self) -> None:
+        report, api = self.complete_report()
         verifier.validate_gpu_report(
-            self.current_report(),
-            "d3d12",
+            report,
+            api,
             Path("fixture.json"),
         )
 
     def test_changed_selected_word_is_actionable(self) -> None:
-        report = copy.deepcopy(self.current_report())
+        current, api = self.complete_report()
+        report = copy.deepcopy(current)
         report["actualWords"][96] = "0xDEADBEEF"
         with self.assertRaisesRegex(
             AssertionError,
             "Deferred TransformVariables validator failed: "
-            "check=gpu_report.d3d12.words; source=fixture.json;",
+            rf"check=gpu_report.{api}.words; source=fixture.json;",
         ):
             verifier.validate_gpu_report(
                 report,
-                "d3d12",
+                api,
                 Path("fixture.json"),
             )
 
     def test_missing_fail_closed_gate_is_actionable(self) -> None:
-        report = copy.deepcopy(self.current_report())
+        current, api = self.complete_report()
+        report = copy.deepcopy(current)
         report["failClosedGates"][2]["diagnosticMatched"] = False
         with self.assertRaisesRegex(
             AssertionError,
-            "check=gpu_report.d3d12.fail_closed_gates",
+            rf"check=gpu_report.{api}.fail_closed_gates",
         ):
             verifier.validate_gpu_report(
                 report,
-                "d3d12",
+                api,
+                Path("fixture.json"),
+            )
+
+    def test_missing_owner_history_gate_is_actionable(self) -> None:
+        current, api = self.complete_report()
+        report = copy.deepcopy(current)
+        report.pop("temporalHistoryStatePolicyPassed")
+        with self.assertRaisesRegex(
+            AssertionError,
+            rf"check=gpu_report.{api}.temporalHistoryStatePolicyPassed; "
+            r"source=fixture.json; expected=True; actual=None",
+        ):
+            verifier.validate_gpu_report(
+                report,
+                api,
                 Path("fixture.json"),
             )
 

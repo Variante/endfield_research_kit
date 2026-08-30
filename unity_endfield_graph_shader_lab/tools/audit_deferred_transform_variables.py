@@ -1,60 +1,66 @@
 #!/usr/bin/env python3
-"""Audit the selected deferred resolver's source-backed b30 camera reads."""
+"""Audit exact M27 b0 reads and the source-derived temporal publisher."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
+import struct
+import subprocess
 from pathlib import Path
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
-METADATA = (
-    LAB_ROOT
-    / "scratch/reverse_engineering/sphereoutside_deferred_variant/"
-    "original_shader_export/Shader/"
-    "HGRP_DeferredLighting_p5F10B115E8D3AFDE.shader.bytecode/"
-    "0097_endfield_dxbc_1.dxbc.metadata.json"
-)
-CAMERA_REPORT = (
+BYTECODE_ROOT = LAB_ROOT / "tools/original_dxbc_exact/bytecode"
+VERTEX_DXBC = BYTECODE_ROOT / "endminf_m27_hgbuffer_vs.dxbc"
+PIXEL_DXBC = BYTECODE_ROOT / "endminf_m27_hgbuffer_ps.dxbc"
+FRAME = (
     REPO_ROOT
-    / "scratch/reverse_engineering/"
-    "zhuangfy_specific_lightning901_gacha_camera_frame/"
-    "gacha_camera_frame_report.json"
+    / "scratch/reverse_engineering/endfield_capture/20260829T224523Z/"
+    "graphics/frames/2344/metadata.json"
 )
+CONTRACT = (
+    LAB_ROOT / "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    "EndfieldRecoveredDeferredTransformVariablesContract.cs"
+)
+OWNER = CONTRACT.with_name("EndfieldRecoveredDeferredTransformVariables.cs")
+PIPELINE = CONTRACT.with_name("HGCompatRenderPipeline.cs")
 OUTPUT = (
-    LAB_ROOT
-    / "scratch/character_recovery/deferred_transform_variables/audit.json"
+    REPO_ROOT / "reports/assets/character_recovery/"
+    "endminf_m27_b0_source_contract.json"
 )
-EXPECTED_METADATA_SHA256 = (
-    "07b16f92bce820666837e624777b4160d89bb5faf9a57e8eafe48c6041501cff"
-)
-EXPECTED_CAMERA_REPORT_SHA256 = (
-    "65a49f19e727787e2c34466968dbcb53df890f6ecf79efb0bbcb469dccd138d8"
-)
-EXPECTED_FIELDS = {
-    "_ViewMatrix": {"byteOffset": 0, "register": 0, "rows": 4, "columns": 4},
-    "_InvViewMatrix": {
-        "byteOffset": 64,
-        "register": 4,
-        "rows": 4,
-        "columns": 4,
+
+EXPECTED_DXBC = {
+    "vertex": "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+    "pixel": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+}
+EXPECTED_IDENTITIES = {
+    "vertex": "0xC0266E7FAC0046C1",
+    "pixel": "0x92D80A93ADD9C714",
+}
+EXPECTED_READS = {
+    "vertex": {
+        32: "xyzw", 33: "xyzw", 34: "xyzw", 35: "xyzw",
+        44: "xyz",
+        57: "xyw", 58: "xyw", 59: "xyw", 60: "xyw",
+        81: "xyz",
     },
-    "_InvViewProjMatrix": {
-        "byteOffset": 384,
-        "register": 24,
-        "rows": 4,
-        "columns": 4,
-    },
-    "_WorldSpaceCameraPos_Internal": {
-        "byteOffset": 704,
-        "register": 44,
-        "rows": 4,
-        "columns": 1,
+    "pixel": {
+        0: "z", 1: "z", 2: "z",
+        24: "xyzw", 25: "xyzw", 26: "xyzw", 27: "xyzw",
+        44: "xyz",
     },
 }
+EXPECTED_PIXEL_B3_READS = {
+    0: "xzw", 1: "xw", 2: "w", 3: "xyw", 4: "xyz", 7: "xz",
+    8: "xyzw", 11: "xyzw", 12: "xyzw", 22: "x", 24: "xyzw",
+    25: "xyzw", 26: "xyzw", 27: "xyz", 28: "yw", 29: "xyz",
+    30: "xyz",
+}
+LANE_INDEX = {lane: index for index, lane in enumerate("xyzw")}
 
 
 def sha256(path: Path) -> str:
@@ -72,88 +78,231 @@ def relative(path: Path) -> str:
 def require(check: str, actual: object, expected: object) -> None:
     if actual != expected:
         raise AssertionError(
-            "Deferred TransformVariables audit failed: "
+            "M27 b0 source audit failed: "
             f"check={check}; expected={expected!r}; actual={actual!r}"
         )
 
 
+def find_fxc() -> Path:
+    kits = Path(r"C:\Program Files (x86)\Windows Kits\10\bin")
+    candidates = sorted(kits.glob("*/x64/fxc.exe"), reverse=True)
+    if not candidates:
+        raise AssertionError("M27 b0 source audit failed: fxc.exe is unavailable")
+    return candidates[0]
+
+
+def read_inventory(
+        fxc: Path,
+        path: Path,
+        buffer_slot: int) -> dict[int, str]:
+    result = subprocess.run(
+        [str(fxc), "/dumpbin", "/nologo", str(path)],
+        check=True,
+        capture_output=True,
+        text=True,
+        errors="replace",
+    )
+    lanes: dict[int, set[str]] = {}
+    pattern = rf"cb{buffer_slot}\[(\d+)\]\.([xyzw]+)"
+    for match in re.finditer(pattern, result.stdout):
+        lanes.setdefault(int(match.group(1)), set()).update(match.group(2))
+    return {
+        register: "".join(lane for lane in "xyzw" if lane in values)
+        for register, values in lanes.items()
+    }
+
+
+def find_row(rows: list[dict[str, object]], **wanted: object) -> dict[str, object]:
+    for row in rows:
+        if all(row.get(key) == value for key, value in wanted.items()):
+            return row
+    raise AssertionError(f"M27 b0 source audit failed: missing row {wanted}")
+
+
+def cb_words(row: dict[str, object]) -> list[int]:
+    payload = bytes.fromhex(str(row.get("dataHex", "")))
+    count = int(row.get("capturedConstants", 0))
+    require("captured_b0_bytes", len(payload), count * 16)
+    return list(struct.unpack(f"<{len(payload) // 4}I", payload))
+
+
+def selected_words(words: list[int], register: int, lanes: str) -> list[int]:
+    return [words[register * 4 + LANE_INDEX[lane]] for lane in lanes]
+
+
+def normalize_signed_zero(word: int) -> int:
+    return 0 if word & 0x7FFFFFFF == 0 else word
+
+
 def build_audit() -> dict[str, object]:
-    metadata_hash = sha256(METADATA)
-    camera_hash = sha256(CAMERA_REPORT)
-    require("metadata_sha256", metadata_hash, EXPECTED_METADATA_SHA256)
-    require("camera_report_sha256", camera_hash, EXPECTED_CAMERA_REPORT_SHA256)
+    fxc = find_fxc()
+    for stage, path in (("vertex", VERTEX_DXBC), ("pixel", PIXEL_DXBC)):
+        require(f"{stage}_dxbc_sha256", sha256(path), EXPECTED_DXBC[stage])
+        require(f"{stage}_b0_reads", read_inventory(fxc, path, 0),
+                EXPECTED_READS[stage])
+    require("pixel_b3_reads", read_inventory(fxc, PIXEL_DXBC, 3),
+            EXPECTED_PIXEL_B3_READS)
 
-    metadata = json.loads(METADATA.read_text(encoding="utf-8"))
-    transform = next(
-        row
-        for row in metadata["ConstantBufferParameters"]
-        if row["Name"] == "_TransformVariables"
+    frame = json.loads(FRAME.read_text(encoding="utf-8"))
+    require("frame_capture_incomplete", frame.get("captureIncomplete"), False)
+    require("frame_capture_failed", frame.get("captureFailed"), False)
+    require("frame_dropped_events", frame.get("droppedEvents"), 0)
+    draw = find_row(
+        frame.get("drawRecords", []),
+        priorityShaderPair=True,
+        priorityM27Geometry=True,
     )
-    require("buffer_size", transform["Size"], 1312)
-    require("partial_consumer_metadata", transform["IsPartialCB"], True)
-
-    fields: dict[str, dict[str, int]] = {}
-    for group in ("MatrixParameters", "VectorParameters"):
-        for row in transform[group]:
-            fields[row["Name"]] = {
-                "byteOffset": int(row["Index"]),
-                "register": int(row["Index"]) // 16,
-                "rows": int(row["RowCount"]),
-                "columns": int(row["ColumnCount"]),
-            }
-    require("selected_used_fields", fields, EXPECTED_FIELDS)
-
-    camera = json.loads(CAMERA_REPORT.read_text(encoding="utf-8"))
-    matrix_fixture = camera["d3d12DiagnosticMatrixFixture"]
+    require("draw_ordinal", draw.get("drawOrdinal"), 38)
+    require("draw_count", draw.get("count"), 1080)
+    require("draw_instance_count", draw.get("instanceCount"), 1)
+    shaders = draw.get("shaders", [])
     require(
-        "matrix_construction",
-        matrix_fixture["matrixConstruction"],
-        "GL.GetGPUProjectionMatrix(nonJitteredProjection,true) * "
-        "worldToCameraWithIndices12To14ZeroAnd15One",
+        "draw_vertex_identity",
+        find_row(shaders, stage=0).get("identityHash"),
+        int(EXPECTED_IDENTITIES["vertex"], 16),
     )
     require(
-        "d3d_register_packing",
-        matrix_fixture["d3dRegisterPacking"],
-        "four physical column registers; VS computes "
-        "x*c32+y*c33+z*c34+1*c35",
+        "draw_pixel_identity",
+        find_row(shaders, stage=4).get("identityHash"),
+        int(EXPECTED_IDENTITIES["pixel"], 16),
     )
+    buffers = draw.get("constantBuffers", [])
+    vertex_b0 = find_row(buffers, stage=0, slot=0)
+    pixel_b0 = find_row(buffers, stage=4, slot=0)
+    for stage, row, needed in (
+            ("vertex", vertex_b0, 82), ("pixel", pixel_b0, 28)):
+        require(f"{stage}_b0_range_valid", row.get("rangeValid"), True)
+        require(f"{stage}_b0_metadata_valid", row.get("metadataValid"), True)
+        require(f"{stage}_b0_captured_constants",
+                int(row.get("capturedConstants", 0)) >= needed, True)
+    require("shared_b0_buffer",
+            (vertex_b0.get("bufferId"), vertex_b0.get("firstConstant")),
+            (pixel_b0.get("bufferId"), pixel_b0.get("firstConstant")))
+    vertex_words = cb_words(vertex_b0)
+    pixel_words = cb_words(pixel_b0)
+    current_matrix_words = vertex_words[32 * 4:36 * 4]
+    previous_matrix_words = vertex_words[57 * 4:61 * 4]
+    require(
+        "retail_reset_previous_matrix_numeric",
+        [normalize_signed_zero(word) for word in previous_matrix_words],
+        [normalize_signed_zero(word) for word in current_matrix_words],
+    )
+    matrix_signed_zero_differences = sum(
+        current != previous and normalize_signed_zero(current) ==
+        normalize_signed_zero(previous)
+        for current, previous in zip(current_matrix_words,
+                                     previous_matrix_words)
+    )
+    require(
+        "retail_reset_previous_camera_xyz",
+        selected_words(vertex_words, 81, "xyz"),
+        selected_words(vertex_words, 44, "xyz"),
+    )
+    for register, lanes in EXPECTED_READS["pixel"].items():
+        if register >= 28:
+            continue
+        require(
+            f"shared_stage_b0_c{register}_{lanes}",
+            selected_words(pixel_words, register, lanes),
+            selected_words(vertex_words, register, lanes),
+        )
+
+    contract_text = CONTRACT.read_text(encoding="utf-8")
+    owner_text = OWNER.read_text(encoding="utf-8")
+    pipeline_text = PIPELINE.read_text(encoding="utf-8")
+    for marker in (
+        "public static readonly int[] M27ReadVectors",
+        "nonJitteredGpuProjection * viewNoTranslation",
+        "viewProjection.inverse",
+        "previousFrameHistoryReady",
+        "previousProjection",
+        "previousPosition",
+    ):
+        require(f"contract_marker:{marker}", marker in contract_text, True)
+    for marker in (
+        "Dictionary<int,",
+        ".CameraHistoryState>",
+        ".TryEvaluateHistory(",
+        "Time.frameCount",
+        "CommitHistory(",
+        "currentM27SourceReady = true",
+        "currentM27SourceReady = false",
+    ):
+        require(f"owner_marker:{marker}", marker in owner_text, True)
+    start = pipeline_text.find(
+        "if (EndfieldRecoveredDeferredTransformVariables.IsRequested)")
+    owner_gate = pipeline_text.find(
+        "if (recoveredEndminfLitEffectOwnerActive", start)
+    require("continuous_camera_history_publication",
+            start >= 0 and owner_gate > start and
+            "PrepareAndPublish" in pipeline_text[start:owner_gate], True)
 
     return {
-        "schema": "endfield.deferred-transform-variables-audit.v1",
-        "status": "selected_consumer_used_ranges_source_closed",
-        "constantBuffer": {
-            "name": "_TransformVariables",
-            "binding": 30,
-            "sizeBytes": 1312,
-            "vectorCount": 82,
-            "partialConsumerMetadata": True,
+        "schema": "endfield.endminf-m27-b0-source-contract.v1",
+        "status": "source_closed_runtime_values_not_captured",
+        "exactProgram": {
+            "subProgramIndex": 113,
+            "vertex": {
+                "path": relative(VERTEX_DXBC),
+                "sha256": EXPECTED_DXBC["vertex"],
+                "identity": EXPECTED_IDENTITIES["vertex"],
+                "b0Reads": {str(key): value
+                            for key, value in EXPECTED_READS["vertex"].items()},
+            },
+            "pixel": {
+                "path": relative(PIXEL_DXBC),
+                "sha256": EXPECTED_DXBC["pixel"],
+                "identity": EXPECTED_IDENTITIES["pixel"],
+                "b0Reads": {str(key): value
+                            for key, value in EXPECTED_READS["pixel"].items()},
+                "b3Reads": {
+                    str(key): value
+                    for key, value in EXPECTED_PIXEL_B3_READS.items()
+                },
+            },
         },
-        "selectedUsedFields": fields,
-        "producerFormula": {
-            "view": "HGCamera input world-to-camera matrix",
-            "inverseView": "inverse of the HGCamera input view matrix",
+        "sourceProducer": {
+            "currentView": "camera.worldToCameraMatrix",
             "inverseViewProjection": (
-                "inverse(GL.GetGPUProjectionMatrix(projection,true) * view)"
+                "inverse(GL.GetGPUProjectionMatrix(camera.projectionMatrix, "
+                "renderIntoTexture) * camera.worldToCameraMatrix)"
             ),
-            "worldSpaceCameraPosition": "physical Camera transform position xyz",
-            "matrixPacking": matrix_fixture["d3dRegisterPacking"],
+            "currentNonJitteredViewNoTranslationProjection": (
+                "GL.GetGPUProjectionMatrix(camera.nonJitteredProjectionMatrix, "
+                "renderIntoTexture) * viewWithoutTranslation"
+            ),
+            "cameraPosition": "camera.transform.position",
+            "previousFrame": (
+                "per-camera immediately preceding source-built matrix and "
+                "position when frame/extent/render-target continuity holds"
+            ),
+            "historyReset": (
+                "current matrix and position, matching retail HGCamera reset"
+            ),
+        },
+        "selectedDrawValidation": {
+            "source": {"path": relative(FRAME), "sha256": sha256(FRAME)},
+            "frame": 2344,
+            "drawOrdinal": 38,
+            "actualM27Geometry": True,
+            "currentPreviousMatrixNumericallyExactOnReset": True,
+            "currentPreviousMatrixSignedZeroDifferences":
+                matrix_signed_zero_differences,
+            "currentPreviousCameraXyzBitExactOnReset": True,
+            "sharedStageB0WordsBitExact": True,
+            "capturedPayloadUsedAtRuntime": False,
+        },
+        "sources": {
+            "contract": {"path": relative(CONTRACT), "sha256": sha256(CONTRACT)},
+            "owner": {"path": relative(OWNER), "sha256": sha256(OWNER)},
+            "pipeline": {"path": relative(PIPELINE), "sha256": sha256(PIPELINE)},
         },
         "boundary": (
-            "Only the four fields present in the selected original pass-0 "
-            "partial constant-buffer metadata are closed. The other 69 "
-            "float4 registers remain history/jitter/stereo producer work and "
-            "must stay zero in the default-off lab transport."
+            "Captured b0 values validate names, packing, and retail reset "
+            "semantics only. Runtime values are rebuilt from the live camera "
+            "and per-camera temporal history; no captured matrix, position, "
+            "constant-buffer array, or fitted curve is published."
         ),
-        "sources": {
-            "selectedDxbcMetadata": {
-                "path": relative(METADATA),
-                "sha256": metadata_hash,
-            },
-            "installedCameraMatrixAudit": {
-                "path": relative(CAMERA_REPORT),
-                "sha256": camera_hash,
-            },
-        },
     }
 
 
@@ -171,8 +320,8 @@ def main() -> int:
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(rendered, encoding="utf-8")
     print(
-        "Deferred TransformVariables audit passed: b30=1312 bytes, "
-        "selected fields=4, unknown registers remain fail-closed."
+        "M27 b0 source audit passed: exact DXBC reads, actual draw reset, "
+        "and source-derived temporal publisher are closed."
     )
     return 0
 

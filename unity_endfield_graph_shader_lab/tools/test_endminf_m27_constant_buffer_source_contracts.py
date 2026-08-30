@@ -17,11 +17,18 @@ TRANSFORM = (
     / "Rendering"
     / "EndfieldRecoveredDeferredTransformVariablesContract.cs"
 )
+TRANSFORM_OWNER = TRANSFORM.with_name(
+    "EndfieldRecoveredDeferredTransformVariables.cs"
+)
 GLOBALS = TRANSFORM.with_name(
     "EndfieldRecoveredShaderVariablesGlobalContract.cs"
 )
 GENERATIVE = TRANSFORM.with_name(
     "EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs"
+)
+PIPELINE = TRANSFORM.with_name("HGCompatRenderPipeline.cs")
+BINDING_POLICY = TRANSFORM.with_name(
+    "EndfieldRecoveredDeferredResolverBindingPolicy.cs"
 )
 
 EXPECTED_HASHES = {
@@ -60,6 +67,23 @@ EXPECTED_READS = {
         (1, 27): "y",
         (1, 103): "xyzw",
         (1, 105): "xyzw",
+        (3, 0): "xzw",
+        (3, 1): "xw",
+        (3, 2): "w",
+        (3, 3): "xyw",
+        (3, 4): "xyz",
+        (3, 7): "xz",
+        (3, 8): "xyzw",
+        (3, 11): "xyzw",
+        (3, 12): "xyzw",
+        (3, 22): "x",
+        (3, 24): "xyzw",
+        (3, 25): "xyzw",
+        (3, 26): "xyzw",
+        (3, 27): "xyz",
+        (3, 28): "yw",
+        (3, 29): "xyz",
+        (3, 30): "xyz",
     },
 }
 
@@ -79,7 +103,7 @@ def _find_fxc() -> Path | None:
 
 def _read_set(disassembly: str) -> dict[tuple[int, int], str]:
     lanes: dict[tuple[int, int], set[str]] = {}
-    for match in re.finditer(r"cb([01])\[(\d+)\]\.([xyzw]+)", disassembly):
+    for match in re.finditer(r"cb([013])\[(\d+)\]\.([xyzw]+)", disassembly):
         key = (int(match.group(1)), int(match.group(2)))
         lanes.setdefault(key, set()).update(match.group(3))
     order = "xyzw"
@@ -117,9 +141,39 @@ class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
             "PreviousNonJitteredViewNoTranslationProjectionFirstVector",
             "PreviousCameraPositionVector",
             "previousFrameHistoryReady",
-            "M27 b0 c57-c60/c81 require frame-contiguous previous",
+            "previous rows from the current frame",
+            "public static bool TryEvaluateHistory(",
+            "history.lastPublishedFrame == frame - 1",
+            "public static void CommitHistory(",
         ):
             self.assertIn(token, source)
+
+        owner = TRANSFORM_OWNER.read_text(encoding="utf-8")
+        for token in (
+            ".CameraHistoryState>",
+            ".TryEvaluateHistory(",
+            "CommitHistory(",
+            "history.nonJitteredViewNoTranslationProjection",
+            "history.cameraPosition",
+            "currentM27SourceReady = true",
+            "currentM27SourceReady = false",
+        ):
+            self.assertIn(token, owner)
+
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        publish = pipeline.index(
+            "if (EndfieldRecoveredDeferredTransformVariables.IsRequested)"
+        )
+        owner_gate = pipeline.index(
+            "if (recoveredEndminfLitEffectOwnerActive", publish
+        )
+        self.assertIn("PrepareAndPublish", pipeline[publish:owner_gate])
+
+        policy = BINDING_POLICY.read_text(encoding="utf-8")
+        self.assertIn(
+            "EndfieldRecoveredEndminfM27GenerativeExactRuntime",
+            policy,
+        )
 
     def test_b1_source_equations_and_missing_registers_are_explicit(self) -> None:
         source = GLOBALS.read_text(encoding="utf-8")
@@ -136,11 +190,23 @@ class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
 
     def test_generative_gate_checks_source_closure_before_binding(self) -> None:
         source = GENERATIVE.read_text(encoding="utf-8")
-        gate = source.index("TryValidateCurrentPublisherForM27")
+        gate = source.index("if (!transformVariablesM27SourceReady")
         bind = source.index("command.SetGlobalConstantBuffer")
         self.assertLess(gate, bind)
         self.assertIn(
             "M27 generative constant-buffer source closure failed",
+            source,
+        )
+        self.assertIn("if (!destination.HasProperty(property))", source)
+        self.assertIn("destination.SetTextureScale(", source)
+        self.assertIn("destination.SetTextureOffset(", source)
+        self.assertIn(
+            'destination.SetInteger("_ParallaxMarchNum", marchCount)',
+            source,
+        )
+        self.assertIn("Mathf.Floor(marchValue) != marchValue", source)
+        self.assertIn(
+            "_ParallaxMarchNum must be an exact non-negative uint",
             source,
         )
 

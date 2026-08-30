@@ -236,8 +236,10 @@ namespace EndfieldGraphShaderLab
             bool canonicalFrameResourcesReady,
             ComputeBuffer transformVariables,
             bool transformVariablesReady,
+            bool transformVariablesM27SourceReady,
             ComputeBuffer shaderVariablesGlobal,
             bool shaderVariablesGlobalReady,
+            bool shaderVariablesGlobalM27SourceReady,
             RenderTargetIdentifier canonicalColorTarget,
             RenderTargetIdentifier canonicalDepthTarget)
         {
@@ -495,8 +497,10 @@ namespace EndfieldGraphShaderLab
                                     false,
                                     transformVariables,
                                     transformVariablesReady,
+                                    transformVariablesM27SourceReady,
                                     shaderVariablesGlobal,
                                     shaderVariablesGlobalReady,
+                                    shaderVariablesGlobalM27SourceReady,
                                     terrainSubsurfaceConstants,
                                     command,
                                     out failure))

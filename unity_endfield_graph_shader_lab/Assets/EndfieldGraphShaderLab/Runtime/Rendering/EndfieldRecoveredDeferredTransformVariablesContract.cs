@@ -51,6 +51,78 @@ namespace EndfieldGraphShaderLab
             81,
         };
 
+        /// <summary>
+        /// Per-camera temporal source state shared by the runtime owner and
+        /// deterministic validation. It stores source-built values, never a
+        /// captured constant-buffer payload.
+        /// </summary>
+        public sealed class CameraHistoryState
+        {
+            public Matrix4x4 nonJitteredViewNoTranslationProjection;
+            public Vector3 cameraPosition;
+            public int lastPublishedFrame = -1;
+            public int width;
+            public int height;
+            public bool renderIntoTexture;
+        }
+
+        public static bool TryEvaluateHistory(
+            CameraHistoryState history,
+            int frame,
+            int width,
+            int height,
+            bool renderIntoTexture,
+            out bool previousFrameHistoryReady,
+            out string failure)
+        {
+            previousFrameHistoryReady = false;
+            failure = null;
+            if (frame < 0)
+            {
+                failure = "frame serial must be non-negative";
+                return false;
+            }
+            if (width <= 0 || height <= 0)
+            {
+                failure = "render dimensions must be positive";
+                return false;
+            }
+            if (history != null && history.lastPublishedFrame == frame)
+            {
+                failure =
+                    "the same camera cannot publish TransformVariables twice " +
+                    "in one frame";
+                return false;
+            }
+            previousFrameHistoryReady = history != null &&
+                history.lastPublishedFrame >= 0 &&
+                history.lastPublishedFrame == frame - 1 &&
+                history.width == width &&
+                history.height == height &&
+                history.renderIntoTexture == renderIntoTexture;
+            return true;
+        }
+
+        public static void CommitHistory(
+            CameraHistoryState history,
+            Matrix4x4 currentNonJitteredViewNoTranslationProjection,
+            Vector3 currentCameraPosition,
+            int frame,
+            int width,
+            int height,
+            bool renderIntoTexture)
+        {
+            if (history == null)
+                throw new ArgumentNullException(nameof(history));
+            history.nonJitteredViewNoTranslationProjection =
+                currentNonJitteredViewNoTranslationProjection;
+            history.cameraPosition = currentCameraPosition;
+            history.lastPublishedFrame = frame;
+            history.width = width;
+            history.height = height;
+            history.renderIntoTexture = renderIntoTexture;
+        }
+
         public static bool TryBuild(
             Camera camera,
             bool renderIntoTexture,
@@ -251,20 +323,6 @@ namespace EndfieldGraphShaderLab
                 previousPosition.z,
                 0.0f);
             return true;
-        }
-
-        /// <summary>
-        /// The current owner still invokes the reset-history overload on every
-        /// frame. An exact M27 draw must remain closed until its call site
-        /// supplies frame-contiguous previous camera state.
-        /// </summary>
-        public static bool TryValidateCurrentPublisherForM27(
-            out string failure)
-        {
-            failure =
-                "M27 b0 c57-c60/c81 require frame-contiguous previous " +
-                "non-jittered view-no-translation projection and camera position";
-            return false;
         }
 
         public static uint[] BuildExpectedWords(Vector4[] vectors)

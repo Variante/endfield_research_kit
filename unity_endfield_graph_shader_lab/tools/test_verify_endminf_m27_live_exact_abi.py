@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 HERE = Path(__file__).resolve().parent
@@ -16,6 +18,45 @@ assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
+
+REPO = HERE.parents[1]
+
+
+def b3_source_fixture() -> tuple[
+        dict[str, object], dict[str, object], dict[str, object], str, str, str]:
+    mapping = json.loads((
+        REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
+        "Generated/Characters/Playable/Endminf/ExternalUiEffects/"
+        "endminf_liteffect_resource_mapping.json"
+    ).read_text(encoding="utf-8"))
+    material = json.loads((
+        REPO / "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
+        "json_by_type/Material/"
+        "M_fx_endminm_gfx_27_pA531A88850690EB8.json"
+    ).read_text(encoding="utf-8-sig"))
+    frame = json.loads((
+        REPO / "scratch/reverse_engineering/endfield_capture/"
+        "20260829T224523Z/graphics/frames/2344/metadata.json"
+    ).read_text(encoding="utf-8"))
+    draw = next(
+        row for row in frame["drawRecords"]
+        if row.get("priorityShaderPair") and
+        row.get("priorityM27Geometry"))
+    shell = (
+        REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
+        "Shaders/Diagnostics/EndfieldEndminfM27GenerativeExactAbiShell.shader"
+    ).read_text(encoding="utf-8")
+    runtime_material = (
+        REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
+        "Generated/Characters/Playable/Endminf/Effects/Overview/Materials/"
+        "M_fx_endminm_gfx_27_pA531A88850690EB8.mat"
+    ).read_text(encoding="utf-8")
+    compatibility_shader = (
+        REPO / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/"
+        "Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader"
+    ).read_text(encoding="utf-8")
+    return (mapping, material, draw, shell, runtime_material,
+            compatibility_shader)
 
 
 def complete_observation() -> dict[str, object]:
@@ -258,6 +299,136 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             self.first_failure(value),
             "live.publishers.terrainSubsurfacePublishedMatchesObserved")
 
+    def test_nonadmissible_runtime_path_is_a_static_blocker(self) -> None:
+        blocker_keys = (
+            "generativeShellIndependentlyPinnedFromD3D11Callback",
+            "runtimePipelineTagCompileReflectionAndSetPassProven",
+            "b0SelectedReadsFullySourcePopulated",
+            "b1SelectedReadsFullySourcePopulated",
+            "b2ActualParticleRecordRangeAndGeometryObserved",
+            "vertexSkinStructuredResourceAuthenticated",
+            "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
+            "b4SelectedFrameProducerValueAuthenticated",
+            "orderedMrtSlotsObserved",
+            "activeSamplerSlotsObserved",
+            "authenticatedObservationWriterAvailable",
+            "admissibleGenerativeParticleRendererPathExists",
+        )
+        audit = {key: True for key in blocker_keys}
+        audit["admissibleGenerativeParticleRendererPathExists"] = False
+        with mock.patch.object(
+                MODULE, "_validate_static", return_value=({}, audit)):
+            report = MODULE.build_report(REPO, complete_observation())
+        self.assertFalse(report["admitted"])
+        self.assertEqual(
+            report["staticAdmissionBlockers"],
+            ["admissibleGenerativeParticleRendererPathExists"])
+
+    def test_gap_names_only_current_static_blockers(self) -> None:
+        audit = {
+            "generativeShellIndependentlyPinnedFromD3D11Callback": True,
+            "runtimePipelineTagCompileReflectionAndSetPassProven": True,
+            "b0SelectedReadsFullySourcePopulated": True,
+            "b1SelectedReadsFullySourcePopulated": False,
+            "b2ActualParticleRecordRangeAndGeometryObserved": True,
+            "vertexSkinStructuredResourceAuthenticated": True,
+            "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": True,
+            "b4SelectedFrameProducerValueAuthenticated": True,
+            "orderedMrtSlotsObserved": True,
+            "activeSamplerSlotsObserved": True,
+            "authenticatedObservationWriterAvailable": True,
+            "admissibleGenerativeParticleRendererPathExists": True,
+        }
+        with mock.patch.object(
+                MODULE, "_validate_static", return_value=({}, audit)):
+            report = MODULE.build_report(REPO)
+        gap = report["smallestRemainingSourceGap"]
+        self.assertIn("b1SelectedReadsFullySourcePopulated", gap)
+        self.assertNotIn("b0SelectedReadsFullySourcePopulated", gap)
+        self.assertNotIn("b3AllSelectedWordsTiedToOriginalMaterialAndLayout", gap)
+
+
+class B3MaterialSourceContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        (self.mapping, self.material, self.draw, self.shell,
+         self.runtime_material, self.compatibility_shader) = b3_source_fixture()
+
+    def validate(self) -> dict[str, object]:
+        return MODULE._validate_b3_material_contract(
+            self.mapping,
+            self.material,
+            self.draw,
+            self.shell)
+
+    def validate_runtime_material(self) -> dict[str, object]:
+        return MODULE._validate_runtime_b3_material_source(
+            self.mapping,
+            self.material,
+            self.runtime_material,
+            self.compatibility_shader)
+
+    def test_selected_b3_has_complete_bit_exact_source_join(self) -> None:
+        contract = self.validate()
+        self.assertEqual(contract["usedWordCount"], 50)
+        self.assertEqual(contract["mappedFieldCount"], 37)
+        self.assertEqual(contract["bitExactMatches"], 50)
+        self.assertEqual(contract["unmappedUsedWords"], [])
+        self.assertFalse(contract["capturedPayloadUsedAtRuntime"])
+
+    def test_mutated_field_offset_is_rejected(self) -> None:
+        fields = self.mapping["constantBuffers"]["fragmentFieldMapping"]
+        row = next(item for item in fields
+                   if item.get("buffer") == "UnityPerMaterial" and
+                   item.get("name") == "_ParallaxStrength")
+        row["offsetBytes"] += 4
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_mutated_scalar_is_rejected(self) -> None:
+        self.material["m_SavedProperties"]["m_Floats"][
+            "_ParallaxStrength"] += 0.125
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_mutated_color_is_rejected(self) -> None:
+        self.material["m_SavedProperties"]["m_Colors"][
+            "_ParallaxColor"]["r"] += 1.0
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_mutated_texture_st_is_rejected(self) -> None:
+        self.material["m_SavedProperties"]["m_TexEnvs"][
+            "_BaseColorMap"]["m_Scale"]["X"] = 2.0
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_mutated_captured_word_is_rejected(self) -> None:
+        row = next(item for item in self.draw["constantBuffers"]
+                   if item.get("stage") == 4 and item.get("slot") == 3)
+        row["dataHex"] = "01" + row["dataHex"][2:]
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_march_count_must_remain_uint(self) -> None:
+        self.shell = self.shell.replace(
+            "uint _ParallaxMarchNum : packoffset(c24.x);",
+            "float _ParallaxMarchNum : packoffset(c24.x);")
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate()
+
+    def test_generated_runtime_material_matches_original_b3_overrides(self) -> None:
+        contract = self.validate_runtime_material()
+        self.assertEqual(contract["selectedB3OverrideCount"], 9)
+        self.assertTrue(contract["allEffectiveOverridesMatchOriginalMaterial"])
+        self.assertFalse(contract["capturedPayloadUsedAtRuntime"])
+
+    def test_mutated_generated_runtime_material_is_rejected(self) -> None:
+        self.runtime_material = self.runtime_material.replace(
+            "- _ParallaxStrength: 0.096",
+            "- _ParallaxStrength: 0.5")
+        with self.assertRaises(MODULE.VerificationError):
+            self.validate_runtime_material()
+
 
 class RepositoryGenerativeRouteTests(unittest.TestCase):
     @classmethod
@@ -271,6 +442,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         cls.runtime = (root / "Runtime/Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs").read_text(
             encoding="utf-8")
         cls.frame = (root / "Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs").read_text(
+            encoding="utf-8")
+        cls.pipeline = (root / "Runtime/Rendering/HGCompatRenderPipeline.cs").read_text(
             encoding="utf-8")
         cls.terrain = (root / "Runtime/Rendering/EndfieldRecoveredTerrainSubsurfaceConstants.cs").read_text(
             encoding="utf-8")
@@ -331,6 +504,37 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         self.assertIn(
             "endminfM27Material,\n                                    false,",
             self.frame)
+
+    def test_b0_readiness_and_b3_material_reach_the_exact_draw(self) -> None:
+        connections = MODULE._validate_runtime_source_connections(
+            self.pipeline,
+            self.frame)
+        self.assertTrue(connections["b0ReadinessReachesExactDraw"])
+        self.assertTrue(connections["b3RetainedMaterialReachesExactShell"])
+
+    def test_disconnected_b0_readiness_is_rejected(self) -> None:
+        disconnected = self.frame.replace(
+            "transformVariablesM27SourceReady,\n"
+            "                                    shaderVariablesGlobal,",
+            "false,\n"
+            "                                    shaderVariablesGlobal,",
+            1)
+        connections = MODULE._validate_runtime_source_connections(
+            self.pipeline,
+            disconnected)
+        self.assertFalse(connections["b0ReadinessReachesExactDraw"])
+
+    def test_disconnected_b3_source_material_is_rejected(self) -> None:
+        disconnected = self.frame.replace(
+            "sourceMaterial,\n"
+            "                            endminfM27Material,",
+            "endminfM27Material,\n"
+            "                            endminfM27Material,",
+            1)
+        connections = MODULE._validate_runtime_source_connections(
+            self.pipeline,
+            disconnected)
+        self.assertFalse(connections["b3RetainedMaterialReachesExactShell"])
 
     def test_live_draw_fixed_state_contract_is_present(self) -> None:
         for state in ("ZTest GEqual", "ZWrite On", "Cull Back"):
