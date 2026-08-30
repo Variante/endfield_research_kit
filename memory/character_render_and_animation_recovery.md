@@ -3558,14 +3558,20 @@ authored curves, sampled curve tables, or replay trajectories.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
-IA layouts, five MRT/depth descriptors, full t0-t3 texture mip payloads, and the
-full b0-b4 logical producer contract. It still fails closed because no live
-generative ParticleSystemRenderer observation joins those contracts. The
-current captured constant-buffer packet route and obsolete t2-t5 diagnostic
-bindings are not admissible presentation. The smallest source step is to bind
-the recovered t0-t3 resources, bridge the existing full b0/b1 publishers by
-name, keep UnityPerDraw b2 engine-produced, and observe that live draw before
-enabling anything.
+IA layouts, five MRT/depth descriptors, and full t0-t3 texture mip payloads.
+Its b0 producer is now source-closed from the live camera plus per-camera
+contiguous history: all 22 published vectors pass the D3D11 GPU verifier, reset
+and discontinuity reuse the current frame, and captured constant-buffer bytes
+remain validation-only. All 50 selected b3 words are tied bit-exactly to 37
+original material fields, explicit packoffsets, the generated Unity material,
+and the compatibility shader's effective defaults. b1 remains deliberately
+closed because the live Halton jitter, physical-camera/IFix vector, gameplay
+player-center, and HGVFX anchor lifecycle owners are not recovered. Admission
+also still requires a synchronized runtime join for engine-produced b2, VS
+structured t0, b4, ordered MRTs, s0-s5, the observation writer, and the actual
+generative ParticleSystemRenderer path. Captured packet constants and fitted
+placement, transforms, curves, texture sampling, or lighting are never an
+admissible substitute.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
@@ -3643,9 +3649,10 @@ or shaders rather than hand-editing generated prefabs.
    compatibility renderers. Preserve the captured hierarchy transforms and
    equal-queue ordering unless a same-session packet-to-palm registration proves
    a specific delta. For M27, keep the independently pinned source shell at
-   t0-t5, retain engine-produced b2 and the full b0/b1 publisher bridge, and use
-   the next observer build to close VS structured t0, s0-s5 descriptors, b4
-   producer/value lifecycle, and synchronized target evidence. Require the live
+   t0-t5 and the source-closed b0/b3 producers; leave b1 closed until each live
+   owner is recovered. Retain engine-produced b2 and use the next observer run
+   to close VS structured t0, s0-s5 descriptors, b4 producer/value lifecycle,
+   and synchronized target evidence. Require the live
    exact-ABI verifier to admit the generative ParticleSystemRenderer draw before
    presentation; never restore captured packet constants or tune placement,
    transforms, curves, texture sampling, or lighting to compensate.

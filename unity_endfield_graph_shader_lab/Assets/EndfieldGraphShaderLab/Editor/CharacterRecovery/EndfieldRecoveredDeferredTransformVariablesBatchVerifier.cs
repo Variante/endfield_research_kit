@@ -19,9 +19,10 @@ namespace EndfieldGraphShaderLabEditor
             "EndfieldRecoveredDeferredTransformVariablesProbe";
         private const string KernelName = "Readback";
         private const string SourceAuditRelativePath =
-            "scratch/character_recovery/deferred_transform_variables/audit.json";
+            "../reports/assets/character_recovery/" +
+            "endminf_m27_b0_source_contract.json";
         private const string ExpectedSourceAuditSha256 =
-            "402a8ddb90b1555a78f5e9fd7c7456c1fa5658bb9f55fd1acae9abd2ae516e3b";
+            "4ba38b099d2ff3d893529cd90fabf234002b9c542868090ec3113e4b1b2c9f5f";
 
         private static readonly int ReadbackId = Shader.PropertyToID(
             "_EndfieldRecoveredDeferredTransformReadback");
@@ -60,6 +61,13 @@ namespace EndfieldGraphShaderLabEditor
             public bool viewInverseRoundTrip;
             public bool worldClipRoundTrip;
             public float worldClipRoundTripMaxError;
+            public bool resetHistoryMatchesCurrent;
+            public bool contiguousHistoryMatchesPrevious;
+            public bool discontinuityResetIgnoresStaleHistory;
+            public bool ownerSourceReadyAfterPublish;
+            public bool duplicateSameFrameRejected;
+            public bool duplicateResetSourceReady;
+            public bool temporalHistoryStatePolicyPassed;
             public string[] expectedWords;
             public string[] actualWords;
             public RejectionReport[] failClosedGates;
@@ -73,9 +81,9 @@ namespace EndfieldGraphShaderLabEditor
         {
             string projectRoot = Path.GetFullPath(
                 Path.Combine(Application.dataPath, ".."));
-            string sourceAuditPath = Path.Combine(
+            string sourceAuditPath = Path.GetFullPath(Path.Combine(
                 projectRoot,
-                SourceAuditRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                SourceAuditRelativePath.Replace('/', Path.DirectorySeparatorChar)));
             string outputRoot = Path.Combine(
                 projectRoot,
                 "scratch",
@@ -142,6 +150,14 @@ namespace EndfieldGraphShaderLabEditor
                 uint[] expected =
                     EndfieldRecoveredDeferredTransformVariablesContract
                         .BuildExpectedWords(fixture);
+                bool resetHistoryMatchesCurrent =
+                    ResetHistoryMatchesCurrent(fixture);
+                bool contiguousHistoryMatchesPrevious =
+                    ContiguousHistoryMatchesPrevious(camera, fixture);
+                bool discontinuityResetIgnoresStaleHistory =
+                    DiscontinuityResetIgnoresStaleHistory(camera);
+                bool temporalHistoryStatePolicyPassed =
+                    TemporalHistoryStatePolicyPassed();
 
                 ComputeShader compute = Resources.Load<ComputeShader>(
                     ComputeResourceName);
@@ -173,6 +189,8 @@ namespace EndfieldGraphShaderLabEditor
                     publicationReady = owner.PrepareAndPublish(
                         camera,
                         true,
+                        640,
+                        720,
                         command,
                         out string publicationFailure);
                     if (!publicationReady)
@@ -186,6 +204,12 @@ namespace EndfieldGraphShaderLabEditor
                     Graphics.ExecuteCommandBuffer(command);
                     readbackBuffer.GetData(readback);
                 }
+                bool ownerSourceReadyAfterPublish =
+                    publicationReady && owner.CurrentM27SourceReady;
+                bool duplicateSameFrameRejected =
+                    DuplicateSameFrameRejected(
+                        camera,
+                        out bool duplicateResetSourceReady);
 
                 bool readyObserved = readback[0] == 0x3F800000u;
                 var actual = new uint[expected.Length];
@@ -216,6 +240,44 @@ namespace EndfieldGraphShaderLabEditor
                     failures.Add(
                         "world_clip_roundtrip: max error=" +
                         worldRoundTripError.ToString("R"));
+                }
+                if (!resetHistoryMatchesCurrent)
+                {
+                    failures.Add(
+                        "temporal_reset: previous matrix/camera do not match " +
+                        "the current source-built frame");
+                }
+                if (!contiguousHistoryMatchesPrevious)
+                {
+                    failures.Add(
+                        "temporal_contiguous: previous matrix/camera do not " +
+                        "match the supplied immediately preceding frame");
+                }
+                if (!discontinuityResetIgnoresStaleHistory)
+                {
+                    failures.Add(
+                        "temporal_discontinuity: reset did not ignore stale " +
+                        "matrix/camera inputs");
+                }
+                if (!ownerSourceReadyAfterPublish)
+                    failures.Add("owner_source_ready: publish did not authenticate b0");
+                if (!duplicateSameFrameRejected)
+                {
+                    failures.Add(
+                        "owner_duplicate: same-camera same-frame publication " +
+                        "was not rejected with an actionable diagnostic");
+                }
+                if (!duplicateResetSourceReady)
+                {
+                    failures.Add(
+                        "owner_duplicate_reset: failed publication did not " +
+                        "reset CurrentM27SourceReady");
+                }
+                if (!temporalHistoryStatePolicyPassed)
+                {
+                    failures.Add(
+                        "owner_history_policy: contiguous/discontinuous " +
+                        "history decisions drifted");
                 }
 
                 RejectionReport[] rejections =
@@ -270,6 +332,16 @@ namespace EndfieldGraphShaderLabEditor
                     viewInverseRoundTrip = inverseRoundTrip,
                     worldClipRoundTrip = worldRoundTrip,
                     worldClipRoundTripMaxError = worldRoundTripError,
+                    resetHistoryMatchesCurrent = resetHistoryMatchesCurrent,
+                    contiguousHistoryMatchesPrevious =
+                        contiguousHistoryMatchesPrevious,
+                    discontinuityResetIgnoresStaleHistory =
+                        discontinuityResetIgnoresStaleHistory,
+                    ownerSourceReadyAfterPublish = ownerSourceReadyAfterPublish,
+                    duplicateSameFrameRejected = duplicateSameFrameRejected,
+                    duplicateResetSourceReady = duplicateResetSourceReady,
+                    temporalHistoryStatePolicyPassed =
+                        temporalHistoryStatePolicyPassed,
                     expectedWords = HexWords(expected),
                     actualWords = HexWords(actual),
                     failClosedGates = rejections,
@@ -290,7 +362,11 @@ namespace EndfieldGraphShaderLabEditor
                 }
                 Debug.Log(
                     "Recovered deferred _TransformVariables validation passed: " +
-                    "all 328 words exact, selected vectors=13/13, " +
+                    "all 328 words exact, selected vectors=" +
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .SelectedUsedVectors.Length + "/" +
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .SelectedUsedVectors.Length + ", " +
                     "unresolved rows zero, fail-closed gates=3/3, api=" + api +
                     ", report=" + reportPath +
                     ". Pass 0 remains disabled.");
@@ -422,6 +498,227 @@ namespace EndfieldGraphShaderLabEditor
             for (int column = 0; column < 4; column++)
                 matrix.SetColumn(column, vectors[first + column]);
             return matrix;
+        }
+
+        private static bool ResetHistoryMatchesCurrent(Vector4[] vectors)
+        {
+            return VectorRangeExactlyEqual(
+                    vectors,
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .NonJitteredViewNoTranslationProjectionFirstVector,
+                    vectors,
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .PreviousNonJitteredViewNoTranslationProjectionFirstVector,
+                    4) &&
+                VectorExactlyEqual(
+                    vectors[
+                        EndfieldRecoveredDeferredTransformVariablesContract
+                            .CameraPositionVector],
+                    vectors[
+                        EndfieldRecoveredDeferredTransformVariablesContract
+                            .PreviousCameraPositionVector]);
+        }
+
+        private static bool ContiguousHistoryMatchesPrevious(
+            Camera camera,
+            Vector4[] previous)
+        {
+            Matrix4x4 previousProjection = UnpackMatrix(
+                previous,
+                EndfieldRecoveredDeferredTransformVariablesContract
+                    .NonJitteredViewNoTranslationProjectionFirstVector);
+            Vector4 previousCameraVector = previous[
+                EndfieldRecoveredDeferredTransformVariablesContract
+                    .CameraPositionVector];
+            Vector3 previousCamera = new Vector3(
+                previousCameraVector.x,
+                previousCameraVector.y,
+                previousCameraVector.z);
+            Matrix4x4 movedView = Matrix4x4.TRS(
+                camera.transform.position + new Vector3(0.5f, -0.25f, 1.0f),
+                Quaternion.Euler(17.0f, -19.0f, 5.0f),
+                Vector3.one).inverse;
+            Matrix4x4 gpuProjection = GL.GetGPUProjectionMatrix(
+                camera.projectionMatrix,
+                true);
+            var current = new Vector4[
+                EndfieldRecoveredDeferredTransformVariablesContract.VectorCount];
+            if (!EndfieldRecoveredDeferredTransformVariablesContract.TryBuild(
+                    movedView,
+                    gpuProjection,
+                    gpuProjection,
+                    camera.transform.position +
+                        new Vector3(0.5f, -0.25f, 1.0f),
+                    previousProjection,
+                    previousCamera,
+                    true,
+                    current,
+                    out _))
+            {
+                return false;
+            }
+            return VectorRangeExactlyEqual(
+                    previous,
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .NonJitteredViewNoTranslationProjectionFirstVector,
+                    current,
+                    EndfieldRecoveredDeferredTransformVariablesContract
+                        .PreviousNonJitteredViewNoTranslationProjectionFirstVector,
+                    4) &&
+                VectorExactlyEqual(
+                    previous[
+                        EndfieldRecoveredDeferredTransformVariablesContract
+                            .CameraPositionVector],
+                    current[
+                        EndfieldRecoveredDeferredTransformVariablesContract
+                            .PreviousCameraPositionVector]);
+        }
+
+        private static bool DiscontinuityResetIgnoresStaleHistory(Camera camera)
+        {
+            Matrix4x4 view = camera.worldToCameraMatrix;
+            Matrix4x4 projection = GL.GetGPUProjectionMatrix(
+                camera.projectionMatrix,
+                true);
+            var current = new Vector4[
+                EndfieldRecoveredDeferredTransformVariablesContract.VectorCount];
+            if (!EndfieldRecoveredDeferredTransformVariablesContract.TryBuild(
+                    view,
+                    projection,
+                    projection,
+                    camera.transform.position,
+                    Matrix4x4.Scale(new Vector3(9.0f, 8.0f, 7.0f)),
+                    new Vector3(6.0f, 5.0f, 4.0f),
+                    false,
+                    current,
+                    out _))
+            {
+                return false;
+            }
+            return ResetHistoryMatchesCurrent(current);
+        }
+
+        private static bool VectorRangeExactlyEqual(
+            Vector4[] left,
+            int leftFirst,
+            Vector4[] right,
+            int rightFirst,
+            int count)
+        {
+            for (int index = 0; index < count; index++)
+            {
+                if (!VectorExactlyEqual(
+                        left[leftFirst + index],
+                        right[rightFirst + index]))
+                    return false;
+            }
+            return true;
+        }
+
+        private static bool VectorExactlyEqual(Vector4 left, Vector4 right)
+        {
+            return BitConverter.SingleToInt32Bits(left.x) ==
+                    BitConverter.SingleToInt32Bits(right.x) &&
+                BitConverter.SingleToInt32Bits(left.y) ==
+                    BitConverter.SingleToInt32Bits(right.y) &&
+                BitConverter.SingleToInt32Bits(left.z) ==
+                    BitConverter.SingleToInt32Bits(right.z) &&
+                BitConverter.SingleToInt32Bits(left.w) ==
+                    BitConverter.SingleToInt32Bits(right.w);
+        }
+
+        private static bool DuplicateSameFrameRejected(
+            Camera camera,
+            out bool sourceReadyReset)
+        {
+            sourceReadyReset = false;
+            var owner = new EndfieldRecoveredDeferredTransformVariables();
+            var command = new CommandBuffer
+            {
+                name = "Verify duplicate TransformVariables publication"
+            };
+            try
+            {
+                bool first = owner.PrepareAndPublish(
+                    camera,
+                    true,
+                    640,
+                    720,
+                    command,
+                    out _);
+                bool firstReady = owner.CurrentM27SourceReady;
+                bool second = owner.PrepareAndPublish(
+                    camera,
+                    true,
+                    640,
+                    720,
+                    command,
+                    out string diagnostic);
+                sourceReadyReset = !owner.CurrentM27SourceReady;
+                return first && firstReady && !second &&
+                    diagnostic != null && diagnostic.Contains("twice");
+            }
+            finally
+            {
+                command.Release();
+                owner.Dispose();
+            }
+        }
+
+        private static bool TemporalHistoryStatePolicyPassed()
+        {
+            var history = new EndfieldRecoveredDeferredTransformVariablesContract
+                .CameraHistoryState();
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history, 0, 640, 720, true,
+                        out bool initialReady, out _) || initialReady)
+            {
+                return false;
+            }
+            EndfieldRecoveredDeferredTransformVariablesContract.CommitHistory(
+                history,
+                Matrix4x4.identity,
+                new Vector3(1.0f, 2.0f, 3.0f),
+                0,
+                640,
+                720,
+                true);
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history, 1, 640, 720, true,
+                        out bool contiguousReady, out _) || !contiguousReady)
+            {
+                return false;
+            }
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history, 1, 641, 720, true,
+                        out bool resizedReady, out _) || resizedReady)
+            {
+                return false;
+            }
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history, 1, 640, 720, false,
+                        out bool targetChangedReady, out _) ||
+                targetChangedReady)
+            {
+                return false;
+            }
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history, 2, 640, 720, true,
+                        out bool gapReady, out _) || gapReady)
+            {
+                return false;
+            }
+            return !EndfieldRecoveredDeferredTransformVariablesContract
+                .TryEvaluateHistory(
+                    history, 0, 640, 720, true,
+                    out _, out string duplicateFailure) &&
+                duplicateFailure != null &&
+                duplicateFailure.Contains("twice");
         }
 
         private static bool MatrixApproximatelyIdentity(

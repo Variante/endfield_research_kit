@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
+import struct
 from pathlib import Path
 from typing import Any
 
@@ -97,6 +99,15 @@ CBUFFERS = [
      "EndfieldRecoveredTerrainSubsurfaceConstants"),
 ]
 
+B3_READ_LANES = (
+    (0, "xzw"), (1, "xw"), (2, "w"), (3, "xyw"),
+    (4, "xyz"), (7, "xz"), (8, "xyzw"), (11, "xyzw"),
+    (12, "xyzw"), (22, "x"), (24, "xyzw"), (25, "xyzw"),
+    (26, "xyzw"), (27, "xyz"), (28, "yw"), (29, "xyz"),
+    (30, "xyz"),
+)
+LANE_INDEX = {lane: index for index, lane in enumerate("xyzw")}
+
 
 class VerificationError(RuntimeError):
     pass
@@ -145,6 +156,382 @@ def _find(items: list[dict[str, Any]], **wanted: Any) -> dict[str, Any]:
     raise VerificationError(f"missing row {wanted}")
 
 
+def _float_word(value: Any) -> int:
+    return struct.unpack("<I", struct.pack("<f", float(value)))[0]
+
+
+def _call_text(source: str, callee: str) -> str:
+    """Return one balanced call expression, or an empty string if absent."""
+    start = source.find(callee)
+    if start < 0:
+        return ""
+    opening = source.find("(", start + len(callee))
+    if opening < 0:
+        return ""
+    depth = 0
+    for index in range(opening, len(source)):
+        character = source[index]
+        if character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+            if depth == 0:
+                return source[start:index + 1]
+    return ""
+
+
+def _validate_runtime_source_connections(
+        pipeline_text: str,
+        frame_runtime_text: str) -> dict[str, bool]:
+    """Prove that source readiness/material state reaches the exact draw."""
+    pipeline_render = re.sub(
+        r"\s+", "", _call_text(
+            pipeline_text, "recoveredDeferredGBufferFrame.Render"))
+    frame_render_signature = re.sub(
+        r"\s+", "", _call_text(frame_runtime_text, "internal bool Render"))
+    bind_draw = re.sub(
+        r"\s+", "", _call_text(
+            frame_runtime_text,
+            "endminfM27GenerativeExactRuntime.TryBindDraw"))
+    configure_material = re.sub(
+        r"\s+", "", _call_text(
+            frame_runtime_text,
+            "endminfM27GenerativeExactRuntime.TryConfigureMaterial"))
+
+    b0_pipeline_connection = (
+        "recoveredDeferredTransformVariables.CurrentBuffer,"
+        "recoveredDeferredTransformsReady,"
+        "recoveredDeferredTransformVariables.CurrentM27SourceReady,"
+        "recoveredShaderVariablesGlobal.CurrentBuffer,"
+        "recoveredShaderVariablesGlobalReady,"
+        "recoveredShaderVariablesGlobal.CurrentM27SourceReady" in
+        pipeline_render)
+    b0_frame_connection = (
+        "ComputeBuffertransformVariables,"
+        "booltransformVariablesReady,"
+        "booltransformVariablesM27SourceReady,"
+        "ComputeBuffershaderVariablesGlobal,"
+        "boolshaderVariablesGlobalReady,"
+        "boolshaderVariablesGlobalM27SourceReady" in
+        frame_render_signature and
+        "transformVariables,transformVariablesReady,"
+        "transformVariablesM27SourceReady,shaderVariablesGlobal,"
+        "shaderVariablesGlobalReady,shaderVariablesGlobalM27SourceReady" in
+        bind_draw)
+    b3_material_connection = (
+        "TryConfigureMaterial(sourceMaterial,endminfM27Material,outfailure)" in
+        configure_material)
+    return {
+        "b0ReadinessReachesExactDraw": (
+            b0_pipeline_connection and b0_frame_connection),
+        "b3RetainedMaterialReachesExactShell": b3_material_connection,
+    }
+
+
+def _validate_b3_material_contract(
+        mapping: dict[str, Any],
+        material_json: dict[str, Any],
+        draw: dict[str, Any],
+        shell_text: str) -> dict[str, Any]:
+    """Join exact PS b3 reads to authored material values and live bytes.
+
+    The captured constant buffer authenticates the join only. Runtime binding
+    continues to use Material properties and texture scale/offset state.
+    """
+    fields = [
+        row for row in mapping.get("constantBuffers", {})
+        .get("fragmentFieldMapping", [])
+        if row.get("buffer") == "UnityPerMaterial"
+    ]
+    saved = material_json.get("m_SavedProperties", {})
+    floats = saved.get("m_Floats", {})
+    colors = saved.get("m_Colors", {})
+    tex_envs = saved.get("m_TexEnvs", {})
+    b3 = _find(draw.get("constantBuffers", []), stage=4, slot=3)
+    _require(b3.get("rangeValid") is True and
+             b3.get("metadataValid") is True and
+             b3.get("truncated") is False and
+             b3.get("capturedConstants", 0) >= 31,
+             "selected M27 PS b3 range is not fully captured")
+    try:
+        payload = bytes.fromhex(str(b3.get("dataHex", "")))
+    except ValueError as exc:
+        raise VerificationError("selected M27 PS b3 dataHex is invalid") from exc
+    _require(len(payload) == b3.get("capturedConstants") * 16,
+             "selected M27 PS b3 byte count drifted")
+
+    used_words: list[dict[str, Any]] = []
+    source_field_names: set[str] = set()
+    unmapped: list[str] = []
+    for register, lanes in B3_READ_LANES:
+        for lane in lanes:
+            lane_index = LANE_INDEX[lane]
+            byte_offset = register * 16 + lane_index * 4
+            matches = [
+                row for row in fields
+                if isinstance(row.get("offsetBytes"), int) and
+                isinstance(row.get("sizeBytes"), int) and
+                row["offsetBytes"] <= byte_offset <
+                row["offsetBytes"] + row["sizeBytes"]
+            ]
+            if len(matches) != 1:
+                unmapped.append(f"c{register}.{lane}")
+                continue
+            field = matches[0]
+            name = str(field.get("name", ""))
+            field_offset = int(field["offsetBytes"])
+            size_bytes = int(field["sizeBytes"])
+            _require(field_offset % 4 == 0 and size_bytes in (4, 16),
+                     f"selected M27 b3 field layout drifted for {name}")
+            component = (byte_offset - field_offset) // 4
+            source_kind: str
+            if name.endswith("_ST"):
+                texture_name = name[:-3]
+                tex_env = tex_envs.get(texture_name, {})
+                scale = tex_env.get("m_Scale", {})
+                offset = tex_env.get("m_Offset", {})
+                values = [
+                    scale.get("X"), scale.get("Y"),
+                    offset.get("X"), offset.get("Y"),
+                ]
+                _require(all(value is not None for value in values),
+                         f"authored texture ST is missing for {name}")
+                expected_word = _float_word(values[component])
+                source_kind = "material_texenv_st"
+            elif name in colors:
+                value = colors[name]
+                components = [
+                    value.get("r"), value.get("g"),
+                    value.get("b"), value.get("a"),
+                ]
+                _require(all(item is not None for item in components),
+                         f"authored color is incomplete for {name}")
+                expected_word = _float_word(components[component])
+                source_kind = "material_color"
+            elif name == "_ParallaxMarchNum":
+                value = floats.get(name)
+                _require(value is not None and float(value).is_integer() and
+                         0 <= int(value) <= 0xFFFFFFFF,
+                         "authored _ParallaxMarchNum is not an exact uint")
+                expected_word = int(value)
+                source_kind = "material_float_to_uint"
+            else:
+                _require(name in floats and component == 0,
+                         f"authored scalar is missing for {name}")
+                expected_word = _float_word(floats[name])
+                source_kind = "material_float"
+            observed_word = struct.unpack_from("<I", payload, byte_offset)[0]
+            _require(observed_word == expected_word,
+                     f"selected M27 b3 word mismatch at c{register}.{lane} "
+                     f"({name}): expected 0x{expected_word:08x}, "
+                     f"observed 0x{observed_word:08x}")
+            source_field_names.add(name)
+            used_words.append({
+                "register": register,
+                "lane": lane,
+                "byteOffset": byte_offset,
+                "field": name,
+                "fieldComponent": component,
+                "sourceKind": source_kind,
+                "expectedWord": f"0x{expected_word:08x}",
+                "observedWord": f"0x{observed_word:08x}",
+                "bitExact": True,
+            })
+
+    _require(not unmapped, "selected M27 b3 has unmapped used words: " +
+             ", ".join(unmapped))
+    _require(len(used_words) == 50 and len(source_field_names) == 37,
+             "selected M27 b3 read/field coverage drifted")
+
+    for name in sorted(source_field_names):
+        field = _find(fields, name=name)
+        offset = int(field["offsetBytes"])
+        register = offset // 16
+        lane = "xyzw"[(offset % 16) // 4]
+        if int(field["sizeBytes"]) == 16:
+            declaration = f"float4 {name} : packoffset(c{register});"
+        else:
+            scalar_type = "uint" if name == "_ParallaxMarchNum" else "float"
+            declaration = (
+                f"{scalar_type} {name} : packoffset(c{register}.{lane});")
+        _require(declaration in shell_text,
+                 f"generative shell b3 declaration drifted for {name}")
+
+        if name.endswith("_ST"):
+            texture_name = name[:-3]
+            _require(f"{texture_name} (" in shell_text,
+                     f"generative shell texture property is missing for {name}")
+            continue
+        if name in colors:
+            match = re.search(
+                rf"\b{re.escape(name)}\s+\(\"\",\s*Color\)\s*=\s*\(([^)]*)\)",
+                shell_text)
+            _require(match is not None,
+                     f"generative shell color default is missing for {name}")
+            shell_values = [float(value.strip())
+                            for value in match.group(1).split(",")]
+            authored = colors[name]
+            authored_values = [
+                authored["r"], authored["g"], authored["b"], authored["a"]]
+            _require(len(shell_values) == 4 and all(
+                _float_word(actual) == _float_word(expected)
+                for actual, expected in zip(shell_values, authored_values)),
+                f"generative shell color default drifted for {name}")
+            continue
+        match = re.search(
+            rf"\b{re.escape(name)}\s+\(\"\",\s*(Float|Integer)\)\s*=\s*"
+            rf"([-+0-9.eE]+)",
+            shell_text)
+        _require(match is not None,
+                 f"generative shell scalar default is missing for {name}")
+        expected_kind = "Integer" if name == "_ParallaxMarchNum" else "Float"
+        _require(match.group(1) == expected_kind,
+                 f"generative shell scalar type drifted for {name}")
+        if expected_kind == "Integer":
+            default_matches = int(float(match.group(2))) == int(floats[name])
+        else:
+            default_matches = (
+                _float_word(match.group(2)) == _float_word(floats[name]))
+        _require(default_matches,
+                 f"generative shell scalar default drifted for {name}")
+
+    return {
+        "shaderStage": "pixel",
+        "bufferSlot": 3,
+        "logicalName": "UnityPerMaterial",
+        "sourceMaterial": material_json.get("Name"),
+        "usedWordCount": len(used_words),
+        "mappedFieldCount": len(source_field_names),
+        "bitExactMatches": sum(row["bitExact"] for row in used_words),
+        "unmappedUsedWords": unmapped,
+        "capturedPayloadUsedAtRuntime": False,
+        "usedWords": used_words,
+    }
+
+
+def _validate_runtime_b3_material_source(
+        mapping: dict[str, Any],
+        material_json: dict[str, Any],
+        runtime_material_text: str,
+        compatibility_shader_text: str) -> dict[str, Any]:
+    """Validate the generated Material values actually copied at runtime."""
+    _require("m_Name: M_fx_endminm_gfx_27" in runtime_material_text,
+             "runtime M27 material identity drifted")
+    property_names = set(re.findall(
+        r"^\s*(?:\[[^]]+\]\s*)?(_[A-Za-z0-9_]+)\s+\(",
+        compatibility_shader_text,
+        re.MULTILINE))
+    fields = [
+        row for row in mapping.get("constantBuffers", {})
+        .get("fragmentFieldMapping", [])
+        if row.get("buffer") == "UnityPerMaterial"
+    ]
+    field_names = {str(row.get("name", "")) for row in fields}
+    saved = material_json.get("m_SavedProperties", {})
+    floats = saved.get("m_Floats", {})
+    colors = saved.get("m_Colors", {})
+    tex_envs = saved.get("m_TexEnvs", {})
+    yaml_scalars = {
+        match.group(1): float(match.group(2))
+        for match in re.finditer(
+            r"^\s+- (_[A-Za-z0-9_]+):\s*([-+0-9.eE]+)\s*$",
+            runtime_material_text,
+            re.MULTILINE)
+    }
+    yaml_colors: dict[str, list[float]] = {}
+    for match in re.finditer(
+            r"^\s+- (_[A-Za-z0-9_]+):\s*\{r:\s*([-+0-9.eE]+),\s*"
+            r"g:\s*([-+0-9.eE]+),\s*b:\s*([-+0-9.eE]+),\s*"
+            r"a:\s*([-+0-9.eE]+)\}\s*$",
+            runtime_material_text,
+            re.MULTILINE):
+        yaml_colors[match.group(1)] = [
+            float(match.group(index)) for index in range(2, 6)]
+
+    records: list[dict[str, Any]] = []
+    for name in sorted(field_names):
+        if name.endswith("_ST"):
+            texture_name = name[:-3]
+            if texture_name not in property_names:
+                continue
+            number = r"([-+0-9.eE]+)"
+            match = re.search(
+                rf"^\s+- {re.escape(texture_name)}:\s*\r?\n"
+                rf"\s+m_Texture:.*\r?\n"
+                rf"\s+m_Scale:\s*\{{x:\s*{number},\s*y:\s*{number}\}}\s*\r?\n"
+                rf"\s+m_Offset:\s*\{{x:\s*{number},\s*y:\s*{number}\}}",
+                runtime_material_text,
+                re.MULTILINE)
+            _require(match is not None,
+                     f"runtime M27 material ST is missing for {texture_name}")
+            actual = [float(match.group(index)) for index in range(1, 5)]
+            tex_env = tex_envs.get(texture_name, {})
+            expected = [
+                tex_env.get("m_Scale", {}).get("X"),
+                tex_env.get("m_Scale", {}).get("Y"),
+                tex_env.get("m_Offset", {}).get("X"),
+                tex_env.get("m_Offset", {}).get("Y"),
+            ]
+            _require(all(value is not None for value in expected) and all(
+                _float_word(left) == _float_word(right)
+                for left, right in zip(actual, expected)),
+                f"runtime M27 material ST drifted for {texture_name}")
+            records.append({"property": name, "source": "generated_mat_texenv"})
+            continue
+        if name not in property_names:
+            continue
+        if name in colors:
+            actual = yaml_colors.get(name)
+            if actual is None:
+                default = re.search(
+                    rf"\b{re.escape(name)}\s+\(\"[^\"]*\",\s*Color\)\s*=\s*"
+                    rf"\(([^)]*)\)",
+                    compatibility_shader_text)
+                _require(default is not None,
+                         f"runtime source shader color default is missing for {name}")
+                actual = [float(value.strip())
+                          for value in default.group(1).split(",")]
+            authored = colors[name]
+            expected = [
+                authored["r"], authored["g"], authored["b"], authored["a"]]
+            _require(len(actual) == 4 and all(
+                _float_word(left) == _float_word(right)
+                for left, right in zip(actual, expected)),
+                f"runtime M27 material color drifted for {name}")
+            records.append({"property": name, "source": "generated_mat_color"})
+            continue
+        if name in floats:
+            actual_scalar = yaml_scalars.get(name)
+            if actual_scalar is None:
+                default = re.search(
+                    rf"\b{re.escape(name)}\s+\(\"[^\"]*\",\s*"
+                    rf"(?:Float|Integer)\)\s*=\s*([-+0-9.eE]+)",
+                    compatibility_shader_text)
+                _require(default is not None,
+                         f"runtime source shader scalar default is missing for {name}")
+                actual_scalar = float(default.group(1))
+            _require(_float_word(actual_scalar) == _float_word(floats[name]),
+                     f"runtime M27 material scalar drifted for {name}")
+            if name == "_ParallaxMarchNum":
+                _require(float(actual_scalar).is_integer() and
+                         0 <= int(actual_scalar) <= 0x7FFFFFFF,
+                         "runtime _ParallaxMarchNum is not an exact uint")
+            records.append({"property": name, "source": "generated_mat_float"})
+
+    _require({row["property"] for row in records} == {
+        "_BaseColor", "_BaseColorMap_ST", "_NormalMap_ST",
+        "_ParallaxColor", "_ParallaxIntensity", "_ParallaxMarchNum",
+        "_ParallaxMinBrightness", "_ParallaxStrength", "_ParallaxTilling",
+    }, "runtime M27 material selected b3 override coverage drifted")
+    return {
+        "name": "M_fx_endminm_gfx_27",
+        "selectedB3OverrideCount": len(records),
+        "allEffectiveOverridesMatchOriginalMaterial": True,
+        "capturedPayloadUsedAtRuntime": False,
+        "properties": records,
+    }
+
+
 def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     particle_path = repo / "reports/assets/character_recovery/endminf_m27_particle_abi.json"
     probe_path = repo / "reports/assets/character_recovery/endminf_m27_particle_abi_unity_probe.json"
@@ -189,6 +576,17 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     material_json_path = repo / (
         "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/"
         "Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json")
+    runtime_material_path = repo / (
+        "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/"
+        "Characters/Playable/Endminf/Effects/Overview/Materials/"
+        "M_fx_endminm_gfx_27_pA531A88850690EB8.mat")
+    compatibility_shader_path = repo / (
+        "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/"
+        "Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader")
+    compatibility_shader_meta_path = Path(str(compatibility_shader_path) + ".meta")
+    b0_source_contract_path = repo / (
+        "reports/assets/character_recovery/"
+        "endminf_m27_b0_source_contract.json")
     transform_contract_path = repo / (
         "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
         "Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs")
@@ -207,6 +605,12 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     generative_runtime_path = repo / (
         "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
         "Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs")
+    pipeline_path = repo / (
+        "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
+        "Rendering/HGCompatRenderPipeline.cs")
+    binding_policy_path = repo / (
+        "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
+        "Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs")
 
     paths = [
         particle_path, probe_path, state_path, frame_path, texture_path,
@@ -215,9 +619,12 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         shell_path,
         terrain_contract_path, terrain_publisher_path,
         compatibility_binding_path, shell_observer_path, material_json_path,
+        runtime_material_path, compatibility_shader_path,
+        compatibility_shader_meta_path, b0_source_contract_path,
         transform_contract_path,
         transform_owner_path, global_contract_path, global_owner_path,
-        frame_runtime_path, generative_runtime_path,
+        frame_runtime_path, generative_runtime_path, pipeline_path,
+        binding_policy_path,
     ]
     for path in paths:
         _require(path.is_file(), f"required source is missing: {path}")
@@ -448,6 +855,68 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                  f"M27 exact ABI shell drifted: {declaration}")
     _require("Retail PS DXBC declares and reads all six slots" in shell_text,
              "generative shell lost the retail six-texture source boundary")
+    b3_material_contract = _validate_b3_material_contract(
+        mapping,
+        material_json,
+        draw,
+        shell_text)
+    runtime_material_text = runtime_material_path.read_text(encoding="utf-8")
+    compatibility_shader_text = compatibility_shader_path.read_text(
+        encoding="utf-8")
+    compatibility_shader_meta_text = compatibility_shader_meta_path.read_text(
+        encoding="utf-8")
+    shader_guid = re.search(
+        r"^guid:\s*([0-9a-f]{32})\s*$",
+        compatibility_shader_meta_text,
+        re.MULTILINE)
+    _require(shader_guid is not None and
+             f"guid: {shader_guid.group(1)}" in runtime_material_text,
+             "runtime M27 material compatibility shader identity drifted")
+    runtime_b3_material_source = _validate_runtime_b3_material_source(
+        mapping,
+        material_json,
+        runtime_material_text,
+        compatibility_shader_text)
+    runtime_b3_material_source["path"] = (
+        runtime_material_path.relative_to(repo).as_posix())
+    runtime_b3_material_source["sha256"] = _sha256(runtime_material_path)
+
+    b0_source_contract = _read_json(b0_source_contract_path)
+    _require(b0_source_contract.get("schema") ==
+             "endfield.endminf-m27-b0-source-contract.v1" and
+             b0_source_contract.get("status") ==
+             "source_closed_runtime_values_not_captured" and
+             b0_source_contract.get("selectedDrawValidation", {})
+             .get("capturedPayloadUsedAtRuntime") is False,
+             "M27 b0 source contract is not closed")
+    b0_program = b0_source_contract.get("exactProgram", {})
+    _require(b0_program.get("subProgramIndex") == 113 and
+             b0_program.get("vertex", {}).get("sha256") == VS_SHA256 and
+             b0_program.get("pixel", {}).get("sha256") == PS_SHA256 and
+             b0_program.get("vertex", {}).get("b0Reads") == {
+                 "32": "xyzw", "33": "xyzw", "34": "xyzw",
+                 "35": "xyzw", "44": "xyz", "57": "xyw",
+                 "58": "xyw", "59": "xyw", "60": "xyw", "81": "xyz",
+             } and
+             b0_program.get("pixel", {}).get("b0Reads") == {
+                 "0": "z", "1": "z", "2": "z", "24": "xyzw",
+                 "25": "xyzw", "26": "xyzw", "27": "xyzw",
+                 "44": "xyz",
+             } and
+             b0_program.get("pixel", {}).get("b3Reads") == {
+                 str(register): lanes for register, lanes in B3_READ_LANES
+             },
+             "M27 b0 exact DXBC read inventory drifted")
+    b0_sources = b0_source_contract.get("sources", {})
+    for key, path in (
+            ("contract", transform_contract_path),
+            ("owner", transform_owner_path),
+            ("pipeline", pipeline_path)):
+        _require(b0_sources.get(key, {}).get("sha256") == _sha256(path),
+                 f"M27 b0 source contract is stale at {key}")
+    _require(b0_source_contract.get("selectedDrawValidation", {})
+             .get("source", {}).get("sha256") == _sha256(frame_path),
+             "M27 b0 selected-draw validation source drifted")
 
     generative_pin = _read_json(generative_pin_path)
     _require(generative_pin.get("schema") == GENERATIVE_SHELL_PIN_SCHEMA and
@@ -540,6 +1009,12 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     packet_captured_arrays = "CreateConstantBufferValues()" in runtime_text
     packet_issue = "EndfieldRecoveredEndminfM27ExactRuntime.Issue(command)" in runtime_text
     generative_text = generative_runtime_path.read_text(encoding="utf-8")
+    pipeline_text = pipeline_path.read_text(encoding="utf-8")
+    binding_policy_text = binding_policy_path.read_text(encoding="utf-8")
+    frame_runtime_text = frame_runtime_path.read_text(encoding="utf-8")
+    runtime_source_connections = _validate_runtime_source_connections(
+        pipeline_text,
+        frame_runtime_text)
     compatibility_text = compatibility_binding_path.read_text(encoding="utf-8")
     shell_observer_text = shell_observer_path.read_text(encoding="utf-8")
     generative_forbidden_packet_data = (
@@ -551,11 +1026,50 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         for name in (
             "_BaseColorMap", "_NormalMap", "_MROMap", "_ParallaxMap",
             "_ParallaxMaskMap", "_ParallaxNoiseMap"))
+    generative_required_material_destination = (
+        'if (!destination.HasProperty(property))' in generative_text and
+        'destination.SetTextureScale(' in generative_text and
+        'destination.SetTextureOffset(' in generative_text and
+        'destination.SetInteger("_ParallaxMarchNum", marchCount)' in
+        generative_text)
     full_publishers_connected = (
         "TransformVariablesId" in generative_text and
         "ShaderVariablesGlobalId" in generative_text and
         "EndfieldRecoveredDeferredTransformVariablesContract.SizeBytes" in generative_text and
         "EndfieldRecoveredShaderVariablesGlobalContract.SizeBytes" in generative_text)
+    b0_publish_start = pipeline_text.find(
+        "if (EndfieldRecoveredDeferredTransformVariables.IsRequested)")
+    b0_owner_gate = pipeline_text.find(
+        "if (recoveredEndminfLitEffectOwnerActive", b0_publish_start)
+    b0_continuous_publish = (
+        b0_publish_start >= 0 and b0_owner_gate > b0_publish_start and
+        "PrepareAndPublish" in
+        pipeline_text[b0_publish_start:b0_owner_gate])
+    b0_source_closed = all(marker in transform_contract for marker in (
+        "public static readonly int[] M27ReadVectors",
+        "nonJitteredGpuProjection * viewNoTranslation",
+        "viewProjection.inverse",
+        "previousFrameHistoryReady",
+        "previousProjection",
+        "previousPosition",
+        "public static bool TryEvaluateHistory(",
+        "history.lastPublishedFrame == frame - 1",
+        "public static void CommitHistory(",
+    )) and all(marker in transform_owner for marker in (
+        ".CameraHistoryState>",
+        ".TryEvaluateHistory(",
+        "CommitHistory(",
+        "history.nonJitteredViewNoTranslationProjection",
+        "history.cameraPosition",
+        "currentM27SourceReady = true",
+        "currentM27SourceReady = false",
+    )) and b0_continuous_publish and runtime_source_connections[
+        "b0ReadinessReachesExactDraw"] and (
+        "EndfieldRecoveredEndminfM27GenerativeExactRuntime" in
+        binding_policy_text) and all(marker in generative_text for marker in (
+            "bool transformVariablesM27SourceReady",
+            "if (!transformVariablesM27SourceReady",
+        ))
     engine_per_draw = "cbuffer UnityPerDraw : register(b2)" in shell_text
     b4_fail_closed = (
         "fresh selected-frame value provenance" in generative_text and
@@ -612,6 +1126,15 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         },
         "inputAssembler": {"allowedVertexStrides": ALLOWED_IA_STRIDES},
         "fiveMrtDescriptor": TARGET,
+        "selectedMaterialB3": b3_material_contract,
+        "runtimeMaterialB3Source": runtime_b3_material_source,
+        "runtimeSourceConnections": runtime_source_connections,
+        "selectedB0SourceContract": {
+            "path": b0_source_contract_path.relative_to(repo).as_posix(),
+            "sha256": _sha256(b0_source_contract_path),
+            "schema": b0_source_contract.get("schema"),
+            "status": b0_source_contract.get("status"),
+        },
         "orderedMrtDescriptors": [
             {
                 "slot": slot,
@@ -658,11 +1181,19 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             selector_enables_retained_renderer,
         "generativeShellIndependentlyPinnedFromD3D11Callback": True,
         "runtimePipelineTagCompileReflectionAndSetPassProven": True,
-        "b0SelectedReadsFullySourcePopulated": False,
+        "b0SelectedReadsFullySourcePopulated": b0_source_closed,
         "b1SelectedReadsFullySourcePopulated": False,
         "b2ActualParticleRecordRangeAndGeometryObserved": False,
         "vertexSkinStructuredResourceAuthenticated": False,
-        "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": False,
+        "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": (
+            b3_material_contract["usedWordCount"] == 50 and
+            b3_material_contract["bitExactMatches"] == 50 and
+            b3_material_contract["unmappedUsedWords"] == [] and
+            runtime_b3_material_source[
+                "allEffectiveOverridesMatchOriginalMaterial"] is True and
+            generative_required_material_destination and
+            runtime_source_connections[
+                "b3RetainedMaterialReachesExactShell"]),
         "b4SelectedFrameProducerValueAuthenticated": False,
         "orderedMrtSlotsObserved": False,
         "activeSamplerSlotsObserved": False,
@@ -931,6 +1462,7 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
         "orderedMrtSlotsObserved",
         "activeSamplerSlotsObserved",
         "authenticatedObservationWriterAvailable",
+        "admissibleGenerativeParticleRendererPathExists",
     ]
     static_blockers = [key for key in blocker_keys if not audit.get(key)]
     admitted = (observation is not None and not failures and
@@ -941,13 +1473,9 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
     elif observation is None:
         status = "fail_closed_generative_route_not_source_complete"
         gap = (
-            "The named generative shell and default-off ParticleSystemRenderer "
-            "route now have independently pinned compiler identities and SetPass "
-            "proof, but admission still requires source-complete selected b0/b1 "
-            "reads, actual PSR b2 range/geometry and vertex structured-resource "
-            "authentication, complete b3 word provenance, fresh selected-frame b4 "
-            "value provenance, ordered MRT/sampler observation, and an "
-            "authenticated synchronized writer."
+            "Static admission remains fail-closed at: " +
+            ", ".join(static_blockers) + ". A synchronized live observation "
+            "is also required before any diagnostic draw can be admitted."
         )
     elif not failures and static_blockers:
         status = "fail_closed_static_admission_blockers"

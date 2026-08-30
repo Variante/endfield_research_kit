@@ -1622,6 +1622,39 @@ namespace EndfieldGraphShaderLab
             bool recoveredCanonicalFrameResourcesReady = false;
             bool recoveredDeferredTransformsReady = false;
             bool recoveredShaderVariablesGlobalReady = false;
+            // Camera temporal history is a source producer, not a particle-
+            // visibility or canonical-lighting side effect. Advance it on
+            // every requested camera frame so an inactive interval cannot be
+            // mislabeled as contiguous M27 history when the draw reappears.
+            if (EndfieldRecoveredDeferredTransformVariables.IsRequested)
+            {
+                recoveredDeferredTransformsReady =
+                    recoveredDeferredTransformVariables.PrepareAndPublish(
+                        camera,
+                        true,
+                        renderWidth,
+                        renderHeight,
+                        commandBuffer,
+                        out string transformFailure);
+                if (recoveredDeferredTransformsReady)
+                {
+                    if (!loggedRecoveredDeferredTransformActivation)
+                    {
+                        Debug.Log(
+                            "Recovered selected deferred _TransformVariables " +
+                            "b30 reads are active for the physical CharInfo " +
+                            "camera; pass0=disabled.");
+                        loggedRecoveredDeferredTransformActivation = true;
+                    }
+                }
+                else if (!loggedRecoveredDeferredTransformFailure)
+                {
+                    Debug.LogWarning(
+                        "Recovered selected deferred _TransformVariables " +
+                        "failed closed: " + transformFailure + ".");
+                    loggedRecoveredDeferredTransformFailure = true;
+                }
+            }
             if (recoveredCanonicalBinningReady)
             {
                 string reflectionFailure;
@@ -1696,37 +1729,6 @@ namespace EndfieldGraphShaderLab
                         }
                         recoveredCanonicalFrameResourcesReady = true;
                         if (recoveredEndminfLitEffectOwnerActive &&
-                            EndfieldRecoveredDeferredTransformVariables.IsRequested)
-                        {
-                            recoveredDeferredTransformsReady =
-                                recoveredDeferredTransformVariables
-                                    .PrepareAndPublish(
-                                        camera,
-                                        true,
-                                        commandBuffer,
-                                        out string transformFailure);
-                            if (recoveredDeferredTransformsReady)
-                            {
-                                if (!loggedRecoveredDeferredTransformActivation)
-                                {
-                                    Debug.Log(
-                                        "Recovered selected deferred " +
-                                        "_TransformVariables b30 reads are active " +
-                                        "for the physical CharInfo camera; pass0=" +
-                                        "disabled.");
-                                    loggedRecoveredDeferredTransformActivation = true;
-                                }
-                            }
-                            else if (!loggedRecoveredDeferredTransformFailure)
-                            {
-                                Debug.LogWarning(
-                                    "Recovered selected deferred " +
-                                    "_TransformVariables failed closed: " +
-                                    transformFailure + ".");
-                                loggedRecoveredDeferredTransformFailure = true;
-                            }
-                        }
-                        if (recoveredEndminfLitEffectOwnerActive &&
                             EndfieldRecoveredShaderVariablesGlobal.IsRequested)
                         {
                             Vector4 environmentParams = characterVolume != null
@@ -1764,17 +1766,6 @@ namespace EndfieldGraphShaderLab
                         }
                     }
                 }
-            }
-            if (recoveredEndminfLitEffectOwnerActive &&
-                EndfieldRecoveredDeferredTransformVariables.IsRequested &&
-                !recoveredCanonicalFrameResourcesReady &&
-                !loggedRecoveredDeferredTransformFailure)
-            {
-                Debug.LogWarning(
-                    "Recovered selected deferred _TransformVariables failed " +
-                    "closed: canonical binning/reflection/" +
-                    "VisibilitySHConstData prerequisites are not ready.");
-                loggedRecoveredDeferredTransformFailure = true;
             }
             if (recoveredEndminfLitEffectOwnerActive &&
                 EndfieldRecoveredShaderVariablesGlobal.IsRequested &&
@@ -2018,8 +2009,12 @@ namespace EndfieldGraphShaderLab
                         recoveredCanonicalFrameResourcesReady,
                         recoveredDeferredTransformVariables.CurrentBuffer,
                         recoveredDeferredTransformsReady,
+                        recoveredDeferredTransformVariables
+                            .CurrentM27SourceReady,
                         recoveredShaderVariablesGlobal.CurrentBuffer,
                         recoveredShaderVariablesGlobalReady,
+                        recoveredShaderVariablesGlobal
+                            .CurrentM27SourceReady,
                         canonicalColorTarget,
                         canonicalDepthTarget);
             }

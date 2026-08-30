@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -24,8 +25,14 @@ namespace EndfieldGraphShaderLab
 
         private readonly Vector4[] vectors = new Vector4[
             EndfieldRecoveredDeferredTransformVariablesContract.VectorCount];
+        private readonly Dictionary<int,
+            EndfieldRecoveredDeferredTransformVariablesContract.CameraHistoryState>
+            cameraHistory = new Dictionary<int,
+                EndfieldRecoveredDeferredTransformVariablesContract
+                    .CameraHistoryState>();
         private ComputeBuffer buffer;
         private bool disposed;
+        private bool currentM27SourceReady;
 
         public static bool IsRequested
         {
@@ -42,6 +49,8 @@ namespace EndfieldGraphShaderLab
         public bool PrepareAndPublish(
             Camera camera,
             bool renderIntoTexture,
+            int width,
+            int height,
             CommandBuffer commandBuffer,
             out string failure)
         {
@@ -60,9 +69,43 @@ namespace EndfieldGraphShaderLab
                 failure = "explicit deferred TransformVariables selector is disabled";
                 return false;
             }
+            if (camera == null)
+            {
+                failure = "physical camera is required";
+                return false;
+            }
+            if (width <= 0 || height <= 0)
+            {
+                failure = "render dimensions must be positive";
+                return false;
+            }
+            int cameraId = camera.GetInstanceID();
+            cameraHistory.TryGetValue(
+                cameraId,
+                out EndfieldRecoveredDeferredTransformVariablesContract
+                    .CameraHistoryState history);
+            if (!EndfieldRecoveredDeferredTransformVariablesContract
+                    .TryEvaluateHistory(
+                        history,
+                        Time.frameCount,
+                        width,
+                        height,
+                        renderIntoTexture,
+                        out bool previousFrameHistoryReady,
+                        out failure))
+            {
+                return false;
+            }
             if (!EndfieldRecoveredDeferredTransformVariablesContract.TryBuild(
                     camera,
                     renderIntoTexture,
+                    history != null
+                        ? history.nonJitteredViewNoTranslationProjection
+                        : Matrix4x4.identity,
+                    history != null
+                        ? history.cameraPosition
+                        : Vector3.zero,
+                    previousFrameHistoryReady,
                     vectors,
                     out failure))
             {
@@ -85,6 +128,31 @@ namespace EndfieldGraphShaderLab
                     EndfieldRecoveredDeferredTransformVariablesContract
                         .D3D11SelectedSizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
+                var currentProjection = Matrix4x4.zero;
+                for (int column = 0; column < 4; column++)
+                {
+                    currentProjection.SetColumn(
+                        column,
+                        vectors[
+                            EndfieldRecoveredDeferredTransformVariablesContract
+                                .NonJitteredViewNoTranslationProjectionFirstVector +
+                            column]);
+                }
+                if (history == null)
+                {
+                    history = new EndfieldRecoveredDeferredTransformVariablesContract
+                        .CameraHistoryState();
+                    cameraHistory.Add(cameraId, history);
+                }
+                EndfieldRecoveredDeferredTransformVariablesContract.CommitHistory(
+                    history,
+                    currentProjection,
+                    camera.transform.position,
+                    Time.frameCount,
+                    width,
+                    height,
+                    renderIntoTexture);
+                currentM27SourceReady = true;
                 // The combined pass-0 subset gate is raised only after b31
                 // _LightDataBuffer also succeeds later in the same frame.
                 return true;
@@ -104,15 +172,19 @@ namespace EndfieldGraphShaderLab
                 throw new ArgumentNullException(nameof(commandBuffer));
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 0.0f);
+            currentM27SourceReady = false;
         }
 
         internal ComputeBuffer CurrentBuffer => buffer;
+        public bool CurrentM27SourceReady => currentM27SourceReady;
 
         public void Dispose()
         {
             if (disposed)
                 return;
             disposed = true;
+            cameraHistory.Clear();
+            currentM27SourceReady = false;
             if (buffer != null)
             {
                 buffer.Release();

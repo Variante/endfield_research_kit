@@ -18,8 +18,20 @@ EXPECTED_SELECTED_VECTORS = [
     0, 1, 2, 3,
     4, 5, 6, 7,
     24, 25, 26, 27,
+    32, 33, 34, 35,
     44,
+    57, 58, 59, 60,
+    81,
 ]
+EXPECTED_TEMPORAL_OWNER_FLAGS = (
+    "resetHistoryMatchesCurrent",
+    "contiguousHistoryMatchesPrevious",
+    "discontinuityResetIgnoresStaleHistory",
+    "ownerSourceReadyAfterPublish",
+    "duplicateSameFrameRejected",
+    "duplicateResetSourceReady",
+    "temporalHistoryStatePolicyPassed",
+)
 ACTIVE_TOKEN = (
     "Recovered selected deferred _TransformVariables b30 reads are active "
     "for the physical CharInfo camera; pass0=disabled."
@@ -101,6 +113,13 @@ def validate_gpu_report(
         ),
         (True, True, True, True, True, True, True),
     )
+    for field in EXPECTED_TEMPORAL_OWNER_FLAGS:
+        require(
+            source,
+            f"gpu_report.{api}.{field}",
+            report.get(field),
+            True,
+        )
     require(
         source,
         f"gpu_report.{api}.word_count",

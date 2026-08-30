@@ -1498,7 +1498,13 @@ def verify_deferred_transform_variables_gpu_report(
     source: Path,
 ) -> None:
     expected_vectors = [
-        0, 1, 2, 3, 4, 5, 6, 7, 24, 25, 26, 27, 44
+        0, 1, 2, 3,
+        4, 5, 6, 7,
+        24, 25, 26, 27,
+        32, 33, 34, 35,
+        44,
+        57, 58, 59, 60,
+        81,
     ]
     require_deferred_transform_variables_value(
         source,
@@ -1545,6 +1551,21 @@ def verify_deferred_transform_variables_gpu_report(
         ),
         (True, True, True, True, True, True, True, []),
     )
+    for field in (
+        "resetHistoryMatchesCurrent",
+        "contiguousHistoryMatchesPrevious",
+        "discontinuityResetIgnoresStaleHistory",
+        "ownerSourceReadyAfterPublish",
+        "duplicateSameFrameRejected",
+        "duplicateResetSourceReady",
+        "temporalHistoryStatePolicyPassed",
+    ):
+        require_deferred_transform_variables_value(
+            source,
+            f"transform_variables.{api}.{field}",
+            report.get(field),
+            True,
+        )
     require_deferred_transform_variables_value(
         source,
         f"transform_variables.{api}.words",

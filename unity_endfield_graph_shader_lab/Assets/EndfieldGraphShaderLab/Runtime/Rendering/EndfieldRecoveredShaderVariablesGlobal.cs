@@ -110,6 +110,10 @@ namespace EndfieldGraphShaderLab
         }
 
         internal ComputeBuffer CurrentBuffer => buffer;
+        // The current publisher lacks authenticated exposure and VFX clock/
+        // anchor producers for the selected M27 reads. Keep the exact draw
+        // closed even though the broader diagnostic buffer can be published.
+        internal bool CurrentM27SourceReady => false;
 
         public void Dispose()
         {
