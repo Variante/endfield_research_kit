@@ -55,6 +55,10 @@ namespace EndfieldGraphShaderLab
         public EndfieldSecondaryDynamicsTransformSnapshotAdapter.SnapshotFrame
             LatestTransformSnapshot { get; private set; }
         public int UpdateLocation => updateLocation;
+        public int PendingCrossFrameGeneration => crossFramePublication == null
+            ? -1 : crossFramePublication.PendingGeneration;
+        public int LastPublishedCrossFrameGeneration => crossFramePublication == null
+            ? -1 : crossFramePublication.LastPublishedGeneration;
 
         [SerializeField, Range(0, 1)]
         private int updateLocation;
@@ -62,6 +66,7 @@ namespace EndfieldGraphShaderLab
         private EndfieldSecondaryDynamicsTransformSnapshotAdapter transformSnapshotAdapter;
         private EndfieldSecondaryDynamicsFrameCoordinator frameCoordinator;
         private EndfieldSecondaryDynamicsTransformPublicationAdapter transformPublicationAdapter;
+        private EndfieldSecondaryDynamicsCrossFramePublication crossFramePublication;
 
         private const float EnableRate = 8.0f;
         private const float DisableRate = 6.0f;
@@ -97,6 +102,14 @@ namespace EndfieldGraphShaderLab
                     data, LatestTransformSnapshot.Owners);
                 transformPublicationAdapter =
                     new EndfieldSecondaryDynamicsTransformPublicationAdapter(transform, data);
+                crossFramePublication =
+                    new EndfieldSecondaryDynamicsCrossFramePublication();
+                // AddTransform initializes both the current and last world/local
+                // arrays from the same live transform state. The coordinator's
+                // initial publication arrays are built from that exact snapshot.
+                crossFramePublication.SeedFromAddTransform(
+                    frameCoordinator.PublicationPositions,
+                    frameCoordinator.PublicationRotations);
             }
             catch (Exception exception)
             {
@@ -105,6 +118,7 @@ namespace EndfieldGraphShaderLab
                 transformSnapshotAdapter = null;
                 frameCoordinator = null;
                 transformPublicationAdapter = null;
+                crossFramePublication = null;
                 LatestTransformSnapshot = null;
                 Debug.LogError(
                     "Recovered secondary dynamics failed closed on " + name + ": " +
@@ -125,6 +139,7 @@ namespace EndfieldGraphShaderLab
             transformSnapshotAdapter = null;
             frameCoordinator = null;
             transformPublicationAdapter = null;
+            crossFramePublication = null;
             LatestTransformSnapshot = null;
             LastSimulationSubsteps = Array.Empty<int>();
             LatestTransformPublication =
@@ -156,7 +171,19 @@ namespace EndfieldGraphShaderLab
 
             try
             {
+                // Observed cross-frame order is: finish prior master,
+                // ReadTransform into current arrays, publish distinct last arrays,
+                // then schedule current simulation. The one-callback retained
+                // result models the observed histories; the native copy/swap
+                // mechanism and reset lifecycle remain unrecovered.
                 LatestTransformSnapshot = transformSnapshotAdapter.Capture();
+                EndfieldSecondaryDynamicsCrossFramePublication.Frame completed =
+                    crossFramePublication.TakeCompletedForPublication();
+                LatestTransformPublication = transformPublicationAdapter.Publish(
+                    completed.Positions,
+                    completed.Rotations,
+                    CurrentWeight,
+                    true);
                 LastSimulationSubsteps = frameCoordinator.AdvanceFrame(
                     new EndfieldSecondaryDynamicsFrameCoordinator.FrameInput
                     {
@@ -184,11 +211,9 @@ namespace EndfieldGraphShaderLab
                         CurrentColliderSamples =
                             LatestTransformSnapshot.CurrentColliderSamples,
                     });
-                LatestTransformPublication = transformPublicationAdapter.Publish(
+                crossFramePublication.StageCurrentSimulation(
                     frameCoordinator.PublicationPositions,
-                    frameCoordinator.PublicationRotations,
-                    CurrentWeight,
-                    true);
+                    frameCoordinator.PublicationRotations);
             }
             catch (Exception exception)
             {
@@ -197,6 +222,7 @@ namespace EndfieldGraphShaderLab
                 Active.Remove(this);
                 frameCoordinator = null;
                 transformPublicationAdapter = null;
+                crossFramePublication = null;
                 Debug.LogError(
                     "Recovered secondary dynamics failed closed on " + name + ": " +
                     BindingFailure, this);
