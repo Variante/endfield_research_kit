@@ -27,8 +27,11 @@ struct Entry
 // These Unity-compiled shell hashes were isolated by activating dedicated
 // reserved material variants after arming the compiler extension. Stage-only,
 // size-only, keyword-only, and first-seen matching remain forbidden because the
-// binary callback carries no shader name. The first pair is M27 HGBuffer; the
-// second pair is M14 VFXBaseV2 SceneColor/SceneMV.
+// binary callback carries no shader name. The first pair is the immutable M27
+// packet shell, the second pair is M14 VFXBaseV2 SceneColor/SceneMV, and the
+// third pair is the source-driven M27 ParticleSystemRenderer shell. The third
+// pair was required to match in two fresh D3D11 editor processes before being
+// pinned; it does not authorize draw submission or captured packet data.
 inline constexpr Entry kEntries[] = {
     {
         Stage::Vertex,
@@ -81,6 +84,32 @@ inline constexpr Entry kEntries[] = {
         g_EndfieldM14PixelDxbc,
         g_EndfieldM14PixelDxbcSize,
         g_EndfieldM14PixelDxbcSha256,
+    },
+    {
+        Stage::Vertex,
+        true,
+        {
+            0x6b, 0x87, 0xd2, 0xcb, 0x5f, 0x1d, 0x92, 0xdd,
+            0x32, 0x09, 0xb1, 0x04, 0xd5, 0x2f, 0xb7, 0x00,
+            0xdb, 0xa5, 0x78, 0xb1, 0x22, 0x37, 0x46, 0x8c,
+            0xbe, 0x9e, 0xa9, 0x08, 0x2a, 0x9a, 0x10, 0x22,
+        },
+        g_EndfieldM27VertexDxbc,
+        g_EndfieldM27VertexDxbcSize,
+        g_EndfieldM27VertexDxbcSha256,
+    },
+    {
+        Stage::Pixel,
+        true,
+        {
+            0x0a, 0xd3, 0x80, 0x94, 0x9c, 0x0e, 0x8e, 0xda,
+            0xed, 0xc6, 0xac, 0x76, 0xfa, 0x00, 0x20, 0x17,
+            0xff, 0x24, 0x76, 0xbf, 0xf4, 0xa0, 0xce, 0x9d,
+            0x2d, 0x52, 0xde, 0x05, 0x69, 0xe9, 0x03, 0xce,
+        },
+        g_EndfieldM27PixelDxbc,
+        g_EndfieldM27PixelDxbcSize,
+        g_EndfieldM27PixelDxbcSha256,
     },
 };
 

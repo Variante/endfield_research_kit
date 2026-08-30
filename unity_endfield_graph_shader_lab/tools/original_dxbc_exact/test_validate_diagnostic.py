@@ -117,6 +117,66 @@ class LiveReportTests(unittest.TestCase):
         ):
             self.assertIn(name, MODULE.EXPECTED_PLUGIN_EXPORTS)
 
+    def test_plugin_contract_includes_observation_only_m27_export(self) -> None:
+        self.assertIn(
+            "EndfieldOriginalDxbcSetM27ObservationArmed",
+            MODULE.EXPECTED_PLUGIN_EXPORTS,
+        )
+
+
+@unittest.skipUnless(
+    os.name == "nt" and PLUGIN_DLL.is_file(),
+    "tool-only plugin build absent",
+)
+class CompilerRouteOwnershipAbiTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.plugin = ctypes.WinDLL(str(PLUGIN_DLL))
+        for name in (
+            "EndfieldOriginalDxbcSetDiagnosticArmed",
+            "EndfieldOriginalDxbcSetM27SubstitutionArmed",
+            "EndfieldOriginalDxbcSetM27ObservationArmed",
+        ):
+            function = getattr(self.plugin, name)
+            function.argtypes = [ctypes.c_uint32]
+            function.restype = ctypes.c_uint32
+        self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed.restype = (
+            ctypes.c_uint32
+        )
+        self.plugin.EndfieldOriginalDxbcSetDiagnosticArmed(0)
+        self.plugin.EndfieldOriginalDxbcSetM27SubstitutionArmed(0)
+        self.plugin.EndfieldOriginalDxbcSetM27ObservationArmed(0)
+
+    def tearDown(self) -> None:
+        self.plugin.EndfieldOriginalDxbcSetDiagnosticArmed(0)
+        self.plugin.EndfieldOriginalDxbcSetM27SubstitutionArmed(0)
+        self.plugin.EndfieldOriginalDxbcSetM27ObservationArmed(0)
+
+    def test_observation_disarm_cannot_clear_hash_pinned_route(self) -> None:
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27SubstitutionArmed(1), 1
+        )
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27ObservationArmed(0), 0
+        )
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 1)
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27ObservationArmed(1), 0
+        )
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 1)
+
+    def test_hash_pinned_disarm_cannot_clear_observation_route(self) -> None:
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27ObservationArmed(1), 1
+        )
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27SubstitutionArmed(0), 0
+        )
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 1)
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcSetM27SubstitutionArmed(1), 0
+        )
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 1)
+
 
 @unittest.skipUnless(
     os.name == "nt" and PLUGIN_DLL.is_file(),

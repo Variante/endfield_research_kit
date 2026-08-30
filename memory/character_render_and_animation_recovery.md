@@ -269,11 +269,20 @@ the outer return; the false path remains intact and all 20 native tests pass.
   recovers the selected HGBuffer fragment's 576-byte `UnityPerMaterial` table
   and exact offsets for all 17 parallax fields used through the 496-byte b3
   prefix (including `_ParallaxColor` at byte 464 and its dark color at 480).
-  This closes the selected physical b3 slice, not visual admission. Selected-
-  frame b1 VFX globals, b2 per-draw history/LOD state, the selected b4 value,
-  `ParserBindChannels`, and complete HGBuffer frame publication remain
-  fail-closed. The raw retail peak frame itself contains the large M13 orange
-  ring, so it is not evidence for shrinking or dimming that authored row.
+  The current actual-geometry M27 draw also closes the physical resource ABI:
+  PS t0-t3 are BaseColor/Normal/MRO/Parallax, PS t4/t5 are real sampled slots
+  backed by one shared null/default resource because both serialized material
+  properties are null, and VS t0 is the optional structured skin palette. The
+  selected stone mesh has no skin rows and the live b2 record clears the skin
+  branch, but the dependency remains declared and fail-closed. A source-driven
+  Unity shell now declares that full ABI and has repeatable independently
+  observed D3D11 compiler hashes plus successful stage+SHA substitution and
+  `SetPass`; it consumes no captured VB/IB/CB packet arrays and still cannot
+  submit a draw. Selected b0/b1 reads, authenticated PSR b2 range/resource
+  ownership, complete b3 word provenance, fresh b4 producer/value lifecycle,
+  s0-s5 descriptors, and synchronized MRT publication remain fail-closed. The
+  raw retail peak frame itself contains the large M13 orange ring, so it is not
+  evidence for shrinking or dimming that authored row.
 - A renderer-isolation audit distinguishes the earlier broad glow
   `overview_04/1/guangyun (3)` with `M_fx_endminm_gfx_30` from the actual
   ten-piece crystal burst,
@@ -3633,10 +3642,13 @@ or shaders rather than hand-editing generated prefabs.
    M30, and M14 one at a time before changing defaults or suppressing their
    compatibility renderers. Preserve the captured hierarchy transforms and
    equal-queue ordering unless a same-session packet-to-palm registration proves
-   a specific delta. For M27, replace captured packet constants and obsolete
-   t2-t5 bindings with the source t0-t3 and full b0/b1 publisher bridge, retain
-   engine-produced b2, and require the live exact-ABI verifier to admit the
-   generative ParticleSystemRenderer draw before presentation.
+   a specific delta. For M27, keep the independently pinned source shell at
+   t0-t5, retain engine-produced b2 and the full b0/b1 publisher bridge, and use
+   the next observer build to close VS structured t0, s0-s5 descriptors, b4
+   producer/value lifecycle, and synchronized target evidence. Require the live
+   exact-ABI verifier to admit the generative ParticleSystemRenderer draw before
+   presentation; never restore captured packet constants or tune placement,
+   transforms, curves, texture sampling, or lighting to compensate.
 3. Generalize the finished Endminf path and rebuild every playable character
    without actor-specific renderer forks.
 4. Keep changing inventories and exhaustive validation output under

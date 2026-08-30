@@ -44,6 +44,10 @@ namespace EndfieldGraphShaderLab
         internal const string EndminfM27ExactShaderName =
             "Hidden/Endfield/Diagnostics/EndminfM27ExactAbiShell";
         internal const string EndminfM27ExactPassName = "M27ExactAbiShell";
+        internal const string EndminfM27GenerativeExactShaderName =
+            "Hidden/Endfield/Diagnostics/EndminfM27GenerativeExactAbiShell";
+        internal const string EndminfM27GenerativeExactPassName =
+            "M27GenerativeExactAbiShell";
         private const string EndminfM27ExactKeyword =
             "ENDFIELD_ORIGINAL_DXBC_M27_EXACT";
         private const long EndminfM27RendererPathId = 59284134265994738L;
@@ -115,6 +119,10 @@ namespace EndfieldGraphShaderLab
         private readonly bool endminfM27Requested;
         private readonly bool endminfLitEffectRequested;
         private readonly bool endminfM27ExactDxbcRequested;
+        private readonly bool endminfM27GenerativeExactDxbcRequested;
+        private readonly EndfieldRecoveredEndminfM27GenerativeExactRuntime
+            endminfM27GenerativeExactRuntime =
+                new EndfieldRecoveredEndminfM27GenerativeExactRuntime();
         private Material endminfM27Material;
         private int endminfM27SourceMaterialId;
         private readonly Dictionary<int, Material> endminfLitEffectMaterials =
@@ -173,10 +181,13 @@ namespace EndfieldGraphShaderLab
         {
             endminfLitEffectRequested =
                 ReadBooleanEnvironment(EndminfLitEffectEnvironmentVariable);
+            endminfM27GenerativeExactDxbcRequested =
+                EndfieldRecoveredEndminfM27GenerativeExactRuntime.Requested;
             endminfM27Requested =
                 ReadBooleanEnvironment(EndminfM27EnvironmentVariable) ||
                 HasCommandLineArgument(EndminfM27CommandLineArgument) ||
-                endminfLitEffectRequested;
+                endminfLitEffectRequested ||
+                endminfM27GenerativeExactDxbcRequested;
             endminfM27ExactDxbcRequested =
                 endminfM27Requested &&
                 ReadBooleanEnvironment(EndminfM27ExactDxbcEnvironmentVariable);
@@ -211,6 +222,7 @@ namespace EndfieldGraphShaderLab
             foreach (Material value in endminfLitEffectMaterials.Values)
                 ReleaseObject(value);
             endminfLitEffectMaterials.Clear();
+            endminfM27GenerativeExactRuntime.Dispose();
             Shader.SetGlobalFloat(ReadyId, 0.0f);
             Shader.SetGlobalFloat(EndminfM27ReadyId, 0.0f);
             PublishBlackFallbacks();
@@ -222,6 +234,10 @@ namespace EndfieldGraphShaderLab
             int width,
             int height,
             bool canonicalFrameResourcesReady,
+            ComputeBuffer transformVariables,
+            bool transformVariablesReady,
+            ComputeBuffer shaderVariablesGlobal,
+            bool shaderVariablesGlobalReady,
             RenderTargetIdentifier canonicalColorTarget,
             RenderTargetIdentifier canonicalDepthTarget)
         {
@@ -288,6 +304,7 @@ namespace EndfieldGraphShaderLab
                  !endminfM27ExactDxbcRequested &&
                  !TryEnsureEndminfM27Material(
                     endminfM27SourceMaterial,
+                    endminfM27GenerativeExactDxbcRequested,
                     out endminfM27PassIndex,
                     out failure)))
             {
@@ -455,6 +472,39 @@ namespace EndfieldGraphShaderLab
                     }
                     else
                     {
+                        if (endminfM27GenerativeExactDxbcRequested)
+                        {
+                            // The manager algorithm and property identity are
+                            // source-closed, but the selected CharInfo terrain
+                            // lifecycle/value is not. Keep the actual draw
+                            // blocked until a fresh complete retail observation
+                            // supplies this evidence; the local empty registry
+                            // is not used to fabricate a zero.
+                            if (!EndfieldRecoveredTerrainSubsurfaceConstants
+                                    .TryPublish(
+                                        command,
+                                        false,
+                                        false,
+                                        -1,
+                                        string.Empty,
+                                        string.Empty,
+                                        out var terrainSubsurfaceConstants,
+                                        out failure) ||
+                                !endminfM27GenerativeExactRuntime.TryBindDraw(
+                                    endminfM27Material,
+                                    false,
+                                    transformVariables,
+                                    transformVariablesReady,
+                                    shaderVariablesGlobal,
+                                    shaderVariablesGlobalReady,
+                                    terrainSubsurfaceConstants,
+                                    command,
+                                    out failure))
+                            {
+                                FailClosed(context, failure);
+                                return false;
+                            }
+                        }
                         if (endminfM27Renderer.mesh != endminfM27Mesh)
                         {
                             endminfM27Renderer.renderMode =
@@ -463,11 +513,18 @@ namespace EndfieldGraphShaderLab
                                 new[] { endminfM27Mesh },
                                 1);
                         }
+                        if (endminfM27GenerativeExactDxbcRequested)
+                        {
+                            command.EnableScissorRect(
+                                new Rect(0.0f, 0.0f, width, height));
+                        }
                         command.DrawRenderer(
                             endminfM27Renderer,
                             endminfM27Material,
                             0,
                             endminfM27PassIndex);
+                        if (endminfM27GenerativeExactDxbcRequested)
+                            command.DisableScissorRect();
                     }
                 }
                 bool endminfLitEffectActive =
@@ -1313,6 +1370,7 @@ namespace EndfieldGraphShaderLab
 
         private bool TryEnsureEndminfM27Material(
             Material sourceMaterial,
+            bool exactAbiShell,
             out int passIndex,
             out string failure)
         {
@@ -1323,23 +1381,14 @@ namespace EndfieldGraphShaderLab
                 failure = "the Endminf M27 source material is absent";
                 return false;
             }
-            if (endminfM27ExactDxbcRequested &&
-                !EndfieldRecoveredM27ExactCaptureData.ExactVertexEnvelopeClosed)
-            {
-                failure =
-                    "the exact M27 vertex b0 envelope is incomplete: captured " +
-                    EndfieldRecoveredM27ExactCaptureData.CapturedB0Float4Count +
-                    " float4s, but retail projection reads through c81";
-                return false;
-            }
             int sourceId = sourceMaterial.GetInstanceID();
             if (endminfM27Material == null ||
                 endminfM27SourceMaterialId != sourceId)
             {
                 ReleaseObject(endminfM27Material);
                 endminfM27Material = null;
-                string shaderName = endminfM27ExactDxbcRequested
-                    ? EndminfM27ExactShaderName
+                string shaderName = exactAbiShell
+                    ? EndminfM27GenerativeExactShaderName
                     : EndminfM27ShaderName;
                 Shader shader = Shader.Find(shaderName);
                 if (shader == null || !shader.isSupported)
@@ -1354,8 +1403,18 @@ namespace EndfieldGraphShaderLab
                     name = "Recovered exact-contract Endminf M27 HGBuffer",
                     hideFlags = HideFlags.HideAndDontSave,
                 };
-                if (endminfM27ExactDxbcRequested)
-                    BindExactM27CaptureData(sourceMaterial, endminfM27Material);
+                if (exactAbiShell)
+                {
+                    if (!endminfM27GenerativeExactRuntime.TryConfigureMaterial(
+                            sourceMaterial,
+                            endminfM27Material,
+                            out failure))
+                    {
+                        ReleaseObject(endminfM27Material);
+                        endminfM27Material = null;
+                        return false;
+                    }
+                }
                 else
                     CopyExactM27SourceProperties(
                         sourceMaterial,
@@ -1363,8 +1422,8 @@ namespace EndfieldGraphShaderLab
                 endminfM27SourceMaterialId = sourceId;
             }
             passIndex = endminfM27Material.FindPass(
-                endminfM27ExactDxbcRequested
-                    ? EndminfM27ExactPassName
+                exactAbiShell
+                    ? EndminfM27GenerativeExactPassName
                     : EndminfM27PassName);
             if (passIndex < 0)
             {

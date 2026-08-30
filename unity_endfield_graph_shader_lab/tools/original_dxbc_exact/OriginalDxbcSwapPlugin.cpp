@@ -7,11 +7,13 @@
 #include <atomic>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <mutex>
 #include <new>
+#include <string>
 
 #include "IUnityInterface.h"
 #include "IUnityGraphicsD3D11.h"
@@ -55,6 +57,7 @@ enum class SubstitutionRoute : std::uint32_t
     None = 0,
     DeferredDiagnostic = 1,
     M27HashPinned = 2,
+    M27ObserveOnly = 3,
 };
 
 IUnityInterfaces* g_unityInterfaces = nullptr;
@@ -485,6 +488,148 @@ struct M27CallbackObservation
 M27CallbackObservation g_m27CallbackObservations[kM27CallbackObservationCapacity] = {};
 std::size_t g_m27CallbackObservationCount = 0;
 std::mutex g_m27CallbackObservationMutex;
+std::atomic<std::uint64_t> g_m27ObservationEpoch{1};
+
+bool StartsWith(
+    const char* begin,
+    const char* end,
+    const char* prefix)
+{
+    if (begin == nullptr || end == nullptr || prefix == nullptr || begin > end)
+        return false;
+    const std::size_t prefixLength = std::strlen(prefix);
+    return prefixLength <= static_cast<std::size_t>(end - begin) &&
+        std::memcmp(begin, prefix, prefixLength) == 0;
+}
+
+bool TryParseUnsigned(
+    const char*& cursor,
+    const char* end,
+    unsigned& value)
+{
+    if (cursor == nullptr || cursor >= end || *cursor < '0' || *cursor > '9')
+        return false;
+    unsigned parsed = 0;
+    do
+    {
+        const unsigned digit = static_cast<unsigned>(*cursor - '0');
+        if (parsed > ((std::numeric_limits<unsigned>::max)() - digit) / 10u)
+            return false;
+        parsed = parsed * 10u + digit;
+        ++cursor;
+    }
+    while (cursor < end && *cursor >= '0' && *cursor <= '9');
+    value = parsed;
+    return true;
+}
+
+bool TryParseRegisterSlot(
+    const char* begin,
+    const char* end,
+    char registerClass,
+    unsigned& slot)
+{
+    if (begin == nullptr || end == nullptr || begin >= end)
+        return false;
+    for (const char* cursor = begin; cursor < end; ++cursor)
+    {
+        if (*cursor != registerClass)
+            continue;
+        if (cursor != begin && cursor[-1] != ' ' && cursor[-1] != '\t' &&
+            cursor[-1] != ',')
+        {
+            continue;
+        }
+        const char* digits = cursor + 1;
+        if (TryParseUnsigned(digits, end, slot))
+            return true;
+    }
+    return false;
+}
+
+void ObserveD3D11Declarations(
+    const unsigned char* byteCode,
+    std::size_t byteCodeSize,
+    M27CallbackObservation& observation)
+{
+    ID3DBlob* disassembly = nullptr;
+    if (FAILED(D3DDisassemble(
+            byteCode,
+            byteCodeSize,
+            0,
+            nullptr,
+            &disassembly)) || disassembly == nullptr)
+    {
+        return;
+    }
+
+    bool cbuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+    bool shaderResources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+    bool samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
+    bool uavs[D3D11_PS_CS_UAV_REGISTER_COUNT] = {};
+    const char* cursor = static_cast<const char*>(
+        disassembly->GetBufferPointer());
+    const char* end = cursor + disassembly->GetBufferSize();
+    while (cursor < end && *cursor != '\0')
+    {
+        while (cursor < end && (*cursor == ' ' || *cursor == '\t'))
+            ++cursor;
+        const char* newline = static_cast<const char*>(
+            std::memchr(cursor, '\n', static_cast<std::size_t>(end - cursor)));
+        const char* lineEnd = newline == nullptr ? end : newline;
+        unsigned slot = 0;
+        unsigned registers = 0;
+        const std::string line(cursor, lineEnd);
+        if (sscanf_s(
+                line.c_str(),
+                "dcl_constantbuffer CB%u[%u]",
+                &slot,
+                &registers) == 2 &&
+            slot < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
+        {
+            if (slot < 5u)
+                observation.metadata[5u + slot] = registers * 16u;
+            cbuffers[slot] = true;
+        }
+        else if (StartsWith(cursor, lineEnd, "dcl_resource") &&
+                 TryParseRegisterSlot(cursor, lineEnd, 't', slot) &&
+                 slot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
+        {
+            if (slot < 32u)
+                observation.metadata[10] |= 1u << slot;
+            shaderResources[slot] = true;
+        }
+        else if (sscanf_s(line.c_str(), "dcl_sampler s%u", &slot) == 1 &&
+                 slot < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
+        {
+            if (slot < 32u)
+                observation.metadata[11] |= 1u << slot;
+            samplers[slot] = true;
+        }
+        else if (StartsWith(cursor, lineEnd, "dcl_uav") &&
+                 TryParseRegisterSlot(cursor, lineEnd, 'u', slot) &&
+                 slot < D3D11_PS_CS_UAV_REGISTER_COUNT)
+        {
+            uavs[slot] = true;
+        }
+
+        if (newline == nullptr)
+            break;
+        cursor = newline + 1;
+    }
+
+    std::uint32_t resourceCount = 0;
+    for (bool present : cbuffers)
+        resourceCount += present ? 1u : 0u;
+    for (bool present : shaderResources)
+        resourceCount += present ? 1u : 0u;
+    for (bool present : samplers)
+        resourceCount += present ? 1u : 0u;
+    for (bool present : uavs)
+        resourceCount += present ? 1u : 0u;
+    observation.metadata[4] = resourceCount;
+    disassembly->Release();
+}
 
 bool Sha256(
     const unsigned char* data,
@@ -507,7 +652,9 @@ bool Sha256(
 void ObserveM27Callback(
     const unsigned char* byteCode,
     std::size_t byteCodeSize,
-    bool isVertex)
+    bool isVertex,
+    SubstitutionRoute expectedRoute,
+    std::uint64_t expectedEpoch)
 {
     unsigned char digest[32] = {};
     if (!Sha256(byteCode, byteCodeSize, digest))
@@ -549,7 +696,10 @@ void ObserveM27Callback(
                             description.Size;
                     }
                 }
-                else if (binding.Type == D3D_SIT_TEXTURE &&
+                else if ((binding.Type == D3D_SIT_TEXTURE ||
+                          binding.Type == D3D_SIT_TBUFFER ||
+                          binding.Type == D3D_SIT_STRUCTURED ||
+                          binding.Type == D3D_SIT_BYTEADDRESS) &&
                     binding.BindPoint < 32u)
                 {
                     observation.metadata[10] |= 1u << binding.BindPoint;
@@ -563,8 +713,16 @@ void ObserveM27Callback(
         }
         reflection->Release();
     }
+    if (observation.metadata[4] == 0u)
+        ObserveD3D11Declarations(byteCode, byteCodeSize, observation);
 
     std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+    if (g_m27ObservationEpoch.load(std::memory_order_acquire) != expectedEpoch ||
+        !g_armed.load(std::memory_order_acquire) ||
+        g_substitutionRoute.load(std::memory_order_acquire) != expectedRoute)
+    {
+        return;
+    }
     for (std::size_t index = 0; index < g_m27CallbackObservationCount; ++index)
     {
         if (std::memcmp(
@@ -721,9 +879,40 @@ void ResetDiagnosticState()
     }
     {
         std::lock_guard<std::mutex> lock(g_m27CallbackObservationMutex);
+        g_m27ObservationEpoch.fetch_add(1, std::memory_order_acq_rel);
         std::memset(g_m27CallbackObservations, 0, sizeof(g_m27CallbackObservations));
         g_m27CallbackObservationCount = 0;
     }
+}
+
+bool TryArmCompilerRouteLocked(SubstitutionRoute owner)
+{
+    const SubstitutionRoute current =
+        g_substitutionRoute.load(std::memory_order_acquire);
+    if (current != SubstitutionRoute::None && current != owner)
+        return false;
+
+    g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(owner, std::memory_order_release);
+    ReleaseRuntimeShaders();
+    ResetDiagnosticState();
+    g_armed.store(true, std::memory_order_release);
+    return true;
+}
+
+bool TryDisarmCompilerRouteLocked(
+    SubstitutionRoute owner,
+    bool resetDiagnosticState)
+{
+    if (g_substitutionRoute.load(std::memory_order_acquire) != owner)
+        return false;
+
+    g_armed.store(false, std::memory_order_release);
+    g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
+    ReleaseRuntimeShaders();
+    if (resetDiagnosticState)
+        ResetDiagnosticState();
+    return true;
 }
 
 void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
@@ -750,14 +939,30 @@ void ReplaceD3D11Shader(UnityShaderCompilerExtCustomBinaryVariantParams& params)
 
     const SubstitutionRoute route =
         g_substitutionRoute.load(std::memory_order_acquire);
+    const std::uint64_t observationEpoch =
+        g_m27ObservationEpoch.load(std::memory_order_acquire);
     const unsigned char* replacementDxbc = nullptr;
     std::size_t replacementDxbcSize = 0;
+    if (route == SubstitutionRoute::M27ObserveOnly)
+    {
+        ObserveM27Callback(
+            params.inputByteCode,
+            params.inputByteCodeSize,
+            isVertex,
+            route,
+            observationEpoch);
+        // Observation is deliberately terminal: retain Unity's shader object
+        // unchanged and never consult the substitution registry.
+        return;
+    }
     if (route == SubstitutionRoute::M27HashPinned)
     {
         ObserveM27Callback(
             params.inputByteCode,
             params.inputByteCodeSize,
-            isVertex);
+            isVertex,
+            route,
+            observationEpoch);
         unsigned char digest[32] = {};
         if (!Sha256(params.inputByteCode, params.inputByteCodeSize, digest))
         {
@@ -7084,22 +7289,11 @@ EndfieldOriginalDxbcSetDiagnosticArmed(std::uint32_t armed)
     if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
         return 0;
     if (armed != 0)
-    {
-        g_armed.store(false, std::memory_order_release);
-        g_substitutionRoute.store(
-            SubstitutionRoute::DeferredDiagnostic,
-            std::memory_order_release);
-        ReleaseRuntimeShaders();
-        ResetDiagnosticState();
-        g_armed.store(true, std::memory_order_release);
-    }
-    else
-    {
-        g_armed.store(false, std::memory_order_release);
-        g_substitutionRoute.store(SubstitutionRoute::None, std::memory_order_release);
-        ReleaseRuntimeShaders();
-    }
-    return g_armed.load(std::memory_order_acquire) ? 1u : 0u;
+        return TryArmCompilerRouteLocked(
+            SubstitutionRoute::DeferredDiagnostic) ? 1u : 0u;
+
+    TryDisarmCompilerRouteLocked(SubstitutionRoute::DeferredDiagnostic, false);
+    return 0u;
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
@@ -7108,17 +7302,26 @@ EndfieldOriginalDxbcSetM27SubstitutionArmed(std::uint32_t armed)
     std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
     if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
         return 0;
-    g_armed.store(false, std::memory_order_release);
-    g_substitutionRoute.store(
-        armed != 0
-            ? SubstitutionRoute::M27HashPinned
-            : SubstitutionRoute::None,
-        std::memory_order_release);
-    ReleaseRuntimeShaders();
-    ResetDiagnosticState();
     if (armed != 0)
-        g_armed.store(true, std::memory_order_release);
-    return g_armed.load(std::memory_order_acquire) ? 1u : 0u;
+        return TryArmCompilerRouteLocked(
+            SubstitutionRoute::M27HashPinned) ? 1u : 0u;
+
+    TryDisarmCompilerRouteLocked(SubstitutionRoute::M27HashPinned, true);
+    return 0u;
+}
+
+extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
+EndfieldOriginalDxbcSetM27ObservationArmed(std::uint32_t armed)
+{
+    std::lock_guard<std::mutex> lock(g_diagnosticSubmissionMutex);
+    if (g_configuredDiagnosticSubmissionSerial.load(std::memory_order_acquire) != 0)
+        return 0;
+    if (armed != 0)
+        return TryArmCompilerRouteLocked(
+            SubstitutionRoute::M27ObserveOnly) ? 1u : 0u;
+
+    TryDisarmCompilerRouteLocked(SubstitutionRoute::M27ObserveOnly, true);
+    return 0u;
 }
 
 extern "C" std::uint32_t UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API

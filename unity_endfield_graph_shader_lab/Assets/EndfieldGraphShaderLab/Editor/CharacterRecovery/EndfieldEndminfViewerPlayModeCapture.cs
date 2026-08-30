@@ -864,10 +864,27 @@ namespace EndfieldGraphShaderLabEditor
                     "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER") == "1" ||
                 Environment.GetEnvironmentVariable(
                     "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION") == "1";
-            if (!exactConsumerRequested ||
+            bool generativeM27Requested =
                 Environment.GetEnvironmentVariable(
-                    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC") != "1")
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_GENERATIVE_EXACT_DXBC") ==
+                "1";
+            bool packetM27Requested =
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC") == "1";
+            if (!generativeM27Requested &&
+                (!exactConsumerRequested || !packetM27Requested))
                 return;
+
+            if (generativeM27Requested)
+            {
+                // The named-binding shell hashes are independently pinned,
+                // but the retained PSR draw remains source-incomplete. Keep
+                // ordinary play-mode preparation unarmed until TryBindDraw's
+                // explicit source/publisher gates can be supplied as ready.
+                EndfieldM27ShellHashCapture
+                    .PrepareGenerativeRawRuntimeVariant();
+                return;
+            }
 
             if (Environment.GetEnvironmentVariable(
                     "ENDFIELD_M27_FORCE_RAW_SHELL") == "1")
