@@ -164,14 +164,26 @@ def complete_observation() -> dict[str, object]:
             }
             for slot in MODULE.SAMPLER_SLOTS
         ],
+        "vertexSkinningControl": {
+            "observedFromActualDraw": True,
+            "synchronizedDrawId": "camera:frame:draw",
+            "constantBufferSlot": MODULE.VERTEX_SKIN_CB_SLOT,
+            "recordIndex": MODULE.VERTEX_SKIN_RECORD_INDEX,
+            "recordStrideFloat4": MODULE.VERTEX_SKIN_RECORD_STRIDE_FLOAT4,
+            "flagRegisterOffset": MODULE.VERTEX_SKIN_FLAG_REGISTER_OFFSET,
+            "flagLane": MODULE.VERTEX_SKIN_FLAG_LANE,
+            "flagMask": MODULE.VERTEX_SKIN_FLAG_MASK,
+            "flagRaw": 0,
+            "skinBranchActive": False,
+            "sourceMeshSkinRows": 0,
+        },
         "vertexResources": [
             {
                 "slot": 0,
-                "kind": "StructuredBuffer",
-                "logicalName": "_VertexSkinMatrices",
-                "stride": 16,
-                "skinBranchActive": False,
-                "sourceMeshSkinRows": 0,
+                "observedFromActualDraw": True,
+                "synchronizedDrawId": "camera:frame:draw",
+                "bound": False,
+                "objectId": 0,
             }
         ],
         "constantBuffers": [
@@ -299,6 +311,25 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             self.first_failure(value),
             "live.publishers.terrainSubsurfacePublishedMatchesObserved")
 
+    def test_active_skin_bit_is_rejected_before_null_t0_admission(self) -> None:
+        value = complete_observation()
+        value["vertexSkinningControl"]["flagRaw"] = MODULE.VERTEX_SKIN_FLAG_MASK
+        value["vertexSkinningControl"]["skinBranchActive"] = True
+        self.assertEqual(
+            self.first_failure(value),
+            "live.vertexSkinningControl.skinFlagClear")
+
+    def test_fabricated_identity_skin_buffer_is_rejected(self) -> None:
+        value = complete_observation()
+        value["vertexResources"][0].update({
+            "bound": True,
+            "objectId": 1234,
+            "kind": "StructuredBuffer",
+            "logicalName": "_VertexSkinMatrices",
+            "stride": 16,
+        })
+        self.assertEqual(self.first_failure(value), "live.vertex.t0.bound")
+
     def test_nonadmissible_runtime_path_is_a_static_blocker(self) -> None:
         blocker_keys = (
             "generativeShellIndependentlyPinnedFromD3D11Callback",
@@ -306,7 +337,7 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             "b0SelectedReadsFullySourcePopulated",
             "b1SelectedReadsFullySourcePopulated",
             "b2ActualParticleRecordRangeAndGeometryObserved",
-            "vertexSkinStructuredResourceAuthenticated",
+            "vertexSkinInactiveNullT0DependencyAuthenticated",
             "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
             "b4SelectedFrameProducerValueAuthenticated",
             "orderedMrtSlotsObserved",
@@ -331,7 +362,7 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             "b0SelectedReadsFullySourcePopulated": True,
             "b1SelectedReadsFullySourcePopulated": False,
             "b2ActualParticleRecordRangeAndGeometryObserved": True,
-            "vertexSkinStructuredResourceAuthenticated": True,
+            "vertexSkinInactiveNullT0DependencyAuthenticated": True,
             "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": True,
             "b4SelectedFrameProducerValueAuthenticated": True,
             "orderedMrtSlotsObserved": True,

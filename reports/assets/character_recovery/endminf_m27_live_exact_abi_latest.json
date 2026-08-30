@@ -941,7 +941,7 @@
     "b0SelectedReadsFullySourcePopulated": true,
     "b1SelectedReadsFullySourcePopulated": false,
     "b2ActualParticleRecordRangeAndGeometryObserved": false,
-    "vertexSkinStructuredResourceAuthenticated": false,
+    "vertexSkinInactiveNullT0DependencyAuthenticated": false,
     "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": true,
     "b4SelectedFrameProducerValueAuthenticated": false,
     "orderedMrtSlotsObserved": false,
@@ -953,7 +953,7 @@
   "staticAdmissionBlockers": [
     "b1SelectedReadsFullySourcePopulated",
     "b2ActualParticleRecordRangeAndGeometryObserved",
-    "vertexSkinStructuredResourceAuthenticated",
+    "vertexSkinInactiveNullT0DependencyAuthenticated",
     "b4SelectedFrameProducerValueAuthenticated",
     "orderedMrtSlotsObserved",
     "activeSamplerSlotsObserved",
@@ -976,8 +976,8 @@
   },
   "observationProducer": {
     "status": "blocked_before_draw_submission",
-    "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
+    "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, inactive b2 skin gate/null VS t0 dependency, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
   },
-  "smallestRemainingSourceGap": "Static admission remains fail-closed at: b1SelectedReadsFullySourcePopulated, b2ActualParticleRecordRangeAndGeometryObserved, vertexSkinStructuredResourceAuthenticated, b4SelectedFrameProducerValueAuthenticated, orderedMrtSlotsObserved, activeSamplerSlotsObserved, authenticatedObservationWriterAvailable, admissibleGenerativeParticleRendererPathExists. A synchronized live observation is also required before any diagnostic draw can be admitted.",
+  "smallestRemainingSourceGap": "Static admission remains fail-closed at: b1SelectedReadsFullySourcePopulated, b2ActualParticleRecordRangeAndGeometryObserved, vertexSkinInactiveNullT0DependencyAuthenticated, b4SelectedFrameProducerValueAuthenticated, orderedMrtSlotsObserved, activeSamplerSlotsObserved, authenticatedObservationWriterAvailable, admissibleGenerativeParticleRendererPathExists. A synchronized live observation is also required before any diagnostic draw can be admitted.",
   "boundary": "Admission is diagnostic only. It never enables canonical presentation, never consumes captured VB/IB/CB arrays, and never tunes transforms, positions, curves, lighting, or texture sampling."
 }
