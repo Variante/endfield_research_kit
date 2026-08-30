@@ -897,6 +897,10 @@ namespace EndfieldGraphShaderLab
                 state.Dispose();
             }
             recoveredLiveCharInfoAutoExposureStates.Clear();
+            // The exact consumer owns the native submission/completion token.
+            // Retire it before any b/t resource owner that may still be held by
+            // a queued render-thread event.
+            recoveredDeferredExactConsumer?.Dispose();
             recoveredScreenShadowMaskDiagnostic?.Dispose();
             recoveredScreenShadowMaskProducer?.Dispose();
             recoveredLowResDirectionalShadowProducer?.Dispose();
@@ -907,7 +911,6 @@ namespace EndfieldGraphShaderLab
             recoveredPreGBufferDiagnostic?.Dispose();
             recoveredDeferredGBufferFrame?.Dispose();
             recoveredDeferredResolverInputProbe?.Dispose();
-            recoveredDeferredExactConsumer?.Dispose();
             recoveredEndminfM27DeferredPresentation?.Dispose();
             recoveredSphereOutsideDeferredPresentation?.Dispose();
             recoveredVisibilitySHProducer?.Dispose();
@@ -1385,12 +1388,16 @@ namespace EndfieldGraphShaderLab
                     camera,
                     applyPostProcess,
                     useRecoveredPostSemantics,
-                    recoveredSceneMVRequest.requested &&
+                    (recoveredSceneMVRequest.requested ||
+                     recoveredDeferredExactConsumer.Requested &&
+                     recoveredEndminfLitEffectOwnerActive) &&
                     camera.GetComponent<EndfieldHGOperatorPresentation>() is
                         EndfieldHGOperatorPresentation exposurePresentation &&
                     exposurePresentation.environmentPhaseSnapshot != null &&
-                    exposurePresentation.environmentPhaseSnapshot
-                        .IsGachaRoomSourceClosed);
+                    (exposurePresentation.environmentPhaseSnapshot
+                        .IsGachaRoomSourceClosed ||
+                     exposurePresentation.environmentPhaseSnapshot
+                        .IsCharacterInfoSourceClosed));
             if (applyPostProcess)
             {
                 cameraColorDescriptor = CreateRecoveredSceneColorDescriptor(
@@ -1520,8 +1527,16 @@ namespace EndfieldGraphShaderLab
                 commandBuffer.SetGlobalTexture(SceneDepthId, Texture2D.blackTexture);
                 commandBuffer.SetGlobalTexture(CameraDepthTextureId, Texture2D.blackTexture);
             }
-            float recoveredVFXExposure = liveAutoExposureState != null
+            float recoveredCurrentCameraExposure = liveAutoExposureState != null
                 ? liveAutoExposureState.CurrentExposure
+                : 0.0f;
+            bool recoveredCurrentCameraExposureReady =
+                liveAutoExposureState != null &&
+                recoveredCurrentCameraExposure > 0.0f &&
+                !float.IsNaN(recoveredCurrentCameraExposure) &&
+                !float.IsInfinity(recoveredCurrentCameraExposure);
+            float recoveredVFXExposure = recoveredCurrentCameraExposureReady
+                ? recoveredCurrentCameraExposure
                 : Shader.GetGlobalVector(ExposureParamsId).x;
             bool recoveredVFXExposureReady =
                 recoveredVFXExposure > 0.0f &&
@@ -1884,7 +1899,8 @@ namespace EndfieldGraphShaderLab
                             ? characterVolume.sceneMainLight
                             : null,
                         characterVolume,
-                        recoveredVFXExposure,
+                        recoveredCurrentCameraExposureReady,
+                        recoveredCurrentCameraExposure,
                         operatorLightRig,
                         recoveredPunctualShadowProducer,
                         recoveredCanonicalFrameResourcesReady,
@@ -6117,9 +6133,12 @@ namespace EndfieldGraphShaderLab
             {
                 // Do not leak the Gacha-specific profile into scene, preview,
                 // reflection, or unrelated operator cameras. The recovered
-                // sceneMV request admits only cameras currently rendering the
-                // selected entrance's VFX consumers, while the camera-local
-                // operator presentation marks the physical recovery camera.
+                // SceneMV or the isolated Endminf exact consumer admits only
+                // cameras currently rendering the selected entrance's VFX
+                // consumers, while the camera-local operator presentation and
+                // source-closed environment snapshot mark the physical
+                // recovery camera. The exact LightData owner consumes this
+                // same camera exposure even when SceneMV presentation is off.
                 if (!useRecoveredGachaManualExposure)
                     return null;
                 if (state == null)
@@ -6127,7 +6146,7 @@ namespace EndfieldGraphShaderLab
                     state = new EndfieldRecoveredCharInfoAutoExposureCameraState();
                     recoveredLiveCharInfoAutoExposureStates.Add(camera, state);
                 }
-                state.AdvanceGachaRoom(deltaTime);
+                state.AdvanceSourceClosedNeutralProfile(deltaTime);
                 return state;
             }
 

@@ -1976,7 +1976,18 @@ namespace EndfieldGraphShaderLabEditor
 
         public static void RebuildSharedViewerSceneFromCachedAssets()
         {
-            RebuildSharedViewerScene(rebuildMeshAssets: false);
+            // Cached recovery must preserve post-build, source-validated actor
+            // augmentations (for example Endminf's four direct Overview effect
+            // bindings). Re-running generic BuildActor would overwrite that
+            // enriched prefab and serialize a detached resident actor whose
+            // manifest-level entrance-effect list is intentionally incomplete.
+            BuildCharacterViewer(
+                SharedViewerCharacters(),
+                ViewerScenePath,
+                allowMissingPresentationProfiles: false,
+                preserveExistingGeneratedAssets: true,
+                previewFileName: "character_recovery_viewer.png",
+                viewerLabel: "Cached shared character viewer");
         }
 
         /// <summary>
@@ -10970,14 +10981,18 @@ namespace EndfieldGraphShaderLabEditor
                 key.useColorTemperature = true;
                 key.colorTemperature = directColorTemperature;
                 key.shadows = LightShadows.None;
-                float pitch = directPitchYaw.x * Mathf.Deg2Rad;
-                float yaw = directPitchYaw.y * Mathf.Deg2Rad;
-                float cosPitch = Mathf.Cos(pitch);
-                Vector3 directionToLight = new Vector3(
-                    -Mathf.Sin(yaw) * cosPitch,
-                    Mathf.Sin(pitch),
-                    -Mathf.Cos(yaw) * cosPitch).normalized;
-                keyObject.transform.rotation = Quaternion.LookRotation(-directionToLight, Vector3.up);
+                if (!EndfieldRecoveredEnvironmentPhaseConsumer
+                        .TryBuildSourceDirectionalRotation(
+                            directPitchYaw,
+                            out Quaternion directRotation,
+                            out _,
+                            out string directRotationFailure))
+                {
+                    throw new InvalidDataException(
+                        "Could not evaluate the generated original CharInfo_Env " +
+                        "direct pitch/yaw: " + directRotationFailure);
+                }
+                keyObject.transform.rotation = directRotation;
                 EditorUtility.SetDirty(key);
                 EditorUtility.SetDirty(keyObject);
                 Debug.Log(
@@ -11025,6 +11040,13 @@ namespace EndfieldGraphShaderLabEditor
 
             EndfieldHGOperatorPresentation presentation =
                 EnsureComponent<EndfieldHGOperatorPresentation>(camera.gameObject);
+            EndfieldRecoveredEnvironmentPhaseSnapshot environmentSnapshot =
+                EnsureComponent<EndfieldRecoveredEnvironmentPhaseSnapshot>(
+                    camera.gameObject);
+            environmentSnapshot.ConfigureCharacterInfo();
+            presentation.environmentPhaseSnapshot = environmentSnapshot;
+            EditorUtility.SetDirty(environmentSnapshot);
+            EditorUtility.SetDirty(presentation);
             // Publish the original Manual zero-EV target. The existing
             // environment override remains an explicit diagnostic only.
             presentation.fixedPostExposureEV = 0.0f;

@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import ctypes
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,6 +17,59 @@ if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"cannot load validator: {MODULE_PATH}")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+
+PLUGIN_DLL = Path(__file__).with_name("build") / "OriginalDxbcSwapPlugin.dll"
+RETAINED_RESOURCE_COUNT = 26 + 9 + 2
+CALLBACK = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)
+
+
+class FakeUnknown(ctypes.Structure):
+    pass
+
+
+QUERY_INTERFACE = CALLBACK(
+    ctypes.c_long, ctypes.POINTER(FakeUnknown), ctypes.c_void_p, ctypes.c_void_p
+)
+ADD_REF = CALLBACK(ctypes.c_ulong, ctypes.POINTER(FakeUnknown))
+RELEASE = CALLBACK(ctypes.c_ulong, ctypes.POINTER(FakeUnknown))
+
+
+class FakeUnknownVTable(ctypes.Structure):
+    _fields_ = [
+        ("query_interface", QUERY_INTERFACE),
+        ("add_ref", ADD_REF),
+        ("release", RELEASE),
+    ]
+
+
+FakeUnknown._fields_ = [
+    ("vtable", ctypes.POINTER(FakeUnknownVTable)),
+    ("references", ctypes.c_ulong),
+    ("add_ref_calls", ctypes.c_ulong),
+    ("release_calls", ctypes.c_ulong),
+]
+
+
+@QUERY_INTERFACE
+def query_interface(_instance, _interface_id, _destination):
+    return -2147467262  # E_NOINTERFACE
+
+
+@ADD_REF
+def add_ref(instance):
+    instance.contents.references += 1
+    instance.contents.add_ref_calls += 1
+    return instance.contents.references
+
+
+@RELEASE
+def release(instance):
+    instance.contents.references -= 1
+    instance.contents.release_calls += 1
+    return instance.contents.references
+
+
+FAKE_UNKNOWN_VTABLE = FakeUnknownVTable(query_interface, add_ref, release)
 
 
 def passing_report() -> dict[str, object]:
@@ -53,6 +108,123 @@ class LiveReportTests(unittest.TestCase):
             "EndfieldOriginalDxbcGetShaderResourceFailureResult",
             MODULE.EXPECTED_PLUGIN_EXPORTS,
         )
+
+    def test_plugin_contract_includes_submission_lifetime_exports(self) -> None:
+        for name in (
+            "EndfieldOriginalDxbcBeginDiagnosticSubmission",
+            "EndfieldOriginalDxbcCancelDiagnosticSubmission",
+            "EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial",
+        ):
+            self.assertIn(name, MODULE.EXPECTED_PLUGIN_EXPORTS)
+
+
+@unittest.skipUnless(
+    os.name == "nt" and PLUGIN_DLL.is_file(),
+    "tool-only plugin build absent",
+)
+class DiagnosticSubmissionAbiTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.plugin = ctypes.WinDLL(str(PLUGIN_DLL))
+        self.plugin.EndfieldOriginalDxbcBeginDiagnosticSubmission.argtypes = [
+            ctypes.POINTER(ctypes.c_uint64),
+            ctypes.c_uint32,
+            ctypes.POINTER(ctypes.c_uint64),
+            ctypes.c_uint32,
+        ]
+        self.plugin.EndfieldOriginalDxbcBeginDiagnosticSubmission.restype = (
+            ctypes.c_uint64
+        )
+        self.plugin.EndfieldOriginalDxbcCancelDiagnosticSubmission.argtypes = [
+            ctypes.c_uint64
+        ]
+        self.plugin.EndfieldOriginalDxbcCancelDiagnosticSubmission.restype = (
+            ctypes.c_uint32
+        )
+        self.plugin.EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial.restype = (
+            ctypes.c_uint64
+        )
+        self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed.restype = ctypes.c_uint32
+        self.plugin.EndfieldOriginalDxbcGetRenderEventFunc.restype = ctypes.c_void_p
+
+        self.resource = FakeUnknown(
+            ctypes.pointer(FAKE_UNKNOWN_VTABLE), 1, 0, 0
+        )
+        pointer = ctypes.addressof(self.resource)
+        self.textures = (ctypes.c_uint64 * 26)(*([pointer] * 26))
+        self.retained = (ctypes.c_uint64 * RETAINED_RESOURCE_COUNT)(
+            *([pointer] * RETAINED_RESOURCE_COUNT)
+        )
+
+    def begin(self) -> int:
+        return int(
+            self.plugin.EndfieldOriginalDxbcBeginDiagnosticSubmission(
+                self.textures, 26, self.retained, RETAINED_RESOURCE_COUNT
+            )
+        )
+
+    def test_pre_arm_zero_is_not_mistaken_for_completion(self) -> None:
+        serial = self.begin()
+        self.assertGreater(serial, 0)
+        self.assertEqual(self.resource.add_ref_calls, RETAINED_RESOURCE_COUNT)
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 0)
+        self.assertLess(
+            self.plugin.EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial(),
+            serial,
+        )
+        self.assertEqual(self.begin(), 0, "pending pointer table must not be overwritten")
+
+        callback_address = self.plugin.EndfieldOriginalDxbcGetRenderEventFunc()
+        self.assertTrue(callback_address)
+        callback = CALLBACK(None, ctypes.c_int)(callback_address)
+        callback(3)
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 1)
+        callback(2)
+
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial(),
+            serial,
+        )
+        self.assertEqual(self.plugin.EndfieldOriginalDxbcGetDiagnosticArmed(), 0)
+        self.assertEqual(self.resource.release_calls, RETAINED_RESOURCE_COUNT)
+        self.assertEqual(self.resource.references, 1)
+
+    def test_retained_resource_count_must_be_exact(self) -> None:
+        for count in (RETAINED_RESOURCE_COUNT - 1, RETAINED_RESOURCE_COUNT + 1):
+            with self.subTest(count=count):
+                self.assertEqual(
+                    self.plugin.EndfieldOriginalDxbcBeginDiagnosticSubmission(
+                        self.textures, 26, self.retained, count
+                    ),
+                    0,
+                )
+        self.assertEqual(self.resource.add_ref_calls, 0)
+        self.assertEqual(self.resource.release_calls, 0)
+        self.assertEqual(self.resource.references, 1)
+
+    def test_unqueued_submission_cancel_releases_and_serials_increase(self) -> None:
+        first = self.begin()
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcCancelDiagnosticSubmission(first), 1
+        )
+        second = self.begin()
+        self.assertGreater(second, first)
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcCancelDiagnosticSubmission(second), 1
+        )
+        self.assertEqual(
+            self.plugin.EndfieldOriginalDxbcGetCompletedDiagnosticSubmissionSerial(),
+            second,
+        )
+        self.assertEqual(
+            self.resource.add_ref_calls, RETAINED_RESOURCE_COUNT * 2
+        )
+        self.assertEqual(
+            self.resource.release_calls, RETAINED_RESOURCE_COUNT * 2
+        )
+        self.assertEqual(self.resource.references, 1)
+
+
+class LiveReportValidationTests(unittest.TestCase):
 
     def test_plugin_contract_includes_fail_closed_m27_exports(self) -> None:
         for name in (

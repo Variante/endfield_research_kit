@@ -57,6 +57,7 @@ namespace EndfieldGraphShaderLab
             internal uint t6PreparedSerial;
             internal RenderTexture t7LowResShadow;
             internal RenderTexture t11ScreenShadow;
+            internal bool t11ContentValid;
             internal Texture2D t14LogSh;
             internal RenderTexture t15VisibilitySh;
 
@@ -92,7 +93,8 @@ namespace EndfieldGraphShaderLab
                     $"t5={(T5Ready ? "ready" : "absent")}," +
                     $"t6={(T6Ready ? "ready" : "absent")}," +
                     $"t7={(T7Ready ? "ready" : "absent")}," +
-                    $"t11={(T11Ready ? "allocated" : "absent")}";
+                    $"t11={(T11Ready ? "allocated" : "absent")}," +
+                    $"t11ContentValid={t11ContentValid.ToString().ToLowerInvariant()}";
             }
 
             internal string BuildShapeToken(int width, int height)
@@ -186,7 +188,8 @@ namespace EndfieldGraphShaderLab
                     camera,
                     width,
                     height,
-                    out frame.t11ScreenShadow);
+                    out frame.t11ScreenShadow,
+                    out frame.t11ContentValid);
             }
             if (visibility != null)
             {

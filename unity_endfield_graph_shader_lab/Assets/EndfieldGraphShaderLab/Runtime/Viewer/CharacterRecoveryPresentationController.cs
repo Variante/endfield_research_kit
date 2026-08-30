@@ -33,6 +33,12 @@ namespace EndfieldGraphShaderLab
             Shader.PropertyToID("_EndfieldRecoveredPostSemantics");
         private const string RecoveredSourceEnergyCoreEnvironmentVariable =
             "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE";
+        private const string RecoveredClusteredNprLightLoopEnvironmentVariable =
+            "ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP";
+        private const string RecoveredLightBinningMembershipEnvironmentVariable =
+            "ENDFIELD_RECOVERED_LIGHT_BINNING_MEMBERSHIP";
+        private const string RecoveredIsolatedPunctualSoftShadowsEnvironmentVariable =
+            "ENDFIELD_RECOVERED_ISOLATED_PUNCTUAL_SOFT_SHADOWS";
 
         public CharacterRecoveryPresentationProfile ActiveProfile { get; private set; }
         public CharacterRecoveryRig ActiveRig { get; private set; }
@@ -255,6 +261,16 @@ namespace EndfieldGraphShaderLab
             if (operatorLightRig == null)
                 return;
 
+            bool clusteredNprLights = enableSourceBackedClusteredNprLights ||
+                IsEnvironmentFlagEnabled(
+                    RecoveredClusteredNprLightLoopEnvironmentVariable);
+            bool lightBinning = enableSourceBackedLightBinning ||
+                IsEnvironmentFlagEnabled(
+                    RecoveredLightBinningMembershipEnvironmentVariable);
+            bool isolatedPunctualSoftShadows =
+                enableIsolatedPunctualSoftShadows ||
+                IsEnvironmentFlagEnabled(
+                    RecoveredIsolatedPunctualSoftShadowsEnvironmentVariable);
             operatorLightRig.normalLightCompatibilityScale = 0.0f;
             // The exact selected cloth/hair/skin type-3 equations and both
             // Endminf type-2 punctual-shadow rows are now live. Keep the old
@@ -262,13 +278,12 @@ namespace EndfieldGraphShaderLab
             // the recovered clustered response.
             operatorLightRig.rimLightCompatibilityScale = 0.0f;
             operatorLightRig.sourceBackedClusteredNprLightLoop =
-                enableSourceBackedClusteredNprLights;
+                clusteredNprLights;
             operatorLightRig.sourceBackedLightBinningMembership =
-                enableSourceBackedClusteredNprLights &&
-                enableSourceBackedLightBinning;
+                clusteredNprLights && lightBinning;
             operatorLightRig.sourceBackedIsolatedPunctualSoftShadowProducer =
-                enableSourceBackedClusteredNprLights &&
-                enableIsolatedPunctualSoftShadows &&
+                clusteredNprLights &&
+                isolatedPunctualSoftShadows &&
                 (string.Equals(profile.rootName, "Wulfa", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(profile.rootName, "Zhuangfy", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(profile.rootName, "Endminf", StringComparison.OrdinalIgnoreCase));
@@ -276,6 +291,15 @@ namespace EndfieldGraphShaderLab
                 Array.Empty<EndfieldHGOperatorLightData>();
             operatorLightRig.BindActorRootAndDescribe(actorRoot);
             operatorLightRig.ApplyGlobals();
+        }
+
+        private static bool IsEnvironmentFlagEnabled(string variableName)
+        {
+            string raw = Environment.GetEnvironmentVariable(variableName);
+            return string.Equals(
+                raw?.Trim(),
+                "1",
+                StringComparison.Ordinal);
         }
 
         private void ApplyPortrait(

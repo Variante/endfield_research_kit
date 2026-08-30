@@ -68,6 +68,7 @@ namespace EndfieldGraphShaderLab
         private int publicationFrame;
         private int publicationWidth;
         private int publicationHeight;
+        private bool publicationContentValid;
         private bool disposed;
 
         internal bool Requested => requested;
@@ -123,6 +124,7 @@ namespace EndfieldGraphShaderLab
                 return;
             disposed = true;
             publicationValid = false;
+            publicationContentValid = false;
             Shader.DisableKeyword(EyeConsumerKeyword);
             Shader.DisableKeyword(SkinConsumerKeyword);
             Shader.SetGlobalFloat(ReadyId, 0.0f);
@@ -161,6 +163,7 @@ namespace EndfieldGraphShaderLab
                 return false;
 
             publicationValid = false;
+            publicationContentValid = false;
 
 
             string failure;
@@ -224,6 +227,10 @@ namespace EndfieldGraphShaderLab
             {
                 name = "Recovered RG8 screen-shadow attachment diagnostic"
             };
+            // Publication validity and content validity are intentionally
+            // independent. This diagnostic owns a physical same-frame target,
+            // but the remaining retail scene-R producers are not yet closed.
+            bool contentValid = false;
             try
             {
                 commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
@@ -286,7 +293,6 @@ namespace EndfieldGraphShaderLab
                 // character G producer. Keep publication content-invalid until
                 // all retail scene-R producers and exact caster ownership are
                 // live.
-                bool contentValid = false;
                 commandBuffer.SetGlobalFloat(
                     ReadyId,
                     contentValid ? 1.0f : 0.0f);
@@ -313,6 +319,7 @@ namespace EndfieldGraphShaderLab
             publicationFrame = Time.frameCount;
             publicationWidth = width;
             publicationHeight = height;
+            publicationContentValid = contentValid;
 
             if (!loggedActive)
             {
@@ -338,9 +345,11 @@ namespace EndfieldGraphShaderLab
             Camera camera,
             int width,
             int height,
-            out RenderTexture publishedTexture)
+            out RenderTexture publishedTexture,
+            out bool contentValid)
         {
             publishedTexture = null;
+            contentValid = false;
             if (!publicationValid ||
                 camera == null ||
                 publicationCameraInstanceId != camera.GetInstanceID() ||
@@ -357,6 +366,7 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
             publishedTexture = resources.mask;
+            contentValid = publicationContentValid;
             return true;
         }
 

@@ -833,6 +833,9 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
+                "ENDFIELD_RECOVERED_CLUSTERED_NPR_LIGHT_LOOP",
+                "ENDFIELD_RECOVERED_LIGHT_BINNING_MEMBERSHIP",
+                "ENDFIELD_RECOVERED_ISOLATED_PUNCTUAL_SOFT_SHADOWS",
                 "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
                 "ENDFIELD_RECOVERED_SEPARATE_CHARACTER_SHADOW",
                 "ENDFIELD_RECOVERED_LOW_RES_DIRECTIONAL_SHADOW",
@@ -2062,6 +2065,29 @@ namespace EndfieldGraphShaderLabEditor
                 unityPublicNgxProxyRequirementReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
+            // Targeted exact probes deliberately permit a content-invalid t11
+            // diagnostic to withhold the final resolver presentation. They may
+            // not, however, pass when the source scene itself has lost the four
+            // entrance roots, eleven LitEffect rows, or exact b31/b34/GBuffer
+            // prerequisites that make the diagnostic meaningful.
+            bool exactConsumerSourceFixtureReady =
+                !deferredExactConsumerRequested ||
+                (observedEntranceVfx &&
+                 observedPrimaryRockCompatibilityBinding &&
+                 observedDeferredLightDataReady &&
+                 observedDeferredShadowDataReady &&
+                 observedDeferredPass0InputSubsetReady &&
+                 observedDeferredGBufferFrameReady &&
+                 observedEndminfM27HGBufferReady);
+            if (!exactConsumerSourceFixtureReady)
+            {
+                missingObservations.Add(
+                    "exact-consumer source fixture with four entrance roots, " +
+                    "eleven LitEffect rows, b31/b34, and five-MRT M27 GBuffer");
+            }
+            requiredCaptureContractReady =
+                requiredCaptureContractReady &&
+                exactConsumerSourceFixtureReady;
             Report report = new Report {
                 status = !requiredCaptureContractReady
                     ? "failed: missing " + string.Join(", ", missingObservations.ToArray())

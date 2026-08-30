@@ -45,6 +45,52 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
         self.assertIn("fallbackTextureSlots=t2,t3,t4.", source)
         self.assertIn("legacy Gacha payload", source)
 
+    def test_physical_diagnostic_t11_cannot_authorize_presentation(self):
+        resource_probe = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "EndfieldRecoveredDeferredResolverInputProbe.cs"
+        ).read_text(encoding="utf-8")
+        screen_shadow = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "EndfieldRecoveredScreenShadowMaskProducer.cs"
+        ).read_text(encoding="utf-8")
+        consumer = (
+            LAB_ROOT
+            / "Assets"
+            / "EndfieldGraphShaderLab"
+            / "Runtime"
+            / "Rendering"
+            / "EndfieldRecoveredDeferredExactConsumer.cs"
+        ).read_text(encoding="utf-8")
+
+        # Keep the strict physical diagnostic gate intact. Content validity is
+        # a separate same-frame publication property, not a relaxed AllPhysical.
+        self.assertIn("T7Ready && T11Ready", resource_probe)
+        self.assertIn("internal bool t11ContentValid;", resource_probe)
+        self.assertIn("out frame.t11ContentValid", resource_probe)
+        self.assertIn("publicationContentValid = contentValid;", screen_shadow)
+        self.assertIn("bool contentValid = false;", screen_shadow)
+        self.assertIn("contentValid = publicationContentValid;", screen_shadow)
+
+        # A nonzero exact readback is necessary but insufficient: the invalid
+        # diagnostic mask may execute the DXBC, but it cannot reach M27 display.
+        self.assertIn(
+            "exactContentValid = t11ContentValid && numericContentValid;",
+            consumer,
+        )
+        self.assertIn("t11ContentValid={t11ContentValid}", consumer)
+        presentation = consumer.split("internal bool PresentationReady =>", 1)[1]
+        presentation = presentation.split("internal void SuppressInactiveFrame", 1)[0]
+        self.assertIn("exactContentValid", presentation)
+
     def test_runtime_event_arm_owns_the_deferred_route(self):
         source = (
             LAB_ROOT / "tools" / "original_dxbc_exact" /
@@ -54,10 +100,85 @@ class VerifyDeferredExactConsumerTests(unittest.TestCase):
             "void UNITY_INTERFACE_API InspectPostDrawBindings", 1
         )[0]
         self.assertIn("SubstitutionRoute::DeferredDiagnostic", arm)
-        cleanup = source.split("if (eventId == 2)", 1)[1].split(
-            "return;", 1
+        cleanup = source.split(
+            "void CompleteDiagnosticSubmissionOnRenderThread()", 1
+        )[1].split(
+            "void AbandonDiagnosticSubmission", 1
         )[0]
         self.assertIn("SubstitutionRoute::None", cleanup)
+
+    def test_exact_consumer_submission_lifetime_uses_completion_serial(self):
+        native = (
+            LAB_ROOT / "tools" / "original_dxbc_exact" /
+            "OriginalDxbcSwapPlugin.cpp"
+        ).read_text(encoding="utf-8")
+        consumer = (
+            LAB_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Runtime" /
+            "Rendering" / "EndfieldRecoveredDeferredExactConsumer.cs"
+        ).read_text(encoding="utf-8")
+
+        begin = native.split(
+            "EndfieldOriginalDxbcBeginDiagnosticSubmission", 1
+        )[1].split(
+            "EndfieldOriginalDxbcCancelDiagnosticSubmission", 1
+        )[0]
+        self.assertIn("g_configuredDiagnosticSubmissionSerial", begin)
+        self.assertIn("resource->AddRef()", begin)
+        self.assertIn("g_diagnosticSubmissionMutex", begin)
+        self.assertIn(
+            "retainedResourceCount != kDiagnosticRetainedResourceCapacity",
+            begin,
+        )
+        exhaustion_check = (
+            "g_nextDiagnosticSubmissionSerial ==\n"
+            "        (std::numeric_limits<std::uint64_t>::max)()"
+        )
+        self.assertIn(exhaustion_check, begin)
+        self.assertNotIn("g_nextDiagnosticSubmissionSerial == 0", begin)
+        self.assertLess(
+            begin.index(exhaustion_check),
+            begin.index("ReleaseDiagnosticRetainedResourcesLocked()"),
+            "serial exhaustion must reject before native resource state changes",
+        )
+        self.assertLess(
+            begin.index(exhaustion_check),
+            begin.index("resource->AddRef()"),
+            "serial exhaustion must reject before retaining any resources",
+        )
+        completion = native.split(
+            "void CompleteDiagnosticSubmissionOnRenderThread()", 1
+        )[1].split(
+            "void AbandonDiagnosticSubmission", 1
+        )[0]
+        self.assertIn("ClearDiagnosticSubmissionLocked(serial)", completion)
+        self.assertIn("ReleaseRuntimeShaders()", completion)
+        event = native.split(
+            "void UNITY_INTERFACE_API InspectPostDrawBindings", 1
+        )[1].split("extern \"C\"", 1)[0]
+        self.assertLess(event.index("if (eventId == 2)"),
+                        event.index("if (!g_armed.load"))
+
+        self.assertIn("nativePendingSubmissionSerial", consumer)
+        self.assertIn("GetCompletedDiagnosticSubmissionSerial", consumer)
+        self.assertIn("BeginDiagnosticSubmission", consumer)
+        self.assertIn("CancelDiagnosticSubmission", consumer)
+        pending_gate = consumer.split(
+            "if (nativePendingSubmissionSerial != 0)", 1
+        )[1].split("if (SystemInfo.graphicsDeviceType", 1)[0]
+        self.assertNotIn("GetDiagnosticArmed", pending_gate)
+
+    def test_pipeline_disposes_exact_consumer_before_input_resources(self):
+        pipeline = (
+            LAB_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Runtime" /
+            "Rendering" / "HGCompatRenderPipeline.cs"
+        ).read_text(encoding="utf-8")
+        dispose = pipeline.split(
+            "protected override void Dispose(bool disposing)", 1
+        )[1].split("private void", 1)[0]
+        exact = dispose.index("recoveredDeferredExactConsumer?.Dispose()")
+        self.assertLess(exact, dispose.index("recoveredDeferredGBufferFrame?.Dispose()"))
+        self.assertLess(exact, dispose.index("recoveredPunctualShadowProducer?.Dispose()"))
+        self.assertLess(exact, dispose.index("recoveredDeferredShadowData?.Dispose()"))
 
     def test_canonical_capture_rejects_both_diagnostic_dynamics_owners(self):
         capture = (

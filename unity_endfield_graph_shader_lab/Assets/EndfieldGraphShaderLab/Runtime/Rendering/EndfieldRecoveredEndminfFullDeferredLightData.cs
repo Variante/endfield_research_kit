@@ -48,6 +48,7 @@ namespace EndfieldGraphShaderLab
             CullingResults cullingResults,
             Light directionalLight,
             EndfieldHGRPCharacterLightingVolume characterVolume,
+            bool currentCameraExposureReady,
             float exposureAdaptation,
             EndfieldHGOperatorLightRig rig,
             EndfieldRecoveredPunctualShadowProducer shadowProducer,
@@ -123,9 +124,14 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            if (!currentCameraExposureReady)
+            {
+                failure = "the current camera has no provenance-valid exposure publication";
+                return false;
+            }
             if (float.IsNaN(exposureAdaptation) ||
                 float.IsInfinity(exposureAdaptation) ||
-                exposureAdaptation < 0.0f)
+                exposureAdaptation <= 0.0f)
             {
                 failure = "the recovered camera exposure adaptation is invalid";
                 return false;
@@ -136,6 +142,13 @@ namespace EndfieldGraphShaderLab
             if (Mathf.Abs(sourceIntensity - expectedIntensity) > 1.0e-6f)
             {
                 failure = "the CharInfo_Env direct intensity no longer matches source data";
+                return false;
+            }
+            if (!EndfieldRecoveredEndminfFullLightDataContract
+                    .MatchesRecoveredSourceDirectColor(
+                        characterVolume.sourceDirectColor))
+            {
+                failure = "the CharInfo_Env direct color no longer matches exact white RGBA source data";
                 return false;
             }
 
