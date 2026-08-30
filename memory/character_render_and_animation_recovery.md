@@ -744,18 +744,18 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   frames. The exact DXBC consumer remains D3D11-only and its private float
   readback is intentionally non-presented; those sidecars are evidence, not a
   hidden beauty path.
-- Endminf's exact 12-row Overview light fixture now passes the selected
-  SphereOutside b31 boundary for every saved frame: all rows are
-  CharacterOnly, no-OBB, no-cookie, no-flicker, and no-culling, while the two
-  serialized soft-shadow identities remain fixed at rows 3 and 11. A bounded
-  D3D12 capture observes `_LightDataBuffer` and the exact zero-cookie buffer
-  ready across all 41 frames while b34, the combined pass-0 gate, and beauty
-  presentation remain false. The exact-consumer bridge now also requires a
-  successful same-camera, same-size, same-frame constants/cookie publication;
-  an allocated zero fallback can no longer pass as provenance. A new 12-row
-  GPU word-readback is still open because the historical verifier's pinned
-  decompiled shader inputs were retired from scratch; do not extend its older
-  eight-row proof by implication.
+- Endminf's exact 12-row Overview light fixture now has a separate complete
+  native b31 contract rather than extending the selected SphereOutside subset.
+  It packs all six headers and eight float4 words for each source-backed live
+  row, uses the prepared rig's live transforms, and consumes the punctual
+  producer's same-camera generation token. Every serialized row carries a
+  deterministic source semantic hash, so inspector edits fail closed instead
+  of becoming hidden light tuning. The bounded clean capture
+  `20260828T121603Z`, frame 1758, owns only its 1,632-byte active prefix; its
+  inactive allocator tail is explicitly outside the oracle. The extended
+  invariant retains source-stable oct lanes and matches offline, while the new
+  named/CB4 GPU transport verifier remains to be executed when the shared Unity
+  project lock is released.
 - The interactive D3D11 Endminf B31 probe now reproduces that selected
   12-light/zero-cookie transport over the actual `ui_overview_start` to loop
   41-frame sequence. It still reports no presented deferred pass-0/shadow
@@ -789,14 +789,15 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   with the otherwise physical t0/t5/t7/t11 set. This is a bounded transport
   scheduling gap in the non-presented SphereOutside diagnostic, not evidence
   for routing CharacterNPR hair through that resolver.
-- Endminf's two punctual-shadow rows now populate the lab-owned diagnostic
-  atlas and selected b34 transport as two validated spot entries in contiguous
-  dynamic slots 40-41. Publication still requires exact source rows 11 and 3
-  by name/type, and the one-spot and six-face fixtures remain independently
-  validated. The retail settled-frame light-to-shadow slot mapping has not
-  been captured, so this closes the non-presented exact-consumer fixture only;
-  do not infer retail order from source row, packed light, registration, or lab
-  allocation order.
+- Endminf's two punctual-shadow rows populate the lab-owned diagnostic atlas
+  and selected b34 transport from the already prepared packed order rather
+  than a row-to-slot table. The admitted clean retail frame closes packed order
+  `[7,4,2,6,10,3,9,5,8,0,11,1]`: source row 3 / packed row 5 receives dynamic
+  slot 40, then source row 11 / packed row 10 receives slot 41. Runtime code
+  derives this by filtering the prepared order and allocating contiguous cache
+  faces; captured order and slots are verifier inputs only. b4, b5, and t6 now
+  require one matching camera/generation token before the exact consumer can
+  submit.
 - The recovered VisibilitySH/capsule term improves measured character deltas,
   but it still runs against the partial ready-subset floor rather than the real
   presentation scene. The softer result is not evidence of a missing constant

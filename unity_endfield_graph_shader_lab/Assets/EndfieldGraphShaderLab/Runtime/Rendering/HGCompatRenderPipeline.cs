@@ -605,6 +605,8 @@ namespace EndfieldGraphShaderLab
             recoveredShaderVariablesGlobal;
         private readonly EndfieldRecoveredDeferredLightData
             recoveredDeferredLightData;
+        private readonly EndfieldRecoveredEndminfFullDeferredLightData
+            recoveredEndminfFullDeferredLightData;
         private readonly EndfieldRecoveredDeferredShadowData
             recoveredDeferredShadowData;
         private readonly EndfieldRecoveredPunctualShadowProducer
@@ -708,6 +710,7 @@ namespace EndfieldGraphShaderLab
         private bool loggedRecoveredDeferredLightDataActivation;
         private bool loggedRecoveredDeferredLightDataFailure;
         private bool loggedRecoveredDeferredEndminfLightDataResult;
+        private bool loggedRecoveredEndminfFullDeferredLightDataResult;
         private bool loggedRecoveredDeferredShadowDataActivation;
         private bool loggedRecoveredDeferredShadowDataFailure;
         private Material recoveredTemporalMaterial;
@@ -750,6 +753,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredShaderVariablesGlobal();
             recoveredDeferredLightData =
                 new EndfieldRecoveredDeferredLightData();
+            recoveredEndminfFullDeferredLightData =
+                new EndfieldRecoveredEndminfFullDeferredLightData();
             recoveredDeferredShadowData =
                 new EndfieldRecoveredDeferredShadowData();
             recoveredPunctualShadowProducer =
@@ -908,6 +913,7 @@ namespace EndfieldGraphShaderLab
             recoveredVisibilitySHProducer?.Dispose();
             recoveredPunctualShadowProducer?.Dispose();
             recoveredDeferredShadowData?.Dispose();
+            recoveredEndminfFullDeferredLightData?.Dispose();
             recoveredDeferredLightData?.Dispose();
             recoveredShaderVariablesGlobal?.Dispose();
             recoveredDeferredTransformVariables?.Dispose();
@@ -1190,6 +1196,12 @@ namespace EndfieldGraphShaderLab
                 camera.GetComponent<EndfieldHGOperatorLightRig>();
             EndfieldHGOperatorPresentation operatorPresentation =
                 camera.GetComponent<EndfieldHGOperatorPresentation>();
+            bool recoveredEndminfActorActive =
+                operatorLightRig != null && operatorLightRig.actorRoot != null &&
+                string.Equals(
+                    operatorLightRig.actorRoot.name,
+                    "Endminf",
+                    System.StringComparison.OrdinalIgnoreCase);
             bool recoveredEndminfLitEffectOwnerActive =
                 !recoveredDeferredGBufferFrame.EndminfLitEffectRequested ||
                 recoveredDeferredGBufferFrame
@@ -1583,6 +1595,7 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredTransformVariables.ResetPublication(commandBuffer);
             recoveredShaderVariablesGlobal.ResetPublication(commandBuffer);
             recoveredDeferredLightData.ResetPublication(commandBuffer);
+            recoveredEndminfFullDeferredLightData.ResetPublication(commandBuffer);
             recoveredDeferredShadowData.ResetPublication(commandBuffer);
             bool recoveredCanonicalBinningReady =
                 recoveredLightBinning.PrepareCamera(
@@ -1774,6 +1787,9 @@ namespace EndfieldGraphShaderLab
                             BuiltinRenderTextureType.CameraTarget));
 
             bool recoveredDeferredLightDataReady = false;
+            uint recoveredDeferredLightDataPreparedSerial = 0;
+            bool recoveredEndminfFullDeferredLightDataReady = false;
+            uint recoveredEndminfFullPreparedSerial = 0;
             bool recoveredDeferredShadowDataReady = false;
             if (recoveredEndminfLitEffectOwnerActive &&
                 EndfieldRecoveredDeferredLightData.IsRequested)
@@ -1793,6 +1809,7 @@ namespace EndfieldGraphShaderLab
                         recoveredCanonicalFrameResourcesReady,
                         recoveredDeferredTransformsReady,
                         lightDataCommand,
+                        out recoveredDeferredLightDataPreparedSerial,
                         out string lightDataFailure);
                 context.ExecuteCommandBuffer(lightDataCommand);
                 lightDataCommand.Release();
@@ -1849,9 +1866,63 @@ namespace EndfieldGraphShaderLab
                 }
             }
 
+            bool recoveredEndminfFullLightScope =
+                recoveredEndminfLitEffectOwnerActive &&
+                recoveredEndminfActorActive &&
+                EndfieldRecoveredEndminfFullDeferredLightData.IsRequested;
+            if (recoveredEndminfFullLightScope)
+            {
+                CommandBuffer fullLightDataCommand = new CommandBuffer
+                {
+                    name = "Recovered full Endminf retail LightData"
+                };
+                recoveredEndminfFullDeferredLightDataReady =
+                    recoveredEndminfFullDeferredLightData.PrepareAndPublish(
+                        camera,
+                        cullingResults,
+                        characterVolume != null
+                            ? characterVolume.sceneMainLight
+                            : null,
+                        characterVolume,
+                        recoveredVFXExposure,
+                        operatorLightRig,
+                        recoveredPunctualShadowProducer,
+                        recoveredCanonicalFrameResourcesReady,
+                        recoveredDeferredTransformsReady,
+                        recoveredPunctualShadowReady,
+                        fullLightDataCommand,
+                        out recoveredEndminfFullPreparedSerial,
+                        out string fullLightDataFailure);
+                context.ExecuteCommandBuffer(fullLightDataCommand);
+                fullLightDataCommand.Release();
+                if (recoveredEndminfFullDeferredLightDataReady &&
+                    !loggedRecoveredEndminfFullDeferredLightDataResult)
+                {
+                    Debug.Log(
+                        "Recovered complete Endminf retail _LightDataBuffer b31 " +
+                        "is active: 6 headers, 12 live prepared lights, and " +
+                        "same-frame packed-order shadow assignments.");
+                    loggedRecoveredEndminfFullDeferredLightDataResult = true;
+                }
+                else if (!recoveredEndminfFullDeferredLightDataReady &&
+                         !loggedRecoveredEndminfFullDeferredLightDataResult)
+                {
+                    Debug.LogWarning(
+                        "Recovered complete Endminf retail _LightDataBuffer " +
+                        "failed closed: " + fullLightDataFailure + ".");
+                    loggedRecoveredEndminfFullDeferredLightDataResult = true;
+                }
+            }
+
             if (recoveredEndminfLitEffectOwnerActive &&
                 EndfieldRecoveredDeferredShadowData.IsRequested)
             {
+                bool exactLightDataReady = recoveredEndminfFullLightScope
+                    ? recoveredEndminfFullDeferredLightDataReady
+                    : recoveredDeferredLightDataReady;
+                uint exactLightDataPreparedSerial = recoveredEndminfFullLightScope
+                    ? recoveredEndminfFullPreparedSerial
+                    : recoveredDeferredLightDataPreparedSerial;
                 CommandBuffer shadowDataCommand = new CommandBuffer
                 {
                     name = "Recovered selected deferred ShadowData"
@@ -1861,7 +1932,8 @@ namespace EndfieldGraphShaderLab
                         camera,
                         operatorLightRig,
                         recoveredPunctualShadowProducer,
-                        recoveredDeferredLightDataReady,
+                        exactLightDataReady,
+                        exactLightDataPreparedSerial,
                         recoveredPunctualShadowReady,
                         shadowDataCommand,
                         out string shadowDataFailure);
@@ -2057,6 +2129,9 @@ namespace EndfieldGraphShaderLab
                         recoveredLightBinning,
                         recoveredReflectionProbeFallback,
                         recoveredPunctualShadowProducer,
+                        recoveredEndminfFullLightScope
+                            ? recoveredEndminfFullPreparedSerial
+                            : recoveredDeferredLightDataPreparedSerial,
                         recoveredLowResDirectionalShadowProducer,
                         recoveredScreenShadowMaskProducer,
                         recoveredVisibilitySHProducer);
@@ -2069,7 +2144,9 @@ namespace EndfieldGraphShaderLab
                     recoveredDeferredGBufferFrameReady,
                     recoveredDeferredTransformsReady,
                     recoveredShaderVariablesGlobalReady,
-                    recoveredDeferredLightDataReady,
+                    recoveredEndminfFullLightScope
+                        ? recoveredEndminfFullDeferredLightDataReady
+                        : recoveredDeferredLightDataReady,
                     recoveredDeferredShadowDataReady,
                     recoveredDeferredResolverResources,
                     canonicalColorTarget,
@@ -2088,10 +2165,14 @@ namespace EndfieldGraphShaderLab
                         recoveredLightBinning,
                         recoveredVisibilitySHConstants,
                         recoveredDeferredLightData,
+                        recoveredEndminfFullDeferredLightData,
+                        recoveredEndminfFullLightScope,
                         recoveredDeferredShadowData,
                         recoveredDeferredTransformsReady,
                         recoveredShaderVariablesGlobalReady,
-                        recoveredDeferredLightDataReady,
+                        recoveredEndminfFullLightScope
+                            ? recoveredEndminfFullDeferredLightDataReady
+                            : recoveredDeferredLightDataReady,
                         recoveredDeferredShadowDataReady,
                         canonicalColorTarget,
                         canonicalDepthTarget);

@@ -54,6 +54,7 @@ namespace EndfieldGraphShaderLab
             internal ComputeBuffer t0Binning;
             internal RenderTexture t5Reflection;
             internal RenderTexture t6PunctualShadow;
+            internal uint t6PreparedSerial;
             internal RenderTexture t7LowResShadow;
             internal RenderTexture t11ScreenShadow;
             internal Texture2D t14LogSh;
@@ -68,6 +69,7 @@ namespace EndfieldGraphShaderLab
             internal bool T5Ready =>
                 t5Reflection != null && t5Reflection.IsCreated();
             internal bool T6Ready =>
+                t6PreparedSerial != 0 &&
                 t6PunctualShadow != null && t6PunctualShadow.IsCreated();
             internal bool T7Ready =>
                 t7LowResShadow != null && t7LowResShadow.IsCreated();
@@ -130,6 +132,7 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredLightBinning lightBinning,
             EndfieldRecoveredReflectionProbeFallback reflection,
             EndfieldRecoveredPunctualShadowProducer punctual,
+            uint expectedPunctualPreparedSerial,
             EndfieldRecoveredLowResDirectionalShadowProducer lowRes,
             EndfieldRecoveredScreenShadowMaskProducer screen,
             EndfieldRecoveredVisibilitySHProducer visibility)
@@ -158,12 +161,16 @@ namespace EndfieldGraphShaderLab
             if (punctual != null)
             {
                 punctual.TryGetCurrentPublication(
+                    camera,
+                    expectedPunctualPreparedSerial,
                     out Matrix4x4[] ignoredMatrices,
                     out Vector4[] ignoredParams,
                     out Vector4[] ignoredRects,
                     out Vector4 ignoredTexelSize,
                     out frame.t6PunctualShadow,
                     out string ignoredFailure);
+                if (frame.t6PunctualShadow != null)
+                    frame.t6PreparedSerial = expectedPunctualPreparedSerial;
             }
             if (lowRes != null)
             {

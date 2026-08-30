@@ -28,7 +28,12 @@ namespace EndfieldGraphShaderLab
 
         private readonly Vector4[] vectors = new Vector4[
             EndfieldRecoveredDeferredShadowDataContract.VectorCount];
+        private readonly EndfieldHGPreparedShadowAssignment[] assignments =
+            new EndfieldHGPreparedShadowAssignment[2];
         private ComputeBuffer buffer;
+        private Camera publicationCamera;
+        private uint publicationPreparedSerial;
+        private bool publicationReady;
         private bool disposed;
 
         public static bool IsRequested
@@ -54,6 +59,7 @@ namespace EndfieldGraphShaderLab
             EndfieldHGOperatorLightRig rig,
             EndfieldRecoveredPunctualShadowProducer punctualShadowProducer,
             bool deferredLightDataReady,
+            uint expectedPreparedSerial,
             bool punctualShadowReady,
             CommandBuffer commandBuffer,
             out string failure)
@@ -73,7 +79,7 @@ namespace EndfieldGraphShaderLab
                 failure = "explicit deferred ShadowData selector is disabled";
                 return false;
             }
-            if (!deferredLightDataReady)
+            if (!deferredLightDataReady || expectedPreparedSerial == 0)
             {
                 failure =
                     "selected deferred LightData prerequisite is not ready";
@@ -92,69 +98,30 @@ namespace EndfieldGraphShaderLab
                     "physical camera, source-backed light rig, and punctual-shadow owner are required";
                 return false;
             }
-            if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
+            if (!punctualShadowProducer.TryCopyCurrentLightShadowAssignments(
                     camera,
-                    out EndfieldHGIsolatedPunctualShadowTarget target,
+                    expectedPreparedSerial,
+                    assignments,
+                    out int assignmentCount,
                     out failure))
-            {
                 return false;
-            }
-            int activeSlotCount;
-            if (string.Equals(
-                    target.actorKey,
-                    "endminf",
-                    StringComparison.Ordinal))
+            int activeSlotCount = 0;
+            for (int index = 0; index < assignmentCount; index++)
             {
-                if (target.sourceIndex != 11 ||
-                    !target.light.spot ||
-                    !string.Equals(
-                        target.light.sourceName,
-                        "RimLight_2 (1)",
-                        StringComparison.Ordinal) ||
-                    target.light.shadowType != 2)
+                EndfieldHGPreparedShadowAssignment assignment = assignments[index];
+                if (assignment.shadowBaseIndex !=
+                    EndfieldRecoveredPunctualShadowProducer.DynamicCacheBase +
+                    activeSlotCount)
                 {
-                    failure =
-                        "Endminf primary isolated shadow target no longer matches source row 11 RimLight_2 (1)";
+                    failure = "punctual ShadowData assignments are not contiguous in native cache order";
                     return false;
                 }
-                if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
-                        camera,
-                        out EndfieldHGIsolatedPunctualShadowTarget secondary,
-                        out failure,
-                        3))
-                {
-                    return false;
-                }
-                if (!secondary.light.spot ||
-                    !string.Equals(
-                        secondary.light.sourceName,
-                        "RimLight_2",
-                        StringComparison.Ordinal) ||
-                    secondary.light.shadowType != 2)
-                {
-                    failure =
-                        "Endminf secondary isolated shadow target no longer matches source row 3 RimLight_2";
-                    return false;
-                }
-                activeSlotCount = 2;
-            }
-            else
-            {
-                if (target.sourceIndex != 4 ||
-                    !string.Equals(
-                        target.light.sourceName,
-                        "RimLight_2 (5)",
-                        StringComparison.Ordinal) ||
-                    target.light.shadowType != 2)
-                {
-                    failure =
-                        "isolated shadow target no longer matches source row 4 RimLight_2 (5)";
-                    return false;
-                }
-                activeSlotCount = target.light.spot ? 1 : 6;
+                activeSlotCount += assignment.faceCount;
             }
 
             if (!punctualShadowProducer.TryGetCurrentPublication(
+                    camera,
+                    expectedPreparedSerial,
                     out Matrix4x4[] worldToShadow,
                     out Vector4[] shadowParams,
                     out Vector4[] shadowRects,
@@ -212,6 +179,9 @@ namespace EndfieldGraphShaderLab
                     atlas);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
                 commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 1.0f);
+                publicationCamera = camera;
+                publicationPreparedSerial = expectedPreparedSerial;
+                publicationReady = true;
                 return true;
             }
             catch (Exception exception)
@@ -228,17 +198,41 @@ namespace EndfieldGraphShaderLab
         {
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 0.0f);
         }
 
-        internal ComputeBuffer CurrentBuffer => buffer;
+        internal bool TryGetCurrentPublication(
+            Camera expectedCamera,
+            uint expectedPreparedSerial,
+            out ComputeBuffer publishedBuffer,
+            out string failure)
+        {
+            publishedBuffer = null;
+            failure = string.Empty;
+            if (!publicationReady || publicationCamera != expectedCamera ||
+                publicationPreparedSerial == 0 ||
+                publicationPreparedSerial != expectedPreparedSerial ||
+                buffer == null || !buffer.IsValid())
+            {
+                failure = "the deferred ShadowData publication is absent or stale";
+                return false;
+            }
+            publishedBuffer = buffer;
+            return true;
+        }
 
         public void Dispose()
         {
             if (disposed)
                 return;
             disposed = true;
+            publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
             if (buffer != null)
             {
                 buffer.Release();
