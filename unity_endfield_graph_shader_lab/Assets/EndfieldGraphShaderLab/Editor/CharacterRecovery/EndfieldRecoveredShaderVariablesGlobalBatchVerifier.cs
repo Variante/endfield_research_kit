@@ -37,6 +37,20 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         [Serializable]
+        private sealed class M27PartialSourceReport
+        {
+            public bool valid;
+            public bool buildAccepted;
+            public bool exposureC27Populated;
+            public bool vfxParams0C103Populated;
+            public bool unresolvedTaaC19Zero;
+            public bool unresolvedMipBiasC26Zero;
+            public bool unresolvedAnchorC105Zero;
+            public bool m27AdmissionRejected;
+            public string admissionDiagnostic;
+        }
+
+        [Serializable]
         private sealed class ValidationReport
         {
             public string schema;
@@ -63,6 +77,7 @@ namespace EndfieldGraphShaderLabEditor
             public string[] expectedWords;
             public string[] actualCanonicalWords;
             public string[] actualD3D11BridgeWords;
+            public M27PartialSourceReport partialOwnedSources;
             public RejectionReport[] failClosedGates;
             public string[] failures;
         }
@@ -227,6 +242,8 @@ namespace EndfieldGraphShaderLabEditor
                     actualCanonical);
                 bool unresolvedZero = UnresolvedVectorsAreZero(
                     actualCanonical);
+                M27PartialSourceReport partialOwnedSources =
+                    VerifyPartialM27OwnedSources(camera);
 
                 if (!readyObserved)
                     failures.Add("ready_flag: expected 0x3F800000");
@@ -249,6 +266,12 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     failures.Add(
                         "unresolved_registers: unknown b35 rows are nonzero");
+                }
+                if (!partialOwnedSources.valid)
+                {
+                    failures.Add(
+                        "partial_m27_owned_sources: c27/c103 propagation or " +
+                        "fail-closed admission validation failed");
                 }
 
                 RejectionReport[] rejections =
@@ -282,7 +305,7 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     schema =
                         "endfield-recovered-shader-variables-global-" +
-                        "validation-v1",
+                        "validation-v2",
                     valid = failures.Count == 0,
                     graphicsApi = api,
                     defaultOff = true,
@@ -314,6 +337,7 @@ namespace EndfieldGraphShaderLabEditor
                     expectedWords = HexWords(expected),
                     actualCanonicalWords = HexWords(actualCanonical),
                     actualD3D11BridgeWords = HexWords(actualBridge),
+                    partialOwnedSources = partialOwnedSources,
                     failClosedGates = rejections,
                     failures = failures.ToArray(),
                 };
@@ -361,6 +385,90 @@ namespace EndfieldGraphShaderLabEditor
                 new Vector4[200],
                 out string diagnostic);
             return Rejection("prerequisites", "prerequisites are required", accepted, diagnostic);
+        }
+
+        private static M27PartialSourceReport VerifyPartialM27OwnedSources(
+            Camera camera)
+        {
+            const float Exposure = 2.0f;
+            Vector3 playerPosition = new Vector3(1.25f, -2.5f, 3.75f);
+            const float ClockSeconds = 1025.5f;
+            EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs
+                inputs = EndfieldRecoveredShaderVariablesGlobalContract
+                    .M27SourceInputs
+                    .CurrentTargetPerspectiveExposureAndVFXPlayer(
+                        Exposure,
+                        true,
+                        playerPosition,
+                        ClockSeconds,
+                        true);
+            var values = new Vector4[
+                EndfieldRecoveredShaderVariablesGlobalContract.VectorCount];
+            bool buildAccepted =
+                EndfieldRecoveredShaderVariablesGlobalContract.TryBuild(
+                    camera,
+                    640,
+                    720,
+                    EndfieldRecoveredShaderVariablesGlobalContract
+                        .SelectedEnvironmentParams,
+                    true,
+                    inputs,
+                    values,
+                    out _);
+            bool m27Admitted =
+                EndfieldRecoveredShaderVariablesGlobalContract
+                    .TryValidateM27SourceReadiness(
+                        inputs,
+                        out string admissionDiagnostic);
+
+            bool exposurePopulated = buildAccepted && VectorBitsEqual(
+                values[EndfieldRecoveredShaderVariablesGlobalContract
+                    .ExposureWithMiscParamsVector],
+                new Vector4(Exposure, 1.0f / Exposure, 640.0f / 720.0f, 0.0f));
+            bool vfxParams0Populated = buildAccepted && VectorBitsEqual(
+                values[EndfieldRecoveredShaderVariablesGlobalContract
+                    .VFXParams0Vector],
+                new Vector4(
+                    playerPosition.x,
+                    playerPosition.y,
+                    playerPosition.z,
+                    ClockSeconds % 1024.0f));
+            bool taaZero = buildAccepted && VectorBitsEqual(
+                values[EndfieldRecoveredShaderVariablesGlobalContract
+                    .TaaJitterStrengthVector],
+                Vector4.zero);
+            bool mipBiasZero = buildAccepted && VectorBitsEqual(
+                values[EndfieldRecoveredShaderVariablesGlobalContract
+                    .GlobalMipBiasVector],
+                Vector4.zero);
+            bool anchorZero = buildAccepted && VectorBitsEqual(
+                values[EndfieldRecoveredShaderVariablesGlobalContract
+                    .VFXParams2Vector],
+                Vector4.zero);
+            bool admissionRejected =
+                !m27Admitted &&
+                admissionDiagnostic != null &&
+                admissionDiagnostic.IndexOf(
+                    "c19.zw",
+                    StringComparison.Ordinal) >= 0;
+            return new M27PartialSourceReport
+            {
+                valid = buildAccepted &&
+                    exposurePopulated &&
+                    vfxParams0Populated &&
+                    taaZero &&
+                    mipBiasZero &&
+                    anchorZero &&
+                    admissionRejected,
+                buildAccepted = buildAccepted,
+                exposureC27Populated = exposurePopulated,
+                vfxParams0C103Populated = vfxParams0Populated,
+                unresolvedTaaC19Zero = taaZero,
+                unresolvedMipBiasC26Zero = mipBiasZero,
+                unresolvedAnchorC105Zero = anchorZero,
+                m27AdmissionRejected = admissionRejected,
+                admissionDiagnostic = admissionDiagnostic,
+            };
         }
 
         private static RejectionReport VerifyDimensionRejection(Camera camera)
@@ -510,6 +618,18 @@ namespace EndfieldGraphShaderLabEditor
         private static bool WordsEqual(uint[] expected, uint[] actual)
         {
             return PrefixWordsEqual(expected, actual, expected.Length);
+        }
+
+        private static bool VectorBitsEqual(Vector4 left, Vector4 right)
+        {
+            return BitConverter.SingleToInt32Bits(left.x) ==
+                    BitConverter.SingleToInt32Bits(right.x) &&
+                BitConverter.SingleToInt32Bits(left.y) ==
+                    BitConverter.SingleToInt32Bits(right.y) &&
+                BitConverter.SingleToInt32Bits(left.z) ==
+                    BitConverter.SingleToInt32Bits(right.z) &&
+                BitConverter.SingleToInt32Bits(left.w) ==
+                    BitConverter.SingleToInt32Bits(right.w);
         }
 
         private static bool PrefixWordsEqual(

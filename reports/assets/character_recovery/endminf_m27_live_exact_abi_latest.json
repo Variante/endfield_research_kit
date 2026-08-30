@@ -663,7 +663,7 @@
     },
     "selectedB0SourceContract": {
       "path": "reports/assets/character_recovery/endminf_m27_b0_source_contract.json",
-      "sha256": "4ba38b099d2ff3d893529cd90fabf234002b9c542868090ec3113e4b1b2c9f5f",
+      "sha256": "80a1d31531a89cd51a982825ebeac6c56dd876e919db0ff6609b0bafb414aa78",
       "schema": "endfield.endminf-m27-b0-source-contract.v1",
       "status": "source_closed_runtime_values_not_captured"
     },
@@ -698,15 +698,54 @@
       "defaultRuntimeFailsClosed": true,
       "sourceOwnedInputContractComplete": true,
       "runtimeSourceInputConnection": {
-        "argumentCount": 7,
-        "sourceInputExpression": null,
+        "argumentCount": 8,
+        "sourceInputExpression": "m27SourceInputs",
         "inlineDefaultRejected": false,
         "inlineConstructorRejected": false,
+        "namedSourceInputExpression": true,
         "namedSourceOwnerExpression": false,
-        "namedSourceOwnerContractAudited": false
+        "namedSourceOwnerContractAudited": false,
+        "partialFactoryAudited": true,
+        "sourceClosedManualExposureReturnAudited": true,
+        "sourceClosedManualExposureGateAudited": true,
+        "exposureLaneAudited": true,
+        "vfxLiveLabCarrierLaneAudited": true,
+        "uniqueAssignmentShapesAudited": {
+          "recoveredSourceClosedManualExposureRequested": true,
+          "recoveredCurrentCameraExposure": true,
+          "recoveredCurrentCameraExposureReady": true,
+          "recoveredVFXPlayerSourceRequested": true,
+          "recoveredVFXPlayerCenterReady": true,
+          "recoveredVFXPlayerPosition": true,
+          "recoveredVFXClockSeconds": true,
+          "recoveredVFXParams0Ready": true,
+          "m27SourceInputs": true
+        },
+        "assignmentOrderAudited": true,
+        "partialPipelineJoinAudited": true,
+        "partialSourceJoinAudited": true
       },
-      "explicitInputsReachRuntimePublisher": false,
+      "runtimeReadConnections": {
+        "c0.zw": true,
+        "c4.w": true,
+        "c19.zw": false,
+        "c26.xy": false,
+        "c27.y": true,
+        "c103.xyzw": true,
+        "c105.xyzw": false
+      },
+      "populatedSelectedReads": [
+        "c0.zw",
+        "c4.w",
+        "c27.y",
+        "c103.xyzw"
+      ],
+      "explicitInputsReachRuntimePublisher": true,
       "allSelectedReadsRuntimeSourcePopulated": false,
+      "runtimeSourceSemantics": {
+        "c27.y": "source_closed_manual_profile_only",
+        "c103.xyzw": "live_lab_actor_root_and_time_carrier; retail_selected_frame_HGVFX_player_identity_unproven"
+      },
       "capturedValuesAuthorized": false
     },
     "orderedMrtDescriptors": [
@@ -927,7 +966,7 @@
       },
       "reports/assets/character_recovery/endminf_m27_b0_source_contract.json": {
         "path": "reports/assets/character_recovery/endminf_m27_b0_source_contract.json",
-        "sha256": "4ba38b099d2ff3d893529cd90fabf234002b9c542868090ec3113e4b1b2c9f5f"
+        "sha256": "80a1d31531a89cd51a982825ebeac6c56dd876e919db0ff6609b0bafb414aa78"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs",
@@ -939,7 +978,7 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs",
-        "sha256": "50623fe136a5d3fcf7eb520919ece1a78bf86032f27589d1546ebfa9510986fe"
+        "sha256": "95c679a127f2adf6e98027931ff21bc0b68783541b33367d39aa4da2db1c1e36"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs",
@@ -955,7 +994,7 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-        "sha256": "afae0928d5faf28827b262598abbcb2131cc8ac5683c95d4087d4a8b4f661249"
+        "sha256": "0f9509577b5b621024f8c50be5cda8c419ca9cfa864878b188f50e7ae6b52aec"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredResolverBindingPolicy.cs",
