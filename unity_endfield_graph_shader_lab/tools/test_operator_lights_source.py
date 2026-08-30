@@ -30,6 +30,13 @@ class OperatorLightsSourceTests(unittest.TestCase):
         self.assertTrue(all(not row["enable_obb_culling_box"] for row in lights))
         self.assertTrue(all(row["cookie_path_id"] == 0 for row in lights))
         self.assertTrue(all(not row["flicker_enabled"] for row in lights))
+        self.assertTrue(
+            all(row["culling_box_falloff_threshold"] == 0.8 for row in lights)
+        )
+        self.assertTrue(all(not row["use_far_distance_show"] for row in lights))
+        self.assertTrue(
+            all(not row["enable_override_shadow_light"] for row in lights)
+        )
         self.assertEqual(
             [(row["index"], row["name"], row["shadow_type"], row["light_type"])
              for row in lights if row["shadow_type"] != 0],

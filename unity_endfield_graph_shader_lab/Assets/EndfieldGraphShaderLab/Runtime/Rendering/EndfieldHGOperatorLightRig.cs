@@ -1,5 +1,8 @@
 using System;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -32,6 +35,9 @@ namespace EndfieldGraphShaderLab
         public bool useCullingDistance;
         public float cullingDistance;
         public float falloffDistance;
+        public float cullingBoxFalloffThreshold;
+        public bool useFarDistanceShow;
+        public bool enableOverrideShadowLight;
         public int shadowType;
         public float shadowNearPlane;
         public float shadowFarPlane;
@@ -63,6 +69,128 @@ namespace EndfieldGraphShaderLab
         public string followerSourcePath;
         public string followerSourceJsonSha256;
         public string followerSourceRawDataSha256;
+        public string sourceSemanticSha256;
+    }
+
+    public static class EndfieldHGOperatorLightSemanticFingerprint
+    {
+        public static string Compute(EndfieldHGOperatorLightData value)
+        {
+            var semantic = new StringBuilder(1024);
+            AppendString(semantic, "endfield.operator-light.semantic.v1");
+            AppendString(semantic, value.sourceName);
+            Append(semantic, value.position);
+            Append(semantic, value.rotation);
+            Append(semantic, value.forward);
+            Append(semantic, value.color);
+            Append(semantic, value.priority);
+            Append(semantic, value.useColorTemperature);
+            Append(semantic, value.intensity);
+            Append(semantic, value.enabled);
+            Append(semantic, value.range);
+            Append(semantic, value.spot);
+            Append(semantic, value.outerSpotAngle);
+            Append(semantic, value.innerSpotAngle);
+            Append(semantic, value.nprType);
+            Append(semantic, value.nprData);
+            Append(semantic, value.characterOnly);
+            Append(semantic, value.volumetricScatteringIntensity);
+            Append(semantic, value.falloffExponent);
+            Append(semantic, value.linearLightLength);
+            Append(semantic, value.softSourceRadius);
+            Append(semantic, value.specularIntensity);
+            Append(semantic, value.useCullingDistance);
+            Append(semantic, value.cullingDistance);
+            Append(semantic, value.falloffDistance);
+            Append(semantic, value.cullingBoxFalloffThreshold);
+            Append(semantic, value.useFarDistanceShow);
+            Append(semantic, value.enableOverrideShadowLight);
+            Append(semantic, value.shadowType);
+            Append(semantic, value.useShadowCullingMatrixOverride);
+            Append(semantic, value.shadowOnly);
+            Append(semantic, value.enableObbCullingBox);
+            Append(semantic, value.hasCookie);
+            Append(semantic, value.flickerEnabled);
+            Append(semantic, value.hasFollower);
+            Append(semantic, value.followerEnabled);
+            Append(semantic, value.followerMode);
+            Append(semantic, value.followerBoneType);
+            AppendString(semantic, value.followerBoneKey);
+            Append(semantic, value.followerPositionOffset);
+            Append(semantic, value.followerLocalPosition);
+            Append(semantic, value.followerLocalEulerDegrees);
+            Append(semantic, value.followerSourcePathId);
+            AppendString(semantic, value.followerSourceJsonSha256);
+            AppendString(semantic, value.followerSourceRawDataSha256);
+            byte[] payload = Encoding.UTF8.GetBytes(semantic.ToString());
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] digest = sha.ComputeHash(payload);
+                var result = new StringBuilder(digest.Length * 2);
+                for (int index = 0; index < digest.Length; index++)
+                    result.Append(digest[index].ToString("x2"));
+                return result.ToString();
+            }
+        }
+
+        public static bool Matches(EndfieldHGOperatorLightData value) =>
+            !string.IsNullOrEmpty(value.sourceSemanticSha256) &&
+            string.Equals(
+                value.sourceSemanticSha256,
+                Compute(value),
+                StringComparison.Ordinal);
+
+        private static void Append(StringBuilder destination, bool value) =>
+            destination.Append(value ? '1' : '0').Append('|');
+
+        private static void Append(StringBuilder destination, int value) =>
+            destination.Append(value.ToString(CultureInfo.InvariantCulture)).Append('|');
+
+        private static void Append(StringBuilder destination, long value) =>
+            destination.Append(value.ToString(CultureInfo.InvariantCulture)).Append('|');
+
+        private static void Append(StringBuilder destination, float value) =>
+            destination.Append(
+                unchecked((uint)BitConverter.SingleToInt32Bits(value)).ToString("x8"))
+                .Append('|');
+
+        private static void Append(StringBuilder destination, Vector3 value)
+        {
+            Append(destination, value.x);
+            Append(destination, value.y);
+            Append(destination, value.z);
+        }
+
+        private static void Append(StringBuilder destination, Vector4 value)
+        {
+            Append(destination, value.x);
+            Append(destination, value.y);
+            Append(destination, value.z);
+            Append(destination, value.w);
+        }
+
+        private static void Append(StringBuilder destination, Quaternion value)
+        {
+            Append(destination, value.x);
+            Append(destination, value.y);
+            Append(destination, value.z);
+            Append(destination, value.w);
+        }
+
+        private static void Append(StringBuilder destination, Color value)
+        {
+            Append(destination, value.r);
+            Append(destination, value.g);
+            Append(destination, value.b);
+            Append(destination, value.a);
+        }
+
+        private static void AppendString(StringBuilder destination, string value)
+        {
+            string encoded = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes(value ?? string.Empty));
+            destination.Append(encoded).Append('|');
+        }
     }
 
     internal struct EndfieldHGIsolatedPunctualShadowTarget
@@ -74,6 +202,16 @@ namespace EndfieldGraphShaderLab
         internal Vector3 worldPosition;
         internal Quaternion worldRotation;
         internal EndfieldHGOperatorLightData light;
+    }
+
+    public struct EndfieldHGPreparedOperatorLight
+    {
+        public int sourceIndex;
+        public int packedIndex;
+        public EndfieldHGOperatorLightData light;
+        public Vector3 worldPosition;
+        public Vector3 worldForward;
+        public Quaternion worldRotation;
     }
 
     /// <summary>
@@ -142,6 +280,7 @@ namespace EndfieldGraphShaderLab
         private EndfieldHGOperatorLightData[] resolvedLightRows;
         private Camera preparedCamera;
         private int preparedLightCount;
+        private uint preparedSerial;
 
         public void SetRecoveredGachaPublicationState(
             bool clusteredNpr,
@@ -158,6 +297,7 @@ namespace EndfieldGraphShaderLab
 
             preparedCamera = null;
             preparedLightCount = 0;
+            preparedSerial = 0;
             PublishGlobalsImmediate(0);
             Shader.SetGlobalFloat(RecoveredLightBinningAvailableId, 0.0f);
         }
@@ -396,13 +536,111 @@ namespace EndfieldGraphShaderLab
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
 
+            // Invalidate the current publication before any evaluation work so
+            // an exception cannot leave an older frame looking current.
+            preparedCamera = null;
+            preparedLightCount = 0;
             int count = EvaluateAndPack(camera);
             if (descriptorDestination != null)
                 BuildBinningDescriptors(camera, count, descriptorDestination);
             PublishGlobals(commandBuffer, count);
             preparedCamera = camera;
             preparedLightCount = count;
+            unchecked
+            {
+                preparedSerial++;
+                if (preparedSerial == 0)
+                    preparedSerial = 1;
+            }
             return count;
+        }
+
+        internal bool TryCopyPreparedSourceBackedFrame(
+            Camera camera,
+            EndfieldHGPreparedOperatorLight[] destination,
+            out int count,
+            out uint serial,
+            out string failure)
+        {
+            if (!TryGetPreparedFrameIdentity(
+                    camera,
+                    out count,
+                    out serial,
+                    out failure))
+                return false;
+            if (destination == null || destination.Length < preparedLightCount)
+            {
+                failure = $"destination must hold at least {preparedLightCount} prepared lights";
+                return false;
+            }
+
+            var seen = new bool[MaxLights];
+            for (int packedIndex = 0; packedIndex < preparedLightCount; packedIndex++)
+            {
+                int sourceIndex = packedSourceIndices[packedIndex];
+                if (sourceIndex < 0 || sourceIndex >= lights.Length || seen[sourceIndex])
+                {
+                    failure = "the prepared light order contains a duplicate or invalid source index";
+                    return false;
+                }
+                seen[sourceIndex] = true;
+
+                Vector3 worldPosition = resolvedWorldPositions[sourceIndex];
+                Vector3 worldForward = resolvedWorldForwards[sourceIndex];
+                Quaternion worldRotation = resolvedWorldRotations[sourceIndex];
+                if (!IsFinite(worldPosition) || !IsFinite(worldForward) ||
+                    worldForward.sqrMagnitude <= 1.0e-12f ||
+                    !TryNormalizeQuaternion(worldRotation, out worldRotation))
+                {
+                    failure = $"prepared light row {sourceIndex} has a non-finite transform";
+                    return false;
+                }
+
+                destination[packedIndex] = new EndfieldHGPreparedOperatorLight
+                {
+                    sourceIndex = sourceIndex,
+                    packedIndex = packedIndex,
+                    light = lights[sourceIndex],
+                    worldPosition = worldPosition,
+                    worldForward = worldForward.normalized,
+                    worldRotation = worldRotation
+                };
+            }
+
+            count = preparedLightCount;
+            serial = preparedSerial;
+            return true;
+        }
+
+        internal bool TryGetPreparedFrameIdentity(
+            Camera camera,
+            out int count,
+            out uint serial,
+            out string failure)
+        {
+            count = 0;
+            serial = 0;
+            failure = string.Empty;
+            if (!sourceBackedClusteredNprLightLoop)
+            {
+                failure = "the source-backed clustered NPR light loop must be enabled";
+                return false;
+            }
+            if (camera == null || preparedCamera != camera || preparedSerial == 0)
+            {
+                failure = "the source-backed light frame was not prepared for this camera";
+                return false;
+            }
+            if (actorRoot == null || lights == null ||
+                preparedLightCount <= 0 || preparedLightCount != lights.Length ||
+                preparedLightCount > MaxLights)
+            {
+                failure = "the prepared source-backed light identity is incomplete";
+                return false;
+            }
+            count = preparedLightCount;
+            serial = preparedSerial;
+            return true;
         }
 
         internal bool TryGetIsolatedPunctualSoftShadowTarget(
@@ -1088,6 +1326,9 @@ namespace EndfieldGraphShaderLab
         private void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            preparedCamera = null;
+            preparedLightCount = 0;
+            preparedSerial = 0;
             Shader.SetGlobalInt(CountId, 0);
             Shader.SetGlobalFloat(RecoveredClusteredNprLightLoopId, 0.0f);
             Shader.SetGlobalFloat(RecoveredLightBinningAvailableId, 0.0f);

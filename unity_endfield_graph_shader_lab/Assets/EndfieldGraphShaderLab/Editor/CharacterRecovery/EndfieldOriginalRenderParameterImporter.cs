@@ -157,6 +157,11 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<string, object> environment = Dict(Get(payload, "environment"));
             Dictionary<string, object> serializedEnvironment =
                 Dict(Get(environment, "serialized"));
+            int sourceDirectColorMode = IntValue(
+                Get(serializedEnvironment, "direct_color_mode"));
+            volume.sourceDirectColor = ColorValue(Get(
+                serializedEnvironment,
+                sourceDirectColorMode == 1 ? "direct_custom_color" : "direct_color"));
             volume.sourceDirectIntensityDividePi = FloatValue(
                 Get(serializedEnvironment, "direct_intensity_divide_pi"));
             volume.useRecoveredSourceMainLightDescriptor =

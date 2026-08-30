@@ -6,6 +6,14 @@ using UnityEngine.Rendering;
 
 namespace EndfieldGraphShaderLab
 {
+    public struct EndfieldHGPreparedShadowAssignment
+    {
+        public int sourceIndex;
+        public int packedIndex;
+        public int shadowBaseIndex;
+        public int faceCount;
+    }
+
     /// <summary>
     /// Source-backed, isolated reconstruction of the original overview
     /// punctual-shadow producer. It intentionally owns only the validated
@@ -13,10 +21,10 @@ namespace EndfieldGraphShaderLab
     /// publishes no cache slot unless every recovered
     /// identity, resource, projection, atlas, and caster condition is valid.
     /// </summary>
-    internal sealed class EndfieldRecoveredPunctualShadowProducer : IDisposable
+    public sealed class EndfieldRecoveredPunctualShadowProducer : IDisposable
     {
-        internal const int CacheSlotCount = 56;
-        internal const int DynamicCacheBase = 40;
+        public const int CacheSlotCount = 56;
+        public const int DynamicCacheBase = 40;
         internal const int EnvironmentDynamicCapacity = 6;
         internal const int MovableDynamicCapacity = 2;
         internal const int DynamicCapacity =
@@ -83,6 +91,12 @@ namespace EndfieldGraphShaderLab
         private readonly Vector4[] shadowParams = new Vector4[CacheSlotCount];
         private readonly Vector4[] shadowRects = new Vector4[CacheSlotCount];
         private readonly Vector4[] lightShadowData = new Vector4[MaxOperatorLights];
+        private readonly EndfieldHGPreparedOperatorLight[] preparedLights =
+            new EndfieldHGPreparedOperatorLight[MaxOperatorLights];
+        private readonly EndfieldHGIsolatedPunctualShadowTarget[] activeTargets =
+            new EndfieldHGIsolatedPunctualShadowTarget[2];
+        private readonly EndfieldHGPreparedShadowAssignment[] shadowAssignments =
+            new EndfieldHGPreparedShadowAssignment[2];
         private readonly Matrix4x4[] casterMatrices = new Matrix4x4[6];
         private readonly Rect[] casterRects = new Rect[6];
         private readonly List<CasterDraw> casterDraws = new List<CasterDraw>();
@@ -97,6 +111,9 @@ namespace EndfieldGraphShaderLab
         private string lastFailure = string.Empty;
         private string lastActiveDescription = string.Empty;
         private bool publicationReady;
+        private Camera publicationCamera;
+        private uint publicationPreparedSerial;
+        private int publicationAssignmentCount;
         private bool disposed;
 
         private struct CasterDraw
@@ -119,6 +136,9 @@ namespace EndfieldGraphShaderLab
             if (camera == null)
                 throw new ArgumentNullException(nameof(camera));
             publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
+            publicationAssignmentCount = 0;
 
             if (rig == null || !rig.sourceBackedIsolatedPunctualSoftShadowProducer)
             {
@@ -143,29 +163,59 @@ namespace EndfieldGraphShaderLab
                 return Fail(context, "D16_UNorm depth-render support is unavailable");
             }
 
-            EndfieldHGIsolatedPunctualShadowTarget target;
             string failure;
-            if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
+            if (!rig.TryCopyPreparedSourceBackedFrame(
                     camera,
-                    out target,
+                    preparedLights,
+                    out int preparedLightCount,
+                    out uint preparedSerial,
                     out failure))
             {
                 return Fail(context, failure);
             }
-            EndfieldHGIsolatedPunctualShadowTarget secondaryTarget = default;
-            int targetCount = 1;
-            if (string.Equals(target.actorKey, "endminf", StringComparison.Ordinal))
+            ClearShadowData();
+            if (!TryBuildShadowAssignmentPlan(
+                    preparedLights,
+                    preparedLightCount,
+                    shadowAssignments,
+                    out int targetCount,
+                    out failure))
             {
+                return Fail(context, failure);
+            }
+            for (int targetIndex = 0; targetIndex < targetCount; targetIndex++)
+            {
+                EndfieldHGPreparedShadowAssignment assignment =
+                    shadowAssignments[targetIndex];
                 if (!rig.TryGetIsolatedPunctualSoftShadowTarget(
                         camera,
-                        out secondaryTarget,
+                        out EndfieldHGIsolatedPunctualShadowTarget candidate,
                         out failure,
-                        3))
+                        assignment.sourceIndex))
                 {
                     return Fail(context, failure);
                 }
-                targetCount = 2;
+                if (candidate.sourceIndex != assignment.sourceIndex ||
+                    candidate.packedIndex != assignment.packedIndex)
+                {
+                    return Fail(
+                        context,
+                        "the isolated shadow target no longer matches the prepared packed order");
+                }
+                activeTargets[targetIndex] = candidate;
             }
+            int expectedTargetCount = rig.actorRoot != null && string.Equals(
+                rig.actorRoot.name,
+                "Endminf",
+                StringComparison.OrdinalIgnoreCase) ? 2 : 1;
+            if (targetCount != expectedTargetCount)
+            {
+                return Fail(
+                    context,
+                    $"expected {expectedTargetCount} isolated shadow-producing lights, found {targetCount}");
+            }
+
+            EndfieldHGIsolatedPunctualShadowTarget target = activeTargets[0];
             if (!BuildCasterList(target, camera, out failure))
                 return Fail(context, failure);
 
@@ -178,23 +228,24 @@ namespace EndfieldGraphShaderLab
                 return Fail(context, failure);
             }
 
-            ClearShadowData();
-            int primaryFaceCount = target.light.spot ? 1 : 6;
-            if (!BuildShadowData(target, primaryFaceCount, 0, 0, out failure))
-                return Fail(context, failure);
-            int secondaryFaceCount = 0;
-            if (targetCount == 2)
+            int totalFaceCount = 0;
+            for (int targetIndex = 0; targetIndex < targetCount; targetIndex++)
             {
-                secondaryFaceCount = secondaryTarget.light.spot ? 1 : 6;
+                EndfieldHGIsolatedPunctualShadowTarget activeTarget =
+                    activeTargets[targetIndex];
+                EndfieldHGPreparedShadowAssignment assignment =
+                    shadowAssignments[targetIndex];
+                int faceCount = assignment.faceCount;
                 if (!BuildShadowData(
-                        secondaryTarget,
-                        secondaryFaceCount,
-                        primaryFaceCount,
-                        primaryFaceCount,
+                        activeTarget,
+                        faceCount,
+                        totalFaceCount,
+                        totalFaceCount,
                         out failure))
                 {
                     return Fail(context, failure);
                 }
+                totalFaceCount += faceCount;
             }
 
             CommandBuffer commandBuffer = new CommandBuffer
@@ -222,10 +273,8 @@ namespace EndfieldGraphShaderLab
                 for (int targetIndex = 0; targetIndex < targetCount; targetIndex++)
                 {
                     EndfieldHGIsolatedPunctualShadowTarget activeTarget =
-                        targetIndex == 0 ? target : secondaryTarget;
-                    int activeFaceCount = targetIndex == 0
-                        ? primaryFaceCount
-                        : secondaryFaceCount;
+                        activeTargets[targetIndex];
+                    int activeFaceCount = shadowAssignments[targetIndex].faceCount;
                     commandBuffer.SetGlobalVector(
                         WorldSpaceLightPositionId,
                         new Vector4(
@@ -295,15 +344,18 @@ namespace EndfieldGraphShaderLab
             }
             commandBuffer.Release();
             publicationReady = true;
+            publicationCamera = camera;
+            publicationPreparedSerial = preparedSerial;
+            publicationAssignmentCount = targetCount;
 
             lastFailure = string.Empty;
+            string targetDescription = targetCount == 2
+                ? $"{activeTargets[0].sourceIndex}/{activeTargets[1].sourceIndex}, packed lights " +
+                  $"{activeTargets[0].packedIndex}/{activeTargets[1].packedIndex}"
+                : $"{activeTargets[0].sourceIndex}, packed light {activeTargets[0].packedIndex}";
             string activeDescription =
-                $"{target.actorKey}: rows " +
-                (targetCount == 2
-                    ? $"{secondaryTarget.sourceIndex}/{target.sourceIndex}, packed lights " +
-                      $"{secondaryTarget.packedIndex}/{target.packedIndex}"
-                    : $"{target.sourceIndex}, packed light {target.packedIndex}") +
-                $", slots 40..{39 + primaryFaceCount + secondaryFaceCount}, B={atlasTileResolution}, " +
+                $"{target.actorKey}: rows {targetDescription}" +
+                $", slots 40..{39 + totalFaceCount}, B={atlasTileResolution}, " +
                 $"atlas={atlasWidth}x{atlasHeight}, D16, casters={casterDraws.Count}";
             if (!string.Equals(
                     activeDescription,
@@ -320,7 +372,80 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        /// <summary>
+        /// Reproduces the native cache allocation order from the already
+        /// prepared light order. It does not resolve transforms or encode any
+        /// source-row-to-slot mapping.
+        /// </summary>
+        public static bool TryBuildShadowAssignmentPlan(
+            EndfieldHGPreparedOperatorLight[] prepared,
+            int preparedCount,
+            EndfieldHGPreparedShadowAssignment[] destination,
+            out int count,
+            out string failure)
+        {
+            count = 0;
+            failure = string.Empty;
+            if (prepared == null || preparedCount <= 0 ||
+                preparedCount > MaxOperatorLights || prepared.Length < preparedCount)
+            {
+                failure = "the prepared light plan has an invalid count";
+                return false;
+            }
+            if (destination == null)
+            {
+                failure = "the shadow assignment destination is unavailable";
+                return false;
+            }
+
+            var seenSourceRows = new bool[MaxOperatorLights];
+            int totalFaceCount = 0;
+            for (int packedIndex = 0; packedIndex < preparedCount; packedIndex++)
+            {
+                EndfieldHGPreparedOperatorLight row = prepared[packedIndex];
+                if (row.packedIndex != packedIndex || row.sourceIndex < 0 ||
+                    row.sourceIndex >= MaxOperatorLights || seenSourceRows[row.sourceIndex])
+                {
+                    failure = "the prepared shadow plan contains a duplicate or invalid identity";
+                    return false;
+                }
+                seenSourceRows[row.sourceIndex] = true;
+                if (row.light.shadowType == 0)
+                    continue;
+                if (row.light.shadowType != 2 || row.light.shadowOnly)
+                {
+                    failure =
+                        $"prepared shadow row {row.sourceIndex} has an unsupported native shadow contract";
+                    return false;
+                }
+                if (count >= destination.Length)
+                {
+                    failure = "the isolated fixture contains too many shadow-producing lights";
+                    return false;
+                }
+
+                int faceCount = row.light.spot ? 1 : 6;
+                if (totalFaceCount + faceCount > DynamicCapacity ||
+                    DynamicCacheBase + totalFaceCount + faceCount > CacheSlotCount)
+                {
+                    failure = "the shadow assignment plan exceeds the recovered dynamic cache";
+                    return false;
+                }
+                destination[count++] = new EndfieldHGPreparedShadowAssignment
+                {
+                    sourceIndex = row.sourceIndex,
+                    packedIndex = packedIndex,
+                    shadowBaseIndex = DynamicCacheBase + totalFaceCount,
+                    faceCount = faceCount
+                };
+                totalFaceCount += faceCount;
+            }
+            return true;
+        }
+
         internal bool TryGetCurrentPublication(
+            Camera expectedCamera,
+            uint expectedPreparedSerial,
             out Matrix4x4[] publishedWorldToShadow,
             out Vector4[] publishedShadowParams,
             out Vector4[] publishedShadowRects,
@@ -334,11 +459,14 @@ namespace EndfieldGraphShaderLab
             publishedTexelSize = Vector4.zero;
             publishedAtlas = null;
             failure = string.Empty;
-            if (!publicationReady || atlas == null || !atlas.IsCreated() ||
+            if (!publicationReady || publicationCamera != expectedCamera ||
+                publicationPreparedSerial == 0 ||
+                publicationPreparedSerial != expectedPreparedSerial ||
+                atlas == null || !atlas.IsCreated() ||
                 atlasWidth <= 0 || atlasHeight <= 0)
             {
                 failure =
-                    "the isolated punctual-shadow producer has no current-frame publication";
+                    "the isolated punctual-shadow producer has no matching camera/frame publication";
                 return false;
             }
             publishedWorldToShadow = worldToShadow;
@@ -353,11 +481,54 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        internal bool TryCopyCurrentLightShadowAssignments(
+            Camera expectedCamera,
+            uint expectedPreparedSerial,
+            EndfieldHGPreparedShadowAssignment[] destination,
+            out int count,
+            out string failure)
+        {
+            count = 0;
+            failure = string.Empty;
+            if (!publicationReady || publicationCamera != expectedCamera ||
+                publicationPreparedSerial == 0 ||
+                publicationPreparedSerial != expectedPreparedSerial)
+            {
+                failure = "the punctual-shadow publication is stale for the prepared light frame";
+                return false;
+            }
+            if (publicationAssignmentCount <= 0 ||
+                publicationAssignmentCount > shadowAssignments.Length ||
+                destination == null || destination.Length < publicationAssignmentCount)
+            {
+                failure = "the punctual-shadow assignment publication is incomplete";
+                return false;
+            }
+
+            for (int index = 0; index < publicationAssignmentCount; index++)
+            {
+                EndfieldHGPreparedShadowAssignment assignment = shadowAssignments[index];
+                if (assignment.sourceIndex < 0 || assignment.packedIndex < 0 ||
+                    assignment.packedIndex >= MaxOperatorLights ||
+                    assignment.shadowBaseIndex < DynamicCacheBase ||
+                    assignment.shadowBaseIndex >= CacheSlotCount ||
+                    (assignment.faceCount != 1 && assignment.faceCount != 6))
+                {
+                    failure = "the punctual-shadow assignment contains an invalid identity or slot";
+                    return false;
+                }
+                destination[index] = assignment;
+            }
+            count = publicationAssignmentCount;
+            return true;
+        }
+
         private void ClearShadowData()
         {
             Array.Clear(worldToShadow, 0, worldToShadow.Length);
             Array.Clear(shadowParams, 0, shadowParams.Length);
             Array.Clear(shadowRects, 0, shadowRects.Length);
+            Array.Clear(shadowAssignments, 0, shadowAssignments.Length);
             for (int index = 0; index < lightShadowData.Length; index++)
                 lightShadowData[index] = new Vector4(-1.0f, 0.0f, 0.0f, 0.0f);
         }
@@ -759,6 +930,9 @@ namespace EndfieldGraphShaderLab
         private void BindDisabled(ScriptableRenderContext context)
         {
             publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
+            publicationAssignmentCount = 0;
             for (int index = 0; index < lightShadowData.Length; index++)
                 lightShadowData[index] = new Vector4(-1.0f, 0.0f, 0.0f, 0.0f);
             CommandBuffer commandBuffer = new CommandBuffer
@@ -801,6 +975,9 @@ namespace EndfieldGraphShaderLab
         private void ReleaseAtlas()
         {
             publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
+            publicationAssignmentCount = 0;
             if (atlas == null)
                 return;
             if (atlas.IsCreated())

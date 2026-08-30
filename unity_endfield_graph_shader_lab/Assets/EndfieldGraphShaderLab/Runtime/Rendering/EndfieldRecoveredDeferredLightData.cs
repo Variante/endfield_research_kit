@@ -28,6 +28,9 @@ namespace EndfieldGraphShaderLab
         private readonly Vector4[] vectors = new Vector4[
             EndfieldRecoveredDeferredLightDataContract.VectorCount];
         private ComputeBuffer buffer;
+        private Camera publicationCamera;
+        private uint publicationPreparedSerial;
+        private bool publicationReady;
         private bool disposed;
 
         public static bool IsRequested
@@ -50,8 +53,10 @@ namespace EndfieldGraphShaderLab
             bool canonicalFrameResourcesReady,
             bool deferredTransformsReady,
             CommandBuffer commandBuffer,
+            out uint publishedPreparedSerial,
             out string failure)
         {
+            publishedPreparedSerial = 0;
             failure = null;
             if (disposed)
             {
@@ -101,6 +106,17 @@ namespace EndfieldGraphShaderLab
                     failure = "source-backed operator-light rig is required";
                 return false;
             }
+            if (!rig.TryGetPreparedFrameIdentity(
+                    camera,
+                    out int preparedCount,
+                    out uint preparedSerial,
+                    out failure) ||
+                preparedCount != punctualLightCount)
+            {
+                if (string.IsNullOrEmpty(failure))
+                    failure = "selected LightData prepared-frame identity is inconsistent";
+                return false;
+            }
 
             // The selected SphereOutside program reads record[5].w and then
             // record[3].z for these rows. CharacterOnly is one, so it exits
@@ -134,6 +150,10 @@ namespace EndfieldGraphShaderLab
                     0,
                     EndfieldRecoveredDeferredLightDataContract.SizeBytes);
                 commandBuffer.SetGlobalFloat(ReadyId, 1.0f);
+                publicationCamera = camera;
+                publicationPreparedSerial = preparedSerial;
+                publicationReady = true;
+                publishedPreparedSerial = preparedSerial;
                 // The combined subset gate is raised only after the matching
                 // b34 ShadowData/atlas publication succeeds later this frame.
                 return true;
@@ -151,17 +171,41 @@ namespace EndfieldGraphShaderLab
         {
             if (commandBuffer == null)
                 throw new ArgumentNullException(nameof(commandBuffer));
+            publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
             commandBuffer.SetGlobalFloat(ReadyId, 0.0f);
             commandBuffer.SetGlobalFloat(Pass0SubsetReadyId, 0.0f);
         }
 
-        internal ComputeBuffer CurrentBuffer => buffer;
+        internal bool TryGetCurrentPublication(
+            Camera expectedCamera,
+            out ComputeBuffer publishedBuffer,
+            out uint preparedSerial,
+            out string failure)
+        {
+            publishedBuffer = null;
+            preparedSerial = 0;
+            failure = string.Empty;
+            if (!publicationReady || publicationCamera != expectedCamera ||
+                publicationPreparedSerial == 0 || buffer == null || !buffer.IsValid())
+            {
+                failure = "the selected LightData publication is absent or stale";
+                return false;
+            }
+            publishedBuffer = buffer;
+            preparedSerial = publicationPreparedSerial;
+            return true;
+        }
 
         public void Dispose()
         {
             if (disposed)
                 return;
             disposed = true;
+            publicationReady = false;
+            publicationCamera = null;
+            publicationPreparedSerial = 0;
             if (buffer != null)
             {
                 buffer.Release();
@@ -171,7 +215,7 @@ namespace EndfieldGraphShaderLab
             Shader.SetGlobalFloat(Pass0SubsetReadyId, 0.0f);
         }
 
-        private static bool MatchesRecoveredDirectionalFixture(
+        internal static bool MatchesRecoveredDirectionalFixture(
             CullingResults cullingResults,
             Light directionalLight,
             out VisibleLight visibleDirectional,

@@ -179,6 +179,7 @@ namespace EndfieldGraphShaderLab
         [Header("Exposure Contract")]
         [Tooltip("Uses the original LightExtensions character-main descriptor. The source intensity is the serialized HGLightConfig directIntensityDividePi; its live input is _ExposureParams.x.")]
         public bool useRecoveredSourceMainLightDescriptor;
+        [ColorUsage(true, true)] public Color sourceDirectColor = Color.white;
         [Min(0.0f)] public float sourceDirectIntensityDividePi = 1.0f;
 
         [Tooltip("Publishes the recovered HGRP _ExposureParams contract: x is the exposure multiplier and y/z/w are zero. Zero EV is neutral and is the safe default.")]

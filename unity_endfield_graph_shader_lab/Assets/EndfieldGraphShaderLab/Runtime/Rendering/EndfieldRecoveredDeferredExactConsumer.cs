@@ -113,7 +113,9 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredReflectionProbeFallback reflectionProbeFallback,
             EndfieldRecoveredLightBinning lightBinning,
             EndfieldRecoveredVisibilitySHConstants visibilitySHConstants,
-            EndfieldRecoveredDeferredLightData lightData,
+            EndfieldRecoveredDeferredLightData selectedLightData,
+            EndfieldRecoveredEndminfFullDeferredLightData fullEndminfLightData,
+            bool useFullEndminfLightData,
             EndfieldRecoveredDeferredShadowData shadowData,
             bool transformsReady,
             bool shaderVariablesReady,
@@ -178,7 +180,10 @@ namespace EndfieldGraphShaderLab
                     reflectionProbeFallback,
                     lightBinning,
                     visibilitySHConstants,
-                    lightData,
+                    selectedLightData,
+                    fullEndminfLightData,
+                    useFullEndminfLightData,
+                    resources,
                     shadowData,
                     out ComputeBuffer[] constantBuffers,
                     out string constantBufferFailure))
@@ -425,7 +430,10 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredReflectionProbeFallback reflectionProbeFallback,
             EndfieldRecoveredLightBinning lightBinning,
             EndfieldRecoveredVisibilitySHConstants visibilitySHConstants,
-            EndfieldRecoveredDeferredLightData lightData,
+            EndfieldRecoveredDeferredLightData selectedLightData,
+            EndfieldRecoveredEndminfFullDeferredLightData fullEndminfLightData,
+            bool useFullEndminfLightData,
+            EndfieldRecoveredDeferredResolverInputProbe.ResourceFrame resources,
             EndfieldRecoveredDeferredShadowData shadowData,
             out ComputeBuffer[] buffers,
             out string failure)
@@ -445,14 +453,56 @@ namespace EndfieldGraphShaderLab
                 buffers = null;
                 return false;
             }
+            ComputeBuffer publishedLightDataBuffer = null;
+            uint preparedSerial = 0;
+            bool lightPublicationReady = useFullEndminfLightData
+                ? fullEndminfLightData != null &&
+                  fullEndminfLightData.TryGetCurrentPublication(
+                      camera,
+                      out publishedLightDataBuffer,
+                      out preparedSerial,
+                      out failure)
+                : selectedLightData != null &&
+                  selectedLightData.TryGetCurrentPublication(
+                      camera,
+                      out publishedLightDataBuffer,
+                      out preparedSerial,
+                      out failure);
+            if (!lightPublicationReady)
+            {
+                if (string.IsNullOrEmpty(failure))
+                    failure = useFullEndminfLightData
+                        ? "exact consumer full Endminf LightData owner is unavailable"
+                        : "exact consumer selected LightData owner is unavailable";
+                buffers = null;
+                return false;
+            }
+            if (resources.t6PreparedSerial != preparedSerial)
+            {
+                failure = "exact consumer t6 does not match the b4 camera/frame publication";
+                buffers = null;
+                return false;
+            }
+            if (shadowData == null ||
+                !shadowData.TryGetCurrentPublication(
+                    camera,
+                    preparedSerial,
+                    out ComputeBuffer publishedShadowDataBuffer,
+                    out failure))
+            {
+                if (shadowData == null)
+                    failure = "exact consumer ShadowData owner is unavailable";
+                buffers = null;
+                return false;
+            }
             buffers = new[]
             {
                 transformVariables?.CurrentBuffer,
                 shaderVariablesGlobal?.CurrentBuffer,
                 reflectionProbeFallback?.CurrentGlobalDataBuffer,
                 lightBinningConstants,
-                lightData?.CurrentBuffer,
-                shadowData?.CurrentBuffer,
+                publishedLightDataBuffer,
+                publishedShadowDataBuffer,
                 zeroHdplsBuffer,
                 lightCookieData,
                 visibilitySHConstants?.CurrentBuffer,
