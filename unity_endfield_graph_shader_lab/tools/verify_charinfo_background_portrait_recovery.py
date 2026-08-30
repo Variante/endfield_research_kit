@@ -203,10 +203,10 @@ def verify_generated_mesh(actor: str) -> str:
     u_max = (x + width) / 1024.0
     v_max = (y + height) / 1024.0
     expected = (
-        left, bottom, 0.0, u_min, v_max,
-        right, bottom, 0.0, u_max, v_max,
-        right, top, 0.0, u_max, v_min,
-        left, top, 0.0, u_min, v_min,
+        left, bottom, 0.0, u_min, v_min,
+        right, bottom, 0.0, u_max, v_min,
+        right, top, 0.0, u_max, v_max,
+        left, top, 0.0, u_min, v_max,
     )
     for index, (actual_value, expected_value) in enumerate(zip(actual, expected)):
         require(

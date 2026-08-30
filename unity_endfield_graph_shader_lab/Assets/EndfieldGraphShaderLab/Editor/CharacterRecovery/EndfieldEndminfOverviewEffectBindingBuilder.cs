@@ -135,12 +135,10 @@ namespace EndfieldGraphShaderLabEditor
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoBackgroundPortrait.EnvironmentVariable,
                 "1");
-            if (EndfieldEndminfOverviewEffectImporter.ExactStageAvailable)
-                EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
-            else
-                Debug.LogWarning(
-                    "The disposable exact Endminf effect stage is absent; " +
-                    "preserving the existing source-retained effect prefabs.");
+            // A comparison render must never inherit possibly stale generated
+            // prefabs. Rebuild all four roots from the validated source stage,
+            // or fail before serializing the visual-reproduction scene.
+            EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
             EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate();
             BuildAndValidate();
             EditorSceneManager.OpenScene(ViewerScene, OpenSceneMode.Single);

@@ -21,6 +21,8 @@ namespace EndfieldGraphShaderLabEditor
             "unity_endfield_graph_shader_lab/scratch/character_recovery/endminf_external_fx_rig/exact_four_root_stage";
         private const string GeneratedRoot =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview";
+        private const string ExpectedStageFingerprint =
+            "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string TextureRoot = GeneratedRoot + "/Textures";
         private const string MeshRoot = GeneratedRoot + "/Meshes";
@@ -186,8 +188,18 @@ namespace EndfieldGraphShaderLabEditor
         {
             string repo = Directory.GetParent(Application.dataPath).Parent.FullName;
             string stage = Path.Combine(repo, StageRelative.Replace('/', Path.DirectorySeparatorChar));
-            L.Require(File.Exists(Path.Combine(stage, "external_ui_effect_stage.json")),
+            string stageReportPath = Path.Combine(stage, "external_ui_effect_stage.json");
+            L.Require(File.Exists(stageReportPath),
                 "Endminf exact effect stage is missing");
+            Dictionary<string, object> stageReport = L.Dict(
+                ManifestMiniJson.Deserialize(File.ReadAllText(stageReportPath, Encoding.UTF8)));
+            Dictionary<string, object> stageValidation = L.Dict(stageReport["validation"]);
+            L.Require(
+                L.Str(stageReport, "status") == "ok" &&
+                L.Int(stageReport, "expected_root_count") == 4 &&
+                L.Int(stageReport, "expected_clip_count") == 1 &&
+                L.Str(stageValidation, "stage_fingerprint") == ExpectedStageFingerprint,
+                "Endminf exact effect stage provenance drifted");
             Dictionary<long, Dictionary<string, object>> gos = LoadType(stage, "GameObject");
             Dictionary<long, Dictionary<string, object>> transforms = LoadType(stage, "Transform");
             Dictionary<long, Dictionary<string, object>> systems = LoadType(stage, "ParticleSystem");
@@ -1085,6 +1097,9 @@ namespace EndfieldGraphShaderLabEditor
                             File.Copy(sourceTexture, L.ProjectAbsolute(asset), true);
                             AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceSynchronousImport);
                         }
+                        ConfigureLitEffectCompatibilityTexture(
+                            asset,
+                            textureRow.Key);
                         context.textures[textureId] = AssetDatabase.LoadAssetAtPath<Texture2D>(asset);
                     }
                 }
@@ -1496,6 +1511,41 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(texture != null,
                 "Decoded Endminf texture import failed: p" + hex);
             return assetPath;
+        }
+
+        private static void ConfigureLitEffectCompatibilityTexture(
+            string assetPath,
+            string materialSlot)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath)
+                as TextureImporter;
+            if (importer == null)
+                return;
+
+            bool colorData = string.Equals(
+                materialSlot,
+                "_BaseColorMap",
+                StringComparison.Ordinal);
+            bool normalData = string.Equals(
+                materialSlot,
+                "_NormalMap",
+                StringComparison.Ordinal);
+            importer.sRGBTexture = colorData;
+            importer.textureType = normalData
+                ? TextureImporterType.NormalMap
+                : TextureImporterType.Default;
+            importer.SaveAndReimport();
+
+            TextureImporter loaded = AssetImporter.GetAtPath(assetPath)
+                as TextureImporter;
+            L.Require(
+                loaded != null &&
+                loaded.sRGBTexture == colorData &&
+                loaded.textureType == (normalData
+                    ? TextureImporterType.NormalMap
+                    : TextureImporterType.Default),
+                "LitEffect compatibility texture color-space/type drifted: " +
+                materialSlot + " -> " + assetPath);
         }
     }
 }

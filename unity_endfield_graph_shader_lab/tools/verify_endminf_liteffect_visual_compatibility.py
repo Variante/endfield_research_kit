@@ -53,6 +53,8 @@ def main() -> int:
         'LitEffectShaderPathId = 6428594484694422749L',
         'keywords.SequenceEqual(new[] { "_PARALLAX_MAP" })',
         'L.Int(row, "m_CustomRenderQueue") == 2000',
+        'ConfigureLitEffectCompatibilityTexture(',
+        'TextureImporterType.NormalMap',
     ]
     required_shader = [
         'Hidden/Endfield/Compatibility/Endminf/LitEffectParallax',

@@ -349,13 +349,13 @@ namespace EndfieldGraphShaderLabEditor
             };
             mesh.uv = new[]
             {
-                // AnimeStudio preserves the retail Texture2D row order in the
-                // PNG payload. Unity uses the opposite vertical texture
-                // convention, so flip inside the asymmetric tight rectangle.
-                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMax / SourceTextureSize),
-                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize),
-                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                // The exported PNG is display-upright. TextureImporter maps
+                // its rows to Unity's bottom-origin sampling convention, so
+                // the source tight-rect UVs must not be flipped a second time.
                 new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMin / SourceTextureSize),
+                new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize),
+                new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMax / SourceTextureSize),
             };
             mesh.triangles = new[] { 0, 2, 1, 0, 3, 2 };
             mesh.RecalculateBounds();
