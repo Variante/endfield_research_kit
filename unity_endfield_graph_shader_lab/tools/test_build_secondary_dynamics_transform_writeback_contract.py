@@ -91,6 +91,62 @@ class SecondaryDynamicsTransformWritebackTests(unittest.TestCase):
         self.assertEqual(spans["WriteTransformDataRangeKernel"]["sha256"], "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923")
         self.assertEqual(spans["WriteTransformJob.Execute.hot"]["bytes"], 2003)
 
+    def test_stage_observer_entries_are_route_independent_and_hash_pinned(self) -> None:
+        observer = self.payload["native"]["stageObserverEntries"]
+        self.assertEqual(
+            observer["status"],
+            "route_independent_gameassembly_worker_entries_closed_selected_burst_route_unobserved",
+        )
+        stages = {row["stage"]: row for row in observer["stages"]}
+        expected = {
+            "CalcDisplayPosition": (
+                385650,
+                "0x18676accc",
+                "0c269791256da59e5e178d55df90241dd95d9e7af2776f6276aef02b00b6ef6a",
+                385672,
+                "81486ab95a6b2f028640fb77dddd7ce15f391ddec07607a7377d214370c56094",
+            ),
+            "PostProxyMeshUpdate.WriteTransformData": (
+                384879,
+                "0x186754680",
+                "e2cdc75fd27b63f2ac803c80ba94b48a7114c8bec4982f96664b24b86d10c923",
+                384901,
+                "7e15e27032cea2ab2ac74f248af07a56f502027d0e05370d206aa41b0c4abfe7",
+            ),
+            "PostProxyMeshUpdate.WriteTransformLocalData": (
+                384903,
+                "0x186755784",
+                "b3798e37d293ce37ebc5460db6ce424e40f217ce617057ae96421f3c69a05d9e",
+                384925,
+                "6ab6d3fe1ebeb9e74eefd7233fdeda8dda0a339f3843425f605154f56757fb4d",
+            ),
+        }
+        self.assertEqual(set(stages), set(expected))
+        for name, (dispatcher_index, dispatcher_va, dispatcher_hash, direct_index, direct_hash) in expected.items():
+            stage = stages[name]
+            dispatcher = stage["routeIndependentDispatcher"]
+            direct_call = stage["burstDirectCall"]
+            self.assertEqual((dispatcher["methodIndex"], dispatcher["methodPointerVa"], dispatcher["sha256"]), (dispatcher_index, dispatcher_va, dispatcher_hash))
+            self.assertEqual((direct_call["methodIndex"], direct_call["sha256"]), (direct_index, direct_hash))
+            self.assertEqual(
+                [row["role"] for row in stage["callEdges"]],
+                [
+                    "worker_to_route_independent_dispatcher",
+                    "dispatcher_to_burst_directcall",
+                    "runtime_selected_burst_function_pointer",
+                    "managed_fallback",
+                ],
+            )
+            self.assertIsNone(stage["callEdges"][2]["targetVa"])
+
+        selected = observer["selectedBurstCpuRoute"]
+        self.assertEqual(selected["status"], "unresolved")
+        self.assertFalse(selected["runtimeSelectedPointerObserved"])
+        self.assertIsNone(selected["selectedExport"])
+        self.assertIsNone(selected["selectedCpuVariant"])
+        self.assertTrue(self.payload["execution_boundary"]["stage_observer_gameassembly_entries_closed"])
+        self.assertFalse(self.payload["execution_boundary"]["selected_burst_cpu_route_closed"])
+
     def test_final_job_flags_weight_and_branch_precedence(self) -> None:
         job = self.payload["writeback"]["finalTransformJob"]
         self.assertEqual(job["flags"]["0x10"], "enable")
