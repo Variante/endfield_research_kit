@@ -3249,6 +3249,17 @@ ownership remain incomplete. Do not tune that heuristic or move effects to fit
 screenshots. Canonical and targeted renders now rebuild the four Overview VFX
 roots from the fingerprint-gated exact source stage and fail if it is missing
 or drifted, preventing stale prefab transforms from passing as current output.
+The isolated Endminf deferred gate confirms the recovered 12-light operator
+fixture, punctual ShadowData/atlas, HGBuffer frame, and exact resolver consumer
+can all publish in one frame. Its M27 probe had separately requested the
+presentation consumer without requesting the recovered M27 HGBuffer producer;
+the probe now connects both selectors. At the authored 4.50-second peak the
+isolated gate reports LightData, ShadowData, input subset, HGBuffer, resolver,
+M27, and SphereOutside all ready. This does not promote the chain to the
+maintained presentation: its screen-shadow R attachment remains explicitly
+content-invalid and produces the known vertically inverted body contamination
+behind the upright portrait. Recover that attachment's retail owner rather than
+approximating or flipping the diagnostic output.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
