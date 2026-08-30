@@ -3534,10 +3534,11 @@ a real bound VS t0 structured buffer, not an explicit null binding. That local
 draw does not override the failed session gates. The maintained converter
 authenticates a complete collector inventory, every artifact hash, one exact
 draw, IA, b2, t0, textures, and pipeline descriptors, emits no captured
-VB/IB/CB arrays, and leaves Unity-only owners unresolved; it accepts the
-observer's declared v2 binding sidecar while retaining historical v1
-compatibility, and it deterministically rejects this session before producing
-output.
+VB/IB/CB arrays, and leaves Unity-only owners unresolved. It now requires the
+fixed-width, pointer-free `bindings.v3.bin` timing proof, exact draw-local owner
+chronology, all five exact packet counters, and byte-for-byte JSON/wire parity;
+historical v1/v2 sidecars are rejected. It deterministically rejects this
+session before producing output.
 
 The same session closes only the generic secondary publication route. All
 2,299 scheduled writes completed and emitted 55,176 readable rows, but every
@@ -3549,15 +3550,23 @@ returns one inserted index, whereas the observer decoded it as a packed
 index zero from the manager-disabled zero return. None of these rows is
 admissible as hair/cloth replay, a fitted curve, or a hardcoded trajectory.
 
-EndfieldCapture commit `80f5b0b` fixes that return decoder and separates the
-72 regular graphics packets from bounded M20, M21, M27, and joined
-M27+Default lanes. Priority storage is preallocated before capture, owner-draw
-admission performs no large allocation, CPU publication grows only in ordered
-drain, and every truncation, incomplete packet, dropped event, or unresolved
-lane keeps publication closed. The resource bytes are still copied at Present,
-not at the owner draw, so the observer labels them `frame-end`, keeps all exact
-packet counters at zero, and cannot produce an admissible exact-M27 session.
-Do not request another retail capture until bounded draw-local staging exists.
+EndfieldCapture commit `11ffb1a` adds the missing bounded draw-local staging.
+The first overview entry discovers exact descriptors and alias topology; its
+Present allocates separate M21, M27, and Default-family plans. The second entry
+copies mutable inputs immediately before each exact owner and outputs
+immediately after it. Joined publication owns only the Default bytes and
+authenticates the separate same-epoch M27 packet, whose retail draw precedes
+M21 in the locally complete frame. Descriptor/range drift, owner/call/epoch
+drift, alias drift, zero or unsupported resources, context contention, map
+failure, event loss, and unacknowledged publication all fail closed. Lane paths
+include the lane identity, each physical plan is capped at 384 MiB, and their
+aggregate is capped at 1 GiB. The fixed `bindings.v3.bin` ABI has explicit
+record sizes, counts, extent, layout hash, reserved-zero checks, and no native
+container pointers. An independent Release run passed all 22 native tests five
+times (110/110), including WARP readback and failed-session collector
+quarantine. A fresh retail capture is now required; enter Endminf Character
+Info twice in one bounded session so discovery and actual owner-draw capture
+cannot be conflated.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
@@ -3594,11 +3603,15 @@ contiguous history: all 22 published vectors pass the D3D11 GPU verifier, reset
 and discontinuity reuse the current frame, and captured constant-buffer bytes
 remain validation-only. All 50 selected b3 words are tied bit-exactly to 37
 original material fields, explicit packoffsets, the generated Unity material,
-and the compatibility shader's effective defaults. The b1 source contract now
-has distinct readiness for target dimensions, perspective, TAA jitter,
+and the compatibility shader's effective defaults. The b1 source contract has
+distinct readiness for target dimensions, perspective, TAA jitter,
 physical-camera material mip bias, exposure, VFX player/time, and the HGVFX
-anchor. The default runtime supplies only current target/perspective state;
-explicit source-owner propagation is still absent, so b1 admission remains
+anchor. Its partial live publisher admits c27 only from the source-closed
+Manual-exposure path with the exact selected camera/environment gate,
+automatic exposure disabled, a persistent non-null state, and finite positive
+exposure. It publishes c103 from the unique actor root plus `Time.time` only as
+an explicit lab carrier, not as proof of the retail selected-frame HGVFX
+identity. c19, c26, and c105 remain zero/unready, so exact b1 admission remains
 closed. The selected physical camera publishes c26.xy=(-1,0.5), while
 serialized virtual-camera defaults only prove (0,1); do not substitute either
 without the missing physical-camera assignment path. Admission also still
@@ -3650,18 +3663,14 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Do not request another retail session yet. Extend observer commit `80f5b0b`
-   with bounded before-owner copies for mutable inputs/constants and
-   after-owner copies for outputs, while preserving allocation-free owner
-   admission, separate lane caps, v2 sidecars, and all fail-closed loss gates.
-   Also add a provably pre-`slInit` load path that can coexist with the Full
-   multi-provider runtime; do not infer initialization preferences from later
-   state or weaken the existing gate. After both gaps are closed and tested,
-   run the new observer build; stop cleanly shortly after the first settled
-   overview-loop wrap so the bounded trajectory buffer includes the required
-   interval. Use
+1. Run one fresh retail session with observer commit `11ffb1a`. Use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
-   omits secondary dynamics and Full graphics. First
+   omits secondary dynamics and Full graphics. Start with Endfield closed and
+   require the pre-`slInit` initialization record. Enter Endminf Character Info
+   twice without stopping the bounded session: keep the first entry through its
+   first settled overview-loop wrap to create the descriptor/topology plans,
+   leave Character Info, then keep the second entry through its first settled
+   wrap to collect the draw-local packets. Stop cleanly with `Numpad 9`. First
    validate the lifecycle-joined effective trajectories with
    `python unity_endfield_graph_shader_lab/tools/verify_endminf_secondary_dynamics_trajectory_capture.py SESSION`.
    Close the

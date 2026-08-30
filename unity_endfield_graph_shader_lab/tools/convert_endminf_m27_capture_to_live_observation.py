@@ -52,6 +52,48 @@ EXPECTED_TEXTURES = {
     3: (128, 128, 99),
 }
 FRAME_METADATA_RE = re.compile(r"^graphics/frames/([^/]+)/metadata\.json$")
+FRAME_SCHEMA = "endfieldCapture.graphicsFrame.v2"
+BINDINGS_FILE = "bindings.v3.bin"
+BINDINGS_SCHEMA = "endfieldCapture.graphicsFrame.bindings.v3\n"
+BINDINGS_WIRE_SCHEMA = (
+    "header:u64(layout,frame,siblingEpoch,siblingCall);"
+    "u32(headerSize,resourceSize,drawSize,resolverSize,siblingSlot,resources,draws,resolvers);"
+    "u8(lane,drawLocal,siblingAuth,siblingLane);"
+    "resource:u64(object,view,requested,blobOffset,blobBytes,call,epoch);"
+    "u32(hresult,occurrence,slot);"
+    "u8(captureKind,failure,owner,phase,stage,resourceKind,attempted,completed);"
+    "draw:u64(call,epoch);u32(occurrence,indexCount,instanceCount,startIndex,baseVertex,startInstance);"
+    "u8(owner,indexedInstanced,renderTargetCount,depthBound);"
+    "resolver:u64(call,epoch);u32(occurrence,vertexCount,instanceCount,startVertex,startInstance);"
+    "u8(owner,default,shadowOutput,shadowConsumer,renderTargetCount,depthBound,reserved0,reserved1);"
+)
+
+
+def _fnv1a64(text: str) -> int:
+    value = 14695981039346656037
+    for byte in text.encode("ascii"):
+        value ^= byte
+        value = (value * 1099511628211) & 0xffffffffffffffff
+    return value
+
+
+BINDINGS_LAYOUT_HASH = _fnv1a64(BINDINGS_WIRE_SCHEMA)
+BINDINGS_HEADER = struct.Struct("<4Q8I4B")
+BINDINGS_RESOURCE = struct.Struct("<7Q3I8B")
+BINDINGS_DRAW = struct.Struct("<2Q4IiI4B")
+BINDINGS_RESOLVER = struct.Struct("<2Q5I8B")
+M27_CAPTURE_LANE = "priority-m27"
+M27_CAPTURE_LANE_WIRE = 5
+M27_DEFERRED_OWNER = 3
+BEFORE_OWNER_PHASE = 1
+AFTER_OWNER_PHASE = 2
+EXACT_PACKET_COUNTERS = (
+    "publishableM20Packets",
+    "publishableM21Packets",
+    "publishableM27Packets",
+    "publishableDefaultDeferredPackets",
+    "publishableM27DefaultDeferredJoinedPackets",
+)
 
 
 class ConversionError(RuntimeError):
@@ -260,6 +302,14 @@ def _validate_summaries(
              graphics.get("shaderBytecodeArchiveComplete") is True and
              graphics.get("complete") is True,
              "graphics summary is incomplete or reports capture loss")
+    _require(graphics.get("exactOwnerResourcePayloadTiming") == "draw-local" and
+             graphics.get("exactOwnerResourcePayloadDrawLocal") is True,
+             "graphics summary lacks exact draw-local resource-payload proof")
+    for counter in EXACT_PACKET_COUNTERS:
+        _require(_is_int(graphics.get(counter)) and graphics[counter] == 1,
+                 f"graphics summary exact packet counter {counter} != 1")
+    _require(graphics.get("exactEndminfPublishable") is True,
+             "graphics summary does not authenticate exact Endminf publication")
     return session, runtime, collected, graphics
 
 
@@ -288,8 +338,7 @@ def _select_draw(
     _require(metadata_paths, "collected session has no graphics frame metadata")
     matches: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
     for relative in metadata_paths:
-        frame = _read_json(
-            root / Path(relative), "endfieldCapture.graphicsFrame.v1")
+        frame = _read_json(root / Path(relative), FRAME_SCHEMA)
         _require(frame.get("drawRecordsTruncated") is False,
                  f"frame draw rows are truncated: {relative}")
         draws = frame.get("drawRecords")
@@ -307,14 +356,17 @@ def _select_draw(
     _require(draw.get("priorityShaderPair") is True and
              draw.get("priorityM27Geometry") is True,
              "exact M27 draw lacks producer priority authentication")
+    _require(frame.get("captureLane") == M27_CAPTURE_LANE,
+             "exact M27 draw is not in the priority-M27 capture lane")
     return relative, frame, draw
 
 
 def _validate_frame(
         root: Path, relative: str, frame: dict[str, Any],
-        artifacts: dict[str, dict[str, Any]]) -> tuple[
+        draw: dict[str, Any], artifacts: dict[str, dict[str, Any]]) -> tuple[
             Path, list[dict[str, Any]], str]:
-    for key in ("resourceSelectionTruncated", "captureIncomplete",
+    for key in ("resourceSelectionTruncated", "dispatchRecordsTruncated",
+                "fullscreenResolverRecordsTruncated", "captureIncomplete",
                 "captureFailed", "resourceCaptureIncomplete",
                 "resourceCaptureFailed"):
         _require(frame.get(key) is False,
@@ -327,22 +379,18 @@ def _validate_frame(
              f"selected M27 frame draw counts are inconsistent: {relative}")
     records = frame.get("selectedResourceRecords")
     _require(isinstance(records, list) and
-             frame.get("selectedResources") == len(records),
+             records and frame.get("selectedResources") == len(records),
              f"selected M27 resource rows are missing or truncated: {relative}")
-    for index, record in enumerate(records):
-        _require(isinstance(record, dict) and
-                 record.get("completed") is True and
-                 record.get("failure") == 0,
-                 f"selected resource row {index} is incomplete: {relative}")
+    _validate_draw_local_resource_evidence(frame, draw, records, relative)
 
     frame_root = (root / Path(relative)).parent
     bindings_file = frame.get("bindingsFile")
-    _require(bindings_file in ("bindings.v1.bin", "bindings.v2.bin"),
+    _require(bindings_file == BINDINGS_FILE,
              f"selected M27 bindings sidecar declaration is invalid: {relative}")
     bindings_relative = (Path(relative).parent / bindings_file).as_posix()
-    _artifact(artifacts, bindings_relative)
-    _require((frame_root / bindings_file).stat().st_size > 0,
-             f"selected M27 bindings sidecar is empty: {relative}")
+    bindings_artifact = _artifact(artifacts, bindings_relative)
+    _validate_bindings_sidecar(
+        frame_root / bindings_file, frame, bindings_artifact, relative)
     _require(frame.get("resourcesFile") == "resources.bin",
              f"selected M27 resources sidecar declaration is invalid: {relative}")
     resources_relative = (Path(relative).parent / "resources.bin").as_posix()
@@ -357,6 +405,311 @@ def _validate_frame(
                  offset + size <= resource_artifact["bytes"],
                  f"selected resource row {index} points outside resources.bin")
     return frame_root / "resources.bin", records, bindings_relative
+
+
+def _positive_int(value: Any) -> bool:
+    return _is_int(value) and value > 0
+
+
+def _validate_bindings_sidecar(
+        path: Path, frame: dict[str, Any], artifact: dict[str, Any],
+        relative: str) -> None:
+    """Authenticate and cross-check the explicit fixed-width v3 wire ABI."""
+    declared = (
+        frame.get("bindingsLayoutHash"), frame.get("bindingsHeaderSize"),
+        frame.get("bindingsSelectedRecordSize"),
+        frame.get("bindingsDrawTimingRecordSize"),
+        frame.get("bindingsResolverTimingRecordSize"),
+    )
+    expected = (
+        BINDINGS_LAYOUT_HASH, BINDINGS_HEADER.size, BINDINGS_RESOURCE.size,
+        BINDINGS_DRAW.size, BINDINGS_RESOLVER.size,
+    )
+    _require(declared == expected,
+             f"selected M27 bindings layout declaration is invalid: {relative}")
+    prefix = BINDINGS_SCHEMA.encode("ascii")
+    _require(_is_int(artifact.get("bytes")) and
+             artifact["bytes"] >= len(prefix) + BINDINGS_HEADER.size,
+             f"selected M27 bindings inventory size is invalid: {relative}")
+    try:
+        payload = path.read_bytes()
+    except OSError as exc:
+        raise ConversionError(f"cannot read bindings sidecar {path}: {exc}") from exc
+    _require(len(payload) == artifact["bytes"],
+             f"selected M27 bindings inventory/file size differs: {relative}")
+    _require(payload[:len(prefix)] == prefix,
+             f"selected M27 bindings schema/header is invalid: {relative}")
+    offset = len(prefix)
+    header = BINDINGS_HEADER.unpack_from(payload, offset)
+    offset += BINDINGS_HEADER.size
+    (layout_hash, frame_number, sibling_epoch, sibling_call,
+     header_size, resource_size, draw_size, resolver_size, sibling_slot,
+     resource_count, draw_count, resolver_count, lane, draw_local,
+     sibling_authenticated, sibling_lane) = header
+    _require((layout_hash, header_size, resource_size, draw_size,
+              resolver_size) == expected,
+             f"selected M27 bindings wire layout is invalid: {relative}")
+    _require(lane == M27_CAPTURE_LANE_WIRE and draw_local == 1 and
+             sibling_authenticated in (0, 1) and
+             sibling_lane == M27_CAPTURE_LANE_WIRE,
+             f"selected M27 bindings wire lane is invalid: {relative}")
+    _require(frame_number == frame.get("frame") and
+             sibling_epoch == frame.get("joinedM27SiblingPresentEpoch", 0) and
+             sibling_call == frame.get("joinedM27SiblingCallOrdinal", 0) and
+             sibling_slot == frame.get("joinedM27SiblingSequenceSlot") and
+             bool(sibling_authenticated) is
+                frame.get("joinedM27SiblingAuthenticated") and
+             resource_count == frame.get("selectedResources") and
+             draw_count == len(frame.get("drawRecords", [])) and
+             resolver_count == len(frame.get("fullscreenResolvers", [])),
+             f"selected M27 bindings header disagrees with JSON: {relative}")
+    if sibling_authenticated == 0:
+        _require(sibling_epoch == 0 and sibling_call == 0,
+                 f"selected M27 bindings inactive sibling is nonzero: {relative}")
+
+    expected_file_size = (
+        len(prefix) + BINDINGS_HEADER.size +
+        resource_count * BINDINGS_RESOURCE.size +
+        draw_count * BINDINGS_DRAW.size +
+        resolver_count * BINDINGS_RESOLVER.size)
+    _require(expected_file_size == artifact["bytes"],
+             f"selected M27 bindings exact file size is invalid: {relative}")
+
+    records = frame["selectedResourceRecords"]
+    for index, json_row in enumerate(records):
+        wire = BINDINGS_RESOURCE.unpack_from(payload, offset)
+        offset += BINDINGS_RESOURCE.size
+        (object_id, view_id, requested_bytes, blob_offset, blob_bytes,
+         call_ordinal, present_epoch, hresult, occurrence, slot,
+         capture_kind, failure, owner, phase, stage, resource_kind,
+         attempted, completed) = wire
+        _require(attempted in (0, 1) and completed in (0, 1),
+                 f"bindings resource {index} has non-boolean wire flags: {relative}")
+        json_values = (
+            json_row.get("objectId"), json_row.get("viewId"),
+            json_row.get("requestedBytes"), json_row.get("blobOffset"),
+            json_row.get("blobBytes"),
+            json_row.get("deferredUnifiedCallOrdinal"),
+            json_row.get("deferredPresentEpoch"), json_row.get("hresult"),
+            json_row.get("deferredOwnerOccurrence"), json_row.get("slot"),
+            json_row.get("captureKind"), json_row.get("failure"),
+            json_row.get("deferredOwner"),
+            json_row.get("deferredCopyPhase"), json_row.get("stage"),
+            json_row.get("resourceKind"),
+            1 if json_row.get("attempted") is True else 0,
+            1 if json_row.get("completed") is True else 0,
+        )
+        _require(wire == json_values,
+                 f"bindings resource {index} disagrees with JSON: {relative}")
+
+    for index, json_draw in enumerate(frame["drawRecords"]):
+        wire = BINDINGS_DRAW.unpack_from(payload, offset)
+        offset += BINDINGS_DRAW.size
+        (call_ordinal, present_epoch, occurrence, index_count, instance_count,
+         start_index, base_vertex, start_instance, owner,
+         indexed_instanced, render_target_count, depth_bound) = wire
+        _require(indexed_instanced in (0, 1) and depth_bound in (0, 1),
+                 f"bindings draw {index} has non-boolean wire flags: {relative}")
+        pipeline_target = json_draw.get("pipelineState", {}).get("target", {})
+        json_values = (
+            json_draw.get("unifiedCallOrdinal"), json_draw.get("presentEpoch"),
+            json_draw.get("deferredOwnerOccurrence"), json_draw.get("count"),
+            json_draw.get("instanceCount"), json_draw.get("start"),
+            json_draw.get("baseVertex"), json_draw.get("startInstance"),
+            json_draw.get("deferredOwner"),
+            1 if json_draw.get("indexedInstanced") is True else 0,
+            pipeline_target.get("renderTargetCount"),
+            1 if pipeline_target.get("depthBound") is True else 0,
+        )
+        _require(wire == json_values,
+                 f"bindings draw {index} disagrees with JSON: {relative}")
+
+    for index, json_resolver in enumerate(frame.get("fullscreenResolvers", [])):
+        wire = BINDINGS_RESOLVER.unpack_from(payload, offset)
+        offset += BINDINGS_RESOLVER.size
+        (call_ordinal, present_epoch, occurrence, vertex_count, instance_count,
+         start_vertex, start_instance, owner, priority_default,
+         priority_shadow_output, priority_shadow_consumer,
+         render_target_count, depth_bound, reserved0, reserved1) = wire
+        _require(priority_default in (0, 1) and
+                 priority_shadow_output in (0, 1) and
+                 priority_shadow_consumer in (0, 1) and
+                 depth_bound in (0, 1) and reserved0 == 0 and reserved1 == 0,
+                 f"bindings resolver {index} flags/reserved bytes are invalid: "
+                 f"{relative}")
+        chain = json_resolver.get("resourceChain", {})
+        json_values = (
+            json_resolver.get("unifiedCallOrdinal"),
+            json_resolver.get("presentEpoch"),
+            json_resolver.get("deferredOwnerOccurrence"),
+            json_resolver.get("vertexCountPerInstance"),
+            json_resolver.get("instanceCount"),
+            json_resolver.get("startVertex"),
+            json_resolver.get("startInstance"),
+            json_resolver.get("deferredOwner"),
+            1 if json_resolver.get("priorityDefaultDeferred") is True else 0,
+            1 if json_resolver.get("priorityScreenShadowOutput") is True else 0,
+            1 if json_resolver.get("priorityScreenShadowConsumer") is True else 0,
+            len(chain.get("renderTargets", [])),
+            1 if chain.get("depthTarget", {}).get("objectId") else 0,
+            0, 0,
+        )
+        _require(wire == json_values,
+                 f"bindings resolver {index} disagrees with JSON: {relative}")
+    _require(offset == len(payload),
+             f"selected M27 bindings parser did not consume exact extent: {relative}")
+
+
+def _matching_selected_resource(
+        records: list[dict[str, Any]], *, object_id: int, stage: int,
+        slot: int, capture_kinds: tuple[int, ...]) -> bool:
+    return any(
+        row.get("objectId") == object_id and row.get("stage") == stage and
+        row.get("slot") == slot and row.get("captureKind") in capture_kinds and
+        row.get("deferredCopyPhase") == BEFORE_OWNER_PHASE
+        for row in records)
+
+
+def _validate_draw_local_resource_evidence(
+        frame: dict[str, Any], draw: dict[str, Any],
+        records: list[dict[str, Any]], relative: str) -> None:
+    _require(frame.get("resourcePayloadTiming") == "draw-local" and
+             frame.get("resourcePayloadDrawLocal") is True,
+             f"selected M27 frame lacks draw-local payload proof: {relative}")
+
+    owner = draw.get("deferredOwner")
+    occurrence = draw.get("deferredOwnerOccurrence")
+    call_ordinal = draw.get("unifiedCallOrdinal")
+    present_epoch = draw.get("presentEpoch")
+    _require(owner == M27_DEFERRED_OWNER and
+             _positive_int(occurrence) and _positive_int(call_ordinal) and
+             _positive_int(present_epoch),
+             f"exact M27 draw owner chronology is invalid: {relative}")
+
+    phases: set[int] = set()
+    for index, record in enumerate(records):
+        phase = record.get("deferredCopyPhase")
+        slot = record.get("slot")
+        output_slot = _is_int(slot) and (
+            0x100 <= slot < 0x108 or slot == 0x200)
+        _require(isinstance(record, dict) and
+                 record.get("attempted") is True and
+                 record.get("completed") is True and
+                 _is_int(record.get("failure")) and
+                 record.get("failure") == 0 and
+                 _is_int(record.get("hresult")) and
+                 record.get("hresult") == 0 and
+                 _positive_int(record.get("requestedBytes")) and
+                 _positive_int(record.get("blobBytes")) and
+                 record.get("blobBytes") == record.get("requestedBytes") and
+                 _is_int(record.get("deferredOwner")) and
+                 record.get("deferredOwner") == owner and
+                 _is_int(record.get("deferredOwnerOccurrence")) and
+                 record.get("deferredOwnerOccurrence") == occurrence and
+                 _is_int(record.get("deferredUnifiedCallOrdinal")) and
+                 record.get("deferredUnifiedCallOrdinal") == call_ordinal and
+                 _is_int(record.get("deferredPresentEpoch")) and
+                 record.get("deferredPresentEpoch") == present_epoch and
+                 _is_int(phase) and
+                 phase in
+                    (BEFORE_OWNER_PHASE, AFTER_OWNER_PHASE),
+                 f"selected resource row {index} lacks exact owner-local proof: "
+                 f"{relative}")
+        _require((phase == AFTER_OWNER_PHASE) == output_slot and
+                 (phase != AFTER_OWNER_PHASE or
+                  (record.get("captureKind") == 3 and
+                   record.get("stage") == 4)),
+                 f"selected resource row {index} has the wrong owner phase: "
+                 f"{relative}")
+        phases.add(phase)
+    _require(phases == {BEFORE_OWNER_PHASE, AFTER_OWNER_PHASE},
+             f"selected M27 resources lack before/after owner phases: {relative}")
+
+    ia = draw.get("inputAssembler")
+    _require(isinstance(ia, dict),
+             f"exact M27 input-assembler evidence is missing: {relative}")
+    vertex_rows = ia.get("vertexBuffers")
+    index_row = ia.get("indexBuffer")
+    _require(isinstance(vertex_rows, list) and isinstance(index_row, dict),
+             f"exact M27 input-assembler bindings are missing: {relative}")
+    for binding in vertex_rows:
+        if not isinstance(binding, dict) or not _positive_int(binding.get("objectId")):
+            continue
+        _require(_matching_selected_resource(
+            records, object_id=binding["objectId"], stage=0,
+            slot=binding.get("slot"), capture_kinds=(0,)),
+            f"exact M27 IA vertex binding lacks before-owner payload: {relative}")
+    _require(_positive_int(index_row.get("objectId")) and
+             _matching_selected_resource(
+                 records, object_id=index_row["objectId"], stage=0, slot=0,
+                 capture_kinds=(1,)),
+             f"exact M27 IA index binding lacks before-owner payload: {relative}")
+
+    constants = draw.get("constantBuffers")
+    _require(isinstance(constants, list) and constants,
+             f"exact M27 constant-buffer bindings are missing: {relative}")
+    for binding in constants:
+        _require(isinstance(binding, dict) and
+                 _positive_int(binding.get("bufferId")) and
+                 _matching_selected_resource(
+                     records, object_id=binding["bufferId"],
+                     stage=binding.get("stage"), slot=binding.get("slot"),
+                     capture_kinds=(2,)),
+                 f"exact M27 constant-buffer binding lacks before-owner payload: "
+                 f"{relative}")
+
+    shader_resources = draw.get("resources")
+    _require(isinstance(shader_resources, list) and shader_resources,
+             f"exact M27 shader-resource bindings are missing: {relative}")
+    for binding in shader_resources:
+        if (not isinstance(binding, dict) or binding.get("bound") is not True or
+                not _positive_int(binding.get("objectId"))):
+            continue
+        kind = binding.get("kind")
+        capture_kinds = (4,) if kind == 1 else (3,) if kind in (2, 3, 4) else ()
+        _require(bool(capture_kinds) and _matching_selected_resource(
+            records, object_id=binding["objectId"],
+            stage=binding.get("stage"), slot=binding.get("slot"),
+            capture_kinds=capture_kinds),
+            f"exact M27 shader-resource binding lacks before-owner payload: "
+            f"{relative}")
+
+    pipeline = draw.get("pipelineState")
+    _require(isinstance(pipeline, dict),
+             f"exact M27 pipeline state is missing: {relative}")
+    render_targets = pipeline.get("renderTargets")
+    _require(isinstance(render_targets, list),
+             f"exact M27 render targets are missing: {relative}")
+    for target in render_targets:
+        if not isinstance(target, dict) or target.get("bound") is not True:
+            continue
+        slot = target.get("slot")
+        _require(_is_int(slot) and any(
+            row.get("captureKind") == 3 and row.get("stage") == 4 and
+            row.get("slot") == 0x100 + slot and
+            row.get("deferredCopyPhase") == AFTER_OWNER_PHASE and
+            row.get("width") == target.get("width") and
+            row.get("height") == target.get("height") and
+            row.get("format") == target.get("textureFormat") and
+            row.get("viewFormat") == target.get("viewFormat")
+            for row in records),
+            f"exact M27 render target {slot} lacks after-owner payload: "
+            f"{relative}")
+    target_summary = pipeline.get("target")
+    depth = pipeline.get("depthTarget")
+    _require(isinstance(target_summary, dict) and isinstance(depth, dict),
+             f"exact M27 depth state is missing: {relative}")
+    if target_summary.get("depthBound") is True:
+        _require(any(
+            row.get("captureKind") == 3 and row.get("stage") == 4 and
+            row.get("slot") == 0x200 and
+            row.get("deferredCopyPhase") == AFTER_OWNER_PHASE and
+            row.get("width") == depth.get("width") and
+            row.get("height") == depth.get("height") and
+            row.get("format") == depth.get("textureFormat") and
+            row.get("viewFormat") == depth.get("viewFormat")
+            for row in records),
+            f"exact M27 depth target lacks after-owner payload: {relative}")
 
 
 def _one(
@@ -737,10 +1090,10 @@ def build_observation(session_root: Path) -> dict[str, Any]:
     root = session_root.resolve()
     _require(root.is_dir(), f"session root does not exist: {root}")
     artifacts, package_auth = _authenticate_inventory(root)
-    session, _runtime, _collected, _graphics = _validate_summaries(root, artifacts)
+    session, _runtime, _collected, graphics = _validate_summaries(root, artifacts)
     relative, frame, draw = _select_draw(root, artifacts)
     resources_path, resource_records, bindings_relative = _validate_frame(
-        root, relative, frame, artifacts)
+        root, relative, frame, draw, artifacts)
     frame_number = frame.get("frame")
     timestamp_qpc = frame.get("timestampQpc")
     draw_ordinal = draw.get("drawOrdinal")
@@ -812,6 +1165,19 @@ def build_observation(session_root: Path) -> dict[str, Any]:
             "frame": frame_number,
             "timestampQpc": timestamp_qpc,
             "drawOrdinal": draw_ordinal,
+            "captureLane": frame["captureLane"],
+            "resourcePayloadTiming": frame["resourcePayloadTiming"],
+            "resourcePayloadDrawLocal": True,
+            "deferredOwner": draw["deferredOwner"],
+            "deferredOwnerOccurrence": draw["deferredOwnerOccurrence"],
+            "unifiedCallOrdinal": draw["unifiedCallOrdinal"],
+            "presentEpoch": draw["presentEpoch"],
+            "bindingsSchema": BINDINGS_SCHEMA.rstrip("\n"),
+            "bindingsLayoutHash": f"0x{BINDINGS_LAYOUT_HASH:016x}",
+            "bindingsBytes": artifacts[bindings_relative]["bytes"],
+            "exactPacketCounters": {
+                key: graphics[key] for key in EXACT_PACKET_COUNTERS
+            },
             **package_auth,
             "sessionDescriptorSha256": artifacts["session.json"]["sha256"],
             "collectorSummarySha256":

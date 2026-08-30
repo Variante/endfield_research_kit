@@ -78,6 +78,14 @@ class PackageFixture:
             "deferredFailed": False,
             "quiescentCleanup": True,
             "shaderBytecodeArchiveComplete": True,
+            "exactOwnerResourcePayloadTiming": "draw-local",
+            "exactOwnerResourcePayloadDrawLocal": True,
+            "publishableM20Packets": 1,
+            "publishableM21Packets": 1,
+            "publishableM27Packets": 1,
+            "publishableDefaultDeferredPackets": 1,
+            "publishableM27DefaultDeferredJoinedPackets": 1,
+            "exactEndminfPublishable": True,
             "complete": True,
         }
         _write_json(self.root / "session.json", session)
@@ -103,7 +111,6 @@ class PackageFixture:
         payload = bytes(ia_blob) + t0_blob + b"".join(texture_blobs)
         self.resources_path.parent.mkdir(parents=True, exist_ok=True)
         self.resources_path.write_bytes(payload)
-        (self.resources_path.parent / "bindings.v2.bin").write_bytes(b"bindings")
 
         selected = [
             self._resource(0, 1000, 0, 0, 4160, 0, 4160,
@@ -119,6 +126,25 @@ class PackageFixture:
                 3, 3000 + slot, 4, slot, 16, texture_offset + slot * 16, 16,
                 width=width, height=height, format_value=texture_format,
                 view_format=texture_format))
+        for slot in (4, 5):
+            selected.append(self._resource(
+                3, 9000, 4, slot, 64, 4160, 64, view_format=29))
+        selected.extend([
+            self._resource(2, 5000, 0, 2, 65536, 0, 4160,
+                           requested_bytes=4160),
+            self._resource(2, 5000, 4, 2, 65536, 0, 4160,
+                           requested_bytes=4160),
+        ])
+        for slot, texture_format in enumerate((26, 24, 24, 24, 29)):
+            selected.append(self._resource(
+                3, 8000 + slot, 4, 0x100 + slot, 16, 4224, 16,
+                width=1920, height=1080, format_value=texture_format,
+                view_format=texture_format,
+                copy_phase=MODULE.AFTER_OWNER_PHASE))
+        selected.append(self._resource(
+            3, 8100, 4, 0x200, 16, 4224, 16,
+            width=1920, height=1080, format_value=19, view_format=20,
+            copy_phase=MODULE.AFTER_OWNER_PHASE))
 
         record = bytearray(256)
         for index in range(4):
@@ -130,9 +156,6 @@ class PackageFixture:
             self._cb(4, 2, 5000, 16, ps_prefix),
         ]
         resources = [
-            {"objectId": 1000, "viewId": 0, "bound": True,
-             "descriptorHash": 1, "kind": 1, "stage": 0, "slot": 0,
-             "byteSize": 4160},
             {"objectId": 2000, "viewId": 2001, "bound": True,
              "descriptorHash": 22, "kind": 1, "stage": 0, "slot": 0,
              "byteSize": 64, "viewDimension": 1, "bindFlags": 136,
@@ -154,6 +177,10 @@ class PackageFixture:
             })
         draw = {
             "drawOrdinal": 7,
+            "unifiedCallOrdinal": 700,
+            "presentEpoch": 70,
+            "deferredOwner": MODULE.M27_DEFERRED_OWNER,
+            "deferredOwnerOccurrence": 1,
             "count": MODULE.M27_INDEX_COUNT,
             "start": 0,
             "indexedInstanced": True,
@@ -184,13 +211,37 @@ class PackageFixture:
             "resources": resources,
             "pipelineState": self._pipeline(),
         }
+        resolver = {
+            "vertexCountPerInstance": 3,
+            "instanceCount": 1,
+            "startVertex": 0,
+            "startInstance": 0,
+            "unifiedCallOrdinal": 710,
+            "presentEpoch": 70,
+            "deferredOwner": 0,
+            "deferredOwnerOccurrence": 0,
+            "priorityDefaultDeferred": False,
+            "priorityScreenShadowOutput": False,
+            "priorityScreenShadowConsumer": False,
+            "resourceChain": {"renderTargets": [],
+                              "depthTarget": {"objectId": 0}},
+        }
         frame = {
-            "schema": "endfieldCapture.graphicsFrame.v1",
+            "schema": MODULE.FRAME_SCHEMA,
+            "captureLane": MODULE.M27_CAPTURE_LANE,
+            "resourcePayloadTiming": "draw-local",
+            "resourcePayloadDrawLocal": True,
+            "joinedM27SiblingAuthenticated": False,
+            "joinedM27SiblingSequenceSlot": 76,
+            "joinedM27SiblingPresentEpoch": 0,
+            "joinedM27SiblingCallOrdinal": 0,
             "frame": 100,
             "timestampQpc": 123456,
             "draws": 1,
             "observedDraws": 1,
             "drawRecordsTruncated": False,
+            "dispatchRecordsTruncated": False,
+            "fullscreenResolverRecordsTruncated": False,
             "resourceSelectionTruncated": False,
             "captureIncomplete": False,
             "captureFailed": False,
@@ -201,11 +252,18 @@ class PackageFixture:
             "selectedResourceRecords": selected,
             "resourceBlobBytes": len(payload),
             "drawRecords": [draw],
-            "bindingsFile": "bindings.v2.bin",
+            "fullscreenResolvers": [resolver],
+            "bindingsFile": MODULE.BINDINGS_FILE,
+            "bindingsLayoutHash": MODULE.BINDINGS_LAYOUT_HASH,
+            "bindingsHeaderSize": MODULE.BINDINGS_HEADER.size,
+            "bindingsSelectedRecordSize": MODULE.BINDINGS_RESOURCE.size,
+            "bindingsDrawTimingRecordSize": MODULE.BINDINGS_DRAW.size,
+            "bindingsResolverTimingRecordSize": MODULE.BINDINGS_RESOLVER.size,
             "resourcesFile": "resources.bin",
             "backbufferFile": None,
         }
         _write_json(self.frame_path, frame)
+        self._write_bindings(frame)
         self.rebuild_inventory()
 
     @staticmethod
@@ -213,16 +271,74 @@ class PackageFixture:
                   byte_size: int, blob_offset: int, blob_bytes: int,
                   **values: int) -> dict[str, object]:
         return {
-            "captureKind": kind, "objectId": object_id, "stage": stage,
+            "captureKind": kind, "objectId": object_id,
+            "viewId": values.get("view_id", 0), "stage": stage,
             "slot": slot, "byteSize": byte_size,
+            "resourceKind": values.get(
+                "resource_kind", 3 if kind == 3 else 1),
             "width": values.get("width", 0), "height": values.get("height", 0),
             "format": values.get("format_value", 0),
             "viewFormat": values.get("view_format", 0), "subresource": 0,
             "stride": values.get("stride", 0),
             "byteOffset": values.get("byte_offset", 0),
-            "requestedBytes": byte_size, "blobOffset": blob_offset,
-            "blobBytes": blob_bytes, "failure": 0, "completed": True,
+            "requestedBytes": values.get("requested_bytes", byte_size),
+            "blobOffset": blob_offset,
+            "blobBytes": blob_bytes, "failure": 0, "hresult": 0,
+            "attempted": True, "completed": True,
+            "deferredOwner": MODULE.M27_DEFERRED_OWNER,
+            "deferredCopyPhase": values.get(
+                "copy_phase", MODULE.BEFORE_OWNER_PHASE),
+            "deferredOwnerOccurrence": 1,
+            "deferredUnifiedCallOrdinal": 700,
+            "deferredPresentEpoch": 70,
         }
+
+    def _write_bindings(self, frame: dict[str, object]) -> None:
+        payload = bytearray(MODULE.BINDINGS_SCHEMA.encode("ascii"))
+        resources = frame["selectedResourceRecords"]
+        draws = frame["drawRecords"]
+        resolvers = frame["fullscreenResolvers"]
+        payload.extend(MODULE.BINDINGS_HEADER.pack(
+            MODULE.BINDINGS_LAYOUT_HASH, frame["frame"],
+            frame["joinedM27SiblingPresentEpoch"],
+            frame["joinedM27SiblingCallOrdinal"],
+            MODULE.BINDINGS_HEADER.size, MODULE.BINDINGS_RESOURCE.size,
+            MODULE.BINDINGS_DRAW.size, MODULE.BINDINGS_RESOLVER.size,
+            frame["joinedM27SiblingSequenceSlot"], len(resources),
+            len(draws), len(resolvers), MODULE.M27_CAPTURE_LANE_WIRE, 1, 0,
+            MODULE.M27_CAPTURE_LANE_WIRE))
+        for row in resources:
+            payload.extend(MODULE.BINDINGS_RESOURCE.pack(
+                row["objectId"], row["viewId"], row["requestedBytes"],
+                row["blobOffset"], row["blobBytes"],
+                row["deferredUnifiedCallOrdinal"],
+                row["deferredPresentEpoch"], row["hresult"],
+                row["deferredOwnerOccurrence"], row["slot"],
+                row["captureKind"], row["failure"], row["deferredOwner"],
+                row["deferredCopyPhase"], row["stage"], row["resourceKind"],
+                int(row["attempted"]), int(row["completed"])))
+        for row in draws:
+            target = row["pipelineState"]["target"]
+            payload.extend(MODULE.BINDINGS_DRAW.pack(
+                row["unifiedCallOrdinal"], row["presentEpoch"],
+                row["deferredOwnerOccurrence"], row["count"],
+                row["instanceCount"], row["start"], row["baseVertex"],
+                row["startInstance"], row["deferredOwner"],
+                int(row["indexedInstanced"]), target["renderTargetCount"],
+                int(target["depthBound"])))
+        for row in resolvers:
+            chain = row["resourceChain"]
+            payload.extend(MODULE.BINDINGS_RESOLVER.pack(
+                row["unifiedCallOrdinal"], row["presentEpoch"],
+                row["deferredOwnerOccurrence"],
+                row["vertexCountPerInstance"], row["instanceCount"],
+                row["startVertex"], row["startInstance"],
+                row["deferredOwner"], int(row["priorityDefaultDeferred"]),
+                int(row["priorityScreenShadowOutput"]),
+                int(row["priorityScreenShadowConsumer"]),
+                len(chain["renderTargets"]),
+                int(bool(chain["depthTarget"]["objectId"])), 0, 0))
+        (self.resources_path.parent / MODULE.BINDINGS_FILE).write_bytes(payload)
 
     @staticmethod
     def _cb(stage: int, slot: int, buffer_id: int, count: int,
@@ -268,6 +384,7 @@ class PackageFixture:
 
     def save_frame(self, frame: dict[str, object]) -> None:
         _write_json(self.frame_path, frame)
+        self._write_bindings(frame)
         self.rebuild_inventory()
 
     def rebuild_inventory(self) -> None:
@@ -316,17 +433,41 @@ class ConverterTests(unittest.TestCase):
         serialized = json.dumps(result)
         self.assertNotIn("dataHex", serialized)
         self.assertNotIn('"capturedPacketArrays":', serialized)
+        authentication = result["authentication"]
+        self.assertEqual(authentication["captureLane"], "priority-m27")
+        self.assertTrue(authentication["resourcePayloadDrawLocal"])
+        self.assertEqual(authentication["deferredOwner"],
+                         MODULE.M27_DEFERRED_OWNER)
+        self.assertEqual(authentication["bindingsLayoutHash"],
+                         "0xaf996b4b5428cc71")
+        self.assertEqual(set(authentication["exactPacketCounters"]),
+                         set(MODULE.EXACT_PACKET_COUNTERS))
 
-    def test_historical_v1_bindings_sidecar_is_accepted(self) -> None:
+    def test_bindings_wire_contract_matches_native_fixed_sizes(self) -> None:
+        self.assertEqual(MODULE.BINDINGS_LAYOUT_HASH, 0xaf996b4b5428cc71)
+        self.assertEqual(
+            (MODULE.BINDINGS_HEADER.size, MODULE.BINDINGS_RESOURCE.size,
+             MODULE.BINDINGS_DRAW.size, MODULE.BINDINGS_RESOLVER.size),
+            (68, 76, 44, 44))
+
+    def test_historical_v2_bindings_sidecar_is_rejected(self) -> None:
         frame = self.fixture.load_frame()
-        frame["bindingsFile"] = "bindings.v1.bin"
+        frame["bindingsFile"] = "bindings.v2.bin"
+        v3_path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
         v2_path = self.fixture.resources_path.parent / "bindings.v2.bin"
-        v1_path = self.fixture.resources_path.parent / "bindings.v1.bin"
-        v1_path.write_bytes(v2_path.read_bytes())
-        v2_path.unlink()
+        v2_path.write_bytes(v3_path.read_bytes())
+        v3_path.unlink()
         self.fixture.save_frame(frame)
-        result = MODULE.build_observation(self.fixture.root)
-        self.assertEqual(result["schema"], MODULE.LIVE_SCHEMA)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "bindings sidecar declaration"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_historical_graphics_frame_v1_is_rejected(self) -> None:
+        frame = self.fixture.load_frame()
+        frame["schema"] = "endfieldCapture.graphicsFrame.v1"
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError, "schema"):
+            MODULE.build_observation(self.fixture.root)
 
     def test_inventory_hash_mismatch_is_rejected(self) -> None:
         self.fixture.resources_path.write_bytes(
@@ -341,6 +482,286 @@ class ConverterTests(unittest.TestCase):
         _write_json(path, summary)
         self.fixture.rebuild_inventory()
         with self.assertRaisesRegex(MODULE.ConversionError, "graphics summary"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_graphics_summary_requires_draw_local_publication(self) -> None:
+        path = self.fixture.root / "graphics/summary.json"
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        summary["exactOwnerResourcePayloadTiming"] = "frame-end"
+        _write_json(path, summary)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "draw-local resource-payload proof"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_graphics_summary_requires_every_exact_packet_counter(self) -> None:
+        path = self.fixture.root / "graphics/summary.json"
+        original = json.loads(path.read_text(encoding="utf-8"))
+        for counter in MODULE.EXACT_PACKET_COUNTERS:
+            with self.subTest(counter=counter):
+                summary = copy.deepcopy(original)
+                summary[counter] = 0
+                _write_json(path, summary)
+                self.fixture.rebuild_inventory()
+                with self.assertRaisesRegex(MODULE.ConversionError, counter):
+                    MODULE.build_observation(self.fixture.root)
+        summary = copy.deepcopy(original)
+        summary[MODULE.EXACT_PACKET_COUNTERS[0]] = True
+        _write_json(path, summary)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(
+                MODULE.ConversionError, MODULE.EXACT_PACKET_COUNTERS[0]):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_graphics_summary_requires_exact_publication(self) -> None:
+        path = self.fixture.root / "graphics/summary.json"
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        summary["exactEndminfPublishable"] = False
+        _write_json(path, summary)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "exact Endminf publication"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_exact_draw_requires_priority_m27_lane(self) -> None:
+        frame = self.fixture.load_frame()
+        frame["captureLane"] = "regular"
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError, "priority-M27"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_frame_requires_draw_local_payload_declaration(self) -> None:
+        for field, invalid in (
+                ("resourcePayloadTiming", "frame-end"),
+                ("resourcePayloadDrawLocal", False)):
+            with self.subTest(field=field):
+                frame = self.fixture.load_frame()
+                frame[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "draw-local payload proof"):
+                    MODULE.build_observation(self.fixture.root)
+                frame[field] = "draw-local" if field.endswith("Timing") else True
+                self.fixture.save_frame(frame)
+
+    def test_draw_owner_and_chronology_must_be_exact(self) -> None:
+        for field, invalid in (
+                ("deferredOwner", 2),
+                ("deferredOwnerOccurrence", 0),
+                ("unifiedCallOrdinal", 0),
+                ("presentEpoch", 0)):
+            with self.subTest(field=field):
+                frame = self.fixture.load_frame()
+                draw = frame["drawRecords"][0]
+                original = draw[field]
+                draw[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "owner chronology"):
+                    MODULE.build_observation(self.fixture.root)
+                draw[field] = original
+                self.fixture.save_frame(frame)
+
+    def test_selected_resource_must_be_attempted_and_completed(self) -> None:
+        for field, invalid in (
+                ("attempted", False), ("completed", False),
+                ("failure", 1), ("hresult", 1)):
+            with self.subTest(field=field):
+                frame = self.fixture.load_frame()
+                row = frame["selectedResourceRecords"][0]
+                original = row[field]
+                row[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "exact owner-local proof"):
+                    MODULE.build_observation(self.fixture.root)
+                row[field] = original
+                self.fixture.save_frame(frame)
+
+    def test_selected_resource_must_match_owner_chronology(self) -> None:
+        for field, invalid in (
+                ("deferredOwner", 2),
+                ("deferredOwnerOccurrence", 2),
+                ("deferredUnifiedCallOrdinal", 701),
+                ("deferredPresentEpoch", 71)):
+            with self.subTest(field=field):
+                frame = self.fixture.load_frame()
+                row = frame["selectedResourceRecords"][0]
+                original = row[field]
+                row[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "exact owner-local proof"):
+                    MODULE.build_observation(self.fixture.root)
+                row[field] = original
+                self.fixture.save_frame(frame)
+
+    def test_selected_resources_require_both_owner_phases(self) -> None:
+        frame = self.fixture.load_frame()
+        for row in frame["selectedResourceRecords"]:
+            row["deferredCopyPhase"] = MODULE.BEFORE_OWNER_PHASE
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "wrong owner phase"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_every_required_draw_binding_needs_its_owner_local_payload(self) -> None:
+        original = self.fixture.load_frame()
+        cases = (
+            ("vertex", lambda row: row["captureKind"] == 0,
+             "IA vertex binding"),
+            ("index", lambda row: row["captureKind"] == 1,
+             "IA index binding"),
+            ("constant", lambda row: row["captureKind"] == 2 and
+             row["stage"] == 0, "constant-buffer binding"),
+            ("srv", lambda row: row["captureKind"] == 3 and
+             row["stage"] == 4 and row["slot"] == 5,
+             "shader-resource binding"),
+            ("render-target", lambda row: row["slot"] == 0x100,
+             "render target 0"),
+            ("depth", lambda row: row["slot"] == 0x200,
+             "depth target"),
+        )
+        for label, remove, error in cases:
+            with self.subTest(binding=label):
+                frame = copy.deepcopy(original)
+                frame["selectedResourceRecords"] = [
+                    row for row in frame["selectedResourceRecords"]
+                    if not remove(row)]
+                frame["selectedResources"] = len(
+                    frame["selectedResourceRecords"])
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError, error):
+                    MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_sidecar_header_is_authenticated(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        payload = bytearray(path.read_bytes())
+        payload[0] ^= 1
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "schema/header"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_sidecar_record_size_matches_metadata(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        payload = bytearray(path.read_bytes())
+        struct.pack_into("<I", payload,
+                         len(MODULE.BINDINGS_SCHEMA) + 36, 75)
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "wire layout"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_sidecar_exact_file_size_is_required(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        path.write_bytes(path.read_bytes() + b"extra")
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "exact file size"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_record_size_declaration_is_required(self) -> None:
+        frame = self.fixture.load_frame()
+        frame["bindingsSelectedRecordSize"] = 0
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "layout declaration"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_layout_hash_declaration_is_required(self) -> None:
+        frame = self.fixture.load_frame()
+        frame["bindingsLayoutHash"] ^= 1
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "layout declaration"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_header_counts_match_json(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        payload = bytearray(path.read_bytes())
+        # selected_resource_count is the sixth u32 after the four u64 values.
+        count_offset = len(MODULE.BINDINGS_SCHEMA) + 32 + 5 * 4
+        struct.pack_into("<I", payload, count_offset, 99)
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "header disagrees with JSON"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_resource_record_matches_json(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        payload = bytearray(path.read_bytes())
+        resource_offset = (len(MODULE.BINDINGS_SCHEMA) +
+                           MODULE.BINDINGS_HEADER.size)
+        struct.pack_into("<Q", payload, resource_offset + 40, 701)
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "resource 0 disagrees with JSON"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_resource_boolean_flags_are_canonical(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        payload = bytearray(path.read_bytes())
+        resource_offset = (len(MODULE.BINDINGS_SCHEMA) +
+                           MODULE.BINDINGS_HEADER.size)
+        payload[resource_offset + 74] = 2
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "non-boolean wire flags"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_draw_timing_matches_json(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        frame = self.fixture.load_frame()
+        payload = bytearray(path.read_bytes())
+        draw_offset = (len(MODULE.BINDINGS_SCHEMA) +
+                       MODULE.BINDINGS_HEADER.size +
+                       len(frame["selectedResourceRecords"]) *
+                       MODULE.BINDINGS_RESOURCE.size)
+        struct.pack_into("<Q", payload, draw_offset, 701)
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "draw 0 disagrees with JSON"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_resolver_timing_matches_json(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        frame = self.fixture.load_frame()
+        payload = bytearray(path.read_bytes())
+        resolver_offset = (len(MODULE.BINDINGS_SCHEMA) +
+                           MODULE.BINDINGS_HEADER.size +
+                           len(frame["selectedResourceRecords"]) *
+                           MODULE.BINDINGS_RESOURCE.size +
+                           len(frame["drawRecords"]) *
+                           MODULE.BINDINGS_DRAW.size)
+        struct.pack_into("<Q", payload, resolver_offset, 711)
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "resolver 0 disagrees with JSON"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_bindings_resolver_reserved_bytes_are_zero(self) -> None:
+        path = self.fixture.resources_path.parent / MODULE.BINDINGS_FILE
+        frame = self.fixture.load_frame()
+        payload = bytearray(path.read_bytes())
+        resolver_offset = (len(MODULE.BINDINGS_SCHEMA) +
+                           MODULE.BINDINGS_HEADER.size +
+                           len(frame["selectedResourceRecords"]) *
+                           MODULE.BINDINGS_RESOURCE.size +
+                           len(frame["drawRecords"]) *
+                           MODULE.BINDINGS_DRAW.size)
+        payload[resolver_offset + 42] = 1
+        path.write_bytes(payload)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "flags/reserved bytes"):
             MODULE.build_observation(self.fixture.root)
 
     def test_selected_frame_resource_truncation_is_rejected(self) -> None:
@@ -398,7 +819,7 @@ class ConverterTests(unittest.TestCase):
         t0["blobBytes"] = 63
         self.fixture.save_frame(frame)
         with self.assertRaisesRegex(MODULE.ConversionError,
-                                    "captured VS t0 structured buffer"):
+                                    "lacks exact owner-local proof"):
             MODULE.build_observation(self.fixture.root)
 
     def test_bound_vertex_t0_wrong_resource_kind_is_rejected(self) -> None:
@@ -408,7 +829,7 @@ class ConverterTests(unittest.TestCase):
         t0["kind"] = 3
         self.fixture.save_frame(frame)
         with self.assertRaisesRegex(MODULE.ConversionError,
-                                    "explicit draw-local VS t0 outcome"):
+                                    "shader-resource binding"):
             MODULE.build_observation(self.fixture.root)
 
     def test_bound_vertex_t0_requires_explicit_boolean_bound_state(self) -> None:
