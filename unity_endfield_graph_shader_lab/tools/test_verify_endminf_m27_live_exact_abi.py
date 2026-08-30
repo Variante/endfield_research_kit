@@ -182,8 +182,21 @@ def complete_observation() -> dict[str, object]:
                 "slot": 0,
                 "observedFromActualDraw": True,
                 "synchronizedDrawId": "camera:frame:draw",
-                "bound": False,
-                "objectId": 0,
+                "bound": True,
+                "kind": "StructuredBuffer",
+                "logicalName": "_VertexSkinMatrices",
+                "objectId": 1234,
+                "viewId": 5678,
+                "descriptorHash": 9012,
+                "byteSize": MODULE.VERTEX_SKIN_BUFFER_BYTES,
+                "viewDimension": MODULE.VERTEX_SKIN_VIEW_DIMENSION,
+                "bindFlags": MODULE.VERTEX_SKIN_BIND_FLAGS,
+                "miscFlags": MODULE.VERTEX_SKIN_MISC_FLAGS,
+                "stride": 16,
+                "viewFirstElement": 0,
+                "viewNumElements": MODULE.VERTEX_SKIN_BUFFER_ELEMENTS,
+                "payloadBytes": MODULE.VERTEX_SKIN_BUFFER_BYTES,
+                "payloadSha256": "66" * 32,
             }
         ],
         "constantBuffers": [
@@ -311,7 +324,7 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             self.first_failure(value),
             "live.publishers.terrainSubsurfacePublishedMatchesObserved")
 
-    def test_active_skin_bit_is_rejected_before_null_t0_admission(self) -> None:
+    def test_active_skin_bit_is_rejected_before_t0_outcome_admission(self) -> None:
         value = complete_observation()
         value["vertexSkinningControl"]["flagRaw"] = MODULE.VERTEX_SKIN_FLAG_MASK
         value["vertexSkinningControl"]["skinBranchActive"] = True
@@ -322,13 +335,35 @@ class LiveExactAbiChecksTests(unittest.TestCase):
     def test_fabricated_identity_skin_buffer_is_rejected(self) -> None:
         value = complete_observation()
         value["vertexResources"][0].update({
-            "bound": True,
-            "objectId": 1234,
-            "kind": "StructuredBuffer",
-            "logicalName": "_VertexSkinMatrices",
-            "stride": 16,
+            "byteSize": 16,
+            "viewNumElements": 1,
+            "payloadBytes": 16,
         })
-        self.assertEqual(self.first_failure(value), "live.vertex.t0.bound")
+        self.assertEqual(self.first_failure(value), "live.vertex.t0.byteSize")
+
+    def test_explicit_unbound_skin_resource_is_accepted(self) -> None:
+        value = complete_observation()
+        value["vertexResources"] = [{
+            "slot": 0,
+            "observedFromActualDraw": True,
+            "synchronizedDrawId": "camera:frame:draw",
+            "bound": False,
+            "objectId": 0,
+            "viewId": 0,
+        }]
+        self.assert_complete(value)
+
+    def test_bound_skin_resource_requires_payload_hash(self) -> None:
+        value = complete_observation()
+        del value["vertexResources"][0]["payloadSha256"]
+        self.assertEqual(
+            self.first_failure(value), "live.vertex.t0.payloadSha256")
+
+    def test_bound_skin_resource_requires_complete_descriptor(self) -> None:
+        value = complete_observation()
+        del value["vertexResources"][0]["miscFlags"]
+        self.assertEqual(
+            self.first_failure(value), "live.vertex.t0.miscFlags")
 
     def test_nonadmissible_runtime_path_is_a_static_blocker(self) -> None:
         blocker_keys = (
@@ -337,7 +372,7 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             "b0SelectedReadsFullySourcePopulated",
             "b1SelectedReadsFullySourcePopulated",
             "b2ActualParticleRecordRangeAndGeometryObserved",
-            "vertexSkinInactiveNullT0DependencyAuthenticated",
+            "vertexSkinDrawLocalT0OutcomeAuthenticated",
             "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
             "b4SelectedFrameProducerValueAuthenticated",
             "orderedMrtSlotsObserved",
@@ -362,7 +397,7 @@ class LiveExactAbiChecksTests(unittest.TestCase):
             "b0SelectedReadsFullySourcePopulated": True,
             "b1SelectedReadsFullySourcePopulated": False,
             "b2ActualParticleRecordRangeAndGeometryObserved": True,
-            "vertexSkinInactiveNullT0DependencyAuthenticated": True,
+            "vertexSkinDrawLocalT0OutcomeAuthenticated": True,
             "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": True,
             "b4SelectedFrameProducerValueAuthenticated": True,
             "orderedMrtSlotsObserved": True,
@@ -476,6 +511,10 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             encoding="utf-8")
         cls.pipeline = (root / "Runtime/Rendering/HGCompatRenderPipeline.cs").read_text(
             encoding="utf-8")
+        cls.global_contract = (root / "Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs").read_text(
+            encoding="utf-8")
+        cls.global_owner = (root / "Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs").read_text(
+            encoding="utf-8")
         cls.terrain = (root / "Runtime/Rendering/EndfieldRecoveredTerrainSubsurfaceConstants.cs").read_text(
             encoding="utf-8")
         cls.observer = (root / "Editor/CharacterRecovery/EndfieldM27ShellHashCapture.cs").read_text(
@@ -542,6 +581,94 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             self.frame)
         self.assertTrue(connections["b0ReadinessReachesExactDraw"])
         self.assertTrue(connections["b3RetainedMaterialReachesExactShell"])
+
+    def test_b1_source_inputs_are_complete_but_runtime_owners_fail_closed(
+            self) -> None:
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            self.pipeline)
+        self.assertTrue(contract["sourceOwnedInputContractComplete"])
+        self.assertTrue(contract["defaultRuntimeFailsClosed"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
+        self.assertFalse(contract["capturedValuesAuthorized"])
+        self.assertTrue(all(contract["readinessBits"].values()))
+        self.assertTrue(all(contract["sourceEquations"].values()))
+
+    def test_b1_missing_halton_readiness_bit_invalidates_contract(self) -> None:
+        mutated = self.global_contract.replace(
+            "public readonly bool taaJitterReady;",
+            "public readonly bool removedTaaJitterReady;",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            mutated,
+            self.global_owner,
+            self.pipeline)
+        self.assertFalse(contract["readinessBits"]["c19.zw"])
+        self.assertFalse(contract["sourceOwnedInputContractComplete"])
+
+    def test_b1_default_runtime_input_cannot_claim_source_owner(self) -> None:
+        mutated = self.pipeline.replace(
+            "recoveredDeferredTransformsReady,\n"
+            "                                    commandBuffer,",
+            "recoveredDeferredTransformsReady,\n"
+            "                                    default(\n"
+            "                                        EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs),\n"
+            "                                    commandBuffer,",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertEqual(connection["argumentCount"], 8)
+        self.assertTrue(connection["inlineDefaultRejected"])
+        self.assertFalse(connection["namedSourceOwnerContractAudited"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
+
+    def test_b1_hardcoded_runtime_input_cannot_claim_source_owner(self) -> None:
+        constructor = (
+            "new EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs("
+            "true, true, Vector4.zero, true, -1.0f, true, 1.0f, true, "
+            "Vector3.zero, 0.0f, true, Vector4.zero, true)")
+        mutated = self.pipeline.replace(
+            "recoveredDeferredTransformsReady,\n"
+            "                                    commandBuffer,",
+            "recoveredDeferredTransformsReady,\n"
+            f"                                    {constructor},\n"
+            "                                    commandBuffer,",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertEqual(connection["argumentCount"], 8)
+        self.assertTrue(connection["inlineConstructorRejected"])
+        self.assertFalse(connection["namedSourceOwnerContractAudited"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
+
+    def test_b1_named_but_unaudited_source_owner_stays_closed(self) -> None:
+        mutated = self.pipeline.replace(
+            "recoveredDeferredTransformsReady,\n"
+            "                                    commandBuffer,",
+            "recoveredDeferredTransformsReady,\n"
+            "                                    recoveredM27ShaderVariablesSourceOwner.CurrentM27SourceInputs,\n"
+            "                                    commandBuffer,",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertEqual(connection["argumentCount"], 8)
+        self.assertTrue(connection["namedSourceOwnerExpression"])
+        self.assertFalse(connection["namedSourceOwnerContractAudited"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
 
     def test_disconnected_b0_readiness_is_rejected(self) -> None:
         disconnected = self.frame.replace(

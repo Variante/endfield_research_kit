@@ -3522,24 +3522,42 @@ without exceeding the bounded automatic resource budget. EndfieldCapture commit
 `d67f942` also retains pixel-sampler slots s0-s5 for the targeted LitEffect draw
 while preserving the existing payload/resource bounds; all 21 native tests
 pass. This is observer coverage only, not renderer admission.
-Collect the next bounded run with
-`tools\EndfieldCapture\StartEndminfOverviewCapture.bat`: start with Endfield
-closed, wait for all four providers, open Endminf Character Info without a
-manual graphics trigger, keep it visible through the first settled loop wrap,
-then press Numpad 9 immediately to stop and collect. Do not press Numpad 5 in
-this automatic run. This is a capture-readiness gate, not recovered solver
-output.
+Session `20260830T154827Z` is rejected as a collected session: it has no
+collector inventory, the selected audio provider had no requested window, the
+graphics summary is incomplete with invalid cadence, and 36 of 72 regular
+frame packets report selected-resource truncation. The 128 MiB shared graphics
+lane spent about 91.5 MiB on automatic reservations and left only about
+42.7 MiB for ordinary resources; this cannot close the pinned Default
+resolver's t0-t27, MRT, and depth set. One exact M27 draw is locally complete
+and corrects an earlier conclusion: its inactive b2 skin bit is accompanied by
+a real bound VS t0 structured buffer, not an explicit null binding. That local
+draw does not override the failed session gates. The maintained converter
+authenticates a complete collector inventory, every artifact hash, one exact
+draw, IA, b2, t0, textures, and pipeline descriptors, emits no captured
+VB/IB/CB arrays, and leaves Unity-only owners unresolved; it deterministically
+rejects this session before producing output.
+
+The same session closes only the generic secondary publication route. All
+2,299 scheduled writes completed and emitted 55,176 readable rows, but every
+row belongs to one unowned team-16 tuple and its motion is effectively static;
+the required 6/30/70 Endminf owner candidates are absent. The failed lifecycle
+join exposed an observer ABI bug: the single-Transform `AddTransform` overload
+returns one inserted index, whereas the observer decoded it as a packed
+`DataChunk`. The corrected decoder derives length one and distinguishes valid
+index zero from the manager-disabled zero return. None of these rows is
+admissible as hair/cloth replay, a fitted curve, or a hardcoded trajectory.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
 start-to-loop sequence with an upright portrait, all four VFX roots, 68 admitted
 entrance renderers, and no crash or device-removal signal. Across 554 bounded
-clean-reference rows its best -1-frame alignment is 22.8884 actor ROI,
-24.8199 effect ROI, and 15.3423 effect temporal-delta MAE. The immediately prior
-measured-strip run scored 22.8848/24.8188/15.3412; the negligible
-0.0036/0.0011/0.0010 difference confirms that the screenshot rectangle pass
-provided no material fidelity and should remain explicit diagnostic evidence.
+clean-reference rows its best -1-frame alignment is 22.8096 actor ROI,
+24.6097 effect ROI, and 15.4914 effect temporal-delta MAE. These spatial scores
+remain in the prior baseline's broad regime while temporal error is slightly
+worse; the run does not establish a causal fidelity gain. The earlier
+measured-strip A/B already showed no material improvement and remains explicit
+diagnostic evidence.
 The opening temporal composition and stone/light peak remain the largest gaps;
 the settled post-cleanup motion is temporally stable while hair/coat silhouettes
 remain spatially different. Treat this as the stable non-crashing baseline, not
@@ -3564,14 +3582,16 @@ contiguous history: all 22 published vectors pass the D3D11 GPU verifier, reset
 and discontinuity reuse the current frame, and captured constant-buffer bytes
 remain validation-only. All 50 selected b3 words are tied bit-exactly to 37
 original material fields, explicit packoffsets, the generated Unity material,
-and the compatibility shader's effective defaults. b1 remains deliberately
-closed because the live Halton jitter, physical-camera material-mip-bias and
-exposure history, gameplay player-center, and HGVFX anchor lifecycle are not
-fully recovered. The selected physical camera publishes c26.xy=(-1,0.5), while
+and the compatibility shader's effective defaults. The b1 source contract now
+has distinct readiness for target dimensions, perspective, TAA jitter,
+physical-camera material mip bias, exposure, VFX player/time, and the HGVFX
+anchor. The default runtime supplies only current target/perspective state;
+explicit source-owner propagation is still absent, so b1 admission remains
+closed. The selected physical camera publishes c26.xy=(-1,0.5), while
 serialized virtual-camera defaults only prove (0,1); do not substitute either
 without the missing physical-camera assignment path. Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
-bit plus explicitly unbound VS t0, b4, ordered MRTs, s0-s5, the observation
+bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted
 placement, transforms, curves, texture sampling, or lighting are never an
 admissible substitute.
