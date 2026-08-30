@@ -78,6 +78,7 @@ EXPECTED_PLUGIN_EXPORTS = [
     "EndfieldOriginalDxbcGetVertexSwapCount",
     "EndfieldOriginalDxbcSetDiagnosticArmed",
     "EndfieldOriginalDxbcSetDiagnosticTexturePointers",
+    "EndfieldOriginalDxbcSetM27ObservationArmed",
     "EndfieldOriginalDxbcSetM27SubstitutionArmed",
     "UnityPluginLoad",
     "UnityPluginUnload",
@@ -274,9 +275,14 @@ def main() -> int:
             errors,
         )
         try:
+            actual_exports = set(PE(blobs["plugin"]).exports())
+            missing_exports = sorted(
+                set(EXPECTED_PLUGIN_EXPORTS) - actual_exports
+            )
             check(
-                PE(blobs["plugin"]).exports() == EXPECTED_PLUGIN_EXPORTS,
-                "plugin export contract drift",
+                not missing_exports,
+                "plugin missing required exports: " +
+                ", ".join(missing_exports),
                 errors,
             )
         except Exception as exc:

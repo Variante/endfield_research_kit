@@ -1,6 +1,6 @@
 {
   "schema": "endfield.endminf-m27-live-exact-abi-admission.v1",
-  "status": "fail_closed_live_particle_renderer_observation_missing",
+  "status": "fail_closed_generative_route_not_source_complete",
   "admitted": false,
   "presentationEnabled": false,
   "capturedPacketDataAuthorized": false,
@@ -12,8 +12,13 @@
       "pixelSha256": "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
       "vertexIdentity": "0xC0266E7FAC0046C1",
       "pixelIdentity": "0x92D80A93ADD9C714",
-      "shellVertexSha256": "b6ffa6a650c43fa86cfed1a146ecdfb046d6c92c7e866ff6f51ac79a6c7d4833",
-      "shellPixelSha256": "9a6803527679aa4d4822ca38a4257c2dafcbce2748a67c7e3387f63e3ee54707"
+      "immutablePacketShellVertexSha256": "b6ffa6a650c43fa86cfed1a146ecdfb046d6c92c7e866ff6f51ac79a6c7d4833",
+      "immutablePacketShellPixelSha256": "9a6803527679aa4d4822ca38a4257c2dafcbce2748a67c7e3387f63e3ee54707",
+      "generativeShellPinSchema": "endfield.endminf-m27-generative-shell-pin.v1",
+      "generativeShellVertexSha256": "6b87d2cb5f1d92dd3209b104d52fb700dba578b12237468cbe9ea9082a9a1022",
+      "generativeShellPixelSha256": "0ad380949c0e8edaedc6ac76fa002017ff2476bff4a0ce9d2d52de0569e903ce",
+      "generativeShellPinned": true,
+      "generativeShellPinReportSha256": "f340d160bdaf80da90acb26423da32664a6fe2bbbc969c3e74964694b2a5ce66"
     },
     "renderer": {
       "type": "ParticleSystemRenderer",
@@ -43,6 +48,43 @@
       "renderTargetCount": 5,
       "depthBound": true
     },
+    "orderedMrtDescriptors": [
+      {
+        "slot": 0,
+        "role": "SceneColor",
+        "textureFormat": 26,
+        "viewFormat": 26,
+        "sampleCount": 1
+      },
+      {
+        "slot": 1,
+        "role": "SceneMV",
+        "textureFormat": 24,
+        "viewFormat": 24,
+        "sampleCount": 1
+      },
+      {
+        "slot": 2,
+        "role": "GBufferA",
+        "textureFormat": 24,
+        "viewFormat": 24,
+        "sampleCount": 1
+      },
+      {
+        "slot": 3,
+        "role": "GBufferB",
+        "textureFormat": 24,
+        "viewFormat": 24,
+        "sampleCount": 1
+      },
+      {
+        "slot": 4,
+        "role": "GBufferC",
+        "textureFormat": 29,
+        "viewFormat": 29,
+        "sampleCount": 1
+      }
+    ],
     "depthDescriptor": {
       "textureFormat": 19,
       "viewFormat": 20,
@@ -92,6 +134,20 @@
         "payloadSha256": "9bdc2187bbc5ee1c2c74c4b0486060fa46c3aba2a1860c3221693f77b00a27e8",
         "payloadBytes": 21872,
         "fullMipChainRequired": true
+      },
+      {
+        "slot": 4,
+        "property": "_ParallaxMaskMap",
+        "serializedNull": true,
+        "shaderDefault": "black",
+        "selectedDrawObjectId": 4929080160
+      },
+      {
+        "slot": 5,
+        "property": "_ParallaxNoiseMap",
+        "serializedNull": true,
+        "shaderDefault": "black",
+        "selectedDrawObjectId": 4929080160
       }
     ],
     "constantBuffers": [
@@ -128,7 +184,7 @@
         "logicalName": "_TerrainSubsurfaceConstants",
         "fullPublisherOrLogicalBytes": 16,
         "exactUsedPrefixBytes": 16,
-        "producer": "global"
+        "producer": "EndfieldRecoveredTerrainSubsurfaceConstants"
       }
     ],
     "sources": {
@@ -144,9 +200,9 @@
         "path": "reports/assets/character_recovery/endminf_m27_fixed_state_capture_latest.json",
         "sha256": "36028507dd19921fb1f91d262e183fc1e31577c326ed299bce8b45235e82837b"
       },
-      "scratch/reverse_engineering/endfield_capture/20260827T225644Z/graphics/frames/2723/metadata.json": {
-        "path": "scratch/reverse_engineering/endfield_capture/20260827T225644Z/graphics/frames/2723/metadata.json",
-        "sha256": "23b8256ca23339dd77cfea103caef13520744c96fcba47add8b4d00eddd4bffe"
+      "scratch/reverse_engineering/endfield_capture/20260829T224523Z/graphics/frames/2344/metadata.json": {
+        "path": "scratch/reverse_engineering/endfield_capture/20260829T224523Z/graphics/frames/2344/metadata.json",
+        "sha256": "baf3020dd50d51844ecd46c82d94c9faedd8461361fa1cdba399f815a2a0aca2"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/endminf_liteffect_native_texture_payload_contract.json": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/RenderParameters/endminf_liteffect_native_texture_payload_contract.json",
@@ -158,15 +214,47 @@
       },
       "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/M27SubstitutionRegistry.h": {
         "path": "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/M27SubstitutionRegistry.h",
-        "sha256": "3a3fadda0844fe9e57a14224172d28edd7bfa93ef99a11b22c429b561e9d3dc4"
+        "sha256": "c9b579d413e64dcd760d49423dc8b6301983a7375ef7e1fe1ab46e0b6001d3be"
+      },
+      "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp": {
+        "path": "unity_endfield_graph_shader_lab/tools/original_dxbc_exact/OriginalDxbcSwapPlugin.cpp",
+        "sha256": "56a89081e58fd33ba1ae3ea70e79223b29c580fa33313a885faad9fd221b9eba"
+      },
+      "reports/assets/character_recovery/endminf_m27_generative_shell_pin.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_generative_shell_pin.json",
+        "sha256": "f340d160bdaf80da90acb26423da32664a6fe2bbbc969c3e74964694b2a5ce66"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27ExactAbiShell.shader": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27ExactAbiShell.shader",
         "sha256": "d9ac7856cb9797d9351911bc8fe4d2733449c662bf366fd00aac5338af9eafbf"
       },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27GenerativeExactAbiShell.shader": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/EndfieldEndminfM27GenerativeExactAbiShell.shader",
+        "sha256": "4a55b2399e50a40fe273c1cad99c666605cc88a692358f3af671735049b5c400"
+      },
+      "reports/assets/character_recovery/endminf_m27_terrain_profile_native_contract.json": {
+        "path": "reports/assets/character_recovery/endminf_m27_terrain_profile_native_contract.json",
+        "sha256": "c2653cb7ebae15b3fae270d7f3358e034f4078b68294aeccc5d9d3a2817ab34e"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredTerrainSubsurfaceConstants.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredTerrainSubsurfaceConstants.cs",
+        "sha256": "b36d4c42d0ce7a31e681feb8b7cecde7eaaefc38185164fdb06395fb918c22ac"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfLitEffectCompatibilityBinding.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfLitEffectCompatibilityBinding.cs",
+        "sha256": "ed0a99981b7a2c2dfbbccfebd854481018600d83d0ba67859d05bb0718e065c6"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldM27ShellHashCapture.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldM27ShellHashCapture.cs",
+        "sha256": "37bebef2d90cbca42640a6ea92b552905fe4bd05541d200bf8492fcba0ff01d2"
+      },
+      "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json": {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material/M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+        "sha256": "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46"
+      },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariablesContract.cs",
-        "sha256": "152fb8b7c6c63bd7e6c5f0fb0e8222b37e92e431bcb35557acdd60d062d44089"
+        "sha256": "66170f5632f6bd6349f99722da1d8d715be0921ad4c903252c7e1ee9f5b7c7d4"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredTransformVariables.cs",
@@ -174,7 +262,7 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobalContract.cs",
-        "sha256": "6a9dba4552546da194db1d582c1a6232bd7026fa326aeb2aee1ee642eb1032bf"
+        "sha256": "1132101f26dd71b4586f2705b17c5530552dbbf87f7fc85b20ce167c4359dbdb"
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs",
@@ -182,18 +270,54 @@
       },
       "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs": {
         "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredDeferredGBufferFrame.cs",
-        "sha256": "8bdef5d2e81376ed4d882375eb43239c44f87e5aa9e616ef7decb3dab9929be9"
+        "sha256": "67f0ca5cd3a7f5d3d8a12c9cafe54ee336128c314af3caba5b927c97cd433cab"
+      },
+      "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs",
+        "sha256": "cb0e70cb403437184009f9302c81d03dafb94cbfbd89db74d2d6e3a596d958b5"
       }
     }
   },
   "currentImplementationAudit": {
-    "activeExactRouteUsesCapturedConstantBufferArrays": true,
-    "activeExactRouteUsesCapturedPacketIssue": true,
-    "activeExactMaterialUsesObsoleteRepresentativeTextureSlots": true,
-    "fullPublishersConnectedToM27ShellCbufferNames": false,
+    "immutablePacketReplayRetained": true,
+    "immutablePacketReplayUsesCapturedConstantBufferArrays": true,
+    "immutablePacketReplayUsesObsoleteRepresentativeTextureSlots": true,
+    "generativeRouteUsesCapturedPacketData": false,
+    "generativeRouteHasActiveT0ThroughT3SourceBindings": true,
+    "generativeRouteHasNamedFullB0B1Publishers": true,
+    "generativeRouteDeclaresEngineUnityPerDrawB2": true,
+    "generativeRouteHasParticleSystemRendererDraw": true,
+    "generativeRouteHasAuthenticatedCompilerSubstitutionGate": true,
+    "staticTextureEvidenceUsesActualM27Geometry": true,
+    "selectedM27VertexSkinBranchInactive": true,
+    "generativeRouteB4FailsClosedWithoutValidatedPublisher": true,
+    "generativeRouteHasUnarmedPostBaselineShellObserver": true,
+    "generativeSelectorEnablesRetainedRenderer": true,
+    "generativeShellIndependentlyPinnedFromD3D11Callback": true,
+    "runtimePipelineTagCompileReflectionAndSetPassProven": true,
+    "b0SelectedReadsFullySourcePopulated": false,
+    "b1SelectedReadsFullySourcePopulated": false,
+    "b2ActualParticleRecordRangeAndGeometryObserved": false,
+    "vertexSkinStructuredResourceAuthenticated": false,
+    "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": false,
+    "b4SelectedFrameProducerValueAuthenticated": false,
+    "orderedMrtSlotsObserved": false,
+    "activeSamplerSlotsObserved": false,
+    "authenticatedObservationWriterAvailable": false,
     "admissibleGenerativeParticleRendererPathExists": false,
     "boundary": "These flags audit the current implementation only. They do not alter the packet replay, enable the shell, or promote it to presentation."
   },
+  "staticAdmissionBlockers": [
+    "b0SelectedReadsFullySourcePopulated",
+    "b1SelectedReadsFullySourcePopulated",
+    "b2ActualParticleRecordRangeAndGeometryObserved",
+    "vertexSkinStructuredResourceAuthenticated",
+    "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
+    "b4SelectedFrameProducerValueAuthenticated",
+    "orderedMrtSlotsObserved",
+    "activeSamplerSlotsObserved",
+    "authenticatedObservationWriterAvailable"
+  ],
   "liveObservation": {
     "provided": false,
     "schema": null,
@@ -208,6 +332,10 @@
     "failureCount": 1,
     "firstFailure": "live.observation"
   },
-  "smallestRemainingSourceGap": "No generative live observation joins the compiler-substituted subprogram-113 pair to the actual M27 ParticleSystemRenderer draw. Before observing it, the diagnostic path must replace the old t2-t5 and captured _M27CB* bindings with source-driven t0-t3 bindings and a named bridge to the existing full b0/b1 publishers; UnityPerDraw b2 must remain engine-produced.",
+  "observationProducer": {
+    "status": "blocked_before_draw_submission",
+    "reason": "A complete live observation must follow an actual synchronized DrawRenderer submission and authenticate the post-baseline shell callback/pin, substitution counters, IA/PSO, ordered MRT/depth, samplers/resources, full publisher readiness, PSR b2 geometry/range, and b4 selected-frame provenance. The route currently fails before submission, so no observation fields are synthesized."
+  },
+  "smallestRemainingSourceGap": "The named generative shell and default-off ParticleSystemRenderer route now have independently pinned compiler identities and SetPass proof, but admission still requires source-complete selected b0/b1 reads, actual PSR b2 range/geometry and vertex structured-resource authentication, complete b3 word provenance, fresh selected-frame b4 value provenance, ordered MRT/sampler observation, and an authenticated synchronized writer.",
   "boundary": "Admission is diagnostic only. It never enables canonical presentation, never consumes captured VB/IB/CB arrays, and never tunes transforms, positions, curves, lighting, or texture sampling."
 }

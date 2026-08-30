@@ -2016,6 +2016,10 @@ namespace EndfieldGraphShaderLab
                         renderWidth,
                         renderHeight,
                         recoveredCanonicalFrameResourcesReady,
+                        recoveredDeferredTransformVariables.CurrentBuffer,
+                        recoveredDeferredTransformsReady,
+                        recoveredShaderVariablesGlobal.CurrentBuffer,
+                        recoveredShaderVariablesGlobalReady,
                         canonicalColorTarget,
                         canonicalDepthTarget);
             }

@@ -22,6 +22,17 @@ namespace EndfieldGraphShaderLabEditor
             "EndfieldEndminfM27ExactAbiShell.shader";
         private const string OutputEnvironment =
             "ENDFIELD_M27_SHELL_HASH_OUTPUT";
+        private const string GenerativeShaderAsset =
+            "Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/" +
+            "EndfieldEndminfM27GenerativeExactAbiShell.shader";
+        private const string GenerativeOutputEnvironment =
+            "ENDFIELD_M27_GENERATIVE_SHELL_HASH_OUTPUT";
+        private const string GenerativePinOutputEnvironment =
+            "ENDFIELD_M27_GENERATIVE_SHELL_PIN_OUTPUT";
+        private const string ImmutablePacketShellVertexSha256 =
+            "b6ffa6a650c43fa86cfed1a146ecdfb046d6c92c7e866ff6f51ac79a6c7d4833";
+        private const string ImmutablePacketShellPixelSha256 =
+            "9a6803527679aa4d4822ca38a4257c2dafcbce2748a67c7e3387f63e3ee54707";
         private const string M14ShaderAsset =
             "Assets/EndfieldGraphShaderLab/Shaders/Diagnostics/" +
             "EndfieldEndminfM14ExactAbiShell.shader";
@@ -97,6 +108,28 @@ namespace EndfieldGraphShaderLabEditor
                 "stage+SHA substitutions=0.");
         }
 
+        public static void PrepareGenerativeRawRuntimeVariant()
+        {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
+                throw new InvalidOperationException(
+                    "Raw generative M27 shell preparation requires Direct3D11.");
+            Native.SetM27SubstitutionArmed(0);
+            uint vertexSwaps = Native.GetVertexSwapCount();
+            uint pixelSwaps = Native.GetPixelSwapCount();
+            ForceRecompileWhileArmed(GenerativeShaderAsset);
+            ForceLoadReservedVariant(GenerativeShaderAsset);
+            if (Native.GetVertexSwapCount() != vertexSwaps ||
+                Native.GetPixelSwapCount() != pixelSwaps)
+            {
+                throw new InvalidOperationException(
+                    "The unpinned generative M27 shell unexpectedly changed " +
+                    "compiler-substitution counters.");
+            }
+            Debug.Log(
+                "Prepared unsubstituted generative Endminf M27 ABI shell: " +
+                "registry unchanged, substitutions=0.");
+        }
+
         [Serializable]
         private sealed class Report
         {
@@ -122,6 +155,69 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         [Serializable]
+        private sealed class GenerativeObservationReport
+        {
+            public string schema;
+            public string status;
+            public string unityVersion;
+            public string graphicsDeviceType;
+            public string shaderAsset;
+            public string shaderSourceSha256;
+            public uint contractVersion;
+            public uint registryReady;
+            public uint callbackCountBefore;
+            public uint callbackCountAfter;
+            public uint callbackObservationCountBefore;
+            public uint callbackObservationCountAfter;
+            public uint vertexSwapCountBefore;
+            public uint vertexSwapCountAfter;
+            public uint pixelSwapCountBefore;
+            public uint pixelSwapCountAfter;
+            public uint failureCountBefore;
+            public uint failureCountAfter;
+            public bool variantWarmupSucceeded;
+            public string variantWarmupFailure;
+            public string variantWarmupPassType;
+            public bool setPassActivated;
+            public string setPassFailure;
+            public int vertexAbiMatchCount;
+            public int pixelAbiMatchCount;
+            public string vertexShellSha256;
+            public string pixelShellSha256;
+            public CallbackObservation[] callbackObservations;
+        }
+
+        [Serializable]
+        private sealed class GenerativePinReport
+        {
+            public string schema;
+            public string status;
+            public string unityVersion;
+            public string graphicsDeviceType;
+            public string shaderAsset;
+            public string shaderSourceSha256;
+            public uint contractVersion;
+            public uint registryReady;
+            public uint callbackCountBefore;
+            public uint callbackCountAfter;
+            public uint callbackObservationCountBefore;
+            public uint callbackObservationCountAfter;
+            public uint vertexSwapCountBefore;
+            public uint vertexSwapCountAfter;
+            public uint pixelSwapCountBefore;
+            public uint pixelSwapCountAfter;
+            public uint failureCountBefore;
+            public uint failureCountAfter;
+            public bool setPassActivated;
+            public string setPassFailure;
+            public int vertexAbiMatchCount;
+            public int pixelAbiMatchCount;
+            public string vertexShellSha256;
+            public string pixelShellSha256;
+            public CallbackObservation[] callbackObservations;
+        }
+
+        [Serializable]
         private sealed class CallbackObservation
         {
             public uint stage;
@@ -137,6 +233,366 @@ namespace EndfieldGraphShaderLabEditor
             public string textureSlotMask;
             public string samplerSlotMask;
             public string sha256;
+        }
+
+        /// <summary>
+        /// Safe callback observation for the unpinned named-binding shell.
+        /// It never arms substitution and never writes registry identities.
+        /// Invoke in a fresh D3D11 batch editor with -executeMethod.
+        /// </summary>
+        public static void RunGenerativeObservation()
+        {
+            string output = Environment.GetEnvironmentVariable(
+                GenerativeOutputEnvironment);
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                output = Path.GetFullPath(Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "scratch",
+                    "character_recovery",
+                    "m27_hgbuffer",
+                    "generative_shell_hashes.json"));
+            }
+            else
+            {
+                output = Path.GetFullPath(output);
+            }
+
+            try
+            {
+                if (SystemInfo.graphicsDeviceType !=
+                    GraphicsDeviceType.Direct3D11)
+                {
+                    throw new InvalidOperationException(
+                        "Generative M27 shell observation requires Direct3D11; " +
+                        "actual=" + SystemInfo.graphicsDeviceType + ".");
+                }
+                if (Native.GetContractVersion() != 2)
+                    throw new InvalidOperationException(
+                        "Original DXBC plugin contract version drifted.");
+                Native.SetM27SubstitutionArmed(0);
+                Native.SetM27ObservationArmed(0);
+                // Settle the project import and this exact asset while the
+                // observer is disarmed. A fresh editor may otherwise compile
+                // unrelated diagnostic shells during the first synchronous
+                // import, making an ABI-only target delta ambiguous.
+                ForceRecompileWhileArmed(GenerativeShaderAsset);
+                ForceLoadReservedVariant(GenerativeShaderAsset);
+                if (Native.SetM27ObservationArmed(1) != 1)
+                    throw new InvalidOperationException(
+                        "M27 observation-only compiler route could not be armed.");
+                // Arming starts a new epoch and resets all diagnostic counters.
+                // Baselines must therefore be sampled after ownership is acquired.
+                uint callbacksBefore = Native.GetCallbackCount();
+                uint observationsBefore =
+                    Native.GetM27CallbackObservationCount();
+                uint vertexSwapsBefore = Native.GetVertexSwapCount();
+                uint pixelSwapsBefore = Native.GetPixelSwapCount();
+                uint failuresBefore = Native.GetFailureCount();
+                ForceRecompileWhileArmed(GenerativeShaderAsset);
+                bool variantWarmupSucceeded = true;
+                string variantWarmupFailure = string.Empty;
+                string variantWarmupPassType = string.Empty;
+                bool setPassActivated = true;
+                string setPassFailure = string.Empty;
+                try
+                {
+                    ForceLoadReservedVariant(GenerativeShaderAsset);
+                    variantWarmupPassType = "Material.SetPass(0)";
+                }
+                catch (Exception exception)
+                {
+                    variantWarmupSucceeded = false;
+                    variantWarmupFailure = exception.Message;
+                    setPassActivated = false;
+                    setPassFailure = exception.Message;
+                    Debug.LogWarning(
+                        "Generative M27 shell keyword variant did not warm: " +
+                        variantWarmupFailure);
+                }
+                uint callbacksAfter = Native.GetCallbackCount();
+                uint observationsAfter =
+                    Native.GetM27CallbackObservationCount();
+                uint vertexSwapsAfter = Native.GetVertexSwapCount();
+                uint pixelSwapsAfter = Native.GetPixelSwapCount();
+                uint failuresAfter = Native.GetFailureCount();
+                CallbackObservation[] callbackObservations =
+                    ReadCallbackObservations();
+                CallbackObservation[] newObservations = callbackObservations
+                    .Skip((int)observationsBefore)
+                    .ToArray();
+                CallbackObservation[] vertexMatches = newObservations
+                    .Where(MatchesGenerativeVertexAbi)
+                    .ToArray();
+                CallbackObservation[] pixelMatches = newObservations
+                    .Where(MatchesGenerativePixelAbi)
+                    .ToArray();
+                bool bothStagesObserved =
+                    vertexMatches.Length == 1 && pixelMatches.Length == 1;
+                bool observationValid = Native.GetConfigureCount() != 0 &&
+                    callbacksAfter >= callbacksBefore + 2 &&
+                    observationsAfter >= observationsBefore + 2 &&
+                    bothStagesObserved &&
+                    variantWarmupSucceeded &&
+                    setPassActivated &&
+                    vertexSwapsAfter == vertexSwapsBefore &&
+                    pixelSwapsAfter == pixelSwapsBefore &&
+                    failuresAfter == failuresBefore;
+
+                string shaderPath = Path.GetFullPath(Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    GenerativeShaderAsset));
+                var report = new GenerativeObservationReport
+                {
+                    schema =
+                        "endfield.m27-generative-unity-shell-observation.v1",
+                    status = observationValid
+                        ? "observed_unpinned_fail_closed"
+                        : bothStagesObserved &&
+                          (!variantWarmupSucceeded || !setPassActivated)
+                            ? "observed_unpinned_setpass_unproven_fail_closed"
+                            : "raw_callback_abi_mismatch_fail_closed",
+                    unityVersion = Application.unityVersion,
+                    graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
+                    shaderAsset = GenerativeShaderAsset,
+                    shaderSourceSha256 = HashFile(shaderPath),
+                    contractVersion = Native.GetContractVersion(),
+                    registryReady = Native.GetM27RegistryReady(),
+                    callbackCountBefore = callbacksBefore,
+                    callbackCountAfter = callbacksAfter,
+                    callbackObservationCountBefore = observationsBefore,
+                    callbackObservationCountAfter = observationsAfter,
+                    vertexSwapCountBefore = vertexSwapsBefore,
+                    vertexSwapCountAfter = vertexSwapsAfter,
+                    pixelSwapCountBefore = pixelSwapsBefore,
+                    pixelSwapCountAfter = pixelSwapsAfter,
+                    failureCountBefore = failuresBefore,
+                    failureCountAfter = failuresAfter,
+                    variantWarmupSucceeded = variantWarmupSucceeded,
+                    variantWarmupFailure = variantWarmupFailure,
+                    variantWarmupPassType = variantWarmupPassType,
+                    setPassActivated = setPassActivated,
+                    setPassFailure = setPassFailure,
+                    vertexAbiMatchCount = vertexMatches.Length,
+                    pixelAbiMatchCount = pixelMatches.Length,
+                    vertexShellSha256 = vertexMatches.Length == 1
+                        ? vertexMatches[0].sha256
+                        : string.Empty,
+                    pixelShellSha256 = pixelMatches.Length == 1
+                        ? pixelMatches[0].sha256
+                        : string.Empty,
+                    callbackObservations = newObservations,
+                };
+                Directory.CreateDirectory(Path.GetDirectoryName(output));
+                File.WriteAllText(output, JsonUtility.ToJson(report, true));
+                if (!observationValid)
+                {
+                    throw new InvalidOperationException(
+                        "Unpinned generative shell callback observation failed " +
+                        "closed: callbacks=" + callbacksBefore + "->" +
+                        callbacksAfter + ", swaps=" + vertexSwapsBefore + "/" +
+                        pixelSwapsBefore + "->" + vertexSwapsAfter + "/" +
+                        pixelSwapsAfter + ", failures=" + failuresBefore + "->" +
+                        failuresAfter + ", ABI matches=" +
+                        vertexMatches.Length + "/" + pixelMatches.Length +
+                        ". Raw report=" + output + ".");
+                }
+                Debug.Log(
+                    "Observed unpinned generative M27 Unity shell hashes: VS=" +
+                    report.vertexShellSha256 + ", PS=" +
+                    report.pixelShellSha256 + ", output=" + output + ".");
+                Native.SetM27ObservationArmed(0);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    Native.SetM27ObservationArmed(0);
+                }
+                catch
+                {
+                    // Preserve the original actionable observation failure.
+                }
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        /// <summary>
+        /// Validates the independently observed generative shell hashes against
+        /// the native stage+SHA registry. This remains compiler-only: it does
+        /// not submit the retained ParticleSystemRenderer draw.
+        /// </summary>
+        public static void RunGenerativePinValidation()
+        {
+            string output = Environment.GetEnvironmentVariable(
+                GenerativePinOutputEnvironment);
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                output = Path.GetFullPath(Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    "scratch",
+                    "character_recovery",
+                    "m27_hgbuffer",
+                    "generative_shell_pin_validation.json"));
+            }
+            else
+            {
+                output = Path.GetFullPath(output);
+            }
+
+            try
+            {
+                if (SystemInfo.graphicsDeviceType !=
+                    GraphicsDeviceType.Direct3D11)
+                {
+                    throw new InvalidOperationException(
+                        "Generative M27 pin validation requires Direct3D11; " +
+                        "actual=" + SystemInfo.graphicsDeviceType + ".");
+                }
+                if (Native.GetContractVersion() != 2 ||
+                    Native.GetM27RegistryReady() != 1)
+                {
+                    throw new InvalidOperationException(
+                        "The exact M27 stage+SHA registry is not ready.");
+                }
+                Native.SetM27ObservationArmed(0);
+                Native.SetM27SubstitutionArmed(0);
+                // Settle imports and prove the raw shell can load before the
+                // fresh owned substitution epoch begins.
+                ForceRecompileWhileArmed(GenerativeShaderAsset);
+                ForceLoadReservedVariant(GenerativeShaderAsset);
+                if (Native.SetM27SubstitutionArmed(1) != 1)
+                {
+                    throw new InvalidOperationException(
+                        "M27 hash-pinned compiler route could not be armed.");
+                }
+
+                uint callbacksBefore = Native.GetCallbackCount();
+                uint observationsBefore =
+                    Native.GetM27CallbackObservationCount();
+                uint vertexSwapsBefore = Native.GetVertexSwapCount();
+                uint pixelSwapsBefore = Native.GetPixelSwapCount();
+                uint failuresBefore = Native.GetFailureCount();
+                ForceRecompileWhileArmed(GenerativeShaderAsset);
+                bool setPassActivated = true;
+                string setPassFailure = string.Empty;
+                try
+                {
+                    ForceLoadReservedVariant(GenerativeShaderAsset);
+                }
+                catch (Exception exception)
+                {
+                    setPassActivated = false;
+                    setPassFailure = exception.Message;
+                }
+
+                uint callbacksAfter = Native.GetCallbackCount();
+                uint observationsAfter =
+                    Native.GetM27CallbackObservationCount();
+                uint vertexSwapsAfter = Native.GetVertexSwapCount();
+                uint pixelSwapsAfter = Native.GetPixelSwapCount();
+                uint failuresAfter = Native.GetFailureCount();
+                CallbackObservation[] callbackObservations =
+                    ReadCallbackObservations();
+                CallbackObservation[] newObservations = callbackObservations
+                    .Skip((int)observationsBefore)
+                    .ToArray();
+                CallbackObservation[] vertexMatches = newObservations
+                    .Where(MatchesGenerativeVertexAbi)
+                    .ToArray();
+                CallbackObservation[] pixelMatches = newObservations
+                    .Where(MatchesGenerativePixelAbi)
+                    .ToArray();
+                bool valid = Native.GetConfigureCount() != 0 &&
+                    callbacksAfter >= callbacksBefore + 2 &&
+                    observationsAfter >= observationsBefore + 2 &&
+                    vertexMatches.Length == 1 && pixelMatches.Length == 1 &&
+                    // Unity may refresh other already-pinned reserved shaders
+                    // in the same import transaction. The unique ABI+hash
+                    // observations above identify this shell; any failed
+                    // replacement increments the shared failure counter.
+                    vertexSwapsAfter > vertexSwapsBefore &&
+                    pixelSwapsAfter > pixelSwapsBefore &&
+                    failuresAfter == failuresBefore &&
+                    setPassActivated;
+
+                string shaderPath = Path.GetFullPath(Path.Combine(
+                    Application.dataPath,
+                    "..",
+                    GenerativeShaderAsset));
+                var report = new GenerativePinReport
+                {
+                    schema = "endfield.endminf-m27-generative-shell-pin.v1",
+                    status = valid
+                        ? "independently_pinned_d3d11_callback"
+                        : "pin_validation_failed_closed",
+                    unityVersion = Application.unityVersion,
+                    graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
+                    shaderAsset = GenerativeShaderAsset,
+                    shaderSourceSha256 = HashFile(shaderPath),
+                    contractVersion = Native.GetContractVersion(),
+                    registryReady = Native.GetM27RegistryReady(),
+                    callbackCountBefore = callbacksBefore,
+                    callbackCountAfter = callbacksAfter,
+                    callbackObservationCountBefore = observationsBefore,
+                    callbackObservationCountAfter = observationsAfter,
+                    vertexSwapCountBefore = vertexSwapsBefore,
+                    vertexSwapCountAfter = vertexSwapsAfter,
+                    pixelSwapCountBefore = pixelSwapsBefore,
+                    pixelSwapCountAfter = pixelSwapsAfter,
+                    failureCountBefore = failuresBefore,
+                    failureCountAfter = failuresAfter,
+                    setPassActivated = setPassActivated,
+                    setPassFailure = setPassFailure,
+                    vertexAbiMatchCount = vertexMatches.Length,
+                    pixelAbiMatchCount = pixelMatches.Length,
+                    vertexShellSha256 = vertexMatches.Length == 1
+                        ? vertexMatches[0].sha256
+                        : string.Empty,
+                    pixelShellSha256 = pixelMatches.Length == 1
+                        ? pixelMatches[0].sha256
+                        : string.Empty,
+                    callbackObservations = newObservations,
+                };
+                Directory.CreateDirectory(Path.GetDirectoryName(output));
+                File.WriteAllText(output, JsonUtility.ToJson(report, true));
+                if (!valid)
+                {
+                    throw new InvalidOperationException(
+                        "Generative M27 shell pin validation failed closed: " +
+                        "callbacks=" + callbacksBefore + "->" + callbacksAfter +
+                        ", swaps=" + vertexSwapsBefore + "/" + pixelSwapsBefore +
+                        "->" + vertexSwapsAfter + "/" + pixelSwapsAfter +
+                        ", failures=" + failuresBefore + "->" + failuresAfter +
+                        ", ABI matches=" + vertexMatches.Length + "/" +
+                        pixelMatches.Length + ", SetPass=" + setPassActivated +
+                        ". Raw report=" + output + ".");
+                }
+                Debug.Log(
+                    "Validated generative M27 stage+SHA substitution: VS=" +
+                    report.vertexShellSha256 + ", PS=" +
+                    report.pixelShellSha256 + ", output=" + output + ".");
+                Native.SetM27SubstitutionArmed(0);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    Native.SetM27SubstitutionArmed(0);
+                }
+                catch
+                {
+                    // Preserve the original actionable validation failure.
+                }
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
         }
 
         public static void Run()
@@ -497,6 +953,44 @@ namespace EndfieldGraphShaderLabEditor
             }
         }
 
+        private static string WarmReservedVariant(string shaderAsset)
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderAsset);
+            if (shader == null)
+                throw new InvalidOperationException(
+                    "Could not load the dedicated M27 shell shader.");
+            ShaderUtil.ClearShaderMessages(shader);
+            ShaderUtil.ClearCachedData(shader);
+            foreach (PassType passType in Enum.GetValues(typeof(PassType)))
+            {
+                try
+                {
+                    var variants = new ShaderVariantCollection();
+                    var variant = new ShaderVariantCollection.ShaderVariant(
+                        shader,
+                        passType,
+                        "ENDFIELD_ORIGINAL_DXBC_M27_EXACT");
+                    if (!variants.Add(variant))
+                        continue;
+                    variants.WarmUp();
+                    if (variants.isWarmedUp && shader.isSupported)
+                        return passType.ToString();
+                }
+                catch (ArgumentException)
+                {
+                    // This pass type has no snippet in the selected SubShader.
+                }
+            }
+            string messages = string.Join(
+                " | ",
+                ShaderUtil.GetShaderMessages(shader).Select(value =>
+                    value.severity + ": " + value.message +
+                    " (" + value.file + ":" + value.line + ")"));
+            throw new InvalidOperationException(
+                "Could not warm any pass type for the reserved generative " +
+                "M27 variant. Import messages: " + messages);
+        }
+
         private static CallbackObservation[] ReadCallbackObservations()
         {
             uint count = Native.GetM27CallbackObservationCount();
@@ -537,6 +1031,48 @@ namespace EndfieldGraphShaderLabEditor
             return values;
         }
 
+        private static bool MatchesGenerativeVertexAbi(
+            CallbackObservation value)
+        {
+            return value != null &&
+                value.stage == 1u &&
+                !string.Equals(
+                    value.sha256,
+                    ImmutablePacketShellVertexSha256,
+                    StringComparison.OrdinalIgnoreCase) &&
+                value.inputParameters == 10u &&
+                value.outputParameters == 9u &&
+                value.boundResources == 4u &&
+                value.constantBuffer0Bytes == 1312u &&
+                value.constantBuffer1Bytes == 320u &&
+                value.constantBuffer2Bytes == 65456u &&
+                value.constantBuffer3Bytes == 0u &&
+                value.constantBuffer4Bytes == 0u &&
+                value.textureSlotMask == "0x00000001" &&
+                value.samplerSlotMask == "0x00000000";
+        }
+
+        private static bool MatchesGenerativePixelAbi(
+            CallbackObservation value)
+        {
+            return value != null &&
+                value.stage == 2u &&
+                !string.Equals(
+                    value.sha256,
+                    ImmutablePacketShellPixelSha256,
+                    StringComparison.OrdinalIgnoreCase) &&
+                value.inputParameters == 10u &&
+                value.outputParameters == 5u &&
+                value.boundResources == 17u &&
+                value.constantBuffer0Bytes == 720u &&
+                value.constantBuffer1Bytes == 1696u &&
+                value.constantBuffer2Bytes == 65456u &&
+                value.constantBuffer3Bytes == 496u &&
+                value.constantBuffer4Bytes == 16u &&
+                value.textureSlotMask == "0x0000003f" &&
+                value.samplerSlotMask == "0x0000003f";
+        }
+
         private static string HashFile(string path)
         {
             using (SHA256 sha = SHA256.Create())
@@ -561,6 +1097,10 @@ namespace EndfieldGraphShaderLabEditor
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcSetM27SubstitutionArmed")]
             internal static extern uint SetM27SubstitutionArmed(uint armed);
+
+            [DllImport(NativeLibrary, EntryPoint =
+                "EndfieldOriginalDxbcSetM27ObservationArmed")]
+            internal static extern uint SetM27ObservationArmed(uint armed);
 
             [DllImport(NativeLibrary, EntryPoint =
                 "EndfieldOriginalDxbcGetM27RegistryReady")]

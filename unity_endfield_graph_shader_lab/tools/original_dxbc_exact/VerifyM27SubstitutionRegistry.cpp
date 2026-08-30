@@ -97,6 +97,21 @@ int main()
         EndfieldM27Substitution::Resolve(
             EndfieldM27Substitution::Stage::Vertex,
             EndfieldM27Substitution::kEntries[3].shellSha256) == nullptr;
+    const bool generativeM27DispatchValid =
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Vertex,
+            EndfieldM27Substitution::kEntries[4].shellSha256) ==
+                &EndfieldM27Substitution::kEntries[4] &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Pixel,
+            EndfieldM27Substitution::kEntries[5].shellSha256) ==
+                &EndfieldM27Substitution::kEntries[5] &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Pixel,
+            EndfieldM27Substitution::kEntries[4].shellSha256) == nullptr &&
+        EndfieldM27Substitution::Resolve(
+            EndfieldM27Substitution::Stage::Vertex,
+            EndfieldM27Substitution::kEntries[5].shellSha256) == nullptr;
 
     ID3D11Device* device = nullptr;
     ID3D11DeviceContext* context = nullptr;
@@ -141,11 +156,13 @@ int main()
         nullptr,
         &m14Pixel);
     std::printf(
-        "registry_ready=%u dispatch=%u m14_dispatch=%u hashes=%u "
+        "registry_ready=%u dispatch=%u m14_dispatch=%u "
+        "generative_m27_dispatch=%u hashes=%u "
         "vertex=0x%08lx pixel=0x%08lx m14_vertex=0x%08lx m14_pixel=0x%08lx\n",
         EndfieldM27Substitution::Ready() ? 1u : 0u,
         dispatchValid ? 1u : 0u,
         m14DispatchValid ? 1u : 0u,
+        generativeM27DispatchValid ? 1u : 0u,
         hashesValid ? 1u : 0u,
         static_cast<unsigned long>(vertexResult),
         static_cast<unsigned long>(pixelResult),
@@ -163,6 +180,7 @@ int main()
     context->Release();
     device->Release();
     return hashesValid && dispatchValid && m14DispatchValid &&
+            generativeM27DispatchValid &&
             SUCCEEDED(vertexResult) && SUCCEEDED(pixelResult) &&
             SUCCEEDED(m14VertexResult) && SUCCEEDED(m14PixelResult)
         ? 0

@@ -18,7 +18,9 @@ namespace EndfieldGraphShaderLab
         public const int ScreenSizeVector = 0;
         public const int ProjectionParamsVector = 3;
         public const int OrthoParamsVector = 4;
+        public const int TaaJitterStrengthVector = 19;
         public const int GlobalMipBiasVector = 26;
+        public const int ExposureWithMiscParamsVector = 27;
         public const int BinningOffsetsVector = 28;
         public const int EnvironmentParamsVector = 29;
         public const int GraphicsFeatures0Vector = 30;
@@ -31,6 +33,53 @@ namespace EndfieldGraphShaderLab
         public const int DefaultSHGreenVector = 136;
         public const int DefaultSHBlueVector = 137;
         public const int WetnessVector = 156;
+        public const int VFXParams0Vector = 103;
+        public const int VFXParams2Vector = 105;
+
+        public static readonly int[] M27ReadVectors =
+        {
+            0, 4, 19, 26, 27, 103, 105,
+        };
+
+        /// <summary>
+        /// Authoritative live inputs for the M27-read b1 rows. Readiness bits
+        /// distinguish a valid zero from absent state, so clearing the buffer
+        /// can never be promoted to source evidence.
+        /// </summary>
+        public readonly struct M27SourceInputs
+        {
+            public readonly float globalMipBias;
+            public readonly Vector4 taaJitterStrength;
+            public readonly float exposureAdaptation;
+            public readonly bool exposureReady;
+            public readonly Vector3 vfxPlayerPosition;
+            public readonly float vfxClockSeconds;
+            public readonly bool vfxParams0Ready;
+            public readonly Vector4 vfxParams2;
+            public readonly bool vfxParams2Ready;
+
+            public M27SourceInputs(
+                float globalMipBias,
+                Vector4 taaJitterStrength,
+                float exposureAdaptation,
+                bool exposureReady,
+                Vector3 vfxPlayerPosition,
+                float vfxClockSeconds,
+                bool vfxParams0Ready,
+                Vector4 vfxParams2,
+                bool vfxParams2Ready)
+            {
+                this.globalMipBias = globalMipBias;
+                this.taaJitterStrength = taaJitterStrength;
+                this.exposureAdaptation = exposureAdaptation;
+                this.exposureReady = exposureReady;
+                this.vfxPlayerPosition = vfxPlayerPosition;
+                this.vfxClockSeconds = vfxClockSeconds;
+                this.vfxParams0Ready = vfxParams0Ready;
+                this.vfxParams2 = vfxParams2;
+                this.vfxParams2Ready = vfxParams2Ready;
+            }
+        }
 
         public static readonly Vector4 SelectedEnvironmentParams = new Vector4(
             0.28772247f,
@@ -46,10 +95,11 @@ namespace EndfieldGraphShaderLab
 
         public static readonly int[] SelectedUsedVectors =
         {
-            0, 3, 4, 26, 28, 29, 30, 31,
+            0, 3, 4, 19, 26, 27, 28, 29, 30, 31,
             71, 72, 73, 74, 75, 76,
             77, 78, 79, 80, 81, 82,
             83, 84, 85, 86, 87,
+            103, 105,
             132, 133, 134, 135, 136, 137,
             156,
         };
@@ -60,6 +110,40 @@ namespace EndfieldGraphShaderLab
             int height,
             Vector4 environmentParams,
             bool prerequisitesReady,
+            Vector4[] destination,
+            out string failure)
+        {
+            // The selected ExternalCamera serializes material mip bias 0 and
+            // the recovered non-jittered route deliberately publishes neutral
+            // TAA strength. Runtime-only exposure/VFX state remains absent.
+            var m27Inputs = new M27SourceInputs(
+                0.0f,
+                Vector4.zero,
+                0.0f,
+                false,
+                Vector3.zero,
+                0.0f,
+                false,
+                Vector4.zero,
+                false);
+            return TryBuild(
+                camera,
+                width,
+                height,
+                environmentParams,
+                prerequisitesReady,
+                m27Inputs,
+                destination,
+                out failure);
+        }
+
+        public static bool TryBuild(
+            Camera camera,
+            int width,
+            int height,
+            Vector4 environmentParams,
+            bool prerequisitesReady,
+            M27SourceInputs m27Inputs,
             Vector4[] destination,
             out string failure)
         {
@@ -108,6 +192,34 @@ namespace EndfieldGraphShaderLab
                     "destination must contain exactly 200 float4 vectors";
                 return false;
             }
+            if (!IsFinite(m27Inputs.globalMipBias) ||
+                !IsFinite(m27Inputs.taaJitterStrength))
+            {
+                failure = "M27 mip-bias and TAA inputs must be finite";
+                return false;
+            }
+            if (m27Inputs.exposureReady &&
+                (!IsFinite(m27Inputs.exposureAdaptation) ||
+                 m27Inputs.exposureAdaptation <= 0.0f))
+            {
+                failure =
+                    "M27 b1 c27.y exposure adaptation must be finite and positive";
+                return false;
+            }
+            if (m27Inputs.vfxParams0Ready &&
+                (!IsFinite(m27Inputs.vfxPlayerPosition) ||
+                 !IsFinite(m27Inputs.vfxClockSeconds) ||
+                 m27Inputs.vfxClockSeconds < 0.0f))
+            {
+                failure =
+                    "M27 b1 c103 VFX player position/time must be finite and nonnegative";
+                return false;
+            }
+            if (m27Inputs.vfxParams2Ready && !IsFinite(m27Inputs.vfxParams2))
+            {
+                failure = "M27 b1 c105 VFX anchor parameters must be finite";
+                return false;
+            }
             if (!EndfieldRecoveredCanonicalBinningLayoutContract.TryBuild(
                     width,
                     height,
@@ -131,8 +243,30 @@ namespace EndfieldGraphShaderLab
                 0.0f);
             // c4.w is the selected perspective flag and is exactly zero.
             destination[OrthoParamsVector] = Vector4.zero;
-            // c26.x is mip bias 0; c26.w is branch-dead behind c83.z=0.
-            destination[GlobalMipBiasVector] = Vector4.zero;
+            destination[TaaJitterStrengthVector] = m27Inputs.taaJitterStrength;
+            float globalMipBiasPow2 = Mathf.Pow(
+                2.0f,
+                m27Inputs.globalMipBias);
+            if (!IsFinite(globalMipBiasPow2))
+            {
+                failure = "M27 b1 c26.y mip-bias pow2 overflowed";
+                return false;
+            }
+            // Retail publishes c26.y=pow(2,c26.x). c26.w remains branch-dead
+            // behind the source-backed disabled-volumetric c83.z=0.
+            destination[GlobalMipBiasVector] = new Vector4(
+                m27Inputs.globalMipBias,
+                globalMipBiasPow2,
+                0.0f,
+                0.0f);
+            if (m27Inputs.exposureReady)
+            {
+                destination[ExposureWithMiscParamsVector] = new Vector4(
+                    m27Inputs.exposureAdaptation,
+                    1.0f / m27Inputs.exposureAdaptation,
+                    width / (float)height,
+                    0.0f);
+            }
             destination[BinningOffsetsVector] = new Vector4(
                 IntBits(layout.lightXYOffset),
                 IntBits(layout.lightZOffset),
@@ -179,7 +313,58 @@ namespace EndfieldGraphShaderLab
             destination[DefaultSHGreenVector] = SelectedDefaultSH;
             destination[DefaultSHBlueVector] = SelectedDefaultSH;
             destination[WetnessVector] = Vector4.zero;
+            if (m27Inputs.vfxParams0Ready)
+            {
+                destination[VFXParams0Vector] = new Vector4(
+                    m27Inputs.vfxPlayerPosition.x,
+                    m27Inputs.vfxPlayerPosition.y,
+                    m27Inputs.vfxPlayerPosition.z,
+                    m27Inputs.vfxClockSeconds % 1024.0f);
+            }
+            if (m27Inputs.vfxParams2Ready)
+                destination[VFXParams2Vector] = m27Inputs.vfxParams2;
             return true;
+        }
+
+        public static bool TryValidateM27SourceReadiness(
+            bool exposureReady,
+            bool vfxParams0Ready,
+            bool vfxParams2Ready,
+            out string failure)
+        {
+            if (!exposureReady)
+            {
+                failure =
+                    "M27 b1 c27.y (_ExposureWithMiscParams reciprocal exposure) " +
+                    "requires authoritative live camera exposure history";
+                return false;
+            }
+            if (!vfxParams0Ready)
+            {
+                failure =
+                    "M27 b1 c103.xyzw (_VFXParams0) requires the unique live " +
+                    "VFX player center and Time.time modulo 1024";
+                return false;
+            }
+            if (!vfxParams2Ready)
+            {
+                failure =
+                    "M27 b1 c105.xyzw (_VFXParams2) requires authoritative " +
+                    "live HGVFXManager anchor position/radius/brightness state";
+                return false;
+            }
+            failure = null;
+            return true;
+        }
+
+        public static bool TryValidateCurrentPublisherForM27(
+            out string failure)
+        {
+            return TryValidateM27SourceReadiness(
+                false,
+                false,
+                false,
+                out failure);
         }
 
         public static uint[] BuildExpectedWords(Vector4[] vectors)
@@ -206,6 +391,26 @@ namespace EndfieldGraphShaderLab
         private static float IntBits(int value)
         {
             return BitConverter.Int32BitsToSingle(value);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) &&
+                IsFinite(value.y) &&
+                IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Vector4 value)
+        {
+            return IsFinite(value.x) &&
+                IsFinite(value.y) &&
+                IsFinite(value.z) &&
+                IsFinite(value.w);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static uint FloatBits(float value)

@@ -4,10 +4,11 @@ using UnityEngine;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Selected-consumer subset of the original pass-0 b30
-    /// _TransformVariables constant buffer. Original DXBC metadata exposes
-    /// only these four live fields; all other registers stay zero until their
-    /// history, jitter, or stereo producers are independently closed.
+    /// Source-built subset of the original pass-0 b30 / M27 b0
+    /// _TransformVariables constant buffer. Unknown registers remain zero;
+    /// the non-jittered camera-relative current/previous rows are produced
+    /// from camera matrices and explicit temporal history, never from a
+    /// captured constant-buffer payload.
     /// </summary>
     public static class EndfieldRecoveredDeferredTransformVariablesContract
     {
@@ -17,14 +18,37 @@ namespace EndfieldGraphShaderLab
         public const int ViewFirstVector = 0;
         public const int InverseViewFirstVector = 4;
         public const int InverseViewProjectionFirstVector = 24;
+        public const int NonJitteredViewNoTranslationProjectionFirstVector = 32;
         public const int CameraPositionVector = 44;
+        public const int PreviousNonJitteredViewNoTranslationProjectionFirstVector =
+            57;
+        public const int PreviousCameraPositionVector = 81;
 
         public static readonly int[] SelectedUsedVectors =
         {
             0, 1, 2, 3,
             4, 5, 6, 7,
             24, 25, 26, 27,
+            32, 33, 34, 35,
             44,
+            57, 58, 59, 60,
+            81,
+        };
+
+        /// <summary>
+        /// Exact vector-level M27 b0 read inventory from the hash-pinned
+        /// subprogram-113 VS/PS pair. The PS reads only .z from c0-c2, and the
+        /// shaders read only .xyz from c44/c81, but the producer publishes
+        /// whole float4 registers so the transport remains ABI-shaped.
+        /// </summary>
+        public static readonly int[] M27ReadVectors =
+        {
+            0, 1, 2,
+            24, 25, 26, 27,
+            32, 33, 34, 35,
+            44,
+            57, 58, 59, 60,
+            81,
         };
 
         public static bool TryBuild(
@@ -39,14 +63,55 @@ namespace EndfieldGraphShaderLab
                 failure = "physical camera is required";
                 return false;
             }
-            Matrix4x4 view = camera.worldToCameraMatrix;
-            Matrix4x4 gpuProjection = GL.GetGPUProjectionMatrix(
-                camera.projectionMatrix,
-                renderIntoTexture);
             return TryBuild(
-                view,
-                gpuProjection,
+                camera.worldToCameraMatrix,
+                GL.GetGPUProjectionMatrix(
+                    camera.projectionMatrix,
+                    renderIntoTexture),
+                GL.GetGPUProjectionMatrix(
+                    camera.nonJitteredProjectionMatrix,
+                    renderIntoTexture),
                 camera.transform.position,
+                Matrix4x4.identity,
+                Vector3.zero,
+                false,
+                destination,
+                out failure);
+        }
+
+        /// <summary>
+        /// Builds the complete M27-read b0 subset with explicit temporal
+        /// inputs. On a history reset, retail HGCamera semantics initialize the
+        /// previous rows from the current frame instead of inventing a prior
+        /// transform.
+        /// </summary>
+        public static bool TryBuild(
+            Camera camera,
+            bool renderIntoTexture,
+            Matrix4x4 previousNonJitteredViewNoTranslationProjection,
+            Vector3 previousCameraPosition,
+            bool previousFrameHistoryReady,
+            Vector4[] destination,
+            out string failure)
+        {
+            failure = null;
+            if (camera == null)
+            {
+                failure = "physical camera is required";
+                return false;
+            }
+            return TryBuild(
+                camera.worldToCameraMatrix,
+                GL.GetGPUProjectionMatrix(
+                    camera.projectionMatrix,
+                    renderIntoTexture),
+                GL.GetGPUProjectionMatrix(
+                    camera.nonJitteredProjectionMatrix,
+                    renderIntoTexture),
+                camera.transform.position,
+                previousNonJitteredViewNoTranslationProjection,
+                previousCameraPosition,
+                previousFrameHistoryReady,
                 destination,
                 out failure);
         }
@@ -55,6 +120,29 @@ namespace EndfieldGraphShaderLab
             Matrix4x4 view,
             Matrix4x4 gpuProjection,
             Vector3 cameraPosition,
+            Vector4[] destination,
+            out string failure)
+        {
+            return TryBuild(
+                view,
+                gpuProjection,
+                gpuProjection,
+                cameraPosition,
+                Matrix4x4.identity,
+                Vector3.zero,
+                false,
+                destination,
+                out failure);
+        }
+
+        public static bool TryBuild(
+            Matrix4x4 view,
+            Matrix4x4 gpuProjection,
+            Matrix4x4 nonJitteredGpuProjection,
+            Vector3 cameraPosition,
+            Matrix4x4 previousNonJitteredViewNoTranslationProjection,
+            Vector3 previousCameraPosition,
+            bool previousFrameHistoryReady,
             Vector4[] destination,
             out string failure)
         {
@@ -74,9 +162,29 @@ namespace EndfieldGraphShaderLab
                 failure = "GPU projection matrix must contain only finite values";
                 return false;
             }
+            if (!IsFinite(nonJitteredGpuProjection))
+            {
+                failure =
+                    "non-jittered GPU projection matrix must contain only finite values";
+                return false;
+            }
             if (!IsFinite(cameraPosition))
             {
                 failure = "camera position must contain only finite values";
+                return false;
+            }
+            if (previousFrameHistoryReady &&
+                !IsFinite(previousNonJitteredViewNoTranslationProjection))
+            {
+                failure =
+                    "previous non-jittered view-no-translation projection " +
+                    "matrix must contain only finite values";
+                return false;
+            }
+            if (previousFrameHistoryReady && !IsFinite(previousCameraPosition))
+            {
+                failure =
+                    "previous camera position must contain only finite values";
                 return false;
             }
             if (Mathf.Abs(view.determinant) <= 1.0e-8f)
@@ -92,6 +200,28 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            Matrix4x4 viewNoTranslation = view;
+            viewNoTranslation.m03 = 0.0f;
+            viewNoTranslation.m13 = 0.0f;
+            viewNoTranslation.m23 = 0.0f;
+            viewNoTranslation.m33 = 1.0f;
+            Matrix4x4 currentNonJitteredViewNoTranslationProjection =
+                nonJitteredGpuProjection * viewNoTranslation;
+            if (!IsFinite(currentNonJitteredViewNoTranslationProjection))
+            {
+                failure =
+                    "non-jittered view-no-translation projection matrix must " +
+                    "contain only finite values";
+                return false;
+            }
+
+            Matrix4x4 previousProjection = previousFrameHistoryReady
+                ? previousNonJitteredViewNoTranslationProjection
+                : currentNonJitteredViewNoTranslationProjection;
+            Vector3 previousPosition = previousFrameHistoryReady
+                ? previousCameraPosition
+                : cameraPosition;
+
             Array.Clear(destination, 0, destination.Length);
             PackD3DColumnRegisters(view, destination, ViewFirstVector);
             PackD3DColumnRegisters(
@@ -102,12 +232,39 @@ namespace EndfieldGraphShaderLab
                 viewProjection.inverse,
                 destination,
                 InverseViewProjectionFirstVector);
+            PackD3DColumnRegisters(
+                currentNonJitteredViewNoTranslationProjection,
+                destination,
+                NonJitteredViewNoTranslationProjectionFirstVector);
             destination[CameraPositionVector] = new Vector4(
                 cameraPosition.x,
                 cameraPosition.y,
                 cameraPosition.z,
                 0.0f);
+            PackD3DColumnRegisters(
+                previousProjection,
+                destination,
+                PreviousNonJitteredViewNoTranslationProjectionFirstVector);
+            destination[PreviousCameraPositionVector] = new Vector4(
+                previousPosition.x,
+                previousPosition.y,
+                previousPosition.z,
+                0.0f);
             return true;
+        }
+
+        /// <summary>
+        /// The current owner still invokes the reset-history overload on every
+        /// frame. An exact M27 draw must remain closed until its call site
+        /// supplies frame-contiguous previous camera state.
+        /// </summary>
+        public static bool TryValidateCurrentPublisherForM27(
+            out string failure)
+        {
+            failure =
+                "M27 b0 c57-c60/c81 require frame-contiguous previous " +
+                "non-jittered view-no-translation projection and camera position";
+            return false;
         }
 
         public static uint[] BuildExpectedWords(Vector4[] vectors)

@@ -20,6 +20,8 @@ namespace EndfieldGraphShaderLab
             "endfield.endminf-liteffect-runtime-binding.v1";
         private const string ExactM27EnvironmentVariable =
             "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER";
+        private const string GenerativeExactM27EnvironmentVariable =
+            "ENDFIELD_RECOVERED_ENDMINF_M27_GENERATIVE_EXACT_DXBC";
         private const long M27RendererPathId = 59284134265994738L;
         internal const int ExactM27Layer = 31;
 
@@ -48,7 +50,11 @@ namespace EndfieldGraphShaderLab
             bool liveHGBuffer = IsEnabled(
                 Environment.GetEnvironmentVariable(
                     LiveHGBufferEnvironmentVariable));
-            if (!compatibility && !exactM27 && !liveHGBuffer)
+            bool generativeExactM27 = IsEnabled(
+                Environment.GetEnvironmentVariable(
+                    GenerativeExactM27EnvironmentVariable));
+            if (!compatibility && !exactM27 && !liveHGBuffer &&
+                !generativeExactM27)
                 return;
 
             foreach (Row row in rows)

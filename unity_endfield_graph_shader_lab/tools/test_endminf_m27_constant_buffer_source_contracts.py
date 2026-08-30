@@ -1,0 +1,149 @@
+from __future__ import annotations
+
+import hashlib
+import re
+import subprocess
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+BYTECODE = ROOT / "tools" / "original_dxbc_exact" / "bytecode"
+TRANSFORM = (
+    ROOT
+    / "Assets"
+    / "EndfieldGraphShaderLab"
+    / "Runtime"
+    / "Rendering"
+    / "EndfieldRecoveredDeferredTransformVariablesContract.cs"
+)
+GLOBALS = TRANSFORM.with_name(
+    "EndfieldRecoveredShaderVariablesGlobalContract.cs"
+)
+GENERATIVE = TRANSFORM.with_name(
+    "EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs"
+)
+
+EXPECTED_HASHES = {
+    "endminf_m27_hgbuffer_vs.dxbc":
+        "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c",
+    "endminf_m27_hgbuffer_ps.dxbc":
+        "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e",
+}
+
+EXPECTED_READS = {
+    "endminf_m27_hgbuffer_vs.dxbc": {
+        (0, 32): "xyzw",
+        (0, 33): "xyzw",
+        (0, 34): "xyzw",
+        (0, 35): "xyzw",
+        (0, 44): "xyz",
+        (0, 57): "xyw",
+        (0, 58): "xyw",
+        (0, 59): "xyw",
+        (0, 60): "xyw",
+        (0, 81): "xyz",
+        (1, 19): "zw",
+    },
+    "endminf_m27_hgbuffer_ps.dxbc": {
+        (0, 0): "z",
+        (0, 1): "z",
+        (0, 2): "z",
+        (0, 24): "xyzw",
+        (0, 25): "xyzw",
+        (0, 26): "xyzw",
+        (0, 27): "xyzw",
+        (0, 44): "xyz",
+        (1, 0): "zw",
+        (1, 4): "w",
+        (1, 26): "xy",
+        (1, 27): "y",
+        (1, 103): "xyzw",
+        (1, 105): "xyzw",
+    },
+}
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _find_fxc() -> Path | None:
+    kits = Path(r"C:\Program Files (x86)\Windows Kits\10\bin")
+    candidates = sorted(
+        kits.glob("*/x64/fxc.exe"),
+        reverse=True,
+    )
+    return candidates[0] if candidates else None
+
+
+def _read_set(disassembly: str) -> dict[tuple[int, int], str]:
+    lanes: dict[tuple[int, int], set[str]] = {}
+    for match in re.finditer(r"cb([01])\[(\d+)\]\.([xyzw]+)", disassembly):
+        key = (int(match.group(1)), int(match.group(2)))
+        lanes.setdefault(key, set()).update(match.group(3))
+    order = "xyzw"
+    return {
+        key: "".join(component for component in order if component in value)
+        for key, value in lanes.items()
+    }
+
+
+class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
+    def test_hash_pinned_dxbc_read_inventory(self) -> None:
+        fxc = _find_fxc()
+        if fxc is None:
+            self.skipTest("Windows SDK fxc.exe is unavailable")
+        for name, expected in EXPECTED_READS.items():
+            path = BYTECODE / name
+            self.assertEqual(_sha256(path), EXPECTED_HASHES[name])
+            result = subprocess.run(
+                [str(fxc), "/dumpbin", "/nologo", str(path)],
+                check=True,
+                capture_output=True,
+                text=True,
+                errors="replace",
+            )
+            self.assertEqual(_read_set(result.stdout), expected)
+
+    def test_b0_source_math_and_temporal_gate_are_explicit(self) -> None:
+        source = TRANSFORM.read_text(encoding="utf-8")
+        for token in (
+            "camera.nonJitteredProjectionMatrix",
+            "viewNoTranslation.m03 = 0.0f",
+            "viewNoTranslation.m13 = 0.0f",
+            "viewNoTranslation.m23 = 0.0f",
+            "nonJitteredGpuProjection * viewNoTranslation",
+            "PreviousNonJitteredViewNoTranslationProjectionFirstVector",
+            "PreviousCameraPositionVector",
+            "previousFrameHistoryReady",
+            "M27 b0 c57-c60/c81 require frame-contiguous previous",
+        ):
+            self.assertIn(token, source)
+
+    def test_b1_source_equations_and_missing_registers_are_explicit(self) -> None:
+        source = GLOBALS.read_text(encoding="utf-8")
+        for token in (
+            "Mathf.Pow(",
+            "1.0f / m27Inputs.exposureAdaptation",
+            "m27Inputs.vfxClockSeconds % 1024.0f",
+            "M27 b1 c27.y",
+            "M27 b1 c103.xyzw",
+            "M27 b1 c105.xyzw",
+            "TryValidateM27SourceReadiness",
+        ):
+            self.assertIn(token, source)
+
+    def test_generative_gate_checks_source_closure_before_binding(self) -> None:
+        source = GENERATIVE.read_text(encoding="utf-8")
+        gate = source.index("TryValidateCurrentPublisherForM27")
+        bind = source.index("command.SetGlobalConstantBuffer")
+        self.assertLess(gate, bind)
+        self.assertIn(
+            "M27 generative constant-buffer source closure failed",
+            source,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
