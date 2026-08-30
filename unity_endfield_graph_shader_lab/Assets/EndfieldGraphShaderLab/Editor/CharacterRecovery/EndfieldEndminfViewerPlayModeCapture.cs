@@ -815,6 +815,7 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
                 "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+                "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
                 "ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME",
                 SphereOutsidePresentationEnvironment,
                 "ENDFIELD_RECOVERED_CANONICAL_BINNING_BUFFER",
