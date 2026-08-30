@@ -174,8 +174,11 @@ namespace EndfieldGraphShaderLab
                 // Observed cross-frame order is: finish prior master,
                 // ReadTransform into current arrays, publish distinct last arrays,
                 // then schedule current simulation. The one-callback retained
-                // result models the observed histories; the native copy/swap
-                // mechanism and reset lifecycle remain unrecovered.
+                // result models the observed histories. The public native
+                // CopyDoubleBuffer method has no direct caller in the closed
+                // target pipeline, so exact current-to-last transport ownership
+                // remains unresolved. Source-recovered Reset seeding happens in
+                // the owner solver before the first substep.
                 LatestTransformSnapshot = transformSnapshotAdapter.Capture();
                 EndfieldSecondaryDynamicsCrossFramePublication.Frame completed =
                     crossFramePublication.TakeCompletedForPublication();

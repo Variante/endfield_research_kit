@@ -13,7 +13,9 @@ namespace EndfieldGraphShaderLab
         public const int DefaultSimulationFrequency = 90;
         public const int DefaultMaxSimulationCountPerFrame = 3;
         public const float DefaultGlobalTimeScale = 1f;
+        public const ulong FlagValid = 0x1UL;
         public const ulong FlagReset = 0x4UL;
+        public const ulong FlagTimeReset = 0x8UL;
         public const ulong FlagSyncSuspend = 0x10UL;
         public const ulong FlagStepRunning = 0x80UL;
 

@@ -9,8 +9,11 @@ namespace EndfieldGraphShaderLab
     /// transforms. Each ClothUpdate reads current transforms, publishes the
     /// completed last arrays, then schedules current simulation. Retaining that
     /// current result for the next callback is behaviorally implied by the
-    /// observed array histories; the native CURRENT-to-LAST copy/swap mechanism
-    /// and reset/teleport lifecycle semantics are not yet recovered.
+    /// observed array histories. The public native CopyDoubleBuffer job is a
+    /// current-to-last value copy, not a pointer swap, but it has no direct caller
+    /// in the statically closed target pipeline. This value model therefore does
+    /// not claim that dormant method as the transport owner; that ownership
+    /// remains unresolved. Reset seeding is handled separately by the owner solver.
     /// </summary>
     public sealed class EndfieldSecondaryDynamicsCrossFramePublication
     {

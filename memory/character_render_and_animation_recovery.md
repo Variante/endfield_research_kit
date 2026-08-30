@@ -1029,6 +1029,16 @@ all-character pass:
   second Distance, End, and collider-snapshot order at the retail cadence. It
   exposes publication-ready arrays but still requires explicit certified
   center/team and prepared-capsule inputs and performs no runtime writes.
+  The startup/reset lifecycle is now source-closed without a captured motion
+  trajectory: `AddTeam` seeds `Valid|Reset|TimeReset`, enabling the process
+  adds the active flags and reasserts `Reset`, and the pre-simulation reset job
+  copies the current animation pose into the simulation/base/display/velocity
+  history arrays while zeroing velocity, friction, and collision state.
+  `PostTeam` consumes `Reset|TimeReset` after publication, including on a
+  zero-substep update. The managed owner solver implements this exact
+  transactional fan-out and has deterministic distinct-current/previous-pose
+  coverage. This closes initialization only; it is not permission to replay a
+  captured trajectory or invent the unresolved cross-frame transport.
   A four-owner inert frame coordinator now supplies those inputs by composing
   exact fixed-center aggregation, team-step state, ten-collider preparation,
   owner collider subsets, and the retail clock. It remains value-only and
@@ -1060,6 +1070,8 @@ all-character pass:
   channels serve restore/writeback. `UseAnimatorTransform` is source-statically
   false, selecting ordinary Transform reads and TransformAccess writes, while
   public `CopyDoubleBuffer` has no direct caller and is dormant in `ClothUpdate`.
+  Static recovery identifies it as a current-to-last value copy rather than a
+  pointer swap, but does not identify a live caller in the target pipeline.
   Live `TeamData.useRelativeTransform` and `UseCrossFrameJob` can still be
   changed by reset, timeline, and authored physics-quality paths; these are the
   two remaining target-session gaps. Minimum telemetry is one manager static
