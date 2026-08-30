@@ -291,6 +291,65 @@ def _call_arguments(expression: str) -> list[str]:
     return []
 
 
+def _assignment_expressions(
+        source: str,
+        variable: str) -> list[tuple[int, int, str]]:
+    """Return simple statement assignments to one local variable.
+
+    The audited publisher join deliberately uses statement-local values.  A
+    unique-assignment requirement makes an inserted overwrite fail closed
+    instead of letting token-presence checks bless an earlier good value.
+    """
+    pattern = re.compile(rf"\b{re.escape(variable)}\s*=(?!=)")
+    assignments: list[tuple[int, int, str]] = []
+    for match in pattern.finditer(source):
+        depth = 0
+        for index in range(match.end(), len(source)):
+            character = source[index]
+            if character in "([{":
+                depth += 1
+            elif character in ")]}":
+                depth -= 1
+            elif character == ";" and depth == 0:
+                assignments.append((
+                    match.start(),
+                    index + 1,
+                    source[match.end():index].strip(),
+                ))
+                break
+    return assignments
+
+
+def _unique_compact_assignment(
+        source: str,
+        variable: str) -> tuple[int, int, str] | None:
+    assignments = _assignment_expressions(source, variable)
+    if len(assignments) != 1:
+        return None
+    start, end, expression = assignments[0]
+    return start, end, re.sub(r"\s+", "", expression)
+
+
+def _method_body(source: str, signature: str) -> str:
+    """Return a balanced C# method body for a unique audited signature."""
+    start = source.find(signature)
+    if start < 0 or source.find(signature, start + len(signature)) >= 0:
+        return ""
+    opening = source.find("{", start + len(signature))
+    if opening < 0:
+        return ""
+    depth = 0
+    for index in range(opening, len(source)):
+        character = source[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return source[opening + 1:index]
+    return ""
+
+
 def _validate_b1_source_contract(
         contract_text: str,
         owner_text: str,
@@ -376,17 +435,150 @@ def _validate_b1_source_contract(
         source_input_expression and re.fullmatch(
             r"[A-Za-z_]\w*\.CurrentM27SourceInputs",
             source_input_expression.strip()))
-    # A named expression is only a connection candidate. Source closure also
-    # requires a separate audit of that owner's per-field readiness and
-    # lifecycle. No such owner exists yet, so do not promote text shape into
-    # runtime provenance.
+    named_source_input_expression = bool(
+        source_input_expression and re.fullmatch(
+            r"[A-Za-z_]\w*",
+            source_input_expression.strip()))
+    partial_factory_audited = (
+        "CurrentTargetPerspectiveExposureAndVFXPlayer(" in contract_text and
+        "returnnewM27SourceInputs(true,true,Vector4.zero,false,0.0f,false,"
+        "exposureAdaptation,exposureReady,vfxPlayerPosition,vfxClockSeconds,"
+        "vfxParams0Ready,Vector4.zero,false);" in compact_contract)
+    prepare_method_body = _method_body(
+        pipeline_text,
+        "private EndfieldRecoveredCharInfoAutoExposureCameraState\n"
+        "            PrepareRecoveredLiveCharInfoAutoExposure(")
+    manual_selector_body = _method_body(
+        prepare_method_body,
+        "if (!recoveredLiveCharInfoAutoExposureRequested)")
+    compact_manual_selector_body = re.sub(
+        r"\s+", "", manual_selector_body)
+    advance_manual = "state.AdvanceSourceClosedNeutralProfile(deltaTime);"
+    source_closed_manual_exposure_return_audited = (
+        bool(prepare_method_body) and
+        bool(manual_selector_body) and
+        "if(!useRecoveredGachaManualExposure)returnnull;" in
+        compact_manual_selector_body and
+        compact_manual_selector_body.count(advance_manual) == 1 and
+        compact_manual_selector_body.endswith(advance_manual + "returnstate;") and
+        "state.Advance(deltaTime,Time.frameCount);" not in
+        compact_manual_selector_body and
+        "state.AdvanceInactive(deltaTime);" not in
+        compact_manual_selector_body and
+        prepare_method_body.count(
+            "state.AdvanceSourceClosedNeutralProfile(deltaTime);") == 1)
+
+    expected_assignments = {
+        "recoveredSourceClosedManualExposureRequested": (
+            "(recoveredSceneMVRequest.requested||"
+            "recoveredDeferredExactConsumer.Requested&&"
+            "recoveredEndminfLitEffectOwnerActive)&&"
+            "camera.GetComponent<EndfieldHGOperatorPresentation>()is"
+            "EndfieldHGOperatorPresentationexposurePresentation&&"
+            "exposurePresentation.environmentPhaseSnapshot!=null&&"
+            "(exposurePresentation.environmentPhaseSnapshot."
+            "IsGachaRoomSourceClosed||exposurePresentation."
+            "environmentPhaseSnapshot.IsCharacterInfoSourceClosed)"),
+        "recoveredCurrentCameraExposure": (
+            "liveAutoExposureState!=null?"
+            "liveAutoExposureState.CurrentExposure:0.0f"),
+        "recoveredCurrentCameraExposureReady": (
+            "recoveredSourceClosedManualExposureRequested&&"
+            "!recoveredLiveCharInfoAutoExposureRequested&&"
+            "liveAutoExposureState!=null&&"
+            "recoveredCurrentCameraExposure>0.0f&&"
+            "!float.IsNaN(recoveredCurrentCameraExposure)&&"
+            "!float.IsInfinity(recoveredCurrentCameraExposure)"),
+        "recoveredVFXPlayerSourceRequested": (
+            "useRecoveredSceneMV||recoveredEndminfLitEffectOwnerActive&&"
+            "EndfieldRecoveredShaderVariablesGlobal.IsRequested"),
+        "recoveredVFXPlayerCenterReady": (
+            "recoveredVFXPlayerSourceRequested&&"
+            "TryResolveRecoveredVFXPlayerCenter(outrecoveredVFXPlayerCenter)"),
+        "recoveredVFXPlayerPosition": (
+            "recoveredVFXPlayerCenterReady?"
+            "recoveredVFXPlayerCenter.position:Vector3.zero"),
+        "recoveredVFXClockSeconds": (
+            "recoveredVFXPlayerCenterReady?Time.time:0.0f"),
+        "recoveredVFXParams0Ready": (
+            "recoveredVFXPlayerCenterReady&&"
+            "!float.IsNaN(recoveredVFXClockSeconds)&&"
+            "!float.IsInfinity(recoveredVFXClockSeconds)&&"
+            "recoveredVFXClockSeconds>=0.0f"),
+        "m27SourceInputs": (
+            "EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs."
+            "CurrentTargetPerspectiveExposureAndVFXPlayer("
+            "recoveredCurrentCameraExposure,"
+            "recoveredCurrentCameraExposureReady,"
+            "recoveredVFXPlayerPosition,recoveredVFXClockSeconds,"
+            "recoveredVFXParams0Ready)"),
+    }
+    assignments = {
+        variable: _unique_compact_assignment(pipeline_text, variable)
+        for variable in expected_assignments
+    }
+    assignment_shapes_audited = {
+        variable: assignment is not None and assignment[2] == expected
+        for variable, expected in expected_assignments.items()
+        for assignment in (assignments[variable],)
+    }
+    ordered_variables = list(expected_assignments)
+    ordered_assignments = [assignments[variable] for variable in ordered_variables]
+    assignment_order_audited = (
+        all(assignment is not None for assignment in ordered_assignments) and
+        all(
+            ordered_assignments[index][1] < ordered_assignments[index + 1][0]
+            for index in range(len(ordered_assignments) - 1)))
+    manual_prepare = _call_text(
+        pipeline_text, "PrepareRecoveredLiveCharInfoAutoExposure")
+    manual_prepare_arguments = _call_arguments(manual_prepare)
+    source_closed_manual_exposure_gate_audited = (
+        assignment_shapes_audited[
+            "recoveredSourceClosedManualExposureRequested"] and
+        len(manual_prepare_arguments) == 4 and
+        manual_prepare_arguments[3] ==
+        "recoveredSourceClosedManualExposureRequested")
+    exposure_lane_audited = (
+        source_closed_manual_exposure_return_audited and
+        source_closed_manual_exposure_gate_audited and
+        assignment_shapes_audited["recoveredCurrentCameraExposure"] and
+        assignment_shapes_audited["recoveredCurrentCameraExposureReady"])
+    vfx_lab_carrier_lane_audited = all(
+        assignment_shapes_audited[variable]
+        for variable in (
+            "recoveredVFXPlayerSourceRequested",
+            "recoveredVFXPlayerCenterReady",
+            "recoveredVFXPlayerPosition",
+            "recoveredVFXClockSeconds",
+            "recoveredVFXParams0Ready"))
+    partial_pipeline_join_audited = (
+        exposure_lane_audited and
+        vfx_lab_carrier_lane_audited and
+        assignment_shapes_audited["m27SourceInputs"] and
+        assignment_order_audited)
+    partial_source_join_audited = (
+        source_input_expression == "m27SourceInputs" and
+        partial_factory_audited and partial_pipeline_join_audited)
+    runtime_read_connections = {
+        "c0.zw": partial_source_join_audited,
+        "c4.w": partial_source_join_audited,
+        "c19.zw": False,
+        "c26.xy": False,
+        "c27.y": partial_source_join_audited,
+        "c103.xyzw": partial_source_join_audited,
+        "c105.xyzw": False,
+    }
+    # A named owner property is only a connection candidate. Its per-field
+    # readiness/lifecycle still needs a separate audit. The current audited
+    # connection is instead a local partial join with explicitly bounded lanes.
     named_source_owner_contract_audited = False
     explicit_inputs_reach_runtime = (
         len(pipeline_publish_arguments) == 8 and
-        named_source_owner_expression and
+        (partial_source_join_audited or
+         named_source_owner_expression and
+         named_source_owner_contract_audited) and
         not inline_default_input and
-        not inline_constructed_input and
-        named_source_owner_contract_audited)
+        not inline_constructed_input)
     return {
         "selectedReads": list(readiness),
         "readinessBits": readiness,
@@ -400,13 +592,37 @@ def _validate_b1_source_contract(
             "sourceInputExpression": source_input_expression,
             "inlineDefaultRejected": inline_default_input,
             "inlineConstructorRejected": inline_constructed_input,
+            "namedSourceInputExpression": named_source_input_expression,
             "namedSourceOwnerExpression": named_source_owner_expression,
             "namedSourceOwnerContractAudited":
                 named_source_owner_contract_audited,
+            "partialFactoryAudited": partial_factory_audited,
+            "sourceClosedManualExposureReturnAudited":
+                source_closed_manual_exposure_return_audited,
+            "sourceClosedManualExposureGateAudited":
+                source_closed_manual_exposure_gate_audited,
+            "exposureLaneAudited": exposure_lane_audited,
+            "vfxLiveLabCarrierLaneAudited": vfx_lab_carrier_lane_audited,
+            "uniqueAssignmentShapesAudited": assignment_shapes_audited,
+            "assignmentOrderAudited": assignment_order_audited,
+            "partialPipelineJoinAudited": partial_pipeline_join_audited,
+            "partialSourceJoinAudited": partial_source_join_audited,
         },
+        "runtimeReadConnections": runtime_read_connections,
+        "populatedSelectedReads": [
+            register for register, connected in runtime_read_connections.items()
+            if connected
+        ],
         "explicitInputsReachRuntimePublisher": explicit_inputs_reach_runtime,
         "allSelectedReadsRuntimeSourcePopulated": (
-            complete and explicit_inputs_reach_runtime),
+            complete and explicit_inputs_reach_runtime and
+            all(runtime_read_connections.values())),
+        "runtimeSourceSemantics": {
+            "c27.y": "source_closed_manual_profile_only",
+            "c103.xyzw": (
+                "live_lab_actor_root_and_time_carrier; "
+                "retail_selected_frame_HGVFX_player_identity_unproven"),
+        },
         "capturedValuesAuthorized": False,
     }
 

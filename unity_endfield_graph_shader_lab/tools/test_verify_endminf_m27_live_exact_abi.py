@@ -582,7 +582,7 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         self.assertTrue(connections["b0ReadinessReachesExactDraw"])
         self.assertTrue(connections["b3RetainedMaterialReachesExactShell"])
 
-    def test_b1_source_inputs_are_complete_but_runtime_owners_fail_closed(
+    def test_b1_partial_runtime_owners_reach_publisher_but_stay_closed(
             self) -> None:
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
@@ -590,11 +590,34 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             self.pipeline)
         self.assertTrue(contract["sourceOwnedInputContractComplete"])
         self.assertTrue(contract["defaultRuntimeFailsClosed"])
-        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertTrue(contract["explicitInputsReachRuntimePublisher"])
         self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
         self.assertFalse(contract["capturedValuesAuthorized"])
         self.assertTrue(all(contract["readinessBits"].values()))
         self.assertTrue(all(contract["sourceEquations"].values()))
+        self.assertEqual(
+            contract["populatedSelectedReads"],
+            ["c0.zw", "c4.w", "c27.y", "c103.xyzw"],
+        )
+        self.assertFalse(contract["runtimeReadConnections"]["c19.zw"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+        self.assertFalse(contract["runtimeReadConnections"]["c105.xyzw"])
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertTrue(connection["namedSourceInputExpression"])
+        self.assertTrue(connection["partialFactoryAudited"])
+        self.assertTrue(connection["sourceClosedManualExposureReturnAudited"])
+        self.assertTrue(connection["sourceClosedManualExposureGateAudited"])
+        self.assertTrue(connection["exposureLaneAudited"])
+        self.assertTrue(connection["vfxLiveLabCarrierLaneAudited"])
+        self.assertTrue(connection["assignmentOrderAudited"])
+        self.assertTrue(all(
+            connection["uniqueAssignmentShapesAudited"].values()))
+        self.assertTrue(connection["partialPipelineJoinAudited"])
+        self.assertTrue(connection["partialSourceJoinAudited"])
+        self.assertIn(
+            "retail_selected_frame_HGVFX_player_identity_unproven",
+            contract["runtimeSourceSemantics"]["c103.xyzw"],
+        )
 
     def test_b1_missing_halton_readiness_bit_invalidates_contract(self) -> None:
         mutated = self.global_contract.replace(
@@ -610,12 +633,9 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
 
     def test_b1_default_runtime_input_cannot_claim_source_owner(self) -> None:
         mutated = self.pipeline.replace(
-            "recoveredDeferredTransformsReady,\n"
-            "                                    commandBuffer,",
-            "recoveredDeferredTransformsReady,\n"
+            "                                    m27SourceInputs,\n",
             "                                    default(\n"
-            "                                        EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs),\n"
-            "                                    commandBuffer,",
+            "                                        EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs),\n",
             1)
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
@@ -634,11 +654,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             "true, true, Vector4.zero, true, -1.0f, true, 1.0f, true, "
             "Vector3.zero, 0.0f, true, Vector4.zero, true)")
         mutated = self.pipeline.replace(
-            "recoveredDeferredTransformsReady,\n"
-            "                                    commandBuffer,",
-            "recoveredDeferredTransformsReady,\n"
-            f"                                    {constructor},\n"
-            "                                    commandBuffer,",
+            "                                    m27SourceInputs,\n",
+            f"                                    {constructor},\n",
             1)
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
@@ -653,11 +670,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
 
     def test_b1_named_but_unaudited_source_owner_stays_closed(self) -> None:
         mutated = self.pipeline.replace(
-            "recoveredDeferredTransformsReady,\n"
-            "                                    commandBuffer,",
-            "recoveredDeferredTransformsReady,\n"
-            "                                    recoveredM27ShaderVariablesSourceOwner.CurrentM27SourceInputs,\n"
-            "                                    commandBuffer,",
+            "                                    m27SourceInputs,\n",
+            "                                    recoveredM27ShaderVariablesSourceOwner.CurrentM27SourceInputs,\n",
             1)
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
@@ -669,6 +683,121 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         self.assertFalse(connection["namedSourceOwnerContractAudited"])
         self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
         self.assertFalse(contract["allSelectedReadsRuntimeSourcePopulated"])
+
+    def test_b1_partial_join_rejects_non_camera_exposure_source(self) -> None:
+        mutated = self.pipeline.replace(
+            "? liveAutoExposureState.CurrentExposure",
+            "? 1.0f",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(connection["partialPipelineJoinAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertEqual(contract["populatedSelectedReads"], [])
+
+    def test_b1_partial_join_rejects_non_engine_vfx_clock(self) -> None:
+        mutated = self.pipeline.replace(
+            "? Time.time",
+            "? 0.0f",
+            1)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(connection["partialPipelineJoinAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+        self.assertFalse(contract["explicitInputsReachRuntimePublisher"])
+        self.assertEqual(contract["populatedSelectedReads"], [])
+
+    def test_b1_partial_join_rejects_forced_vfx_readiness(self) -> None:
+        mutated = self.pipeline.replace(
+            "            bool recoveredVFXParams0Ready =\n"
+            "                recoveredVFXPlayerCenterReady &&",
+            "            bool recoveredVFXParams0Ready = true;\n"
+            "            // rejected stale expression\n"
+            "            bool ignoredRecoveredVFXParams0Ready =\n"
+            "                recoveredVFXPlayerCenterReady &&",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(
+            connection["uniqueAssignmentShapesAudited"]
+            ["recoveredVFXParams0Ready"])
+        self.assertFalse(connection["vfxLiveLabCarrierLaneAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+
+    def test_b1_partial_join_rejects_intervening_position_overwrite(self) -> None:
+        mutated = self.pipeline.replace(
+            "                : Vector3.zero;\n"
+            "            float recoveredVFXClockSeconds",
+            "                : Vector3.zero;\n"
+            "            recoveredVFXPlayerPosition = Vector3.one;\n"
+            "            float recoveredVFXClockSeconds",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(
+            connection["uniqueAssignmentShapesAudited"]
+            ["recoveredVFXPlayerPosition"])
+        self.assertFalse(connection["vfxLiveLabCarrierLaneAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+
+    def test_b1_partial_join_rejects_diagnostic_exposure_selector(self) -> None:
+        mutated = self.pipeline.replace(
+            "                !recoveredLiveCharInfoAutoExposureRequested &&",
+            "                recoveredLiveCharInfoAutoExposureRequested &&",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(connection["exposureLaneAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+
+    def test_b1_partial_join_rejects_non_source_closed_manual_gate(self) -> None:
+        mutated = self.pipeline.replace(
+            "                    recoveredSourceClosedManualExposureRequested);",
+            "                    true);",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(connection["sourceClosedManualExposureGateAudited"])
+        self.assertFalse(connection["exposureLaneAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
+
+    def test_b1_partial_join_rejects_non_manual_state_return(self) -> None:
+        mutated = self.pipeline.replace(
+            "                state.AdvanceSourceClosedNeutralProfile(deltaTime);",
+            "                state.Advance(deltaTime, Time.frameCount);",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated)
+        connection = contract["runtimeSourceInputConnection"]
+        self.assertFalse(connection["sourceClosedManualExposureReturnAudited"])
+        self.assertFalse(connection["exposureLaneAudited"])
+        self.assertFalse(connection["partialSourceJoinAudited"])
 
     def test_disconnected_b0_readiness_is_rejected(self) -> None:
         disconnected = self.frame.replace(

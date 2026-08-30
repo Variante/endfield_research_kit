@@ -1383,21 +1383,23 @@ namespace EndfieldGraphShaderLab
                  recoveredDeferredExactConsumer.Requested &&
                  recoveredEndminfLitEffectOwnerActive);
             RenderTexture physicalRecoveredCameraDepth = null;
+            bool recoveredSourceClosedManualExposureRequested =
+                (recoveredSceneMVRequest.requested ||
+                 recoveredDeferredExactConsumer.Requested &&
+                 recoveredEndminfLitEffectOwnerActive) &&
+                camera.GetComponent<EndfieldHGOperatorPresentation>() is
+                    EndfieldHGOperatorPresentation exposurePresentation &&
+                exposurePresentation.environmentPhaseSnapshot != null &&
+                (exposurePresentation.environmentPhaseSnapshot
+                    .IsGachaRoomSourceClosed ||
+                 exposurePresentation.environmentPhaseSnapshot
+                    .IsCharacterInfoSourceClosed);
             EndfieldRecoveredCharInfoAutoExposureCameraState liveAutoExposureState =
                 PrepareRecoveredLiveCharInfoAutoExposure(
                     camera,
                     applyPostProcess,
                     useRecoveredPostSemantics,
-                    (recoveredSceneMVRequest.requested ||
-                     recoveredDeferredExactConsumer.Requested &&
-                     recoveredEndminfLitEffectOwnerActive) &&
-                    camera.GetComponent<EndfieldHGOperatorPresentation>() is
-                        EndfieldHGOperatorPresentation exposurePresentation &&
-                    exposurePresentation.environmentPhaseSnapshot != null &&
-                    (exposurePresentation.environmentPhaseSnapshot
-                        .IsGachaRoomSourceClosed ||
-                     exposurePresentation.environmentPhaseSnapshot
-                        .IsCharacterInfoSourceClosed));
+                    recoveredSourceClosedManualExposureRequested);
             if (applyPostProcess)
             {
                 cameraColorDescriptor = CreateRecoveredSceneColorDescriptor(
@@ -1531,6 +1533,8 @@ namespace EndfieldGraphShaderLab
                 ? liveAutoExposureState.CurrentExposure
                 : 0.0f;
             bool recoveredCurrentCameraExposureReady =
+                recoveredSourceClosedManualExposureRequested &&
+                !recoveredLiveCharInfoAutoExposureRequested &&
                 liveAutoExposureState != null &&
                 recoveredCurrentCameraExposure > 0.0f &&
                 !float.IsNaN(recoveredCurrentCameraExposure) &&
@@ -1552,22 +1556,50 @@ namespace EndfieldGraphShaderLab
                         renderWidth / (float)renderHeight,
                         0.0f));
             }
+            // This live lab carrier is independent of SceneMV allocation.
+            // Resolve the unique actor root once and sample Time.time once so
+            // same-camera lab consumers agree. This does not prove retail
+            // selected-frame HGVFXManager player identity.
             Transform recoveredVFXPlayerCenter = null;
+            bool recoveredVFXPlayerSourceRequested =
+                useRecoveredSceneMV ||
+                recoveredEndminfLitEffectOwnerActive &&
+                EndfieldRecoveredShaderVariablesGlobal.IsRequested;
             bool recoveredVFXPlayerCenterReady =
-                useRecoveredSceneMV &&
+                recoveredVFXPlayerSourceRequested &&
                 TryResolveRecoveredVFXPlayerCenter(out recoveredVFXPlayerCenter);
+            Vector3 recoveredVFXPlayerPosition = recoveredVFXPlayerCenterReady
+                ? recoveredVFXPlayerCenter.position
+                : Vector3.zero;
+            float recoveredVFXClockSeconds = recoveredVFXPlayerCenterReady
+                ? Time.time
+                : 0.0f;
+            bool recoveredVFXParams0Ready =
+                recoveredVFXPlayerCenterReady &&
+                !float.IsNaN(recoveredVFXClockSeconds) &&
+                !float.IsInfinity(recoveredVFXClockSeconds) &&
+                recoveredVFXClockSeconds >= 0.0f;
+            EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs
+                m27SourceInputs =
+                    EndfieldRecoveredShaderVariablesGlobalContract
+                        .M27SourceInputs
+                        .CurrentTargetPerspectiveExposureAndVFXPlayer(
+                            recoveredCurrentCameraExposure,
+                            recoveredCurrentCameraExposureReady,
+                            recoveredVFXPlayerPosition,
+                            recoveredVFXClockSeconds,
+                            recoveredVFXParams0Ready);
             if (useRecoveredSceneMV &&
                 recoveredVFXExposureReady &&
-                recoveredVFXPlayerCenterReady)
+                recoveredVFXParams0Ready)
             {
-                Vector3 playerCenter = recoveredVFXPlayerCenter.position;
                 commandBuffer.SetGlobalVector(
                     EndfieldRecoveredSceneMVCompositor.VFXParams0Id,
                     new Vector4(
-                        playerCenter.x,
-                        playerCenter.y,
-                        playerCenter.z,
-                        Time.time % 1024.0f));
+                        recoveredVFXPlayerPosition.x,
+                        recoveredVFXPlayerPosition.y,
+                        recoveredVFXPlayerPosition.z,
+                        recoveredVFXClockSeconds % 1024.0f));
                 commandBuffer.SetGlobalFloat(
                     EndfieldRecoveredSceneMVCompositor.VFXGlobalsReadyId,
                     1.0f);
@@ -1741,6 +1773,7 @@ namespace EndfieldGraphShaderLab
                                     renderHeight,
                                     environmentParams,
                                     recoveredDeferredTransformsReady,
+                                    m27SourceInputs,
                                     commandBuffer,
                                     out string shaderVariablesFailure);
                             if (recoveredShaderVariablesGlobalReady)

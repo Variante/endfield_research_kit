@@ -30,6 +30,14 @@ GENERATIVE = TRANSFORM.with_name(
     "EndfieldRecoveredEndminfM27GenerativeExactRuntime.cs"
 )
 PIPELINE = TRANSFORM.with_name("HGCompatRenderPipeline.cs")
+GLOBALS_VERIFIER = (
+    ROOT
+    / "Assets"
+    / "EndfieldGraphShaderLab"
+    / "Editor"
+    / "CharacterRecovery"
+    / "EndfieldRecoveredShaderVariablesGlobalBatchVerifier.cs"
+)
 BINDING_POLICY = TRANSFORM.with_name(
     "EndfieldRecoveredDeferredResolverBindingPolicy.cs"
 )
@@ -217,6 +225,70 @@ class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
             owner,
         )
         self.assertNotIn("CurrentM27SourceReady => false", owner)
+
+        for token in (
+            "CurrentTargetPerspectiveExposureAndVFXPlayer(",
+            "exposureAdaptation,",
+            "exposureReady,",
+            "vfxPlayerPosition,",
+            "vfxClockSeconds,",
+            "vfxParams0Ready,",
+        ):
+            self.assertIn(token, source)
+
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        for token in (
+            "recoveredSourceClosedManualExposureRequested",
+            "recoveredCurrentCameraExposureReady",
+            "!recoveredLiveCharInfoAutoExposureRequested",
+            "state.AdvanceSourceClosedNeutralProfile(deltaTime);",
+            "TryResolveRecoveredVFXPlayerCenter",
+            "recoveredVFXPlayerPosition",
+            "recoveredVFXClockSeconds",
+            "recoveredVFXParams0Ready",
+            ".CurrentTargetPerspectiveExposureAndVFXPlayer(",
+            "m27SourceInputs,",
+        ):
+            self.assertIn(token, pipeline)
+
+        join = pipeline.index(
+            ".CurrentTargetPerspectiveExposureAndVFXPlayer("
+        )
+        publish = pipeline.index(
+            "recoveredShaderVariablesGlobal.PrepareAndPublish(", join
+        )
+        self.assertLess(join, publish)
+        self.assertIn(
+            "m27SourceInputs,",
+            pipeline[publish:publish + 1200],
+        )
+
+        verifier = GLOBALS_VERIFIER.read_text(encoding="utf-8")
+        for token in (
+            "VerifyPartialM27OwnedSources(camera)",
+            "exposureC27Populated",
+            "vfxParams0C103Populated",
+            "unresolvedTaaC19Zero",
+            "unresolvedMipBiasC26Zero",
+            "unresolvedAnchorC105Zero",
+            "m27AdmissionRejected",
+            '"c19.zw"',
+        ):
+            self.assertIn(token, verifier)
+
+        static_audit = (
+            ROOT / "tools" / "verify_endminf_m27_live_exact_abi.py"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "_unique_compact_assignment",
+            "sourceClosedManualExposureReturnAudited",
+            "sourceClosedManualExposureGateAudited",
+            "uniqueAssignmentShapesAudited",
+            "assignmentOrderAudited",
+            "vfxLiveLabCarrierLaneAudited",
+            "retail_selected_frame_HGVFX_player_identity_unproven",
+        ):
+            self.assertIn(token, static_audit)
 
     def test_generative_gate_checks_source_closure_before_binding(self) -> None:
         source = GENERATIVE.read_text(encoding="utf-8")

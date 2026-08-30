@@ -88,7 +88,7 @@
     },
     "pipeline": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs",
-      "sha256": "afae0928d5faf28827b262598abbcb2131cc8ac5683c95d4087d4a8b4f661249"
+      "sha256": "0f9509577b5b621024f8c50be5cda8c419ca9cfa864878b188f50e7ae6b52aec"
     }
   },
   "boundary": "Captured b0 values validate names, packing, and retail reset semantics only. Runtime values are rebuilt from the live camera and per-camera temporal history; no captured matrix, position, constant-buffer array, or fitted curve is published."

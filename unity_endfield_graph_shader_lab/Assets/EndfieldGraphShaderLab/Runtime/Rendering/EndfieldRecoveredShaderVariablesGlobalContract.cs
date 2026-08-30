@@ -120,6 +120,39 @@ namespace EndfieldGraphShaderLab
                         false);
                 }
             }
+
+            /// <summary>
+            /// Joins the independently recovered source-closed Manual exposure
+            /// and live lab actor-root/time carrier to the target/camera lanes.
+            /// The carrier is not proof of retail selected-frame HGVFX player
+            /// identity. TAA, the physical-camera material mip-bias assignment,
+            /// and the HGVFX anchor owner deliberately remain absent. These
+            /// partial live sources can populate their selected registers but
+            /// can never admit the M27 draw by themselves.
+            /// </summary>
+            public static M27SourceInputs
+                CurrentTargetPerspectiveExposureAndVFXPlayer(
+                    float exposureAdaptation,
+                    bool exposureReady,
+                    Vector3 vfxPlayerPosition,
+                    float vfxClockSeconds,
+                    bool vfxParams0Ready)
+            {
+                return new M27SourceInputs(
+                    true,
+                    true,
+                    Vector4.zero,
+                    false,
+                    0.0f,
+                    false,
+                    exposureAdaptation,
+                    exposureReady,
+                    vfxPlayerPosition,
+                    vfxClockSeconds,
+                    vfxParams0Ready,
+                    Vector4.zero,
+                    false);
+            }
         }
 
         public static readonly Vector4 SelectedEnvironmentParams = new Vector4(
@@ -413,7 +446,8 @@ namespace EndfieldGraphShaderLab
             {
                 failure =
                     "M27 b1 c103.xyzw (_VFXParams0) requires the unique live " +
-                    "VFX player center and Time.time modulo 1024";
+                    "lab actor-root carrier and Time.time modulo 1024; retail " +
+                    "selected-frame HGVFX player identity remains unproven";
                 return false;
             }
             if (!m27Inputs.vfxParams2Ready)
