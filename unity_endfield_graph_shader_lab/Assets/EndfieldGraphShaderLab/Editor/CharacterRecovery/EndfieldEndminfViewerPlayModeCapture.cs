@@ -614,15 +614,11 @@ namespace EndfieldGraphShaderLabEditor
                 "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT",
                 IncludeBackgroundPortrait ? "1" : "0");
             EndfieldRecoveredCharInfoPresentation.RefreshStandaloneSelection();
-            // Character refreshes rebuild the source actor prefab and can
-            // remove its generated overview-effect requests/spawner. Restore
-            // the complete source-retained entrance-effect contract before the
-            // scene instantiates the actor. The exact source stage is
-            // disposable and may be absent between recovery batches, so the
-            // binding builder preserves the existing effect prefabs and then
-            // repairs the ten certified primary-rock material rows from their
-            // pinned PathIDs and direct tracked assets. This remains opt-in and
-            // does not broaden the four separately blocked non-primary rows.
+            // Character refreshes can replace the generated actor and effect
+            // bindings. Canonical and targeted captures must rebuild all four
+            // roots from the fingerprint-gated source stage; never preserve a
+            // stale generated prefab when that source is missing or drifted.
+            EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
             EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
             // The overview rebuild refreshes transient source prefabs. Restore
             // the direct LitEffect rows afterward so both compatibility and

@@ -3133,6 +3133,18 @@ runtime trajectory is captured, compatibility replay interpolates positions
 and rotations continuously across sparse intervals; the remaining uncertainty
 is an evidence gap, not permission to add discontinuities.
 
+The native cross-frame callback order is now closed through publication: finish
+the retained previous master, read current transforms, publish the distinct
+`last` arrays through `WriteDoubleBufferTransform`, schedule current simulation
+through display/PostProxy, and retain its master for the next callback. The
+specific CURRENT-to-LAST copy/swap mechanism and reset/teleport lifecycle are
+still unproven, so the Unity cross-frame coordinator labels its one-callback
+handoff as behaviorally inferred. The diagnostic solver remains default-off:
+its settled error (`13.07 mm / 11.14 degrees`) is worse than solver-off replay
+(`1.99 mm / 0.985 degrees`) because the recovered pipeline still lacks the
+native `CalcDisplayPosition` result boundary. Do not publish raw Angle/nextPos
+scratch or invent smoothing curves as a substitute.
+
 The compatibility replay clock itself is continuous: all 770 presentation
 frames advance without repeated requested times. Its remaining visible jerk is
 caused by a sparse 144-pose oracle (72 adjacent previous/current pairs, with
@@ -3222,6 +3234,21 @@ remaining few-pixel tail requires same-session runtime gyroscope state rather
 than a global camera, portrait, or screenshot-fit offset. Loop-only diagnostics
 can supply an explicit paired sequence origin to the comparator; the tool
 rejects partial origins and continues to require chronological output.
+
+The background portrait inversion was a Unity mesh bug, not missing capture
+evidence: both portrait builders vertically flipped UVs that TextureImporter
+had already mapped from the display-upright PNG. Their tight-rectangle UVs now
+use unflipped `vMin`/`vMax` order, and a targeted 0.65/4.4333/6.65-second render
+shows the silhouette upright. Endminf LitEffect compatibility textures now
+also enforce source semantics on import: BaseColor is sRGB, while MRO,
+parallax, and Normal are linear, with Normal imported as `NormalMap`. This
+corrects the stone normal sampling contract but does not claim retail lighting
+parity. The compatibility LitEffect shader still contains an approximate
+directional-light model, while exact deferred light, shadow, and HGBuffer frame
+ownership remain incomplete. Do not tune that heuristic or move effects to fit
+screenshots. Canonical and targeted renders now rebuild the four Overview VFX
+roots from the fingerprint-gated exact source stage and fail if it is missing
+or drifted, preventing stale prefab transforms from passing as current output.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip
@@ -3359,11 +3386,16 @@ multi-provider mask.
 
 The same session is not secondary-motion evidence. It observed 32,097
 cross-frame cloth updates but zero scheduled, completed, or written Transform
-jobs and one registration-lifecycle failure. Late adapter installation explains
-the stale registration lifecycle, but does not prove whether cross-frame mode
-bypasses the pinned inner calls or those call-site offsets are stale. Preserve
-the fail-closed result and recover the active publication call path before
-changing the observer or the Unity solver.
+jobs and one registration-lifecycle failure. Binary recovery subsequently
+identified `WriteDoubleBufferTransform` as the active `last`-array publication
+route. EndfieldCapture commit `4cac2fc` records that route and array source per
+row and requires complete scheduled/completed/write counts, trajectory,
+publication, lifecycle, hierarchy, effective-pose, and four-owner coverage.
+Collect the next bounded run with
+`tools\EndfieldCapture\StartEndminfOverviewCapture.bat`: start with Endfield
+closed, wait for all four providers, open Endminf without manually triggering,
+keep it visible through the first settled loop wrap, then stop immediately.
+This is a capture-readiness gate, not recovered solver output.
 After that gate passes,
 `unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
