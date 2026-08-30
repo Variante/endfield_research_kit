@@ -50,6 +50,17 @@ ACTIVE_STREAMS = [
 ]
 ALLOWED_IA_STRIDES = [60, 68]
 
+# The exact VS gates its optional t0 skin palette from UnityPerDraw record
+# c4.w.  This source mesh is unskinned, and the selected retail draw proves
+# bit 5 clear with no VS t0 resource bound.  Keep these as observation fields
+# instead of manufacturing an identity StructuredBuffer for a dead branch.
+VERTEX_SKIN_CB_SLOT = 2
+VERTEX_SKIN_RECORD_INDEX = 0
+VERTEX_SKIN_RECORD_STRIDE_FLOAT4 = 16
+VERTEX_SKIN_FLAG_REGISTER_OFFSET = 4
+VERTEX_SKIN_FLAG_LANE = "w"
+VERTEX_SKIN_FLAG_MASK = 32
+
 TARGET = {
     "textureFormat": 26,
     "viewFormat": 26,
@@ -1184,7 +1195,7 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         "b0SelectedReadsFullySourcePopulated": b0_source_closed,
         "b1SelectedReadsFullySourcePopulated": False,
         "b2ActualParticleRecordRangeAndGeometryObserved": False,
-        "vertexSkinStructuredResourceAuthenticated": False,
+        "vertexSkinInactiveNullT0DependencyAuthenticated": False,
         "b3AllSelectedWordsTiedToOriginalMaterialAndLayout": (
             b3_material_contract["usedWordCount"] == 50 and
             b3_material_contract["bitExactMatches"] == 50 and
@@ -1378,19 +1389,56 @@ def _live_checks(observation: dict[str, Any] | None) -> list[dict[str, Any]]:
         add(f"live.s{slot}.observedFromActualDraw",
             row.get("observedFromActualDraw"), True)
 
+    vertex_skin_control = observation.get("vertexSkinningControl", {})
+    add("live.vertexSkinningControl.observedFromActualDraw",
+        vertex_skin_control.get("observedFromActualDraw"), True)
+    add("live.vertexSkinningControl.synchronizedDrawId",
+        vertex_skin_control.get("synchronizedDrawId"),
+        authentication.get("synchronizedDrawId"))
+    add("live.vertexSkinningControl.constantBufferSlot",
+        vertex_skin_control.get("constantBufferSlot"), VERTEX_SKIN_CB_SLOT)
+    add("live.vertexSkinningControl.recordIndex",
+        vertex_skin_control.get("recordIndex"), VERTEX_SKIN_RECORD_INDEX)
+    add("live.vertexSkinningControl.recordStrideFloat4",
+        vertex_skin_control.get("recordStrideFloat4"),
+        VERTEX_SKIN_RECORD_STRIDE_FLOAT4)
+    add("live.vertexSkinningControl.flagRegisterOffset",
+        vertex_skin_control.get("flagRegisterOffset"),
+        VERTEX_SKIN_FLAG_REGISTER_OFFSET)
+    add("live.vertexSkinningControl.flagLane",
+        vertex_skin_control.get("flagLane"), VERTEX_SKIN_FLAG_LANE)
+    add("live.vertexSkinningControl.flagMask",
+        vertex_skin_control.get("flagMask"), VERTEX_SKIN_FLAG_MASK)
+    skin_flag_raw = vertex_skin_control.get("flagRaw")
+    skin_flag_raw_is_uint = (
+        isinstance(skin_flag_raw, int) and
+        not isinstance(skin_flag_raw, bool) and
+        0 <= skin_flag_raw <= 0xFFFFFFFF)
+    add("live.vertexSkinningControl.flagRawPresent",
+        skin_flag_raw_is_uint, True)
+    add("live.vertexSkinningControl.skinFlagClear",
+        skin_flag_raw_is_uint and
+        (skin_flag_raw & VERTEX_SKIN_FLAG_MASK) == 0, True)
+    add("live.vertexSkinningControl.skinBranchActive",
+        vertex_skin_control.get("skinBranchActive"), False)
+    add("live.vertexSkinningControl.sourceMeshSkinRows",
+        vertex_skin_control.get("sourceMeshSkinRows"), 0)
+
     vertex_resources = observation.get("vertexResources", [])
+    add("live.vertex.resourceSlots.exact",
+        sorted(row.get("slot") for row in vertex_resources
+               if isinstance(row.get("slot"), int)), [0])
     try:
         vertex_skin = _find(vertex_resources, slot=0)
     except VerificationError:
         vertex_skin = {}
-    add("live.vertex.t0.kind", vertex_skin.get("kind"), "StructuredBuffer")
-    add("live.vertex.t0.logicalName",
-        vertex_skin.get("logicalName"), "_VertexSkinMatrices")
-    add("live.vertex.t0.stride", vertex_skin.get("stride"), 16)
-    add("live.vertex.t0.skinBranchActive",
-        vertex_skin.get("skinBranchActive"), False)
-    add("live.vertex.t0.sourceMeshSkinRows",
-        vertex_skin.get("sourceMeshSkinRows"), 0)
+    add("live.vertex.t0.observedFromActualDraw",
+        vertex_skin.get("observedFromActualDraw"), True)
+    add("live.vertex.t0.synchronizedDrawId",
+        vertex_skin.get("synchronizedDrawId"),
+        authentication.get("synchronizedDrawId"))
+    add("live.vertex.t0.bound", vertex_skin.get("bound"), False)
+    add("live.vertex.t0.objectId", vertex_skin.get("objectId"), 0)
 
     cbuffers = observation.get("constantBuffers", [])
     for slot, name, full_bytes, used_bytes, producer in CBUFFERS:
@@ -1456,7 +1504,7 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
         "b0SelectedReadsFullySourcePopulated",
         "b1SelectedReadsFullySourcePopulated",
         "b2ActualParticleRecordRangeAndGeometryObserved",
-        "vertexSkinStructuredResourceAuthenticated",
+        "vertexSkinInactiveNullT0DependencyAuthenticated",
         "b3AllSelectedWordsTiedToOriginalMaterialAndLayout",
         "b4SelectedFrameProducerValueAuthenticated",
         "orderedMrtSlotsObserved",
@@ -1507,7 +1555,8 @@ def build_report(repo: Path, observation: dict[str, Any] | None = None) -> dict[
                 "DrawRenderer submission and authenticate the post-baseline shell "
                 "callback/pin, substitution counters, IA/PSO, ordered MRT/depth, "
                 "samplers/resources, full publisher readiness, PSR b2 geometry/"
-                "range, and b4 selected-frame provenance. The route currently "
+                "range, inactive b2 skin gate/null VS t0 dependency, and b4 "
+                "selected-frame provenance. The route currently "
                 "fails before submission, so no observation fields are synthesized."
             ),
         },

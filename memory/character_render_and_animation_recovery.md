@@ -3565,11 +3565,14 @@ and discontinuity reuse the current frame, and captured constant-buffer bytes
 remain validation-only. All 50 selected b3 words are tied bit-exactly to 37
 original material fields, explicit packoffsets, the generated Unity material,
 and the compatibility shader's effective defaults. b1 remains deliberately
-closed because the live Halton jitter, physical-camera/IFix vector, gameplay
-player-center, and HGVFX anchor lifecycle owners are not recovered. Admission
-also still requires a synchronized runtime join for engine-produced b2, VS
-structured t0, b4, ordered MRTs, s0-s5, the observation writer, and the actual
-generative ParticleSystemRenderer path. Captured packet constants and fitted
+closed because the live Halton jitter, physical-camera material-mip-bias and
+exposure history, gameplay player-center, and HGVFX anchor lifecycle are not
+fully recovered. The selected physical camera publishes c26.xy=(-1,0.5), while
+serialized virtual-camera defaults only prove (0,1); do not substitute either
+without the missing physical-camera assignment path. Admission also still
+requires a synchronized runtime join for engine-produced b2, its inactive skin
+bit plus explicitly unbound VS t0, b4, ordered MRTs, s0-s5, the observation
+writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted
 placement, transforms, curves, texture sampling, or lighting are never an
 admissible substitute.
 After that gate passes,
@@ -3651,8 +3654,8 @@ or shaders rather than hand-editing generated prefabs.
    a specific delta. For M27, keep the independently pinned source shell at
    t0-t5 and the source-closed b0/b3 producers; leave b1 closed until each live
    owner is recovered. Retain engine-produced b2 and use the next observer run
-   to close VS structured t0, s0-s5 descriptors, b4 producer/value lifecycle,
-   and synchronized target evidence. Require the live
+   to prove its inactive skin bit and explicit null VS t0, s0-s5 descriptors,
+   b4 producer/value lifecycle, and synchronized target evidence. Require the live
    exact-ABI verifier to admit the generative ParticleSystemRenderer draw before
    presentation; never restore captured packet constants or tune placement,
    transforms, curves, texture sampling, or lighting to compensate.
