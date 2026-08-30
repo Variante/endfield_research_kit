@@ -3534,8 +3534,10 @@ a real bound VS t0 structured buffer, not an explicit null binding. That local
 draw does not override the failed session gates. The maintained converter
 authenticates a complete collector inventory, every artifact hash, one exact
 draw, IA, b2, t0, textures, and pipeline descriptors, emits no captured
-VB/IB/CB arrays, and leaves Unity-only owners unresolved; it deterministically
-rejects this session before producing output.
+VB/IB/CB arrays, and leaves Unity-only owners unresolved; it accepts the
+observer's declared v2 binding sidecar while retaining historical v1
+compatibility, and it deterministically rejects this session before producing
+output.
 
 The same session closes only the generic secondary publication route. All
 2,299 scheduled writes completed and emitted 55,176 readable rows, but every
@@ -3546,6 +3548,16 @@ returns one inserted index, whereas the observer decoded it as a packed
 `DataChunk`. The corrected decoder derives length one and distinguishes valid
 index zero from the manager-disabled zero return. None of these rows is
 admissible as hair/cloth replay, a fitted curve, or a hardcoded trajectory.
+
+EndfieldCapture commit `80f5b0b` fixes that return decoder and separates the
+72 regular graphics packets from bounded M20, M21, M27, and joined
+M27+Default lanes. Priority storage is preallocated before capture, owner-draw
+admission performs no large allocation, CPU publication grows only in ordered
+drain, and every truncation, incomplete packet, dropped event, or unresolved
+lane keeps publication closed. The resource bytes are still copied at Present,
+not at the owner draw, so the observer labels them `frame-end`, keeps all exact
+packet counters at zero, and cannot produce an admissible exact-M27 session.
+Do not request another retail capture until bounded draw-local staging exists.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
@@ -3638,15 +3650,16 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Add a provably pre-`slInit` load path that can coexist with the Full
+1. Do not request another retail session yet. Extend observer commit `80f5b0b`
+   with bounded before-owner copies for mutable inputs/constants and
+   after-owner copies for outputs, while preserving allocation-free owner
+   admission, separate lane caps, v2 sidecars, and all fail-closed loss gates.
+   Also add a provably pre-`slInit` load path that can coexist with the Full
    multi-provider runtime; do not infer initialization preferences from later
-   state or weaken the existing gate. Then run observer commit `d67f942`
-   (including the screen-shadow correction from `4f23c03`, s0-s5 LitEffect
-   sampler retention, and the earlier
-   automatic-trigger, exposure, options/init-join, next-Present scheduling,
-   and serialized-staging commits) on the next
-   game session; stop cleanly shortly after the first settled overview-loop
-   wrap so the bounded trajectory buffer includes the required interval. Use
+   state or weaken the existing gate. After both gaps are closed and tested,
+   run the new observer build; stop cleanly shortly after the first settled
+   overview-loop wrap so the bounded trajectory buffer includes the required
+   interval. Use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
    omits secondary dynamics and Full graphics. First
    validate the lifecycle-joined effective trajectories with
@@ -3673,9 +3686,10 @@ or shaders rather than hand-editing generated prefabs.
    equal-queue ordering unless a same-session packet-to-palm registration proves
    a specific delta. For M27, keep the independently pinned source shell at
    t0-t5 and the source-closed b0/b3 producers; leave b1 closed until each live
-   owner is recovered. Retain engine-produced b2 and use the next observer run
-   to prove its inactive skin bit and explicit null VS t0, s0-s5 descriptors,
-   b4 producer/value lifecycle, and synchronized target evidence. Require the live
+   owner is recovered. Retain engine-produced b2 and use the next admissible
+   observer run to join its inactive skin bit to the already observed bound,
+   complete VS t0 palette payload, s0-s5 descriptors, b4 producer/value
+   lifecycle, and synchronized target evidence. Require the live
    exact-ABI verifier to admit the generative ParticleSystemRenderer draw before
    presentation; never restore captured packet constants or tune placement,
    transforms, curves, texture sampling, or lighting to compensate.
