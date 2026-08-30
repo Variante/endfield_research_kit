@@ -103,7 +103,7 @@ class PackageFixture:
         payload = bytes(ia_blob) + t0_blob + b"".join(texture_blobs)
         self.resources_path.parent.mkdir(parents=True, exist_ok=True)
         self.resources_path.write_bytes(payload)
-        (self.resources_path.parent / "bindings.v1.bin").write_bytes(b"bindings")
+        (self.resources_path.parent / "bindings.v2.bin").write_bytes(b"bindings")
 
         selected = [
             self._resource(0, 1000, 0, 0, 4160, 0, 4160,
@@ -201,7 +201,7 @@ class PackageFixture:
             "selectedResourceRecords": selected,
             "resourceBlobBytes": len(payload),
             "drawRecords": [draw],
-            "bindingsFile": "bindings.v1.bin",
+            "bindingsFile": "bindings.v2.bin",
             "resourcesFile": "resources.bin",
             "backbufferFile": None,
         }
@@ -316,6 +316,17 @@ class ConverterTests(unittest.TestCase):
         serialized = json.dumps(result)
         self.assertNotIn("dataHex", serialized)
         self.assertNotIn('"capturedPacketArrays":', serialized)
+
+    def test_historical_v1_bindings_sidecar_is_accepted(self) -> None:
+        frame = self.fixture.load_frame()
+        frame["bindingsFile"] = "bindings.v1.bin"
+        v2_path = self.fixture.resources_path.parent / "bindings.v2.bin"
+        v1_path = self.fixture.resources_path.parent / "bindings.v1.bin"
+        v1_path.write_bytes(v2_path.read_bytes())
+        v2_path.unlink()
+        self.fixture.save_frame(frame)
+        result = MODULE.build_observation(self.fixture.root)
+        self.assertEqual(result["schema"], MODULE.LIVE_SCHEMA)
 
     def test_inventory_hash_mismatch_is_rejected(self) -> None:
         self.fixture.resources_path.write_bytes(

@@ -313,7 +313,7 @@ def _select_draw(
 def _validate_frame(
         root: Path, relative: str, frame: dict[str, Any],
         artifacts: dict[str, dict[str, Any]]) -> tuple[
-            Path, list[dict[str, Any]]]:
+            Path, list[dict[str, Any]], str]:
     for key in ("resourceSelectionTruncated", "captureIncomplete",
                 "captureFailed", "resourceCaptureIncomplete",
                 "resourceCaptureFailed"):
@@ -336,11 +336,12 @@ def _validate_frame(
                  f"selected resource row {index} is incomplete: {relative}")
 
     frame_root = (root / Path(relative)).parent
-    _require(frame.get("bindingsFile") == "bindings.v1.bin",
+    bindings_file = frame.get("bindingsFile")
+    _require(bindings_file in ("bindings.v1.bin", "bindings.v2.bin"),
              f"selected M27 bindings sidecar declaration is invalid: {relative}")
-    bindings_relative = (Path(relative).parent / "bindings.v1.bin").as_posix()
+    bindings_relative = (Path(relative).parent / bindings_file).as_posix()
     _artifact(artifacts, bindings_relative)
-    _require((frame_root / "bindings.v1.bin").stat().st_size > 0,
+    _require((frame_root / bindings_file).stat().st_size > 0,
              f"selected M27 bindings sidecar is empty: {relative}")
     _require(frame.get("resourcesFile") == "resources.bin",
              f"selected M27 resources sidecar declaration is invalid: {relative}")
@@ -355,7 +356,7 @@ def _validate_frame(
                  offset >= 0 and size >= 0 and
                  offset + size <= resource_artifact["bytes"],
                  f"selected resource row {index} points outside resources.bin")
-    return frame_root / "resources.bin", records
+    return frame_root / "resources.bin", records, bindings_relative
 
 
 def _one(
@@ -738,7 +739,7 @@ def build_observation(session_root: Path) -> dict[str, Any]:
     artifacts, package_auth = _authenticate_inventory(root)
     session, _runtime, _collected, _graphics = _validate_summaries(root, artifacts)
     relative, frame, draw = _select_draw(root, artifacts)
-    resources_path, resource_records = _validate_frame(
+    resources_path, resource_records, bindings_relative = _validate_frame(
         root, relative, frame, artifacts)
     frame_number = frame.get("frame")
     timestamp_qpc = frame.get("timestampQpc")
@@ -759,7 +760,6 @@ def build_observation(session_root: Path) -> dict[str, Any]:
     textures = _extract_textures(draw, resource_records, resources_path)
 
     frame_artifact = _artifact(artifacts, relative)
-    bindings_relative = (Path(relative).parent / "bindings.v1.bin").as_posix()
     resources_relative = (Path(relative).parent / "resources.bin").as_posix()
     unresolved = [
         {
