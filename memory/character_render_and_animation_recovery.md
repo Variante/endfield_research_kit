@@ -3568,6 +3568,19 @@ quarantine. A fresh retail capture is now required; enter Endminf Character
 Info twice in one bounded session so discovery and actual owner-draw capture
 cannot be conflated.
 
+Attempt `20260830T192522Z` failed before injection and contains no game
+evidence: `host.target-ready`, `host.attach-started`, and `runtime.error` were
+published in the same second, the one-shot Toolhelp module snapshot did not
+resolve `LoadLibraryW`, and the runtime DLL never loaded. EndfieldCapture
+commit `10484db` resolves the module that actually owns the local export
+(Kernel32 or KernelBase), retries only transient/absent startup-module state
+for at most five seconds, rechecks process identity on every probe, and does so
+before `VirtualAllocEx` or `CreateRemoteThread`. Exit, identity drift, fatal
+snapshot error, missing owner timeout, and out-of-range RVA now have distinct
+fail-closed diagnostics. One hundred consecutive synthetic attachment
+lifecycles and five complete 22-test passes succeed; this remains capture
+readiness, not recovered renderer evidence.
+
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
