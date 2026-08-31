@@ -3634,32 +3634,41 @@ that absent audio and semantic artifacts remain valid for mask 5. The final
 Release suite passed all 25 tests five times, and the installed-client preflight
 validated Full mask 5 without starting the host or game.
 
-Session `20260831T174406Z` is rejected overall but closes the earlier transport
-and deferred-sequence failures: the exact-build runtime shut down cleanly, the
-Animator and two-packet Streamline lanes completed, and all 72 regular plus
-four priority graphics packages staged, drained, and published without owner
-loss or a runtime error. Its remaining failures are observer bounds rather
-than recovered render facts. The joined Default plan retained every input and
-MRT but rejected its final depth surface under the old 384-MiB lane ceiling;
-the M31 sidecar stopped on an earlier one-draw source-signature candidate; and
-the fixed three-undrained-tail throttle displaced scheduled samples while a
-large priority packet was publishing. Secondary dynamics also overflowed the
-old row store and every retained row lacked both required lifecycle-generation
-joins, so the session supplies no admissible hair/cloth trajectory.
+Session `20260831T184411Z` is rejected evidence, but it is not a recorded game
+crash. The exact-build observer shut down quiescently with 31 collector records,
+zero dropped or invalid records, no writer error, and no crash artifact. Its
+two-packet Streamline surface lane completed before deferred graphics, and the
+51 accepted regular samples preserved the exact dense/eight-Present cadence.
+Regular sample 52 failed closed at Present 2280 because the nominally
+metadata-only tail still inherited a 33,243,136-byte 3840x2160 backbuffer
+charge. The recorded deferred peak was 1,049,073,096 bytes, leaving only
+24,668,728 bytes under the unchanged 1-GiB staging gate. Secondary dynamics
+retained 4,824 rows, but every row was rejected at
+`joinMissingTransformGeneration`: this build registers those transforms through
+the bulk `AddTransform(VirtualMeshContainer, teamId)` overload, while the old
+observer hooked only the single-Transform overload.
 
-EndfieldCapture commit `09131ab` addresses those bounded collection defects
-without adding pose, position, timing, or curve substitutes. Exact-owner plans
-now use a 448-MiB per-plan ceiling under the unchanged shared 1-GiB gate; M31
-releases and retries bounded provisional one/two-draw or wrong-order candidates
-while preserving its exact same-Present source signature; and regular tail
-requests use the aggregate byte gate at their exact scheduled Presents instead
-of a three-packet count throttle. Secondary storage is bounded at 262,144 rows
-and the summary now exposes lifecycle-hook calls, successful registry
-publications/occupancy, successful joins, and fixed rejection classes. The
-Release build, all 27 native tests, and the installed-client nonlaunching Full
-graphics-plus-dynamics preflight pass. A fresh retail session is still required
-to prove the corrected M31/cadence/Default closures and to identify why the
-current process lifetime published no usable dynamics registrations.
+EndfieldCapture commit `dac972a` corrects both observer defects without
+substitute positions, timing, curves, or a larger memory budget. Regular-tail
+packets now retain draw/dispatch chronology only; both staging and collection
+reject any tail GPU payload. The exact bulk overload is guarded by its complete
+native body hash and observed ABI, stages at most 256 registrations in fixed
+storage, and commits the whole range atomically or publishes nothing.
+Source-proven invalid-manager and valid-empty zero returns are explicit benign
+no-ops; malformed ranges, thread drift, partial removals, lifecycle mutation,
+capacity failures, and incomplete registrations remain visible rejections.
+Sampling copies registration state under the lifecycle lock, releases it before
+calling Unity getters, then revalidates the entire writeback. Every writeback
+must independently retain one stable four-owner actor group identified by the
+exact runtime cloth names `MC_Ribbon2`, `MC_Hair`, `MC_Ribbon`, and `MC_Coat`;
+team/component/cloth/Transform identities, both generations, hierarchy records,
+Root, and actor parent must match the first writeback. Proxy starts and lengths
+are descriptive only. The independent trajectory verifier enforces the same
+identity boundary plus the recovered hierarchy-path multiset. The Release
+build and all 27 native tests, the focused Debug secondary test, all 24 verifier
+tests, and the installed-client nonlaunching Full graphics-plus-dynamics
+preflight pass. A fresh retail session is still required to prove the repaired
+capture path; this commit is capture readiness, not recovered motion evidence.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
@@ -3756,7 +3765,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run one fresh retail session with observer commit `09131ab`. First run
+1. Run one fresh retail session with observer commit `dac972a`. First run
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat --preflight-only --no-pause`,
    then use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
