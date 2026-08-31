@@ -3563,7 +3563,7 @@ returns one inserted index, whereas the observer decoded it as a packed
 index zero from the manager-disabled zero return. None of these rows is
 admissible as hair/cloth replay, a fitted curve, or a hardcoded trajectory.
 
-EndfieldCapture commit `11ffb1a` adds the missing bounded draw-local staging.
+EndfieldCapture commit `11ffb1a` added the missing bounded draw-local staging.
 The first overview entry discovers exact descriptors and alias topology; its
 Present allocates separate M21, M27, and Default-family plans. The second entry
 copies mutable inputs immediately before each exact owner and outputs
@@ -3572,8 +3572,9 @@ authenticates the separate same-epoch M27 packet, whose retail draw precedes
 M21 in the locally complete frame. Descriptor/range drift, owner/call/epoch
 drift, alias drift, zero or unsupported resources, context contention, map
 failure, event loss, and unacknowledged publication all fail closed. Lane paths
-include the lane identity, each physical plan is capped at 384 MiB, and their
-aggregate is capped at 1 GiB. The fixed `bindings.v3.bin` ABI has explicit
+include the lane identity; that initial implementation capped each physical
+plan at 384 MiB and their aggregate at 1 GiB. The fixed `bindings.v3.bin` ABI
+has explicit
 record sizes, counts, extent, layout hash, reserved-zero checks, and no native
 container pointers. An independent Release run passed all 22 native tests five
 times (110/110), including WARP readback and failed-session collector
@@ -3632,6 +3633,33 @@ inputs, missing manifest keys, renamed/swapped/unsupported runtimes, and prove
 that absent audio and semantic artifacts remain valid for mask 5. The final
 Release suite passed all 25 tests five times, and the installed-client preflight
 validated Full mask 5 without starting the host or game.
+
+Session `20260831T174406Z` is rejected overall but closes the earlier transport
+and deferred-sequence failures: the exact-build runtime shut down cleanly, the
+Animator and two-packet Streamline lanes completed, and all 72 regular plus
+four priority graphics packages staged, drained, and published without owner
+loss or a runtime error. Its remaining failures are observer bounds rather
+than recovered render facts. The joined Default plan retained every input and
+MRT but rejected its final depth surface under the old 384-MiB lane ceiling;
+the M31 sidecar stopped on an earlier one-draw source-signature candidate; and
+the fixed three-undrained-tail throttle displaced scheduled samples while a
+large priority packet was publishing. Secondary dynamics also overflowed the
+old row store and every retained row lacked both required lifecycle-generation
+joins, so the session supplies no admissible hair/cloth trajectory.
+
+EndfieldCapture commit `09131ab` addresses those bounded collection defects
+without adding pose, position, timing, or curve substitutes. Exact-owner plans
+now use a 448-MiB per-plan ceiling under the unchanged shared 1-GiB gate; M31
+releases and retries bounded provisional one/two-draw or wrong-order candidates
+while preserving its exact same-Present source signature; and regular tail
+requests use the aggregate byte gate at their exact scheduled Presents instead
+of a three-packet count throttle. Secondary storage is bounded at 262,144 rows
+and the summary now exposes lifecycle-hook calls, successful registry
+publications/occupancy, successful joins, and fixed rejection classes. The
+Release build, all 27 native tests, and the installed-client nonlaunching Full
+graphics-plus-dynamics preflight pass. A fresh retail session is still required
+to prove the corrected M31/cadence/Default closures and to identify why the
+current process lifetime published no usable dynamics registrations.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
@@ -3728,7 +3756,7 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run one fresh retail session with observer commit `4536910`. First run
+1. Run one fresh retail session with observer commit `09131ab`. First run
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat --preflight-only --no-pause`,
    then use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
