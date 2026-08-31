@@ -21,7 +21,10 @@ SPEC.loader.exec_module(MODULE)
 def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -> None:
     directory = root / "secondary-dynamics"
     directory.mkdir(parents=True)
-    sample_count = sum(MODULE.OWNER_LENGTHS.values()) * 2 - (1 if omit_last_coat else 0)
+    expected_hierarchy_paths = MODULE.load_expected_owner_hierarchy_paths()
+    owner_counts = {owner: len(paths)
+                    for owner, paths in expected_hierarchy_paths.items()}
+    sample_count = sum(owner_counts.values()) * 2 - (1 if omit_last_coat else 0)
     window = {
         "schema": "endfieldCapture.secondaryDynamicsWindow.v4",
         "windowId": 1,
@@ -32,8 +35,10 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
         "transformScheduledCalls": 2,
         "transformCompletedCalls": 2,
         "transformWriteCalls": 2,
-        "endminfTrajectoryFourChunkCandidateCoverage": True,
-        "endminfTrajectoryFourOwnerCoverage": False,
+        "endminfTrajectoryFourChunkCandidateCoverage": False,
+        "endminfTrajectoryFourOwnerCoverage": True,
+        "endminfSourceOwnerSetUnambiguous": True,
+        "registrationSourceComplete": True,
         "registrationLifecycleJoinComplete": True,
         "effectivePostJobPoseComplete": True,
         "registrationHierarchyIdentityComplete": True,
@@ -53,6 +58,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
         "addClothHookInstalled": True,
         "removeClothHookInstalled": True,
         "addTransformHookInstalled": True,
+        "addTransformBulkHookInstalled": True,
         "removeTransformHookInstalled": True,
         "hierarchyIdentityGettersPinned": True,
         "mainWindowThreadId": 123,
@@ -72,6 +78,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
         "automaticTriggerLifecycleFailures": 0,
         "automaticTriggerCallbackQuiescent": True,
         "quiescentCleanup": True,
+        "registrationSourceComplete": True,
         "complete": True,
     }
     (directory / "summary.json").write_text(
@@ -101,13 +108,13 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
     }) + "\n", encoding="utf-8")
     with (directory / "trajectories.jsonl").open("w", encoding="utf-8") as output:
         expected_paths = MODULE.load_expected_owner_paths()
-        expected_hierarchy_paths = MODULE.load_expected_owner_hierarchy_paths()
         instance_by_path = {
             digest: 1000 + index for index, digest in enumerate(dict.fromkeys(
                 digest for paths in expected_paths.values() for digest in paths))
         }
         start = 0
-        for owner_index, (owner, length) in enumerate(MODULE.OWNER_LENGTHS.items(), 1):
+        for owner_index, owner in enumerate(MODULE.STATIC_OWNER_NAMES, 1):
+            length = owner_counts[owner]
             for writeback in (1, 2):
                 for local in range(length):
                     if omit_last_coat and owner == "Coat" and writeback == 2 and local == length - 1:
@@ -120,6 +127,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                         "transformIndex": start + local,
                         "teamId": owner_index,
                         "componentId": owner_index * 10,
+                        "componentClothInstanceMatch": True,
                         "proxyTransformStart": start,
                         "proxyTransformLength": length,
                         "endminfOwnerCandidate": owner,
@@ -133,7 +141,7 @@ def write_capture(root: Path, overflow: int = 0, omit_last_coat: bool = False) -
                         "clothTransform": f"0x{0x3000 + owner_index:x}",
                         "registeredTransform": f"0x{0x4000 + start + local:x}",
                         "liveTransform": f"0x{0x8000 + start + local:x}",
-                        "clothInstanceId": 100 + owner_index,
+                        "clothInstanceId": owner_index * 10,
                         "clothTransformInstanceId": 200 + owner_index,
                         "registeredTransformInstanceId": instance_by_path[
                             expected_paths[owner][local]],
@@ -173,7 +181,25 @@ class TrajectoryCaptureTests(unittest.TestCase):
                 report["status"],
                 "validated_four_static_owner_path_joined_post_job_trajectories")
             self.assertEqual(report["writebackCount"], 2)
-            self.assertEqual(report["sampleCount"], 252)
+            self.assertEqual(
+                report["sampleCount"],
+                2 * sum(len(paths) for paths in
+                        MODULE.load_expected_owner_hierarchy_paths().values()))
+
+    def test_proxy_range_drift_is_descriptive_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            for offset, row in enumerate(rows):
+                row["proxyTransformStart"] = 90_000 - offset
+                row["proxyTransformLength"] = -10_000 - offset
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            report = MODULE.build_report(root, minimum_writebacks=2)
+            self.assertEqual(report["writebackCount"], 2)
 
     def test_overflow_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -220,6 +246,20 @@ class TrajectoryCaptureTests(unittest.TestCase):
                                         "writebacks differ"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
+    def test_exact_runtime_owner_certification_is_required(self) -> None:
+        for field in ("registrationSourceComplete",
+                      "endminfTrajectoryFourOwnerCoverage",
+                      "endminfSourceOwnerSetUnambiguous"):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                write_capture(root)
+                path = root / "secondary-dynamics/windows.jsonl"
+                window = json.loads(path.read_text(encoding="utf-8"))
+                window[field] = False
+                path.write_text(json.dumps(window) + "\n", encoding="utf-8")
+                with self.assertRaises(MODULE.VerificationError):
+                    MODULE.build_report(root, minimum_writebacks=2)
+
     def test_trajectory_must_reach_first_loop_wrap(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -236,7 +276,8 @@ class TrajectoryCaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             write_capture(root, omit_last_coat=True)
-            with self.assertRaisesRegex(MODULE.VerificationError, "Coat"):
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "complete static owner row count"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_missing_registration_join_fails_closed(self) -> None:
@@ -281,6 +322,20 @@ class TrajectoryCaptureTests(unittest.TestCase):
                                         "identity differs"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
+    def test_component_cloth_identity_certification_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            rows[0]["componentClothInstanceMatch"] = False
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "component/cloth identity"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
     def test_degenerate_effective_quaternion_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -308,7 +363,7 @@ class TrajectoryCaptureTests(unittest.TestCase):
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
-                                        "complete team candidates"):
+                                        "hierarchy-path multiset"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_cloth_name_drift_fails_closed(self) -> None:
@@ -319,13 +374,13 @@ class TrajectoryCaptureTests(unittest.TestCase):
             rows = [json.loads(line) for line in
                     path.read_text(encoding="utf-8").splitlines()]
             for row in rows:
-                if row["proxyTransformLength"] == 6:
+                if row["clothName"] == "MC_Ribbon2":
                     row["clothName"] = "MC_Wrong"
                     row["clothNameSha256"] = MODULE.sha256_text("MC_Wrong")
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
-                                        "cloth name"):
+                                        "exact Endminf cloth owner"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_cross_owner_duplicate_instance_drift_fails_closed(self) -> None:
@@ -339,7 +394,7 @@ class TrajectoryCaptureTests(unittest.TestCase):
             changed = False
             for row in rows:
                 if (row["hierarchyPathSha256"] == target_digest and
-                        row["proxyTransformLength"] == 70):
+                        row["clothName"] == "MC_Coat"):
                     row["registeredTransformInstanceId"] += 10000
                     row["liveTransformInstanceId"] = row[
                         "registeredTransformInstanceId"]
@@ -348,7 +403,7 @@ class TrajectoryCaptureTests(unittest.TestCase):
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
-                                        "100-path/26-duplicate"):
+                                        "static hierarchy-path duplicate contract"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_registration_thread_mismatch_fails_closed(self) -> None:
@@ -383,12 +438,14 @@ class TrajectoryCaptureTests(unittest.TestCase):
             rows = [json.loads(line) for line in
                     path.read_text(encoding="utf-8").splitlines()]
             for row in rows:
-                if row["proxyTransformLength"] == 6:
+                if (row["clothName"] == "MC_Ribbon2" and
+                        row["writebackId"] == 2):
                     row["clothParentInstanceId"] = 902
+                    row["hierarchyActorParentInstanceId"] = 902
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
-                                        "share one actor parent"):
+                                        "splits the four owners"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
     def test_immutable_hierarchy_record_reuse_fails_closed(self) -> None:
@@ -420,7 +477,43 @@ class TrajectoryCaptureTests(unittest.TestCase):
             path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
                             encoding="utf-8")
             with self.assertRaisesRegex(MODULE.VerificationError,
-                                        "stale, reused, or incomplete"):
+                                        "reused or incomplete"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_second_writeback_generation_drift_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            target = next(row for row in rows if
+                          row["writebackId"] == 2 and
+                          row["clothName"] == "MC_Hair")
+            target["transformRegistrationGeneration"] += 100_000
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "identity drifted from the first writeback"):
+                MODULE.build_report(root, minimum_writebacks=2)
+
+    def test_duplicate_owner_transform_key_in_one_writeback_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_capture(root)
+            path = root / "secondary-dynamics/trajectories.jsonl"
+            rows = [json.loads(line) for line in
+                    path.read_text(encoding="utf-8").splitlines()]
+            ribbon2 = [row for row in rows if
+                       row["writebackId"] == 2 and
+                       row["clothName"] == "MC_Ribbon2"]
+            self.assertGreaterEqual(len(ribbon2), 2)
+            ribbon2[1]["transformIndex"] = ribbon2[0]["transformIndex"]
+            ribbon2[1]["registrationStart"] = ribbon2[0]["transformIndex"]
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.VerificationError,
+                                        "duplicates Ribbon2 transform index"):
                 MODULE.build_report(root, minimum_writebacks=2)
 
 

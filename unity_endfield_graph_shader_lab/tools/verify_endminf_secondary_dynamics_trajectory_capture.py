@@ -7,7 +7,7 @@ import argparse
 import hashlib
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -17,9 +17,15 @@ DEFAULT_OUTPUT = (
     REPO / "reports/assets/character_recovery"
     / "endminf_secondary_dynamics_trajectory_capture_latest.json"
 )
-OWNER_LENGTHS = {"Ribbon2": 6, "Hair": 30, "Ribbon": 20, "Coat": 70}
-STATIC_OWNER_NAMES = {owner: f"MC_{owner}" for owner in OWNER_LENGTHS}
-OWNER_STARTS = {"Ribbon2": 0, "Hair": 6, "Ribbon": 36, "Coat": 56}
+STATIC_OWNER_NAMES = {
+    "Ribbon2": "MC_Ribbon2",
+    "Hair": "MC_Hair",
+    "Ribbon": "MC_Ribbon",
+    "Coat": "MC_Coat",
+}
+OWNER_BY_STATIC_NAME = {
+    static_name: owner for owner, static_name in STATIC_OWNER_NAMES.items()
+}
 TRANSFORM_READ_CONTRACT_SHA256 = (
     "87ea60222e32d9037ef2d8968d441109c0de61933187f17e51a338361dea66b8")
 GAME_ASSEMBLY_SHA256 = (
@@ -85,7 +91,7 @@ def load_expected_owner_hierarchy_paths() -> dict[str, list[str]]:
     require(endminf.get("ownerOrder") == list(STATIC_OWNER_NAMES.values()),
             "static Endminf owner order drifted")
     entries = endminf.get("orderedEntries")
-    require(isinstance(entries, list) and len(entries) == 126,
+    require(isinstance(entries, list) and entries,
             "static Endminf transform-read entries are incomplete")
     owners = endminf.get("owners")
     require(isinstance(owners, list) and len(owners) == 4,
@@ -94,32 +100,38 @@ def load_expected_owner_hierarchy_paths() -> dict[str, list[str]]:
     output: dict[str, list[str]] = {}
     for candidate, static_owner in STATIC_OWNER_NAMES.items():
         owner_row = owner_rows.get(static_owner, {})
-        require(owner_row.get("orderedStart") == OWNER_STARTS[candidate] and
-                owner_row.get("bindingCount") == OWNER_LENGTHS[candidate] and
+        start = owner_row.get("orderedStart")
+        count = owner_row.get("bindingCount")
+        require(isinstance(start, int) and start >= 0 and
+                isinstance(count, int) and count > 0 and
                 owner_row.get("excludedOwnerRoot") == static_owner,
                 f"static {static_owner} owner range drifted")
         owner_entries = [row for row in entries
                          if row.get("owner") == static_owner]
         paths = [row.get("hierarchyPath") for row in owner_entries]
-        require(len(paths) == OWNER_LENGTHS[candidate] and
+        require(len(paths) == count and
                 all(isinstance(path, str) and path.startswith("Root/")
                     for path in paths),
                 f"static {static_owner} path vector is incomplete")
-        start = OWNER_STARTS[candidate]
         require([row.get("orderedIndex") for row in owner_entries] ==
-                list(range(start, start + OWNER_LENGTHS[candidate])) and
+                list(range(start, start + count)) and
                 [row.get("managerIndex") for row in owner_entries] ==
-                list(range(start, start + OWNER_LENGTHS[candidate])) and
+                list(range(start, start + count)) and
                 [row.get("ownerLocalIndex") for row in owner_entries] ==
-                list(range(OWNER_LENGTHS[candidate])),
+                list(range(count)),
                 f"static {static_owner} ordered index vector drifted")
         output[candidate] = paths
+    require(sum(len(paths) for paths in output.values()) == len(entries),
+            "static Endminf entries contain an unexpected owner")
     duplicates = endminf.get("duplicates", {})
-    require(duplicates.get("bindingEntries") == 126 and
-            duplicates.get("uniqueTransforms") == 100 and
-            duplicates.get("duplicateEntries") == 26 and
+    unique_path_count = len(set(
+        path for paths in output.values() for path in paths))
+    require(duplicates.get("bindingEntries") == len(entries) and
+            duplicates.get("uniqueTransforms") == unique_path_count and
+            duplicates.get("duplicateEntries") ==
+                len(entries) - unique_path_count and
             duplicates.get("preservedAsDistinctManagerEntries") is True and
-            len(set(path for paths in output.values() for path in paths)) == 100,
+            unique_path_count > 0,
             "static Endminf path duplicate contract drifted")
     return output
 
@@ -209,8 +221,10 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
                   "alwaysTeamUpdateHookInstalled", "writeTransformHookInstalled",
                   "completeMasterJobHookInstalled", "addClothHookInstalled",
                   "removeClothHookInstalled", "addTransformHookInstalled",
+                  "addTransformBulkHookInstalled",
                   "removeTransformHookInstalled",
                   "hierarchyIdentityGettersPinned",
+                  "registrationSourceComplete",
                   "quiescentCleanup",
                   "automaticTriggerCallbackQuiescent", "complete"):
         require(summary.get(field) is True,
@@ -262,10 +276,12 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
     recorded = int(window.get("transformWriteCalls", -1))
     require(scheduled > 0 and scheduled == completed == recorded,
             "scheduled, completed, and recorded transform writebacks differ")
-    require(window.get("endminfTrajectoryFourChunkCandidateCoverage") is True,
-            "window does not contain all four Endminf chunk candidates")
-    require(window.get("endminfTrajectoryFourOwnerCoverage") is not True,
-            "capture must not claim owner identity from chunk length alone")
+    require(window.get("registrationSourceComplete") is True,
+            "window does not certify its registration source")
+    require(window.get("endminfTrajectoryFourOwnerCoverage") is True,
+            "window does not certify exact four-owner coverage")
+    require(window.get("endminfSourceOwnerSetUnambiguous") is True,
+            "window does not certify an unambiguous source-owner set")
     require(int(window.get("transformWriteUnreadableCalls", -1)) == 0,
             "one or more transform writes was unreadable")
     require(int(window.get("transformSampleOverflow", -1)) == 0,
@@ -274,8 +290,7 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
 
     path = capture / "secondary-dynamics/trajectories.jsonl"
     require(path.is_file(), f"trajectory file is absent: {path}")
-    by_candidate: dict[tuple[str, int, int], dict[int, list[dict[str, Any]]]] = (
-        defaultdict(lambda: defaultdict(list)))
+    rows_by_writeback: dict[int, list[dict[str, Any]]] = defaultdict(list)
     writeback_timestamps: dict[int, int] = {}
     retained_rows = 0
     with path.open("r", encoding="utf-8") as source:
@@ -285,11 +300,12 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             row = json.loads(line)
             if int(row.get("windowId", -1)) != window_id:
                 continue
-            owner = row.get("endminfOwnerCandidate")
-            if owner not in OWNER_LENGTHS:
-                continue
-            require(int(row.get("proxyTransformLength", -1)) == OWNER_LENGTHS[owner],
-                    f"line {line_number} owner length drifted")
+            static_owner = row.get("clothName")
+            require(static_owner in OWNER_BY_STATIC_NAME,
+                    f"line {line_number} has no exact Endminf cloth owner")
+            owner = OWNER_BY_STATIC_NAME[static_owner]
+            require(row.get("endminfOwnerCandidate") == owner,
+                    f"line {line_number} runtime owner certification differs from its exact cloth name")
             finite_vector(row, "position", 3)
             finite_vector(row, "rotation", 4)
             finite_vector(row, "localPosition", 3)
@@ -312,6 +328,7 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
                         int(value, 16) != 0,
                         f"line {line_number} {pointer} is absent")
             cloth_instance_id = int(row.get("clothInstanceId", 0))
+            component_id = int(row.get("componentId", 0))
             cloth_transform_instance_id = int(
                 row.get("clothTransformInstanceId", 0))
             registered_instance_id = int(
@@ -321,6 +338,9 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
                     registered_instance_id != 0 and
                     live_instance_id == registered_instance_id,
                     f"line {line_number} live Transform identity differs from registration")
+            require(row.get("componentClothInstanceMatch") is True and
+                    component_id == cloth_instance_id,
+                    f"line {line_number} component/cloth identity is not certified")
             require(row.get("hierarchyIdentityReadable") is True,
                     f"line {line_number} hierarchy identity is unreadable")
             for digest_key in ("hierarchyPathSha256", "clothNameSha256"):
@@ -355,8 +375,7 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
             prior = writeback_timestamps.setdefault(writeback, timestamp)
             require(prior == timestamp,
                     f"writeback {writeback} has inconsistent timestamps")
-            key = (owner, int(row["teamId"]), int(row["componentId"]))
-            by_candidate[key][writeback].append(row)
+            rows_by_writeback[writeback].append(row)
             retained_rows += 1
 
     require(retained_rows == int(window.get("transformSampleCount", -1)),
@@ -373,168 +392,165 @@ def build_report(capture: Path, minimum_writebacks: int = 60) -> dict[str, Any]:
     require(timestamps[-1] >= first_loop_wrap_ns,
             "secondary-dynamics trajectory ends before the first settled loop wrap")
 
+    expected_total_rows = sum(
+        len(paths) for paths in expected_owner_hierarchy_paths.values())
+    expected_unique_paths = len(set(
+        path for paths in expected_owner_hierarchy_paths.values()
+        for path in paths))
+    baseline: dict[tuple[str, int], dict[str, Any]] | None = None
     owners: dict[str, dict[str, Any]] = {}
-    validated_rows: list[dict[str, Any]] = []
-    for owner, length in OWNER_LENGTHS.items():
-        candidates = []
-        for (candidate_owner, team_id, component_id), writebacks in by_candidate.items():
-            if candidate_owner != owner or set(writebacks) != set(ordered_writebacks):
-                continue
-            valid = True
-            chunk_start = None
-            for rows in writebacks.values():
-                if len(rows) != length:
-                    valid = False
-                    break
-                starts = {int(row["proxyTransformStart"]) for row in rows}
-                indices = sorted(int(row["transformIndex"]) for row in rows)
-                if len(starts) != 1:
-                    valid = False
-                    break
-                start = next(iter(starts))
-                if indices != list(range(start, start + length)):
-                    valid = False
-                    break
-                ordered_rows = sorted(rows, key=lambda row: int(row["transformIndex"]))
-                if ([row["hierarchyPathSha256"] for row in ordered_rows] !=
-                        expected_owner_paths[owner]):
-                    valid = False
-                    break
-                if ([row["hierarchyPath"] for row in ordered_rows] !=
-                        expected_owner_hierarchy_paths[owner]):
-                    valid = False
-                    break
-                if chunk_start is None:
-                    chunk_start = start
-                elif chunk_start != start:
-                    valid = False
-                    break
-            if valid:
-                candidates.append((team_id, component_id, chunk_start))
-        require(len(candidates) == 1,
-                f"{owner} has {len(candidates)} complete team candidates")
-        team_id, component_id, chunk_start = candidates[0]
-        require(chunk_start == OWNER_STARTS[owner],
-                f"{owner} manager range does not match the pinned contract")
-        candidate_rows = [row for rows in by_candidate[
-            (owner, team_id, component_id)].values() for row in rows]
-        cloth_processes = {row["clothProcess"] for row in candidate_rows}
-        cloth_components = {row["clothComponent"] for row in candidate_rows}
-        cloth_transforms = {row["clothTransform"] for row in candidate_rows}
-        cloth_instance_ids = {int(row["clothInstanceId"])
-                              for row in candidate_rows}
-        cloth_transform_instance_ids = {
-            int(row["clothTransformInstanceId"]) for row in candidate_rows}
-        cloth_names = {row["clothNameSha256"] for row in candidate_rows}
-        cloth_parent_instance_ids = {int(row["clothParentInstanceId"])
-                                     for row in candidate_rows}
-        hierarchy_root_instance_ids = {int(row["hierarchyRootInstanceId"])
-                                       for row in candidate_rows}
-        hierarchy_actor_parent_instance_ids = {
-            int(row["hierarchyActorParentInstanceId"])
-            for row in candidate_rows}
-        cloth_generations = {int(row["clothRegistrationGeneration"])
-                             for row in candidate_rows}
-        cloth_name_records = {int(row["clothNameRecordId"])
-                              for row in candidate_rows}
-        require(len(cloth_processes) == len(cloth_components) ==
-                len(cloth_transforms) == len(cloth_instance_ids) ==
-                len(cloth_transform_instance_ids) ==
-                len(cloth_names) == len(cloth_parent_instance_ids) ==
-                len(hierarchy_root_instance_ids) ==
-                len(hierarchy_actor_parent_instance_ids) ==
-                len(cloth_generations) == len(cloth_name_records) ==
-                1,
-                f"{owner} registration identity changes across writebacks")
-        static_owner = STATIC_OWNER_NAMES[owner]
-        require(next(iter(cloth_names)) == sha256_text(static_owner),
-                f"{owner} cloth name does not identify {static_owner}")
-        require({row["clothName"] for row in candidate_rows} == {static_owner},
-                f"{owner} cloth name text does not identify {static_owner}")
-        registered_by_index: dict[int, set[int]] = defaultdict(set)
-        generations_by_index: dict[int, set[int]] = defaultdict(set)
-        records_by_index: dict[int, set[int]] = defaultdict(set)
-        for row in candidate_rows:
-            registered_by_index[int(row["transformIndex"])].add(
-                int(row["registeredTransformInstanceId"]))
-            generations_by_index[int(row["transformIndex"])].add(
-                int(row["transformRegistrationGeneration"]))
-            records_by_index[int(row["transformIndex"])].add(
-                int(row["hierarchyIdentityRecordId"]))
-        require(all(len(values) == 1 for values in registered_by_index.values()) and
-                len({next(iter(values)) for values in
-                     registered_by_index.values()}) == length,
-                f"{owner} registered Transform identity is not stable and unique")
-        require(all(len(values) == 1 for values in generations_by_index.values()) and
-                all(len(values) == 1 for values in records_by_index.values()),
-                f"{owner} registration generation or immutable record changes across writebacks")
-        validated_rows.extend(candidate_rows)
-        owners[static_owner] = {
-            "teamId": team_id,
-            "componentId": component_id,
-            "proxyTransformStart": chunk_start,
-            "proxyTransformLength": length,
-            "sampleCount": length * len(ordered_writebacks),
-            "clothProcess": next(iter(cloth_processes)),
-            "clothComponent": next(iter(cloth_components)),
-            "clothTransform": next(iter(cloth_transforms)),
-            "clothInstanceId": next(iter(cloth_instance_ids)),
-            "clothTransformInstanceId": next(iter(cloth_transform_instance_ids)),
-            "clothNameRecordId": next(iter(cloth_name_records)),
-            "clothParentInstanceId": next(iter(cloth_parent_instance_ids)),
-            "hierarchyRootInstanceId": next(iter(hierarchy_root_instance_ids)),
-            "hierarchyActorParentInstanceId": next(
-                iter(hierarchy_actor_parent_instance_ids)),
+
+    def identity(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "teamId": int(row["teamId"]),
+            "componentId": int(row["componentId"]),
+            "clothInstanceId": int(row["clothInstanceId"]),
+            "clothTransformInstanceId": int(
+                row["clothTransformInstanceId"]),
+            "clothRegistrationGeneration": int(
+                row["clothRegistrationGeneration"]),
+            "transformRegistrationGeneration": int(
+                row["transformRegistrationGeneration"]),
+            "registeredTransformInstanceId": int(
+                row["registeredTransformInstanceId"]),
+            "hierarchyIdentityRecordId": int(
+                row["hierarchyIdentityRecordId"]),
+            "hierarchyPathSha256": row["hierarchyPathSha256"],
+            "clothNameRecordId": int(row["clothNameRecordId"]),
+            "clothNameSha256": row["clothNameSha256"],
+            "hierarchyRootInstanceId": int(
+                row["hierarchyRootInstanceId"]),
+            "hierarchyActorParentInstanceId": int(
+                row["hierarchyActorParentInstanceId"]),
+            "clothParentInstanceId": int(row["clothParentInstanceId"]),
+            "clothProcess": row["clothProcess"],
+            "clothComponent": row["clothComponent"],
+            "clothTransform": row["clothTransform"],
+            "registeredTransform": row["registeredTransform"],
         }
 
-    require(len({row["clothProcess"] for row in owners.values()}) == 4 and
-            len({row["clothComponent"] for row in owners.values()}) == 4 and
-            len({row["clothTransform"] for row in owners.values()}) == 4 and
-            len({row["clothInstanceId"] for row in owners.values()}) == 4 and
-            len({row["clothTransformInstanceId"] for row in owners.values()}) == 4,
-            "the four chunk candidates do not map to four distinct cloth owners")
-    root_instance_ids = {row["hierarchyRootInstanceId"]
-                         for row in owners.values()}
-    actor_parent_instance_ids = {row["hierarchyActorParentInstanceId"]
-                                 for row in owners.values()}
-    cloth_parent_instance_ids = {row["clothParentInstanceId"]
-                                 for row in owners.values()}
-    require(len(root_instance_ids) == 1 and
-            len(actor_parent_instance_ids) == 1 and
-            cloth_parent_instance_ids == actor_parent_instance_ids,
-            "the four cloth owners and skeleton Root do not share one actor parent")
+    for writeback in ordered_writebacks:
+        writeback_rows = rows_by_writeback[writeback]
+        require(len(writeback_rows) == expected_total_rows,
+                f"writeback {writeback} does not contain the complete static owner row count")
+        owner_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in writeback_rows:
+            owner_rows[OWNER_BY_STATIC_NAME[row["clothName"]]].append(row)
+        require(set(owner_rows) == set(STATIC_OWNER_NAMES),
+                f"writeback {writeback} does not contain exactly four cloth owners")
 
+        roots = {int(row["hierarchyRootInstanceId"])
+                 for row in writeback_rows}
+        actor_parents = {int(row["hierarchyActorParentInstanceId"])
+                         for row in writeback_rows}
+        cloth_parents = {int(row["clothParentInstanceId"])
+                         for row in writeback_rows}
+        require(len(roots) == 1 and len(actor_parents) == 1 and
+                cloth_parents == actor_parents,
+                f"writeback {writeback} splits the four owners across actor hierarchies")
+
+        current: dict[tuple[str, int], dict[str, Any]] = {}
+        owner_identities: list[tuple[int, int, int, int]] = []
+        for owner, static_owner in STATIC_OWNER_NAMES.items():
+            rows = owner_rows[owner]
+            expected_paths = expected_owner_hierarchy_paths[owner]
+            require(len(rows) == len(expected_paths),
+                    f"writeback {writeback} {owner} row count differs from the static contract")
+            require(Counter(row["hierarchyPath"] for row in rows) ==
+                    Counter(expected_paths) and
+                    Counter(row["hierarchyPathSha256"] for row in rows) ==
+                    Counter(expected_owner_paths[owner]),
+                    f"writeback {writeback} {owner} hierarchy-path multiset differs from the static contract")
+            require({row["clothName"] for row in rows} == {static_owner} and
+                    {row["clothNameSha256"] for row in rows} ==
+                        {sha256_text(static_owner)},
+                    f"writeback {writeback} {owner} exact cloth name drifted")
+
+            team_ids = {int(row["teamId"]) for row in rows}
+            component_ids = {int(row["componentId"]) for row in rows}
+            cloth_ids = {int(row["clothInstanceId"]) for row in rows}
+            cloth_generations = {
+                int(row["clothRegistrationGeneration"]) for row in rows}
+            require(len(team_ids) == len(component_ids) == len(cloth_ids) ==
+                    len(cloth_generations) == 1,
+                    f"writeback {writeback} {owner} has ambiguous cloth registration identity")
+            team_id = next(iter(team_ids))
+            component_id = next(iter(component_ids))
+            cloth_id = next(iter(cloth_ids))
+            cloth_generation = next(iter(cloth_generations))
+            owner_identities.append(
+                (team_id, component_id, cloth_id, cloth_generation))
+
+            for row in rows:
+                key = (owner, int(row["transformIndex"]))
+                require(key not in current,
+                        f"writeback {writeback} duplicates {owner} transform index {key[1]}")
+                current[key] = identity(row)
+
+            if baseline is None:
+                first = rows[0]
+                owners[static_owner] = {
+                    "teamId": team_id,
+                    "componentId": component_id,
+                    "clothInstanceId": cloth_id,
+                    "clothRegistrationGeneration": cloth_generation,
+                    "transformIndices": sorted(
+                        int(row["transformIndex"]) for row in rows),
+                    "bindingCount": len(rows),
+                    "sampleCount": len(rows) * len(ordered_writebacks),
+                    "clothProcess": first["clothProcess"],
+                    "clothComponent": first["clothComponent"],
+                    "clothTransform": first["clothTransform"],
+                    "clothTransformInstanceId": int(
+                        first["clothTransformInstanceId"]),
+                    "clothNameRecordId": int(first["clothNameRecordId"]),
+                    "clothParentInstanceId": int(
+                        first["clothParentInstanceId"]),
+                    "hierarchyRootInstanceId": int(
+                        first["hierarchyRootInstanceId"]),
+                    "hierarchyActorParentInstanceId": int(
+                        first["hierarchyActorParentInstanceId"]),
+                }
+
+        require(len({item[0] for item in owner_identities}) == 4 and
+                len({item[1] for item in owner_identities}) == 4 and
+                len({item[2] for item in owner_identities}) == 4 and
+                len({item[3] for item in owner_identities}) == 4,
+                f"writeback {writeback} does not contain four distinct owner registrations")
+        if baseline is None:
+            baseline = current
+        else:
+            require(set(current) == set(baseline),
+                    f"writeback {writeback} owner/transform identity key set drifted")
+            for key, expected_identity in baseline.items():
+                require(current[key] == expected_identity,
+                        f"writeback {writeback} {key[0]} transform {key[1]} identity drifted from the first writeback")
+
+    require(baseline is not None and len(baseline) == expected_total_rows,
+            "first-writeback identity baseline is incomplete")
     path_to_instances: dict[str, set[int]] = defaultdict(set)
     instance_to_paths: dict[int, set[str]] = defaultdict(set)
-    transform_generations: dict[int, set[int]] = defaultdict(set)
-    transform_records: dict[int, set[int]] = defaultdict(set)
-    for row in validated_rows:
-        digest = row["hierarchyPathSha256"]
-        instance_id = int(row["registeredTransformInstanceId"])
-        index = int(row["transformIndex"])
-        path_to_instances[digest].add(instance_id)
-        instance_to_paths[instance_id].add(digest)
-        transform_generations[index].add(
-            int(row["transformRegistrationGeneration"]))
-        transform_records[index].add(int(row["hierarchyIdentityRecordId"]))
-    require(len(path_to_instances) == len(instance_to_paths) == 100 and
+    transform_generations: set[int] = set()
+    transform_records: set[int] = set()
+    cloth_name_records: set[int] = set()
+    for values in baseline.values():
+        registered_instance_id = values["registeredTransformInstanceId"]
+        path_digest = values["hierarchyPathSha256"]
+        path_to_instances[path_digest].add(registered_instance_id)
+        instance_to_paths[registered_instance_id].add(path_digest)
+        transform_generations.add(values["transformRegistrationGeneration"])
+        transform_records.add(values["hierarchyIdentityRecordId"])
+        cloth_name_records.add(values["clothNameRecordId"])
+    require(len(path_to_instances) == len(instance_to_paths) ==
+            expected_unique_paths and
             all(len(values) == 1 for values in path_to_instances.values()) and
             all(len(values) == 1 for values in instance_to_paths.values()),
-            "runtime Transform identity does not preserve the 100-path/26-duplicate contract")
-    require(len(transform_generations) == 126 and
-            all(len(values) == 1 for values in transform_generations.values()) and
-            len({next(iter(values)) for values in
-                 transform_generations.values()}) == 126,
-            "runtime registration generations are stale, reused, or incomplete")
-    stable_transform_records = {next(iter(values))
-                                for values in transform_records.values()
-                                if len(values) == 1}
-    cloth_name_records = {int(row["clothNameRecordId"])
-                          for row in owners.values()}
-    require(len(transform_records) == 126 and
-            len(stable_transform_records) == 126 and
-            len(cloth_name_records) == 4 and
-            stable_transform_records.isdisjoint(cloth_name_records),
+            "runtime Transform identity does not preserve the static hierarchy-path duplicate contract")
+    require(len(transform_generations) == expected_total_rows,
+            "runtime registration generations are reused or incomplete")
+    require(len(transform_records) == expected_total_rows and
+            len(cloth_name_records) == len(STATIC_OWNER_NAMES) and
+            transform_records.isdisjoint(cloth_name_records),
             "immutable hierarchy record IDs are reused or incomplete")
 
     return {
