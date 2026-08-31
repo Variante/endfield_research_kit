@@ -3581,6 +3581,32 @@ fail-closed diagnostics. One hundred consecutive synthetic attachment
 lifecycles and five complete 22-test passes succeed; this remains capture
 readiness, not recovered renderer evidence.
 
+Session `20260830T194329Z` proves that loader repair but is still rejected
+evidence. The runtime attached and installed its hooks without a client crash,
+then the Streamline surface lane failed before the deferred sequence. The exact
+chronology is now closed: trigger Present 4967 contained one readable viewport-3
+evaluation whose evaluate token did not join its tag/constants token; Present
+4968 proved that interval had no complete packet; the first complete packet was
+prior-Present 4968 and the second was the consecutive prior-Present 4969. This
+is a bounded one-Present-deferred route, not permission to shift captured
+resources or author replacement timing. EndfieldCapture commit `e2df98a`
+admits only trigger offset 0 or that proven offset 1, stages type-13 exposure
+only after a complete packet is admitted, requires exactly one bounded
+unjoinable trigger evaluation on the offset-1 route, and revalidates the pair
+before publication. Exposure Copy/Map/Unmap is confined to the first accepted
+evaluation thread, rejects reentry and cross-device resources before copying,
+and never holds the observer mutex across D3D11 calls. The automatic collector
+uses one production/test gate for the surface pair, four two-entry exact-owner
+packets, and all 72 regular packages. Late attachment is reported honestly as
+`post-init-feature0-runtime-proof`: it leaves `initObserved=false`,
+`initCalls=0`, and strict `sequenceComplete=false`; only the no-init surface
+consumer accepts the exact later runtime proof. Initialization-argument
+consumers still require a genuinely observed `slInit`. The settled patch passes
+all 24 native tests five times, the three failure-sensitive tests 100 times
+each, the 43-case strict M27 converter suite, and the 16-case independent
+surface verifier. No usable surface, deferred-owner, or secondary-motion payload
+has yet passed a fresh retail collection gate.
+
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
@@ -3676,10 +3702,13 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run one fresh retail session with observer commit `11ffb1a`. Use
+1. Run one fresh retail session with observer commit `e2df98a`. Use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
-   omits secondary dynamics and Full graphics. Start with Endfield closed and
-   require the pre-`slInit` initialization record. Enter Endminf Character Info
+   omits secondary dynamics and Full graphics. Start with Endfield closed.
+   Accept strict `observed-slInit` only when it is genuinely retained;
+   otherwise the no-init Streamline surface consumer may use only the exact
+   `post-init-feature0-runtime-proof`, while all initialization-argument
+   consumers remain incomplete. Enter Endminf Character Info
    twice without stopping the bounded session: keep the first entry through its
    first settled overview-loop wrap to create the descriptor/topology plans,
    leave Character Info, then keep the second entry through its first settled

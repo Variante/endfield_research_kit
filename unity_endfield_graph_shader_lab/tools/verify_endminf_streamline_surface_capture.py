@@ -190,11 +190,11 @@ def audit_streamline_global(
         "observationOnly", "requested", "configured", "exactBuildValidated",
         "coreModuleLoaded", "coreModuleValidated", "dlssModuleLoaded",
         "dlssModuleValidated", "coreHooksInstalled",
-        "initHookInstalled", "initObserved",
+        "initHookInstalled",
         "dlssOptionsHookInstalled", "dlssOptionsDirectHookInstalled",
         "presentClockConfigured", "callbacksQuiescent",
         "exposureCaptureRequested", "exposureCaptureComplete",
-        "sequenceComplete",
+        "feature0RuntimeProofComplete",
     ):
         require_true(errors, f"Streamline.{key}", streamline.get(key))
     for key in ("recordsTruncated", "recordsUnreadable", "apiCallFailed",
@@ -209,35 +209,72 @@ def audit_streamline_global(
         "droppedExposureSamples",
     ):
         require_equal(errors, f"Streamline.{key}", integer(streamline.get(key)), 0)
-    require_equal(errors, "Streamline.initCalls",
-                  integer(streamline.get("initCalls")), 1)
+    evidence_mode = streamline.get("initializationEvidenceMode")
     initialization_value = streamline.get("initialization")
     initialization = (initialization_value
                       if isinstance(initialization_value, dict) else {})
-    require_equal(errors, "Streamline.initialization.result",
-                  integer(initialization.get("result")), 0)
-    require_true(errors, "Streamline.initialization.readable",
-                 initialization.get("readable"))
-    require_equal(errors, "Streamline.initialization.truncated",
-                  initialization.get("truncated"), False)
-    features = initialization.get("features")
-    if not isinstance(features, list) or 0 not in features:
-        errors.append("Streamline.initialization.features: expected DLSS feature 0")
+    if evidence_mode == "observed-slInit":
+        require_true(errors, "Streamline.initializationEvidenceComplete",
+                     streamline.get("initializationEvidenceComplete"))
+        require_equal(errors, "Streamline.postInitFeature0RuntimeProofMode",
+                      streamline.get("postInitFeature0RuntimeProofMode"), False)
+        require_true(errors, "Streamline.initObserved",
+                     streamline.get("initObserved"))
+        require_equal(errors, "Streamline.initCalls",
+                      integer(streamline.get("initCalls")), 1)
+        require_true(errors, "Streamline.sequenceComplete",
+                     streamline.get("sequenceComplete"))
+        require_equal(errors, "Streamline.initialization.result",
+                      integer(initialization.get("result")), 0)
+        require_true(errors, "Streamline.initialization.readable",
+                     initialization.get("readable"))
+        require_equal(errors, "Streamline.initialization.truncated",
+                      initialization.get("truncated"), False)
+        features = initialization.get("features")
+        if not isinstance(features, list) or 0 not in features:
+            errors.append(
+                "Streamline.initialization.features: expected DLSS feature 0")
+    elif evidence_mode == "post-init-feature0-runtime-proof":
+        require_true(errors, "Streamline.postInitFeature0RuntimeProofMode",
+                     streamline.get("postInitFeature0RuntimeProofMode"))
+        require_equal(errors, "Streamline.initializationEvidenceComplete",
+                      streamline.get("initializationEvidenceComplete"), False)
+        require_equal(errors, "Streamline.initObserved",
+                      streamline.get("initObserved"), False)
+        require_equal(errors, "Streamline.initCalls",
+                      integer(streamline.get("initCalls")), 0)
+        require_equal(errors, "Streamline.sequenceComplete",
+                      streamline.get("sequenceComplete"), False)
+    else:
+        errors.append(
+            "Streamline.initializationEvidenceMode: expected observed-slInit "
+            "or post-init-feature0-runtime-proof, found " + repr(evidence_mode))
     samples = integer(streamline.get("exposureSamples"))
     require_equal(errors, "Streamline.matchedExposureSamples",
                   integer(streamline.get("matchedExposureSamples")), samples)
-    if samples <= 0:
-        errors.append(f"Streamline.exposureSamples: expected > 0, found {samples}")
-    if integer(streamline.get("matchedTargetViewportDlssSequences")) <= 0:
-        errors.append("Streamline.matchedTargetViewportDlssSequences: expected > 0")
-    require_true(errors, "graphics summary.streamlineDlssObservationComplete",
-                 summary.get("streamlineDlssObservationComplete"))
+    require_equal(errors, "Streamline.exposureSamples", samples, 2)
+    if integer(streamline.get("exposureContextThreadId")) <= 0:
+        errors.append("Streamline.exposureContextThreadId: expected > 0")
+    require_equal(errors, "Streamline.matchedTargetViewportDlssSequences",
+                  integer(streamline.get("matchedTargetViewportDlssSequences")), 2)
+    require_true(
+        errors, "graphics summary.streamlineDlssFeature0RuntimeProofComplete",
+        summary.get("streamlineDlssFeature0RuntimeProofComplete"))
     require_true(errors, "graphics summary.streamlineDlssInitHookInstalled",
                  summary.get("streamlineDlssInitHookInstalled"))
-    require_true(errors, "graphics summary.streamlineDlssInitObserved",
-                 summary.get("streamlineDlssInitObserved"))
+    require_equal(
+        errors, "graphics summary.streamlineDlssPostInitFeature0RuntimeProofMode",
+        summary.get("streamlineDlssPostInitFeature0RuntimeProofMode"),
+        evidence_mode == "post-init-feature0-runtime-proof")
+    require_equal(errors, "graphics summary.streamlineDlssInitObserved",
+                  summary.get("streamlineDlssInitObserved"),
+                  evidence_mode == "observed-slInit")
     require_equal(errors, "graphics summary.streamlineDlssInitCalls",
-                  integer(summary.get("streamlineDlssInitCalls")), 1)
+                  integer(summary.get("streamlineDlssInitCalls")),
+                  1 if evidence_mode == "observed-slInit" else 0)
+    require_equal(errors, "graphics summary.streamlineDlssObservationComplete",
+                  summary.get("streamlineDlssObservationComplete"),
+                  evidence_mode == "observed-slInit")
     require_equal(errors, "graphics summary.streamlineDlssDroppedInitCalls",
                   integer(summary.get("streamlineDlssDroppedInitCalls")), 0)
     for key in (
@@ -298,7 +335,7 @@ def validate_exposure(
         require_true(errors, f"{label} exposure.{key}", row.get(key))
     require_equal(errors, f"{label} exposure.producerCompletionBoundary",
                   row.get("producerCompletionBoundary"),
-                  "same-command-buffer-before-tagged-staging-copy")
+                  "exact-packet-admission-before-evaluate")
     descriptor = row.get("descriptor")
     if not isinstance(descriptor, dict):
         errors.append(f"{label} exposure.descriptor: expected object")
@@ -636,6 +673,42 @@ def build_report(capture: Path) -> dict[str, Any]:
     require_equal(errors, "surface pair trigger Present",
                   integer(pair.get("triggerPresentOrdinal")),
                   integer(summary.get("graphicsSequenceTriggerPresent")))
+    first_offset = integer(pair.get("firstPacketPresentOffset"))
+    if first_offset not in (0, 1):
+        errors.append(
+            "surface pair.firstPacketPresentOffset: expected 0 or 1, found "
+            f"{first_offset}")
+    trigger_closed = pair.get(
+        "triggerPresentClosedWithoutCompleteCandidate") is True
+    require_equal(
+        errors,
+        "surface pair.triggerPresentClosedWithoutCompleteCandidate",
+        trigger_closed,
+        first_offset == 1,
+    )
+    require_true(
+        errors, "graphics summary.streamlineSurfacesFirstPacketPresentOffsetValid",
+        summary.get("streamlineSurfacesFirstPacketPresentOffsetValid"))
+    require_equal(
+        errors, "graphics summary.streamlineSurfacesFirstPacketPresentOffset",
+        integer(summary.get("streamlineSurfacesFirstPacketPresentOffset")),
+        first_offset)
+    require_equal(
+        errors,
+        "graphics summary.streamlineSurfacesTriggerPresentClosedWithoutCompleteCandidate",
+        summary.get(
+            "streamlineSurfacesTriggerPresentClosedWithoutCompleteCandidate"),
+        trigger_closed)
+    require_true(errors, "graphics summary.streamlineSurfacesScheduleComplete",
+                 summary.get("streamlineSurfacesScheduleComplete"))
+    require_true(errors, "Streamline.surfaceFirstPacketPresentOffsetValid",
+                 streamline.get("surfaceFirstPacketPresentOffsetValid"))
+    require_equal(errors, "Streamline.surfaceFirstPacketPresentOffset",
+                  integer(streamline.get("surfaceFirstPacketPresentOffset")),
+                  first_offset)
+    require_equal(errors, "Streamline.triggerIntervalUnjoinableEvaluations",
+                  integer(streamline.get(
+                      "triggerIntervalUnjoinableEvaluations")), first_offset)
 
     packet_reports = []
     packets = []
@@ -656,9 +729,9 @@ def build_report(capture: Path) -> dict[str, Any]:
     require_equal(errors, "surface pair shared Present boundary",
                   integer(first.get("closingPresentOrdinal")),
                   integer(second.get("priorPresentOrdinal")))
-    require_equal(errors, "surface pair first trigger Present",
+    require_equal(errors, "surface pair bounded first packet Present",
                   integer(first.get("priorPresentOrdinal")),
-                  integer(pair.get("triggerPresentOrdinal")))
+                  integer(pair.get("triggerPresentOrdinal")) + first_offset)
     frames = pair.get("frames")
     if not isinstance(frames, list) or len(frames) != 2:
         errors.append("surface pair.frames: expected exactly 2 rows")
