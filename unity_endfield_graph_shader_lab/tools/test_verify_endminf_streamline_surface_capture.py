@@ -67,10 +67,13 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "animatorSequenceTriggerGateMatched": True,
             "cadenceValid": True,
             "graphicsSequenceTriggerPresent": 100,
-            "streamlineDlssObservationComplete": True,
+            "streamlineDlssObservationComplete": False,
+            "streamlineDlssFeature0RuntimeProofComplete": True,
+            "streamlineDlssCoreLoadedAtObserverStart": True,
+            "streamlineDlssPostInitFeature0RuntimeProofMode": True,
             "streamlineDlssInitHookInstalled": True,
-            "streamlineDlssInitObserved": True,
-            "streamlineDlssInitCalls": 1,
+            "streamlineDlssInitObserved": False,
+            "streamlineDlssInitCalls": 0,
             "streamlineDlssDroppedInitCalls": 0,
             "streamlineSurfacesRequested": True,
             "streamlineSurfacesTriggered": True,
@@ -83,6 +86,10 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "streamlineSurfacesPublishedPackets": 2,
             "streamlineSurfacesCopyResourceCalls": 8,
             "streamlineSurfacesTriggerPresent": 100,
+            "streamlineSurfacesTriggerPresentClosedWithoutCompleteCandidate": True,
+            "streamlineSurfacesFirstPacketPresentOffsetValid": True,
+            "streamlineSurfacesFirstPacketPresentOffset": 1,
+            "streamlineSurfacesScheduleComplete": True,
             "streamlineSurfacesPeakStagingBytes": 12,
             "streamlineSurfacesSummaryWritten": True,
             "streamlineSurfacesPublishedBeforeDeferredSequence": True,
@@ -92,7 +99,7 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
         options, tokens, constants, tags, evaluates, exposures = [], [], [], [], [], []
         pair_frames = []
         for index in range(2):
-            prior = 100 + index
+            prior = 101 + index
             closing = prior + 1
             frame_index = 700 + index
             base_order = 10 + index * 10
@@ -193,7 +200,7 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
                 "descriptorReadable": True, "stagingCopyEnqueued": True,
                 "evaluationAssociated": True, "payloadReadable": True,
                 "producerCompletionBoundary":
-                    "same-command-buffer-before-tagged-staging-copy",
+                    "exact-packet-admission-before-evaluate",
             })
             packet = {
                 "schema": "endfieldCapture.streamlineSurfacePacket.v1",
@@ -223,12 +230,13 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "exactBuildValidated": True, "coreModuleLoaded": True,
             "coreModuleValidated": True, "dlssModuleLoaded": True,
             "dlssModuleValidated": True, "coreHooksInstalled": True,
-            "initHookInstalled": True, "initObserved": True,
-            "initCalls": 1, "droppedInitCalls": 0,
-            "initialization": {
-                "result": 0, "readable": True, "truncated": False,
-                "features": [0],
-            },
+            "coreModuleLoadedAtObserverStart": True,
+            "postInitFeature0RuntimeProofMode": True,
+            "initializationEvidenceMode": "post-init-feature0-runtime-proof",
+            "initializationEvidenceComplete": False,
+            "initHookInstalled": True, "initObserved": False,
+            "initCalls": 0, "droppedInitCalls": 0,
+            "initialization": {},
             "dlssOptionsHookInstalled": True,
             "dlssOptionsDirectHookInstalled": True,
             "presentClockConfigured": True, "callbacksQuiescent": True,
@@ -236,14 +244,20 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "apiCallFailed": False, "exposureCaptureRequested": True,
             "exposureCaptureComplete": True, "exposureCaptureFailed": False,
             "exposureSamples": 2, "matchedExposureSamples": 2,
-            "droppedExposureSamples": 0, "failed": False,
+            "droppedExposureSamples": 0, "exposureContextThreadId": 17,
+            "failed": False,
             "presentClockFailures": 0, "droppedFrameTokenCalls": 0,
             "droppedOptionsCalls": 0, "droppedTagCalls": 0,
             "droppedConstantsCalls": 0, "droppedEvaluateCalls": 0,
             "truncatedTagPayloads": 0, "truncatedEvaluatePayloads": 0,
             "matchedTargetViewportDlssSequences": 2,
             "rejectedTargetViewportDlssSequences": 0,
-            "pendingDlssSequences": 0, "sequenceComplete": True,
+            "pendingDlssSequences": 0,
+            "triggerIntervalUnjoinableEvaluations": 1,
+            "surfaceFirstPacketPresentOffsetValid": True,
+            "surfaceFirstPacketPresentOffset": 1,
+            "feature0RuntimeProofComplete": True,
+            "sequenceComplete": False,
             "optionsCalls": options, "frameTokenCalls": tokens,
             "constantsCalls": constants, "tagCalls": tags,
             "evaluateCalls": evaluates, "exposureSampleRecords": exposures,
@@ -256,6 +270,8 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             "surfaceCountPerPacket": 4, "copyResourceCalls": 8,
             "packetBytes": 6, "pairBytes": 12,
             "triggerPresentOrdinal": 100, "peakStagingBytes": 12,
+            "triggerPresentClosedWithoutCompleteCandidate": True,
+            "firstPacketPresentOffset": 1,
             "frames": pair_frames, "complete": True,
         }), encoding="utf-8")
 
@@ -280,6 +296,52 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             report = self.build(root)
             self.assertEqual("validated", report["status"], report["errors"])
             self.assertEqual([], report["errors"])
+
+    def test_strict_observed_init_mode_also_validates(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            summary_path = root / "graphics/summary.json"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            summary["streamlineDlssObservationComplete"] = True
+            summary["streamlineDlssCoreLoadedAtObserverStart"] = False
+            summary["streamlineDlssPostInitFeature0RuntimeProofMode"] = False
+            summary["streamlineDlssInitObserved"] = True
+            summary["streamlineDlssInitCalls"] = 1
+            summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["coreModuleLoadedAtObserverStart"] = False
+            streamline["postInitFeature0RuntimeProofMode"] = False
+            streamline["initializationEvidenceMode"] = "observed-slInit"
+            streamline["initializationEvidenceComplete"] = True
+            streamline["initObserved"] = True
+            streamline["initCalls"] = 1
+            streamline["initialization"] = {
+                "result": 0, "readable": True, "truncated": False,
+                "features": [0],
+            }
+            streamline["sequenceComplete"] = True
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+
+            report = self.build(root)
+            self.assertEqual("validated", report["status"], report["errors"])
+
+    def test_post_init_missed_between_polls_also_validates(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            summary_path = root / "graphics/summary.json"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            summary["streamlineDlssCoreLoadedAtObserverStart"] = False
+            summary_path.write_text(json.dumps(summary), encoding="utf-8")
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["coreModuleLoadedAtObserverStart"] = False
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertEqual("validated", report["status"], report["errors"])
 
     def test_graphics_proxy_does_not_claim_an_animator_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -320,6 +382,40 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             self.assertIn("surface pair consecutive frame index", text)
             self.assertIn("surface pair consecutive prior Present", text)
 
+    def test_surface_offset_and_closure_corruption_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_surfaces/metadata.json"
+            pair = json.loads(path.read_text(encoding="utf-8"))
+            pair["firstPacketPresentOffset"] = 0
+            path.write_text(json.dumps(pair), encoding="utf-8")
+            report = self.build(root)
+            text = "\n".join(report["errors"])
+            self.assertIn(
+                "surface pair.triggerPresentClosedWithoutCompleteCandidate",
+                text,
+            )
+            self.assertIn(
+                "graphics summary.streamlineSurfacesFirstPacketPresentOffset",
+                text,
+            )
+
+    def test_exposure_boundary_label_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["exposureSampleRecords"][0][
+                "producerCompletionBoundary"] = "stale-boundary-label"
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertIn(
+                "frame0 exposure.producerCompletionBoundary",
+                "\n".join(report["errors"]),
+            )
+
     def test_exposure_descriptor_and_association_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -346,21 +442,31 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             report = self.build(root)
             self.assertEqual("validated", report["status"], report["errors"])
 
-    def test_missing_initialization_identity_fails_closed(self) -> None:
+    def test_missing_initialization_evidence_mode_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.make_capture(root)
             path = root / "graphics/streamline_dlss.json"
             streamline = json.loads(path.read_text(encoding="utf-8"))
-            streamline["initObserved"] = False
-            streamline["initCalls"] = 0
-            streamline["initialization"] = {}
+            streamline["initializationEvidenceMode"] = "incomplete"
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            text = "\n".join(report["errors"])
+            self.assertIn("Streamline.initializationEvidenceMode", text)
+
+    def test_post_init_mode_cannot_claim_an_init_call(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["initObserved"] = True
+            streamline["initCalls"] = 1
             path.write_text(json.dumps(streamline), encoding="utf-8")
             report = self.build(root)
             text = "\n".join(report["errors"])
             self.assertIn("Streamline.initObserved", text)
             self.assertIn("Streamline.initCalls", text)
-            self.assertIn("Streamline.initialization.features", text)
 
     def test_overlapping_deferred_sequence_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

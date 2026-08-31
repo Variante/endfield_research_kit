@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import struct
 import sys
@@ -40,6 +41,16 @@ SKIN_FLAG_MASK = 32
 SKIN_FLAG_REGISTER_OFFSET = 4
 SKIN_FLAG_LANE = "w"
 SKIN_RECORD_STRIDE_FLOAT4 = 16
+TERRAIN_SELECTED_FRAME_SCHEMA = (
+    "endfield.endminf-m27-terrain-profile-selected-frame.v1")
+TERRAIN_PROFILE_CB_SLOT = 4
+TERRAIN_PROFILE_REGISTER = 0
+TERRAIN_PROFILE_LANE = "w"
+TERRAIN_PROFILE_LANE_BYTE_OFFSET = 12
+# RegisterFromTerrain/UpdateTerrainProfile publish index + 1 through a float.
+# 2^24 is the first integer that cannot distinguish every adjacent uint in
+# IEEE-754 binary32, so the source publisher admits 0..2^24-1 only.
+TERRAIN_PROFILE_MAX_EXACT_PUBLISHED = 16_777_215
 VERTEX_SKIN_BUFFER_BYTES = 8_413_184
 VERTEX_SKIN_BUFFER_ELEMENTS = 525_824
 VERTEX_SKIN_VIEW_DIMENSION = 1
@@ -798,6 +809,126 @@ def _extract_b2(
     return control, row
 
 
+def _extract_terrain_profile_b4(
+        draw: dict[str, Any], records: list[dict[str, Any]],
+        resources_path: Path, resources_artifact_sha256: str,
+        synchronized_draw_id: str) -> dict[str, Any]:
+    """Authenticate retail PS b4 c0.w without exporting its captured buffer."""
+    rows = draw.get("constantBuffers")
+    _require(isinstance(rows, list),
+             "exact M27 constant-buffer rows are missing")
+    binding = _one(
+        rows,
+        lambda row: row.get("stage") == 4 and
+        row.get("slot") == TERRAIN_PROFILE_CB_SLOT,
+        "PS b4 row")
+    buffer_id = binding.get("bufferId")
+    first_constant = binding.get("firstConstant")
+    num_constants = binding.get("numConstants")
+    captured_constants = binding.get("capturedConstants")
+    _require(_positive_int(buffer_id) and
+             _is_int(first_constant) and first_constant >= 0 and
+             _positive_int(num_constants) and
+             _positive_int(captured_constants) and
+             binding.get("rangeValid") is True and
+             binding.get("metadataValid") is True,
+             "exact M27 PS b4 buffer/range metadata is invalid")
+    prefix = _constant_bytes(binding, "PS b4")
+    _require(captured_constants >= 1 and len(prefix) >= 16,
+             "exact M27 PS b4 captured prefix is incomplete")
+
+    capture = _one(
+        records,
+        lambda row: row.get("captureKind") == 2 and
+        row.get("stage") == 4 and
+        row.get("slot") == TERRAIN_PROFILE_CB_SLOT and
+        row.get("objectId") == buffer_id,
+        "captured PS b4 buffer")
+    _require(capture.get("deferredCopyPhase") == BEFORE_OWNER_PHASE and
+             capture.get("deferredOwner") == draw.get("deferredOwner") and
+             capture.get("deferredOwnerOccurrence") ==
+                draw.get("deferredOwnerOccurrence") and
+             capture.get("deferredUnifiedCallOrdinal") ==
+                draw.get("unifiedCallOrdinal") and
+             capture.get("deferredPresentEpoch") == draw.get("presentEpoch"),
+             "exact M27 PS b4 capture is not from the selected owner call")
+    _require(capture.get("bindingFirstConstant") == first_constant and
+             capture.get("bindingNumConstants") == num_constants,
+             "exact M27 PS b4 selected range disagrees with the draw")
+    byte_size = capture.get("byteSize")
+    blob_offset = capture.get("blobOffset")
+    blob_bytes = capture.get("blobBytes")
+    _require(_positive_int(byte_size) and byte_size % 16 == 0 and
+             _is_int(blob_offset) and blob_offset >= 0 and
+             blob_bytes == byte_size and
+             capture.get("requestedBytes") == byte_size,
+             "exact M27 PS b4 staged buffer is incomplete")
+    range_offset_in_buffer = first_constant * 16
+    range_bytes = num_constants * 16
+    _require(range_offset_in_buffer <= byte_size and
+             range_bytes <= byte_size - range_offset_in_buffer,
+             "exact M27 PS b4 selected range exceeds its staged buffer")
+
+    word_offset = (blob_offset + range_offset_in_buffer +
+                   TERRAIN_PROFILE_LANE_BYTE_OFFSET)
+    staged_word = _read_slice(resources_path, word_offset, 4)
+    prefix_word = prefix[
+        TERRAIN_PROFILE_LANE_BYTE_OFFSET:
+        TERRAIN_PROFILE_LANE_BYTE_OFFSET + 4]
+    _require(staged_word == prefix_word,
+             "exact M27 PS b4 c0.w draw prefix and staged buffer disagree")
+    raw_word = struct.unpack("<I", staged_word)[0]
+    exact_float = struct.unpack("<f", staged_word)[0]
+    _require(math.isfinite(exact_float),
+             "exact M27 PS b4 terrain profile scalar is non-finite")
+    _require(exact_float.is_integer(),
+             "exact M27 PS b4 terrain profile scalar is non-integral")
+    published_scalar = int(exact_float)
+    _require(0 <= published_scalar <= TERRAIN_PROFILE_MAX_EXACT_PUBLISHED,
+             "exact M27 PS b4 terrain profile scalar is outside the source "
+             "publisher range")
+    canonical_word = struct.unpack(
+        "<I", struct.pack("<f", float(published_scalar)))[0]
+    _require(raw_word == canonical_word,
+             "exact M27 PS b4 terrain profile scalar is not a canonical exact "
+             "published uint")
+
+    buffer_sha256 = _sha256_slice(resources_path, blob_offset, blob_bytes)
+    selected_range_sha256 = _sha256_slice(
+        resources_path, blob_offset + range_offset_in_buffer, range_bytes)
+    provenance = {
+        "schema": TERRAIN_SELECTED_FRAME_SCHEMA,
+        "synchronizedDrawId": synchronized_draw_id,
+        "stage": 4,
+        "slot": TERRAIN_PROFILE_CB_SLOT,
+        "firstConstant": first_constant,
+        "numConstants": num_constants,
+        "rawWord": raw_word,
+        "resourcesArtifactSha256": resources_artifact_sha256,
+        "bufferPayloadSha256": buffer_sha256,
+        "selectedRangeSha256": selected_range_sha256,
+    }
+    provenance_sha256 = hashlib.sha256(json.dumps(
+        provenance, sort_keys=True, separators=(",", ":"))
+        .encode("utf-8")).hexdigest()
+    return {
+        "schema": TERRAIN_SELECTED_FRAME_SCHEMA,
+        "status": "draw_local_selected_frame_value_authenticated",
+        "constantBufferSlot": TERRAIN_PROFILE_CB_SLOT,
+        "constantRegister": TERRAIN_PROFILE_REGISTER,
+        "lane": TERRAIN_PROFILE_LANE,
+        "c0wRawWord": raw_word,
+        "exactFloat": exact_float,
+        "publishedScalar": published_scalar,
+        "resourcesArtifactSha256": resources_artifact_sha256,
+        "bufferPayloadSha256": buffer_sha256,
+        "selectedRangeSha256": selected_range_sha256,
+        "provenanceSha256": provenance_sha256,
+        "observedFromActualDraw": True,
+        "synchronizedDrawId": synchronized_draw_id,
+    }
+
+
 def _extract_ia(
         draw: dict[str, Any], records: list[dict[str, Any]], resources_path: Path,
         synchronized_draw_id: str) -> dict[str, Any]:
@@ -1107,13 +1238,16 @@ def build_observation(session_root: Path) -> dict[str, Any]:
     shader = _authenticate_shaders(root, artifacts, draw)
     ia = _extract_ia(draw, resource_records, resources_path, synchronized_draw_id)
     skin_control, b2 = _extract_b2(draw, synchronized_draw_id)
+    resources_relative = (Path(relative).parent / "resources.bin").as_posix()
+    terrain_profile = _extract_terrain_profile_b4(
+        draw, resource_records, resources_path,
+        artifacts[resources_relative]["sha256"], synchronized_draw_id)
     vertex_t0 = _extract_vertex_t0(
         draw, resource_records, resources_path, synchronized_draw_id)
     pipeline = _extract_pipeline(draw)
     textures = _extract_textures(draw, resource_records, resources_path)
 
     frame_artifact = _artifact(artifacts, relative)
-    resources_relative = (Path(relative).parent / "resources.bin").as_posix()
     unresolved = [
         {
             "fields": [
@@ -1138,7 +1272,7 @@ def build_observation(session_root: Path) -> dict[str, Any]:
         {
             "fields": [
                 "constantBuffers[0]", "constantBuffers[1]",
-                "constantBuffers[3]", "constantBuffers[4]",
+                "constantBuffers[3]",
                 "constantBuffers[*].logicalName",
                 "constantBuffers[*].producer", "publishers",
             ],
@@ -1198,6 +1332,7 @@ def build_observation(session_root: Path) -> dict[str, Any]:
         "vertexSkinningControl": skin_control,
         "vertexResources": [vertex_t0],
         "constantBuffers": [b2],
+        "terrainSubsurfaceSelectedFrame": terrain_profile,
         "textures": textures,
         **pipeline,
         "unresolved": unresolved,

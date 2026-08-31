@@ -108,7 +108,11 @@ class PackageFixture:
         ia_blob[2000:4160] = struct.pack("<" + "H" * len(indices), *indices)
         t0_blob = bytes(range(64))
         texture_blobs = [bytes([slot + 1]) * 16 for slot in range(4)]
-        payload = bytes(ia_blob) + t0_blob + b"".join(texture_blobs)
+        terrain_profile_buffer = bytearray(64)
+        struct.pack_into("<f", terrain_profile_buffer, 16 + 12, 2.0)
+        terrain_profile_offset = 4160 + 64 + 4 * 16
+        payload = (bytes(ia_blob) + t0_blob + b"".join(texture_blobs) +
+                   bytes(terrain_profile_buffer))
         self.resources_path.parent.mkdir(parents=True, exist_ok=True)
         self.resources_path.write_bytes(payload)
 
@@ -134,6 +138,11 @@ class PackageFixture:
                            requested_bytes=4160),
             self._resource(2, 5000, 4, 2, 65536, 0, 4160,
                            requested_bytes=4160),
+            self._resource(
+                2, 6000, 4, MODULE.TERRAIN_PROFILE_CB_SLOT,
+                len(terrain_profile_buffer), terrain_profile_offset,
+                len(terrain_profile_buffer), binding_first_constant=1,
+                binding_num_constants=1),
         ])
         for slot, texture_format in enumerate((26, 24, 24, 24, 29)):
             selected.append(self._resource(
@@ -154,6 +163,10 @@ class PackageFixture:
         constant_buffers = [
             self._cb(0, 2, 5000, 104, vs_prefix),
             self._cb(4, 2, 5000, 16, ps_prefix),
+            self._cb(
+                4, MODULE.TERRAIN_PROFILE_CB_SLOT, 6000, 1,
+                bytes(12) + struct.pack("<f", 2.0),
+                first_constant=1, num_constants=1),
         ]
         resources = [
             {"objectId": 2000, "viewId": 2001, "bound": True,
@@ -279,6 +292,8 @@ class PackageFixture:
             "width": values.get("width", 0), "height": values.get("height", 0),
             "format": values.get("format_value", 0),
             "viewFormat": values.get("view_format", 0), "subresource": 0,
+            "bindingFirstConstant": values.get("binding_first_constant", 0),
+            "bindingNumConstants": values.get("binding_num_constants", 0),
             "stride": values.get("stride", 0),
             "byteOffset": values.get("byte_offset", 0),
             "requestedBytes": values.get("requested_bytes", byte_size),
@@ -342,10 +357,11 @@ class PackageFixture:
 
     @staticmethod
     def _cb(stage: int, slot: int, buffer_id: int, count: int,
-            payload: bytes) -> dict[str, object]:
+            payload: bytes, *, first_constant: int = 123,
+            num_constants: int = 4096) -> dict[str, object]:
         return {
             "stage": stage, "slot": slot, "bufferId": buffer_id,
-            "firstConstant": 123, "numConstants": 4096,
+            "firstConstant": first_constant, "numConstants": num_constants,
             "capturedConstants": count, "rangeValid": True,
             "metadataValid": True, "truncated": True,
             "dataHex": payload.hex(),
@@ -386,6 +402,33 @@ class PackageFixture:
         _write_json(self.frame_path, frame)
         self._write_bindings(frame)
         self.rebuild_inventory()
+
+    def set_terrain_profile_word(
+            self, raw_word: int, *, update_prefix: bool = True,
+            update_staged_buffer: bool = True) -> None:
+        frame = self.load_frame()
+        binding = next(
+            row for row in frame["drawRecords"][0]["constantBuffers"]
+            if row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        capture = next(
+            row for row in frame["selectedResourceRecords"]
+            if row["captureKind"] == 2 and row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        if update_prefix:
+            prefix = bytearray.fromhex(binding["dataHex"])
+            struct.pack_into("<I", prefix,
+                             MODULE.TERRAIN_PROFILE_LANE_BYTE_OFFSET,
+                             raw_word)
+            binding["dataHex"] = prefix.hex()
+        if update_staged_buffer:
+            payload = bytearray(self.resources_path.read_bytes())
+            word_offset = (
+                capture["blobOffset"] + binding["firstConstant"] * 16 +
+                MODULE.TERRAIN_PROFILE_LANE_BYTE_OFFSET)
+            struct.pack_into("<I", payload, word_offset, raw_word)
+            self.resources_path.write_bytes(payload)
+        self.save_frame(frame)
 
     def rebuild_inventory(self) -> None:
         inventory_path = self.root / "collected/inventory.json"
@@ -430,6 +473,24 @@ class ConverterTests(unittest.TestCase):
         self.assertNotIn("sourceMeshSkinRows", result["vertexSkinningControl"])
         self.assertNotIn("renderer", result)
         self.assertNotIn("publishers", result)
+        terrain = result["terrainSubsurfaceSelectedFrame"]
+        self.assertEqual(terrain["schema"],
+                         MODULE.TERRAIN_SELECTED_FRAME_SCHEMA)
+        self.assertEqual(terrain["status"],
+                         "draw_local_selected_frame_value_authenticated")
+        self.assertEqual(terrain["constantBufferSlot"], 4)
+        self.assertEqual(terrain["constantRegister"], 0)
+        self.assertEqual(terrain["lane"], "w")
+        self.assertEqual(terrain["c0wRawWord"], 0x40000000)
+        self.assertEqual(terrain["exactFloat"], 2.0)
+        self.assertEqual(terrain["publishedScalar"], 2)
+        for field in (
+                "resourcesArtifactSha256", "bufferPayloadSha256",
+                "selectedRangeSha256", "provenanceSha256"):
+            self.assertRegex(terrain[field], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            terrain["synchronizedDrawId"],
+            result["authentication"]["synchronizedDrawId"])
         serialized = json.dumps(result)
         self.assertNotIn("dataHex", serialized)
         self.assertNotIn('"capturedPacketArrays":', serialized)
@@ -770,6 +831,147 @@ class ConverterTests(unittest.TestCase):
         self.fixture.save_frame(frame)
         with self.assertRaisesRegex(MODULE.ConversionError,
                                     "resourceSelectionTruncated=true"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_requires_exact_pixel_b4_binding(self) -> None:
+        original = self.fixture.load_frame()
+        for field, invalid in (("stage", 0), ("slot", 5)):
+            with self.subTest(field=field):
+                frame = copy.deepcopy(original)
+                binding = next(
+                    row for row in frame["drawRecords"][0]["constantBuffers"]
+                    if row["stage"] == 4 and
+                    row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+                capture = next(
+                    row for row in frame["selectedResourceRecords"]
+                    if row["captureKind"] == 2 and row["stage"] == 4 and
+                    row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+                binding[field] = invalid
+                capture[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "PS b4 row"):
+                    MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_selected_range_must_match_draw(self) -> None:
+        original = self.fixture.load_frame()
+        for field, invalid in (
+                ("bindingFirstConstant", 0),
+                ("bindingNumConstants", 2)):
+            with self.subTest(field=field):
+                frame = copy.deepcopy(original)
+                capture = next(
+                    row for row in frame["selectedResourceRecords"]
+                    if row["captureKind"] == 2 and row["stage"] == 4 and
+                    row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+                capture[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(MODULE.ConversionError,
+                                            "selected range disagrees"):
+                    MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_range_must_fit_staged_buffer(self) -> None:
+        frame = self.fixture.load_frame()
+        binding = next(
+            row for row in frame["drawRecords"][0]["constantBuffers"]
+            if row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        capture = next(
+            row for row in frame["selectedResourceRecords"]
+            if row["captureKind"] == 2 and row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        binding["firstConstant"] = 4
+        capture["bindingFirstConstant"] = 4
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "selected range exceeds"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_incomplete_prefix_is_rejected(self) -> None:
+        frame = self.fixture.load_frame()
+        binding = next(
+            row for row in frame["drawRecords"][0]["constantBuffers"]
+            if row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        binding["capturedConstants"] = 0
+        binding["dataHex"] = ""
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "buffer/range metadata is invalid"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_incomplete_staged_bytes_are_rejected(self) -> None:
+        frame = self.fixture.load_frame()
+        capture = next(
+            row for row in frame["selectedResourceRecords"]
+            if row["captureKind"] == 2 and row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        capture["blobBytes"] -= 1
+        self.fixture.save_frame(frame)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "exact owner-local proof"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_owner_timing_must_match_selected_draw(self) -> None:
+        original = self.fixture.load_frame()
+        cases = (
+            ("deferredOwner", 2),
+            ("deferredCopyPhase", MODULE.AFTER_OWNER_PHASE),
+            ("deferredOwnerOccurrence", 2),
+            ("deferredUnifiedCallOrdinal", 701),
+            ("deferredPresentEpoch", 71),
+        )
+        for field, invalid in cases:
+            with self.subTest(field=field):
+                frame = copy.deepcopy(original)
+                capture = next(
+                    row for row in frame["selectedResourceRecords"]
+                    if row["captureKind"] == 2 and row["stage"] == 4 and
+                    row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+                capture[field] = invalid
+                self.fixture.save_frame(frame)
+                with self.assertRaisesRegex(
+                        MODULE.ConversionError,
+                        "exact owner-local proof|wrong owner phase"):
+                    MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_scalar_fails_closed(self) -> None:
+        cases = (
+            (0x7FC00000, "non-finite"),
+            (0x7F800000, "non-finite"),
+            (struct.unpack("<I", struct.pack("<f", 1.5))[0],
+             "non-integral"),
+            (struct.unpack("<I", struct.pack("<f", -1.0))[0],
+             "outside the source publisher range"),
+            (struct.unpack("<I", struct.pack("<f", 16_777_216.0))[0],
+             "outside the source publisher range"),
+            (0x80000000, "not a canonical exact published uint"),
+        )
+        for raw_word, error in cases:
+            with self.subTest(raw_word=f"0x{raw_word:08x}"):
+                self.fixture.set_terrain_profile_word(raw_word)
+                with self.assertRaisesRegex(MODULE.ConversionError, error):
+                    MODULE.build_observation(self.fixture.root)
+                self.fixture.set_terrain_profile_word(0x40000000)
+
+    def test_terrain_profile_prefix_and_staged_word_must_match(self) -> None:
+        self.fixture.set_terrain_profile_word(
+            0x00000000, update_prefix=False)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "draw prefix and staged buffer disagree"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_terrain_profile_artifact_hash_mismatch_is_rejected(self) -> None:
+        payload = bytearray(self.fixture.resources_path.read_bytes())
+        frame = self.fixture.load_frame()
+        capture = next(
+            row for row in frame["selectedResourceRecords"]
+            if row["captureKind"] == 2 and row["stage"] == 4 and
+            row["slot"] == MODULE.TERRAIN_PROFILE_CB_SLOT)
+        payload[capture["blobOffset"]] ^= 1
+        self.fixture.resources_path.write_bytes(payload)
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "SHA-256 mismatch"):
             MODULE.build_observation(self.fixture.root)
 
     def test_ambiguous_exact_draw_is_rejected(self) -> None:
