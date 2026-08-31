@@ -74,6 +74,19 @@ proxy; the largest verified linked frame is now below 93 KiB and all 21 native
 tests pass. This repairs capture readiness only; it does not make the failed
 session usable or provide missing graphics/secondary-motion evidence.
 
+Streamline viewport values are opaque per-process lifetime handles, not stable
+Endminf identifiers. Session `20260831T004510Z` supplied two otherwise exact
+surface joins on viewport 5; the former viewport-3 constant rejected them
+before staging. EndfieldCapture now binds the first exact scheduled packet's
+viewport at runtime, requires the consecutive packet, exposure samples,
+deferred-route provenance, observer, sidecar, and published summaries to retain
+that identity, and rejects ambiguous or cross-viewport evidence. Full capture
+also exposes the sidecar's immutable trigger Present so repeated later
+body/Uber observations cannot move the graphics/Animator join. Release build,
+all 26 native tests, repeated evidence-shaped viewport-3/viewport-5 cases, and
+the nonlaunching installed-client preflight pass; a fresh retail collection is
+still required before the repaired path supplies usable visual evidence.
+
 The same session proved why the secondary observer recorded 32,097
 `crossFrame=true` cloth updates but no writes. That branch bypasses the former
 `WriteTransform`/`CompleteMasterJob` hooks and publishes through
