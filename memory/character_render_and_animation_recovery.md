@@ -3607,6 +3607,19 @@ each, the 43-case strict M27 converter suite, and the 16-case independent
 surface verifier. No usable surface, deferred-owner, or secondary-motion payload
 has yet passed a fresh retail collection gate.
 
+EndfieldCapture commit `4536910` hardens the maintained recapture launcher
+without changing that evidence boundary. Its dedicated `endminf`/Full profile
+selects only graphics plus secondary dynamics: audio's manual window and
+gameplay-semantics completeness are unrelated to this visual gate and made
+otherwise valid sessions uncollectable. Non-launching `--preflight-only` now
+gates the exact installed executable, GameAssembly, metadata, provider set,
+and runtime flavor; the latter is classified from a bounded offline PE export
+table rather than a filename. Synthetic tests reject missing or changed native
+inputs, missing manifest keys, renamed/swapped/unsupported runtimes, and prove
+that absent audio and semantic artifacts remain valid for mask 5. The final
+Release suite passed all 25 tests five times, and the installed-client preflight
+validated Full mask 5 without starting the host or game.
+
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
@@ -3702,7 +3715,9 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run one fresh retail session with observer commit `e2df98a`. Use
+1. Run one fresh retail session with observer commit `4536910`. First run
+   `tools\EndfieldCapture\StartEndminfOverviewCapture.bat --preflight-only --no-pause`,
+   then use
    `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
    omits secondary dynamics and Full graphics. Start with Endfield closed.
    Accept strict `observed-slInit` only when it is genuinely retained;
