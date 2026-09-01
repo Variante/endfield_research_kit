@@ -4,9 +4,9 @@
 The contract closes the managed/native ABI, ordered job construction, job
 payload layouts, exact generic scheduling identities, the unpatched
 CalcLineNormalTangent managed-worker traversal/equations, and the generated
-BurstDirectCall wrapper plus its managed-fallback equivalence.  The selected
-runtime Burst pointer and IFix patch state remain open; no capture samples,
-fitted curves, or replay data are inputs.
+BurstDirectCall wrapper plus its managed-fallback equivalence and exact Burst
+target.  The selected runtime branch and IFix patch state remain open; no
+capture samples, fitted curves, or replay data are inputs.
 """
 
 from __future__ import annotations
@@ -28,11 +28,13 @@ EVIDENCE_ROOT = LAB_ROOT / "scratch/character_recovery/secondary_dynamics_owner"
 DEFAULT_OUTPUT = DATA_ROOT / "secondary_dynamics_post_proxy_contract.json"
 DEFAULT_METADATA_EVIDENCE = EVIDENCE_ROOT / "post_proxy_metadata.json"
 DEFAULT_NATIVE_EVIDENCE = EVIDENCE_ROOT / "post_proxy_native.json"
+DEFAULT_BURST_CONTRACT = DATA_ROOT / "secondary_dynamics_burst_export_contract.json"
 DEFAULT_GAME_ASSEMBLY: Path | None = None
 DEFAULT_METADATA: Path | None = None
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+EXPECTED_LIB_BURST_SHA256 = "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
 EXPECTED_METADATA_EVIDENCE_SHA256 = "d1533b659e33a2e561c444cb4aec9a929dfac355a8d3409748c009e9c277a295"
 EXPECTED_NATIVE_EVIDENCE_SHA256 = "3bad91ae59e34b7abc50b5f88aafb77ea9e2c1395fba1346cc503deafb982b5d"
 EXPECTED_CODE_REGISTRATION = 0x18B9217D0
@@ -594,6 +596,53 @@ def _dependency(path: Path, expected_hash: str, schema: str) -> dict[str, Any]:
     return {**source, "schema": schema, "status": payload.get("status")}
 
 
+def _calc_line_burst_dependency(path: Path) -> dict[str, Any]:
+    """Validate the sibling contract's exact CalcLine target, not its file hash."""
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if (payload.get("schema") != "endfield.charinfo.secondary-dynamics-burst-export.v1" or
+            payload.get("status") != "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved"):
+        raise ContractError("CalcLine Burst dependency schema/status drift")
+    gate = payload.get("native_gate", {})
+    expected_gate = {
+        "gameAssembly": EXPECTED_GAME_ASSEMBLY_SHA256,
+        "globalMetadata": EXPECTED_METADATA_SHA256,
+        "libBurstGenerated": EXPECTED_LIB_BURST_SHA256,
+    }
+    for key, expected in expected_gate.items():
+        if gate.get(key, {}).get("sha256") != expected:
+            raise ContractError(f"CalcLine Burst dependency {key} gate drift")
+    target = payload.get("targets", {}).get("calcLineNormalTangent", {})
+    expected = {
+        "status": "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+        "candidateHash": "7342567c29c434b5b924be51bd8e34b7",
+        "functionPointerSlotRva": "0x3c57b0",
+    }
+    for key, value in expected.items():
+        if target.get(key) != value:
+            raise ContractError(f"CalcLine Burst dependency target {key} drift")
+    if (target.get("export", {}).get("bodySha256") !=
+            "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328"):
+        raise ContractError("CalcLine Burst dependency export body drift")
+    variants = {row.get("cpuVariant"): row for row in target.get("variants", [])}
+    expected_cores = {
+        "x64_sse2": ("0xf4100", "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824"),
+        "avx2": ("0x284c50", "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c"),
+    }
+    for cpu_variant, (rva, sha256) in expected_cores.items():
+        core = variants.get(cpu_variant, {}).get("solverCore", {})
+        if (core.get("rva"), core.get("sha256")) != (rva, sha256):
+            raise ContractError(f"CalcLine Burst dependency {cpu_variant} core drift")
+    return {
+        "repoPath": _repo_path(path),
+        "size": path.stat().st_size,
+        "sha256": _sha(path),
+        "schema": payload["schema"],
+        "status": payload["status"],
+        "target": target,
+    }
+
+
 def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                    metadata: Path | None = DEFAULT_METADATA,
                    metadata_evidence: Path = DEFAULT_METADATA_EVIDENCE,
@@ -858,11 +907,12 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "transformWriteback": _dependency(DATA_ROOT / "secondary_dynamics_transform_writeback_contract.json",
                                           "f3e44da89e706cf5a43e625f774196091790b5d548ab720d35b0d8ce77c520c8",
                                           "endfield.charinfo.secondary-dynamics-transform-writeback.v1"),
+        "calcLineBurstExport": _calc_line_burst_dependency(DEFAULT_BURST_CONTRACT),
     }
     sources["dependencies"] = dependencies
     return {
         "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-        "status": "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
+        "status": "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
         "manager_schedule_closed": True,
         "managed_job_payload_layout_closed": True,
         "generic_methodspec_identities_closed": True,
@@ -875,7 +925,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "calc_line_data_layout_closed": True,
         "calc_line_kernel_wrapper_route_recovered": True,
         "calc_line_directcall_managed_fallback_equivalence_closed": True,
-        "calc_line_burst_function_pointer_target_closed": False,
+        "calc_line_burst_function_pointer_target_closed": True,
         "create_list_kernel_numerics_recovered": False,
         "calc_line_normal_tangent_numerics_recovered": False,
         "selected_calc_line_execution_route_closed": False,
@@ -1033,7 +1083,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                 "baseLineData", "index",
             ],
             "unusedParameters": ["parentIndices"],
-            "numericBoundary": "The pinned unpatched managed-worker traversal/equations and the generated DirectCall managed fallback are closed. Overall runtime numerics remain fail-closed until the selected Burst function pointer, cross-frame/managed route, and FromToRotation IFix patch state are proven.",
+            "numericBoundary": "The pinned unpatched managed-worker traversal/equations, generated DirectCall managed fallback, and exact dual-CPU Burst target are closed. Overall runtime numerics remain fail-closed until the selected Burst/managed branch, cross-frame/managed route, and managed-route FromToRotation IFix patch state are proven.",
         },
         "calcLineDirectCallRoute": {
             "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",
@@ -1095,24 +1145,24 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     "directCallFallbackFrameBytes": "0x7b0",
                     "numericConstantDifferenceObserved": False,
                 },
-                "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. This comparison does not identify or prove the body behind a non-null Burst function pointer.",
+                "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. The sibling Burst contract separately identifies the non-null target; this comparison does not prove which route was selected at runtime.",
             },
             "selectedRuntimeRoute": "unresolved",
-            "burstFunctionPointerTarget": "unresolved",
+            "burstFunctionPointerTarget": dependencies["calcLineBurstExport"]["target"],
         },
         "routeEvidence": {"coldSpans": cold,
-                          "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine DirectCall branch conditions are statically closed, but their runtime values and the returned Burst target are not."},
+                          "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, but BurstCompiler.get_IsEnabled and the returned-pointer null/non-null branch remain unobserved runtime values."},
         "workerTargets": workers,
         "nextDisassemblyTargets": [],
         "remainingRuntimeEvidence": [
-            {"boundary": "CalcLine BurstDirectCall selected target",
-             "reason": "method 384854 and the managed fallback are closed, but a non-null GetILPPMethodFunctionPointer2 result is an unresolved runtime pointer"},
+            {"boundary": "CalcLine BurstDirectCall selected route",
+             "reason": "method 384854, its managed fallback, and the exact non-null Burst target are closed, but BurstCompiler.get_IsEnabled and GetILPPMethodFunctionPointer2 null/non-null selection remain unobserved runtime values"},
             {"boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
              "reason": "the unpatched body is closed; runtime IFix selection remains external state"},
         ],
         "nonClaims": [
             "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-            "The DirectCall managed fallback equivalence does not establish that retail selected it instead of the unresolved non-null Burst function pointer.",
+            "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
             "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
             "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
             "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",

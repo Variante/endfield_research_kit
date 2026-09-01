@@ -26,7 +26,7 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         payload = self.payload
         self.assertEqual(
             payload["status"],
-            "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
+            "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
         )
         self.assertTrue(payload["manager_schedule_closed"])
         self.assertTrue(payload["managed_job_payload_layout_closed"])
@@ -39,7 +39,7 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertTrue(payload["calc_line_data_layout_closed"])
         self.assertTrue(payload["calc_line_kernel_wrapper_route_recovered"])
         self.assertTrue(payload["calc_line_directcall_managed_fallback_equivalence_closed"])
-        self.assertFalse(payload["calc_line_burst_function_pointer_target_closed"])
+        self.assertTrue(payload["calc_line_burst_function_pointer_target_closed"])
         self.assertFalse(payload["create_list_kernel_numerics_recovered"])
         self.assertFalse(payload["calc_line_normal_tangent_numerics_recovered"])
         self.assertFalse(payload["selected_calc_line_execution_route_closed"])
@@ -115,7 +115,16 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual(selection["getFunctionPointer"]["returnedPointer"],
                          "unresolved runtime value")
         self.assertEqual(route["selectedRuntimeRoute"], "unresolved")
-        self.assertEqual(route["burstFunctionPointerTarget"], "unresolved")
+        burst = route["burstFunctionPointerTarget"]
+        self.assertEqual(
+            burst["status"],
+            "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+        )
+        self.assertEqual(burst["candidateHash"], "7342567c29c434b5b924be51bd8e34b7")
+        self.assertEqual(burst["functionPointerSlotRva"], "0x3c57b0")
+        variants = {row["cpuVariant"]: row for row in burst["variants"]}
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["rva"], "0xf4100")
+        self.assertEqual(variants["avx2"]["solverCore"]["rva"], "0x284c50")
 
         fallback = route["directCallManagedFallback"]
         self.assertEqual((fallback["startVa"], fallback["spanBytes"],

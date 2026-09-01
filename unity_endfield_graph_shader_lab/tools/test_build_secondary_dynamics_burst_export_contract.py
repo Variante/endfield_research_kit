@@ -58,9 +58,15 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
 
     def test_direct_call_identity_and_parameter_contracts_are_explicit(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        calc_line = payload["targets"]["calcLineNormalTangent"]
         simulation = payload["targets"]["simulationStartRange"]
         start = payload["targets"]["colliderStartRange"]
         end = payload["targets"]["colliderEndRange"]
+        self.assertEqual(calc_line["managedWorkerMethodIndex"], 384856)
+        self.assertEqual(calc_line["kernelWrapperMethodIndex"], 384854)
+        self.assertEqual(calc_line["directCallInvokeMethodIndex"], 384867)
+        self.assertEqual(calc_line["parameterContract"]["parameterCount"], 17)
+        self.assertEqual(calc_line["parameterContract"]["lastParameter"], "index System.Int32")
         self.assertEqual(simulation["directInvokeMethodIndex"], 385570)
         self.assertEqual(simulation["parameterContract"]["parameterCount"], 29)
         self.assertEqual(simulation["parameterContract"]["directInvokeNativeArrayParameterCount"], 24)
@@ -73,6 +79,50 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(end["parameterContract"]["directInvokeNativeArrayParameterCount"], 6)
         self.assertEqual(end["parameterContract"]["sourceJobNativeArrayFieldCount"], 5)
         self.assertEqual(end["parameterContract"]["sourceJobNativeReferenceFieldCount"], 1)
+
+    def test_calc_line_exact_export_and_dual_cpu_core_graph_are_closed(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        calc_line = payload["targets"]["calcLineNormalTangent"]
+        self.assertEqual(
+            calc_line["status"],
+            "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+        )
+        self.assertEqual(calc_line["candidateHash"], "7342567c29c434b5b924be51bd8e34b7")
+        self.assertEqual(calc_line["export"]["rva"], "0x3571e0")
+        self.assertEqual(calc_line["export"]["bodyBytes"], 205)
+        self.assertEqual(
+            calc_line["export"]["bodySha256"],
+            "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328",
+        )
+        self.assertEqual(calc_line["functionPointerSlotRva"], "0x3c57b0")
+        self.assertEqual(
+            calc_line["export"]["functionPointerSlotDiskState"],
+            "zero_fill_bss_no_on_disk_pointer",
+        )
+        variants = {row["cpuVariant"]: row for row in calc_line["variants"]}
+        self.assertEqual(variants["x64_sse2"]["entry"]["rva"], "0x10ef20")
+        self.assertEqual(variants["x64_sse2"]["tailStub"]["rva"], "0x10f190")
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["rva"], "0xf4100")
+        self.assertEqual(
+            variants["x64_sse2"]["solverCore"]["sha256"],
+            "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+        )
+        self.assertEqual(variants["avx2"]["entry"]["rva"], "0x29a3c0")
+        self.assertEqual(variants["avx2"]["tailStub"]["rva"], "0x29a5c0")
+        self.assertEqual(variants["avx2"]["solverCore"]["rva"], "0x284c50")
+        self.assertEqual(
+            variants["avx2"]["solverCore"]["sha256"],
+            "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+        )
+        for row in variants.values():
+            self.assertEqual(
+                row["solverCore"]["directCallTargets"],
+                [row["scalarSinCos"]["rva"], row["scalarSinCos"]["rva"]],
+            )
+        self.assertEqual(calc_line["semanticDiscriminator"]["teamData"]["strideBytes"], 464)
+        self.assertEqual(calc_line["semanticDiscriminator"]["clothParameters"]["strideBytes"], 808)
+        self.assertIn("neither core calls GameAssembly", calc_line["ifixBoundary"])
+        self.assertIn("unobserved", calc_line["runtimeSelection"])
 
     def test_simulation_semantic_fingerprint_is_closed_at_runtime_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
