@@ -50,9 +50,31 @@ PROFILE_SOURCE = ROOT / (
 PROFILE_MESH_ROOT = ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/CharInfoPlayableProfiles/Meshes"
 )
+DEFERRED_RECOVERY = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+    "CharInfoPresentation/deferred_lighting_recovery.json"
+)
 
 
 class EndminfBackdropContractTests(unittest.TestCase):
+    def test_sphereoutside_manifest_requires_current_draw_local_t11_evidence(self):
+        recovery = json.loads(DEFERRED_RECOVERY.read_text(encoding="utf-8"))
+        self.assertFalse(recovery["runtime_ready"])
+        validation = recovery["retail_frame_analysis_closure"]["unity_validation"]
+        self.assertTrue(validation["historical_pre_t11_content_gate"])
+        self.assertFalse(validation["current_presentation_authorized"])
+        required = recovery["required_next_capture"]
+        self.assertIn("draw-local", required["target"])
+        joined = " ".join(required["collect"])
+        for token in (
+            "both screen-space shadow mask producer-after payloads",
+            "consumer-before t11 payload",
+            "non-truncated",
+            "draw-local",
+            "exactly two same-target producers",
+        ):
+            self.assertIn(token, joined)
+
     def test_endminf_portrait_requires_unrotated_source_packing_and_upright_uv(self):
         builder = PROFILE_BUILDER.read_text(encoding="utf-8")
         self.assertGreaterEqual(
@@ -149,12 +171,9 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
             defaults,
         )
-        self.assertNotIn(
-            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
-            defaults,
-        )
-        self.assertIn("content-invalid screen-shadow attachment", defaults)
-        self.assertIn("upside-down body mask over the portrait", defaults)
+        self.assertNotIn("SphereOutsidePresentationEnvironment", defaults)
+        self.assertNotIn("ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER", defaults)
+        self.assertIn("retail t11 screen-shadow producer/content boundary", defaults)
 
         forced_start = capture.index("CanonicalVideoForcedOffFlags")
         forced_end = capture.index("};", forced_start)
@@ -164,6 +183,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
             forced_off,
         )
         self.assertIn("SphereOutsidePresentationEnvironment", forced_off)
+        self.assertIn("ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER", forced_off)
         self.assertIn(
             'Environment.SetEnvironmentVariable(flag, "0");',
             capture,
@@ -200,12 +220,12 @@ class EndminfBackdropContractTests(unittest.TestCase):
         end = source.index("private void ApplyReadySubsetDiagnostic()", start)
         source_path = source[start:end]
         self.assertIn(
-            "SetRendererEnabledStates(false, false, false, false, true);",
+            "SetRendererEnabledStates(false, true, false, false, true);",
             source_path,
         )
         self.assertIn("ApplySettledOpenState(openState, false);", source_path)
         self.assertIn("appliedBackdropRenderer.enabled = false;", source_path)
-        self.assertIn("ShadowPlane final-consumer route", source_path)
+        self.assertIn("Wall and ShadowPlane remain", source_path)
         self.assertNotIn("0.125f", source_path)
         self.assertNotIn('"_TopColor"', source_path)
 
@@ -221,7 +241,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
         for token in (
             "value.farGridRenderer.enabled",
             "!value.sphereOutsideRenderer.enabled",
-            "!value.floorRenderer.enabled",
+            "value.floorRenderer.enabled",
             "!value.wallRenderer.enabled",
             "!value.shadowPlaneRenderer.enabled",
             "!value.compatibilityBackdropRenderer.enabled",
@@ -237,7 +257,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
         validation = source[validation_start:validation_end]
         for token in (
             "ValidateReadySubsetReadiness(out openState, out failure)",
-            "retail physical-camera stencil/color-target ownership is not",
+            "physical-camera stencil/color-target ownership is not closed",
             "must not enter maintained presentation",
         ):
             self.assertIn(token, validation)
@@ -275,6 +295,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "IsFittedCompatibilityPlateActive()",
             "public bool fittedCompatibilityPlateActive;",
             "public bool canonicalSolidColorBackgroundIncluded;",
+            "public bool canonicalSourceSphereFloorGridBackgroundIncluded;",
         ):
             self.assertIn(token, capture)
         self.assertGreaterEqual(capture.count('"0");'), 2)
@@ -288,7 +309,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
         )
         canonical_path = capture[canonical_start:canonical_end]
         self.assertIn(
-            "videoExportRequested || sourceBackgroundExplicitlyDisabled",
+            "captureCanonicalSolidColorBackground =\n                sourceBackgroundExplicitlyDisabled",
             canonical_path,
         )
         self.assertIn(
@@ -316,6 +337,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
             'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
             'set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=0"',
             'set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"',
+            'set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=0"',
         ):
             self.assertIn(token, launcher)
 
@@ -326,8 +348,8 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "ReadySubsetEnvironmentVariable,",
             'Environment.SetEnvironmentVariable(selector, "0");',
             "referenceBackdrop.enabled = false;",
-            "presentation.enableRecoveredEndminfSourceBackground = true;",
-            "camera.backgroundColor = Color.black;",
+            "presentation.enableRecoveredEndminfSourceBackground = false;",
+            "camera.backgroundColor = new Color(0.70f, 0.71f, 0.70f, 1.0f);",
             "camera.aspect = ResolveEndminfSourceAspect();",
             'EndfieldPlayableCharInfoProfileBuilder.LoadProfile("Endminf")',
             '"chr_0003_endminf"',
@@ -380,13 +402,14 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "CanonicalBackgroundProofTimes.Length",
             "MinimumBackgroundProofMeanLuma",
             "MinimumBackgroundProofPixelLuma",
-            "charInfoBackgroundIncluded =\n                canonicalSolidColorBackgroundIncluded",
+            "bool canonicalSourceSphereFloorGridBackgroundIncluded =",
+            "endminfSourceBackgroundIncluded",
+            "observedSphereOutsidePresentationReady",
+            "Frames.All(value => value.deferredExactConsumerReady)",
+            "charInfoBackgroundIncluded =\n                canonicalSourceSphereFloorGridBackgroundIncluded ||",
         ):
             self.assertIn(token, gate)
-        self.assertNotIn(
-            "charInfoBackgroundIncluded =\n                endminfSourceBackgroundIncluded",
-            capture,
-        )
+        self.assertIn("canonicalSourceSphereFloorGridBackgroundIncluded", capture)
         clear_start = pipeline.index(
             "bool selectedCharInfoMaterialOnlySolidColor ="
         )
@@ -408,7 +431,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
         ):
             self.assertIn(token, clear_path)
 
-    def test_maintained_paths_force_capture_fitted_and_incomplete_routes_off(self):
+    def test_maintained_paths_force_incomplete_sphere_and_diagnostic_routes_off(self):
         capture = CAPTURE.read_text(encoding="utf-8")
         forced_start = capture.index("CanonicalVideoForcedOffFlags")
         forced_end = capture.index("};", forced_start)
@@ -444,12 +467,15 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH",
         )
         for selector in selectors:
-            if selector == "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION":
-                self.assertIn("SphereOutsidePresentationEnvironment", forced_off)
-            else:
-                self.assertIn(selector, forced_off)
+            capture_token = (
+                "SphereOutsidePresentationEnvironment"
+                if selector == "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION"
+                else selector
+            )
+            self.assertIn(capture_token, forced_off)
             self.assertIn(selector, launcher)
             self.assertIn(selector, builder)
+        self.assertNotIn("MaintainedPresentationEnabledSelectors", builder)
         self.assertGreaterEqual(launcher.count('=0"'), len(selectors))
 
     def test_source_camera_aspect_fails_closed_without_framing_fallback(self):

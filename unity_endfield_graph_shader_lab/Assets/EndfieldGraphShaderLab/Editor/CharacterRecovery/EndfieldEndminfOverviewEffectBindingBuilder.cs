@@ -162,7 +162,7 @@ namespace EndfieldGraphShaderLabEditor
                 "1");
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoPresentation.EndminfSourceBackgroundEnvironmentVariable,
-                "1");
+                "0");
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoPresentation.EndminfBackdropVisualCompatibilityEnvironmentVariable,
                 "0");
@@ -207,14 +207,14 @@ namespace EndfieldGraphShaderLabEditor
                 if (referenceBackdrop != null)
                 {
                     // Keep the fitted actor-bounds plate as a disabled
-                    // diagnostic dependency. Exact source GridFar alone owns
-                    // maintained presentation; the incomplete ShadowPlane
-                    // final-consumer route stays excluded.
+                    // diagnostic dependency. The source SphereOutside composite
+                    // remains fail-closed until its content-valid retail t11
+                    // producer is recovered.
                     referenceBackdrop.enabled = false;
                     presentation.presentationBackdropRenderer = referenceBackdrop;
                 }
                 presentation.enableRecoveredReadyPresentationSubset = false;
-                presentation.enableRecoveredEndminfSourceBackground = true;
+                presentation.enableRecoveredEndminfSourceBackground = false;
                 presentation.enableSourceBackedClusteredNprLights = true;
                 presentation.enableSourceBackedLightBinning = true;
                 presentation.enableIsolatedPunctualSoftShadows = true;
@@ -235,10 +235,10 @@ namespace EndfieldGraphShaderLabEditor
                 if (camera.GetComponent<AudioListener>() == null)
                     camera.gameObject.AddComponent<AudioListener>();
                 camera.clearFlags = CameraClearFlags.SolidColor;
-                // The exact recovered CharInfo sky owns the maintained
-                // background. If that source gate fails, expose the failure
-                // over black instead of silently substituting a fitted clear.
-                camera.backgroundColor = Color.black;
+                // Retain the measured neutral preview clear until the source
+                // SphereOutside -> floor -> Far path passes its exact-consumer
+                // and presented-pixel gate. This is not the fitted plate.
+                camera.backgroundColor = new Color(0.70f, 0.71f, 0.70f, 1.0f);
                 // The reference and all comparison renders are 1920x1080.
                 // Consume the serialized Endminf sensor aspect rather than a
                 // duplicate framing constant when overriding Free Aspect.

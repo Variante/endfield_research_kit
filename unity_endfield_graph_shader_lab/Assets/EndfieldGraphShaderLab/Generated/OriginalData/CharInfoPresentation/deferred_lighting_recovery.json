@@ -1,9 +1,9 @@
 {
   "schema": "endfield.charinfo.sphereoutside.deferred-lighting-recovery.v1",
   "recovered_at": "2026-08-09",
-  "runtime_ready": true,
+  "runtime_ready": false,
   "activation_policy": "default-off-fail-closed",
-  "outcome": "The isolated CharInfo SphereOutside path is runtime-ready behind an explicit fail-closed selector. The recovered HGRP/Lit HGBuffer producer writes the exact five logical MRT formats plus D32S8, and the recovered Default Lit resolver is composited into the physical camera before ForwardOpaque with the sidecar depth. Archived full-frame analysis closes the D3D11 attachment chronology and producer-to-resolver aliases: draw 40 binds/clears the five-target frame, draw 51 is the 509-vertex/2304-index SphereOutside owner, and draw 73 samples the same A/B/C resources in legacy resolver slots t25/t26/t27. A settled-loop probe and the combined exact-M27 peak probe both report SphereOutside presentation ready on Direct3D11 while retaining the source portrait and excluding foreground UI. General-scene/static-cache lighting, future patch state, non-CharacterOnly shadow sections, and retail settled shadow/atmosphere resources remain outside this isolated path.",
+  "outcome": "The isolated CharInfo SphereOutside HGBuffer producer, draw chronology, and Default Lit resolver bytecode are recovered, but the path is not runtime-ready for maintained presentation. Current pass-0 admission requires a content-valid, same-frame retail t11 screen-shadow resource with exact producer provenance. The old physical Sphere probes predate that gate, and the available current observer payload is frame-end, truncated, and not draw-local, so neither proves the required producer-to-consumer handoff. The source floor/Far ordering may be exercised only as a fail-closed diagnostic until a publishable joined capture closes the two screen-shadow producers and the Default consumer-before t11 payload.",
   "selected_hgbuffer": {
     "shader": "HGRP/Lit",
     "pass": "HGBuffer",
@@ -919,6 +919,9 @@
       "full_start_loop_frames": 41,
       "graphics_api": "Direct3D11",
       "sphereoutside_presented": true,
+      "historical_pre_t11_content_gate": true,
+      "current_presentation_authorized": false,
+      "current_blocker": "content-valid same-frame t11 producer provenance is not captured draw-locally",
       "background_portrait_presented": true,
       "foreground_ui_presented": false
     }
@@ -928,12 +931,14 @@
     "Retail render-graph physical resource identity, alias lifetime, and settled contents. The lab now closes the source-camera 640x720 logical five-MRT plus D32S8 producer route and its cross-API bytes, but the non-presented sidecar is not evidence of physical render-graph equivalence.",
     "All selected ShaderVariablesGlobal value producers are source-closed. Its default-off canonical/EndfieldCB1 publisher now reads back 800/800 and 628/628 words exactly on D3D11/D3D12, preserves raw c28 integer offsets, zeroes every unselected row, activates in the same Wulfa frame, and fails closed without canonical prerequisites while leaving D3D12 beauty unchanged. Pass 0 remains disabled pending remaining texture/pixel inputs and a binding-compatible resolve. Exact c3.y=0.1, c30=(0,0,1,1), c31.x=7, c135..c137, fog reset rows, inactive V2 IV params, wetness, mip bias, binning/environment rows, and the full ReflectionProbeGlobalData plus CB2 prefix are closed.",
     "Retail settled frame-produced AO, SSR, planar reflection, screen-space shadow mask, subsurface, fog-LUT, wetness, general-scene light, and shadow contents. Disabled-feature neutral bindings and the recovered fixture inputs are closed, but they are not evidence of the original frame's physical resources.",
-    "Full render-graph equivalence outside isolated CharInfo. SphereOutside now has a frame-proven opt-in physical presentation, but general-scene alias lifetimes and unrecovered settled shadow/atmosphere resources are not generalized from this CharacterOnly route."
+    "Full render-graph equivalence outside isolated CharInfo. Historical SphereOutside probes presented pixels before the content-valid t11 gate existed; they do not authorize current presentation. General-scene alias lifetimes and unrecovered settled shadow/atmosphere resources are not generalized from this CharacterOnly route."
   ],
   "required_next_capture": {
-    "target": "none for the isolated SphereOutside background path",
+    "target": "current-build draw-local screen-shadow t11 producer-to-Default-consumer handoff for the isolated SphereOutside background path",
     "collect": [
-      "Only capture again if a later comparison exposes a specific non-CharacterOnly shadow, atmosphere, or alias-lifetime mismatch not covered by the archived full frame."
+      "Run one bounded current-build EndfieldCapture Full graphics observation through the normal two-entry Endminf workflow.",
+      "Collect both screen-space shadow mask producer-after payloads and the Default resolver consumer-before t11 payload for the same 3840x2160 RG8 resource.",
+      "Accept the evidence only when the joined packet is non-truncated, draw-local, publishable, has exactly two same-target producers, and passes the exact screen-shadow admission gate."
     ],
     "safety_boundary": "Use an offline/noncompetitive client session and supported GPU-capture tooling. Do not bypass anti-cheat or other access controls."
   }
