@@ -24,7 +24,7 @@ GYROSCOPE_MANIFEST = (
 class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
     def test_report_separates_target_threshold_and_actual_clocks(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v23", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v24", source)
         for field in (
             "public float targetSeconds;",
             "public float requestedSeconds;",
@@ -35,6 +35,33 @@ class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
         self.assertIn("targetSeconds = target", source)
         self.assertIn("requestedSeconds = requested", source)
         self.assertIn("phaseErrorSeconds = elapsed - target", source)
+
+    def test_capture_requires_synchronized_source_acl_pose_publication(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        for token in (
+            "public bool observedRecoveredAclPosePublication;",
+            "public bool recoveredAclPoseBindingValid;",
+            "public int recoveredAclPoseAppliedFrameCount;",
+            "public int recoveredAclPoseAppliedTransformCount;",
+            "public int recoveredAclPoseCurrentStateHash;",
+            "public int recoveredAclPoseNextStateHash;",
+            "public float recoveredAclPoseTransitionWeight;",
+            "public int evaluatedAnimatorCurrentStateHash;",
+            "public int evaluatedAnimatorNextStateHash;",
+            "public float evaluatedAnimatorTransitionWeight;",
+            "value.recoveredAclPoseCurrentStateHash ==",
+            "value.evaluatedAnimatorCurrentStateHash",
+            "value.recoveredAclPoseNextStateHash ==",
+            "value.evaluatedAnimatorNextStateHash",
+            "value.recoveredAclPoseTransitionWeight -",
+            "value.evaluatedAnimatorTransitionWeight",
+            "observedRecoveredAclPosePublication &&",
+        ):
+            self.assertIn(token, source)
+        self.assertIn(
+            "source-decoded ACL pose publication synchronized to Animator state",
+            source,
+        )
 
     def test_explicit_targeted_times_are_not_shifted(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
