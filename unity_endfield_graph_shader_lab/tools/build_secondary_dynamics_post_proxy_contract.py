@@ -5,8 +5,10 @@ The contract closes the managed/native ABI, ordered job construction, job
 payload layouts, exact generic scheduling identities, the unpatched
 CalcLineNormalTangent managed-worker traversal/equations, and the generated
 BurstDirectCall wrapper plus its managed-fallback equivalence and exact Burst
-target.  The selected runtime branch and IFix patch state remain open; no
-capture samples, fitted curves, or replay data are inputs.
+target.  The installed local IFix payload is joined and parsed to bound its
+absence of BeyondDynamicBone targets.  The selected runtime branch and live
+IFix patch state remain open; no capture samples, fitted curves, or replay data
+are inputs.
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ DEFAULT_OUTPUT = DATA_ROOT / "secondary_dynamics_post_proxy_contract.json"
 DEFAULT_METADATA_EVIDENCE = EVIDENCE_ROOT / "post_proxy_metadata.json"
 DEFAULT_NATIVE_EVIDENCE = EVIDENCE_ROOT / "post_proxy_native.json"
 DEFAULT_BURST_CONTRACT = DATA_ROOT / "secondary_dynamics_burst_export_contract.json"
+DEFAULT_IFIX_REPORT = DATA_ROOT / "installed_ifix_patch_state.json"
 DEFAULT_GAME_ASSEMBLY: Path | None = None
 DEFAULT_METADATA: Path | None = None
 
@@ -363,6 +366,127 @@ def _source(path: Path, expected_hash: str) -> dict[str, Any]:
     if actual != expected_hash:
         raise ContractError(f"source drift: {_repo_path(path)} {actual} != {expected_hash}")
     return {"repoPath": _repo_path(path), "size": path.stat().st_size, "sha256": actual}
+
+
+def _validate_installed_ifix_payload(
+        payload: dict[str, Any], gate: dict[str, Any],
+        parsed_targets: list[dict[str, Any]]) -> dict[str, Any]:
+    """Join the local installed payload without promoting it to live state.
+
+    IFix's numeric wrapper id is not an on-disk target-table key.  Therefore
+    the sound static negative proof is absence of every BeyondDynamicBone
+    target from the exact parsed installed table, not a search for ``0x219``.
+    """
+    if payload.get("schema") != "endfield.charinfo.installed-ifix-patch-state.v1":
+        raise ContractError("installed IFix report schema drift")
+    source_build = payload.get("source_build") or {}
+    expected_build = {
+        "game_assembly": gate["gameAssembly"]["sha256"],
+        "global_metadata": gate["globalMetadata"]["sha256"],
+    }
+    for key, expected_sha in expected_build.items():
+        actual_sha = str((source_build.get(key) or {}).get("sha256") or "").lower()
+        if actual_sha != expected_sha.lower():
+            raise ContractError(f"installed IFix report native build drift: {key}")
+
+    targets = payload.get("targets")
+    if not isinstance(targets, list) or targets != parsed_targets:
+        raise ContractError("installed IFix parsed target table differs from report")
+    patch_format = payload.get("patch_format") or {}
+    if patch_format.get("target_count") != len(targets):
+        raise ContractError("installed IFix target count differs from parsed table")
+    persistent = ((payload.get("vfs_state") or {}).get("persistent_overlay") or {})
+    patch_record = persistent.get("file") or {}
+    refresh = payload.get("refresh") or {}
+    if (not patch_record.get("sha256") or
+            refresh.get("source_patch_sha256") != patch_record.get("sha256")):
+        raise ContractError("installed IFix refresh/source patch identity drift")
+    if persistent.get("file_count") != 1 or persistent.get("chunk_count") != 1:
+        raise ContractError("installed Persistent IFix VFS census drift")
+    base = ((payload.get("vfs_state") or {}).get("base_streaming_assets") or {})
+    if base.get("file_count") != 0 or base.get("chunk_count") != 0:
+        raise ContractError("installed base IFix VFS census drift")
+
+    beyond_targets = [
+        row for row in targets
+        if str(row.get("type") or "").startswith("BeyondDynamicBone.")
+    ]
+    from_to_targets = [
+        row for row in beyond_targets
+        if row.get("type") == "BeyondDynamicBone.MathUtility" and
+        row.get("method") == "FromToRotation"
+    ]
+    if beyond_targets:
+        raise ContractError(
+            "installed IFix unexpectedly targets BeyondDynamicBone: " +
+            json.dumps(beyond_targets, ensure_ascii=False, sort_keys=True)
+        )
+    return {
+        "status": "hash_pinned_installed_local_payload_excludes_beyond_dynamic_bone",
+        "installedLocalPayloadFileCount": 1,
+        "parsedTargetCount": len(targets),
+        "beyondDynamicBoneTargetCount": len(beyond_targets),
+        "fromToRotationTargetCount": len(from_to_targets),
+        "sourcePatchSha256": patch_record["sha256"],
+        "sourceBuild": expected_build,
+        "proof": (
+            "The exact parsed target table of the only installed local IFixPatchOut "
+            "payload contains no BeyondDynamicBone target. Patch id 0x219 is a "
+            "wrapper gate constant, not an on-disk target-table key."
+        ),
+        "runtimeBoundary": (
+            "This disk snapshot does not prove live slot ownership or exclude a "
+            "later, remote, or memory-only patch."
+        ),
+    }
+
+
+def _installed_ifix_snapshot(path: Path, gate: dict[str, Any]) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ContractError(f"cannot read installed IFix report: {exc}") from exc
+
+    verifier = _load(
+        "post_proxy_installed_ifix_verifier",
+        LAB_ROOT / "tools" / "verify_installed_ifix_patch_state.py",
+    )
+    try:
+        persistent = payload["vfs_state"]["persistent_overlay"]
+        verifier.check_installed_file(persistent["chunk"], "IFix VFS chunk")
+        verifier.check_installed_file(
+            persistent["block_catalog"], "IFix block catalog"
+        )
+        patch_path = verifier.check_file(
+            persistent["file"], "decrypted Gameplay patch"
+        )
+        parsed_targets, observed = verifier.parse_patch(
+            patch_path.read_bytes(), payload["patch_format"]
+        )
+    except (KeyError, OSError, ValueError, SystemExit) as exc:
+        raise ContractError(f"installed IFix source validation failed: {exc}") from exc
+    expected = payload["patch_format"]
+    for key in ("bridge", "type_count", "target_count"):
+        if observed[key] != expected[key]:
+            raise ContractError(f"installed IFix parsed {key} drift")
+    for key in ("type_table_end", "target_table_end", "file_end"):
+        if observed[key] != int(expected[key], 16):
+            raise ContractError(f"installed IFix parsed {key} drift")
+    if observed["terminal"] != expected["terminal_int32"]:
+        raise ContractError("installed IFix parsed terminal drift")
+
+    result = _validate_installed_ifix_payload(payload, gate, parsed_targets)
+    result["report"] = {
+        "repoPath": _repo_path(path),
+        "size": path.stat().st_size,
+        "sha256": _sha(path),
+    }
+    result["parsedPatch"] = {
+        "repoPath": _repo_path(patch_path),
+        "size": patch_path.stat().st_size,
+        "sha256": _sha(patch_path),
+    }
+    return result
 
 
 def _gate(game_assembly: Path | None, metadata: Path | None) -> tuple[dict[str, Any], Path, Path]:
@@ -909,7 +1033,9 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                                           "endfield.charinfo.secondary-dynamics-transform-writeback.v1"),
         "calcLineBurstExport": _calc_line_burst_dependency(DEFAULT_BURST_CONTRACT),
     }
+    installed_ifix = _installed_ifix_snapshot(DEFAULT_IFIX_REPORT, gate)
     sources["dependencies"] = dependencies
+    sources["installedLocalIfix"] = installed_ifix
     return {
         "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
         "status": "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
@@ -926,6 +1052,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "calc_line_kernel_wrapper_route_recovered": True,
         "calc_line_directcall_managed_fallback_equivalence_closed": True,
         "calc_line_burst_function_pointer_target_closed": True,
+        "from_to_rotation_installed_local_ifix_target_absent": True,
         "create_list_kernel_numerics_recovered": False,
         "calc_line_normal_tangent_numerics_recovered": False,
         "selected_calc_line_execution_route_closed": False,
@@ -1070,6 +1197,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     "getPatchMethodIndex": 387383,
                     "dynamicWrapperMethodIndex": 386959,
                     "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
+                    "installedLocalSnapshot": "sources.installedLocalIfix",
                     "selectedAtRuntime": "unresolved",
                 },
             },
@@ -1150,20 +1278,23 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             "selectedRuntimeRoute": "unresolved",
             "burstFunctionPointerTarget": dependencies["calcLineBurstExport"]["target"],
         },
-        "routeEvidence": {"coldSpans": cold,
-                          "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, but BurstCompiler.get_IsEnabled and the returned-pointer null/non-null branch remain unobserved runtime values."},
+        "routeEvidence": {
+            "coldSpans": cold,
+            "installedLocalIfix": "sources.installedLocalIfix",
+            "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, and the parsed installed local IFix table excludes BeyondDynamicBone. BurstCompiler.get_IsEnabled, the returned-pointer null/non-null branch, and live IFix slot ownership remain unobserved runtime values.",
+        },
         "workerTargets": workers,
         "nextDisassemblyTargets": [],
         "remainingRuntimeEvidence": [
             {"boundary": "CalcLine BurstDirectCall selected route",
              "reason": "method 384854, its managed fallback, and the exact non-null Burst target are closed, but BurstCompiler.get_IsEnabled and GetILPPMethodFunctionPointer2 null/non-null selection remain unobserved runtime values"},
             {"boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
-             "reason": "the unpatched body is closed; runtime IFix selection remains external state"},
+             "reason": "the unpatched body is closed and the exact parsed installed local IFix table contains no BeyondDynamicBone target; live slot ownership and later, remote, or memory-only patches remain external runtime state"},
         ],
         "nonClaims": [
             "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
             "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
-            "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
+            "The parsed installed local IFix table excludes BeyondDynamicBone, but does not establish that IFix patch id 0x219 was absent at runtime.",
             "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
             "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
             "This static contract is not a Unity execution or retail-equivalence result.",

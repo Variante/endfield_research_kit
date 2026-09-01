@@ -14,6 +14,7 @@
   "calc_line_kernel_wrapper_route_recovered": true,
   "calc_line_directcall_managed_fallback_equivalence_closed": true,
   "calc_line_burst_function_pointer_target_closed": true,
+  "from_to_rotation_installed_local_ifix_target_absent": true,
   "create_list_kernel_numerics_recovered": false,
   "calc_line_normal_tangent_numerics_recovered": false,
   "selected_calc_line_execution_route_closed": false,
@@ -239,6 +240,30 @@
           "runtimeSelection": "unobserved: BurstCompiler.get_IsEnabled and the managed GetFunctionPointer return value still decide Burst versus managed fallback",
           "numericBoundary": "The original executable export/slot/dual-CPU core graph is exact and source-pinned. A complete source-level transcription and integration remain open; no capture-derived transforms, timing, positions, or curves are inputs."
         }
+      }
+    },
+    "installedLocalIfix": {
+      "status": "hash_pinned_installed_local_payload_excludes_beyond_dynamic_bone",
+      "installedLocalPayloadFileCount": 1,
+      "parsedTargetCount": 32,
+      "beyondDynamicBoneTargetCount": 0,
+      "fromToRotationTargetCount": 0,
+      "sourcePatchSha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c",
+      "sourceBuild": {
+        "game_assembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+        "global_metadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+      },
+      "proof": "The exact parsed target table of the only installed local IFixPatchOut payload contains no BeyondDynamicBone target. Patch id 0x219 is a wrapper gate constant, not an on-disk target-table key.",
+      "runtimeBoundary": "This disk snapshot does not prove live slot ownership or exclude a later, remote, or memory-only patch.",
+      "report": {
+        "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+        "size": 19511,
+        "sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af"
+      },
+      "parsedPatch": {
+        "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/dump/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
+        "size": 86926,
+        "sha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c"
       }
     }
   },
@@ -1453,6 +1478,7 @@
         "getPatchMethodIndex": 387383,
         "dynamicWrapperMethodIndex": 386959,
         "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
+        "installedLocalSnapshot": "sources.installedLocalIfix",
         "selectedAtRuntime": "unresolved"
       }
     },
@@ -1946,7 +1972,8 @@
         "sha256": "93473a002a7338a223d7d2e8a8e453df5b9b04a0df3f764570442a0d636a29e4"
       }
     ],
-    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, but BurstCompiler.get_IsEnabled and the returned-pointer null/non-null branch remain unobserved runtime values."
+    "installedLocalIfix": "sources.installedLocalIfix",
+    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, and the parsed installed local IFix table excludes BeyondDynamicBone. BurstCompiler.get_IsEnabled, the returned-pointer null/non-null branch, and live IFix slot ownership remain unobserved runtime values."
   },
   "workerTargets": [
     {
@@ -2030,13 +2057,13 @@
     },
     {
       "boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
-      "reason": "the unpatched body is closed; runtime IFix selection remains external state"
+      "reason": "the unpatched body is closed and the exact parsed installed local IFix table contains no BeyondDynamicBone target; live slot ownership and later, remote, or memory-only patches remain external runtime state"
     }
   ],
   "nonClaims": [
     "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
     "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
-    "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
+    "The parsed installed local IFix table excludes BeyondDynamicBone, but does not establish that IFix patch id 0x219 was absent at runtime.",
     "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
     "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
     "This static contract is not a Unity execution or retail-equivalence result."
