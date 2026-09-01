@@ -1,0 +1,208 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v1",
+  "status": "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases",
+  "nativeGate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "libBurstGenerated": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/Plugins/x86_64/lib_burst_generated.dll",
+      "size": 4042216,
+      "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
+    }
+  },
+  "cores": [
+    {
+      "cpuVariant": "x64_sse2",
+      "rva": "0xf4100",
+      "bytes": 3742,
+      "sha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+      "sincosHelperRva": "0x6e860"
+    },
+    {
+      "cpuVariant": "avx2",
+      "rva": "0x284c50",
+      "bytes": 2901,
+      "sha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+      "sincosHelperRva": "0x1e5d30"
+    }
+  ],
+  "equations": {
+    "traversal": "baseline list -> bit-0/team gates -> baseline parents -> packed child list; select one per-child direction, add it to the parent direction sum, and pass that per-child direction to child FromTo",
+    "rest": "double3(float3(rotateBinary32(parentRotation, localPosition*negativeScaleDirection)))",
+    "childRotation": "mulBinary32(mulBinary32(parentRotation, localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))",
+    "parentRotation": "mulBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+    "acos64PolynomialCoefficients": [
+      0.031615876506539346,
+      0.012153605255773773,
+      -0.015819182433299966,
+      0.013887151845016092,
+      0.019290454772679107,
+      0.017359569912236146,
+      0.006606077476277171,
+      0.022371761819320483,
+      0.030381959280381322,
+      0.044642856813771024,
+      0.07500000000378582,
+      0.16666666666664975
+    ],
+    "acos64Grouping": "z2=z*z; even0=z2*(z*c0+c2)+(z*c4+c6); even1=z2*(z*c1+c3)+(z*c5+c7); base=z2*(z*c8+c9)+(z*c10+c11); poly=(base+(z2*z2)*even1)+((z2*z2)^2)*even0",
+    "axisAngle": "normalize double3 axis; cast components and angle*t to float32; multiply half angle in float32; use the CPU-local pinned sincos helper"
+  },
+  "degeneracy": {
+    "parallel": "abs(1-dot)<epsilon returns identity before axis normalization",
+    "antiparallel": "abs(dot+1)<epsilon uses float-pi promoted to double and reference Y only when u.x>u.y and u.x>u.z, otherwise X",
+    "negativeXAxis": "the authored reference rule produces a zero cross axis for exact negative X; normalization propagates canonical NaN quaternion lanes",
+    "zeroOrNonFinite": "there is no explicit normalization guard; IEEE infinity/NaN values propagate through the exact polynomial and sincos special cases",
+    "emptyChild": "no parent or child rotation write occurs"
+  },
+  "vectors": [
+    {
+      "name": "parallel_move",
+      "childCount": 1,
+      "rotationBitsLe": [
+        [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ]
+      ]
+    },
+    {
+      "name": "quarter_turn_move",
+      "childCount": 1,
+      "rotationBitsLe": [
+        [
+          "00000000",
+          "00000000",
+          "ea5af13e",
+          "98c5613f"
+        ],
+        [
+          "00000000",
+          "00000000",
+          "f404353f",
+          "f304353f"
+        ]
+      ]
+    },
+    {
+      "name": "antiparallel_positive_x",
+      "childCount": 1,
+      "rotationBitsLe": [
+        [
+          "00000000",
+          "00000000",
+          "f404353f",
+          "f304353f"
+        ],
+        [
+          "00000000",
+          "00000000",
+          "0000803f",
+          "2ebd3bb3"
+        ]
+      ]
+    },
+    {
+      "name": "non_move_assignment",
+      "childCount": 1,
+      "rotationBitsLe": [
+        [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ],
+        [
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f"
+        ]
+      ]
+    },
+    {
+      "name": "two_child_parent_direction_sum",
+      "childCount": 2,
+      "rotationBitsLe": [
+        [
+          "6bd6f53d",
+          "6bd6f5bd",
+          "6bd6f53d",
+          "e2677a3f"
+        ],
+        [
+          "00000000",
+          "00000000",
+          "f404353f",
+          "f304353f"
+        ],
+        [
+          "f404353f",
+          "00000000",
+          "00000000",
+          "f304353f"
+        ]
+      ]
+    },
+    {
+      "name": "empty_child_no_write",
+      "childCount": 0,
+      "rotationBitsLe": [
+        [
+          "0000003e",
+          "000080be",
+          "0000c03e",
+          "0000003f"
+        ]
+      ]
+    },
+    {
+      "name": "negative_x_antiparallel_zero_axis",
+      "childCount": 1,
+      "rotationBitsLe": [
+        [
+          "0000c0ff",
+          "0000c0ff",
+          "0000c0ff",
+          "0000c0ff"
+        ],
+        [
+          "0000c0ff",
+          "0000c0ff",
+          "0000c0ff",
+          "0000c0ff"
+        ]
+      ]
+    }
+  ],
+  "boundary": {
+    "nativeCpuVariantsExecuted": [
+      "x64_sse2",
+      "avx2"
+    ],
+    "sourceOnlyTranscriptionMatchedBitForBit": true,
+    "caseCount": 7,
+    "captureUsed": false,
+    "runtimeRouteSelected": false,
+    "managedIfixPatchStateClosed": false,
+    "solverImplemented": false,
+    "retailEquivalent": false
+  },
+  "harnessSha256": "3515100a44bec76d80c5719dcf805a78ee28e89ea8f63e75853d69d91a202911"
+}

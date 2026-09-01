@@ -17,7 +17,7 @@ namespace EndfieldGraphShaderLabEditor
             VerifyAntiparallelAxisSelection();
             VerifyBinary32HelperGrouping();
             VerifyParentAndChildEquations();
-            VerifyNonMoveAssignmentProperty();
+            VerifyPerChildDirectionAndParentSum();
             VerifyEmptyAndUndefinedBranchesFailClosed();
             Debug.Log(
                 "Verified value-only secondary-dynamics CalcLine managed equations; " +
@@ -166,7 +166,7 @@ namespace EndfieldGraphShaderLabEditor
                 "signed local and child FromTo order");
         }
 
-        private static void VerifyNonMoveAssignmentProperty()
+        private static void VerifyPerChildDirectionAndParentSum()
         {
             var parent = new C.ParentSource(
                 D(0.0, 0.0, 0.0),
@@ -185,16 +185,16 @@ namespace EndfieldGraphShaderLabEditor
             Require(C.TryCalculateParent(parent, children, out C.ParentValue result),
                 "mixed move/non-move parent equation");
 
-            // The first accumulated (3,0,0) is discarded by the non-move child;
-            // the third move child then adds (0,0,4) to that assigned rest vector.
+            // Every child uses its own direction for child FromTo. The parent
+            // accumulator independently adds all three child directions.
             RequireDouble3(
-                result.children[1].directionAccumulator,
+                result.children[1].childDirection,
                 D(0.0, 2.0, 0.0),
-                "non-move assigns direction accumulator");
+                "non-move child direction uses rest vector");
             RequireDouble3(
                 result.directionAccumulator,
-                D(0.0, 2.0, 4.0),
-                "move after non-move adds to assigned direction");
+                D(3.0, 2.0, 4.0),
+                "parent direction sums every child direction");
             RequireDouble3(result.restSum, D(1.0, 2.0, 1.0), "ordered rest sum");
         }
 

@@ -22,6 +22,11 @@ OUTPUT = LAB_ROOT / (
 SINCOS_RVA = 0x1E5D30
 SINCOS_BYTES = 521
 SINCOS_SHA256 = "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+SINCOS_VARIANTS = (
+    ("x64_sse2", 0x6E860, 496,
+     "542a4e9e9c3d9631a1f5dfff36628d62603938361adfd468b6abb283002fb047"),
+    ("avx2", SINCOS_RVA, SINCOS_BYTES, SINCOS_SHA256),
+)
 REDUCER_RVA = 0x1DE840
 REDUCER_BYTES = 1134
 REDUCER_SHA256 = "4e59a40ed0e7702288ddad778c7048e66844dd9f29e024b920961257c082537a"
@@ -305,7 +310,7 @@ CASES = (
 )
 
 
-def _make_native(module: Any) -> tuple[Any, int]:
+def _make_native(module: Any, target_rva: int = SINCOS_RVA) -> tuple[Any, int]:
     # void thunk(void* target, uint32* in, uint32* out): exact bit load/store.
     code = bytes.fromhex(
         "4883ec38" "4c89442420" "f30f1002" "ffd1" "4c8b442420"
@@ -322,7 +327,7 @@ def _make_native(module: Any) -> tuple[Any, int]:
     def invoke(value_bits: int) -> tuple[int, int]:
         source = ctypes.c_uint32(value_bits)
         result = (ctypes.c_uint32 * 2)()
-        thunk(module._handle + SINCOS_RVA, ctypes.byref(source), result)
+        thunk(module._handle + target_rva, ctypes.byref(source), result)
         return int(result[0]), int(result[1])
 
     return invoke, int(address)
@@ -334,18 +339,28 @@ def build_contract() -> dict[str, Any]:
     gate = burst._native_gate(None, None)
     dll = Path(gate["libBurstGenerated"]["path"])
     pe = burst._pe_exports(dll)
-    burst._exact_rva_span(pe, SINCOS_RVA, SINCOS_BYTES, SINCOS_SHA256)
+    for _variant, helper_rva, helper_bytes, helper_sha256 in SINCOS_VARIANTS:
+        burst._exact_rva_span(pe, helper_rva, helper_bytes, helper_sha256)
     burst._exact_rva_span(pe, REDUCER_RVA, REDUCER_BYTES, REDUCER_SHA256)
     module = ctypes.WinDLL(str(dll))
-    native, _thunk_address = _make_native(module)
+    native_variants = {
+        variant: _make_native(module, helper_rva)[0]
+        for variant, helper_rva, _helper_bytes, _helper_sha256 in SINCOS_VARIANTS
+    }
     vectors = []
     for name, input_bits in CASES:
-        native_bits = native(input_bits)
         source_bits = source_sincos(input_bits)
-        if native_bits != source_bits[:2]:
-            raise burst.ContractError(
-                f"source sincos differs for {name}: native={native_bits!r}, source={source_bits[:2]!r}"
-            )
+        native_rows = {
+            variant: native(input_bits)
+            for variant, native in native_variants.items()
+        }
+        for variant, native_bits in native_rows.items():
+            if native_bits != source_bits[:2]:
+                raise burst.ContractError(
+                    f"source sincos differs for {variant}/{name}: "
+                    f"native={native_bits!r}, source={source_bits[:2]!r}"
+                )
+        native_bits = native_rows["avx2"]
         vectors.append({
             "name": name,
             "input": {"float32": _from_bits(input_bits), "bitsLe": struct.pack("<I", input_bits).hex()},
@@ -361,7 +376,11 @@ def build_contract() -> dict[str, Any]:
         "schema": "endfield.charinfo.secondary-dynamics-float-sincos-golden-vectors.v1",
         "status": "native_helper_and_source_only_transcription_exact_for_controlled_and_boundary_cases",
         "nativeGate": gate,
-        "helper": {"rva": f"0x{SINCOS_RVA:x}", "bytes": SINCOS_BYTES, "sha256": SINCOS_SHA256},
+        "helpers": [
+            {"cpuVariant": variant, "rva": f"0x{helper_rva:x}",
+             "bytes": helper_bytes, "sha256": helper_sha256}
+            for variant, helper_rva, helper_bytes, helper_sha256 in SINCOS_VARIANTS
+        ],
         "largeReducer": {"rva": f"0x{REDUCER_RVA:x}", "bytes": REDUCER_BYTES, "sha256": REDUCER_SHA256},
         "reducerTable": {"rva": f"0x{TABLE_RVA:x}", "bytes": TABLE_BYTES, "sha256": TABLE_SHA256,
                          "words": len(_TABLE)},
@@ -379,7 +398,9 @@ def build_contract() -> dict[str, Any]:
         },
         "harnessSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "vectors": vectors,
-        "boundary": {"nativeHelperExecuted": True, "sourceOnlyTranscriptionMatchedBitForBit": True,
+        "boundary": {"nativeHelperExecuted": True, "nativeCpuVariantsExecuted": [
+                         variant for variant, *_rest in SINCOS_VARIANTS
+                     ], "sourceOnlyTranscriptionMatchedBitForBit": True,
                      "caseCount": len(vectors), "unityPortExecuted": True,
                      "unityVerifier": "EndfieldGraphShaderLabEditor.EndfieldSecondaryDynamicsKernelGoldenVerifier.VerifyMenu"},
     }

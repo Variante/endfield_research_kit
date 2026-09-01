@@ -83,16 +83,16 @@ namespace EndfieldGraphShaderLab
         public readonly struct ChildValue
         {
             public readonly K.Double3 restVector;
-            public readonly K.Double3 directionAccumulator;
+            public readonly K.Double3 childDirection;
             public readonly K.Float4 rotation;
 
             public ChildValue(
                 K.Double3 restVector,
-                K.Double3 directionAccumulator,
+                K.Double3 childDirection,
                 K.Float4 rotation)
             {
                 this.restVector = restVector;
-                this.directionAccumulator = directionAccumulator;
+                this.childDirection = childDirection;
                 this.rotation = rotation;
             }
         }
@@ -175,21 +175,14 @@ namespace EndfieldGraphShaderLab
                     RotateQuaternionBinary32(parent.rotation, signedLocalPosition));
                 restSum = Add(restSum, restVector);
 
-                if ((child.attribute & FlagMove) != 0)
-                {
-                    directionAccumulator = Add(
-                        directionAccumulator,
-                        Subtract(child.position, parent.position));
-                }
-                else
-                {
-                    // The managed worker assigns, rather than adds, here.
-                    directionAccumulator = restVector;
-                }
+                K.Double3 childDirection = (child.attribute & FlagMove) != 0
+                    ? Subtract(child.position, parent.position)
+                    : restVector;
+                directionAccumulator = Add(directionAccumulator, childDirection);
 
                 if (!TryFromToRotation(
                         restVector,
-                        directionAccumulator,
+                        childDirection,
                         1.0,
                         out K.Float4 childFromTo))
                 {
@@ -205,7 +198,7 @@ namespace EndfieldGraphShaderLab
                     childFromTo);
                 childValues[index] = new ChildValue(
                     restVector,
-                    directionAccumulator,
+                    childDirection,
                     childRotation);
             }
 

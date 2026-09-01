@@ -1,11 +1,12 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-  "status": "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
+  "status": "post_proxy_create_list_and_calc_line_burst_numerics_closed_runtime_selection_open",
   "manager_schedule_closed": true,
   "managed_job_payload_layout_closed": true,
   "generic_methodspec_identities_closed": true,
   "world_local_publication_equations_closed": true,
   "create_list_worker_control_flow_recovered": true,
+  "create_list_directcall_route_recovered": true,
   "calc_line_entry_control_flow_recovered": true,
   "calc_line_child_traversal_recovered": true,
   "calc_line_managed_worker_equations_recovered": true,
@@ -19,8 +20,10 @@
   "burst_initial_default_conditions_closed": true,
   "from_to_rotation_installed_local_ifix_target_absent": true,
   "from_to_rotation_installed_local_ifix_bootstrap_absent": true,
-  "create_list_kernel_numerics_recovered": false,
+  "create_list_kernel_numerics_recovered": true,
+  "selected_create_list_execution_route_closed": false,
   "calc_line_normal_tangent_numerics_recovered": false,
+  "calc_line_burst_numerics_recovered": true,
   "selected_calc_line_execution_route_closed": false,
   "from_to_rotation_ifix_patch_state_closed": false,
   "selected_cross_frame_route_closed": false,
@@ -67,8 +70,8 @@
       },
       "calcLineBurstExport": {
         "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json",
-        "size": 627694,
-        "sha256": "dddaca5bba089b18711a9709a0f459bac1742d7be43c8156ed57f3f4818ead0d",
+        "size": 633706,
+        "sha256": "4661dc65bfbd26fd2860c49a8739f6aba164a0c07c859ce3a5962a3ffb335b73",
         "schema": "endfield.charinfo.secondary-dynamics-burst-export.v1",
         "status": "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved",
         "target": {
@@ -243,6 +246,227 @@
           "ifixBoundary": "Both Burst cores have exactly two direct calls, both to their local scalar sin/cos helper; neither core calls GameAssembly or the IFix FromToRotation gate.",
           "runtimeSelection": "unobserved: BurstCompiler.get_IsEnabled and the managed GetFunctionPointer return value still decide Burst versus managed fallback",
           "numericBoundary": "The original executable export/slot/dual-CPU core graph is exact and source-pinned. A complete source-level transcription and integration remain open; no capture-derived transforms, timing, positions, or curves are inputs."
+        },
+        "createListTarget": {
+          "status": "static_semantic_export_dual_cpu_equations_and_buffers_closed_runtime_route_unobserved",
+          "managedWorkerMethodIndex": 384832,
+          "kernelWrapperMethodIndex": 384830,
+          "directCallInvokeMethodIndex": 384843,
+          "candidateHash": "ef715c6829f8df5c4396ed6a395d3bb0",
+          "abiShapeCandidates": [
+            "3e6b9ccd6fd50a2a4ba0cc0521fc2dba",
+            "463402ec49aaa2fc35216cbb91a6b624",
+            "a351a48b53dbea9102fe6e7a42e7fbc3",
+            "e359f302619847aeca832710b725db85",
+            "ef715c6829f8df5c4396ed6a395d3bb0"
+          ],
+          "export": {
+            "ordinal": 3091,
+            "rva": "0x362af0",
+            "spanBytes": 96,
+            "bodyBytes": 81,
+            "bodySha256": "c42a67de3829ab624ffbdeb153fe8f880bda6bb634a17a82eedb39fce48cf2eb",
+            "stackWriteOffsets": [
+              "0x20",
+              "0x28",
+              "0x30",
+              "0x38",
+              "0x40",
+              "0x48"
+            ],
+            "stackWriteWidths": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ],
+            "functionPointerSlotRva": "0x3c6a30",
+            "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+            "exactBodyBytes": 81
+          },
+          "parameterContract": {
+            "parameterCount": 10,
+            "parameterNames": [
+              "teamDataArray",
+              "processingCounter0",
+              "processingList0",
+              "processingCounter1",
+              "processingList1",
+              "processingCounter2",
+              "processingList2",
+              "processingCounter3",
+              "processingList3",
+              "teamId"
+            ],
+            "lastParameter": "teamId System.Int32"
+          },
+          "functionPointerSlotRva": "0x3c6a30",
+          "variants": [
+            {
+              "cpuVariant": "x64_sse2",
+              "burstInitializeAssignment": {
+                "rva": "0x35fefe",
+                "bytes": 14,
+                "sha256": "b13a84969287bba4c7f4a5d2960080a297ffe4df37926dbe6acd038a591a380d",
+                "functionPointerSlotRva": "0x3c6a30"
+              },
+              "entry": {
+                "rva": "0xf3a80",
+                "bytes": 80,
+                "sha256": "7732caae7ea8a6432588ddd36c00fcdfb0c63060ba90a0e74eb30083df04dbf7"
+              },
+              "solverCore": {
+                "rva": "0xf3ad0",
+                "bytes": 951,
+                "sha256": "1a032caef0f1f620f05665ab236c15e89483a43d10e6463e40adf0826b21bbda",
+                "directCallTargets": []
+              },
+              "contiguousSequenceVectorization": {
+                "minimumCount": 8,
+                "elementsPerVectorLoop": 8,
+                "constants": [
+                  {
+                    "rva": "0x364a10",
+                    "bytes": "000000000100000002000000030000000400000004000000040000000400000008000000080000000800000008000000"
+                  }
+                ]
+              }
+            },
+            {
+              "cpuVariant": "avx2",
+              "burstInitializeAssignment": {
+                "rva": "0x35bcc7",
+                "bytes": 14,
+                "sha256": "6f077cd12d57c6c368de50e85e65bcdcc6f3c1bcb2695782bef3bb137dfa71f9",
+                "functionPointerSlotRva": "0x3c6a30"
+              },
+              "entry": {
+                "rva": "0x284590",
+                "bytes": 54,
+                "sha256": "c06d5391bd179913ba721f25a7bba96a80ccb52b4e6cb2ae5776f3b14e2d2dfa"
+              },
+              "solverCore": {
+                "rva": "0x2845d0",
+                "bytes": 1145,
+                "sha256": "ac1747a45021702a7b88789dbdfdef99ac44e9df2d3d61aef30b0b04d105e734",
+                "directCallTargets": []
+              },
+              "contiguousSequenceVectorization": {
+                "minimumCount": 32,
+                "elementsPerVectorLoop": 32,
+                "constants": [
+                  {
+                    "rva": "0x3668a0",
+                    "bytes": "0000000001000000020000000300000004000000050000000600000007000000"
+                  },
+                  {
+                    "rva": "0x3644f4",
+                    "bytes": "08000000"
+                  },
+                  {
+                    "rva": "0x3668c0",
+                    "bytes": "100000001800000020000000"
+                  }
+                ]
+              }
+            }
+          ],
+          "teamSelection": {
+            "strideBytes": 464,
+            "zeroTeamIdReturns": true,
+            "enableAndCullingMask": "(teamQword0 & 0x2000000000080802) == 2",
+            "boundsCheck": null
+          },
+          "queues": [
+            {
+              "queue": 0,
+              "sourceStartOffset": "0x124",
+              "sourceCountOffset": "0x128",
+              "conditions": [
+                "field+0x138 > 0",
+                "field+0x128 > 0"
+              ]
+            },
+            {
+              "queue": 1,
+              "sourceStartOffset": "0x124",
+              "sourceCountOffset": "0x128",
+              "conditions": [
+                "field+0x118 == 3"
+              ],
+              "nonPositiveCount": "atomic counter still adds the signed count; no elements are written"
+            },
+            {
+              "queue": 2,
+              "sourceStartOffset": "0x15c",
+              "sourceCountOffset": "0x160",
+              "conditions": [
+                "field+0x160 > 0"
+              ]
+            },
+            {
+              "queue": 3,
+              "sourceStartOffset": "0x134",
+              "sourceCountOffset": "0x138",
+              "conditions": [
+                "field+0x138 > 0"
+              ]
+            }
+          ],
+          "queueEquation": "old = atomic_fetch_add(counter, signedCount); for i in [0,count): list[old+i] = sourceStart+i",
+          "bufferBoundary": "No capacity or team-index bounds check exists in either core. Signed 32-bit reservation/index arithmetic is preserved; SIMD is only an integer contiguous-sequence optimization and falls back to scalar writes when its signed-overflow guard rejects the vector path.",
+          "numericBoundary": "Both exact CPU cores contain no helper calls and close the same four integer queue equations as the managed fallback. Runtime selection remains unobserved but does not change the recovered queue result."
+        }
+      },
+      "calcLineBurstNumerics": {
+        "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_calc_line_burst_golden_vectors.json",
+        "size": 5917,
+        "sha256": "5d2c7ea2f80243405bc2d3dd54f5a01035cc4777e8d02c64182285331caf93a1",
+        "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v1",
+        "status": "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases",
+        "boundary": {
+          "nativeCpuVariantsExecuted": [
+            "x64_sse2",
+            "avx2"
+          ],
+          "sourceOnlyTranscriptionMatchedBitForBit": true,
+          "caseCount": 7,
+          "captureUsed": false,
+          "runtimeRouteSelected": false,
+          "managedIfixPatchStateClosed": false,
+          "solverImplemented": false,
+          "retailEquivalent": false
+        },
+        "equations": {
+          "traversal": "baseline list -> bit-0/team gates -> baseline parents -> packed child list; select one per-child direction, add it to the parent direction sum, and pass that per-child direction to child FromTo",
+          "rest": "double3(float3(rotateBinary32(parentRotation, localPosition*negativeScaleDirection)))",
+          "childRotation": "mulBinary32(mulBinary32(parentRotation, localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))",
+          "parentRotation": "mulBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+          "acos64PolynomialCoefficients": [
+            0.031615876506539346,
+            0.012153605255773773,
+            -0.015819182433299966,
+            0.013887151845016092,
+            0.019290454772679107,
+            0.017359569912236146,
+            0.006606077476277171,
+            0.022371761819320483,
+            0.030381959280381322,
+            0.044642856813771024,
+            0.07500000000378582,
+            0.16666666666664975
+          ],
+          "acos64Grouping": "z2=z*z; even0=z2*(z*c0+c2)+(z*c4+c6); even1=z2*(z*c1+c3)+(z*c5+c7); base=z2*(z*c8+c9)+(z*c10+c11); poly=(base+(z2*z2)*even1)+((z2*z2)^2)*even0",
+          "axisAngle": "normalize double3 axis; cast components and angle*t to float32; multiply half angle in float32; use the CPU-local pinned sincos helper"
+        },
+        "degeneracy": {
+          "parallel": "abs(1-dot)<epsilon returns identity before axis normalization",
+          "antiparallel": "abs(dot+1)<epsilon uses float-pi promoted to double and reference Y only when u.x>u.y and u.x>u.z, otherwise X",
+          "negativeXAxis": "the authored reference rule produces a zero cross axis for exact negative X; normalization propagates canonical NaN quaternion lanes",
+          "zeroOrNonFinite": "there is no explicit normalization guard; IEEE infinity/NaN values propagate through the exact polynomial and sincos special cases",
+          "emptyChild": "no parent or child rotation write occurs"
         }
       }
     },
@@ -926,6 +1150,210 @@
     ],
     "operation": "Each accepted chunk atomically reserves count slots, then appends the contiguous indices start + i. No captured indices are stored."
   },
+  "createListDirectCallRoute": {
+    "kernelWrapper": {
+      "methodIndex": 384830,
+      "startVa": "0x18674e9c4",
+      "spanBytes": 196,
+      "bodySha256": "aa4787dc1a16922c3df8ee11c9bd0af329558bb294115e7fe08576a7a131348b",
+      "invokeCallOffset": "0xa6",
+      "invokeMethodIndex": 384843
+    },
+    "invoke": {
+      "methodIndex": 384843,
+      "token": "0x06000514",
+      "method": "Invoke",
+      "startVa": "0x18674f118",
+      "endVa": "0x18674f260",
+      "spanBytes": 328,
+      "bodySha256": "d2ddb8ea79313aad24069c05bb1226291aa68da0764874292d0fef30a5c1305d",
+      "burstEnabledCallOffset": "0x56",
+      "getFunctionPointerCallOffset": "0x6d",
+      "indirectCallOffset": "0xcf",
+      "managedFallbackCallOffset": "0x12b"
+    },
+    "managedFallback": {
+      "methodIndex": 384832,
+      "startVa": "0x186743868",
+      "spanBytes": 3300,
+      "bodySha256": "02a0d53fed888f05f966dbe2250f59e4f2722d0cfac3928e7a2b268d39bb4bde",
+      "equations": "createListHotControlFlow"
+    },
+    "burstFunctionPointerTarget": {
+      "status": "static_semantic_export_dual_cpu_equations_and_buffers_closed_runtime_route_unobserved",
+      "managedWorkerMethodIndex": 384832,
+      "kernelWrapperMethodIndex": 384830,
+      "directCallInvokeMethodIndex": 384843,
+      "candidateHash": "ef715c6829f8df5c4396ed6a395d3bb0",
+      "abiShapeCandidates": [
+        "3e6b9ccd6fd50a2a4ba0cc0521fc2dba",
+        "463402ec49aaa2fc35216cbb91a6b624",
+        "a351a48b53dbea9102fe6e7a42e7fbc3",
+        "e359f302619847aeca832710b725db85",
+        "ef715c6829f8df5c4396ed6a395d3bb0"
+      ],
+      "export": {
+        "ordinal": 3091,
+        "rva": "0x362af0",
+        "spanBytes": 96,
+        "bodyBytes": 81,
+        "bodySha256": "c42a67de3829ab624ffbdeb153fe8f880bda6bb634a17a82eedb39fce48cf2eb",
+        "stackWriteOffsets": [
+          "0x20",
+          "0x28",
+          "0x30",
+          "0x38",
+          "0x40",
+          "0x48"
+        ],
+        "stackWriteWidths": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "functionPointerSlotRva": "0x3c6a30",
+        "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+        "exactBodyBytes": 81
+      },
+      "parameterContract": {
+        "parameterCount": 10,
+        "parameterNames": [
+          "teamDataArray",
+          "processingCounter0",
+          "processingList0",
+          "processingCounter1",
+          "processingList1",
+          "processingCounter2",
+          "processingList2",
+          "processingCounter3",
+          "processingList3",
+          "teamId"
+        ],
+        "lastParameter": "teamId System.Int32"
+      },
+      "functionPointerSlotRva": "0x3c6a30",
+      "variants": [
+        {
+          "cpuVariant": "x64_sse2",
+          "burstInitializeAssignment": {
+            "rva": "0x35fefe",
+            "bytes": 14,
+            "sha256": "b13a84969287bba4c7f4a5d2960080a297ffe4df37926dbe6acd038a591a380d",
+            "functionPointerSlotRva": "0x3c6a30"
+          },
+          "entry": {
+            "rva": "0xf3a80",
+            "bytes": 80,
+            "sha256": "7732caae7ea8a6432588ddd36c00fcdfb0c63060ba90a0e74eb30083df04dbf7"
+          },
+          "solverCore": {
+            "rva": "0xf3ad0",
+            "bytes": 951,
+            "sha256": "1a032caef0f1f620f05665ab236c15e89483a43d10e6463e40adf0826b21bbda",
+            "directCallTargets": []
+          },
+          "contiguousSequenceVectorization": {
+            "minimumCount": 8,
+            "elementsPerVectorLoop": 8,
+            "constants": [
+              {
+                "rva": "0x364a10",
+                "bytes": "000000000100000002000000030000000400000004000000040000000400000008000000080000000800000008000000"
+              }
+            ]
+          }
+        },
+        {
+          "cpuVariant": "avx2",
+          "burstInitializeAssignment": {
+            "rva": "0x35bcc7",
+            "bytes": 14,
+            "sha256": "6f077cd12d57c6c368de50e85e65bcdcc6f3c1bcb2695782bef3bb137dfa71f9",
+            "functionPointerSlotRva": "0x3c6a30"
+          },
+          "entry": {
+            "rva": "0x284590",
+            "bytes": 54,
+            "sha256": "c06d5391bd179913ba721f25a7bba96a80ccb52b4e6cb2ae5776f3b14e2d2dfa"
+          },
+          "solverCore": {
+            "rva": "0x2845d0",
+            "bytes": 1145,
+            "sha256": "ac1747a45021702a7b88789dbdfdef99ac44e9df2d3d61aef30b0b04d105e734",
+            "directCallTargets": []
+          },
+          "contiguousSequenceVectorization": {
+            "minimumCount": 32,
+            "elementsPerVectorLoop": 32,
+            "constants": [
+              {
+                "rva": "0x3668a0",
+                "bytes": "0000000001000000020000000300000004000000050000000600000007000000"
+              },
+              {
+                "rva": "0x3644f4",
+                "bytes": "08000000"
+              },
+              {
+                "rva": "0x3668c0",
+                "bytes": "100000001800000020000000"
+              }
+            ]
+          }
+        }
+      ],
+      "teamSelection": {
+        "strideBytes": 464,
+        "zeroTeamIdReturns": true,
+        "enableAndCullingMask": "(teamQword0 & 0x2000000000080802) == 2",
+        "boundsCheck": null
+      },
+      "queues": [
+        {
+          "queue": 0,
+          "sourceStartOffset": "0x124",
+          "sourceCountOffset": "0x128",
+          "conditions": [
+            "field+0x138 > 0",
+            "field+0x128 > 0"
+          ]
+        },
+        {
+          "queue": 1,
+          "sourceStartOffset": "0x124",
+          "sourceCountOffset": "0x128",
+          "conditions": [
+            "field+0x118 == 3"
+          ],
+          "nonPositiveCount": "atomic counter still adds the signed count; no elements are written"
+        },
+        {
+          "queue": 2,
+          "sourceStartOffset": "0x15c",
+          "sourceCountOffset": "0x160",
+          "conditions": [
+            "field+0x160 > 0"
+          ]
+        },
+        {
+          "queue": 3,
+          "sourceStartOffset": "0x134",
+          "sourceCountOffset": "0x138",
+          "conditions": [
+            "field+0x138 > 0"
+          ]
+        }
+      ],
+      "queueEquation": "old = atomic_fetch_add(counter, signedCount); for i in [0,count): list[old+i] = sourceStart+i",
+      "bufferBoundary": "No capacity or team-index bounds check exists in either core. Signed 32-bit reservation/index arithmetic is preserved; SIMD is only an integer contiguous-sequence optimization and falls back to scalar writes when its signed-overflow guard rejects the vector path.",
+      "numericBoundary": "Both exact CPU cores contain no helper calls and close the same four integer queue equations as the managed fallback. Runtime selection remains unobserved but does not change the recovered queue result."
+    },
+    "numericEquivalence": "Both exact Burst cores and the managed fallback perform the same four signed atomic reservations and contiguous sourceStart+i writes. SSE2/AVX2 vector blocks only batch that integer sequence.",
+    "selectedRuntimeRoute": "unresolved"
+  },
   "calcLineEntryControlFlow": {
     "managedWorkerMethodIndex": 384856,
     "startVa": "0x186744fb0",
@@ -1363,8 +1791,8 @@
       ],
       "restVector": "double3(math.mul(parentRotation, vertexLocalPositions[childVertex] * team.negativeScaleDirection))",
       "restSum": "restSum + restVector for every child; restSum starts at double3.zero for each parentVertex",
-      "directionAccumulatorInitial": "double3.zero for each parentVertex",
-      "directionAccumulatorMoveBranch": "if attributes[childVertex].Value & VertexAttribute.Flag_Move (0x02) != 0: directionAccumulator += positions[childVertex] - parentPosition",
+      "parentDirectionSumInitial": "double3.zero for each parentVertex",
+      "childDirectionMoveBranch": "if attributes[childVertex].Value & VertexAttribute.Flag_Move (0x02) != 0: childDirection = positions[childVertex] - parentPosition",
       "moveBitSemanticEvidence": {
         "methodIndex": 386730,
         "token": "0x06000c73",
@@ -1373,8 +1801,14 @@
         "endVa": "0x1866ff0a4",
         "spanBytes": 72
       },
-      "directionAccumulatorNonMoveBranch": "otherwise: directionAccumulator = restVector",
-      "childFromTo": "MathUtility.FromToRotation(restVector, directionAccumulator, 1.0)",
+      "childDirectionNonMoveBranch": "otherwise: childDirection = restVector",
+      "parentDirectionSum": "parentDirectionSum += childDirection after selecting the per-child value",
+      "parentDirectionSumCallOffsets": {
+        "nonMoveBranch": "0x460",
+        "moveBranch": "0x4e4"
+      },
+      "childFromTo": "MathUtility.FromToRotation(restVector, childDirection, 1.0)",
+      "childFromToCallOffset": "0x548",
       "signedLocalRotation": "quaternion(vertexLocalRotations[childVertex].value * team.negativeScaleQuaternionValue)",
       "childRotationWrite": "rotations[childVertex] = math.mul(math.mul(parentRotation, signedLocalRotation), childFromTo)",
       "writeOffsets": [
@@ -1385,7 +1819,7 @@
     "parentRotationWrite": {
       "condition": "at least one child was traversed for parentVertex",
       "interpolation": "attributes[parentVertex].Value & VertexAttribute.Flag_Move (0x02) != 0 ? parameter.rotationalInterpolation : parameter.rootRotation",
-      "parentFromTo": "MathUtility.FromToRotation(restSum, directionAccumulator, interpolation)",
+      "parentFromTo": "MathUtility.FromToRotation(restSum, parentDirectionSum, interpolation)",
       "write": "rotations[parentVertex] = math.mul(parentFromTo, parentRotation)",
       "writeOffsets": [
         "0x62c",
@@ -1592,6 +2026,40 @@
       "parentIndices"
     ],
     "numericBoundary": "The pinned unpatched managed-worker traversal/equations, generated DirectCall managed fallback, and exact dual-CPU Burst target are closed. Overall runtime numerics remain fail-closed until the selected Burst/managed branch, cross-frame/managed route, and managed-route FromToRotation IFix patch state are proven."
+  },
+  "calcLineBurstNumerics": {
+    "source": "sources.dependencies.calcLineBurstNumerics",
+    "equations": {
+      "traversal": "baseline list -> bit-0/team gates -> baseline parents -> packed child list; select one per-child direction, add it to the parent direction sum, and pass that per-child direction to child FromTo",
+      "rest": "double3(float3(rotateBinary32(parentRotation, localPosition*negativeScaleDirection)))",
+      "childRotation": "mulBinary32(mulBinary32(parentRotation, localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))",
+      "parentRotation": "mulBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+      "acos64PolynomialCoefficients": [
+        0.031615876506539346,
+        0.012153605255773773,
+        -0.015819182433299966,
+        0.013887151845016092,
+        0.019290454772679107,
+        0.017359569912236146,
+        0.006606077476277171,
+        0.022371761819320483,
+        0.030381959280381322,
+        0.044642856813771024,
+        0.07500000000378582,
+        0.16666666666664975
+      ],
+      "acos64Grouping": "z2=z*z; even0=z2*(z*c0+c2)+(z*c4+c6); even1=z2*(z*c1+c3)+(z*c5+c7); base=z2*(z*c8+c9)+(z*c10+c11); poly=(base+(z2*z2)*even1)+((z2*z2)^2)*even0",
+      "axisAngle": "normalize double3 axis; cast components and angle*t to float32; multiply half angle in float32; use the CPU-local pinned sincos helper"
+    },
+    "degeneracy": {
+      "parallel": "abs(1-dot)<epsilon returns identity before axis normalization",
+      "antiparallel": "abs(dot+1)<epsilon uses float-pi promoted to double and reference Y only when u.x>u.y and u.x>u.z, otherwise X",
+      "negativeXAxis": "the authored reference rule produces a zero cross axis for exact negative X; normalization propagates canonical NaN quaternion lanes",
+      "zeroOrNonFinite": "there is no explicit normalization guard; IEEE infinity/NaN values propagate through the exact polynomial and sincos special cases",
+      "emptyChild": "no parent or child rotation write occurs"
+    },
+    "classification": "Both pinned CPU cores match the source-only transcription bit for bit across parallel, quarter-turn, antiparallel, non-move, multi-child, empty-child, and zero-axis branch cases.",
+    "runtimeBoundary": "This closes Burst-core numerics, not the branch selected by retail. A selected managed route can still enter live IFix patch 0x219."
   },
   "calcLineDirectCallRoute": {
     "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",
