@@ -3580,6 +3580,15 @@ The builder refuses output inside the authenticated capture and labels the
 result `diagnosticReplayOnly`; it does not authorize presentation or certify
 the procedural Unity producer. A fresh bounded Full graphics capture is still
 required before the RG attachment can be admitted to presentation.
+The maintained live path is now
+`tools\EndfieldCapture\StartEndminfScreenShadowCapture.bat` with Endfield
+closed. This explicit opt-in keeps generic `StartCapture.bat graphics full`
+manual, but for the Endminf lane it waits for the exact published capture-host
+PID/path, authenticates the same immutable session ID/root after host exit,
+requires `collected/inventory.json`, and runs the strict screen-shadow verifier
+automatically. This closes the collection handoff only; preflight or launcher
+success is not t11 presentation evidence until the verifier admits exactly one
+live packet.
 The current source-background probe also closes the ordinary renderer order as
 CharFloorEffect then GridFar, with SphereOutside isolated to the deferred
 sidecar and wall/ShadowPlane disabled. Its v22 presented-pixel gate correctly
