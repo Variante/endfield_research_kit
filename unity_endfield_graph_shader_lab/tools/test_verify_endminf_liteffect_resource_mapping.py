@@ -112,6 +112,12 @@ class LitEffectResourceMappingTests(unittest.TestCase):
             ports["m01M38Compatibility"]["classification"],
             "source_sampling_subgraph_forward_presentation_non_exact",
         )
+        exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
+        self.assertIn(
+            "ddx_coarse(input.uv0) * _GlobalMipBiasPow2",
+            exact,
+        )
+        self.assertNotIn("_RecoveredM27ParallaxGradientScale", exact)
 
     def test_swapped_unity_parallax_roles_fail_closed(self) -> None:
         exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
@@ -212,6 +218,38 @@ class LitEffectResourceMappingTests(unittest.TestCase):
                     mutated_exact,
                     mutated_compatibility,
                 )
+
+    def test_post_definition_transport_reroutes_fail_closed(self) -> None:
+        exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
+        compatibility = MODULE.COMPATIBILITY_UNITY_PORT.read_text(
+            encoding="utf-8")
+        attacks = (
+            exact.replace(
+                "float roughness = lerp(",
+                "metallic = mroSample.g;\n                float roughness = lerp(",
+                1,
+            ),
+            exact.replace(
+                "float fresnel = exp2(",
+                "parallaxSample = _MROMap.SampleBias("
+                "sampler_LinearMirror, pbrUV, 0.0).r;\n"
+                "                float fresnel = exp2(",
+                1,
+            ),
+            exact.replace(
+                "float4 baseSample = _BaseColorMap.SampleBias(",
+                "baseUV = input.uv0;\n                "
+                "float4 baseSample = _BaseColorMap.SampleBias(",
+                1,
+            ),
+        )
+        for mutated in attacks:
+            self.assertNotEqual(mutated, exact, "test mutation did not alter exact port")
+            with self.assertRaisesRegex(
+                MODULE.VerificationError,
+                "single-assignment",
+            ):
+                MODULE._validate_unity_transport_ports(mutated, compatibility)
 
     def test_constant_buffer_sizes_and_known_fields(self) -> None:
         report = MODULE.build_report()

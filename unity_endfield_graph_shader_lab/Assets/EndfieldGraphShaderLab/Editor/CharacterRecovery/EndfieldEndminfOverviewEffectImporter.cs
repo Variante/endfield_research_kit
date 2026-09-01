@@ -24,7 +24,7 @@ namespace EndfieldGraphShaderLabEditor
         private const string ExpectedStageFingerprint =
             "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3";
         private const string ExpectedStageContentSha256 =
-            "cd3ae3fe97dac3c8c0ae64012401b7bb239b98aa8104933f2d516f227e739e3a";
+            "873f17793284de92f7680448b7efe282b73cbaea85522297e3f412e49508d302";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string TextureRoot = GeneratedRoot + "/Textures";
         private const string MeshRoot = GeneratedRoot + "/Meshes";
@@ -429,7 +429,7 @@ namespace EndfieldGraphShaderLabEditor
             // restore the separately decoded, source-closed transform clips
             // before validating or publishing the generated roots.
             EndfieldEndminfEffectAnimationImporter.BuildAndValidate();
-            ValidateGenerated(systems, renderers, context);
+            ValidateGenerated(gos, transforms, systems, renderers, context);
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Rebuild Endminf M14 Material")]
@@ -987,7 +987,7 @@ namespace EndfieldGraphShaderLabEditor
         {
             string[] types = {
                 "GameObject", "Transform", "ParticleSystem",
-                "ParticleSystemRenderer", "MonoBehaviour"
+                "ParticleSystemRenderer", "MonoBehaviour", "AnimationClip"
             };
             var manifest = new StringBuilder();
             foreach (string type in types)
@@ -1073,6 +1073,29 @@ namespace EndfieldGraphShaderLabEditor
             var safeRenderer = new Dictionary<string, object>(source);
             safeRenderer.Remove("$animestudio");
             safeRenderer.Remove("Name");
+            object retailSortingFudge = null;
+            object unitySortingFudge = null;
+            L.Require(
+                safeRenderer.TryGetValue(
+                    "m_RendererSortingFudge",
+                    out retailSortingFudge) &&
+                safeRenderer.TryGetValue(
+                    "m_SortingFudge",
+                    out unitySortingFudge) &&
+                SameFloat(
+                    Convert.ToSingle(
+                        retailSortingFudge,
+                        CultureInfo.InvariantCulture),
+                    Convert.ToSingle(
+                        unitySortingFudge,
+                        CultureInfo.InvariantCulture)),
+                "Endminf source renderer sorting-fudge aliases drifted");
+            // The retail fork serializes the same authored value under both
+            // m_RendererSortingFudge and stock Unity's m_SortingFudge. Map the
+            // source pair explicitly to the executable stock field instead of
+            // classifying the retail alias as an unimplemented native field.
+            safeRenderer.Remove("m_RendererSortingFudge");
+            safeRenderer["m_SortingFudge"] = unitySortingFudge;
             // Dependency references are installed from exact PathID joins
             // after the ordinary renderer payload has been applied.
             safeRenderer.Remove("m_Materials");
@@ -1147,17 +1170,23 @@ namespace EndfieldGraphShaderLabEditor
         }
 
         private static void ValidateGenerated(
+            Dictionary<long, Dictionary<string, object>> gameObjects,
+            Dictionary<long, Dictionary<string, object>> transforms,
             Dictionary<long, Dictionary<string, object>> systems,
             Dictionary<long, Dictionary<string, object>> renderers,
             EndfieldZhuangfyParticleEffectImporter.Context context)
         {
             L.Require(
+                gameObjects != null && gameObjects.Count == 101 &&
+                transforms != null && transforms.Count == 101 &&
                 systems != null && systems.Count == 70 &&
                 renderers != null && renderers.Count == 70 &&
                 context != null,
                 "Endminf saved-payload source context is incomplete");
             int total = 0;
             int admitted = 0;
+            var consumedGameObjects = new HashSet<long>();
+            var consumedTransforms = new HashSet<long>();
             var consumedSystems = new HashSet<long>();
             var consumedRenderers = new HashSet<long>();
             foreach (string name in Roots)
@@ -1205,6 +1234,13 @@ namespace EndfieldGraphShaderLabEditor
                             out string v2Failure),
                     "Endminf saved v2 source-owner validation failed: " +
                     name + ": " + v2Failure);
+                VerifySavedHierarchySourcePayloads(
+                    prefab,
+                    marker,
+                    gameObjects,
+                    transforms,
+                    consumedGameObjects,
+                    consumedTransforms);
                 VerifySavedSourcePayloads(
                     prefab,
                     marker,
@@ -1221,11 +1257,129 @@ namespace EndfieldGraphShaderLabEditor
                 "Endminf generated hierarchy marker census drifted");
             L.Require(total == 70, "Endminf generated particle census drifted");
             L.Require(
+                consumedGameObjects.Count == gameObjects.Count &&
+                consumedTransforms.Count == transforms.Count &&
                 consumedSystems.Count == systems.Count &&
                 consumedRenderers.Count == renderers.Count,
-                "Endminf saved particle PathID coverage drifted");
+                "Endminf saved hierarchy/particle PathID coverage drifted");
             L.Require(admitted > 0,
                 "Endminf exact BaseV2 material gate admitted no renderers");
+        }
+
+        private static void VerifySavedHierarchySourcePayloads(
+            GameObject prefab,
+            EndfieldRecoveredParticleEffectSource marker,
+            Dictionary<long, Dictionary<string, object>> gameObjects,
+            Dictionary<long, Dictionary<string, object>> transforms,
+            HashSet<long> consumedGameObjects,
+            HashSet<long> consumedTransforms)
+        {
+            L.Require(prefab != null && marker != null &&
+                marker.hierarchyNodes != null,
+                "Endminf saved hierarchy source context is incomplete");
+            Dictionary<long, EndfieldRecoveredParticleHierarchyNodeSource>
+                markerByTransform = marker.hierarchyNodes.ToDictionary(
+                    row => row.transformPathId);
+            foreach (EndfieldRecoveredParticleHierarchyNodeSource row in
+                     marker.hierarchyNodes)
+            {
+                Dictionary<string, object> sourceGameObject = null;
+                Dictionary<string, object> sourceTransform = null;
+                L.Require(
+                    row != null && row.generatedTransform != null &&
+                    consumedGameObjects.Add(row.gameObjectPathId) &&
+                    consumedTransforms.Add(row.transformPathId) &&
+                    gameObjects.TryGetValue(
+                        row.gameObjectPathId,
+                        out sourceGameObject) &&
+                    transforms.TryGetValue(
+                        row.transformPathId,
+                        out sourceTransform) &&
+                    L.PPtrId(sourceTransform["m_GameObject"]) ==
+                        row.gameObjectPathId,
+                    "Endminf saved hierarchy source PathID join drifted: " +
+                    marker.effectRoot + "/" +
+                    (row == null ? "<null>" : row.hierarchy));
+
+                long sourceParentPathId = L.PPtrId(
+                    sourceTransform["m_Father"]);
+                Transform expectedParent = null;
+                if (sourceParentPathId != 0)
+                {
+                    L.Require(markerByTransform.TryGetValue(
+                            sourceParentPathId,
+                            out EndfieldRecoveredParticleHierarchyNodeSource
+                                parentRow) &&
+                        parentRow != null &&
+                        parentRow.generatedTransform != null,
+                        "Endminf saved hierarchy source parent join drifted: " +
+                        marker.effectRoot + "/" + row.hierarchy);
+                    expectedParent = parentRow.generatedTransform;
+                }
+
+                Transform generated = row.generatedTransform;
+                L.Require(
+                    generated.name == L.Str(sourceGameObject, "m_Name") &&
+                    generated.gameObject.layer ==
+                        L.Int(sourceGameObject, "m_Layer") &&
+                    generated.parent == expectedParent &&
+                    string.Equals(
+                        row.hierarchy,
+                        HierarchyIncludingRoot(generated, prefab.transform),
+                        StringComparison.Ordinal) &&
+                    SameVector3(
+                        generated.localPosition,
+                        L.Vector3Value(sourceTransform["m_LocalPosition"])) &&
+                    SameQuaternion(
+                        generated.localRotation,
+                        L.QuaternionValue(sourceTransform["m_LocalRotation"])) &&
+                    SameVector3(
+                        generated.localScale,
+                        L.Vector3Value(sourceTransform["m_LocalScale"])),
+                    "Endminf saved GameObject/Transform payload drifted: " +
+                    marker.effectRoot + "/" + row.hierarchy);
+            }
+        }
+
+        private static bool SameFloat(float left, float right)
+        {
+            return Mathf.Abs(left - right) <= 1.0e-6f;
+        }
+
+        private static bool SameVector3(Vector3 left, Vector3 right)
+        {
+            return SameFloat(left.x, right.x) &&
+                SameFloat(left.y, right.y) &&
+                SameFloat(left.z, right.z);
+        }
+
+        private static bool SameQuaternion(Quaternion left, Quaternion right)
+        {
+            return SameFloat(left.x, right.x) &&
+                SameFloat(left.y, right.y) &&
+                SameFloat(left.z, right.z) &&
+                SameFloat(left.w, right.w);
+        }
+
+        private static string HierarchyIncludingRoot(
+            Transform target,
+            Transform root)
+        {
+            if (target == null || root == null)
+                return string.Empty;
+            var names = new List<string>();
+            Transform current = target;
+            while (current != null)
+            {
+                names.Add(current.name);
+                if (current == root)
+                {
+                    names.Reverse();
+                    return string.Join("/", names.ToArray());
+                }
+                current = current.parent;
+            }
+            return string.Empty;
         }
 
         private static void VerifySavedSourcePayloads(
@@ -2011,12 +2165,16 @@ namespace EndfieldGraphShaderLabEditor
 
         private static void ConfigureExactEndminfShapeTexture(string assetPath)
         {
-            // Exact installed Texture2D descriptor row for PathID
+            // Installed Texture2D descriptor row for PathID
             // 6970530313307194154: source object 2807456b59eb005d at offset
             // 793448011, descriptor SHA-256 E6F98C...97F40, 256x256,
             // TextureFormat 25, nine mips, completeImageSize 87408 and
-            // sourceColorSpace 1. Keep this narrow Endminf copy independent
-            // of the ignored generic-actor postprocessor/absolute audit path.
+            // sourceColorSpace 1. The executable recovery boundary here is
+            // deliberately narrower: hash-pinned decoded PNG content plus
+            // dimensions, mip count and importer sampling/color profile. It
+            // does not claim native BC7 bytes or platform compression identity.
+            // Keep this narrow Endminf copy independent of the ignored generic-
+            // actor postprocessor/absolute audit path.
             TextureImporter importer = AssetImporter.GetAtPath(assetPath)
                 as TextureImporter;
             L.Require(importer != null,

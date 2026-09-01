@@ -25,15 +25,15 @@ OUT = ROOT / "reports/assets/character_recovery/endminf_liteffect_visual_compati
 ASSETS = {
     "M01": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
-        "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
+        None,
     ),
     "M38": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
-        "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+        None,
     ),
     "M27": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
-        "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
+        None,
     ),
     "rockMesh": (
         ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Meshes/S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.obj",
@@ -63,7 +63,10 @@ SOURCE_FLOATS = (
     "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
     "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
     "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
+    "_ParallaxStrength", "_ParallaxTilling", "_ParallaxMarchNum",
+    "_ParallaxMinBrightness", "_ParallaxIntensity",
 )
+SOURCE_COLORS = ("_BaseColor", "_ParallaxColor", "_ParallaxColorDark")
 
 def sha256(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
@@ -120,6 +123,14 @@ def validate_material_yaml(
     expected_source_sha256: str,
 ) -> tuple[dict, list[str]]:
     failures: list[str] = []
+    if not material_path.is_file():
+        failures.append(f"generated material is missing {name}")
+        return ({
+            "sourcePath": str(source_path.relative_to(ROOT)),
+            "sourceSha256": sha256(source_path),
+            "expectedSourceSha256": expected_source_sha256,
+            "validated": False,
+        }, failures)
     actual_source_sha256 = sha256(source_path)
     if actual_source_sha256 != expected_source_sha256:
         failures.append(f"source material hash drifted {name}")
@@ -139,13 +150,15 @@ def validate_material_yaml(
             float(source_floats[field]) - material_floats[field]
         ) > 1.0e-6:
             failures.append(f"material source float drifted {name}.{field}")
-    expected_dark = source_colors.get("_ParallaxColorDark") or {}
-    actual_dark = material_colors.get("_ParallaxColorDark") or {}
-    if set(expected_dark) != {"r", "g", "b", "a"} or any(
-        abs(float(expected_dark[channel]) - float(actual_dark.get(channel, 1.0e30))) >
-        1.0e-6 for channel in ("r", "g", "b", "a")
-    ):
-        failures.append(f"material source color drifted {name}._ParallaxColorDark")
+    for field in SOURCE_COLORS:
+        expected_color = source_colors.get(field) or {}
+        actual_color = material_colors.get(field) or {}
+        if set(expected_color) != {"r", "g", "b", "a"} or any(
+            abs(float(expected_color[channel]) -
+                float(actual_color.get(channel, 1.0e30))) > 1.0e-6
+            for channel in ("r", "g", "b", "a")
+        ):
+            failures.append(f"material source color drifted {name}.{field}")
     material_text = material_path.read_text(encoding="utf-8")
     if "_RecoveredParallaxCompatibilityScale" in material_text:
         failures.append(f"material retains capture-fitted scale {name}")
@@ -153,7 +166,7 @@ def validate_material_yaml(
         "sourcePath": str(source_path.relative_to(ROOT)),
         "sourceSha256": actual_source_sha256,
         "expectedSourceSha256": expected_source_sha256,
-        "sourceFields": list(SOURCE_FLOATS) + ["_ParallaxColorDark"],
+        "sourceFields": list(SOURCE_FLOATS) + list(SOURCE_COLORS),
         "validated": not failures,
     }, failures)
 
@@ -207,6 +220,14 @@ def main() -> int:
                  for value in forbidden_shader if value in shader]
     required_runtime = [
         "endfield.endminf-liteffect-runtime-binding.v1",
+        "TryValidateForRecoveryAudit",
+        "TryValidateEndminfV2MarkerForRecoveryAudit",
+        "sourceByRendererPathId.TryGetValue",
+        "node.generatedRenderer != row.renderer",
+        "node.materialPathIds[0] != row.materialPathId",
+        "node.meshPathIds[0] != row.meshPathId",
+        "node.resolvedSourceMaterials[0] != row.material",
+        "node.resolvedSourceMeshes[0] != row.mesh",
         "ParticleSystemRenderMode.Mesh",
         "row.renderer.SetMeshes",
         "row.renderer.sharedMaterials",
@@ -220,9 +241,23 @@ def main() -> int:
         "rows.Count == 10 && material01Count == 7 && material38Count == 3",
         "renderer.enabled = false",
         "renderer.sharedMaterials = Array.Empty<Material>()",
+        "ValidateSourceMaterial(material01, Material01PathId)",
+        "ValidateSourceMaterial(material27, Material27PathId)",
+        "ValidateSourceMaterial(material38, Material38PathId)",
+        "HasSerializedMaterialProperty(",
+        "TryValidateForRecoveryAudit(out string bindingFailure)",
+        "TryValidateForRecoveryAudit(out string m27BindingFailure)",
     ]
     failures += ["runtime binding missing " + value for value in required_runtime if value not in runtime]
     failures += ["binding builder missing " + value for value in required_builder if value not in builder]
+    forbidden_builder = [
+        "ExpectedSha256",
+        "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
+        "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+        "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
+    ]
+    failures += ["binding builder retains stale generated material hash " + value
+                 for value in forbidden_builder if value in builder]
     failures += ["focused rebuild missing binding builder invocation"
                  for _ in [0] if "EndfieldEndminfLitEffectCompatibilityBindingBuilder.BuildAndValidate()" not in setup_source]
     failures += ["canonical Endminf launcher does not enable the retained LitEffect owners"
@@ -287,8 +322,10 @@ def main() -> int:
     for name, (path, expected) in ASSETS.items():
         actual = sha256(path)
         asset_evidence[name] = {"path": str(path.relative_to(ROOT)), "sha256": actual,
-                                "expectedSha256": expected, "validated": actual == expected}
-        if actual != expected:
+                                "expectedSha256": expected,
+                                "validated": actual is not None and
+                                    (expected is None or actual == expected)}
+        if actual is None or (expected is not None and actual != expected):
             failures.append(f"asset hash drifted {name}")
     material_source_evidence = {}
     for name, (source_path, expected_source_sha256) in SOURCE_MATERIALS.items():
@@ -299,6 +336,10 @@ def main() -> int:
             expected_source_sha256,
         )
         material_source_evidence[name] = evidence
+        asset_evidence[name]["validated"] = bool(evidence.get("validated"))
+        asset_evidence[name]["validationBasis"] = (
+            "source hash and serialized material fields"
+        )
         failures.extend(material_failures)
 
     capture = json.loads(CAPTURE_REPORT.read_text(encoding="utf-8")) if CAPTURE_REPORT.is_file() else {}

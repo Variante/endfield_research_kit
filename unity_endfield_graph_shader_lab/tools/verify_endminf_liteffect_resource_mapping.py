@@ -705,6 +705,31 @@ def _validate_unity_transport_ports(
 
     exact_code = normalized_code(exact_text)
     compatibility_code = normalized_code(compatibility_text)
+
+    def require_single_assignment(
+        label: str,
+        code: str,
+        variables: tuple[str, ...],
+    ) -> None:
+        """Reject shadowing and post-definition reroutes of admitted values.
+
+        This is deliberately bounded to the source-proven transport variables,
+        but unlike token-presence checks it verifies that each has one typed
+        definition and no subsequent simple/compound assignment or increment.
+        """
+        for variable in variables:
+            declarations = re.findall(
+                rf"\b(?:float(?:[234](?:x[234])?)?|uint)\s+{re.escape(variable)}\s*=",
+                code,
+            )
+            writes = re.findall(
+                rf"\b{re.escape(variable)}\s*(?:[+\-*/%&|^]?=|\+\+|--)",
+                code,
+            )
+            if len(declarations) != 1 or len(writes) != 1:
+                raise VerificationError(
+                    f"{label} admitted value is not single-assignment: "
+                    f"{variable} declarations={len(declarations)} writes={len(writes)}")
     exact_required = (
         "float2 baseUV = mad( lerp(input.uv0, input.uv1, _BaseUVSet), _BaseColorMap_ST.xy, _BaseColorMap_ST.zw);",
         "float2 pbrUV = mad( lerp(input.uv0, input.uv1, _BasePbrMapUVSet), _NormalMap_ST.xy, _NormalMap_ST.zw);",
@@ -715,12 +740,16 @@ def _validate_unity_transport_ports(
         "float maskTexture = _ParallaxMaskMap.SampleBias( sampler_PointClamp, input.uv1, _GlobalMipBias).r;",
         "float sampledHeight = _ParallaxNoiseMap.SampleGrad( sampler_PointRepeat, parallaxBaseUV * _ParallaxNoiseMapTilling + rayOffset, uvDx, uvDy).r;",
         "float parallaxSample = _ParallaxMap.SampleBias( sampler_LinearMirrorOnce, parallaxUV, _GlobalMipBias).g;",
+        "float _GlobalMipBiasPow2;",
+        "float2 uvDx = ddx_coarse(input.uv0) * _GlobalMipBiasPow2;",
+        "float2 uvDy = ddy_coarse(input.uv0) * _GlobalMipBiasPow2;",
         "geometricNormal * normalZ + tangent * (normalXY.x * _NormalScale) + bitangent * (normalXY.y * _NormalScale)",
         "float metallic = lerp( mroSample.r, _Metallic, saturate(_BaseTextureMapCount - 1.0));",
         "float roughness = lerp( _RoughnessMin, _RoughnessMax, mroSample.g);",
         "float occlusion = mad( _OcclusionStrength, mroSample.b - 1.0, 1.0);",
         "output.gBufferA = float4( metallic, occlusion, 0.0,",
         "output.gBufferB = float4( mad(octNormal, 0.5, 0.5), roughness,",
+        "float3 parallaxColor = lerp( _ParallaxColorDark.rgb, _ParallaxColor.rgb, parallaxSample);",
     )
     compatibility_required = (
         "float2 baseUV = lerp(input.uv0, input.uv1, _BaseUVSet) * _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;",
@@ -735,6 +764,8 @@ def _validate_unity_transport_ports(
         "float metallic = saturate(lerp( mro.r, _Metallic, saturate(_BaseTextureMapCount - 1.0)));",
         "float sourceRoughness = lerp( _RoughnessMin, _RoughnessMax, mro.g);",
         "float occlusion = saturate(lerp( 1.0, mro.b, _OcclusionStrength));",
+        "float3 parallaxColor = lerp( _ParallaxColorDark.rgb, _ParallaxColor.rgb, parallax);",
+        "return float4(lit + emission, baseSample.a);",
     )
     forbidden = (
         "_ParallaxMap.SampleGrad(",
@@ -742,6 +773,7 @@ def _validate_unity_transport_ports(
         "float roughness = clamp(mro.r",
         "float metallic = saturate(mro.g)",
         "_MetallicMax",
+        "_RecoveredM27ParallaxGradientScale",
     )
     for label, code, required in (
         ("exact M27 producer", exact_code, exact_required),
@@ -754,6 +786,25 @@ def _validate_unity_transport_ports(
             raise VerificationError(
                 f"{label} source sampling transport drifted: "
                 f"missing={missing!r} forbidden={retained!r}")
+    require_single_assignment(
+        "exact M27 producer",
+        exact_code,
+        (
+            "baseUV", "pbrUV", "parallaxBaseUV", "baseSample",
+            "normalSample", "mroSample", "uvDx",
+            "uvDy", "sampledHeight", "parallaxSample", "metallic",
+            "roughness", "occlusion", "parallaxColor",
+        ),
+    )
+    require_single_assignment(
+        "M01/M38 visual compatibility port",
+        compatibility_code,
+        (
+            "baseUV", "pbrUV", "parallaxBaseUV", "baseSample",
+            "normalSample", "mro", "sampledHeight", "parallax",
+            "metallic", "sourceRoughness", "occlusion", "parallaxColor",
+        ),
+    )
     return {
         "sourceProvenSubgraph": {
             "physicalTextures": EXPECTED_FRAGMENT_TEXTURE_REGISTERS,

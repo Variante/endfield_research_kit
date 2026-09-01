@@ -58,7 +58,6 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
         [HideInInspector] _TerrainSubsurfaceProfileInt ("Terrain Subsurface Profile", Float) = 0
         [HideInInspector] _RecoveredM27InstanceRecordC3 ("Captured Instance Record c3", Vector) = (0, 0, 0, 1)
         [HideInInspector] _RecoveredM27InstanceRecordC4 ("Captured Instance Record c4", Vector) = (1000, 0, 0, 0)
-        [HideInInspector] _RecoveredM27ParallaxGradientScale ("Captured Parallax Gradient Scale", Float) = 0.5
         [HideInInspector] _RecoveredSourceAuthoredLitEffect ("Source-authored live LitEffect", Float) = 0
     }
 
@@ -159,13 +158,13 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
             float _TAAUNormalBiasReverse;
             float _TaauMaskModeValue;
             float _GlobalMipBias;
+            float _GlobalMipBiasPow2;
             float _HGRPExposureMultiplier;
             float4 _VFXParams0;
             float4 _AnchorWaveBright;
             float _TerrainSubsurfaceProfileInt;
             float4 _RecoveredM27InstanceRecordC3;
             float4 _RecoveredM27InstanceRecordC4;
-            float _RecoveredM27ParallaxGradientScale;
             float _RecoveredSourceAuthoredLitEffect;
 
             struct Attributes
@@ -356,10 +355,11 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 float2 rayOffset = rayStep;
                 float hitHeight = 0.0;
 
-                float2 uvDx = ddx_coarse(input.uv0) *
-                    _RecoveredM27ParallaxGradientScale;
-                float2 uvDy = ddy_coarse(input.uv0) *
-                    _RecoveredM27ParallaxGradientScale;
+                // ShaderVariablesGlobal c26.y is _GlobalMipBiasPow2 in the
+                // recovered source metadata. Consume that live engine value
+                // instead of replaying the captured 0.5 value.
+                float2 uvDx = ddx_coarse(input.uv0) * _GlobalMipBiasPow2;
+                float2 uvDy = ddy_coarse(input.uv0) * _GlobalMipBiasPow2;
 
                 [loop]
                 for (uint stepIndex = 0u; stepIndex < marchCount + 1u; ++stepIndex)

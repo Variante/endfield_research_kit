@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
+RUNTIME_BINDING = HERE.parent / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    "EndfieldEndminfLitEffectCompatibilityBinding.cs"
+)
 RESOURCE_SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_liteffect_resource_mapping",
     HERE / "verify_endminf_liteffect_resource_mapping.py",
@@ -44,6 +48,66 @@ class EndminfLitEffectVisualCompatibilityTests(unittest.TestCase):
             MODULE.canonical_json(drifted),
             MODULE.canonical_json(fresh),
         )
+
+    def test_material_contract_is_source_derived_not_generated_hash_pinned(self) -> None:
+        builder = MODULE.BUILDER.read_text(encoding="utf-8")
+        for stale_hash in (
+            "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
+            "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
+            "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
+        ):
+            self.assertNotIn(stale_hash, builder)
+        self.assertIn("ValidateSourceMaterial(material01, Material01PathId)", builder)
+        self.assertIn("SourceTextureFields", builder)
+        self.assertIn("HasSerializedMaterialProperty(", builder)
+
+    def test_source_material_fields_cover_all_used_stone_controls(self) -> None:
+        self.assertTrue({
+            "_NormalScale", "_RoughnessMin", "_RoughnessMax",
+            "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
+            "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
+            "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
+            "_ParallaxStrength", "_ParallaxTilling", "_ParallaxMarchNum",
+            "_ParallaxMinBrightness", "_ParallaxIntensity",
+        }.issubset(set(MODULE.SOURCE_FLOATS)))
+        self.assertEqual(
+            set(MODULE.SOURCE_COLORS),
+            {"_BaseColor", "_ParallaxColor", "_ParallaxColorDark"},
+        )
+
+    def test_runtime_binding_rejoins_rows_to_the_exact_v2_source_marker(self) -> None:
+        source = RUNTIME_BINDING.read_text(encoding="utf-8")
+        validator = source[source.index(
+            "public bool TryValidateForRecoveryAudit("
+        ):source.index("public static bool Requested")]
+        for token in (
+            "contractSchema,",
+            "ContractSchema,",
+            "GetComponent<EndfieldRecoveredParticleEffectSource>()",
+            "TryValidateEndminfV2MarkerForRecoveryAudit(",
+            "sourceByRendererPathId.TryGetValue(",
+            "node.generatedRenderer != row.renderer",
+            "node.materialPathIds[0] != row.materialPathId",
+            "node.meshPathIds[0] != row.meshPathId",
+            "node.resolvedSourceMaterials[0] != row.material",
+            "node.resolvedSourceMeshes[0] != row.mesh",
+            "material01Count != 7",
+            "material38Count != 3",
+            "material27Count != 1",
+            "admittedRendererIds.Contains(M27RendererPathId)",
+        ):
+            self.assertIn(token, validator)
+
+    def test_runtime_validates_the_whole_binding_before_enabling_any_row(self) -> None:
+        source = RUNTIME_BINDING.read_text(encoding="utf-8")
+        on_enable = source[source.index("private void OnEnable()"):
+                           source.index("public bool TryValidateForRecoveryAudit(")]
+        self.assertLess(
+            on_enable.index("TryValidateForRecoveryAudit("),
+            on_enable.index("foreach (Row row in rows)"),
+        )
+        self.assertIn("return;", on_enable)
+        self.assertEqual(on_enable.count("row.renderer.enabled = true;"), 1)
 
 
 if __name__ == "__main__":
