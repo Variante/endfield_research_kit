@@ -3567,16 +3567,19 @@ scene-shadow R preservation plus a changed/non-constant character-shadow G,
 and fails closed with structured diagnostics. Pass `--artifact-dir <scratch>`
 to emit lossless native-row-order PNGs for both R/G channels of P1, P2, the
 consumer, and the producer deltas; these are comparison evidence, not runtime
-textures. After a capture passes, run
+textures. `Numpad 9` finalizes providers but does not run the collector. After
+the capture host exits, run `EndfieldCapture.exe collect --session <id> --session-root <capture>`
+and require validated collector JSON plus
+`collected/inventory.json` before invoking the strict verifier. The rejected
+`20260831T184411Z` session omitted this required collection step. After a
+capture passes, run
 `python tools/build_endminf_screen_shadow_capture_artifact.py <capture>
 --output-dir <scratch-output>` from `unity_endfield_graph_shader_lab/` to emit
 the inventory-authenticated raw P2 RG8 bytes plus a deterministic manifest.
 The builder refuses output inside the authenticated capture and labels the
 result `diagnosticReplayOnly`; it does not authorize presentation or certify
-the procedural Unity producer. The incomplete
-`20260831T184411Z` session has no collector inventory and remains rejected. A
-fresh bounded Full graphics capture is still required before the RG attachment
-can be admitted to presentation.
+the procedural Unity producer. A fresh bounded Full graphics capture is still
+required before the RG attachment can be admitted to presentation.
 The current source-background probe also closes the ordinary renderer order as
 CharFloorEffect then GridFar, with SphereOutside isolated to the deferred
 sidecar and wall/ShadowPlane disabled. Its v22 presented-pixel gate correctly
