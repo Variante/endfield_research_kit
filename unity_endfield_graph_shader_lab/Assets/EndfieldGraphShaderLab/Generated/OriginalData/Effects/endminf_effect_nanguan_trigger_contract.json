@@ -1,0 +1,528 @@
+{
+  "schema": "endfield.endminf-effect-nanguan-trigger.v3",
+  "scope": "separate source-closed EffectInstance delay behavior, LOD-owned child Animator definition, native play code path, and non-retail lab transport; no cross-owner timing join",
+  "evidence": {
+    "serializedArtifacts": [
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/MonoBehaviour/MonoBehaviour#299_pEE47385E2B7F6C79.json",
+        "sha256": "f6fc9bb6515773524430750eda8e4b836ec582c70a3bd12c25994e86d98da7ea"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/GameObject/effect_nanguan_p3E1E69C789E16C79.json",
+        "sha256": "07b3c0594bb31e0287414195b08563ba72fb26c52b45d4a18cd1c09417f74de7"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/Animator/effect_nanguan_pA68268B3E2D06C79.json",
+        "sha256": "01d9c44f9de1f38c9fa75c4063e53ca0383b83ac385309710cbd8773ff30d829"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/Animator/P_fxui_endminm003_overview_01_pB1AA2926B7D06C79.json",
+        "sha256": "a7061f60874b100ff2c095b21a55b2c4ce9c8af3d1117710c2ca0f6fd927cd5e"
+      },
+      {
+        "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController/AnimatorController#3596353_pE864B694E2337D78.json",
+        "sha256": "a680e895100485bb57c1467f08ed3da926ce791dc4fa576a5f4437fc1e747e3d"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/AnimationClip/A_fx_endminf_ui_overview_03_p74482923CB70A4E8.json",
+        "sha256": "81ee25bc86197850e8c9fbf45e23d99a77da958ac9c0258e0ebfede1ab421426"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+        "sha256": "220ae359098e5a843afdced4680265e3eead2aba79b926988c5ba46ae6d42e6f"
+      },
+      {
+        "path": "scratch/character_recovery/endminf_overview_effect_stage/filters/external_ui_effects_001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.json",
+        "sha256": "98d12d6f6598436605a3f48d5db863542d41d6a06d5e482c079dd8e2e90c177a"
+      }
+    ],
+    "originalAssetMap": {
+      "path": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json",
+      "sha256": "148415835f911fc94a634925c50c2d8b9a1cd4f5f141412f956cbb143805b6f3",
+      "byteCount": 759252292,
+      "exactNameRowCounts": {
+        "A_fx_endminf_ui_overview_03": 1,
+        "A_fx_endminf_ui_overview_04": 1,
+        "effect_nanguan": 3,
+        "A_fx_endminf_ui_overview_03_04": 0
+      },
+      "exactRows": [
+        {
+          "Name": "A_fx_endminf_ui_overview_03",
+          "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_02.prefab",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "PathID": 8378992340436559080,
+          "Type": "AnimationClip",
+          "Hash": "c558743aacd8a0f7",
+          "Offset": 373845082
+        },
+        {
+          "Name": "A_fx_endminf_ui_overview_04",
+          "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "PathID": -2625895420410042749,
+          "Type": "AnimationClip",
+          "Hash": "cb429ac9f1afe11",
+          "Offset": 772927267
+        },
+        {
+          "Name": "effect_nanguan",
+          "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "PathID": -6448476594627384199,
+          "Type": "Animator",
+          "Hash": "6b9e501d73e9ca28",
+          "Offset": 772927267
+        }
+      ]
+    },
+    "exactAssetMapFilter": {
+      "path": "scratch/character_recovery/endminf_overview_effect_stage/filters/external_ui_effects_001_98E51B76A48F5BEF8D07BDFD3E4DA7ED.json",
+      "sha256": "98d12d6f6598436605a3f48d5db863542d41d6a06d5e482c079dd8e2e90c177a",
+      "rows": [
+        {
+          "Name": "A_fx_endminf_ui_overview_03",
+          "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_02.prefab",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "PathID": 8378992340436559080,
+          "Type": "AnimationClip",
+          "Hash": "c558743aacd8a0f7",
+          "Offset": 373845082
+        },
+        {
+          "Name": "A_fx_endminf_ui_overview_04",
+          "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+          "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+          "PathID": -2625895420410042749,
+          "Type": "AnimationClip",
+          "Hash": "cb429ac9f1afe11",
+          "Offset": 772927267
+        }
+      ]
+    },
+    "nativeBuildGate": {
+      "status": "validated",
+      "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+      "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    },
+    "native": {
+      "methodIdentities": [
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000d8e",
+          "method": "_ReadCfgData",
+          "methodIndex": 23176,
+          "token": "0x06005a89",
+          "parameters": [],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000d8e",
+          "method": "Start",
+          "methodIndex": 23178,
+          "token": "0x06005a8b",
+          "parameters": [],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000d8e",
+          "method": "SetActive",
+          "methodIndex": 23200,
+          "token": "0x06005aa1",
+          "parameters": [
+            {
+              "name": "active",
+              "type": "System.Boolean"
+            }
+          ],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000d8e",
+          "method": "SetEffectPlayState",
+          "methodIndex": 23201,
+          "token": "0x06005aa2",
+          "parameters": [
+            {
+              "name": "play",
+              "type": "System.Boolean"
+            }
+          ],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectSetting",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000db1",
+          "method": "PlayEffect",
+          "methodIndex": 23675,
+          "token": "0x06005c7c",
+          "parameters": [],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectLodCfg",
+          "image": "Gameplay.Beyond.dll",
+          "typeToken": "0x02000db9",
+          "method": "Play",
+          "methodIndex": 23709,
+          "token": "0x06005c9e",
+          "parameters": [],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "UnityEngine.Behaviour",
+          "image": "UnityEngine.CoreModule.dll",
+          "typeToken": "0x02000180",
+          "method": "set_enabled",
+          "methodIndex": 405973,
+          "token": "0x0600105c",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "System.Boolean"
+            }
+          ],
+          "returnType": "System.Void"
+        },
+        {
+          "type": "UnityEngine.Animator",
+          "image": "UnityEngine.AnimationModule.dll",
+          "typeToken": "0x0200002a",
+          "method": "Play",
+          "methodIndex": 475603,
+          "token": "0x06000212",
+          "parameters": [
+            {
+              "name": "stateNameHash",
+              "type": "System.Int32"
+            }
+          ],
+          "returnType": "System.Void"
+        }
+      ],
+      "fieldIdentities": [
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "field": "m_delayTime",
+          "token": "0x04004deb"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "field": "m_animator",
+          "token": "0x04004dfb"
+        },
+        {
+          "type": "Beyond.Gameplay.EffectInstance",
+          "field": "m_hasAnimator",
+          "token": "0x04004dfc"
+        }
+      ],
+      "methodPointerMapping": {
+        "codeRegistrationVa": "0x18b9217d0",
+        "codeGenModuleCount": 170,
+        "status": "validated_from_current_metadata_and_codegen_module_tables",
+        "methods": [
+          {
+            "method": "Beyond.Gameplay.EffectInstance._ReadCfgData",
+            "methodIndex": 23176,
+            "token": "0x06005a89",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23176,
+            "methodPointerVa": "0x183963e40"
+          },
+          {
+            "method": "Beyond.Gameplay.EffectInstance.Start",
+            "methodIndex": 23178,
+            "token": "0x06005a8b",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23178,
+            "methodPointerVa": "0x183028ee0"
+          },
+          {
+            "method": "Beyond.Gameplay.EffectInstance.SetActive",
+            "methodIndex": 23200,
+            "token": "0x06005aa1",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23200,
+            "methodPointerVa": "0x18302a920"
+          },
+          {
+            "method": "Beyond.Gameplay.EffectInstance.SetEffectPlayState",
+            "methodIndex": 23201,
+            "token": "0x06005aa2",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23201,
+            "methodPointerVa": "0x18743eba0"
+          },
+          {
+            "method": "Beyond.Gameplay.EffectSetting.PlayEffect",
+            "methodIndex": 23675,
+            "token": "0x06005c7c",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23675,
+            "methodPointerVa": "0x1834fc4d0"
+          },
+          {
+            "method": "Beyond.Gameplay.EffectLodCfg.Play",
+            "methodIndex": 23709,
+            "token": "0x06005c9e",
+            "image": "Gameplay.Beyond.dll",
+            "moduleMethodSlot": 23709,
+            "methodPointerVa": "0x1834fc5e0"
+          },
+          {
+            "method": "UnityEngine.Behaviour.set_enabled",
+            "methodIndex": 405973,
+            "token": "0x0600105c",
+            "image": "UnityEngine.CoreModule.dll",
+            "moduleMethodSlot": 4187,
+            "methodPointerVa": "0x1834369a0"
+          },
+          {
+            "method": "UnityEngine.Animator.Play(System.Int32)",
+            "methodIndex": 475603,
+            "token": "0x06000212",
+            "image": "UnityEngine.AnimationModule.dll",
+            "moduleMethodSlot": 529,
+            "methodPointerVa": "0x1834fcd00"
+          }
+        ]
+      },
+      "methodBodies": [
+        {
+          "name": "Beyond.Gameplay.EffectInstance._ReadCfgData",
+          "virtualAddress": "0x183963e40",
+          "fileOffset": "0x3962440",
+          "byteCount": 144,
+          "sha256": "81a63414ffa5d3968059951ba619d93a0a635ce8bc66afdaac7654a836b4b9fa"
+        },
+        {
+          "name": "Beyond.Gameplay.EffectInstance.Start",
+          "virtualAddress": "0x183028ee0",
+          "fileOffset": "0x30274e0",
+          "byteCount": 3024,
+          "sha256": "bd85708e13c4bb1206126168df46bf50c2c24c5c14d571db321d1c7c16c44564"
+        },
+        {
+          "name": "Beyond.Gameplay.EffectInstance.SetActive",
+          "virtualAddress": "0x18302a920",
+          "fileOffset": "0x3028f20",
+          "byteCount": 672,
+          "sha256": "ac853001b71f10be0c349c3da9959f21a142dc49e80bc8f486f1feac4637cec1"
+        },
+        {
+          "name": "Beyond.Gameplay.EffectInstance.SetEffectPlayState",
+          "virtualAddress": "0x18743eba0",
+          "fileOffset": "0x743d1a0",
+          "byteCount": 392,
+          "sha256": "367374b2c9ad06bf88b0d6a4f6edd999e9c9c8161a7eb54abf12f2f3ec32a489"
+        },
+        {
+          "name": "Beyond.Gameplay.EffectSetting.PlayEffect",
+          "virtualAddress": "0x1834fc4d0",
+          "fileOffset": "0x34faad0",
+          "byteCount": 272,
+          "sha256": "7c98c6cc65e25d96d4adda5293efd6ec9103fb8ad49fbb3c6482e5549738a724"
+        },
+        {
+          "name": "Beyond.Gameplay.EffectLodCfg.Play",
+          "virtualAddress": "0x1834fc5e0",
+          "fileOffset": "0x34fabe0",
+          "byteCount": 656,
+          "sha256": "b2fa3784d165047b376844a63ff0cd06bf6a37d68912f572596116d0ea162b1a"
+        }
+      ],
+      "controlFlow": [
+        {
+          "name": "read_cfg_delay_copy",
+          "caller": "Beyond.Gameplay.EffectInstance._ReadCfgData",
+          "offset": "0x48",
+          "bytes": "48 8b 83 98 00 00 00 48 85 c0 74 35 80 78 18 00 75 0f 8b 40 1c 89 83 c8 00 00 00 48 83 c4 20 5b c3",
+          "semantic": "copies non-random EffectLogicCfg.delay into EffectInstance.m_delayTime"
+        },
+        {
+          "name": "zero_delay_start_animator_enable",
+          "caller": "Beyond.Gameplay.EffectInstance.Start",
+          "offset": "0x412",
+          "bytes": "f3 0f 10 8e c8 00 00 00 0f 57 c0 0f 2f c8 0f 87 cf 00 00 00 88 9e cc 00 00 00 38 9e 40 01 00 00 0f 84 a0 00 00 00 48 8b 8e 38 01 00 00 48 85 c9 0f 84 f7 06 00 00 45 33 c0 b2 01 e8 6e d6 40 00",
+          "semantic": "delay > 0 branches to delayed deactivation; zero delay falls through and, only when EffectInstance.m_hasAnimator is true and EffectInstance.m_animator is non-null, enables that runtime EffectInstance animator",
+          "callIndex": 59,
+          "target": "UnityEngine.Behaviour.set_enabled",
+          "targetVirtualAddress": "0x1834369a0",
+          "branchOpcode": "JA",
+          "branchMeaning": "delay > 0",
+          "branchTargetOffset": "0x4f5",
+          "fallthroughMeaning": "delay == 0 falls through to a conditional enable of the runtime EffectInstance.m_animator at +0x138 only when m_hasAnimator at +0x140 is true and that animator is non-null"
+        },
+        {
+          "name": "set_active_to_play_effect",
+          "caller": "Beyond.Gameplay.EffectInstance.SetActive",
+          "offset": "0x178",
+          "bytes": "48 85 c9 74 67 33 d2 e8 2c 1a 4d 00",
+          "semantic": "SetActive true path calls EffectSetting.PlayEffect",
+          "callIndex": 7,
+          "target": "Beyond.Gameplay.EffectSetting.PlayEffect",
+          "targetVirtualAddress": "0x1834fc4d0"
+        },
+        {
+          "name": "play_effect_to_lod_play",
+          "caller": "Beyond.Gameplay.EffectSetting.PlayEffect",
+          "offset": "0x85",
+          "bytes": "48 8b 5c 24 50 48 85 db 74 68 33 d2 48 8b cb e8 77 00 00 00",
+          "semantic": "PlayEffect enumerator row calls EffectLodCfg.Play",
+          "callIndex": 15,
+          "target": "Beyond.Gameplay.EffectLodCfg.Play",
+          "targetVirtualAddress": "0x1834fc5e0"
+        },
+        {
+          "name": "lod_play_to_animator_play",
+          "caller": "Beyond.Gameplay.EffectLodCfg.Play",
+          "offset": "0x1b9",
+          "bytes": "48 8b 8b a8 00 00 00 48 85 c9 74 be 45 33 c0 33 d2 e8 51 05 00 00",
+          "semantic": "EffectLodCfg.Play calls Animator.Play(stateNameHash=0)",
+          "callIndex": 17,
+          "target": "UnityEngine.Animator.Play(System.Int32)",
+          "targetVirtualAddress": "0x1834fcd00"
+        }
+      ],
+      "negativeEdges": [
+        {
+          "caller": "Beyond.Gameplay.EffectInstance.Start",
+          "target": "Beyond.Gameplay.EffectSetting.PlayEffect",
+          "directRelativeCallOffsets": [],
+          "meaning": "No direct Start -> PlayEffect edge exists in the pinned method body; the zero-delay Start proof is only the separate conditional enable of EffectInstance.m_animator. It does not identify the LOD-owned child Animator."
+        }
+      ]
+    },
+    "effectSetting": {
+      "enabled": true,
+      "isLoop": false,
+      "durationSeconds": 9.0,
+      "randomDelay": false,
+      "delaySeconds": 0.0,
+      "lodIndex": 30,
+      "gameObjectPathId": 4476131385385512057,
+      "animatorPathId": -6448476594627384199,
+      "settingLodLevel": 15,
+      "platformLayer": 7,
+      "targetLayer": 3,
+      "speedPercent": 1.0,
+      "serializedDistanceLodActiveFlag": true,
+      "runtimeGameObjectActivationProven": false
+    },
+    "lodOwnedChildAnimator": {
+      "gameObject": "effect_nanguan",
+      "assetMapOwnerRow": {
+        "Name": "effect_nanguan",
+        "Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab",
+        "Source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\StreamingAssets\\VFS\\7064D8E2\\98E51B76A48F5BEF8D07BDFD3E4DA7ED.chk",
+        "PathID": -6448476594627384199,
+        "Type": "Animator",
+        "Hash": "6b9e501d73e9ca28",
+        "Offset": 772927267
+      },
+      "controllerPathId": -1701034008672764552,
+      "controllerName": "A_fx_endminf_ui_overview_04",
+      "defaultState": 0,
+      "unconditionalEntryDestination": 0,
+      "clipPathId": -2625895420410042749,
+      "clipName": "A_fx_endminf_ui_overview_04",
+      "clipStartSeconds": 0.0,
+      "clipStopSeconds": 4.366667,
+      "sampleRate": 60.0,
+      "loop": false,
+      "serializedGenericBindingCount": 8,
+      "relationshipToEffectInstanceRuntimeAnimatorProven": false,
+      "clipStartRelativeToEffectInstanceStartProven": false
+    },
+    "overviewRootAnimator": {
+      "gameObject": "P_fxui_endminm003_overview_01",
+      "gameObjectPathId": 644358100928130169,
+      "enabled": true,
+      "controllerPathId": 0,
+      "controllerIsNull": true
+    },
+    "nativeDelayBranch": {
+      "effectInstanceDelayFieldOffset": "0xc8",
+      "comparison": "EffectInstance.Start enters delayed deactivation only when delay > 0",
+      "zeroDelayResult": "fallthrough to a conditional Behaviour.set_enabled(true) on the runtime EffectInstance.m_animator at +0x138 when m_hasAnimator at +0x140 is true and the animator is non-null",
+      "controlFlowEvidence": "zero_delay_start_animator_enable",
+      "childAnimatorIdentityProven": false
+    }
+  },
+  "rejectedComposite": {
+    "name": "A_fx_endminf_ui_overview_03_04",
+    "originalAssetMapExactNameRowCount": 0,
+    "reason": "The serialized controller points only to source clip 04; clip 03 belongs to a different source effect prefab, so grafting its visibility curves is not source-closed.",
+    "clip03Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_02.prefab",
+    "clip04Container": "assets/beyond/dynamicassets/gameplay/effects/prefabs/p_fxui_endminm003_overview_01.prefab"
+  },
+  "conclusions": {
+    "effectInstanceDelayAndOwnAnimatorEnable": {
+      "sourceClosed": true,
+      "relativeAnchor": "EffectInstance.Start",
+      "provenChain": [
+        "EffectInstance._ReadCfgData copies authored delay=0 to m_delayTime",
+        "EffectInstance.Start takes the zero-delay fallthrough",
+        "when m_hasAnimator is true and m_animator is non-null, Behaviour.set_enabled(true) is called on that EffectInstance animator"
+      ],
+      "nonclaim": "This code path does not identify EffectInstance.m_animator as the separately serialized LOD-owned effect_nanguan child Animator and therefore does not establish any clip start relative to EffectInstance.Start."
+    },
+    "lodOwnedChildAnimatorDefinitionAndPlayCodePath": {
+      "definitionSourceClosed": true,
+      "nativeCodePathSourceClosed": true,
+      "runtimeInvocationForThisLodRowSourceClosed": false,
+      "clipStartRelativeToEffectInstanceStartSourceClosed": false,
+      "serializedOwnerChain": [
+        "EffectSetting.lodSetting[30]",
+        "effect_nanguan Animator",
+        "A_fx_endminf_ui_overview_04 AnimatorController",
+        "unconditional default state 0",
+        "A_fx_endminf_ui_overview_04"
+      ],
+      "nativeCodePath": [
+        "EffectSetting.PlayEffect",
+        "EffectLodCfg.Play",
+        "Animator.Play(stateNameHash=0)"
+      ],
+      "nonclaim": "The serialized child ownership and generic native play chain are exact, but no exact call binds that chain to LOD row 30 at EffectInstance.Start."
+    },
+    "effectInstanceAnimatorToChildAnimatorRelationship": {
+      "sourceClosed": false,
+      "status": "unresolved",
+      "nonclaim": "The EffectInstance.m_animator pointer used by Start is not proven to be the LOD-owned effect_nanguan child Animator. The exact overview-root Animator has a null controller, while the child Animator is owned separately by lodSetting[30]."
+    },
+    "effectSettingLodGameObjectActivation": {
+      "sourceClosed": false,
+      "status": "unresolved",
+      "knownRuntimePath": [
+        "EffectInstance.SetActive(true)",
+        "EffectSetting.PlayEffect",
+        "EffectLodCfg.Play",
+        "Animator.Play(stateNameHash=0)"
+      ],
+      "nonclaim": "The serialized LOD row identifies effect_nanguan and carries isActive=1, and the native PlayEffect chain is exact, but no exact invocation of SetGameObjectActive(true) for this owner transition has been established. GameObject/LOD activation is not claimed."
+    },
+    "overviewStateToEffectInstanceStart": {
+      "sourceClosed": false,
+      "status": "unresolved",
+      "nonclaim": "No exact source link yet establishes when the outer Endminf overview state creates or starts this EffectInstance; no absolute character-timeline offset or retail-canonical overview timing is claimed."
+    },
+    "labPlayback": {
+      "sourceOwner": "Animator",
+      "labTransport": "Legacy Animation",
+      "retailOwnerExact": false,
+      "retailTimingExact": false,
+      "labStartPolicy": "start exact clip 04 when the lab effect root is instantiated",
+      "rule": "Bind the exact exported A_fx_endminf_ui_overview_04 clip and start it when the lab instantiates its recovered effect root. This is a transport mapping, not a retail EffectInstance or child-Animator timing claim. Do not graft clip 03 or add a fitted delay."
+    }
+  }
+}
