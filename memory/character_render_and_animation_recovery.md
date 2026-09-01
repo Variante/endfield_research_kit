@@ -3695,10 +3695,16 @@ first post-publication sample (36.45 mm/6.82 degrees mean) and reaches
 off. The generated PostProxy contract now closes the hidden JobHandle ABI,
 four-stage dependency order, job payload layouts, exact scheduling identities
 and batch sizes, the create-list gates plus four atomic contiguous-index queue
-appends, and CalcLine entry gates through nonzero child count. The remaining
-numeric boundary is CalcLine child traversal and normal/tangent vector math.
-The contract fails closed on that boundary and on runtime route selection; it
-uses no captured positions, timing, curves, fitted constants, or replay data.
+appends, and the pinned unpatched CalcLine managed worker. That worker's exact
+17-parameter ABI, packed child traversal, Move-bit branches, signed local
+rotation, parent/child quaternion equations, helper spans, and
+`FromToRotation` parallel/antiparallel degeneracy branches are code-closed.
+Despite the job name, this body writes rotations and has no separate
+normal/tangent output buffer. Overall numeric equivalence remains fail-closed:
+static code does not prove whether retail selected the managed worker or the
+Burst/direct-call route, and `FromToRotation` can be replaced through IFix
+patch `0x219`, whose runtime state is unknown. The contract uses no captured
+positions, timing, curves, fitted constants, or replay data.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
@@ -3770,12 +3776,15 @@ or shaders rather than hand-editing generated prefabs.
 
 1. Do not run the combined Endminf graphics-plus-dynamics wrapper while the
    bulk Transform observer is withheld; it now rejects a real launch. Continue
-   offline recovery of the remaining CalcLine child traversal and
-   normal/tangent equations from the pinned native code, extending
-   `build_secondary_dynamics_post_proxy_contract.py` and its focused tests.
-   Keep the older trajectory capture validation-only. If new graphics evidence
-   is independently required, use `StartCapture.bat graphics full` with
-   Endfield closed and do not interpret it as secondary-motion evidence.
+   offline recovery at the remaining CalcLine route boundary: disassemble and
+   compare the Burst/direct-call target at method index `384854`, and establish
+   the runtime IFix selection state for `FromToRotation` patch `0x219`. Do not
+   implement the managed equations as retail-active until those routes close.
+   Keep the older trajectory capture validation-only. A new capture is useful
+   only if it is narrowly instrumented for the selected CalcLine route or IFix
+   patch state. If new graphics evidence is independently required, use
+   `StartCapture.bat graphics full` with Endfield closed and do not interpret
+   it as secondary-motion evidence.
    Accept strict `observed-slInit` only when it is genuinely retained;
    otherwise the no-init Streamline surface consumer may use only the exact
    `post-init-feature0-runtime-proof`, while all initialization-argument

@@ -1,14 +1,20 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-  "status": "post_proxy_schedule_and_create_list_control_closed_calc_line_vectors_open",
+  "status": "post_proxy_managed_calc_line_equations_closed_runtime_routes_open",
   "manager_schedule_closed": true,
   "managed_job_payload_layout_closed": true,
   "generic_methodspec_identities_closed": true,
   "world_local_publication_equations_closed": true,
   "create_list_worker_control_flow_recovered": true,
   "calc_line_entry_control_flow_recovered": true,
+  "calc_line_child_traversal_recovered": true,
+  "calc_line_managed_worker_equations_recovered": true,
+  "calc_line_managed_worker_degeneracy_branches_recovered": true,
+  "calc_line_data_layout_closed": true,
   "create_list_kernel_numerics_recovered": false,
   "calc_line_normal_tangent_numerics_recovered": false,
+  "selected_calc_line_execution_route_closed": false,
+  "from_to_rotation_ifix_patch_state_closed": false,
   "selected_cross_frame_route_closed": false,
   "solver_implemented": false,
   "retail_equivalent": false,
@@ -674,7 +680,375 @@
   },
   "calcLineEntryControlFlow": {
     "managedWorkerMethodIndex": 384856,
+    "startVa": "0x186744fb0",
+    "spanBytes": 1844,
     "bodySha256": "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829",
+    "throughRetBytes": 1835,
+    "throughRetSha256": "3fd25c103794771a322506815060f2203fc2ef5d4830252122bd4b654c76df31",
+    "parameterLayout": [
+      {
+        "ordinal": 0,
+        "name": "jobBaseLineList",
+        "metadataParameterIndex": 426922,
+        "metadataTypeIndex": 117350,
+        "win64Location": "rcx",
+        "workerRbpOffset": null,
+        "elementType": "System.Int32",
+        "elementTypeCode": "0x8",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 4,
+        "access": "read"
+      },
+      {
+        "ordinal": 1,
+        "name": "teamDataArray",
+        "metadataParameterIndex": 426923,
+        "metadataTypeIndex": 117510,
+        "win64Location": "rdx",
+        "workerRbpOffset": null,
+        "elementType": "BeyondDynamicBone.TeamManager+TeamData",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 48233,
+        "elementStrideBytes": 464,
+        "access": "read"
+      },
+      {
+        "ordinal": 2,
+        "name": "parameterArray",
+        "metadataParameterIndex": 426924,
+        "metadataTypeIndex": 117243,
+        "win64Location": "r8",
+        "workerRbpOffset": null,
+        "elementType": "BeyondDynamicBone.ClothParameters",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 48002,
+        "elementStrideBytes": 808,
+        "access": "read"
+      },
+      {
+        "ordinal": 3,
+        "name": "attributes",
+        "metadataParameterIndex": 426925,
+        "metadataTypeIndex": 117438,
+        "win64Location": "r9",
+        "workerRbpOffset": null,
+        "elementType": "BeyondDynamicBone.VertexAttribute",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 48621,
+        "elementStrideBytes": 1,
+        "access": "read"
+      },
+      {
+        "ordinal": 4,
+        "name": "positions",
+        "metadataParameterIndex": 426926,
+        "metadataTypeIndex": 117455,
+        "win64Location": "entry rsp+0x28",
+        "workerRbpOffset": "0x720",
+        "elementType": "Unity.Mathematics.double3",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 57201,
+        "elementStrideBytes": 24,
+        "access": "read"
+      },
+      {
+        "ordinal": 5,
+        "name": "rotations",
+        "metadataParameterIndex": 426927,
+        "metadataTypeIndex": 117463,
+        "win64Location": "entry rsp+0x30",
+        "workerRbpOffset": "0x728",
+        "elementType": "Unity.Mathematics.quaternion",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 57247,
+        "elementStrideBytes": 16,
+        "access": "readWrite"
+      },
+      {
+        "ordinal": 6,
+        "name": "vertexLocalPositions",
+        "metadataParameterIndex": 426928,
+        "metadataTypeIndex": 117458,
+        "win64Location": "entry rsp+0x38",
+        "workerRbpOffset": "0x730",
+        "elementType": "Unity.Mathematics.float3",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 57216,
+        "elementStrideBytes": 12,
+        "access": "read"
+      },
+      {
+        "ordinal": 7,
+        "name": "vertexLocalRotations",
+        "metadataParameterIndex": 426929,
+        "metadataTypeIndex": 117463,
+        "win64Location": "entry rsp+0x40",
+        "workerRbpOffset": "0x738",
+        "elementType": "Unity.Mathematics.quaternion",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 57247,
+        "elementStrideBytes": 16,
+        "access": "read"
+      },
+      {
+        "ordinal": 8,
+        "name": "parentIndices",
+        "metadataParameterIndex": 426930,
+        "metadataTypeIndex": 117350,
+        "win64Location": "entry rsp+0x48",
+        "workerRbpOffset": "0x740",
+        "elementType": "System.Int32",
+        "elementTypeCode": "0x8",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 4,
+        "access": "unusedByMethod384856"
+      },
+      {
+        "ordinal": 9,
+        "name": "childIndexArray",
+        "metadataParameterIndex": 426931,
+        "metadataTypeIndex": 117409,
+        "win64Location": "entry rsp+0x50",
+        "workerRbpOffset": "0x748",
+        "elementType": "System.UInt32",
+        "elementTypeCode": "0x9",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 4,
+        "access": "read"
+      },
+      {
+        "ordinal": 10,
+        "name": "childDataArray",
+        "metadataParameterIndex": 426932,
+        "metadataTypeIndex": 117406,
+        "win64Location": "entry rsp+0x58",
+        "workerRbpOffset": "0x750",
+        "elementType": "System.UInt16",
+        "elementTypeCode": "0x7",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 2,
+        "access": "read"
+      },
+      {
+        "ordinal": 11,
+        "name": "baseLineFlags",
+        "metadataParameterIndex": 426933,
+        "metadataTypeIndex": 117259,
+        "win64Location": "entry rsp+0x60",
+        "workerRbpOffset": "0x758",
+        "elementType": "BeyondDynamicBone.ExBitFlag8",
+        "elementTypeCode": "0x11",
+        "elementTypeDefinitionIndex": 48538,
+        "elementStrideBytes": 1,
+        "access": "readEntryGateThenIncomingStackSlotReused"
+      },
+      {
+        "ordinal": 12,
+        "name": "baseLineTeamIds",
+        "metadataParameterIndex": 426934,
+        "metadataTypeIndex": 117347,
+        "win64Location": "entry rsp+0x68",
+        "workerRbpOffset": "0x760",
+        "elementType": "System.Int16",
+        "elementTypeCode": "0x6",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 2,
+        "access": "read"
+      },
+      {
+        "ordinal": 13,
+        "name": "baseLineStartIndices",
+        "metadataParameterIndex": 426935,
+        "metadataTypeIndex": 117406,
+        "win64Location": "entry rsp+0x70",
+        "workerRbpOffset": "0x768",
+        "elementType": "System.UInt16",
+        "elementTypeCode": "0x7",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 2,
+        "access": "read"
+      },
+      {
+        "ordinal": 14,
+        "name": "baseLineDataCounts",
+        "metadataParameterIndex": 426936,
+        "metadataTypeIndex": 117406,
+        "win64Location": "entry rsp+0x78",
+        "workerRbpOffset": "0x770",
+        "elementType": "System.UInt16",
+        "elementTypeCode": "0x7",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 2,
+        "access": "read"
+      },
+      {
+        "ordinal": 15,
+        "name": "baseLineData",
+        "metadataParameterIndex": 426937,
+        "metadataTypeIndex": 117406,
+        "win64Location": "entry rsp+0x80",
+        "workerRbpOffset": "0x778",
+        "elementType": "System.UInt16",
+        "elementTypeCode": "0x7",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 2,
+        "access": "read"
+      },
+      {
+        "ordinal": 16,
+        "name": "index",
+        "metadataParameterIndex": 426938,
+        "metadataTypeIndex": 148327,
+        "win64Location": "entry rsp+0x88",
+        "workerRbpOffset": "0x780",
+        "elementType": "System.Int32",
+        "elementTypeCode": "0x8",
+        "elementTypeDefinitionIndex": null,
+        "elementStrideBytes": 4,
+        "access": "scalar"
+      }
+    ],
+    "relevantNativeLayouts": {
+      "nativeTypes": [
+        {
+          "name": "BeyondDynamicBone.TeamManager+TeamData",
+          "metadataTypeDefinitionIndex": 48233,
+          "instanceSizeBytes": 480,
+          "nativeSizeBytes": 464
+        },
+        {
+          "name": "BeyondDynamicBone.ClothParameters",
+          "metadataTypeDefinitionIndex": 48002,
+          "instanceSizeBytes": 824,
+          "nativeSizeBytes": 808
+        },
+        {
+          "name": "BeyondDynamicBone.VertexAttribute",
+          "metadataTypeDefinitionIndex": 48621,
+          "instanceSizeBytes": 17,
+          "nativeSizeBytes": 1
+        },
+        {
+          "name": "BeyondDynamicBone.ExBitFlag8",
+          "metadataTypeDefinitionIndex": 48538,
+          "instanceSizeBytes": 17,
+          "nativeSizeBytes": 1
+        },
+        {
+          "name": "BeyondDynamicBone.DataChunk",
+          "metadataTypeDefinitionIndex": 48536,
+          "instanceSizeBytes": 24,
+          "nativeSizeBytes": 8
+        },
+        {
+          "name": "Unity.Mathematics.double3",
+          "metadataTypeDefinitionIndex": 57201,
+          "instanceSizeBytes": 40,
+          "nativeSizeBytes": 24
+        },
+        {
+          "name": "Unity.Mathematics.float3",
+          "metadataTypeDefinitionIndex": 57216,
+          "instanceSizeBytes": 28,
+          "nativeSizeBytes": 12
+        },
+        {
+          "name": "Unity.Mathematics.float4",
+          "metadataTypeDefinitionIndex": 57221,
+          "instanceSizeBytes": 32,
+          "nativeSizeBytes": 16
+        },
+        {
+          "name": "Unity.Mathematics.quaternion",
+          "metadataTypeDefinitionIndex": 57247,
+          "instanceSizeBytes": 32,
+          "nativeSizeBytes": 16
+        }
+      ],
+      "fieldsReadByMethod384856": [
+        {
+          "declaringType": "BeyondDynamicBone.TeamManager+TeamData",
+          "declaringTypeDefinitionIndex": 48233,
+          "field": "negativeScaleDirection",
+          "fieldIndex": 229659,
+          "metadataTypeIndex": 171871,
+          "nativePayloadOffset": "0x68",
+          "boxedFieldOffset": "0x78"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.TeamManager+TeamData",
+          "declaringTypeDefinitionIndex": 48233,
+          "field": "negativeScaleQuaternionValue",
+          "fieldIndex": 229662,
+          "metadataTypeIndex": 171886,
+          "nativePayloadOffset": "0x88",
+          "boxedFieldOffset": "0x98"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.TeamManager+TeamData",
+          "declaringTypeDefinitionIndex": 48233,
+          "field": "proxyCommonChunk",
+          "fieldIndex": 229683,
+          "metadataTypeIndex": 136096,
+          "nativePayloadOffset": "0x124",
+          "boxedFieldOffset": "0x134"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.TeamManager+TeamData",
+          "declaringTypeDefinitionIndex": 48233,
+          "field": "proxyVertexChildDataChunk",
+          "fieldIndex": 229684,
+          "metadataTypeIndex": 136096,
+          "nativePayloadOffset": "0x12c",
+          "boxedFieldOffset": "0x13c"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.TeamManager+TeamData",
+          "declaringTypeDefinitionIndex": 48233,
+          "field": "baseLineDataChunk",
+          "fieldIndex": 229691,
+          "metadataTypeIndex": 136096,
+          "nativePayloadOffset": "0x164",
+          "boxedFieldOffset": "0x174"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.ClothParameters",
+          "declaringTypeDefinitionIndex": 48002,
+          "field": "rotationalInterpolation",
+          "fieldIndex": 228432,
+          "metadataTypeIndex": 163868,
+          "nativePayloadOffset": "0xa0",
+          "boxedFieldOffset": "0xb0"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.ClothParameters",
+          "declaringTypeDefinitionIndex": 48002,
+          "field": "rootRotation",
+          "fieldIndex": 228433,
+          "metadataTypeIndex": 163868,
+          "nativePayloadOffset": "0xa4",
+          "boxedFieldOffset": "0xb4"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.DataChunk",
+          "declaringTypeDefinitionIndex": 48536,
+          "field": "startIndex",
+          "fieldIndex": 230870,
+          "metadataTypeIndex": 148333,
+          "nativePayloadOffset": "0x0",
+          "boxedFieldOffset": "0x10"
+        },
+        {
+          "declaringType": "BeyondDynamicBone.DataChunk",
+          "declaringTypeDefinitionIndex": 48536,
+          "field": "dataLength",
+          "fieldIndex": 230871,
+          "metadataTypeIndex": 148333,
+          "nativePayloadOffset": "0x4",
+          "boxedFieldOffset": "0x14"
+        }
+      ]
+    },
     "entryGates": [
       {
         "offset": "0x98",
@@ -682,7 +1056,7 @@
       },
       {
         "offset": "0xa3",
-        "condition": "attributes[baseLineIndex] bit 0 is set"
+        "condition": "baseLineFlags[baseLineIndex].Value & 0x01 != 0 (bit semantic is not named by this method)"
       },
       {
         "offset": "0xb4",
@@ -703,15 +1077,228 @@
         "required": false
       },
       {
+        "offset": "0x1f5",
+        "operation": "baseLineDataStart = baseLineStartIndices[baseLineIndex] + team.baseLineDataChunk.startIndex"
+      },
+      {
         "offset": "0x206",
-        "operation": "childCount = baseLineDataCounts[baseLineIndex]"
+        "operation": "baseLineEntryCount = baseLineDataCounts[baseLineIndex]"
       },
       {
         "offset": "0x20b",
-        "condition": "childCount != 0"
+        "condition": "baseLineEntryCount != 0"
       }
     ],
-    "numericBoundary": "The child traversal and normal/tangent math after offset 0x245 remain code-only disassembly targets; no capture-derived vector or curve is substituted."
+    "childIndexEncoding": {
+      "readOffset": "0x27f",
+      "packedType": "System.UInt32",
+      "childCount": "packed >> 20 (upper 12 bits)",
+      "localStart": "packed & 0x000fffff (lower 20 bits)",
+      "absoluteStart": "localStart + team.proxyVertexChildDataChunk.startIndex",
+      "childVertex": "childDataArray[absoluteStart + childOrdinal] + team.proxyCommonChunk.startIndex"
+    },
+    "outerTraversal": {
+      "loopOffsets": [
+        "0x245",
+        "0x6cf"
+      ],
+      "parentVertex": "baseLineData[baseLineDataStart + baseLineOrdinal] + team.proxyCommonChunk.startIndex",
+      "parentPosition": "positions[parentVertex] (double3)",
+      "parentRotation": "rotations[parentVertex] (quaternion, loaded once before its child loop)",
+      "parentAttribute": "attributes[parentVertex].Value",
+      "zeroChildBranch": "packed childCount == 0 skips this parent without a rotation write"
+    },
+    "childTraversal": {
+      "loopOffsets": [
+        "0x2f0",
+        "0x61d"
+      ],
+      "restVector": "double3(math.mul(parentRotation, vertexLocalPositions[childVertex] * team.negativeScaleDirection))",
+      "restSum": "restSum + restVector for every child; restSum starts at double3.zero for each parentVertex",
+      "directionAccumulatorInitial": "double3.zero for each parentVertex",
+      "directionAccumulatorMoveBranch": "if attributes[childVertex].Value & VertexAttribute.Flag_Move (0x02) != 0: directionAccumulator += positions[childVertex] - parentPosition",
+      "moveBitSemanticEvidence": {
+        "methodIndex": 386730,
+        "token": "0x06000c73",
+        "method": "IsMove",
+        "startVa": "0x1866ff05c",
+        "endVa": "0x1866ff0a4",
+        "spanBytes": 72
+      },
+      "directionAccumulatorNonMoveBranch": "otherwise: directionAccumulator = restVector",
+      "childFromTo": "MathUtility.FromToRotation(restVector, directionAccumulator, 1.0)",
+      "signedLocalRotation": "quaternion(vertexLocalRotations[childVertex].value * team.negativeScaleQuaternionValue)",
+      "childRotationWrite": "rotations[childVertex] = math.mul(math.mul(parentRotation, signedLocalRotation), childFromTo)",
+      "writeOffsets": [
+        "0x5f1",
+        "0x5fe"
+      ]
+    },
+    "parentRotationWrite": {
+      "condition": "at least one child was traversed for parentVertex",
+      "interpolation": "attributes[parentVertex].Value & VertexAttribute.Flag_Move (0x02) != 0 ? parameter.rotationalInterpolation : parameter.rootRotation",
+      "parentFromTo": "MathUtility.FromToRotation(restSum, directionAccumulator, interpolation)",
+      "write": "rotations[parentVertex] = math.mul(parentFromTo, parentRotation)",
+      "writeOffsets": [
+        "0x62c",
+        "0x6b8"
+      ]
+    },
+    "helperSpans": [
+      {
+        "name": "float3ComponentMultiply",
+        "startVa": "0x184d886a0",
+        "throughRetBytes": 49,
+        "throughRetSha256": "a2d2e46ffbeb6198dff49c5c0a7e4da77d367c0ab09fa9e9cc8dd8092c1e5084"
+      },
+      {
+        "name": "quaternionRotateFloat3",
+        "startVa": "0x182facf20",
+        "throughRetBytes": 629,
+        "throughRetSha256": "03a1a80c2ead230146ab4c2988e047bad9026de6272f4481370b166e211eae16"
+      },
+      {
+        "name": "float3ToDouble3",
+        "startVa": "0x18415f9a0",
+        "throughRetBytes": 59,
+        "throughRetSha256": "bc37b4cddfcb15deb3c2d8d3521eb30faf5bbd7c43102c1184a703f4cb4846f4"
+      },
+      {
+        "name": "double3Add",
+        "startVa": "0x185f00d7c",
+        "throughRetBytes": 56,
+        "throughRetSha256": "355bec682557efb3d846bdb78aa4e2f82fd6d1478b92dea4340a1cf025b86ceb"
+      },
+      {
+        "name": "vertexAttributeMoveBitHotPath",
+        "startVa": "0x18352b760",
+        "throughRetBytes": 46,
+        "throughRetSha256": "2bf36191ae94ce2bae81b475e3902855e98eb859aae26d87d384161aacb79822"
+      },
+      {
+        "name": "VertexAttribute.IsMove",
+        "startVa": "0x1866ff05c",
+        "throughRetBytes": 70,
+        "throughRetSha256": "6786da000a4eeed36be726cdd30026b208a4b44008203673bf85a5d9500d70cd"
+      },
+      {
+        "name": "double3Subtract",
+        "startVa": "0x185f00f40",
+        "throughRetBytes": 56,
+        "throughRetSha256": "0a732489946664f570db7628b2e73c0f3ef7fc6e3363c25368267cff29b48200"
+      },
+      {
+        "name": "MathUtility.FromToRotation",
+        "startVa": "0x1866aef20",
+        "throughRetBytes": 775,
+        "throughRetSha256": "64bfab4167c7dacee770dc9f680ba205e6a8f277584d0ce917b1b39870883a0f"
+      },
+      {
+        "name": "float4ComponentMultiply",
+        "startVa": "0x1830e8750",
+        "throughRetBytes": 65,
+        "throughRetSha256": "7cf87e0301a78d9cce4f3df394313d4e093798c46d0c6ac2c55024e407f6f232"
+      },
+      {
+        "name": "quaternionHamiltonProduct",
+        "startVa": "0x1830e8510",
+        "throughRetBytes": 568,
+        "throughRetSha256": "e774acaece8257a4bdb8df10ad22b9a0c60995e2b8f4e9a1cfebbb761a70aab6"
+      }
+    ],
+    "fromToRotation": {
+      "methodIdentity": {
+        "methodIndex": 386226,
+        "token": "0x06000a7b",
+        "method": "FromToRotation",
+        "startVa": "0x1866aef20",
+        "endVa": "0x1866af228",
+        "spanBytes": 776
+      },
+      "managedUnpatchedEquation": [
+        "u = math.normalize(from); v = math.normalize(to)",
+        "dot = math.clamp(math.dot(u, v), -1.0, 1.0); angle = acos(dot); axis = math.cross(u, v)",
+        "if abs(dot + 1.0) < epsilon: angle = pi; reference = (0,1,0) when u.x > u.y and u.x > u.z, otherwise (1,0,0); axis = math.cross(u, reference)",
+        "else if abs(1.0 - dot) < epsilon: return quaternion.identity",
+        "axis = math.normalize(axis); return quaternion.AxisAngle(float3(axis), float(angle * t))"
+      ],
+      "constants": {
+        "epsilon": 9.999999974752427e-07,
+        "pi": 3.1415927410125732,
+        "sourceBytes": [
+          {
+            "name": "one",
+            "va": "0x18b959238",
+            "bytes": "000000000000f03f"
+          },
+          {
+            "name": "minusOne",
+            "va": "0x18b9594f8",
+            "bytes": "000000000000f0bf"
+          },
+          {
+            "name": "parallelEpsilon",
+            "va": "0x18dc807b8",
+            "bytes": "000000a0f7c6b03e"
+          },
+          {
+            "name": "pi",
+            "va": "0x18dc80a70",
+            "bytes": "00000060fb210940"
+          },
+          {
+            "name": "antiparallelYAxisXY",
+            "va": "0x18da45b60",
+            "bytes": "0000000000000000000000000000f03f"
+          },
+          {
+            "name": "antiparallelXAxisXY",
+            "va": "0x18dc80fc0",
+            "bytes": "000000000000f03f0000000000000000"
+          }
+        ]
+      },
+      "degeneracyBranches": {
+        "antiparallel": "abs(dot + 1.0) < epsilon selects a deterministic perpendicular axis and pi before t scaling",
+        "parallel": "abs(1.0 - dot) < epsilon returns quaternion.identity without normalizing the zero cross product",
+        "zeroOrNonFiniteInput": "no explicit guard exists before the two unconditional input normalizations; output is not claimed for zero/non-finite input"
+      },
+      "ifixRoute": {
+        "patchId": "0x219",
+        "patchSlot": 0,
+        "isPatchedMethodIndex": 387384,
+        "getPatchMethodIndex": 387383,
+        "dynamicWrapperMethodIndex": 386959,
+        "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
+        "selectedAtRuntime": "unresolved"
+      }
+    },
+    "writes": [
+      "rotations[childVertex]",
+      "rotations[parentVertex]"
+    ],
+    "normalTangentNamingBoundary": "Despite the method name, method 384856 has no normal/tangent output array. Code proves the rest/direction vectors and quaternion writes above; it does not name either vector as a separately stored normal or tangent.",
+    "readOnlyInputs": [
+      "jobBaseLineList",
+      "teamDataArray",
+      "parameterArray",
+      "attributes",
+      "positions",
+      "vertexLocalPositions",
+      "vertexLocalRotations",
+      "childIndexArray",
+      "childDataArray",
+      "baseLineFlags",
+      "baseLineTeamIds",
+      "baseLineStartIndices",
+      "baseLineDataCounts",
+      "baseLineData",
+      "index"
+    ],
+    "unusedParameters": [
+      "parentIndices"
+    ],
+    "numericBoundary": "The pinned unpatched managed-worker traversal and equations are closed. Overall runtime numerics remain fail-closed until the selected Burst/cross-frame/managed route and FromToRotation IFix patch state are proven."
   },
   "routeEvidence": {
     "coldSpans": [
@@ -766,7 +1353,7 @@
     ],
     "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present; static code alone does not select the runtime branch."
   },
-  "openWorkerTargets": [
+  "workerTargets": [
     {
       "methodIndex": 384830,
       "token": "0x06000507",
@@ -842,14 +1429,21 @@
   ],
   "nextDisassemblyTargets": [
     {
-      "methodIndex": 384856,
-      "method": "CalcLineNormalTangentKernel$BurstManaged",
-      "reason": "continue after the closed entry gates to recover child traversal, line normal/tangent equations, and degeneracy branches from code"
+      "methodIndex": 384854,
+      "method": "CalcLineNormalTangentKernel",
+      "reason": "resolve the selected Burst/direct-call target and prove whether its numeric body is equivalent to the now-closed managed worker"
+    },
+    {
+      "methodIndex": 386226,
+      "method": "MathUtility.FromToRotation",
+      "reason": "the unpatched body is closed; runtime IFix patch id 0x219 selection remains an external-state evidence boundary"
     }
   ],
   "nonClaims": [
     "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-    "CreatePostProxyMeshUpdateList queue control flow is closed, but CalcLineNormalTangent vector equations remain unresolved.",
+    "The managed CalcLineNormalTangent traversal/equations do not establish that retail selected the managed worker instead of the Burst/direct-call route.",
+    "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
+    "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
     "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
     "This static contract is not a Unity execution or retail-equivalence result."
   ]
