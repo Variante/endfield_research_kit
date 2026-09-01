@@ -538,11 +538,20 @@ the outer return; the false path remains intact and all 20 native tests pass.
   `Time.timeAsDouble`; it never uses an absolute capture offset or continuously
   resamples the body Animator. Invalid selector, owner, generation, Animator,
   root, startup, or bind state revokes the transaction and capture records only
-  a successfully evaluated source-post state. The former fitted peak scaling,
+  a successfully evaluated source-post state. Runtime center projection
+  resolves the imported `post (1)` Transform through
+  its exact GameObject/Transform PathIDs and direct marker reference; it no
+  longer duplicates `(0,1.266,0)` as a hardcoded placement value.
+  The former fitted peak scaling,
   shifted late-pulse key, and downstream quarter-intensity factor remain
   removed. Retail `EffectInstance` tick ownership, SceneColor/pass chronology,
   and retail-equivalent presentation are still unresolved and explicitly not
   claimed.
+  Runtime spawning also preserves each imported
+  `ParticleSystemRenderer.maxParticleSize` value. The former visual-only
+  billboard adaptation replaced source values at or below `0.5` with `10`
+  across broad Endminf owners; it is removed rather than retained as an
+  unproven substitute for the missing retail HGRP particle-size code path.
   The exact combined Uber variant now also closes the CharInfo merge: source-only
   global exposure, channel-wise bloom decoding above 0.3, serialized intensity,
   white normalized tint, zero blend mode, and saturated source alpha. The D3D12
@@ -906,7 +915,10 @@ fragments around the raised hand. Both `overview_02/all/suikuai` source rows are
   derives this by filtering the prepared order and allocating contiguous cache
   faces; captured order and slots are verifier inputs only. b4, b5, and t6 now
   require one matching camera/generation token before the exact consumer can
-  submit.
+  submit. The maintained rig now starts from the pinned native
+  `HGSettingParameters` base-tile default `T=512`; captured `T=1024` remains an
+  explicit diagnostic override because the runtime/quality override owner and
+  predicate are not source-closed.
 - The recovered VisibilitySH/capsule term improves measured character deltas,
   but it still runs against the partial ready-subset floor rather than the real
   presentation scene. The softer result is not evidence of a missing constant
@@ -2119,6 +2131,16 @@ source grid visible with normal character occlusion. Remaining differences
 belong to final ShadowPlane/SphereOutside ownership, Uber, camera, and portrait
 composition rather than procedural replacement geometry.
 
+The maintained Endminf launcher, editor reproduction entry point, and canonical
+video setup now pin the fitted plate, generic ready subset, measured opening
+strip, captured packet replays, and incomplete deferred/M27 presentation
+selectors off instead of inheriting them from the parent process. The exact
+CharInfo sky owns normal background pixels; a failed source gate exposes the
+black camera fallback rather than substituting an actor-bounds plate or fitted
+clear color. Camera aspect is derived from the serialized sensor dimensions,
+and invalid/non-finite source camera, look-at, gyroscope, or quaternion rows now
+fail closed instead of falling back to 16:9 or identity rotation.
+
 Portrait alignment is likewise no longer a screenshot-fitting task. Lua and
 raw RectTransform evidence confirm `CharInfoCamAttachment` at
 `lookat_overview`, the authored overview-camera rotation, centered anchors and
@@ -2542,6 +2564,21 @@ and bounded GGX behavior, but it is still a non-exact ForwardOnly substitute
 for retail HGBuffer/deferred lighting. Do not tune its light model, texture
 scale, owner placement, or effect curves as if it were exact presentation;
 deferred light/shadow/frame ownership and peak composition remain open.
+
+The LitEffect fallback now preserves more of that source boundary before its
+explicitly approximate GGX evaluation: Base/Normal/MRO/Parallax samples use the
+live `_GlobalMipBias`, noise-march derivatives use the live
+`_GlobalMipBiasPow2`, base color applies the authored brighter/tint-cover
+equation, two-sided normal handling is retained, and unclamped source
+metallic/roughness/occlusion values remain distinct from fallback-only safety
+bounds. The rebuild gate verifies those extra material fields directly against
+all three exported M01/M27/M38 JSON objects. The non-generative M27 HGBuffer
+port also uses the validated shared runtime fixed state (`ZTest GEqual`, depth
+write, `Cull Back`) instead of the serialized shader dump's unresolved
+Off/Off placeholders. This corrects source transport, not retail presentation:
+the exact deferred LightData/ShadowData/frame-resource readiness and owner
+chronology remain fail-closed, so no light direction, shadow term, material
+multiplier, placement, curve, or timing was tuned.
 
 The measured opening-fracture reconstruction is diagnostic-only. Clean-reference
 frames 91-109 establish a bounded table for effect-clock frames 4-20, but its
@@ -3796,11 +3833,20 @@ first post-publication sample (36.45 mm/6.82 degrees mean) and reaches
 104.20 mm/10.89 degrees overall versus 20.24 mm/7.19 degrees with the solver
 off. The generated PostProxy contract now closes the hidden JobHandle ABI,
 four-stage dependency order, job payload layouts, exact scheduling identities
-and batch sizes, the create-list gates plus four atomic contiguous-index queue
-appends, and the pinned unpatched CalcLine managed worker. That worker's exact
-17-parameter ABI, packed child traversal, Move-bit branches, signed local
+and batch sizes, and the pinned unpatched CalcLine managed worker. The
+create-list integer kernel is now numerically source-closed for both pinned CPU
+variants: its exact team gate selects four signed contiguous-index queues, each
+using one atomic fetch-add reservation followed by `start+i` writes. It has no
+capacity or team-index bounds check. This closure is route-independent because
+the Burst and managed DirectCall fallback paths produce the same integer queue
+result; the process-selected route is still unobserved. The CalcLine worker's
+exact 17-parameter ABI, packed child traversal, Move-bit branches, signed local
 rotation, parent/child quaternion equations, helper spans, and
 `FromToRotation` parallel/antiparallel degeneracy branches are code-closed.
+Each child selects a fresh direction (live position minus parent for Move,
+otherwise the rotated rest vector), adds that value to the parent sum, and
+passes that same per-child direction to the child `FromToRotation`; only the
+parent write consumes the final sum.
 Method `384854` is now also closed as a thin 296-byte argument forwarder into
 the generated BurstDirectCall `Invoke`; it contains no line/vector math.
 `Invoke` uses `BurstCompiler.get_IsEnabled` plus a nonzero
@@ -3814,8 +3860,14 @@ The exact non-null Burst target is now statically joined by its unique complete
 17-argument and baseline/team/chunk/packed-child signature: export hash
 `7342567c29c434b5b924be51bd8e34b7` assigns zero-fill slot `0x3c57b0` to the
 pinned SSE2 `0x10ef20 -> 0x10f190 -> 0xf4100` or AVX2
-`0x29a3c0 -> 0x29a5c0 -> 0x284c50` route. Each core calls only its local
-scalar sin/cos helper twice; neither calls GameAssembly or IFix. Overall
+`0x29a3c0 -> 0x29a5c0 -> 0x284c50` route. Both cores now also have a
+source-only numeric transcription that matches character-neutral branch
+vectors bit-for-bit, including the exact double-precision acos polynomial,
+float32 quaternion grouping, packed traversal, empty-child no-write behavior,
+and negative-X antiparallel zero-axis NaN propagation. Their separate SSE2 and
+AVX2 scalar sin/cos helpers match the same source transcription across
+controlled vectors and a stratified sweep of every finite float exponent.
+Each core calls only its local helper twice; neither calls GameAssembly or IFix. Overall
 Static runtime selection is narrower but remains fail-closed. The pinned Burst
 initializers construct global `Options(true)` and publish `_IsEnabled=true`
 unless the exact disable command-line token or a non-empty/non-`0` disable
@@ -3838,12 +3890,17 @@ still populate the patch-id entry used by `0x219`. The contract uses
 no captured positions, timing, curves, fitted constants, or replay data.
 A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
 equations with explicit binary32 operation grouping and bit-exact verifier
-vectors. It decodes packed child ranges, preserves ordered Move/non-Move
-accumulation, and computes child/parent quaternion writes, but it is not
+vectors. It decodes packed child ranges, preserves the per-child direction plus
+ordered parent-sum dataflow, and computes child/parent quaternion writes, but it is not
 referenced by the solver, frame coordinator, generated prefabs, scenes, or
 assets. Zero/non-finite and the finite negative-X antiparallel zero-axis case
 fail closed. This is executable code recovery, not evidence that retail chose
-the Burst or managed route on a particular frame.
+the Burst or managed route on a particular frame. The broader CalcLine numeric
+readiness therefore remains false until live DirectCall and IFix selection are
+closed, and it is not a retail-equivalent secondary solver: simulation,
+constraint, collision, cross-frame ownership, and writeback selection remain
+separate unresolved stages. No captured positions, curves, or timing are used
+as implementation input.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
