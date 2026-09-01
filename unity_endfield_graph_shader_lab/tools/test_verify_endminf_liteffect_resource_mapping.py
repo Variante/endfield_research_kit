@@ -113,11 +113,36 @@ class LitEffectResourceMappingTests(unittest.TestCase):
             "source_sampling_subgraph_forward_presentation_non_exact",
         )
         exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
+        compatibility = MODULE.COMPATIBILITY_UNITY_PORT.read_text(
+            encoding="utf-8")
         self.assertIn(
             "ddx_coarse(input.uv0) * _GlobalMipBiasPow2",
             exact,
         )
+        self.assertIn("ZTest GEqual", exact)
+        self.assertIn("Cull Back", exact)
+        self.assertNotIn("ZTest Off", exact)
+        self.assertNotIn("Cull Off", exact)
+        self.assertIn(
+            "ddx_coarse(input.uv0) * _GlobalMipBiasPow2",
+            compatibility,
+        )
+        self.assertIn(
+            "sampler_LinearClamp, baseUV, _GlobalMipBias",
+            compatibility,
+        )
         self.assertNotIn("_RecoveredM27ParallaxGradientScale", exact)
+
+    def test_obsolete_m27_fixed_state_fails_closed(self) -> None:
+        exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
+        compatibility = MODULE.COMPATIBILITY_UNITY_PORT.read_text(
+            encoding="utf-8")
+        mutated = exact.replace("ZTest GEqual", "ZTest Off", 1)
+        with self.assertRaisesRegex(
+            MODULE.VerificationError,
+            "source sampling transport drifted|fixed state drifted",
+        ):
+            MODULE._validate_unity_transport_ports(mutated, compatibility)
 
     def test_swapped_unity_parallax_roles_fail_closed(self) -> None:
         exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")

@@ -770,6 +770,9 @@ def _validate_unity_transport_ports(
                     f"{label} output store is not single-assignment: "
                     f"{member} writes={len(writes)}")
     exact_required = (
+        "ZTest GEqual",
+        "ZWrite On",
+        "Cull Back",
         "float2 baseUV = mad( lerp(input.uv0, input.uv1, _BaseUVSet), _BaseColorMap_ST.xy, _BaseColorMap_ST.zw);",
         "float2 pbrUV = mad( lerp(input.uv0, input.uv1, _BasePbrMapUVSet), _NormalMap_ST.xy, _NormalMap_ST.zw);",
         "float2 parallaxBaseUV = mad(_ParallaxMapUVType, uvDelta, input.uv0);",
@@ -794,15 +797,22 @@ def _validate_unity_transport_ports(
         "float2 baseUV = lerp(input.uv0, input.uv1, _BaseUVSet) * _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;",
         "float2 pbrUV = lerp(input.uv0, input.uv1, _BasePbrMapUVSet) * _NormalMap_ST.xy + _NormalMap_ST.zw;",
         "float2 parallaxBaseUV = lerp( input.uv0, input.uv1, _ParallaxMapUVType);",
-        "float4 baseSample = _BaseColorMap.SampleBias( sampler_LinearClamp, baseUV, 0.0) * _BaseColor;",
-        "float4 normalSample = _NormalMap.SampleBias( sampler_LinearRepeat, pbrUV, 0.0);",
-        "float3 mro = _MROMap.SampleBias( sampler_LinearMirror, pbrUV, 0.0).rgb;",
+        "float4 baseSample = _BaseColorMap.SampleBias( sampler_LinearClamp, baseUV, _GlobalMipBias);",
+        "float4 normalSample = _NormalMap.SampleBias( sampler_LinearRepeat, pbrUV, _GlobalMipBias);",
+        "float3 mro = _MROMap.SampleBias( sampler_LinearMirror, pbrUV, _GlobalMipBias).rgb;",
+        "float3 sourceBaseColor = lerp( saturate( baseSample.rgb * _BaseColor.rgb * _BaseColorBrighterScale), _BaseColor.rgb, _BaseColorTintCover);",
         "float sampledHeight = _ParallaxNoiseMap.SampleGrad( sampler_PointRepeat, parallaxBaseUV * _ParallaxNoiseMapTilling + rayOffset, noiseDx, noiseDy).r;",
-        "float parallax = _ParallaxMap.SampleBias( sampler_LinearMirrorOnce, parallaxUV, 0.0).g;",
+        "float parallax = _ParallaxMap.SampleBias( sampler_LinearMirrorOnce, parallaxUV, _GlobalMipBias).g;",
+        "float _GlobalMipBiasPow2;",
+        "float2 noiseDx = ddx_coarse(input.uv0) * _GlobalMipBiasPow2;",
+        "float2 noiseDy = ddy_coarse(input.uv0) * _GlobalMipBiasPow2;",
         "float3 normalTS = float3( normalXY * _NormalScale, normalZ);",
-        "float metallic = saturate(lerp( mro.r, _Metallic, saturate(_BaseTextureMapCount - 1.0)));",
+        "if (_TwoSidedNormal > 0.0 && !isFrontFace) normalZ = -normalZ;",
+        "float sourceMetallic = lerp( mro.r, _Metallic, saturate(_BaseTextureMapCount - 1.0));",
         "float sourceRoughness = lerp( _RoughnessMin, _RoughnessMax, mro.g);",
-        "float occlusion = saturate(lerp( 1.0, mro.b, _OcclusionStrength));",
+        "float sourceOcclusion = mad( _OcclusionStrength, mro.b - 1.0, 1.0);",
+        "float metallic = saturate(sourceMetallic);",
+        "float occlusion = saturate(sourceOcclusion);",
         "float3 parallaxColor = lerp( _ParallaxColorDark.rgb, _ParallaxColor.rgb, parallax);",
         "return float4(lit + emission, baseSample.a);",
     )
@@ -814,6 +824,7 @@ def _validate_unity_transport_ports(
         "_MetallicMax",
         "_RecoveredM27ParallaxGradientScale",
     )
+    exact_forbidden = ("ZTest Off", "Cull Off")
     for label, code, required in (
         ("exact M27 producer", exact_code, exact_required),
         ("M01/M38 visual compatibility port", compatibility_code,
@@ -825,6 +836,13 @@ def _validate_unity_transport_ports(
             raise VerificationError(
                 f"{label} source sampling transport drifted: "
                 f"missing={missing!r} forbidden={retained!r}")
+    retained_fixed_state = [
+        token for token in exact_forbidden if token in exact_code
+    ]
+    if retained_fixed_state:
+        raise VerificationError(
+            "exact M27 producer fixed state drifted: "
+            f"forbidden={retained_fixed_state!r}")
     require_single_assignment(
         "exact M27 producer",
         exact_code,
@@ -841,7 +859,8 @@ def _validate_unity_transport_ports(
         (
             "baseUV", "pbrUV", "parallaxBaseUV", "baseSample",
             "normalSample", "mro", "sampledHeight", "parallax",
-            "metallic", "sourceRoughness", "occlusion", "parallaxColor",
+            "sourceBaseColor", "sourceMetallic", "sourceRoughness",
+            "sourceOcclusion", "metallic", "occlusion", "parallaxColor",
         ),
     )
     reject_indirect_mutation("exact M27 producer", exact_code)
@@ -867,6 +886,15 @@ def _validate_unity_transport_ports(
                 "march _ParallaxNoiseMap.r with PointRepeat, then sample "
                 "_ParallaxMap.g with LinearMirrorOnce"
             ),
+            "mipTransport": (
+                "SampleBias uses live _GlobalMipBias and parallax height "
+                "gradients use live _GlobalMipBiasPow2"
+            ),
+            "baseMaterial": (
+                "saturate(BaseColorMap.rgb * BaseColor.rgb * "
+                "BaseColorBrighterScale), then BaseColorTintCover"
+            ),
+            "fixedState": "ZTest GEqual, ZWrite On, Cull Back",
         },
         "exactM27Producer": {
             "path": str(EXACT_UNITY_PORT.relative_to(ROOT)).replace("\\", "/"),

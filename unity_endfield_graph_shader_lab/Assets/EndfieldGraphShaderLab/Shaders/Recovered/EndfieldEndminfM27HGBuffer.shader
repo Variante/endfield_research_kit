@@ -80,11 +80,13 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 "RenderType" = "HGLitShader"
             }
 
-            // Hash-pinned HGBuffer pass state: ZTest Off, Cull Off, writable
-            // depth through the bound depth attachment, and stencil replace.
-            ZTest Off
+            // The exact shared M01/M38/M27 runtime pair uses reversed-Z
+            // greater-or-equal depth, back-face culling, writable depth, and
+            // stencil replace. The serialized shader dump's unresolved
+            // Off/Off placeholders are not live fixed-state evidence.
+            ZTest GEqual
             ZWrite On
-            Cull Off
+            Cull Back
             Blend Off
             Stencil
             {

@@ -63,8 +63,10 @@ class EndminfLitEffectVisualCompatibilityTests(unittest.TestCase):
 
     def test_source_material_fields_cover_all_used_stone_controls(self) -> None:
         self.assertTrue({
+            "_BaseColorTintCover", "_BaseColorBrighterScale",
             "_NormalScale", "_RoughnessMin", "_RoughnessMax",
-            "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
+            "_OcclusionStrength", "_TwoSidedNormal", "_Metallic",
+            "_BaseTextureMapCount",
             "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
             "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
             "_ParallaxStrength", "_ParallaxTilling", "_ParallaxMarchNum",
@@ -74,6 +76,23 @@ class EndminfLitEffectVisualCompatibilityTests(unittest.TestCase):
             set(MODULE.SOURCE_COLORS),
             {"_BaseColor", "_ParallaxColor", "_ParallaxColorDark"},
         )
+
+    def test_shader_uses_live_source_mip_and_material_decode(self) -> None:
+        source = MODULE.SHADER.read_text(encoding="utf-8")
+        for token in (
+            "sampler_LinearClamp, baseUV, _GlobalMipBias",
+            "sampler_LinearRepeat, pbrUV, _GlobalMipBias",
+            "sampler_LinearMirror, pbrUV, _GlobalMipBias",
+            "ddx_coarse(input.uv0) * _GlobalMipBiasPow2",
+            "ddy_coarse(input.uv0) * _GlobalMipBiasPow2",
+            "float3 sourceBaseColor = lerp(",
+            "float sourceMetallic = lerp(",
+            "float sourceOcclusion = mad(",
+            "if (_TwoSidedNormal > 0.0 && !isFrontFace)",
+        ):
+            self.assertIn(token, source)
+        self.assertNotIn("sampler_LinearClamp, baseUV, 0.0", source)
+        self.assertNotIn("sampler_LinearRepeat, pbrUV, 0.0", source)
 
     def test_runtime_binding_rejoins_rows_to_the_exact_v2_source_marker(self) -> None:
         source = RUNTIME_BINDING.read_text(encoding="utf-8")

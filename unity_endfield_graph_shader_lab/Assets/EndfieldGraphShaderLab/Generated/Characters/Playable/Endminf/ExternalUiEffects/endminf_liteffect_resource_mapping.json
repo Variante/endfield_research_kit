@@ -3056,16 +3056,19 @@
         "g": "roughness",
         "b": "occlusion"
       },
-      "parallax": "march _ParallaxNoiseMap.r with PointRepeat, then sample _ParallaxMap.g with LinearMirrorOnce"
+      "parallax": "march _ParallaxNoiseMap.r with PointRepeat, then sample _ParallaxMap.g with LinearMirrorOnce",
+      "mipTransport": "SampleBias uses live _GlobalMipBias and parallax height gradients use live _GlobalMipBiasPow2",
+      "baseMaterial": "saturate(BaseColorMap.rgb * BaseColor.rgb * BaseColorBrighterScale), then BaseColorTintCover",
+      "fixedState": "ZTest GEqual, ZWrite On, Cull Back"
     },
     "exactM27Producer": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfM27HGBuffer.shader",
-      "sha256": "482a77a284328b9efd58d3b05c3cad65a949d0cdc059724fd4bed62d91faf5ca",
+      "sha256": "666f7930717fff915d88efe49fa838da02d0a605e8f0c6ba23a5dc6e867497b9",
       "classification": "source_equation_port_consumer_still_gated"
     },
     "m01M38Compatibility": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader",
-      "sha256": "b6073961a57353ba4619a1432503401fa112f24ea4bdd70944f55f2adfec435e",
+      "sha256": "94fb23714db8a4bcadd5434b64ee27ff3b4e8ae7ef129b6da20d5d91f2a023a8",
       "classification": "source_sampling_subgraph_forward_presentation_non_exact"
     }
   },
