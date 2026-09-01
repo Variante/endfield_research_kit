@@ -50,7 +50,7 @@
   },
   "resourceMappingEvidence": {
     "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\ExternalUiEffects\\endminf_liteffect_resource_mapping.json",
-    "sha256": "b1d31124e3a77f59d11664579cbf1beb87e76dcd767b726015cacf377bfd8254",
+    "sha256": "c9282dea1d43001bf435496f93618202fcfe4ac09f04c3be4b9a16d2d3d9db99",
     "current": true,
     "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps"
   },
@@ -167,11 +167,12 @@
     "fresh verified PackedBinding physical t0..t5 mapping artifact",
     "fresh verified static sampler pairing",
     "fresh verified metallic/roughness/occlusion stores in MRO R/G/B",
-    "fresh verified noise-height march then ParallaxMap.g sample"
+    "fresh verified noise-height march then ParallaxMap.g sample",
+    "serialized CharInfo sceneMainLight direct-reference direction"
   ],
   "approximated": [
     "converted PNG texture derivatives where native payloads are absent",
-    "forward lighting",
+    "forward BRDF and light intensity",
     "particle phase/brightness",
     "HGBuffer/deferred replacement"
   ],

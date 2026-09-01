@@ -60,6 +60,8 @@ namespace EndfieldGraphShaderLab
         private static readonly int ExposureParamsId = Shader.PropertyToID("_ExposureParams");
         private static readonly int CharacterMainLightIntensityId =
             Shader.PropertyToID("_EndfieldCharMainLightIntensity");
+        private static readonly int SourceMainLightReadyId =
+            Shader.PropertyToID("_EndfieldCharSourceMainLightReady");
         private static readonly int CharacterMaxCubemapId = Shader.PropertyToID("_CharMaxCubemap");
         private static readonly int RecoveredCharacterCubemapBoundId =
             Shader.PropertyToID("_EndfieldRecoveredCharCubemapBound");
@@ -272,6 +274,7 @@ namespace EndfieldGraphShaderLab
                 Shader.SetGlobalFloat(RecoveredDiffuseAuditModeId, 0.0f);
                 Shader.SetGlobalFloat(RecoveredShadowBlendOverrideId, -1.0f);
                 Shader.SetGlobalFloat(CharacterMainLightIntensityId, 1.0f);
+                Shader.SetGlobalFloat(SourceMainLightReadyId, 0.0f);
                 for (int i = 0; i < CharacterParameterIds.Length; i++)
                     Shader.SetGlobalVector(CharacterParameterIds[i], Vector4.zero);
             }
@@ -530,6 +533,13 @@ namespace EndfieldGraphShaderLab
 
         private void PublishSemanticAliases(Light mainLight, float exposure)
         {
+            // LitEffect's forward-only compatibility shell may use the
+            // source scene direction, but it must not mistake an automatic
+            // fallback light for the serialized CharInfo owner.  Keep the
+            // direct-reference provenance as a separate fail-closed signal.
+            bool sourceMainLightReady =
+                IsUsableDirectionalLight(sceneMainLight) &&
+                mainLight == sceneMainLight;
             Vector3 sceneDirection = mainLight != null
                 ? (-mainLight.transform.forward).normalized
                 : new Vector3(-0.433f, 0.5f, 0.75f).normalized;
@@ -539,6 +549,9 @@ namespace EndfieldGraphShaderLab
 
             Shader.SetGlobalVector("_EndfieldCharSceneLightDirection",
                 new Vector4(sceneDirection.x, sceneDirection.y, sceneDirection.z, 0.0f));
+            Shader.SetGlobalFloat(
+                SourceMainLightReadyId,
+                sourceMainLightReady ? 1.0f : 0.0f);
             Shader.SetGlobalColor("_EndfieldCharMainLightColor", resolvedMainColor);
             Shader.SetGlobalColor("_EndfieldCharSkinMainLightColor", resolvedSkinColor);
             Shader.SetGlobalFloat(

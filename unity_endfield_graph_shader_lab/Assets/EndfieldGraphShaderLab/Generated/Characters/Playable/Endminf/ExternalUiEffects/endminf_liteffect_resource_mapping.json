@@ -3068,7 +3068,7 @@
     },
     "m01M38Compatibility": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader",
-      "sha256": "94fb23714db8a4bcadd5434b64ee27ff3b4e8ae7ef129b6da20d5d91f2a023a8",
+      "sha256": "24acac1a4a9c3dc15742fd3b24c589fea50d6301a1dc95b705eb8db05c94a71a",
       "classification": "source_sampling_subgraph_forward_presentation_non_exact"
     }
   },
