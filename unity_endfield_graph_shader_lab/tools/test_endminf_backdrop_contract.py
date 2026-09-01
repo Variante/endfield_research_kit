@@ -285,6 +285,8 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "source camera has an invalid serialized sensor size",
             "profile.referenceAspect = sensorSize.x / sensorSize.y;",
             "source camera produced an invalid sensor aspect",
+            "source camera has invalid lens or clip values",
+            "source camera position and look-at collapse",
             "must contain exactly two components",
             "must contain exactly three components",
             "must contain x, y, and z components",
