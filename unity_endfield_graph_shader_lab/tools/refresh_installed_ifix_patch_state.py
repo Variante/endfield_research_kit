@@ -11,10 +11,11 @@ It never launches the game or contacts the network.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import struct
-import sys
+import subprocess
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -32,13 +33,110 @@ DEFAULT_EVIDENCE_ROOT = LAB_ROOT / "scratch/character_recovery/ifix_patch_state"
 IFIX_BLOCK = "DAFE52C9"
 PATCH_NAME = "Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes"
 BRIDGE_MARKER = b"IFix.ILFixInterfaceBridge"
+ANIMESTUDIO_CLI = (
+    REPO_ROOT
+    / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows"
+    / "AnimeStudio.CLI.exe"
+)
 
 
-def _decoder_module():
-    sys.path.insert(0, str(REPO_ROOT / "scripts/chk_decode"))
-    import decode_persistent_vfs as decoder  # type: ignore
+def _run_animestudio(args: list[str]) -> subprocess.CompletedProcess[str]:
+    if not ANIMESTUDIO_CLI.is_file():
+        raise FileNotFoundError(f"AnimeStudio CLI is missing: {ANIMESTUDIO_CLI}")
+    result = subprocess.run(
+        [str(ANIMESTUDIO_CLI), *args],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            "AnimeStudio VFS command failed: " +
+            " ".join(args) + "\n" + result.stderr.strip()
+        )
+    return result
 
-    return decoder
+
+def _extract_current_ifix(
+    persistent_root: Path,
+    fallback_root: Path,
+    index_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], bytes]:
+    common = [
+        "--streaming-assets", str(persistent_root),
+        "--fallback-assets", str(fallback_root),
+        "--block-type", "i-fix-patch",
+        "--file-regex", r"Gameplay\.Beyond\.patch\.bytes$",
+    ]
+    _run_animestudio([
+        "vfs-index", *common, "--output", str(index_path),
+    ])
+    index_payload = json.loads(index_path.read_text(encoding="utf-8"))
+    blocks = index_payload.get("blocks") or []
+    files = index_payload.get("files") or []
+    if len(blocks) != 1 or len(files) != 1:
+        raise ValueError(
+            "targeted IFix VFS index must contain exactly one block and file"
+        )
+    block = blocks[0]
+    chunks = block.get("chunks") or []
+    if (block.get("name") != "IFixPatchOut" or len(chunks) != 1 or
+            files[0].get("fileName") != PATCH_NAME):
+        raise ValueError("targeted IFix VFS index identity drifted")
+
+    streamed = _run_animestudio(["stream", *common])
+    rows: list[dict[str, Any]] = []
+    for line in streamed.stdout.splitlines():
+        line = line.strip()
+        if line.startswith("{"):
+            rows.append(json.loads(line))
+    if len(rows) != 1 or rows[0].get("fileName") != PATCH_NAME:
+        raise ValueError("targeted IFix VFS stream did not return the exact patch")
+    try:
+        patch_bytes = base64.b64decode(rows[0]["dataBase64"], validate=True)
+    except (KeyError, ValueError) as exc:
+        raise ValueError("targeted IFix VFS stream payload is malformed") from exc
+    if len(patch_bytes) != int(files[0]["length"]):
+        raise ValueError("targeted IFix VFS stream length drifted")
+    expected_md5 = str(files[0]["fileDataMd5"]).upper()
+    actual_md5 = md5(patch_bytes)
+    try:
+        reversed_vfs_md5 = bytes.fromhex(expected_md5)[::-1].hex().upper()
+    except ValueError as exc:
+        raise ValueError("targeted IFix VFS index MD5 is malformed") from exc
+    if actual_md5 not in (expected_md5, reversed_vfs_md5):
+        raise ValueError(
+            "IFix patch MD5 mismatch: " + actual_md5 +
+            f" != {expected_md5} (VFS byte order)"
+        )
+    return index_payload, block, chunks[0], patch_bytes
+
+
+def _build_base_ifix_index(
+    streaming_root: Path,
+    index_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    _run_animestudio([
+        "vfs-index",
+        "--streaming-assets", str(streaming_root),
+        "--output", str(index_path),
+        "--block-type", "i-fix-patch",
+        "--file-regex", r"Gameplay\.Beyond\.patch\.bytes$",
+    ])
+    payload = json.loads(index_path.read_text(encoding="utf-8"))
+    blocks = payload.get("blocks") or []
+    if (len(blocks) != 1 or blocks[0].get("name") != "IFixPatchOut" or
+            (payload.get("files") or []) or
+            int(blocks[0].get("fileCount", -1)) != 0):
+        raise ValueError(
+            "base StreamingAssets IFix index must contain one empty IFixPatchOut block"
+        )
+    payload["generatedAtEpoch"] = int(date.today().strftime("%Y%m%d"))
+    index_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return payload, blocks[0]
 
 
 def sha256(path: Path) -> str:
@@ -211,6 +309,44 @@ def installed_path(path: Path) -> str:
     return path.resolve().as_posix()
 
 
+def _same_installed_path(value: Any, expected: Path) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    return str(Path(value).resolve()).casefold() == str(expected.resolve()).casefold()
+
+
+def validate_loader_artifact_provenance(
+    key: str,
+    payload: dict[str, Any],
+    game_assembly: Path,
+    game_assembly_sha256: str,
+    metadata: Path,
+    metadata_sha256: str,
+) -> None:
+    provenance = payload.get("metadata") or {}
+    if key == "metadata_catalog":
+        valid = (
+            _same_installed_path(provenance.get("path"), metadata) and
+            str(provenance.get("sha256") or "").lower() == metadata_sha256.lower()
+        )
+    elif key == "native_map":
+        valid = (
+            _same_installed_path(provenance.get("metadataPath"), metadata) and
+            str(provenance.get("metadataSha256") or "").lower() ==
+                metadata_sha256.lower() and
+            _same_installed_path(provenance.get("gameAssembly"), game_assembly) and
+            str(provenance.get("gameAssemblySha256") or "").lower() ==
+                game_assembly_sha256.lower()
+        )
+    else:
+        raise ValueError(f"unknown loader artifact kind: {key}")
+    if not valid:
+        raise ValueError(
+            f"{key} embedded native-build provenance does not match the selected "
+            "GameAssembly/global-metadata inputs"
+        )
+
+
 def build_index(info: Any, chunk: Any, chunk_path: Path, persistent_root: Path) -> dict[str, Any]:
     chunk_name = chunk.chk_file_name()
     files: list[dict[str, Any]] = []
@@ -314,38 +450,32 @@ def dynamic_file_record(path: Path) -> dict[str, Any]:
 
 
 def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str, Any]:
-    decoder = _decoder_module()
     persistent_root = game_root / "Endfield_Data/Persistent"
+    fallback_root = game_root / "Endfield_Data/StreamingAssets"
     block_dir = persistent_root / "VFS" / IFIX_BLOCK
     blc_path = block_dir / f"{IFIX_BLOCK}.blc"
     if not blc_path.is_file():
         raise FileNotFoundError(f"IFix VFS block catalog not found: {blc_path}")
-    info = decoder.parse_block_main_info(decoder.decrypt_blc(blc_path), verify_crc=True)
-    if info.group_cfg_name != "IFixPatchOut" or not info.chunks:
-        raise ValueError(f"unexpected IFix block catalog: {info.group_cfg_name!r}")
-    patch_chunk = None
-    patch_file = None
-    for chunk in info.chunks:
-        for file_info in chunk.files:
-            if file_info.file_name == PATCH_NAME:
-                patch_chunk, patch_file = chunk, file_info
-                break
-        if patch_file is not None:
-            break
-    if patch_chunk is None or patch_file is None:
-        raise ValueError(f"IFix block does not contain {PATCH_NAME}")
-    chunk_path = block_dir / patch_chunk.chk_file_name()
-    if not chunk_path.is_file():
-        raise FileNotFoundError(f"IFix VFS chunk not found: {chunk_path}")
-    patch_bytes = decoder.extract_file(chunk_path, patch_file)
-    expected_md5 = patch_file.file_data_md5.to_bytes(16, "little").hex().upper()
-    if md5(patch_bytes) != expected_md5:
-        raise ValueError(f"IFix patch MD5 mismatch: {md5(patch_bytes)} != {expected_md5}")
-    targets, patch_format = discover_patch_layout(patch_bytes)
 
     evidence_root.mkdir(parents=True, exist_ok=True)
+    base_index_path = evidence_root / "streaming_primary_ifix_vfs_index.json"
+    base_index_payload, base_block = _build_base_ifix_index(
+        fallback_root,
+        base_index_path,
+    )
     index_path = evidence_root / "persistent_primary_ifix_vfs_index.json"
-    index_payload = build_index(info, patch_chunk, chunk_path, persistent_root)
+    index_payload, block, chunk_record, patch_bytes = _extract_current_ifix(
+        persistent_root,
+        fallback_root,
+        index_path,
+    )
+    file_record = index_payload["files"][0]
+    chunk_path = Path(chunk_record["absolutePath"])
+    if not chunk_path.is_file():
+        raise FileNotFoundError(f"IFix VFS chunk not found: {chunk_path}")
+    expected_md5 = md5(patch_bytes)
+    targets, patch_format = discover_patch_layout(patch_bytes)
+
     index_payload["generatedAtEpoch"] = int(date.today().strftime("%Y%m%d"))
     index_path.write_text(json.dumps(index_payload, indent=2) + "\n", encoding="utf-8")
     patch_path = evidence_root / "dump" / Path(PATCH_NAME)
@@ -355,28 +485,67 @@ def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str
     if not report_path.is_file():
         raise FileNotFoundError(f"existing IFix report is required as a static-loader template: {report_path}")
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    game_assembly = game_root / "GameAssembly.dll"
+    metadata = game_root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
+    game_assembly_record = dynamic_file_record(game_assembly)
+    metadata_record = dynamic_file_record(metadata)
+    loader_recovery = report.get("loader_recovery") or {}
+    for key in ("metadata_catalog", "native_map"):
+        record = loader_recovery.get(key) or {}
+        relative = record.get("repo_path")
+        if not isinstance(relative, str):
+            raise ValueError(f"loader recovery record is missing repo_path: {key}")
+        artifact = REPO_ROOT / Path(relative)
+        if not artifact.is_file():
+            raise FileNotFoundError(f"loader recovery artifact is missing: {artifact}")
+        artifact_payload = json.loads(artifact.read_text(encoding="utf-8"))
+        if not isinstance(artifact_payload, dict):
+            raise ValueError(f"loader recovery artifact is not an object: {artifact}")
+        validate_loader_artifact_provenance(
+            key,
+            artifact_payload,
+            game_assembly,
+            game_assembly_record["sha256"],
+            metadata,
+            metadata_record["sha256"],
+        )
+        record["size"] = artifact.stat().st_size
+        record["sha256"] = sha256(artifact)
+        if key == "native_map":
+            record["mapped_targets"] = int(
+                artifact_payload["summary"]["mappedTargetCount"]
+            )
     source_build = report.setdefault("source_build", {})
-    source_build["game_assembly"] = dynamic_file_record(game_root / "GameAssembly.dll")
-    source_build["global_metadata"] = dynamic_file_record(
-        game_root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
-    )
+    source_build["game_assembly"] = game_assembly_record
+    source_build["global_metadata"] = metadata_record
 
     vfs = report.setdefault("vfs_state", {})
+    base = vfs.setdefault("base_streaming_assets", {})
+    base["index"] = {
+        "repo_path": repo_path(base_index_path),
+        "size": base_index_path.stat().st_size,
+        "sha256": sha256(base_index_path),
+    }
+    base["block_version"] = int(base_block["version"])
+    base["code_version"] = int(base_block["codeVersion"])
+    base["file_count"] = int(base_block["declaredFileCount"])
+    base["chunk_count"] = int(base_block["chunkCount"])
+    base["byte_count"] = int(base_block["declaredChunkBytes"])
     persistent = vfs.setdefault("persistent_overlay", {})
     persistent["index"] = {
         "repo_path": repo_path(index_path),
         "size": index_path.stat().st_size,
         "sha256": sha256(index_path),
     }
-    persistent["block_version"] = info.version
-    persistent["code_version"] = info.code_version
-    persistent["file_count"] = info.group_file_info_num
-    persistent["chunk_count"] = len(info.chunks)
-    persistent["byte_count"] = info.group_chunks_length
+    persistent["block_version"] = int(block["version"])
+    persistent["code_version"] = int(block["codeVersion"])
+    persistent["file_count"] = int(block["declaredFileCount"])
+    persistent["chunk_count"] = int(block["chunkCount"])
+    persistent["byte_count"] = int(block["declaredChunkBytes"])
     persistent["file"] = {
         "vfs_name": PATCH_NAME,
         "data_md5": expected_md5,
-        "encrypted_in_vfs": patch_file.use_encrypt,
+        "encrypted_in_vfs": bool(file_record["encrypted"]),
         "extracted_repo_path": repo_path(patch_path),
         "size": len(patch_bytes),
         "sha256": sha256(patch_path),
@@ -425,7 +594,7 @@ def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str
         "tool": "unity_endfield_graph_shader_lab/tools/refresh_installed_ifix_patch_state.py",
         "target_discovery": "unique self-terminating table at file end",
         "source_block": IFIX_BLOCK,
-        "source_chunk": patch_chunk.chk_file_name(),
+        "source_chunk": str(chunk_record["fileName"]),
         "source_patch_sha256": sha256(patch_path),
         "source_patch_size": len(patch_bytes),
         "evidence_boundary": (
@@ -439,7 +608,7 @@ def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str
         "report": str(report_path),
         "patch": str(patch_path),
         "chunk": str(chunk_path),
-        "block_version": info.version,
+        "block_version": int(block["version"]),
         "patch_size": len(patch_bytes),
         "patch_sha256": sha256(patch_path),
         "target_count": len(targets),

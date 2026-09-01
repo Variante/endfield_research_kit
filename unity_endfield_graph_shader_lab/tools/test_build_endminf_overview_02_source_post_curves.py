@@ -8,6 +8,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from unittest import mock
@@ -23,7 +24,7 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 EXPECTED_PAYLOAD_SHA256 = (
-    "0919ae4aab01e7772fb0c3987ad16f2885ad6374ff6c88a4adc065e4ba19353c"
+    "044017968e8d7cfe1f291274f29700a9d7bffc2bc18e333fa262d961b5385ace"
 )
 
 
@@ -133,7 +134,28 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
         ):
             self.assertIn(token, runtime)
         self.assertIn("EndfieldRecoveredEndminfSourcePostCurves.TryEvaluate(", clock)
-        self.assertIn("public static bool SourcePostClockAuthenticated => false;", clock)
+        for token in (
+            '"ENDFIELD_RECOVERED_ENDMINF_SOURCE_POST"',
+            "public static bool SourcePostSeedAuthenticated =>",
+            "TryGetAuthenticatedSourcePostElapsed(out _)",
+            "if (!SourcePostRequested)",
+            "ClearSourcePost();",
+            "sourcePostRoot != null",
+            "sourcePostSeedSeconds = sourceElapsed;",
+            "sourcePostBindTime = Time.timeAsDouble;",
+            "double delta = Time.timeAsDouble - sourcePostBindTime;",
+            "elapsed = sourcePostSeedSeconds + (float)delta;",
+            "boundSourcePostGeneration == sourcePostGeneration",
+            "IsSourceOwnerLive(overview02SourceOwner,",
+            "overview02SourcePlaybackGeneration",
+            "owner.AnimatorContractActive",
+            "animator.runtimeAnimatorController != null",
+            "public static bool RetailEffectTickDomainExact => false;",
+            '"P_fxui_endminm003_overview_01__OverviewRuntime"',
+            '"P_fxui_endminm003_overview_02__OverviewRuntime"',
+            "MarkOverview02CompatibilityStart(Transform effectRoot)",
+        ):
+            self.assertIn(token, clock)
         evaluator = clock[
             clock.index("public static bool TryEvaluateRecoveredPost("):
             clock.index("private static bool TryGetAuthenticatedSourcePostElapsed(")
@@ -151,6 +173,245 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
         self.assertIn("endminfPost.radialIntensity,", pipeline)
         self.assertIn("endminfPost.chromaticIntensity,", pipeline)
         self.assertNotIn("EndminfCompatibilityUberIntensityScale", pipeline)
+
+    def test_source_effect_owner_and_state_elapsed_route_are_exact(self) -> None:
+        playback = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Animation"
+            / "EndfieldOverviewPlayback.cs"
+        ).read_text(encoding="utf-8")
+        spawner = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredCharEffectSpawner.cs"
+        ).read_text(encoding="utf-8")
+        clock = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldEndminfVisualCompatibilityClock.cs"
+        ).read_text(encoding="utf-8")
+        elapsed_method = playback[
+            playback.index("public bool TryGetAutomaticOverviewStartSeconds("):
+            playback.index("private bool waitingForExit;")
+        ]
+        self.assertIn("seconds = current.length * current.normalizedTime;", elapsed_method)
+        self.assertIn("SourceOverviewStartFullPathHash", elapsed_method)
+        self.assertIn("current.fullPathHash != SourceOverviewStartFullPathHash", elapsed_method)
+        self.assertNotIn("Mathf.Clamp01(current.normalizedTime)", elapsed_method)
+
+        restart = playback[
+            playback.index("private bool TryRestartRecoveredAnimator()"):
+            playback.index("private void OnAnimatorMove()")
+        ]
+        self.assertLess(restart.index('animator.SetTrigger("EnableSwitch")'),
+                        restart.index("PublishEntranceEffects(new"))
+        self.assertIn("animator.Update(0f);", restart)
+        self.assertIn("TryGetAutomaticOverviewStartSeconds(out float sourceElapsed)", restart)
+        for token in (
+            "new EndfieldOverviewEffectSourceClock",
+            "owner = this",
+            "playbackGeneration = playbackGeneration",
+            "stateFullPathHash = SourceOverviewStartFullPathHash",
+            "elapsedSeconds = sourceElapsed",
+            "valid = true",
+        ):
+            self.assertIn(token, restart)
+
+        self.assertIn('"P_fxui_endminm003_overview_01"', spawner)
+        self.assertIn("BindOverview02SourceClock(", spawner)
+        create = spawner[
+            spawner.index("private void CreateEffect("):
+            spawner.index("private bool StartRecoveredLegacyAnimations(")
+        ]
+        self.assertLess(create.index("instance.SetActive(true);"),
+                        create.index("StartRecoveredLegacyAnimations("))
+        self.assertLess(create.index("StartRecoveredLegacyAnimations("),
+                        create.index("PlayRecoveredParticleSystems(instance, systems);"))
+        self.assertLess(create.index("PlayRecoveredParticleSystems(instance, systems);"),
+                        create.index("BindOverview02SourceClock("))
+        self.assertIn("MarkOverview02CompatibilityStart(instance.transform);", create)
+        self.assertIn("source_post_effect_startup_failed", create)
+        self.assertIn("source_post_clock_bind_rejected", create)
+
+        elapsed = clock[
+            clock.index("private static bool TryGetAuthenticatedSourcePostElapsed("):
+            clock.index("public static bool TryEvaluateOpeningStrip(")
+        ]
+        self.assertNotIn("TryGetAutomaticOverviewStartSeconds", elapsed)
+        self.assertIn("IsSourceOwnerLive(overview02SourceOwner", elapsed)
+
+    def test_v4_trigger_contract_bounds_one_shot_source_clock(self) -> None:
+        contract_path = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects"
+            / "endminf_effect_nanguan_trigger_contract.json"
+        )
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            contract["schema"],
+            "endfield.endminf-effect-nanguan-trigger.v4",
+        )
+        join = contract["evidence"]["overviewSourceJoin"]
+        self.assertEqual(
+            join["state"],
+            {
+                "path": "Base Layer.Overview.FromOveview",
+                "fullPathId": 1560421867,
+                "pathCrc32": "0x5d0225eb",
+                "layerIndex": 0,
+            },
+        )
+        behaviour = join["stateMachineBehaviour"]
+        self.assertEqual(
+            (
+                behaviour["pathId"],
+                behaviour["rangeStart"],
+                behaviour["rangeCount"],
+                behaviour["behaviourIndex"],
+            ),
+            (-5549677297504648584, 3, 1, 3),
+        )
+        self.assertEqual(
+            [row["effectName"] for row in behaviour["orderedEffects"]],
+            [
+                "P_fxui_endminm003_overview_01",
+                "P_fxui_endminm003_overview_02",
+                "P_fxui_endminm003_overview_03",
+                "P_fxui_endminm003_overview_04",
+            ],
+        )
+        self.assertEqual(
+            join["overview01PostHierarchy"],
+            {
+                "rootTransformPathId": 8425642429156191353,
+                "postTransformPathId": 8592508268722613369,
+                "postGameObject": "post (1)",
+                "postLocalPosition": [0.0, 1.266, 0.0],
+                "postLocalRotation": [0.0, 0.0, 0.0, 1.0],
+                "postLocalScale": [1.0, 1.0, 1.0],
+            },
+        )
+        ifix = join["recordedInstalledIfixSnapshot"]
+        self.assertTrue(ifix["sourceBuildMatchesPinnedNative"])
+        self.assertEqual(ifix["relevantRouteTargetsPresent"], [])
+        self.assertFalse(ifix["runtimeOrRemotePatchStateProven"])
+        route = contract["conclusions"]["overviewStateToEffectInstanceStart"]
+        self.assertTrue(route["serializedOwnerSourceClosed"])
+        self.assertTrue(route["pinnedUnpatchedNativeRouteSourceClosed"])
+        self.assertTrue(route["recordedIfixSnapshotNonreplacement"])
+        self.assertFalse(route["currentRuntimeRouteSourceClosed"])
+        self.assertEqual(
+            route["status"], "conditional_pinned_unpatched_route_only")
+        control_flow_names = {
+            row["name"] for row in contract["evidence"]["native"]["controlFlow"]
+        }
+        self.assertTrue({
+            "overview_state_enter_load_immediately",
+            "overview_state_enter_sync_same_effect_instance",
+            "sync_effect_time_valid_positive_elapsed_gate",
+            "sync_effect_time_elapsed_product",
+            "sync_child_animator_update_zero",
+            "sync_child_animator_update_elapsed",
+            "sync_effect_instance_manual_time",
+            "load_immediately_to_load_finish",
+            "load_finish_to_start",
+        }.issubset(control_flow_names))
+        self.assertEqual(
+            len(contract["evidence"]["native"]["syncEffectTimeDirectCallers"]),
+            1,
+        )
+        self.assertEqual(
+            [row["name"] for row in contract["evidence"]["native"]
+             ["syncEffectTimeDirectCallerExecutableSectionsScanned"]],
+            [".text", "il2cpp", ".tvm0"],
+        )
+        lab = contract["conclusions"]["labPlayback"]
+        self.assertTrue(lab["sourceTriggerOwnerExact"])
+        self.assertTrue(lab["oneShotSeedExact"])
+        self.assertFalse(lab["retailOwnerExact"])
+        self.assertFalse(lab["retailEffectInstanceTransportExact"])
+        self.assertFalse(lab["retailTimingExact"])
+        self.assertIn("without re-polling the body Animator", lab["labStartPolicy"])
+
+        source_curves = json.loads(MODULE.OUTPUT.read_text(encoding="utf-8"))
+        boundary = source_curves["runtimeBoundary"]
+        for token in (
+            "conditional pinned unpatched route",
+            "recorded installed local IFix snapshot excludes those route targets",
+            "retail EffectInstance tick domain",
+            "SceneColor chronology",
+            "retail-equivalent Unity presentation path remain outside this payload",
+        ):
+            self.assertIn(token, boundary)
+
+    def test_selector_default_preserves_explicit_zero_and_generation_is_transactional(
+            self) -> None:
+        capture = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+            / "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        selector_default = re.search(
+            r"if \(string\.IsNullOrWhiteSpace\(Environment\.GetEnvironmentVariable\(\s*"
+            r"EndfieldEndminfVisualCompatibilityClock\.SourcePostEnvironmentVariable\)\)\)\s*"
+            r"\{\s*Environment\.SetEnvironmentVariable\(\s*"
+            r"EndfieldEndminfVisualCompatibilityClock\.SourcePostEnvironmentVariable,\s*"
+            r'"1"\);\s*\}',
+            capture,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(selector_default)
+
+        playback = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Animation"
+            / "EndfieldOverviewPlayback.cs"
+        ).read_text(encoding="utf-8")
+        spawner = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldRecoveredCharEffectSpawner.cs"
+        ).read_text(encoding="utf-8")
+        clock = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+            / "EndfieldEndminfVisualCompatibilityClock.cs"
+        ).read_text(encoding="utf-8")
+        for token in (
+            "public struct EndfieldOverviewEffectSourceClock",
+            "internal int playbackGeneration;",
+            "EndfieldOverviewEffectSourceClock sourceClock);",
+            "playbackGeneration = playbackGeneration",
+        ):
+            self.assertIn(token, playback)
+        for token in (
+            "EndfieldOverviewEffectSourceClock sourceClock)",
+            "SpawnAfterDelay(binding, request, mount, sourceClock)",
+            "CreateEffect(binding, request, mount, sourceClock)",
+            "BindOverview02SourceClock(",
+        ):
+            self.assertIn(token, spawner)
+        self.assertIn("IsSourceOwnerLive(sourceClock.owner,", clock)
+        self.assertIn("owner.PlaybackGeneration == playbackGeneration", clock)
+
+        capture = (
+            HERE.parent
+            / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+            / "EndfieldEndminfViewerPlayModeCapture.cs"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn(
+            "EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(\n"
+            "                out float endminfPostSeconds);",
+            capture,
+        )
+        for token in (
+            "bool endminfPostEvaluated =",
+            "? endminfPostState.elapsed",
+            "endminfPostEvaluated = endminfPostEvaluated",
+            "value.endminfPostEvaluated && Mathf.Abs(",
+            "authenticated Endminf overview_01 source-post clock",
+        ):
+            self.assertIn(token, capture)
 
 
 if __name__ == "__main__":

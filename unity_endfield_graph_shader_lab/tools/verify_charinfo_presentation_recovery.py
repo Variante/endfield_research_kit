@@ -171,10 +171,17 @@ def verify_implementation() -> None:
         [
             "public bool enableRecoveredPresentation;",
             "public bool enableReadySubsetDiagnostic;",
+            "public bool enableEndminfSourceBackground;",
             "public bool exactSourceAssetsReady;",
             "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
+            "ENDFIELD_ENDMINF_SOURCE_BACKGROUND",
             "SetRendererEnabledStates(false, true, true, false, true);",
-            "ApplySettledOpenState(openState);",
+            "SetRendererEnabledStates(false, false, false, true, true);",
+            "ApplySettledOpenState(openState, false);",
+            "ApplySettledOpenState(openState, true);",
+            "ValidateEndminfSourceBackgroundReadiness",
+            "source-backed partial ShadowPlane",
+            "ShadowPlane is not claimed as retail-exact presented pixels",
             "new Color(0.509434f, 0.509434f, 0.509434f, 0.6f)",
             "new Color(1.0f, 1.0f, 1.0f, 0.011764706f)",
             "sourceContent.SetActive(false);",
@@ -199,9 +206,22 @@ def verify_implementation() -> None:
             "UnavailableLitShaderName",
             "controller.enableRecoveredPresentation = false;",
             "controller.enableReadySubsetDiagnostic = false;",
+            "controller.enableEndminfSourceBackground = false;",
             "controller.settledOpenState = readySubsetOpenState;",
         ],
     )
+
+    runtime_source = runtime.read_text(encoding="utf-8")
+    assert runtime_source.count("gridTint.a *= 0.125f;") == 1
+    assert runtime_source.count("ApplySettledOpenState(openState, true);") == 1
+    source_start = runtime_source.index("private void ApplyEndminfSourceBackground()")
+    source_end = runtime_source.index(
+        "private void ApplyReadySubsetDiagnostic()", source_start
+    )
+    source_path = runtime_source[source_start:source_end]
+    assert "ApplySettledOpenState(openState, false);" in source_path
+    assert "gridTint.a *= 0.125f;" not in source_path
+    assert '"_TopColor"' not in source_path
 
     require_tokens(
         recovered / "EndfieldCharInfoVFXDsWriteRecovered.shader",
@@ -266,7 +286,9 @@ def main() -> int:
         f"{len(manifest['files'])} exact source files, "
         f"{len(manifest['selected_shader_variants'])} shipped shader variants; "
         "full runtime selector remains default-off/fail-closed at HGRP/Lit; "
-        "ready-subset diagnostic is default-off and excludes SphereOutside/ShadowPlane."
+        "ready-subset diagnostic is default-off and excludes SphereOutside/ShadowPlane; "
+        "independent Endminf source background admits exact Far plus bounded "
+        "source-backed partial ShadowPlane while excluding the fitted plate."
     )
     return 0
 

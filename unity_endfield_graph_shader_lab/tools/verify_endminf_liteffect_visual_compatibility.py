@@ -68,7 +68,7 @@ def main() -> int:
         "ParticleSystemRenderMode.Mesh",
         "row.renderer.SetMeshes",
         "row.renderer.sharedMaterials",
-        "if (!compatibility && !exactM27)",
+        "if (!compatibility && !exactM27 && !liveHGBuffer &&",
     ]
     required_builder = [
         "Material01PathId = 0x5A6341E8A834E421L",
@@ -86,16 +86,19 @@ def main() -> int:
     failures += ["canonical Endminf launcher does not enable the retained LitEffect owners"
                  for _ in [0] if 'set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"' not in open_wrapper]
     required_lifecycle = [
-        "StartRecoveredLegacyAnimations(instance)",
+        "StartRecoveredLegacyAnimations(",
         "animation.playAutomatically",
-        'EndminfCompositeRockClipName =',
-        '"A_fx_endminf_ui_overview_03_04"',
-        "EndminfCompositeRockClipDelaySeconds = 2.7666667f",
         "animation.Rewind(animation.clip.name)",
         "animation.Play(animation.clip.name)",
     ]
     failures += ["effect lifecycle missing " + value
                  for value in required_lifecycle if value not in spawner]
+    forbidden_lifecycle = [
+        "EndminfCompositeRockClipDelaySeconds",
+        "PlayRecoveredLegacyAnimationAfterDelay",
+    ]
+    failures += ["effect lifecycle still contains capture-fitted delay " + value
+                 for value in forbidden_lifecycle if value in spawner]
     asset_evidence = {}
     for name, (path, expected) in ASSETS.items():
         actual = sha256(path)

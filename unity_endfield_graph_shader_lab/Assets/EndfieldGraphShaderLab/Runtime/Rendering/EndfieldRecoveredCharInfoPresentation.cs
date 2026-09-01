@@ -9,9 +9,10 @@ namespace EndfieldGraphShaderLab
     /// original hierarchy is never shown unless every required source asset
     /// and shader semantic has been marked complete by the source-data
     /// importer. A separately named diagnostic can show only the source-owned
-    /// wall, floor, and far-grid subset. That diagnostic always excludes the
-    /// unresolved outside sphere and shadow receiver and is never presented as
-    /// an original full-scene reconstruction.
+    /// wall, floor, and far-grid subset. A dedicated Endminf selector admits
+    /// exact GridDeco/Far plus the bounded source-backed ShadowPlane identity,
+    /// while excluding both the unresolved sphere and generated neutral plate.
+    /// ShadowPlane is not represented as retail-exact presented pixels.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -31,6 +32,12 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC";
         public const string ReadySubsetCommandLineArgument =
             "-endfield-recovered-charinfo-ready-subset-diagnostic";
+        public const string EndminfSourceBackgroundKeyword =
+            "ENDFIELD_ENDMINF_SOURCE_BACKGROUND";
+        public const string EndminfSourceBackgroundEnvironmentVariable =
+            "ENDFIELD_ENDMINF_SOURCE_BACKGROUND";
+        public const string EndminfSourceBackgroundCommandLineArgument =
+            "-endfield-endminf-source-background";
         public const string EndminfBackdropVisualCompatibilityEnvironmentVariable =
             "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY";
 
@@ -55,6 +62,12 @@ namespace EndfieldGraphShaderLab
                  "off by default and explicitly excludes SphereOutside and " +
                  "ShadowPlane.")]
         public bool enableReadySubsetDiagnostic;
+
+        [Tooltip("Requests the bounded Endminf source background containing " +
+                 "only exact GridDeco/Far and the source-backed partial " +
+                 "ShadowPlane receiver. The neutral compatibility plate is " +
+                 "always excluded.")]
+        public bool enableEndminfSourceBackground;
 
         [Tooltip("Importer-owned wrapper containing the exact layer-13 source hierarchy.")]
         public GameObject sourceContent;
@@ -87,15 +100,19 @@ namespace EndfieldGraphShaderLab
         private static bool standaloneSelectionInitialized;
         private static bool? standaloneSelectionRequested;
         private static bool? standaloneReadySubsetRequested;
+        private static bool? standaloneEndminfSourceBackgroundRequested;
 
         private bool sourceStateApplied;
         private bool readySubsetStateApplied;
+        private bool endminfSourceBackgroundStateApplied;
         private bool previousBackdropEnabled;
         private Renderer appliedBackdropRenderer;
         private MaterialPropertyBlock endminfBackdropProperties;
         private bool loggedReadinessFailure;
         private bool loggedReadySubsetFailure;
         private bool loggedReadySubsetActivation;
+        private bool loggedEndminfSourceBackgroundFailure;
+        private bool loggedEndminfSourceBackgroundActivation;
 
         private readonly bool[] previousRendererEnabled = new bool[5];
         private MaterialPropertyBlock previousFloorProperties;
@@ -118,7 +135,9 @@ namespace EndfieldGraphShaderLab
         }
 
         public bool PresentationActive =>
-            sourceStateApplied && !readySubsetStateApplied;
+            sourceStateApplied &&
+            !readySubsetStateApplied &&
+            !endminfSourceBackgroundStateApplied;
 
         public bool ReadySubsetDiagnosticRequested
         {
@@ -134,12 +153,27 @@ namespace EndfieldGraphShaderLab
         public bool ReadySubsetDiagnosticActive =>
             sourceStateApplied && readySubsetStateApplied;
 
+        public bool EndminfSourceBackgroundRequested
+        {
+            get
+            {
+                InitializeStandaloneSelection();
+                return enabled && gameObject.activeInHierarchy &&
+                       (standaloneEndminfSourceBackgroundRequested ??
+                        enableEndminfSourceBackground);
+            }
+        }
+
+        public bool EndminfSourceBackgroundActive =>
+            sourceStateApplied && endminfSourceBackgroundStateApplied;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void PublishStandaloneSelection()
         {
             InitializeStandaloneSelection();
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
         }
 
         private static void InitializeStandaloneSelection()
@@ -156,6 +190,9 @@ namespace EndfieldGraphShaderLab
                 EndfieldRecoveredSelector.Explicit(EnvironmentVariable);
             standaloneReadySubsetRequested =
                 EndfieldRecoveredSelector.Explicit(ReadySubsetEnvironmentVariable);
+            standaloneEndminfSourceBackgroundRequested =
+                EndfieldRecoveredSelector.Explicit(
+                    EndminfSourceBackgroundEnvironmentVariable);
 
             string[] arguments = Environment.GetCommandLineArgs();
             for (int i = 0; i < arguments.Length; i++)
@@ -177,6 +214,16 @@ namespace EndfieldGraphShaderLab
                     continue;
                 standaloneReadySubsetRequested = true;
             }
+
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (!string.Equals(
+                        arguments[i],
+                        EndminfSourceBackgroundCommandLineArgument,
+                        StringComparison.OrdinalIgnoreCase))
+                    continue;
+                standaloneEndminfSourceBackgroundRequested = true;
+            }
         }
 
         /// <summary>
@@ -190,6 +237,7 @@ namespace EndfieldGraphShaderLab
             standaloneSelectionInitialized = false;
             standaloneSelectionRequested = null;
             standaloneReadySubsetRequested = null;
+            standaloneEndminfSourceBackgroundRequested = null;
             InitializeStandaloneSelection();
         }
 
@@ -220,12 +268,16 @@ namespace EndfieldGraphShaderLab
 
         private void ApplySelection()
         {
-            if (!PresentationRequested && !ReadySubsetDiagnosticRequested)
+            if (!PresentationRequested &&
+                !EndminfSourceBackgroundRequested &&
+                !ReadySubsetDiagnosticRequested)
             {
                 FailClosed();
                 loggedReadinessFailure = false;
                 loggedReadySubsetFailure = false;
                 loggedReadySubsetActivation = false;
+                loggedEndminfSourceBackgroundFailure = false;
+                loggedEndminfSourceBackgroundActivation = false;
                 return;
             }
 
@@ -235,6 +287,12 @@ namespace EndfieldGraphShaderLab
             if (PresentationRequested)
             {
                 ApplyExactSelection();
+                return;
+            }
+
+            if (EndminfSourceBackgroundRequested)
+            {
+                ApplyEndminfSourceBackground();
                 return;
             }
 
@@ -272,7 +330,7 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            BeginSourceState(false);
+            BeginSourceState(false, false);
 
             sourceContent.SetActive(true);
             SetRendererEnabledStates(true, true, true, true, true);
@@ -280,7 +338,51 @@ namespace EndfieldGraphShaderLab
                 appliedBackdropRenderer.enabled = false;
             Shader.EnableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
             loggedReadinessFailure = false;
+        }
+
+        private void ApplyEndminfSourceBackground()
+        {
+            string failure;
+            ReadySubsetOpenState openState;
+            if (!ValidateEndminfSourceBackgroundReadiness(
+                    out openState,
+                    out failure))
+            {
+                FailClosed();
+                if (!loggedEndminfSourceBackgroundFailure)
+                {
+                    Debug.LogError(
+                        "Recovered Endminf source background failed closed. " +
+                        failure,
+                        this);
+                    loggedEndminfSourceBackgroundFailure = true;
+                }
+                return;
+            }
+
+            BeginSourceState(false, true);
+            sourceContent.SetActive(true);
+            ApplySettledOpenState(openState, false);
+            SetRendererEnabledStates(false, false, false, true, true);
+            if (appliedBackdropRenderer != null)
+                appliedBackdropRenderer.enabled = false;
+            Shader.DisableKeyword(Keyword);
+            Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.EnableKeyword(EndminfSourceBackgroundKeyword);
+            loggedEndminfSourceBackgroundFailure = false;
+
+            if (!loggedEndminfSourceBackgroundActivation)
+            {
+                Debug.LogWarning(
+                    "Recovered Endminf source background active: exact " +
+                    "GridDeco/Far plus source-backed partial ShadowPlane. " +
+                    "The neutral compatibility plate is disabled. " +
+                    "ShadowPlane is not claimed as retail-exact presented pixels.",
+                    this);
+                loggedEndminfSourceBackgroundActivation = true;
+            }
         }
 
         private void ApplyReadySubsetDiagnostic()
@@ -303,14 +405,15 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            BeginSourceState(true);
+            BeginSourceState(true, false);
             sourceContent.SetActive(true);
-            ApplySettledOpenState(openState);
 
-            if (ApplyEndminfBackdropCompatibility())
+            if (ApplyEndminfBackdropCompatibility(openState))
             {
                 return;
             }
+
+            ApplySettledOpenState(openState, false);
 
             // The diagnostic is intentionally an allow-list. Do not permit
             // either unresolved pass to draw even if its GameObject or source
@@ -320,6 +423,7 @@ namespace EndfieldGraphShaderLab
                 appliedBackdropRenderer.enabled = false;
             Shader.DisableKeyword(Keyword);
             Shader.EnableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
             loggedReadySubsetFailure = false;
 
             if (!loggedReadySubsetActivation)
@@ -334,7 +438,8 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private bool ApplyEndminfBackdropCompatibility()
+        private bool ApplyEndminfBackdropCompatibility(
+            ReadySubsetOpenState openState)
         {
             if (EndfieldRecoveredSelector.Explicit(
                     EndminfBackdropVisualCompatibilityEnvironmentVariable) != true)
@@ -346,6 +451,7 @@ namespace EndfieldGraphShaderLab
             // validated ready subset, so admit that renderer alone over the
             // bounded neutral screen plate.
             sourceContent.SetActive(true);
+            ApplySettledOpenState(openState, true);
             if (sphereOutsideRenderer != null) sphereOutsideRenderer.enabled = false;
             if (floorRenderer != null) floorRenderer.enabled = false;
             if (wallRenderer != null) wallRenderer.enabled = false;
@@ -413,6 +519,7 @@ namespace EndfieldGraphShaderLab
             }
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
             loggedReadySubsetFailure = false;
             return true;
         }
@@ -488,6 +595,39 @@ namespace EndfieldGraphShaderLab
         {
             ReadySubsetOpenState ignored;
             return ValidateReadySubsetReadiness(out ignored, out failure);
+        }
+
+        public bool ValidateEndminfSourceBackgroundReadiness(
+            out string failure)
+        {
+            ReadySubsetOpenState ignored;
+            return ValidateEndminfSourceBackgroundReadiness(
+                out ignored,
+                out failure);
+        }
+
+        private bool ValidateEndminfSourceBackgroundReadiness(
+            out ReadySubsetOpenState openState,
+            out string failure)
+        {
+            if (!ValidateReadySubsetReadiness(out openState, out failure))
+                return false;
+
+            // The source background admits ShadowPlane only as a bounded,
+            // source-backed partial renderer. This identity gate does not
+            // claim that its final presented pixels match retail ownership.
+            if (!ValidateRenderer(
+                    shadowPlaneRenderer,
+                    "ShadowPlane",
+                    "Plane",
+                    ShadowReceiverShaderName,
+                    out failure))
+            {
+                return false;
+            }
+
+            failure = string.Empty;
+            return true;
         }
 
         private bool ValidateReadySubsetReadiness(
@@ -710,15 +850,19 @@ namespace EndfieldGraphShaderLab
                 sourceContent.SetActive(false);
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
 
             if (!sourceStateApplied)
                 return;
             RestoreBackdrop();
             sourceStateApplied = false;
             readySubsetStateApplied = false;
+            endminfSourceBackgroundStateApplied = false;
         }
 
-        private void BeginSourceState(bool readySubset)
+        private void BeginSourceState(
+            bool readySubset,
+            bool endminfSourceBackground)
         {
             if (!sourceStateApplied)
             {
@@ -744,6 +888,7 @@ namespace EndfieldGraphShaderLab
                 SnapshotRendererState();
             }
             readySubsetStateApplied = readySubset;
+            endminfSourceBackgroundStateApplied = endminfSourceBackground;
         }
 
         private void SnapshotRendererState()
@@ -801,7 +946,9 @@ namespace EndfieldGraphShaderLab
                 farGridRenderer.enabled = farGrid;
         }
 
-        private void ApplySettledOpenState(ReadySubsetOpenState openState)
+        private void ApplySettledOpenState(
+            ReadySubsetOpenState openState,
+            bool compatibilityAttenuation)
         {
             MaterialPropertyBlock floorProperties = new MaterialPropertyBlock();
             floorRenderer.GetPropertyBlock(floorProperties);
@@ -811,11 +958,13 @@ namespace EndfieldGraphShaderLab
             MaterialPropertyBlock gridProperties = new MaterialPropertyBlock();
             farGridRenderer.GetPropertyBlock(gridProperties);
             Color gridTint = openState.grid_far_tint;
-            // At the maintained 1920x1080 comparison resolution the recovered
-            // grid's high-pass contrast measured 8.0x the clean reference.
-            // Preserve the source RGB and animation endpoint while restoring
-            // the reference composition's effective far-grid opacity.
-            gridTint.a *= 0.125f;
+            if (compatibilityAttenuation)
+            {
+                // The generated neutral-plate diagnostic retains its former
+                // 1920x1080 comparison fit. Source-background admission never
+                // executes this capture-derived attenuation.
+                gridTint.a *= 0.125f;
+            }
             gridProperties.SetColor(TintColorId, gridTint);
             farGridRenderer.SetPropertyBlock(gridProperties);
         }

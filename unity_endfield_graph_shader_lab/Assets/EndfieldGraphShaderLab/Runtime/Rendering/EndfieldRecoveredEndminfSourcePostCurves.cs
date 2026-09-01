@@ -20,7 +20,7 @@ namespace EndfieldGraphShaderLab
         internal const string ExpectedSourceClipSha256 =
             "9814b9de92d5af7902b1967c295f98d29327824bdd7b478984527c5ccccd076c";
         internal const string ExpectedPayloadSha256 =
-            "0919ae4aab01e7772fb0c3987ad16f2885ad6374ff6c88a4adc065e4ba19353c";
+            "044017968e8d7cfe1f291274f29700a9d7bffc2bc18e333fa262d961b5385ace";
 
         private static SourcePostContract contract;
         private static string contractFailure = string.Empty;

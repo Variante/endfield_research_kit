@@ -40,7 +40,7 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         payload = MOD.build(self.gameassembly, self.metadata)
         published = json.loads(MOD.OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(payload, published)
-        self.assertEqual(payload["schema"], "endfield.endminf-effect-nanguan-trigger.v3")
+        self.assertEqual(payload["schema"], "endfield.endminf-effect-nanguan-trigger.v4")
         own_animator = payload["conclusions"]["effectInstanceDelayAndOwnAnimatorEnable"]
         self.assertTrue(own_animator["sourceClosed"])
         self.assertEqual(own_animator["relativeAnchor"], "EffectInstance.Start")
@@ -54,8 +54,11 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         self.assertFalse(child["runtimeInvocationForThisLodRowSourceClosed"])
         self.assertFalse(child["clipStartRelativeToEffectInstanceStartSourceClosed"])
         outer = payload["conclusions"]["overviewStateToEffectInstanceStart"]
-        self.assertFalse(outer["sourceClosed"])
-        self.assertEqual(outer["status"], "unresolved")
+        self.assertTrue(outer["serializedOwnerSourceClosed"])
+        self.assertTrue(outer["pinnedUnpatchedNativeRouteSourceClosed"])
+        self.assertTrue(outer["recordedIfixSnapshotNonreplacement"])
+        self.assertFalse(outer["currentRuntimeRouteSourceClosed"])
+        self.assertEqual(outer["status"], "conditional_pinned_unpatched_route_only")
         self.assertEqual(payload["evidence"]["effectSetting"]["delaySeconds"], 0.0)
         self.assertEqual(
             payload["evidence"]["lodOwnedChildAnimator"]["clipName"],
@@ -82,12 +85,48 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         self.assertFalse(lod["sourceClosed"])
         self.assertEqual(lod["status"], "unresolved")
         lab_playback = payload["conclusions"]["labPlayback"]
+        self.assertTrue(lab_playback["sourceTriggerOwnerExact"])
+        self.assertTrue(lab_playback["oneShotSeedExact"])
         self.assertFalse(lab_playback["retailOwnerExact"])
+        self.assertFalse(lab_playback["retailEffectInstanceTransportExact"])
         self.assertFalse(lab_playback["retailTimingExact"])
+        source_join = payload["evidence"]["overviewSourceJoin"]
+        self.assertEqual(
+            source_join["state"],
+            {
+                "path": "Base Layer.Overview.FromOveview",
+                "fullPathId": 1560421867,
+                "pathCrc32": "0x5d0225eb",
+                "layerIndex": 0,
+            },
+        )
+        self.assertEqual(
+            [row["effectName"] for row in
+             source_join["stateMachineBehaviour"]["orderedEffects"]],
+            list(MOD.SOURCE_OVERVIEW_EFFECTS),
+        )
+        self.assertEqual(
+            source_join["overview01PostHierarchy"]["postLocalPosition"],
+            [0.0, 1.266, 0.0],
+        )
+        self.assertTrue(
+            source_join["recordedInstalledIfixSnapshot"]
+            ["sourceBuildMatchesPinnedNative"]
+        )
+        self.assertFalse(
+            source_join["recordedInstalledIfixSnapshot"]
+            ["runtimeOrRemotePatchStateProven"]
+        )
         identities = payload["evidence"]["native"]["methodIdentities"]
         self.assertIn(
             ("UnityEngine.Animator", "Play", "0x06000212"),
             {(row["type"], row["method"], row["token"]) for row in identities},
+        )
+        self.assertIn(
+            ("Beyond.Gameplay.EffectInstance", "get_isValid", "0x06005a7f",
+             "System.Boolean"),
+            {(row["type"], row["method"], row["token"], row["returnType"])
+             for row in identities},
         )
         mapping = payload["evidence"]["native"]["methodPointerMapping"]
         self.assertEqual(
@@ -108,6 +147,106 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
             ["directRelativeCallOffsets"],
             [],
         )
+        gates = payload["evidence"]["native"]["ifixWrapperGates"]
+        self.assertEqual(
+            {(row["method"], row["gateId"]) for row in gates},
+            {(method, f"0x{gate_id:x}")
+             for method, _, gate_id, _ in MOD.NATIVE_IFIX_WRAPPER_GATES},
+        )
+        self.assertEqual(
+            payload["evidence"]["native"]["syncEffectTimeDirectCallers"],
+            [{
+                "fileOffset": "0x6b84937",
+                "callVirtualAddress": "0x186b86337",
+                "section": "il2cpp",
+            }],
+        )
+        self.assertEqual(
+            [row["name"] for row in payload["evidence"]["native"]
+             ["syncEffectTimeDirectCallerExecutableSectionsScanned"]],
+            [".text", "il2cpp", ".tvm0"],
+        )
+        validity_gate = next(
+            row for row in control
+            if row["name"] == "sync_effect_time_valid_positive_elapsed_gate"
+        )
+        self.assertEqual(
+            validity_gate["target"],
+            "Beyond.Gameplay.EffectInstance.get_isValid",
+        )
+        self.assertNotIn("inactive", validity_gate["semantic"])
+        self.assertIn(
+            "Gameplay.Beyond managed route method",
+            outer["nonclaim"],
+        )
+
+    def test_fromoverview_behaviour_range_mutation_fails_closed(self) -> None:
+        original = MOD.load_json
+
+        def changed(path: Path) -> dict:
+            value = original(path)
+            if Path(path) == MOD.ACTOR_CONTROLLER:
+                value = copy.deepcopy(value)
+                ranges = value["m_StateMachineBehaviourVectorDescription"][
+                    "m_StateMachineBehaviourRanges"
+                ]
+                row = next(item for item in ranges
+                           if item["Key"]["m_StateID"] == MOD.SOURCE_OVERVIEW_STATE_HASH)
+                row["Value"]["m_StartIndex"] = 2
+            return value
+
+        with mock.patch.object(MOD, "load_json", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "Behaviour range drifted"):
+                MOD.build(self.gameassembly, self.metadata)
+
+    def test_overview_effect_order_mutation_fails_closed(self) -> None:
+        original = MOD.load_json
+
+        def changed(path: Path) -> dict:
+            value = original(path)
+            if Path(path) == MOD.OVERVIEW_PLAY_EFFECT_BEHAVIOUR:
+                value = copy.deepcopy(value)
+                value["_effects"][0], value["_effects"][1] = (
+                    value["_effects"][1], value["_effects"][0]
+                )
+            return value
+
+        with mock.patch.object(MOD, "load_json", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "payload/order drifted"):
+                MOD.build(self.gameassembly, self.metadata)
+
+    def test_overview_post_hierarchy_mutation_fails_closed(self) -> None:
+        original = MOD.load_json
+
+        def changed(path: Path) -> dict:
+            value = original(path)
+            if Path(path) == MOD.OVERVIEW_01_POST_TRANSFORM:
+                value = copy.deepcopy(value)
+                value["m_Father"]["m_PathID"] = 0
+            return value
+
+        with mock.patch.object(MOD, "load_json", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "local hierarchy/anchor drifted"):
+                MOD.build(self.gameassembly, self.metadata)
+
+    def test_recorded_ifix_route_target_mutation_fails_closed(self) -> None:
+        original = MOD.load_json
+
+        def changed(path: Path) -> dict:
+            value = original(path)
+            if Path(path) == MOD.INSTALLED_IFIX_PATCH_STATE:
+                value = copy.deepcopy(value)
+                value["targets"].append({
+                    "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
+                    "method": "_SyncEffectTime",
+                    "parameters": [],
+                    "implementation_index": 999,
+                })
+            return value
+
+        with mock.patch.object(MOD, "load_json", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "replaces source-clock route"):
+                MOD.build(self.gameassembly, self.metadata)
 
     def test_nonzero_serialized_delay_fails_closed(self) -> None:
         original = MOD.load_json

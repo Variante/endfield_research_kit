@@ -467,20 +467,25 @@ the outer return; the false path remains intact and all 20 native tests pass.
 - Effect-02's exact serialized streamed-cubic radial/chromatic coefficients,
   constant 1.0 radial-power curve, native mode/effective-power packing,
   signed/clamped post-projection center transform, source-only warped taps, and
-  separate bloom sampling order are source-backed. A deterministic payload now
-  joins the hash-gated `A_fx_endminf_ui_overview_02` clip to the pinned native
-  MonoBehaviour field/apply identities, and the runtime evaluates Unity's
-  original `((a*dt+b)*dt+c)*dt+d` segments directly. The former compatibility
-  evaluator that scaled the opening peaks to 45% and moved the late pulse from
-  its authored 4.4333-second key to 4.3500 seconds was video-fitted and has been
-  removed, as was the downstream quarter-intensity factor selected by a matched
-  reference-frame sweep; the public-Unity carrier now receives the authored
-  values without a fitted multiplier. The exact outer effect-start timestamp and retail SceneColor/pass
-  chronology remain unresolved; the runtime publisher therefore rejects the
-  prefab-creation/pre-roll compatibility clock and stays fail-closed. The exact
-  curve evaluator is currently only the bounded `f(elapsed)` contract; neither
-  recording alignment nor a visible Uber draw may replace the missing source
-  clock owner.
+  separate bloom sampling order are source-backed. The exact source owner is
+  `Base Layer.Overview.FromOveview` (`0x5D0225EB`): its single joined
+  `AnimatorBehaviourPlayEffect` owns ordered effects `_01`, `_02`, `_03`, and
+  `_04`; `_01` owns `A_fx_endminf_ui_overview_02` and its `post (1)` child at
+  local `(0,1.266,0)`. On the pinned unpatched route, `OnStateEnter` completes
+  the accepted `LoadImmediately -> LoadFinish -> EffectInstance.Start` path,
+  then `_SyncEffectTime` seeds active effect animators and `ManualSyncTime` once
+  with raw `length * normalizedTime`. The recorded installed local IFix payload
+  replaces none of these methods, while runtime/remote/memory-only and future
+  patch state remain outside static proof. The lab carries that one-shot seed
+  synchronously into the started `_01` instance and advances it with scaled
+  `Time.timeAsDouble`; it never uses an absolute capture offset or continuously
+  resamples the body Animator. Invalid selector, owner, generation, Animator,
+  root, startup, or bind state revokes the transaction and capture records only
+  a successfully evaluated source-post state. The former fitted peak scaling,
+  shifted late-pulse key, and downstream quarter-intensity factor remain
+  removed. Retail `EffectInstance` tick ownership, SceneColor/pass chronology,
+  and retail-equivalent presentation are still unresolved and explicitly not
+  claimed.
   The exact combined Uber variant now also closes the CharInfo merge: source-only
   global exposure, channel-wise bloom decoding above 0.3, serialized intensity,
   white normalized tint, zero blend mode, and saturated source alpha. The D3D12
@@ -492,8 +497,9 @@ the outer return; the false path remains intact and all 20 native tests pass.
   that applying the nine-tick post offset to particle simulation makes M13
   appear before retail and removes it from the retail peak. Particle delays
   therefore remain on the selection/body timeline: M13 is absent at requested
-  4.2167 seconds, alive at 4.4667, and gone by 4.7167, while the post clock is
-  still 0.15 seconds ahead in that retired diagnostic. The pinned native producer selects mode 6 when both effects are active
+  4.2167 seconds, alive at 4.4667, and gone by 4.7167. The former 0.15-second
+  post lead is retired comparison evidence and is never an active source clock.
+  The pinned native producer selects mode 6 when both effects are active
   and radial intensity exceeds 0.01, and mode 3 otherwise; the recovered mode-3
   and mode-6 DXBC sampling equations and the source-warp/bloom-merge order are
   already represented by the compatibility shader. A tempting mode-3 c0/c25
@@ -2023,21 +2029,25 @@ focused D3D11 report proves all six particles alive and playing at post time
 4.4333 (clean frame 269); crystals, stones, rays, and every other particle
 remain on the selection/body clock.
 
-The CharInfo background now uses the exact `S_GridFar`/`M_GridFar` source route
-over the neutral wall with its 1,012-vertex/1,518-index mesh, layer 13, queue
-2950, `ForwardOnly` pass, exact transform, BC7-sRGB `T_GridLineFar` texture, and
-static `sampler_LinearClamp`. The importer restores the source submesh AABB as
-well as the overall mesh bounds; validation fails if they diverge. Bounds and
-sampler corrections alone did not admit the draw, nor did an opaque-fragment or
-direct `DrawRenderer` diagnostic with source `ZTest LEqual`. Changing only the
-diagnostic depth test to Always exposed the full perspective grid, proving
-depth occlusion. The recovered pre-GBuffer owner had been forcing every generic
-opaque-queue renderer through its depth-only material and therefore wrote the
-`Endfield/CharacterRecovery/ReferenceBackdrop` even though that shader declares
-`ZWrite Off`. Excluding that exact shader from generic depth admission removes
-one depth draw and makes GridFar visible with normal character occlusion. Keep
-the source grid; remaining strength/alignment differences belong to final Uber,
-camera, and portrait composition rather than procedural replacement geometry.
+The CharInfo background now has a source-honest Endminf selector independent of
+the generic ready-subset diagnostic and fitted backdrop. It admits the exact
+`S_GridFar`/`M_GridFar` route with its 1,012-vertex/1,518-index mesh, layer 13,
+queue 2950, `ForwardOnly` pass, exact transform, BC7-sRGB `T_GridLineFar`
+texture, static `sampler_LinearClamp`, and unattenuated serialized open-state
+tint. It also admits the exact source `ShadowPlane` identity only as a
+source-backed partial owner; final retail pixel ownership remains unresolved.
+The canonical source path enables only `GridDeco/Far` and `ShadowPlane`, keeps
+Sphere/floor/wall off, and requires the generated `ReferenceBackdrop` plate off.
+That plate's actor-bounds placement, paired-frame grade, and 0.125 grid-alpha
+attenuation are capture-fitted diagnostics and remain available only under the
+separate compatibility selector. The upright source-recovered portrait remains
+independent. Bounds and sampler corrections alone did not admit GridFar; the
+recovered pre-GBuffer owner had been forcing the `ReferenceBackdrop` through a
+generic depth-only path even though its shader declares `ZWrite Off`.
+Excluding that diagnostic shader from generic depth admission makes the exact
+source grid visible with normal character occlusion. Remaining differences
+belong to final ShadowPlane/SphereOutside ownership, Uber, camera, and portrait
+composition rather than procedural replacement geometry.
 
 Portrait alignment is likewise no longer a screenshot-fitting task. Lua and
 raw RectTransform evidence confirm `CharInfoCamAttachment` at

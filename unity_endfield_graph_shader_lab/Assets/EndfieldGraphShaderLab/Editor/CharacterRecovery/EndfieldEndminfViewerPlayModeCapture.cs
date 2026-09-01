@@ -156,8 +156,11 @@ namespace EndfieldGraphShaderLabEditor
             public bool actorOnlyCapture =
                 !IncludeCharInfoBackground && !IncludeBackgroundPortrait;
             public bool charInfoBackgroundRequested = IncludeCharInfoBackground;
+            public bool endminfSourceBackgroundRequested = IncludeCharInfoBackground;
             public bool backgroundPortraitRequested = IncludeBackgroundPortrait;
             public bool charInfoBackgroundIncluded;
+            public bool endminfSourceBackgroundIncluded;
+            public bool fittedCompatibilityPlateActive;
             public bool backgroundPortraitIncluded;
             public bool foregroundUiOverlayIncluded = false;
             public bool postProcessingExplicitlyDisabled = false;
@@ -231,6 +234,7 @@ namespace EndfieldGraphShaderLabEditor
             public float requestedSeconds;
             public float actualSeconds;
             public float phaseErrorSeconds;
+            public bool endminfPostEvaluated;
             public float endminfPostSeconds;
             public float endminfPostChromaticIntensity;
             public float endminfPostRadialIntensity;
@@ -559,16 +563,36 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.SetEnvironmentVariable(
                     flag,
                     "1");
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldEndminfVisualCompatibilityClock.SourcePostEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldEndminfVisualCompatibilityClock.SourcePostEnvironmentVariable,
+                    "1");
+            }
             // Exact HGBuffer publication replaces only the identity-gated M27
             // hand-crystal row. The ten source-identified M01/M38 primary-rock
             // renderers remain separate ForwardOnly owners; disabling the
             // whole compatibility binding removed those stones from the shot.
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceBackgroundEnvironmentVariable)))
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceBackgroundEnvironmentVariable,
+                    "1");
+            }
+            // Canonical capture admits the bounded source-owned background.
+            // Neither fitted compatibility path may become a hidden fallback.
             Environment.SetEnvironmentVariable(
-                "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY",
-                IncludeCharInfoBackground ? "1" : "0");
+                EndfieldRecoveredCharInfoPresentation
+                    .EndminfBackdropVisualCompatibilityEnvironmentVariable,
+                "0");
             Environment.SetEnvironmentVariable(
-                "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
-                IncludeCharInfoBackground ? "1" : "0");
+                EndfieldRecoveredCharInfoPresentation
+                    .ReadySubsetEnvironmentVariable,
+                "0");
             Environment.SetEnvironmentVariable(
                 "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT",
                 IncludeBackgroundPortrait ? "1" : "0");
@@ -1265,12 +1289,14 @@ namespace EndfieldGraphShaderLabEditor
             }
             string file = "frame_" + next.ToString("D6") + ".png";
             Write(Path.Combine(output, file), pixels);
-            EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(
-                out float endminfPostSeconds);
-            EndfieldEndminfVisualCompatibilityClock.TryEvaluateRecoveredPost(
-                camera,
-                out EndfieldEndminfVisualCompatibilityClock.RecoveredPostState
-                    endminfPostState);
+            bool endminfPostEvaluated =
+                EndfieldEndminfVisualCompatibilityClock.TryEvaluateRecoveredPost(
+                    camera,
+                    out EndfieldEndminfVisualCompatibilityClock.RecoveredPostState
+                        endminfPostState);
+            float endminfPostSeconds = endminfPostEvaluated
+                ? endminfPostState.elapsed
+                : 0.0f;
             EndfieldRecoveredCharInfoPresentation charInfoPresentation =
                 UnityEngine.Object.FindObjectOfType<EndfieldRecoveredCharInfoPresentation>(true);
             Renderer shadowPlane = charInfoPresentation == null
@@ -1337,6 +1363,7 @@ namespace EndfieldGraphShaderLabEditor
                 actualSeconds = elapsed,
                 phaseErrorSeconds = elapsed - target,
                 file = file,
+                endminfPostEvaluated = endminfPostEvaluated,
                 endminfPostSeconds = endminfPostSeconds,
                 endminfPostChromaticIntensity =
                     endminfPostState.chromaticIntensity,
@@ -1830,14 +1857,32 @@ namespace EndfieldGraphShaderLabEditor
                 if (!observedLightCookieDataReady)
                     missingObservations.Add("exact-consumer LightCookieData readiness");
             }
+            bool endminfSourceBackgroundIncluded =
+                !IncludeCharInfoBackground || IsEndminfSourceBackgroundActive();
+            bool fittedCompatibilityPlateActive =
+                IsFittedCompatibilityPlateActive();
             bool charInfoBackgroundIncluded =
-                !IncludeCharInfoBackground || IsCharInfoBackgroundActive();
+                endminfSourceBackgroundIncluded &&
+                !fittedCompatibilityPlateActive;
             bool backgroundPortraitIncluded =
                 !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
             if (!charInfoBackgroundIncluded)
-                missingObservations.Add("active recovered CharInfo grey background");
+                missingObservations.Add(
+                    "active Endminf source background with exact Far, expected " +
+                    "ShadowPlane, and fitted plate disabled");
+            if (fittedCompatibilityPlateActive)
+                missingObservations.Add(
+                    "fitted Endminf compatibility plate remained active");
             if (!backgroundPortraitIncluded)
                 missingObservations.Add("active Endminf background portrait");
+            bool observedEndminfSourcePostClock =
+                Frames.Any(value => value.endminfPostEvaluated);
+            if (EndfieldEndminfVisualCompatibilityClock.SourcePostRequested &&
+                !observedEndminfSourcePostClock)
+            {
+                missingObservations.Add(
+                    "authenticated Endminf overview_01 source-post clock");
+            }
             bool observedEndminfPostSourceRgba16 =
                 Frames.Count > 0 && Frames.All(value => string.Equals(
                     value.endminfPostSourceGraphicsFormat,
@@ -1884,7 +1929,7 @@ namespace EndfieldGraphShaderLabEditor
             // the editor-side report gate.
             const float capturedUberPhaseSeconds = 4.35f;
             bool capturedUberPhaseIncluded = Frames.Any(value =>
-                Mathf.Abs(
+                value.endminfPostEvaluated && Mathf.Abs(
                     value.endminfPostSeconds -
                     capturedUberPhaseSeconds) <= 1.0f / 120.0f);
             bool exactEndminfUberRequirementReady =
@@ -2062,6 +2107,10 @@ namespace EndfieldGraphShaderLabEditor
                 fps = captureFps,
                 graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
                 charInfoBackgroundIncluded = charInfoBackgroundIncluded,
+                endminfSourceBackgroundIncluded =
+                    endminfSourceBackgroundIncluded,
+                fittedCompatibilityPlateActive =
+                    fittedCompatibilityPlateActive,
                 backgroundPortraitIncluded = backgroundPortraitIncluded,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
@@ -2142,10 +2191,11 @@ namespace EndfieldGraphShaderLabEditor
                 gyroscopeInputY = captureGyroscopeInputY,
                 gyroscopeEntryOffsetX = captureGyroscopeEntryOffsetX,
                 gyroscopeEntryOffsetY = captureGyroscopeEntryOffsetY,
-                // The _02 owner is destroyed before the full sequence report
+                // The _01 source-post owner is destroyed before the full sequence report
                 // is published, which deliberately clears the live clock.
                 // Preserve the observed first-frame phase difference instead.
-                visualPostPreRollSeconds = Frames.Count > 0
+                visualPostPreRollSeconds = Frames.Count > 0 &&
+                    Frames[0].endminfPostEvaluated
                     ? Mathf.Max(
                         0.0f,
                         Frames[0].endminfPostSeconds - Frames[0].actualSeconds)
@@ -2220,7 +2270,28 @@ namespace EndfieldGraphShaderLabEditor
             EditorApplication.ExitPlaymode();
         }
 
-        private static bool IsCharInfoBackgroundActive()
+        private static bool IsEndminfSourceBackgroundActive()
+        {
+            return UnityEngine.Object
+                .FindObjectsOfType<EndfieldRecoveredCharInfoPresentation>(true)
+                .Any(value =>
+                    value != null &&
+                    value.enabled &&
+                    value.gameObject.activeInHierarchy &&
+                    value.EndminfSourceBackgroundActive &&
+                    value.sourceContent != null &&
+                    value.sourceContent.activeInHierarchy &&
+                    value.farGridRenderer != null &&
+                    value.farGridRenderer.enabled &&
+                    value.farGridRenderer.gameObject.activeInHierarchy &&
+                    value.shadowPlaneRenderer != null &&
+                    value.shadowPlaneRenderer.enabled &&
+                    value.shadowPlaneRenderer.gameObject.activeInHierarchy &&
+                    (value.compatibilityBackdropRenderer == null ||
+                     !value.compatibilityBackdropRenderer.enabled));
+        }
+
+        private static bool IsFittedCompatibilityPlateActive()
         {
             return UnityEngine.Object
                 .FindObjectsOfType<EndfieldRecoveredCharInfoPresentation>(true)

@@ -59,6 +59,40 @@ def check_installed_file(record: dict, label: str) -> None:
         fail(f"installed {label} SHA-256 changed: {actual_hash}")
 
 
+def same_installed_path(value: object, expected: str) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    return str(Path(value).resolve()).casefold() == str(Path(expected).resolve()).casefold()
+
+
+def check_loader_build_provenance(
+    report: dict,
+    metadata_catalog: dict,
+    native_map: dict,
+) -> None:
+    source_build = report.get("source_build") or {}
+    game_assembly = source_build.get("game_assembly") or {}
+    metadata = source_build.get("global_metadata") or {}
+    catalog_source = metadata_catalog.get("metadata") or {}
+    map_source = native_map.get("metadata") or {}
+    if not (
+        same_installed_path(catalog_source.get("path"), metadata.get("path_at_recovery", "")) and
+        str(catalog_source.get("sha256") or "").lower() ==
+            str(metadata.get("sha256") or "").lower()
+    ):
+        fail("loader metadata catalog native-build provenance is stale or mismatched")
+    if not (
+        same_installed_path(map_source.get("metadataPath"), metadata.get("path_at_recovery", "")) and
+        str(map_source.get("metadataSha256") or "").lower() ==
+            str(metadata.get("sha256") or "").lower() and
+        same_installed_path(map_source.get("gameAssembly"),
+                            game_assembly.get("path_at_recovery", "")) and
+        str(map_source.get("gameAssemblySha256") or "").lower() ==
+            str(game_assembly.get("sha256") or "").lower()
+    ):
+        fail("loader native map native-build provenance is stale or mismatched")
+
+
 def read_i32(data: bytes, offset: int) -> tuple[int, int]:
     if offset + 4 > len(data):
         fail(f"truncated int32 at 0x{offset:x}")
@@ -185,8 +219,15 @@ def main() -> int:
     persistent_index = check_file(vfs["persistent_overlay"]["index"], "Persistent IFix VFS index")
     patch_path = check_file(vfs["persistent_overlay"]["file"], "decrypted Gameplay patch")
     check_refresh_metadata(report, vfs["persistent_overlay"]["file"])
-    check_file(report["loader_recovery"]["metadata_catalog"], "loader metadata catalog")
-    check_file(report["loader_recovery"]["native_map"], "loader native map")
+    metadata_catalog_path = check_file(
+        report["loader_recovery"]["metadata_catalog"], "loader metadata catalog"
+    )
+    native_map_path = check_file(
+        report["loader_recovery"]["native_map"], "loader native map"
+    )
+    metadata_catalog = json.loads(metadata_catalog_path.read_text(encoding="utf-8"))
+    native_map = json.loads(native_map_path.read_text(encoding="utf-8"))
+    check_loader_build_provenance(report, metadata_catalog, native_map)
     check_vfs_index(base_index, vfs["base_streaming_assets"], "base")
     check_vfs_index(persistent_index, vfs["persistent_overlay"], "Persistent")
 
@@ -222,9 +263,6 @@ def main() -> int:
         ] in protected_methods:
             fail(f"Character Info/render protected target unexpectedly patched: {target}")
 
-    native_map = json.loads(
-        repo_path(report["loader_recovery"]["native_map"]["repo_path"]).read_text(encoding="utf-8")
-    )
     if native_map["summary"]["mappedTargetCount"] != report["loader_recovery"]["native_map"]["mapped_targets"]:
         fail("loader mapped-target count changed")
     edge_set = {
