@@ -23,20 +23,23 @@
     "M01": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_01_p5A6341E8A834E421.mat",
       "sha256": "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
-      "expectedSha256": "626dc677675fea1a3a0f2f0079c9755455d37336cfe8cd682e3332669606f509",
-      "validated": true
+      "expectedSha256": null,
+      "validated": false,
+      "validationBasis": "source hash and serialized material fields"
     },
     "M38": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_38_pAFCE491DD7BC5724.mat",
       "sha256": "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
-      "expectedSha256": "b52f21342f56dd8b7801fe31217cc806a88553f5cba1cc688084dd229edcd38a",
-      "validated": true
+      "expectedSha256": null,
+      "validated": false,
+      "validationBasis": "source hash and serialized material fields"
     },
     "M27": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Materials\\M_fx_endminm_gfx_27_pA531A88850690EB8.mat",
       "sha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
-      "expectedSha256": "696bf7dc65d7b4e4a591980ad95faeec80077faed0213ccc74ea5bc539eab8a7",
-      "validated": true
+      "expectedSha256": null,
+      "validated": false,
+      "validationBasis": "source hash and serialized material fields"
     },
     "rockMesh": {
       "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\Effects\\Overview\\Meshes\\S_rock_small_1_017_02_lod2_p8EC9950E5461C8D9.obj",
@@ -47,7 +50,7 @@
   },
   "resourceMappingEvidence": {
     "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\ExternalUiEffects\\endminf_liteffect_resource_mapping.json",
-    "sha256": "64cc031e3b147eb4818e7b365c70f027cc8788eae846c8d6f7f7851dbf6b183d",
+    "sha256": "bcc97358bb5e5bb38fee5d447f61d1ddeaf01a248a8075d822e11f205946710a",
     "current": true,
     "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps"
   },
@@ -68,6 +71,13 @@
         "_ParallaxMapUVType",
         "_ParallaxNoiseMapTilling",
         "_ParallaxFresnelStrength",
+        "_ParallaxStrength",
+        "_ParallaxTilling",
+        "_ParallaxMarchNum",
+        "_ParallaxMinBrightness",
+        "_ParallaxIntensity",
+        "_BaseColor",
+        "_ParallaxColor",
         "_ParallaxColorDark"
       ],
       "validated": false
@@ -88,6 +98,13 @@
         "_ParallaxMapUVType",
         "_ParallaxNoiseMapTilling",
         "_ParallaxFresnelStrength",
+        "_ParallaxStrength",
+        "_ParallaxTilling",
+        "_ParallaxMarchNum",
+        "_ParallaxMinBrightness",
+        "_ParallaxIntensity",
+        "_BaseColor",
+        "_ParallaxColor",
         "_ParallaxColorDark"
       ],
       "validated": false
@@ -108,6 +125,13 @@
         "_ParallaxMapUVType",
         "_ParallaxNoiseMapTilling",
         "_ParallaxFresnelStrength",
+        "_ParallaxStrength",
+        "_ParallaxTilling",
+        "_ParallaxMarchNum",
+        "_ParallaxMinBrightness",
+        "_ParallaxIntensity",
+        "_BaseColor",
+        "_ParallaxColor",
         "_ParallaxColorDark"
       ],
       "validated": false

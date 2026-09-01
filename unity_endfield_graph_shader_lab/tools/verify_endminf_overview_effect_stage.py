@@ -69,10 +69,10 @@ CLIPS = {
     "A_actor_endminf_ui_overview_02": (-7994037904239017215, 937624865),
 }
 STAGE_FINGERPRINT = "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3"
-STAGE_CONTENT_SHA256 = "cd3ae3fe97dac3c8c0ae64012401b7bb239b98aa8104933f2d516f227e739e3a"
+STAGE_CONTENT_SHA256 = "873f17793284de92f7680448b7efe282b73cbaea85522297e3f412e49508d302"
 STAGE_CONTENT_TYPES = (
     "GameObject", "Transform", "ParticleSystem",
-    "ParticleSystemRenderer", "MonoBehaviour",
+    "ParticleSystemRenderer", "MonoBehaviour", "AnimationClip",
 )
 SHAPE_TEXTURE_PATH_ID = 6970530313307194154
 SHAPE_TEXTURE_SHA256 = "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb"

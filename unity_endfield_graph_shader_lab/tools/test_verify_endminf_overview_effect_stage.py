@@ -30,7 +30,7 @@ class EndminfOverviewEffectStageTests(unittest.TestCase):
         )
 
     def test_aggregate_preserving_owner_swaps_change_stage_hash(self) -> None:
-        mutations = ("scaling", "shape", "materials")
+        mutations = ("scaling", "shape", "materials", "animation")
         for mutation in mutations:
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temp:
                 stage = Path(temp) / "stage"
@@ -60,7 +60,7 @@ class EndminfOverviewEffectStageTests(unittest.TestCase):
                         copy.deepcopy(right_shape["m_Texture"]),
                         copy.deepcopy(left_shape["m_Texture"]),
                     )
-                else:
+                elif mutation == "materials":
                     paths = sorted((stage / "ParticleSystemRenderer").glob("*.json"))
                     rows = [(path, json.loads(path.read_text(encoding="utf-8")))
                             for path in paths]
@@ -73,7 +73,19 @@ class EndminfOverviewEffectStageTests(unittest.TestCase):
                         copy.deepcopy(right[1]["m_Materials"]),
                         copy.deepcopy(left[1]["m_Materials"]),
                     )
-                for path, row in (left, right):
+                else:
+                    path = next(
+                        (stage / "AnimationClip").glob(
+                            "A_actor_endminf_ui_overview_02_*.json"
+                        )
+                    )
+                    row = json.loads(path.read_text(encoding="utf-8"))
+                    deltas = row["m_MuscleClip"]["m_ValueArrayDelta"]
+                    self.assertGreater(len(deltas), 0)
+                    deltas[0]["m_Start"] = float(deltas[0]["m_Start"]) + 0.125
+                    left = (path, row)
+                    right = None
+                for path, row in (left, right) if right else (left,):
                     path.write_text(json.dumps(row, indent=2) + "\n", encoding="utf-8")
                 self.assertNotEqual(
                     MODULE.stage_content_sha256(stage),

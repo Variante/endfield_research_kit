@@ -3060,7 +3060,7 @@
     },
     "exactM27Producer": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfM27HGBuffer.shader",
-      "sha256": "5fbc72fa0e23aad636575e4630272e5c98118b9898b0f04ce80ebe95ff087b31",
+      "sha256": "482a77a284328b9efd58d3b05c3cad65a949d0cdc059724fd4bed62d91faf5ca",
       "classification": "source_equation_port_consumer_still_gated"
     },
     "m01M38Compatibility": {

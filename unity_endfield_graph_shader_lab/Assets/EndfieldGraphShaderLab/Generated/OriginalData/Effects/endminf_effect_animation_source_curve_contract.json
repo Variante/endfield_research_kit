@@ -1,0 +1,384 @@
+{
+  "schema": "endfield.endminf-effect-animation-source-curves.v1",
+  "status": "source_derived_semantic_curve_contract",
+  "derivation": {
+    "decoder": "tools/unity_muscleclip_sampler.py::ClipSampler",
+    "curveRule": "all source frames; declared Transform channels only",
+    "keyDigest": "sha256(concat(float32_le(time),float32_le(value)))",
+    "tangentRule": "Unity EnsureQuaternionContinuity smooth central derivative; endpoints one-sided",
+    "weightRule": "WeightedMode.None with default one-third weights",
+    "boundary": "No cached .anim bytes or capture-fitted values participate in expected curves."
+  },
+  "clips": [
+    {
+      "name": "A_actor_endminf_ui_overview_02",
+      "sourceFile": "A_actor_endminf_ui_overview_02_p910F78E15CD34301.json",
+      "sourceSha256": "22c191d15ea18dc2d890b9c6e4411e8e2985c6ea5fd6db96263b499e3d86a70d",
+      "sampleRate": 60.0,
+      "duration": 5.883333683013916,
+      "bindingCount": 30,
+      "keyCountPerBinding": 354,
+      "curves": [
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "3b6cd026bb883bb7e2f0a7a21114d44d8e849e1e8acc239b46e5ad6655928ed3"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "d1d244516af1b06389276b4f74220b8d2e25f514897c6ea1def877ff2ed7dd28"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "325ada7c7c99aba6a6666cba00fa2fcd885caa3640bda858bff19d088c089b30"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 354,
+          "keyTimeValueSha256": "116a33b6e1ec74a9939d913fbb5fa889253069c9134ec52c08265c207d6738e3"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "03de2b08b4c5edadbcbc3a1ecc00d4e7215aa6ee99fa2c286aa49d80f5686271"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "d7fdacc6c500be21d2a88910e1d3303e1a933a2f27c194f6fdbd833292b32723"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "d5cb25a62a86d3c1dbfbb5ed815256e0983523bf432ccf59a70217b069b8476c"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalScale.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "0bb572fababde897c9afb2e916153e16cb289709f72f4e5d9cb04ee845f9e335"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalScale.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "563ab2a98a9fc87b70d8c50c676274b37be1984d8ecbafebab71a1f0a616fa89"
+        },
+        {
+          "path": "Dummy002",
+          "propertyName": "m_LocalScale.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "5cc9a5a2f5320c5bb7ec36ccee36fce60648e1b4b06a08c75feedfad0e2e2655"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "6b30f1cddff936dadb6110c4169701904fcd23fc5afb85b277edd0ba9c79d188"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "8eb3aca1329b91bfe1dde0aba5b1578859a000eb430318f4d0989c61bd9c9d8f"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "58a3f767ae3bb9aac33dc86b235a5dd0bf9684f4fb508de439cc9860b146f372"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 354,
+          "keyTimeValueSha256": "b9da4fe5e142872ceeb112771c45de24ad2c73eb4427442f9d3a305853b89849"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "7ba14486ebf9cd2c524eff497d2546f42f601ee2be5746f5b136d68b75c5e5ea"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "d598fa522c5e3e6e91083ab2397fc8fbf64bdce128d5263823ed86f93b4d49df"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "65cdaac84d50babd4b5f713d765c0ef44cd8f1f4698f1933c3843eb4422647fb"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalScale.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "68104d9938ff3155f2db0f2a1767d4c64fa123e0c7e9b8b24e0aed38c1b74be0"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalScale.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "bd517a02fc3f8543c0f94902b6571d301ffbf77d4a6ebfbf96116ce45d525109"
+        },
+        {
+          "path": "Dummy003",
+          "propertyName": "m_LocalScale.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "8237721c97493bb40ffcfcaa94e6756ec42cd9a19d5d3ce6518107666eae052c"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "48c66c9c312308f96df77c587f71808c22279c4260c1a6b28a62e3f7c25c6910"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "7dae61469b67a408e691540f2a1b22ce09612cd75f4422ddee5f309a05795437"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "a0197da8d912cb97484fe06284e02f1150ae8ffb007ef92b66492f128af85a9c"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 354,
+          "keyTimeValueSha256": "24ce6aa1a79849edbaaef5cff16e6c97bf54154587ab7631ca13b42903e312bf"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "941924d549a4758b5c23d89358142fb501e1b0c4000ad72aad1dba215e6c7fb7"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "336855d9127948d94a1bb92e8cdd870806ab424ba809294017225f466ea4a203"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "1c5f4e5dfac3a76b83c656e64054419f21f8222cc8b164f36e375aa74dd985e7"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalScale.x",
+          "keyCount": 354,
+          "keyTimeValueSha256": "1b1668abcc14e94b140bb6b837aa20bac5c95c1063694ca191e2126c594180e1"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalScale.y",
+          "keyCount": 354,
+          "keyTimeValueSha256": "33655213e1f9bdee51ef30e7f7fe8a65db5207fe627eba7679adf3abdb8a6fec"
+        },
+        {
+          "path": "Dummy004",
+          "propertyName": "m_LocalScale.z",
+          "keyCount": 354,
+          "keyTimeValueSha256": "0aacfbd8ed193dd194fa081bbe1cf4f55038609fafec1aa19beca41a42eb591a"
+        }
+      ]
+    },
+    {
+      "name": "A_fx_endminf_ui_overview_04",
+      "sourceFile": "A_fx_endminf_ui_overview_04_pDB8EF20719226683.json",
+      "sourceSha256": "220ae359098e5a843afdced4680265e3eead2aba79b926988c5ba46ae6d42e6f",
+      "sampleRate": 60.0,
+      "duration": 4.366666793823242,
+      "bindingCount": 28,
+      "keyCountPerBinding": 263,
+      "curves": [
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "840214d1b4f9bf5a7165444987420563eb052a7d521d4ad543891152f4026c23"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "60e7acd75ccfe48c29612ff231d16c12b0230a3ab8c5649ec3788be37d50aa96"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "e30d463b3c765429b8ace826d4036916d932b5391bf0de1cf6d0c590fe1dcc8c"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 263,
+          "keyTimeValueSha256": "16ead0097e24be49f361120e0f0c75565cd68588bec0ad207eb4e7d9b775b9f5"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "b22fc809a951540fd45c8ababa4a772f94335c09707b2ee0a7fbb49bbe4e0df9"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere002",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "0211b73ce8f8c6cc763b41bb4cf8290476a47df0c3121078f5943149b81a5a14"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "a0cf784ce555d664b6dc0f44b99fcfdaeb3b85551d211d06a596c61c94cf10be"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "ebc1f3c207c46e844916ddd280fab480c808d0c17d8e2a654d7a0f6c7e32b31a"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 263,
+          "keyTimeValueSha256": "16ead0097e24be49f361120e0f0c75565cd68588bec0ad207eb4e7d9b775b9f5"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "b22fc809a951540fd45c8ababa4a772f94335c09707b2ee0a7fbb49bbe4e0df9"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere003",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "cea08f3fa6a66ca3ba78cd6fe0715d72dfd5f6ce925cfd189ae5ffcde5ceb3a0"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "2825ccefefd8469ffb37913b04cf23edd865ba283e5cf852d2afb23e97e353ea"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "a77b90a48ca71cc173387f6e6187a2802a60c3b1cffeeca82f71030df2395492"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 263,
+          "keyTimeValueSha256": "16ead0097e24be49f361120e0f0c75565cd68588bec0ad207eb4e7d9b775b9f5"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "b22fc809a951540fd45c8ababa4a772f94335c09707b2ee0a7fbb49bbe4e0df9"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere004",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalPosition.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "fb307a32c0697335dafb8bb13545d14c448bc50460ed4ce5072d2686f805a19d"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalPosition.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "e8649ca4e7e08d54fac1cf969d4f9ac33ef20b8f6fcbd515cf00354c510405d8"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalPosition.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "4c269d6226e2af095b6abdd4c0660e88dde4b9bb478f250d7f11f4a41c01c0d8"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalRotation.w",
+          "keyCount": 263,
+          "keyTimeValueSha256": "16ead0097e24be49f361120e0f0c75565cd68588bec0ad207eb4e7d9b775b9f5"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalRotation.x",
+          "keyCount": 263,
+          "keyTimeValueSha256": "b22fc809a951540fd45c8ababa4a772f94335c09707b2ee0a7fbb49bbe4e0df9"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalRotation.y",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        },
+        {
+          "path": "Sphere005",
+          "propertyName": "m_LocalRotation.z",
+          "keyCount": 263,
+          "keyTimeValueSha256": "1ed19b358372136d78cea613e3dcf05fec4ee4ecd772359228aa4791bcf8ab57"
+        }
+      ]
+    }
+  ]
+}

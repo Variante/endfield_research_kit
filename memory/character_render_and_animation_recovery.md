@@ -230,12 +230,22 @@ the outer return; the false path remains intact and all 20 native tests pass.
   transform clip with four source-resolved `GameObject.m_IsActive` curves.
   They remain active through 1.5 seconds and deactivate on the source boundary.
   The fifth constant-zero binding has no resolved hierarchy target and remains
-  fail-closed rather than being fabricated.
+  fail-closed rather than being fabricated. The publish gate now rejoins all
+  101 saved GameObject/Transform rows to their exact source PathIDs and checks
+  parentage, name, layer, hierarchy, and local TRS. The two used AnimationClips
+  are decoded reproducibly from their exact serialized source payloads into 58
+  scalar bindings and 17,984 keys; Unity checks the exact binding set,
+  time/value digests, source-derived tangents, modes, and weights. Cached
+  `.anim` bytes, capture-fitted positions, and fitted curves are not admitted.
 - The canonical capture now restores eleven retained LitEffect rock/crystal
   renderers: seven M01 rows, three M38 rows, and the later M27 hand-crystal row,
   all keyed by exact renderer/material PathIDs and the exact
   `S_rock_small_1_017_02_lod2` mesh. Direct references are validated against
-  pinned asset hashes, the default remains disabled/fail-closed, and only
+  the v2 source marker before any renderer is enabled; the runtime rejoins each
+  row to its exact source owner, renderer, particle system, mesh, material, and
+  PathIDs. Material validation uses hash-pinned source JSON plus authored
+  fields, textures, transforms, shader, keyword, and queue rather than hashes
+  of generated `.mat` files. The default remains disabled/fail-closed, and only
   `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Exact M27 mode
   now redirects only M27 to its identity-gated layer while retaining the ten
   separate M01/M38 ForwardOnly owners; the former blanket exclusion caused the
@@ -542,7 +552,10 @@ the outer return; the false path remains intact and all 20 native tests pass.
   Parallax/LinearMirrorOnce at t3, Mask/PointClamp at t4, and Noise/PointRepeat
   at t5. MRO stores metallic, roughness, and occlusion in R, G, and B;
   parallax marching reads Noise.r and the final parallax contribution reads
-  Parallax.g.
+  Parallax.g. M27's derivative transport now consumes the live source global
+  `_GlobalMipBiasPow2`; the former capture-fitted `0.5` compatibility scalar is
+  forbidden. Bounded shader dataflow checks reject later reassignment of the
+  admitted UV, sample, material-channel, or output-feed variables.
   The selected `HGRP/DeferredLighting` pass closes the five-MRT A/B/C consumer
   at t23/t24/t25. Exact HGBuffer admission remains blocked only on live retail
   global/per-draw completeness and the complete deferred frame, not material
