@@ -2135,17 +2135,23 @@ The maintained Endminf launcher, editor reproduction entry point, and canonical
 video setup now pin the fitted plate, generic ready subset, measured opening
 strip, captured packet replays, and incomplete deferred/M27 presentation
 selectors off instead of inheriting them from the parent process. The exact
-CharInfo sky owns normal background pixels; a failed source gate exposes the
-black camera fallback rather than substituting an actor-bounds plate or fitted
-clear color. Camera aspect is derived from the serialized sensor dimensions,
-and invalid/non-finite source camera, look-at, gyroscope, or quaternion rows now
-fail closed instead of falling back to 16:9 or identity rotation.
+CharInfo sky and GridDeco/Far own normal background pixels; a failed source gate
+exposes the black camera fallback rather than substituting an actor-bounds plate
+or fitted clear color. ShadowPlane remains excluded despite source-closed mesh,
+material, shader, and VisibilitySH inputs because its physical-camera stencil
+and final color-target owner are not proven. SphereOutside and the post-Uber
+portrait-depth sync diagnostic are likewise forced off. Camera aspect is derived
+from the serialized sensor dimensions, and incomplete or non-finite source
+camera, look-at, gyroscope, portrait-offset, lens, clip, or quaternion rows fail
+closed instead of falling back to 16:9, zero vectors, or identity rotation.
 
 Portrait alignment is likewise no longer a screenshot-fitting task. Lua and
 raw RectTransform evidence confirm `CharInfoCamAttachment` at
 `lookat_overview`, the authored overview-camera rotation, centered anchors and
 pivots, canvas scale 0.0016, card size 900, settled anchored position
-`(-300,50)`, and zero Endminf `overviewImgOffset`. The exact selected D3D11
+`(-300,50)`, and zero Endminf `overviewImgOffset`. All 31 generated Tight,
+unrotated portrait meshes map bottom vertices to `vMin` and top vertices to
+`vMax`. The exact selected D3D11
 `CLIP_SCENEDEPTH + HG_WORLD_UI` program is now extracted from Endfield blob 207;
 its vertex/pixel SHA-256 values exactly match the retained manifest
 `14b05d...e0d52` / `1ff3fa...f0546`. The vertex path transforms absolute
@@ -2575,10 +2581,13 @@ bounds. The rebuild gate verifies those extra material fields directly against
 all three exported M01/M27/M38 JSON objects. The non-generative M27 HGBuffer
 port also uses the validated shared runtime fixed state (`ZTest GEqual`, depth
 write, `Cull Back`) instead of the serialized shader dump's unresolved
-Off/Off placeholders. This corrects source transport, not retail presentation:
-the exact deferred LightData/ShadowData/frame-resource readiness and owner
-chronology remain fail-closed, so no light direction, shadow term, material
-multiplier, placement, curve, or timing was tuned.
+Off/Off placeholders. Its compatibility lighting no longer invents a fixed
+direction: it consumes the serialized CharInfo `sceneMainLight` direction and
+clips when that direct-reference provenance is unavailable. This corrects
+source transport, not retail presentation: exact deferred LightData GPU words,
+ShadowData/atlas GPU contents, physical-resource alias/lifetime, frame readiness,
+and owner chronology remain fail-closed, so no shadow term, material multiplier,
+placement, curve, timing, or capture packet was tuned or replayed.
 
 The measured opening-fracture reconstruction is diagnostic-only. Clean-reference
 frames 91-109 establish a bounded table for effect-clock frames 4-20, but its
@@ -3875,9 +3884,12 @@ environment value sets `ForceDisableBurstCompilation`; the player-build
 secondary-process predicate returns false. `GetILPPMethodFunctionPointer2`
 null-checks all three arguments and then returns its first argument unchanged,
 so its emitted null fallback branch is unreachable after a normal return (a
-null input throws). Retail selection still depends on actual process inputs,
-the service-backed `IsBurstGenerated` bit, later public Options mutation, and
-normal DirectCall initialization, none of which is serialized here.
+null input throws). The exact helper chain also proves that method `489292`'s
+constant-false registered body is not the value stored in `IsBurstGenerated`:
+the helper initializer stores whether `BurstCompilerService` returned a non-null
+compiled delegate. Retail selection still depends on that async service result,
+actual process inputs, later public Options mutation, and normal DirectCall
+initialization, none of which is serialized here.
 The post-proxy contract now mechanically rejoins and parses the hash-pinned
 installed IFix report, VFS chunk/catalog, decrypted payload, loader map, and
 exact native build. BeyondDynamicBone's generated wrapper initializer creates
