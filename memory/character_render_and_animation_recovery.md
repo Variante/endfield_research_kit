@@ -3648,27 +3648,29 @@ retained 4,824 rows, but every row was rejected at
 the bulk `AddTransform(VirtualMeshContainer, teamId)` overload, while the old
 observer hooked only the single-Transform overload.
 
-EndfieldCapture commit `dac972a` corrects both observer defects without
-substitute positions, timing, curves, or a larger memory budget. Regular-tail
-packets now retain draw/dispatch chronology only; both staging and collection
-reject any tail GPU payload. The exact bulk overload is guarded by its complete
-native body hash and observed ABI, stages at most 256 registrations in fixed
-storage, and commits the whole range atomically or publishes nothing.
-Source-proven invalid-manager and valid-empty zero returns are explicit benign
-no-ops; malformed ranges, thread drift, partial removals, lifecycle mutation,
-capacity failures, and incomplete registrations remain visible rejections.
-Sampling copies registration state under the lifecycle lock, releases it before
-calling Unity getters, then revalidates the entire writeback. Every writeback
-must independently retain one stable four-owner actor group identified by the
-exact runtime cloth names `MC_Ribbon2`, `MC_Hair`, `MC_Ribbon`, and `MC_Coat`;
-team/component/cloth/Transform identities, both generations, hierarchy records,
-Root, and actor parent must match the first writeback. Proxy starts and lengths
-are descriptive only. The independent trajectory verifier enforces the same
-identity boundary plus the recovered hierarchy-path multiset. The Release
-build and all 27 native tests, the focused Debug secondary test, all 24 verifier
-tests, and the installed-client nonlaunching Full graphics-plus-dynamics
-preflight pass. A fresh retail session is still required to prove the repaired
-capture path; this commit is capture readiness, not recovered motion evidence.
+EndfieldCapture commit `dac972a` fixed the regular-tail staging defect, but its
+new process-wide bulk Transform registration detour was not retail-safe.
+Session `20260831T225915Z` reached login and ordinary resource loading, then
+ended as Windows Application Hang event 1002 rather than a native crash. It
+never wrote final provider summaries or a usable recovery payload. The only new
+path exercised was one bulk registration callback with a valid 13-entry result;
+the detour then performed per-entry engine identity calls, hierarchy walks,
+hashing, and a registry transaction inline on the game's resource-loading
+thread. The prior `20260831T184411Z` session had not patched that entry and did
+not hang. Treat this as sufficient evidence to remove the risky observation,
+not as permission to retry it.
+
+EndfieldCapture commit `a67832a` keeps the exact bulk function/body identity
+for offline analysis but never creates or enables its hook. Secondary
+registration evidence therefore remains explicitly incomplete in every session: live status
+separates partial observers from evidence readiness, the overlay never labels
+the provider ready or accepts `Numpad 5`, the final aggregate hook claim stays
+false, and the combined Endminf wrapper refuses a retail launch before starting
+the host or game. The Full Release suite, focused Debug secondary test, overlay
+readiness self-test, withheld-launch test, all 24 trajectory-verifier tests, and
+installed-client nonlaunching preflight pass. The graphics-only Full profile
+remains available for independent graphics evidence, but it cannot claim the
+missing secondary lifecycle join.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
@@ -3690,12 +3692,13 @@ The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Its 40-checkpoint comparison diverges at the
 first post-publication sample (36.45 mm/6.82 degrees mean) and reaches
 104.20 mm/10.89 degrees overall versus 20.24 mm/7.19 degrees with the solver
-off. Current observation closes `ClothUpdate` chronology and final
-TransformAccess publication only; it does not observe the internal numeric
-stages. Before changing the solver, pin the exact CalcDisplayPosition and
-PostProxy worker entries and add a bounded, joined enter/exit stage sidecar.
-Record runtime state arrays only; do not capture or fit parameter arrays,
-authored curves, sampled curve tables, or replay trajectories.
+off. The generated PostProxy contract now closes the hidden JobHandle ABI,
+four-stage dependency order, job payload layouts, exact scheduling identities
+and batch sizes, the create-list gates plus four atomic contiguous-index queue
+appends, and CalcLine entry gates through nonzero child count. The remaining
+numeric boundary is CalcLine child traversal and normal/tangent vector math.
+The contract fails closed on that boundary and on runtime route selection; it
+uses no captured positions, timing, curves, fitted constants, or replay data.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
@@ -3765,27 +3768,21 @@ or shaders rather than hand-editing generated prefabs.
 
 ## Recovery queue
 
-1. Run one fresh retail session with observer commit `dac972a`. First run
-   `tools\EndfieldCapture\StartEndminfOverviewCapture.bat --preflight-only --no-pause`,
-   then use
-   `tools\EndfieldCapture\StartEndminfOverviewCapture.bat`; the plain wrapper
-   omits secondary dynamics and Full graphics. Start with Endfield closed.
+1. Do not run the combined Endminf graphics-plus-dynamics wrapper while the
+   bulk Transform observer is withheld; it now rejects a real launch. Continue
+   offline recovery of the remaining CalcLine child traversal and
+   normal/tangent equations from the pinned native code, extending
+   `build_secondary_dynamics_post_proxy_contract.py` and its focused tests.
+   Keep the older trajectory capture validation-only. If new graphics evidence
+   is independently required, use `StartCapture.bat graphics full` with
+   Endfield closed and do not interpret it as secondary-motion evidence.
    Accept strict `observed-slInit` only when it is genuinely retained;
    otherwise the no-init Streamline surface consumer may use only the exact
    `post-init-feature0-runtime-proof`, while all initialization-argument
-   consumers remain incomplete. Enter Endminf Character Info
-   twice without stopping the bounded session: keep the first entry through its
-   first settled overview-loop wrap to create the descriptor/topology plans,
-   leave Character Info, then keep the second entry through its first settled
-   wrap to collect the draw-local packets. Stop cleanly with `Numpad 9`. First
-   validate the lifecycle-joined effective trajectories with
-   `python unity_endfield_graph_shader_lab/tools/verify_endminf_secondary_dynamics_trajectory_capture.py SESSION`.
-   Close the
-   retail temporal boundary with consecutive pre/post Streamline surfaces,
-   depth, velocity, jitter/reset, frame token, formats, extents, and resource
-   tags. Validate it with
+   consumers remain incomplete. Validate any graphics-only Streamline result
+   with
    `python unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py SESSION`
-   before generating any Unity diagnostic assets, then run
+   before generating Unity diagnostic assets, then run
    `python unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py SESSION`
    to compare the exact input/output pair offline.
    The screenshot-measured opening strip is now default-off in canonical and
