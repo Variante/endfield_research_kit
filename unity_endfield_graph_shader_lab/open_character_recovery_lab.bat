@@ -26,8 +26,9 @@ exit /b 2
   rem Retain the ten source-identified M01/M38 fly-in rock owners. Exact M27
   rem replaces only the hand-crystal row and does not replace these owners.
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
-  rem Keep the source-owned GridDeco/Far and ShadowPlane separate from the
-  rem fitted neutral plate and generic ready-subset diagnostics.
+  rem Keep exact source GridDeco/Far separate from the fitted neutral plate.
+  rem ShadowPlane stays excluded until its retail final-consumer ownership is
+  rem source-closed; generic ready-subset diagnostics remain off as well.
   set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"
   set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"
@@ -42,6 +43,10 @@ exit /b 2
   rem omitting them here would not make this maintained path fail closed.
   set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=0"
   set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"
+  rem The post-Uber depth-sync experiment substitutes a compatibility-Uber
+  rem footprint for the source primary scene depth. Do not inherit it into the
+  rem maintained portrait path, where it can create a body-shaped cutout.
+  set "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH=0"
   rem Captured opening-strip, M13, and M21 packets remain opt-in ABI probes.
   rem They are not maintained presentation: replaying one or a few observed
   rem particle states substitutes fixed geometry for the source runtime that

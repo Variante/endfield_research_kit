@@ -176,12 +176,12 @@ def verify_implementation() -> None:
             "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
             "ENDFIELD_ENDMINF_SOURCE_BACKGROUND",
             "SetRendererEnabledStates(false, true, true, false, true);",
-            "SetRendererEnabledStates(false, false, false, true, true);",
+            "SetRendererEnabledStates(false, false, false, false, true);",
             "ApplySettledOpenState(openState, false);",
             "ApplySettledOpenState(openState, true);",
             "ValidateEndminfSourceBackgroundReadiness",
-            "source-backed partial ShadowPlane",
-            "ShadowPlane is not claimed as retail-exact presented pixels",
+            "ShadowPlane final-consumer route",
+            "retail physical-camera stencil/color-target ownership is not",
             "new Color(0.509434f, 0.509434f, 0.509434f, 0.6f)",
             "new Color(1.0f, 1.0f, 1.0f, 0.011764706f)",
             "sourceContent.SetActive(false);",
@@ -287,8 +287,8 @@ def main() -> int:
         f"{len(manifest['selected_shader_variants'])} shipped shader variants; "
         "full runtime selector remains default-off/fail-closed at HGRP/Lit; "
         "ready-subset diagnostic is default-off and excludes SphereOutside/ShadowPlane; "
-        "independent Endminf source background admits exact Far plus bounded "
-        "source-backed partial ShadowPlane while excluding the fitted plate."
+        "independent Endminf source background admits exact Far only while "
+        "excluding SphereOutside, ShadowPlane, and the fitted plate."
     )
     return 0
 

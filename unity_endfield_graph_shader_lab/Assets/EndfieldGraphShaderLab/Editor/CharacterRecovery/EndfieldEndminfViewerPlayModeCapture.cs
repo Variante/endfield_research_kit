@@ -134,10 +134,14 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
             "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER",
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
-            // These two selectors form the known content-invalid path that
-            // produced an upside-down body-shaped resolve over the portrait.
+            // These selectors cover the known content-invalid paths that
+            // produced body-shaped resolves over the portrait.
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
             SphereOutsidePresentationEnvironment,
+            // This causality probe replaces the source primary depth with a
+            // compatibility-Uber footprint and can create another body-shaped
+            // portrait cutout. It is never canonical presentation policy.
+            "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH",
         };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
@@ -1893,8 +1897,8 @@ namespace EndfieldGraphShaderLabEditor
                 !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
             if (!charInfoBackgroundIncluded)
                 missingObservations.Add(
-                    "active Endminf source background with exact Far, expected " +
-                    "ShadowPlane, and fitted plate disabled");
+                    "active Endminf source background with exact Far and all " +
+                    "incomplete/fitted background renderers disabled");
             if (fittedCompatibilityPlateActive)
                 missingObservations.Add(
                     "fitted Endminf compatibility plate remained active");
@@ -2309,9 +2313,14 @@ namespace EndfieldGraphShaderLabEditor
                     value.farGridRenderer != null &&
                     value.farGridRenderer.enabled &&
                     value.farGridRenderer.gameObject.activeInHierarchy &&
+                    value.sphereOutsideRenderer != null &&
+                    !value.sphereOutsideRenderer.enabled &&
+                    value.floorRenderer != null &&
+                    !value.floorRenderer.enabled &&
+                    value.wallRenderer != null &&
+                    !value.wallRenderer.enabled &&
                     value.shadowPlaneRenderer != null &&
-                    value.shadowPlaneRenderer.enabled &&
-                    value.shadowPlaneRenderer.gameObject.activeInHierarchy &&
+                    !value.shadowPlaneRenderer.enabled &&
                     (value.compatibilityBackdropRenderer == null ||
                      !value.compatibilityBackdropRenderer.enabled));
         }
