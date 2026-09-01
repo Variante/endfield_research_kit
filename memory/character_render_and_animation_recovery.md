@@ -3583,12 +3583,43 @@ temporal improvement; retain the source-exact LUT, but treat the remaining
 color/VFX mismatch as upstream scene-color, bloom/Uber chronology, or lighting
 rather than compensating with a fitted grade.
 
-The captured Endminf Uber packet remains diagnostic-only. Its native draw and
-resources validate, but the current input chronology regresses the three
-aligned effect samples against the otherwise identical exact-off control
-(mean effect ROI MAE 36.2987 versus 35.0779). The maintained launcher and
-canonical capture defaults therefore no longer request it; recover its retail
-SceneColor/producer chronology before reconsidering presentation ownership.
+The native Phase-2 command order is now reproduced as ColorGrading/LUT, Bloom,
+AutoExposure, then Uber. The prior Unity command buffer recorded Bloom and the
+optional histogram before LUT preparation. A complete 770-frame D3D11 capture
+under `scratch/character_recovery/endminf_phase2_lut_order_full_770_20260901`
+passes entrance, cleanup, transition, settled-loop, exact-LUT, post-source, and
+bloom gates. Representative frames are byte-identical to the preceding exact-
+LUT checkpoint and the 555-row comparison remains
+33.3722/35.5934/15.4469 ROI/effect/temporal MAE, as expected for a static LUT;
+retain the literal source chronology without claiming a fitted pixel gain.
+
+The captured Endminf Uber packets remain diagnostic-only. Their native draws
+and resources validate, but the retained evidence consists of one early and
+one peak 60-Hz source-effect sample. The exact transport now submits only
+inside those two authenticated half-frame windows and falls back to the
+compatibility Uber elsewhere instead of reusing the peak payload as a
+sequence-wide normal packet. The 770-row D3D11 diagnostic under
+`scratch/character_recovery/endminf_uber_sparse_full_770_diagnostic_20260901`
+passes the full animation/VFX lifecycle and exact-LUT gates, with exactly one
+submitted/validated peak row and 769 cleanly withheld rows. The current exact-
+packet input chronology still regresses the three aligned effect samples
+against the otherwise identical
+exact-off control (mean effect ROI MAE 36.2987 versus 35.0779). The maintained
+launcher and canonical capture defaults therefore do not request it; recover
+per-frame retail constants plus draw-local SceneColor/bloom/LUT producer and
+consumer chronology before reconsidering presentation ownership.
+
+The same dense comparison localizes the settled mismatch without authorizing
+global tuning. Eroded actor interiors retain roughly 35.4-40.7 RGB MAE, almost
+entirely in luminance, while a best global affine luma correction removes only
+6.6-9.7 percent. The spatial residual is consistent with material/light
+response or local post, and final PNGs cannot distinguish those without matched
+retail pre-Uber SceneColor. The strongest literal visual gap remains the
+crystal/stone LitEffect compatibility shader: it is approximate ForwardOnly
+shading while the recovered five-MRT HGBuffer/Default-Lit path is still gated
+on a same-frame, content-valid t11 screen-shadow producer-to-consumer capture.
+Do not compensate with exposure, saturation, bloom, material multipliers,
+stone scale, or animation timing.
 
 The current clean-video bridge does not prove the complete 770-frame animation
 schedule. Its source sidecar covers retail frames 88-645, anchors start-clip

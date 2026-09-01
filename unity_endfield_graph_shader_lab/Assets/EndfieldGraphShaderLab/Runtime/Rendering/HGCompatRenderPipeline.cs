@@ -3731,6 +3731,61 @@ namespace EndfieldGraphShaderLab
                     (float)width / height)
                 : new Vector4(0.0f, 0.41f, 1.0f, (float)width / height);
 
+            // Native phase 2 prepares ColorGrading/LUT before Bloom,
+            // AutoExposure, and the final Uber composite. Preserve that command
+            // chronology even though Endminf's exact LUT is static: future
+            // dynamic LUT owners must not be recorded after their sibling
+            // Bloom/AutoExposure producers.
+            string exactLutProfileFailure = string.Empty;
+            bool exactEndminfLutProfile =
+                useRecoveredPostSemantics &&
+                TryValidateExactEndminfCharInfoLutProfile(
+                    camera,
+                    out exactLutProfileFailure);
+            LastRecoveredEndminfExactLutProfileMatched = exactEndminfLutProfile;
+            bool exactEndminfLutReady =
+                exactEndminfLutProfile &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.EnqueueExactEndminfGpuValidation(
+                    commandBuffer);
+            LastRecoveredEndminfExactLutGpuValidationPending =
+                exactEndminfLutProfile &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.ExactEndminfGpuValidationPending;
+            LastRecoveredEndminfExactLutGpuValidated = exactEndminfLutReady;
+            LastRecoveredEndminfExactLutSha256 =
+                exactEndminfLutProfile && recoveredColorGradingLut != null
+                    ? recoveredColorGradingLut.ExactEndminfSha
+                    : string.Empty;
+            if (exactEndminfLutProfile && !exactEndminfLutReady &&
+                !LastRecoveredEndminfExactLutGpuValidationPending)
+            {
+                LastRecoveredEndminfExactLutFailure =
+                    recoveredColorGradingLut == null
+                        ? "the recovered LUT owner is absent"
+                        : recoveredColorGradingLut.ExactEndminfFailure;
+            }
+            else if (!exactEndminfLutProfile)
+            {
+                LastRecoveredEndminfExactLutFailure = exactLutProfileFailure;
+            }
+            bool proceduralLutReady =
+                useRecoveredPostSemantics &&
+                !exactEndminfLutReady &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.EnqueueBuild(commandBuffer);
+            bool recoveredLutReady = exactEndminfLutReady || proceduralLutReady;
+            Texture recoveredCompatibilityLut = exactEndminfLutReady
+                ? recoveredColorGradingLut.ExactEndminfTexture
+                : recoveredColorGradingLut != null
+                    ? recoveredColorGradingLut.Texture
+                    : null;
+            Texture exactEndminfLut = exactEndminfLutReady
+                ? recoveredColorGradingLut.ExactEndminfTexture
+                : null;
+            LastRecoveredEndminfCompatibilityExactLutBound =
+                exactEndminfLutReady;
+
             postProcessMaterial.SetFloat(BloomThresholdId, bloomThreshold);
             postProcessMaterial.SetFloat(BloomSoftnessId, bloomSoftness);
             int bloomOutputId;
@@ -3792,55 +3847,6 @@ namespace EndfieldGraphShaderLab
                 height);
             }
 
-            string exactLutProfileFailure = string.Empty;
-            bool exactEndminfLutProfile =
-                useRecoveredPostSemantics &&
-                TryValidateExactEndminfCharInfoLutProfile(
-                    camera,
-                    out exactLutProfileFailure);
-            LastRecoveredEndminfExactLutProfileMatched = exactEndminfLutProfile;
-            bool exactEndminfLutReady =
-                exactEndminfLutProfile &&
-                recoveredColorGradingLut != null &&
-                recoveredColorGradingLut.EnqueueExactEndminfGpuValidation(
-                    commandBuffer);
-            LastRecoveredEndminfExactLutGpuValidationPending =
-                exactEndminfLutProfile &&
-                recoveredColorGradingLut != null &&
-                recoveredColorGradingLut.ExactEndminfGpuValidationPending;
-            LastRecoveredEndminfExactLutGpuValidated = exactEndminfLutReady;
-            LastRecoveredEndminfExactLutSha256 =
-                exactEndminfLutProfile && recoveredColorGradingLut != null
-                    ? recoveredColorGradingLut.ExactEndminfSha
-                    : string.Empty;
-            if (exactEndminfLutProfile && !exactEndminfLutReady &&
-                !LastRecoveredEndminfExactLutGpuValidationPending)
-            {
-                LastRecoveredEndminfExactLutFailure =
-                    recoveredColorGradingLut == null
-                        ? "the recovered LUT owner is absent"
-                        : recoveredColorGradingLut.ExactEndminfFailure;
-            }
-            else if (!exactEndminfLutProfile)
-            {
-                LastRecoveredEndminfExactLutFailure = exactLutProfileFailure;
-            }
-            bool proceduralLutReady =
-                useRecoveredPostSemantics &&
-                !exactEndminfLutReady &&
-                recoveredColorGradingLut != null &&
-                recoveredColorGradingLut.EnqueueBuild(commandBuffer);
-            bool recoveredLutReady = exactEndminfLutReady || proceduralLutReady;
-            Texture recoveredCompatibilityLut = exactEndminfLutReady
-                ? recoveredColorGradingLut.ExactEndminfTexture
-                : recoveredColorGradingLut != null
-                    ? recoveredColorGradingLut.Texture
-                    : null;
-            Texture exactEndminfLut = exactEndminfLutReady
-                ? recoveredColorGradingLut.ExactEndminfTexture
-                : null;
-            LastRecoveredEndminfCompatibilityExactLutBound =
-                exactEndminfLutReady;
             // In the recovered live path _ExposureParams.x was used to divide
             // character HDR during ForwardLit. The shipped Uber multiplies the
             // same current camera value back before the authored post exposure

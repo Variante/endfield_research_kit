@@ -7,11 +7,11 @@ using UnityEngine.Rendering;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Source-sparse D3D11 transport for Endminf's exact ordinary and
-    /// BLOOM + RADIAL_BLUR + VIGNETTE peak Uber draws. The native side
-    /// owns the stage-local captured constant payload and exact DXBC objects;
-    /// this bridge owns stable Unity textures and schedules their copies before
-    /// the render-thread event.
+    /// Source-sparse D3D11 transport for Endminf's two retained exact Uber
+    /// samples. The native side owns the stage-local captured constant payload
+    /// and exact DXBC objects; this bridge owns stable Unity textures and
+    /// schedules their copies before the render-thread event. Frames without a
+    /// retained packet stay on the compatibility Uber path.
     /// </summary>
     internal sealed class EndfieldRecoveredEndminfUberExactRuntime : IDisposable
     {
@@ -84,12 +84,30 @@ namespace EndfieldGraphShaderLab
         {
             if (!Requested || failed)
                 return false;
+            if (!ValidatePending())
+                return false;
+
+            // The capture retains only the early and peak packets below. Do
+            // not reuse either packet as a sequence-wide "normal" draw: every
+            // other source-effect sample has different, unobserved PS lanes.
+            uint variant;
+            if (EarlyDiagnosticRequested && IsEarlyCapturedPhase(hasPost, post))
+            {
+                variant = 2u;
+            }
+            else if (IsCapturedPhase(hasPost, post))
+            {
+                variant = 1u;
+            }
+            else
+            {
+                LastSubmittedVariant = string.Empty;
+                return false;
+            }
             if (command == null || lut == null)
                 return Fail("exact Uber inputs are incomplete");
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
                 return Fail("exact Uber transport requires Direct3D11");
-            if (!ValidatePending())
-                return false;
             if (!Initialize())
                 return false;
             if (!EnsureTextures(width, height, bloomWidth, bloomHeight))
@@ -109,10 +127,6 @@ namespace EndfieldGraphShaderLab
                 : new Vector2(0.5f, 0.5f);
             float radial = hasPost ? post.radialIntensity : 0.0f;
             float power = hasPost ? post.effectivePower : 1.0f;
-            uint variant = EarlyDiagnosticRequested &&
-                IsEarlyCapturedPhase(hasPost, post)
-                ? 2u
-                : IsCapturedPhase(hasPost, post) ? 1u : 0u;
             uint packet;
             try
             {

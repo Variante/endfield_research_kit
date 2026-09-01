@@ -51,9 +51,21 @@ class EndminfPeakExactCaptureWindowContractTests(unittest.TestCase):
             '"ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC"',
             uber,
         )
-        self.assertIn("uint variant = EarlyDiagnosticRequested &&", uber)
-        self.assertIn("? 2u", uber)
-        self.assertIn("QueuePacketVariant(", uber)
+        enqueue = uber.split("internal bool Enqueue(", 1)[1].split(
+            "internal static bool IsCapturedPhase(", 1
+        )[0]
+        early = enqueue.index("IsEarlyCapturedPhase(hasPost, post)")
+        peak = enqueue.index("IsCapturedPhase(hasPost, post)")
+        unsupported = enqueue.index("LastSubmittedVariant = string.Empty")
+        input_gate = enqueue.index("exact Uber inputs are incomplete")
+        queue = enqueue.index("QueuePacketVariant(")
+        self.assertLess(early, peak)
+        self.assertLess(peak, unsupported)
+        self.assertLess(unsupported, input_gate)
+        self.assertLess(input_gate, queue)
+        self.assertIn("variant = 2u", enqueue)
+        self.assertIn("variant = 1u", enqueue)
+        self.assertNotIn("variant = 0u", enqueue)
         self.assertIn("post.mode == 6", uber)
         self.assertIn("Mathf.Abs(post.elapsed - CapturePhaseSeconds)", uber)
         self.assertIn("Mathf.Abs(post.elapsed - EarlyCapturePhaseSeconds)", uber)
