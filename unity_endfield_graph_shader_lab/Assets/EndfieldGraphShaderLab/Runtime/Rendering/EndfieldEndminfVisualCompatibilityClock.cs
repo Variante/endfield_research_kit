@@ -46,6 +46,7 @@ namespace EndfieldGraphShaderLab
         private static int compatibilityOverview02RootInstanceId;
         private static Transform sourcePostRoot;
         private static int sourcePostRootInstanceId;
+        private static Transform sourcePostCenter;
         private static uint sourcePostGeneration;
         private static uint boundSourcePostGeneration;
         private static float sourcePostSeedSeconds = float.NaN;
@@ -53,8 +54,10 @@ namespace EndfieldGraphShaderLab
         private static EndfieldOverviewPlayback overview02SourceOwner;
         private static int overview02SourcePlaybackGeneration;
         private static bool sourcePostFailureLogged;
-        private static readonly Vector3 RecoveredPostCenterLocal =
-            new Vector3(0.0f, 1.266f, 0.0f);
+        private const long RecoveredPostGameObjectPathId =
+            8953141407210302585L;
+        private const long RecoveredPostTransformPathId =
+            8592508268722613369L;
         private const string RecoveredPostRuntimeRootName =
             "P_fxui_endminm003_overview_01__OverviewRuntime";
         private const string RecoveredPostRequestName =
@@ -137,6 +140,14 @@ namespace EndfieldGraphShaderLab
                 failure = "source-state transaction is invalid or stale";
                 return false;
             }
+            if (!TryResolveRecoveredPostCenter(
+                    effectRoot,
+                    out Transform resolvedPostCenter,
+                    out failure))
+            {
+                ClearSourcePost();
+                return false;
+            }
 
             // Stationary recovered effect roots are instantiated outside the
             // actor hierarchy. In that exact binding, validate the actor owner
@@ -146,6 +157,7 @@ namespace EndfieldGraphShaderLab
             AdvanceSourcePostGeneration();
             sourcePostRoot = effectRoot;
             sourcePostRootInstanceId = effectRoot.GetInstanceID();
+            sourcePostCenter = resolvedPostCenter;
             boundSourcePostGeneration = sourcePostGeneration;
             sourcePostSeedSeconds = sourceElapsed;
             sourcePostBindTime = Time.timeAsDouble;
@@ -207,6 +219,7 @@ namespace EndfieldGraphShaderLab
                 AdvanceSourcePostGeneration();
             sourcePostRoot = null;
             sourcePostRootInstanceId = 0;
+            sourcePostCenter = null;
             boundSourcePostGeneration = 0;
             sourcePostSeedSeconds = float.NaN;
             sourcePostBindTime = double.NaN;
@@ -339,6 +352,9 @@ namespace EndfieldGraphShaderLab
             if (sourcePostRoot != null &&
                 sourcePostRoot.gameObject.activeInHierarchy &&
                 sourcePostRootInstanceId == sourcePostRoot.GetInstanceID() &&
+                sourcePostCenter != null &&
+                sourcePostCenter.gameObject.activeInHierarchy &&
+                sourcePostCenter.parent == sourcePostRoot &&
                 boundSourcePostGeneration != 0 &&
                 boundSourcePostGeneration == sourcePostGeneration &&
                 overview02SourceOwner != null &&
@@ -380,6 +396,54 @@ namespace EndfieldGraphShaderLab
                 owner.PlaybackGeneration == playbackGeneration &&
                 animator != null && animator.enabled &&
                 animator.runtimeAnimatorController != null;
+        }
+
+        private static bool TryResolveRecoveredPostCenter(
+            Transform effectRoot,
+            out Transform center,
+            out string failure)
+        {
+            center = null;
+            failure = string.Empty;
+            EndfieldRecoveredParticleEffectSource marker = effectRoot == null
+                ? null
+                : effectRoot.GetComponent<EndfieldRecoveredParticleEffectSource>();
+            if (marker == null ||
+                marker.contractSchema !=
+                    EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema ||
+                marker.effectRoot != RecoveredPostRequestName ||
+                marker.sourceGameObjectPathId != 644358100928130169L ||
+                marker.sourceTransformPathId != 8425642429156191353L ||
+                marker.hierarchyNodes == null || marker.hierarchyNodes.Length != 58)
+            {
+                failure = "overview_01 source hierarchy marker drifted";
+                return false;
+            }
+
+            for (int index = 0; index < marker.hierarchyNodes.Length; index++)
+            {
+                EndfieldRecoveredParticleHierarchyNodeSource row =
+                    marker.hierarchyNodes[index];
+                if (row == null ||
+                    row.gameObjectPathId != RecoveredPostGameObjectPathId ||
+                    row.transformPathId != RecoveredPostTransformPathId)
+                    continue;
+                if (center != null)
+                {
+                    failure = "overview_01 post Transform identity is duplicated";
+                    return false;
+                }
+                center = row.generatedTransform;
+            }
+
+            if (center == null || center.parent != effectRoot ||
+                center.name != "post (1)")
+            {
+                center = null;
+                failure = "overview_01 exact post Transform is missing or reparented";
+                return false;
+            }
+            return true;
         }
 
         public static bool TryEvaluateOpeningStrip(
@@ -442,8 +506,11 @@ namespace EndfieldGraphShaderLab
             if (!SourcePostRequested || sourcePostRoot == null || camera == null)
                 return new Vector2(0.5f, 0.5f);
 
+            if (sourcePostCenter == null ||
+                sourcePostCenter.parent != sourcePostRoot)
+                return new Vector2(0.5f, 0.5f);
             Vector3 viewport = camera.WorldToViewportPoint(
-                sourcePostRoot.TransformPoint(RecoveredPostCenterLocal));
+                sourcePostCenter.position);
             if (viewport.z <= 0.0f)
                 return new Vector2(0.5f, 0.5f);
 

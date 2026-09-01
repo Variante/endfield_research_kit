@@ -39,6 +39,10 @@ LOD_ACTIVATION_CONTRACT = ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
     "endminf_effect_lod_activation_contract.json"
 )
+SPAWNER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    "EndfieldRecoveredCharEffectSpawner.cs"
+)
 
 
 class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
@@ -148,6 +152,12 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
         self.assertIn(
             'safeRenderer["m_SortingFudge"] = unitySortingFudge;', self.source
         )
+
+    def test_runtime_does_not_replace_source_billboard_size_with_fitted_clamp(self) -> None:
+        spawner = SPAWNER.read_text(encoding="utf-8")
+        self.assertNotIn("ApplyEndminfBillboardClampCompatibility", spawner)
+        self.assertNotIn("renderer.maxParticleSize = 10f", spawner)
+        self.assertNotIn("renderer.maxParticleSize <= 0.5001f", spawner)
 
     def test_effect_animation_source_and_semantic_contract_are_pinned(self) -> None:
         animation_source = ANIMATION_IMPORTER.read_text(encoding="utf-8")
