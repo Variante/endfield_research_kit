@@ -19,6 +19,7 @@ from unity_endfield_graph_shader_lab.tools.build_recovered_acl_clip_data import 
 from unity_endfield_graph_shader_lab.tools.verify_endminf_overview_effect_stage import (  # noqa: E402
     validate as validate_effect_stage,
 )
+from scripts.common import check_installed_native_inputs  # noqa: E402
 
 
 LAB = REPO / "unity_endfield_graph_shader_lab"
@@ -47,6 +48,18 @@ BACKGROUND_PORTRAIT_MANIFEST = (
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
     "CharInfoBackgroundPortrait/source_manifest.json"
 )
+EFFECT_LOD_ACTIVATION_CONTRACT = (
+    LAB
+    / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
+    "endminf_effect_lod_activation_contract.json"
+)
+EFFECT_LOD_ACTIVATION_CONTRACT_SHA256 = (
+    "7e938a5fa0ddc9d9d337ae3cddfbe2131e5c8d1829a45375f0c57a25a7507a0d"
+)
+EFFECT_LOD_NATIVE_HASHES = {
+    "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "metadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+}
 EFFECT_ANIMATION_CONTRACT = (
     LAB
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
@@ -127,6 +140,68 @@ def sha256(path: Path) -> str:
 def canonical_text_sha256(path: Path) -> str:
     payload = path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def validate_effect_lod_activation_contract(
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
+) -> dict[str, int]:
+    require(
+        EFFECT_LOD_ACTIVATION_CONTRACT.is_file()
+        and canonical_text_sha256(EFFECT_LOD_ACTIVATION_CONTRACT)
+        == EFFECT_LOD_ACTIVATION_CONTRACT_SHA256,
+        "Endminf effect LOD activation contract hash drifted: "
+        f"{EFFECT_LOD_ACTIVATION_CONTRACT}",
+    )
+    payload = load_json(EFFECT_LOD_ACTIVATION_CONTRACT)
+    defaults = payload.get("runtimeDefaults") or {}
+    native = payload.get("nativeEvidence") or {}
+    owners = native.get("setAllTargetLayersCallerOwners") or []
+    require(
+        payload.get("schema") == "endfield.endminf-effect-lod-activation.v1"
+        and payload.get("status") == "source_closed_normal_creation_defaults"
+        and defaults == {
+            "qualitySettingLodLevel": 8,
+            "qualityNormalizationDomain": [1, 2, 4, 8],
+            "targetLayers": 1,
+        },
+        "Endminf effect LOD runtime defaults/normalization drifted",
+    )
+    require(
+        native.get("gameAssemblySha256") == EFFECT_LOD_NATIVE_HASHES["gameAssembly"]
+        and native.get("globalMetadataSha256") == EFFECT_LOD_NATIVE_HASHES["metadata"]
+        and native.get("recordedInstalledIfixNonreplacement") is True
+        and native.get("normalCreationRouteDirectCallerExcluded") is True,
+        "Endminf effect LOD native evidence/default route gate drifted",
+    )
+    owner_keys = {
+        str((row.get("owner") or {}).get("key")) for row in owners
+        if isinstance(row, dict)
+    }
+    require(
+        owner_keys == {
+            "battle_normal_refresh_guard_lod_alpha",
+            "battle_normal_refresh_tower_lod",
+        },
+        f"Endminf SetAllTargetLayers caller ownership drifted: {sorted(owner_keys)}",
+    )
+    installed = check_installed_native_inputs(
+        EFFECT_LOD_NATIVE_HASHES["gameAssembly"],
+        EFFECT_LOD_NATIVE_HASHES["metadata"],
+        gameassembly=gameassembly,
+        metadata=metadata,
+    )
+    require(
+        installed.validated,
+        f"Endminf effect LOD native inputs failed closed ({installed.status}): "
+        f"{installed.detail}",
+    )
+    rows = payload.get("rows") or []
+    require(
+        len(rows) == 101 and all(row.get("authoredInitialActive") is True for row in rows),
+        "Endminf effect LOD authored-active row census drifted",
+    )
+    return {"rows": len(rows), "callerOwners": len(owners)}
 
 
 def validate_profile_inputs() -> int:
@@ -337,7 +412,12 @@ def build_acl_jobs(output_root: Path, write: bool) -> list[dict[str, str]]:
     return jobs
 
 
-def prepare(output_root: Path, write: bool = True) -> dict:
+def prepare(output_root: Path, write: bool = True,
+            gameassembly: Path | None = None,
+            metadata: Path | None = None) -> dict:
+    # This gate must run before build_acl_jobs can create or replace any file;
+    # the batch invokes this process before it launches Unity/BuildActor.
+    lod_activation = validate_effect_lod_activation_contract(gameassembly, metadata)
     profiles = validate_profile_inputs()
     background_portraits = validate_background_portrait_manifest()
     effects = validate_effect_dependency_closure()
@@ -346,6 +426,8 @@ def prepare(output_root: Path, write: bool = True) -> dict:
     if write:
         job_path.write_text(json.dumps({"items": jobs}, indent=2) + "\n", encoding="utf-8")
     return {
+        "effectLodActivationRows": lod_activation["rows"],
+        "effectLodTargetLayerCallerOwners": lod_activation["callerOwners"],
         "profiles": profiles,
         "backgroundPortraits": background_portraits,
         "effectRoots": effects["roots"],
@@ -363,8 +445,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--check", action="store_true", help="validate without writing ACL jobs")
+    parser.add_argument("--gameassembly", type=Path)
+    parser.add_argument("--metadata", type=Path)
     args = parser.parse_args()
-    result = prepare(args.output_root, write=not args.check)
+    result = prepare(
+        args.output_root, write=not args.check,
+        gameassembly=args.gameassembly, metadata=args.metadata,
+    )
     print("prepare_endminf_source_rebuild: OK " + json.dumps(result, sort_keys=True))
     return 0
 

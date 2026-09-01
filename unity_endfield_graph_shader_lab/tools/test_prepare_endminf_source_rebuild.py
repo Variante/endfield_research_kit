@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from unity_endfield_graph_shader_lab.tools import prepare_endminf_source_rebuild as preflight
@@ -104,6 +105,66 @@ class EndminfSourceRebuildPreflightTests(unittest.TestCase):
         ):
             self.assertIn(token, source)
         self.assertNotIn("Animations/ACL/A_actor_endminf", source)
+
+    def test_lod_activation_native_gate_runs_before_any_prepare_write(self) -> None:
+        source = Path(preflight.__file__).read_text(encoding="utf-8")
+        prepare_start = source.index("def prepare(")
+        self.assertLess(
+            source.index("validate_effect_lod_activation_contract", prepare_start),
+            source.index("validate_profile_inputs", prepare_start),
+        )
+        self.assertIn("check_installed_native_inputs", source)
+        with tempfile.TemporaryDirectory() as temp_text:
+            contract = Path(temp_text) / "activation.json"
+            contract.write_text(
+                preflight.EFFECT_LOD_ACTIVATION_CONTRACT.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            valid_gate = SimpleNamespace(validated=True, status="validated", detail="")
+            patches = (
+                mock.patch.object(preflight, "EFFECT_LOD_ACTIVATION_CONTRACT", contract),
+                mock.patch.object(
+                    preflight,
+                    "EFFECT_LOD_ACTIVATION_CONTRACT_SHA256",
+                    preflight.canonical_text_sha256(contract),
+                ),
+                mock.patch.object(
+                    preflight, "check_installed_native_inputs", return_value=valid_gate
+                ),
+            )
+            with patches[0], patches[1], patches[2]:
+                self.assertEqual(
+                    preflight.validate_effect_lod_activation_contract(),
+                    {"rows": 101, "callerOwners": 2},
+                )
+                payload = json.loads(contract.read_text(encoding="utf-8"))
+                payload["runtimeDefaults"]["targetLayers"] = 3
+                contract.write_text(json.dumps(payload), encoding="utf-8")
+                with mock.patch.object(
+                    preflight,
+                    "EFFECT_LOD_ACTIVATION_CONTRACT_SHA256",
+                    preflight.canonical_text_sha256(contract),
+                ):
+                    with self.assertRaisesRegex(RuntimeError, "defaults/normalization"):
+                        preflight.validate_effect_lod_activation_contract()
+
+            contract.write_text(
+                preflight.EFFECT_LOD_ACTIVATION_CONTRACT.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            mismatch = SimpleNamespace(
+                validated=False, status="mismatched", detail="different build"
+            )
+            with mock.patch.object(preflight, "EFFECT_LOD_ACTIVATION_CONTRACT", contract), \
+                    mock.patch.object(
+                        preflight,
+                        "EFFECT_LOD_ACTIVATION_CONTRACT_SHA256",
+                        preflight.canonical_text_sha256(contract),
+                    ), mock.patch.object(
+                        preflight, "check_installed_native_inputs", return_value=mismatch
+                    ):
+                with self.assertRaisesRegex(RuntimeError, r"failed closed \(mismatched\)"):
+                    preflight.validate_effect_lod_activation_contract()
 
     def test_profile_preflight_reports_hash_drift_before_unity(self) -> None:
         with tempfile.TemporaryDirectory() as temp_text:
