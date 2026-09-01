@@ -291,18 +291,25 @@ the outer return; the false path remains intact and all 20 native tests pass.
   require their own source/runtime evidence.
   `effect_nanguan` owns the exact child Animator/controller whose default state
   zero uses `A_fx_endminf_ui_overview_04`. The native
-  `PlayEffect -> EffectLodCfg.Play -> Animator.Play(0)` chain is exact, and the
-  authored EffectInstance delay is zero, but neither the invocation of that
-  chain nor the child clip's start relative to `EffectInstance.Start` is closed.
-  Start's zero-delay path only conditionally enables its own runtime root
-  Animator, whose exact serialized controller is null; it must not be conflated
-  with the LOD-owned child Animator. The former
+  chain is now closed from `EffectInstance.Start`: after the SetActive IFix gate
+  returns false, a false-to-true activation-latch change enters SetActive's
+  internal core with `active=true`, which calls `PlayEffect`, enumerates exact
+  `lodSetting[30]`, calls `EffectLodCfg.Play`, and resets the child Animator with
+  `Animator.Play(0)`. This is exact only for the pinned unpatched route and the
+  recorded installed local IFix snapshot, which replaces none of SetActive,
+  PlayEffect, or LOD Play; runtime/remote/memory-only patch state remains outside
+  proof. The separate zero-delay path conditionally enables the EffectInstance's
+  own runtime Animator, whose exact serialized controller is null; it must not
+  be conflated with the LOD-owned child Animator. The former
   `A_fx_endminf_ui_overview_03_04` composite and fitted 2.7667-second delay are
   rejected: the original AssetMap contains no composite row, and clip 03 belongs
   to a different prefab owner. The lab starts exact clip 04 when it instantiates
-  the recovered effect root as an explicit transport mapping. The outer
-  overview-state transition, child GameObject/LOD activation, and retail clip
-  start timing remain unresolved, so no absolute retail timing is claimed.
+  the recovered effect root as an explicit transport mapping. On the same
+  conditional pinned-unpatched route, FromOveview starts the child state during
+  `EffectInstance.Start` and then applies the one-shot raw
+  `length * normalizedTime` seed after Start returns.
+  Child `GameObject.SetActive`/LOD display ownership, the retail effect tick
+  domain, and any absolute capture/video offset remain unresolved.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer. A separate
@@ -3789,11 +3796,12 @@ pinned SSE2 `0x10ef20 -> 0x10f190 -> 0xf4100` or AVX2
 scalar sin/cos helper twice; neither calls GameAssembly or IFix. Overall
 runtime selection remains fail-closed because `BurstCompiler.get_IsEnabled`
 and the returned function pointer still decide Burst versus managed fallback.
-The hash-pinned current installed IFix table has no BeyondDynamicBone,
-`MathUtility`, or `FromToRotation` target, but that disk snapshot does not prove
-live slot ownership or exclude later, remote, or memory-only patches. The
-contract uses no captured positions, timing, curves, fitted constants, or
-replay data.
+The post-proxy contract now mechanically rejoins and parses the hash-pinned
+installed IFix report, VFS chunk/catalog, decrypted payload, and exact native
+build. Its 32-target table has no BeyondDynamicBone, `MathUtility`, or
+`FromToRotation` target, but that disk snapshot does not prove live slot
+ownership or exclude later, remote, or memory-only patches. The contract uses
+no captured positions, timing, curves, fitted constants, or replay data.
 A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
 equations with explicit binary32 operation grouping and bit-exact verifier
 vectors. It decodes packed child ranges, preserves ordered Move/non-Move
@@ -3868,6 +3876,20 @@ unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characte
 
 Generated assets are rebuildable. Change generators, importers, runtime code,
 or shaders rather than hand-editing generated prefabs.
+
+The maintained all-character batch now performs a source-only Endminf preflight
+before Unity starts. It validates the 31 profile/render/light rows, both legacy
+portrait sources, the four-root/101-node Overview stage and its complete
+material/mesh/texture closure, the semantic effect-animation and `suikuai`
+contracts, and regenerates both ACL runtime import contracts. The Unity entry
+then imports ACL first, rebuilds the Endminf actor without deleting the ACL
+assets, validates the pose driver and packed outline streams, rebuilds the four
+Overview roots and exact clips, restores LitEffect source materials and direct
+prefab bindings, verifies secondary-dynamics bindings, and only then rebuilds
+the cached viewer and verifies portrait orientation. This replaces the former
+path that could reuse a stale Endminf prefab or erase ACL `.asset` files without
+regenerating them. The batch waits while Unity, Unity Hub, Endfield, or the
+project lock indicates shared use; it never removes or bypasses the lock.
 
 ## Recovery queue
 
