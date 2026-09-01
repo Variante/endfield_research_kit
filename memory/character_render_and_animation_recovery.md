@@ -4064,6 +4064,18 @@ constraint, collision, cross-frame ownership, and writeback selection remain
 separate unresolved stages. No captured positions, curves, or timing are used
 as implementation input.
 
+CalcLine route promotion is now an explicit immutable evidence boundary rather
+than a manual interpretation of the general telemetry report. The dedicated
+`build_secondary_dynamics_calc_line_route_artifact.py` builder independently
+revalidates the referenced trace, binds the trace/validation/manifest plus
+pinned disk and runtime native identities by SHA-256, and publishes a route
+only for one mutually exclusive closure: enabled Burst with exactly one
+source-authenticated SSE2/AVX2 selection, or disabled Burst with exactly one
+unpatched `direct_call_fallback` IFix observation. Missing, duplicated,
+conflicting, or tampered inputs fail closed. The resulting selector payload is
+still inert: it does not connect the solver, frame coordinator, scene assets,
+Transforms, or writeback.
+
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
 IA layouts, five MRT/depth descriptors, and full t0-t3 texture mip payloads.
@@ -4171,9 +4183,13 @@ project lock indicates shared use; it never removes or bypasses the lock.
    observes the exact Burst-enabled return and `IsPatched(0x219)` only on
    admitted CalcLine caller stacks. Its installed-build preflight is:
    `python unity_endfield_graph_shader_lab/tools/burst_resolver_telemetry.py --check-only`.
-   This readiness does not close either live route; collect and validate one
-   actual trace before enabling solver writeback. Keep the older trajectory
-   capture validation-only. If new graphics evidence is independently
+   `capture_endminf_burst_resolver.bat` now records unique trace, validation,
+   and immutable CalcLine-route paths, then rebuild-checks the artifact before
+   reporting route closure. The tooling does not itself close either live
+   route; collect one actual trace and require a checked route artifact before
+   selecting even the inert value kernel. Solver/writeback integration remains
+   a separate gate. Keep the older trajectory capture validation-only. If new
+   graphics evidence is independently
    required, use
    `StartCapture.bat graphics full` with Endfield closed and do not interpret
    it as secondary-motion evidence.
