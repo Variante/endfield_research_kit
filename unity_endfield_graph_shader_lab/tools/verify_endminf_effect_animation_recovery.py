@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Endminf's exact rock transform/visibility composition contract."""
+"""Verify Endminf clip 03 visibility stays separate from effect_nanguan clip 04."""
 
 from __future__ import annotations
 
@@ -96,16 +96,21 @@ def validate() -> dict:
 
     importer = IMPORTER.read_text(encoding="utf-8")
     for token in (
-        '"A_fx_endminf_ui_overview_03_04"',
-        'endminf_overview_rock_visibility.json',
-        'AnimationRoot + "/A_fx_endminf_ui_overview_04.anim"',
-        'AddRockVisibilityCurves(rocksClip, rockVisibility);',
-        'typeof(GameObject)',
-        '"m_IsActive"',
-        'fail_closed_do_not_fabricate_target',
-        'rockBindings.Length == 32',
+        'EffectNanguanClipName = "A_fx_endminf_ui_overview_04"',
+        'AnimationRoot + "/" + EffectNanguanClipName + ".anim"',
+        'rockBindings.Length == 28',
+        '!rockBindings.Any(binding => binding.type == typeof(GameObject)',
+        'binding.propertyName == "m_IsActive"',
     ):
         require(token in importer, f"Unity importer lost required contract token: {token}")
+    for token in (
+        'A_fx_endminf_ui_overview_03_04',
+        'endminf_overview_rock_visibility.json',
+        'AddRockVisibilityCurves',
+        'CopyClip',
+    ):
+        require(token not in importer,
+                f"Unity importer retained forbidden cross-owner composition token: {token}")
 
     return {
         "resolvedActiveCurves": len(active),

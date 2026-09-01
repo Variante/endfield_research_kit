@@ -22,9 +22,6 @@ namespace EndfieldGraphShaderLab
             "endfield.charinfo-char-effect-particle.v1";
         public const string EndminfOverviewContractSchema =
             "endfield.endminf-overview-particle-stage.v1";
-        private const string EndminfCompositeRockClipName =
-            "A_fx_endminf_ui_overview_03_04";
-        private const float EndminfCompositeRockClipDelaySeconds = 2.7666667f;
         private const float EndminfSmoke20PresentationAdvanceSeconds = 2f / 60f;
         private const string EndminfSmoke20MaterialName = "M_fx_endminm_gfx_20";
 
@@ -251,20 +248,6 @@ namespace EndfieldGraphShaderLab
                     continue;
                 animation.Stop();
                 animation.Rewind(animation.clip.name);
-                if (string.Equals(
-                        animation.clip.name,
-                        EndminfCompositeRockClipName,
-                        StringComparison.Ordinal))
-                {
-                    // Retail's last nonzero/first-zero sampled packets are at
-                    // 4.1667/4.30 s. The exact 1.50 s source active curve and
-                    // its 30-fps ticks fix the trigger at tick 83 (2.7667 s).
-                    StartCoroutine(PlayRecoveredLegacyAnimationAfterDelay(
-                        instance,
-                        animation,
-                        EndminfCompositeRockClipDelaySeconds));
-                    continue;
-                }
                 PlayRecoveredLegacyAnimation(animation);
             }
         }
@@ -278,18 +261,6 @@ namespace EndfieldGraphShaderLab
                     animation.clip.name,
                     animation);
             }
-        }
-
-        private static IEnumerator PlayRecoveredLegacyAnimationAfterDelay(
-            GameObject instance,
-            Animation animation,
-            float delaySeconds)
-        {
-            yield return new WaitForSeconds(delaySeconds);
-            if (instance == null || animation == null ||
-                !instance.activeInHierarchy)
-                yield break;
-            PlayRecoveredLegacyAnimation(animation);
         }
 
         private static void PlayRecoveredParticleSystems(

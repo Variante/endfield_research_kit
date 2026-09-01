@@ -261,13 +261,20 @@ the outer return; the false path remains intact and all 20 native tests pass.
   material-property bindings. This closes source texture transport only;
   LitEffect lighting, deferred composition, and particle placement still
   require their own source/runtime evidence.
-  Runtime spawning now explicitly restarts recovered `playAutomatically`
-  legacy effect clips after its inactive staging step. The composite
-  `effect_nanguan` clip uses a capture-closed 2.7667-second (30-fps tick 83)
-  trigger: retail's last nonzero and first-zero packets are at 4.1667 and 4.30
-  seconds, while its source active curve ends at 1.50 seconds. This aligns the
-  four one-rock owners with the observed 3.07-4.17-second interval instead of
-  deactivating them at 1.50 seconds.
+  `effect_nanguan` owns the exact child Animator/controller whose default state
+  zero uses `A_fx_endminf_ui_overview_04`. The native
+  `PlayEffect -> EffectLodCfg.Play -> Animator.Play(0)` chain is exact, and the
+  authored EffectInstance delay is zero, but neither the invocation of that
+  chain nor the child clip's start relative to `EffectInstance.Start` is closed.
+  Start's zero-delay path only conditionally enables its own runtime root
+  Animator, whose exact serialized controller is null; it must not be conflated
+  with the LOD-owned child Animator. The former
+  `A_fx_endminf_ui_overview_03_04` composite and fitted 2.7667-second delay are
+  rejected: the original AssetMap contains no composite row, and clip 03 belongs
+  to a different prefab owner. The lab starts exact clip 04 when it instantiates
+  the recovered effect root as an explicit transport mapping. The outer
+  overview-state transition, child GameObject/LOD activation, and retail clip
+  start timing remain unresolved, so no absolute retail timing is claimed.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer. A separate
