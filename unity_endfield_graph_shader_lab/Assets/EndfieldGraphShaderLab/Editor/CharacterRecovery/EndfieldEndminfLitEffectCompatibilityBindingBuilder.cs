@@ -71,8 +71,10 @@ namespace EndfieldGraphShaderLabEditor
             };
 
         private static readonly string[] SourceFloatFields = {
+            "_BaseColorTintCover", "_BaseColorBrighterScale",
             "_NormalScale", "_RoughnessMin", "_RoughnessMax",
-            "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
+            "_OcclusionStrength", "_TwoSidedNormal", "_Metallic",
+            "_BaseTextureMapCount",
             "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
             "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
             "_ParallaxStrength", "_ParallaxTilling", "_ParallaxMarchNum",

@@ -4,11 +4,14 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
     {
         _BaseColorMap ("Recovered Base Color Map", 2D) = "white" {}
         _BaseColor ("Recovered Base Color", Color) = (1,1,1,1)
+        _BaseColorTintCover ("Recovered Base Color Tint Cover", Float) = 0
+        _BaseColorBrighterScale ("Recovered Base Color Brighter Scale", Float) = 1
         _MROMap ("Recovered MRO Map", 2D) = "white" {}
         _NormalMap ("Recovered Normal Map", 2D) = "bump" {}
         _ParallaxMap ("Recovered Parallax Map", 2D) = "black" {}
         [HideInInspector] _ParallaxNoiseMap ("Recovered Parallax Noise Map", 2D) = "black" {}
         _NormalScale ("Recovered Normal Scale", Float) = 1
+        _TwoSidedNormal ("Recovered Two-Sided Normal", Float) = 1
         _RoughnessMin ("Recovered Roughness Minimum", Float) = 0
         _RoughnessMax ("Recovered Roughness Maximum", Float) = 1
         _OcclusionStrength ("Recovered Occlusion Strength", Float) = 1
@@ -63,10 +66,13 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
             SamplerState sampler_LinearMirrorOnce;
             SamplerState sampler_PointRepeat;
             float4 _BaseColor;
+            float _BaseColorTintCover;
+            float _BaseColorBrighterScale;
             float4 _ParallaxColor;
             float4 _ParallaxColorDark;
             float _ParallaxIntensity;
             float _NormalScale;
+            float _TwoSidedNormal;
             float _RoughnessMin;
             float _RoughnessMax;
             float _OcclusionStrength;
@@ -77,6 +83,8 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
             float _ParallaxMapUVType;
             float _ParallaxNoiseMapTilling;
             float _ParallaxFresnelStrength;
+            float _GlobalMipBias;
+            float _GlobalMipBiasPow2;
 
             struct Attributes
             {
@@ -114,18 +122,28 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 output.positionWS = mul(unity_ObjectToWorld, input.positionOS).xyz;
                 return output;
             }
-            float4 Frag(Varyings input):SV_Target
+            float4 Frag(
+                Varyings input,
+                bool isFrontFace : SV_IsFrontFace):SV_Target
             {
                 float2 baseUV = lerp(input.uv0, input.uv1, _BaseUVSet) *
                     _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;
                 float2 pbrUV = lerp(input.uv0, input.uv1, _BasePbrMapUVSet) *
                     _NormalMap_ST.xy + _NormalMap_ST.zw;
                 float4 baseSample = _BaseColorMap.SampleBias(
-                    sampler_LinearClamp, baseUV, 0.0) * _BaseColor;
+                    sampler_LinearClamp, baseUV, _GlobalMipBias);
                 float4 normalSample = _NormalMap.SampleBias(
-                    sampler_LinearRepeat, pbrUV, 0.0);
+                    sampler_LinearRepeat, pbrUV, _GlobalMipBias);
                 float3 mro = _MROMap.SampleBias(
-                    sampler_LinearMirror, pbrUV, 0.0).rgb;
+                    sampler_LinearMirror, pbrUV, _GlobalMipBias).rgb;
+                // Preserve the selected retail b3 base-color subgraph before
+                // the explicitly non-exact forward light model consumes it.
+                float3 sourceBaseColor = lerp(
+                    saturate(
+                        baseSample.rgb * _BaseColor.rgb *
+                        _BaseColorBrighterScale),
+                    _BaseColor.rgb,
+                    _BaseColorTintCover);
                 // The exact HGBuffer variant consumes NORMAL and TANGENT and
                 // the selected source materials bind _NormalMap with
                 // _NormalScale=1.
@@ -139,6 +157,8 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 float normalZ = max(
                     sqrt(1.0 - min(dot(normalXY, normalXY), 1.0)),
                     1.0000000168623835e-16);
+                if (_TwoSidedNormal > 0.0 && !isFrontFace)
+                    normalZ = -normalZ;
                 float3 normalTS = float3(
                     normalXY * _NormalScale,
                     normalZ);
@@ -176,8 +196,13 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 float layer = 1.0 - layerStep;
                 float2 rayOffset = rayStep;
                 float hitHeight = 0.0;
-                float2 noiseDx = ddx_coarse(input.uv0);
-                float2 noiseDy = ddy_coarse(input.uv0);
+                // The retail fragment multiplies coarse derivatives by the
+                // live ShaderVariablesGlobal mip-bias power. Do not replace
+                // this with the formerly captured 0.5 scalar.
+                float2 noiseDx =
+                    ddx_coarse(input.uv0) * _GlobalMipBiasPow2;
+                float2 noiseDy =
+                    ddy_coarse(input.uv0) * _GlobalMipBiasPow2;
                 [loop]
                 for (uint stepIndex = 0u;
                      stepIndex < parallaxSteps + 1u;
@@ -215,7 +240,7 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 float parallax = _ParallaxMap.SampleBias(
                     sampler_LinearMirrorOnce,
                     parallaxUV,
-                    0.0).g;
+                    _GlobalMipBias).g;
                 float3 l = normalize(float3(-0.35, 0.8, 0.45));
                 float3 h = normalize(l + viewWS);
                 float ndl = saturate(dot(n, l));
@@ -225,19 +250,24 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 // Source MRO packing is R=metallic, G=roughness,
                 // B=occlusion. The previous compatibility port had R/G
                 // swapped, materially changing every stone face.
-                float metallic = saturate(lerp(
+                float sourceMetallic = lerp(
                     mro.r,
                     _Metallic,
-                    saturate(_BaseTextureMapCount - 1.0)));
+                    saturate(_BaseTextureMapCount - 1.0));
                 float sourceRoughness = lerp(
                     _RoughnessMin,
                     _RoughnessMax,
                     mro.g);
+                float sourceOcclusion = mad(
+                    _OcclusionStrength,
+                    mro.b - 1.0,
+                    1.0);
+                // These bounds belong only to the fallback GGX evaluation;
+                // sourceMetallic/sourceRoughness/sourceOcclusion above retain
+                // the exact HGBuffer material decode.
+                float metallic = saturate(sourceMetallic);
                 float roughness = clamp(sourceRoughness, 0.06, 1.0);
-                float occlusion = saturate(lerp(
-                    1.0,
-                    mro.b,
-                    _OcclusionStrength));
+                float occlusion = saturate(sourceOcclusion);
                 float alphaRoughness = roughness * roughness;
                 float alphaRoughness2 = alphaRoughness * alphaRoughness;
                 float denominator = ndh * ndh * (alphaRoughness2 - 1.0) + 1.0;
@@ -246,10 +276,10 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 float geometryK = (roughness + 1.0) * (roughness + 1.0) * 0.125;
                 float geometryV = ndv / max(ndv * (1.0 - geometryK) + geometryK, 0.001);
                 float geometryL = ndl / max(ndl * (1.0 - geometryK) + geometryK, 0.001);
-                float3 f0 = lerp(0.04.xxx, baseSample.rgb, metallic);
+                float3 f0 = lerp(0.04.xxx, sourceBaseColor, metallic);
                 float3 fresnel = f0 + (1.0 - f0) * pow(1.0 - vdh, 5.0);
                 float3 specular = distribution * geometryV * geometryL * fresnel * ndl;
-                float3 diffuse = baseSample.rgb * (1.0 - metallic) *
+                float3 diffuse = sourceBaseColor * (1.0 - metallic) *
                     (0.14 * occlusion + 0.86 * ndl) / UNITY_PI;
                 float3 lit = diffuse + specular;
                 float fresnelGate = pow(

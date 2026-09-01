@@ -59,8 +59,10 @@ SOURCE_MATERIALS = {
     ),
 }
 SOURCE_FLOATS = (
+    "_BaseColorTintCover", "_BaseColorBrighterScale",
     "_NormalScale", "_RoughnessMin", "_RoughnessMax",
-    "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
+    "_OcclusionStrength", "_TwoSidedNormal", "_Metallic",
+    "_BaseTextureMapCount",
     "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
     "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
     "_ParallaxStrength", "_ParallaxTilling", "_ParallaxMarchNum",
@@ -355,11 +357,15 @@ def main() -> int:
         'SamplerState sampler_PointRepeat;',
         '_ParallaxNoiseMap.SampleGrad(',
         '_ParallaxMap.SampleBias(',
-        'float metallic = saturate(lerp(',
+        'float _GlobalMipBias;',
+        'float _GlobalMipBiasPow2;',
+        'float3 sourceBaseColor = lerp(',
+        'float sourceMetallic = lerp(',
         'float sourceRoughness = lerp(',
+        'float sourceOcclusion = mad(',
         '_RoughnessMax,',
         'mro.g);',
-        'mro.b,',
+        'mro.b - 1.0,',
     ]
     failures = ["importer missing " + value for value in required_importer if value not in importer]
     failures += ["shader missing " + value for value in required_shader if value not in shader]
