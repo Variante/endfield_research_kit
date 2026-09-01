@@ -2,10 +2,11 @@
 """Build the pinned PostProxyMeshUpdate native scheduling contract.
 
 The contract closes the managed/native ABI, ordered job construction, job
-payload layouts, exact generic scheduling identities, and the unpatched
-CalcLineNormalTangent managed-worker traversal/equations.  Runtime selection
-between Burst/cross-frame/managed routes and the IFix patch state remain open;
-no capture samples, fitted curves, or replay data are inputs.
+payload layouts, exact generic scheduling identities, the unpatched
+CalcLineNormalTangent managed-worker traversal/equations, and the generated
+BurstDirectCall wrapper plus its managed-fallback equivalence.  The selected
+runtime Burst pointer and IFix patch state remain open; no capture samples,
+fitted curves, or replay data are inputs.
 """
 
 from __future__ import annotations
@@ -210,6 +211,30 @@ CALC_LINE = {
     "throughRetSha256": "3fd25c103794771a322506815060f2203fc2ef5d4830252122bd4b654c76df31",
 }
 
+CALC_LINE_DIRECT_CALL = {
+    "kernelMethodIndex": 384854,
+    "kernelStartVa": 0x1867456E4,
+    "kernelSpanBytes": 0x128,
+    "kernelBodySha256": "05af0def52b33451b7424296e8325c8f4819c7e27a0b64bfc1207b359431ba83",
+    "getFunctionPointerDiscardMethodIndex": 384862,
+    "getFunctionPointerDiscardStartVa": 0x186746378,
+    "getFunctionPointerDiscardSpanBytes": 0x104,
+    "getFunctionPointerDiscardBodySha256": "e01f62edf47a397a23be09da38d792201e7d14ebc2af0a2307786cb0b43cccab",
+    "getFunctionPointerMethodIndex": 384863,
+    "getFunctionPointerStartVa": 0x18674647C,
+    "getFunctionPointerSpanBytes": 0x54,
+    "getFunctionPointerBodySha256": "388ecee8eb261eb2f581b522a2bcb5d7ff521b9d7ad0d198149a345ced0eff33",
+    "invokeMethodIndex": 384867,
+    "invokeStartVa": 0x1867464D0,
+    "invokeSpanBytes": 0x220,
+    "invokeBodySha256": "3166eb9d2d86a50eb31524927b652850ffcdc6a22b5b6edd92db200959392de7",
+    "fallbackStartVa": 0x186740ADC,
+    "fallbackSpanBytes": 0x738,
+    "fallbackBodySha256": "0a7045f6a467730b13d1b7f540cf87f258f1dd3e6f5c74bfd00af0e1d525279e",
+    "fallbackThroughRetBytes": 0x731,
+    "fallbackThroughRetSha256": "b1424aff822792c251bd1176f13d30a274612c86c11a0c5f19c471b363f8feeb",
+}
+
 # The parameter declaration and pointee identities come from global metadata
 # plus MetadataRegistration.types.  Strides/access are then independently
 # demonstrated by the pinned worker body's address arithmetic.
@@ -257,24 +282,33 @@ CALC_LINE_TYPE_SIZES = (
     ("Unity.Mathematics.quaternion", 57247, 16),
 )
 
-CALC_LINE_CALLS = (
-    (0x356, 0x184D886A0),  # float3 component multiply
-    (0x379, 0x182FACF20),  # quaternion rotate float3
-    (0x39E, 0x18415F9A0),  # float3 -> double3
-    (0x3D6, 0x185F00D7C),  # double3 add
-    (0x40E, 0x18352B760),  # VertexAttribute Move-bit test
-    (0x42F, 0x18415F9A0),
-    (0x460, 0x185F00D7C),
-    (0x4A9, 0x185F00F40),  # double3 subtract
-    (0x4E4, 0x185F00D7C),
-    (0x512, 0x18415F9A0),
-    (0x548, 0x1866AEF20),  # MathUtility.FromToRotation
-    (0x597, 0x1830E8750),  # float4 component multiply
-    (0x5BD, 0x1830E8510),  # quaternion Hamilton product
-    (0x5EC, 0x1830E8510),
-    (0x63F, 0x18352B760),
-    (0x67E, 0x1866AEF20),
-    (0x69B, 0x1830E8510),
+# These paired call sites were decoded offline.  The builder pins both byte
+# streams and every rel32 target, so the published comparison fails closed if
+# either emitted body changes.  The first offset is method 384856; the second
+# is the generated DirectCall managed-fallback body at 0x186740adc.
+CALC_LINE_EQUIVALENT_CALLS = (
+    ("staticInitialization", 0x180035ED0, 0x085, 0x085),
+    ("teamIsEnabled", 0x1837EBD60, 0x152, 0x152),
+    ("teamIsCullingInvisible", 0x18673DB7C, 0x168, 0x168),
+    ("float3ComponentMultiply", 0x184D886A0, 0x356, 0x35C),
+    ("quaternionRotateFloat3", 0x182FACF20, 0x379, 0x37F),
+    ("float3ToDouble3", 0x18415F9A0, 0x39E, 0x3A4),
+    ("double3Add", 0x185F00D7C, 0x3D6, 0x3DF),
+    ("runtimeClassInit", 0x1800036A0, 0x402, 0x40B),
+    ("vertexAttributeMoveBit", 0x18352B760, 0x40E, 0x417),
+    ("float3ToDouble3", 0x18415F9A0, 0x42F, 0x438),
+    ("double3Add", 0x185F00D7C, 0x460, 0x469),
+    ("double3Subtract", 0x185F00F40, 0x4A9, 0x4B2),
+    ("double3Add", 0x185F00D7C, 0x4E4, 0x4ED),
+    ("float3ToDouble3", 0x18415F9A0, 0x512, 0x51B),
+    ("fromToRotation", 0x1866AEF20, 0x548, 0x54E),
+    ("float4ComponentMultiply", 0x1830E8750, 0x597, 0x5A0),
+    ("quaternionHamiltonProduct", 0x1830E8510, 0x5BD, 0x5C6),
+    ("quaternionHamiltonProduct", 0x1830E8510, 0x5EC, 0x5F5),
+    ("runtimeClassInit", 0x1800036A0, 0x633, 0x63C),
+    ("vertexAttributeMoveBit", 0x18352B760, 0x63F, 0x648),
+    ("fromToRotation", 0x1866AEF20, 0x67E, 0x684),
+    ("quaternionHamiltonProduct", 0x1830E8510, 0x69B, 0x6A1),
 )
 
 CALC_LINE_HELPER_SPANS = (
@@ -529,12 +563,15 @@ def _generic(index: dict[int, list[dict[str, Any]]], *, pointer: int, method_ind
             "genericEntryVa": f"0x{pointer:x}", "jobTypeIndex": job_type_index, "jobType": job_type}
 
 
-def _method_pointer_context(md: Any, native: Any, pe: Any, code: int) -> tuple[list[int], list[int], int]:
+def _method_pointer_context(
+    md: Any, native: Any, pe: Any, code: int
+) -> tuple[list[int], list[int], int, dict[int, list[dict[str, Any]]]]:
     modules = native.parse_codegen_modules(pe, code)
     ranges = native.image_method_ranges(md)
-    pointers, _ = native.build_pointer_indexes(pe, md, modules, ranges)
+    pointers, method_by_pointer = native.build_pointer_indexes(pe, md, modules, ranges)
     bone = pointers["BeyondDynamicBone.dll"]
-    return bone, sorted({pointer for pointer in bone if pointer}), ranges["BeyondDynamicBone.dll"]["methodStart"]
+    return (bone, sorted({pointer for pointer in bone if pointer}),
+            ranges["BeyondDynamicBone.dll"]["methodStart"], method_by_pointer)
 
 
 def _method_record(md: Any, bone: list[int], unique: list[int], method_start: int, method_index: int,
@@ -591,7 +628,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     if (code, meta) != (EXPECTED_CODE_REGISTRATION, EXPECTED_METADATA_REGISTRATION):
         raise ContractError(f"registration drift: {code!r}, {meta!r}")
     registration = native.metadata_registration_summary(pe, meta)
-    bone, unique, method_start = _method_pointer_context(md, native, pe, code)
+    bone, unique, method_start, method_by_pointer = _method_pointer_context(md, native, pe, code)
     method = md.methods[POST_PROXY["methodIndex"]]
     pointer = bone[POST_PROXY["methodIndex"] - method_start]
     body = pe.bytes_at_va(pointer, POST_PROXY["spanBytes"])
@@ -666,13 +703,17 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         data = pe.bytes_at_va(expected_pointer, row["spanBytes"])
         row["bodySha256"] = hashlib.sha256(data).hexdigest()
         workers.append(row)
-    expected_managed = {
+    expected_worker_bodies = {
         384832: (3300, "02a0d53fed888f05f966dbe2250f59e4f2722d0cfac3928e7a2b268d39bb4bde"),
+        384854: (CALC_LINE_DIRECT_CALL["kernelSpanBytes"],
+                 CALC_LINE_DIRECT_CALL["kernelBodySha256"]),
         384856: (1844, "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829"),
     }
     for row in workers:
-        if row["methodIndex"] in expected_managed and (row["spanBytes"], row["bodySha256"]) != expected_managed[row["methodIndex"]]:
-            raise ContractError(f"managed worker body drift for {row['method']}")
+        expected = expected_worker_bodies.get(row["methodIndex"])
+        if expected is not None and (row["spanBytes"], row["bodySha256"]) != expected:
+            raise ContractError(f"worker body drift for {row['method']}")
+    calc_line_kernel = next(row for row in workers if row["methodIndex"] == 384854)
     create_hot_hash = hashlib.sha256(pe.bytes_at_va(0x186743868, 0x223)).hexdigest()
     if create_hot_hash != "05248d617681f7cbce052c79fffc748936523f7230da3812c6c8bab0f3230213":
         raise ContractError(f"CreatePostProxyMeshUpdateList hot-path drift: {create_hot_hash}")
@@ -684,8 +725,91 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             CALC_LINE["spanBytes"], CALC_LINE["bodySha256"], b"\xc3",
             CALC_LINE["throughRetSha256"]):
         raise ContractError("CalcLineNormalTangent managed worker body/return drift")
-    for call_offset, target_va in CALC_LINE_CALLS:
-        _validate_call(pe, CALC_LINE["startVa"] + call_offset, target_va)
+    direct_call_methods = []
+    for method_index, name, start_key, span_key, hash_key in (
+        (384862, "GetFunctionPointerDiscard", "getFunctionPointerDiscardStartVa",
+         "getFunctionPointerDiscardSpanBytes", "getFunctionPointerDiscardBodySha256"),
+        (384863, "GetFunctionPointer", "getFunctionPointerStartVa",
+         "getFunctionPointerSpanBytes", "getFunctionPointerBodySha256"),
+        (384867, "Invoke", "invokeStartVa", "invokeSpanBytes", "invokeBodySha256"),
+    ):
+        start = CALC_LINE_DIRECT_CALL[start_key]
+        row = _method_record(md, bone, unique, method_start, method_index, name, start)
+        data = pe.bytes_at_va(start, row["spanBytes"])
+        row["bodySha256"] = hashlib.sha256(data).hexdigest()
+        if (row["spanBytes"], row["bodySha256"]) != (
+                CALC_LINE_DIRECT_CALL[span_key], CALC_LINE_DIRECT_CALL[hash_key]):
+            raise ContractError(f"CalcLineNormalTangent DirectCall {name} body drift")
+        direct_call_methods.append(row)
+
+    fallback_body = pe.bytes_at_va(
+        CALC_LINE_DIRECT_CALL["fallbackStartVa"], CALC_LINE_DIRECT_CALL["fallbackSpanBytes"]
+    )
+    fallback_through_ret = fallback_body[:CALC_LINE_DIRECT_CALL["fallbackThroughRetBytes"]]
+    if (len(fallback_body), hashlib.sha256(fallback_body).hexdigest(),
+            fallback_through_ret[-1:], hashlib.sha256(fallback_through_ret).hexdigest()) != (
+            CALC_LINE_DIRECT_CALL["fallbackSpanBytes"],
+            CALC_LINE_DIRECT_CALL["fallbackBodySha256"], b"\xc3",
+            CALC_LINE_DIRECT_CALL["fallbackThroughRetSha256"]):
+        raise ContractError("CalcLineNormalTangent DirectCall managed fallback body/return drift")
+
+    equivalent_calls = []
+    for name, target_va, managed_offset, fallback_offset in CALC_LINE_EQUIVALENT_CALLS:
+        _validate_call(pe, CALC_LINE["startVa"] + managed_offset, target_va)
+        _validate_call(pe, CALC_LINE_DIRECT_CALL["fallbackStartVa"] + fallback_offset, target_va)
+        equivalent_calls.append({
+            "name": name,
+            "targetVa": f"0x{target_va:x}",
+            "managedWorkerOffset": f"0x{managed_offset:x}",
+            "directCallFallbackOffset": f"0x{fallback_offset:x}",
+        })
+
+    # Pin the generated route itself: kernel -> DirectCall.Invoke, then
+    # BurstCompiler.get_IsEnabled plus a non-null returned pointer selects the
+    # indirect call; either failed gate reaches the separate managed fallback.
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["kernelStartVa"] + 0x10A,
+                   CALC_LINE_DIRECT_CALL["invokeStartVa"])
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["getFunctionPointerStartVa"] + 0x45,
+                   CALC_LINE_DIRECT_CALL["getFunctionPointerDiscardStartVa"])
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["getFunctionPointerDiscardStartVa"] + 0xB5,
+                   0x18474F6F0)
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x59, 0x18307B8D0)
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x74,
+                   CALC_LINE_DIRECT_CALL["getFunctionPointerStartVa"])
+    _validate_call(pe, CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x202,
+                   CALC_LINE_DIRECT_CALL["fallbackStartVa"])
+    if pe.bytes_at_va(CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x13B, 3) != b"\x41\xff\xd2":
+        raise ContractError("CalcLineNormalTangent DirectCall indirect pointer call drift")
+    if pe.bytes_at_va(CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x5E, 8) != bytes.fromhex(
+            "84 c0 0f 84 dd 00 00 00"):
+        raise ContractError("CalcLineNormalTangent Burst-enabled gate drift")
+    if pe.bytes_at_va(CALC_LINE_DIRECT_CALL["invokeStartVa"] + 0x7C, 9) != bytes.fromhex(
+            "48 85 c0 0f 84 be 00 00 00"):
+        raise ContractError("CalcLineNormalTangent non-null pointer gate drift")
+
+    def exact_global_method(pointer: int, method_index: int, type_name: str,
+                            method_name: str, token: str) -> dict[str, Any]:
+        rows = method_by_pointer.get(pointer, [])
+        matches = [row for row in rows if row.get("methodIndex") == method_index]
+        if len(matches) != 1:
+            raise ContractError(f"global method pointer identity drift at 0x{pointer:x}")
+        row = matches[0]
+        if (row.get("type"), row.get("method"), row.get("token")) != (
+                type_name, method_name, token):
+            raise ContractError(f"global method declaration drift for {type_name}.{method_name}")
+        return row
+
+    burst_is_enabled = exact_global_method(
+        0x18307B8D0, 489283, "Unity.Burst.BurstCompiler", "get_IsEnabled", "0x0600000b"
+    )
+    burst_is_enabled_body = pe.bytes_at_va(0x18307B8D0, 0x66)
+    if hashlib.sha256(burst_is_enabled_body).hexdigest() != (
+            "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67"):
+        raise ContractError("BurstCompiler.get_IsEnabled body drift")
+    burst_get_ilpp = exact_global_method(
+        0x18474F6F0, 489285, "Unity.Burst.BurstCompiler",
+        "GetILPPMethodFunctionPointer2", "0x0600000d"
+    )
     helper_spans = _verified_helper_spans(pe)
     parameter_layout = _calc_line_parameter_layout(md, pe, registration)
     relevant_layouts = _calc_line_relevant_layouts(md, pe, registration)
@@ -738,7 +862,7 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     sources["dependencies"] = dependencies
     return {
         "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-        "status": "post_proxy_managed_calc_line_equations_closed_runtime_routes_open",
+        "status": "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
         "manager_schedule_closed": True,
         "managed_job_payload_layout_closed": True,
         "generic_methodspec_identities_closed": True,
@@ -749,6 +873,9 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "calc_line_managed_worker_equations_recovered": True,
         "calc_line_managed_worker_degeneracy_branches_recovered": True,
         "calc_line_data_layout_closed": True,
+        "calc_line_kernel_wrapper_route_recovered": True,
+        "calc_line_directcall_managed_fallback_equivalence_closed": True,
+        "calc_line_burst_function_pointer_target_closed": False,
         "create_list_kernel_numerics_recovered": False,
         "calc_line_normal_tangent_numerics_recovered": False,
         "selected_calc_line_execution_route_closed": False,
@@ -906,20 +1033,86 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                 "baseLineData", "index",
             ],
             "unusedParameters": ["parentIndices"],
-            "numericBoundary": "The pinned unpatched managed-worker traversal and equations are closed. Overall runtime numerics remain fail-closed until the selected Burst/cross-frame/managed route and FromToRotation IFix patch state are proven.",
+            "numericBoundary": "The pinned unpatched managed-worker traversal/equations and the generated DirectCall managed fallback are closed. Overall runtime numerics remain fail-closed until the selected Burst function pointer, cross-frame/managed route, and FromToRotation IFix patch state are proven.",
+        },
+        "calcLineDirectCallRoute": {
+            "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",
+            "kernelWrapper": {
+                **calc_line_kernel,
+                "instructionCount": 55,
+                "invokeCallOffset": "0x10a",
+                "invokeMethodIndex": 384867,
+            },
+            "generatedMethods": direct_call_methods,
+            "invokeSelection": {
+                "burstEnabledGate": {
+                    **burst_is_enabled,
+                    "startVa": "0x18307b8d0",
+                    "spanBytes": 0x66,
+                    "bodySha256": "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67",
+                    "invokeCallOffset": "0x59",
+                    "falseBranch": "directCallManagedFallback",
+                    "runtimeValue": "unresolved",
+                },
+                "getFunctionPointer": {
+                    "methodIndex": 384863,
+                    "invokeCallOffset": "0x74",
+                    "resolver": {
+                        **burst_get_ilpp,
+                        "startVa": "0x18474f6f0",
+                        "getFunctionPointerDiscardCallOffset": "0xb5",
+                    },
+                    "nullBranch": "directCallManagedFallback",
+                    "nonNullBranch": "indirect call through r10 at Invoke offset 0x13b",
+                    "returnedPointer": "unresolved runtime value",
+                },
+                "managedFallbackCallOffset": "0x202",
+                "operation": "BurstCompiler.get_IsEnabled must be true and GetFunctionPointer must return nonzero to take the indirect Burst call; either failed gate calls the separate managed fallback body.",
+            },
+            "directCallManagedFallback": {
+                "startVa": f"0x{CALC_LINE_DIRECT_CALL['fallbackStartVa']:x}",
+                "metadataMethodIdentity": None,
+                "identityBoundary": "This internal target is not a registered IL2CPP method pointer; its role is established by the exact method-384867 fallback call edge.",
+                "spanBytes": CALC_LINE_DIRECT_CALL["fallbackSpanBytes"],
+                "bodySha256": CALC_LINE_DIRECT_CALL["fallbackBodySha256"],
+                "throughRetBytes": CALC_LINE_DIRECT_CALL["fallbackThroughRetBytes"],
+                "throughRetSha256": CALC_LINE_DIRECT_CALL["fallbackThroughRetSha256"],
+            },
+            "managedFallbackComparison": {
+                "managedMethodIndex": 384856,
+                "classification": "separately emitted numeric body statically equivalent to method 384856 modulo stack/local layout",
+                "throughFirstRetInstructionCount": 396,
+                "identicalMnemonicSequence": True,
+                "identicalOperandStructuralShapes": True,
+                "conditionalAndUnconditionalBranchCount": 18,
+                "identicalControlFlowTopologyByInstructionOrdinal": True,
+                "directCallCount": len(equivalent_calls),
+                "identicalDirectCallTargetsAtSameInstructionOrdinals": True,
+                "pairedDirectCalls": equivalent_calls,
+                "nonControlImmediateComparison": {
+                    "allEqualExcept": "stack frame allocation",
+                    "managedWorkerFrameBytes": "0x7c0",
+                    "directCallFallbackFrameBytes": "0x7b0",
+                    "numericConstantDifferenceObserved": False,
+                },
+                "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. This comparison does not identify or prove the body behind a non-null Burst function pointer.",
+            },
+            "selectedRuntimeRoute": "unresolved",
+            "burstFunctionPointerTarget": "unresolved",
         },
         "routeEvidence": {"coldSpans": cold,
-                          "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present; static code alone does not select the runtime branch."},
+                          "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine DirectCall branch conditions are statically closed, but their runtime values and the returned Burst target are not."},
         "workerTargets": workers,
-        "nextDisassemblyTargets": [
-            {"methodIndex": 384854, "method": "CalcLineNormalTangentKernel",
-             "reason": "resolve the selected Burst/direct-call target and prove whether its numeric body is equivalent to the now-closed managed worker"},
-            {"methodIndex": 386226, "method": "MathUtility.FromToRotation",
-             "reason": "the unpatched body is closed; runtime IFix patch id 0x219 selection remains an external-state evidence boundary"},
+        "nextDisassemblyTargets": [],
+        "remainingRuntimeEvidence": [
+            {"boundary": "CalcLine BurstDirectCall selected target",
+             "reason": "method 384854 and the managed fallback are closed, but a non-null GetILPPMethodFunctionPointer2 result is an unresolved runtime pointer"},
+            {"boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
+             "reason": "the unpatched body is closed; runtime IFix selection remains external state"},
         ],
         "nonClaims": [
             "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-            "The managed CalcLineNormalTangent traversal/equations do not establish that retail selected the managed worker instead of the Burst/direct-call route.",
+            "The DirectCall managed fallback equivalence does not establish that retail selected it instead of the unresolved non-null Burst function pointer.",
             "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
             "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
             "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
