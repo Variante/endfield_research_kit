@@ -134,6 +134,16 @@ namespace EndfieldGraphShaderLab
             new Dictionary<string, Coroutine>(StringComparer.Ordinal);
         private readonly HashSet<string> reportedFailureKeys =
             new HashSet<string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, SourceSeedTelemetry> sourceSeedTelemetry =
+            new Dictionary<string, SourceSeedTelemetry>(StringComparer.Ordinal);
+
+        private struct SourceSeedTelemetry
+        {
+            public bool authenticated;
+            public int animationCount;
+            public float seconds;
+            public string failure;
+        }
 
         public Binding[] Bindings => bindings;
 
@@ -148,6 +158,30 @@ namespace EndfieldGraphShaderLab
             set => rejectUnboundRequests = value;
         }
 
+        public bool TryGetSourceSeedTelemetry(
+            string prefabName,
+            out bool authenticated,
+            out int animationCount,
+            out float seconds,
+            out string failure)
+        {
+            authenticated = false;
+            animationCount = 0;
+            seconds = 0f;
+            failure = string.Empty;
+            if (string.IsNullOrEmpty(prefabName) ||
+                !sourceSeedTelemetry.TryGetValue(
+                    prefabName,
+                    out SourceSeedTelemetry telemetry))
+                return false;
+
+            authenticated = telemetry.authenticated;
+            animationCount = telemetry.animationCount;
+            seconds = telemetry.seconds;
+            failure = telemetry.failure ?? string.Empty;
+            return true;
+        }
+
         public void SpawnOverviewEffect(
             EndfieldOverviewEffectRequest request,
             Transform actorRoot,
@@ -155,6 +189,11 @@ namespace EndfieldGraphShaderLab
         {
             if (string.IsNullOrEmpty(request.prefabName))
                 return;
+
+            // Revoke any prior generation's proof before validating or
+            // scheduling this request. A failed replacement must never leave
+            // a stale successful seed visible to the capture contract.
+            sourceSeedTelemetry.Remove(request.prefabName);
 
             Binding binding = FindBinding(request.prefabName);
             if (binding == null)
@@ -263,7 +302,16 @@ namespace EndfieldGraphShaderLab
                 StartRecoveredLegacyAnimations(
                     instance,
                     sourceClock,
-                    out string legacyAnimationFailure);
+                    out string legacyAnimationFailure,
+                    out bool sourceClockAuthenticated,
+                    out int sourceSeededAnimationCount,
+                    out float sourceSeedSeconds);
+            sourceSeedTelemetry[request.prefabName] = new SourceSeedTelemetry {
+                authenticated = sourceClockAuthenticated,
+                animationCount = sourceSeededAnimationCount,
+                seconds = sourceSeedSeconds,
+                failure = legacyAnimationFailure,
+            };
             PlayRecoveredParticleSystems(systems);
             if (string.Equals(binding.prefab.name,
                     "P_fxui_endminm003_overview_02",
@@ -333,7 +381,10 @@ namespace EndfieldGraphShaderLab
         private bool StartRecoveredLegacyAnimations(
             GameObject instance,
             EndfieldOverviewEffectSourceClock sourceClock,
-            out string failure)
+            out string failure,
+            out bool sourceClockAuthenticated,
+            out int sourceSeededAnimationCount,
+            out float sourceSeedSeconds)
         {
             // Instantiate activates an enabled prefab before this spawner can
             // clear and stage its ParticleSystems. Deactivating that instance
@@ -342,7 +393,9 @@ namespace EndfieldGraphShaderLab
             // only clips explicitly marked automatic in the recovered prefab.
             bool allStarted = true;
             failure = string.Empty;
-            bool sourceClockAuthenticated =
+            sourceSeededAnimationCount = 0;
+            sourceSeedSeconds = 0f;
+            sourceClockAuthenticated =
                 sourceClock.TryGetAuthenticatedElapsed(out float sourceElapsed);
             if (sourceClock.valid && !sourceClockAuthenticated)
             {
@@ -384,6 +437,11 @@ namespace EndfieldGraphShaderLab
                             "' rejected its authenticated source-state seed: " +
                             seedFailure;
                     }
+                }
+                else if (seedFromSourceState)
+                {
+                    sourceSeededAnimationCount++;
+                    sourceSeedSeconds = sourceElapsed;
                 }
             }
             return allStarted;
@@ -460,6 +518,8 @@ namespace EndfieldGraphShaderLab
             if (string.IsNullOrEmpty(prefabName))
                 return;
 
+            sourceSeedTelemetry.Remove(prefabName);
+
             if (pendingEffects.TryGetValue(prefabName, out Coroutine pending))
             {
                 pendingEffects.Remove(prefabName);
@@ -512,6 +572,7 @@ namespace EndfieldGraphShaderLab
             activeEffects.Keys.CopyTo(names, 0);
             foreach (string name in names)
                 FinishOverviewEffect(name);
+            sourceSeedTelemetry.Clear();
         }
 
         private Binding FindBinding(string requestPrefabName)
