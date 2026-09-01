@@ -12436,10 +12436,19 @@ namespace EndfieldGraphShaderLabEditor
             camera.transform.rotation = Quaternion.LookRotation(
                 lookAtPosition - cameraPosition,
                 Vector3.up);
+            CharacterRecoveryPresentationProfile presentationProfile =
+                EndfieldPlayableCharInfoProfileBuilder.LoadProfile(actorName);
+            if (presentationProfile == null || !presentationProfile.sourceRecovered)
+            {
+                throw new InvalidOperationException(
+                    $"No source-recovered CharInfo presentation profile exists for " +
+                    $"gyroscope actor '{actorName}'.");
+            }
             EndfieldRecoveredCharInfoGyroscopeCameraState.TryApplyOverview(
                 camera,
                 actorName,
-                lookAtPosition);
+                lookAtPosition,
+                presentationProfile.gyroscopeEntryOffsets);
             camera.nearClipPlane = cameraEntry.NearClipPlane;
             camera.farClipPlane = cameraEntry.FarClipPlane;
             EndfieldRecoveredCharInfoSky sourceSky =

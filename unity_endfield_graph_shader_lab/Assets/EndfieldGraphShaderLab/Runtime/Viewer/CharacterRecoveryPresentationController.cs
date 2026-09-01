@@ -130,7 +130,8 @@ namespace EndfieldGraphShaderLab
             EndfieldRecoveredCharInfoGyroscopeCameraState.TryConfigureRuntimeOverview(
                 viewerCamera,
                 profile.rootName,
-                actorRoot.TransformPoint(profile.lookAtPosition));
+                actorRoot.TransformPoint(profile.lookAtPosition),
+                profile.gyroscopeEntryOffsets);
 
             ApplyCharacterLighting(profile);
             ApplyOperatorLights(profile, actorRoot);

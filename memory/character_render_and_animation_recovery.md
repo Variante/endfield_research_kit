@@ -1781,25 +1781,20 @@ that obscure the hand and body. The exact Uber payload remains the dominant
 visual blocker; do not compensate for that post distortion by shifting bones
 or UVs.
 
-The first corrected 770-frame sequence still used the lower-right gyroscope
-endpoint from an older recording. The canonical clean
-`videos/2026-08-26_21-25-50.mkv` cursor stabilizes at source pixel `(1036,75)`
-in its 3840x2160 frame, which maps to normalized source input
-`(-0.4604167,0.9305556)`. An identical eight-checkpoint A/B against that clean
-reference improves ROI/effect-ROI/temporal-delta MAE from
-`38.4311/43.4587/53.4870` to `25.8487/25.0545/35.6725`. The Viewer and launcher
-now use this recording-specific endpoint by default while preserving explicit
-environment overrides for older captures. This corrects a real camera/root
-presentation mismatch that had made body, cape, portrait, and stones appear
-shifted; it does not replace the remaining exact Uber or secondary-shape work.
-A fresh 770-frame canonical render with that endpoint passes the complete
-start-to-loop, background, portrait, no-foreground-UI, stone, M27, deferred,
-and captured-secondary-replay gates. Across the full 555-frame overlap at the
-sidecar's proven offset zero, ROI/effect-ROI/temporal-delta MAE improves from
-`32.2628/35.4458/15.5904` to `23.7086/23.6431/13.7609`. The synchronized pulse
-peak improves from `16.6648` dB / `0.7023` SSIM to `17.1922` dB / `0.7328`, but
-still shows the broad overbright RGB ghost instead of retail's compact amber
-ring; exact Uber transport remains the dominant peak blocker.
+The CharInfo gyroscope path is code-closed through its input-provider boundary.
+The pinned Tick returns PreLate option `8`, polls
+`Beyond.Input.InputManager.mousePosition`, clamps and normalizes against half
+screen extents, evaluates the two serialized curves and scales, and applies
+one evaluated-target squared-distance gate at `1e-10`. An inactive path creates
+the serialized two-second ease-6/OutQuad tween; an active path calls
+`ChangeEndValue(rawTarget, -1, true)`, preserving duration and snapping the new
+start to the reached value. Presentation-profile data owns actor entry offsets.
+Canonical/batch capture no longer embeds the clean video's endpoint or cursor
+track: it defaults to deterministic serialized entry, rejects live input, and
+reports mode, provider, explicit input when present, and entry offsets. The
+interactive public-Unity mouse adapter remains useful for exploration but is
+not retail-input parity because Beyond's virtual/controller provider is not
+implemented.
 
 The captured-replay renderer-consumption audit rules out a disconnected or
 unused secondary skeleton. All 74 replay transforms resolve in active target
@@ -2416,35 +2411,14 @@ and rejected; retail c13/stream carriers are not equivalent to multiplying or
 reinterpreting the current extracted procedural streams. The admission
 verifier hash-gates both M20 source pairs and the exact sampler translation.
 
-The clean recording also contains a late live-cursor move that the former
-single-endpoint gyroscope replay could not represent. Source-native behavior
-restarts a two-second OutQuad at PreLate whenever the evaluated input endpoint
-changes by more than `1e-10` squared. Replaying the observed clean-reference
-cursor samples from requested time 7.2333-7.4667 seconds improves every tested
-late checkpoint: across clean source frames 523/529/537/559/589/619/639, mean
-character ROI MAE falls from 21.632 to 19.256 and effect ROI MAE from 22.950
-to 19.278. The directly observed final clamp `(1,0.9962963)` is stronger than
-the bounded `(1,1)` alternative, whose effect ROI MAE is 20.226. Keep this
-recording-specific track opt-in and preserve the general source retarget API;
-do not replace it with a static camera or backdrop offset. A subsequent
-770-frame schema-v8 render completed `status=ok` with the track active and kept
-the global best phase offset at -1. Versus the immediately preceding exact-Uber
-full render, aggregate ROI/effect MAE improves 21.134/22.069 to 21.035/21.902;
-temporal-delta MAE changes 11.889 to 12.053, so the track closes the coordinated
-late composition drift but does not replace the remaining particle/Uber
-temporal work.
-
-The clean recording's initial pointer endpoint is also the best bounded
-source-native settled state; the near-zero endpoint from a different runtime
-session and an extreme `(-1,1)` input are both rejected. At requested times
-6.75/6.7833/6.8167 seconds and the established -1-frame alignment, moving from
-the clean pointer `(-0.4604167,0.9305556)` to the extreme endpoint worsens
-actor/effect ROI MAE from 15.0059/13.4783 to 16.5791/15.8456 and portrait-left
-ROI MAE from 13.8433 to 15.0397. The recovered curves are already saturated
-near the pointer state, so the residual portrait/grid mismatch is not evidence
-for another gyroscope, RectTransform, or screenshot-fit offset. Keep the clean
-pointer default and require new same-session camera evidence before changing
-composition again.
+The clean recording's late cursor move remains useful validation that the
+source gyroscope is dynamic, but its observed samples, endpoint, and timing are
+not implementation inputs. The earlier recording-specific endpoint/track A/Bs
+are superseded diagnostics and must not become canonical defaults or corrective
+camera offsets. Closing the remaining live-input boundary requires Beyond's
+virtual/controller provider or exact runtime provider state; it does not
+justify changing FOV, actor scale, portrait placement, GridFar, or adding a
+screenshot-fit transform.
 
 The CharInfo portrait's earlier inversion was a tight-sprite UV error, not
 another RectTransform or camera offset. The exported PNG is display-upright
@@ -3297,21 +3271,14 @@ mappings. The corrected chronological pairing disproves the apparent settled
 camera/framing gap: actor and portrait scale are within a few tenths of one
 percent and displacement is sub-pixel before the late cursor move. Do not
 change FOV, actor root scale, static camera position, portrait placement, or
-GridFar to fit the old clip-wrapped comparison. The remaining late offset is a
-small gyroscope timing/state gap. The retained cursor samples are labeled in
-the clean reference's requested-animation clock, but their first implementation
-scheduled on editor wall/play elapsed time, which leads requested time by three
-60-Hz samples in canonical capture. Replay now uses the requested clock. A
-corrected 770-frame A/B at source offset -1 improves full actor/effect ROI MAE
-by 0.079/0.229 and the tween-tail actor/effect ROI MAE by 0.757/1.523, but it
-worsens full temporal-delta MAE by 0.139 and the bounded retarget window's
-actor/effect/temporal MAE by 1.129/1.669/3.174. Keep the track opt-in. The old
-minus-one/zero/plus-one sweep described the superseded elapsed-clock schedule;
-any future offset sweep must use the corrected requested clock. Resolving the
-remaining few-pixel tail requires same-session runtime gyroscope state rather
-than a global camera, portrait, or screenshot-fit offset. Loop-only diagnostics
-can supply an explicit paired sequence origin to the comparator; the tool
-rejects partial origins and continues to require chronological output.
+GridFar to fit the old clip-wrapped comparison. The remaining late offset is an
+input-provider state gap, not permission to replay clean-video cursor samples.
+Those tracks and their offset sweep are removed from canonical capture.
+Resolving the remaining few-pixel tail requires the retail Beyond input provider
+or same-session runtime state used as validation evidence, not a global camera,
+portrait, or screenshot-fit offset. Loop-only diagnostics can supply an explicit
+paired sequence origin to the comparator; the tool rejects partial origins and
+continues to require chronological output.
 
 The background portrait inversion was a Unity mesh bug, not missing capture
 evidence: both portrait builders vertically flipped UVs that TextureImporter
