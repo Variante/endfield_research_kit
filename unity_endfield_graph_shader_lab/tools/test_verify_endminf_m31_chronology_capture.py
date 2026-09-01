@@ -55,6 +55,8 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             "m31ChronologyFailed": False,
             "m31ChronologyCensusCount": 3,
             "m31ChronologyCensusTruncated": False,
+            "m31ChronologyCandidateAttempts": 1,
+            "m31ChronologyCandidateAttemptCapacity": 8192,
             "m31ChronologyStagingBytes": 192,
             "m31ChronologyFailureHresult": 0,
         }
@@ -75,7 +77,8 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             "originalCallsForwardedExactlyOnce": True,
             "complete": True,
             "triad": [1082, 443, 32], "presentOrdinal": 9,
-            "censusCapacity": 64, "censusCount": 3,
+            "candidateAttempts": 1, "candidateAttemptCapacity": 8192,
+            "censusCapacity": 8192, "censusCount": 3,
             "censusTruncated": False, "reservedStagingBytes": 192,
             "targets": [{"drawIndex": index,
                          "rtv0": target("rtv0"),
@@ -171,6 +174,40 @@ class M31ChronologyCaptureTests(unittest.TestCase):
             path.write_text(json.dumps(data))
         with self.assertRaisesRegex(MODULE.ChronologyError,
                                     "chronology failure"):
+            self.report(mutate)
+
+    def test_stale_summary_candidate_capacity_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/summary.json"
+            data = json.loads(path.read_text())
+            data["m31ChronologyCandidateAttemptCapacity"] = 64
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(
+                MODULE.ChronologyError,
+                "candidate-attempt capacity differs"):
+            self.report(mutate)
+
+    def test_stale_metadata_capacities_fail_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/m31_chronology/metadata.json"
+            data = json.loads(path.read_text())
+            data["candidateAttemptCapacity"] = 64
+            data["censusCapacity"] = 64
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(
+                MODULE.ChronologyError,
+                "candidate-attempt capacity differs"):
+            self.report(mutate)
+
+    def test_candidate_attempt_overflow_fails_closed(self) -> None:
+        def mutate(capture: Path) -> None:
+            path = capture / "graphics/summary.json"
+            data = json.loads(path.read_text())
+            data["m31ChronologyCandidateAttempts"] = 8193
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(
+                MODULE.ChronologyError,
+                "candidate attempts exceed capacity"):
             self.report(mutate)
 
     def test_malformed_census_call_fails_closed(self) -> None:

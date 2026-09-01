@@ -11,12 +11,19 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
+OBSERVER_SPEC = importlib.util.spec_from_file_location(
+    "endfield_capture_observer_build_contract",
+    REPO / "scripts/endfield_capture_observer_build_contract.py")
+assert OBSERVER_SPEC and OBSERVER_SPEC.loader
+OBSERVER_BUILD = importlib.util.module_from_spec(OBSERVER_SPEC)
+OBSERVER_SPEC.loader.exec_module(OBSERVER_BUILD)
 DEFAULT_OUTPUT = (
     REPO / "reports/assets/character_recovery"
     / "endminf_streamline_surface_capture_latest.json"
@@ -377,12 +384,21 @@ def validate_exposure(
         return
     require_equal(errors, f"{label} exposure.nativeResource",
                   integer(row.get("nativeResource")), integer(resource.get("native")))
-    require_equal(errors, f"{label} exposure tag.resource.width",
-                  integer(resource.get("width")), 1)
-    require_equal(errors, f"{label} exposure tag.resource.height",
-                  integer(resource.get("height")), 1)
-    require_equal(errors, f"{label} exposure tag.resource.nativeFormat",
-                  integer(resource.get("nativeFormat")), format_id)
+    if integer(resource.get("native")) <= 0:
+        errors.append(f"{label} exposure tag.resource.native: expected nonzero")
+    # Retail Streamline leaves these optional sl::Resource descriptor fields
+    # zero. The authoritative texture facts are the D3D11 GetDesc values
+    # recorded above. If a caller does populate the raw fields, require the
+    # complete tuple to agree rather than accepting partial metadata.
+    raw_descriptor = (
+        integer(resource.get("width")),
+        integer(resource.get("height")),
+        integer(resource.get("nativeFormat")),
+    )
+    if raw_descriptor != (0, 0, 0) and raw_descriptor != (1, 1, format_id):
+        errors.append(
+            f"{label} exposure tag.resource optional descriptor: expected "
+            f"(0, 0, 0) or (1, 1, {format_id}), found {raw_descriptor}")
     require_equal(errors, f"{label} exposure tag extent",
                   exposure_tag.get("extent"), [0, 0, 1, 1])
     first_order = integer(row.get("firstResourceTagOrder"))
@@ -390,7 +406,8 @@ def validate_exposure(
     first_qpc = integer(row.get("firstResourceTagTimestampQpc"))
     tag_qpc = integer(row.get("tagTimestampQpc"))
     copy_qpc = integer(row.get("stagingCopyTimestampQpc"))
-    evaluate_qpc = integer(row.get("evaluateTimestampQpc"))
+    evaluate_entry_qpc = integer(packet.get("evaluateEntryTimestampQpc"))
+    evaluate_exit_qpc = integer(packet.get("evaluateExitTimestampQpc"))
     ready_qpc = integer(row.get("payloadReadyTimestampQpc"))
     if not (0 < first_order <= tag_order < integer(row.get("evaluateOrder"))):
         errors.append(
@@ -398,16 +415,18 @@ def validate_exposure(
             f"found {first_order}, {tag_order}, {row.get('evaluateOrder')}")
     if integer(row.get("resourceBindingOrdinal")) < 0:
         errors.append(f"{label} exposure.resourceBindingOrdinal: expected nonnegative")
-    if not (0 < first_qpc <= tag_qpc <= copy_qpc <= evaluate_qpc <= ready_qpc):
+    if not (0 < first_qpc <= tag_qpc < evaluate_entry_qpc <= copy_qpc <=
+            evaluate_exit_qpc <= ready_qpc):
         errors.append(
             f"{label} exposure QPC chronology: need first-resource <= tag <= "
-            f"copy <= evaluate <= ready, found {first_qpc}, {tag_qpc}, "
-            f"{copy_qpc}, {evaluate_qpc}, {ready_qpc}")
+            "evaluate-entry <= staging-copy-enqueue <= evaluate-exit <= ready, "
+            f"found {first_qpc}, {tag_qpc}, {evaluate_entry_qpc}, "
+            f"{copy_qpc}, {evaluate_exit_qpc}, {ready_qpc}")
 
 
 def validate_packet(
     packet: dict[str, Any], packet_index: int, streamline: dict[str, Any],
-    errors: list[str], packet_root: Path,
+    errors: list[str], packet_root: Path, trigger_present: int,
 ) -> dict[str, Any]:
     label = f"frame{packet_index}"
     require_equal(errors, f"{label}.schema", packet.get("schema"),
@@ -478,8 +497,13 @@ def validate_packet(
         require_true(errors, f"{label} options.readable", option.get("readable"))
         require_true(errors, f"{label} options.presentClockReadable",
                      option.get("presentClockReadable"))
-        require_equal(errors, f"{label} options prior Present",
-                      integer(option.get("priorPresentOrdinal")), prior)
+        option_prior = integer(option.get("priorPresentOrdinal"))
+        if not (trigger_present > 0 and
+                trigger_present - 1 <= option_prior <= prior):
+            errors.append(
+                f"{label} options prior Present: expected retained trigger "
+                f"warm-up/current state in [{trigger_present - 1}, {prior}], "
+                f"found {option_prior}")
     if token:
         for key in ("readable", "frameIndexSupplied", "presentClockReadable"):
             require_true(errors, f"{label} frame token.{key}", token.get(key))
@@ -645,9 +669,20 @@ def validate_packet(
             "packetBytes": total_bytes}
 
 
-def build_report(capture: Path) -> dict[str, Any]:
+def build_report(capture: Path, *,
+                 expected_observer_sha256: str | None = None,
+                 expected_observer_bytes: int | None = None) -> dict[str, Any]:
     capture = capture.resolve()
     errors: list[str] = []
+    observer_facts: dict[str, Any] = {}
+    try:
+        observer_facts = OBSERVER_BUILD.validate_observer_binary(
+            capture / "private/EndfieldCapture.dll",
+            build_label="Streamline surface build",
+            expected_sha256=expected_observer_sha256,
+            expected_bytes=expected_observer_bytes)
+    except OBSERVER_BUILD.ObserverBuildContractError as exc:
+        errors.append(str(exc))
     session_audit = audit_session(capture, errors)
     summary = session_audit["graphicsSummary"]
     streamline = load_json(capture / "graphics/streamline_dlss.json", "Streamline")
@@ -712,12 +747,13 @@ def build_report(capture: Path) -> dict[str, Any]:
 
     packet_reports = []
     packets = []
+    trigger_present = integer(summary.get("graphicsSequenceTriggerPresent"))
     for index in range(2):
         root = capture / "graphics/streamline_surfaces" / f"frame{index}"
         packet = load_json(root / "metadata.json", f"frame{index}")
         packets.append(packet)
         packet_reports.append(validate_packet(
-            packet, index, streamline, errors, root))
+            packet, index, streamline, errors, root, trigger_present))
 
     first, second = packets
     require_equal(errors, "surface pair consecutive frame index",
@@ -750,6 +786,8 @@ def build_report(capture: Path) -> dict[str, Any]:
         "schema": "endfield.endminf-streamline-surface-capture.v1",
         "status": "validated" if not errors else "rejected",
         "capture": str(capture),
+        "observerSha256": observer_facts.get("sha256"),
+        "observerBytes": observer_facts.get("bytes"),
         "sessionId": session_audit["session"].get("sessionId"),
         "surfaceContract": {
             "width": WIDTH, "height": HEIGHT,

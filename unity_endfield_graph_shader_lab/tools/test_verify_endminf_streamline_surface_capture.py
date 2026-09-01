@@ -25,6 +25,10 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
         graphics = root / "graphics"
         surfaces_root = graphics / "streamline_surfaces"
         surfaces_root.mkdir(parents=True)
+        private = root / "private"
+        private.mkdir()
+        (private / "EndfieldCapture.dll").write_bytes(
+            b"streamline surface observer")
         (root / "session.json").write_text(json.dumps({
             "schema": "endfieldCapture.session.v1",
             "sessionId": "fixture",
@@ -114,7 +118,8 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
                 "indicatorInvertAxisY": 1, "useAutoExposure": 0,
                 "alphaUpscalingEnabled": 0, "readable": True,
                 "presets": [0, 0, 0, 0, 0, 0],
-                "presentClockReadable": True, "priorPresentOrdinal": prior,
+                "presentClockReadable": True,
+                "priorPresentOrdinal": prior - 1,
             })
             tokens.append({
                 "order": token_order, "returnedToken": token_value,
@@ -162,8 +167,8 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             tag_items.append({
                 "bufferType": 13, "lifecycle": 0, "extent": [0, 0, 1, 1],
                 "resourcePresent": True,
-                "resource": {"native": exposure_native, "width": 1,
-                             "height": 1, "nativeFormat": 41},
+                "resource": {"native": exposure_native, "width": 0,
+                             "height": 0, "nativeFormat": 0},
             })
             tags.append({
                 "order": tag_order, "frameBased": True, "frameToken": token_value,
@@ -190,7 +195,7 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
                 "resourceBindingOrdinal": 4,
                 "evaluateOrder": evaluate_order,
                 "evaluateTimestampQpc": 200 + index * 100,
-                "stagingCopyTimestampQpc": 180 + index * 100,
+                "stagingCopyTimestampQpc": 250 + index * 100,
                 "payloadReadyTimestampQpc": 450 + index * 100,
                 "frameToken": token_value, "viewport": 3,
                 "commandBuffer": command_buffer, "nativeResource": exposure_native,
@@ -276,10 +281,13 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
         }), encoding="utf-8")
 
     def build(self, root: Path) -> dict:
+        expected_hash = hashlib.sha256(
+            (root / "private/EndfieldCapture.dll").read_bytes()).hexdigest()
         with mock.patch.object(subject, "EXPECTED_SURFACES", TEST_SURFACES), \
              mock.patch.object(subject, "PACKET_BYTES", 6), \
              mock.patch.object(subject, "PAIR_BYTES", 12):
-            return subject.build_report(root)
+            return subject.build_report(
+                root, expected_observer_sha256=expected_hash)
 
     def test_exact_production_contract_is_pinned(self) -> None:
         self.assertEqual([26, 10, 19, 34],
@@ -430,6 +438,61 @@ class StreamlineSurfaceCaptureTests(unittest.TestCase):
             text = "\n".join(report["errors"])
             self.assertIn("frame0 exposure.descriptor.width", text)
             self.assertIn("frame0 exposure.commandBuffer", text)
+
+    def test_populated_raw_exposure_descriptor_also_validates(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            resource = streamline["tagCalls"][0]["tags"][-1]["resource"]
+            resource.update({"width": 1, "height": 1, "nativeFormat": 41})
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertEqual("validated", report["status"], report["errors"])
+
+    def test_partial_raw_exposure_descriptor_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["tagCalls"][0]["tags"][-1]["resource"]["width"] = 1
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertIn(
+                "frame0 exposure tag.resource optional descriptor",
+                "\n".join(report["errors"]),
+            )
+
+    def test_copy_after_evaluate_exit_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["exposureSampleRecords"][0][
+                "stagingCopyTimestampQpc"] = 301
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertIn(
+                "frame0 exposure QPC chronology",
+                "\n".join(report["errors"]),
+            )
+
+    def test_options_outside_trigger_warmup_window_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.make_capture(root)
+            path = root / "graphics/streamline_dlss.json"
+            streamline = json.loads(path.read_text(encoding="utf-8"))
+            streamline["optionsCalls"][0]["priorPresentOrdinal"] = 98
+            path.write_text(json.dumps(streamline), encoding="utf-8")
+            report = self.build(root)
+            self.assertIn(
+                "frame0 options prior Present",
+                "\n".join(report["errors"]),
+            )
 
     def test_exposure_frame_token_reference_address_may_differ(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
