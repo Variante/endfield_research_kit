@@ -91,6 +91,13 @@ namespace EndfieldGraphShaderLab
                     $"Character presentation profile failed closed because it is not source-recovered: {profile.name}");
                 return false;
             }
+            if (!ValidateSourceCameraProfile(profile, out string cameraFailure))
+            {
+                Debug.LogWarning(
+                    $"Character presentation profile failed closed because its source camera contract is invalid: " +
+                    $"{profile.name}: {cameraFailure}");
+                return false;
+            }
 
             ResolveComponents();
             if (viewerCamera == null)
@@ -98,9 +105,7 @@ namespace EndfieldGraphShaderLab
 
             PublishRecoveredStyleSelectors();
             viewerCamera.orthographic = false;
-            viewerCamera.aspect = profile.referenceAspect > 0.0f
-                ? profile.referenceAspect
-                : 16.0f / 9.0f;
+            viewerCamera.aspect = profile.referenceAspect;
             viewerCamera.ResetProjectionMatrix();
 
             ActiveProfile = profile;
@@ -333,9 +338,7 @@ namespace EndfieldGraphShaderLab
                 Mathf.Max(0.8f, bounds.size.y * 0.20f + bounds.extents.z);
             float planeHeight = 2.0f * planeDistance *
                 Mathf.Tan(viewerCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.35f;
-            float aspect = profile.referenceAspect > 0.0f
-                ? profile.referenceAspect
-                : Mathf.Max(0.1f, viewerCamera.aspect);
+            float aspect = profile.referenceAspect;
             float planeWidth = planeHeight * aspect * 1.18f;
             Transform backdrop = presentationBackdropRenderer.transform;
             backdrop.position = viewerCamera.transform.position +
@@ -343,5 +346,59 @@ namespace EndfieldGraphShaderLab
             backdrop.rotation = viewerCamera.transform.rotation;
             backdrop.localScale = new Vector3(planeWidth, planeHeight, 1.0f);
         }
+
+        private static bool ValidateSourceCameraProfile(
+            CharacterRecoveryPresentationProfile profile,
+            out string failure)
+        {
+            if (!IsFinite(profile.cameraPosition) ||
+                !IsFinite(profile.lookAtPosition) ||
+                !IsFinite(profile.overviewImageOffset))
+            {
+                failure = "camera, look-at, or portrait offset is non-finite";
+                return false;
+            }
+            if ((profile.lookAtPosition - profile.cameraPosition).sqrMagnitude <=
+                    1.0e-8f)
+            {
+                failure = "camera position and look-at collapse to one point";
+                return false;
+            }
+            if (!IsFinite(profile.fieldOfView) ||
+                profile.fieldOfView <= 0.0f || profile.fieldOfView >= 180.0f ||
+                !IsFinite(profile.nearClip) || profile.nearClip <= 0.0f ||
+                !IsFinite(profile.farClip) ||
+                profile.farClip <= profile.nearClip ||
+                !IsFinite(profile.referenceAspect) ||
+                profile.referenceAspect <= 0.0f ||
+                !IsFinite(profile.gyroscopeEntryOffsets) ||
+                !IsFinite(profile.authoredOverviewRotation) ||
+                QuaternionMagnitudeSquared(profile.authoredOverviewRotation) <=
+                    1.0e-8f)
+            {
+                failure = "lens, clip planes, sensor aspect, gyroscope offsets, or authored rotation are invalid";
+                return false;
+            }
+
+            failure = string.Empty;
+            return true;
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+
+        private static bool IsFinite(Vector2 value) =>
+            IsFinite(value.x) && IsFinite(value.y);
+
+        private static bool IsFinite(Quaternion value) =>
+            IsFinite(value.x) && IsFinite(value.y) &&
+            IsFinite(value.z) && IsFinite(value.w);
+
+        private static float QuaternionMagnitudeSquared(Quaternion value) =>
+            value.x * value.x + value.y * value.y +
+            value.z * value.z + value.w * value.w;
+
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
     }
 }

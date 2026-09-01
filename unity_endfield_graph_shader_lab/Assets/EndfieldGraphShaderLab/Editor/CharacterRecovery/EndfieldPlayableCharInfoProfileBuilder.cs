@@ -221,21 +221,43 @@ namespace EndfieldGraphShaderLabEditor
             profile.cameraGroup = Str(Get(row, "camera_group"));
             profile.lightGroup = Str(Get(row, "light_group"));
             profile.sourceManifest = sourceManifest;
-            profile.cameraPosition = Vector3List(List(Get(camera, "position")));
-            profile.lookAtPosition = Vector3List(List(Get(camera, "look_at")));
+            profile.cameraPosition = Vector3List(
+                List(Get(camera, "position")),
+                $"{rootName} source camera position");
+            profile.lookAtPosition = Vector3List(
+                List(Get(camera, "look_at")),
+                $"{rootName} source camera look-at");
             profile.authoredOverviewRotation =
-                QuaternionList(List(Get(camera, "authored_rotation_xyzw")));
+                QuaternionList(
+                    List(Get(camera, "authored_rotation_xyzw")),
+                    $"{rootName} source camera rotation");
             profile.fieldOfView = Float(Get(camera, "field_of_view"));
             profile.nearClip = Float(Get(camera, "near_clip"));
             profile.farClip = Float(Get(camera, "far_clip"));
-            Vector2 sensorSize = Vector2List(List(Get(camera, "sensor_size")));
-            profile.referenceAspect = sensorSize.y > 0.0f
-                ? sensorSize.x / sensorSize.y
-                : 16.0f / 9.0f;
+            Vector2 sensorSize = Vector2List(
+                List(Get(camera, "sensor_size")),
+                $"{rootName} source camera sensor size");
+            if (!IsFinite(sensorSize.x) || !IsFinite(sensorSize.y) ||
+                sensorSize.x <= 0.0f || sensorSize.y <= 0.0f)
+            {
+                throw new InvalidDataException(
+                    $"{rootName} source camera has an invalid serialized sensor size.");
+            }
+            profile.referenceAspect = sensorSize.x / sensorSize.y;
+            if (!IsFinite(profile.referenceAspect) ||
+                profile.referenceAspect <= 0.0f)
+            {
+                throw new InvalidDataException(
+                    $"{rootName} source camera produced an invalid sensor aspect.");
+            }
             profile.gyroscopeEntryOffsets =
-                Vector2List(List(Get(camera, "gyroscope_entry_offsets")));
+                Vector2List(
+                    List(Get(camera, "gyroscope_entry_offsets")),
+                    $"{rootName} source camera gyroscope entry offsets");
             profile.overviewImageOffset =
-                Vector3Dictionary(Dict(Get(row, "overview_image_offset")));
+                Vector3Dictionary(
+                    Dict(Get(row, "overview_image_offset")),
+                    $"{rootName} source portrait offset");
             profile.portraitTexture = portraitTexture;
             profile.portraitMesh = portraitMesh;
 
@@ -624,28 +646,75 @@ namespace EndfieldGraphShaderLabEditor
                 ? 0.0f
                 : Convert.ToSingle(value, CultureInfo.InvariantCulture);
 
-        private static Vector2 Vector2List(IList values) => new Vector2(
-            Float(values.Count > 0 ? values[0] : null),
-            Float(values.Count > 1 ? values[1] : null));
+        private static bool IsFinite(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value);
 
-        private static Vector3 Vector3List(IList values) => new Vector3(
-            Float(values.Count > 0 ? values[0] : null),
-            Float(values.Count > 1 ? values[1] : null),
-            Float(values.Count > 2 ? values[2] : null));
+        private static Vector2 Vector2List(IList values, string fieldName)
+        {
+            if (values == null || values.Count != 2)
+                throw new InvalidDataException(
+                    $"{fieldName} must contain exactly two components.");
+            Vector2 vector = new Vector2(Float(values[0]), Float(values[1]));
+            if (!IsFinite(vector.x) || !IsFinite(vector.y))
+                throw new InvalidDataException($"{fieldName} is non-finite.");
+            return vector;
+        }
+
+        private static Vector3 Vector3List(IList values, string fieldName)
+        {
+            if (values == null || values.Count != 3)
+                throw new InvalidDataException(
+                    $"{fieldName} must contain exactly three components.");
+            Vector3 vector = new Vector3(
+                Float(values[0]), Float(values[1]), Float(values[2]));
+            if (!IsFinite(vector.x) || !IsFinite(vector.y) ||
+                !IsFinite(vector.z))
+                throw new InvalidDataException($"{fieldName} is non-finite.");
+            return vector;
+        }
 
         private static Vector3 Vector3Dictionary(
-            Dictionary<string, object> values) => new Vector3(
-            Float(Get(values, "x")),
-            Float(Get(values, "y")),
-            Float(Get(values, "z")));
-
-        private static Quaternion QuaternionList(IList values)
+            Dictionary<string, object> values,
+            string fieldName)
         {
+            if (values == null ||
+                !values.ContainsKey("x") ||
+                !values.ContainsKey("y") ||
+                !values.ContainsKey("z"))
+            {
+                throw new InvalidDataException(
+                    $"{fieldName} must contain x, y, and z components.");
+            }
+            Vector3 vector = new Vector3(
+                Float(values["x"]), Float(values["y"]), Float(values["z"]));
+            if (!IsFinite(vector.x) || !IsFinite(vector.y) ||
+                !IsFinite(vector.z))
+                throw new InvalidDataException($"{fieldName} is non-finite.");
+            return vector;
+        }
+
+        private static Quaternion QuaternionList(IList values, string fieldName)
+        {
+            if (values == null || values.Count != 4)
+                throw new InvalidDataException(
+                    $"{fieldName} must contain exactly four components.");
             Quaternion quaternion = new Quaternion(
                 Float(values.Count > 0 ? values[0] : null),
                 Float(values.Count > 1 ? values[1] : null),
                 Float(values.Count > 2 ? values[2] : null),
                 Float(values.Count > 3 ? values[3] : null));
+            float magnitudeSquared =
+                quaternion.x * quaternion.x +
+                quaternion.y * quaternion.y +
+                quaternion.z * quaternion.z +
+                quaternion.w * quaternion.w;
+            if (!IsFinite(quaternion.x) || !IsFinite(quaternion.y) ||
+                !IsFinite(quaternion.z) || !IsFinite(quaternion.w) ||
+                !IsFinite(magnitudeSquared) || magnitudeSquared <= 1.0e-8f)
+            {
+                throw new InvalidDataException(
+                    $"{fieldName} is non-finite or degenerate.");
+            }
             quaternion.Normalize();
             return quaternion;
         }

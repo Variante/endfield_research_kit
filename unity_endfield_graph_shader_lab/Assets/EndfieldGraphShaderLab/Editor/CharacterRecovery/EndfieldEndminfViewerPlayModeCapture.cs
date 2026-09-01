@@ -108,10 +108,34 @@ namespace EndfieldGraphShaderLabEditor
         };
         private static readonly string[] CanonicalVideoForcedOffFlags =
         {
+            // Canonical export must not inherit bounded packet replays,
+            // measured-reference effects, or incomplete deferred consumers
+            // from a parent shell. Dedicated diagnostic entry points remain
+            // available and do not use the canonical-video policy.
+            "ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC",
+            "ENDFIELD_ENDMINF_M28_VISUAL_COMPAT",
+            "ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M29_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M30_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_VFXBASEV2_PEAK_COHORT_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_GENERATIVE_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
+            "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER",
+            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
             // These two selectors form the known content-invalid path that
             // produced an upside-down body-shaped resolve over the portrait.
-            // Canonical export must not inherit either selector from a parent
-            // shell; dedicated diagnostic entry points remain available.
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
             SphereOutsidePresentationEnvironment,
         };

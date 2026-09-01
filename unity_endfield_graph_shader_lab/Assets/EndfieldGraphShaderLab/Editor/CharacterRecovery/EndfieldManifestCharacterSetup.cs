@@ -11197,7 +11197,7 @@ namespace EndfieldGraphShaderLabEditor
             operatorLights.sourceBackedPunctualShadowTileResolution =
                 operatorLights.sourceBackedIsolatedPunctualSoftShadowProducer
                     ? ReadRecoveredPunctualShadowTileResolution()
-                    : 1024;
+                    : 512;
             if (!EndfieldOriginalOperatorLightImporter.TryRead(
                     lightingActorName,
                     out EndfieldHGOperatorLightData[] originalOperatorLights,
@@ -12669,10 +12669,11 @@ namespace EndfieldGraphShaderLabEditor
                 RecoveredPunctualShadowTileResolutionEnvironmentVariable);
             if (string.IsNullOrWhiteSpace(value))
             {
-                // Installed RTX 5080 device-default HGRP tier 5000 resolves to
-                // the recovered desktop B=1024 profile. B=512 remains an exact
-                // source-backed lower quality profile, not a fitted option.
-                return 1024;
+                // HGSettingParameters constructs the pinned installed native
+                // default as B=512 before any runtime/quality override. Keep
+                // the capture-observed B=1024 route explicit until its owner
+                // and selection predicate are source-closed.
+                return 512;
             }
 
             int resolution;

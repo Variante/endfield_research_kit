@@ -204,7 +204,9 @@ namespace EndfieldGraphShaderLab
         public float fieldOfView = 20.0f;
         public float nearClip = 0.1f;
         public float farClip = 50.0f;
-        public float referenceAspect = 16.0f / 9.0f;
+        // Generated profiles must supply the serialized sensor aspect. Zero
+        // keeps an incomplete source join fail-closed in the runtime verifier.
+        public float referenceAspect;
         public Vector2 gyroscopeEntryOffsets;
 
         [Header("Recovered Overview portrait")]
