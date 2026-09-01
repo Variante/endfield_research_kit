@@ -105,6 +105,11 @@ EXACT_PACKET_COUNTERS = (
     "publishableDefaultDeferredPackets",
     "publishableM27DefaultDeferredJoinedPackets",
 )
+SCREEN_SHADOW_PACKET_COUNTERS = {
+    "exactScreenShadowAdmissionRequiredPackets": 1,
+    "exactScreenShadowAdmissionPassedPackets": 1,
+    "exactScreenShadowAdmissionFailedPackets": 0,
+}
 
 
 class ConversionError(RuntimeError):
@@ -319,6 +324,13 @@ def _validate_summaries(
     for counter in EXACT_PACKET_COUNTERS:
         _require(_is_int(graphics.get(counter)) and graphics[counter] == 1,
                  f"graphics summary exact packet counter {counter} != 1")
+    for counter, expected in SCREEN_SHADOW_PACKET_COUNTERS.items():
+        _require(_is_int(graphics.get(counter)) and
+                 graphics[counter] == expected,
+                 f"graphics summary screen-shadow counter {counter} != "
+                 f"{expected}")
+    _require(graphics.get("exactScreenShadowAdmissionPassed") is True,
+             "graphics summary lacks exact screen-shadow admission")
     _require(graphics.get("exactEndminfPublishable") is True,
              "graphics summary does not authenticate exact Endminf publication")
     return session, runtime, collected, graphics

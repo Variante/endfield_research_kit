@@ -85,6 +85,10 @@ class PackageFixture:
             "publishableM27Packets": 1,
             "publishableDefaultDeferredPackets": 1,
             "publishableM27DefaultDeferredJoinedPackets": 1,
+            "exactScreenShadowAdmissionRequiredPackets": 1,
+            "exactScreenShadowAdmissionPassedPackets": 1,
+            "exactScreenShadowAdmissionFailedPackets": 0,
+            "exactScreenShadowAdmissionPassed": True,
             "exactEndminfPublishable": True,
             "complete": True,
         }
@@ -583,6 +587,28 @@ class ConverterTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.ConversionError,
                                     "exact Endminf publication"):
             MODULE.build_observation(self.fixture.root)
+
+    def test_graphics_summary_requires_screen_shadow_admission(self) -> None:
+        path = self.fixture.root / "graphics/summary.json"
+        summary = json.loads(path.read_text(encoding="utf-8"))
+        summary["exactScreenShadowAdmissionPassed"] = False
+        _write_json(path, summary)
+        self.fixture.rebuild_inventory()
+        with self.assertRaisesRegex(MODULE.ConversionError,
+                                    "screen-shadow admission"):
+            MODULE.build_observation(self.fixture.root)
+
+    def test_graphics_summary_requires_screen_shadow_packet_counts(self) -> None:
+        path = self.fixture.root / "graphics/summary.json"
+        original = json.loads(path.read_text(encoding="utf-8"))
+        for counter, expected in MODULE.SCREEN_SHADOW_PACKET_COUNTERS.items():
+            with self.subTest(counter=counter):
+                summary = copy.deepcopy(original)
+                summary[counter] = expected + 1
+                _write_json(path, summary)
+                self.fixture.rebuild_inventory()
+                with self.assertRaisesRegex(MODULE.ConversionError, counter):
+                    MODULE.build_observation(self.fixture.root)
 
     def test_exact_draw_requires_priority_m27_lane(self) -> None:
         frame = self.fixture.load_frame()

@@ -3546,10 +3546,20 @@ The first writes scene-shadow R as
 `1 + strength * (min(sceneShadow, 1) - 1)` and the second preserves that R
 while adding character-shadow G; neutral R is 1. Capture `20260829T224523Z`
 retains the deferred consumer but missed those ordinary-draw producer payloads.
-EndfieldCapture now observes and descriptor-gates both fullscreen producer
-draws plus the current PS t11/s1 consumer, retains the shared RG8 payload, and
-requires their same-frame identity and chronology. A fresh bounded graphics
-capture is required before the RG attachment can be admitted to presentation.
+EndfieldCapture commit `3102f11` closes the observer transport gap: the joined
+M27+Default lane now retains distinct producer-1-after, producer-2-after, and
+Default-consumer-before t11 snapshots for the same RG8 object. Admission
+requires exact shader/pipeline identity, descriptor and Present-epoch equality,
+strict `P1 < P2 < consumer` draw chronology, complete readbacks, and byte-equal
+P2/consumer payloads; exact Endminf publication requires exactly one passing
+joined packet. The independent
+`tools/verify_endminf_screen_shadow_capture.py` verifier also authenticates the
+collector inventory and pinned client build, re-derives those rows, requires
+scene-shadow R preservation plus a changed/non-constant character-shadow G,
+and fails closed with structured diagnostics. The incomplete
+`20260831T184411Z` session has no collector inventory and remains rejected. A
+fresh bounded Full graphics capture is still required before the RG attachment
+can be admitted to presentation.
 The current source-background probe also closes the ordinary renderer order as
 CharFloorEffect then GridFar, with SphereOutside isolated to the deferred
 sidecar and wall/ShadowPlane disabled. Its v22 presented-pixel gate correctly
@@ -3766,13 +3776,11 @@ identified `WriteDoubleBufferTransform` as the active `last`-array publication
 route. EndfieldCapture commit `fc37afc` retains the `4cac2fc` route and array
 source evidence while bounding every observer callback stack frame; it requires
 complete scheduled/completed/write counts, trajectory, publication, lifecycle,
-hierarchy, effective-pose, and four-owner coverage. Commit `4f23c03` corrects
-the deferred screen-shadow observer from the obsolete t13 assumption to the
-current two-producer/t11-consumer chain and reserves its shared RG8 payload
-without exceeding the bounded automatic resource budget. EndfieldCapture commit
-`d67f942` also retains pixel-sampler slots s0-s5 for the targeted LitEffect draw
-while preserving the existing payload/resource bounds; all 21 native tests
-pass. This is observer coverage only, not renderer admission.
+hierarchy, effective-pose, and four-owner coverage. The current deferred
+screen-shadow observer and its renderer-admission boundary are recorded above;
+native observer coverage is not itself presentation authority. EndfieldCapture
+also retains pixel-sampler slots s0-s5 for the targeted LitEffect draw while
+preserving the bounded resource contract.
 Session `20260830T154827Z` is rejected as a collected session: it has no
 collector inventory, the selected audio provider had no requested window, the
 graphics summary is incomplete with invalid cadence, and 36 of 72 regular
