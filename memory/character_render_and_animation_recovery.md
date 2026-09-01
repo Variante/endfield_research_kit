@@ -1247,10 +1247,13 @@ all-character pass:
   input as expected; target gravity/scale ratios remain one.
   The bounded read-only Burst resolver telemetry manifest now includes exact
   constructor, static-constructor, shared-initializer, function-pointer, and
-  invoke windows for Collider Start and Collider End alongside the three
-  Simulation kernels. Its target block is hash-pinned and passes the installed
-  four-file check-only gate; no live attach or kernel execution observation has
-  been performed.
+  invoke windows for Collider Start, Collider End, CalcLineNormalTangent, and
+  the three Simulation kernels. CalcLine additionally carries hash-pinned
+  read-only return probes for its exact `BurstCompiler.get_IsEnabled` call and,
+  only on an admitted managed CalcLine caller stack, IFix `IsPatched(0x219)`.
+  The target and route-probe blocks pass the installed four-file check-only
+  gate plus exact body/call-target verification; no live attach, selected-route
+  result, or kernel execution observation has been performed.
   Regenerate with
   `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with
