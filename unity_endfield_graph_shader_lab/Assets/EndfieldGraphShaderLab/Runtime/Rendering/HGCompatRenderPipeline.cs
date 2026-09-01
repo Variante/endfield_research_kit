@@ -386,6 +386,18 @@ namespace EndfieldGraphShaderLab
             { get; private set; } = string.Empty;
         public static string LastRecoveredEndminfExactUberFailure
             { get; private set; } = string.Empty;
+        public static bool LastRecoveredEndminfExactLutProfileMatched
+            { get; private set; }
+        public static bool LastRecoveredEndminfExactLutGpuValidationPending
+            { get; private set; }
+        public static bool LastRecoveredEndminfExactLutGpuValidated
+            { get; private set; }
+        public static bool LastRecoveredEndminfCompatibilityExactLutBound
+            { get; private set; }
+        public static string LastRecoveredEndminfExactLutSha256
+            { get; private set; } = string.Empty;
+        public static string LastRecoveredEndminfExactLutFailure
+            { get; private set; } = string.Empty;
         public static bool LastRecoveredEndminfOpeningStripCompatibilityApplied
             { get; private set; }
         public static bool LastRecoveredEndminfOpeningStripSceneMVApplied
@@ -3507,6 +3519,12 @@ namespace EndfieldGraphShaderLab
             LastRecoveredEndminfExactUberValidated = false;
             LastRecoveredEndminfExactUberVariant = string.Empty;
             LastRecoveredEndminfExactUberFailure = string.Empty;
+            LastRecoveredEndminfExactLutProfileMatched = false;
+            LastRecoveredEndminfExactLutGpuValidationPending = false;
+            LastRecoveredEndminfExactLutGpuValidated = false;
+            LastRecoveredEndminfCompatibilityExactLutBound = false;
+            LastRecoveredEndminfExactLutSha256 = string.Empty;
+            LastRecoveredEndminfExactLutFailure = string.Empty;
             EndfieldHGOperatorPresentation operatorPresentation =
                 camera.GetComponent<EndfieldHGOperatorPresentation>();
             int width = Mathf.Max(camera.pixelWidth, 1);
@@ -3774,19 +3792,55 @@ namespace EndfieldGraphShaderLab
                 height);
             }
 
-            bool recoveredLutReady =
+            string exactLutProfileFailure = string.Empty;
+            bool exactEndminfLutProfile =
                 useRecoveredPostSemantics &&
+                TryValidateExactEndminfCharInfoLutProfile(
+                    camera,
+                    out exactLutProfileFailure);
+            LastRecoveredEndminfExactLutProfileMatched = exactEndminfLutProfile;
+            bool exactEndminfLutReady =
+                exactEndminfLutProfile &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.EnqueueExactEndminfGpuValidation(
+                    commandBuffer);
+            LastRecoveredEndminfExactLutGpuValidationPending =
+                exactEndminfLutProfile &&
+                recoveredColorGradingLut != null &&
+                recoveredColorGradingLut.ExactEndminfGpuValidationPending;
+            LastRecoveredEndminfExactLutGpuValidated = exactEndminfLutReady;
+            LastRecoveredEndminfExactLutSha256 =
+                exactEndminfLutProfile && recoveredColorGradingLut != null
+                    ? recoveredColorGradingLut.ExactEndminfSha
+                    : string.Empty;
+            if (exactEndminfLutProfile && !exactEndminfLutReady &&
+                !LastRecoveredEndminfExactLutGpuValidationPending)
+            {
+                LastRecoveredEndminfExactLutFailure =
+                    recoveredColorGradingLut == null
+                        ? "the recovered LUT owner is absent"
+                        : recoveredColorGradingLut.ExactEndminfFailure;
+            }
+            else if (!exactEndminfLutProfile)
+            {
+                LastRecoveredEndminfExactLutFailure = exactLutProfileFailure;
+            }
+            bool proceduralLutReady =
+                useRecoveredPostSemantics &&
+                !exactEndminfLutReady &&
                 recoveredColorGradingLut != null &&
                 recoveredColorGradingLut.EnqueueBuild(commandBuffer);
-            Texture exactEndminfLut = null;
-            if (useRecoveredPostSemantics &&
-                recoveredEndminfUberExactRuntime.Requested &&
-                recoveredColorGradingLut != null &&
-                recoveredColorGradingLut.EnsureExactEndminfTexture())
-            {
-                exactEndminfLut =
-                    recoveredColorGradingLut.ExactEndminfTexture;
-            }
+            bool recoveredLutReady = exactEndminfLutReady || proceduralLutReady;
+            Texture recoveredCompatibilityLut = exactEndminfLutReady
+                ? recoveredColorGradingLut.ExactEndminfTexture
+                : recoveredColorGradingLut != null
+                    ? recoveredColorGradingLut.Texture
+                    : null;
+            Texture exactEndminfLut = exactEndminfLutReady
+                ? recoveredColorGradingLut.ExactEndminfTexture
+                : null;
+            LastRecoveredEndminfCompatibilityExactLutBound =
+                exactEndminfLutReady;
             // In the recovered live path _ExposureParams.x was used to divide
             // character HDR during ForwardLit. The shipped Uber multiplies the
             // same current camera value back before the authored post exposure
@@ -3829,7 +3883,7 @@ namespace EndfieldGraphShaderLab
             {
                 postProcessMaterial.SetTexture(
                     RecoveredColorGradingLutId,
-                    recoveredColorGradingLut.Texture);
+                    recoveredCompatibilityLut);
             }
             commandBuffer.SetGlobalTexture(
                 BloomTextureId,
@@ -4089,6 +4143,58 @@ namespace EndfieldGraphShaderLab
             }
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
+        }
+
+        private static bool TryValidateExactEndminfCharInfoLutProfile(
+            Camera camera,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (camera == null)
+            {
+                failure = "the owning camera is absent";
+                return false;
+            }
+            CharacterRecoveryPresentationController controller =
+                camera.GetComponent<CharacterRecoveryPresentationController>();
+            CharacterRecoveryPresentationProfile profile = controller == null
+                ? null
+                : controller.ActiveProfile;
+            if (controller == null || profile == null ||
+                controller.ActiveRig == null)
+            {
+                failure = "the active CharInfo presentation profile is absent";
+                return false;
+            }
+            if (!profile.sourceRecovered ||
+                !string.Equals(
+                    profile.schema,
+                    "endfield.playable-charinfo-presentation-profile.v1",
+                    System.StringComparison.Ordinal) ||
+                !string.Equals(
+                    profile.characterId,
+                    "chr_0003_endminf",
+                    System.StringComparison.Ordinal) ||
+                !string.Equals(
+                    profile.actorToken,
+                    "endminf",
+                    System.StringComparison.Ordinal) ||
+                !string.Equals(
+                    profile.rootName,
+                    "Endminf",
+                    System.StringComparison.Ordinal))
+            {
+                failure = "the active profile is not the exact Endminf CharInfo profile";
+                return false;
+            }
+            if (!CharacterRecoveryViewerUI.TryGetSelectedActorRoot(
+                    out Transform selectedActor) ||
+                selectedActor != controller.ActiveRig.transform)
+            {
+                failure = "the active Endminf profile does not own the selected actor";
+                return false;
+            }
+            return true;
         }
 
         private void DrawRecoveredPostUberWorldUi(

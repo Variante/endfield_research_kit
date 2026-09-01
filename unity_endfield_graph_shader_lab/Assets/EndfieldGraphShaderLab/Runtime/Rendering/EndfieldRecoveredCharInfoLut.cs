@@ -1,5 +1,6 @@
 using System;
 using System.Security.Cryptography;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -23,12 +24,26 @@ namespace EndfieldGraphShaderLab
         private const int ExactEndminfByteLength = Width * Height * 8;
         private const string ExactEndminfSha256 =
             "717c1d483662c00abe55e1c56a9d024f45e5c84c430ed9dd2854cb386f372482";
+        private const string ExactEndminfValidationPass =
+            "VERIFY_EXACT_ENDMINF_LUT_SENTINELS";
+        private static readonly byte[] ExactEndminfGpuSentinels =
+        {
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c,
+            0x00, 0x3c, 0x9d, 0x3a, 0xb0, 0x30, 0x00, 0x3c,
+            0xe7, 0x3b, 0x00, 0x3c, 0x48, 0x3b, 0x00, 0x3c,
+            0x00, 0x3c, 0x35, 0x35, 0x6b, 0x3b, 0x00, 0x3c,
+            0x00, 0x3c, 0xff, 0x3b, 0xfd, 0x3b, 0x00, 0x3c,
+        };
 
         private readonly Material builderMaterial;
         private RenderTexture texture;
         private Texture2D exactEndminfTexture;
+        private RenderTexture exactEndminfValidationTarget;
         private bool buildQueued;
         private bool exactEndminfLoadAttempted;
+        private bool exactEndminfGpuValidationQueued;
+        private bool exactEndminfGpuValidationComplete;
+        private bool exactEndminfGpuValidated;
         private string exactEndminfFailure = string.Empty;
 
         public EndfieldRecoveredCharInfoLut()
@@ -54,6 +69,58 @@ namespace EndfieldGraphShaderLab
 
         public string ExactEndminfFailure => exactEndminfFailure;
 
+        public bool ExactEndminfGpuValidationPending =>
+            exactEndminfGpuValidationQueued;
+
+        public bool ExactEndminfGpuValidated => exactEndminfGpuValidated;
+
+        public string ExactEndminfSha => ExactEndminfSha256;
+
+        public bool EnqueueExactEndminfGpuValidation(CommandBuffer commandBuffer)
+        {
+            if (exactEndminfGpuValidated)
+                return true;
+            if (exactEndminfGpuValidationComplete ||
+                exactEndminfGpuValidationQueued)
+                return false;
+            if (commandBuffer == null)
+                return FailExactEndminf("GPU validation command buffer is absent");
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Direct3D11)
+                return FailExactEndminf("GPU validation requires Direct3D11");
+            if (!SystemInfo.supportsAsyncGPUReadback)
+                return FailExactEndminf("GPU validation requires AsyncGPUReadback");
+            if (!EnsureExactEndminfTexture())
+                return false;
+            int pass = builderMaterial == null
+                ? -1
+                : builderMaterial.FindPass(ExactEndminfValidationPass);
+            if (pass < 0)
+                return FailExactEndminf("GPU sentinel validation pass is unavailable");
+            EnsureExactEndminfValidationTarget();
+            if (exactEndminfValidationTarget == null ||
+                !exactEndminfValidationTarget.IsCreated())
+                return FailExactEndminf("GPU sentinel target is unavailable");
+
+            builderMaterial.SetTexture("_ExactEndminfLut", exactEndminfTexture);
+            commandBuffer.BeginSample("Validate exact Endminf CharInfo LUT");
+            commandBuffer.SetRenderTarget(exactEndminfValidationTarget);
+            commandBuffer.SetViewport(new Rect(0.0f, 0.0f, 5.0f, 1.0f));
+            commandBuffer.DrawProcedural(
+                Matrix4x4.identity,
+                builderMaterial,
+                pass,
+                MeshTopology.Triangles,
+                3,
+                1);
+            commandBuffer.RequestAsyncReadback(
+                exactEndminfValidationTarget,
+                0,
+                CompleteExactEndminfGpuValidation);
+            commandBuffer.EndSample("Validate exact Endminf CharInfo LUT");
+            exactEndminfGpuValidationQueued = true;
+            return false;
+        }
+
         /// <summary>
         /// Loads the exact captured Endminf CharInfo t2 resource without any
         /// importer color conversion or row/channel transformation. This is
@@ -77,6 +144,13 @@ namespace EndfieldGraphShaderLab
                     "captured raw LUT length drifted: expected " +
                     ExactEndminfByteLength + ", got " +
                     (payload == null ? 0 : payload.Length));
+            }
+
+            if (exactEndminfValidationTarget != null)
+            {
+                exactEndminfValidationTarget.Release();
+                DestroyResource(exactEndminfValidationTarget);
+                exactEndminfValidationTarget = null;
             }
             string payloadHash;
             using (SHA256 sha = SHA256.Create())
@@ -266,11 +340,76 @@ namespace EndfieldGraphShaderLab
 
         private bool FailExactEndminf(string reason)
         {
+            exactEndminfGpuValidationComplete = true;
             exactEndminfFailure = reason ?? "unknown captured LUT failure";
             Debug.LogWarning(
                 "Exact Endminf CharInfo LUT failed closed: " +
                 exactEndminfFailure + ".");
             return false;
+        }
+
+        private void EnsureExactEndminfValidationTarget()
+        {
+            if (exactEndminfValidationTarget != null &&
+                exactEndminfValidationTarget.IsCreated())
+                return;
+            var descriptor = new RenderTextureDescriptor(
+                5,
+                1,
+                GraphicsFormat.R16G16B16A16_SFloat,
+                GraphicsFormat.None)
+            {
+                msaaSamples = 1,
+                volumeDepth = 1,
+                sRGB = false,
+                useMipMap = false,
+                autoGenerateMips = false,
+            };
+            exactEndminfValidationTarget = new RenderTexture(descriptor)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                name = "Exact Endminf LUT GPU sentinel target",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            if (!exactEndminfValidationTarget.Create())
+            {
+                DestroyResource(exactEndminfValidationTarget);
+                exactEndminfValidationTarget = null;
+            }
+        }
+
+        private void CompleteExactEndminfGpuValidation(
+            AsyncGPUReadbackRequest request)
+        {
+            exactEndminfGpuValidationQueued = false;
+            exactEndminfGpuValidationComplete = true;
+            if (request.hasError)
+            {
+                FailExactEndminf("GPU sentinel readback failed");
+                return;
+            }
+            NativeArray<byte> data = request.GetData<byte>();
+            if (data.Length != ExactEndminfGpuSentinels.Length)
+            {
+                FailExactEndminf(
+                    "GPU sentinel byte length drifted: expected " +
+                    ExactEndminfGpuSentinels.Length + ", got " + data.Length);
+                return;
+            }
+            for (int index = 0; index < data.Length; index++)
+            {
+                if (data[index] == ExactEndminfGpuSentinels[index])
+                    continue;
+                FailExactEndminf(
+                    "GPU sentinel bytes drifted at offset " + index);
+                return;
+            }
+            exactEndminfGpuValidated = true;
+            exactEndminfFailure = string.Empty;
+            Debug.Log(
+                "Validated exact Endminf CharInfo LUT through five D3D11 GPU samples: " +
+                ExactEndminfSha256 + ".");
         }
 
         private static bool HasSentinel(

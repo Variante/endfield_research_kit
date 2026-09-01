@@ -86,7 +86,7 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
 
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v22", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v23", source)
         for field in (
             "exactEndminfUberRequested",
             "exactEndminfUberSubmitted",
@@ -246,12 +246,16 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
             contract["orientation"],
             "no flip; offset=((greenRow*1024)+(blueSlice*32)+redIndex)*8",
         )
+        self.assertEqual(contract["gpuValidation"]["requiredDevice"], "Direct3D11")
+        self.assertEqual(contract["gpuValidation"]["requiredSentinels"], 5)
+        self.assertTrue(contract["gpuValidation"]["failClosed"])
         for sentinel in contract["sentinels"]:
             offset = (sentinel["y"] * 1024 + sentinel["x"]) * 8
             self.assertEqual(payload[offset : offset + 8].hex(), sentinel["hex"])
 
-    def test_exact_uber_uses_captured_lut_and_compatibility_keeps_builder(self) -> None:
+    def test_exact_lut_requires_gpu_sentinels_before_compatibility_binding(self) -> None:
         runtime = EXACT_LUT_RUNTIME.read_text(encoding="utf-8")
+        capture = CAPTURE.read_text(encoding="utf-8")
         pipeline = (
             RUNTIME_ROOT / "HGCompatRenderPipeline.cs"
         ).read_text(encoding="utf-8")
@@ -259,8 +263,19 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         self.assertIn("SetPixelData<byte>(payload, 0)", runtime)
         self.assertIn("Apply(false, true)", runtime)
         self.assertIn("HasSentinel(payload, 1023, 31", runtime)
+        self.assertIn("VERIFY_EXACT_ENDMINF_LUT_SENTINELS", runtime)
+        self.assertIn("RequestAsyncReadback", runtime)
+        self.assertIn("ExactEndminfGpuSentinels", runtime)
+        self.assertIn("TryValidateExactEndminfCharInfoLutProfile", pipeline)
+        self.assertIn('"chr_0003_endminf"', pipeline)
         self.assertIn("recoveredColorGradingLut.EnqueueBuild(commandBuffer)", pipeline)
+        self.assertIn(
+            "recoveredColorGradingLut.EnqueueExactEndminfGpuValidation",
+            pipeline,
+        )
         self.assertIn("recoveredColorGradingLut.ExactEndminfTexture", pipeline)
+        self.assertIn("LastRecoveredEndminfCompatibilityExactLutBound", pipeline)
+        self.assertIn("exactEndminfLutRequirementReady", capture)
         self.assertGreaterEqual(pipeline.count("exactEndminfLut,"), 2)
 
 
