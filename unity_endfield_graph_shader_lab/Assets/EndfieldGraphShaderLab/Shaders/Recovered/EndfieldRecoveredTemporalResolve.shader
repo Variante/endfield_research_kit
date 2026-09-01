@@ -201,10 +201,17 @@ Shader "Hidden/Endfield/HGRPCompat/TemporalResolve"
                 float2 previousUv = uv - motionValid * decodedUv;
                 float3 history = SampleRetailHistory(previousUv, texel);
                 // The ordinary resolve first bounds reconstructed history to
-                // 0.2x..1.8x the center sample, then performs a 3x3 variance
-                // clip in its exact YCoCg basis. Its adaptive factor remains
-                // 1.25 throughout normalized scene-color variance.
-                history = clamp(history, current * 0.2, current * 1.8);
+                // 0.2x..1.8x the direct reprojected history sample, then
+                // performs a 3x3 variance clip in its exact YCoCg basis. Its
+                // adaptive factor remains 1.25 throughout normalized
+                // scene-color variance.
+                float3 ordinaryDirectHistory = tex2Dlod(
+                    _RecoveredTemporalHistory,
+                    float4(previousUv, 0.0, 0.0)).rgb;
+                history = clamp(
+                    history,
+                    ordinaryDirectHistory * 0.2,
+                    ordinaryDirectHistory * 1.8);
                 float3 neighborhoodMean = neighborhoodSum / 9.0;
                 float3 neighborhoodVariance = max(
                     0.0,

@@ -12,9 +12,29 @@ NGX_PROXY = ROOT / (
     "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
     "EndfieldRecoveredUnityPublicNgxProxy.cs"
 )
+TEMPORAL_SHADER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Shaders/Recovered/"
+    "EndfieldRecoveredTemporalResolve.shader"
+)
 
 
 class EndminfTemporalPostSourceContractTests(unittest.TestCase):
+    def test_ordinary_history_bound_uses_direct_reprojected_history(self) -> None:
+        source = TEMPORAL_SHADER.read_text(encoding="utf-8")
+        start = source.index("float3 history = SampleRetailHistory(previousUv, texel);")
+        end = source.index("float3 neighborhoodMean", start)
+        ordinary = source[start:end]
+        self.assertIn(
+            "float3 ordinaryDirectHistory = tex2Dlod(\n"
+            "                    _RecoveredTemporalHistory,\n"
+            "                    float4(previousUv, 0.0, 0.0)).rgb;",
+            ordinary,
+        )
+        self.assertIn("ordinaryDirectHistory * 0.2", ordinary)
+        self.assertIn("ordinaryDirectHistory * 1.8", ordinary)
+        self.assertNotIn("current * 0.2", ordinary)
+        self.assertNotIn("current * 1.8", ordinary)
+
     def test_resolve_and_history_keep_the_source_r16g16b16a16_format(self) -> None:
         source = PIPELINE.read_text(encoding="utf-8")
         method = source[source.index("EnqueueRecoveredEndminfTemporalResolve(") :]
