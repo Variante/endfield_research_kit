@@ -86,7 +86,7 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
 
     def test_report_schema_and_rows_publish_each_exact_packet_state(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v24", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v25", source)
         for field in (
             "exactEndminfUberRequested",
             "exactEndminfUberSubmitted",
@@ -155,6 +155,27 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         for flag in PACKET_REPLAY_FLAGS:
             self.assertNotIn(flag, defaults, flag)
             self.assertNotIn(f'set "{flag}=1"', wrapper, flag)
+
+    def test_canonical_report_proves_every_forced_off_diagnostic(self) -> None:
+        source = CAPTURE.read_text(encoding="utf-8")
+        for field in (
+            "public bool canonicalVideoExportRequested;",
+            "public bool observedCanonicalPresentationDiagnosticsForcedOff;",
+            "public string[] canonicalPresentationDiagnosticFlagsNotForcedOff;",
+        ):
+            self.assertIn(field, source)
+        self.assertIn(
+            "CanonicalVideoForcedOffFlags.Where(flag => !string.Equals(",
+            source,
+        )
+        self.assertIn(
+            "canonicalPresentationDiagnosticPolicyReady;",
+            source,
+        )
+        forced_start = source.index("CanonicalVideoForcedOffFlags")
+        forced = source[forced_start:source.index("};", forced_start)]
+        for flag in PACKET_REPLAY_FLAGS:
+            self.assertIn(flag, forced, flag)
 
     def test_packet_replays_use_only_authenticated_source_effect_time(
         self,

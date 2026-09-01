@@ -192,7 +192,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v24";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v25";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -218,6 +218,9 @@ namespace EndfieldGraphShaderLabEditor
             public int minimumCanonicalBackgroundProofLuma;
             public bool foregroundUiOverlayIncluded = false;
             public bool postProcessingExplicitlyDisabled = false;
+            public bool canonicalVideoExportRequested;
+            public bool observedCanonicalPresentationDiagnosticsForcedOff;
+            public string[] canonicalPresentationDiagnosticFlagsNotForcedOff;
             public bool prePostHdrDiagnostic;
             public bool postStageDiagnostic;
             public string excludedMaterial;
@@ -2410,6 +2413,31 @@ namespace EndfieldGraphShaderLabEditor
                         ? string.Empty
                         : " (" + unityPublicNgxProxyFailure + ")"));
             }
+            bool canonicalVideoExportRequested = string.Equals(
+                Environment.GetEnvironmentVariable(
+                    "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT"),
+                "1",
+                StringComparison.Ordinal);
+            string[] canonicalPresentationDiagnosticFlagsNotForcedOff =
+                canonicalVideoExportRequested
+                    ? CanonicalVideoForcedOffFlags.Where(flag => !string.Equals(
+                        Environment.GetEnvironmentVariable(flag),
+                        "0",
+                        StringComparison.Ordinal)).ToArray()
+                    : Array.Empty<string>();
+            bool observedCanonicalPresentationDiagnosticsForcedOff =
+                canonicalVideoExportRequested &&
+                canonicalPresentationDiagnosticFlagsNotForcedOff.Length == 0;
+            bool canonicalPresentationDiagnosticPolicyReady =
+                !canonicalVideoExportRequested ||
+                observedCanonicalPresentationDiagnosticsForcedOff;
+            if (!canonicalPresentationDiagnosticPolicyReady)
+            {
+                missingObservations.Add(
+                    "canonical presentation diagnostics forced off (" +
+                    string.Join(", ",
+                        canonicalPresentationDiagnosticFlagsNotForcedOff) + ")");
+            }
             bool requiredCaptureContractReady =
                 charInfoBackgroundIncluded &&
                 backgroundPortraitIncluded &&
@@ -2420,7 +2448,8 @@ namespace EndfieldGraphShaderLabEditor
                 exactEndminfUberRequirementReady &&
                 endminfOpeningStripExactRequirementReady &&
                 endminfM31ExactRequirementReady &&
-                unityPublicNgxProxyRequirementReady;
+                unityPublicNgxProxyRequirementReady &&
+                canonicalPresentationDiagnosticPolicyReady;
             bool targetedTimes = !string.IsNullOrWhiteSpace(
                 Environment.GetEnvironmentVariable(RequestedTimesEnvironment));
             // Targeted exact probes deliberately permit a content-invalid t11
@@ -2460,6 +2489,11 @@ namespace EndfieldGraphShaderLabEditor
                     : "failed: missing " + string.Join(", ", missingObservations.ToArray()),
                 prePostHdrDiagnostic = capturePrePostHdr,
                 postStageDiagnostic = capturePostStages,
+                canonicalVideoExportRequested = canonicalVideoExportRequested,
+                observedCanonicalPresentationDiagnosticsForcedOff =
+                    observedCanonicalPresentationDiagnosticsForcedOff,
+                canonicalPresentationDiagnosticFlagsNotForcedOff =
+                    canonicalPresentationDiagnosticFlagsNotForcedOff,
                 excludedMaterial = Environment.GetEnvironmentVariable(
                     "ENDFIELD_ENDMINF_CAPTURE_EXCLUDE_MATERIAL") ?? string.Empty,
                 diagnosticAdmittedRenderer = Environment.GetEnvironmentVariable(

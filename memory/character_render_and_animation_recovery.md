@@ -4174,15 +4174,25 @@ project lock indicates shared use; it never removes or bypasses the lock.
    not reproduce retail's broad multi-exposure history. Recover the live
    pre-Uber owner and consumer chronology instead. Keep the rejected public NGX
    proxy and M31 replay diagnostic-only until that chronology is complete.
-2. Close the palm/crystal owner order from same-session evidence. Retain M13
-   exact and the certified one-sample M21 stone packet; their controlled A/Bs
-   reject compensatory resizing, retiming, or removal. Use the corrected M20
-   observer route to recover its live gas packet, then visually certify M29,
-   M30, and M14 one at a time before changing defaults or suppressing their
-   compatibility renderers. Preserve the captured hierarchy transforms and
-   equal-queue ordering unless a same-session packet-to-palm registration proves
-   a specific delta. For M27, keep the independently pinned source shell at
-   t0-t5 and the source-closed b0/b3 producers; leave b1 closed until each live
+2. Close the palm/crystal owner order from same-session evidence. Retain the
+   source-authored M13 and M21 timelines; their exact packet checkpoints remain
+   bounded diagnostics and their controlled A/Bs reject compensatory resizing,
+   retiming, or removal. M20's live gas checkpoint is already source-closed by
+   the exact frame-1748 packet and requires no further capture. Its shared
+   VFXBaseV2 shader pair plus a 36-index count is not a sufficient owner key:
+   the combined capture gate now additionally requires the authenticated
+   36-byte/stride-zero/R16 IA shape and complete 256x128 BC7-sRGB PS-t1 atlas,
+   which admits only frame 1748 in the authority session. Keep that one-sample
+   transport diagnostic while the generating runtime is incomplete. Visually
+   certify M29, M30, and M14 one at a time before changing defaults or
+   suppressing their compatibility renderers. Preserve the captured hierarchy
+   transforms and equal-queue ordering unless a same-session packet-to-palm
+   registration proves a specific delta. Canonical Viewer report v25 now
+   enumerates any presentation-diagnostic selector that escaped the maintained
+   forced-off policy and fails video export unless the entire packet/deferred/
+   Uber diagnostic set is explicitly zero. For M27, keep the independently
+   pinned source shell at t0-t5 and the source-closed b0/b3 producers; leave b1
+   closed until each live
    owner is recovered. Retain engine-produced b2 and use the next admissible
    observer run to join its inactive skin bit to the already observed bound,
    complete VS t0 palette payload, s0-s5 descriptors, b4 producer/value
