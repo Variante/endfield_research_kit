@@ -3558,6 +3558,17 @@ Historical SphereOutside probes predate that gate and are not presentation
 authority; maintained playback therefore retains the neutral clear while this
 exact producer-to-consumer handoff remains open.
 
+The compatibility Quality-0 temporal resolve now follows the decoded source
+bound in both shader branches: five-tap reconstructed history is clamped to
+0.2x..1.8x the direct reprojected history sample, not to the current scene
+sample. A continuous 770-frame D3D11 run passes all entrance, cleanup,
+transition, and settled-loop gates. Against the same aligned clean retail
+window, the correction has no material spatial effect and produces a small
+temporal-delta improvement at every selected entrance and crystal-peak
+checkpoint. Retain it as a literal pipeline correction; it does not authorize
+crystal, stone, or animation retiming, and the larger temporal/Uber residual
+remains open.
+
 The captured Endminf Uber packet remains diagnostic-only. Its native draw and
 resources validate, but the current input chronology regresses the three
 aligned effect samples against the otherwise identical exact-off control
