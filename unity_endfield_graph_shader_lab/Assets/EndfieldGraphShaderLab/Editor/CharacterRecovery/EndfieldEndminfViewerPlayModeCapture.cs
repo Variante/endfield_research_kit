@@ -182,7 +182,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v19";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v20";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -216,6 +216,10 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedAnimatorContract;
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
+            public bool observedOverview01AuthenticatedSourceSeed;
+            public int overview01SourceSeededAnimationCount;
+            public float overview01SourceSeedSeconds;
+            public string overview01SourceSeedFailure;
             public bool observedRotationOnlyRootMotion;
             public bool observedPrimaryRockCompatibilityBinding;
             public bool observedDeferredLightDataReady;
@@ -337,6 +341,10 @@ namespace EndfieldGraphShaderLabEditor
             public int admittedRenderers;
             public int activeAdmittedRenderers;
             public int admittedAliveParticles;
+            public bool overview01SourceClockAuthenticated;
+            public int overview01SourceSeededAnimationCount;
+            public float overview01SourceSeedSeconds;
+            public string overview01SourceSeedFailure;
             public bool sharedCharEffectActive;
             public int sharedCharEffectAliveParticles;
             public int sharedCharEffectTrailAliveParticles;
@@ -1369,6 +1377,18 @@ namespace EndfieldGraphShaderLabEditor
             if (sharedCharEffectTrail != null && sharedTrailCount != 0)
                 sharedTrailCount = sharedCharEffectTrail.GetParticles(
                     sharedTrailParticles);
+            EndfieldRecoveredCharEffectSpawner effectSpawner = actor
+                .GetComponentInChildren<EndfieldRecoveredCharEffectSpawner>(true);
+            bool overview01SourceClockAuthenticated = false;
+            int overview01SourceSeededAnimationCount = 0;
+            float overview01SourceSeedSeconds = 0f;
+            string overview01SourceSeedFailure = string.Empty;
+            effectSpawner?.TryGetSourceSeedTelemetry(
+                "P_fxui_endminm003_overview_01",
+                out overview01SourceClockAuthenticated,
+                out overview01SourceSeededAnimationCount,
+                out overview01SourceSeedSeconds,
+                out overview01SourceSeedFailure);
             Vector3 sharedTrailPositionMin = Vector3.zero;
             Vector3 sharedTrailPositionMax = Vector3.zero;
             if (sharedTrailCount != 0)
@@ -1519,6 +1539,12 @@ namespace EndfieldGraphShaderLabEditor
                 activeAdmittedRenderers = renderers.Count(value => value.enabled && value.gameObject.activeInHierarchy),
                 admittedAliveParticles = renderers.Where(value => value.enabled && value.gameObject.activeInHierarchy)
                     .Sum(value => value.GetComponent<ParticleSystem>().particleCount),
+                overview01SourceClockAuthenticated =
+                    overview01SourceClockAuthenticated,
+                overview01SourceSeededAnimationCount =
+                    overview01SourceSeededAnimationCount,
+                overview01SourceSeedSeconds = overview01SourceSeedSeconds,
+                overview01SourceSeedFailure = overview01SourceSeedFailure,
                 sharedCharEffectActive = sharedCharEffect != null &&
                     sharedCharEffect.activeInHierarchy,
                 sharedCharEffectAliveParticles = sharedCharEffectSystems
@@ -1701,6 +1727,13 @@ namespace EndfieldGraphShaderLabEditor
                 value.activeAdmittedRenderers > 0 && value.admittedAliveParticles > 0);
             bool observedEntranceVfxCleanup = Frames.Any(value =>
                 value.overviewLooping && !value.overviewTransitioning && value.effectRootCount == 0);
+            FrameRow overview01SourceSeedFrame = Frames.FirstOrDefault(value =>
+                value.overview01SourceClockAuthenticated &&
+                value.overview01SourceSeededAnimationCount == 2 &&
+                value.overview01SourceSeedSeconds > 0f &&
+                string.IsNullOrEmpty(value.overview01SourceSeedFailure));
+            bool observedOverview01AuthenticatedSourceSeed =
+                overview01SourceSeedFrame != null;
             bool observedRotationOnlyRootMotion =
                 Frames.Any(value => value.rootMotionCallbackCount > 0) &&
                 Frames.All(value => value.rootMotionPositionDelta.sqrMagnitude <= 1.0e-10f);
@@ -1814,6 +1847,9 @@ namespace EndfieldGraphShaderLabEditor
             if (!observedSettledLoop) missingObservations.Add("settled loop");
             if (!observedEntranceVfx) missingObservations.Add("entrance VFX");
             if (!observedEntranceVfxCleanup) missingObservations.Add("entrance VFX cleanup");
+            if (!observedOverview01AuthenticatedSourceSeed)
+                missingObservations.Add(
+                    "overview_01 authenticated one-shot source seed on two automatic Legacy Animation children");
             if (!observedRotationOnlyRootMotion)
                 missingObservations.Add("rotation-only root motion with invariant position");
             if (!observedPrimaryRockCompatibilityBinding)
@@ -2153,6 +2189,16 @@ namespace EndfieldGraphShaderLabEditor
                 observedAnimatorContract = observedAnimatorContract,
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
+                observedOverview01AuthenticatedSourceSeed =
+                    observedOverview01AuthenticatedSourceSeed,
+                overview01SourceSeededAnimationCount =
+                    overview01SourceSeedFrame?.overview01SourceSeededAnimationCount ?? 0,
+                overview01SourceSeedSeconds =
+                    overview01SourceSeedFrame?.overview01SourceSeedSeconds ?? 0f,
+                overview01SourceSeedFailure = Frames
+                    .Select(value => value.overview01SourceSeedFailure)
+                    .FirstOrDefault(value => !string.IsNullOrEmpty(value)) ??
+                    string.Empty,
                 observedRotationOnlyRootMotion = observedRotationOnlyRootMotion,
                 observedPrimaryRockCompatibilityBinding =
                     observedPrimaryRockCompatibilityBinding,

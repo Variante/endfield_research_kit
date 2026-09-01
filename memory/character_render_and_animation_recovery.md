@@ -315,8 +315,12 @@ the outer return; the false path remains intact and all 20 native tests pass.
   clock that claimed validity fails closed. Focused tests pin the two automatic
   overview-01 children (`A_actor_endminf_ui_overview_02` and
   `A_fx_endminf_ui_overview_04`), forbid clamp/wrap and particle retiming, and
-  require the state-time write after `Play`; canonical D3D11 visual validation
-  remains pending.
+  require the state-time write after `Play`. The v20 canonical capture contract
+  now records the authenticated overview-01 seed, its raw elapsed seconds, and
+  the count of successfully seeded automatic children, and requires the exact
+  count of two for the observation to pass. Canonical D3D11 visual validation
+  remains pending because the shared Unity project lock is still present; it
+  was not removed or bypassed.
   Child `GameObject.SetActive`/LOD display is also closed under that same
   conditional pinned-unpatched route. The original serialized TypeTree has
   `effect_nanguan.m_IsActive=true`; `EffectLodCfg.InitData` preserves that as

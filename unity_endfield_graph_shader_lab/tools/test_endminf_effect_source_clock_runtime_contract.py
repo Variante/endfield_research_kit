@@ -21,6 +21,11 @@ SPAWNER = (
     / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
     / "EndfieldRecoveredCharEffectSpawner.cs"
 )
+CAPTURE = (
+    LAB
+    / "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery"
+    / "EndfieldEndminfViewerPlayModeCapture.cs"
+)
 CONTRACT = (
     LAB
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects"
@@ -121,6 +126,39 @@ class EndminfEffectSourceClockRuntimeContractTests(unittest.TestCase):
             self.assertIsNotNone(match)
             actual.add(guid_to_name[match.group(1)])
         self.assertEqual(actual, expected)
+
+    def test_capture_reports_two_authenticated_overview_01_seeds(self) -> None:
+        spawner = SPAWNER.read_text(encoding="utf-8")
+        capture = CAPTURE.read_text(encoding="utf-8")
+        self.assertIn("TryGetSourceSeedTelemetry(", spawner)
+        self.assertIn("sourceSeededAnimationCount++;", spawner)
+        self.assertLess(
+            spawner.index("sourceSeedTelemetry.Remove(request.prefabName);"),
+            spawner.index("Binding binding = FindBinding(request.prefabName);"),
+        )
+        finish = spawner[
+            spawner.index("public void FinishOverviewEffect"):
+            spawner.index("private static void DestroyEffectInstance")
+        ]
+        self.assertLess(
+            finish.index("sourceSeedTelemetry.Remove(prefabName);"),
+            finish.index("activeEffects.TryGetValue"),
+        )
+        finish_all = spawner[
+            spawner.index("private void FinishAllEffects"):
+            spawner.index("private Binding FindBinding")
+        ]
+        self.assertIn("sourceSeedTelemetry.Clear();", finish_all)
+        self.assertIn(
+            '"P_fxui_endminm003_overview_01",',
+            capture,
+        )
+        self.assertIn("overview01SourceSeededAnimationCount == 2", capture)
+        self.assertIn("observedOverview01AuthenticatedSourceSeed", capture)
+        self.assertIn(
+            "overview_01 authenticated one-shot source seed on two automatic",
+            capture,
+        )
 
 
 if __name__ == "__main__":
