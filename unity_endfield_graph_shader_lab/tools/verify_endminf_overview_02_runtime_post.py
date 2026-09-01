@@ -142,8 +142,8 @@ def verify() -> dict[str, object]:
     ), "source-curve non-equivalence boundary")
 
     trigger = json.loads(TRIGGER_CONTRACT.read_text(encoding="utf-8"))
-    if trigger.get("schema") != "endfield.endminf-effect-nanguan-trigger.v4":
-        raise RuntimeError("Endminf effect trigger contract is not v4")
+    if trigger.get("schema") != "endfield.endminf-effect-nanguan-trigger.v5":
+        raise RuntimeError("Endminf effect trigger contract is not v5")
     evidence = trigger.get("evidence", {})
     if evidence.get("nativeBuildGate", {}).get("status") != "validated":
         raise RuntimeError("Endminf trigger native build gate is not validated")
@@ -232,9 +232,26 @@ def verify() -> dict[str, object]:
         "sync_effect_instance_manual_time",
         "load_immediately_to_load_finish",
         "load_finish_to_start",
+        "start_set_active_true_internal_core",
+        "set_active_to_play_effect",
+        "play_effect_to_lod_play",
+        "lod_play_to_animator_play",
     }
     if not required_seed_edges.issubset(control_flow_names):
         raise RuntimeError("one-shot native seed control-flow proof is incomplete")
+    child_route = trigger.get("conclusions", {}).get(
+        "lodOwnedChildAnimatorDefinitionAndPlayCodePath", {})
+    display_route = trigger.get("conclusions", {}).get(
+        "effectSettingLodGameObjectActivation", {})
+    if (
+        child_route.get("runtimeInvocationForThisLodRowSourceClosed") is not True or
+        child_route.get("clipStartRelativeToEffectInstanceStartSourceClosed") is not True or
+        "activation latch" not in str(child_route.get("sourceClosedScope") or "") or
+        display_route.get("sourceClosed") is not False or
+        display_route.get("status") !=
+            "animator_play_closed_gameobject_display_unresolved"
+    ):
+        raise RuntimeError("conditional Start-to-child-Animator route drifted")
     validity_rows = [
         row for row in evidence.get("native", {}).get("controlFlow", [])
         if row.get("name") == "sync_effect_time_valid_positive_elapsed_gate"
