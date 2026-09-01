@@ -464,27 +464,36 @@ the outer return; the false path remains intact and all 20 native tests pass.
   `R11G11B10_FLOAT` payload. Its Streamline gate uses the latest required tag
   state, rejects null/zero-extent/non-finite evidence, revalidates the loaded
   pinned modules, and cannot be bypassed through an absent game directory.
-- Effect-02's animated radial/chromatic values, exact 1.0 radial power, native
-  mode/effective-power packing, signed/clamped post-projection center transform,
-  source-only warped taps, and separate bloom sampling order are source-backed.
+- Effect-02's exact serialized streamed-cubic radial/chromatic coefficients,
+  constant 1.0 radial-power curve, native mode/effective-power packing,
+  signed/clamped post-projection center transform, source-only warped taps, and
+  separate bloom sampling order are source-backed. A deterministic payload now
+  joins the hash-gated `A_fx_endminf_ui_overview_02` clip to the pinned native
+  MonoBehaviour field/apply identities, and the runtime evaluates Unity's
+  original `((a*dt+b)*dt+c)*dt+d` segments directly. The former compatibility
+  evaluator that scaled the opening peaks to 45% and moved the late pulse from
+  its authored 4.4333-second key to 4.3500 seconds was video-fitted and has been
+  removed, as was the downstream quarter-intensity factor selected by a matched
+  reference-frame sweep; the public-Unity carrier now receives the authored
+  values without a fitted multiplier. The exact outer effect-start timestamp and retail SceneColor/pass
+  chronology remain unresolved; the runtime publisher therefore rejects the
+  prefab-creation/pre-roll compatibility clock and stays fail-closed. The exact
+  curve evaluator is currently only the bounded `f(elapsed)` contract; neither
+  recording alignment nor a visible Uber draw may replace the missing source
+  clock owner.
   The exact combined Uber variant now also closes the CharInfo merge: source-only
   global exposure, channel-wise bloom decoding above 0.3, serialized intensity,
   white normalized tint, zero blend mode, and saturated source alpha. The D3D12
   compatibility implementation reduced the UI-free 28-frame RGB MAE from
-  27.6888 to 27.6752. The supplied recording's Wolfgd-to-Endminf route starts
-  this post owner nine 60 Hz frames before the first visible Endminf body frame;
-  applying that explicit 0.15-second recording pre-roll removes the two
-  incorrectly shifted chromatic pulses and, together with the recovered
-  gyroscope transition, lowers the same MAE to 22.3254. That age belongs to
-  the compatibility post clock, not to `_02`'s ParticleSystems. A phase-paired
+  27.6888 to 27.6752. An earlier recording registration found a nine-tick
+  image-alignment offset and lowered the same MAE to 22.3254, but that result is
+  comparison evidence only and no longer advances the source post clock. A phase-paired
   check against no-frame-generation source frames 367, 382, and 397 proves
   that applying the nine-tick post offset to particle simulation makes M13
   appear before retail and removes it from the retail peak. Particle delays
   therefore remain on the selection/body timeline: M13 is absent at requested
   4.2167 seconds, alive at 4.4667, and gone by 4.7167, while the post clock is
-  still 0.15 seconds ahead. The streamed late-pulse coefficients are the same
-  zero-tangent cubic as the current `SmoothStep` evaluation within about
-  2.5e-8. The pinned native producer selects mode 6 when both effects are active
+  still 0.15 seconds ahead in that retired diagnostic. The pinned native producer selects mode 6 when both effects are active
   and radial intensity exceeds 0.01, and mode 3 otherwise; the recovered mode-3
   and mode-6 DXBC sampling equations and the source-warp/bloom-merge order are
   already represented by the compatibility shader. A tempting mode-3 c0/c25
@@ -2291,15 +2300,15 @@ disabling it worsens mean character/effect ROI MAE from 27.935/35.212 to
 28.375/35.623. The broad peak blur is therefore not evidence for bypassing
 history or moving Uber ahead of the recovered temporal stage.
 
-The remaining broad late echoes were an Uber pulse-registration error, not a
-stage-order error. Retail frame 1818 maps the late radial peak to clean frame
-264 / phase 4.3500 seconds; the former curve peaked five 60 Hz samples later at
-4.4333. Advancing only that late pulse preserves the captured envelope and
-puts the exact Uber at radial/chromatic 0.109/0.101 on 4.3500. Across the 11
-shared focused samples, character ROI MAE improves 27.935 to 27.581, effect ROI
-MAE improves 35.212 to 34.690, and temporal-delta MAE improves 29.301 to
-25.685. Keep temporal -> bloom -> actor-inclusive exact Uber ordering intact.
-The subsequent 770-frame exact-Uber render completed without a crash and kept
+An earlier comparison-only experiment advanced the authored 4.4333-second
+late-pulse key by five 60 Hz samples to align it with retail frame 1818. It
+improved the 11-sample character/effect/temporal metrics from
+27.935/35.212/29.301 to 27.581/34.690/25.685, but it fitted the reference video
+and did not recover the missing outer effect-start owner. That shifted curve is
+retired; the runtime now retains the exact serialized key and coefficients.
+Keep temporal -> bloom -> actor-inclusive exact Uber ordering intact and close
+the outer clock from source/runtime ownership before interpreting residual late
+echoes. The subsequent 770-frame exact-Uber render completed without a crash and kept
 the best global phase offset at -1; its aggregate ROI/effect/temporal MAE is
 21.134/22.069/11.889. Do not compare its first two aggregates directly with
 the older 20.972/21.937 compatibility-Uber run, because that baseline did not

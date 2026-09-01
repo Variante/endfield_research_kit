@@ -348,11 +348,6 @@ namespace EndfieldGraphShaderLab
         private const float RecoveredBloomSerializedThreshold = 0.75f;
         private const float RecoveredBloomSerializedIntensity = 0.45f;
         private const float RecoveredBloomSerializedScatter = 0.8f;
-        // Public-Unity HLSL receives a different pre-Uber temporal source than
-        // retail's Streamline output. A matched peak sweep against clean frame
-        // 269 selects one quarter of the source intensity for this fallback;
-        // the native exact path below still receives the unscaled retail state.
-        private const float EndminfCompatibilityUberIntensityScale = 0.25f;
         private const float RecoveredGachaBloomSerializedThreshold = 0.95f;
         private const float RecoveredGachaBloomSerializedIntensity = 0.5f;
         private const float RecoveredGachaBloomSerializedScatter = 0.4f;
@@ -3823,10 +3818,8 @@ namespace EndfieldGraphShaderLab
                 EndminfVisualCompatibilityParamsId,
                 hasEndminfPost
                     ? new Vector4(
-                        endminfPost.radialIntensity *
-                            EndminfCompatibilityUberIntensityScale,
-                        endminfPost.chromaticIntensity *
-                            EndminfCompatibilityUberIntensityScale,
+                        endminfPost.radialIntensity,
+                        endminfPost.chromaticIntensity,
                         endminfPost.mode,
                         endminfPost.effectivePower)
                     : Vector4.zero);
