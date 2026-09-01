@@ -289,6 +289,26 @@ BURST_RUNTIME_SELECTION = {
     "checkSecondaryStartVa": 0x1812081B0,
     "checkSecondaryThroughRetBytes": 3,
     "checkSecondaryThroughRetSha256": "01cb47d078b4841b8408ec4fe278efa83115c6f6e101972987507d2b2b57dcf0",
+    "helperIsBurstEnabledMethodIndex": 489292,
+    "helperIsBurstEnabledStartVa": 0x18B15C238,
+    "helperIsBurstEnabledSpanBytes": 0x3C,
+    "helperIsBurstEnabledBodySha256": "a6bdfecd92d02577f8f9b00f92d0a4466df234dce32751e79ed051f9aa955017",
+    "helperCctorMethodIndex": 489295,
+    "helperCctorStartVa": 0x183FAEB30,
+    "helperCctorThroughRetBytes": 0xBB,
+    "helperCctorThroughRetSha256": "e60792092fab6f83a9c61aea1d93f6cfed7d71119046ce92a749cc070da235ff",
+    "helperIsCompiledMethodIndex": 489294,
+    "helperIsCompiledStartVa": 0x183FB0A20,
+    "helperIsCompiledThroughRetBytes": 0x58,
+    "helperIsCompiledThroughRetSha256": "9e770066dac653966dcdafd1afefe2dfbcd7225903069fe10cee0aced70b18e4",
+    "compileAsyncMethodIndex": 402096,
+    "compileAsyncStartVa": 0x183FB1010,
+    "compileAsyncSpanBytes": 0x30,
+    "compileAsyncBodySha256": "b1fb4b136d839734f68531bd41b891044bccfb1dee7dd7acd505180af9626b98",
+    "getAsyncMethodIndex": 402097,
+    "getAsyncStartVa": 0x183FB0FD0,
+    "getAsyncSpanBytes": 0x40,
+    "getAsyncBodySha256": "baa29c1b316ca0b19e357d5c2706ee037fc5869dbdd673818ffea2b0a16f7254",
     "directCallCctorMethodIndex": 384866,
     "directCallCctorStartVa": 0x184D1D370,
     "directCallCctorSpanBytes": 0x10,
@@ -1337,6 +1357,66 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             hashlib.sha256(check_secondary_body).hexdigest() !=
             BURST_RUNTIME_SELECTION["checkSecondaryThroughRetSha256"]):
         raise ContractError("Burst secondary-process predicate drift")
+
+    helper_is_burst_enabled = exact_body(
+        BURST_RUNTIME_SELECTION["helperIsBurstEnabledStartVa"],
+        BURST_RUNTIME_SELECTION["helperIsBurstEnabledMethodIndex"],
+        "Unity.Burst.BurstCompiler+BurstCompilerHelper", "IsBurstEnabled",
+        "0x06000014", BURST_RUNTIME_SELECTION["helperIsBurstEnabledSpanBytes"],
+        BURST_RUNTIME_SELECTION["helperIsBurstEnabledBodySha256"],
+    )
+    helper_cctor = exact_body(
+        BURST_RUNTIME_SELECTION["helperCctorStartVa"],
+        BURST_RUNTIME_SELECTION["helperCctorMethodIndex"],
+        "Unity.Burst.BurstCompiler+BurstCompilerHelper", ".cctor",
+        "0x06000017", BURST_RUNTIME_SELECTION["helperCctorThroughRetBytes"],
+        BURST_RUNTIME_SELECTION["helperCctorThroughRetSha256"],
+    )
+    helper_is_compiled = exact_body(
+        BURST_RUNTIME_SELECTION["helperIsCompiledStartVa"],
+        BURST_RUNTIME_SELECTION["helperIsCompiledMethodIndex"],
+        "Unity.Burst.BurstCompiler+BurstCompilerHelper", "IsCompiledByBurst",
+        "0x06000016", BURST_RUNTIME_SELECTION["helperIsCompiledThroughRetBytes"],
+        BURST_RUNTIME_SELECTION["helperIsCompiledThroughRetSha256"],
+    )
+    compile_async = exact_body(
+        BURST_RUNTIME_SELECTION["compileAsyncStartVa"],
+        BURST_RUNTIME_SELECTION["compileAsyncMethodIndex"],
+        "Unity.Burst.LowLevel.BurstCompilerService", "CompileAsyncDelegateMethod",
+        "0x06000137", BURST_RUNTIME_SELECTION["compileAsyncSpanBytes"],
+        BURST_RUNTIME_SELECTION["compileAsyncBodySha256"],
+    )
+    get_async = exact_body(
+        BURST_RUNTIME_SELECTION["getAsyncStartVa"],
+        BURST_RUNTIME_SELECTION["getAsyncMethodIndex"],
+        "Unity.Burst.LowLevel.BurstCompilerService",
+        "GetAsyncCompiledAsyncDelegateMethod", "0x06000138",
+        BURST_RUNTIME_SELECTION["getAsyncSpanBytes"],
+        BURST_RUNTIME_SELECTION["getAsyncBodySha256"],
+    )
+    helper_is_burst_enabled_body = pe.bytes_at_va(
+        BURST_RUNTIME_SELECTION["helperIsBurstEnabledStartVa"],
+        BURST_RUNTIME_SELECTION["helperIsBurstEnabledSpanBytes"],
+    )
+    if (helper_is_burst_enabled_body[0x35:0x3C] !=
+            bytes.fromhex("32 c0 48 83 c4 28 c3")):
+        raise ContractError("Burst helper managed IsBurstEnabled return drift")
+    if _metadata_usage_source(pe, 0x18E3906A8, 3) != 489292:
+        raise ContractError("Burst helper IsBurstEnabled delegate target drift")
+    for call_va, target_va in (
+        (BURST_RUNTIME_SELECTION["helperCctorStartVa"] + 0x63, 0x183FAEAA0),
+        (BURST_RUNTIME_SELECTION["helperCctorStartVa"] + 0x9F,
+         BURST_RUNTIME_SELECTION["helperIsCompiledStartVa"]),
+        (BURST_RUNTIME_SELECTION["helperIsCompiledStartVa"] + 0x3C,
+         BURST_RUNTIME_SELECTION["compileAsyncStartVa"]),
+        (BURST_RUNTIME_SELECTION["helperIsCompiledStartVa"] + 0x45,
+         BURST_RUNTIME_SELECTION["getAsyncStartVa"]),
+    ):
+        _validate_call(pe, call_va, target_va)
+    if pe.bytes_at_va(
+            BURST_RUNTIME_SELECTION["helperCctorStartVa"] + 0xB2, 3
+    ) != bytes.fromhex("88 42 08"):
+        raise ContractError("BurstCompilerHelper.IsBurstGenerated store drift")
     options_cold = pe.bytes_at_va(
         BURST_RUNTIME_SELECTION["optionsCctorColdStartVa"],
         BURST_RUNTIME_SELECTION["optionsCctorColdSpanBytes"],
@@ -1602,6 +1682,47 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             ],
             "operation": "Each accepted chunk atomically reserves count slots, then appends the contiguous indices start + i. No captured indices are stored.",
         },
+        "burstRuntimeSelectionEvidence": {
+            "helperManagedBody": {
+                **helper_is_burst_enabled,
+                "delegateMetadataUsageSlotVa": "0x18e3906a8",
+                "registeredManagedReturn": False,
+                "classification": (
+                    "The registered IL2CPP fallback body returns false, but "
+                    "BurstCompiler.get_IsEnabled does not call this body."
+                ),
+            },
+            "helperInitialization": {
+                "typeInitializer": helper_cctor,
+                "isCompiledByBurst": helper_is_compiled,
+                "delegateTargetMethodIndex": 489292,
+                "compileAsyncCallOffset": "0x3c",
+                "getAsyncCompiledCallOffset": "0x45",
+                "isBurstGeneratedStoreOffset": "0xb2",
+                "operation": (
+                    "The helper type initializer constructs a delegate for method "
+                    "489292, submits it to BurstCompilerService, and stores whether "
+                    "GetAsyncCompiledAsyncDelegateMethod returned non-null in the "
+                    "IsBurstGenerated byte."
+                ),
+            },
+            "compilerService": {
+                "compileAsyncDelegateMethod": compile_async,
+                "getAsyncCompiledAsyncDelegateMethod": get_async,
+                "runtimeBoundary": (
+                    "Both methods dispatch through runtime-populated native service "
+                    "pointers. The pinned files do not serialize their returned handle "
+                    "or compiled delegate pointer."
+                ),
+            },
+            "classification": (
+                "The former generic service-backed boundary is now an exact, "
+                "hash-pinned delegate/service/non-nullness chain. The constant-false "
+                "managed helper body is not the value stored in IsBurstGenerated and "
+                "therefore cannot select the managed DirectCall branch by itself."
+            ),
+            "selectedIsBurstGeneratedValue": "unresolved",
+        },
         "createListDirectCallRoute": {
             "kernelWrapper": {
                 "methodIndex": CREATE_LIST_DIRECT_CALL["kernelMethodIndex"],
@@ -1842,9 +1963,10 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     },
                     "runtimeValue": "unresolved",
                     "runtimeBoundary": (
-                        "The process command line/environment, service-backed "
-                        "IsBurstGenerated value, and any later public Options mutation "
-                        "are not serialized in the pinned inputs."
+                        "The process command line/environment, the exact async "
+                        "BurstCompilerService result recorded in "
+                        "burstRuntimeSelectionEvidence, and any later public Options "
+                        "mutation are not serialized in the pinned inputs."
                     ),
                 },
                 "getFunctionPointer": {
@@ -1916,13 +2038,13 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "routeEvidence": {
             "coldSpans": cold,
             "installedLocalIfix": "sources.installedLocalIfix",
-            "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback, exact Burst target, GetILPP normal-return identity/non-nullability, conditional Burst default, empty BeyondDynamicBone IFix bootstrap, and installed-local payload absence are statically closed. The process inputs, service-backed Burst-generated bit, later Options mutation, and live IFix slot ownership remain runtime values.",
+            "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback, exact Burst target, GetILPP normal-return identity/non-nullability, conditional Burst default, exact helper delegate/service chain, empty BeyondDynamicBone IFix bootstrap, and installed-local payload absence are statically closed. The process inputs, async compiler-service result, later Options mutation, and live IFix slot ownership remain runtime values.",
         },
         "workerTargets": workers,
         "nextDisassemblyTargets": [],
         "remainingRuntimeEvidence": [
             {"boundary": "CalcLine BurstDirectCall selected route",
-             "reason": "GetILPPMethodFunctionPointer2 normal-return identity/non-nullability and the conditional Burst default are closed, but the actual process inputs, service-backed IsBurstGenerated value, later Options mutation, and CompileILPPMethod2 completion/value remain runtime state"},
+             "reason": "GetILPPMethodFunctionPointer2 normal-return identity/non-nullability, the conditional Burst default, and the helper's exact delegate/service/non-null chain are closed, but the actual process inputs, async compiler-service return, later Options mutation, and CompileILPPMethod2 completion/value remain runtime state"},
             {"boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
              "reason": "the BeyondDynamicBone wrapper array starts empty and the exact installed local Gameplay.Beyond payload has no BeyondDynamicBone target; InitWrapperArray and later, remote, or memory-only loaders leave live slot ownership external runtime state"},
         ],

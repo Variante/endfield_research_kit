@@ -183,6 +183,31 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
             comparison["nonControlImmediateComparison"]["numericConstantDifferenceObserved"]
         )
 
+    def test_burst_helper_selection_is_exact_but_service_result_stays_open(self) -> None:
+        evidence = self.payload["burstRuntimeSelectionEvidence"]
+        managed = evidence["helperManagedBody"]
+        self.assertEqual(
+            (managed["methodIndex"], managed["startVa"], managed["spanBytes"]),
+            (489292, "0x18b15c238", 0x3C),
+        )
+        self.assertFalse(managed["registeredManagedReturn"])
+        self.assertIn("does not call this body", managed["classification"])
+        initialization = evidence["helperInitialization"]
+        self.assertEqual(initialization["typeInitializer"]["methodIndex"], 489295)
+        self.assertEqual(initialization["isCompiledByBurst"]["methodIndex"], 489294)
+        self.assertEqual(initialization["delegateTargetMethodIndex"], 489292)
+        self.assertEqual(initialization["compileAsyncCallOffset"], "0x3c")
+        self.assertEqual(initialization["getAsyncCompiledCallOffset"], "0x45")
+        service = evidence["compilerService"]
+        self.assertEqual(
+            service["compileAsyncDelegateMethod"]["methodIndex"], 402096
+        )
+        self.assertEqual(
+            service["getAsyncCompiledAsyncDelegateMethod"]["methodIndex"], 402097
+        )
+        self.assertIn("runtime-populated", service["runtimeBoundary"])
+        self.assertEqual(evidence["selectedIsBurstGeneratedValue"], "unresolved")
+
     def test_create_list_control_flow_is_code_derived(self) -> None:
         flow = self.payload["createListHotControlFlow"]
         self.assertEqual(flow["hotSpan"]["throughRetSha256"],
@@ -380,6 +405,8 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         cases = (
             (builder.BURST_RUNTIME_SELECTION, "getIlppBodySha256",
              "GetILPPMethodFunctionPointer2 identity/nullability drift"),
+            (builder.BURST_RUNTIME_SELECTION, "helperIsCompiledThroughRetSha256",
+             r"body drift for Unity.Burst.BurstCompiler\+BurstCompilerHelper.IsCompiledByBurst"),
             (builder.IFIX_WRAPPER_BOOTSTRAP, "isPatchedBodySha256",
              "body drift for IFix.WrappersManagerImpl.IsPatched"),
         )
