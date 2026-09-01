@@ -23,11 +23,13 @@ namespace EndfieldGraphShaderLab
         // Capture 20260827T183054Z supplies two independently registered exact
         // combined-Uber packets. Frame 1600's retained radial/chromatic values
         // solve the authored source curves to 0.02256267 s; its accumulated
-        // backbuffer maps to clean reference frame 8. Frame 1818 maps directly
-        // to clean reference frame 264 / 4.35 s. Their other PS lanes differ
-        // materially, so each is admitted for only its nearest 60 Hz sample.
+        // backbuffer maps to clean reference frame 8. Frame 1818 maps to clean
+        // reference frame 264 / 4.35 s in the body/reference clock, while its
+        // retained c0.z/c25.y values solve the authenticated source-effect
+        // clock to 4.4333334 s. Their other PS lanes differ materially, so each
+        // is admitted for only its nearest 60 Hz source-effect sample.
         internal const float EarlyCapturePhaseSeconds = 0.02256267f;
-        internal const float CapturePhaseSeconds = 4.35f;
+        internal const float CapturePhaseSeconds = 4.4333334f;
         private const float HalfWindowSeconds = 1.0f / 120.0f;
 
         private RenderTexture sourceTexture;

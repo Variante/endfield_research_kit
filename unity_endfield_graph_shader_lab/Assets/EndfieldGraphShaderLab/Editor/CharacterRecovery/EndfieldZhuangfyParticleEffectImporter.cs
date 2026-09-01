@@ -3388,11 +3388,7 @@ namespace EndfieldGraphShaderLabEditor
                     return;
 #endif
                 case SerializedPropertyType.LayerMask:
-                    object layerValue = value is Dictionary<string, object>
-                        ? Dict(value)["m_Bits"]
-                        : value;
-                    property.intValue = unchecked((int)Convert.ToUInt32(
-                        layerValue, CultureInfo.InvariantCulture));
+                    property.intValue = LayerMaskInt(value, path);
                     return;
                 case SerializedPropertyType.Generic:
                     ApplyChildren(property, Dict(value), context, path);
@@ -3497,7 +3493,9 @@ namespace EndfieldGraphShaderLabEditor
                     return;
 #endif
                 case SerializedPropertyType.LayerMask:
-                    Require(property.intValue == Int(value), "Layer mask mismatch at " + path);
+                    Require(
+                        property.intValue == LayerMaskInt(value, path),
+                        "Layer mask mismatch at " + path);
                     return;
                 case SerializedPropertyType.Generic:
                     foreach (KeyValuePair<string, object> pair in Dict(value))
@@ -4306,6 +4304,42 @@ namespace EndfieldGraphShaderLabEditor
         private static bool Bool(object value) => value != null && Convert.ToBoolean(value, CultureInfo.InvariantCulture);
         private static bool Bool(Dictionary<string, object> data, string key) =>
             data.TryGetValue(key, out object value) && Bool(value);
+        private static int LayerMaskInt(object value, string path)
+        {
+            object source = value;
+            if (value is Dictionary<string, object> dictionary)
+            {
+                if (!dictionary.TryGetValue("m_Bits", out source))
+                {
+                    throw new InvalidOperationException(
+                        $"Layer mask source at {path} is an object without required m_Bits.");
+                }
+            }
+            try
+            {
+                return source == null
+                    ? 0
+                    : unchecked((int)Convert.ToUInt32(
+                        source,
+                        CultureInfo.InvariantCulture));
+            }
+            catch (Exception exception) when (
+                exception is InvalidCastException ||
+                exception is FormatException ||
+                exception is OverflowException)
+            {
+                string sourceType = source == null
+                    ? "<null>"
+                    : source.GetType().FullName;
+                string sourceValue = source == null
+                    ? "<null>"
+                    : Convert.ToString(source, CultureInfo.InvariantCulture);
+                throw new InvalidOperationException(
+                    $"Layer mask source conversion failed at {path}: expected UInt32 " +
+                    $"or {{m_Bits: UInt32}}, actual type={sourceType}, value={sourceValue}.",
+                    exception);
+            }
+        }
         private static float FloatEither(
             Dictionary<string, object> data, string lower, string upper, float fallback = 0f) =>
             data.TryGetValue(lower, out object value) ? Float(value) :

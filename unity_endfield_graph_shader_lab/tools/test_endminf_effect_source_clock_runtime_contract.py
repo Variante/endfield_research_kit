@@ -100,6 +100,68 @@ class EndminfEffectSourceClockRuntimeContractTests(unittest.TestCase):
         self.assertNotIn("sourceClock", particles)
         self.assertNotIn("sourceElapsed", particles)
 
+    def test_overview_01_admission_is_exact_and_precedes_playback(self) -> None:
+        source = SPAWNER.read_text(encoding="utf-8")
+        start = source[
+            source.index("private bool StartRecoveredLegacyAnimations"):
+            source.index("private static bool PlayRecoveredLegacyAnimation")
+        ]
+        selection = start[
+            start.index("private static bool TrySelectRecoveredAutomaticAnimations"):
+        ]
+        self.assertLess(
+            start.index("TrySelectRecoveredAutomaticAnimations("),
+            start.index("sourceClock.TryGetAuthenticatedElapsed"),
+        )
+        self.assertLess(
+            start.index("TrySelectRecoveredAutomaticAnimations("),
+            start.index("PlayRecoveredLegacyAnimation(animation)"),
+        )
+        for required in (
+            '"P_fxui_endminm003_overview_01__OverviewRuntime"',
+            "automatic.Count != 2",
+            'instance.transform.Find("effect_01")',
+            'instance.transform.Find("effect_nanguan")',
+            '"A_actor_endminf_ui_overview_02"',
+            '"A_fx_endminf_ui_overview_04"',
+            "animation.enabled",
+            "animation.playAutomatically",
+            "animation.clip.legacy",
+            "selected = Array.Empty<Animation>();",
+        ):
+            self.assertIn(required, selection)
+        self.assertIn("duplicate or unexpected", selection)
+
+    def test_runtime_marker_canonicalizes_only_the_mutable_clone_root(self) -> None:
+        source = SPAWNER.read_text(encoding="utf-8")
+        validator = source[
+            source.index("private static bool TryValidateEndminfV2Marker"):
+            source.index("private static bool TryValidateParticleRendererState")
+        ]
+        self.assertIn(
+            "HierarchyIncludingSourceRoot(\n"
+            "                        row.generatedTransform,\n"
+            "                        prefab.transform,\n"
+            "                        marker.effectRoot)",
+            validator,
+        )
+        self.assertIn(
+            "names.Add(current == root ? sourceRootName : current.name);",
+            validator,
+        )
+        for diagnostic in (
+            "hierarchy identity/reference drifted at row ",
+            "expected=",
+            "actual=",
+            "runtimeRoot=",
+            "sourceRoot=",
+        ):
+            self.assertIn(diagnostic, validator)
+        self.assertNotIn(
+            "HierarchyIncludingRoot(row.generatedTransform, prefab.transform)",
+            validator,
+        )
+
     def test_overview_01_has_exactly_two_automatic_source_children(self) -> None:
         prefab = OVERVIEW_01.read_text(encoding="utf-8")
         blocks = re.findall(

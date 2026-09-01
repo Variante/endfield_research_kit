@@ -1621,11 +1621,17 @@ namespace EndfieldGraphShaderLab
             bool selectedGachaSceneColor =
                 operatorPresentation != null &&
                 operatorPresentation.useRecoveredGachaRoomPostProfile;
+            bool selectedCharInfoMaterialOnlySolidColor =
+                camera.clearFlags == CameraClearFlags.SolidColor &&
+                camera.GetComponent<EndfieldRecoveredCharInfoSky>() != null &&
+                EndfieldRecoveredCharInfoSky.MaterialOnlyDiagnosticRequested();
             Color sceneColorClear = selectedGachaSceneColor
                 ? RecoveredGachaSceneColorClear
                 : drawRecoveredCharInfoSky
                     ? Color.clear
-                    : asset.clearColor;
+                    : selectedCharInfoMaterialOnlySolidColor
+                        ? camera.backgroundColor
+                        : asset.clearColor;
             commandBuffer.ClearRenderTarget(true, true, sceneColorClear);
             ApplyLightingGlobals(commandBuffer);
             recoveredReflectionProbeFallback.ResetPublication(commandBuffer);

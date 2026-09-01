@@ -26,10 +26,11 @@ exit /b 2
   rem Retain the ten source-identified M01/M38 fly-in rock owners. Exact M27
   rem replaces only the hand-crystal row and does not replace these owners.
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
-  rem Keep exact source GridDeco/Far separate from the fitted neutral plate.
-  rem ShadowPlane stays excluded until its retail final-consumer ownership is
-  rem source-closed; generic ready-subset diagnostics remain off as well.
-  set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=1"
+  rem Keep incomplete source GridDeco/Far as an explicit diagnostic only.
+  rem Canonical presentation uses the neutral preview camera clear;
+  rem ShadowPlane, fitted plate, and generic ready-subset routes stay off.
+  set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=0"
+  set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE_MATERIAL_ONLY_DIAGNOSTIC=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"
   set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1"

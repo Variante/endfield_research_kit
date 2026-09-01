@@ -393,8 +393,19 @@ namespace EndfieldGraphShaderLab
             // only clips explicitly marked automatic in the recovered prefab.
             bool allStarted = true;
             failure = string.Empty;
+            sourceClockAuthenticated = false;
             sourceSeededAnimationCount = 0;
             sourceSeedSeconds = 0f;
+            Animation[] recoveredAnimations =
+                instance.GetComponentsInChildren<Animation>(true);
+            if (!TrySelectRecoveredAutomaticAnimations(
+                    instance,
+                    recoveredAnimations,
+                    out Animation[] automaticAnimations,
+                    out failure))
+            {
+                return false;
+            }
             sourceClockAuthenticated =
                 sourceClock.TryGetAuthenticatedElapsed(out float sourceElapsed);
             if (sourceClock.valid && !sourceClockAuthenticated)
@@ -405,11 +416,8 @@ namespace EndfieldGraphShaderLab
             }
             bool seedFromSourceState =
                 sourceClockAuthenticated && sourceElapsed > 0f;
-            foreach (Animation animation in
-                instance.GetComponentsInChildren<Animation>(true))
+            foreach (Animation animation in automaticAnimations)
             {
-                if (!animation.playAutomatically || animation.clip == null)
-                    continue;
                 animation.Stop();
                 animation.Rewind(animation.clip.name);
                 if (!PlayRecoveredLegacyAnimation(animation))
@@ -445,6 +453,116 @@ namespace EndfieldGraphShaderLab
                 }
             }
             return allStarted;
+        }
+
+        private static bool TrySelectRecoveredAutomaticAnimations(
+            GameObject instance,
+            Animation[] recoveredAnimations,
+            out Animation[] selected,
+            out string failure)
+        {
+            var automatic = new List<Animation>();
+            foreach (Animation animation in recoveredAnimations)
+            {
+                if (animation != null && animation.playAutomatically)
+                    automatic.Add(animation);
+            }
+            selected = automatic.ToArray();
+            failure = string.Empty;
+
+            if (!string.Equals(
+                    instance.name,
+                    "P_fxui_endminm003_overview_01__OverviewRuntime",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            // Source evidence closes overview_01 to two automatic Legacy
+            // owners. Admit the source-post clock only after the entire set is
+            // present; a partial or augmented prefab must never seed arbitrary
+            // clips and then masquerade as the authenticated retail stage.
+            if (automatic.Count != 2)
+            {
+                failure =
+                    "Endminf overview_01 requires exactly two automatic Legacy " +
+                    "Animations; observed " + automatic.Count + ".";
+                selected = Array.Empty<Animation>();
+                return false;
+            }
+
+            Transform actorHost = instance.transform.Find("effect_01");
+            Transform nanguanHost = instance.transform.Find("effect_nanguan");
+            if (actorHost == null || nanguanHost == null || actorHost == nanguanHost)
+            {
+                failure =
+                    "Endminf overview_01 is missing its unique effect_01 and " +
+                    "effect_nanguan automatic-animation hosts.";
+                selected = Array.Empty<Animation>();
+                return false;
+            }
+
+            Animation actorAnimation = null;
+            Animation nanguanAnimation = null;
+            foreach (Animation animation in automatic)
+            {
+                if (animation.transform == actorHost && actorAnimation == null)
+                    actorAnimation = animation;
+                else if (animation.transform == nanguanHost && nanguanAnimation == null)
+                    nanguanAnimation = animation;
+                else
+                {
+                    failure =
+                        "Endminf overview_01 contains a duplicate or unexpected " +
+                        "automatic Animation host: " + animation.transform.name + ".";
+                    selected = Array.Empty<Animation>();
+                    return false;
+                }
+            }
+
+            if (!TryValidateRecoveredAutomaticAnimation(
+                    actorAnimation,
+                    "effect_01",
+                    "A_actor_endminf_ui_overview_02",
+                    out failure) ||
+                !TryValidateRecoveredAutomaticAnimation(
+                    nanguanAnimation,
+                    "effect_nanguan",
+                    "A_fx_endminf_ui_overview_04",
+                    out failure))
+            {
+                selected = Array.Empty<Animation>();
+                return false;
+            }
+
+            selected = new[] { actorAnimation, nanguanAnimation };
+            return true;
+        }
+
+        private static bool TryValidateRecoveredAutomaticAnimation(
+            Animation animation,
+            string host,
+            string expectedClip,
+            out string failure)
+        {
+            if (animation == null || !animation.enabled ||
+                !animation.playAutomatically || animation.clip == null ||
+                !animation.clip.legacy || !string.Equals(
+                    animation.clip.name,
+                    expectedClip,
+                    StringComparison.Ordinal))
+            {
+                string actualClip = animation != null && animation.clip != null
+                    ? animation.clip.name
+                    : "<missing>";
+                failure =
+                    "Endminf overview_01 automatic Animation contract failed at " +
+                    host + ": expected enabled Legacy clip " + expectedClip +
+                    ", actual " + actualClip + ".";
+                return false;
+            }
+            failure = string.Empty;
+            return true;
         }
 
         private static bool PlayRecoveredLegacyAnimation(Animation animation)
@@ -840,9 +958,16 @@ namespace EndfieldGraphShaderLab
                 new Dictionary<long, EndfieldRecoveredParticleHierarchyNodeSource>();
             var hierarchyGameObjectPathIds = new HashSet<long>();
             var generatedTransforms = new HashSet<Transform>();
+            int hierarchyIndex = 0;
             foreach (EndfieldRecoveredParticleHierarchyNodeSource row in
                      marker.hierarchyNodes)
             {
+                string actualHierarchy = row == null
+                    ? "<null-row>"
+                    : HierarchyIncludingSourceRoot(
+                        row.generatedTransform,
+                        prefab.transform,
+                        marker.effectRoot);
                 if (row == null || row.gameObjectPathId == 0 ||
                     row.transformPathId == 0 || row.generatedTransform == null ||
                     !hierarchyByTransformPathId.TryAdd(row.transformPathId, row) ||
@@ -850,12 +975,19 @@ namespace EndfieldGraphShaderLab
                     !generatedTransforms.Add(row.generatedTransform) ||
                     !string.Equals(
                         row.hierarchy,
-                        HierarchyIncludingRoot(row.generatedTransform, prefab.transform),
+                        actualHierarchy,
                         StringComparison.Ordinal))
                 {
-                    reason = "Endminf v2 hierarchy identity/reference drifted.";
+                    reason =
+                        "Endminf v2 hierarchy identity/reference drifted at row " +
+                        hierarchyIndex + ": expected=" +
+                        (row == null ? "<null-row>" : row.hierarchy) +
+                        ", actual=" + actualHierarchy +
+                        ", runtimeRoot=" + prefab.transform.name +
+                        ", sourceRoot=" + marker.effectRoot + ".";
                     return false;
                 }
+                hierarchyIndex++;
             }
             if (!hierarchyByTransformPathId.TryGetValue(
                     rootTransformPathId,
@@ -981,17 +1113,23 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
-        private static string HierarchyIncludingRoot(
+        private static string HierarchyIncludingSourceRoot(
             Transform target,
-            Transform root)
+            Transform root,
+            string sourceRootName)
         {
-            if (target == null || root == null)
+            if (target == null || root == null ||
+                string.IsNullOrEmpty(sourceRootName))
                 return string.Empty;
             var names = new List<string>();
             Transform current = target;
             while (current != null)
             {
-                names.Add(current.name);
+                // Unity mutates instantiated root names before the runtime
+                // audit runs. The marker's pinned effectRoot and root PathIDs
+                // own that segment; all descendant names and direct references
+                // remain validated from the live clone.
+                names.Add(current == root ? sourceRootName : current.name);
                 if (current == root)
                 {
                     names.Reverse();
