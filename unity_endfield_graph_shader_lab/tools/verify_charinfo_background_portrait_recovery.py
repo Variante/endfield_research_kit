@@ -257,8 +257,11 @@ def verify_scene_binding(path: Path) -> None:
         )
 
 
-def verify_static(actor: str) -> dict:
-    for path in (MANIFEST, RUNTIME, BUILDER, SHADER, PIPELINE, SETUP, WRAPPERS[actor]):
+def verify_static(actor: str, *, verify_wrapper: bool = True) -> dict:
+    required_paths = [MANIFEST, RUNTIME, BUILDER, SHADER, PIPELINE, SETUP]
+    if verify_wrapper:
+        required_paths.append(WRAPPERS[actor])
+    for path in required_paths:
         require(path.is_file(), f"missing recovery file: {path}")
 
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -359,6 +362,7 @@ def verify_static(actor: str) -> dict:
         "new RenderTargetIdentifier(primarySceneDepth)",
         "commandBuffer.SetGlobalTexture(SceneDepthId, portraitSceneDepth)",
         "commandBuffer.SetRenderTarget(postColorTarget)",
+        "commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f)",
     ):
         require(token in pipeline, f"post-Uber portrait pipeline contract missing {token!r}")
 
@@ -396,24 +400,31 @@ def verify_static(actor: str) -> dict:
     for scene_path in CANONICAL_SCENES:
         verify_scene_binding(scene_path)
 
-    wrapper = WRAPPERS[actor].read_text(encoding="utf-8")
-    for token in (
-        'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
-        'set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"',
-        'set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=off"',
-        'set "ENDFIELD_RECOVERED_CHARINFO_PRESENTATION=0"',
-        'set "ENDFIELD_RECOVERED_PREGBUFFER_DIAGNOSTIC=0"',
-        'set "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_DIAGNOSTIC=0"',
-        "verify_charinfo_background_portrait_recovery.py",
-        "-force-d3d12",
-    ):
-        require(token in wrapper, f"{WRAPPERS[actor].name}: missing {token!r}")
+    if verify_wrapper:
+        wrapper_path = WRAPPERS[actor]
+        require(
+            wrapper_path.is_file(),
+            f"missing runtime wrapper: {wrapper_path}",
+        )
+        wrapper = wrapper_path.read_text(encoding="utf-8")
+        for token in (
+            'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
+            'set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"',
+            'set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=off"',
+            'set "ENDFIELD_RECOVERED_CHARINFO_PRESENTATION=0"',
+            'set "ENDFIELD_RECOVERED_PREGBUFFER_DIAGNOSTIC=0"',
+            'set "ENDFIELD_RECOVERED_SCREEN_SHADOW_MASK_DIAGNOSTIC=0"',
+            "verify_charinfo_background_portrait_recovery.py",
+            "-force-d3d12",
+        ):
+            require(token in wrapper, f"{wrapper_path.name}: missing {token!r}")
 
     return {
         "manifest": str(MANIFEST),
         "manifestSha256": sha256(MANIFEST),
         "sourceTextureSha256": source_hashes,
         "generatedMeshSha256": generated_mesh_hashes,
+        "runtimeWrapperChecked": verify_wrapper,
         "staticContractValid": True,
     }
 
@@ -475,7 +486,14 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     if args.static_only:
-        results = {actor: verify_static(actor) for actor in WRAPPERS}
+        # Runtime wrappers are local/ignored operator conveniences and are not
+        # part of a clean checkout. Static-only mode validates the maintained
+        # source, generated assets, scenes, shader, and render-pipeline contract
+        # without pretending those absent wrappers were checked.
+        results = {
+            actor: verify_static(actor, verify_wrapper=False)
+            for actor in WRAPPERS
+        }
         print(json.dumps({"staticValid": True, "actors": results}, indent=2, sort_keys=True))
         return 0
     require(args.actor is not None, "--actor is required unless --static-only is used")

@@ -94,7 +94,6 @@ def main() -> int:
         "camera.nonJitteredProjectionMatrix",
         "projection * viewNoTranslation",
         "commandBuffer.SetGlobalFloat(RenderPathInjectedId, 1.0f)",
-        "camera.targetTexture == null ? 1.0f : 0.0f",
         "ReleaseRecoveredPrimarySceneDepth(recoveredPrimarySceneDepth)",
     ]
     for marker in pipeline_markers:
@@ -131,6 +130,16 @@ def main() -> int:
         all("primarySceneDepth" not in arguments
             for arguments in post_ui_render_targets),
         "primary depth must not be rebound as a simultaneous post-UI DSV",
+        failures,
+    )
+    require(
+        "commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);" in portrait_draw,
+        "post-Uber portrait draw does not retain the offscreen target orientation",
+        failures,
+    )
+    require(
+        "camera.targetTexture == null ? 1.0f : 0.0f" not in portrait_draw,
+        "post-Uber portrait still applies a portrait-only backbuffer Y flip",
         failures,
     )
 

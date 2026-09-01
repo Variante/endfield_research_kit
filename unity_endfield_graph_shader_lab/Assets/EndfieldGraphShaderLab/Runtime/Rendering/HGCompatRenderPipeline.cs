@@ -4219,9 +4219,13 @@ namespace EndfieldGraphShaderLab
                     1.0f));
             commandBuffer.SetGlobalFloat(RenderPathInjectedId, 1.0f);
             commandBuffer.SetGlobalFloat(HGFlipXId, 0.0f);
-            commandBuffer.SetGlobalFloat(
-                HGFlipYId,
-                camera.targetTexture == null ? 1.0f : 0.0f);
+            // This draw targets postColorTarget, not the backbuffer. The GPU
+            // projection above is therefore built with renderIntoTexture=true
+            // in both Play mode and capture mode. Backbuffer presentation may
+            // flip the completed postColorTarget later, but applying that flip
+            // to this layer alone turns the portrait upside down relative to
+            // the scene.
+            commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);
             context.ExecuteCommandBuffer(commandBuffer);
             commandBuffer.Release();
 
