@@ -17,6 +17,57 @@ import validate_burst_resolver_telemetry as validator  # noqa: E402
 
 
 class ValidateBurstResolverTelemetryTests(unittest.TestCase):
+    @staticmethod
+    def _cpu_selection_payload(
+        manifest: dict[str, object], identity: dict[str, object],
+        target_id: str, status: str = "matched",
+    ) -> dict[str, object]:
+        probe = manifest["calcLineCpuSelection"]
+        empty: dict[str, object] = {
+            "probe": None,
+            "status": "not_configured",
+            "slotAddress": None,
+            "selectedPointer": None,
+            "resolvedAddress": None,
+            "resolvedModuleName": None,
+            "resolvedModulePath": None,
+            "resolvedModuleBase": None,
+            "resolvedModuleSize": None,
+            "resolvedModuleOffset": None,
+            "selectedCpuVariant": None,
+            "error": None,
+        }
+        if target_id != probe["targetId"]:
+            return empty
+        slot_address = hex(
+            int(str(identity["base"]), 16) +
+            int(str(probe["functionPointerSlotRva"]), 16)
+        )
+        configured = {**empty, "probe": probe, "status": status,
+                      "slotAddress": slot_address}
+        if status == "slot_null":
+            configured["selectedPointer"] = "0x0"
+            return configured
+        entry_rva = (
+            probe["variants"][0]["entryRva"]
+            if status == "matched" else "0x1234"
+        )
+        selected_pointer = hex(int(str(identity["base"]), 16) + int(entry_rva, 16))
+        configured.update({
+            "selectedPointer": selected_pointer,
+            "resolvedAddress": selected_pointer,
+            "resolvedModuleName": manifest["resolverModuleName"],
+            "resolvedModulePath": identity["path"],
+            "resolvedModuleBase": identity["base"],
+            "resolvedModuleSize": identity["size"],
+            "resolvedModuleOffset": entry_rva,
+            "selectedCpuVariant": (
+                probe["variants"][0]["cpuVariant"]
+                if status == "matched" else None
+            ),
+        })
+        return configured
+
     def _write_trace(self, path: Path, *, stop_ack: bool = True) -> None:
         manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
         files = {
@@ -158,6 +209,51 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _add_all_pointer_events(
+        self, path: Path, *, calc_status: str = "matched",
+    ) -> None:
+        manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+        rows = [json.loads(line) for line in path.read_text(
+            encoding="utf-8").splitlines()]
+        identity = rows[1]["resolverModuleIdentity"]
+        insert_at = next(index for index, row in enumerate(rows)
+                         if row["kind"] == "capture_stop_ack")
+        pointer_events = []
+        for target in manifest["targets"]:
+            pointer_events.append({
+                "schema": telemetry.EVENT_SCHEMA,
+                "sessionId": "burst-test-session",
+                "seq": 0,
+                "monotonicMs": 0.0,
+                "utc": "2026-08-20T00:00:00.000Z",
+                "kind": "burst_function_pointer",
+                "targetId": target["id"],
+                "targetMethodIndex": target["methodIndex"],
+                "targetMethodName": target["methodName"],
+                "targetFullName": target["fullName"],
+                "callTargetProbe": target["callTargetProbe"],
+                "returnPointer": "0x7000",
+                "resolvedAddress": "0x7000",
+                "resolvedModuleName": manifest["resolverModuleName"],
+                "resolvedModulePath": identity["path"],
+                "resolvedModuleBase": "0x5000",
+                "resolvedModuleSize": manifest["files"]["resolver"]["bytes"],
+                "resolvedModuleOffset": "0x2000",
+                "resolvedExportName": "0123456789abcdef0123456789abcdef",
+                "resolvedExportStatus": "enumerated",
+                "cpuSelection": self._cpu_selection_payload(
+                    manifest, identity, target["id"], calc_status),
+                "threadId": 42,
+            })
+        rows[insert_at:insert_at] = pointer_events
+        next(row for row in rows if row["kind"] == "capture_stop_ack")[
+            "eventCount"] = 1 + len(pointer_events)
+        for seq, row in enumerate(rows):
+            row["seq"] = seq
+            row["monotonicMs"] = float(seq)
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows),
+                        encoding="utf-8")
+
     def test_valid_trace_records_only_matching_resolver_handle(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "trace.jsonl"
@@ -173,46 +269,38 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "trace.jsonl"
             self._write_trace(path)
-            manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
-            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-            identity = rows[1]["resolverModuleIdentity"]
-            insert_at = next(index for index, row in enumerate(rows) if row["kind"] == "capture_stop_ack")
-            pointer_events = []
-            for target in manifest["targets"]:
-                pointer_events.append({
-                    "schema": telemetry.EVENT_SCHEMA,
-                    "sessionId": "burst-test-session",
-                    "seq": 0,
-                    "monotonicMs": 0.0,
-                    "utc": "2026-08-20T00:00:00.000Z",
-                    "kind": "burst_function_pointer",
-                    "targetId": target["id"],
-                    "targetMethodIndex": target["methodIndex"],
-                    "targetMethodName": target["methodName"],
-                    "targetFullName": target["fullName"],
-                    "callTargetProbe": target["callTargetProbe"],
-                    "returnPointer": "0x7000",
-                    "resolvedAddress": "0x7000",
-                    "resolvedModuleName": manifest["resolverModuleName"],
-                    "resolvedModulePath": identity["path"],
-                    "resolvedModuleBase": "0x5000",
-                    "resolvedModuleSize": manifest["files"]["resolver"]["bytes"],
-                    "resolvedModuleOffset": "0x2000",
-                    "resolvedExportName": "0123456789abcdef0123456789abcdef",
-                    "resolvedExportStatus": "enumerated",
-                    "threadId": 42,
-                })
-            rows[insert_at:insert_at] = pointer_events
-            next(row for row in rows if row["kind"] == "capture_stop_ack")["eventCount"] = 1 + len(pointer_events)
-            for seq, row in enumerate(rows):
-                row["seq"] = seq
-                row["monotonicMs"] = float(seq)
-            path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+            self._add_all_pointer_events(path)
             result = validator.validate_trace(path)
         self.assertEqual(result["burstFunctionPointerEventCount"], 6)
         self.assertTrue(result["claims"]["liveBurstCallTargetsObserved"])
         self.assertTrue(result["claims"]["resolverExportMappingProven"])
         self.assertTrue(all(result["burstFunctionPointerMappings"].values()))
+        self.assertEqual(
+            result["calcLineCpuSelection"]["status"],
+            "selected_cpu_variant_observed",
+        )
+        self.assertEqual(
+            result["calcLineCpuSelection"]["selectedCpuVariant"], "x64_sse2")
+        self.assertTrue(result["claims"]["calcLineDirectCallTargetObserved"])
+        self.assertTrue(result["claims"]["calcLineSelectedCpuVariantObserved"])
+
+    def test_calc_line_cpu_variant_unknown_zero_and_missing_fail_closed(self) -> None:
+        for status, expected in (
+            ("unknown_entry", "unknown_entry"),
+            ("slot_null", "slot_null"),
+            (None, "missing"),
+        ):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temp:
+                path = Path(temp) / "trace.jsonl"
+                self._write_trace(path)
+                if status is not None:
+                    self._add_all_pointer_events(path, calc_status=status)
+                result = validator.validate_trace(path)
+                self.assertEqual(result["calcLineCpuSelection"]["status"], expected)
+                self.assertIsNone(
+                    result["calcLineCpuSelection"]["selectedCpuVariant"])
+                self.assertFalse(
+                    result["claims"]["calcLineSelectedCpuVariantObserved"])
 
     def test_all_target_windows_are_counted_without_execution_claim(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

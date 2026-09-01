@@ -244,6 +244,140 @@ def _resolved_fields(row: dict[str, Any], label: str) -> None:
         _fail(f"{label}.resolvedAddress is not resolvedModuleBase plus resolvedModuleOffset")
 
 
+def _cpu_selection(
+    value: Any,
+    label: str,
+    manifest: dict[str, Any],
+    expected_resolver_path: str,
+    expected_resolver_base: str | None,
+) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        _fail(f"{label} is not an object")
+    required = {
+        "probe", "status", "slotAddress", "selectedPointer",
+        "resolvedAddress", "resolvedModuleName", "resolvedModulePath",
+        "resolvedModuleBase", "resolvedModuleSize", "resolvedModuleOffset",
+        "selectedCpuVariant", "error",
+    }
+    if set(value) != required:
+        _fail(f"{label} has an unexpected CPU selection schema: {sorted(value)}")
+    status = value.get("status")
+    if status not in {
+        "not_configured", "resolver_unavailable", "slot_unreadable",
+        "slot_null", "unknown_entry", "matched",
+    }:
+        _fail(f"{label}.status is invalid")
+    nullable_resolution = (
+        "resolvedAddress", "resolvedModuleName", "resolvedModulePath",
+        "resolvedModuleBase", "resolvedModuleSize", "resolvedModuleOffset",
+    )
+    if status == "not_configured":
+        if value.get("probe") is not None:
+            _fail(f"{label}.probe must be null when not configured")
+        for key in (
+            "slotAddress", "selectedPointer", *nullable_resolution,
+            "selectedCpuVariant", "error",
+        ):
+            if value.get(key) is not None:
+                _fail(f"{label}.{key} must be null when not configured")
+        return value
+
+    probe = manifest["calcLineCpuSelection"]
+    if value.get("probe") != probe:
+        _fail(f"{label}.probe drifted from the pinned CalcLine CPU selection")
+    if status == "resolver_unavailable":
+        for key in (
+            "slotAddress", "selectedPointer", *nullable_resolution,
+            "selectedCpuVariant", "error",
+        ):
+            if value.get(key) is not None:
+                _fail(f"{label}.{key} must be null when the resolver is unavailable")
+        return value
+
+    slot_address = value.get("slotAddress")
+    _check_pointer(slot_address, f"{label}.slotAddress")
+    if expected_resolver_base is not None:
+        expected_slot = int(expected_resolver_base, 16) + int(
+            probe["functionPointerSlotRva"], 16
+        )
+        if int(slot_address, 16) != expected_slot:
+            _fail(f"{label}.slotAddress is not the pinned resolver slot")
+
+    if status == "slot_unreadable":
+        if not isinstance(value.get("error"), str) or not value["error"]:
+            _fail(f"{label}.error must explain an unreadable slot")
+        for key in ("selectedPointer", *nullable_resolution, "selectedCpuVariant"):
+            if value.get(key) is not None:
+                _fail(f"{label}.{key} must be null when the slot is unreadable")
+        return value
+    if value.get("error") is not None:
+        _fail(f"{label}.error is only valid for an unreadable slot")
+
+    selected_pointer = value.get("selectedPointer")
+    _check_pointer(selected_pointer, f"{label}.selectedPointer", allow_null=True)
+    if status == "slot_null":
+        if selected_pointer not in {"0x0", "0x0000000000000000"}:
+            _fail(f"{label}.selectedPointer must be null for slot_null")
+        for key in (*nullable_resolution, "selectedCpuVariant"):
+            if value.get(key) is not None:
+                _fail(f"{label}.{key} must be null for slot_null")
+        return value
+    _check_pointer(selected_pointer, f"{label}.selectedPointer")
+    resolved_address = value.get("resolvedAddress")
+    _check_pointer(resolved_address, f"{label}.resolvedAddress")
+    if resolved_address.casefold() != selected_pointer.casefold():
+        _fail(f"{label}.resolvedAddress differs from selectedPointer")
+
+    module_fields = (
+        value.get("resolvedModuleName"), value.get("resolvedModulePath"),
+        value.get("resolvedModuleBase"), value.get("resolvedModuleSize"),
+        value.get("resolvedModuleOffset"),
+    )
+    if any(field is not None for field in module_fields):
+        if any(field is None for field in module_fields):
+            _fail(f"{label} has a partial selected-entry module identity")
+        _module_name(value["resolvedModuleName"], f"{label}.resolvedModuleName")
+        _module_path(value["resolvedModulePath"], f"{label}.resolvedModulePath")
+        _check_pointer(value["resolvedModuleBase"], f"{label}.resolvedModuleBase")
+        size = value["resolvedModuleSize"]
+        if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
+            _fail(f"{label}.resolvedModuleSize is invalid")
+        _check_pointer(value["resolvedModuleOffset"], f"{label}.resolvedModuleOffset")
+        if int(value["resolvedModuleOffset"], 16) >= size:
+            _fail(f"{label}.resolvedModuleOffset lies outside its module image")
+        if int(resolved_address, 16) != (
+            int(value["resolvedModuleBase"], 16) +
+            int(value["resolvedModuleOffset"], 16)
+        ):
+            _fail(f"{label}.resolvedAddress is not module base plus offset")
+
+    if status == "unknown_entry":
+        if value.get("selectedCpuVariant") is not None:
+            _fail(f"{label}.selectedCpuVariant must be null for an unknown entry")
+        return value
+
+    if status != "matched":
+        _fail(f"{label}.status is inconsistent with a non-null selected entry")
+    if _module_name(value.get("resolvedModuleName"), f"{label}.resolvedModuleName") != manifest["resolverModuleName"].casefold():
+        _fail(f"{label} matched entry is outside the pinned resolver")
+    if _module_path(value.get("resolvedModulePath"), f"{label}.resolvedModulePath") != expected_resolver_path:
+        _fail(f"{label} matched entry belongs to a different resolver path")
+    if value.get("resolvedModuleSize") != manifest["files"]["resolver"]["bytes"]:
+        _fail(f"{label} matched entry has the wrong resolver size")
+    if expected_resolver_base is not None and str(value.get("resolvedModuleBase")).casefold() != expected_resolver_base.casefold():
+        _fail(f"{label} matched entry has the wrong resolver base")
+    variants = {
+        variant["cpuVariant"]: variant["entryRva"]
+        for variant in probe["variants"]
+    }
+    cpu_variant = value.get("selectedCpuVariant")
+    if cpu_variant not in variants:
+        _fail(f"{label}.selectedCpuVariant is not a pinned variant")
+    if int(value["resolvedModuleOffset"], 16) != int(variants[cpu_variant], 16):
+        _fail(f"{label}.selectedCpuVariant does not match the selected entry RVA")
+    return value
+
+
 def validate_trace(
     path: Path,
     manifest_path: Path = telemetry.DEFAULT_MANIFEST,
@@ -287,7 +421,8 @@ def validate_trace(
             "targetId", "targetMethodIndex", "targetMethodName", "targetFullName",
             "callTargetProbe", "returnPointer", "resolvedAddress", "resolvedModuleName",
             "resolvedModulePath", "resolvedModuleBase", "resolvedModuleSize",
-            "resolvedModuleOffset", "resolvedExportName", "resolvedExportStatus", "threadId",
+            "resolvedModuleOffset", "resolvedExportName", "resolvedExportStatus",
+            "cpuSelection", "threadId",
         },
         "calc_line_burst_gate": {
             "probe", "methodIndex", "methodName", "result", "returnRegister",
@@ -659,7 +794,8 @@ def validate_trace(
     pointer_mappings: dict[str, list[dict[str, Any]]] = {
         target_id: [] for target_id in targets_by_id
     }
-    seen_pointer_observations: set[tuple[str, str]] = set()
+    seen_pointer_observations: set[tuple[str, str, str, str]] = set()
+    calc_line_cpu_observations: list[dict[str, Any]] = []
     for index, row in enumerate(pointer_events):
         label = f"burst_function_pointer {index}"
         target_id = row.get("targetId")
@@ -679,7 +815,34 @@ def validate_trace(
         return_pointer = row.get("returnPointer")
         _check_pointer(return_pointer, f"{label}.returnPointer", allow_null=True)
         _resolved_fields(row, label)
-        dedupe_key = (target_id, str(return_pointer).casefold())
+        cpu_selection = _cpu_selection(
+            row.get("cpuSelection"), f"{label}.cpuSelection", manifest,
+            expected_resolver_path,
+            str(identity_handle) if identity_handle is not None else None,
+        )
+        cpu_target_id = manifest["calcLineCpuSelection"]["targetId"]
+        if target_id == cpu_target_id:
+            if cpu_selection["status"] == "not_configured":
+                _fail(f"{label}.cpuSelection is missing for the CalcLine target")
+            calc_line_cpu_observations.append({
+                "returnPointer": return_pointer,
+                "resolvedModuleName": row.get("resolvedModuleName"),
+                "resolvedModulePath": row.get("resolvedModulePath"),
+                "resolvedModuleBase": row.get("resolvedModuleBase"),
+                "resolvedModuleSize": row.get("resolvedModuleSize"),
+                "resolvedModuleOffset": row.get("resolvedModuleOffset"),
+                "resolvedExportName": row.get("resolvedExportName"),
+                "resolvedExportStatus": row.get("resolvedExportStatus"),
+                "cpuSelection": cpu_selection,
+            })
+        elif cpu_selection["status"] != "not_configured":
+            _fail(f"{label}.cpuSelection is configured for a non-CalcLine target")
+        dedupe_key = (
+            target_id,
+            str(return_pointer).casefold(),
+            str(cpu_selection.get("selectedPointer")).casefold(),
+            str(cpu_selection.get("status")),
+        )
         if dedupe_key in seen_pointer_observations:
             _fail(f"{label} duplicates a target/pointer observation")
         seen_pointer_observations.add(dedupe_key)
@@ -710,8 +873,64 @@ def validate_trace(
                 "resolvedModuleOffset": row.get("resolvedModuleOffset"),
                 "resolvedExportName": row.get("resolvedExportName"),
                 "resolvedExportStatus": row.get("resolvedExportStatus"),
+                "cpuSelection": cpu_selection,
             }
         )
+
+    cpu_probe = manifest["calcLineCpuSelection"]
+    variant_rvas = {
+        variant["cpuVariant"]: variant["entryRva"]
+        for variant in cpu_probe["variants"]
+    }
+    cpu_statuses = {
+        observation["cpuSelection"]["status"]
+        for observation in calc_line_cpu_observations
+    }
+    observed_variants = {
+        observation["cpuSelection"]["selectedCpuVariant"]
+        for observation in calc_line_cpu_observations
+        if observation["cpuSelection"]["status"] == "matched"
+    }
+    direct_call_targets_exact = bool(calc_line_cpu_observations) and all(
+        observation["returnPointer"] not in {None, "0x0", "0x0000000000000000"}
+        and str(observation["resolvedModuleName"]).casefold()
+            == manifest["resolverModuleName"].casefold()
+        and _module_path(
+            observation["resolvedModulePath"],
+            "CalcLine direct-call target resolver path",
+        ) == expected_resolver_path
+        and observation["resolvedModuleSize"]
+            == manifest["files"]["resolver"]["bytes"]
+        and observation["resolvedExportStatus"] == "enumerated"
+        and isinstance(observation["resolvedExportName"], str)
+        and re.fullmatch(r"[0-9a-f]{32}", observation["resolvedExportName"])
+        for observation in calc_line_cpu_observations
+    )
+    selected_cpu_variant: str | None = None
+    if (
+        direct_call_targets_exact and cpu_statuses == {"matched"}
+        and len(observed_variants) == 1
+    ):
+        selected_cpu_variant = next(iter(observed_variants))
+        calc_line_cpu_status = "selected_cpu_variant_observed"
+    elif not calc_line_cpu_observations:
+        calc_line_cpu_status = "missing"
+    elif len(cpu_statuses) == 1:
+        calc_line_cpu_status = next(iter(cpu_statuses))
+    else:
+        calc_line_cpu_status = "conflicting_or_incomplete_observations"
+    calc_line_cpu_selection = {
+        "targetId": cpu_probe["targetId"],
+        "functionPointerSlotRva": cpu_probe["functionPointerSlotRva"],
+        "observationCount": len(calc_line_cpu_observations),
+        "status": calc_line_cpu_status,
+        "directCallTargetObserved": direct_call_targets_exact,
+        "selectedCpuVariant": selected_cpu_variant,
+        "selectedCpuEntryRva": (
+            variant_rvas[selected_cpu_variant]
+            if selected_cpu_variant is not None else None
+        ),
+    }
 
     burst_probe = manifest["routeProbes"]["calcLineBurstEnabled"]
     seen_burst_results: set[bool] = set()
@@ -806,7 +1025,7 @@ def validate_trace(
         _fail("trace exceeds configured event cap")
 
     return {
-        "schema": "burstResolverTelemetry.validation.v2",
+        "schema": "burstResolverTelemetry.validation.v3",
         "status": "observed_runtime_candidate",
         "trace": str(path.resolve()),
         "sessionId": next(iter(set(session_values))),
@@ -818,6 +1037,7 @@ def validate_trace(
         "getProcAddressEventCount": len(proc_events),
         "burstFunctionPointerEventCount": len(pointer_events),
         "burstFunctionPointerMappings": pointer_mappings,
+        "calcLineCpuSelection": calc_line_cpu_selection,
         "calcLineBurstGateObservations": burst_gate_events,
         "calcLineIfixGateObservations": ifix_gate_events,
         "hashedExportRequestCount": observed_hashed_events,
@@ -836,6 +1056,10 @@ def validate_trace(
             "allTargetWindowsObserved": all(target_observations.values()),
             "calcLineBurstSelectionObserved": bool(burst_gate_events),
             "calcLineManagedIfixSelectionObserved": bool(ifix_gate_events),
+            "calcLineDirectCallTargetObserved": direct_call_targets_exact,
+            "calcLineSelectedCpuVariantObserved": (
+                selected_cpu_variant is not None
+            ),
             "gameAssemblyCallerBacktraceObserved": any(
                 row.get("backtraceStatus") == "gameassembly_frames" and row.get("gameAssemblyCallerBacktrace")
                 for row in proc_events

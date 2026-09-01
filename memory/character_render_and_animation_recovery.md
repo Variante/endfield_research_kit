@@ -4145,9 +4145,19 @@ project lock indicates shared use; it never removes or bypasses the lock.
    function pointer plus the IFix selection state for `FromToRotation` patch
    `0x219`. Do not implement the managed/fallback equations as retail-active
    until those runtime states close.
-   Keep the older trajectory capture validation-only. A new capture is useful
-   only if it is narrowly instrumented for the selected CalcLine route or IFix
-   patch state. If new graphics evidence is independently required, use
+   The dedicated `burst_resolver_telemetry.py` v3 observer now supplies that
+   narrow lane without the withheld bulk hook. After the exact CalcLine
+   GetFunctionPointer wrapper returns, it reads only the hash-pinned resolver
+   slot at RVA `0x3c57b0`; validation names `x64_sse2` or `avx2` only for the
+   two source-authenticated entry RVAs and keeps missing, null, unreadable,
+   unknown, or conflicting observations incomplete. The same bounded trace
+   observes the exact Burst-enabled return and `IsPatched(0x219)` only on
+   admitted CalcLine caller stacks. Its installed-build preflight is:
+   `python unity_endfield_graph_shader_lab/tools/burst_resolver_telemetry.py --check-only`.
+   This readiness does not close either live route; collect and validate one
+   actual trace before enabling solver writeback. Keep the older trajectory
+   capture validation-only. If new graphics evidence is independently
+   required, use
    `StartCapture.bat graphics full` with Endfield closed and do not interpret
    it as secondary-motion evidence.
    Accept strict `observed-slInit` only when it is genuinely retained;
