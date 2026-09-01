@@ -26,9 +26,10 @@ exit /b 2
   rem Retain the ten source-identified M01/M38 fly-in rock owners. Exact M27
   rem replaces only the hand-crystal row and does not replace these owners.
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
-  rem Keep incomplete source GridDeco/Far as an explicit diagnostic only.
-  rem Canonical presentation uses the neutral preview camera clear;
-  rem ShadowPlane, fitted plate, and generic ready-subset routes stay off.
+  rem Keep the source-background composite as an explicit fail-closed probe.
+  rem Its floor/Far ordering is source-backed, but the SphereOutside resolver
+  rem still lacks a content-valid retail t11 screen-shadow resource.
+  rem Canonical presentation therefore uses the neutral preview clear.
   set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=0"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE_MATERIAL_ONLY_DIAGNOSTIC=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"
@@ -37,11 +38,9 @@ exit /b 2
   set "ENDFIELD_RECOVERED_VISIBILITY_SH=1"
   set "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1"
   set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"
-  rem Deferred/SphereOutside remains a default-off diagnostic. Its current
-  rem screen-shadow prerequisite is content-invalid and vertically masks the
-  rem portrait, so the maintained visual path does not request that chain.
-  rem Override inherited parent-shell diagnostic selectors as well; merely
-  rem omitting them here would not make this maintained path fail closed.
+  rem Do not inherit the content-invalid screen-shadow attachment or its exact
+  rem consumer. Current pass-0 presentation correctly fails closed until the
+  rem retail t11 producer/content boundary is recovered.
   set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=0"
   set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"
   rem The post-Uber depth-sync experiment substitutes a compatibility-Uber

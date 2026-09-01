@@ -63,9 +63,10 @@ namespace EndfieldGraphShaderLab
         public bool enableReadySubsetDiagnostic;
 
         [Tooltip("Requests the bounded Endminf source background containing " +
-                 "only exact GridDeco/Far. SphereOutside, the incomplete " +
-                 "ShadowPlane final-consumer route, and the neutral " +
-                 "compatibility plate are always excluded.")]
+                 "the exact CharFloorEffect and GridDeco/Far forward passes. " +
+                 "SphereOutside remains disabled in the ordinary cull because " +
+                 "its recovered HGBuffer/Default-Lit sidecar owns the opaque " +
+                 "carrier; ShadowPlane and the compatibility plate stay off.")]
         public bool enableEndminfSourceBackground;
 
         [Tooltip("Importer-owned wrapper containing the exact layer-13 source hierarchy.")]
@@ -364,7 +365,13 @@ namespace EndfieldGraphShaderLab
             BeginSourceState(false, true);
             sourceContent.SetActive(true);
             ApplySettledOpenState(openState, false);
-            SetRendererEnabledStates(false, false, false, false, true);
+            // SphereOutside must remain disabled in the ordinary cull: the
+            // recovered five-MRT HGBuffer -> Default-Lit presentation draws it
+            // before ForwardOpaque and fails closed unless this renderer is
+            // isolated. CharFloorEffect and GridFar then retain their source
+            // queue/state over that opaque carrier. Wall and ShadowPlane remain
+            // gated by their still-open presentation boundaries.
+            SetRendererEnabledStates(false, true, false, false, true);
             if (appliedBackdropRenderer != null)
                 appliedBackdropRenderer.enabled = false;
             Shader.DisableKeyword(Keyword);
@@ -376,9 +383,9 @@ namespace EndfieldGraphShaderLab
             {
                 Debug.LogWarning(
                     "Recovered Endminf source background active: exact " +
-                    "GridDeco/Far only. SphereOutside, the incomplete " +
-                    "ShadowPlane final-consumer route, and the neutral " +
-                    "compatibility plate are disabled.",
+                    "CharFloorEffect and GridDeco/Far over the isolated " +
+                    "SphereOutside deferred presentation. Ordinary SphereOutside, " +
+                    "wall, ShadowPlane, and the compatibility plate are disabled.",
                     this);
                 loggedEndminfSourceBackgroundActivation = true;
             }
@@ -613,10 +620,13 @@ namespace EndfieldGraphShaderLab
                 return false;
 
             // ValidateReadySubsetReadiness explicitly verifies that both
-            // SphereOutside and ShadowPlane remain excluded. ShadowPlane's
-            // serialized identity and shader consumer are source-backed, but
-            // its retail physical-camera stencil/color-target ownership is not
-            // closed, so it must not enter maintained presentation.
+            // SphereOutside and ShadowPlane remain excluded from the ordinary
+            // renderer. SphereOutside is instead consumed by the recovered
+            // five-MRT HGBuffer -> Default-Lit sidecar; the sidecar has its own
+            // same-camera identity/readiness gate. ShadowPlane's serialized
+            // identity and shader consumer are source-backed, but its retail
+            // physical-camera stencil/color-target ownership is not closed, so
+            // it must not enter maintained presentation.
             failure = string.Empty;
             return true;
         }

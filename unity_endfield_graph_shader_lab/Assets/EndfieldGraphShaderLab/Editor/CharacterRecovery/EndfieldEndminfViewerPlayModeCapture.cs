@@ -96,16 +96,14 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT";
         private const string SphereOutsidePresentationEnvironment =
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION";
-        // A canonical video export must exercise the same source-backed exact
-        // presentation as the maintained interactive launcher. Keep explicit
-        // environment values (including "0") for controlled A/B runs, but do
-        // not let an ordinary batch render silently omit recovered owners.
+        // Source-backed owners are promoted here only after their exact path is
+        // presentation-ready. Keep this list empty while SphereOutside still
+        // lacks a content-valid retail t11 producer; explicit diagnostics use
+        // dedicated entry points outside canonical-video policy.
         private static readonly string[] CanonicalVideoDefaultFlags =
         {
-            // The deferred/SphereOutside chain still depends on the explicitly
-            // content-invalid screen-shadow attachment diagnostic. Enabling it
-            // produces an upside-down body mask over the portrait and regresses
-            // the aligned peak substantially, so it is not presentation policy.
+            // SphereOutside remains an explicit fail-closed probe until the
+            // retail t11 screen-shadow producer/content boundary is recovered.
             // Captured opening-strip, M13, and M21 draw packets remain useful
             // ABI diagnostics, but they freeze one or a few observed particle
             // states. The maintained reproduction must keep the authored
@@ -194,7 +192,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v21";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v22";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -210,6 +208,7 @@ namespace EndfieldGraphShaderLabEditor
             public bool backgroundPortraitRequested = IncludeBackgroundPortrait;
             public bool charInfoBackgroundIncluded;
             public bool endminfSourceBackgroundIncluded;
+            public bool canonicalSourceSphereFloorGridBackgroundIncluded;
             public bool canonicalSolidColorBackgroundIncluded;
             public bool fittedCompatibilityPlateActive;
             public bool backgroundPortraitIncluded;
@@ -608,23 +607,35 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
                         .EndminfSourceBackgroundEnvironmentVariable);
+            if (videoExportRequested &&
+                string.IsNullOrWhiteSpace(sourceBackgroundSelection))
+            {
+                sourceBackgroundSelection = "0";
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceBackgroundEnvironmentVariable,
+                    sourceBackgroundSelection);
+            }
             bool sourceBackgroundExplicitlyDisabled = string.Equals(
                 sourceBackgroundSelection,
                 "0",
                 StringComparison.Ordinal);
-            // Canonical video always uses the neutral preview camera clear.
-            // An explicit zero gives focused probes the same carrier.
-            // The incomplete Far-only branch remains available only when a
-            // caller explicitly runs a source-background diagnostic.
+            // Canonical video retains the neutral preview clear until the
+            // source SphereOutside -> floor -> Far composite passes the v22
+            // exact-consumer and presented-pixel gate. Explicit source=1 is a
+            // controlled fail-closed diagnostic.
             captureCanonicalSolidColorBackground =
-                videoExportRequested || sourceBackgroundExplicitlyDisabled;
+                sourceBackgroundExplicitlyDisabled;
             if (videoExportRequested)
             {
-                foreach (string flag in CanonicalVideoDefaultFlags)
+                if (!sourceBackgroundExplicitlyDisabled)
                 {
-                    if (string.IsNullOrWhiteSpace(
-                            Environment.GetEnvironmentVariable(flag)))
-                        Environment.SetEnvironmentVariable(flag, "1");
+                    foreach (string flag in CanonicalVideoDefaultFlags)
+                    {
+                        if (string.IsNullOrWhiteSpace(
+                                Environment.GetEnvironmentVariable(flag)))
+                            Environment.SetEnvironmentVariable(flag, "1");
+                    }
                 }
                 foreach (string flag in CanonicalVideoForcedOffFlags)
                     Environment.SetEnvironmentVariable(flag, "0");
@@ -674,6 +685,13 @@ namespace EndfieldGraphShaderLabEditor
                     "1");
             }
             // Canonical capture admits the bounded source-owned background.
+            // Hold the unrelated physical sky off: SphereOutside owns the
+            // opaque room and its failed presentation must remain visibly
+            // fail-closed instead of being replaced by another background.
+            Environment.SetEnvironmentVariable(
+                EndfieldRecoveredCharInfoSky
+                    .MaterialOnlyDiagnosticEnvironmentVariable,
+                "1");
             // Neither fitted compatibility path may become a hidden fallback.
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoPresentation
@@ -693,9 +711,8 @@ namespace EndfieldGraphShaderLabEditor
             // stale generated prefab when that source is missing or drifted.
             EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
             EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
-            // The binding builder intentionally selects its source-background
-            // diagnostic while authoring the generated scene. Restore the
-            // canonical/explicitly-disabled process selector after that
+            // The rebuild may refresh serialized presentation state. Restore
+            // the canonical/explicitly-disabled process selector after that
             // mutation, then invalidate the already-running editor cache
             // before opening the Play-mode scene.
             if (captureCanonicalSolidColorBackground)
@@ -1876,8 +1893,8 @@ namespace EndfieldGraphShaderLabEditor
                 value.endminfM27HGBufferReady);
             bool observedEndminfM27PresentationReady = Frames.Any(value =>
                 value.endminfM27PresentationReady);
-            bool observedSphereOutsidePresentationReady = Frames.Any(value =>
-                value.sphereOutsidePresentationReady);
+            bool observedSphereOutsidePresentationReady = Frames.Count > 0 &&
+                Frames.All(value => value.sphereOutsidePresentationReady);
             bool observedPreGBufferDepthOwnerReady = Frames.All(value =>
                 value.preGBufferDepthOwnerReady);
             bool observedCanonicalCharacterPreGBufferReady = Frames.All(value =>
@@ -2011,22 +2028,43 @@ namespace EndfieldGraphShaderLabEditor
                     CanonicalBackgroundProofTimes.Length &&
                  minimumCanonicalBackgroundProofLumaMean >=
                     MinimumBackgroundProofMeanLuma &&
+                  minimumCanonicalBackgroundProofLuma >=
+                     MinimumBackgroundProofPixelLuma);
+            bool canonicalSourceSphereFloorGridBackgroundIncluded =
+                !IncludeCharInfoBackground ||
+                (!captureCanonicalSolidColorBackground &&
+                 endminfSourceBackgroundIncluded &&
+                 observedSphereOutsidePresentationReady &&
+                 Frames.Count > 0 &&
+                 Frames.All(value => value.deferredExactConsumerReady) &&
+                 !fittedCompatibilityPlateActive &&
+                 IsCanonicalSolidColorBackgroundCamera(camera) &&
+                 canonicalBackgroundProofFrames.Length ==
+                    CanonicalBackgroundProofTimes.Length &&
+                 minimumCanonicalBackgroundProofLumaMean >=
+                    MinimumBackgroundProofMeanLuma &&
                  minimumCanonicalBackgroundProofLuma >=
                     MinimumBackgroundProofPixelLuma);
             bool charInfoBackgroundIncluded =
+                canonicalSourceSphereFloorGridBackgroundIncluded ||
                 canonicalSolidColorBackgroundIncluded;
             bool backgroundPortraitIncluded =
                 !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
             if (!charInfoBackgroundIncluded)
                 missingObservations.Add(
-                    "canonical Endminf SolidColor background: expected camera " +
-                    "RGBA(0.70,0.71,0.70,1), incomplete source/fitted routes " +
-                    "off, and 0.65/4.4333334/6.65 s top-left 128x128 luma " +
+                    "canonical Endminf background: expected the source " +
+                    "SphereOutside deferred resolve plus CharFloorEffect/Far " +
+                    "allow-list (or an explicitly requested neutral-clear A/B), " +
+                    "camera RGBA(0.70,0.71,0.70,1), fitted route off, and " +
+                    "0.65/4.4333334/6.65 s top-left 128x128 luma " +
                     "mean/min >= " +
                     MinimumBackgroundProofMeanLuma.ToString(
                         "0.0", CultureInfo.InvariantCulture) + "/" +
                     MinimumBackgroundProofPixelLuma + "; actual source=" +
-                    endminfSourceBackgroundIncluded + ", fitted=" +
+                    endminfSourceBackgroundIncluded + ", sphereAll=" +
+                    observedSphereOutsidePresentationReady + ", exactAll=" +
+                    (Frames.Count > 0 && Frames.All(value =>
+                        value.deferredExactConsumerReady)) + ", fitted=" +
                     fittedCompatibilityPlateActive + ", camera=" +
                     camera.clearFlags + " " +
                     camera.backgroundColor.ToString("F5") + ", mean/min=" +
@@ -2286,6 +2324,8 @@ namespace EndfieldGraphShaderLabEditor
                     captureCanonicalSolidColorBackground,
                 endminfSourceBackgroundIncluded =
                     endminfSourceBackgroundIncluded,
+                canonicalSourceSphereFloorGridBackgroundIncluded =
+                    canonicalSourceSphereFloorGridBackgroundIncluded,
                 canonicalSolidColorBackgroundIncluded =
                     canonicalSolidColorBackgroundIncluded,
                 fittedCompatibilityPlateActive =
@@ -2485,7 +2525,7 @@ namespace EndfieldGraphShaderLabEditor
                     value.sphereOutsideRenderer != null &&
                     !value.sphereOutsideRenderer.enabled &&
                     value.floorRenderer != null &&
-                    !value.floorRenderer.enabled &&
+                    value.floorRenderer.enabled &&
                     value.wallRenderer != null &&
                     !value.wallRenderer.enabled &&
                     value.shadowPlaneRenderer != null &&

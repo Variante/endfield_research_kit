@@ -3550,6 +3550,13 @@ EndfieldCapture now observes and descriptor-gates both fullscreen producer
 draws plus the current PS t11/s1 consumer, retains the shared RG8 payload, and
 requires their same-frame identity and chronology. A fresh bounded graphics
 capture is required before the RG attachment can be admitted to presentation.
+The current source-background probe also closes the ordinary renderer order as
+CharFloorEffect then GridFar, with SphereOutside isolated to the deferred
+sidecar and wall/ShadowPlane disabled. Its v22 presented-pixel gate correctly
+fails because no current capture certifies content-valid draw-local t11 data.
+Historical SphereOutside probes predate that gate and are not presentation
+authority; maintained playback therefore retains the neutral clear while this
+exact producer-to-consumer handoff remains open.
 
 The captured Endminf Uber packet remains diagnostic-only. Its native draw and
 resources validate, but the current input chronology regresses the three
