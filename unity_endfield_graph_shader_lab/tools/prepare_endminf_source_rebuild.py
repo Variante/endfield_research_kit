@@ -94,6 +94,7 @@ TARGET_CLIPS = (
     "A_actor_endminf_ui_overview_start",
     "A_actor_endminf_ui_overview_loop",
 )
+EXPECTED_PROFILE_COUNT = 31
 ACL_ASSET_ROOT = (
     "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/"
     "Animations/ACL"
@@ -140,8 +141,12 @@ def validate_profile_inputs() -> int:
         f"playable CharInfo profile contract failed closed: {PROFILE_SOURCE}",
     )
     require(
-        isinstance(rows, list) and declared > 0 and len(rows) == declared,
-        "playable CharInfo profile count is incomplete",
+        isinstance(rows, list)
+        and declared == EXPECTED_PROFILE_COUNT
+        and len(rows) == EXPECTED_PROFILE_COUNT,
+        "playable CharInfo profile count is incomplete: "
+        f"expected {EXPECTED_PROFILE_COUNT}, declared {declared}, "
+        f"found {len(rows) if isinstance(rows, list) else 'non-list'}",
     )
     require(
         render_parameters.get("schema")
@@ -156,6 +161,17 @@ def validate_profile_inputs() -> int:
     )
     render_actors = render_parameters.get("characters") or {}
     light_actors = operator_lights.get("actors") or {}
+    actor_tokens = [str(row.get("actor_token") or "").strip() for row in rows]
+    root_names = [str(row.get("root_name") or "").strip() for row in rows]
+    require(
+        all(actor_tokens)
+        and len({value.casefold() for value in actor_tokens})
+        == EXPECTED_PROFILE_COUNT
+        and all(root_names)
+        and len({value.casefold() for value in root_names})
+        == EXPECTED_PROFILE_COUNT,
+        "playable CharInfo profile actor/root identities are empty or duplicated",
+    )
     for row in rows:
         root_name = str(row.get("root_name") or "<unnamed>")
         actor_token = str(row.get("actor_token") or "")

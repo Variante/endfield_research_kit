@@ -170,11 +170,25 @@ class EndminfSourceRebuildPreflightTests(unittest.TestCase):
                 mock.patch.object(preflight, "OPERATOR_LIGHTS", operator_lights),
             )
             with patches[0], patches[1], patches[2]:
-                self.assertEqual(preflight.validate_profile_inputs(), 1)
-                payload["characters"][0]["portrait"]["texture_png"]["sha256"] = "0" * 64
-                manifest.write_text(json.dumps(payload), encoding="utf-8")
-                with self.assertRaisesRegex(RuntimeError, "portrait PNG hash drifted"):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "expected 31, declared 1, found 1",
+                ):
                     preflight.validate_profile_inputs()
+                with mock.patch.object(preflight, "EXPECTED_PROFILE_COUNT", 1):
+                    self.assertEqual(preflight.validate_profile_inputs(), 1)
+                    payload["characters"][0]["actor_token"] = ""
+                    manifest.write_text(json.dumps(payload), encoding="utf-8")
+                    with self.assertRaisesRegex(
+                        RuntimeError,
+                        "actor/root identities are empty or duplicated",
+                    ):
+                        preflight.validate_profile_inputs()
+                    payload["characters"][0]["actor_token"] = "endminf"
+                    payload["characters"][0]["portrait"]["texture_png"]["sha256"] = "0" * 64
+                    manifest.write_text(json.dumps(payload), encoding="utf-8")
+                    with self.assertRaisesRegex(RuntimeError, "portrait PNG hash drifted"):
+                        preflight.validate_profile_inputs()
 
 
 if __name__ == "__main__":
