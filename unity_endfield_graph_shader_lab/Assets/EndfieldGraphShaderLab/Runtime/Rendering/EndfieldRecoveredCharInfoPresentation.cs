@@ -10,9 +10,8 @@ namespace EndfieldGraphShaderLab
     /// and shader semantic has been marked complete by the source-data
     /// importer. A separately named diagnostic can show only the source-owned
     /// wall, floor, and far-grid subset. A dedicated Endminf selector admits
-    /// exact GridDeco/Far plus the bounded source-backed ShadowPlane identity,
-    /// while excluding both the unresolved sphere and generated neutral plate.
-    /// ShadowPlane is not represented as retail-exact presented pixels.
+    /// exact GridDeco/Far only, while excluding the unresolved sphere,
+    /// ShadowPlane final-consumer route, and generated neutral plate.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -64,9 +63,9 @@ namespace EndfieldGraphShaderLab
         public bool enableReadySubsetDiagnostic;
 
         [Tooltip("Requests the bounded Endminf source background containing " +
-                 "only exact GridDeco/Far and the source-backed partial " +
-                 "ShadowPlane receiver. The neutral compatibility plate is " +
-                 "always excluded.")]
+                 "only exact GridDeco/Far. SphereOutside, the incomplete " +
+                 "ShadowPlane final-consumer route, and the neutral " +
+                 "compatibility plate are always excluded.")]
         public bool enableEndminfSourceBackground;
 
         [Tooltip("Importer-owned wrapper containing the exact layer-13 source hierarchy.")]
@@ -365,7 +364,7 @@ namespace EndfieldGraphShaderLab
             BeginSourceState(false, true);
             sourceContent.SetActive(true);
             ApplySettledOpenState(openState, false);
-            SetRendererEnabledStates(false, false, false, true, true);
+            SetRendererEnabledStates(false, false, false, false, true);
             if (appliedBackdropRenderer != null)
                 appliedBackdropRenderer.enabled = false;
             Shader.DisableKeyword(Keyword);
@@ -377,9 +376,9 @@ namespace EndfieldGraphShaderLab
             {
                 Debug.LogWarning(
                     "Recovered Endminf source background active: exact " +
-                    "GridDeco/Far plus source-backed partial ShadowPlane. " +
-                    "The neutral compatibility plate is disabled. " +
-                    "ShadowPlane is not claimed as retail-exact presented pixels.",
+                    "GridDeco/Far only. SphereOutside, the incomplete " +
+                    "ShadowPlane final-consumer route, and the neutral " +
+                    "compatibility plate are disabled.",
                     this);
                 loggedEndminfSourceBackgroundActivation = true;
             }
@@ -613,19 +612,11 @@ namespace EndfieldGraphShaderLab
             if (!ValidateReadySubsetReadiness(out openState, out failure))
                 return false;
 
-            // The source background admits ShadowPlane only as a bounded,
-            // source-backed partial renderer. This identity gate does not
-            // claim that its final presented pixels match retail ownership.
-            if (!ValidateRenderer(
-                    shadowPlaneRenderer,
-                    "ShadowPlane",
-                    "Plane",
-                    ShadowReceiverShaderName,
-                    out failure))
-            {
-                return false;
-            }
-
+            // ValidateReadySubsetReadiness explicitly verifies that both
+            // SphereOutside and ShadowPlane remain excluded. ShadowPlane's
+            // serialized identity and shader consumer are source-backed, but
+            // its retail physical-camera stencil/color-target ownership is not
+            // closed, so it must not enter maintained presentation.
             failure = string.Empty;
             return true;
         }

@@ -49,6 +49,7 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
+            "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH",
         };
 
         public static void OpenVisualReproductionInPlayMode()
@@ -206,8 +207,9 @@ namespace EndfieldGraphShaderLabEditor
                 if (referenceBackdrop != null)
                 {
                     // Keep the fitted actor-bounds plate as a disabled
-                    // diagnostic dependency. The exact source GridFar plus
-                    // partial ShadowPlane route owns maintained presentation.
+                    // diagnostic dependency. Exact source GridFar alone owns
+                    // maintained presentation; the incomplete ShadowPlane
+                    // final-consumer route stays excluded.
                     referenceBackdrop.enabled = false;
                     presentation.presentationBackdropRenderer = referenceBackdrop;
                 }

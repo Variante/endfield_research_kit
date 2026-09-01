@@ -1,3 +1,6 @@
+import json
+import re
+import struct
 import unittest
 from pathlib import Path
 
@@ -40,6 +43,13 @@ PORTRAIT_SHADER = ROOT / (
 PIPELINE = ROOT / (
     "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs"
 )
+PROFILE_SOURCE = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/"
+    "CharInfoPlayableProfiles/source_profiles.json"
+)
+PROFILE_MESH_ROOT = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/CharInfoPlayableProfiles/Meshes"
+)
 
 
 class EndminfBackdropContractTests(unittest.TestCase):
@@ -65,6 +75,51 @@ class EndminfBackdropContractTests(unittest.TestCase):
         self.assertIn("output.uv = input.uv;", shader)
         self.assertNotIn("1.0 - input.uv.y", shader)
         self.assertNotIn("1.0 - input.uv", shader)
+
+    def test_all_generated_playable_portrait_meshes_are_upright(self):
+        payload = json.loads(PROFILE_SOURCE.read_text(encoding="utf-8-sig"))
+        self.assertEqual(
+            payload["schema"],
+            "endfield.playable-charinfo-presentation-profiles.v1",
+        )
+        self.assertEqual(len(payload["characters"]), payload["character_count"])
+        self.assertEqual(payload["character_count"], 31)
+
+        for row in payload["characters"]:
+            root_name = row["root_name"]
+            portrait = row["portrait"]
+            self.assertEqual(
+                portrait["packing"],
+                {
+                    "meshType": "Tight",
+                    "packed": 0,
+                    "packingMode": "Tight",
+                    "packingRotation": "None",
+                    "settingsRaw": 64,
+                },
+                root_name,
+            )
+            mesh_path = PROFILE_MESH_ROOT / (
+                f"{root_name}_CharInfoPortraitTightQuad.asset"
+            )
+            mesh_text = mesh_path.read_text(encoding="utf-8-sig")
+            match = re.search(r"^    _typelessdata: ([0-9a-f]+)$", mesh_text, re.M)
+            self.assertIsNotNone(match, root_name)
+            vertex_bytes = bytes.fromhex(match.group(1))
+            self.assertEqual(len(vertex_bytes), 4 * 20, root_name)
+            vertices = [
+                struct.unpack_from("<5f", vertex_bytes, index * 20)
+                for index in range(4)
+            ]
+            texture_rect = portrait["texture_rect"]
+            v_min = texture_rect["y"] / 1024.0
+            v_max = (texture_rect["y"] + texture_rect["height"]) / 1024.0
+            self.assertLess(vertices[0][1], vertices[2][1], root_name)
+            self.assertLess(vertices[0][4], vertices[2][4], root_name)
+            self.assertAlmostEqual(vertices[0][4], v_min, places=6, msg=root_name)
+            self.assertAlmostEqual(vertices[1][4], v_min, places=6, msg=root_name)
+            self.assertAlmostEqual(vertices[2][4], v_max, places=6, msg=root_name)
+            self.assertAlmostEqual(vertices[3][4], v_max, places=6, msg=root_name)
 
     def test_portrait_only_flip_and_invalid_body_mask_stay_fail_closed(self):
         pipeline = PIPELINE.read_text(encoding="utf-8")
@@ -145,14 +200,33 @@ class EndminfBackdropContractTests(unittest.TestCase):
         end = source.index("private void ApplyReadySubsetDiagnostic()", start)
         source_path = source[start:end]
         self.assertIn(
-            "SetRendererEnabledStates(false, false, false, true, true);",
+            "SetRendererEnabledStates(false, false, false, false, true);",
             source_path,
         )
         self.assertIn("ApplySettledOpenState(openState, false);", source_path)
         self.assertIn("appliedBackdropRenderer.enabled = false;", source_path)
-        self.assertIn("source-backed partial ShadowPlane", source_path)
+        self.assertIn("ShadowPlane final-consumer route", source_path)
         self.assertNotIn("0.125f", source_path)
         self.assertNotIn('"_TopColor"', source_path)
+
+        capture = CAPTURE.read_text(encoding="utf-8")
+        active_start = capture.index(
+            "private static bool IsEndminfSourceBackgroundActive()"
+        )
+        active_end = capture.index(
+            "private static bool IsFittedCompatibilityPlateActive()",
+            active_start,
+        )
+        active_gate = capture[active_start:active_end]
+        for token in (
+            "value.farGridRenderer.enabled",
+            "!value.sphereOutsideRenderer.enabled",
+            "!value.floorRenderer.enabled",
+            "!value.wallRenderer.enabled",
+            "!value.shadowPlaneRenderer.enabled",
+            "!value.compatibilityBackdropRenderer.enabled",
+        ):
+            self.assertIn(token, active_gate)
 
         validation_start = source.index(
             "private bool ValidateEndminfSourceBackgroundReadiness("
@@ -163,13 +237,11 @@ class EndminfBackdropContractTests(unittest.TestCase):
         validation = source[validation_start:validation_end]
         for token in (
             "ValidateReadySubsetReadiness(out openState, out failure)",
-            "shadowPlaneRenderer",
-            '"ShadowPlane"',
-            '"Plane"',
-            "ShadowReceiverShaderName",
-            "claim that its final presented pixels match retail ownership",
+            "retail physical-camera stencil/color-target ownership is not",
+            "must not enter maintained presentation",
         ):
             self.assertIn(token, validation)
+        self.assertNotIn("ValidateRenderer(", validation)
 
     def test_capture_fits_remain_compatibility_only(self):
         source = PRESENTATION.read_text(encoding="utf-8")
@@ -268,6 +340,7 @@ class EndminfBackdropContractTests(unittest.TestCase):
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
             "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
+            "ENDFIELD_DIAGNOSTIC_SYNC_POST_UBER_PORTRAIT_DEPTH",
         )
         for selector in selectors:
             if selector == "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION":
