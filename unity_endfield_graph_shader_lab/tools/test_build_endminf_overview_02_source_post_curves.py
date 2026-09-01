@@ -141,6 +141,11 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
             "if (!SourcePostRequested)",
             "ClearSourcePost();",
             "sourcePostRoot != null",
+            "RecoveredPostGameObjectPathId =\n            8953141407210302585L",
+            "RecoveredPostTransformPathId =\n            8592508268722613369L",
+            "TryResolveRecoveredPostCenter(",
+            "sourcePostCenter = resolvedPostCenter;",
+            "sourcePostCenter.position",
             "sourcePostSeedSeconds = sourceElapsed;",
             "sourcePostBindTime = Time.timeAsDouble;",
             "double delta = Time.timeAsDouble - sourcePostBindTime;",
@@ -156,6 +161,8 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
             "MarkOverview02CompatibilityStart(Transform effectRoot)",
         ):
             self.assertIn(token, clock)
+        self.assertNotIn("RecoveredPostCenterLocal", clock)
+        self.assertNotIn("new Vector3(0.0f, 1.266f, 0.0f)", clock)
         evaluator = clock[
             clock.index("public static bool TryEvaluateRecoveredPost("):
             clock.index("private static bool TryGetAuthenticatedSourcePostElapsed(")

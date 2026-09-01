@@ -249,7 +249,6 @@ namespace EndfieldGraphShaderLab
                 instance = Instantiate(binding.prefab, mount, false);
             }
             instance.name = binding.prefab.name + "__OverviewRuntime";
-            ApplyEndminfBillboardClampCompatibility(instance);
             instance.SetActive(false);
 
             ParticleSystem[] systems = binding.bindingKind == BindingKind.Particle
@@ -378,33 +377,6 @@ namespace EndfieldGraphShaderLab
             // separately recovered compatibility post clock carries pre-roll.
             foreach (ParticleSystem system in systems)
                 system.Play(true);
-        }
-
-        private static void ApplyEndminfBillboardClampCompatibility(GameObject instance)
-        {
-            if (!EndfieldEndminfVisualCompatibilityClock.Requested || instance == null ||
-                instance.name.IndexOf("P_fxui_endminm003_overview_",
-                    StringComparison.Ordinal) < 0)
-                return;
-
-            // The source ParticleSystemRenderer payload frequently carries
-            // maxParticleSize=0.5. Unity's built-in particle path interprets
-            // that as a hard half-screen billboard clamp, visibly slicing the
-            // authored flare. Retail HGRP owns a different VFX draw path. Keep
-            // the serialized prefab untouched and remove only that runtime
-            // compatibility clamp for billboard/stretch billboards.
-            foreach (ParticleSystemRenderer renderer in
-                instance.GetComponentsInChildren<ParticleSystemRenderer>(true))
-            {
-                // Do not broaden this to Stretch. Endminf's M22 jianshe ray
-                // producer is an authored stretch renderer whose 0.5 cap is
-                // visible in the retail frame. Removing that cap turned its
-                // short radial rays into screen-spanning shard streaks.
-                if (renderer.renderMode != ParticleSystemRenderMode.Billboard)
-                    continue;
-                if (renderer.maxParticleSize <= 0.5001f)
-                    renderer.maxParticleSize = 10f;
-            }
         }
 
         private IEnumerator FinishAfterDuration(

@@ -317,6 +317,10 @@ def verify() -> dict[str, object]:
         "TryGetAuthenticatedSourcePostElapsed(out _)",
         "if (!SourcePostRequested)",
         "sourcePostRoot != null",
+        "RecoveredPostGameObjectPathId =\n            8953141407210302585L",
+        "RecoveredPostTransformPathId =\n            8592508268722613369L",
+        "TryResolveRecoveredPostCenter(",
+        "sourcePostCenter = resolvedPostCenter;",
         "sourcePostSeedSeconds = sourceElapsed;",
         "sourcePostBindTime = Time.timeAsDouble;",
         "double delta = Time.timeAsDouble - sourcePostBindTime;",
@@ -343,7 +347,7 @@ def verify() -> dict[str, object]:
         "Mathf.Clamp01(radial / chromatic)",
         "(chromaticActive && radial > 0.01f ? 6 : 3)",
         "camera.WorldToViewportPoint(",
-        "sourcePostRoot.TransformPoint(RecoveredPostCenterLocal)",
+        "sourcePostCenter.position",
         "Vector2 center = new Vector2(viewport.x, viewport.y)",
         "viewport.x * 2.0f - 1.0f",
         "viewport.y * 2.0f - 1.0f",
@@ -360,6 +364,10 @@ def verify() -> dict[str, object]:
         "lateEndSeconds = 4.5166667f",
     )
     leaked = [token for token in forbidden_clock_tokens if token in clock]
+    leaked.extend(token for token in (
+        "RecoveredPostCenterLocal",
+        "new Vector3(0.0f, 1.266f, 0.0f)",
+    ) if token in clock)
     if leaked:
         raise RuntimeError(f"video-fitted source-curve substitute remains: {leaked}")
     evaluator = clock[
