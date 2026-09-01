@@ -173,6 +173,7 @@ namespace EndfieldGraphShaderLabEditor
 
             Dictionary<string, object> camera = Dict(Get(row, "camera"));
             Dictionary<string, object> portrait = Dict(Get(row, "portrait"));
+            ValidatePortraitPackingForUnflippedUv(portrait, rootName);
             Dictionary<string, object> texturePng = Dict(Get(portrait, "texture_png"));
             Dictionary<string, object> logicalRect = Dict(Get(portrait, "logical_rect"));
             Dictionary<string, object> textureRectRecord =
@@ -437,6 +438,7 @@ namespace EndfieldGraphShaderLabEditor
                 }
 
                 Dictionary<string, object> portrait = Dict(Get(row, "portrait"));
+                ValidatePortraitPackingForUnflippedUv(portrait, rootName);
                 Dictionary<string, object> logicalRect = Dict(Get(portrait, "logical_rect"));
                 Dictionary<string, object> textureRectRecord =
                     Dict(Get(portrait, "texture_rect"));
@@ -464,6 +466,33 @@ namespace EndfieldGraphShaderLabEditor
                     throw new InvalidDataException(
                         $"{rootName} portrait importer no longer preserves the display-upright PNG contract.");
                 }
+            }
+        }
+
+        private static void ValidatePortraitPackingForUnflippedUv(
+            Dictionary<string, object> portrait,
+            string rootName)
+        {
+            Dictionary<string, object> packing = Dict(Get(portrait, "packing"));
+            if (!string.Equals(
+                    Str(Get(packing, "meshType")),
+                    "Tight",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    Str(Get(packing, "packingMode")),
+                    "Tight",
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    Str(Get(packing, "packingRotation")),
+                    "None",
+                    StringComparison.Ordinal) ||
+                Int(Get(packing, "packed")) != 0)
+            {
+                throw new InvalidDataException(
+                    $"{rootName} portrait packing cannot use the recovered " +
+                    "unflipped tight-rectangle UV path: expected " +
+                    "meshType=Tight, packingMode=Tight, " +
+                    "packingRotation=None, packed=0.");
             }
         }
 

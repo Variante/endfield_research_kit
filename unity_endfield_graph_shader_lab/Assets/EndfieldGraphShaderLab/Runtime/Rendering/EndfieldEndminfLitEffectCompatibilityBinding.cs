@@ -49,6 +49,19 @@ namespace EndfieldGraphShaderLab
         public string contractSchema = ContractSchema;
         public Row[] rows = Array.Empty<Row>();
 
+        private sealed class RuntimeRowState
+        {
+            public Row row;
+            public int layer;
+            public bool enabled;
+            public ParticleSystemRenderMode renderMode;
+            public Material[] sharedMaterials;
+            public Mesh[] meshes;
+        }
+
+        private readonly List<RuntimeRowState> runtimeStates =
+            new List<RuntimeRowState>();
+
         private void OnEnable()
         {
             bool compatibility = Requested;
@@ -76,23 +89,127 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            foreach (Row row in rows)
+            try
             {
-                bool isM27 = row.particleRendererPathId == M27RendererPathId;
-                if (!isM27 && !compatibility && !liveHGBuffer)
-                    continue;
+                foreach (Row row in rows)
+                {
+                    bool isM27 = row.particleRendererPathId == M27RendererPathId;
+                    if (!isM27 && !compatibility && !liveHGBuffer)
+                        continue;
+                    CaptureRuntimeState(row);
+                }
 
-                row.renderer.renderMode = ParticleSystemRenderMode.Mesh;
-                row.renderer.SetMeshes(new[] { row.mesh }, 1);
-                row.renderer.sharedMaterials = new[] { row.material };
-                // The live HGBuffer route remains a non-presented diagnostic
-                // until the original deferred output proves non-empty source
-                // content. Keep the ordinary source renderer visible while
-                // that proof is incomplete; otherwise a black diagnostic
-                // resolve replaces an already useful compatibility result.
-                if (exactM27 && isM27)
-                    row.renderer.gameObject.layer = ExactM27Layer;
-                row.renderer.enabled = true;
+                foreach (RuntimeRowState state in runtimeStates)
+                {
+                    Row row = state.row;
+                    bool isM27 = row.particleRendererPathId == M27RendererPathId;
+                    row.renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                    row.renderer.SetMeshes(new[] { row.mesh }, 1);
+                    row.renderer.sharedMaterials = new[] { row.material };
+                    // The live HGBuffer route remains a non-presented diagnostic
+                    // until the original deferred output proves non-empty source
+                    // content. Keep the ordinary source renderer visible while
+                    // that proof is incomplete; otherwise a black diagnostic
+                    // resolve replaces an already useful compatibility result.
+                    if (exactM27 && isM27)
+                        row.renderer.gameObject.layer = ExactM27Layer;
+                    row.renderer.enabled = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                RestoreRuntimeState();
+                Debug.LogError(
+                    "Recovered Endminf LitEffect binding failed closed while " +
+                    "applying its reversible runtime state: " + exception,
+                    this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            RestoreRuntimeState();
+        }
+
+        private void OnDestroy()
+        {
+            RestoreRuntimeState();
+        }
+
+        private void CaptureRuntimeState(Row row)
+        {
+            var meshes = new Mesh[row.renderer.meshCount];
+            row.renderer.GetMeshes(meshes);
+            runtimeStates.Add(new RuntimeRowState {
+                row = row,
+                layer = row.renderer.gameObject.layer,
+                enabled = row.renderer.enabled,
+                renderMode = row.renderer.renderMode,
+                sharedMaterials = (Material[])row.renderer.sharedMaterials.Clone(),
+                meshes = meshes,
+            });
+        }
+
+        private void RestoreRuntimeState()
+        {
+            RuntimeRowState[] states = runtimeStates.ToArray();
+            // Clear before invoking Unity APIs so OnDisable/OnDestroy and a
+            // later OnEnable cannot replay a partially completed transaction.
+            runtimeStates.Clear();
+            for (int index = states.Length - 1; index >= 0; index--)
+            {
+                RuntimeRowState state = states[index];
+                if (state == null || state.row == null ||
+                    state.row.renderer == null)
+                    continue;
+                ParticleSystemRenderer renderer = state.row.renderer;
+                // Disable first and restore enabled last so a partially restored
+                // renderer can never become visible between state writes. Each
+                // field is attempted independently so one Unity exception does
+                // not strand layer 31 or skip restoration of later rows.
+                RestoreRuntimeMutation(
+                    state,
+                    "temporary visibility",
+                    () => renderer.enabled = false);
+                RestoreRuntimeMutation(
+                    state,
+                    "GameObject layer",
+                    () => renderer.gameObject.layer = state.layer);
+                RestoreRuntimeMutation(
+                    state,
+                    "render mode",
+                    () => renderer.renderMode = state.renderMode);
+                RestoreRuntimeMutation(
+                    state,
+                    "mesh set",
+                    () => renderer.SetMeshes(state.meshes, state.meshes.Length));
+                RestoreRuntimeMutation(
+                    state,
+                    "shared materials",
+                    () => renderer.sharedMaterials = state.sharedMaterials);
+                RestoreRuntimeMutation(
+                    state,
+                    "visibility",
+                    () => renderer.enabled = state.enabled);
+            }
+        }
+
+        private void RestoreRuntimeMutation(
+            RuntimeRowState state,
+            string field,
+            Action mutation)
+        {
+            try
+            {
+                mutation();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "Recovered Endminf LitEffect binding could not restore " +
+                    field + " for renderer " +
+                    state.row.particleRendererPathId + ": " + exception,
+                    this);
             }
         }
 

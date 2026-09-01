@@ -106,6 +106,15 @@ namespace EndfieldGraphShaderLabEditor
             // regresses every aligned effect sample versus the exact-off
             // control. Keep it available as an explicit diagnostic only.
         };
+        private static readonly string[] CanonicalVideoForcedOffFlags =
+        {
+            // These two selectors form the known content-invalid path that
+            // produced an upside-down body-shaped resolve over the portrait.
+            // Canonical export must not inherit either selector from a parent
+            // shell; dedicated diagnostic entry points remain available.
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+            SphereOutsidePresentationEnvironment,
+        };
         private const string Suikuai1Material =
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview/Materials/M_fx_common_teleport_03_p19E6A2A7AE736DA5.mat";
         private static readonly string[] ExpectedRemainingBlockedEffects = {
@@ -547,6 +556,8 @@ namespace EndfieldGraphShaderLabEditor
                             Environment.GetEnvironmentVariable(flag)))
                         Environment.SetEnvironmentVariable(flag, "1");
                 }
+                foreach (string flag in CanonicalVideoForcedOffFlags)
+                    Environment.SetEnvironmentVariable(flag, "0");
             }
             bool isolatedEndminfLitEffect =
                 Environment.GetEnvironmentVariable(

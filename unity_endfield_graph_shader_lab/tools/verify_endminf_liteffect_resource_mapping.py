@@ -730,6 +730,45 @@ def _validate_unity_transport_ports(
                 raise VerificationError(
                     f"{label} admitted value is not single-assignment: "
                     f"{variable} declarations={len(declarations)} writes={len(writes)}")
+
+    def reject_indirect_mutation(label: str, code: str) -> None:
+        """Reject the bounded alias routes that evade direct-assignment counts.
+
+        Neither maintained port needs source macros nor out/inout helper
+        parameters or conditional preprocessing. Admitting any of these would
+        let a helper rewrite a proven local or let the preprocessor disable or
+        reroute required source spelling in the unpreprocessed text.
+        """
+        macros = re.findall(r"#\s*define\s+([A-Za-z_]\w*)", code)
+        conditional_directives = re.findall(
+            r"#\s*(if|ifdef|ifndef|elif|else|endif|undef)\b",
+            code,
+        )
+        output_parameter_qualifiers = re.findall(r"\b(?:inout|out)\b", code)
+        if macros or conditional_directives or output_parameter_qualifiers:
+            raise VerificationError(
+                f"{label} admits indirect mutation/aliasing: "
+                f"macros={macros!r} conditionals={conditional_directives!r} "
+                f"outQualifiers={output_parameter_qualifiers!r}")
+
+    def require_single_output_writes(
+        label: str,
+        code: str,
+        members: tuple[str, ...],
+    ) -> None:
+        if re.search(r"\boutput\s*(?:[+\-*/%&|^]?=|\+\+|--)", code):
+            raise VerificationError(
+                f"{label} overwrites the complete output after source stores")
+        for member in members:
+            writes = re.findall(
+                rf"\boutput\.{re.escape(member)}(?:\.[A-Za-z_]\w*)?\s*"
+                rf"(?:[+\-*/%&|^]?=|\+\+|--)",
+                code,
+            )
+            if len(writes) != 1:
+                raise VerificationError(
+                    f"{label} output store is not single-assignment: "
+                    f"{member} writes={len(writes)}")
     exact_required = (
         "float2 baseUV = mad( lerp(input.uv0, input.uv1, _BaseUVSet), _BaseColorMap_ST.xy, _BaseColorMap_ST.zw);",
         "float2 pbrUV = mad( lerp(input.uv0, input.uv1, _BasePbrMapUVSet), _NormalMap_ST.xy, _NormalMap_ST.zw);",
@@ -804,6 +843,16 @@ def _validate_unity_transport_ports(
             "normalSample", "mro", "sampledHeight", "parallax",
             "metallic", "sourceRoughness", "occlusion", "parallaxColor",
         ),
+    )
+    reject_indirect_mutation("exact M27 producer", exact_code)
+    reject_indirect_mutation(
+        "M01/M38 visual compatibility port",
+        compatibility_code,
+    )
+    require_single_output_writes(
+        "exact M27 producer",
+        exact_code,
+        ("sceneColor", "sceneMotion", "gBufferA", "gBufferB", "gBufferC"),
     )
     return {
         "sourceProvenSubgraph": {

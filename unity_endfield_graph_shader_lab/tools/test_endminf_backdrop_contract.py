@@ -17,9 +17,91 @@ CAPTURE = ROOT / (
     "EndfieldEndminfViewerPlayModeCapture.cs"
 )
 LAUNCHER = ROOT / "open_character_recovery_lab.bat"
+PROFILE_BUILDER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+    "EndfieldPlayableCharInfoProfileBuilder.cs"
+)
+PORTRAIT_SHADER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Shaders/Recovered/"
+    "EndfieldCharInfoBackgroundPortraitRecovered.shader"
+)
+PIPELINE = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Rendering/HGCompatRenderPipeline.cs"
+)
 
 
 class EndminfBackdropContractTests(unittest.TestCase):
+    def test_endminf_portrait_requires_unrotated_source_packing_and_upright_uv(self):
+        builder = PROFILE_BUILDER.read_text(encoding="utf-8")
+        self.assertGreaterEqual(
+            builder.count("ValidatePortraitPackingForUnflippedUv("),
+            3,
+        )
+        for token in (
+            'Str(Get(packing, "meshType"))',
+            'Str(Get(packing, "packingMode"))',
+            'Str(Get(packing, "packingRotation"))',
+            'Int(Get(packing, "packed")) != 0',
+            '"Tight"',
+            '"None"',
+            "new Vector2(textureRect.xMin / SourceTextureSize, textureRect.yMin / SourceTextureSize)",
+            "new Vector2(textureRect.xMax / SourceTextureSize, textureRect.yMax / SourceTextureSize)",
+            "vertices[0].y < vertices[2].y && uv[0].y < uv[2].y",
+        ):
+            self.assertIn(token, builder)
+        shader = PORTRAIT_SHADER.read_text(encoding="utf-8")
+        self.assertIn("output.uv = input.uv;", shader)
+        self.assertNotIn("1.0 - input.uv.y", shader)
+        self.assertNotIn("1.0 - input.uv", shader)
+
+    def test_portrait_only_flip_and_invalid_body_mask_stay_fail_closed(self):
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        draw_start = pipeline.index("private void DrawRecoveredPostUberWorldUi(")
+        draw_end = pipeline.index(
+            "private int BuildRecoveredSceneBloomPyramid", draw_start
+        )
+        portrait_draw = pipeline[draw_start:draw_end]
+        self.assertIn(
+            "commandBuffer.SetGlobalFloat(HGFlipYId, 0.0f);",
+            portrait_draw,
+        )
+        self.assertNotIn(
+            "camera.targetTexture == null ? 1.0f : 0.0f",
+            portrait_draw,
+        )
+        self.assertGreaterEqual(
+            pipeline.count("recoveredDeferredExactConsumer.PresentationReady"),
+            4,
+        )
+
+        capture = CAPTURE.read_text(encoding="utf-8")
+        defaults_start = capture.index("CanonicalVideoDefaultFlags")
+        defaults_end = capture.index("};", defaults_start)
+        defaults = capture[defaults_start:defaults_end]
+        self.assertNotIn(
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+            defaults,
+        )
+        self.assertNotIn(
+            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
+            defaults,
+        )
+        self.assertIn("content-invalid screen-shadow attachment", defaults)
+        self.assertIn("upside-down body mask over the portrait", defaults)
+
+        forced_start = capture.index("CanonicalVideoForcedOffFlags")
+        forced_end = capture.index("};", forced_start)
+        forced_off = capture[forced_start:forced_end]
+        self.assertIn(
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+            forced_off,
+        )
+        self.assertIn("SphereOutsidePresentationEnvironment", forced_off)
+        self.assertIn(
+            'Environment.SetEnvironmentVariable(flag, "0");',
+            capture,
+        )
+
     def test_diagnostic_plate_retains_measured_neutral_grade(self):
         source = PRESENTATION.read_text(encoding="utf-8")
         for token in (
@@ -117,6 +199,8 @@ class EndminfBackdropContractTests(unittest.TestCase):
             'set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"',
             'set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"',
             'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
+            'set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=0"',
+            'set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"',
         ):
             self.assertIn(token, launcher)
 

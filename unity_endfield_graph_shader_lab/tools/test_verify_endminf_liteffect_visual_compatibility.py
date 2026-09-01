@@ -109,6 +109,70 @@ class EndminfLitEffectVisualCompatibilityTests(unittest.TestCase):
         self.assertIn("return;", on_enable)
         self.assertEqual(on_enable.count("row.renderer.enabled = true;"), 1)
 
+    def test_runtime_binding_restores_every_mutated_renderer_field(self) -> None:
+        source = RUNTIME_BINDING.read_text(encoding="utf-8")
+        MODULE.validate_runtime_binding_source(source)
+
+    def test_runtime_binding_lifecycle_mutations_fail_closed(self) -> None:
+        source = RUNTIME_BINDING.read_text(encoding="utf-8")
+        attacks = (
+            source.replace(
+                "() => renderer.gameObject.layer = state.layer);",
+                "() => renderer.gameObject.layer = ExactM27Layer);",
+                1,
+            ),
+            source.replace(
+                "() => renderer.SetMeshes(state.meshes, state.meshes.Length));",
+                "() => renderer.SetMeshes(new[] { state.row.mesh }, 1));",
+                1,
+            ),
+            source.replace(
+                "() => renderer.sharedMaterials = state.sharedMaterials);",
+                "() => renderer.sharedMaterials = new[] { state.row.material });",
+                1,
+            ),
+            source.replace(
+                "() => renderer.enabled = state.enabled);",
+                "() => renderer.enabled = true);",
+                1,
+            ),
+            source.replace(
+                "() => renderer.enabled = state.enabled);",
+                "() => renderer.enabled = state.enabled);\n"
+                "                renderer.gameObject.layer = ExactM27Layer;",
+                1,
+            ),
+            source.replace(
+                "() => renderer.enabled = state.enabled);",
+                "renderer.sortingFudge = 99f;\n"
+                "                () => renderer.enabled = state.enabled);",
+                1,
+            ),
+            source.replace(
+                "CaptureRuntimeState(row);",
+                "runtimeStates.Clear();",
+                1,
+            ),
+            source.replace(
+                "private void OnDisable()\n        {\n            RestoreRuntimeState();",
+                "private void OnDisable()\n        {",
+                1,
+            ),
+            source.replace(
+                "private void OnDisable()\n        {\n"
+                "            RestoreRuntimeState();\n        }",
+                "private void OnDisable()\n        {\n"
+                "            RestoreRuntimeState();\n"
+                "            renderer.gameObject.layer = ExactM27Layer;\n"
+                "        }",
+                1,
+            ),
+        )
+        for mutated in attacks:
+            self.assertNotEqual(mutated, source, "test mutation did not alter C#")
+            with self.assertRaises(MODULE.RuntimeBindingVerificationError):
+                MODULE.validate_runtime_binding_source(mutated)
+
 
 if __name__ == "__main__":
     unittest.main()
