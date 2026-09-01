@@ -52,6 +52,30 @@ exit /b 2
   rem The exact Uber packet remains an explicit diagnostic. Its native draw is
   rem validated, but the captured SceneColor/input chronology is not yet closed
   rem and the current replay regresses every aligned effect sample versus off.
+  rem Force every measured, captured-packet, and incomplete deferred selector
+  rem off so a parent shell cannot silently change maintained presentation.
+  set "ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC=0"
+  set "ENDFIELD_ENDMINF_M28_VISUAL_COMPAT=0"
+  set "ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M29_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M30_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_VFXBASEV2_PEAK_COHORT_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M27_GENERATIVE_EXACT_DXBC=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER=0"
+  set "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER=0"
+  set "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER=0"
   rem Reproduce UIGyroscopeEffect from the current live cursor through its
   rem recovered screen normalization, curves, PreLate change edge, and OutQuad.
   set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=live-input"

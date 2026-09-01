@@ -92,14 +92,23 @@ class OperatorLightsSourceTests(unittest.TestCase):
         self.assertIn("recoveredCurrentCameraExposure", full_call)
         self.assertNotIn("recoveredVFXExposure", full_call)
 
+        exposure_gate = pipeline.split(
+            "bool recoveredSourceClosedManualExposureRequested =", 1
+        )[1].split(
+            "EndfieldRecoveredCharInfoAutoExposureCameraState", 1
+        )[0]
+        self.assertIn("recoveredSceneMVRequest.requested ||", exposure_gate)
+        self.assertIn("recoveredDeferredExactConsumer.Requested", exposure_gate)
+        self.assertIn("recoveredEndminfLitEffectOwnerActive", exposure_gate)
+        self.assertIn("IsGachaRoomSourceClosed", exposure_gate)
+        self.assertIn("IsCharacterInfoSourceClosed", exposure_gate)
         exposure_call = pipeline.split(
             "PrepareRecoveredLiveCharInfoAutoExposure(", 1
         )[1].split("if (applyPostProcess)", 1)[0]
-        self.assertIn("recoveredSceneMVRequest.requested ||", exposure_call)
-        self.assertIn("recoveredDeferredExactConsumer.Requested", exposure_call)
-        self.assertIn("recoveredEndminfLitEffectOwnerActive", exposure_call)
-        self.assertIn("IsGachaRoomSourceClosed", exposure_call)
-        self.assertIn("IsCharacterInfoSourceClosed", exposure_call)
+        self.assertIn(
+            "recoveredSourceClosedManualExposureRequested",
+            exposure_call,
+        )
         self.assertIn("AdvanceSourceClosedNeutralProfile", pipeline)
 
         builder = read_source(
@@ -168,6 +177,41 @@ class OperatorLightsSourceTests(unittest.TestCase):
             "                IsEnvironmentFlagEnabled(",
             controller,
         )
+
+    def test_punctual_shadow_default_uses_pinned_native_setting(self) -> None:
+        contract_path = (
+            LAB_ROOT / "Assets" / "EndfieldGraphShaderLab" / "Generated" /
+            "OriginalData" / "CharInfoPresentation" /
+            "deferred_resolver_binding_contract.json"
+        )
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        shadow_role = next(
+            row for row in contract["identified_unnamed_constant_buffer_roles"]
+            if row["role"] == "ShadowData"
+        )
+        setting_defaults = shadow_role["native_producer"]["setting_defaults"]
+        self.assertIn("T=512", setting_defaults)
+        self.assertIn("before runtime overrides", setting_defaults)
+
+        rig = read_source(RUNTIME / "EndfieldHGOperatorLightRig.cs")
+        setup = read_source(EDITOR / "EndfieldManifestCharacterSetup.cs")
+        self.assertIn(
+            "sourceBackedPunctualShadowTileResolution = 512;",
+            rig,
+        )
+        self.assertIn(
+            "operatorLights.sourceBackedIsolatedPunctualSoftShadowProducer\n"
+            "                    ? ReadRecoveredPunctualShadowTileResolution()\n"
+            "                    : 512;",
+            setup,
+        )
+        default_reader = setup.split(
+            "private static int ReadRecoveredPunctualShadowTileResolution()", 1
+        )[1].split("private static Transform FindDescendantByName", 1)[0]
+        self.assertIn("return 512;", default_reader)
+        self.assertIn("resolution == 512 || resolution == 1024", default_reader)
+        self.assertNotIn("return 1024;", default_reader)
+        self.assertNotIn("captured RTX 5080 device default", rig)
 
     def test_exact_white_rgba_source_color_is_gated_and_rejected_on_drift(
         self,

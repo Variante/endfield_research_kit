@@ -16,10 +16,22 @@ CAPTURE = ROOT / (
     "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
     "EndfieldEndminfViewerPlayModeCapture.cs"
 )
+REPRODUCTION_BUILDER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
+    "EndfieldEndminfOverviewEffectBindingBuilder.cs"
+)
 LAUNCHER = ROOT / "open_character_recovery_lab.bat"
 PROFILE_BUILDER = ROOT / (
     "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
     "EndfieldPlayableCharInfoProfileBuilder.cs"
+)
+PRESENTATION_CONTROLLER = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Viewer/"
+    "CharacterRecoveryPresentationController.cs"
+)
+PRESENTATION_PROFILE = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Viewer/"
+    "CharacterRecoveryPresentationProfile.cs"
 )
 PORTRAIT_SHADER = ROOT / (
     "Assets/EndfieldGraphShaderLab/Shaders/Recovered/"
@@ -203,6 +215,118 @@ class EndminfBackdropContractTests(unittest.TestCase):
             'set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"',
         ):
             self.assertIn(token, launcher)
+
+        builder = REPRODUCTION_BUILDER.read_text(encoding="utf-8")
+        for token in (
+            "EndminfSourceBackgroundEnvironmentVariable,",
+            "EndminfBackdropVisualCompatibilityEnvironmentVariable,",
+            "ReadySubsetEnvironmentVariable,",
+            'Environment.SetEnvironmentVariable(selector, "0");',
+            "referenceBackdrop.enabled = false;",
+            "presentation.enableRecoveredEndminfSourceBackground = true;",
+            "camera.backgroundColor = Color.black;",
+            "camera.aspect = ResolveEndminfSourceAspect();",
+            'EndfieldPlayableCharInfoProfileBuilder.LoadProfile("Endminf")',
+            '"chr_0003_endminf"',
+            "profile.referenceAspect <= 0.0f",
+        ):
+            self.assertIn(token, builder)
+        self.assertNotIn("referenceBackdrop.enabled = true;", builder)
+        self.assertNotIn("new Color(0.735f, 0.755f, 0.765f", builder)
+        self.assertNotIn("camera.aspect = 16f / 9f;", builder)
+
+    def test_maintained_paths_force_capture_fitted_and_incomplete_routes_off(self):
+        capture = CAPTURE.read_text(encoding="utf-8")
+        forced_start = capture.index("CanonicalVideoForcedOffFlags")
+        forced_end = capture.index("};", forced_start)
+        forced_off = capture[forced_start:forced_end]
+        launcher = LAUNCHER.read_text(encoding="utf-8")
+        builder = REPRODUCTION_BUILDER.read_text(encoding="utf-8")
+
+        selectors = (
+            "ENDFIELD_ENDMINF_MEASURED_OPENING_STRIP_DIAGNOSTIC",
+            "ENDFIELD_ENDMINF_M28_VISUAL_COMPAT",
+            "ENDFIELD_ENDMINF_OPENING_STRIP_SCENEMV",
+            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M29_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M30_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_VFXBASEV2_PEAK_COHORT_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
+            "ENDFIELD_RECOVERED_ENDMINF_UBER_EARLY_DIAGNOSTIC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_GENERATIVE_EXACT_DXBC",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_PRESENTATION",
+            "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
+            "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER",
+            "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+            "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
+            "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION",
+        )
+        for selector in selectors:
+            if selector == "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION":
+                self.assertIn("SphereOutsidePresentationEnvironment", forced_off)
+            else:
+                self.assertIn(selector, forced_off)
+            self.assertIn(selector, launcher)
+            self.assertIn(selector, builder)
+        self.assertGreaterEqual(launcher.count('=0"'), len(selectors))
+
+    def test_source_camera_aspect_fails_closed_without_framing_fallback(self):
+        profile_builder = PROFILE_BUILDER.read_text(encoding="utf-8")
+        for token in (
+            "sensorSize.x <= 0.0f || sensorSize.y <= 0.0f",
+            "source camera has an invalid serialized sensor size",
+            "profile.referenceAspect = sensorSize.x / sensorSize.y;",
+            "source camera produced an invalid sensor aspect",
+            "must contain exactly two components",
+            "must contain exactly three components",
+            "must contain x, y, and z components",
+            "must contain exactly four components",
+        ):
+            self.assertIn(token, profile_builder)
+        self.assertNotIn(
+            "sensorSize.x / sensorSize.y\n                : 16.0f / 9.0f",
+            profile_builder,
+        )
+
+        presentation_profile = PRESENTATION_PROFILE.read_text(encoding="utf-8")
+        self.assertIn("public float referenceAspect;", presentation_profile)
+        self.assertNotIn(
+            "public float referenceAspect = 16.0f / 9.0f;",
+            presentation_profile,
+        )
+
+        controller = PRESENTATION_CONTROLLER.read_text(encoding="utf-8")
+        for token in (
+            "ValidateSourceCameraProfile(profile, out string cameraFailure)",
+            "viewerCamera.aspect = profile.referenceAspect;",
+            "float aspect = profile.referenceAspect;",
+            "profile.farClip <= profile.nearClip",
+            "profile.referenceAspect <= 0.0f",
+            "profile.gyroscopeEntryOffsets",
+            "profile.overviewImageOffset",
+            "profile.authoredOverviewRotation",
+            "QuaternionMagnitudeSquared(profile.authoredOverviewRotation)",
+        ):
+            self.assertIn(token, controller)
+        self.assertNotIn(
+            "? profile.referenceAspect\n                : 16.0f / 9.0f",
+            controller,
+        )
+        for token in (
+            "values == null || values.Count != 4",
+            "must contain exactly four components",
+            "magnitudeSquared <= 1.0e-8f",
+            "is non-finite or degenerate",
+        ):
+            self.assertIn(token, profile_builder)
 
 
 if __name__ == "__main__":

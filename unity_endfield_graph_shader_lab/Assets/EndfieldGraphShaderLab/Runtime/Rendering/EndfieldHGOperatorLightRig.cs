@@ -257,8 +257,8 @@ namespace EndfieldGraphShaderLab
         public bool sourceBackedLightBinningMembership;
         [Tooltip("Default-off isolated overview producer for Wulfa/Zhuangfy RimLight_2 (5) and Endminf RimLight_2/RimLight_2 (1). It requires the source-backed clustered NPR loop and fails closed if the exact actor, light, atlas, or caster contract is unavailable.")]
         public bool sourceBackedIsolatedPunctualSoftShadowProducer;
-        [Tooltip("Source-backed original punctual-shadow quality profile. Only 512 and 1024 are valid recovered base tile sizes; the captured RTX 5080 device default selects 1024.")]
-        public int sourceBackedPunctualShadowTileResolution = 1024;
+        [Tooltip("Source-backed original punctual-shadow quality profile. The pinned native HGSettingParameters constructor default is 512. A 1024 runtime/quality override remains explicit until that override route is source-closed.")]
+        public int sourceBackedPunctualShadowTileResolution = 512;
         [Tooltip("Sampled/live recovered actor whose exact Bip001 and Head_Local transforms drive original CharInfoLightFollower rows.")]
         public Transform actorRoot;
         public EndfieldHGOperatorLightData[] lights = Array.Empty<EndfieldHGOperatorLightData>();

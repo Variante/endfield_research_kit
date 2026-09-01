@@ -99,10 +99,20 @@ class EndminfOpeningStripContractTests(unittest.TestCase):
         wrapper = (ROOT / "open_character_recovery_lab.bat").read_text(
             encoding="utf-8"
         )
-        self.assertNotIn(OPENING_STRIP_DIAGNOSTIC, wrapper)
+        self.assertNotIn(f'{OPENING_STRIP_DIAGNOSTIC}=1', wrapper)
+        self.assertIn(f'{OPENING_STRIP_DIAGNOSTIC}=0', wrapper)
+        capture = CAPTURE.read_text(encoding="utf-8")
+        default_start = capture.index("CanonicalVideoDefaultFlags")
+        default_end = capture.index("};", default_start)
         self.assertNotIn(
             OPENING_STRIP_DIAGNOSTIC,
-            CAPTURE.read_text(encoding="utf-8"),
+            capture[default_start:default_end],
+        )
+        forced_start = capture.index("CanonicalVideoForcedOffFlags")
+        forced_end = capture.index("};", forced_start)
+        self.assertIn(
+            OPENING_STRIP_DIAGNOSTIC,
+            capture[forced_start:forced_end],
         )
 
     def test_compatibility_publishes_retail_target1_scene_mv_marker(self) -> None:
