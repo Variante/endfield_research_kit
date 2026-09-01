@@ -38,6 +38,10 @@ exit /b 2
   rem Deferred/SphereOutside remains a default-off diagnostic. Its current
   rem screen-shadow prerequisite is content-invalid and vertically masks the
   rem portrait, so the maintained visual path does not request that chain.
+  rem Override inherited parent-shell diagnostic selectors as well; merely
+  rem omitting them here would not make this maintained path fail closed.
+  set "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC=0"
+  set "ENDFIELD_RECOVERED_SPHERE_OUTSIDE_PRESENTATION=0"
   rem Captured opening-strip, M13, and M21 packets remain opt-in ABI probes.
   rem They are not maintained presentation: replaying one or a few observed
   rem particle states substitutes fixed geometry for the source runtime that

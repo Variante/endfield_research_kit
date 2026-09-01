@@ -92,6 +92,35 @@ def curve_key_sha256(keys: list[dict[str, float]]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def curve_payload_sha256(
+    times: list[float],
+    values: list[float],
+    in_tangents: list[float],
+    out_tangents: list[float],
+    left_tangent_mode: int,
+    right_tangent_mode: int,
+    weighted_mode: int,
+    in_weight: float,
+    out_weight: float,
+) -> str:
+    require(
+        len(times) == len(values) == len(in_tangents) == len(out_tangents),
+        "curve payload arrays have different lengths",
+    )
+    payload = bytearray()
+    for index, time in enumerate(times):
+        payload.extend(f32_bytes(time))
+        payload.extend(f32_bytes(values[index]))
+        payload.extend(f32_bytes(in_tangents[index]))
+        payload.extend(f32_bytes(out_tangents[index]))
+        payload.extend(struct.pack("<i", int(left_tangent_mode)))
+        payload.extend(struct.pack("<i", int(right_tangent_mode)))
+        payload.extend(struct.pack("<i", int(weighted_mode)))
+        payload.extend(f32_bytes(in_weight))
+        payload.extend(f32_bytes(out_weight))
+    return hashlib.sha256(payload).hexdigest()
+
+
 def placeholder_transforms(paths: tuple[str, ...]) -> list[dict[str, Any]]:
     return [
         {
@@ -124,6 +153,11 @@ def derive_clip(spec: dict[str, Any]) -> dict[str, Any]:
     require(len(frames) == int(spec["expectedKeyCount"]),
             f"source frame count drifted: {spec['name']}")
 
+    key_times = [f32(frame["time"]) for frame in frames]
+    tangent_mode = 0
+    weighted_mode = 0
+    in_weight = f32(1.0 / 3.0)
+    out_weight = f32(1.0 / 3.0)
     curves: list[dict[str, Any]] = []
     for binding in sample.get("track_bindings") or []:
         track_index = int(binding["track_index"])
@@ -131,18 +165,37 @@ def derive_clip(spec: dict[str, Any]) -> dict[str, Any]:
         for channel in binding.get("declared_channels") or []:
             property_prefix, frame_field, axes = CHANNELS[str(channel)]
             for component, axis in enumerate(axes):
-                keys = [
-                    {
-                        "time": f32(frame["time"]),
-                        "value": f32(frame["tracks"][track_index][frame_field][component]),
-                    }
+                values = [
+                    f32(frame["tracks"][track_index][frame_field][component])
                     for frame in frames
+                ]
+                keys = [
+                    {"time": key_times[index], "value": value}
+                    for index, value in enumerate(values)
+                ]
+                tangents = [
+                    expected_tangent(keys, index)
+                    for index in range(len(keys))
                 ]
                 curves.append({
                     "path": path,
                     "propertyName": f"{property_prefix}.{axis}",
                     "keyCount": len(keys),
                     "keyTimeValueSha256": curve_key_sha256(keys),
+                    "keyPayloadSha256": curve_payload_sha256(
+                        key_times,
+                        values,
+                        tangents,
+                        tangents,
+                        tangent_mode,
+                        tangent_mode,
+                        weighted_mode,
+                        in_weight,
+                        out_weight,
+                    ),
+                    "values": values,
+                    "inTangents": tangents,
+                    "outTangents": tangents,
                 })
     curves.sort(key=lambda row: (row["path"], row["propertyName"]))
     require(len(curves) == int(spec["expectedBindingCount"]),
@@ -155,21 +208,37 @@ def derive_clip(spec: dict[str, Any]) -> dict[str, Any]:
         "duration": f32(sample["duration"]),
         "bindingCount": len(curves),
         "keyCountPerBinding": int(spec["expectedKeyCount"]),
+        "keyTimes": key_times,
+        "keySettings": {
+            "leftTangentMode": tangent_mode,
+            "rightTangentMode": tangent_mode,
+            "weightedMode": weighted_mode,
+            "inWeight": in_weight,
+            "outWeight": out_weight,
+        },
+        "unityTransport": {
+            "legacy": True,
+            "compressed": False,
+            "wrapMode": 0,
+            "useHighQualityCurve": True,
+        },
         "curves": curves,
     }
 
 
 def build_contract() -> dict[str, Any]:
     return {
-        "schema": "endfield.endminf-effect-animation-source-curves.v1",
-        "status": "source_derived_semantic_curve_contract",
+        "schema": "endfield.endminf-effect-animation-source-curves.v2",
+        "status": "source_derived_rebuildable_curve_contract",
         "derivation": {
             "decoder": "tools/unity_muscleclip_sampler.py::ClipSampler",
             "curveRule": "all source frames; declared Transform channels only",
             "keyDigest": "sha256(concat(float32_le(time),float32_le(value)))",
-            "tangentRule": "Unity EnsureQuaternionContinuity smooth central derivative; endpoints one-sided",
+            "payloadDigest": "sha256(per-key float32 time/value/in/out tangent, int32 left/right tangent modes, int32 weighted mode, float32 in/out weight)",
+            "tangentRule": "Unity smooth float32 average of adjacent float32 secants; endpoints one-sided",
             "weightRule": "WeightedMode.None with default one-third weights",
-            "boundary": "No cached .anim bytes or capture-fitted values participate in expected curves.",
+            "storage": "clip-shared float32 keyTimes plus per-binding float32 values/inTangents/outTangents and shared exact key settings",
+            "boundary": "Tracked payload is rederived only from exact serialized AnimationClip JSON; no cached .anim bytes or capture-fitted values participate.",
         },
         "clips": [derive_clip(spec) for spec in SPECS],
     }
@@ -254,18 +323,136 @@ def parse_generated_curves(path: Path) -> dict[tuple[str, str], list[dict[str, A
 def expected_tangent(keys: list[dict[str, Any]], index: int) -> float:
     if len(keys) <= 1:
         return 0.0
-    left = max(0, index - 1)
-    right = min(len(keys) - 1, index + 1)
-    delta_time = f32(keys[right]["time"] - keys[left]["time"])
-    if delta_time == 0.0:
-        return 0.0
-    return f32(f32(keys[right]["value"] - keys[left]["value"]) / delta_time)
+
+    def slope(left: int, right: int) -> float:
+        delta_time = f32(keys[right]["time"] - keys[left]["time"])
+        if delta_time == 0.0:
+            return 0.0
+        return f32(
+            f32(keys[right]["value"] - keys[left]["value"]) / delta_time
+        )
+
+    if index == 0:
+        return slope(0, 1)
+    if index == len(keys) - 1:
+        return slope(index - 1, index)
+    # Unity's smooth-key result is the float32 average of the adjacent
+    # float32 secants, not a single secant spanning both neighbours.
+    return f32(f32(slope(index - 1, index) + slope(index, index + 1)) * f32(0.5))
 
 
-def nearly(left: float, right: float) -> bool:
-    return math.isfinite(left) and math.isfinite(right) and abs(left - right) <= max(
-        2.0e-5, abs(right) * 2.0e-4
+def exact_f32(left: Any, right: Any) -> bool:
+    return f32_bytes(left) == f32_bytes(right)
+
+
+def is_exact_f32(value: Any) -> bool:
+    return math.isfinite(float(value)) and float(value) == f32(value)
+
+
+def validate_contract(contract: dict[str, Any]) -> None:
+    require(
+        contract.get("schema") ==
+        "endfield.endminf-effect-animation-source-curves.v2" and
+        contract.get("status") ==
+        "source_derived_rebuildable_curve_contract",
+        "semantic animation contract schema/status drifted",
     )
+    clips = contract.get("clips")
+    require(isinstance(clips, list) and len(clips) == len(SPECS),
+            "semantic animation clip census drifted")
+    expected_specs = {str(spec["name"]): spec for spec in SPECS}
+    require({str(clip.get("name")) for clip in clips} == set(expected_specs),
+            "semantic animation clip identity set drifted")
+    for clip in clips:
+        spec = expected_specs[str(clip["name"])]
+        require(
+            clip.get("sourceFile") == spec["source"] and
+            clip.get("sourceSha256") == spec["sourceSha256"] and
+            int(clip.get("bindingCount", -1)) == spec["expectedBindingCount"] and
+            int(clip.get("keyCountPerBinding", -1)) == spec["expectedKeyCount"],
+            f"semantic animation source identity drifted: {clip['name']}",
+        )
+        key_times = clip.get("keyTimes")
+        require(
+            isinstance(key_times, list) and
+            len(key_times) == spec["expectedKeyCount"] and
+            all(is_exact_f32(value)
+                for value in key_times) and
+            all(float(key_times[index]) > float(key_times[index - 1])
+                for index in range(1, len(key_times))),
+            f"semantic animation key-time payload drifted: {clip['name']}",
+        )
+        settings = clip.get("keySettings") or {}
+        require(
+            settings == {
+                "leftTangentMode": 0,
+                "rightTangentMode": 0,
+                "weightedMode": 0,
+                "inWeight": f32(1.0 / 3.0),
+                "outWeight": f32(1.0 / 3.0),
+            },
+            f"semantic animation key settings drifted: {clip['name']}",
+        )
+        require(
+            clip.get("unityTransport") == {
+                "legacy": True,
+                "compressed": False,
+                "wrapMode": 0,
+                "useHighQualityCurve": True,
+            },
+            f"semantic animation Unity transport drifted: {clip['name']}",
+        )
+        curves = clip.get("curves")
+        require(isinstance(curves, list) and len(curves) == spec["expectedBindingCount"],
+                f"semantic animation curve census drifted: {clip['name']}")
+        identities = [(str(row.get("path")), str(row.get("propertyName")))
+                      for row in curves]
+        require(identities == sorted(identities) and
+                len(set(identities)) == len(identities),
+                f"semantic animation binding identities drifted: {clip['name']}")
+        for row in curves:
+            count = int(row.get("keyCount", -1))
+            values = row.get("values")
+            in_tangents = row.get("inTangents")
+            out_tangents = row.get("outTangents")
+            require(
+                count == len(key_times) and
+                all(isinstance(items, list) and len(items) == count
+                    for items in (values, in_tangents, out_tangents)) and
+                all(is_exact_f32(value)
+                    for items in (values, in_tangents, out_tangents)
+                    for value in items),
+                f"semantic animation curve payload shape drifted: "
+                f"{clip['name']}/{row.get('path')}/{row.get('propertyName')}",
+            )
+            keys = [
+                {"time": key_times[index], "value": values[index]}
+                for index in range(count)
+            ]
+            require(
+                row.get("keyTimeValueSha256") == curve_key_sha256(keys) and
+                row.get("keyPayloadSha256") == curve_payload_sha256(
+                    key_times,
+                    values,
+                    in_tangents,
+                    out_tangents,
+                    int(settings["leftTangentMode"]),
+                    int(settings["rightTangentMode"]),
+                    int(settings["weightedMode"]),
+                    float(settings["inWeight"]),
+                    float(settings["outWeight"]),
+                ),
+                f"semantic animation curve digest drifted: "
+                f"{clip['name']}/{row.get('path')}/{row.get('propertyName')}",
+            )
+
+
+def load_published_contract(path: Path = DEFAULT_OUTPUT) -> dict[str, Any]:
+    require(path.is_file(), f"missing published semantic contract: {path}")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    require(isinstance(value, dict), "published semantic contract is not an object")
+    validate_contract(value)
+    return value
 
 
 def validate_actual_curves(
@@ -280,20 +467,41 @@ def validate_actual_curves(
             f"{clip_contract['name']}: generated binding set drifted")
     for binding, row in expected_rows.items():
         keys = actual[binding]
+        key_times = clip_contract["keyTimes"]
+        settings = clip_contract["keySettings"]
         require(len(keys) == int(row["keyCount"]),
                 f"{clip_contract['name']}/{binding}: key count drifted")
         require(curve_key_sha256(keys) == row["keyTimeValueSha256"],
                 f"{clip_contract['name']}/{binding}: key time/value drifted")
         for index, key in enumerate(keys):
-            tangent = expected_tangent(keys, index)
-            require(nearly(float(key["inTangent"]), tangent) and
-                    nearly(float(key["outTangent"]), tangent),
+            require(exact_f32(key["time"], key_times[index]) and
+                    exact_f32(key["value"], row["values"][index]),
+                    f"{clip_contract['name']}/{binding}[{index}]: "
+                    "exact float32 time/value drifted")
+            require(exact_f32(key["inTangent"], row["inTangents"][index]) and
+                    exact_f32(key["outTangent"], row["outTangents"][index]),
                     f"{clip_contract['name']}/{binding}[{index}]: tangent drifted")
-            require(int(key["tangentMode"]) == 0 and
-                    int(key["weightedMode"]) == 0 and
-                    nearly(float(key["inWeight"]), 1.0 / 3.0) and
-                    nearly(float(key["outWeight"]), 1.0 / 3.0),
+            require(int(key["tangentMode"]) ==
+                        int(settings["leftTangentMode"]) and
+                    int(key["weightedMode"]) ==
+                        int(settings["weightedMode"]) and
+                    exact_f32(key["inWeight"], settings["inWeight"]) and
+                    exact_f32(key["outWeight"], settings["outWeight"]),
                     f"{clip_contract['name']}/{binding}[{index}]: tangent mode/weight drifted")
+        require(
+            curve_payload_sha256(
+                [key["time"] for key in keys],
+                [key["value"] for key in keys],
+                [key["inTangent"] for key in keys],
+                [key["outTangent"] for key in keys],
+                int(settings["leftTangentMode"]),
+                int(settings["rightTangentMode"]),
+                int(settings["weightedMode"]),
+                float(settings["inWeight"]),
+                float(settings["outWeight"]),
+            ) == row["keyPayloadSha256"],
+            f"{clip_contract['name']}/{binding}: exact key payload drifted",
+        )
 
 
 def verify_generated(contract: dict[str, Any]) -> None:
@@ -306,24 +514,53 @@ def verify_generated(contract: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--write", action="store_true")
+    mode.add_argument(
+        "--write",
+        "--update-from-source",
+        dest="write",
+        action="store_true",
+        help="rederive and publish the tracked payload from exact source JSON",
+    )
     mode.add_argument(
         "--check",
+        "--check-source",
+        dest="check_source",
         action="store_true",
-        help="verify the published contract and generated clips (default)",
+        help="rederive from exact source JSON and compare with the publication (default)",
+    )
+    mode.add_argument(
+        "--check-contract",
+        action="store_true",
+        help="validate only the tracked rebuildable payload (clean-checkout safe)",
+    )
+    mode.add_argument(
+        "--check-generated",
+        action="store_true",
+        help="compare ignored generated .anim caches with the tracked payload",
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
-    contract = build_contract()
-    verify_generated(contract)
-    encoded = json.dumps(contract, indent=2, ensure_ascii=False) + "\n"
     if args.write:
+        contract = build_contract()
+        validate_contract(contract)
+        encoded = json.dumps(contract, indent=2, ensure_ascii=False) + "\n"
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(encoded, encoding="utf-8", newline="\n")
+        operation = "updated_from_source"
+    elif args.check_contract:
+        contract = load_published_contract(args.output)
+        operation = "checked_tracked_contract"
+    elif args.check_generated:
+        contract = load_published_contract(args.output)
+        verify_generated(contract)
+        operation = "checked_generated_clips"
     else:
-        require(args.output.is_file(), f"missing published semantic contract: {args.output}")
-        require(json.loads(args.output.read_text(encoding="utf-8")) == contract,
+        contract = build_contract()
+        validate_contract(contract)
+        published = load_published_contract(args.output)
+        require(published == contract,
                 "published semantic animation contract drifted")
+        operation = "checked_source_derivation"
     print("build_endminf_effect_animation_semantic_contract: OK " + json.dumps({
         "clips": len(contract["clips"]),
         "bindings": sum(row["bindingCount"] for row in contract["clips"]),
@@ -331,6 +568,7 @@ def main() -> int:
             curve["keyCount"]
             for clip in contract["clips"] for curve in clip["curves"]
         ),
+        "operation": operation,
         "output": str(args.output),
     }, sort_keys=True))
     return 0

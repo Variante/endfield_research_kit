@@ -83,6 +83,160 @@ def canonical_json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
+class RuntimeBindingVerificationError(ValueError):
+    pass
+
+
+def _strip_csharp_comments_and_literals(source: str) -> str:
+    """Remove non-code text while preserving enough spacing for token gates."""
+    pattern = re.compile(
+        r"/\*.*?\*/|//[^\r\n]*|@\"(?:\"\"|[^\"])*\"|"
+        r"\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'",
+        re.DOTALL,
+    )
+    return pattern.sub(lambda match: "\n" * match.group(0).count("\n") or " ", source)
+
+
+def validate_runtime_binding_source(source: str) -> None:
+    """Keep the opt-in renderer mutation transaction fully reversible.
+
+    This is a bounded source contract rather than a C# parser. It intentionally
+    covers every Renderer/GameObject field written by OnEnable and requires the
+    snapshot to precede the first write, fail-path rollback, and idempotent
+    disable/destroy restoration with visibility restored last.
+    """
+    code = _strip_csharp_comments_and_literals(source)
+    try:
+        on_enable_start = code.index("private void OnEnable()")
+        on_disable_start = code.index("private void OnDisable()")
+        on_destroy_start = code.index("private void OnDestroy()")
+        capture_start = code.index("private void CaptureRuntimeState(")
+        restore_start = code.index("private void RestoreRuntimeState()")
+        validator_start = code.index("public bool TryValidateForRecoveryAudit(")
+        on_enable = code[on_enable_start:on_disable_start]
+        on_disable = code[on_disable_start:on_destroy_start]
+        on_destroy = code[on_destroy_start:capture_start]
+        capture = code[capture_start:restore_start]
+        restore = code[restore_start:validator_start]
+    except ValueError as exc:
+        raise RuntimeBindingVerificationError(
+            "runtime binding lifecycle method is missing") from exc
+
+    required_capture = (
+        "new Mesh[row.renderer.meshCount]",
+        "row.renderer.GetMeshes(meshes)",
+        "layer = row.renderer.gameObject.layer",
+        "enabled = row.renderer.enabled",
+        "renderMode = row.renderer.renderMode",
+        "sharedMaterials = (Material[])row.renderer.sharedMaterials.Clone()",
+        "meshes = meshes",
+    )
+    required_restore = (
+        "renderer.enabled = false",
+        "renderer.gameObject.layer = state.layer",
+        "renderer.renderMode = state.renderMode",
+        "renderer.SetMeshes(state.meshes, state.meshes.Length)",
+        "renderer.sharedMaterials = state.sharedMaterials",
+        "renderer.enabled = state.enabled",
+        "runtimeStates.Clear()",
+    )
+    missing_capture = [token for token in required_capture if token not in capture]
+    missing_restore = [token for token in required_restore if token not in restore]
+    if missing_capture or missing_restore:
+        raise RuntimeBindingVerificationError(
+            "runtime binding snapshot/restore coverage drifted: "
+            f"capture={missing_capture!r} restore={missing_restore!r}")
+
+    write_pattern = re.compile(
+        r"\b((?:row\.)?renderer(?:\.gameObject)?\.[A-Za-z_]\w*)\s*"
+        r"(?:[+\-*/%&|^]=|=(?!=)|\+\+|--)",
+    )
+    call_pattern = re.compile(
+        r"\b((?:row\.)?renderer)\.([A-Za-z_]\w*)\s*\(",
+    )
+
+    def mutation_inventory(body: str) -> tuple[list[str], list[str]]:
+        return (
+            [match.group(1) for match in write_pattern.finditer(body)],
+            [f"{match.group(1)}.{match.group(2)}"
+             for match in call_pattern.finditer(body)],
+        )
+
+    expected_mutations = {
+        "OnEnable": (
+            [
+                "row.renderer.renderMode",
+                "row.renderer.sharedMaterials",
+                "row.renderer.gameObject.layer",
+                "row.renderer.enabled",
+            ],
+            ["row.renderer.SetMeshes"],
+        ),
+        "CaptureRuntimeState": (
+            [],
+            ["row.renderer.GetMeshes"],
+        ),
+        "RestoreRuntimeState": (
+            [
+                "renderer.enabled",
+                "renderer.gameObject.layer",
+                "renderer.renderMode",
+                "renderer.sharedMaterials",
+                "renderer.enabled",
+            ],
+            ["renderer.SetMeshes"],
+        ),
+    }
+    actual_mutations = {
+        "OnEnable": mutation_inventory(on_enable),
+        "OnDisable": mutation_inventory(on_disable),
+        "OnDestroy": mutation_inventory(on_destroy),
+        "CaptureRuntimeState": mutation_inventory(capture),
+        "RestoreRuntimeState": mutation_inventory(restore),
+    }
+    expected_mutations["OnDisable"] = ([], [])
+    expected_mutations["OnDestroy"] = ([], [])
+    for method, expected in expected_mutations.items():
+        actual = actual_mutations[method]
+        if actual != expected:
+            raise RuntimeBindingVerificationError(
+                "runtime binding renderer mutation inventory drifted: "
+                f"method={method} expected={expected!r} actual={actual!r}")
+    try:
+        snapshot_position = on_enable.index("CaptureRuntimeState(row)")
+        first_mutation_position = on_enable.index(
+            "row.renderer.renderMode = ParticleSystemRenderMode.Mesh")
+        catch_start = on_enable.index("catch (Exception exception)")
+    except ValueError as exc:
+        raise RuntimeBindingVerificationError(
+            "runtime binding snapshot/mutation transaction drifted") from exc
+    if snapshot_position > first_mutation_position:
+        raise RuntimeBindingVerificationError(
+            "runtime binding mutates a renderer before snapshot")
+    if "RestoreRuntimeState();" not in on_enable[catch_start:]:
+        raise RuntimeBindingVerificationError(
+            "runtime binding exception path does not restore its snapshot")
+    if "RestoreRuntimeState();" not in on_disable or \
+            "RestoreRuntimeState();" not in on_destroy:
+        raise RuntimeBindingVerificationError(
+            "runtime binding disable/destroy path is not reversible")
+    normalized_disable = re.sub(r"\s+", " ", on_disable).strip()
+    normalized_destroy = re.sub(r"\s+", " ", on_destroy).strip()
+    if normalized_disable != (
+            "private void OnDisable() { RestoreRuntimeState(); }") or \
+            normalized_destroy != (
+                "private void OnDestroy() { RestoreRuntimeState(); }"):
+        raise RuntimeBindingVerificationError(
+            "runtime binding disable/destroy bodies contain extra behavior")
+    restore_order = [restore.index(token) for token in required_restore[:-1]]
+    if restore_order != sorted(restore_order):
+        raise RuntimeBindingVerificationError(
+            "runtime binding restoration order drifted")
+    if actual_mutations["RestoreRuntimeState"][0][-1] != "renderer.enabled":
+        raise RuntimeBindingVerificationError(
+            "runtime binding does not restore visibility last")
+
+
 def parsed_material_yaml(path: Path) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
     floats: dict[str, float] = {}
     colors: dict[str, dict[str, float]] = {}
@@ -249,6 +403,10 @@ def main() -> int:
         "TryValidateForRecoveryAudit(out string m27BindingFailure)",
     ]
     failures += ["runtime binding missing " + value for value in required_runtime if value not in runtime]
+    try:
+        validate_runtime_binding_source(runtime)
+    except RuntimeBindingVerificationError as exc:
+        failures.append(str(exc))
     failures += ["binding builder missing " + value for value in required_builder if value not in builder]
     forbidden_builder = [
         "ExpectedSha256",

@@ -33,6 +33,7 @@ namespace EndfieldGraphShaderLab
             public Vector3 referencePosition;
             public Quaternion referenceRotation;
             public Vector3 referenceScale;
+            public RecoveredAclTransformComponentMask allStateComponents;
             public TrackBinding[] stateTracks;
         }
 
@@ -123,6 +124,7 @@ namespace EndfieldGraphShaderLab
                             referencePosition = target.localPosition,
                             referenceRotation = target.localRotation,
                             referenceScale = target.localScale,
+                            allStateComponents = RecoveredAclTransformComponentMask.None,
                             stateTracks = new TrackBinding[states.Length],
                         };
                         for (int index = 0; index < path.stateTracks.Length; index++)
@@ -137,6 +139,7 @@ namespace EndfieldGraphShaderLab
                         trackIndex = binding.trackIndex,
                         components = binding.components,
                     };
+                    path.allStateComponents |= binding.components;
                 }
             }
 
@@ -191,16 +194,37 @@ namespace EndfieldGraphShaderLab
             foreach (BoundPath path in boundPaths)
             {
                 TrackBinding binding = path.stateTracks[stateIndex];
-                if (binding.trackIndex < 0)
-                    continue;
-                if (!RecoveredAclPoseEvaluator.TrySampleTrack(
+                RecoveredAclQvvSample sample = ReferenceSample(path);
+                if (binding.trackIndex >= 0 &&
+                    !RecoveredAclPoseEvaluator.TrySampleTrack(
                         clip, time, binding.trackIndex,
-                        out RecoveredAclQvvSample sample, out string failure))
+                        out sample, out string failure))
                 {
                     FailRuntime(clip, path.path, failure);
                     return;
                 }
-                ApplyComponents(path.transform, binding.components, sample);
+                // Every recovered overview Animator state has Write Defaults
+                // enabled. A component bound by another state but absent from
+                // this state's ACL track therefore returns to the source
+                // reference pose; retaining the prior transition sample would
+                // invent state history, especially on asymmetric hair/cloth
+                // bindings.
+                var effective = new RecoveredAclQvvSample
+                {
+                    translation = ComponentValue(
+                        sample.translation, path.referencePosition,
+                        binding.components,
+                        RecoveredAclTransformComponentMask.Translation),
+                    rotation = ComponentValue(
+                        sample.rotation, path.referenceRotation,
+                        binding.components,
+                        RecoveredAclTransformComponentMask.Rotation),
+                    scale = ComponentValue(
+                        sample.scale, path.referenceScale,
+                        binding.components,
+                        RecoveredAclTransformComponentMask.Scale),
+                };
+                ApplyComponents(path.transform, path.allStateComponents, effective);
                 writes++;
             }
             AppliedTransformCount = writes;
@@ -225,7 +249,7 @@ namespace EndfieldGraphShaderLab
                 TrackBinding currentBinding = path.stateTracks[currentIndex];
                 TrackBinding nextBinding = path.stateTracks[nextIndex];
                 RecoveredAclTransformComponentMask components =
-                    currentBinding.components | nextBinding.components;
+                    path.allStateComponents;
                 if (components == RecoveredAclTransformComponentMask.None)
                     continue;
 

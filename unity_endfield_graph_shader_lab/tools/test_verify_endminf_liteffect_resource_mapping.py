@@ -251,6 +251,54 @@ class LitEffectResourceMappingTests(unittest.TestCase):
             ):
                 MODULE._validate_unity_transport_ports(mutated, compatibility)
 
+    def test_indirect_and_post_output_transport_reroutes_fail_closed(self) -> None:
+        exact = MODULE.EXACT_UNITY_PORT.read_text(encoding="utf-8")
+        compatibility = MODULE.COMPATIBILITY_UNITY_PORT.read_text(
+            encoding="utf-8")
+        attacks = (
+            exact.replace(
+                "            M27HGBufferOutput Frag(",
+                "            void RerouteMro(inout float4 target) "
+                "{ target = target.grba; }\n\n"
+                "            M27HGBufferOutput Frag(",
+                1,
+            ).replace(
+                "                float metallic = lerp(",
+                "                RerouteMro(mroSample);\n"
+                "                float metallic = lerp(",
+                1,
+            ),
+            exact.replace(
+                "                return output;",
+                "                output.gBufferA = "
+                "float4(roughness, metallic, 0.0, 0.0);\n"
+                "                return output;",
+                1,
+            ),
+            exact.replace(
+                "            float _GlobalMipBiasPow2;",
+                "            float _GlobalMipBiasPow2;\n"
+                "            #define _GlobalMipBiasPow2 0.0",
+                1,
+            ),
+            exact.replace(
+                "                float2 baseUV = mad(",
+                "                #if 0\n"
+                "                float2 baseUV = mad(",
+                1,
+            ).replace(
+                "                return output;",
+                "                return output;\n"
+                "                #endif\n"
+                "                return (M27HGBufferOutput)0;",
+                1,
+            ),
+        )
+        for mutated in attacks:
+            self.assertNotEqual(mutated, exact, "test mutation did not alter exact port")
+            with self.assertRaises(MODULE.VerificationError):
+                MODULE._validate_unity_transport_ports(mutated, compatibility)
+
     def test_constant_buffer_sizes_and_known_fields(self) -> None:
         report = MODULE.build_report()
         vertex = {row["register"]: row for row in report["constantBuffers"]["vertex"]}

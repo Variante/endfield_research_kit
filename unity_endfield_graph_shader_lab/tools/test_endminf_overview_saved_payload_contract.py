@@ -24,6 +24,13 @@ ANIMATION_ROOT = ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/"
     "Effects/Overview/Animation"
 )
+ANIMATION_CONTRACT = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
+    "endminf_effect_animation_source_curve_contract.json"
+)
+ANIMATION_BUILDER = ROOT / (
+    "tools/build_endminf_effect_animation_semantic_contract.py"
+)
 
 
 class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
@@ -136,29 +143,70 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
 
     def test_effect_animation_source_and_semantic_contract_are_pinned(self) -> None:
         animation_source = ANIMATION_IMPORTER.read_text(encoding="utf-8")
+        builder_source = ANIMATION_BUILDER.read_text(encoding="utf-8")
+        contract_bytes = ANIMATION_CONTRACT.read_bytes()
+        contract = json.loads(contract_bytes)
         expected = {
-            STAGE / "AnimationClip/A_actor_endminf_ui_overview_02_p910F78E15CD34301.json":
+            "A_actor_endminf_ui_overview_02_p910F78E15CD34301.json":
                 "22c191d15ea18dc2d890b9c6e4411e8e2985c6ea5fd6db96263b499e3d86a70d",
-            STAGE / "AnimationClip/A_fx_endminf_ui_overview_04_pDB8EF20719226683.json":
+            "A_fx_endminf_ui_overview_04_pDB8EF20719226683.json":
                 "220ae359098e5a843afdced4680265e3eead2aba79b926988c5ba46ae6d42e6f",
         }
-        for path, digest in expected.items():
-            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), digest)
-            self.assertIn(f'"{digest}"', animation_source)
-        self.assertGreaterEqual(
-            animation_source.count("ValidateExactAnimationEvidence();"), 2
+        self.assertEqual(
+            contract["schema"],
+            "endfield.endminf-effect-animation-source-curves.v2",
         )
-        self.assertNotIn("RigAnimSha256", animation_source)
-        self.assertNotIn("RocksAnimSha256", animation_source)
+        self.assertEqual(
+            contract["status"],
+            "source_derived_rebuildable_curve_contract",
+        )
+        self.assertEqual(
+            {row["sourceFile"]: row["sourceSha256"]
+             for row in contract["clips"]},
+            expected,
+        )
+        self.assertEqual(
+            sum(row["bindingCount"] for row in contract["clips"]),
+            58,
+        )
+        self.assertEqual(
+            sum(curve["keyCount"]
+                for clip in contract["clips"] for curve in clip["curves"]),
+            17_984,
+        )
+        canonical_contract_bytes = contract_bytes.replace(
+            b"\r\n", b"\n"
+        ).replace(b"\r", b"\n")
+        contract_digest = hashlib.sha256(canonical_contract_bytes).hexdigest()
+        self.assertIn(f'"{contract_digest}"', animation_source)
+        for source_file, digest in expected.items():
+            self.assertIn(f'"{source_file}"', animation_source)
+            self.assertIn(f'"{digest}"', animation_source)
+            self.assertIn(f'"{source_file}"', builder_source)
+            self.assertIn(f'"{digest}"', builder_source)
+        self.assertNotIn("ExactStageRelative", animation_source)
+        self.assertNotIn("scratch/character_recovery", animation_source)
+        self.assertNotIn("ValidateExactAnimationEvidence", animation_source)
         for token in (
             "endminf_effect_animation_source_curve_contract.json",
+            "BuildOrReplaceClip(",
+            "AssetDatabase.CreateAsset(clip, assetPath)",
+            "AnimationUtility.SetEditorCurve(",
+            "AnimationUtility.SetObjectReferenceCurve(clip, binding, null)",
+            "AnimationUtility.SetKeyLeftTangentMode(",
+            "AnimationUtility.SetKeyRightTangentMode(",
             "ValidateSemanticClip(",
             "AnimationUtility.GetCurveBindings(clip)",
             "AnimationUtility.GetEditorCurve(",
             "HashCurveTimeValues(curve)",
-            "ValidateSourceDerivedTangents(",
+            "HashKeyPayload(",
+            "ValidateExactKeyPayload(",
+            '.Replace("\\r\\n", "\\n")',
+            "Encoding.UTF8.GetBytes(canonicalText)",
         ):
             self.assertIn(token, animation_source)
+        self.assertIn('"--check-contract"', builder_source)
+        self.assertIn('"--check-generated"', builder_source)
 
     def test_shape_texture_boundary_does_not_claim_native_bc7_identity(self) -> None:
         self.assertIn(

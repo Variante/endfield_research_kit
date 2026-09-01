@@ -174,7 +174,15 @@ the outer return; the false path remains intact and all 20 native tests pass.
   shortest-hemisphere normalized quaternion interpolation. The bridge preserves
   each manifest binding's position/rotation/scale mask and fails closed on
   source, decoded-payload, hierarchy, or state mismatch; it contains no
-  Endminf pose constants or corrective curves. A canonical 770-frame render
+  Endminf pose constants or corrective curves. The retail Overview states all
+  use `Write Defaults`, while the recovered start/loop ACL sets are asymmetric:
+  273 versus 249 bindings, with 29 start-only paths, 5 loop-only paths, and 25
+  shared component-mask differences. The driver now retains the union of
+  source-bound components and restores a component absent from the current
+  state to the captured hierarchy reference pose instead of retaining a stale
+  transition sample. A compact source-hash-bound contract records that binding
+  evidence, including the affected hair, cape, and thigh-cloth paths, but no
+  pose values, curves, captured motion, or fitted timing. A canonical 770-frame render
   with this driver passes start-to-loop, settled-loop, upright portrait, exact
   effect, and captured-secondary gates. Its best retail alignment is effectively
   unchanged from the dense-key baseline (ROI MAE 23.8907 versus 23.8872;
@@ -234,9 +242,14 @@ the outer return; the false path remains intact and all 20 native tests pass.
   101 saved GameObject/Transform rows to their exact source PathIDs and checks
   parentage, name, layer, hierarchy, and local TRS. The two used AnimationClips
   are decoded reproducibly from their exact serialized source payloads into 58
-  scalar bindings and 17,984 keys; Unity checks the exact binding set,
-  time/value digests, source-derived tangents, modes, and weights. Cached
-  `.anim` bytes, capture-fitted positions, and fitted curves are not admitted.
+  scalar bindings and 17,984 keys. Their tracked v2 contract contains every
+  float32 time, value, source-derived tangent, tangent mode, weight, and
+  transport setting, so a clean checkout creates or replaces both `.anim`
+  assets without the ignored source stage or an existing generated cache.
+  The explicit local updater rederives the contract only from the two
+  hash-pinned serialized AnimationClip JSON files, while normal Unity builds
+  consume and validate the tracked payload. Cached `.anim` bytes,
+  capture-fitted positions, and fitted curves are not admitted.
 - The canonical capture now restores eleven retained LitEffect rock/crystal
   renderers: seven M01 rows, three M38 rows, and the later M27 hand-crystal row,
   all keyed by exact renderer/material PathIDs and the exact
@@ -245,7 +258,12 @@ the outer return; the false path remains intact and all 20 native tests pass.
   row to its exact source owner, renderer, particle system, mesh, material, and
   PathIDs. Material validation uses hash-pinned source JSON plus authored
   fields, textures, transforms, shader, keyword, and queue rather than hashes
-  of generated `.mat` files. The default remains disabled/fail-closed, and only
+  of generated `.mat` files. The opt-in runtime transaction now snapshots and
+  restores each selected renderer's layer, enabled state, render mode,
+  materials, and complete mesh slots on disable, destruction, or a partial
+  apply failure. This makes enable/disable/enable deterministic and prevents
+  M27's diagnostic layer 31 or compatibility bindings from leaking into a
+  later run. The default remains disabled/fail-closed, and only
   `ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1` activates them. Exact M27 mode
   now redirects only M27 to its identity-gated layer while retaining the ten
   separate M01/M38 ForwardOnly owners; the former blanket exclusion caused the
@@ -3338,7 +3356,13 @@ evidence: both portrait builders vertically flipped UVs that TextureImporter
 had already mapped from the display-upright PNG. Their tight-rectangle UVs now
 use unflipped `vMin`/`vMax` order, a targeted 0.65/4.4333/6.65-second render
 shows the silhouette upright, and all 31 playable profile meshes pass the
-independent bottom=`vMin`/top=`vMax` verifier. Endminf LitEffect compatibility
+independent bottom=`vMin`/top=`vMax` verifier. The builder and verifier also
+require `meshType=Tight`, `packingMode=Tight`, `packingRotation=None`, and
+`packed=0` before using that unflipped UV path. Canonical capture and the
+maintained launcher forcibly clear the content-invalid screen-shadow-R and
+SphereOutside presentation selectors, so an inherited diagnostic environment
+cannot reintroduce the upside-down body-shaped mask; no second portrait flip is
+admitted. Endminf LitEffect compatibility
 textures now also enforce source semantics on import: BaseColor and Parallax
 are sRGB, while MRO and Normal are linear, with Normal imported as
 `NormalMap`. This
@@ -3352,10 +3376,13 @@ carries exact hierarchy identities plus direct ParticleSystem,
 ParticleSystemRenderer, resolved material/mesh, and shape-texture references
 instead of positional list joins, and
 validates the complete saved particle/renderer payload by source PathID after
-effect-animation reconstruction. The checked-in generated Overview prefabs
+effect-animation reconstruction. The current local generated Overview prefabs
 are still schema v1 and therefore fail closed until a clean, coordinated Unity
 rebuild regenerates and validates them; no current render is certified by the
-v2 gate yet.
+v2 gate yet. The broader exact stage, generated prefabs, materials, and shader
+sidecars remain intentionally local evidence inputs rather than tracked binary
+blobs; the rebuildable v2 animation payload closes the new cached-clip
+dependency but does not claim the whole visual lab is standalone.
 The exact deferred subset no longer substitutes a 1x1 zero texture at t10:
 `SetupMultiscatteringLut` is reproduced as a source-generated 32x32
 `R16_UNorm` Bilinear/Clamp LUT with exact 2,048-byte SHA-256
@@ -3698,6 +3725,19 @@ readiness self-test, withheld-launch test, all 24 trajectory-verifier tests, and
 installed-client nonlaunching preflight pass. The graphics-only Full profile
 remains available for independent graphics evidence, but it cannot claim the
 missing secondary lifecycle join.
+
+The deferred-capture consumer audit now uses one exact observer-build contract
+for Animator, Streamline, and M31 verification. It pins the current Release
+observer's source identity, DLL size/hash, 8,192-row Animator capacity, and
+8,192-row M31 candidate/census capacities. The Streamline verifier accepts the
+retail raw `sl::Resource` descriptor only when its optional width/height/format
+tuple is either wholly zero or wholly agrees with the authoritative D3D11
+descriptor, and it enforces tag < evaluate-entry <= copy-enqueue <=
+evaluate-exit <= payload-ready plus the bounded retained prior-Present options
+state. Rechecking `20260831T184411Z` against its captured observer identity now
+removes the former impossible descriptor/timestamp errors; it remains rejected
+only by six genuine incomplete-session gates. No additional capture is needed
+to diagnose those historical failures.
 
 The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
