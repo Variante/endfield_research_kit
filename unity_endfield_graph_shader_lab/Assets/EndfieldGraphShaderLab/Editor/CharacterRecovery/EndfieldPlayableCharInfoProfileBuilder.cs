@@ -234,6 +234,21 @@ namespace EndfieldGraphShaderLabEditor
             profile.fieldOfView = Float(Get(camera, "field_of_view"));
             profile.nearClip = Float(Get(camera, "near_clip"));
             profile.farClip = Float(Get(camera, "far_clip"));
+            if (!IsFinite(profile.fieldOfView) ||
+                profile.fieldOfView <= 0.0f || profile.fieldOfView >= 180.0f ||
+                !IsFinite(profile.nearClip) || profile.nearClip <= 0.0f ||
+                !IsFinite(profile.farClip) ||
+                profile.farClip <= profile.nearClip)
+            {
+                throw new InvalidDataException(
+                    $"{rootName} source camera has invalid lens or clip values.");
+            }
+            if ((profile.lookAtPosition - profile.cameraPosition).sqrMagnitude <=
+                    1.0e-8f)
+            {
+                throw new InvalidDataException(
+                    $"{rootName} source camera position and look-at collapse.");
+            }
             Vector2 sensorSize = Vector2List(
                 List(Get(camera, "sensor_size")),
                 $"{rootName} source camera sensor size");
