@@ -3712,6 +3712,14 @@ Overall runtime selection remains fail-closed: the nonzero Burst function
 pointer is a runtime value, and `FromToRotation` can be replaced through IFix
 patch `0x219`, whose runtime state is unknown. The contract uses no captured
 positions, timing, curves, fitted constants, or replay data.
+A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
+equations with explicit binary32 operation grouping and bit-exact verifier
+vectors. It decodes packed child ranges, preserves ordered Move/non-Move
+accumulation, and computes child/parent quaternion writes, but it is not
+referenced by the solver, frame coordinator, generated prefabs, scenes, or
+assets. Zero/non-finite and the finite negative-X antiparallel zero-axis case
+fail closed. This is executable code recovery, not evidence that retail chose
+the unresolved Burst pointer or that IFix `0x219` was inactive.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
