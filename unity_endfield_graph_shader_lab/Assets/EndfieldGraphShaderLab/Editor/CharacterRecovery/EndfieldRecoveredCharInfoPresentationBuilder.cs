@@ -308,6 +308,7 @@ namespace EndfieldGraphShaderLabEditor
             controller.enableRecoveredPresentation = false;
             controller.enableReadySubsetDiagnostic =
                 enableReadySubsetDiagnostic;
+            controller.enableEndminfSourceBackground = false;
             controller.RefreshSelection();
             EditorUtility.SetDirty(controller);
             return controller;
@@ -371,6 +372,7 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException("Presentation prefab has no strict selector.");
             if (controller.enableRecoveredPresentation ||
                 controller.enableReadySubsetDiagnostic ||
+                controller.enableEndminfSourceBackground ||
                 controller.exactSourceAssetsReady ||
                 controller.sourceContent == null ||
                 controller.sourceContent.activeSelf)
@@ -393,6 +395,14 @@ namespace EndfieldGraphShaderLabEditor
                 throw new InvalidDataException(
                     "Ready-subset diagnostic source contract failed: " +
                     readySubsetFailure);
+            }
+            string endminfSourceBackgroundFailure;
+            if (!controller.ValidateEndminfSourceBackgroundReadiness(
+                    out endminfSourceBackgroundFailure))
+            {
+                throw new InvalidDataException(
+                    "Endminf source-background contract failed: " +
+                    endminfSourceBackgroundFailure);
             }
             if (controller.sphereOutsideRenderer == null ||
                 controller.floorRenderer == null ||
@@ -1347,6 +1357,7 @@ namespace EndfieldGraphShaderLabEditor
 
                 controller.enableRecoveredPresentation = false;
                 controller.enableReadySubsetDiagnostic = false;
+                controller.enableEndminfSourceBackground = false;
                 controller.sourceContent = content;
                 controller.sphereOutsideRenderer = sphereRenderer;
                 controller.floorRenderer = floorRenderer;
@@ -1510,6 +1521,7 @@ namespace EndfieldGraphShaderLabEditor
                     controller.compatibilityBackdropRenderer = compatibilityBackdrop;
                     controller.enableRecoveredPresentation = false;
                     controller.enableReadySubsetDiagnostic = false;
+                    controller.enableEndminfSourceBackground = false;
                     if (controller.sourceContent != null)
                         controller.sourceContent.SetActive(false);
                     EditorUtility.SetDirty(controller);

@@ -12,6 +12,15 @@ namespace EndfieldGraphShaderLab
         public bool finishWhenTransition;
     }
 
+    public struct EndfieldOverviewEffectSourceClock
+    {
+        internal EndfieldOverviewPlayback owner;
+        internal int playbackGeneration;
+        internal int stateFullPathHash;
+        internal float elapsedSeconds;
+        internal bool valid;
+    }
+
     [System.Serializable]
     public struct EndfieldOverviewItemWidgetBinding
     {
@@ -48,7 +57,10 @@ namespace EndfieldGraphShaderLab
 
     public interface IEndfieldOverviewEffectSpawner
     {
-        void SpawnOverviewEffect(EndfieldOverviewEffectRequest request, Transform actorRoot);
+        void SpawnOverviewEffect(
+            EndfieldOverviewEffectRequest request,
+            Transform actorRoot,
+            EndfieldOverviewEffectSourceClock sourceClock);
         void FinishOverviewEffect(string prefabName);
     }
 
@@ -63,6 +75,8 @@ namespace EndfieldGraphShaderLab
     [DefaultExecutionOrder(-80)]
     public sealed class EndfieldOverviewPlayback : MonoBehaviour
     {
+        public const int SourceOverviewStartFullPathHash = 1560421867;
+
         [Header("Recovered clips")]
         public Animation animationSource;
         [Tooltip("Generated source-exact Animator used by automatic Overview playback. Manual clip browsing still uses animationSource.")]
@@ -142,17 +156,24 @@ namespace EndfieldGraphShaderLab
             seconds = 0f;
             Animator animator = animatorSource;
             if (!AnimatorContractActive || animator == null ||
-                !animator.enabled || animator.runtimeAnimatorController == null ||
-                animator.IsInTransition(0))
+                !animator.enabled || animator.runtimeAnimatorController == null)
                 return false;
 
             AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(0);
-            if (current.fullPathHash != Animator.StringToHash(animatorStartStatePath) ||
+            if (Animator.StringToHash(animatorStartStatePath) !=
+                    SourceOverviewStartFullPathHash ||
+                current.fullPathHash != SourceOverviewStartFullPathHash ||
                 current.length <= 0f || float.IsNaN(current.normalizedTime) ||
-                float.IsInfinity(current.normalizedTime))
+                float.IsInfinity(current.normalizedTime) || current.normalizedTime < 0f)
                 return false;
-            seconds = Mathf.Clamp01(current.normalizedTime) * current.length;
-            return true;
+
+            // AnimatorBehaviourPlayEffect._SyncEffectTime consumes the current
+            // AnimatorStateInfo as length * normalizedTime. Do not clamp the
+            // value or reject the start-to-loop transition: FromOveview remains
+            // the current state during that transition, including the recovered
+            // source post's late 4.4 s pulse.
+            seconds = current.length * current.normalizedTime;
+            return !float.IsNaN(seconds) && !float.IsInfinity(seconds) && seconds >= 0f;
         }
 
         private bool waitingForExit;
@@ -259,6 +280,22 @@ namespace EndfieldGraphShaderLab
                 return;
             if (requireAnimatorContract)
             {
+                // Every failed automatic restart is a terminal ownership
+                // boundary, including failures discovered before Rebind/state
+                // entry. Revoke any prior generation and unwind its transient
+                // effects instead of leaving the last successful selection
+                // visible behind a disabled Animator.
+                playbackGeneration++;
+                AnimatorContractActive = false;
+                waitingForExit = false;
+                IsTransitioning = false;
+                IsLooping = false;
+                CurrentAnimatorStateHash = 0;
+                NextAnimatorStateHash = 0;
+                AnimatorTransitionNormalizedTime = 0f;
+                FinishAllEntranceEffects();
+                StopOverviewAudio();
+                RestoreRecoveredParameters();
                 Animation legacy = AnimationSource;
                 if (legacy != null)
                 {
@@ -477,14 +514,42 @@ namespace EndfieldGraphShaderLab
             if (!transitionDurationFixed && sourceStart != null)
                 RecoveredTransitionSeconds *= sourceStart.length;
 
-            StartItemWidgets(legacy);
-            PublishRecoveredParameters();
-            PublishEntranceEffects();
-            PlayOverviewAudio(Mathf.Clamp01(entryNormalizedOffset) *
-                (sourceStart != null ? sourceStart.length : 0f));
             animator.SetTrigger("EnableSwitch");
             animator.Update(0f);
             ObserveRecoveredAnimator();
+
+            // The source StateMachineBehaviour publishes its effects from
+            // OnStateEnter. The lab cannot run that game-specific behaviour,
+            // so enter and authenticate the exact source state first, then
+            // publish effects against its AnimatorStateInfo elapsed clock.
+            if (!TryGetAutomaticOverviewStartSeconds(out float sourceElapsed))
+            {
+                AnimatorContractActive = false;
+                animator.enabled = false;
+                if (legacy != null)
+                    legacy.enabled = true;
+                waitingForExit = false;
+                IsTransitioning = false;
+                IsLooping = false;
+                CurrentAnimatorStateHash = 0;
+                NextAnimatorStateHash = 0;
+                AnimatorTransitionNormalizedTime = 0f;
+                FinishAllEntranceEffects();
+                StopOverviewAudio();
+                RestoreRecoveredParameters();
+                return false;
+            }
+
+            StartItemWidgets(legacy);
+            PublishRecoveredParameters();
+            PublishEntranceEffects(new EndfieldOverviewEffectSourceClock {
+                owner = this,
+                playbackGeneration = playbackGeneration,
+                stateFullPathHash = SourceOverviewStartFullPathHash,
+                elapsedSeconds = sourceElapsed,
+                valid = true,
+            });
+            PlayOverviewAudio(sourceElapsed);
             return true;
         }
 
@@ -514,6 +579,16 @@ namespace EndfieldGraphShaderLab
             if (animator == null || !animator.enabled || animator.runtimeAnimatorController == null)
             {
                 AnimatorContractActive = false;
+                playbackGeneration++;
+                waitingForExit = false;
+                IsTransitioning = false;
+                IsLooping = false;
+                CurrentAnimatorStateHash = 0;
+                NextAnimatorStateHash = 0;
+                AnimatorTransitionNormalizedTime = 0f;
+                FinishAllEntranceEffects();
+                StopOverviewAudio();
+                RestoreRecoveredParameters();
                 return;
             }
 
@@ -746,6 +821,12 @@ namespace EndfieldGraphShaderLab
 
         private void PublishEntranceEffects()
         {
+            PublishEntranceEffects(default);
+        }
+
+        private void PublishEntranceEffects(
+            EndfieldOverviewEffectSourceClock sourceClock)
+        {
             if (entranceEffects == null || entranceEffects.Length == 0)
                 return;
             foreach (MonoBehaviour behaviour in GetComponentsInChildren<MonoBehaviour>(true))
@@ -753,7 +834,7 @@ namespace EndfieldGraphShaderLab
                 if (!(behaviour is IEndfieldOverviewEffectSpawner spawner))
                     continue;
                 foreach (EndfieldOverviewEffectRequest effect in entranceEffects)
-                    spawner.SpawnOverviewEffect(effect, transform);
+                    spawner.SpawnOverviewEffect(effect, transform, sourceClock);
             }
         }
 

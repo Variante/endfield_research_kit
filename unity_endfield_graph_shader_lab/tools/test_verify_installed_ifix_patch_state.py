@@ -33,6 +33,36 @@ class InstalledIfixVerifierTests(unittest.TestCase):
         ):
             verifier.check_refresh_metadata(report, {"sha256": "a" * 64})
 
+    def test_loader_native_map_stale_build_reports_failure(self) -> None:
+        report = {
+            "source_build": {
+                "game_assembly": {
+                    "path_at_recovery": "C:/fixture/GameAssembly.dll",
+                    "sha256": "a" * 64,
+                },
+                "global_metadata": {
+                    "path_at_recovery": "C:/fixture/global-metadata.dat",
+                    "sha256": "b" * 64,
+                },
+            }
+        }
+        catalog = {
+            "metadata": {
+                "path": "C:/fixture/global-metadata.dat",
+                "sha256": "b" * 64,
+            }
+        }
+        native_map = {
+            "metadata": {
+                "metadataPath": "C:/fixture/global-metadata.dat",
+                "metadataSha256": "b" * 64,
+                "gameAssembly": "C:/fixture/GameAssembly.dll",
+                "gameAssemblySha256": "c" * 64,
+            }
+        }
+        with self.assertRaisesRegex(SystemExit, "native map native-build provenance"):
+            verifier.check_loader_build_provenance(report, catalog, native_map)
+
 
 if __name__ == "__main__":
     unittest.main()

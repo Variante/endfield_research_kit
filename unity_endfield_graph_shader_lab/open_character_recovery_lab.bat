@@ -19,13 +19,18 @@ exit /b 2
 
 :open_endminf
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY=1"
-  rem Direct UI-free registration places the maintained Aug-24 no-frame-generation post pulse on the authored body clock.
   set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0"
-  rem Retain the ten source-identified M01/M38 fly-in rocks. Exact M27 mode
-  rem redirects only its own hand-crystal row and does not replace these owners.
+  rem Exact serialized post curves consume the authenticated FromOveview
+  rem AnimatorStateInfo clock; this does not enable broad visual compatibility.
+  if not defined ENDFIELD_RECOVERED_ENDMINF_SOURCE_POST set "ENDFIELD_RECOVERED_ENDMINF_SOURCE_POST=1"
+  rem Retain the ten source-identified M01/M38 fly-in rock owners. Exact M27
+  rem replaces only the hand-crystal row and does not replace these owners.
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
-  set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=1"
-  set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=1"
+  rem Keep the source-owned GridDeco/Far and ShadowPlane separate from the
+  rem fitted neutral plate and generic ready-subset diagnostics.
+  set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=1"
+  set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"
+  set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1"
   set "ENDFIELD_RECOVERED_VISIBILITY_SH=1"
   set "ENDFIELD_RECOVERED_LINEAR_UNORM_FINAL_TARGET=1"

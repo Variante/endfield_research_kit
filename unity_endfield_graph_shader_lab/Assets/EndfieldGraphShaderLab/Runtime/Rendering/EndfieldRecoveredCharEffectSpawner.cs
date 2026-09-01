@@ -93,6 +93,8 @@ namespace EndfieldGraphShaderLab
             new Dictionary<string, Coroutine>(StringComparer.Ordinal);
         private readonly Dictionary<string, Coroutine> lifetimeEffects =
             new Dictionary<string, Coroutine>(StringComparer.Ordinal);
+        private readonly HashSet<string> reportedFailureKeys =
+            new HashSet<string>(StringComparer.Ordinal);
 
         public Binding[] Bindings => bindings;
 
@@ -109,7 +111,8 @@ namespace EndfieldGraphShaderLab
 
         public void SpawnOverviewEffect(
             EndfieldOverviewEffectRequest request,
-            Transform actorRoot)
+            Transform actorRoot,
+            EndfieldOverviewEffectSourceClock sourceClock)
         {
             if (string.IsNullOrEmpty(request.prefabName))
                 return;
@@ -165,29 +168,31 @@ namespace EndfieldGraphShaderLab
             if (binding.expectedDelay > 0f)
             {
                 pendingEffects[request.prefabName] = StartCoroutine(
-                    SpawnAfterDelay(binding, request, mount));
+                    SpawnAfterDelay(binding, request, mount, sourceClock));
                 return;
             }
 
-            CreateEffect(binding, request, mount);
+            CreateEffect(binding, request, mount, sourceClock);
         }
 
         private IEnumerator SpawnAfterDelay(
             Binding binding,
             EndfieldOverviewEffectRequest request,
-            Transform mount)
+            Transform mount,
+            EndfieldOverviewEffectSourceClock sourceClock)
         {
             yield return new WaitForSeconds(binding.expectedDelay);
             pendingEffects.Remove(request.prefabName);
             if (mount == null || !isActiveAndEnabled)
                 yield break;
-            CreateEffect(binding, request, mount);
+            CreateEffect(binding, request, mount, sourceClock);
         }
 
         private void CreateEffect(
             Binding binding,
             EndfieldOverviewEffectRequest request,
-            Transform mount)
+            Transform mount,
+            EndfieldOverviewEffectSourceClock sourceClock)
         {
 
             GameObject instance;
@@ -206,11 +211,6 @@ namespace EndfieldGraphShaderLab
             }
             instance.name = binding.prefab.name + "__OverviewRuntime";
             ApplyEndminfBillboardClampCompatibility(instance);
-            if (string.Equals(binding.prefab.name,
-                    "P_fxui_endminm003_overview_02",
-                    StringComparison.Ordinal))
-                EndfieldEndminfVisualCompatibilityClock.MarkOverview02Start(
-                    instance.transform);
             instance.SetActive(false);
 
             ParticleSystem[] systems = binding.bindingKind == BindingKind.Particle
@@ -221,8 +221,65 @@ namespace EndfieldGraphShaderLab
 
             activeEffects[request.prefabName] = instance;
             instance.SetActive(true);
-            StartRecoveredLegacyAnimations(instance);
+            bool legacyAnimationsStarted =
+                StartRecoveredLegacyAnimations(
+                    instance,
+                    out string legacyAnimationFailure);
             PlayRecoveredParticleSystems(instance, systems);
+            if (string.Equals(binding.prefab.name,
+                    "P_fxui_endminm003_overview_02",
+                    StringComparison.Ordinal))
+            {
+                // The measured opening-strip diagnostic is deliberately
+                // separate from the authenticated overview_01 source-post
+                // transaction. Manual clip browsing may anchor this bounded
+                // compatibility clock, but can never authorize source curves.
+                EndfieldEndminfVisualCompatibilityClock
+                    .MarkOverview02CompatibilityStart(instance.transform);
+            }
+            if (string.Equals(binding.prefab.name,
+                    "P_fxui_endminm003_overview_01",
+                    StringComparison.Ordinal))
+            {
+                // A_fx_endminf_ui_overview_02 and its post (1) owner are
+                // children of prefab overview_01. Native OnStateEnter first
+                // completes EffectInstance.Start, then _SyncEffectTime samples
+                // the source AnimatorStateInfo once on that started instance.
+                bool sourcePostRequested =
+                    EndfieldEndminfVisualCompatibilityClock.SourcePostRequested;
+                bool sourcePostBound = false;
+                string sourcePostFailure = string.Empty;
+                if (legacyAnimationsStarted)
+                {
+                    sourcePostBound = EndfieldEndminfVisualCompatibilityClock
+                        .BindOverview02SourceClock(
+                            instance.transform,
+                            request.prefabName,
+                            binding.expectedDelay,
+                            sourceClock,
+                            out sourcePostFailure);
+                }
+                if (!legacyAnimationsStarted)
+                {
+                    EndfieldEndminfVisualCompatibilityClock.ClearOverview02(
+                        instance.transform);
+                    if (sourcePostRequested)
+                    {
+                        FailClosed(
+                            "source_post_effect_startup_failed",
+                            request.prefabName,
+                            legacyAnimationFailure +
+                            " The source-post clock was not admitted.");
+                    }
+                }
+                else if (sourcePostRequested && !sourcePostBound)
+                {
+                    FailClosed(
+                        "source_post_clock_bind_rejected",
+                        request.prefabName,
+                        sourcePostFailure);
+                }
+            }
 
             if (binding.expectedDuration > 0f)
             {
@@ -234,13 +291,17 @@ namespace EndfieldGraphShaderLab
             }
         }
 
-        private void StartRecoveredLegacyAnimations(GameObject instance)
+        private bool StartRecoveredLegacyAnimations(
+            GameObject instance,
+            out string failure)
         {
             // Instantiate activates an enabled prefab before this spawner can
             // clear and stage its ParticleSystems. Deactivating that instance
             // again stops playAutomatically legacy Animation components, and
             // the following activation does not reliably restart them. Replay
             // only clips explicitly marked automatic in the recovered prefab.
+            bool allStarted = true;
+            failure = string.Empty;
             foreach (Animation animation in
                 instance.GetComponentsInChildren<Animation>(true))
             {
@@ -248,19 +309,22 @@ namespace EndfieldGraphShaderLab
                     continue;
                 animation.Stop();
                 animation.Rewind(animation.clip.name);
-                PlayRecoveredLegacyAnimation(animation);
+                if (!PlayRecoveredLegacyAnimation(animation))
+                {
+                    allStarted = false;
+                    if (failure.Length == 0)
+                    {
+                        failure = "Recovered automatic Legacy Animation '" +
+                            animation.clip.name + "' failed to start.";
+                    }
+                }
             }
+            return allStarted;
         }
 
-        private static void PlayRecoveredLegacyAnimation(Animation animation)
+        private static bool PlayRecoveredLegacyAnimation(Animation animation)
         {
-            if (!animation.Play(animation.clip.name))
-            {
-                Debug.LogError(
-                    "Recovered CharEffect legacy animation failed closed: " +
-                    animation.clip.name,
-                    animation);
-            }
+            return animation.Play(animation.clip.name);
         }
 
         private static void PlayRecoveredParticleSystems(
@@ -828,7 +892,9 @@ namespace EndfieldGraphShaderLab
 
         private void FailClosed(string code, string effectName, string reason)
         {
-            if (rejectUnboundRequests || code != "unbound_effect_request")
+            string key = code + "\n" + effectName;
+            if ((rejectUnboundRequests || code != "unbound_effect_request") &&
+                reportedFailureKeys.Add(key))
             {
                 Debug.LogWarning(
                     "[Endfield CharEffect] " + code + " for '" + effectName + "': " +
