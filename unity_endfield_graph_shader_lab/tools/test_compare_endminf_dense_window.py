@@ -20,9 +20,25 @@ class DenseWindowComparisonTests(unittest.TestCase):
     def test_sheet_indices_are_bounded_for_short_probe(self) -> None:
         self.assertEqual(MODULE.sheet_indices(10), [0, 2, 4, 6, 8, 9])
 
-    def test_sheet_indices_preserve_established_dense_cadence(self) -> None:
+    def test_sheet_indices_preserve_short_probe_cadence(self) -> None:
         self.assertEqual(
             MODULE.sheet_indices(16), [0, 2, 4, 6, 8, 10, 12, 14, 15])
+
+    def test_full_sheet_covers_opening_peak_transition_and_loop(self) -> None:
+        self.assertEqual(
+            MODULE.sheet_indices(554, 60.0),
+            [0, 30, 60, 120, 267, 300, 360, 480, 553],
+        )
+
+    def test_sheet_indices_use_reference_fps_and_stay_bounded(self) -> None:
+        self.assertEqual(
+            MODULE.sheet_indices(200, 30.0),
+            [0, 15, 30, 60, 134, 150, 180, 199],
+        )
+
+    def test_invalid_sheet_fps_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "sheet fps"):
+            MODULE.sheet_indices(10, 0.0)
 
     def test_empty_probe_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "no recovered frames"):

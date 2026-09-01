@@ -19,6 +19,26 @@ namespace EndfieldGraphShaderLab
         internal int stateFullPathHash;
         internal float elapsedSeconds;
         internal bool valid;
+
+        internal bool TryGetAuthenticatedElapsed(out float elapsed)
+        {
+            elapsed = 0f;
+            Animator animator = owner == null ? null : owner.animatorSource;
+            if (!valid || owner == null || !owner.isActiveAndEnabled ||
+                !owner.gameObject.activeInHierarchy ||
+                !owner.AnimatorContractActive ||
+                owner.PlaybackGeneration != playbackGeneration ||
+                stateFullPathHash !=
+                    EndfieldOverviewPlayback.SourceOverviewStartFullPathHash ||
+                animator == null || !animator.enabled ||
+                animator.runtimeAnimatorController == null ||
+                float.IsNaN(elapsedSeconds) ||
+                float.IsInfinity(elapsedSeconds) || elapsedSeconds < 0f)
+                return false;
+
+            elapsed = elapsedSeconds;
+            return true;
+        }
     }
 
     [System.Serializable]
