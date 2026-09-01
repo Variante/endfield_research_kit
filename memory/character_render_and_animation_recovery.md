@@ -3556,7 +3556,16 @@ joined packet. The independent
 `tools/verify_endminf_screen_shadow_capture.py` verifier also authenticates the
 collector inventory and pinned client build, re-derives those rows, requires
 scene-shadow R preservation plus a changed/non-constant character-shadow G,
-and fails closed with structured diagnostics. The incomplete
+and fails closed with structured diagnostics. Pass `--artifact-dir <scratch>`
+to emit lossless native-row-order PNGs for both R/G channels of P1, P2, the
+consumer, and the producer deltas; these are comparison evidence, not runtime
+textures. After a capture passes, run
+`python tools/build_endminf_screen_shadow_capture_artifact.py <capture>
+--output-dir <scratch-output>` from `unity_endfield_graph_shader_lab/` to emit
+the inventory-authenticated raw P2 RG8 bytes plus a deterministic manifest.
+The builder refuses output inside the authenticated capture and labels the
+result `diagnosticReplayOnly`; it does not authorize presentation or certify
+the procedural Unity producer. The incomplete
 `20260831T184411Z` session has no collector inventory and remains rejected. A
 fresh bounded Full graphics capture is still required before the RG attachment
 can be admitted to presentation.

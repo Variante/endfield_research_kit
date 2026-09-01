@@ -19,6 +19,8 @@ import argparse
 import hashlib
 import json
 import re
+import struct
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -203,8 +205,79 @@ def _record_report(
     }
 
 
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(payload))
+        + kind
+        + payload
+        + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+    )
+
+
+def _write_grayscale_png(
+    path: Path, width: int, height: int, values: bytes
+) -> dict[str, Any]:
+    expected = width * height
+    if len(values) != expected:
+        raise VerificationError(
+            f"PNG source has {len(values)} bytes, expected {expected}"
+        )
+    rows = b"".join(
+        b"\x00" + values[y * width:(y + 1) * width]
+        for y in range(height)
+    )
+    payload = (
+        b"\x89PNG\r\n\x1a\n"
+        + _png_chunk(
+            b"IHDR",
+            struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0),
+        )
+        + _png_chunk(b"IDAT", zlib.compress(rows, 9))
+        + _png_chunk(b"IEND", b"")
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+    return {
+        "path": str(path.resolve()),
+        "bytes": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "rowOrder": "captured-native-no-flip",
+    }
+
+
+def _write_channel_artifacts(
+    artifact_dir: Path,
+    width: int,
+    height: int,
+    p1: bytes,
+    p2: bytes,
+    consumer: bytes,
+) -> dict[str, Any]:
+    channels = {
+        "producer1AfterR": p1[0::2],
+        "producer1AfterG": p1[1::2],
+        "producer2AfterR": p2[0::2],
+        "producer2AfterG": p2[1::2],
+        "consumerBeforeR": consumer[0::2],
+        "consumerBeforeG": consumer[1::2],
+        "producerRDelta": bytes(
+            abs(left - right) for left, right in zip(p1[0::2], p2[0::2])
+        ),
+        "producerGDelta": bytes(
+            abs(left - right) for left, right in zip(p1[1::2], p2[1::2])
+        ),
+    }
+    output: dict[str, Any] = {}
+    for name, values in channels.items():
+        output[name] = _write_grayscale_png(
+            artifact_dir / f"{name}.png", width, height, values
+        )
+    return output
+
+
 def verify_frame(
-    frame_dir: Path, *, width: int = WIDTH, height: int = HEIGHT
+    frame_dir: Path, *, width: int = WIDTH, height: int = HEIGHT,
+    artifact_dir: Path | None = None,
 ) -> dict[str, Any]:
     metadata = load_json(frame_dir / "metadata.json")
     failures: list[str] = []
@@ -376,6 +449,7 @@ def verify_frame(
                 failures.append(f"{name} payload {index + 1} descriptor/readback is invalid")
 
     record_reports: list[dict[str, Any]] = []
+    artifacts: dict[str, Any] = {}
     content = {
         "producer1ToProducer2Changed": False,
         "sceneRPreserved": False,
@@ -410,6 +484,10 @@ def verify_frame(
                     failures.append("content gate failed: producer-1 scene R is constant")
                 if record_reports[1]["channels"]["g"]["distinctValues"] < 2:
                     failures.append("content gate failed: producer-2 character G is constant")
+                if artifact_dir is not None:
+                    artifacts = _write_channel_artifacts(
+                        artifact_dir, width, height, p1, p2, consumer_payload
+                    )
             except (OSError, VerificationError) as exc:
                 failures.append(str(exc))
 
@@ -438,6 +516,7 @@ def verify_frame(
         "consumerCallOrdinal": consumer_ordinal,
         "content": content,
         "records": record_reports,
+        "artifacts": artifacts,
         "failures": failures,
     }
 
@@ -548,7 +627,9 @@ def authenticate_collection(capture: Path) -> dict[str, Any]:
     }
 
 
-def verify_session(capture: Path) -> dict[str, Any]:
+def verify_session(
+    capture: Path, artifact_dir: Path | None = None
+) -> dict[str, Any]:
     authentication = authenticate_collection(capture)
     frame_paths = sorted(
         (capture / "graphics/frames").glob("*/metadata.json"),
@@ -564,7 +645,12 @@ def verify_session(capture: Path) -> dict[str, Any]:
         metadata = load_json(path)
         if (metadata.get("captureLane") == JOINED_LANE
                 or metadata.get("exactEndminfScreenShadowAdmissionRequired") is True):
-            candidates.append(verify_frame(path.parent))
+            frame_artifact_dir = None
+            if artifact_dir is not None:
+                frame_artifact_dir = artifact_dir / path.parent.name
+            candidates.append(verify_frame(
+                path.parent, artifact_dir=frame_artifact_dir
+            ))
 
     summary_failures: list[str] = []
     summary_path = capture / "graphics/summary.json"
@@ -638,9 +724,11 @@ def verify_session(capture: Path) -> dict[str, Any]:
     }
 
 
-def build_report(capture: Path) -> dict[str, Any]:
+def build_report(
+    capture: Path, artifact_dir: Path | None = None
+) -> dict[str, Any]:
     try:
-        return verify_session(capture)
+        return verify_session(capture, artifact_dir)
     except (OSError, ValueError, VerificationError) as exc:
         return {
             "schema": "endfield.endminf-screen-shadow-capture.v1",
@@ -660,8 +748,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--artifact-dir", type=Path,
+        help="write lossless native-row-order R/G evidence PNGs",
+    )
     args = parser.parse_args()
-    report = build_report(args.capture.resolve())
+    report = build_report(args.capture.resolve(), args.artifact_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(args.output)

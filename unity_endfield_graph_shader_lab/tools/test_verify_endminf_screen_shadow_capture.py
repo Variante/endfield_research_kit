@@ -184,14 +184,23 @@ class VerifyEndminfScreenShadowCaptureTests(unittest.TestCase):
     def test_accepts_exact_three_stage_draw_local_handoff(self):
         with tempfile.TemporaryDirectory() as temporary:
             frame = self.make_frame(Path(temporary))
+            artifacts = Path(temporary) / "artifacts"
             report = MODULE.verify_frame(
-                frame, width=self.WIDTH, height=self.HEIGHT
+                frame,
+                width=self.WIDTH,
+                height=self.HEIGHT,
+                artifact_dir=artifacts,
             )
             self.assertTrue(report["valid"], report["failures"])
             self.assertTrue(report["content"]["sceneRPreserved"])
             self.assertTrue(report["content"]["characterGChanged"])
             self.assertTrue(report["content"]["producer2EqualsConsumer"])
             self.assertEqual(len(report["records"]), 3)
+            self.assertEqual(len(report["artifacts"]), 8)
+            for row in report["artifacts"].values():
+                self.assertEqual(Path(row["path"]).read_bytes()[:8],
+                                 b"\x89PNG\r\n\x1a\n")
+                self.assertEqual(row["rowOrder"], "captured-native-no-flip")
 
     def test_rejects_old_two_record_admission(self):
         with tempfile.TemporaryDirectory() as temporary:
