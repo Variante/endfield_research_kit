@@ -16,9 +16,47 @@ TEMPORAL_SHADER = ROOT / (
     "Assets/EndfieldGraphShaderLab/Shaders/Recovered/"
     "EndfieldRecoveredTemporalResolve.shader"
 )
+EXACT_UBER_RUNTIME = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
+    "EndfieldRecoveredEndminfUberExactRuntime.cs"
+)
 
 
 class EndminfTemporalPostSourceContractTests(unittest.TestCase):
+    def test_native_phase_two_orders_lut_before_bloom_and_auto_exposure(self) -> None:
+        source = PIPELINE.read_text(encoding="utf-8")
+        start = source.index("private void ApplyCharacterPostProcess")
+        end = source.index(
+            "private bool ApplyRecoveredEndminfOpeningStripCompatibilityBeforeTemporal",
+            start,
+        )
+        post = source[start:end]
+        lut = post.index("EnqueueExactEndminfGpuValidation(")
+        bloom = post.index("BuildRecoveredSceneBloomPyramid(")
+        auto_exposure = post.index("ShouldEnqueueRecoveredAutoHistogram(")
+        uber = post.index("recoveredEndminfUberExactRuntime.Enqueue(")
+        self.assertLess(lut, bloom)
+        self.assertLess(bloom, auto_exposure)
+        self.assertLess(auto_exposure, uber)
+
+    def test_exact_uber_submits_only_retained_early_and_peak_packets(self) -> None:
+        source = EXACT_UBER_RUNTIME.read_text(encoding="utf-8")
+        start = source.index("internal bool Enqueue(")
+        end = source.index("internal static bool IsCapturedPhase(", start)
+        enqueue = source[start:end]
+        early = enqueue.index("IsEarlyCapturedPhase(hasPost, post)")
+        peak = enqueue.index("IsCapturedPhase(hasPost, post)")
+        unsupported = enqueue.index("LastSubmittedVariant = string.Empty")
+        input_gate = enqueue.index("exact Uber inputs are incomplete")
+        backend_gate = enqueue.index("exact Uber transport requires Direct3D11")
+        queue = enqueue.index("Native.QueuePacketVariant(")
+        self.assertLess(early, peak)
+        self.assertLess(peak, unsupported)
+        self.assertLess(unsupported, input_gate)
+        self.assertLess(input_gate, backend_gate)
+        self.assertLess(backend_gate, queue)
+        self.assertNotIn("IsCapturedPhase(hasPost, post) ? 1u : 0u", enqueue)
+
     def test_ordinary_history_bound_uses_direct_reprojected_history(self) -> None:
         source = TEMPORAL_SHADER.read_text(encoding="utf-8")
         start = source.index("float3 history = SampleRetailHistory(previousUv, texel);")
