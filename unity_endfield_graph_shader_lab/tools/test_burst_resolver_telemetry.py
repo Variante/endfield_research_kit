@@ -20,7 +20,7 @@ import burst_resolver_telemetry as telemetry  # noqa: E402
 class BurstResolverTelemetryTests(unittest.TestCase):
     def test_manifest_pins_four_hash_pinned_files_and_exact_modules(self) -> None:
         manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
-        self.assertEqual(manifest["schema"], "burstResolverTelemetry.hooks.v1")
+        self.assertEqual(manifest["schema"], "burstResolverTelemetry.hooks.v2")
         self.assertEqual(manifest["moduleName"], "GameAssembly.dll")
         self.assertEqual(manifest["kernel32ModuleName"], "kernel32.dll")
         self.assertEqual(manifest["resolverModuleName"], "lib_burst_generated.dll")
@@ -29,7 +29,7 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertEqual(manifest["files"]["metadata"]["sha256"], "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e")
         self.assertEqual(manifest["files"]["resolver"]["sha256"], "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99")
         self.assertEqual({target["id"] for target in manifest["targets"]}, telemetry.TARGET_IDS)
-        self.assertEqual(len(manifest["targets"]), 5)
+        self.assertEqual(len(manifest["targets"]), 6)
         by_id = {target["id"]: target for target in manifest["targets"]}
         self.assertEqual(by_id["collider_start_simulation_step_range_kernel"]["methodIndex"], 385394)
         self.assertEqual(by_id["collider_end_simulation_step_range_kernel"]["methodIndex"], 385295)
@@ -41,6 +41,15 @@ class BurstResolverTelemetryTests(unittest.TestCase):
             "role": "invoke", "methodIndex": 385317,
             "startOffset": "0x675b0cc", "endOffsetExclusive": "0x675b1d4",
         })
+        self.assertEqual(by_id["calc_line_normal_tangent_kernel"]["methodIndex"], 384791)
+        self.assertEqual(
+            by_id["calc_line_normal_tangent_kernel"]["callTargetProbe"]["indirectCallOffset"],
+            "0x674660b",
+        )
+        self.assertEqual(
+            set(manifest["routeProbes"]),
+            {"calcLineBurstEnabled", "fromToRotationIfix"},
+        )
         for target in manifest["targets"]:
             self.assertEqual(
                 {window["role"] for window in target["windows"]},
@@ -65,6 +74,9 @@ class BurstResolverTelemetryTests(unittest.TestCase):
         self.assertIn("resolvedExportName", rendered)
         self.assertIn("burst_function_pointer", rendered)
         self.assertIn("callTargetHooks", rendered)
+        self.assertIn("routeProbeHooks", rendered)
+        self.assertIn("calc_line_burst_gate", rendered)
+        self.assertIn("calc_line_ifix_gate", rendered)
         self.assertIn("getFunctionPointerOffset", rendered)
         self.assertIn("readAnsiString", rendered)
         self.assertIn("loadlibrary_path_unterminated", rendered)

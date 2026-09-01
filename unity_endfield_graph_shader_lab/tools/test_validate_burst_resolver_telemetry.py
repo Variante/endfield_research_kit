@@ -73,6 +73,7 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             verifiedFiles=files,
             hookStates={name: "attached" for name in manifest["hooks"]},
             callTargetHookStates={target["id"]: "attached" for target in manifest["targets"]},
+            routeProbeHookStates={name: "attached" for name in manifest["routeProbes"]},
             kernel32ModuleName=manifest["kernel32ModuleName"],
             resolverModuleName=manifest["resolverModuleName"],
             resolverModuleIdentity=identity,
@@ -202,13 +203,13 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                     "threadId": 42,
                 })
             rows[insert_at:insert_at] = pointer_events
-            next(row for row in rows if row["kind"] == "capture_stop_ack")["eventCount"] = 6
+            next(row for row in rows if row["kind"] == "capture_stop_ack")["eventCount"] = 1 + len(pointer_events)
             for seq, row in enumerate(rows):
                 row["seq"] = seq
                 row["monotonicMs"] = float(seq)
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             result = validator.validate_trace(path)
-        self.assertEqual(result["burstFunctionPointerEventCount"], 5)
+        self.assertEqual(result["burstFunctionPointerEventCount"], 6)
         self.assertTrue(result["claims"]["liveBurstCallTargetsObserved"])
         self.assertTrue(result["claims"]["resolverExportMappingProven"])
         self.assertTrue(all(result["burstFunctionPointerMappings"].values()))
@@ -255,8 +256,8 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                 row["seq"] = seq
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             result = validator.validate_trace(path)
-        self.assertEqual(result["hashedExportRequestCount"], 5)
-        self.assertEqual(result["hashedExportRequestsWithTargetAttribution"], 5)
+        self.assertEqual(result["hashedExportRequestCount"], 6)
+        self.assertEqual(result["hashedExportRequestsWithTargetAttribution"], 6)
         self.assertEqual(
             result["targetWindowObservations"],
             {
@@ -265,9 +266,10 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
                 "end_simulation_step_range_kernel": 1,
                 "collider_start_simulation_step_range_kernel": 1,
                 "collider_end_simulation_step_range_kernel": 1,
+                "calc_line_normal_tangent_kernel": 1,
             },
         )
-        self.assertTrue(result["claims"]["allThreeTargetWindowsObserved"])
+        self.assertTrue(result["claims"]["allTargetWindowsObserved"])
         self.assertFalse(result["claims"]["resolverExportMappingProven"])
 
     def test_null_proc_result_and_failed_load_are_valid_observations(self) -> None:
@@ -320,6 +322,73 @@ class ValidateBurstResolverTelemetryTests(unittest.TestCase):
             path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
             result = validator.validate_trace(path)
         self.assertEqual(result["getProcAddressEventCount"], 1)
+
+    def test_calc_line_route_gate_observations_are_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "trace.jsonl"
+            self._write_trace(path)
+            manifest = telemetry.load_manifest(telemetry.DEFAULT_MANIFEST)
+            rows = [json.loads(line) for line in path.read_text(
+                encoding="utf-8").splitlines()]
+            burst = manifest["routeProbes"]["calcLineBurstEnabled"]
+            ifix = manifest["routeProbes"]["fromToRotationIfix"]
+            caller = ifix["calcLineCallerReturns"][0]
+            insert_at = next(index for index, row in enumerate(rows)
+                             if row["kind"] == "capture_stop_ack")
+            common = {
+                "schema": telemetry.EVENT_SCHEMA,
+                "sessionId": "burst-test-session",
+                "seq": 0,
+                "monotonicMs": 0.0,
+                "utc": "2026-08-20T00:00:00.000Z",
+                "threadId": 42,
+            }
+            rows[insert_at:insert_at] = [
+                {
+                    **common,
+                    "kind": "calc_line_burst_gate",
+                    "probe": "calcLineBurstEnabled",
+                    "methodIndex": burst["methodIndex"],
+                    "methodName": burst["methodName"],
+                    "result": True,
+                    "returnRegister": burst["returnRegister"],
+                    "callerReturnOffset": burst["invokeReturnOffset"],
+                    "methodInfo": burst["expectedMethodInfo"],
+                },
+                {
+                    **common,
+                    "kind": "calc_line_ifix_gate",
+                    "probe": "fromToRotationIfix",
+                    "methodIndex": ifix["methodIndex"],
+                    "methodName": ifix["methodName"],
+                    "result": False,
+                    "patchId": ifix["patchId"],
+                    "returnRegister": ifix["returnRegister"],
+                    "fromToReturnOffset": ifix["callReturnOffset"],
+                    "calcLineRoute": caller["route"],
+                    "calcLineCallerReturnOffset": caller["returnOffset"],
+                    "methodInfo": ifix["expectedMethodInfo"],
+                },
+            ]
+            next(row for row in rows if row["kind"] == "capture_stop_ack")[
+                "eventCount"] += 2
+            for seq, row in enumerate(rows):
+                row["seq"] = seq
+                row["monotonicMs"] = float(seq)
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows),
+                            encoding="utf-8")
+            result = validator.validate_trace(path)
+            self.assertTrue(result["claims"]["calcLineBurstSelectionObserved"])
+            self.assertTrue(result["claims"]["calcLineManagedIfixSelectionObserved"])
+
+            mutated = deepcopy(rows)
+            next(row for row in mutated if row["kind"] == "calc_line_ifix_gate")[
+                "patchId"] = 0x218
+            path.write_text("".join(json.dumps(row) + "\n" for row in mutated),
+                            encoding="utf-8")
+            with self.assertRaisesRegex(
+                    validator.TraceValidationError, "ABI fields drifted"):
+                validator.validate_trace(path)
 
     def test_foreign_hmodule_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:

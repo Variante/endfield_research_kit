@@ -264,6 +264,7 @@ def validate_trace(
         "native_module_verified": {
             "expectedModulePath", "expectedModuleSize", "attachedModulePath", "attachedModuleSize",
             "modulePathMatch", "moduleSizeMatch", "verifiedFiles", "hookStates", "callTargetHookStates",
+            "routeProbeHookStates",
             "kernel32ModuleName", "resolverModuleName", "resolverModuleIdentity",
             "resolverExpectedPath", "resolverExpectedSize", "gameAssemblyModuleName",
             "gameAssemblyModuleBase", "gameAssemblyModuleSize", "targets",
@@ -288,6 +289,15 @@ def validate_trace(
             "resolvedModulePath", "resolvedModuleBase", "resolvedModuleSize",
             "resolvedModuleOffset", "resolvedExportName", "resolvedExportStatus", "threadId",
         },
+        "calc_line_burst_gate": {
+            "probe", "methodIndex", "methodName", "result", "returnRegister",
+            "callerReturnOffset", "methodInfo", "threadId",
+        },
+        "calc_line_ifix_gate": {
+            "probe", "methodIndex", "methodName", "result", "patchId",
+            "returnRegister", "fromToReturnOffset", "calcLineRoute",
+            "calcLineCallerReturnOffset", "methodInfo", "threadId",
+        },
         "capture_stop_ack": {"eventCount", "captureStarted", "terminalState", "resolverModuleIdentity"},
         "session_end": {"captureStarted", "stopAck", "terminalFailure"},
     }
@@ -310,7 +320,10 @@ def validate_trace(
     if rows[-2].get("kind") != "capture_stop_ack" or rows[-1].get("kind") != "session_end":
         _fail("trace event order must end capture_stop_ack -> session_end")
     middle_kinds = [row.get("kind") for row in rows[3:-2]]
-    if any(kind not in {"resolver_module_loaded", "get_proc_address", "burst_function_pointer"} for kind in middle_kinds):
+    if any(kind not in {
+        "resolver_module_loaded", "get_proc_address", "burst_function_pointer",
+        "calc_line_burst_gate", "calc_line_ifix_gate",
+    } for kind in middle_kinds):
         _fail("resolver/proc/call-target events are only valid between capture_started and capture_stop_ack")
 
     starts = [row for row in rows if row.get("kind") == "session_start"]
@@ -364,9 +377,14 @@ def validate_trace(
         _fail("native module handshake does not prove every resolver hook attached")
     call_target_hook_states = handshake.get("callTargetHookStates")
     if not isinstance(call_target_hook_states, dict) or set(call_target_hook_states) != telemetry.TARGET_IDS:
-        _fail("native module handshake does not list all five call-target hooks")
+        _fail("native module handshake does not list all six call-target hooks")
     if any(value != "attached" for value in call_target_hook_states.values()):
         _fail("native module handshake does not prove every call-target hook attached")
+    route_probe_hook_states = handshake.get("routeProbeHookStates")
+    if not isinstance(route_probe_hook_states, dict) or set(route_probe_hook_states) != set(manifest["routeProbes"]):
+        _fail("native module handshake does not list both CalcLine route probes")
+    if any(value != "attached" for value in route_probe_hook_states.values()):
+        _fail("native module handshake does not prove every CalcLine route probe attached")
     resolver_identity = handshake.get("resolverModuleIdentity")
     if not isinstance(resolver_identity, dict):
         _fail("native module handshake has no resolver module identity")
@@ -416,6 +434,8 @@ def validate_trace(
     resolver_events = [row for row in rows if row.get("kind") == "resolver_module_loaded"]
     proc_events = [row for row in rows if row.get("kind") == "get_proc_address"]
     pointer_events = [row for row in rows if row.get("kind") == "burst_function_pointer"]
+    burst_gate_events = [row for row in rows if row.get("kind") == "calc_line_burst_gate"]
+    ifix_gate_events = [row for row in rows if row.get("kind") == "calc_line_ifix_gate"]
     observed_handles: set[str] = set()
     if isinstance(identity_handle, str) and identity_handle:
         observed_handles.add(identity_handle.casefold())
@@ -693,6 +713,53 @@ def validate_trace(
             }
         )
 
+    burst_probe = manifest["routeProbes"]["calcLineBurstEnabled"]
+    seen_burst_results: set[bool] = set()
+    for index, row in enumerate(burst_gate_events):
+        label = f"calc_line_burst_gate {index}"
+        if row.get("probe") != "calcLineBurstEnabled":
+            _fail(f"{label}.probe is invalid")
+        if row.get("methodIndex") != burst_probe["methodIndex"] or row.get("methodName") != burst_probe["methodName"]:
+            _fail(f"{label} method identity drifted")
+        if row.get("callerReturnOffset") != burst_probe["invokeReturnOffset"]:
+            _fail(f"{label} caller return is not the pinned CalcLine Invoke site")
+        if row.get("methodInfo") != burst_probe["expectedMethodInfo"] or row.get("returnRegister") != burst_probe["returnRegister"]:
+            _fail(f"{label} ABI fields drifted")
+        result = row.get("result")
+        if not isinstance(result, bool) or result in seen_burst_results:
+            _fail(f"{label} result is invalid or duplicated")
+        seen_burst_results.add(result)
+        thread_id = row.get("threadId")
+        if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id <= 0:
+            _fail(f"{label}.threadId is invalid")
+
+    ifix_probe = manifest["routeProbes"]["fromToRotationIfix"]
+    callers_by_return = {
+        caller["returnOffset"]: caller for caller in ifix_probe["calcLineCallerReturns"]
+    }
+    seen_ifix_results: set[tuple[str, bool]] = set()
+    for index, row in enumerate(ifix_gate_events):
+        label = f"calc_line_ifix_gate {index}"
+        if row.get("probe") != "fromToRotationIfix":
+            _fail(f"{label}.probe is invalid")
+        if row.get("methodIndex") != ifix_probe["methodIndex"] or row.get("methodName") != ifix_probe["methodName"]:
+            _fail(f"{label} method identity drifted")
+        if row.get("fromToReturnOffset") != ifix_probe["callReturnOffset"]:
+            _fail(f"{label} caller return is not the pinned FromToRotation gate")
+        if row.get("patchId") != ifix_probe["patchId"] or row.get("methodInfo") != ifix_probe["expectedMethodInfo"] or row.get("returnRegister") != ifix_probe["returnRegister"]:
+            _fail(f"{label} ABI fields drifted")
+        caller = callers_by_return.get(row.get("calcLineCallerReturnOffset"))
+        if caller is None or row.get("calcLineRoute") != caller["route"]:
+            _fail(f"{label} does not carry an admitted CalcLine caller route")
+        result = row.get("result")
+        key = (caller["route"], result)
+        if not isinstance(result, bool) or key in seen_ifix_results:
+            _fail(f"{label} result is invalid or duplicated")
+        seen_ifix_results.add(key)
+        thread_id = row.get("threadId")
+        if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id <= 0:
+            _fail(f"{label}.threadId is invalid")
+
     terminal_kinds = {
         "capture_fatal",
         "capture_capped",
@@ -717,7 +784,10 @@ def validate_trace(
         if stop_ack.get("terminalState") not in {"fatal", "capped", "detached", "start_rejected"}:
             _fail("capture_stop_ack has an unrecognized terminalState")
         _fail("capture_stop_ack confirms a non-clean terminal state")
-    expected_event_count = len(resolver_events) + len(proc_events) + len(pointer_events)
+    expected_event_count = (
+        len(resolver_events) + len(proc_events) + len(pointer_events) +
+        len(burst_gate_events) + len(ifix_gate_events)
+    )
     if stop_ack.get("eventCount") != expected_event_count:
         _fail(
             "capture_stop_ack eventCount differs from resolver/proc/call-target event count: "
@@ -736,7 +806,7 @@ def validate_trace(
         _fail("trace exceeds configured event cap")
 
     return {
-        "schema": "burstResolverTelemetry.validation.v1",
+        "schema": "burstResolverTelemetry.validation.v2",
         "status": "observed_runtime_candidate",
         "trace": str(path.resolve()),
         "sessionId": next(iter(set(session_values))),
@@ -748,6 +818,8 @@ def validate_trace(
         "getProcAddressEventCount": len(proc_events),
         "burstFunctionPointerEventCount": len(pointer_events),
         "burstFunctionPointerMappings": pointer_mappings,
+        "calcLineBurstGateObservations": burst_gate_events,
+        "calcLineIfixGateObservations": ifix_gate_events,
         "hashedExportRequestCount": observed_hashed_events,
         "hashedExportRequestsWithTargetAttribution": attributed_hashed_events,
         "targetWindowObservations": target_observations,
@@ -761,7 +833,9 @@ def validate_trace(
             "hashedExportRequestsAttributedToTargetWindows": (
                 observed_hashed_events > 0 and attributed_hashed_events == observed_hashed_events
             ),
-            "allThreeTargetWindowsObserved": all(target_observations.values()),
+            "allTargetWindowsObserved": all(target_observations.values()),
+            "calcLineBurstSelectionObserved": bool(burst_gate_events),
+            "calcLineManagedIfixSelectionObserved": bool(ifix_gate_events),
             "gameAssemblyCallerBacktraceObserved": any(
                 row.get("backtraceStatus") == "gameassembly_frames" and row.get("gameAssemblyCallerBacktrace")
                 for row in proc_events

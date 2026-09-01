@@ -1,5 +1,5 @@
 {
-  "schema": "burstResolverTelemetry.hooks.v1",
+  "schema": "burstResolverTelemetry.hooks.v2",
   "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
   "processName": "Endfield.exe",
   "moduleName": "GameAssembly.dll",
@@ -178,15 +178,79 @@
         {"role": "get_function_pointer", "methodIndex": 385313, "startOffset": "0x675b078", "endOffsetExclusive": "0x675b0cc"},
         {"role": "invoke", "methodIndex": 385317, "startOffset": "0x675b0cc", "endOffsetExclusive": "0x675b1d4"}
       ]
+    },
+    {
+      "id": "calc_line_normal_tangent_kernel",
+      "methodIndex": 384791,
+      "methodName": "Initialize$CalcLineNormalTangentJobKernels_CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+      "fullName": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+      "callTargetProbe": {
+        "getFunctionPointerMethodIndex": 384863,
+        "getFunctionPointerOffset": "0x674647c",
+        "invokeMethodIndex": 384867,
+        "invokeStartOffset": "0x67464d0",
+        "invokeEndOffsetExclusive": "0x67466f0",
+        "invokeBodySha256": "3166eb9d2d86a50eb31524927b652850ffcdc6a22b5b6edd92db200959392de7",
+        "indirectCallOffset": "0x674660b",
+        "targetRegister": "r10",
+        "instructionBytes": "41ffd2"
+      },
+      "windows": [
+        {"role": "constructor", "methodIndex": 384864, "startOffset": "0x4d1d380", "endOffsetExclusive": "0x4d1d410"},
+        {"role": "static_constructor", "methodIndex": 384866, "startOffset": "0x4d1d370", "endOffsetExclusive": "0x4d1d380"},
+        {"role": "initializer", "methodIndex": 384865, "startOffset": "0x41e1670", "endOffsetExclusive": "0x41e1680"},
+        {"role": "get_function_pointer_discard", "methodIndex": 384862, "startOffset": "0x6746378", "endOffsetExclusive": "0x674647c"},
+        {"role": "get_function_pointer", "methodIndex": 384863, "startOffset": "0x674647c", "endOffsetExclusive": "0x67464d0"},
+        {"role": "invoke", "methodIndex": 384867, "startOffset": "0x67464d0", "endOffsetExclusive": "0x67466f0"}
+      ]
     }
   ],
+  "routeProbes": {
+    "calcLineBurstEnabled": {
+      "methodIndex": 489283,
+      "methodName": "Unity.Burst.BurstCompiler.get_IsEnabled",
+      "startOffset": "0x307b8d0",
+      "endOffsetExclusive": "0x307b936",
+      "bodySha256": "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67",
+      "invokeCallOffset": "0x6746529",
+      "invokeReturnOffset": "0x674652e",
+      "callInstructionBytes": "e8a25393fc",
+      "methodInfoRegister": "rcx",
+      "expectedMethodInfo": "0x0",
+      "returnRegister": "al"
+    },
+    "fromToRotationIfix": {
+      "methodIndex": 387384,
+      "methodName": "IFix.WrappersManagerImpl.IsPatched",
+      "startOffset": "0x2f95a30",
+      "endOffsetExclusive": "0x2f95ac0",
+      "bodySha256": "313d367c6b4d2777c831c0ef2280273536e55dbec46540925b997fc1b46f805c",
+      "fromToRotationMethodIndex": 386226,
+      "fromToRotationStartOffset": "0x66aef20",
+      "fromToRotationEndOffsetExclusive": "0x66af228",
+      "callOffset": "0x66aef82",
+      "callReturnOffset": "0x66aef87",
+      "callInstructionBytes": "e8a96a8efc",
+      "patchId": 537,
+      "patchIdRegister": "ecx",
+      "methodInfoRegister": "rdx",
+      "expectedMethodInfo": "0x0",
+      "returnRegister": "al",
+      "calcLineCallerReturns": [
+        {"route": "managed_worker", "callOffset": "0x67454f8", "returnOffset": "0x67454fd", "instructionBytes": "e8239af6ff"},
+        {"route": "managed_worker", "callOffset": "0x674562e", "returnOffset": "0x6745633", "instructionBytes": "e8ed98f6ff"},
+        {"route": "direct_call_fallback", "callOffset": "0x674102a", "returnOffset": "0x674102f", "instructionBytes": "e8f1def6ff"},
+        {"route": "direct_call_fallback", "callOffset": "0x6741160", "returnOffset": "0x6741165", "instructionBytes": "e8bbddf6ff"}
+      ]
+    }
+  },
   "resolverExportEnumeration": {
     "hashedCount": 628,
     "canonicalNameRvaSha256": "c5e81b87d6e69459047585163469139c8e75523f1e4939166d40b96725c4ce54"
   },
   "evidenceBoundary": {
     "classification": "observed_runtime_candidate",
-    "scope": "Read-only LoadLibraryW/GetProcAddress observation plus GetFunctionPointer return observation at five exact GameAssembly.dll wrappers, with disk-hash-pinned inputs, wrapper-body hashes, indirect-call instruction bytes, runtime module identity, and bounded caller backtraces.",
+    "scope": "Read-only LoadLibraryW/GetProcAddress observation plus GetFunctionPointer return observation at six exact GameAssembly.dll wrappers and CalcLine route-gate return observation, with disk-hash-pinned inputs, wrapper-body hashes, call instruction bytes, runtime module identity, and bounded caller backtraces.",
     "nonClaims": [
       "The trace does not call a resolver export, replace a resolver body, or write game state.",
       "Interceptor attachment can perturb timing and loader scheduling; the capture is not behavior-neutral and remains candidate evidence.",
@@ -194,7 +258,7 @@
       "A GetFunctionPointer return is a live wrapper call-target observation, but it does not invoke the pointer, prove every subsequent indirect call completed, or establish the kernel's algorithm.",
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The callerBacktrace is bounded and includes only frames Frida resolves to a loaded module; gameAssemblyCallerBacktrace is the verified GameAssembly.dll subset, and an empty backtrace is not identity proof.",
-      "Target-window attribution is a caller-address observation against the five pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",
+      "Target-window attribution is a caller-address observation against the six pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",
       "The pinned executable, GameAssembly.dll, global-metadata.dat, and resolver hashes verify disk files for one client build; runtime path/size/base matching is recorded separately, and this does not claim a memory-image hash."
     ],
     "stopRule": "Stop on attach refusal, protection termination, native hash/module drift, missing kernel32 exports, hook failure, malformed bounded read, or event cap; do not retry through evasion."
