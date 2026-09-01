@@ -183,7 +183,7 @@ the outer return; the false path remains intact and all 20 native tests pass.
   transition sample. A compact source-hash-bound contract records that binding
   evidence, including the affected hair, cape, and thigh-cloth paths, but no
   pose values, curves, captured motion, or fitted timing. A canonical D3D11
-  770-frame v24 render now proves source-decoded ACL publication throughout the
+  770-frame v25 render now proves source-decoded ACL publication throughout the
   complete start-to-loop sequence: all frames retain a valid binding, positive
   application across 278 transforms, and exact current-state, next-state, and
   transition-weight agreement with the directly evaluated Animator state.
@@ -1322,8 +1322,9 @@ For the current Endminf deliverable, Unity retains the CharInfo grey background
 target and actor-specific background portrait with the main character and her
 spawned visual effects. Foreground controls, labels, icons, cursor, and other
 front UI overlays are excluded. The portrait transport is source-recovered.
-The grey carrier now uses the frame-proven physical `SphereOutside` HGBuffer
-plus Default Lit resolve before ForwardOpaque; foreground UI remains excluded.
+The canonical grey carrier remains a neutral clear while the physical
+`SphereOutside` HGBuffer plus Default Lit resolve is fail-closed on its missing
+content-valid t11 producer/consumer join; foreground UI remains excluded.
 
 The maintained video-to-frame workflow is
 `unity_endfield_graph_shader_lab/scripts/reference_video/`. Its config records
@@ -3411,7 +3412,7 @@ seek. Unity auto-tangent curves, Hermite interpolation, `Quaternion.Slerp`, and
 generic `Quaternion.Lerp` are therefore not source-faithful replacements. The
 lab imports decoded ACL sample contracts through source/payload hash gates and
 publishes their recovered component masks through a character-neutral runtime
-driver synchronized to the generated Animator controller. The canonical v24
+driver synchronized to the generated Animator controller. The canonical v25
 capture verifies the driver against the directly evaluated Animator state on
 all 770 frames and all 278 bound transforms. Endminf body timing and pose
 publication are therefore closed for this two-clip scope; entrance secondary
@@ -3947,18 +3948,23 @@ removes the former impossible descriptor/timestamp errors; it remains rejected
 only by six genuine incomplete-session gates. No additional capture is needed
 to diagnose those historical failures.
 
-The current 770-frame canonical source-authored Unity run keeps captured
+The current 770-frame canonical source-authored Unity run at
+`scratch/character_recovery/endminf_v25_canonical_full_770_20260901` keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
 start-to-loop sequence with an upright portrait, all four VFX roots, 68 admitted
-entrance renderers, and no crash or device-removal signal. Its v24 telemetry
+entrance renderers, and no crash or device-removal signal. Its v25 telemetry
 proves valid source-decoded ACL binding and application across 278 transforms,
 with current state, next state, and transition weight matching the directly
 evaluated Animator on all 770 frames. Both alternate secondary-motion paths stay
-inactive. A zero-offset comparison against the clean 2026-08-26 reference is
-control-equivalent; it establishes the body publication boundary but no causal
-fidelity gain. The opening temporal composition and stone/light peak remain the
-largest render gaps. The settled post-cleanup motion is temporally stable, while
+inactive, every maintained packet/deferred diagnostic selector is explicitly
+zero, and no selector escapes canonical policy. All 770 PNGs are byte-identical
+to the preceding ACL-publication baseline. A zero-offset comparison against the
+clean 2026-08-26 reference remains 33.3722/35.5934/15.4469
+ROI/effect/temporal MAE; it establishes the body publication boundary but no
+causal fidelity gain. Settled background-only regions measure 23.83-51.90 RGB
+MAE because the content-valid physical `SphereOutside`/floor/grid carrier is
+still missing. The settled post-cleanup motion is temporally stable, while
 entrance hair, coat, and strap silhouettes remain spatially different. Treat
 this as the stable source-authored body baseline, not retail parity or
 secondary-motion certification.
@@ -4009,7 +4015,15 @@ float32 quaternion grouping, packed traversal, empty-child no-write behavior,
 and negative-X antiparallel zero-axis NaN propagation. Their separate SSE2 and
 AVX2 scalar sin/cos helpers match the same source transcription across
 controlled vectors and a stratified sweep of every finite float exponent.
-Each core calls only its local helper twice; neither calls GameAssembly or IFix. Overall
+Each core calls only its local helper twice; neither calls GameAssembly or IFix.
+Their common source-closed value equation is now available through separate
+inert SSE2 and AVX2 routes with the recovered binary64 acos polynomial and
+explicit non-fused operation grouping. A fail-closed selector admits no route
+without one validated Burst gate observation plus exactly one matched CPU
+selection, or one validated Burst-disabled direct-call fallback with
+`IFix(0x219)=false`. It is not referenced by the solver, frame coordinator,
+prefabs, or Transform writeback. The live route remains the gate before global
+PostProxy scheduling or trajectory validation can begin. Overall
 Static runtime selection is narrower but remains fail-closed. The pinned Burst
 initializers construct global `Options(true)` and publish `_IsEnabled=true`
 unless the exact disable command-line token or a non-empty/non-`0` disable

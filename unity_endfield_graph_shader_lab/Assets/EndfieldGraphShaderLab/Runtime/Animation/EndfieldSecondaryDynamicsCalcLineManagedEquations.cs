@@ -5,13 +5,20 @@ using K = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels;
 namespace EndfieldGraphShaderLab
 {
     /// <summary>
-    /// Value-only transcription of the pinned client's unpatched managed
-    /// CalcLineNormalTangent worker equations for one parent and its children.
-    /// This helper is deliberately not scheduled or connected to scene state.
-    /// The selected retail worker route and FromToRotation IFix state remain open.
+    /// Value-only transcription of the pinned client's CalcLineNormalTangent
+    /// equations for one parent and its children. It carries separate unpatched
+    /// managed and common dual-CPU Burst acos paths. This helper is deliberately
+    /// not scheduled or connected to scene state; the selected retail route and
+    /// managed FromToRotation IFix state remain open.
     /// </summary>
     public static class EndfieldSecondaryDynamicsCalcLineManagedEquations
     {
+        public enum BurstCpuVariant
+        {
+            X64Sse2,
+            Avx2,
+        }
+
         public const byte FlagMove = 0x02;
         public const uint ChildLocalStartMask = 0x000fffffU;
         public const int ChildCountShift = 20;
@@ -138,6 +145,31 @@ namespace EndfieldGraphShaderLab
             ChildSource[] children,
             out ParentValue value)
         {
+            return TryCalculateParentCore(parent, children, false, out value);
+        }
+
+        /// <summary>
+        /// Computes the same CalcLine iteration with the exact scalar equations
+        /// shared by the pinned SSE2 and AVX2 Burst cores. The variant is kept
+        /// explicit so a caller cannot silently guess the live CPU route. Both
+        /// admitted variants execute the same source-closed value path.
+        /// </summary>
+        public static bool TryCalculateParentBurst(
+            BurstCpuVariant variant,
+            ParentSource parent,
+            ChildSource[] children,
+            out ParentValue value)
+        {
+            RequireBurstVariant(variant);
+            return TryCalculateParentCore(parent, children, true, out value);
+        }
+
+        private static bool TryCalculateParentCore(
+            ParentSource parent,
+            ChildSource[] children,
+            bool useBurstAcos,
+            out ParentValue value)
+        {
             if (children == null)
                 throw new ArgumentNullException(nameof(children));
             RequireFinite(parent.position, nameof(parent));
@@ -180,10 +212,11 @@ namespace EndfieldGraphShaderLab
                     : restVector;
                 directionAccumulator = Add(directionAccumulator, childDirection);
 
-                if (!TryFromToRotation(
+                if (!TryFromToRotationCore(
                         restVector,
                         childDirection,
                         1.0,
+                        useBurstAcos,
                         out K.Float4 childFromTo))
                 {
                     value = default;
@@ -205,10 +238,11 @@ namespace EndfieldGraphShaderLab
             double interpolation = (parent.attribute & FlagMove) != 0
                 ? parent.rotationalInterpolation
                 : parent.rootRotation;
-            if (!TryFromToRotation(
+            if (!TryFromToRotationCore(
                     restSum,
                     directionAccumulator,
                     interpolation,
+                    useBurstAcos,
                     out K.Float4 parentFromTo))
             {
                 value = default;
@@ -235,6 +269,32 @@ namespace EndfieldGraphShaderLab
             double interpolation,
             out K.Float4 rotation)
         {
+            return TryFromToRotationCore(from, to, interpolation, false, out rotation);
+        }
+
+        /// <summary>
+        /// Exact value path shared by the pinned CalcLine SSE2 and AVX2 cores.
+        /// The native cores use their own double-precision acos polynomial
+        /// instead of the managed fallback's System.Math.Acos call.
+        /// </summary>
+        public static bool TryFromToRotationBurst(
+            BurstCpuVariant variant,
+            K.Double3 from,
+            K.Double3 to,
+            double interpolation,
+            out K.Float4 rotation)
+        {
+            RequireBurstVariant(variant);
+            return TryFromToRotationCore(from, to, interpolation, true, out rotation);
+        }
+
+        private static bool TryFromToRotationCore(
+            K.Double3 from,
+            K.Double3 to,
+            double interpolation,
+            bool useBurstAcos,
+            out K.Float4 rotation)
+        {
             if (!IsFinite(from) || !IsFinite(to) || !IsFinite(interpolation) ||
                 !TryNormalize(from, out K.Double3 u) ||
                 !TryNormalize(to, out K.Double3 v))
@@ -244,7 +304,7 @@ namespace EndfieldGraphShaderLab
             }
 
             double dot = Clamp(Dot(u, v), -1.0, 1.0);
-            double angle = Math.Acos(dot);
+            double angle = useBurstAcos ? AcosBurstBinary64(dot) : Math.Acos(dot);
             K.Double3 axis = Cross(u, v);
             if (Math.Abs(dot + 1.0) < ParallelEpsilon)
             {
@@ -278,6 +338,83 @@ namespace EndfieldGraphShaderLab
                 MultiplyBinary32((float)axis.z, sine),
                 cosine);
             return IsFinite(rotation);
+        }
+
+        // Exact instruction grouping and coefficients shared by the pinned
+        // x64_sse2 0xf4100 and avx2 0x284c50 CalcLine cores. Explicit
+        // no-inline arithmetic boundaries prevent a runtime from contracting
+        // the recovered multiply/add grouping into fused operations.
+        private static double AcosBurstBinary64(double value)
+        {
+            double absolute = DoubleFromBits(
+                unchecked((ulong)BitConverter.DoubleToInt64Bits(value)) &
+                0x7fffffffffffffffUL);
+            double z;
+            double root;
+            if (absolute < 0.5)
+            {
+                z = MultiplyBinary64(value, value);
+                root = absolute;
+            }
+            else
+            {
+                z = MultiplyBinary64(0.5, SubtractBinary64(1.0, absolute));
+                root = absolute == 1.0 ? 0.0 : Math.Sqrt(z);
+            }
+
+            const double c0 = 0.031615876506539346;
+            const double c1 = 0.012153605255773773;
+            const double c2 = -0.015819182433299966;
+            const double c3 = 0.013887151845016092;
+            const double c4 = 0.019290454772679107;
+            const double c5 = 0.017359569912236146;
+            const double c6 = 0.006606077476277171;
+            const double c7 = 0.022371761819320483;
+            const double c8 = 0.030381959280381322;
+            const double c9 = 0.044642856813771024;
+            const double c10 = 0.07500000000378582;
+            const double c11 = 0.16666666666664975;
+
+            double z2 = MultiplyBinary64(z, z);
+            double even0 = AddBinary64(
+                MultiplyBinary64(z2, AddBinary64(MultiplyBinary64(z, c0), c2)),
+                AddBinary64(MultiplyBinary64(z, c4), c6));
+            double even1 = AddBinary64(
+                MultiplyBinary64(z2, AddBinary64(MultiplyBinary64(z, c1), c3)),
+                AddBinary64(MultiplyBinary64(z, c5), c7));
+            double polynomialBase = AddBinary64(
+                MultiplyBinary64(z2, AddBinary64(MultiplyBinary64(z, c8), c9)),
+                AddBinary64(MultiplyBinary64(z, c10), c11));
+            double z4 = MultiplyBinary64(z2, z2);
+            double polynomial = AddBinary64(
+                AddBinary64(polynomialBase, MultiplyBinary64(z4, even1)),
+                MultiplyBinary64(MultiplyBinary64(z4, z4), even0));
+            double term = MultiplyBinary64(MultiplyBinary64(z, root), polynomial);
+
+            ulong sign = unchecked((ulong)BitConverter.DoubleToInt64Bits(value)) &
+                0x8000000000000000UL;
+            double signedRoot = DoubleFromBits(
+                unchecked((ulong)BitConverter.DoubleToInt64Bits(root)) ^ sign);
+            double signedTerm = DoubleFromBits(
+                unchecked((ulong)BitConverter.DoubleToInt64Bits(term)) ^ sign);
+            double asin = AddBinary64(signedRoot, signedTerm);
+            if (absolute < 0.5)
+                return SubtractBinary64(Math.PI * 0.5, asin);
+
+            double rootPlusTerm = AddBinary64(root, term);
+            double doubled = AddBinary64(rootPlusTerm, rootPlusTerm);
+            return value < 0.0 ? SubtractBinary64(Math.PI, doubled) : doubled;
+        }
+
+        private static void RequireBurstVariant(BurstCpuVariant variant)
+        {
+            if (variant != BurstCpuVariant.X64Sse2 && variant != BurstCpuVariant.Avx2)
+                throw new ArgumentOutOfRangeException(nameof(variant));
+        }
+
+        private static double DoubleFromBits(ulong bits)
+        {
+            return BitConverter.Int64BitsToDouble(unchecked((long)bits));
         }
 
         private static K.Float4 Identity()
@@ -381,30 +518,40 @@ namespace EndfieldGraphShaderLab
         private static K.Double3 Add(K.Double3 left, K.Double3 right)
         {
             return new K.Double3(
-                left.x + right.x,
-                left.y + right.y,
-                left.z + right.z);
+                AddBinary64(left.x, right.x),
+                AddBinary64(left.y, right.y),
+                AddBinary64(left.z, right.z));
         }
 
         private static K.Double3 Subtract(K.Double3 left, K.Double3 right)
         {
             return new K.Double3(
-                left.x - right.x,
-                left.y - right.y,
-                left.z - right.z);
+                SubtractBinary64(left.x, right.x),
+                SubtractBinary64(left.y, right.y),
+                SubtractBinary64(left.z, right.z));
         }
 
         private static K.Double3 Cross(K.Double3 left, K.Double3 right)
         {
             return new K.Double3(
-                left.y * right.z - left.z * right.y,
-                left.z * right.x - left.x * right.z,
-                left.x * right.y - left.y * right.x);
+                SubtractBinary64(
+                    MultiplyBinary64(left.y, right.z),
+                    MultiplyBinary64(left.z, right.y)),
+                SubtractBinary64(
+                    MultiplyBinary64(left.z, right.x),
+                    MultiplyBinary64(left.x, right.z)),
+                SubtractBinary64(
+                    MultiplyBinary64(left.x, right.y),
+                    MultiplyBinary64(left.y, right.x)));
         }
 
         private static double Dot(K.Double3 left, K.Double3 right)
         {
-            return left.x * right.x + left.y * right.y + left.z * right.z;
+            return AddBinary64(
+                AddBinary64(
+                    MultiplyBinary64(left.x, right.x),
+                    MultiplyBinary64(left.y, right.y)),
+                MultiplyBinary64(left.z, right.z));
         }
 
         private static bool TryNormalize(K.Double3 value, out K.Double3 normalized)
@@ -416,11 +563,11 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
-            double inverseLength = 1.0 / Math.Sqrt(lengthSquared);
+            double inverseLength = DivideBinary64(1.0, Math.Sqrt(lengthSquared));
             normalized = new K.Double3(
-                value.x * inverseLength,
-                value.y * inverseLength,
-                value.z * inverseLength);
+                MultiplyBinary64(value.x, inverseLength),
+                MultiplyBinary64(value.y, inverseLength),
+                MultiplyBinary64(value.z, inverseLength));
             return IsFinite(normalized);
         }
 
@@ -492,6 +639,154 @@ namespace EndfieldGraphShaderLab
         private static float MultiplyBinary32(float left, float right)
         {
             return left * right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double AddBinary64(double left, double right)
+        {
+            return left + right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double SubtractBinary64(double left, double right)
+        {
+            return left - right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double MultiplyBinary64(double left, double right)
+        {
+            return left * right;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static double DivideBinary64(double left, double right)
+        {
+            return left / right;
+        }
+    }
+
+    /// <summary>
+    /// Inert admission boundary for CalcLine execution. A caller may select a
+    /// value kernel only from a separately validated live resolver trace. This
+    /// class has no scene, PlayerLoop, solver, or Transform-writeback hook.
+    /// </summary>
+    public static class EndfieldSecondaryDynamicsCalcLineRouteSelection
+    {
+        public enum ExecutionRoute
+        {
+            Unselected,
+            ManagedUnpatched,
+            BurstX64Sse2,
+            BurstAvx2,
+        }
+
+        public readonly struct Observation
+        {
+            public readonly bool traceValidated;
+            public readonly int burstGateObservationCount;
+            public readonly bool burstEnabled;
+            public readonly bool directCallTargetObserved;
+            public readonly int cpuSelectionObservationCount;
+            public readonly string cpuVariant;
+            public readonly int ifixGateObservationCount;
+            public readonly bool ifixPatched;
+            public readonly string ifixCalcLineRoute;
+
+            public Observation(
+                bool traceValidated,
+                int burstGateObservationCount,
+                bool burstEnabled,
+                bool directCallTargetObserved,
+                int cpuSelectionObservationCount,
+                string cpuVariant,
+                int ifixGateObservationCount,
+                bool ifixPatched,
+                string ifixCalcLineRoute)
+            {
+                this.traceValidated = traceValidated;
+                this.burstGateObservationCount = burstGateObservationCount;
+                this.burstEnabled = burstEnabled;
+                this.directCallTargetObserved = directCallTargetObserved;
+                this.cpuSelectionObservationCount = cpuSelectionObservationCount;
+                this.cpuVariant = cpuVariant;
+                this.ifixGateObservationCount = ifixGateObservationCount;
+                this.ifixPatched = ifixPatched;
+                this.ifixCalcLineRoute = ifixCalcLineRoute;
+            }
+        }
+
+        public static bool TrySelect(Observation observation, out ExecutionRoute route)
+        {
+            route = ExecutionRoute.Unselected;
+            if (!observation.traceValidated ||
+                observation.burstGateObservationCount != 1)
+                return false;
+
+            if (observation.burstEnabled)
+            {
+                if (!observation.directCallTargetObserved ||
+                    observation.cpuSelectionObservationCount != 1 ||
+                    observation.ifixGateObservationCount != 0 ||
+                    observation.ifixPatched ||
+                    !string.IsNullOrEmpty(observation.ifixCalcLineRoute))
+                    return false;
+                if (string.Equals(observation.cpuVariant, "x64_sse2",
+                        StringComparison.Ordinal))
+                {
+                    route = ExecutionRoute.BurstX64Sse2;
+                    return true;
+                }
+                if (string.Equals(observation.cpuVariant, "avx2",
+                        StringComparison.Ordinal))
+                {
+                    route = ExecutionRoute.BurstAvx2;
+                    return true;
+                }
+                return false;
+            }
+
+            // The Invoke null-pointer fallback is statically unreachable after
+            // a normal GetILPPMethodFunctionPointer2 return. A disabled Burst
+            // route therefore admits only the observed direct-call fallback,
+            // and only when its FromToRotation IFix gate is explicitly false.
+            if (observation.directCallTargetObserved ||
+                observation.cpuSelectionObservationCount != 0 ||
+                !string.IsNullOrEmpty(observation.cpuVariant) ||
+                observation.ifixGateObservationCount != 1 ||
+                observation.ifixPatched ||
+                !string.Equals(observation.ifixCalcLineRoute,
+                    "direct_call_fallback", StringComparison.Ordinal))
+            {
+                return false;
+            }
+            route = ExecutionRoute.ManagedUnpatched;
+            return true;
+        }
+
+        public static bool TryCalculateParent(
+            ExecutionRoute route,
+            EndfieldSecondaryDynamicsCalcLineManagedEquations.ParentSource parent,
+            EndfieldSecondaryDynamicsCalcLineManagedEquations.ChildSource[] children,
+            out EndfieldSecondaryDynamicsCalcLineManagedEquations.ParentValue value)
+        {
+            switch (route)
+            {
+                case ExecutionRoute.ManagedUnpatched:
+                    return EndfieldSecondaryDynamicsCalcLineManagedEquations.TryCalculateParent(
+                        parent, children, out value);
+                case ExecutionRoute.BurstX64Sse2:
+                    return EndfieldSecondaryDynamicsCalcLineManagedEquations.TryCalculateParentBurst(
+                        EndfieldSecondaryDynamicsCalcLineManagedEquations.BurstCpuVariant.X64Sse2,
+                        parent, children, out value);
+                case ExecutionRoute.BurstAvx2:
+                    return EndfieldSecondaryDynamicsCalcLineManagedEquations.TryCalculateParentBurst(
+                        EndfieldSecondaryDynamicsCalcLineManagedEquations.BurstCpuVariant.Avx2,
+                        parent, children, out value);
+                default:
+                    value = default;
+                    return false;
+            }
         }
     }
 }

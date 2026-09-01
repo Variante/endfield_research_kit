@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using K = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsKernels;
 using C = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsCalcLineManagedEquations;
+using R = EndfieldGraphShaderLab.EndfieldSecondaryDynamicsCalcLineRouteSelection;
 
 namespace EndfieldGraphShaderLabEditor
 {
@@ -19,9 +20,11 @@ namespace EndfieldGraphShaderLabEditor
             VerifyParentAndChildEquations();
             VerifyPerChildDirectionAndParentSum();
             VerifyEmptyAndUndefinedBranchesFailClosed();
+            VerifyDualCpuBurstEquations();
+            VerifyLiveRouteAdmissionFailsClosed();
             Debug.Log(
-                "Verified value-only secondary-dynamics CalcLine managed equations; " +
-                "runtime route and IFix selection remain fail-closed.");
+                "Verified value-only secondary-dynamics CalcLine managed and dual-CPU " +
+                "Burst equations; runtime route remains fail-closed until a validated trace.");
         }
 
         private static void VerifyPackedChildIndex()
@@ -220,6 +223,114 @@ namespace EndfieldGraphShaderLabEditor
                 D(1.0, 0.0, 0.0), F(0.0f, 0.0f, 0.0f), C.FlagMove);
             Require(!C.TryCalculateParent(parent, new[] { degenerate }, out _),
                 "zero authored rest vector must fail closed");
+        }
+
+        private static void VerifyDualCpuBurstEquations()
+        {
+            var parent = new C.ParentSource(
+                D(0.0, 0.0, 0.0),
+                Q(0.0f, 0.0f, 0.0f, 1.0f),
+                F(1.0f, 1.0f, 1.0f),
+                Q(1.0f, 1.0f, 1.0f, 1.0f),
+                C.FlagMove,
+                0.4,
+                0.9);
+            var children = new[]
+            {
+                Child(D(0.0, 1.0, 0.0), F(1.0f, 0.0f, 0.0f), C.FlagMove),
+                Child(D(0.0, 0.0, 1.0), F(0.0f, 1.0f, 0.0f), C.FlagMove),
+            };
+
+            Require(C.TryCalculateParentBurst(
+                C.BurstCpuVariant.X64Sse2, parent, children, out C.ParentValue sse),
+                "SSE2 CalcLine Burst equation");
+            Require(C.TryCalculateParentBurst(
+                C.BurstCpuVariant.Avx2, parent, children, out C.ParentValue avx),
+                "AVX2 CalcLine Burst equation");
+            RequireQuaternionBits(
+                sse.rotation,
+                0x3df5d66bU, 0xbdf5d66bU, 0x3df5d66bU, 0x3f7a67e2U,
+                "SSE2 two-child parent-sum vector");
+            RequireQuaternionBits(
+                avx.rotation,
+                0x3df5d66bU, 0xbdf5d66bU, 0x3df5d66bU, 0x3f7a67e2U,
+                "AVX2 two-child parent-sum vector");
+            RequireQuaternionBits(
+                sse.children[0].rotation,
+                0x00000000U, 0x00000000U, 0x3f3504f4U, 0x3f3504f3U,
+                "SSE2 first child vector");
+            RequireQuaternionBits(
+                avx.children[1].rotation,
+                0x3f3504f4U, 0x00000000U, 0x00000000U, 0x3f3504f3U,
+                "AVX2 second child vector");
+
+            bool rejectedUnknown = false;
+            try
+            {
+                C.TryCalculateParentBurst(
+                    (C.BurstCpuVariant)99, parent, children, out _);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                rejectedUnknown = true;
+            }
+            Require(rejectedUnknown, "unknown Burst CPU variant must fail closed");
+        }
+
+        private static void VerifyLiveRouteAdmissionFailsClosed()
+        {
+            Require(!R.TrySelect(default, out R.ExecutionRoute missing) &&
+                    missing == R.ExecutionRoute.Unselected,
+                "missing live observation must remain unselected");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, true, true, 1, "unknown", 0, false, null), out _),
+                "unknown Burst CPU route must fail closed");
+            Require(R.TrySelect(new R.Observation(
+                    true, 1, true, true, 1, "x64_sse2", 0, false, null),
+                    out R.ExecutionRoute sse) &&
+                    sse == R.ExecutionRoute.BurstX64Sse2,
+                "validated SSE2 route admission");
+            Require(R.TrySelect(new R.Observation(
+                    true, 1, true, true, 1, "avx2", 0, false, null),
+                    out R.ExecutionRoute avx) &&
+                    avx == R.ExecutionRoute.BurstAvx2,
+                "validated AVX2 route admission");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, false, false, 0, null, 1, true,
+                    "direct_call_fallback"), out _),
+                "patched managed FromToRotation must fail closed");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, false, false, 0, null, 1, false,
+                    "managed_worker"), out _),
+                "unselected managed worker must fail closed");
+            Require(R.TrySelect(new R.Observation(
+                    true, 1, false, false, 0, null, 1, false,
+                    "direct_call_fallback"), out R.ExecutionRoute managed) &&
+                    managed == R.ExecutionRoute.ManagedUnpatched,
+                "validated unpatched direct-call fallback admission");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 2, true, true, 1, "x64_sse2", 0, false, null), out _),
+                "conflicting Burst gate observations must fail closed");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, true, true, 2, "x64_sse2", 0, false, null), out _),
+                "multiple CPU selection observations must fail closed");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, false, false, 0, null, 2, false,
+                    "direct_call_fallback"), out _),
+                "conflicting IFix observations must fail closed");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, true, true, 1, "x64_sse2", 1, false,
+                    "direct_call_fallback"), out _),
+                "simultaneous Burst and managed-route evidence must fail closed");
+            Require(!R.TrySelect(new R.Observation(
+                    true, 1, false, true, 1, "avx2", 1, false,
+                    "direct_call_fallback"), out _),
+                "managed fallback with CPU-route evidence must fail closed");
+
+            C.ParentSource parent = IdentityParent();
+            Require(!R.TryCalculateParent(
+                    R.ExecutionRoute.Unselected, parent, Array.Empty<C.ChildSource>(), out _),
+                "unselected route must not execute CalcLine");
         }
 
         private static C.ParentSource IdentityParent()

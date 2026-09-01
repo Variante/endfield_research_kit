@@ -12,6 +12,7 @@ CONTRACT = (
     / "secondary_dynamics_post_proxy_contract.json"
 )
 HELPER = RUNTIME / "EndfieldSecondaryDynamicsCalcLineManagedEquations.cs"
+ROUTE = HELPER
 VERIFIER = EDITOR / "EndfieldSecondaryDynamicsCalcLineManagedEquationsVerifier.cs"
 TYPE_NAME = "EndfieldSecondaryDynamicsCalcLineManagedEquations"
 
@@ -54,6 +55,12 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "Math.Abs(1.0 - dot) < ParallelEpsilon",
             "float halfAngle = MultiplyBinary32(scaledAngle, 0.5f);",
             "K.FloatSinCosBinary32(halfAngle, out float sine, out float cosine);",
+            "public enum BurstCpuVariant",
+            "TryCalculateParentBurst(",
+            "AcosBurstBinary64(dot)",
+            "const double c0 = 0.031615876506539346;",
+            "const double c11 = 0.16666666666664975;",
+            "MultiplyBinary64(MultiplyBinary64(z4, z4), even0)",
             "[MethodImpl(MethodImplOptions.NoInlining)]",
         )
         for token in required:
@@ -86,6 +93,40 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
                     unexpected_assets.append(str(path.relative_to(ROOT)))
         self.assertEqual(unexpected_assets, [])
 
+    def test_route_selector_is_inert_and_requires_validated_live_evidence(self):
+        source = ROUTE.read_text(encoding="utf-8")
+        for token in (
+            "ExecutionRoute.Unselected",
+            "!observation.traceValidated",
+            "observation.burstGateObservationCount != 1",
+            "!observation.directCallTargetObserved",
+            "observation.cpuSelectionObservationCount != 1",
+            "observation.ifixGateObservationCount != 0",
+            '"x64_sse2"',
+            '"avx2"',
+            "observation.cpuSelectionObservationCount != 0",
+            "observation.ifixGateObservationCount != 1",
+            "observation.ifixPatched",
+            '"direct_call_fallback"',
+            "BurstCpuVariant.X64Sse2",
+            "BurstCpuVariant.Avx2",
+        ):
+            self.assertIn(token, source)
+        for forbidden in (
+            "MonoBehaviour",
+            "GameObject",
+            "PlayerLoopSystem",
+            "OwnerSolver",
+            "FrameCoordinator",
+            "Transform",
+            "LateUpdate(",
+        ):
+            # Transform occurs only in the explanatory no-writeback comment.
+            if forbidden == "Transform":
+                self.assertNotIn("UnityEngine.Transform", source)
+            else:
+                self.assertNotIn(forbidden, source)
+
     def test_verifier_covers_golden_properties_and_fail_closed_boundary(self):
         source = VERIFIER.read_text(encoding="utf-8")
         for method in (
@@ -96,6 +137,8 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "VerifyParentAndChildEquations",
             "VerifyPerChildDirectionAndParentSum",
             "VerifyEmptyAndUndefinedBranchesFailClosed",
+            "VerifyDualCpuBurstEquations",
+            "VerifyLiveRouteAdmissionFailsClosed",
         ):
             self.assertIn(method + "();", source)
         self.assertIn("zero FromTo input must fail closed", source)
@@ -104,6 +147,13 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
         self.assertIn("parent direction sums every child direction", source)
         self.assertIn("0x3f3504f4U, 0x3f3504f3U", source)
         self.assertIn("BitConverter.SingleToInt32Bits", source)
+        self.assertIn("unknown Burst CPU variant must fail closed", source)
+        self.assertIn("patched managed FromToRotation must fail closed", source)
+        self.assertIn("conflicting Burst gate observations must fail closed", source)
+        self.assertIn("conflicting IFix observations must fail closed", source)
+        self.assertIn("simultaneous Burst and managed-route evidence must fail closed", source)
+        self.assertIn("managed fallback with CPU-route evidence must fail closed", source)
+        self.assertIn("unselected route must not execute CalcLine", source)
         self.assertNotIn("Tolerance", source)
         self.assertNotIn("Mathf.Abs", source)
 
