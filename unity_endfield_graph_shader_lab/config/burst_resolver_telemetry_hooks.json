@@ -1,5 +1,5 @@
 {
-  "schema": "burstResolverTelemetry.hooks.v2",
+  "schema": "burstResolverTelemetry.hooks.v3",
   "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
   "processName": "Endfield.exe",
   "moduleName": "GameAssembly.dll",
@@ -244,18 +244,27 @@
       ]
     }
   },
+  "calcLineCpuSelection": {
+    "targetId": "calc_line_normal_tangent_kernel",
+    "functionPointerSlotRva": "0x3c57b0",
+    "variants": [
+      {"cpuVariant": "x64_sse2", "entryRva": "0x10ef20"},
+      {"cpuVariant": "avx2", "entryRva": "0x29a3c0"}
+    ]
+  },
   "resolverExportEnumeration": {
     "hashedCount": 628,
     "canonicalNameRvaSha256": "c5e81b87d6e69459047585163469139c8e75523f1e4939166d40b96725c4ce54"
   },
   "evidenceBoundary": {
     "classification": "observed_runtime_candidate",
-    "scope": "Read-only LoadLibraryW/GetProcAddress observation plus GetFunctionPointer return observation at six exact GameAssembly.dll wrappers and CalcLine route-gate return observation, with disk-hash-pinned inputs, wrapper-body hashes, call instruction bytes, runtime module identity, and bounded caller backtraces.",
+    "scope": "Read-only LoadLibraryW/GetProcAddress observation plus GetFunctionPointer return observation at six exact GameAssembly.dll wrappers, a read-only snapshot of the CalcLine Burst function-pointer slot, and CalcLine route-gate return observation, with disk-hash-pinned inputs, wrapper-body hashes, call instruction bytes, runtime module identity, and bounded caller backtraces.",
     "nonClaims": [
       "The trace does not call a resolver export, replace a resolver body, or write game state.",
       "Interceptor attachment can perturb timing and loader scheduling; the capture is not behavior-neutral and remains candidate evidence.",
       "A returned proc pointer is an identity observation only; it does not prove the pointer was called or map it to a Burst generic.",
       "A GetFunctionPointer return is a live wrapper call-target observation, but it does not invoke the pointer, prove every subsequent indirect call completed, or establish the kernel's algorithm.",
+      "The CalcLine CPU selection snapshot reads one hash-pinned lib_burst_generated.dll function-pointer slot after the exact GetFunctionPointer wrapper returns. It does not call the selected entry, prove that a later indirect call reached it, or classify any offset except the two exact source-authenticated CPU entries.",
       "Only GetProcAddress calls whose hModule equals the observed lib_burst_generated.dll HMODULE are recorded.",
       "The callerBacktrace is bounded and includes only frames Frida resolves to a loaded module; gameAssemblyCallerBacktrace is the verified GameAssembly.dll subset, and an empty backtrace is not identity proof.",
       "Target-window attribution is a caller-address observation against the six pinned wrapper/initializer ranges; it does not prove the hashed export was called or that the Burst kernel executed.",

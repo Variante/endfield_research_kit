@@ -414,6 +414,77 @@ function resolvedPointer(retval) {
   };
 }
 
+function calcLineCpuSelection(target) {
+  const probe = CONFIG.calcLineCpuSelection || null;
+  const empty = {
+    probe: null,
+    status: "not_configured",
+    slotAddress: null,
+    selectedPointer: null,
+    resolvedAddress: null,
+    resolvedModuleName: null,
+    resolvedModulePath: null,
+    resolvedModuleBase: null,
+    resolvedModuleSize: null,
+    resolvedModuleOffset: null,
+    selectedCpuVariant: null,
+    error: null,
+  };
+  if (!probe || !target || target.id !== probe.targetId) return empty;
+  const configured = { ...empty, probe };
+  if (!burstHandle || !burstIdentity || !burstIdentity.moduleBase) {
+    return { ...configured, status: "resolver_unavailable" };
+  }
+  let slotAddress;
+  try {
+    slotAddress = ptr(burstHandle).add(ptr(probe.functionPointerSlotRva));
+    const selected = slotAddress.readPointer();
+    const selectedPointer = pointerText(selected);
+    if (selected.isNull()) {
+      return {
+        ...configured,
+        status: "slot_null",
+        slotAddress: pointerText(slotAddress),
+        selectedPointer,
+      };
+    }
+    const resolved = resolvedPointer(selected);
+    let selectedCpuVariant = null;
+    if (
+      resolved.resolvedModuleBase &&
+      sameOffset(resolved.resolvedModuleBase, burstHandle)
+    ) {
+      for (const variant of probe.variants || []) {
+        if (sameOffset(resolved.resolvedModuleOffset, variant.entryRva)) {
+          selectedCpuVariant = variant.cpuVariant;
+          break;
+        }
+      }
+    }
+    return {
+      probe,
+      status: selectedCpuVariant ? "matched" : "unknown_entry",
+      slotAddress: pointerText(slotAddress),
+      selectedPointer,
+      resolvedAddress: resolved.resolvedAddress,
+      resolvedModuleName: resolved.resolvedModuleName,
+      resolvedModulePath: resolved.resolvedModulePath,
+      resolvedModuleBase: resolved.resolvedModuleBase,
+      resolvedModuleSize: resolved.resolvedModuleSize,
+      resolvedModuleOffset: resolved.resolvedModuleOffset,
+      selectedCpuVariant,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      ...configured,
+      status: "slot_unreadable",
+      slotAddress: slotAddress ? pointerText(slotAddress) : null,
+      error: String(error),
+    };
+  }
+}
+
 function attachHook(name, spec) {
   let address;
   try {
@@ -527,7 +598,9 @@ function attachCallTargetHook(target) {
       onLeave(retval) {
         if (!captureEnabled || capped || terminalState) return;
         const returnPointer = pointerText(retval);
-        const observationKey = `${target.id}:${String(returnPointer).toLowerCase()}`;
+        const cpuSelection = calcLineCpuSelection(target);
+        const observationKey = `${target.id}:${String(returnPointer).toLowerCase()}:` +
+          `${String(cpuSelection.selectedPointer).toLowerCase()}:${cpuSelection.status}`;
         if (observedCallTargets.has(observationKey)) return;
         observedCallTargets.add(observationKey);
         record("burst_function_pointer", {
@@ -538,6 +611,7 @@ function attachCallTargetHook(target) {
           callTargetProbe: probe,
           returnPointer,
           ...resolvedPointer(retval),
+          cpuSelection,
           threadId: Process.getCurrentThreadId(),
         });
       },
