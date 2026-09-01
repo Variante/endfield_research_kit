@@ -54,11 +54,12 @@ runtime component, or shader instead of editing generated files by hand.
 
 ## Active target
 
-The source reference is `../videos/2026-08-15_10-32-32.mkv`; the focused
-Endminf comparison capture is `../videos/2026-08-21_20-15-17.mkv`, with
-`../videos/2026-08-24_06-37-22.mkv` as its 4K frame-generation-off companion.
-Keep image comparison, timing, camera, lighting, materials, effects, and
-post-processing anchored to those recordings. Treat the amber crystal/stone
+The source reference is `../videos/2026-08-15_10-32-32.mkv`; the maintained
+clean Endminf start-to-loop authority is
+`../videos/2026-08-26_21-25-50.mkv`, with the 2026-08-21 and 2026-08-24
+recordings retained for focused 4K frame-generation-off evidence. Keep image
+comparison, timing, camera, lighting, materials, effects, and post-processing
+anchored to those recordings. Treat the amber crystal/stone
 entrance effect separately from general body comparisons as defined by the
 maintained sequence annotation. Do not reintroduce actor-specific
 approximation branches without source evidence.
@@ -73,8 +74,13 @@ the completed result can later rebuild all characters.
   generated prefab paths.
 - Playable LOD0 meshes, materials, textures, cameras, profiles, lights,
   portraits, and the selected Overview animation sources are recovered.
-- The selected playable UI animation scope is complete; runtime transition,
-  blending, IK, secondary motion, and effect lifecycle behavior remain partial.
+- The selected playable UI animation sources are complete. Endminf's generated
+  controller and character-neutral ACL driver publish the exact decoded
+  component masks for `ui_overview_start -> ui_overview_loop`; a canonical
+  770-frame D3D11 capture verifies valid application across 278 transforms and
+  direct Animator state/transition agreement on every frame. Generalized
+  transition behavior, IK, secondary motion, and effect lifecycle remain
+  partial.
 - Endminf's selected `ui_overview_start -> ui_overview_loop` handoff now runs
   through a generated source-backed Animator controller, and its four resolved
   overview rocks/crystals follow the exact 1.5-second active-state gate. The

@@ -182,13 +182,16 @@ the outer return; the false path remains intact and all 20 native tests pass.
   state to the captured hierarchy reference pose instead of retaining a stale
   transition sample. A compact source-hash-bound contract records that binding
   evidence, including the affected hair, cape, and thigh-cloth paths, but no
-  pose values, curves, captured motion, or fitted timing. A canonical 770-frame render
-  with this driver passes start-to-loop, settled-loop, upright portrait, exact
-  effect, and captured-secondary gates. Its best retail alignment is effectively
-  unchanged from the dense-key baseline (ROI MAE 23.8907 versus 23.8872;
-  temporal delta MAE 15.4863 versus 15.4818), confirming that the visible
-  remaining jerk belongs to sparse secondary replay/unsolved cloth history,
-  not permission to tune the body trajectory.
+  pose values, curves, captured motion, or fitted timing. A canonical D3D11
+  770-frame v24 render now proves source-decoded ACL publication throughout the
+  complete start-to-loop sequence: all frames retain a valid binding, positive
+  application across 278 transforms, and exact current-state, next-state, and
+  transition-weight agreement with the directly evaluated Animator state.
+  Captured replay and solver writeback both remain disabled for the entire run.
+  The zero-offset clean-reference comparison is control-equivalent, confirming
+  that this closes the body-pose publication boundary rather than claiming a
+  visual gain. The visible entrance residual belongs primarily to unsolved
+  hair, coat, and strap dynamics, not permission to tune the body trajectory.
   The two automatic Legacy owners under Endminf overview_01 now start from one
   authenticated `ui_overview_start` source-state clock sample: exactly
   `effect_01/A_actor_endminf_ui_overview_02` and
@@ -3389,14 +3392,14 @@ the first error to Start, Tether, Angle, CalcDisplayPosition, or another kernel.
 Keep the solver diagnostic-only and recover that internal stage boundary; do
 not publish scratch state or invent smoothing curves.
 
-The compatibility replay clock itself is continuous: all 770 presentation
-frames advance without repeated requested times. Its remaining visible jerk is
-caused by a sparse 144-pose oracle (72 adjacent previous/current pairs, with
+The optional compatibility replay clock itself is continuous: all 770
+presentation frames advance without repeated requested times. Its visible jerk
+is caused by a sparse 144-pose oracle (72 adjacent previous/current pairs, with
 many multi-frame gaps) joined by piecewise interpolation, which is only C0 at
-sample boundaries and suppresses extrema. Do not replace that limitation with
-authored per-bone positions or smoothing curves. The recovery target is the
-already identified BeyondBoneCloth solver and publication path; captured pose
-replay remains a diagnostic bridge.
+sample boundaries and suppresses extrema. Canonical rendering keeps that replay
+disabled. Do not replace its limitation with authored per-bone positions or
+smoothing curves. The recovery target is the already identified BeyondBoneCloth
+solver and publication path; captured pose replay remains a diagnostic bridge.
 
 The original `ui_overview_start` and `ui_overview_loop` sources contain no
 ordinary Unity transform or float curves. Their poses are stored in ACL 2.1
@@ -3406,9 +3409,13 @@ stable endpoint vector interpolation, and shortest-hemisphere normalized
 stable quaternion nlerp; controller time wrapping occurs before the ACL clamp
 seek. Unity auto-tangent curves, Hermite interpolation, `Quaternion.Slerp`, and
 generic `Quaternion.Lerp` are therefore not source-faithful replacements. The
-lab now has inert decoded-ACL data and sampling primitives with source/payload
-hash gates; transform publication and controller integration remain separate
-unimplemented steps.
+lab imports decoded ACL sample contracts through source/payload hash gates and
+publishes their recovered component masks through a character-neutral runtime
+driver synchronized to the generated Animator controller. The canonical v24
+capture verifies the driver against the directly evaluated Animator state on
+all 770 frames and all 278 bound transforms. Endminf body timing and pose
+publication are therefore closed for this two-clip scope; entrance secondary
+dynamics remain separate and incomplete.
 
 Directly transplanting the retail Streamline path into the Unity lab remains
 fail-closed. Unity's D3D11 plugin interface exposes both the native device and
@@ -3944,17 +3951,17 @@ The current 770-frame canonical source-authored Unity run keeps captured
 secondary replay, the unverified source solver, measured opening rectangles,
 and content-invalid deferred presentation disabled. It completes the ACL-backed
 start-to-loop sequence with an upright portrait, all four VFX roots, 68 admitted
-entrance renderers, and no crash or device-removal signal. Across 554 bounded
-clean-reference rows its best -1-frame alignment is 22.8096 actor ROI,
-24.6097 effect ROI, and 15.4914 effect temporal-delta MAE. These spatial scores
-remain in the prior baseline's broad regime while temporal error is slightly
-worse; the run does not establish a causal fidelity gain. The earlier
-measured-strip A/B already showed no material improvement and remains explicit
-diagnostic evidence.
-The opening temporal composition and stone/light peak remain the largest gaps;
-the settled post-cleanup motion is temporally stable while hair/coat silhouettes
-remain spatially different. Treat this as the stable non-crashing baseline, not
-retail parity or secondary-motion certification.
+entrance renderers, and no crash or device-removal signal. Its v24 telemetry
+proves valid source-decoded ACL binding and application across 278 transforms,
+with current state, next state, and transition weight matching the directly
+evaluated Animator on all 770 frames. Both alternate secondary-motion paths stay
+inactive. A zero-offset comparison against the clean 2026-08-26 reference is
+control-equivalent; it establishes the body publication boundary but no causal
+fidelity gain. The opening temporal composition and stone/light peak remain the
+largest render gaps. The settled post-cleanup motion is temporally stable, while
+entrance hair, coat, and strap silhouettes remain spatially different. Treat
+this as the stable source-authored body baseline, not retail parity or
+secondary-motion certification.
 
 The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Exact per-owner child topology is now
@@ -4078,12 +4085,21 @@ objects, and injected-runtime dependency tests fail if that boundary regresses.
 
 ## Main animation gap
 
-The remaining runtime systems are generalized controller and rotation-only
-root-motion routing beyond the certified Endminf path, broader Avatar
-transport, grounding and IK, facial emotion/lip sync, gaze, secondary motion
-outside the certified positive-scale stationary Endminf subset,
-remaining item/deco/FX lifecycle, gacha timing, and non-playable runtime
-assembly.
+Endminf's source ACL body timing and pose publication are closed for
+`ui_overview_start -> ui_overview_loop`. The primary remaining animation
+residual is entrance secondary motion in the recovered hair, coat, and strap
+chains; settled-loop oracle error is small, while entrance checkpoints diverge
+materially. The next bounded recovery is the process-selected CalcLine route:
+observe the nonzero Burst DirectCall target/CPU variant and IFix
+`FromToRotation` patch `0x219`, integrate only the selected exact kernel through
+the existing 5/22/16/65 child arrays, and require the 40-checkpoint trajectory
+regression to beat solver-off before enabling writeback.
+
+Beyond this selected scope, remaining runtime systems include generalized
+controller and rotation-only root-motion routing, broader Avatar transport,
+grounding and IK, facial emotion/lip sync, gaze, secondary motion outside the
+certified positive-scale stationary Endminf subset, remaining item/deco/FX
+lifecycle, gacha timing, and non-playable runtime assembly.
 
 These are implementation gaps, not reasons to weaken the recovered evidence
 boundary. Static prefabs and isolated clip playback must remain labeled as

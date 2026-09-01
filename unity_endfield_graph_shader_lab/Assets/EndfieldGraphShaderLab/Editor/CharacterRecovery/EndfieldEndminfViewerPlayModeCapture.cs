@@ -192,7 +192,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v23";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v24";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -231,6 +231,9 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedTransition;
             public bool observedSettledLoop;
             public bool observedAnimatorContract;
+            public bool observedRecoveredAclPosePublication;
+            public int recoveredAclPoseBoundTransformCount;
+            public string recoveredAclPoseFailure;
             public bool observedEntranceVfx;
             public bool observedEntranceVfxCleanup;
             public bool observedOverview01AuthenticatedSourceSeed;
@@ -394,6 +397,16 @@ namespace EndfieldGraphShaderLabEditor
             public int currentAnimatorStateHash;
             public int nextAnimatorStateHash;
             public float animatorTransitionNormalizedTime;
+            public int evaluatedAnimatorCurrentStateHash;
+            public int evaluatedAnimatorNextStateHash;
+            public float evaluatedAnimatorTransitionWeight;
+            public bool recoveredAclPoseBindingValid;
+            public string recoveredAclPoseBindingFailure;
+            public int recoveredAclPoseAppliedFrameCount;
+            public int recoveredAclPoseAppliedTransformCount;
+            public int recoveredAclPoseCurrentStateHash;
+            public int recoveredAclPoseNextStateHash;
+            public float recoveredAclPoseTransitionWeight;
             public int rootMotionCallbackCount;
             public float appliedRootDeltaRotationDegrees;
             public Vector3 rootMotionPositionDelta;
@@ -1451,6 +1464,27 @@ namespace EndfieldGraphShaderLabEditor
                 .GetComponent<EndfieldSecondaryDynamicsRuntime>();
             EndfieldCapturedSecondaryDynamicsReplay capturedReplay = actor
                 .GetComponent<EndfieldCapturedSecondaryDynamicsReplay>();
+            RecoveredAclAnimatorPoseDriver aclPoseDriver = actor
+                .GetComponent<RecoveredAclAnimatorPoseDriver>();
+            Animator evaluatedAnimator = overview != null
+                ? overview.animatorSource
+                : null;
+            bool evaluatedAnimatorReady = evaluatedAnimator != null &&
+                evaluatedAnimator.enabled &&
+                evaluatedAnimator.runtimeAnimatorController != null;
+            bool evaluatedAnimatorTransitioning = evaluatedAnimatorReady &&
+                evaluatedAnimator.IsInTransition(0);
+            int evaluatedAnimatorCurrentStateHash = evaluatedAnimatorReady
+                ? evaluatedAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash
+                : 0;
+            int evaluatedAnimatorNextStateHash = evaluatedAnimatorTransitioning
+                ? evaluatedAnimator.GetNextAnimatorStateInfo(0).fullPathHash
+                : 0;
+            float evaluatedAnimatorTransitionWeight =
+                evaluatedAnimatorTransitioning
+                    ? Mathf.Clamp01(evaluatedAnimator
+                        .GetAnimatorTransitionInfo(0).normalizedTime)
+                    : 0f;
             GameObject sharedCharEffect = UnityEngine.Object
                 .FindObjectsOfType<GameObject>(true)
                 .FirstOrDefault(value =>
@@ -1704,6 +1738,32 @@ namespace EndfieldGraphShaderLabEditor
                 animatorTransitionNormalizedTime = overview != null
                     ? overview.AnimatorTransitionNormalizedTime
                     : 0f,
+                evaluatedAnimatorCurrentStateHash =
+                    evaluatedAnimatorCurrentStateHash,
+                evaluatedAnimatorNextStateHash =
+                    evaluatedAnimatorNextStateHash,
+                evaluatedAnimatorTransitionWeight =
+                    evaluatedAnimatorTransitionWeight,
+                recoveredAclPoseBindingValid = aclPoseDriver != null &&
+                    aclPoseDriver.BindingValid,
+                recoveredAclPoseBindingFailure = aclPoseDriver == null
+                    ? "runtime missing"
+                    : aclPoseDriver.BindingFailure,
+                recoveredAclPoseAppliedFrameCount = aclPoseDriver != null
+                    ? aclPoseDriver.AppliedFrameCount
+                    : 0,
+                recoveredAclPoseAppliedTransformCount = aclPoseDriver != null
+                    ? aclPoseDriver.AppliedTransformCount
+                    : 0,
+                recoveredAclPoseCurrentStateHash = aclPoseDriver != null
+                    ? aclPoseDriver.CurrentStateHash
+                    : 0,
+                recoveredAclPoseNextStateHash = aclPoseDriver != null
+                    ? aclPoseDriver.NextStateHash
+                    : 0,
+                recoveredAclPoseTransitionWeight = aclPoseDriver != null
+                    ? aclPoseDriver.TransitionWeight
+                    : 0f,
                 rootMotionCallbackCount = overview != null
                     ? overview.RootMotionCallbackCount
                     : 0,
@@ -1832,6 +1892,26 @@ namespace EndfieldGraphShaderLabEditor
                 value.activeBodyClip.IndexOf("overview_loop", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 !value.overviewTransitioning);
             bool observedAnimatorContract = Frames.Any(value => value.animatorContractActive);
+            bool observedRecoveredAclPosePublication = Frames.Count > 0 &&
+                Frames.All(value =>
+                    value.animatorContractActive &&
+                    value.recoveredAclPoseBindingValid &&
+                    value.recoveredAclPoseAppliedFrameCount > 0 &&
+                    value.recoveredAclPoseAppliedTransformCount > 0 &&
+                    value.recoveredAclPoseCurrentStateHash ==
+                        value.evaluatedAnimatorCurrentStateHash &&
+                    value.recoveredAclPoseNextStateHash ==
+                        value.evaluatedAnimatorNextStateHash &&
+                    Mathf.Abs(value.recoveredAclPoseTransitionWeight -
+                        value.evaluatedAnimatorTransitionWeight) <= 1.0e-6f);
+            int recoveredAclPoseBoundTransformCount = Frames.Count == 0
+                ? 0
+                : Frames.Min(value => value.recoveredAclPoseAppliedTransformCount);
+            string recoveredAclPoseFailure = Frames
+                .Select(value => value.recoveredAclPoseBindingFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) &&
+                    !string.Equals(value, "ok", StringComparison.Ordinal)) ??
+                string.Empty;
             bool observedEntranceVfx = Frames.Any(value =>
                 value.activeBodyClip.IndexOf("overview_start", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 value.effectRootCount == 4 && value.admittedRenderers > 0 &&
@@ -1954,6 +2034,14 @@ namespace EndfieldGraphShaderLabEditor
                     !value.capturedSecondaryReplayPoseAppliedThisFrame));
             var missingObservations = new List<string>();
             if (!observedAnimatorContract) missingObservations.Add("Animator contract");
+            if (!observedRecoveredAclPosePublication)
+            {
+                missingObservations.Add(
+                    "source-decoded ACL pose publication synchronized to Animator state" +
+                    (string.IsNullOrEmpty(recoveredAclPoseFailure)
+                        ? string.Empty
+                        : " (" + recoveredAclPoseFailure + ")"));
+            }
             if (!observedTransition) missingObservations.Add("start-to-loop transition");
             if (!observedSettledLoop) missingObservations.Add("settled loop");
             if (!observedEntranceVfx) missingObservations.Add("entrance VFX");
@@ -2325,6 +2413,7 @@ namespace EndfieldGraphShaderLabEditor
             bool requiredCaptureContractReady =
                 charInfoBackgroundIncluded &&
                 backgroundPortraitIncluded &&
+                observedRecoveredAclPosePublication &&
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
                 exactEndminfLutRequirementReady &&
@@ -2416,6 +2505,11 @@ namespace EndfieldGraphShaderLabEditor
                 observedTransition = observedTransition,
                 observedSettledLoop = observedSettledLoop,
                 observedAnimatorContract = observedAnimatorContract,
+                observedRecoveredAclPosePublication =
+                    observedRecoveredAclPosePublication,
+                recoveredAclPoseBoundTransformCount =
+                    recoveredAclPoseBoundTransformCount,
+                recoveredAclPoseFailure = recoveredAclPoseFailure,
                 observedEntranceVfx = observedEntranceVfx,
                 observedEntranceVfxCleanup = observedEntranceVfxCleanup,
                 observedOverview01AuthenticatedSourceSeed =
