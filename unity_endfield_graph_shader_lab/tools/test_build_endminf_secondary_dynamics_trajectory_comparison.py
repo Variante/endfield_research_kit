@@ -22,6 +22,10 @@ SPEC.loader.exec_module(MODULE)
 class TrajectoryComparisonTests(unittest.TestCase):
     def test_current_capture_schema_is_admitted_explicitly(self) -> None:
         self.assertIn(
+            "endfield.endminf-viewer-playmode-sequence.v19",
+            MODULE.SUPPORTED_UNITY_SCHEMAS,
+        )
+        self.assertIn(
             "endfield.endminf-viewer-playmode-sequence.v18",
             MODULE.SUPPORTED_UNITY_SCHEMAS,
         )

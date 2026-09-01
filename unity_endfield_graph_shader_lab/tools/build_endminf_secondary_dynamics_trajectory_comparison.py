@@ -29,6 +29,7 @@ SUPPORTED_UNITY_SCHEMAS = frozenset({
     "endfield.endminf-viewer-playmode-sequence.v4",
     "endfield.endminf-viewer-playmode-sequence.v5",
     "endfield.endminf-viewer-playmode-sequence.v18",
+    "endfield.endminf-viewer-playmode-sequence.v19",
 })
 
 

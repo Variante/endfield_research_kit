@@ -29,13 +29,19 @@ namespace EndfieldGraphShaderLab
         public const float SourceTweenDurationSeconds = 2.0f;
         public const float SourceVerticalCurveScale = 0.15f;
         public const float SourceHorizontalCurveScale = -0.25f;
+        // UIGyroscopeEffect.Tick compares the evaluated raw target Vector3 to
+        // m_lastValue once, before changing or creating the DOTween. This is
+        // not an input-position epsilon and must not be repeated by the tween.
+        public const float SourceRawTargetChangeThresholdSquared = 1e-10f;
 
         public enum RecoveryMode
         {
             Off,
             NeutralCenteredInput,
             SerializedEntry,
+            LiveInput,
             RecordedInputEndpoint,
+            Invalid,
         }
 
         private readonly struct CurveKey
@@ -74,20 +80,32 @@ namespace EndfieldGraphShaderLab
         public static bool TryApplyOverview(
             Camera camera,
             string actorName,
-            Vector3 referenceLookAt)
+            Vector3 referenceLookAt,
+            Vector2 serializedEntryOffsets)
         {
             if (camera == null)
                 throw new ArgumentNullException(nameof(camera));
 
             RecoveryMode mode = ResolveMode();
-            if (mode == RecoveryMode.Off)
-                return false;
-
-            if (!TryResolveOffsets(mode, actorName, out Vector2 offsets))
+            if (mode == RecoveryMode.Invalid)
             {
                 Debug.LogWarning(
                     "Recovered CharInfo gyroscope camera state failed closed: " +
-                    $"mode={mode}, actor={actorName}. Recorded-input mode requires " +
+                    "the nonempty gyroscope mode selector is unknown.");
+                return false;
+            }
+            if (mode == RecoveryMode.Off)
+                return false;
+
+            if (!TryResolveOffsets(
+                    mode,
+                    serializedEntryOffsets,
+                    out Vector2 offsets))
+            {
+                Debug.LogWarning(
+                    "Recovered CharInfo gyroscope camera state failed closed: " +
+                    $"mode={mode}, actor={actorName}. Live-input mode requires a " +
+                    "valid screen extent; recorded-input mode requires " +
                     $"{InputXEnvironmentVariable} and {InputYEnvironmentVariable} in [-1,1].");
                 return false;
             }
@@ -142,41 +160,132 @@ namespace EndfieldGraphShaderLab
         public static bool TryConfigureRuntimeOverview(
             Camera camera,
             string actorName,
-            Vector3 referenceLookAt)
+            Vector3 referenceLookAt,
+            Vector2 serializedEntryOffsets)
         {
             if (camera == null)
                 throw new ArgumentNullException(nameof(camera));
             RecoveryMode mode = ResolveMode();
             EndfieldRecoveredCharInfoGyroscopeTween tween =
                 camera.GetComponent<EndfieldRecoveredCharInfoGyroscopeTween>();
-            if (mode != RecoveryMode.RecordedInputEndpoint)
+            EndfieldRecoveredCharInfoGyroscopeInputDriver inputDriver =
+                camera.GetComponent<EndfieldRecoveredCharInfoGyroscopeInputDriver>();
+            if (mode == RecoveryMode.Invalid)
             {
                 if (tween != null)
                     tween.enabled = false;
+                if (inputDriver != null)
+                    inputDriver.enabled = false;
+                Debug.LogWarning(
+                    "Recovered CharInfo runtime gyroscope tween failed closed: " +
+                    "the nonempty gyroscope mode selector is unknown.");
                 return false;
             }
-            if (!TryResolveOffsets(
-                    RecoveryMode.SerializedEntry,
-                    actorName,
-                    out Vector2 entryOffsets) ||
-                !TryResolveOffsets(mode, actorName, out Vector2 targetOffsets))
+            if (mode == RecoveryMode.Off)
             {
                 if (tween != null)
                     tween.enabled = false;
+                if (inputDriver != null)
+                    inputDriver.enabled = false;
+                return false;
+            }
+
+            if (!IsFinite(serializedEntryOffsets.x) ||
+                !IsFinite(serializedEntryOffsets.y))
+            {
+                if (tween != null)
+                    tween.enabled = false;
+                if (inputDriver != null)
+                    inputDriver.enabled = false;
+                Debug.LogWarning(
+                    "Recovered CharInfo runtime gyroscope tween failed closed: " +
+                    $"actor={actorName} has no finite serialized source entry offsets.");
+                return false;
+            }
+
+            if (mode != RecoveryMode.LiveInput &&
+                mode != RecoveryMode.RecordedInputEndpoint)
+            {
+                if (tween != null)
+                    tween.enabled = false;
+                if (inputDriver != null)
+                    inputDriver.enabled = false;
+                if (!TryResolveOffsets(
+                        mode,
+                        serializedEntryOffsets,
+                        out Vector2 staticOffsets))
+                    return false;
+                ApplyCenteredOverviewOffsets(
+                    camera,
+                    camera.transform.position,
+                    referenceLookAt,
+                    staticOffsets);
+                return true;
+            }
+
+            Vector2 targetOffsets = serializedEntryOffsets;
+            if (mode == RecoveryMode.LiveInput)
+            {
+                // Do not sample Input.mousePosition while configuring the
+                // camera. The source driver owns that poll on its PreLate tick.
+                if (Screen.width <= 0 || Screen.height <= 0)
+                {
+                    if (tween != null)
+                        tween.enabled = false;
+                    if (inputDriver != null)
+                        inputDriver.enabled = false;
+                    Debug.LogWarning(
+                        "Recovered CharInfo live gyroscope failed closed: " +
+                        $"actor={actorName}, screen={Screen.width}x{Screen.height}.");
+                    return false;
+                }
+            }
+            else if (!TryResolveOffsets(
+                         mode,
+                         serializedEntryOffsets,
+                         out targetOffsets))
+            {
+                if (tween != null)
+                    tween.enabled = false;
+                if (inputDriver != null)
+                    inputDriver.enabled = false;
                 Debug.LogWarning(
                     "Recovered CharInfo runtime gyroscope tween failed closed: " +
                     $"actor={actorName}. Recorded-input mode requires " +
                     $"{InputXEnvironmentVariable} and {InputYEnvironmentVariable} in [-1,1].");
                 return false;
             }
+
+            // m_lastValue is a non-serialized Vector3 and therefore starts at
+            // zero. The recorded-input diagnostic crosses the same one source
+            // gate as Tick; live input crosses it in the PreLate driver.
+            if (mode == RecoveryMode.RecordedInputEndpoint &&
+                !ShouldRetargetRawTarget(Vector2.zero, targetOffsets))
+            {
+                targetOffsets = serializedEntryOffsets;
+            }
+
             if (tween == null)
                 tween = camera.gameObject.AddComponent<EndfieldRecoveredCharInfoGyroscopeTween>();
             tween.Configure(
                 camera.transform.position,
                 referenceLookAt,
-                entryOffsets,
+                serializedEntryOffsets,
                 targetOffsets,
                 SourceTweenDurationSeconds);
+            if (mode == RecoveryMode.LiveInput)
+            {
+                if (inputDriver == null)
+                {
+                    inputDriver = camera.gameObject.AddComponent<
+                        EndfieldRecoveredCharInfoGyroscopeInputDriver>();
+                }
+                inputDriver.Configure(tween);
+            }
+            else if (inputDriver != null)
+            {
+                inputDriver.enabled = false;
+            }
             return true;
         }
 
@@ -214,20 +323,40 @@ namespace EndfieldGraphShaderLab
             return new Vector2(offsetX, offsetY);
         }
 
-        public static Vector2 SerializedEntryOffsets(string actorName)
+        public static bool TryNormalizeMousePosition(
+            Vector3 mousePosition,
+            int screenWidth,
+            int screenHeight,
+            out Vector2 normalizedInput)
         {
-            if (string.Equals(actorName, "Wulfa", StringComparison.OrdinalIgnoreCase))
-                return new Vector2(0.2483662f, -0.143241f);
-            if (string.Equals(actorName, "Zhuangfy", StringComparison.OrdinalIgnoreCase))
-                return new Vector2(-0.2489724f, 0.08848439f);
-            if (string.Equals(actorName, "Endminf", StringComparison.OrdinalIgnoreCase))
-                return new Vector2(0.24835543f, -0.1448596f);
-            return new Vector2(float.NaN, float.NaN);
+            if (screenWidth <= 0 || screenHeight <= 0 ||
+                !IsFinite(mousePosition.x) || !IsFinite(mousePosition.y))
+            {
+                normalizedInput = Vector2.zero;
+                return false;
+            }
+
+            float halfWidth = screenWidth * 0.5f;
+            float halfHeight = screenHeight * 0.5f;
+            normalizedInput = new Vector2(
+                (Mathf.Clamp(mousePosition.x, 0.0f, screenWidth) - halfWidth) /
+                    halfWidth,
+                (Mathf.Clamp(mousePosition.y, 0.0f, screenHeight) - halfHeight) /
+                    halfHeight);
+            return true;
+        }
+
+        public static bool ShouldRetargetRawTarget(
+            Vector2 previousRawTarget,
+            Vector2 nextRawTarget)
+        {
+            return (nextRawTarget - previousRawTarget).sqrMagnitude >=
+                SourceRawTargetChangeThresholdSquared;
         }
 
         private static bool TryResolveOffsets(
             RecoveryMode mode,
-            string actorName,
+            Vector2 serializedEntryOffsets,
             out Vector2 offsets)
         {
             switch (mode)
@@ -236,21 +365,24 @@ namespace EndfieldGraphShaderLab
                     offsets = EvaluateSourceMouseEndpoint(0.0f, 0.0f);
                     return true;
                 case RecoveryMode.SerializedEntry:
-                    offsets = SerializedEntryOffsets(actorName);
+                    offsets = serializedEntryOffsets;
                     return IsFinite(offsets.x) && IsFinite(offsets.y);
-                case RecoveryMode.RecordedInputEndpoint:
-                    if (TryReadFloatSelector(
-                            InputXEnvironmentVariable,
-                            InputXCommandLineArgument,
-                            out float inputX) &&
-                        TryReadFloatSelector(
-                            InputYEnvironmentVariable,
-                            InputYCommandLineArgument,
-                            out float inputY) &&
-                        inputX >= -1.0f && inputX <= 1.0f &&
-                        inputY >= -1.0f && inputY <= 1.0f)
+                case RecoveryMode.LiveInput:
+                    if (TryReadLiveNormalizedMouseInput(out Vector2 liveInput))
                     {
-                        offsets = EvaluateSourceMouseEndpoint(inputX, inputY);
+                        offsets = EvaluateSourceMouseEndpoint(
+                            liveInput.x,
+                            liveInput.y);
+                        return true;
+                    }
+                    break;
+                case RecoveryMode.RecordedInputEndpoint:
+                    if (TryGetRecordedNormalizedInput(
+                            out Vector2 recordedInput))
+                    {
+                        offsets = EvaluateSourceMouseEndpoint(
+                            recordedInput.x,
+                            recordedInput.y);
                         return true;
                     }
                     break;
@@ -260,7 +392,38 @@ namespace EndfieldGraphShaderLab
             return false;
         }
 
-        private static RecoveryMode ResolveMode()
+        internal static bool TryReadLiveNormalizedMouseInput(
+            out Vector2 normalizedInput)
+        {
+            return TryNormalizeMousePosition(
+                Input.mousePosition,
+                Screen.width,
+                Screen.height,
+                out normalizedInput);
+        }
+
+        public static bool TryGetRecordedNormalizedInput(
+            out Vector2 normalizedInput)
+        {
+            if (TryReadFloatSelector(
+                    InputXEnvironmentVariable,
+                    InputXCommandLineArgument,
+                    out float inputX) &&
+                TryReadFloatSelector(
+                    InputYEnvironmentVariable,
+                    InputYCommandLineArgument,
+                    out float inputY) &&
+                inputX >= -1.0f && inputX <= 1.0f &&
+                inputY >= -1.0f && inputY <= 1.0f)
+            {
+                normalizedInput = new Vector2(inputX, inputY);
+                return true;
+            }
+            normalizedInput = Vector2.zero;
+            return false;
+        }
+
+        public static RecoveryMode ResolveMode()
         {
             string value = Environment.GetEnvironmentVariable(
                 ModeEnvironmentVariable);
@@ -286,12 +449,17 @@ namespace EndfieldGraphShaderLab
             {
                 return RecoveryMode.SerializedEntry;
             }
+            if (string.Equals(value, "live", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "live-input", StringComparison.OrdinalIgnoreCase))
+            {
+                return RecoveryMode.LiveInput;
+            }
             if (string.Equals(value, "recorded-input", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(value, "recorded-input-endpoint", StringComparison.OrdinalIgnoreCase))
             {
                 return RecoveryMode.RecordedInputEndpoint;
             }
-            return RecoveryMode.Off;
+            return RecoveryMode.Invalid;
         }
 
         private static bool TryReadFloatSelector(
@@ -351,7 +519,7 @@ namespace EndfieldGraphShaderLab
             return keys[last].value;
         }
 
-        private static string ModeName(RecoveryMode mode)
+        public static string ModeName(RecoveryMode mode)
         {
             switch (mode)
             {
@@ -359,14 +527,74 @@ namespace EndfieldGraphShaderLab
                     return "neutral-centered-input";
                 case RecoveryMode.SerializedEntry:
                     return "serialized-entry";
+                case RecoveryMode.LiveInput:
+                    return "live-input";
                 case RecoveryMode.RecordedInputEndpoint:
                     return "recorded-input-endpoint";
+                case RecoveryMode.Invalid:
+                    return "invalid";
                 default:
                     return "off";
             }
         }
     }
 
+    /// <summary>
+    /// Interactive public-Unity adapter for UIGyroscopeEffect's source PreLate
+    /// path. Retail polls Beyond.Input.InputManager.mousePosition, including
+    /// its virtual/controller state; the lab can provide only UnityEngine.Input
+    /// mousePosition. The normalization, evaluated-target change threshold,
+    /// curve evaluation, and replacement tween are recovered exactly. Batch
+    /// capture rejects this provider-incomplete, non-deterministic adapter.
+    /// </summary>
+    [DefaultExecutionOrder(-90)]
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(Camera))]
+    public sealed class EndfieldRecoveredCharInfoGyroscopeInputDriver : MonoBehaviour
+    {
+        private EndfieldRecoveredCharInfoGyroscopeTween tween;
+        private Vector2 previousRawTarget;
+        private bool configured;
+
+        public void Configure(EndfieldRecoveredCharInfoGyroscopeTween sourceTween)
+        {
+            tween = sourceTween;
+            // The retail m_lastValue field is not serialized. A newly-awake
+            // UIGyroscopeEffect therefore begins with Vector3.zero.
+            previousRawTarget = Vector2.zero;
+            configured = tween != null;
+            enabled = configured;
+            if (configured)
+            {
+                Debug.Log(
+                    "Recovered CharInfo live gyroscope input active: " +
+                    "provider=UnityEngine.Input.mousePosition, sourcePhase=PreLate, " +
+                    "adapterCallback=LateUpdate, equivalenceClaim=false.");
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (!configured || tween == null)
+                return;
+            if (!EndfieldRecoveredCharInfoGyroscopeCameraState
+                    .TryReadLiveNormalizedMouseInput(out Vector2 normalizedInput))
+                return;
+            Vector2 rawTarget =
+                EndfieldRecoveredCharInfoGyroscopeCameraState
+                    .EvaluateSourceMouseEndpoint(
+                        normalizedInput.x,
+                        normalizedInput.y);
+            if (!EndfieldRecoveredCharInfoGyroscopeCameraState
+                    .ShouldRetargetRawTarget(previousRawTarget, rawTarget))
+                return;
+
+            previousRawTarget = rawTarget;
+            tween.RetargetRawTarget(rawTarget);
+        }
+    }
+
+    [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
     public sealed class EndfieldRecoveredCharInfoGyroscopeTween : MonoBehaviour
@@ -409,29 +637,24 @@ namespace EndfieldGraphShaderLab
         /// starts the replacement OutQuad from the value reached by the
         /// preceding tween, rather than from the serialized actor entry.
         /// </summary>
-        public bool RetargetNormalizedMouseInput(
-            float normalizedMouseX,
-            float normalizedMouseY)
+        public void RetargetRawTarget(Vector2 nextTarget)
         {
-            Vector2 nextTarget =
-                EndfieldRecoveredCharInfoGyroscopeCameraState
-                    .EvaluateSourceMouseEndpoint(
-                        normalizedMouseX,
-                        normalizedMouseY);
-            if ((nextTarget - targetOffsets).sqrMagnitude <= 1e-10f)
-                return false;
-
+            // Tick already performed the one source m_lastValue gate. The
+            // active retail tween uses ChangeEndValue(..., -1, true). DOTween's
+            // -1 sentinel preserves the created two-second duration, while
+            // snapStartValue=true starts at the value the prior tween reached.
             entryOffsets = EvaluateCurrentOffsets();
             targetOffsets = nextTarget;
             elapsed = 0.0f;
             enabled = true;
             ApplyCurrent();
-            return true;
         }
 
         private void LateUpdate()
         {
-            elapsed = Mathf.Min(duration, elapsed + Time.unscaledDeltaTime);
+            // The source creates a default DOTween and never selects
+            // independent/unscaled update, so its clock is scaled deltaTime.
+            elapsed = Mathf.Min(duration, elapsed + Time.deltaTime);
             ApplyCurrent();
             if (elapsed >= duration)
                 enabled = false;

@@ -43,11 +43,9 @@ exit /b 2
   rem The exact Uber packet remains an explicit diagnostic. Its native draw is
   rem validated, but the captured SceneColor/input chronology is not yet closed
   rem and the current replay regresses every aligned effect sample versus off.
-  rem Recording-specific live cursor endpoint measured from the canonical clean
-  rem videos/2026-08-26_21-25-50.mkv reference at source pixel (1036,75).
-  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=recorded-input"
-  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_X=-0.4604167"
-  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_INPUT_Y=0.9305556"
+  rem Reproduce UIGyroscopeEffect from the current live cursor through its
+  rem recovered screen normalization, curves, PreLate change edge, and OutQuad.
+  set "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE=live-input"
   set "ENDFIELD_CHARACTER_RECOVERY_INITIAL_MODEL=Endminf"
   echo Opening Endminf reproduction with authored effect timelines and source-backed presentation.
   "%UNITY_EXE%" -projectPath "%PROJECT_PATH%" -force-d3d11 -executeMethod EndfieldGraphShaderLabEditor.EndfieldEndminfOverviewEffectBindingBuilder.OpenVisualReproductionInPlayMode

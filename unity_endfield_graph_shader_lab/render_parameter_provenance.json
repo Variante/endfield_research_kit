@@ -595,10 +595,11 @@
     },
     {
       "id": "camera.charinfo.gyroscope_finalize_state",
-      "scope": "wulfa_zhuangfy_default_off_camera_input_endpoint",
+      "scope": "charinfo_source_closed_camera_input_and_retarget_contract",
       "currentValue": {
         "nativeCallback": "Beyond.UI.CinemachineGyroscopeEffect.PostPipelineStageCallback at Finalize; PositionCorrection += RawOrientation*(offsetX,offsetY,0), then preserve the prior look offset",
-        "inputDriver": "UIGyroscopeEffect PreLate; original vertical/horizontal curves; target scales +0.15/-0.25; 2-second OutQuad replacement of extension offsets",
+        "inputDriver": "UIGyroscopeEffect PreLate polls Beyond.Input.InputManager.get_mousePosition, clamps to Screen width/height, subtracts and divides by half extents, evaluates the original vertical/horizontal curves, and applies target scales +0.15/-0.25",
+        "retarget": "one evaluated-target m_lastValue squared-distance gate; inactive branch creates the serialized 2-second tween and applies serialized ease 6 (OutQuad); active branch calls ChangeEndValue with native duration-preservation sentinel -1 and snapStartValue=true",
         "centeredMouseSettledOffsets": [
           -0.0014590695,
           -0.0079590753
@@ -627,17 +628,18 @@
           "off",
           "neutral-centered-input",
           "serialized-entry",
+          "live-input",
           "recorded-input-endpoint"
         ]
       },
-      "status": "exact_native_finalize_callback_curves_and_source_endpoints",
+      "status": "exact_native_finalize_poll_normalization_curve_gate_and_retarget_contract",
       "productionEligible": false,
-      "activation": "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE; default off in ordinary and cumulative captures",
-      "source": "installed UI.Beyond metadata/native GameAssembly bodies plus Wulfa/Zhuangfy UIGyroscopeEffect and CinemachineGyroscopeEffect MonoBehaviour records",
+      "activation": "ENDFIELD_RECOVERED_CHARINFO_GYROSCOPE_MODE; interactive default off. Canonical/batch capture defaults to the Endminf presentation profile's serialized-entry state, admits only auditable deterministic selectors, and rejects live-input",
+      "source": "exact-build UI.Beyond metadata/native GameAssembly bodies plus Wulfa, Zhuangfy, and Endminf UIGyroscopeEffect/CinemachineGyroscopeEffect MonoBehaviour records with raw payload hashes",
       "evidence": "memory/charinfo_gyroscope_camera_state_recovery_20260714.md; Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoGyroscope/source_manifest.json; scratch/charinfo_gyroscope_effect_recovery_20260714.md; scratch/charinfo_gyroscope_recovery_verification_20260714.json",
       "code": "Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldRecoveredCharInfoGyroscopeCameraState.cs; tools/verify_charinfo_gyroscope_recovery.py",
-      "limitation": "the capture-time cursor/controller state and two-second transition timeline were not recorded. Serialized offsets are entry state and must not be treated as universal settled values",
-      "action": "use source-defined endpoint modes for diagnostics; replay only a recorded input trace when exact capture-time input becomes available"
+      "limitation": "the capture-time cursor/controller samples remain external. Retail Beyond.Input includes virtual/controller state that public Unity does not expose; the interactive UnityEngine.Input.mousePosition adapter is explicitly provider-incomplete and makes no retail-input-equivalence claim. Serialized offsets are actor-owned entry state, not universal settled values",
+      "action": "keep canonical/batch capture deterministic and auditable; use live-input only for interactive inspection, and replay explicit normalized inputs only when their provider and values are reported"
     },
     {
       "id": "scene.operator_environment_direction",
