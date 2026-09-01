@@ -206,6 +206,29 @@ class AnimatorTimelineCaptureTests(unittest.TestCase):
                                         "observer SHA-256 differs"):
                 MODULE.build_report(capture, expected_observer_sha256="00")
 
+    def test_wrong_observer_size_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            capture = Path(temporary)
+            observer_hash = self.make_capture(capture)
+            observer = capture / "private/EndfieldCapture.dll"
+            with self.assertRaisesRegex(MODULE.TimelineError,
+                                        "observer byte size differs"):
+                MODULE.build_report(
+                    capture, expected_observer_sha256=observer_hash,
+                    expected_observer_bytes=observer.stat().st_size + 1)
+
+    def test_default_contract_matches_current_release_artifact(self) -> None:
+        observer = (HERE.parents[1] /
+                    "tools/EndfieldCapture/build-local/Release/EndfieldCapture.dll")
+        if not observer.is_file():
+            self.skipTest("local Release observer has not been built")
+        facts = MODULE.OBSERVER_BUILD.validate_observer_binary(
+            observer, build_label="test Release observer")
+        self.assertEqual(
+            MODULE.OBSERVER_CONTRACT["runtime"]["sha256"], facts["sha256"])
+        self.assertEqual(
+            MODULE.OBSERVER_CONTRACT["runtime"]["bytes"], facts["bytes"])
+
     def test_missing_transition_fails(self) -> None:
         def mutate(capture: Path) -> None:
             path, data = self.metadata(capture)

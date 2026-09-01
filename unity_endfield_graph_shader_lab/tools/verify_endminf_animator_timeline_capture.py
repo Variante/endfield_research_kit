@@ -14,18 +14,24 @@ from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_OBSERVER_SHA256 = (
-    "3EFF5BCDD2F130D7344148D4812E57ABFB60D34747A6D8BCB589AB80876DAF6E")
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_draw_contract_capture",
     HERE / "verify_endminf_draw_contract_capture.py")
 assert SPEC and SPEC.loader
 BASE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BASE)
+OBSERVER_SPEC = importlib.util.spec_from_file_location(
+    "endfield_capture_observer_build_contract",
+    HERE.parents[1] / "scripts/endfield_capture_observer_build_contract.py")
+assert OBSERVER_SPEC and OBSERVER_SPEC.loader
+OBSERVER_BUILD = importlib.util.module_from_spec(OBSERVER_SPEC)
+OBSERVER_SPEC.loader.exec_module(OBSERVER_BUILD)
+OBSERVER_CONTRACT = OBSERVER_BUILD.load_contract()
 
 EXPECTED_SCHEMA = "endfieldCapture.endminfAnimatorTimeline.v3"
 EXPECTED_CHARACTER = "chr_0003_endminf"
-EXPECTED_CAPACITY = 8192
+EXPECTED_CAPACITY = OBSERVER_CONTRACT["producerContracts"][
+    "animatorTimeline"]["sampleCapacity"]
 HEX_IDENTITY = re.compile(r"0x[1-9a-fA-F][0-9a-fA-F]*\Z")
 EXPECTED_START_STATE = {
     "name": "Base Layer.Overview.FromOveview",
@@ -523,16 +529,18 @@ def validate_metadata(metadata: dict[str, Any],
 
 
 def build_report(capture: Path, *,
-                 expected_observer_sha256: str =
-                 DEFAULT_OBSERVER_SHA256) -> dict[str, Any]:
+                 expected_observer_sha256: str | None = None,
+                 expected_observer_bytes: int | None = None) -> dict[str, Any]:
     capture = capture.resolve()
     observer = capture / "private/EndfieldCapture.dll"
-    require(observer.is_file(), f"captured observer binary is absent: {observer}")
-    observed_sha = sha256(observer)
-    require(observed_sha == expected_observer_sha256.upper(),
-            "captured observer SHA-256 differs from the animator timeline "
-            f"build: expected {expected_observer_sha256.upper()}, "
-            f"observed {observed_sha}")
+    try:
+        observer_facts = OBSERVER_BUILD.validate_observer_binary(
+            observer, build_label="animator timeline build",
+            expected_sha256=expected_observer_sha256,
+            expected_bytes=expected_observer_bytes)
+    except OBSERVER_BUILD.ObserverBuildContractError as exc:
+        raise TimelineError(str(exc)) from exc
+    observed_sha = observer_facts["sha256"]
     session = BASE.validate_session(capture)
     summary_path = capture / "graphics/summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))

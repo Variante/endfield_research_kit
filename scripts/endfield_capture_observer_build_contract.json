@@ -1,0 +1,18 @@
+{
+  "schema": "endfield.endfield-capture-observer-build-contract.v1",
+  "producerSourceCommit": "a67832a7eef373da0b87c436aab4aff2b143c7dd",
+  "runtime": {
+    "file": "EndfieldCapture.dll",
+    "bytes": 971264,
+    "sha256": "AB3751947715F2E4028A7A431092E8EADADC47FC2C0E5F5B4E9F8BE786E2A3FF"
+  },
+  "producerContracts": {
+    "animatorTimeline": {
+      "sampleCapacity": 8192
+    },
+    "m31Chronology": {
+      "candidateAttemptCapacity": 8192,
+      "censusCapacity": 8192
+    }
+  }
+}

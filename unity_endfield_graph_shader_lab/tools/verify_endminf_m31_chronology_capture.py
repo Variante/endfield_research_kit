@@ -12,14 +12,20 @@ from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_OBSERVER_SHA256 = (
-    "3EFF5BCDD2F130D7344148D4812E57ABFB60D34747A6D8BCB589AB80876DAF6E")
 SPEC = importlib.util.spec_from_file_location(
     "verify_endminf_draw_contract_capture",
     HERE / "verify_endminf_draw_contract_capture.py")
 assert SPEC and SPEC.loader
 BASE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BASE)
+OBSERVER_SPEC = importlib.util.spec_from_file_location(
+    "endfield_capture_observer_build_contract",
+    HERE.parents[1] / "scripts/endfield_capture_observer_build_contract.py")
+assert OBSERVER_SPEC and OBSERVER_SPEC.loader
+OBSERVER_BUILD = importlib.util.module_from_spec(OBSERVER_SPEC)
+OBSERVER_SPEC.loader.exec_module(OBSERVER_BUILD)
+OBSERVER_CONTRACT = OBSERVER_BUILD.load_contract()
+M31_CONTRACT = OBSERVER_CONTRACT["producerContracts"]["m31Chronology"]
 
 
 class ChronologyError(RuntimeError):
@@ -91,13 +97,29 @@ def validate_summary(capture: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             "graphics summary reports a nonzero M31 chronology HRESULT")
     count = integer(summary.get("m31ChronologyCensusCount"),
                     "M31 chronology census count")
-    require(count <= 64, "M31 chronology census count exceeds capacity 64")
+    require(count <= M31_CONTRACT["censusCapacity"],
+            "M31 chronology census count exceeds capacity "
+            f"{M31_CONTRACT['censusCapacity']}")
+    require(integer(summary.get("m31ChronologyCandidateAttemptCapacity"),
+                    "M31 chronology candidate-attempt capacity") ==
+            M31_CONTRACT["candidateAttemptCapacity"],
+            "M31 chronology candidate-attempt capacity differs from the "
+            "observer build contract")
+    candidate_attempts = integer(
+        summary.get("m31ChronologyCandidateAttempts"),
+        "M31 chronology candidate attempts")
+    require(candidate_attempts <= M31_CONTRACT["candidateAttemptCapacity"],
+            "M31 chronology candidate attempts exceed capacity "
+            f"{M31_CONTRACT['candidateAttemptCapacity']}")
     staging = integer(summary.get("m31ChronologyStagingBytes"),
                       "M31 chronology staging bytes", 1)
     return session, {field: summary[field] for field in true_fields} | {
         "m31ChronologyFailed": False,
         "m31ChronologyCensusCount": count,
         "m31ChronologyCensusTruncated": False,
+        "m31ChronologyCandidateAttemptCapacity":
+            M31_CONTRACT["candidateAttemptCapacity"],
+        "m31ChronologyCandidateAttempts": candidate_attempts,
         "m31ChronologyStagingBytes": staging,
         "m31ChronologyFailureHresult": 0,
     }
@@ -135,17 +157,20 @@ def changed_bytes(left: Path, right: Path) -> int:
 
 
 def build_report(capture: Path, *,
-                 expected_observer_sha256: str = DEFAULT_OBSERVER_SHA256,
+                 expected_observer_sha256: str | None = None,
+                 expected_observer_bytes: int | None = None,
                  expected_width: int = 3840,
                  expected_height: int = 2160) -> dict[str, Any]:
     capture = capture.resolve()
     observer = capture / "private/EndfieldCapture.dll"
-    require(observer.is_file(), f"captured observer binary is absent: {observer}")
-    observed_sha = sha256(observer)
-    require(observed_sha == expected_observer_sha256.upper(),
-            "captured observer SHA-256 differs from the corrected M31 "
-            f"chronology build: expected {expected_observer_sha256.upper()}, "
-            f"observed {observed_sha}")
+    try:
+        observer_facts = OBSERVER_BUILD.validate_observer_binary(
+            observer, build_label="corrected M31 chronology build",
+            expected_sha256=expected_observer_sha256,
+            expected_bytes=expected_observer_bytes)
+    except OBSERVER_BUILD.ObserverBuildContractError as exc:
+        raise ChronologyError(str(exc)) from exc
+    observed_sha = observer_facts["sha256"]
     session, summary = validate_summary(capture)
 
     root = capture / "graphics/m31_chronology"
@@ -163,8 +188,18 @@ def build_report(capture: Path, *,
             "M31 chronology metadata complete gate is false")
     require(metadata.get("triad") == [1082, 443, 32],
             "M31 chronology base-vertex triad is not [1082, 443, 32]")
-    require(integer(metadata.get("censusCapacity"), "census capacity") == 64,
-            "M31 chronology census capacity is not 64")
+    require(integer(metadata.get("candidateAttemptCapacity"),
+                    "candidate-attempt capacity") ==
+            M31_CONTRACT["candidateAttemptCapacity"],
+            "M31 chronology candidate-attempt capacity differs from the "
+            "observer build contract")
+    require(integer(metadata.get("candidateAttempts"), "candidate attempts") ==
+            summary["m31ChronologyCandidateAttempts"],
+            "metadata and graphics-summary candidate-attempt counts differ")
+    require(integer(metadata.get("censusCapacity"), "census capacity") ==
+            M31_CONTRACT["censusCapacity"],
+            "M31 chronology census capacity differs from the observer build "
+            "contract")
     census_count = integer(metadata.get("censusCount"), "census count")
     require(census_count == summary["m31ChronologyCensusCount"],
             "metadata and graphics-summary census counts differ")
