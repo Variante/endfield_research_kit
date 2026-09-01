@@ -31,6 +31,8 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
         # a retail frame are not, so the runtime route and its IFix-dependent
         # FromToRotation state must remain fail closed.
         self.assertFalse(contract["calc_line_normal_tangent_numerics_recovered"])
+        self.assertTrue(contract["calc_line_burst_numerics_recovered"])
+        self.assertTrue(contract["create_list_kernel_numerics_recovered"])
         self.assertTrue(contract["calc_line_burst_function_pointer_target_closed"])
         self.assertFalse(contract["selected_calc_line_execution_route_closed"])
         self.assertFalse(contract["from_to_rotation_ifix_patch_state_closed"])
@@ -44,7 +46,7 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "public const byte FlagMove = 0x02;",
             "public const uint ChildLocalStartMask = 0x000fffffU;",
             "public const int ChildCountShift = 20;",
-            "directionAccumulator = restVector;",
+            "directionAccumulator = Add(directionAccumulator, childDirection);",
             "MultiplyQuaternionBinary32(parent.rotation, signedLocalRotation)",
             "MultiplyQuaternionBinary32(parentFromTo, parent.rotation)",
             "u.x > u.y && u.x > u.z",
@@ -92,13 +94,14 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "VerifyAntiparallelAxisSelection",
             "VerifyBinary32HelperGrouping",
             "VerifyParentAndChildEquations",
-            "VerifyNonMoveAssignmentProperty",
+            "VerifyPerChildDirectionAndParentSum",
             "VerifyEmptyAndUndefinedBranchesFailClosed",
         ):
             self.assertIn(method + "();", source)
         self.assertIn("zero FromTo input must fail closed", source)
         self.assertIn("negative-X antiparallel zero-axis branch must fail closed", source)
-        self.assertIn("non-move assigns direction accumulator", source)
+        self.assertIn("non-move child direction uses rest vector", source)
+        self.assertIn("parent direction sums every child direction", source)
         self.assertIn("0x3f3504f4U, 0x3f3504f3U", source)
         self.assertIn("BitConverter.SingleToInt32Bits", source)
         self.assertNotIn("Tolerance", source)

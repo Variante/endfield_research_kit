@@ -92,6 +92,178 @@
     }
   },
   "targets": {
+    "createPostProxyMeshUpdateList": {
+      "status": "static_semantic_export_dual_cpu_equations_and_buffers_closed_runtime_route_unobserved",
+      "managedWorkerMethodIndex": 384832,
+      "kernelWrapperMethodIndex": 384830,
+      "directCallInvokeMethodIndex": 384843,
+      "candidateHash": "ef715c6829f8df5c4396ed6a395d3bb0",
+      "abiShapeCandidates": [
+        "3e6b9ccd6fd50a2a4ba0cc0521fc2dba",
+        "463402ec49aaa2fc35216cbb91a6b624",
+        "a351a48b53dbea9102fe6e7a42e7fbc3",
+        "e359f302619847aeca832710b725db85",
+        "ef715c6829f8df5c4396ed6a395d3bb0"
+      ],
+      "export": {
+        "ordinal": 3091,
+        "rva": "0x362af0",
+        "spanBytes": 96,
+        "bodyBytes": 81,
+        "bodySha256": "c42a67de3829ab624ffbdeb153fe8f880bda6bb634a17a82eedb39fce48cf2eb",
+        "stackWriteOffsets": [
+          "0x20",
+          "0x28",
+          "0x30",
+          "0x38",
+          "0x40",
+          "0x48"
+        ],
+        "stackWriteWidths": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "functionPointerSlotRva": "0x3c6a30",
+        "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+        "exactBodyBytes": 81
+      },
+      "parameterContract": {
+        "parameterCount": 10,
+        "parameterNames": [
+          "teamDataArray",
+          "processingCounter0",
+          "processingList0",
+          "processingCounter1",
+          "processingList1",
+          "processingCounter2",
+          "processingList2",
+          "processingCounter3",
+          "processingList3",
+          "teamId"
+        ],
+        "lastParameter": "teamId System.Int32"
+      },
+      "functionPointerSlotRva": "0x3c6a30",
+      "variants": [
+        {
+          "cpuVariant": "x64_sse2",
+          "burstInitializeAssignment": {
+            "rva": "0x35fefe",
+            "bytes": 14,
+            "sha256": "b13a84969287bba4c7f4a5d2960080a297ffe4df37926dbe6acd038a591a380d",
+            "functionPointerSlotRva": "0x3c6a30"
+          },
+          "entry": {
+            "rva": "0xf3a80",
+            "bytes": 80,
+            "sha256": "7732caae7ea8a6432588ddd36c00fcdfb0c63060ba90a0e74eb30083df04dbf7"
+          },
+          "solverCore": {
+            "rva": "0xf3ad0",
+            "bytes": 951,
+            "sha256": "1a032caef0f1f620f05665ab236c15e89483a43d10e6463e40adf0826b21bbda",
+            "directCallTargets": []
+          },
+          "contiguousSequenceVectorization": {
+            "minimumCount": 8,
+            "elementsPerVectorLoop": 8,
+            "constants": [
+              {
+                "rva": "0x364a10",
+                "bytes": "000000000100000002000000030000000400000004000000040000000400000008000000080000000800000008000000"
+              }
+            ]
+          }
+        },
+        {
+          "cpuVariant": "avx2",
+          "burstInitializeAssignment": {
+            "rva": "0x35bcc7",
+            "bytes": 14,
+            "sha256": "6f077cd12d57c6c368de50e85e65bcdcc6f3c1bcb2695782bef3bb137dfa71f9",
+            "functionPointerSlotRva": "0x3c6a30"
+          },
+          "entry": {
+            "rva": "0x284590",
+            "bytes": 54,
+            "sha256": "c06d5391bd179913ba721f25a7bba96a80ccb52b4e6cb2ae5776f3b14e2d2dfa"
+          },
+          "solverCore": {
+            "rva": "0x2845d0",
+            "bytes": 1145,
+            "sha256": "ac1747a45021702a7b88789dbdfdef99ac44e9df2d3d61aef30b0b04d105e734",
+            "directCallTargets": []
+          },
+          "contiguousSequenceVectorization": {
+            "minimumCount": 32,
+            "elementsPerVectorLoop": 32,
+            "constants": [
+              {
+                "rva": "0x3668a0",
+                "bytes": "0000000001000000020000000300000004000000050000000600000007000000"
+              },
+              {
+                "rva": "0x3644f4",
+                "bytes": "08000000"
+              },
+              {
+                "rva": "0x3668c0",
+                "bytes": "100000001800000020000000"
+              }
+            ]
+          }
+        }
+      ],
+      "teamSelection": {
+        "strideBytes": 464,
+        "zeroTeamIdReturns": true,
+        "enableAndCullingMask": "(teamQword0 & 0x2000000000080802) == 2",
+        "boundsCheck": null
+      },
+      "queues": [
+        {
+          "queue": 0,
+          "sourceStartOffset": "0x124",
+          "sourceCountOffset": "0x128",
+          "conditions": [
+            "field+0x138 > 0",
+            "field+0x128 > 0"
+          ]
+        },
+        {
+          "queue": 1,
+          "sourceStartOffset": "0x124",
+          "sourceCountOffset": "0x128",
+          "conditions": [
+            "field+0x118 == 3"
+          ],
+          "nonPositiveCount": "atomic counter still adds the signed count; no elements are written"
+        },
+        {
+          "queue": 2,
+          "sourceStartOffset": "0x15c",
+          "sourceCountOffset": "0x160",
+          "conditions": [
+            "field+0x160 > 0"
+          ]
+        },
+        {
+          "queue": 3,
+          "sourceStartOffset": "0x134",
+          "sourceCountOffset": "0x138",
+          "conditions": [
+            "field+0x138 > 0"
+          ]
+        }
+      ],
+      "queueEquation": "old = atomic_fetch_add(counter, signedCount); for i in [0,count): list[old+i] = sourceStart+i",
+      "bufferBoundary": "No capacity or team-index bounds check exists in either core. Signed 32-bit reservation/index arithmetic is preserved; SIMD is only an integer contiguous-sequence optimization and falls back to scalar writes when its signed-overflow guard rejects the vector path.",
+      "numericBoundary": "Both exact CPU cores contain no helper calls and close the same four integer queue equations as the managed fallback. Runtime selection remains unobserved but does not change the recovered queue result."
+    },
     "calcLineNormalTangent": {
       "status": "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
       "managedWorkerMethodIndex": 384856,

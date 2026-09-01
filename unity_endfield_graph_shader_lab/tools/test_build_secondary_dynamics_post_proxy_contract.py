@@ -27,12 +27,13 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         payload = self.payload
         self.assertEqual(
             payload["status"],
-            "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
+            "post_proxy_create_list_and_calc_line_burst_numerics_closed_runtime_selection_open",
         )
         self.assertTrue(payload["manager_schedule_closed"])
         self.assertTrue(payload["managed_job_payload_layout_closed"])
         self.assertTrue(payload["generic_methodspec_identities_closed"])
         self.assertTrue(payload["create_list_worker_control_flow_recovered"])
+        self.assertTrue(payload["create_list_directcall_route_recovered"])
         self.assertTrue(payload["calc_line_entry_control_flow_recovered"])
         self.assertTrue(payload["calc_line_child_traversal_recovered"])
         self.assertTrue(payload["calc_line_managed_worker_equations_recovered"])
@@ -46,8 +47,10 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertTrue(payload["burst_initial_default_conditions_closed"])
         self.assertTrue(payload["from_to_rotation_installed_local_ifix_target_absent"])
         self.assertTrue(payload["from_to_rotation_installed_local_ifix_bootstrap_absent"])
-        self.assertFalse(payload["create_list_kernel_numerics_recovered"])
+        self.assertTrue(payload["create_list_kernel_numerics_recovered"])
         self.assertFalse(payload["calc_line_normal_tangent_numerics_recovered"])
+        self.assertTrue(payload["calc_line_burst_numerics_recovered"])
+        self.assertFalse(payload["selected_create_list_execution_route_closed"])
         self.assertFalse(payload["selected_calc_line_execution_route_closed"])
         self.assertFalse(payload["from_to_rotation_ifix_patch_state_closed"])
         self.assertFalse(payload["selected_cross_frame_route_closed"])
@@ -189,6 +192,24 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual([row["atomicReserveOffset"] for row in flow["atomicQueueAppends"]],
                          ["0x110", "0x143", "0x191", "0x1d5"])
         self.assertIn("No captured indices", flow["operation"])
+        route = self.payload["createListDirectCallRoute"]
+        self.assertEqual(route["kernelWrapper"]["invokeCallOffset"], "0xa6")
+        self.assertEqual(route["invoke"]["managedFallbackCallOffset"], "0x12b")
+        self.assertEqual(
+            route["burstFunctionPointerTarget"]["candidateHash"],
+            "ef715c6829f8df5c4396ed6a395d3bb0",
+        )
+        variants = {
+            row["cpuVariant"]: row
+            for row in route["burstFunctionPointerTarget"]["variants"]
+        }
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["rva"], "0xf3ad0")
+        self.assertEqual(variants["avx2"]["solverCore"]["rva"], "0x2845d0")
+        self.assertEqual(
+            [row["queue"] for row in route["burstFunctionPointerTarget"]["queues"]],
+            [0, 1, 2, 3],
+        )
+        self.assertEqual(route["selectedRuntimeRoute"], "unresolved")
 
     def test_calc_line_exact_abi_and_parent_indices_boundary(self) -> None:
         flow = self.payload["calcLineEntryControlFlow"]
@@ -240,8 +261,14 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual(packed["localStart"], "packed & 0x000fffff (lower 20 bits)")
         child = flow["childTraversal"]
         self.assertIn("negativeScaleDirection", child["restVector"])
-        self.assertIn("Flag_Move (0x02)", child["directionAccumulatorMoveBranch"])
-        self.assertIn("directionAccumulator = restVector", child["directionAccumulatorNonMoveBranch"])
+        self.assertIn("Flag_Move (0x02)", child["childDirectionMoveBranch"])
+        self.assertIn("childDirection = restVector", child["childDirectionNonMoveBranch"])
+        self.assertIn("parentDirectionSum += childDirection", child["parentDirectionSum"])
+        self.assertEqual(
+            child["parentDirectionSumCallOffsets"],
+            {"nonMoveBranch": "0x460", "moveBranch": "0x4e4"},
+        )
+        self.assertEqual(child["childFromToCallOffset"], "0x548")
         self.assertEqual((child["moveBitSemanticEvidence"]["methodIndex"],
                           child["moveBitSemanticEvidence"]["startVa"]),
                          (386730, "0x1866ff05c"))
@@ -255,6 +282,10 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual(parent["write"],
                          "rotations[parentVertex] = math.mul(parentFromTo, parentRotation)")
         self.assertIn("no normal/tangent output array", flow["normalTangentNamingBoundary"])
+        burst_numeric = self.payload["calcLineBurstNumerics"]
+        self.assertIn("z2=z*z", burst_numeric["equations"]["acos64Grouping"])
+        self.assertIn("zero cross axis", burst_numeric["degeneracy"]["negativeXAxis"])
+        self.assertIn("live IFix patch 0x219", burst_numeric["runtimeBoundary"])
 
     def test_from_to_rotation_equation_and_degeneracy_boundary(self) -> None:
         flow = self.payload["calcLineEntryControlFlow"]

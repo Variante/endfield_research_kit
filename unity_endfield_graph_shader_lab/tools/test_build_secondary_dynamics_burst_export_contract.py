@@ -59,6 +59,7 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
     def test_direct_call_identity_and_parameter_contracts_are_explicit(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
         calc_line = payload["targets"]["calcLineNormalTangent"]
+        create_list = payload["targets"]["createPostProxyMeshUpdateList"]
         simulation = payload["targets"]["simulationStartRange"]
         start = payload["targets"]["colliderStartRange"]
         end = payload["targets"]["colliderEndRange"]
@@ -67,6 +68,10 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(calc_line["directCallInvokeMethodIndex"], 384867)
         self.assertEqual(calc_line["parameterContract"]["parameterCount"], 17)
         self.assertEqual(calc_line["parameterContract"]["lastParameter"], "index System.Int32")
+        self.assertEqual(create_list["managedWorkerMethodIndex"], 384832)
+        self.assertEqual(create_list["kernelWrapperMethodIndex"], 384830)
+        self.assertEqual(create_list["directCallInvokeMethodIndex"], 384843)
+        self.assertEqual(create_list["parameterContract"]["parameterCount"], 10)
         self.assertEqual(simulation["directInvokeMethodIndex"], 385570)
         self.assertEqual(simulation["parameterContract"]["parameterCount"], 29)
         self.assertEqual(simulation["parameterContract"]["directInvokeNativeArrayParameterCount"], 24)
@@ -123,6 +128,30 @@ class SecondaryDynamicsBurstExportTests(unittest.TestCase):
         self.assertEqual(calc_line["semanticDiscriminator"]["clothParameters"]["strideBytes"], 808)
         self.assertIn("neither core calls GameAssembly", calc_line["ifixBoundary"])
         self.assertIn("unobserved", calc_line["runtimeSelection"])
+
+    def test_create_list_exact_export_and_integer_queue_equations_are_closed(self) -> None:
+        payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))
+        target = payload["targets"]["createPostProxyMeshUpdateList"]
+        self.assertEqual(
+            target["status"],
+            "static_semantic_export_dual_cpu_equations_and_buffers_closed_runtime_route_unobserved",
+        )
+        self.assertEqual(target["candidateHash"], "ef715c6829f8df5c4396ed6a395d3bb0")
+        self.assertEqual(target["functionPointerSlotRva"], "0x3c6a30")
+        self.assertEqual(len(target["abiShapeCandidates"]), 5)
+        variants = {row["cpuVariant"]: row for row in target["variants"]}
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["rva"], "0xf3ad0")
+        self.assertEqual(variants["x64_sse2"]["solverCore"]["directCallTargets"], [])
+        self.assertEqual(variants["avx2"]["solverCore"]["rva"], "0x2845d0")
+        self.assertEqual(
+            variants["x64_sse2"]["contiguousSequenceVectorization"]["minimumCount"], 8
+        )
+        self.assertEqual(
+            variants["avx2"]["contiguousSequenceVectorization"]["minimumCount"], 32
+        )
+        self.assertEqual([row["queue"] for row in target["queues"]], [0, 1, 2, 3])
+        self.assertIn("atomic_fetch_add", target["queueEquation"])
+        self.assertIn("No capacity", target["bufferBoundary"])
 
     def test_simulation_semantic_fingerprint_is_closed_at_runtime_boundary(self) -> None:
         payload = json.loads(builder.DEFAULT_OUTPUT.read_text(encoding="utf-8"))

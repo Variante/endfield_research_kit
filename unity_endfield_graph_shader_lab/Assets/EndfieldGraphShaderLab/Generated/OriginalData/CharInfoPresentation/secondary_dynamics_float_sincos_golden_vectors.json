@@ -18,11 +18,20 @@
       "sha256": "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e6c45f9d3ceb99"
     }
   },
-  "helper": {
-    "rva": "0x1e5d30",
-    "bytes": 521,
-    "sha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
-  },
+  "helpers": [
+    {
+      "cpuVariant": "x64_sse2",
+      "rva": "0x6e860",
+      "bytes": 496,
+      "sha256": "542a4e9e9c3d9631a1f5dfff36628d62603938361adfd468b6abb283002fb047"
+    },
+    {
+      "cpuVariant": "avx2",
+      "rva": "0x1e5d30",
+      "bytes": 521,
+      "sha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+    }
+  ],
   "largeReducer": {
     "rva": "0x1de840",
     "bytes": 1134,
@@ -70,7 +79,7 @@
     "sourceCallsNativeHelper": false,
     "sourceReadsNativeReducerTable": false
   },
-  "harnessSha256": "def68983448cccb1a23959a8ce8e17c8681ec6f5785e2754d0a5c2d8fa324c17",
+  "harnessSha256": "d818def47a0d62a990193f6243597483e79872e1e3eb76d299d10cb876a69ebc",
   "vectors": [
     {
       "name": "positive_zero",
@@ -411,6 +420,10 @@
   ],
   "boundary": {
     "nativeHelperExecuted": true,
+    "nativeCpuVariantsExecuted": [
+      "x64_sse2",
+      "avx2"
+    ],
     "sourceOnlyTranscriptionMatchedBitForBit": true,
     "caseCount": 24,
     "unityPortExecuted": true,
