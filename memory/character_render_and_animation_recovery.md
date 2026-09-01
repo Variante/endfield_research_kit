@@ -189,6 +189,36 @@ the outer return; the false path remains intact and all 20 native tests pass.
   temporal delta MAE 15.4863 versus 15.4818), confirming that the visible
   remaining jerk belongs to sparse secondary replay/unsolved cloth history,
   not permission to tune the body trajectory.
+  The two automatic Legacy owners under Endminf overview_01 now start from one
+  authenticated `ui_overview_start` source-state clock sample: exactly
+  `effect_01/A_actor_endminf_ui_overview_02` and
+  `effect_nanguan/A_fx_endminf_ui_overview_04` must be present, enabled,
+  Legacy, unique, and automatic before either is played or the source-post
+  clock is published. The raw elapsed time is assigned once after `Play`, with
+  no clamp, repeat, continuous resampling, or particle retiming. Runtime v2
+  marker validation continues to rejoin every source PathID and descendant
+  name, but canonicalizes the mutable Unity clone root back to the marker's
+  pinned `effectRoot`; failures now report the deterministic row and bounded
+  expected/actual hierarchy instead of a generic drift status. A dedicated
+  D3D11 source rebuild and a 770-frame Viewer capture pass the two-clip seed,
+  start-to-loop, settled-loop, four-root VFX, 68-renderer, M01/M38/M27 stone and
+  crystal, suikuai, cleanup, and secondary-ownership gates.
+  The retained peak Uber packet's body/reference mapping remains 4.35 seconds,
+  while its captured radial/chromatic lanes solve the authenticated source-
+  effect clock to 4.4333334 seconds; exact packet admission now uses the latter
+  clock domain. The incomplete Far-only and physical-HDR sky branches remain
+  explicit diagnostics and cannot satisfy canonical background inclusion.
+  Canonical presentation holds the fitted plate off, keeps the source portrait,
+  uses the existing neutral preview camera clear `(0.70,0.71,0.70,1)`, and
+  requires presented top-left 128x128 luma at 0.65, 4.4333334, and 6.65 seconds;
+  the current 770-frame report closes those frames at indices 41/268/401 with
+  minimum mean/pixel luma 165.9324/154. The opening post pulse is deliberately
+  outside this static-carrier gate. Across 554 bounded clean-reference rows the
+  refreshed sequence's best -1-frame alignment is 32.6150 actor ROI, 34.5048
+  effect ROI, and 15.2511 temporal-delta MAE. This removes the false black-
+  background regression but is not parity: remaining differences include the
+  retail floor/grid/background composite, source portrait grade, and unresolved
+  effect/temporal ownership. Do not fit those gaps with a screenshot plate.
   Captured
   Forward vertex streams are undeformed and duplicated; retail skinning lives
   in structured SRV `vs-t0`. Decompiled CharacterNPR Skin PreGBuffer vertex

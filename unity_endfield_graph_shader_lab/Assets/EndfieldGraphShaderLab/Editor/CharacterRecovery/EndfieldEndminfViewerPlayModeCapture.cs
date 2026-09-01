@@ -42,6 +42,17 @@ namespace EndfieldGraphShaderLabEditor
         // Match the complete no-frame-generation retail segment through the
         // sustained loop tail, rather than stopping at the former 10 s export.
         private const int VideoFrameCount = 770;
+        private const int BackgroundProofEdgePixels = 128;
+        private const float MinimumBackgroundProofMeanLuma = 100.0f;
+        private const int MinimumBackgroundProofPixelLuma = 80;
+        private static readonly Color CanonicalSolidBackgroundColor =
+            new Color(0.70f, 0.71f, 0.70f, 1.0f);
+        private static readonly float[] CanonicalBackgroundProofTimes =
+        {
+            0.65f,
+            4.4333334f,
+            6.65f,
+        };
         // Direct UI-free registration of the retained retail Uber output places
         // the August 24 no-frame-generation pulse on the authored body clock.
         // The older August 21 route's 0.15-second offset remains available as
@@ -171,6 +182,7 @@ namespace EndfieldGraphShaderLabEditor
         private static bool capturePostStages;
         private static bool captureSecondaryDynamics;
         private static bool captureRetainedSkinningDiagnostic;
+        private static bool captureCanonicalSolidColorBackground;
         private static bool enableSecondaryDynamicsSolver;
         private static bool enableCapturedSecondaryDynamicsReplay;
         private static string prePostHdrCohort;
@@ -182,7 +194,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v20";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v21";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -193,12 +205,18 @@ namespace EndfieldGraphShaderLabEditor
             public bool actorOnlyCapture =
                 !IncludeCharInfoBackground && !IncludeBackgroundPortrait;
             public bool charInfoBackgroundRequested = IncludeCharInfoBackground;
-            public bool endminfSourceBackgroundRequested = IncludeCharInfoBackground;
+            public bool endminfSourceBackgroundRequested;
+            public bool canonicalSolidColorBackgroundRequested;
             public bool backgroundPortraitRequested = IncludeBackgroundPortrait;
             public bool charInfoBackgroundIncluded;
             public bool endminfSourceBackgroundIncluded;
+            public bool canonicalSolidColorBackgroundIncluded;
             public bool fittedCompatibilityPlateActive;
             public bool backgroundPortraitIncluded;
+            public float[] canonicalSolidColorBackgroundProofTimes;
+            public int[] canonicalSolidColorBackgroundProofFrameIndices;
+            public float minimumCanonicalBackgroundProofLumaMean;
+            public int minimumCanonicalBackgroundProofLuma;
             public bool foregroundUiOverlayIncluded = false;
             public bool postProcessingExplicitlyDisabled = false;
             public bool prePostHdrDiagnostic;
@@ -414,6 +432,8 @@ namespace EndfieldGraphShaderLabEditor
             public EndfieldEndminfRetainedSkinningDiagnostic.RendererRow[]
                 retainedSkinningRenderers;
             public string[] blockedRendererIdentities;
+            public float topLeftBackgroundLumaMean;
+            public int topLeftBackgroundLumaMin;
             public int changedPixelsFromPrevious;
             public long absoluteRgbDifferenceFromPrevious;
         }
@@ -584,6 +604,20 @@ namespace EndfieldGraphShaderLabEditor
             // merely because its parent shell lacks these process variables.
             bool videoExportRequested = Environment.GetEnvironmentVariable(
                 "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT") == "1";
+            string sourceBackgroundSelection =
+                Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceBackgroundEnvironmentVariable);
+            bool sourceBackgroundExplicitlyDisabled = string.Equals(
+                sourceBackgroundSelection,
+                "0",
+                StringComparison.Ordinal);
+            // Canonical video always uses the neutral preview camera clear.
+            // An explicit zero gives focused probes the same carrier.
+            // The incomplete Far-only branch remains available only when a
+            // caller explicitly runs a source-background diagnostic.
+            captureCanonicalSolidColorBackground =
+                videoExportRequested || sourceBackgroundExplicitlyDisabled;
             if (videoExportRequested)
             {
                 foreach (string flag in CanonicalVideoDefaultFlags)
@@ -621,9 +655,18 @@ namespace EndfieldGraphShaderLabEditor
             // hand-crystal row. The ten source-identified M01/M38 primary-rock
             // renderers remain separate ForwardOnly owners; disabling the
             // whole compatibility binding removed those stones from the shot.
-            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(
+            if (captureCanonicalSolidColorBackground)
+            {
+                Environment.SetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
-                        .EndminfSourceBackgroundEnvironmentVariable)))
+                        .EndminfSourceBackgroundEnvironmentVariable,
+                    "0");
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoSky
+                        .MaterialOnlyDiagnosticEnvironmentVariable,
+                    "1");
+            }
+            else if (string.IsNullOrWhiteSpace(sourceBackgroundSelection))
             {
                 Environment.SetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
@@ -650,6 +693,20 @@ namespace EndfieldGraphShaderLabEditor
             // stale generated prefab when that source is missing or drifted.
             EndfieldEndminfOverviewEffectImporter.BuildAndValidate();
             EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();
+            // The binding builder intentionally selects its source-background
+            // diagnostic while authoring the generated scene. Restore the
+            // canonical/explicitly-disabled process selector after that
+            // mutation, then invalidate the already-running editor cache
+            // before opening the Play-mode scene.
+            if (captureCanonicalSolidColorBackground)
+            {
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceBackgroundEnvironmentVariable,
+                    "0");
+                EndfieldRecoveredCharInfoPresentation
+                    .RefreshStandaloneSelection();
+            }
             // The overview rebuild refreshes transient source prefabs. Restore
             // the direct LitEffect rows afterward so both compatibility and
             // exact M27 owners receive the same hash-validated references.
@@ -1161,6 +1218,10 @@ namespace EndfieldGraphShaderLabEditor
                     requested);
             }
             Color32[] pixels = Render(camera);
+            MeasureTopLeftBackground(
+                pixels,
+                out float topLeftBackgroundLumaMean,
+                out int topLeftBackgroundLumaMin);
             // ReadPixels in Render synchronizes this focused D3D11 capture, so
             // the render-thread plugin callback must be observable here. Do
             // not accept a submitted event as proof that an exact packet drew.
@@ -1711,6 +1772,8 @@ namespace EndfieldGraphShaderLabEditor
                             material == null ? "<null>" : material.name + " -> " +
                                 (material.shader == null ? "<null shader>" : material.shader.name))))
                     .OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+                topLeftBackgroundLumaMean = topLeftBackgroundLumaMean,
+                topLeftBackgroundLumaMin = topLeftBackgroundLumaMin,
                 changedPixelsFromPrevious = changed, absoluteRgbDifferenceFromPrevious = difference
             });
             next++;
@@ -1926,15 +1989,55 @@ namespace EndfieldGraphShaderLabEditor
                 !IncludeCharInfoBackground || IsEndminfSourceBackgroundActive();
             bool fittedCompatibilityPlateActive =
                 IsFittedCompatibilityPlateActive();
+            FrameRow[] canonicalBackgroundProofFrames =
+                SelectCanonicalBackgroundProofFrames();
+            float minimumCanonicalBackgroundProofLumaMean =
+                canonicalBackgroundProofFrames.Length == 0
+                ? 0.0f
+                : canonicalBackgroundProofFrames.Min(
+                    value => value.topLeftBackgroundLumaMean);
+            int minimumCanonicalBackgroundProofLuma =
+                canonicalBackgroundProofFrames.Length == 0
+                ? 0
+                : canonicalBackgroundProofFrames.Min(
+                    value => value.topLeftBackgroundLumaMin);
+            bool canonicalSolidColorBackgroundIncluded =
+                !IncludeCharInfoBackground ||
+                (captureCanonicalSolidColorBackground &&
+                 !endminfSourceBackgroundIncluded &&
+                 !fittedCompatibilityPlateActive &&
+                 IsCanonicalSolidColorBackgroundCamera(camera) &&
+                 canonicalBackgroundProofFrames.Length ==
+                    CanonicalBackgroundProofTimes.Length &&
+                 minimumCanonicalBackgroundProofLumaMean >=
+                    MinimumBackgroundProofMeanLuma &&
+                 minimumCanonicalBackgroundProofLuma >=
+                    MinimumBackgroundProofPixelLuma);
             bool charInfoBackgroundIncluded =
-                endminfSourceBackgroundIncluded &&
-                !fittedCompatibilityPlateActive;
+                canonicalSolidColorBackgroundIncluded;
             bool backgroundPortraitIncluded =
                 !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
             if (!charInfoBackgroundIncluded)
                 missingObservations.Add(
-                    "active Endminf source background with exact Far and all " +
-                    "incomplete/fitted background renderers disabled");
+                    "canonical Endminf SolidColor background: expected camera " +
+                    "RGBA(0.70,0.71,0.70,1), incomplete source/fitted routes " +
+                    "off, and 0.65/4.4333334/6.65 s top-left 128x128 luma " +
+                    "mean/min >= " +
+                    MinimumBackgroundProofMeanLuma.ToString(
+                        "0.0", CultureInfo.InvariantCulture) + "/" +
+                    MinimumBackgroundProofPixelLuma + "; actual source=" +
+                    endminfSourceBackgroundIncluded + ", fitted=" +
+                    fittedCompatibilityPlateActive + ", camera=" +
+                    camera.clearFlags + " " +
+                    camera.backgroundColor.ToString("F5") + ", mean/min=" +
+                    minimumCanonicalBackgroundProofLumaMean.ToString(
+                        "0.00", CultureInfo.InvariantCulture) + "/" +
+                    minimumCanonicalBackgroundProofLuma + ", proofFrames=" +
+                    string.Join(
+                        ",",
+                        canonicalBackgroundProofFrames.Select(
+                            value => value.index.ToString(
+                                CultureInfo.InvariantCulture)).ToArray()));
             if (fittedCompatibilityPlateActive)
                 missingObservations.Add(
                     "fitted Endminf compatibility plate remained active");
@@ -1989,10 +2092,11 @@ namespace EndfieldGraphShaderLabEditor
                 Frames.Count > 0 && Frames.Any(
                     value => value.exactEndminfUberValidated);
             // Capture 20260827T183054Z frame 1818 is the sole certified Uber
-            // packet, at overview phase 4.350000 s. The runtime assembly keeps
-            // its transport internal, so mirror only this evidence constant in
-            // the editor-side report gate.
-            const float capturedUberPhaseSeconds = 4.35f;
+            // packet. Its body/reference frame maps to 4.350000 s, but retained
+            // c0.z/c25.y solve the authenticated source-effect curves to
+            // 4.4333334 s. The runtime assembly keeps its transport internal,
+            // so mirror only the source-effect evidence constant here.
+            const float capturedUberPhaseSeconds = 4.4333334f;
             bool capturedUberPhaseIncluded = Frames.Any(value =>
                 value.endminfPostEvaluated && Mathf.Abs(
                     value.endminfPostSeconds -
@@ -2172,11 +2276,30 @@ namespace EndfieldGraphShaderLabEditor
                 fps = captureFps,
                 graphicsDeviceType = SystemInfo.graphicsDeviceType.ToString(),
                 charInfoBackgroundIncluded = charInfoBackgroundIncluded,
+                endminfSourceBackgroundRequested = string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        EndfieldRecoveredCharInfoPresentation
+                            .EndminfSourceBackgroundEnvironmentVariable),
+                    "1",
+                    StringComparison.Ordinal),
+                canonicalSolidColorBackgroundRequested =
+                    captureCanonicalSolidColorBackground,
                 endminfSourceBackgroundIncluded =
                     endminfSourceBackgroundIncluded,
+                canonicalSolidColorBackgroundIncluded =
+                    canonicalSolidColorBackgroundIncluded,
                 fittedCompatibilityPlateActive =
                     fittedCompatibilityPlateActive,
                 backgroundPortraitIncluded = backgroundPortraitIncluded,
+                canonicalSolidColorBackgroundProofTimes =
+                    CanonicalBackgroundProofTimes.ToArray(),
+                canonicalSolidColorBackgroundProofFrameIndices =
+                    canonicalBackgroundProofFrames.Select(
+                        value => value.index).ToArray(),
+                minimumCanonicalBackgroundProofLumaMean =
+                    minimumCanonicalBackgroundProofLumaMean,
+                minimumCanonicalBackgroundProofLuma =
+                    minimumCanonicalBackgroundProofLuma,
                 recoveredLinearUnormFinalTargetRequested =
                     HDRenderPipeline.IsRecoveredLinearUnormFinalTargetRequested(),
                 renderPipeline = GraphicsSettings.currentRenderPipeline == null ? "BuiltIn" : GraphicsSettings.currentRenderPipeline.GetType().FullName,
@@ -2382,6 +2505,39 @@ namespace EndfieldGraphShaderLabEditor
                     value.compatibilityBackdropRenderer != null &&
                     value.compatibilityBackdropRenderer.enabled &&
                     value.compatibilityBackdropRenderer.gameObject.activeInHierarchy);
+        }
+
+        private static bool IsCanonicalSolidColorBackgroundCamera(Camera value)
+        {
+            if (value == null || value.clearFlags != CameraClearFlags.SolidColor)
+                return false;
+            Color actual = value.backgroundColor;
+            return Mathf.Abs(actual.r - CanonicalSolidBackgroundColor.r) <= 1.0e-4f &&
+                Mathf.Abs(actual.g - CanonicalSolidBackgroundColor.g) <= 1.0e-4f &&
+                Mathf.Abs(actual.b - CanonicalSolidBackgroundColor.b) <= 1.0e-4f &&
+                Mathf.Abs(actual.a - CanonicalSolidBackgroundColor.a) <= 1.0e-4f;
+        }
+
+        private static FrameRow[] SelectCanonicalBackgroundProofFrames()
+        {
+            if (Frames.Count == 0)
+                return Array.Empty<FrameRow>();
+            var selected = new List<FrameRow>(
+                CanonicalBackgroundProofTimes.Length);
+            float maximumPhaseError = 1.0f / (2.0f * SimulationFps) + 1.0e-5f;
+            foreach (float target in CanonicalBackgroundProofTimes)
+            {
+                FrameRow nearest = Frames
+                    .OrderBy(value => Mathf.Abs(value.requestedSeconds - target))
+                    .FirstOrDefault();
+                if (nearest == null || Mathf.Abs(
+                        nearest.requestedSeconds - target) > maximumPhaseError)
+                {
+                    return Array.Empty<FrameRow>();
+                }
+                selected.Add(nearest);
+            }
+            return selected.ToArray();
         }
 
         private static bool IsBackgroundPortraitActive()
@@ -2833,6 +2989,40 @@ namespace EndfieldGraphShaderLabEditor
             Color32[] pixels = texture.GetPixels32();
             value.targetTexture = null; RenderTexture.active = old; UnityEngine.Object.Destroy(texture); rt.Release(); UnityEngine.Object.Destroy(rt);
             return pixels;
+        }
+
+        private static void MeasureTopLeftBackground(
+            Color32[] pixels,
+            out float meanLuma,
+            out int minimumLuma)
+        {
+            if (pixels == null || pixels.Length != captureWidth * captureHeight)
+            {
+                throw new InvalidDataException(
+                    "Endminf background proof requires one complete presented " +
+                    "frame; expected " + (captureWidth * captureHeight) +
+                    " pixels, actual " + (pixels == null ? 0 : pixels.Length) + ".");
+            }
+            int width = Math.Min(BackgroundProofEdgePixels, captureWidth);
+            int height = Math.Min(BackgroundProofEdgePixels, captureHeight);
+            long lumaSum = 0;
+            minimumLuma = 255;
+            // Texture2D.GetPixels32 uses bottom-left ordering. Start at the
+            // highest rows to prove the unobscured top-left carrier after the
+            // complete render pipeline, not merely the camera configuration.
+            for (int y = captureHeight - height; y < captureHeight; y++)
+            {
+                int row = y * captureWidth;
+                for (int x = 0; x < width; x++)
+                {
+                    Color32 pixel = pixels[row + x];
+                    int luma = (54 * pixel.r + 183 * pixel.g +
+                        19 * pixel.b + 128) >> 8;
+                    lumaSum += luma;
+                    minimumLuma = Math.Min(minimumLuma, luma);
+                }
+            }
+            meanLuma = lumaSum / (float)(width * height);
         }
 
         private static Color32[] Read(string path)

@@ -271,15 +271,46 @@ class EndminfBackdropContractTests(unittest.TestCase):
             ".EndminfBackdropVisualCompatibilityEnvironmentVariable,",
             ".ReadySubsetEnvironmentVariable,",
             "IsEndminfSourceBackgroundActive()",
+            "IsCanonicalSolidColorBackgroundCamera(camera)",
             "IsFittedCompatibilityPlateActive()",
             "public bool fittedCompatibilityPlateActive;",
+            "public bool canonicalSolidColorBackgroundIncluded;",
         ):
             self.assertIn(token, capture)
         self.assertGreaterEqual(capture.count('"0");'), 2)
 
+        canonical_start = capture.index(
+            "captureCanonicalSolidColorBackground ="
+        )
+        canonical_end = capture.index(
+            "EndfieldEndminfLitEffectCompatibilityBindingBuilder",
+            canonical_start,
+        )
+        canonical_path = capture[canonical_start:canonical_end]
+        self.assertIn(
+            "videoExportRequested || sourceBackgroundExplicitlyDisabled",
+            canonical_path,
+        )
+        self.assertIn(
+            "EndfieldEndminfOverviewEffectBindingBuilder.BuildAndValidate();",
+            canonical_path,
+        )
+        self.assertGreaterEqual(
+            canonical_path.count("EndminfSourceBackgroundEnvironmentVariable"),
+            2,
+        )
+        self.assertIn('"0");', canonical_path)
+        self.assertIn(
+            ".MaterialOnlyDiagnosticEnvironmentVariable",
+            canonical_path,
+        )
+        self.assertIn('"1");', canonical_path)
+        self.assertIn("RefreshStandaloneSelection();", canonical_path)
+
         launcher = LAUNCHER.read_text(encoding="utf-8")
         for token in (
-            'set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=1"',
+            'set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=0"',
+            'set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE_MATERIAL_ONLY_DIAGNOSTIC=1"',
             'set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"',
             'set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"',
             'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
@@ -306,6 +337,76 @@ class EndminfBackdropContractTests(unittest.TestCase):
         self.assertNotIn("referenceBackdrop.enabled = true;", builder)
         self.assertNotIn("new Color(0.735f, 0.755f, 0.765f", builder)
         self.assertNotIn("camera.aspect = 16f / 9f;", builder)
+
+    def test_canonical_background_requires_presented_pixel_proof(self):
+        capture = CAPTURE.read_text(encoding="utf-8")
+        pipeline = PIPELINE.read_text(encoding="utf-8")
+        for token in (
+            "BackgroundProofEdgePixels = 128",
+            "MinimumBackgroundProofMeanLuma = 100.0f",
+            "MinimumBackgroundProofPixelLuma = 80",
+            "new Color(0.70f, 0.71f, 0.70f, 1.0f)",
+            "MeasureTopLeftBackground(",
+            "Color32[] pixels",
+            "captureHeight - height",
+            "54 * pixel.r + 183 * pixel.g",
+            "public float topLeftBackgroundLumaMean;",
+            "public int topLeftBackgroundLumaMin;",
+            "CanonicalBackgroundProofTimes",
+            "0.65f",
+            "4.4333334f",
+            "6.65f",
+            "SelectCanonicalBackgroundProofFrames()",
+            "minimumCanonicalBackgroundProofLumaMean",
+            "minimumCanonicalBackgroundProofLuma",
+            "canonicalSolidColorBackgroundProofFrameIndices",
+        ):
+            self.assertIn(token, capture)
+
+        gate_start = capture.index(
+            "bool canonicalSolidColorBackgroundIncluded ="
+        )
+        gate_end = capture.index(
+            "bool backgroundPortraitIncluded =",
+            gate_start,
+        )
+        gate = capture[gate_start:gate_end]
+        for token in (
+            "captureCanonicalSolidColorBackground",
+            "!endminfSourceBackgroundIncluded",
+            "!fittedCompatibilityPlateActive",
+            "IsCanonicalSolidColorBackgroundCamera(camera)",
+            "canonicalBackgroundProofFrames.Length ==",
+            "CanonicalBackgroundProofTimes.Length",
+            "MinimumBackgroundProofMeanLuma",
+            "MinimumBackgroundProofPixelLuma",
+            "charInfoBackgroundIncluded =\n                canonicalSolidColorBackgroundIncluded",
+        ):
+            self.assertIn(token, gate)
+        self.assertNotIn(
+            "charInfoBackgroundIncluded =\n                endminfSourceBackgroundIncluded",
+            capture,
+        )
+        clear_start = pipeline.index(
+            "bool selectedCharInfoMaterialOnlySolidColor ="
+        )
+        clear_end = pipeline.index(
+            "commandBuffer.ClearRenderTarget(true, true, sceneColorClear);",
+            clear_start,
+        )
+        clear_path = pipeline[clear_start:clear_end]
+        for token in (
+            "selectedGachaSceneColor",
+            "RecoveredGachaSceneColorClear",
+            "drawRecoveredCharInfoSky",
+            "Color.clear",
+            "selectedCharInfoMaterialOnlySolidColor",
+            "camera.GetComponent<EndfieldRecoveredCharInfoSky>() != null",
+            "EndfieldRecoveredCharInfoSky.MaterialOnlyDiagnosticRequested()",
+            "camera.backgroundColor",
+            "asset.clearColor",
+        ):
+            self.assertIn(token, clear_path)
 
     def test_maintained_paths_force_capture_fitted_and_incomplete_routes_off(self):
         capture = CAPTURE.read_text(encoding="utf-8")
