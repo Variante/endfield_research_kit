@@ -308,8 +308,30 @@ the outer return; the false path remains intact and all 20 native tests pass.
   conditional pinned-unpatched route, FromOveview starts the child state during
   `EffectInstance.Start` and then applies the one-shot raw
   `length * normalizedTime` seed after Start returns.
-  Child `GameObject.SetActive`/LOD display ownership, the retail effect tick
-  domain, and any absolute capture/video offset remain unresolved.
+  Child `GameObject.SetActive`/LOD display is also closed under that same
+  conditional pinned-unpatched route. The original serialized TypeTree has
+  `effect_nanguan.m_IsActive=true`; `EffectLodCfg.InitData` preserves that as
+  `m_initActive`. Normal immediate creation reaches `EffectInstance.InitLod`,
+  which copies the manager quality through `SetAllSettingLod` and refreshes
+  every row. The manager normalizes quality to exactly one of `{1,2,4,8}`, so
+  row 30's authored setting mask `15` admits every possible normalized value;
+  its authored target mask `3` admits the untouched runtime target default
+  `1`, and its sole distance row is active. `_RefreshLod` therefore requests
+  `GameObject.SetActive(true)` for row 30. The authored masks are not runtime
+  `showSettingLodLevel`/`showTargetLayers` values and must not be copied as
+  hardcoded `15/3` display state. The lab activation preflight now pins all 101
+  original GameObject TypeTree active bits plus the exact metadata identities,
+  method pointers/bodies, `8/1` defaults, normalization branches, creation-to-
+  refresh calls, `_RefreshLod` predicate/`SetActive` identity, and installed-
+  local IFix nonreplacement. The exhaustive target-layer caller census maps
+  only to `BattleNormalEffect._RefreshGuardLodAlpha` and the hash-pinned cold
+  blocks returning into `BattleNormalEffect._RefreshTowerLod`, excluding the
+  normal FromOveview/create/load/`InitLod` method identities. The Python rebuild
+  preflight now validates this contract and the resolved installed native pair
+  before it writes ACL jobs or launches Unity/BuildActor.
+  Runtime/remote/memory-only IFix replacement,
+  the retail effect tick domain, and any absolute capture/video offset remain
+  outside proof.
   A same-seed M27-excluded differential isolates only that small late fragment
   cohort; it does not own the much larger raised-hand ring/bloom burst.
   This remains a non-exact forward LitEffect compatibility layer. A separate
@@ -3794,13 +3816,25 @@ The exact non-null Burst target is now statically joined by its unique complete
 pinned SSE2 `0x10ef20 -> 0x10f190 -> 0xf4100` or AVX2
 `0x29a3c0 -> 0x29a5c0 -> 0x284c50` route. Each core calls only its local
 scalar sin/cos helper twice; neither calls GameAssembly or IFix. Overall
-runtime selection remains fail-closed because `BurstCompiler.get_IsEnabled`
-and the returned function pointer still decide Burst versus managed fallback.
+Static runtime selection is narrower but remains fail-closed. The pinned Burst
+initializers construct global `Options(true)` and publish `_IsEnabled=true`
+unless the exact disable command-line token or a non-empty/non-`0` disable
+environment value sets `ForceDisableBurstCompilation`; the player-build
+secondary-process predicate returns false. `GetILPPMethodFunctionPointer2`
+null-checks all three arguments and then returns its first argument unchanged,
+so its emitted null fallback branch is unreachable after a normal return (a
+null input throws). Retail selection still depends on actual process inputs,
+the service-backed `IsBurstGenerated` bit, later public Options mutation, and
+normal DirectCall initialization, none of which is serialized here.
 The post-proxy contract now mechanically rejoins and parses the hash-pinned
-installed IFix report, VFS chunk/catalog, decrypted payload, and exact native
-build. Its 32-target table has no BeyondDynamicBone, `MathUtility`, or
-`FromToRotation` target, but that disk snapshot does not prove live slot
-ownership or exclude later, remote, or memory-only patches. The contract uses
+installed IFix report, VFS chunk/catalog, decrypted payload, loader map, and
+exact native build. BeyondDynamicBone's generated wrapper initializer creates
+an empty local wrapper array, and its `IsPatched` succeeds only for an in-range,
+non-null slot. The sole installed local payload uses the `Gameplay.Beyond`
+bridge; its 32-target table has no BeyondDynamicBone, `MathUtility`, or
+`FromToRotation` target. This closes absence from local startup/bootstrap, not
+live ownership: `InitWrapperArray` or a later remote/memory-only load could
+still populate the patch-id entry used by `0x219`. The contract uses
 no captured positions, timing, curves, fitted constants, or replay data.
 A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
 equations with explicit binary32 operation grouping and bit-exact verifier

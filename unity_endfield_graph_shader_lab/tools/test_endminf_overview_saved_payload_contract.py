@@ -31,6 +31,14 @@ ANIMATION_CONTRACT = ROOT / (
 ANIMATION_BUILDER = ROOT / (
     "tools/build_endminf_effect_animation_semantic_contract.py"
 )
+LOD_ACTIVATION_RUNTIME = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Runtime/Animation/"
+    "EndfieldRecoveredEffectLodActivation.cs"
+)
+LOD_ACTIVATION_CONTRACT = ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects/"
+    "endminf_effect_lod_activation_contract.json"
+)
 
 
 class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
@@ -216,6 +224,62 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
             "does not claim native BC7 bytes or platform compression identity",
             self.source,
         )
+
+    def test_lod_activation_uses_normal_creation_masks_and_source_active_bits(self) -> None:
+        runtime = LOD_ACTIVATION_RUNTIME.read_text(encoding="utf-8")
+        contract_bytes = LOD_ACTIVATION_CONTRACT.read_bytes().replace(
+            b"\r\n", b"\n"
+        ).replace(b"\r", b"\n")
+        contract = json.loads(contract_bytes)
+        contract_sha256 = hashlib.sha256(contract_bytes).hexdigest()
+        self.assertIn(f'"{contract_sha256}"', self.source)
+        self.assertEqual(
+            contract["runtimeDefaults"],
+            {
+                "qualitySettingLodLevel": 8,
+                "qualityNormalizationDomain": [1, 2, 4, 8],
+                "targetLayers": 1,
+            },
+        )
+        self.assertEqual(len(contract["rows"]), 101)
+        self.assertTrue(all(row["authoredInitialActive"] for row in contract["rows"]))
+        native = contract["nativeEvidence"]
+        self.assertEqual(len(native["methodIdentities"]), 18)
+        self.assertTrue(native["normalCreationRouteDirectCallerExcluded"])
+        self.assertEqual(len(native["setAllTargetLayersCallerOwners"]), 2)
+        self.assertEqual(len(native["byteGates"]), 10)
+        self.assertTrue(native["recordedInstalledIfixNonreplacement"])
+        self.assertIn("NormalCreationQualitySettingLodLevel = 8", runtime)
+        self.assertIn("NormalCreationTargetLayers = 1", runtime)
+        self.assertIn("row.authoredInitialActive &&", runtime)
+        self.assertNotIn("showSettingLodLevel", runtime)
+        self.assertNotIn("showTargetLayers", runtime)
+
+    def test_lod_importer_configures_before_onenable(self) -> None:
+        preflight = self.source.index("LoadAuthoredInitialActive(repo, gos);")
+        first_asset_mutation = self.source.index("L.EnsureFolder(GeneratedRoot);")
+        self.assertLess(preflight, first_asset_mutation)
+        construct = self.source.index("var obj = new GameObject")
+        inactive = self.source.index("obj.SetActive(false);", construct)
+        attach = self.source.index("AttachExactLodActivation(", inactive)
+        last_component_payload = self.source.index(
+            "marker.particleNodes = markerNodes.ToArray();", inactive
+        )
+        self.assertLess(inactive, attach)
+        self.assertLess(last_component_payload, attach)
+        self.assertNotIn("obj.SetActive(true);", self.source)
+        lod = self.source.index(
+            "var activation = root.AddComponent<EndfieldRecoveredEffectLodActivation>();"
+        )
+        disabled = self.source.index("activation.enabled = false;", lod)
+        rows = self.source.index("activation.rows = rows.ToArray();", disabled)
+        apply = self.source.index("activation.ApplyBeforePlay();", rows)
+        enabled = self.source.index("activation.enabled = true;", apply)
+        self.assertLess(disabled, rows)
+        self.assertLess(rows, apply)
+        self.assertLess(apply, enabled)
+        self.assertNotIn("activation.showSettingLodLevel", self.source)
+        self.assertNotIn("activation.showTargetLayers", self.source)
 
 
 if __name__ == "__main__":

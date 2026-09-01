@@ -1,0 +1,1242 @@
+{
+  "schema": "endfield.endminf-effect-lod-activation.v1",
+  "status": "source_closed_normal_creation_defaults",
+  "runtimeDefaults": {
+    "qualitySettingLodLevel": 8,
+    "qualityNormalizationDomain": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "targetLayers": 1
+  },
+  "nativeEvidence": {
+    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
+    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "methodIdentities": [
+      {
+        "key": "overview_on_state_enter",
+        "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
+        "typeToken": "0x02000210",
+        "method": "OnStateEnter",
+        "methodIndex": 3566,
+        "token": "0x06000def",
+        "virtualAddress": "0x186b85e54",
+        "moduleMethodSlot": 3566
+      },
+      {
+        "key": "effect_instance_init_lod",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "InitLod",
+        "methodIndex": 23218,
+        "token": "0x06005ab3",
+        "virtualAddress": "0x1834f7fb0",
+        "moduleMethodSlot": 23218
+      },
+      {
+        "key": "effect_instance_set_setting",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "SetSettingLodLevel",
+        "methodIndex": 23188,
+        "token": "0x06005a95",
+        "virtualAddress": "0x1834f98c0",
+        "moduleMethodSlot": 23188
+      },
+      {
+        "key": "effect_instance_load_immediately",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "LoadImmediately",
+        "methodIndex": 23245,
+        "token": "0x06005ace",
+        "virtualAddress": "0x183b76030",
+        "moduleMethodSlot": 23245
+      },
+      {
+        "key": "effect_instance_load_finish",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "LoadFinish",
+        "methodIndex": 23244,
+        "token": "0x06005acd",
+        "virtualAddress": "0x183963320",
+        "moduleMethodSlot": 23244
+      },
+      {
+        "key": "effect_manager_ctor",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": ".ctor",
+        "methodIndex": 23430,
+        "token": "0x06005b87",
+        "virtualAddress": "0x1840e6020",
+        "moduleMethodSlot": 23430
+      },
+      {
+        "key": "effect_manager_get_quality",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "get_qualitySettingLodLevel",
+        "methodIndex": 23434,
+        "token": "0x06005b8b",
+        "virtualAddress": "0x1834f80f0",
+        "moduleMethodSlot": 23434
+      },
+      {
+        "key": "effect_manager_set_quality",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "SetQualitySettingLodLevel",
+        "methodIndex": 23457,
+        "token": "0x06005ba2",
+        "virtualAddress": "0x183f92910",
+        "moduleMethodSlot": 23457
+      },
+      {
+        "key": "effect_manager_normalize",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "_NormalizeSingleSettingLodLevel",
+        "methodIndex": 23464,
+        "token": "0x06005ba9",
+        "virtualAddress": "0x183f929c0",
+        "moduleMethodSlot": 23464
+      },
+      {
+        "key": "effect_manager_create_stationary_3",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "CreateStationaryEffect",
+        "methodIndex": 23505,
+        "token": "0x06005bd2",
+        "virtualAddress": "0x183287d20",
+        "moduleMethodSlot": 23505
+      },
+      {
+        "key": "effect_manager_create_stationary_4",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "CreateStationaryEffect",
+        "methodIndex": 23506,
+        "token": "0x06005bd3",
+        "virtualAddress": "0x1833d1300",
+        "moduleMethodSlot": 23506
+      },
+      {
+        "key": "effect_setting_set_all_setting",
+        "type": "Beyond.Gameplay.EffectSetting",
+        "typeToken": "0x02000db1",
+        "method": "SetAllSettingLod",
+        "methodIndex": 23665,
+        "token": "0x06005c72",
+        "virtualAddress": "0x18339b920",
+        "moduleMethodSlot": 23665
+      },
+      {
+        "key": "effect_setting_set_all_target",
+        "type": "Beyond.Gameplay.EffectSetting",
+        "typeToken": "0x02000db1",
+        "method": "SetAllTargetLayers",
+        "methodIndex": 23667,
+        "token": "0x06005c74",
+        "virtualAddress": "0x1834fc030",
+        "moduleMethodSlot": 23667
+      },
+      {
+        "key": "battle_normal_refresh_guard_lod_alpha",
+        "type": "Beyond.Gameplay.BattleNormalEffect",
+        "typeToken": "0x02000d90",
+        "method": "_RefreshGuardLodAlpha",
+        "methodIndex": 23312,
+        "token": "0x06005b11",
+        "virtualAddress": "0x1834fac90",
+        "moduleMethodSlot": 23312
+      },
+      {
+        "key": "battle_normal_refresh_tower_lod",
+        "type": "Beyond.Gameplay.BattleNormalEffect",
+        "typeToken": "0x02000d90",
+        "method": "_RefreshTowerLod",
+        "methodIndex": 23318,
+        "token": "0x06005b17",
+        "virtualAddress": "0x1834faaf0",
+        "moduleMethodSlot": 23318
+      },
+      {
+        "key": "effect_lod_init_data",
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "typeToken": "0x02000db9",
+        "method": "InitData",
+        "methodIndex": 23690,
+        "token": "0x06005c8b",
+        "virtualAddress": "0x18339d940",
+        "moduleMethodSlot": 23690
+      },
+      {
+        "key": "effect_lod_refresh",
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "typeToken": "0x02000db9",
+        "method": "_RefreshLod",
+        "methodIndex": 23694,
+        "token": "0x06005c8f",
+        "virtualAddress": "0x18339d7d0",
+        "moduleMethodSlot": 23694
+      },
+      {
+        "key": "effect_lod_ctor",
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "typeToken": "0x02000db9",
+        "method": ".ctor",
+        "methodIndex": 23717,
+        "token": "0x06005ca6",
+        "virtualAddress": "0x183c2f600",
+        "moduleMethodSlot": 23717
+      }
+    ],
+    "fieldIdentities": [
+      {
+        "type": "Beyond.Gameplay.EffectInstance",
+        "field": "m_settingLodLevel",
+        "token": "0x04004de1",
+        "nativeOffset": "0x8c"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectManager",
+        "field": "m_qualitySettingLodLevel",
+        "token": "0x04004e63",
+        "nativeOffset": "0x120"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectSetting",
+        "field": "lodSetting",
+        "token": "0x04004eec",
+        "nativeOffset": "0xb0"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "settingLodLevel",
+        "token": "0x04004f27",
+        "nativeOffset": "0x40"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "targetLayer",
+        "token": "0x04004f29",
+        "nativeOffset": "0x48"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_initActive",
+        "token": "0x04004f2b",
+        "nativeOffset": "0x58"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_curActive",
+        "token": "0x04004f2c",
+        "nativeOffset": "0x59"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_isShowLod",
+        "token": "0x04004f32",
+        "nativeOffset": "0x6d"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_showSettingLodLevel",
+        "token": "0x04004f33",
+        "nativeOffset": "0x70"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_distanceLodInfo",
+        "token": "0x04004f34",
+        "nativeOffset": "0x78"
+      },
+      {
+        "type": "Beyond.Gameplay.EffectLodCfg",
+        "field": "m_showTargetLayers",
+        "token": "0x04004f3d",
+        "nativeOffset": "0xc0"
+      }
+    ],
+    "methodBodies": [
+      {
+        "key": "overview_on_state_enter",
+        "virtualAddress": "0x186b85e54",
+        "fileOffset": "0x6b84454",
+        "scanByteCount": 1528,
+        "sha256": "ece99aba984d97b01f050e3b5b4ae512a1df5dc26d0fd0388a1abb5e994f7f0e"
+      },
+      {
+        "key": "effect_instance_init_lod",
+        "virtualAddress": "0x1834f7fb0",
+        "fileOffset": "0x34f65b0",
+        "scanByteCount": 309,
+        "sha256": "f2232ed06251f2d5c70374c51581c07aaf1c5a3cb5ecc7033d1ce31b964b4094"
+      },
+      {
+        "key": "effect_instance_set_setting",
+        "virtualAddress": "0x1834f98c0",
+        "fileOffset": "0x34f7ec0",
+        "scanByteCount": 227,
+        "sha256": "f668ea4c2e5fc43a6edb56aa3a2b5de7011b214e130a2430b1faa05d5cee27ae"
+      },
+      {
+        "key": "effect_instance_load_immediately",
+        "virtualAddress": "0x183b76030",
+        "fileOffset": "0x3b74630",
+        "scanByteCount": 240,
+        "sha256": "64183251a8b5de49da081bfeaef247da8d2e9d59ebd69da3136ccde6ab19a5bb"
+      },
+      {
+        "key": "effect_instance_load_finish",
+        "virtualAddress": "0x183963320",
+        "fileOffset": "0x3961920",
+        "scanByteCount": 240,
+        "sha256": "57bb65439641fc8c51f86b29aa9f55803480d536fee3e19494a890bdd91c69ab"
+      },
+      {
+        "key": "effect_manager_ctor",
+        "virtualAddress": "0x1840e6020",
+        "fileOffset": "0x40e4620",
+        "scanByteCount": 1120,
+        "sha256": "468ef91bda0ddc521e7fc4642080c8960564d9d32474cef68c8e4935f18b53b7"
+      },
+      {
+        "key": "effect_manager_get_quality",
+        "virtualAddress": "0x1834f80f0",
+        "fileOffset": "0x34f66f0",
+        "scanByteCount": 48,
+        "sha256": "8addebd709c459ad542000c7e889693f2d2b91b1a5479193d44054878986f07c"
+      },
+      {
+        "key": "effect_manager_set_quality",
+        "virtualAddress": "0x183f92910",
+        "fileOffset": "0x3f90f10",
+        "scanByteCount": 176,
+        "sha256": "4ab4d06af5a49c3ee913d57fbb956422d5f58070db01f225ea5e9e22b3647f68"
+      },
+      {
+        "key": "effect_manager_normalize",
+        "virtualAddress": "0x183f929c0",
+        "fileOffset": "0x3f90fc0",
+        "scanByteCount": 64,
+        "sha256": "31be9f58e68c86724d59ba9b8e023aa79ca30a37911cfc19a5b5d778699a1de9"
+      },
+      {
+        "key": "effect_manager_create_stationary_3",
+        "virtualAddress": "0x183287d20",
+        "fileOffset": "0x3286320",
+        "scanByteCount": 352,
+        "sha256": "cada808963deaa752d22161d1aee57d7e1193e159b1f73866329c39b15cc5f30"
+      },
+      {
+        "key": "effect_manager_create_stationary_4",
+        "virtualAddress": "0x1833d1300",
+        "fileOffset": "0x33cf900",
+        "scanByteCount": 384,
+        "sha256": "e0394fde17f20729ceadb855619a26c29776bece98b049bf6866fc4a7f49d376"
+      },
+      {
+        "key": "effect_setting_set_all_setting",
+        "virtualAddress": "0x18339b920",
+        "fileOffset": "0x3399f20",
+        "scanByteCount": 1376,
+        "sha256": "17eb415f3ef38bd3e3a9b81fbe9de848d96d2b52818eb84c07111e740348bc48"
+      },
+      {
+        "key": "effect_setting_set_all_target",
+        "virtualAddress": "0x1834fc030",
+        "fileOffset": "0x34fa630",
+        "scanByteCount": 1104,
+        "sha256": "71849fe5fd0029f26a2ff5d12c26159073ccebff73faec3aa84f39231fef4a2f"
+      },
+      {
+        "key": "battle_normal_refresh_guard_lod_alpha",
+        "virtualAddress": "0x1834fac90",
+        "fileOffset": "0x34f9290",
+        "scanByteCount": 704,
+        "sha256": "717b3738f2628eb90fcf1a6303dc23c60f382558def12cc80518d63fd9b0ec7c"
+      },
+      {
+        "key": "battle_normal_refresh_tower_lod",
+        "virtualAddress": "0x1834faaf0",
+        "fileOffset": "0x34f90f0",
+        "scanByteCount": 272,
+        "sha256": "d4d44ea96f75b55d10b70393c4a5fdc91e006264cc997967d0d65110a69dfdd3"
+      },
+      {
+        "key": "effect_lod_init_data",
+        "virtualAddress": "0x18339d940",
+        "fileOffset": "0x339bf40",
+        "scanByteCount": 3184,
+        "sha256": "b8608c742c988a67fd3a813355673e6a9d9319ce2c7f37fd00afc6825352b6e4"
+      },
+      {
+        "key": "effect_lod_refresh",
+        "virtualAddress": "0x18339d7d0",
+        "fileOffset": "0x339bdd0",
+        "scanByteCount": 368,
+        "sha256": "fb68df2db8aa3bf21590207f6079d54809b4f82888b9cb9cac3134367741d1a7"
+      },
+      {
+        "key": "effect_lod_ctor",
+        "virtualAddress": "0x183c2f600",
+        "fileOffset": "0x3c2dc00",
+        "scanByteCount": 288,
+        "sha256": "6dcd0766663144c3ee19571a633601344f3719d5811e4094cfa9825ff86fb6fe"
+      }
+    ],
+    "byteGates": [
+      {
+        "name": "effect_lod_ctor_defaults",
+        "fileOffset": "0x3c2dce7",
+        "bytes": "c7 43 70 08 00 00 00 c7 83 c0 00 00 00 01 00 00 00",
+        "meaning": "EffectLodCfg runtime show defaults are quality=8 and target=1"
+      },
+      {
+        "name": "effect_manager_ctor_quality_default",
+        "fileOffset": "0x40e4a4d",
+        "bytes": "c7 83 20 01 00 00 08 00 00 00",
+        "meaning": "EffectManager quality default at +0x120 is 8"
+      },
+      {
+        "name": "set_quality_normalize_fallback_and_store",
+        "fileOffset": "0x3f90f58",
+        "bytes": "45 33 c0 ba 08 00 00 00 8b ce e8 59 00 00 00 89 83 20 01 00 00",
+        "meaning": "SetQuality passes fallback 8 to Normalize and stores its result at +0x120"
+      },
+      {
+        "name": "normalize_quality_hot",
+        "fileOffset": "0x3f90fe2",
+        "bytes": "8d 57 ff 83 fa 03 0f 85 46 4d 2a 01 bb 04 00 00 00",
+        "meaning": "Normalize admits 4 in the hot body and branches every other input to the cold body"
+      },
+      {
+        "name": "normalize_quality_cold",
+        "fileOffset": "0x5235d34",
+        "bytes": "85 d2 74 28 83 ea 01 74 19 83 fa 01 0f 84 ad b2 d5 fe 83 ff 08 0f 85 a4 b2 d5 fe 8b df e9 9d b2 d5 fe bb 02 00 00 00 e9 93 b2 d5 fe bb 01 00 00 00",
+        "meaning": "Normalize admits 1,2,8 and otherwise retains fallback 8"
+      },
+      {
+        "name": "init_lod_get_quality_then_set",
+        "fileOffset": "0x34f667a",
+        "bytes": "33 d2 e8 6f 00 00 00 45 33 c9 41 b0 01 8b d0 48 8b cb 48 83 c4 30 5b e9 2a 18 00 00",
+        "meaning": "InitLod gets manager quality and tail-enters SetSettingLodLevel(init=true)"
+      },
+      {
+        "name": "set_setting_to_all_rows",
+        "fileOffset": "0x34f7f33",
+        "bytes": "48 8b 8b 80 00 00 00 48 85 c9 74 5e 45 33 c0 8b d6 e8 d7 1f ea ff",
+        "meaning": "SetSettingLodLevel calls EffectSetting.SetAllSettingLod"
+      },
+      {
+        "name": "set_all_setting_refresh",
+        "fileOffset": "0x339a0d0",
+        "bytes": "44 89 76 70 45 33 c0 33 d2 48 8b ce e8 ef 1c 00 00",
+        "meaning": "SetAllSettingLod writes m_showSettingLodLevel and calls _RefreshLod(false)"
+      },
+      {
+        "name": "init_data_active_self",
+        "fileOffset": "0x339c2c1",
+        "bytes": "ff d0 48 8b 5f 18 88 47 58 88 47 59",
+        "meaning": "InitData copies the GameObject active getter result into m_initActive/m_curActive"
+      },
+      {
+        "name": "refresh_predicate_and_set_active",
+        "fileOffset": "0x339be31",
+        "bytes": "8b 43 70 c6 43 10 00 85 43 40 0f 84 8e 00 00 00 8b 83 c0 00 00 00 b9 00 00 00 00 85 43 48 0f 97 c0 88 43 6d 48 83 7b 78 00 74 14 84 c0 74 78 48 8b 43 78 0f b6 40 14 85 c0 0f 95 c0 88 43 6d 80 7b 6d 00 74 04 0f b6 4b 58 85 c9 40 0f 95 c7 40 84 f6 75 32 48 8b 73 18 48 85 f6 74 6d 48 8b 05 cb 23 fd 0b 48 85 c0 74 78 40 0f b6 d7 48 8b ce ff d0 40 88 7b 59",
+        "meaning": "_RefreshLod intersects both masks and distance-active, ANDs m_initActive, calls GameObject.SetActive, and stores m_curActive"
+      }
+    ],
+    "callGates": [
+      {
+        "name": "set_quality_normalize_fallback_and_store",
+        "target": "effect_manager_normalize",
+        "targetVirtualAddress": "0x183f929c0"
+      },
+      {
+        "name": "init_lod_get_quality",
+        "target": "effect_manager_get_quality",
+        "targetVirtualAddress": "0x1834f80f0"
+      },
+      {
+        "name": "init_lod_tail_set_setting",
+        "target": "effect_instance_set_setting",
+        "targetVirtualAddress": "0x1834f98c0"
+      },
+      {
+        "name": "set_setting_to_all_rows",
+        "target": "effect_setting_set_all_setting",
+        "targetVirtualAddress": "0x18339b920"
+      },
+      {
+        "name": "set_all_setting_refresh",
+        "target": "effect_lod_refresh",
+        "targetVirtualAddress": "0x18339d7d0"
+      }
+    ],
+    "setAllTargetLayersDirectCallers": [
+      {
+        "fileOffset": "0x34f93ce",
+        "callVirtualAddress": "0x1834fadce",
+        "section": "il2cpp"
+      },
+      {
+        "fileOffset": "0x34f94c9",
+        "callVirtualAddress": "0x1834faec9",
+        "section": "il2cpp"
+      },
+      {
+        "fileOffset": "0x508f2d2",
+        "callVirtualAddress": "0x185090cd2",
+        "section": "il2cpp"
+      },
+      {
+        "fileOffset": "0x508f345",
+        "callVirtualAddress": "0x185090d45",
+        "section": "il2cpp"
+      }
+    ],
+    "setAllTargetLayersCallerOwners": [
+      {
+        "owner": {
+          "key": "battle_normal_refresh_guard_lod_alpha",
+          "type": "Beyond.Gameplay.BattleNormalEffect",
+          "typeToken": "0x02000d90",
+          "method": "_RefreshGuardLodAlpha",
+          "methodIndex": 23312,
+          "token": "0x06005b11",
+          "virtualAddress": "0x1834fac90",
+          "moduleMethodSlot": 23312
+        },
+        "bodyRange": [
+          "0x1834fac90",
+          "0x1834faf50"
+        ],
+        "callVirtualAddresses": [
+          "0x1834fadce",
+          "0x1834faec9"
+        ],
+        "codePlacement": "pinned hot method body"
+      },
+      {
+        "owner": {
+          "key": "battle_normal_refresh_tower_lod",
+          "type": "Beyond.Gameplay.BattleNormalEffect",
+          "typeToken": "0x02000d90",
+          "method": "_RefreshTowerLod",
+          "methodIndex": 23318,
+          "token": "0x06005b17",
+          "virtualAddress": "0x1834faaf0",
+          "moduleMethodSlot": 23318
+        },
+        "bodyRange": [
+          "0x1834faaf0",
+          "0x1834fac00"
+        ],
+        "coldWindow": {
+          "name": "battle_normal_refresh_tower_lod_cold",
+          "virtualAddress": "0x185090c80",
+          "fileOffset": "0x508f280",
+          "byteCount": 218,
+          "sha256": "ba2305de6d6800dd541efb86a3ae7ac44ab184e5f7ad6dcc01c2717cbdc2ae4b"
+        },
+        "coldReturnVirtualAddress": "0x1834fabc6",
+        "callVirtualAddresses": [
+          "0x185090cd2",
+          "0x185090d45"
+        ],
+        "codePlacement": "hash-pinned cold blocks with exact jumps into hot body"
+      }
+    ],
+    "normalCreationRouteMethodIdentities": [
+      {
+        "key": "overview_on_state_enter",
+        "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
+        "typeToken": "0x02000210",
+        "method": "OnStateEnter",
+        "methodIndex": 3566,
+        "token": "0x06000def",
+        "virtualAddress": "0x186b85e54",
+        "moduleMethodSlot": 3566
+      },
+      {
+        "key": "effect_manager_create_stationary_3",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "CreateStationaryEffect",
+        "methodIndex": 23505,
+        "token": "0x06005bd2",
+        "virtualAddress": "0x183287d20",
+        "moduleMethodSlot": 23505
+      },
+      {
+        "key": "effect_manager_create_stationary_4",
+        "type": "Beyond.Gameplay.EffectManager",
+        "typeToken": "0x02000d98",
+        "method": "CreateStationaryEffect",
+        "methodIndex": 23506,
+        "token": "0x06005bd3",
+        "virtualAddress": "0x1833d1300",
+        "moduleMethodSlot": 23506
+      },
+      {
+        "key": "effect_instance_load_immediately",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "LoadImmediately",
+        "methodIndex": 23245,
+        "token": "0x06005ace",
+        "virtualAddress": "0x183b76030",
+        "moduleMethodSlot": 23245
+      },
+      {
+        "key": "effect_instance_load_finish",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "LoadFinish",
+        "methodIndex": 23244,
+        "token": "0x06005acd",
+        "virtualAddress": "0x183963320",
+        "moduleMethodSlot": 23244
+      },
+      {
+        "key": "effect_instance_init_lod",
+        "type": "Beyond.Gameplay.EffectInstance",
+        "typeToken": "0x02000d8e",
+        "method": "InitLod",
+        "methodIndex": 23218,
+        "token": "0x06005ab3",
+        "virtualAddress": "0x1834f7fb0",
+        "moduleMethodSlot": 23218
+      }
+    ],
+    "normalCreationRouteDirectCallerExcluded": true,
+    "executableSectionsScanned": [
+      ".text",
+      "il2cpp",
+      ".tvm0"
+    ],
+    "recordedInstalledIfixNonreplacement": true,
+    "lifecycleAuditSha256": "1414f67ae318e8afbca752eb45a8dda615be0198f88d60e66ea1331ee182d438"
+  },
+  "source": {
+    "kind": "original Unity GameObject TypeTree Dump",
+    "gameObjectCount": 101,
+    "allAuthoredInitiallyActive": true
+  },
+  "rows": [
+    {
+      "gameObjectPathId": -9147818123849470855,
+      "name": "trail (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "107c7f88258d0b627e024410b7863d158771b3e3629a66f1d7a145f1ce37bdb4"
+    },
+    {
+      "gameObjectPathId": -9069408142067536775,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "789531f493d85f34135bbd2f1f43fac949081131b325b0ee9223ddeb072062ba"
+    },
+    {
+      "gameObjectPathId": -8947665970063446919,
+      "name": "effect_01",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "2dbe54a8cf225629438eafa34968e72e05afddcdae08ca127dfe4cf060bcf002"
+    },
+    {
+      "gameObjectPathId": -8837273897525941127,
+      "name": "Dummy003",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "3c8b1c298b15c819cf94ea6ad977277b389cb231de3ff4ddafe2901a748427bf"
+    },
+    {
+      "gameObjectPathId": -8640398850400555911,
+      "name": "baofahengxian (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "5eaf70f48f1807746446d8b262f08cffbdcc165fb5e39e040181a54487e8da2d"
+    },
+    {
+      "gameObjectPathId": -8628302516491293575,
+      "name": "Sphere004",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ff3a563b4f9cd9b48e5fae06f0d6bf04381f352d8bce93fab3ac5377b8fc0457"
+    },
+    {
+      "gameObjectPathId": -8498887544102884231,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "d96d8e9a195d229258899eed8f3731d0cdc15d495084a546223b1a16b39d298f"
+    },
+    {
+      "gameObjectPathId": -8213489811193938446,
+      "name": "huan (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "e4f0398be725e216b494a26e5d70317655e533ffe2b9ec915714a35dca77de65"
+    },
+    {
+      "gameObjectPathId": -7637484799926506375,
+      "name": "rock",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "a5f9aa7051edb3e650cca10075b89d8acfb2eee22800b341696d2afba327ceae"
+    },
+    {
+      "gameObjectPathId": -6981985968283358087,
+      "name": "Particle System (5)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "5aa4f77fe136c7d92ca74f212045ff2ffd14872afa154f417c99fe833f77eee4"
+    },
+    {
+      "gameObjectPathId": -6828525816245359495,
+      "name": "P_endminf_ui_overview_01_rock_01",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "57404a12b18f319a88cfb15b6503e1954ee14c28d311cd34b3c6af9c6306b5b4"
+    },
+    {
+      "gameObjectPathId": -6499859274251373430,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "1458f3918f704d856f7a98dd1960fb6bd053762552ebf68ca6a77e1afa356e12"
+    },
+    {
+      "gameObjectPathId": -6230128792345809799,
+      "name": "Sphere005",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "7e4be3efcf7f1f540db68a2778625e48257278e79048141a89753142c1440cdf"
+    },
+    {
+      "gameObjectPathId": -6100264111226751862,
+      "name": "Particle System (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "27ac23bf3afc7e939acd20dcdcf34f6d88a8d91d946468bc8c5337296b3c0090"
+    },
+    {
+      "gameObjectPathId": -5155698796128801671,
+      "name": "guangyun (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "4d6fa672edeae9fa28210df103f3a942a39180bb4df656fe9885f9ae9b072111"
+    },
+    {
+      "gameObjectPathId": -5003046203317130119,
+      "name": "guangyun (3)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ae51dd225b94b54d32bb4a8fc336e9a457bc27846ce012bcc2b2e0140397c1f4"
+    },
+    {
+      "gameObjectPathId": -4915519294848174966,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b35f06dbc96be5b8d1495dd48225234ae19a2d6d589cfeb42657eb490beaa642"
+    },
+    {
+      "gameObjectPathId": -4659140047815000590,
+      "name": "baodian",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "506c3b346887a79b588e4170228c264ba464f3e48e0b62ced6d1462e9e73c4f9"
+    },
+    {
+      "gameObjectPathId": -4498228434147623438,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "bfc9965391e9c6c8a195ca6786d60204d78321d986f2864a2ba82910b2b6c348"
+    },
+    {
+      "gameObjectPathId": -4456450453208667015,
+      "name": "trail",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "0f55b7a41be95d6fa0db07040d8eb4ea8da7468772c7b840722d8cc7d9b352e4"
+    },
+    {
+      "gameObjectPathId": -4440886746465276807,
+      "name": "lizi (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "64d6161b6714319dbe4879597a30ff928763eef667dcd1b627950b495388a835"
+    },
+    {
+      "gameObjectPathId": -4212797537319469582,
+      "name": "smoke (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ae04b684dd0ca837b68493c7ea0fec6b755a49d9e798050c9d56a0c0f8b95245"
+    },
+    {
+      "gameObjectPathId": -4092326818857173518,
+      "name": "Particle System (9)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b932331ea2719c903f73140dc6e7ef2cff47d2d43b432e56a1aeb563cf71c092"
+    },
+    {
+      "gameObjectPathId": -3953273289873087936,
+      "name": "glow",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "307648ff9dcd0f05e0415357e5a81cec2bcbd51c65da20b2906003107bd4689c"
+    },
+    {
+      "gameObjectPathId": -3881249644904897984,
+      "name": "all",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "cd6c1c7169f323deaddb021096f5e35db0fa5db6538297c0375652f102ad5b94"
+    },
+    {
+      "gameObjectPathId": -3276418335224695670,
+      "name": "Particle System (7)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ebef30d490f2b1055f2435b49ad84581f42512063e7503cae0ece5dc2853af26"
+    },
+    {
+      "gameObjectPathId": -3166230417407544182,
+      "name": "P_fxui_endminm003_overview_04",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "11a8531390a5732b8a35d36f60f559602059a385ccef35b7e19233b1eeff76d8"
+    },
+    {
+      "gameObjectPathId": -2921976608690574215,
+      "name": "Dummy003",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "dfda948f058cf40d39c6bfd45cb5a7c989311e49de549bef9f787bca61e6fcb0"
+    },
+    {
+      "gameObjectPathId": -2727635743564237686,
+      "name": "Particle System (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "8ab05945e232fc652c711d2bb09ccb9987a320c5e7c278035fce142b7c673947"
+    },
+    {
+      "gameObjectPathId": -2713062956971789174,
+      "name": "1",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "a954e55b9f145cc165b4a7eb028addd35acdfc64517462ad88aa7dd7a01976e4"
+    },
+    {
+      "gameObjectPathId": -2608144299264217991,
+      "name": "hengxian (6)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "8d3a92729c1075a7218f552cef1b7f97e3f406713596e41f2fad921055f8f265"
+    },
+    {
+      "gameObjectPathId": -2472000325808479680,
+      "name": "baodian (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "10700c2c6f8bf8295c2a3c26cf825c06f5367b9fab677bfb91b58c7e1151ed43"
+    },
+    {
+      "gameObjectPathId": -2419729484045980551,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "976fd933fa94b46c8d632ab298a598926369dc5cc7af5830cf40a9ea50ce60fe"
+    },
+    {
+      "gameObjectPathId": -2342053693758049142,
+      "name": "Particle System (10)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b4b33483b0a002dc9a43af7ab2c809f5333989bcfd1ea9a52bf5a36b05f6614c"
+    },
+    {
+      "gameObjectPathId": -2294782594461766535,
+      "name": "suikuai (5)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "3b22333f8458bd9480bd8945f44a3e8a8c40ad12403f302c587b5baec45546b9"
+    },
+    {
+      "gameObjectPathId": -2054349525238680438,
+      "name": "Particle System (8)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "4b8617e1fb86741858278231a00636703a710a5560b5b4befddc34b49a6224ae"
+    },
+    {
+      "gameObjectPathId": -1985326932119032711,
+      "name": "suikuai (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "40e8b3febfc0a114744c4110254961bbd971b6fff096e10897b18df095910f6c"
+    },
+    {
+      "gameObjectPathId": -1868355154486334343,
+      "name": "suikuai (3)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "aed7f147ed043d6ab0ded7a244c8fadca41ea6b0ef3ade333ff34b2f32adb291"
+    },
+    {
+      "gameObjectPathId": -1767898205817639815,
+      "name": "Particle System (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "fd77fb46dd2b472574c2c93e992324b5c944558f7124427e01df6276f6dfb736"
+    },
+    {
+      "gameObjectPathId": -1722782521022845831,
+      "name": "Sphere002",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ea1563bd4557a4d6a46dde2cc3d8d962b66718d8ced8943282eddc4c978553d2"
+    },
+    {
+      "gameObjectPathId": -1496316950738099648,
+      "name": "jianshe",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "2bdbcc9da5d085e56667fb95eab465545c1d58a2b7f8e5440d04a0ee42cb1f08"
+    },
+    {
+      "gameObjectPathId": -1404565365764821895,
+      "name": "P_endminf_ui_overview_01_rock_03",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "586f3bdb96707a80e669f20c47ae4a607837751c3e62d219198d3f01aa20de5d"
+    },
+    {
+      "gameObjectPathId": -1360749089670992775,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "a9351817ebdef12205ec79a1c037b4de894955869074685033e3f21377930e9a"
+    },
+    {
+      "gameObjectPathId": -1052161294400852871,
+      "name": "hengxian (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "8e9859fee3b1dd67b1fbd085cb268297b703091d30fad53d0d2061b2e54d579d"
+    },
+    {
+      "gameObjectPathId": -802699095016706951,
+      "name": "lizi (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "6abecfbe3a3a0f4a69b8e5da506790c3651ffee8983af8d85a51182e58e50345"
+    },
+    {
+      "gameObjectPathId": -471337412914746247,
+      "name": "guangyun (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "526f383f56e88ef21a3be09f666161ca14078277b7e87508a0b74b87af78ff3d"
+    },
+    {
+      "gameObjectPathId": -228236085753123719,
+      "name": "hengxian (7)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "afec311c2f25c507785e362589ac4b9844cbcf574df4f079afbf4abf992b4b76"
+    },
+    {
+      "gameObjectPathId": -188629422848250759,
+      "name": "lizi (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "060e7d300a3c0b66c4d2ce2b23a6e39295ca7341f37917d7e524b5ef48ec4cdd"
+    },
+    {
+      "gameObjectPathId": -51479899873020790,
+      "name": "guangyun (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "86bcfcd9733d000cbfb190b010193f566d5456a52c6aa1f46c6f1844ebe96906"
+    },
+    {
+      "gameObjectPathId": 235909906788478073,
+      "name": "P_endminf_ui_overview_01_rock_04",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "efbebd35df4ed38ab70d785d973988a554654343f725b8e29bff80ba0ebd497a"
+    },
+    {
+      "gameObjectPathId": 496903090291108985,
+      "name": "Dummy002",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "7225b65572f2994d99c1d4bdd39bf7d1fcdf0ea9af08bbab0e0976c8fa3a617d"
+    },
+    {
+      "gameObjectPathId": 644358100928130169,
+      "name": "P_fxui_endminm003_overview_01",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b1ba2f307728520b52aede3ad779d09a9ee16f555f0d93af01aa05ce27b91668"
+    },
+    {
+      "gameObjectPathId": 753354739349417081,
+      "name": "Sphere003",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "38f24bfc9f745c92bfc76c3fcd182e87d386f0b6c035a1766c8d44678b2c8c5c"
+    },
+    {
+      "gameObjectPathId": 814741908835384818,
+      "name": "hengxian (11)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "3156a930700d2a89d5b831db21ca48e24f1b0ba30d903f2cf20e12c3ac3f6c95"
+    },
+    {
+      "gameObjectPathId": 975623524646284409,
+      "name": "P_endminf_ui_overview_01_rock_03",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b5465ce8fd68e424d3ccf4f1b85d2fb918e0fdc7c663214bb4be9d1fa2b7c7df"
+    },
+    {
+      "gameObjectPathId": 1228908367936339442,
+      "name": "jianshe (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "3e51c1150c3a93e0cc35d10d7b91391a25a1d05e6c0e5772b01f4fa6a5a9e2f0"
+    },
+    {
+      "gameObjectPathId": 1343106962351484025,
+      "name": "Particle System (3)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "324ce0a6938c3dfec319b4ec46e7ad2e52a838f0b7d583e84a123c3762fa1f4c"
+    },
+    {
+      "gameObjectPathId": 1448116963442357386,
+      "name": "Particle System (3)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "11ea07f77873ecbccaceb26adf8aa166dcf14f7d3b3a28f18129079d47343b2a"
+    },
+    {
+      "gameObjectPathId": 1582063910123453938,
+      "name": "suikuai (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "391048746f98088be203dd0914ae73a676d9b7db2e924d524d68fdb62e08ec32"
+    },
+    {
+      "gameObjectPathId": 1872604012454440057,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "07c086a64d0a174eed31a6b16a798f21b27a3675b444f4a2ad9bd7bc107caea3"
+    },
+    {
+      "gameObjectPathId": 2023677891727092857,
+      "name": "suikuai (5)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "d043f6103da26421cf17634314cdcf6634ff5b3db1bbf195bfeea73b596cc810"
+    },
+    {
+      "gameObjectPathId": 2242306857605426297,
+      "name": "baofahengxian (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "6e6c291bf1ec95f371985f4c2409f49463a121c0c97fb14ae07ae7d5ef9d4b1c"
+    },
+    {
+      "gameObjectPathId": 2376111990022499449,
+      "name": "P_endminf_ui_overview_01_rock_02",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "7d837c6632d5cef66239663052ec4ab916a80da22871ecd35089ec7e81176f2f"
+    },
+    {
+      "gameObjectPathId": 2506922149825868938,
+      "name": "guangyun (5)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "70d2dc5d0dd5d7cace3ab73b399685a90f6e32c118cbcd4fce2c56e3f74f188e"
+    },
+    {
+      "gameObjectPathId": 2513573946737278450,
+      "name": "guangyun (6)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "0990e67ce12bb61dca4e91a66191d59f434e9b39343ab38523b2e02c36d175a0"
+    },
+    {
+      "gameObjectPathId": 2714469750500781177,
+      "name": "Dummy005",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "a2886cd6c727cefa872c23c65e65f445abdc9e10f144eb24327441700f79e6bc"
+    },
+    {
+      "gameObjectPathId": 2715056256155434482,
+      "name": "baoshan",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "dc6f9c99db37d46336e435a6925c9fbb83f7621194c28b893eed5362359a57e3"
+    },
+    {
+      "gameObjectPathId": 2749790928841457138,
+      "name": "hengxian (11)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "9a0d30acc79a6f28143f6858084e5de115a7a9834909347abdc2ef63bd093758"
+    },
+    {
+      "gameObjectPathId": 2844289051751071218,
+      "name": "all",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ce96ad8d3093ea6b33c7915e601420ebf90dfdffb1a5e62bae5f4611f2985bfc"
+    },
+    {
+      "gameObjectPathId": 2926954151713270905,
+      "name": "baofahengxian",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "e75dabfe3d2707921e3d95f1cac2a39f86b79dce7225b44e0cd3e56eae4ab15e"
+    },
+    {
+      "gameObjectPathId": 3597285135005543545,
+      "name": "suikuai (6)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "2ad8c6650458dac6daefbe04da82fbe4c75510511c4aed22c660e82aa37b7a17"
+    },
+    {
+      "gameObjectPathId": 3662967129923087481,
+      "name": "Dummy002",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "b2a9a90d2bdc0d65f935079355693e25aef8bd850dc09bcfdb9c6d348dab40a7"
+    },
+    {
+      "gameObjectPathId": 3861682262153346546,
+      "name": "shitou (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "f33b9b9365e05002d8593e6723fa6b46ce39da61781f198b0a588309fe6ba957"
+    },
+    {
+      "gameObjectPathId": 3940891493467188345,
+      "name": "suikuai (4)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "de51da815fb36e24fffa2d2213600a6f8d89e7673c9b77a44300183f3c532aed"
+    },
+    {
+      "gameObjectPathId": 4020419883133201529,
+      "name": "P_endminf_ui_overview_01_rock_01",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "efe7bd80b9d19275c9c74897865c7816460be4de7f4f9841b40266d0a749135d"
+    },
+    {
+      "gameObjectPathId": 4040795893417667705,
+      "name": "Dummy004",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "94e269d3aea6036f73a11585c276e4e982b6918a48cdc9be58210974ac99634e"
+    },
+    {
+      "gameObjectPathId": 4134042529781673081,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "8675bf9da246859b609244c222a2b0fcd0bc6562af187c9c415eb4d8d02dc716"
+    },
+    {
+      "gameObjectPathId": 4168431228448809536,
+      "name": "Particle System (10)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "6cf869b57b5870372be50fa26050bb1966fd4ae26c091d14187bcebed2266f13"
+    },
+    {
+      "gameObjectPathId": 4176831436435602930,
+      "name": "wind (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "37c26baa590038ca24af7e73e69eacf9a9ed09241017017ecdd83f48f882d252"
+    },
+    {
+      "gameObjectPathId": 4240350341979139193,
+      "name": "Dummy004",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "bfd639376c2444ed3e2a0ecc0d69f64e9b2ebd1317c8c29d35de5bb859edbf04"
+    },
+    {
+      "gameObjectPathId": 4476131385385512057,
+      "name": "effect_nanguan",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "f48aecda479bf4d5508417f3b56ace1ed2855986623a616d2648e30c44024b61"
+    },
+    {
+      "gameObjectPathId": 4499704467801009273,
+      "name": "trail (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "a29edc7fb5e3c345e7148c519faefc2fa86245d017f7c5a059d1b02759b8eaca"
+    },
+    {
+      "gameObjectPathId": 4523587384448085113,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ac6a375d67139e9936ffa22b0e98c1d927824f9b6908f98ac1a4bf1e0a52ac2e"
+    },
+    {
+      "gameObjectPathId": 4605839516663673994,
+      "name": "hengxian (11)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "3d8857ca192b1361baef9962b88e6f8b93b6d684b3ae9b3d1869a5b98f38f579"
+    },
+    {
+      "gameObjectPathId": 4712319999993015417,
+      "name": "hengxian (5)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "39c8ebb118f48e83d44583c7de09c8b1ffb49d5de60429054734886ce3cda0bd"
+    },
+    {
+      "gameObjectPathId": 4834023672155499641,
+      "name": "P_endminf_ui_overview_01_rock_02",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "1e5788682f55502a2a85dc6a72a3a9d56cd18e510026d174609c18d96a0a3b14"
+    },
+    {
+      "gameObjectPathId": 5442122015683406969,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "78014608fff3ced5dacbc8b92e7460298b5aad3a57ebd18bf75052cae046d8fe"
+    },
+    {
+      "gameObjectPathId": 5587022036373433465,
+      "name": "Particle System",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "f5d812df8a7b59e4ffa7935f0a5d41f85c7bfd2ba71542669baff9fd4aff645e"
+    },
+    {
+      "gameObjectPathId": 6106329229577272818,
+      "name": "huan",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "d2a3ddf6f8dc3048d4bca04a38d3aeb59a535e5c4abc11414373ffccc3c52506"
+    },
+    {
+      "gameObjectPathId": 6239110611978232384,
+      "name": "wind",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "bc8d3cd2c8a16061f76423669080b4f927b5c2de79837662ad7552a1b42b0e9c"
+    },
+    {
+      "gameObjectPathId": 6277198576094749248,
+      "name": "P_fxui_endminm003_overview_03",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "6bfb47c70cd6b2caacc13b864fd3e0bde50b0f0cbf7035a509db715be13ed31e"
+    },
+    {
+      "gameObjectPathId": 7363896822729326066,
+      "name": "Particle System (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "8b2a5daa4d807e72942e21beb0fa2cde04e50fe35eeb91f9e43a095ad30ec3ce"
+    },
+    {
+      "gameObjectPathId": 7701914037140635122,
+      "name": "P_fxui_endminm003_overview_02",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "31c449eb674672f83929b7d9e70c65bef1dfd0382580f74261afdf0850e3eec9"
+    },
+    {
+      "gameObjectPathId": 7860065953199865330,
+      "name": "glow (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "fcf59df21ca4921e8553215ce191cdfaabe8722442b6f3d53ff0b961d4306868"
+    },
+    {
+      "gameObjectPathId": 7969459606786339978,
+      "name": "hengxian (11)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "06635469c4d35d9b9d78ef4b6ecad9be3753ff15ef68c900aeef4212c90fc2df"
+    },
+    {
+      "gameObjectPathId": 8209225899320025664,
+      "name": "glow",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "ed4d79905f780384d676ce3401d7ee61371c03eb7dfbf460f28a09772f5fef26"
+    },
+    {
+      "gameObjectPathId": 8546288233879158258,
+      "name": "kuosan",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "9f38c323b3c88f0915245e7cb505252e0d1b86c064a44b1f3b5c530f8d7e04cd"
+    },
+    {
+      "gameObjectPathId": 8638561524310568057,
+      "name": "guangyun (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "0e383d0501378cd9345564fe4eb30f68378f9183ddec5aa3f888260bf6fdeed3"
+    },
+    {
+      "gameObjectPathId": 8922573288709944458,
+      "name": "guangyun (3)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "6e31b065d5ff861d376878c071b22c31976fb2995e59226624dd40430da22e4f"
+    },
+    {
+      "gameObjectPathId": 8953141407210302585,
+      "name": "post (1)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "d6a930df45fac75369e4712684851de1232afa7ae8a2d81eca880ba2feadf137"
+    },
+    {
+      "gameObjectPathId": 9090700144688676338,
+      "name": "suikuai (2)",
+      "authoredInitialActive": true,
+      "typeTreeDumpSha256": "27c66d37b4f2bc9aa0cb728168bc44cfbd2c72ee5e14bf7ec6fe536fe623a6c3"
+    }
+  ]
+}

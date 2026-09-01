@@ -25,6 +25,11 @@ namespace EndfieldGraphShaderLabEditor
             "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3";
         private const string ExpectedStageContentSha256 =
             "873f17793284de92f7680448b7efe282b73cbaea85522297e3f412e49508d302";
+        private const string LodActivationContractRelative =
+            "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/" +
+            "OriginalData/Effects/endminf_effect_lod_activation_contract.json";
+        private const string LodActivationContractSha256 =
+            "7e938a5fa0ddc9d9d337ae3cddfbe2131e5c8d1829a45375f0c57a25a7507a0d";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string TextureRoot = GeneratedRoot + "/Textures";
         private const string MeshRoot = GeneratedRoot + "/Meshes";
@@ -216,6 +221,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<long, Dictionary<string, object>> behaviours = LoadType(stage, "MonoBehaviour");
             L.Require(gos.Count == 101 && transforms.Count == 101 && systems.Count == 70 &&
                 renderers.Count == 70, "Endminf effect stage census drifted");
+            Dictionary<long, bool> authoredInitialActive =
+                LoadAuthoredInitialActive(repo, gos);
             L.Require(systems.Values.Count(row => L.Int(row, "scalingMode") == 1) == 60 &&
                 systems.Values.Count(row => L.Int(row, "scalingMode") == 0) == 10 &&
                 systems.Values.Count(row => L.Bool(row, "moveWithTransform")) == 10,
@@ -258,11 +265,10 @@ namespace EndfieldGraphShaderLabEditor
                     Dictionary<string, object> go = gos[goByTransform[transformId]];
                     var obj = new GameObject(L.Str(go, "m_Name"));
                     obj.layer = L.Int(go, "m_Layer");
-                    // The targeted AnimeStudio GameObject view omits m_IsActive.
-                    // Runtime FromOverview instantiation activates this authored
-                    // one-shot hierarchy; renderer visibility remains separately
-                    // gated below by exact material/shader admission.
-                    obj.SetActive(true);
+                    // Construct inactive so AddComponent cannot dispatch OnEnable
+                    // against a partially configured hierarchy. Exact authored
+                    // activeSelf is restored by the TypeTree-backed LOD contract.
+                    obj.SetActive(false);
                     generated[transformId] = obj;
                 }
                 foreach (var pair in generated)
@@ -292,8 +298,6 @@ namespace EndfieldGraphShaderLabEditor
                     hierarchyByTransform[transformId] = hierarchy;
                     return hierarchy;
                 };
-                AttachExactLodActivation(root, rootName, generated, transformByGo,
-                    goByTransform, gos, behaviours);
                 var markerNodes = new List<EndfieldRecoveredParticleNodeSource>();
                 var markerByHost = new Dictionary<GameObject, EndfieldRecoveredParticleNodeSource>();
                 foreach (var pair in systems.Where(row => generated.ContainsKey(transformByGo[L.PPtrId(row.Value["m_GameObject"])])))
@@ -421,6 +425,12 @@ namespace EndfieldGraphShaderLabEditor
                         generatedTransform = pair.Value.transform,
                     }).ToArray();
                 marker.particleNodes = markerNodes.ToArray();
+                // This is deliberately last: every ParticleSystem, renderer and
+                // source marker must be fully configured while the hierarchy is
+                // inactive so no AddComponent-triggered OnEnable observes a
+                // partial payload.
+                AttachExactLodActivation(root, rootName, generated, transformByGo,
+                    goByTransform, gos, behaviours, authoredInitialActive);
                 PrefabUtility.SaveAsPrefabAsset(root, GeneratedRoot + "/" + rootName + ".prefab");
                 UnityEngine.Object.DestroyImmediate(root);
             }
@@ -914,7 +924,8 @@ namespace EndfieldGraphShaderLabEditor
         private static void AttachExactLodActivation(GameObject root, string rootName,
             Dictionary<long, GameObject> generated, Dictionary<long, long> transformByGo,
             Dictionary<long, long> goByTransform, Dictionary<long, Dictionary<string, object>> gos,
-            Dictionary<long, Dictionary<string, object>> behaviours)
+            Dictionary<long, Dictionary<string, object>> behaviours,
+            Dictionary<long, bool> authoredInitialActive)
         {
             long rootTransform = generated.Single(pair => pair.Value == root).Key;
             long rootGo = goByTransform[rootTransform];
@@ -953,15 +964,19 @@ namespace EndfieldGraphShaderLabEditor
                     // When distance LOD is disabled, native initialization uses
                     // row zero. When it is enabled here, the sole distance cfg
                     // also makes row zero camera-independent.
-                    distanceActive = L.Bool(L.Dict(infos[0]), "isActive")
+                    distanceActive = L.Bool(L.Dict(infos[0]), "isActive"),
+                    authoredInitialActive = authoredInitialActive[goId]
                 });
             }
             L.Require(rows.Count == sourceRows.Count && rows.Count == generated.Count,
                 rootName + " EffectLod/source hierarchy census mismatch: rows=" + rows.Count +
                 " hierarchy=" + generated.Count);
             var activation = root.AddComponent<EndfieldRecoveredEffectLodActivation>();
-            activation.showSettingLodLevel = 15;
-            activation.showTargetLayers = 3;
+            // AddComponent runs while the constructed root is inactive. Keep
+            // the component disabled until every source field and row is set,
+            // then restore the exact activeSelf hierarchy before OnEnable.
+            activation.enabled = false;
+            activation.UseNormalCreationDefaults();
             activation.useDistanceLod = useDistanceLod;
             activation.cullDisabled = L.Bool(source, "_isCullDisable");
             activation.cameraDistanceResolved = cameraDistanceResolved;
@@ -969,6 +984,49 @@ namespace EndfieldGraphShaderLabEditor
             L.Require((!activation.useDistanceLod || activation.cameraDistanceResolved) && activation.cullDisabled,
                 rootName + " EffectLod camera/distance gate drifted");
             activation.ApplyBeforePlay();
+            activation.enabled = true;
+        }
+
+        private static Dictionary<long, bool> LoadAuthoredInitialActive(
+            string repo, Dictionary<long, Dictionary<string, object>> gameObjects)
+        {
+            string path = Path.Combine(repo, LodActivationContractRelative.Replace(
+                '/', Path.DirectorySeparatorChar));
+            string canonicalText = File.ReadAllText(path, Encoding.UTF8)
+                .Replace("\r\n", "\n").Replace("\r", "\n");
+            byte[] canonical = Encoding.UTF8.GetBytes(canonicalText);
+            L.Require(Sha256Lower(canonical) == LodActivationContractSha256,
+                "Endminf GameObject active-state contract hash drifted");
+            Dictionary<string, object> contract = L.Dict(
+                ManifestMiniJson.Deserialize(canonicalText));
+            Dictionary<string, object> defaults = L.Dict(contract["runtimeDefaults"]);
+            L.Require(
+                L.Str(contract, "schema") == "endfield.endminf-effect-lod-activation.v1" &&
+                L.Str(contract, "status") == "source_closed_normal_creation_defaults" &&
+                L.Int(defaults, "qualitySettingLodLevel") ==
+                    EndfieldRecoveredEffectLodActivation.NormalCreationQualitySettingLodLevel &&
+                L.Int(defaults, "targetLayers") ==
+                    EndfieldRecoveredEffectLodActivation.NormalCreationTargetLayers,
+                "Endminf normal-creation LOD defaults drifted");
+            var result = new Dictionary<long, bool>();
+            foreach (object value in L.List(contract["rows"]))
+            {
+                Dictionary<string, object> row = L.Dict(value);
+                long gameObjectPathId = Convert.ToInt64(
+                    row["gameObjectPathId"], CultureInfo.InvariantCulture);
+                L.Require(gameObjects.TryGetValue(gameObjectPathId,
+                        out Dictionary<string, object> gameObject) &&
+                    L.Str(gameObject, "m_Name") == L.Str(row, "name") &&
+                    !result.ContainsKey(gameObjectPathId),
+                    "Endminf authored GameObject active-state identity drifted: " +
+                    gameObjectPathId);
+                result.Add(gameObjectPathId,
+                    L.Bool(row, "authoredInitialActive"));
+            }
+            L.Require(result.Count == gameObjects.Count &&
+                gameObjects.Keys.All(result.ContainsKey),
+                "Endminf authored GameObject active-state census drifted");
+            return result;
         }
 
         private static Dictionary<long, Dictionary<string, object>> LoadType(string stage, string type)
