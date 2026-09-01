@@ -41,7 +41,11 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertTrue(payload["calc_line_kernel_wrapper_route_recovered"])
         self.assertTrue(payload["calc_line_directcall_managed_fallback_equivalence_closed"])
         self.assertTrue(payload["calc_line_burst_function_pointer_target_closed"])
+        self.assertTrue(payload["calc_line_get_ilpp_normal_return_nonnull_closed"])
+        self.assertTrue(payload["calc_line_get_ilpp_return_identity_closed"])
+        self.assertTrue(payload["burst_initial_default_conditions_closed"])
         self.assertTrue(payload["from_to_rotation_installed_local_ifix_target_absent"])
+        self.assertTrue(payload["from_to_rotation_installed_local_ifix_bootstrap_absent"])
         self.assertFalse(payload["create_list_kernel_numerics_recovered"])
         self.assertFalse(payload["calc_line_normal_tangent_numerics_recovered"])
         self.assertFalse(payload["selected_calc_line_execution_route_closed"])
@@ -113,9 +117,40 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         selection = route["invokeSelection"]
         self.assertEqual(selection["burstEnabledGate"]["methodIndex"], 489283)
         self.assertEqual(selection["burstEnabledGate"]["runtimeValue"], "unresolved")
+        initialization = selection["burstEnabledGate"]["initialization"]
+        self.assertEqual(
+            initialization["burstCompilerTypeInitializer"]["methodIndex"], 489290
+        )
+        self.assertEqual(initialization["optionsConstructor"]["methodIndex"], 489303)
+        self.assertEqual(initialization["enableSetter"]["methodIndex"], 489306)
+        self.assertEqual(initialization["optionsTypeInitializer"]["methodIndex"], 489314)
+        self.assertFalse(initialization["secondaryProcessPredicate"]["pinnedReturn"])
+        self.assertEqual(
+            initialization["secondaryProcessPredicate"]["throughRetBytes"], 3
+        )
+        self.assertEqual(
+            initialization["secondaryProcessPredicate"]["throughRetSha256"],
+            "01cb47d078b4841b8408ec4fe278efa83115c6f6e101972987507d2b2b57dcf0",
+        )
+        self.assertEqual(
+            initialization["recognizedInputs"]["commandLine"]["value"],
+            "--burst-disable-compilation",
+        )
+        self.assertEqual(
+            initialization["recognizedInputs"]["environment"]["value"],
+            "UNITY_BURST_DISABLE_COMPILATION",
+        )
         self.assertEqual(selection["getFunctionPointer"]["resolver"]["methodIndex"], 489285)
-        self.assertEqual(selection["getFunctionPointer"]["returnedPointer"],
-                         "unresolved runtime value")
+        self.assertTrue(selection["getFunctionPointer"]["normalReturnNonNull"])
+        self.assertIn(
+            "DeferredCompilation/Pointer",
+            selection["getFunctionPointer"]["normalReturnIdentity"],
+        )
+        self.assertIn(
+            "null first argument throws",
+            selection["getFunctionPointer"]["nullBranchBoundary"],
+        )
+        self.assertEqual(route["staticInitialization"]["constructor"]["methodIndex"], 384864)
         self.assertEqual(route["selectedRuntimeRoute"], "unresolved")
         burst = route["burstFunctionPointerTarget"]
         self.assertEqual(
@@ -251,7 +286,18 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual(local_ifix["parsedTargetCount"], 32)
         self.assertEqual(local_ifix["beyondDynamicBoneTargetCount"], 0)
         self.assertEqual(local_ifix["fromToRotationTargetCount"], 0)
+        self.assertEqual(
+            local_ifix["loaderEvidence"]["payloadBridge"],
+            "IFix.ILFixInterfaceBridge, Gameplay.Beyond, Version=0.0.0.0, "
+            "Culture=neutral, PublicKeyToken=null",
+        )
         self.assertIn("does not prove live slot ownership", local_ifix["runtimeBoundary"])
+        bootstrap = from_to["ifixRoute"]["localBootstrap"]
+        self.assertEqual(bootstrap["wrapperArrayCctor"]["methodIndex"], 387376)
+        self.assertEqual(bootstrap["initialArrayLength"], 0)
+        self.assertEqual(bootstrap["getPatch"]["methodIndex"], 387383)
+        self.assertEqual(bootstrap["isPatched"]["methodIndex"], 387384)
+        self.assertIn("later, remote, or memory-only", bootstrap["runtimeBoundary"])
         self.assertEqual(from_to["ifixRoute"]["selectedAtRuntime"], "unresolved")
         self.assertIn("no explicit guard", from_to["degeneracyBranches"]["zeroOrNonFiniteInput"])
         self.assertIn("runtime numerics remain fail-closed", flow["numericBoundary"])
@@ -298,6 +344,23 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
             builder._validate_installed_ifix_payload(
                 report, self.payload["native_gate"], report["targets"][:-1]
             )
+
+    def test_runtime_selection_static_proofs_fail_closed_on_body_drift(self) -> None:
+        cases = (
+            (builder.BURST_RUNTIME_SELECTION, "getIlppBodySha256",
+             "GetILPPMethodFunctionPointer2 identity/nullability drift"),
+            (builder.IFIX_WRAPPER_BOOTSTRAP, "isPatchedBodySha256",
+             "body drift for IFix.WrappersManagerImpl.IsPatched"),
+        )
+        for values, key, message in cases:
+            with self.subTest(key=key):
+                original = values[key]
+                values[key] = "0" * 64
+                try:
+                    with self.assertRaisesRegex(builder.ContractError, message):
+                        builder.build_contract()
+                finally:
+                    values[key] = original
 
     def test_builder_recomputes_published_contract(self) -> None:
         self.assertEqual(builder.build_contract(), self.payload)

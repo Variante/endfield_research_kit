@@ -14,7 +14,11 @@
   "calc_line_kernel_wrapper_route_recovered": true,
   "calc_line_directcall_managed_fallback_equivalence_closed": true,
   "calc_line_burst_function_pointer_target_closed": true,
+  "calc_line_get_ilpp_normal_return_nonnull_closed": true,
+  "calc_line_get_ilpp_return_identity_closed": true,
+  "burst_initial_default_conditions_closed": true,
   "from_to_rotation_installed_local_ifix_target_absent": true,
+  "from_to_rotation_installed_local_ifix_bootstrap_absent": true,
   "create_list_kernel_numerics_recovered": false,
   "calc_line_normal_tangent_numerics_recovered": false,
   "selected_calc_line_execution_route_closed": false,
@@ -264,6 +268,42 @@
         "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/dump/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
         "size": 86926,
         "sha256": "baa28ae497e64d94e152886622bbe5fb391199bcbf8366e2df91591c9a9f172c"
+      },
+      "loaderEvidence": {
+        "metadataCatalog": {
+          "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/loader_metadata.json",
+          "size": 209407648,
+          "sha256": "31213942e0389c708ae90502f562307f7bfa9ed433f862cfcd96552ad9b3ba5f"
+        },
+        "nativeMap": {
+          "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/loader_native_map.json",
+          "size": 14775360,
+          "sha256": "04aba13510cb89f2d3430e8272e99336f1fcab29d37670552deadc31517bb9bc"
+        },
+        "requiredDirectCallEdges": [
+          {
+            "callerMethodIndex": 482175,
+            "calleeMethodIndex": 482190
+          },
+          {
+            "callerMethodIndex": 482190,
+            "calleeMethodIndex": 485545
+          },
+          {
+            "callerMethodIndex": 482190,
+            "calleeMethodIndex": 485546
+          },
+          {
+            "callerMethodIndex": 485545,
+            "calleeMethodIndex": 485543
+          },
+          {
+            "callerMethodIndex": 485545,
+            "calleeMethodIndex": 485544
+          }
+        ],
+        "payloadBridge": "IFix.ILFixInterfaceBridge, Gameplay.Beyond, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+        "classification": "The hash-pinned local loader gets the VFS stream, unloads the prior manager, and calls IFix.Core.PatchManager.Load/readSlotInfo/getMapId. The installed bridge belongs to Gameplay.Beyond, not BeyondDynamicBone."
       }
     }
   },
@@ -1479,6 +1519,50 @@
         "dynamicWrapperMethodIndex": 386959,
         "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
         "installedLocalSnapshot": "sources.installedLocalIfix",
+        "localBootstrap": {
+          "wrapperType": {
+            "slotVa": "0x18e2ea7d0",
+            "metadataTypeIndex": 146943,
+            "typeDefinitionIndex": 48629,
+            "typeBits": "0x120000",
+            "type": "IFix.ILFixDynamicMethodWrapper"
+          },
+          "wrapperArrayFieldIndex": 231395,
+          "wrapperArrayCctor": {
+            "methodIndex": 387376,
+            "type": "IFix.ILFixDynamicMethodWrapper",
+            "method": ".cctor",
+            "token": "0x06000ef9",
+            "returnTypeName": "System.Void",
+            "startVa": "0x184d37bf0",
+            "spanBytes": 96,
+            "bodySha256": "5cb6d4ce87529c8c6f1fa7eac874f3ead4739a13fcb266e47994d36a9009ede4"
+          },
+          "initialArrayLength": 0,
+          "getPatch": {
+            "methodIndex": 387383,
+            "type": "IFix.WrappersManagerImpl",
+            "method": "GetPatch",
+            "token": "0x06000f00",
+            "returnTypeName": "IFix.ILFixDynamicMethodWrapper",
+            "startVa": "0x185396738",
+            "spanBytes": 100,
+            "bodySha256": "db307c30bca973a0267cca2f59294c3fc59aa0bf6959b4d74eb3e7aa760f10c0"
+          },
+          "isPatched": {
+            "methodIndex": 387384,
+            "type": "IFix.WrappersManagerImpl",
+            "method": "IsPatched",
+            "token": "0x06000f01",
+            "returnTypeName": "System.Boolean",
+            "startVa": "0x182f95a30",
+            "spanBytes": 144,
+            "bodySha256": "313d367c6b4d2777c831c0ef2280273536e55dbec46540925b997fc1b46f805c"
+          },
+          "slotPredicate": "id is in range and wrapperArray[id] is non-null",
+          "installedLocalOutcome": "The BeyondDynamicBone wrapper array starts empty, and the only hash-pinned installed local payload uses the Gameplay.Beyond bridge with no BeyondDynamicBone target.",
+          "runtimeBoundary": "InitWrapperArray or another later, remote, or memory-only load can still replace/populate the live array."
+        },
         "selectedAtRuntime": "unresolved"
       }
     },
@@ -1552,6 +1636,30 @@
         "bodySha256": "3166eb9d2d86a50eb31524927b652850ffcdc6a22b5b6edd92db200959392de7"
       }
     ],
+    "staticInitialization": {
+      "typeInitializer": {
+        "methodIndex": 384866,
+        "type": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+        "method": ".cctor",
+        "token": "0x0600052b",
+        "returnTypeName": "System.Void",
+        "startVa": "0x184d1d370",
+        "spanBytes": 16,
+        "bodySha256": "63dd03799ed9bf5e7b69310d767e063a455475311552dfd822d46c24f2760a66"
+      },
+      "constructor": {
+        "methodIndex": 384864,
+        "type": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+        "method": "Constructor",
+        "token": "0x06000529",
+        "returnTypeName": "System.Void",
+        "startVa": "0x184d1d380",
+        "spanBytes": 144,
+        "bodySha256": "f58d1d860f35dd2a4f36061ff389e56cedde85f4a81317ca1c1ad6f2c362e0e6"
+      },
+      "operation": "The type initializer enters Constructor; Constructor calls BurstCompiler.CompileILPPMethod2 and stores its return in the DirectCall DeferredCompilation field. The first pointer lookup passes that value to GetILPPMethodFunctionPointer2 and stores the normal return in DirectCall.Pointer.",
+      "runtimeBoundary": "The exact value produced by CompileILPPMethod2 and whether initialization completes normally remain runtime state."
+    },
     "invokeSelection": {
       "burstEnabledGate": {
         "methodIndex": 489283,
@@ -1564,7 +1672,116 @@
         "bodySha256": "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67",
         "invokeCallOffset": "0x59",
         "falseBranch": "directCallManagedFallback",
-        "runtimeValue": "unresolved"
+        "semantics": "returns BurstCompiler._IsEnabled && BurstCompilerHelper.IsBurstGenerated",
+        "initialization": {
+          "burstCompilerTypeInitializer": {
+            "methodIndex": 489290,
+            "type": "Unity.Burst.BurstCompiler",
+            "method": ".cctor",
+            "token": "0x06000012",
+            "returnTypeName": "System.Void",
+            "startVa": "0x18495ee80",
+            "spanBytes": 288,
+            "bodySha256": "efc41f828e4d160cfb3991fdcaa944cfa50e7ea7e6d8d45c944baed1cebcb41d"
+          },
+          "optionsConstructor": {
+            "methodIndex": 489303,
+            "type": "Unity.Burst.BurstCompilerOptions",
+            "method": ".ctor",
+            "token": "0x0600001f",
+            "returnTypeName": "System.Void",
+            "startVa": "0x18495efa0",
+            "spanBytes": 64,
+            "bodySha256": "b531f3a726f3a1da861a706522bc611a2a3e9894034278e693d050d2d057a64d"
+          },
+          "enableSetter": {
+            "methodIndex": 489306,
+            "type": "Unity.Burst.BurstCompilerOptions",
+            "method": "set_EnableBurstCompilation",
+            "token": "0x06000022",
+            "returnTypeName": "System.Void",
+            "startVa": "0x18495efe0",
+            "spanBytes": 240,
+            "bodySha256": "963b0bbb979e44b8caf98e75c9f618d261327f5752446fa4a9165e5b0cb68ac7"
+          },
+          "optionsTypeInitializer": {
+            "methodIndex": 489314,
+            "type": "Unity.Burst.BurstCompilerOptions",
+            "method": ".cctor",
+            "token": "0x0600002a",
+            "returnTypeName": "System.Void",
+            "startVa": "0x1841a6310",
+            "spanBytes": 240,
+            "bodySha256": "a5b06c77510b5b7001e2d5ab9b6152899960ba2a10ffb1d63a3b9ccdc58f8532"
+          },
+          "secondaryProcessPredicate": {
+            "methodIndex": 489315,
+            "type": "Unity.Burst.BurstCompilerOptions",
+            "method": "CheckIsSecondaryUnityProcess",
+            "token": "0x0600002b",
+            "returnTypeName": "System.Boolean",
+            "startVa": "0x1812081b0",
+            "throughRetBytes": 3,
+            "throughRetSha256": "01cb47d078b4841b8408ec4fe278efa83115c6f6e101972987507d2b2b57dcf0",
+            "pinnedReturn": false
+          },
+          "metadataUsageTypes": {
+            "BurstCompiler": {
+              "slotVa": "0x18e366608",
+              "metadataTypeIndex": 131177,
+              "typeDefinitionIndex": 62825,
+              "typeBits": "0x120000",
+              "type": "Unity.Burst.BurstCompiler"
+            },
+            "BurstCompilerHelper": {
+              "slotVa": "0x18e390770",
+              "metadataTypeIndex": 184213,
+              "typeDefinitionIndex": 62822,
+              "typeBits": "0x120000",
+              "type": "Unity.Burst.BurstCompiler+BurstCompilerHelper"
+            },
+            "BurstCompilerOptions": {
+              "slotVa": "0x18e390710",
+              "metadataTypeIndex": 131178,
+              "typeDefinitionIndex": 62826,
+              "typeBits": "0x120000",
+              "type": "Unity.Burst.BurstCompilerOptions"
+            },
+            "CalcLineDirectCall": {
+              "slotVa": "0x18e2fd760",
+              "metadataTypeIndex": 211092,
+              "typeDefinitionIndex": 48260,
+              "typeBits": "0x120000",
+              "type": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+CalcLineNormalTangentKernel_000002EA$BurstDirectCall"
+            }
+          },
+          "recognizedInputs": {
+            "commandLine": {
+              "slotVa": "0x18e390620",
+              "literalIndex": 1797,
+              "value": "--burst-disable-compilation"
+            },
+            "forceSyncCommandLine": {
+              "slotVa": "0x18e390610",
+              "literalIndex": 1798,
+              "value": "--burst-force-sync-compilation"
+            },
+            "environment": {
+              "slotVa": "0x18e390600",
+              "literalIndex": 28211,
+              "value": "UNITY_BURST_DISABLE_COMPILATION"
+            },
+            "environmentFalseValue": {
+              "slotVa": "0x18e33b918",
+              "literalIndex": 2071,
+              "value": "0"
+            }
+          },
+          "conditionalDefault": "BurstCompiler constructs global Options(true). The setter publishes true unless ForceDisableBurstCompilation is set; the pinned secondary-process predicate returns false.",
+          "forceDisableSources": "the exact --burst-disable-compilation command-line token or a non-empty, non-'0' UNITY_BURST_DISABLE_COMPILATION environment value"
+        },
+        "runtimeValue": "unresolved",
+        "runtimeBoundary": "The process command line/environment, service-backed IsBurstGenerated value, and any later public Options mutation are not serialized in the pinned inputs."
       },
       "getFunctionPointer": {
         "methodIndex": 384863,
@@ -1576,14 +1793,19 @@
           "token": "0x0600000d",
           "returnTypeName": "<type-index:117445>",
           "startVa": "0x18474f6f0",
-          "getFunctionPointerDiscardCallOffset": "0xb5"
+          "spanBytes": 48,
+          "bodySha256": "9bee5e8ec8df54600135338af3dcfb9bd658c504be3b76c5dd27f1093c44cc24",
+          "getFunctionPointerDiscardCallOffset": "0xb5",
+          "semantics": "null-checks all three arguments, then returns the first argument unchanged"
         },
         "nullBranch": "directCallManagedFallback",
         "nonNullBranch": "indirect call through r10 at Invoke offset 0x13b",
-        "returnedPointer": "unresolved runtime value"
+        "normalReturnNonNull": true,
+        "normalReturnIdentity": "the DirectCall DeferredCompilation/Pointer value passed as the resolver's first argument",
+        "nullBranchBoundary": "The emitted null branch exists, but it is unreachable after a normal resolver return: a null first argument throws before returning rather than selecting the managed fallback."
       },
       "managedFallbackCallOffset": "0x202",
-      "operation": "BurstCompiler.get_IsEnabled must be true and GetFunctionPointer must return nonzero to take the indirect Burst call; either failed gate calls the separate managed fallback body."
+      "operation": "BurstCompiler.get_IsEnabled false selects the managed fallback. When it is true, a normal GetFunctionPointer resolver return is provably non-null and reaches the indirect call; a null resolver input throws instead of returning null."
     },
     "directCallManagedFallback": {
       "startVa": "0x186740adc",
@@ -1973,7 +2195,7 @@
       }
     ],
     "installedLocalIfix": "sources.installedLocalIfix",
-    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, and the parsed installed local IFix table excludes BeyondDynamicBone. BurstCompiler.get_IsEnabled, the returned-pointer null/non-null branch, and live IFix slot ownership remain unobserved runtime values."
+    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback, exact Burst target, GetILPP normal-return identity/non-nullability, conditional Burst default, empty BeyondDynamicBone IFix bootstrap, and installed-local payload absence are statically closed. The process inputs, service-backed Burst-generated bit, later Options mutation, and live IFix slot ownership remain runtime values."
   },
   "workerTargets": [
     {
@@ -2053,17 +2275,17 @@
   "remainingRuntimeEvidence": [
     {
       "boundary": "CalcLine BurstDirectCall selected route",
-      "reason": "method 384854, its managed fallback, and the exact non-null Burst target are closed, but BurstCompiler.get_IsEnabled and GetILPPMethodFunctionPointer2 null/non-null selection remain unobserved runtime values"
+      "reason": "GetILPPMethodFunctionPointer2 normal-return identity/non-nullability and the conditional Burst default are closed, but the actual process inputs, service-backed IsBurstGenerated value, later Options mutation, and CompileILPPMethod2 completion/value remain runtime state"
     },
     {
       "boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
-      "reason": "the unpatched body is closed and the exact parsed installed local IFix table contains no BeyondDynamicBone target; live slot ownership and later, remote, or memory-only patches remain external runtime state"
+      "reason": "the BeyondDynamicBone wrapper array starts empty and the exact installed local Gameplay.Beyond payload has no BeyondDynamicBone target; InitWrapperArray and later, remote, or memory-only loaders leave live slot ownership external runtime state"
     }
   ],
   "nonClaims": [
     "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
     "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
-    "The parsed installed local IFix table excludes BeyondDynamicBone, but does not establish that IFix patch id 0x219 was absent at runtime.",
+    "The empty BeyondDynamicBone bootstrap and parsed installed local IFix absence do not establish that patch id 0x219 was absent after later runtime loading.",
     "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
     "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
     "This static contract is not a Unity execution or retail-equivalence result."

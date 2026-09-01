@@ -240,6 +240,61 @@ CALC_LINE_DIRECT_CALL = {
     "fallbackThroughRetSha256": "b1424aff822792c251bd1176f13d30a274612c86c11a0c5f19c471b363f8feeb",
 }
 
+BURST_RUNTIME_SELECTION = {
+    "burstCompilerCctorMethodIndex": 489290,
+    "burstCompilerCctorStartVa": 0x18495EE80,
+    "burstCompilerCctorSpanBytes": 0x120,
+    "burstCompilerCctorBodySha256": "efc41f828e4d160cfb3991fdcaa944cfa50e7ea7e6d8d45c944baed1cebcb41d",
+    "optionsCtorMethodIndex": 489303,
+    "optionsCtorStartVa": 0x18495EFA0,
+    "optionsCtorSpanBytes": 0x40,
+    "optionsCtorBodySha256": "b531f3a726f3a1da861a706522bc611a2a3e9894034278e693d050d2d057a64d",
+    "optionsSetEnabledMethodIndex": 489306,
+    "optionsSetEnabledStartVa": 0x18495EFE0,
+    "optionsSetEnabledSpanBytes": 0xF0,
+    "optionsSetEnabledBodySha256": "963b0bbb979e44b8caf98e75c9f618d261327f5752446fa4a9165e5b0cb68ac7",
+    "optionsCctorMethodIndex": 489314,
+    "optionsCctorStartVa": 0x1841A6310,
+    "optionsCctorSpanBytes": 0xF0,
+    "optionsCctorBodySha256": "a5b06c77510b5b7001e2d5ab9b6152899960ba2a10ffb1d63a3b9ccdc58f8532",
+    "optionsCctorColdStartVa": 0x1852725C6,
+    "optionsCctorColdSpanBytes": 0x58,
+    "optionsCctorColdSha256": "9fed79435b6cdada18438bf51f32864c7aa7a912782d93c14f203ca533a30951",
+    "checkSecondaryMethodIndex": 489315,
+    "checkSecondaryStartVa": 0x1812081B0,
+    "checkSecondaryThroughRetBytes": 3,
+    "checkSecondaryThroughRetSha256": "01cb47d078b4841b8408ec4fe278efa83115c6f6e101972987507d2b2b57dcf0",
+    "directCallCctorMethodIndex": 384866,
+    "directCallCctorStartVa": 0x184D1D370,
+    "directCallCctorSpanBytes": 0x10,
+    "directCallCctorBodySha256": "63dd03799ed9bf5e7b69310d767e063a455475311552dfd822d46c24f2760a66",
+    "directCallCtorMethodIndex": 384864,
+    "directCallCtorStartVa": 0x184D1D380,
+    "directCallCtorSpanBytes": 0x90,
+    "directCallCtorBodySha256": "f58d1d860f35dd2a4f36061ff389e56cedde85f4a81317ca1c1ad6f2c362e0e6",
+    "getIlppSpanBytes": 0x30,
+    "getIlppBodySha256": "9bee5e8ec8df54600135338af3dcfb9bd658c504be3b76c5dd27f1093c44cc24",
+}
+
+IFIX_WRAPPER_BOOTSTRAP = {
+    "dynamicWrapperTypeDefinitionIndex": 48629,
+    "wrapperArrayFieldIndex": 231395,
+    "wrapperArrayFieldName": "wrapperArray",
+    "wrapperArrayCctorMethodIndex": 387376,
+    "wrapperArrayCctorStartVa": 0x184D37BF0,
+    "wrapperArrayCctorThroughRetBytes": 0x60,
+    "wrapperArrayCctorThroughRetSha256": "5cb6d4ce87529c8c6f1fa7eac874f3ead4739a13fcb266e47994d36a9009ede4",
+    "getPatchMethodIndex": 387383,
+    "getPatchStartVa": 0x185396738,
+    "getPatchSpanBytes": 0x64,
+    "getPatchBodySha256": "db307c30bca973a0267cca2f59294c3fc59aa0bf6959b4d74eb3e7aa760f10c0",
+    "isPatchedMethodIndex": 387384,
+    "isPatchedStartVa": 0x182F95A30,
+    "isPatchedSpanBytes": 0x90,
+    "isPatchedBodySha256": "313d367c6b4d2777c831c0ef2280273536e55dbec46540925b997fc1b46f805c",
+    "initWrapperArrayMethodIndex": 387387,
+}
+
 # The parameter declaration and pointee identities come from global metadata
 # plus MetadataRegistration.types.  Strides/access are then independently
 # demonstrated by the pinned worker body's address arithmetic.
@@ -368,6 +423,62 @@ def _source(path: Path, expected_hash: str) -> dict[str, Any]:
     return {"repoPath": _repo_path(path), "size": path.stat().st_size, "sha256": actual}
 
 
+def _metadata_usage_source(pe: Any, va: int, expected_kind: int) -> int:
+    encoded = pe.u64_at_va(va)
+    kind = encoded >> 29
+    source_index = (encoded >> 1) & 0x0FFFFFFF
+    if kind != expected_kind:
+        raise ContractError(
+            f"metadata usage kind drift at 0x{va:x}: {kind} != {expected_kind}"
+        )
+    return source_index
+
+
+def _metadata_usage_type(md: Any, pe: Any, registration: dict[str, Any],
+                         va: int, expected_name: str) -> dict[str, Any]:
+    metadata_type_index = _metadata_usage_source(pe, va, 1)
+    types_table = int(registration["types"], 16)
+    type_pointer = pe.u64_at_va(types_table + metadata_type_index * 8)
+    type_definition_index, type_bits = struct.unpack(
+        "<QI", pe.bytes_at_va(type_pointer, 12)
+    )
+    if type_definition_index >= len(md.types):
+        raise ContractError(f"metadata usage type is not a TypeDef at 0x{va:x}")
+    actual_name = md.type_full_name(md.types[type_definition_index])
+    if actual_name != expected_name:
+        raise ContractError(
+            f"metadata usage type drift at 0x{va:x}: {actual_name} != {expected_name}"
+        )
+    return {
+        "slotVa": f"0x{va:x}",
+        "metadataTypeIndex": metadata_type_index,
+        "typeDefinitionIndex": type_definition_index,
+        "typeBits": f"0x{type_bits:x}",
+        "type": actual_name,
+    }
+
+
+def _metadata_usage_string(md: Any, pe: Any, va: int,
+                           expected_value: str) -> dict[str, Any]:
+    literal_index = _metadata_usage_source(pe, va, 5)
+    literals = md.sections["stringLiteral"]
+    data = md.sections["stringLiteralData"]
+    record = literals.offset + literal_index * 8
+    if record < literals.offset or record + 8 > literals.offset + literals.size:
+        raise ContractError(f"metadata string literal index out of bounds at 0x{va:x}")
+    length, data_index = struct.unpack_from("<II", md.buf, record)
+    start = data.offset + data_index
+    end = start + length
+    if start < data.offset or end > data.offset + data.size:
+        raise ContractError(f"metadata string literal data out of bounds at 0x{va:x}")
+    value = md.buf[start:end].decode("utf-8", errors="strict")
+    if value != expected_value:
+        raise ContractError(
+            f"metadata string literal drift at 0x{va:x}: {value!r} != {expected_value!r}"
+        )
+    return {"slotVa": f"0x{va:x}", "literalIndex": literal_index, "value": value}
+
+
 def _validate_installed_ifix_payload(
         payload: dict[str, Any], gate: dict[str, Any],
         parsed_targets: list[dict[str, Any]]) -> dict[str, Any]:
@@ -460,6 +571,16 @@ def _installed_ifix_snapshot(path: Path, gate: dict[str, Any]) -> dict[str, Any]
         patch_path = verifier.check_file(
             persistent["file"], "decrypted Gameplay patch"
         )
+        loader = payload["loader_recovery"]
+        metadata_catalog_path = verifier.check_file(
+            loader["metadata_catalog"], "IFix loader metadata catalog"
+        )
+        native_map_path = verifier.check_file(
+            loader["native_map"], "IFix loader native map"
+        )
+        metadata_catalog = json.loads(metadata_catalog_path.read_text(encoding="utf-8"))
+        native_map = json.loads(native_map_path.read_text(encoding="utf-8"))
+        verifier.check_loader_build_provenance(payload, metadata_catalog, native_map)
         parsed_targets, observed = verifier.parse_patch(
             patch_path.read_bytes(), payload["patch_format"]
         )
@@ -485,6 +606,45 @@ def _installed_ifix_snapshot(path: Path, gate: dict[str, Any]) -> dict[str, Any]
         "repoPath": _repo_path(patch_path),
         "size": patch_path.stat().st_size,
         "sha256": _sha(patch_path),
+    }
+    edge_set = {
+        (edge["caller"]["methodIndex"], callee["methodIndex"])
+        for edge in native_map["directCallEdges"]
+        for callee in edge["callees"]
+    }
+    required_loader_edges = {
+        (482175, 482190),
+        (482190, 485545),
+        (482190, 485546),
+        (485545, 485543),
+        (485545, 485544),
+    }
+    if not required_loader_edges <= edge_set:
+        raise ContractError(
+            "installed IFix local loader edges drift: " +
+            repr(sorted(required_loader_edges - edge_set))
+        )
+    result["loaderEvidence"] = {
+        "metadataCatalog": {
+            "repoPath": _repo_path(metadata_catalog_path),
+            "size": metadata_catalog_path.stat().st_size,
+            "sha256": _sha(metadata_catalog_path),
+        },
+        "nativeMap": {
+            "repoPath": _repo_path(native_map_path),
+            "size": native_map_path.stat().st_size,
+            "sha256": _sha(native_map_path),
+        },
+        "requiredDirectCallEdges": [
+            {"callerMethodIndex": caller, "calleeMethodIndex": callee}
+            for caller, callee in sorted(required_loader_edges)
+        ],
+        "payloadBridge": observed["bridge"],
+        "classification": (
+            "The hash-pinned local loader gets the VFS stream, unloads the prior "
+            "manager, and calls IFix.Core.PatchManager.Load/readSlotInfo/getMapId. "
+            "The installed bridge belongs to Gameplay.Beyond, not BeyondDynamicBone."
+        ),
     }
     return result
 
@@ -972,6 +1132,23 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             raise ContractError(f"global method declaration drift for {type_name}.{method_name}")
         return row
 
+    def exact_body(pointer: int, method_index: int, type_name: str,
+                   method_name: str, token: str, span_bytes: int,
+                   expected_hash: str) -> dict[str, Any]:
+        row = exact_global_method(pointer, method_index, type_name, method_name, token)
+        body = pe.bytes_at_va(pointer, span_bytes)
+        actual_hash = hashlib.sha256(body).hexdigest()
+        if len(body) != span_bytes or actual_hash != expected_hash:
+            raise ContractError(
+                f"body drift for {type_name}.{method_name}: {actual_hash}"
+            )
+        return {
+            **row,
+            "startVa": f"0x{pointer:x}",
+            "spanBytes": span_bytes,
+            "bodySha256": actual_hash,
+        }
+
     burst_is_enabled = exact_global_method(
         0x18307B8D0, 489283, "Unity.Burst.BurstCompiler", "get_IsEnabled", "0x0600000b"
     )
@@ -983,6 +1160,140 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         0x18474F6F0, 489285, "Unity.Burst.BurstCompiler",
         "GetILPPMethodFunctionPointer2", "0x0600000d"
     )
+    burst_get_ilpp_body = pe.bytes_at_va(
+        0x18474F6F0, BURST_RUNTIME_SELECTION["getIlppSpanBytes"]
+    )
+    if (hashlib.sha256(burst_get_ilpp_body).hexdigest() !=
+            BURST_RUNTIME_SELECTION["getIlppBodySha256"] or
+            burst_get_ilpp_body[6:33] != bytes.fromhex(
+                "48 85 c9 0f 84 e1 4e 7e 00 48 85 d2 0f 84 86 4e 7e 00 "
+                "4d 85 c0 0f 84 2b 4e 7e 00"
+            ) or
+            burst_get_ilpp_body[33:42] != bytes.fromhex(
+                "48 8b c1 48 83 c4 20 5b c3"
+            )):
+        raise ContractError("GetILPPMethodFunctionPointer2 identity/nullability drift")
+
+    burst_compiler_cctor = exact_body(
+        BURST_RUNTIME_SELECTION["burstCompilerCctorStartVa"],
+        BURST_RUNTIME_SELECTION["burstCompilerCctorMethodIndex"],
+        "Unity.Burst.BurstCompiler", ".cctor", "0x06000012",
+        BURST_RUNTIME_SELECTION["burstCompilerCctorSpanBytes"],
+        BURST_RUNTIME_SELECTION["burstCompilerCctorBodySha256"],
+    )
+    options_ctor = exact_body(
+        BURST_RUNTIME_SELECTION["optionsCtorStartVa"],
+        BURST_RUNTIME_SELECTION["optionsCtorMethodIndex"],
+        "Unity.Burst.BurstCompilerOptions", ".ctor", "0x0600001f",
+        BURST_RUNTIME_SELECTION["optionsCtorSpanBytes"],
+        BURST_RUNTIME_SELECTION["optionsCtorBodySha256"],
+    )
+    options_set_enabled = exact_body(
+        BURST_RUNTIME_SELECTION["optionsSetEnabledStartVa"],
+        BURST_RUNTIME_SELECTION["optionsSetEnabledMethodIndex"],
+        "Unity.Burst.BurstCompilerOptions", "set_EnableBurstCompilation",
+        "0x06000022", BURST_RUNTIME_SELECTION["optionsSetEnabledSpanBytes"],
+        BURST_RUNTIME_SELECTION["optionsSetEnabledBodySha256"],
+    )
+    options_cctor = exact_body(
+        BURST_RUNTIME_SELECTION["optionsCctorStartVa"],
+        BURST_RUNTIME_SELECTION["optionsCctorMethodIndex"],
+        "Unity.Burst.BurstCompilerOptions", ".cctor", "0x0600002a",
+        BURST_RUNTIME_SELECTION["optionsCctorSpanBytes"],
+        BURST_RUNTIME_SELECTION["optionsCctorBodySha256"],
+    )
+    check_secondary = exact_global_method(
+        BURST_RUNTIME_SELECTION["checkSecondaryStartVa"],
+        BURST_RUNTIME_SELECTION["checkSecondaryMethodIndex"],
+        "Unity.Burst.BurstCompilerOptions", "CheckIsSecondaryUnityProcess",
+        "0x0600002b",
+    )
+    check_secondary_body = pe.bytes_at_va(
+        BURST_RUNTIME_SELECTION["checkSecondaryStartVa"],
+        BURST_RUNTIME_SELECTION["checkSecondaryThroughRetBytes"],
+    )
+    if (check_secondary_body != b"\x32\xc0\xc3" or
+            hashlib.sha256(check_secondary_body).hexdigest() !=
+            BURST_RUNTIME_SELECTION["checkSecondaryThroughRetSha256"]):
+        raise ContractError("Burst secondary-process predicate drift")
+    options_cold = pe.bytes_at_va(
+        BURST_RUNTIME_SELECTION["optionsCctorColdStartVa"],
+        BURST_RUNTIME_SELECTION["optionsCctorColdSpanBytes"],
+    )
+    if hashlib.sha256(options_cold).hexdigest() != BURST_RUNTIME_SELECTION[
+            "optionsCctorColdSha256"]:
+        raise ContractError("Burst options command/environment cold branches drift")
+    _validate_call(pe, BURST_RUNTIME_SELECTION["burstCompilerCctorStartVa"] + 0x6E,
+                   BURST_RUNTIME_SELECTION["optionsCtorStartVa"])
+    _validate_call(pe, BURST_RUNTIME_SELECTION["optionsCtorStartVa"] + 0x11,
+                   BURST_RUNTIME_SELECTION["optionsSetEnabledStartVa"])
+    if pe.bytes_at_va(
+            BURST_RUNTIME_SELECTION["optionsSetEnabledStartVa"] + 0xB7, 2
+    ) != b"\x88\x18":
+        raise ContractError("BurstCompiler._IsEnabled global write drift")
+    if pe.bytes_at_va(
+            BURST_RUNTIME_SELECTION["optionsSetEnabledStartVa"] + 0x69, 3
+    ) != b"\x80\x39\x00":
+        raise ContractError("ForceDisableBurstCompilation gate drift")
+
+    burst_usage_types = {
+        "BurstCompiler": _metadata_usage_type(
+            md, pe, registration, 0x18E366608, "Unity.Burst.BurstCompiler"
+        ),
+        "BurstCompilerHelper": _metadata_usage_type(
+            md, pe, registration, 0x18E390770,
+            "Unity.Burst.BurstCompiler+BurstCompilerHelper"
+        ),
+        "BurstCompilerOptions": _metadata_usage_type(
+            md, pe, registration, 0x18E390710,
+            "Unity.Burst.BurstCompilerOptions"
+        ),
+        "CalcLineDirectCall": _metadata_usage_type(
+            md, pe, registration, 0x18E2FD760,
+            "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+"
+            "CalcLineNormalTangentKernel_000002EA$BurstDirectCall"
+        ),
+    }
+    burst_disable_inputs = {
+        "commandLine": _metadata_usage_string(
+            md, pe, 0x18E390620, "--burst-disable-compilation"
+        ),
+        "forceSyncCommandLine": _metadata_usage_string(
+            md, pe, 0x18E390610, "--burst-force-sync-compilation"
+        ),
+        "environment": _metadata_usage_string(
+            md, pe, 0x18E390600, "UNITY_BURST_DISABLE_COMPILATION"
+        ),
+        "environmentFalseValue": _metadata_usage_string(md, pe, 0x18E33B918, "0"),
+    }
+
+    direct_call_cctor = exact_body(
+        BURST_RUNTIME_SELECTION["directCallCctorStartVa"],
+        BURST_RUNTIME_SELECTION["directCallCctorMethodIndex"],
+        "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+"
+        "CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+        ".cctor", "0x0600052b",
+        BURST_RUNTIME_SELECTION["directCallCctorSpanBytes"],
+        BURST_RUNTIME_SELECTION["directCallCctorBodySha256"],
+    )
+    direct_call_ctor = exact_body(
+        BURST_RUNTIME_SELECTION["directCallCtorStartVa"],
+        BURST_RUNTIME_SELECTION["directCallCtorMethodIndex"],
+        "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJobKernels+"
+        "CalcLineNormalTangentKernel_000002EA$BurstDirectCall",
+        "Constructor", "0x06000529",
+        BURST_RUNTIME_SELECTION["directCallCtorSpanBytes"],
+        BURST_RUNTIME_SELECTION["directCallCtorBodySha256"],
+    )
+    _validate_call(pe, BURST_RUNTIME_SELECTION["directCallCtorStartVa"] + 0x5B,
+                   0x183FB0BC0)
+    if (pe.bytes_at_va(BURST_RUNTIME_SELECTION["directCallCctorStartVa"], 7) !=
+            bytes.fromhex("33 c9 e9 09 00 00 00") or
+            pe.bytes_at_va(BURST_RUNTIME_SELECTION["directCallCtorStartVa"] + 0x86, 4) !=
+            bytes.fromhex("48 89 58 08") or
+            pe.bytes_at_va(CALC_LINE_DIRECT_CALL["getFunctionPointerDiscardStartVa"] + 0xC8, 3) !=
+            bytes.fromhex("48 89 02")):
+        raise ContractError("CalcLine DirectCall pointer initialization/store drift")
     helper_spans = _verified_helper_spans(pe)
     parameter_layout = _calc_line_parameter_layout(md, pe, registration)
     relevant_layouts = _calc_line_relevant_layouts(md, pe, registration)
@@ -1024,6 +1335,50 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             raise ContractError(f"MathUtility.FromToRotation constant drift for {name}")
         constant_rows.append({"name": name, "va": f"0x{va:x}", "bytes": actual.hex()})
 
+    ifix_type = md.types[IFIX_WRAPPER_BOOTSTRAP["dynamicWrapperTypeDefinitionIndex"]]
+    if (md.type_full_name(ifix_type), md.image_name_by_type_index.get(ifix_type.index)) != (
+            "IFix.ILFixDynamicMethodWrapper", "BeyondDynamicBone.dll"):
+        raise ContractError("BeyondDynamicBone IFix dynamic-wrapper type identity drift")
+    wrapper_field = md.fields[IFIX_WRAPPER_BOOTSTRAP["wrapperArrayFieldIndex"]]
+    if (wrapper_field.index - ifix_type.field_start < 0 or
+            wrapper_field.index - ifix_type.field_start >= ifix_type.field_count or
+            md.string(wrapper_field.name_index) !=
+            IFIX_WRAPPER_BOOTSTRAP["wrapperArrayFieldName"]):
+        raise ContractError("BeyondDynamicBone IFix wrapperArray field identity drift")
+    ifix_usage_type = _metadata_usage_type(
+        md, pe, registration, 0x18E2EA7D0, "IFix.ILFixDynamicMethodWrapper"
+    )
+    if ifix_usage_type["typeDefinitionIndex"] != ifix_type.index:
+        raise ContractError("BeyondDynamicBone IFix wrapper metadata usage drift")
+    ifix_cctor = exact_body(
+        IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorStartVa"],
+        IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorMethodIndex"],
+        "IFix.ILFixDynamicMethodWrapper", ".cctor", "0x06000ef9",
+        IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorThroughRetBytes"],
+        IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorThroughRetSha256"],
+    )
+    ifix_get_patch = exact_body(
+        IFIX_WRAPPER_BOOTSTRAP["getPatchStartVa"],
+        IFIX_WRAPPER_BOOTSTRAP["getPatchMethodIndex"],
+        "IFix.WrappersManagerImpl", "GetPatch", "0x06000f00",
+        IFIX_WRAPPER_BOOTSTRAP["getPatchSpanBytes"],
+        IFIX_WRAPPER_BOOTSTRAP["getPatchBodySha256"],
+    )
+    ifix_is_patched = exact_body(
+        IFIX_WRAPPER_BOOTSTRAP["isPatchedStartVa"],
+        IFIX_WRAPPER_BOOTSTRAP["isPatchedMethodIndex"],
+        "IFix.WrappersManagerImpl", "IsPatched", "0x06000f01",
+        IFIX_WRAPPER_BOOTSTRAP["isPatchedSpanBytes"],
+        IFIX_WRAPPER_BOOTSTRAP["isPatchedBodySha256"],
+    )
+    if (pe.bytes_at_va(IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorStartVa"] + 0x33, 2) !=
+            b"\x33\xd2" or
+            pe.bytes_at_va(IFIX_WRAPPER_BOOTSTRAP["wrapperArrayCctorStartVa"] + 0x48, 3) !=
+            b"\x48\x89\x02" or
+            pe.bytes_at_va(IFIX_WRAPPER_BOOTSTRAP["isPatchedStartVa"] + 0x66, 6) !=
+            bytes.fromhex("48 83 7c d9 20 00")):
+        raise ContractError("BeyondDynamicBone IFix empty-array/slot-test semantics drift")
+
     dependencies = {
         "callback": _dependency(DATA_ROOT / "secondary_dynamics_callback_contract.json",
                                 "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65",
@@ -1052,7 +1407,11 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "calc_line_kernel_wrapper_route_recovered": True,
         "calc_line_directcall_managed_fallback_equivalence_closed": True,
         "calc_line_burst_function_pointer_target_closed": True,
+        "calc_line_get_ilpp_normal_return_nonnull_closed": True,
+        "calc_line_get_ilpp_return_identity_closed": True,
+        "burst_initial_default_conditions_closed": True,
         "from_to_rotation_installed_local_ifix_target_absent": True,
+        "from_to_rotation_installed_local_ifix_bootstrap_absent": True,
         "create_list_kernel_numerics_recovered": False,
         "calc_line_normal_tangent_numerics_recovered": False,
         "selected_calc_line_execution_route_closed": False,
@@ -1198,6 +1557,28 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     "dynamicWrapperMethodIndex": 386959,
                     "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
                     "installedLocalSnapshot": "sources.installedLocalIfix",
+                    "localBootstrap": {
+                        "wrapperType": ifix_usage_type,
+                        "wrapperArrayFieldIndex": IFIX_WRAPPER_BOOTSTRAP[
+                            "wrapperArrayFieldIndex"
+                        ],
+                        "wrapperArrayCctor": ifix_cctor,
+                        "initialArrayLength": 0,
+                        "getPatch": ifix_get_patch,
+                        "isPatched": ifix_is_patched,
+                        "slotPredicate": (
+                            "id is in range and wrapperArray[id] is non-null"
+                        ),
+                        "installedLocalOutcome": (
+                            "The BeyondDynamicBone wrapper array starts empty, and the "
+                            "only hash-pinned installed local payload uses the "
+                            "Gameplay.Beyond bridge with no BeyondDynamicBone target."
+                        ),
+                        "runtimeBoundary": (
+                            "InitWrapperArray or another later, remote, or memory-only "
+                            "load can still replace/populate the live array."
+                        ),
+                    },
                     "selectedAtRuntime": "unresolved",
                 },
             },
@@ -1222,6 +1603,21 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                 "invokeMethodIndex": 384867,
             },
             "generatedMethods": direct_call_methods,
+            "staticInitialization": {
+                "typeInitializer": direct_call_cctor,
+                "constructor": direct_call_ctor,
+                "operation": (
+                    "The type initializer enters Constructor; Constructor calls "
+                    "BurstCompiler.CompileILPPMethod2 and stores its return in the "
+                    "DirectCall DeferredCompilation field. The first pointer lookup "
+                    "passes that value to GetILPPMethodFunctionPointer2 and stores "
+                    "the normal return in DirectCall.Pointer."
+                ),
+                "runtimeBoundary": (
+                    "The exact value produced by CompileILPPMethod2 and whether "
+                    "initialization completes normally remain runtime state."
+                ),
+            },
             "invokeSelection": {
                 "burstEnabledGate": {
                     **burst_is_enabled,
@@ -1230,7 +1626,45 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     "bodySha256": "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67",
                     "invokeCallOffset": "0x59",
                     "falseBranch": "directCallManagedFallback",
+                    "semantics": (
+                        "returns BurstCompiler._IsEnabled && "
+                        "BurstCompilerHelper.IsBurstGenerated"
+                    ),
+                    "initialization": {
+                        "burstCompilerTypeInitializer": burst_compiler_cctor,
+                        "optionsConstructor": options_ctor,
+                        "enableSetter": options_set_enabled,
+                        "optionsTypeInitializer": options_cctor,
+                        "secondaryProcessPredicate": {
+                            **check_secondary,
+                            "startVa": f"0x{BURST_RUNTIME_SELECTION['checkSecondaryStartVa']:x}",
+                            "throughRetBytes": BURST_RUNTIME_SELECTION[
+                                "checkSecondaryThroughRetBytes"
+                            ],
+                            "throughRetSha256": BURST_RUNTIME_SELECTION[
+                                "checkSecondaryThroughRetSha256"
+                            ],
+                            "pinnedReturn": False,
+                        },
+                        "metadataUsageTypes": burst_usage_types,
+                        "recognizedInputs": burst_disable_inputs,
+                        "conditionalDefault": (
+                            "BurstCompiler constructs global Options(true). The setter "
+                            "publishes true unless ForceDisableBurstCompilation is set; "
+                            "the pinned secondary-process predicate returns false."
+                        ),
+                        "forceDisableSources": (
+                            "the exact --burst-disable-compilation command-line token "
+                            "or a non-empty, non-'0' UNITY_BURST_DISABLE_COMPILATION "
+                            "environment value"
+                        ),
+                    },
                     "runtimeValue": "unresolved",
+                    "runtimeBoundary": (
+                        "The process command line/environment, service-backed "
+                        "IsBurstGenerated value, and any later public Options mutation "
+                        "are not serialized in the pinned inputs."
+                    ),
                 },
                 "getFunctionPointer": {
                     "methodIndex": 384863,
@@ -1238,14 +1672,34 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
                     "resolver": {
                         **burst_get_ilpp,
                         "startVa": "0x18474f6f0",
+                        "spanBytes": BURST_RUNTIME_SELECTION["getIlppSpanBytes"],
+                        "bodySha256": BURST_RUNTIME_SELECTION["getIlppBodySha256"],
                         "getFunctionPointerDiscardCallOffset": "0xb5",
+                        "semantics": (
+                            "null-checks all three arguments, then returns the first "
+                            "argument unchanged"
+                        ),
                     },
                     "nullBranch": "directCallManagedFallback",
                     "nonNullBranch": "indirect call through r10 at Invoke offset 0x13b",
-                    "returnedPointer": "unresolved runtime value",
+                    "normalReturnNonNull": True,
+                    "normalReturnIdentity": (
+                        "the DirectCall DeferredCompilation/Pointer value passed as "
+                        "the resolver's first argument"
+                    ),
+                    "nullBranchBoundary": (
+                        "The emitted null branch exists, but it is unreachable after "
+                        "a normal resolver return: a null first argument throws before "
+                        "returning rather than selecting the managed fallback."
+                    ),
                 },
                 "managedFallbackCallOffset": "0x202",
-                "operation": "BurstCompiler.get_IsEnabled must be true and GetFunctionPointer must return nonzero to take the indirect Burst call; either failed gate calls the separate managed fallback body.",
+                "operation": (
+                    "BurstCompiler.get_IsEnabled false selects the managed fallback. "
+                    "When it is true, a normal GetFunctionPointer resolver return is "
+                    "provably non-null and reaches the indirect call; a null resolver "
+                    "input throws instead of returning null."
+                ),
             },
             "directCallManagedFallback": {
                 "startVa": f"0x{CALC_LINE_DIRECT_CALL['fallbackStartVa']:x}",
@@ -1281,20 +1735,20 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         "routeEvidence": {
             "coldSpans": cold,
             "installedLocalIfix": "sources.installedLocalIfix",
-            "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, and the parsed installed local IFix table excludes BeyondDynamicBone. BurstCompiler.get_IsEnabled, the returned-pointer null/non-null branch, and live IFix slot ownership remain unobserved runtime values.",
+            "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback, exact Burst target, GetILPP normal-return identity/non-nullability, conditional Burst default, empty BeyondDynamicBone IFix bootstrap, and installed-local payload absence are statically closed. The process inputs, service-backed Burst-generated bit, later Options mutation, and live IFix slot ownership remain runtime values.",
         },
         "workerTargets": workers,
         "nextDisassemblyTargets": [],
         "remainingRuntimeEvidence": [
             {"boundary": "CalcLine BurstDirectCall selected route",
-             "reason": "method 384854, its managed fallback, and the exact non-null Burst target are closed, but BurstCompiler.get_IsEnabled and GetILPPMethodFunctionPointer2 null/non-null selection remain unobserved runtime values"},
+             "reason": "GetILPPMethodFunctionPointer2 normal-return identity/non-nullability and the conditional Burst default are closed, but the actual process inputs, service-backed IsBurstGenerated value, later Options mutation, and CompileILPPMethod2 completion/value remain runtime state"},
             {"boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
-             "reason": "the unpatched body is closed and the exact parsed installed local IFix table contains no BeyondDynamicBone target; live slot ownership and later, remote, or memory-only patches remain external runtime state"},
+             "reason": "the BeyondDynamicBone wrapper array starts empty and the exact installed local Gameplay.Beyond payload has no BeyondDynamicBone target; InitWrapperArray and later, remote, or memory-only loaders leave live slot ownership external runtime state"},
         ],
         "nonClaims": [
             "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
             "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
-            "The parsed installed local IFix table excludes BeyondDynamicBone, but does not establish that IFix patch id 0x219 was absent at runtime.",
+            "The empty BeyondDynamicBone bootstrap and parsed installed local IFix absence do not establish that patch id 0x219 was absent after later runtime loading.",
             "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
             "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
             "This static contract is not a Unity execution or retail-equivalence result.",
