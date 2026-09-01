@@ -262,6 +262,7 @@ namespace EndfieldGraphShaderLab
             bool legacyAnimationsStarted =
                 StartRecoveredLegacyAnimations(
                     instance,
+                    sourceClock,
                     out string legacyAnimationFailure);
             PlayRecoveredParticleSystems(systems);
             if (string.Equals(binding.prefab.name,
@@ -331,6 +332,7 @@ namespace EndfieldGraphShaderLab
 
         private bool StartRecoveredLegacyAnimations(
             GameObject instance,
+            EndfieldOverviewEffectSourceClock sourceClock,
             out string failure)
         {
             // Instantiate activates an enabled prefab before this spawner can
@@ -340,6 +342,16 @@ namespace EndfieldGraphShaderLab
             // only clips explicitly marked automatic in the recovered prefab.
             bool allStarted = true;
             failure = string.Empty;
+            bool sourceClockAuthenticated =
+                sourceClock.TryGetAuthenticatedElapsed(out float sourceElapsed);
+            if (sourceClock.valid && !sourceClockAuthenticated)
+            {
+                failure =
+                    "Authenticated source-state clock became invalid or stale.";
+                return false;
+            }
+            bool seedFromSourceState =
+                sourceClockAuthenticated && sourceElapsed > 0f;
             foreach (Animation animation in
                 instance.GetComponentsInChildren<Animation>(true))
             {
@@ -355,6 +367,23 @@ namespace EndfieldGraphShaderLab
                         failure = "Recovered automatic Legacy Animation '" +
                             animation.clip.name + "' failed to start.";
                     }
+                    continue;
+                }
+                if (seedFromSourceState &&
+                    !TryApplyOneShotSourceAnimationSeed(
+                        animation,
+                        sourceElapsed,
+                        out string seedFailure))
+                {
+                    animation.Stop();
+                    allStarted = false;
+                    if (failure.Length == 0)
+                    {
+                        failure = "Recovered automatic Legacy Animation '" +
+                            animation.clip.name +
+                            "' rejected its authenticated source-state seed: " +
+                            seedFailure;
+                    }
                 }
             }
             return allStarted;
@@ -363,6 +392,38 @@ namespace EndfieldGraphShaderLab
         private static bool PlayRecoveredLegacyAnimation(Animation animation)
         {
             return animation.Play(animation.clip.name);
+        }
+
+        private static bool TryApplyOneShotSourceAnimationSeed(
+            Animation animation,
+            float sourceElapsed,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (animation == null || animation.clip == null ||
+                float.IsNaN(sourceElapsed) ||
+                float.IsInfinity(sourceElapsed) || sourceElapsed <= 0f)
+            {
+                failure = "animation or positive source elapsed time is invalid";
+                return false;
+            }
+
+            AnimationState state = animation[animation.clip.name];
+            if (state == null)
+            {
+                failure = "automatic clip state is missing";
+                return false;
+            }
+
+            // AnimatorBehaviourPlayEffect._SyncEffectTime seeds active child
+            // Animators once with length * normalizedTime after
+            // EffectInstance.Start. Preserve that raw elapsed value here,
+            // sample once, and let the effect-owned Animation advance on
+            // Unity's scaled clock. Do not clamp, wrap, or continuously poll
+            // the body Animator.
+            state.time = sourceElapsed;
+            animation.Sample();
+            return true;
         }
 
         private static void PlayRecoveredParticleSystems(

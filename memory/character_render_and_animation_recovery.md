@@ -308,6 +308,15 @@ the outer return; the false path remains intact and all 20 native tests pass.
   conditional pinned-unpatched route, FromOveview starts the child state during
   `EffectInstance.Start` and then applies the one-shot raw
   `length * normalizedTime` seed after Start returns.
+  The Unity spawner now consumes that already-authenticated source transaction:
+  after each automatic child Legacy `Animation` starts, it assigns the raw
+  elapsed value and samples exactly once, then returns progression to the
+  effect-owned scaled clock. Default/manual clocks stay at zero, while a stale
+  clock that claimed validity fails closed. Focused tests pin the two automatic
+  overview-01 children (`A_actor_endminf_ui_overview_02` and
+  `A_fx_endminf_ui_overview_04`), forbid clamp/wrap and particle retiming, and
+  require the state-time write after `Play`; canonical D3D11 visual validation
+  remains pending.
   Child `GameObject.SetActive`/LOD display is also closed under that same
   conditional pinned-unpatched route. The original serialized TypeTree has
   `effect_nanguan.m_IsActive=true`; `EffectLodCfg.InitData` preserves that as

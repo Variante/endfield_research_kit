@@ -69,13 +69,30 @@ def parse_box(values: list[int]) -> tuple[int, int, int, int]:
     return box
 
 
-def sheet_indices(frame_count: int) -> list[int]:
+def sheet_indices(frame_count: int, fps: float = 60.0) -> list[int]:
     if frame_count <= 0:
         raise ValueError("comparison contains no recovered frames")
-    # Keep the established dense-window cadence, but never request indices
-    # outside a shorter targeted probe.
+    if not math.isfinite(fps) or fps <= 0.0:
+        raise ValueError("sheet fps must be finite and positive")
+    if frame_count <= 16:
+        # Preserve the useful every-other-frame view for short targeted probes.
+        return sorted({
+            index for index in (*range(0, frame_count, 2), frame_count - 1)
+            if 0 <= index < frame_count
+        })
+
+    # A full-sequence sheet must expose the actual fidelity risks rather than
+    # spending eight of nine rows on the first quarter-second. These source-
+    # timeline checkpoints cover early entrance buildup, the opening-motion
+    # residual, mid-start, the 4.45-second crystal peak, transition/cleanup,
+    # and settled loop. The last available row is always retained.
+    checkpoint_seconds = (0.0, 0.5, 1.0, 2.0, 4.45, 5.0, 6.0, 8.0)
     return sorted({
-        index for index in (0, 2, 4, 6, 8, 10, 12, 14, frame_count - 1)
+        index for index in (
+            *(int(math.floor(seconds * fps + 0.5))
+              for seconds in checkpoint_seconds),
+            frame_count - 1,
+        )
         if 0 <= index < frame_count
     })
 
@@ -299,7 +316,7 @@ def main() -> int:
     if not unity_frames:
         raise ValueError("Unity and retail sequences have no common bounded frame window")
     frame_count = len(unity_frames)
-    selected_sheet_indices = set(sheet_indices(frame_count))
+    selected_sheet_indices = set(sheet_indices(frame_count, fps))
     rows_by_offset: dict[int, list[dict]] = {
         offset: [] for offset in args.source_offsets
     }
@@ -420,6 +437,7 @@ def main() -> int:
         ),
         "bestOffsetByMeanEffectRoiMae": best_offset,
         "sheet": str(sheet_path),
+        "sheetIndices": indices,
         "alignments": alignments,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
