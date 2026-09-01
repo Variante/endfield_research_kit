@@ -3691,10 +3691,19 @@ enters a separately emitted managed fallback. That fallback and method
 18-branch control-flow topology, 22 direct-call targets, and numeric
 immediates; only stack/local layout differs. Despite the job name, these
 bodies write rotations and have no separate normal/tangent output buffer.
-Overall runtime selection remains fail-closed: the nonzero Burst function
-pointer is a runtime value, and `FromToRotation` can be replaced through IFix
-patch `0x219`, whose runtime state is unknown. The contract uses no captured
-positions, timing, curves, fitted constants, or replay data.
+The exact non-null Burst target is now statically joined by its unique complete
+17-argument and baseline/team/chunk/packed-child signature: export hash
+`7342567c29c434b5b924be51bd8e34b7` assigns zero-fill slot `0x3c57b0` to the
+pinned SSE2 `0x10ef20 -> 0x10f190 -> 0xf4100` or AVX2
+`0x29a3c0 -> 0x29a5c0 -> 0x284c50` route. Each core calls only its local
+scalar sin/cos helper twice; neither calls GameAssembly or IFix. Overall
+runtime selection remains fail-closed because `BurstCompiler.get_IsEnabled`
+and the returned function pointer still decide Burst versus managed fallback.
+The hash-pinned current installed IFix table has no BeyondDynamicBone,
+`MathUtility`, or `FromToRotation` target, but that disk snapshot does not prove
+live slot ownership or exclude later, remote, or memory-only patches. The
+contract uses no captured positions, timing, curves, fitted constants, or
+replay data.
 A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
 equations with explicit binary32 operation grouping and bit-exact verifier
 vectors. It decodes packed child ranges, preserves ordered Move/non-Move
@@ -3702,7 +3711,7 @@ accumulation, and computes child/parent quaternion writes, but it is not
 referenced by the solver, frame coordinator, generated prefabs, scenes, or
 assets. Zero/non-finite and the finite negative-X antiparallel zero-axis case
 fail closed. This is executable code recovery, not evidence that retail chose
-the unresolved Burst pointer or that IFix `0x219` was inactive.
+the Burst or managed route on a particular frame.
 
 The M27 live exact-ABI admission verifier validates the source subprogram-113
 shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte

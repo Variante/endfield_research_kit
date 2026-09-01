@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-  "status": "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
+  "status": "post_proxy_calc_line_burst_target_and_fallback_closed_runtime_selection_open",
   "manager_schedule_closed": true,
   "managed_job_payload_layout_closed": true,
   "generic_methodspec_identities_closed": true,
@@ -13,7 +13,7 @@
   "calc_line_data_layout_closed": true,
   "calc_line_kernel_wrapper_route_recovered": true,
   "calc_line_directcall_managed_fallback_equivalence_closed": true,
-  "calc_line_burst_function_pointer_target_closed": false,
+  "calc_line_burst_function_pointer_target_closed": true,
   "create_list_kernel_numerics_recovered": false,
   "calc_line_normal_tangent_numerics_recovered": false,
   "selected_calc_line_execution_route_closed": false,
@@ -59,6 +59,186 @@
         "sha256": "f3e44da89e706cf5a43e625f774196091790b5d548ab720d35b0d8ce77c520c8",
         "schema": "endfield.charinfo.secondary-dynamics-transform-writeback.v1",
         "status": "transform_writeback_contract_closed_with_duplicate_boundary"
+      },
+      "calcLineBurstExport": {
+        "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json",
+        "size": 627694,
+        "sha256": "dddaca5bba089b18711a9709a0f459bac1742d7be43c8156ed57f3f4818ead0d",
+        "schema": "endfield.charinfo.secondary-dynamics-burst-export.v1",
+        "status": "secondary_dynamics_static_export_core_identities_partial_managed_routes_unresolved",
+        "target": {
+          "status": "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+          "managedWorkerMethodIndex": 384856,
+          "kernelWrapperMethodIndex": 384854,
+          "directCallInvokeMethodIndex": 384867,
+          "candidateHash": "7342567c29c434b5b924be51bd8e34b7",
+          "export": {
+            "ordinal": 282,
+            "rva": "0x3571e0",
+            "spanBytes": 208,
+            "bodyBytes": 205,
+            "bodySha256": "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328",
+            "stackWriteOffsets": [
+              "0x20",
+              "0x28",
+              "0x30",
+              "0x38",
+              "0x40",
+              "0x48",
+              "0x50",
+              "0x58",
+              "0x60",
+              "0x68",
+              "0x70",
+              "0x78",
+              "0x80"
+            ],
+            "stackWriteWidths": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ],
+            "functionPointerSlotRva": "0x3c57b0",
+            "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+            "exactBodyBytes": 205
+          },
+          "parameterContract": {
+            "parameterCount": 17,
+            "parameterNames": [
+              "jobBaseLineList",
+              "teamDataArray",
+              "parameterArray",
+              "attributes",
+              "positions",
+              "rotations",
+              "vertexLocalPositions",
+              "vertexLocalRotations",
+              "parentIndices",
+              "childIndexArray",
+              "childDataArray",
+              "baseLineFlags",
+              "baseLineTeamIds",
+              "baseLineStartIndices",
+              "baseLineDataCounts",
+              "baseLineData",
+              "index"
+            ],
+            "lastParameter": "index System.Int32"
+          },
+          "semanticDiscriminator": {
+            "entry": "jobBaseLineList[index], baseline bit-0 gate, Int16 team id",
+            "teamData": {
+              "strideBytes": 464,
+              "fieldOffsets": [
+                "0x68",
+                "0x88",
+                "0x124",
+                "0x12c",
+                "0x164"
+              ]
+            },
+            "clothParameters": {
+              "strideBytes": 808,
+              "fieldOffsets": [
+                "0xa0",
+                "0xa4"
+              ]
+            },
+            "packedChildIndex": {
+              "childCount": "value >> 20",
+              "localStart": "value & 0x000fffff"
+            },
+            "writes": [
+              "rotations[childVertex]",
+              "rotations[parentVertex]"
+            ],
+            "reason": "this complete ordered field/stride/packed-child signature occurs behind 7342567c... and distinguishes it from the other two 17-argument wrapper-ABI candidates"
+          },
+          "functionPointerSlotRva": "0x3c57b0",
+          "variants": [
+            {
+              "cpuVariant": "x64_sse2",
+              "burstInitializeAssignment": {
+                "rva": "0x3605c6",
+                "bytes": 14,
+                "sha256": "1c731ab8d00561daf856a9674880f5921b87cce0b216dc46a40d272c6b8f75ae",
+                "functionPointerSlotRva": "0x3c57b0"
+              },
+              "entry": {
+                "rva": "0x10ef20",
+                "bytes": 204,
+                "sha256": "ef31d3c92ce1d2d1004560a75f2dc47b849f6f330dadd5bb267c5e9427be8b18"
+              },
+              "tailStub": {
+                "rva": "0x10f190",
+                "bytes": 10,
+                "sha256": "1477b201c50de25305761971f44bae5a8060b844f72a5a5770e462f8b32d61ac",
+                "tailTargetRva": "0xf4100"
+              },
+              "solverCore": {
+                "rva": "0xf4100",
+                "bytes": 3742,
+                "sha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+                "directCallTargets": [
+                  "0x6e860",
+                  "0x6e860"
+                ]
+              },
+              "scalarSinCos": {
+                "rva": "0x6e860",
+                "throughFirstRetBytes": 496,
+                "throughFirstRetSha256": "542a4e9e9c3d9631a1f5dfff36628d62603938361adfd468b6abb283002fb047"
+              }
+            },
+            {
+              "cpuVariant": "avx2",
+              "burstInitializeAssignment": {
+                "rva": "0x35c38f",
+                "bytes": 14,
+                "sha256": "673d9cdf093a02d4282dcd4cff2ef048e9599cc1db3922c1beebb988c41387e7",
+                "functionPointerSlotRva": "0x3c57b0"
+              },
+              "entry": {
+                "rva": "0x29a3c0",
+                "bytes": 83,
+                "sha256": "ef3d905ce27209c4f97ea2f88610907fbfd572a01f7db6c1ca5a610ddca9859a"
+              },
+              "tailStub": {
+                "rva": "0x29a5c0",
+                "bytes": 10,
+                "sha256": "109cb38188b82eb4b73761ce7b46c535f1cf9402ab6255afd36a4031409476f8",
+                "tailTargetRva": "0x284c50"
+              },
+              "solverCore": {
+                "rva": "0x284c50",
+                "bytes": 2901,
+                "sha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+                "directCallTargets": [
+                  "0x1e5d30",
+                  "0x1e5d30"
+                ]
+              },
+              "scalarSinCos": {
+                "rva": "0x1e5d30",
+                "throughFirstRetBytes": 521,
+                "throughFirstRetSha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+              }
+            }
+          ],
+          "ifixBoundary": "Both Burst cores have exactly two direct calls, both to their local scalar sin/cos helper; neither core calls GameAssembly or the IFix FromToRotation gate.",
+          "runtimeSelection": "unobserved: BurstCompiler.get_IsEnabled and the managed GetFunctionPointer return value still decide Burst versus managed fallback",
+          "numericBoundary": "The original executable export/slot/dual-CPU core graph is exact and source-pinned. A complete source-level transcription and integration remain open; no capture-derived transforms, timing, positions, or curves are inputs."
+        }
       }
     }
   },
@@ -1301,7 +1481,7 @@
     "unusedParameters": [
       "parentIndices"
     ],
-    "numericBoundary": "The pinned unpatched managed-worker traversal/equations and the generated DirectCall managed fallback are closed. Overall runtime numerics remain fail-closed until the selected Burst function pointer, cross-frame/managed route, and FromToRotation IFix patch state are proven."
+    "numericBoundary": "The pinned unpatched managed-worker traversal/equations, generated DirectCall managed fallback, and exact dual-CPU Burst target are closed. Overall runtime numerics remain fail-closed until the selected Burst/managed branch, cross-frame/managed route, and managed-route FromToRotation IFix patch state are proven."
   },
   "calcLineDirectCallRoute": {
     "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",
@@ -1538,10 +1718,182 @@
         "directCallFallbackFrameBytes": "0x7b0",
         "numericConstantDifferenceObserved": false
       },
-      "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. This comparison does not identify or prove the body behind a non-null Burst function pointer."
+      "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. The sibling Burst contract separately identifies the non-null target; this comparison does not prove which route was selected at runtime."
     },
     "selectedRuntimeRoute": "unresolved",
-    "burstFunctionPointerTarget": "unresolved"
+    "burstFunctionPointerTarget": {
+      "status": "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+      "managedWorkerMethodIndex": 384856,
+      "kernelWrapperMethodIndex": 384854,
+      "directCallInvokeMethodIndex": 384867,
+      "candidateHash": "7342567c29c434b5b924be51bd8e34b7",
+      "export": {
+        "ordinal": 282,
+        "rva": "0x3571e0",
+        "spanBytes": 208,
+        "bodyBytes": 205,
+        "bodySha256": "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328",
+        "stackWriteOffsets": [
+          "0x20",
+          "0x28",
+          "0x30",
+          "0x38",
+          "0x40",
+          "0x48",
+          "0x50",
+          "0x58",
+          "0x60",
+          "0x68",
+          "0x70",
+          "0x78",
+          "0x80"
+        ],
+        "stackWriteWidths": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "functionPointerSlotRva": "0x3c57b0",
+        "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+        "exactBodyBytes": 205
+      },
+      "parameterContract": {
+        "parameterCount": 17,
+        "parameterNames": [
+          "jobBaseLineList",
+          "teamDataArray",
+          "parameterArray",
+          "attributes",
+          "positions",
+          "rotations",
+          "vertexLocalPositions",
+          "vertexLocalRotations",
+          "parentIndices",
+          "childIndexArray",
+          "childDataArray",
+          "baseLineFlags",
+          "baseLineTeamIds",
+          "baseLineStartIndices",
+          "baseLineDataCounts",
+          "baseLineData",
+          "index"
+        ],
+        "lastParameter": "index System.Int32"
+      },
+      "semanticDiscriminator": {
+        "entry": "jobBaseLineList[index], baseline bit-0 gate, Int16 team id",
+        "teamData": {
+          "strideBytes": 464,
+          "fieldOffsets": [
+            "0x68",
+            "0x88",
+            "0x124",
+            "0x12c",
+            "0x164"
+          ]
+        },
+        "clothParameters": {
+          "strideBytes": 808,
+          "fieldOffsets": [
+            "0xa0",
+            "0xa4"
+          ]
+        },
+        "packedChildIndex": {
+          "childCount": "value >> 20",
+          "localStart": "value & 0x000fffff"
+        },
+        "writes": [
+          "rotations[childVertex]",
+          "rotations[parentVertex]"
+        ],
+        "reason": "this complete ordered field/stride/packed-child signature occurs behind 7342567c... and distinguishes it from the other two 17-argument wrapper-ABI candidates"
+      },
+      "functionPointerSlotRva": "0x3c57b0",
+      "variants": [
+        {
+          "cpuVariant": "x64_sse2",
+          "burstInitializeAssignment": {
+            "rva": "0x3605c6",
+            "bytes": 14,
+            "sha256": "1c731ab8d00561daf856a9674880f5921b87cce0b216dc46a40d272c6b8f75ae",
+            "functionPointerSlotRva": "0x3c57b0"
+          },
+          "entry": {
+            "rva": "0x10ef20",
+            "bytes": 204,
+            "sha256": "ef31d3c92ce1d2d1004560a75f2dc47b849f6f330dadd5bb267c5e9427be8b18"
+          },
+          "tailStub": {
+            "rva": "0x10f190",
+            "bytes": 10,
+            "sha256": "1477b201c50de25305761971f44bae5a8060b844f72a5a5770e462f8b32d61ac",
+            "tailTargetRva": "0xf4100"
+          },
+          "solverCore": {
+            "rva": "0xf4100",
+            "bytes": 3742,
+            "sha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+            "directCallTargets": [
+              "0x6e860",
+              "0x6e860"
+            ]
+          },
+          "scalarSinCos": {
+            "rva": "0x6e860",
+            "throughFirstRetBytes": 496,
+            "throughFirstRetSha256": "542a4e9e9c3d9631a1f5dfff36628d62603938361adfd468b6abb283002fb047"
+          }
+        },
+        {
+          "cpuVariant": "avx2",
+          "burstInitializeAssignment": {
+            "rva": "0x35c38f",
+            "bytes": 14,
+            "sha256": "673d9cdf093a02d4282dcd4cff2ef048e9599cc1db3922c1beebb988c41387e7",
+            "functionPointerSlotRva": "0x3c57b0"
+          },
+          "entry": {
+            "rva": "0x29a3c0",
+            "bytes": 83,
+            "sha256": "ef3d905ce27209c4f97ea2f88610907fbfd572a01f7db6c1ca5a610ddca9859a"
+          },
+          "tailStub": {
+            "rva": "0x29a5c0",
+            "bytes": 10,
+            "sha256": "109cb38188b82eb4b73761ce7b46c535f1cf9402ab6255afd36a4031409476f8",
+            "tailTargetRva": "0x284c50"
+          },
+          "solverCore": {
+            "rva": "0x284c50",
+            "bytes": 2901,
+            "sha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+            "directCallTargets": [
+              "0x1e5d30",
+              "0x1e5d30"
+            ]
+          },
+          "scalarSinCos": {
+            "rva": "0x1e5d30",
+            "throughFirstRetBytes": 521,
+            "throughFirstRetSha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+          }
+        }
+      ],
+      "ifixBoundary": "Both Burst cores have exactly two direct calls, both to their local scalar sin/cos helper; neither core calls GameAssembly or the IFix FromToRotation gate.",
+      "runtimeSelection": "unobserved: BurstCompiler.get_IsEnabled and the managed GetFunctionPointer return value still decide Burst versus managed fallback",
+      "numericBoundary": "The original executable export/slot/dual-CPU core graph is exact and source-pinned. A complete source-level transcription and integration remain open; no capture-derived transforms, timing, positions, or curves are inputs."
+    }
   },
   "routeEvidence": {
     "coldSpans": [
@@ -1594,7 +1946,7 @@
         "sha256": "93473a002a7338a223d7d2e8a8e453df5b9b04a0df3f764570442a0d636a29e4"
       }
     ],
-    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine DirectCall branch conditions are statically closed, but their runtime values and the returned Burst target are not."
+    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine managed fallback and exact non-null Burst target are statically closed, but BurstCompiler.get_IsEnabled and the returned-pointer null/non-null branch remain unobserved runtime values."
   },
   "workerTargets": [
     {
@@ -1673,8 +2025,8 @@
   "nextDisassemblyTargets": [],
   "remainingRuntimeEvidence": [
     {
-      "boundary": "CalcLine BurstDirectCall selected target",
-      "reason": "method 384854 and the managed fallback are closed, but a non-null GetILPPMethodFunctionPointer2 result is an unresolved runtime pointer"
+      "boundary": "CalcLine BurstDirectCall selected route",
+      "reason": "method 384854, its managed fallback, and the exact non-null Burst target are closed, but BurstCompiler.get_IsEnabled and GetILPPMethodFunctionPointer2 null/non-null selection remain unobserved runtime values"
     },
     {
       "boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
@@ -1683,7 +2035,7 @@
   ],
   "nonClaims": [
     "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-    "The DirectCall managed fallback equivalence does not establish that retail selected it instead of the unresolved non-null Burst function pointer.",
+    "The exact DirectCall managed fallback and non-null Burst target identities do not establish which branch retail selected on a particular frame.",
     "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
     "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
     "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",

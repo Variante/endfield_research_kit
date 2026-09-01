@@ -92,6 +92,179 @@
     }
   },
   "targets": {
+    "calcLineNormalTangent": {
+      "status": "static_semantic_export_and_dual_cpu_core_identity_closed_runtime_route_unobserved",
+      "managedWorkerMethodIndex": 384856,
+      "kernelWrapperMethodIndex": 384854,
+      "directCallInvokeMethodIndex": 384867,
+      "candidateHash": "7342567c29c434b5b924be51bd8e34b7",
+      "export": {
+        "ordinal": 282,
+        "rva": "0x3571e0",
+        "spanBytes": 208,
+        "bodyBytes": 205,
+        "bodySha256": "17244d44dcff7f94b21b887f24ca42d662db90b81a1a1fcc2220a41e15c90328",
+        "stackWriteOffsets": [
+          "0x20",
+          "0x28",
+          "0x30",
+          "0x38",
+          "0x40",
+          "0x48",
+          "0x50",
+          "0x58",
+          "0x60",
+          "0x68",
+          "0x70",
+          "0x78",
+          "0x80"
+        ],
+        "stackWriteWidths": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          4
+        ],
+        "functionPointerSlotRva": "0x3c57b0",
+        "functionPointerSlotDiskState": "zero_fill_bss_no_on_disk_pointer",
+        "exactBodyBytes": 205
+      },
+      "parameterContract": {
+        "parameterCount": 17,
+        "parameterNames": [
+          "jobBaseLineList",
+          "teamDataArray",
+          "parameterArray",
+          "attributes",
+          "positions",
+          "rotations",
+          "vertexLocalPositions",
+          "vertexLocalRotations",
+          "parentIndices",
+          "childIndexArray",
+          "childDataArray",
+          "baseLineFlags",
+          "baseLineTeamIds",
+          "baseLineStartIndices",
+          "baseLineDataCounts",
+          "baseLineData",
+          "index"
+        ],
+        "lastParameter": "index System.Int32"
+      },
+      "semanticDiscriminator": {
+        "entry": "jobBaseLineList[index], baseline bit-0 gate, Int16 team id",
+        "teamData": {
+          "strideBytes": 464,
+          "fieldOffsets": [
+            "0x68",
+            "0x88",
+            "0x124",
+            "0x12c",
+            "0x164"
+          ]
+        },
+        "clothParameters": {
+          "strideBytes": 808,
+          "fieldOffsets": [
+            "0xa0",
+            "0xa4"
+          ]
+        },
+        "packedChildIndex": {
+          "childCount": "value >> 20",
+          "localStart": "value & 0x000fffff"
+        },
+        "writes": [
+          "rotations[childVertex]",
+          "rotations[parentVertex]"
+        ],
+        "reason": "this complete ordered field/stride/packed-child signature occurs behind 7342567c... and distinguishes it from the other two 17-argument wrapper-ABI candidates"
+      },
+      "functionPointerSlotRva": "0x3c57b0",
+      "variants": [
+        {
+          "cpuVariant": "x64_sse2",
+          "burstInitializeAssignment": {
+            "rva": "0x3605c6",
+            "bytes": 14,
+            "sha256": "1c731ab8d00561daf856a9674880f5921b87cce0b216dc46a40d272c6b8f75ae",
+            "functionPointerSlotRva": "0x3c57b0"
+          },
+          "entry": {
+            "rva": "0x10ef20",
+            "bytes": 204,
+            "sha256": "ef31d3c92ce1d2d1004560a75f2dc47b849f6f330dadd5bb267c5e9427be8b18"
+          },
+          "tailStub": {
+            "rva": "0x10f190",
+            "bytes": 10,
+            "sha256": "1477b201c50de25305761971f44bae5a8060b844f72a5a5770e462f8b32d61ac",
+            "tailTargetRva": "0xf4100"
+          },
+          "solverCore": {
+            "rva": "0xf4100",
+            "bytes": 3742,
+            "sha256": "d2981125e4685061134d4e7c1048efc84c33ecc9053f09d3dc9d104756282824",
+            "directCallTargets": [
+              "0x6e860",
+              "0x6e860"
+            ]
+          },
+          "scalarSinCos": {
+            "rva": "0x6e860",
+            "throughFirstRetBytes": 496,
+            "throughFirstRetSha256": "542a4e9e9c3d9631a1f5dfff36628d62603938361adfd468b6abb283002fb047"
+          }
+        },
+        {
+          "cpuVariant": "avx2",
+          "burstInitializeAssignment": {
+            "rva": "0x35c38f",
+            "bytes": 14,
+            "sha256": "673d9cdf093a02d4282dcd4cff2ef048e9599cc1db3922c1beebb988c41387e7",
+            "functionPointerSlotRva": "0x3c57b0"
+          },
+          "entry": {
+            "rva": "0x29a3c0",
+            "bytes": 83,
+            "sha256": "ef3d905ce27209c4f97ea2f88610907fbfd572a01f7db6c1ca5a610ddca9859a"
+          },
+          "tailStub": {
+            "rva": "0x29a5c0",
+            "bytes": 10,
+            "sha256": "109cb38188b82eb4b73761ce7b46c535f1cf9402ab6255afd36a4031409476f8",
+            "tailTargetRva": "0x284c50"
+          },
+          "solverCore": {
+            "rva": "0x284c50",
+            "bytes": 2901,
+            "sha256": "fd0fd8d14052cccdcf137f7e90391faadd0bae6c88c5e199fc908f0b8fe5b07c",
+            "directCallTargets": [
+              "0x1e5d30",
+              "0x1e5d30"
+            ]
+          },
+          "scalarSinCos": {
+            "rva": "0x1e5d30",
+            "throughFirstRetBytes": 521,
+            "throughFirstRetSha256": "3021151e64547f2cc7e4266b846da35bbb8eef05f00d864a357f9757e730f0a6"
+          }
+        }
+      ],
+      "ifixBoundary": "Both Burst cores have exactly two direct calls, both to their local scalar sin/cos helper; neither core calls GameAssembly or the IFix FromToRotation gate.",
+      "runtimeSelection": "unobserved: BurstCompiler.get_IsEnabled and the managed GetFunctionPointer return value still decide Burst versus managed fallback",
+      "numericBoundary": "The original executable export/slot/dual-CPU core graph is exact and source-pinned. A complete source-level transcription and integration remain open; no capture-derived transforms, timing, positions, or curves are inputs."
+    },
     "simulationStartRange": {
       "managedMethodIndex": 385542,
       "directInvokeMethodIndex": 385570,
@@ -24269,8 +24442,8 @@
     }
   },
   "unresolved": [
-    "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll; static export-table analysis cannot join a managed BurstDirectCall to a hash.",
-    "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove managed BurstDirectCall wrapper-to-hash selection; it is no longer required to identify the statically closed Simulation Start, Simulation Update Basic Posture, Simulation End, or Collider End export cores.",
+    "No exact 32-hex hash bytes or 16-byte hash values were found in GameAssembly.dll. CalcLine is nevertheless joined to 7342567c... by its unique exact 17-argument ABI plus dual-CPU baseline/team/chunk/packed-child core signature; other managed BurstDirectCall wrappers still require equivalent semantic closure or runtime resolution.",
+    "Runtime GetProcAddress plus a call-site/returned-pointer trace remains required to prove whether a managed BurstDirectCall selected its statically identified Burst target instead of the managed fallback; it is no longer required to identify the CalcLine, Simulation Start, Simulation Update Basic Posture, Simulation End, or Collider End export cores.",
     "Hash-pinned solver bodies are evidence of original numerics, not a Unity solver implementation or secondary-dynamics equivalence claim; complete equation decoding and runtime integration remain open."
   ]
 }
