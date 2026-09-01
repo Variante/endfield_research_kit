@@ -235,6 +235,9 @@ NATIVE_METHOD_VAS = {
     "Beyond.Gameplay.EffectInstance._ReadCfgData": 0x183963E40,
     "Beyond.Gameplay.EffectInstance.Start": 0x183028EE0,
     "Beyond.Gameplay.EffectInstance.SetActive": 0x18302A920,
+    # Internal unpatched core entered by the public SetActive wrapper after its
+    # IFix gate, and directly by EffectInstance.Start after the same gate.
+    "Beyond.Gameplay.EffectInstance.SetActiveCore": 0x18302A970,
     "Beyond.Gameplay.EffectInstance.SetEffectPlayState": 0x18743EBA0,
     "Beyond.Gameplay.EffectInstance.get_isValid": 0x18302B2E0,
     "Beyond.Gameplay.EffectSetting.PlayEffect": 0x1834FC4D0,
@@ -257,6 +260,12 @@ NATIVE_IFIX_WRAPPER_GATES = (
      bytes.fromhex("bf 06 16 00 00 8b cf")),
     ("Beyond.Gameplay.EffectInstance.get_isValid", 0x9, 0x057E,
      bytes.fromhex("33 d2 b9 7e 05 00 00")),
+    ("Beyond.Gameplay.EffectInstance.SetActive", 0x10, 0x0599,
+     bytes.fromhex("33 d2 b9 99 05 00 00")),
+    ("Beyond.Gameplay.EffectSetting.PlayEffect", 0x0D, 0x660C,
+     bytes.fromhex("33 d2 b9 0c 66 00 00")),
+    ("Beyond.Gameplay.EffectLodCfg.Play", 0x12, 0x660D,
+     bytes.fromhex("33 d2 b9 0d 66 00 00")),
 )
 SOURCE_OVERVIEW_STATE_PATH = "Base Layer.Overview.FromOveview"
 SOURCE_OVERVIEW_STATE_HASH = 1560421867
@@ -404,6 +413,22 @@ NATIVE_CONTROL_FLOW = (
             "delay > 0 branches to delayed deactivation; zero delay falls through and, only "
             "when EffectInstance.m_hasAnimator is true and EffectInstance.m_animator is non-null, "
             "enables that runtime EffectInstance animator"
+        ),
+    },
+    {
+        "name": "start_set_active_true_internal_core",
+        "caller": "Beyond.Gameplay.EffectInstance.Start",
+        "offset": 0x78,
+        "bytes": bytes.fromhex(
+            "84 c0 75 23 80 be 9c 01 00 00 01 0f 84 ff 02 00 00 "
+            "b2 01 c6 86 9c 01 00 00 01 48 8b ce e8 f6 19 00 00"
+        ),
+        "callIndex": 29,
+        "target": "Beyond.Gameplay.EffectInstance.SetActiveCore",
+        "semantic": (
+            "after the SetActive IFix gate returns false, Start compares the EffectInstance "
+            "activation latch at +0x19c with true; when it changes false-to-true, Start stores "
+            "true, passes active=true in dl, and calls the unpatched SetActive internal core"
         ),
     },
     {
@@ -866,6 +891,15 @@ def validate_native(gameassembly: Path, metadata: Path) -> dict[str, Any]:
                 NATIVE_METHOD_VAS["Beyond.Gameplay.EffectSetting.PlayEffect"],
             ) == [],
             "EffectInstance.Start unexpectedly gained a direct PlayEffect call")
+    start_set_active_core_offsets = _relative_call_offsets(
+        NATIVE_METHOD_VAS["Beyond.Gameplay.EffectInstance.Start"],
+        method_bodies["Beyond.Gameplay.EffectInstance.Start"],
+        NATIVE_METHOD_VAS["Beyond.Gameplay.EffectInstance.SetActiveCore"],
+    )
+    require(
+        start_set_active_core_offsets == [0x95, 0x4FA],
+        "EffectInstance.Start internal SetActive-core call census drifted",
+    )
     return {
         "methodIdentities": identities,
         "fieldIdentities": fields,
@@ -888,9 +922,21 @@ def validate_native(gameassembly: Path, metadata: Path) -> dict[str, Any]:
             "target": "Beyond.Gameplay.EffectSetting.PlayEffect",
             "directRelativeCallOffsets": [],
             "meaning": (
-                "No direct Start -> PlayEffect edge exists in the pinned method body; the "
-                "zero-delay Start proof is only the separate conditional enable of "
-                "EffectInstance.m_animator. It does not identify the LOD-owned child Animator."
+                "No direct Start -> PlayEffect entry-point call exists. The pinned unpatched "
+                "route instead enters SetActive's internal core with active=true when Start "
+                "changes its activation latch; that exact indirect edge is proven separately."
+            ),
+        }],
+        "internalCoreEdges": [{
+            "caller": "Beyond.Gameplay.EffectInstance.Start",
+            "target": "Beyond.Gameplay.EffectInstance.SetActiveCore",
+            "directRelativeCallOffsets": [
+                f"0x{offset:x}" for offset in start_set_active_core_offsets
+            ],
+            "meaning": (
+                "+0x95 is the false-to-true Start activation path; +0x4fa is the "
+                "separate delayed false path. Their bounded source bytes keep the two "
+                "boolean arguments distinct."
             ),
         }],
     }
@@ -1021,6 +1067,9 @@ def validate_overview_source_join(
         ("Beyond.Gameplay.EffectInstance", "Start"),
         ("Beyond.Gameplay.EffectInstance", "ManualSyncTime"),
         ("Beyond.Gameplay.EffectInstance", "get_isValid"),
+        ("Beyond.Gameplay.EffectInstance", "SetActive"),
+        ("Beyond.Gameplay.EffectSetting", "PlayEffect"),
+        ("Beyond.Gameplay.EffectLodCfg", "Play"),
         ("UnityEngine.Animator", "Update"),
     }
     observed_targets = {
@@ -1182,12 +1231,12 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
         for path, expected_hash in SOURCE_HASHES.items()
     ]
     return {
-        "schema": "endfield.endminf-effect-nanguan-trigger.v4",
+        "schema": "endfield.endminf-effect-nanguan-trigger.v5",
         "scope": (
             "exact FromOveview AnimatorBehaviourPlayEffect ownership, conditional pinned "
-            "unpatched EffectInstance start and one-shot elapsed-seed route, overview_01 post "
-            "hierarchy, separate LOD child-Animator definition, and bounded public-Unity lab "
-            "transport"
+            "unpatched EffectInstance Start-to-SetActive-core-to-LOD child Animator.Play(0) "
+            "route and one-shot elapsed seed, overview_01 post hierarchy, and bounded "
+            "public-Unity lab transport"
         ),
         "evidence": {
             "serializedArtifacts": artifacts,
@@ -1221,6 +1270,7 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
                 "targetLayer": int(lod["targetLayer"]),
                 "speedPercent": 1.0,
                 "serializedDistanceLodActiveFlag": True,
+                "startInvokesLodPlayForEverySerializedRowOnActivationLatchChange": True,
                 "runtimeGameObjectActivationProven": False,
             },
             "lodOwnedChildAnimator": {
@@ -1238,7 +1288,11 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
                 "loop": False,
                 "serializedGenericBindingCount": 8,
                 "relationshipToEffectInstanceRuntimeAnimatorProven": False,
-                "clipStartRelativeToEffectInstanceStartProven": False,
+                "clipStartRelativeToEffectInstanceStartProven": True,
+                "clipStartProofScope": (
+                    "conditional pinned unpatched route when Start changes the "
+                    "EffectInstance activation latch false-to-true"
+                ),
             },
             "overviewRootAnimator": {
                 "gameObject": "P_fxui_endminm003_overview_01",
@@ -1290,8 +1344,12 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
             "lodOwnedChildAnimatorDefinitionAndPlayCodePath": {
                 "definitionSourceClosed": True,
                 "nativeCodePathSourceClosed": True,
-                "runtimeInvocationForThisLodRowSourceClosed": False,
-                "clipStartRelativeToEffectInstanceStartSourceClosed": False,
+                "runtimeInvocationForThisLodRowSourceClosed": True,
+                "clipStartRelativeToEffectInstanceStartSourceClosed": True,
+                "sourceClosedScope": (
+                    "conditional pinned unpatched route when Start changes the "
+                    "EffectInstance activation latch false-to-true"
+                ),
                 "serializedOwnerChain": [
                     "EffectSetting.lodSetting[30]",
                     "effect_nanguan Animator",
@@ -1300,13 +1358,18 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
                     "A_fx_endminf_ui_overview_04",
                 ],
                 "nativeCodePath": [
+                    "EffectInstance.Start",
+                    "EffectInstance.SetActive internal core (active=true)",
                     "EffectSetting.PlayEffect",
+                    "EffectSetting.lodSetting[30]",
                     "EffectLodCfg.Play",
                     "Animator.Play(stateNameHash=0)",
                 ],
                 "nonclaim": (
-                    "The serialized child ownership and generic native play chain are exact, but "
-                    "no exact call binds that chain to LOD row 30 at EffectInstance.Start."
+                    "This closes the child state reset during Start only on the recorded-local-"
+                    "IFix nonreplacement/unpatched route and only when the activation latch "
+                    "changes false-to-true. It does not prove remote or memory-only patch state, "
+                    "the GameObject.SetActive LOD/display decision, or an absolute video offset."
                 ),
             },
             "effectInstanceAnimatorToChildAnimatorRelationship": {
@@ -1321,18 +1384,20 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
             },
             "effectSettingLodGameObjectActivation": {
                 "sourceClosed": False,
-                "status": "unresolved",
+                "status": "animator_play_closed_gameobject_display_unresolved",
                 "knownRuntimePath": [
-                    "EffectInstance.SetActive(true)",
+                    "EffectInstance.Start changes activation latch false-to-true",
+                    "EffectInstance.SetActive internal core (active=true)",
                     "EffectSetting.PlayEffect",
+                    "EffectSetting.lodSetting[30]",
                     "EffectLodCfg.Play",
                     "Animator.Play(stateNameHash=0)",
                 ],
                 "nonclaim": (
-                    "The serialized LOD row identifies effect_nanguan and carries isActive=1, and "
-                    "the native PlayEffect chain is exact, but no exact invocation of "
-                    "SetGameObjectActive(true) for this owner transition has been established. "
-                    "GameObject/LOD activation is not claimed."
+                    "The Start-to-child-Animator.Play chain is exact on the conditional pinned "
+                    "unpatched route, but EffectLodCfg.Play does not call GameObject.SetActive. "
+                    "No exact SetGameObjectActive(true) display decision for row 30 has been "
+                    "established, so GameObject/LOD presentation remains unclaimed."
                 ),
             },
             "overviewStateToEffectInstanceStart": {
@@ -1353,6 +1418,12 @@ def build(gameassembly: Path, metadata: Path) -> dict[str, Any]:
                     (
                         "the normal accepted LoadImmediately completion branch calls "
                         "LoadFinish, whose normal accepted branch calls EffectInstance.Start"
+                    ),
+                    (
+                        "when Start changes its activation latch false-to-true, it enters the "
+                        "unpatched SetActive internal core with active=true; that core calls "
+                        "PlayEffect, which enumerates lodSetting[30], calls EffectLodCfg.Play, "
+                        "and resets effect_nanguan through Animator.Play(0)"
                     ),
                     (
                         "_SyncEffectTime has exactly one direct rel32 caller across every "

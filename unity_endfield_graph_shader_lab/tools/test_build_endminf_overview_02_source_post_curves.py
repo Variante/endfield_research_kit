@@ -246,7 +246,7 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
         self.assertNotIn("TryGetAutomaticOverviewStartSeconds", elapsed)
         self.assertIn("IsSourceOwnerLive(overview02SourceOwner", elapsed)
 
-    def test_v4_trigger_contract_bounds_one_shot_source_clock(self) -> None:
+    def test_v5_trigger_contract_bounds_one_shot_source_clock(self) -> None:
         contract_path = (
             HERE.parent
             / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/Effects"
@@ -255,7 +255,7 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
         contract = json.loads(contract_path.read_text(encoding="utf-8"))
         self.assertEqual(
             contract["schema"],
-            "endfield.endminf-effect-nanguan-trigger.v4",
+            "endfield.endminf-effect-nanguan-trigger.v5",
         )
         join = contract["evidence"]["overviewSourceJoin"]
         self.assertEqual(
@@ -321,7 +321,27 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
             "sync_effect_instance_manual_time",
             "load_immediately_to_load_finish",
             "load_finish_to_start",
+            "start_set_active_true_internal_core",
+            "set_active_to_play_effect",
+            "play_effect_to_lod_play",
+            "lod_play_to_animator_play",
         }.issubset(control_flow_names))
+        child = contract["conclusions"][
+            "lodOwnedChildAnimatorDefinitionAndPlayCodePath"
+        ]
+        self.assertTrue(child["runtimeInvocationForThisLodRowSourceClosed"])
+        self.assertTrue(
+            child["clipStartRelativeToEffectInstanceStartSourceClosed"]
+        )
+        self.assertIn("activation latch", child["sourceClosedScope"])
+        display = contract["conclusions"][
+            "effectSettingLodGameObjectActivation"
+        ]
+        self.assertFalse(display["sourceClosed"])
+        self.assertEqual(
+            display["status"],
+            "animator_play_closed_gameobject_display_unresolved",
+        )
         self.assertEqual(
             len(contract["evidence"]["native"]["syncEffectTimeDirectCallers"]),
             1,

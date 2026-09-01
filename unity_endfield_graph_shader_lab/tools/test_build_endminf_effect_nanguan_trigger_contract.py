@@ -40,7 +40,7 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         payload = MOD.build(self.gameassembly, self.metadata)
         published = json.loads(MOD.OUTPUT.read_text(encoding="utf-8"))
         self.assertEqual(payload, published)
-        self.assertEqual(payload["schema"], "endfield.endminf-effect-nanguan-trigger.v4")
+        self.assertEqual(payload["schema"], "endfield.endminf-effect-nanguan-trigger.v5")
         own_animator = payload["conclusions"]["effectInstanceDelayAndOwnAnimatorEnable"]
         self.assertTrue(own_animator["sourceClosed"])
         self.assertEqual(own_animator["relativeAnchor"], "EffectInstance.Start")
@@ -51,8 +51,9 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         child = payload["conclusions"]["lodOwnedChildAnimatorDefinitionAndPlayCodePath"]
         self.assertTrue(child["definitionSourceClosed"])
         self.assertTrue(child["nativeCodePathSourceClosed"])
-        self.assertFalse(child["runtimeInvocationForThisLodRowSourceClosed"])
-        self.assertFalse(child["clipStartRelativeToEffectInstanceStartSourceClosed"])
+        self.assertTrue(child["runtimeInvocationForThisLodRowSourceClosed"])
+        self.assertTrue(child["clipStartRelativeToEffectInstanceStartSourceClosed"])
+        self.assertIn("activation latch", child["sourceClosedScope"])
         outer = payload["conclusions"]["overviewStateToEffectInstanceStart"]
         self.assertTrue(outer["serializedOwnerSourceClosed"])
         self.assertTrue(outer["pinnedUnpatchedNativeRouteSourceClosed"])
@@ -83,7 +84,10 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
         )
         lod = payload["conclusions"]["effectSettingLodGameObjectActivation"]
         self.assertFalse(lod["sourceClosed"])
-        self.assertEqual(lod["status"], "unresolved")
+        self.assertEqual(
+            lod["status"],
+            "animator_play_closed_gameobject_display_unresolved",
+        )
         lab_playback = payload["conclusions"]["labPlayback"]
         self.assertTrue(lab_playback["sourceTriggerOwnerExact"])
         self.assertTrue(lab_playback["oneShotSeedExact"])
@@ -147,6 +151,29 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
             ["directRelativeCallOffsets"],
             [],
         )
+        self.assertEqual(
+            payload["evidence"]["native"]["internalCoreEdges"][0],
+            {
+                "caller": "Beyond.Gameplay.EffectInstance.Start",
+                "target": "Beyond.Gameplay.EffectInstance.SetActiveCore",
+                "directRelativeCallOffsets": ["0x95", "0x4fa"],
+                "meaning": (
+                    "+0x95 is the false-to-true Start activation path; +0x4fa is the "
+                    "separate delayed false path. Their bounded source bytes keep the two "
+                    "boolean arguments distinct."
+                ),
+            },
+        )
+        start_activation = next(
+            row for row in control
+            if row["name"] == "start_set_active_true_internal_core"
+        )
+        self.assertEqual(
+            start_activation["target"],
+            "Beyond.Gameplay.EffectInstance.SetActiveCore",
+        )
+        self.assertEqual(start_activation["callIndex"], 29)
+        self.assertIn("active=true", start_activation["semantic"])
         gates = payload["evidence"]["native"]["ifixWrapperGates"]
         self.assertEqual(
             {(row["method"], row["gateId"]) for row in gates},
@@ -240,6 +267,25 @@ class EndminfEffectNanguanTriggerContractTests(unittest.TestCase):
                     "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
                     "method": "_SyncEffectTime",
                     "parameters": [],
+                    "implementation_index": 999,
+                })
+            return value
+
+        with mock.patch.object(MOD, "load_json", side_effect=changed):
+            with self.assertRaisesRegex(ValueError, "replaces source-clock route"):
+                MOD.build(self.gameassembly, self.metadata)
+
+    def test_recorded_ifix_set_active_route_mutation_fails_closed(self) -> None:
+        original = MOD.load_json
+
+        def changed(path: Path) -> dict:
+            value = original(path)
+            if Path(path) == MOD.INSTALLED_IFIX_PATCH_STATE:
+                value = copy.deepcopy(value)
+                value["targets"].append({
+                    "type": "Beyond.Gameplay.EffectInstance",
+                    "method": "SetActive",
+                    "parameters": ["System.Boolean"],
                     "implementation_index": 999,
                 })
             return value
