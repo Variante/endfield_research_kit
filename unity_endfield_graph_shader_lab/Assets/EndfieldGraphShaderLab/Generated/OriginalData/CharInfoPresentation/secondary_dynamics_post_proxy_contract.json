@@ -1,0 +1,856 @@
+{
+  "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
+  "status": "post_proxy_schedule_and_create_list_control_closed_calc_line_vectors_open",
+  "manager_schedule_closed": true,
+  "managed_job_payload_layout_closed": true,
+  "generic_methodspec_identities_closed": true,
+  "world_local_publication_equations_closed": true,
+  "create_list_worker_control_flow_recovered": true,
+  "calc_line_entry_control_flow_recovered": true,
+  "create_list_kernel_numerics_recovered": false,
+  "calc_line_normal_tangent_numerics_recovered": false,
+  "selected_cross_frame_route_closed": false,
+  "solver_implemented": false,
+  "retail_equivalent": false,
+  "capture_used_as_implementation_source": false,
+  "native_gate": {
+    "gameAssembly": {
+      "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
+      "size": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "globalMetadata": {
+      "path": "D:/Program Files/Endfield Game/Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "size": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "sources": {
+    "metadataCatalog": {
+      "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/post_proxy_metadata.json",
+      "size": 3068491,
+      "sha256": "d1533b659e33a2e561c444cb4aec9a929dfac355a8d3409748c009e9c277a295"
+    },
+    "nativeEvidence": {
+      "repoPath": "unity_endfield_graph_shader_lab/scratch/character_recovery/secondary_dynamics_owner/post_proxy_native.json",
+      "size": 5326407,
+      "sha256": "3bad91ae59e34b7abc50b5f88aafb77ea9e2c1395fba1346cc503deafb982b5d"
+    },
+    "dependencies": {
+      "callback": {
+        "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_callback_contract.json",
+        "size": 17561,
+        "sha256": "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65",
+        "schema": "endfield.charinfo.secondary-dynamics-callback-writeback.v1",
+        "status": "native_callback_writeback_closed"
+      },
+      "transformWriteback": {
+        "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_transform_writeback_contract.json",
+        "size": 102059,
+        "sha256": "f3e44da89e706cf5a43e625f774196091790b5d548ab720d35b0d8ce77c520c8",
+        "schema": "endfield.charinfo.secondary-dynamics-transform-writeback.v1",
+        "status": "transform_writeback_contract_closed_with_duplicate_boundary"
+      }
+    }
+  },
+  "registrations": {
+    "codeRegistrationVa": "0x18b9217d0",
+    "metadataRegistrationVa": "0x18b921c30"
+  },
+  "managerAbi": {
+    "methodIndex": 384785,
+    "token": "0x060004da",
+    "type": "BeyondDynamicBone.VirtualMeshManager",
+    "method": "PostProxyMeshUpdate",
+    "startVa": "0x182f8c4a0",
+    "fileOffset": "0x2f8aaa0",
+    "spanBytes": 4272,
+    "bodySha256": "5a74ebb4a44356d4114332da8ca9c4ed183ed2e7d88216637072e0ebf151bead",
+    "firstRetOffset": "0xe34",
+    "throughFirstRetSha256": "842cc941559ab9c9b6c7c62092ca6a30f05ca5ad7a7ea6c29e93a92e9fbc685c",
+    "win64Arguments": {
+      "rcx": "hidden 16-byte JobHandle return buffer",
+      "rdx": "VirtualMeshManager this",
+      "r8": "input JobHandle address",
+      "r9": "MethodInfo (unused by unpatched body)"
+    },
+    "return": "the dependency threaded through all four stages is written to the hidden return buffer"
+  },
+  "stageOrder": [
+    {
+      "order": 1,
+      "job": "CreatePostProxyMeshUpdateListJob",
+      "setIndexCount": {
+        "callOffset": "0x3b8",
+        "targetVa": "0x183d84160"
+      },
+      "getReflectionData": {
+        "methodIndex": 401847,
+        "token": "0x0600003e",
+        "methodSpecIndex": 516826,
+        "genericMethodPointerSlot": 483841,
+        "methodInstantiationGenericInstIndex": 22216,
+        "genericEntryVa": "0x183f51d90",
+        "jobTypeIndex": 208231,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CreatePostProxyMeshUpdateListJob",
+        "callOffset": "0x496"
+      },
+      "parallelSchedule": {
+        "methodIndex": 401866,
+        "token": "0x06000051",
+        "methodSpecIndex": 517373,
+        "genericMethodPointerSlot": 484362,
+        "methodInstantiationGenericInstIndex": 22216,
+        "genericEntryVa": "0x1876c6dc4",
+        "jobTypeIndex": 208231,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CreatePostProxyMeshUpdateListJob",
+        "kind": "IJobParallelFor",
+        "innerLoopBatchCount": 1
+      },
+      "crossFrameScheduleHelper": {
+        "methodIndex": 384474,
+        "token": "0x060003a3",
+        "methodSpecIndex": 508694,
+        "genericMethodPointerSlot": 477087,
+        "methodInstantiationGenericInstIndex": 22216,
+        "genericEntryVa": "0x187af4c60",
+        "jobTypeIndex": 208231,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CreatePostProxyMeshUpdateListJob"
+      },
+      "jobPayload": {
+        "metadataTypeIndex": 48300,
+        "nativePayloadBytes": 160,
+        "fields": [
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229882,
+            "nativePayloadOffset": "0x0",
+            "boxedFieldOffset": "0x10"
+          },
+          {
+            "name": "processingCounter0",
+            "fieldIndex": 229883,
+            "nativePayloadOffset": "0x10",
+            "boxedFieldOffset": "0x20"
+          },
+          {
+            "name": "processingList0",
+            "fieldIndex": 229884,
+            "nativePayloadOffset": "0x20",
+            "boxedFieldOffset": "0x30"
+          },
+          {
+            "name": "processingCounter1",
+            "fieldIndex": 229885,
+            "nativePayloadOffset": "0x30",
+            "boxedFieldOffset": "0x40"
+          },
+          {
+            "name": "processingList1",
+            "fieldIndex": 229886,
+            "nativePayloadOffset": "0x40",
+            "boxedFieldOffset": "0x50"
+          },
+          {
+            "name": "processingCounter2",
+            "fieldIndex": 229887,
+            "nativePayloadOffset": "0x50",
+            "boxedFieldOffset": "0x60"
+          },
+          {
+            "name": "processingList2",
+            "fieldIndex": 229888,
+            "nativePayloadOffset": "0x60",
+            "boxedFieldOffset": "0x70"
+          },
+          {
+            "name": "processingCounter3",
+            "fieldIndex": 229889,
+            "nativePayloadOffset": "0x70",
+            "boxedFieldOffset": "0x80"
+          },
+          {
+            "name": "processingList3",
+            "fieldIndex": 229890,
+            "nativePayloadOffset": "0x80",
+            "boxedFieldOffset": "0x90"
+          },
+          {
+            "name": "_indexCount",
+            "fieldIndex": 229891,
+            "nativePayloadOffset": "0x90",
+            "boxedFieldOffset": "0xa0"
+          }
+        ]
+      }
+    },
+    {
+      "order": 2,
+      "job": "CalcLineNormalTangentJob",
+      "setIndexCount": {
+        "callOffset": "0x765",
+        "targetVa": "0x183d51420"
+      },
+      "getReflectionData": {
+        "methodIndex": 401847,
+        "token": "0x0600003e",
+        "methodSpecIndex": 516819,
+        "genericMethodPointerSlot": 483834,
+        "methodInstantiationGenericInstIndex": 22056,
+        "genericEntryVa": "0x183f51d90",
+        "jobTypeIndex": 208217,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJob",
+        "callOffset": "0x838"
+      },
+      "parallelSchedule": {
+        "methodIndex": 476935,
+        "token": "0x0600001b",
+        "methodSpecIndex": 517163,
+        "genericMethodPointerSlot": 484159,
+        "methodInstantiationGenericInstIndex": 22056,
+        "genericEntryVa": "0x1876c6ba8",
+        "jobTypeIndex": 208217,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJob",
+        "kind": "IJobParallelForDefer",
+        "innerLoopBatchCount": 8
+      },
+      "crossFrameScheduleHelper": {
+        "methodIndex": 384475,
+        "token": "0x060003a4",
+        "methodSpecIndex": 508714,
+        "genericMethodPointerSlot": 477107,
+        "methodInstantiationGenericInstIndex": 22056,
+        "genericEntryVa": "0x187af43d0",
+        "jobTypeIndex": 208217,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+CalcLineNormalTangentJob"
+      },
+      "jobPayload": {
+        "metadataTypeIndex": 48301,
+        "nativePayloadBytes": 272,
+        "fields": [
+          {
+            "name": "jobBaseLineList",
+            "fieldIndex": 229892,
+            "nativePayloadOffset": "0x0",
+            "boxedFieldOffset": "0x10"
+          },
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229893,
+            "nativePayloadOffset": "0x10",
+            "boxedFieldOffset": "0x20"
+          },
+          {
+            "name": "parameterArray",
+            "fieldIndex": 229894,
+            "nativePayloadOffset": "0x20",
+            "boxedFieldOffset": "0x30"
+          },
+          {
+            "name": "attributes",
+            "fieldIndex": 229895,
+            "nativePayloadOffset": "0x30",
+            "boxedFieldOffset": "0x40"
+          },
+          {
+            "name": "positions",
+            "fieldIndex": 229896,
+            "nativePayloadOffset": "0x40",
+            "boxedFieldOffset": "0x50"
+          },
+          {
+            "name": "rotations",
+            "fieldIndex": 229897,
+            "nativePayloadOffset": "0x50",
+            "boxedFieldOffset": "0x60"
+          },
+          {
+            "name": "vertexLocalPositions",
+            "fieldIndex": 229898,
+            "nativePayloadOffset": "0x60",
+            "boxedFieldOffset": "0x70"
+          },
+          {
+            "name": "vertexLocalRotations",
+            "fieldIndex": 229899,
+            "nativePayloadOffset": "0x70",
+            "boxedFieldOffset": "0x80"
+          },
+          {
+            "name": "parentIndices",
+            "fieldIndex": 229900,
+            "nativePayloadOffset": "0x80",
+            "boxedFieldOffset": "0x90"
+          },
+          {
+            "name": "childIndexArray",
+            "fieldIndex": 229901,
+            "nativePayloadOffset": "0x90",
+            "boxedFieldOffset": "0xa0"
+          },
+          {
+            "name": "childDataArray",
+            "fieldIndex": 229902,
+            "nativePayloadOffset": "0xa0",
+            "boxedFieldOffset": "0xb0"
+          },
+          {
+            "name": "baseLineFlags",
+            "fieldIndex": 229903,
+            "nativePayloadOffset": "0xb0",
+            "boxedFieldOffset": "0xc0"
+          },
+          {
+            "name": "baseLineTeamIds",
+            "fieldIndex": 229904,
+            "nativePayloadOffset": "0xc0",
+            "boxedFieldOffset": "0xd0"
+          },
+          {
+            "name": "baseLineStartIndices",
+            "fieldIndex": 229905,
+            "nativePayloadOffset": "0xd0",
+            "boxedFieldOffset": "0xe0"
+          },
+          {
+            "name": "baseLineDataCounts",
+            "fieldIndex": 229906,
+            "nativePayloadOffset": "0xe0",
+            "boxedFieldOffset": "0xf0"
+          },
+          {
+            "name": "baseLineData",
+            "fieldIndex": 229907,
+            "nativePayloadOffset": "0xf0",
+            "boxedFieldOffset": "0x100"
+          },
+          {
+            "name": "_indexCount",
+            "fieldIndex": 229908,
+            "nativePayloadOffset": "0x100",
+            "boxedFieldOffset": "0x110"
+          }
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "job": "WriteTransformDataJob",
+      "setIndexCount": {
+        "callOffset": "0xa1b",
+        "targetVa": "0x183d77850"
+      },
+      "getReflectionData": {
+        "methodIndex": 401847,
+        "token": "0x0600003e",
+        "methodSpecIndex": 516828,
+        "genericMethodPointerSlot": 483843,
+        "methodInstantiationGenericInstIndex": 22060,
+        "genericEntryVa": "0x183f51d90",
+        "jobTypeIndex": 208234,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
+        "callOffset": "0xae9"
+      },
+      "parallelSchedule": {
+        "methodIndex": 476935,
+        "token": "0x0600001b",
+        "methodSpecIndex": 517167,
+        "genericMethodPointerSlot": 484163,
+        "methodInstantiationGenericInstIndex": 22060,
+        "genericEntryVa": "0x1876c6ba8",
+        "jobTypeIndex": 208234,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob",
+        "kind": "IJobParallelForDefer",
+        "innerLoopBatchCount": 16
+      },
+      "crossFrameScheduleHelper": {
+        "methodIndex": 384475,
+        "token": "0x060003a4",
+        "methodSpecIndex": 508718,
+        "genericMethodPointerSlot": 477111,
+        "methodInstantiationGenericInstIndex": 22060,
+        "genericEntryVa": "0x187af773c",
+        "jobTypeIndex": 208234,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformDataJob"
+      },
+      "jobPayload": {
+        "metadataTypeIndex": 48304,
+        "nativePayloadBytes": 144,
+        "fields": [
+          {
+            "name": "jobVertexIndexList",
+            "fieldIndex": 229927,
+            "nativePayloadOffset": "0x0",
+            "boxedFieldOffset": "0x10"
+          },
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229928,
+            "nativePayloadOffset": "0x10",
+            "boxedFieldOffset": "0x20"
+          },
+          {
+            "name": "transformPositionArray",
+            "fieldIndex": 229929,
+            "nativePayloadOffset": "0x20",
+            "boxedFieldOffset": "0x30"
+          },
+          {
+            "name": "transformRotationArray",
+            "fieldIndex": 229930,
+            "nativePayloadOffset": "0x30",
+            "boxedFieldOffset": "0x40"
+          },
+          {
+            "name": "teamIds",
+            "fieldIndex": 229931,
+            "nativePayloadOffset": "0x40",
+            "boxedFieldOffset": "0x50"
+          },
+          {
+            "name": "positions",
+            "fieldIndex": 229932,
+            "nativePayloadOffset": "0x50",
+            "boxedFieldOffset": "0x60"
+          },
+          {
+            "name": "rotations",
+            "fieldIndex": 229933,
+            "nativePayloadOffset": "0x60",
+            "boxedFieldOffset": "0x70"
+          },
+          {
+            "name": "vertexToTransformRotations",
+            "fieldIndex": 229934,
+            "nativePayloadOffset": "0x70",
+            "boxedFieldOffset": "0x80"
+          },
+          {
+            "name": "_indexCount",
+            "fieldIndex": 229935,
+            "nativePayloadOffset": "0x80",
+            "boxedFieldOffset": "0x90"
+          }
+        ]
+      }
+    },
+    {
+      "order": 4,
+      "job": "WriteTransformLocalDataJob",
+      "setIndexCount": {
+        "callOffset": "0xcd0",
+        "targetVa": "0x183d52360"
+      },
+      "getReflectionData": {
+        "methodIndex": 401847,
+        "token": "0x0600003e",
+        "methodSpecIndex": 516829,
+        "genericMethodPointerSlot": 483844,
+        "methodInstantiationGenericInstIndex": 22061,
+        "genericEntryVa": "0x183f51d90",
+        "jobTypeIndex": 208236,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
+        "callOffset": "0xdae"
+      },
+      "parallelSchedule": {
+        "methodIndex": 476935,
+        "token": "0x0600001b",
+        "methodSpecIndex": 517168,
+        "genericMethodPointerSlot": 484164,
+        "methodInstantiationGenericInstIndex": 22061,
+        "genericEntryVa": "0x1876c6ba8",
+        "jobTypeIndex": 208236,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob",
+        "kind": "IJobParallelForDefer",
+        "innerLoopBatchCount": 32
+      },
+      "crossFrameScheduleHelper": {
+        "methodIndex": 384475,
+        "token": "0x060003a4",
+        "methodSpecIndex": 508719,
+        "genericMethodPointerSlot": 477112,
+        "methodInstantiationGenericInstIndex": 22061,
+        "genericEntryVa": "0x187af7974",
+        "jobTypeIndex": 208236,
+        "jobType": "BeyondDynamicBone.VirtualMeshManager+WriteTransformLocalDataJob"
+      },
+      "jobPayload": {
+        "metadataTypeIndex": 48305,
+        "nativePayloadBytes": 176,
+        "fields": [
+          {
+            "name": "jobVertexIndexList",
+            "fieldIndex": 229936,
+            "nativePayloadOffset": "0x0",
+            "boxedFieldOffset": "0x10"
+          },
+          {
+            "name": "teamDataArray",
+            "fieldIndex": 229937,
+            "nativePayloadOffset": "0x10",
+            "boxedFieldOffset": "0x20"
+          },
+          {
+            "name": "teamIds",
+            "fieldIndex": 229938,
+            "nativePayloadOffset": "0x20",
+            "boxedFieldOffset": "0x30"
+          },
+          {
+            "name": "attributes",
+            "fieldIndex": 229939,
+            "nativePayloadOffset": "0x30",
+            "boxedFieldOffset": "0x40"
+          },
+          {
+            "name": "vertexParentIndices",
+            "fieldIndex": 229940,
+            "nativePayloadOffset": "0x40",
+            "boxedFieldOffset": "0x50"
+          },
+          {
+            "name": "transformPositionArray",
+            "fieldIndex": 229941,
+            "nativePayloadOffset": "0x50",
+            "boxedFieldOffset": "0x60"
+          },
+          {
+            "name": "transformRotationArray",
+            "fieldIndex": 229942,
+            "nativePayloadOffset": "0x60",
+            "boxedFieldOffset": "0x70"
+          },
+          {
+            "name": "transformScaleArray",
+            "fieldIndex": 229943,
+            "nativePayloadOffset": "0x70",
+            "boxedFieldOffset": "0x80"
+          },
+          {
+            "name": "transformLocalPositionArray",
+            "fieldIndex": 229944,
+            "nativePayloadOffset": "0x80",
+            "boxedFieldOffset": "0x90"
+          },
+          {
+            "name": "transformLocalRotationArray",
+            "fieldIndex": 229945,
+            "nativePayloadOffset": "0x90",
+            "boxedFieldOffset": "0xa0"
+          },
+          {
+            "name": "_indexCount",
+            "fieldIndex": 229946,
+            "nativePayloadOffset": "0xa0",
+            "boxedFieldOffset": "0xb0"
+          }
+        ]
+      }
+    }
+  ],
+  "dependencyFlow": "input JobHandle -> CreatePostProxyMeshUpdateList -> CalcLineNormalTangent -> WriteTransformData -> WriteTransformLocalData -> returned JobHandle",
+  "createListHotControlFlow": {
+    "managedWorkerMethodIndex": 384832,
+    "hotSpan": {
+      "startVa": "0x186743868",
+      "throughRetBytes": 547,
+      "throughRetSha256": "05248d617681f7cbce052c79fffc748936523f7230da3812c6c8bab0f3230213"
+    },
+    "argumentBoundary": {
+      "registers": {
+        "rcx": "teamDataArray",
+        "rdx": "processingCounter0",
+        "r8": "processingList0",
+        "r9": "processingCounter1"
+      },
+      "stackArguments": [
+        {
+          "rbpOffset": "0x120",
+          "value": "processingList1"
+        },
+        {
+          "rbpOffset": "0x128",
+          "value": "processingCounter2"
+        },
+        {
+          "rbpOffset": "0x130",
+          "value": "processingList2"
+        },
+        {
+          "rbpOffset": "0x138",
+          "value": "processingCounter3"
+        },
+        {
+          "rbpOffset": "0x140",
+          "value": "processingList3"
+        },
+        {
+          "rbpOffset": "0x148",
+          "value": "teamId"
+        }
+      ]
+    },
+    "teamDataStrideBytes": 464,
+    "gates": [
+      {
+        "offset": "0x2d",
+        "condition": "teamId != 0"
+      },
+      {
+        "offset": "0xcb",
+        "call": "TeamData.get_IsEnable",
+        "required": true
+      },
+      {
+        "offset": "0xdf",
+        "call": "TeamData.get_IsCullingInvisible",
+        "required": false
+      }
+    ],
+    "atomicQueueAppends": [
+      {
+        "queue": 0,
+        "sourceDataChunkPayloadOffsets": [
+          "0x44",
+          "0x48"
+        ],
+        "conditions": [
+          "TeamData.get_TriangleCount() > 0",
+          "DataChunk at payload 0x44 is valid"
+        ],
+        "atomicReserveOffset": "0x110",
+        "appendLoopOffsets": [
+          "0x121",
+          "0x134"
+        ]
+      },
+      {
+        "queue": 1,
+        "sourceDataChunkPayloadOffsets": [
+          "0x44",
+          "0x48"
+        ],
+        "conditions": [
+          "TeamData payload int at 0x38 == 3"
+        ],
+        "atomicReserveOffset": "0x143",
+        "appendLoopOffsets": [
+          "0x158",
+          "0x16f"
+        ]
+      },
+      {
+        "queue": 2,
+        "sourceDataChunkPayloadOffsets": [
+          "0x7c",
+          "0x80"
+        ],
+        "conditions": [
+          "DataChunk at payload 0x7c is valid"
+        ],
+        "atomicReserveOffset": "0x191",
+        "appendLoopOffsets": [
+          "0x1a6",
+          "0x1bc"
+        ]
+      },
+      {
+        "queue": 3,
+        "sourceDataChunkPayloadOffsets": [
+          "0x54",
+          "0x58"
+        ],
+        "conditions": [
+          "TeamData.get_TriangleCount() > 0"
+        ],
+        "atomicReserveOffset": "0x1d5",
+        "appendLoopOffsets": [
+          "0x1ef",
+          "0x204"
+        ]
+      }
+    ],
+    "operation": "Each accepted chunk atomically reserves count slots, then appends the contiguous indices start + i. No captured indices are stored."
+  },
+  "calcLineEntryControlFlow": {
+    "managedWorkerMethodIndex": 384856,
+    "bodySha256": "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829",
+    "entryGates": [
+      {
+        "offset": "0x98",
+        "operation": "baseLineIndex = jobBaseLineList[index]"
+      },
+      {
+        "offset": "0xa3",
+        "condition": "attributes[baseLineIndex] bit 0 is set"
+      },
+      {
+        "offset": "0xb4",
+        "operation": "teamId = baseLineTeamIds[baseLineIndex]"
+      },
+      {
+        "offset": "0xb9",
+        "condition": "teamId != 0"
+      },
+      {
+        "offset": "0x152",
+        "call": "TeamData.get_IsEnable",
+        "required": true
+      },
+      {
+        "offset": "0x168",
+        "call": "TeamData.get_IsCullingInvisible",
+        "required": false
+      },
+      {
+        "offset": "0x206",
+        "operation": "childCount = baseLineDataCounts[baseLineIndex]"
+      },
+      {
+        "offset": "0x20b",
+        "condition": "childCount != 0"
+      }
+    ],
+    "numericBoundary": "The child traversal and normal/tangent math after offset 0x245 remain code-only disassembly targets; no capture-derived vector or curve is substituted."
+  },
+  "routeEvidence": {
+    "coldSpans": [
+      {
+        "name": "createList.parallelSchedule",
+        "startVa": "0x184f719ad",
+        "spanBytes": 183,
+        "sha256": "4719cfbfbd935abeec928b9bb13817c689d15b9d0f4ec1105e084b720c643765"
+      },
+      {
+        "name": "createList.managedWorkerFallback",
+        "startVa": "0x184f71a64",
+        "spanBytes": 90,
+        "sha256": "072931d13b5e4b4ed4bf76acb4fc573a38437c91cd7198d926fd96525f8b7b7f"
+      },
+      {
+        "name": "calcLine.parallelSchedule",
+        "startVa": "0x184f71b5b",
+        "spanBytes": 172,
+        "sha256": "ef1a37914751af65e5300ee74593270555942a13a452c2a4bb606d24655ddc95"
+      },
+      {
+        "name": "calcLine.managedWorkerFallback",
+        "startVa": "0x184f71c07",
+        "spanBytes": 90,
+        "sha256": "345d0c714243e33ef822263e1ea3abdf2032de0c41e5421ee1879adbd3ed95c8"
+      },
+      {
+        "name": "writeWorldAndLocal.directSchedule",
+        "startVa": "0x184f71cf9",
+        "spanBytes": 709,
+        "sha256": "6282f4c057e37c867e134ab63218d4be2e390e0b274e93935641a7a7c8138460"
+      },
+      {
+        "name": "writeWorld.managedWorkerFallback",
+        "startVa": "0x184f71fbe",
+        "spanBytes": 166,
+        "sha256": "3b9a21353d270175e9cb543bcc950961d2d37d82b67cc9a6f0eb206c2ad92d71"
+      },
+      {
+        "name": "writeLocal.parallelSchedule",
+        "startVa": "0x184f720f2",
+        "spanBytes": 182,
+        "sha256": "5b7ef19b3b21bc5435d2bf143a029a754e584a7c437bd2fe67cd3a2359a8df13"
+      },
+      {
+        "name": "writeLocal.managedWorkerFallback",
+        "startVa": "0x184f721a8",
+        "spanBytes": 90,
+        "sha256": "93473a002a7338a223d7d2e8a8e453df5b9b04a0df3f764570442a0d636a29e4"
+      }
+    ],
+    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present; static code alone does not select the runtime branch."
+  },
+  "openWorkerTargets": [
+    {
+      "methodIndex": 384830,
+      "token": "0x06000507",
+      "method": "CreatePostProxyMeshUpdateListKernel",
+      "startVa": "0x18674e9c4",
+      "endVa": "0x18674ea88",
+      "spanBytes": 196,
+      "bodySha256": "aa4787dc1a16922c3df8ee11c9bd0af329558bb294115e7fe08576a7a131348b"
+    },
+    {
+      "methodIndex": 384831,
+      "token": "0x06000508",
+      "method": "CreatePostProxyMeshUpdateListRangeKernel",
+      "startVa": "0x18674eb40",
+      "endVa": "0x18674ec04",
+      "spanBytes": 196,
+      "bodySha256": "c91b24dd42826ddcac3fd0c3008ef334b54295087ad2b3e90d394a5906ee82f5"
+    },
+    {
+      "methodIndex": 384832,
+      "token": "0x06000509",
+      "method": "CreatePostProxyMeshUpdateListKernel$BurstManaged",
+      "startVa": "0x186743868",
+      "endVa": "0x18674454c",
+      "spanBytes": 3300,
+      "bodySha256": "02a0d53fed888f05f966dbe2250f59e4f2722d0cfac3928e7a2b268d39bb4bde"
+    },
+    {
+      "methodIndex": 384833,
+      "token": "0x0600050a",
+      "method": "CreatePostProxyMeshUpdateListRangeKernel$BurstManaged",
+      "startVa": "0x18674ea88",
+      "endVa": "0x18674eb40",
+      "spanBytes": 184,
+      "bodySha256": "000afdccc9840e155b8a9c56edad3f449f8d777ad4da4b23931cbd0cd2271617"
+    },
+    {
+      "methodIndex": 384854,
+      "token": "0x0600051f",
+      "method": "CalcLineNormalTangentKernel",
+      "startVa": "0x1867456e4",
+      "endVa": "0x18674580c",
+      "spanBytes": 296,
+      "bodySha256": "05af0def52b33451b7424296e8325c8f4819c7e27a0b64bfc1207b359431ba83"
+    },
+    {
+      "methodIndex": 384855,
+      "token": "0x06000520",
+      "method": "CalcLineNormalTangentRangeKernel",
+      "startVa": "0x18674580c",
+      "endVa": "0x186745938",
+      "spanBytes": 300,
+      "bodySha256": "c82c8ada9cc497359e0249c836ef0f2e8d656376f7cba0f4c24c56954108d13c"
+    },
+    {
+      "methodIndex": 384856,
+      "token": "0x06000521",
+      "method": "CalcLineNormalTangentKernel$BurstManaged",
+      "startVa": "0x186744fb0",
+      "endVa": "0x1867456e4",
+      "spanBytes": 1844,
+      "bodySha256": "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829"
+    },
+    {
+      "methodIndex": 384857,
+      "token": "0x06000522",
+      "method": "CalcLineNormalTangentRangeKernel$BurstManaged",
+      "startVa": "0x186741214",
+      "endVa": "0x18674133c",
+      "spanBytes": 296,
+      "bodySha256": "d89a096b7cfbcecdca18c7180654860ba4504926eb1084917a61ea8b2d8ea56e"
+    }
+  ],
+  "nextDisassemblyTargets": [
+    {
+      "methodIndex": 384856,
+      "method": "CalcLineNormalTangentKernel$BurstManaged",
+      "reason": "continue after the closed entry gates to recover child traversal, line normal/tangent equations, and degeneracy branches from code"
+    }
+  ],
+  "nonClaims": [
+    "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
+    "CreatePostProxyMeshUpdateList queue control flow is closed, but CalcLineNormalTangent vector equations remain unresolved.",
+    "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
+    "This static contract is not a Unity execution or retail-equivalence result."
+  ]
+}
