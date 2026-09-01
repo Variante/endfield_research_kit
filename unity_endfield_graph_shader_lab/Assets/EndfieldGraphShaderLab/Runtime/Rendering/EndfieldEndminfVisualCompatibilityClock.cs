@@ -39,6 +39,7 @@ namespace EndfieldGraphShaderLab
         private static float startTime = float.NaN;
         private static float configuredPreRollSeconds;
         private static Transform overview02Root;
+        private static bool sourcePostFailureLogged;
         private static readonly Vector3 RecoveredPostCenterLocal =
             new Vector3(0.0f, 1.266f, 0.0f);
 
@@ -71,6 +72,13 @@ namespace EndfieldGraphShaderLab
         }
 
         public static float ConfiguredPreRollSeconds => configuredPreRollSeconds;
+
+        // The serialized curve f(elapsed) is exact, but the original runtime
+        // owner that establishes elapsed=0 has not been recovered. Prefab
+        // creation and user-configurable pre-roll are compatibility clocks,
+        // not authenticated source time, so the presentation publisher stays
+        // fail-closed until that owner is proven.
+        public static bool SourcePostClockAuthenticated => false;
 
         public static void ClearOverview02(Transform effectRoot)
         {
@@ -121,11 +129,26 @@ namespace EndfieldGraphShaderLab
             out RecoveredPostState state)
         {
             state = default;
-            if (camera == null || !TryGetElapsed(out float elapsed))
+            if (camera == null ||
+                !TryGetAuthenticatedSourcePostElapsed(out float elapsed))
                 return false;
 
-            float chromatic = EvaluateSourceCurve(elapsed, 0.127f, 0.101f);
-            float radial = EvaluateSourceCurve(elapsed, 0.152f, 0.109f);
+            if (!EndfieldRecoveredEndminfSourcePostCurves.TryEvaluate(
+                    elapsed,
+                    out float chromatic,
+                    out float radial,
+                    out float animatedRadialPower,
+                    out string sourcePostFailure))
+            {
+                if (!sourcePostFailureLogged)
+                {
+                    sourcePostFailureLogged = true;
+                    Debug.LogWarning(
+                        "Recovered Endminf source post failed closed: " +
+                        sourcePostFailure);
+                }
+                return false;
+            }
             bool chromaticActive = chromatic > 0.0f;
             bool radialActive = radial > 0.0f;
             // The pinned native producer selects the nine-tap combined mode
@@ -134,10 +157,9 @@ namespace EndfieldGraphShaderLab
                 ? (chromaticActive && radial > 0.01f ? 6 : 3)
                 : 0;
 
-            // A_fx_endminf_ui_overview_02 animates radial power to exactly
-            // 1.0. The pinned Uber parameter producer blends from 1.0 when
-            // both effects are active. Its separate no-radial default is 1.2.
-            const float animatedRadialPower = 1.0f;
+            // The serialized clip owns radial power. The pinned Uber parameter
+            // producer blends from 1.0 when both effects are active. Its
+            // separate no-radial default is 1.2.
             float effectivePower = animatedRadialPower;
             if (chromaticActive && radialActive)
             {
@@ -156,6 +178,13 @@ namespace EndfieldGraphShaderLab
                 centerViewport = GetRecoveredPostCenterViewport(camera)
             };
             return true;
+        }
+
+        private static bool TryGetAuthenticatedSourcePostElapsed(
+            out float elapsed)
+        {
+            elapsed = 0.0f;
+            return false;
         }
 
         public static bool TryEvaluateOpeningStrip(
@@ -211,48 +240,6 @@ namespace EndfieldGraphShaderLab
                 default:
                     return false;
             }
-        }
-
-        private static float EvaluateSourceCurve(
-            float time,
-            float initialPeak,
-            float latePeak)
-        {
-            if (time <= 0.1f)
-            {
-                // Clean-reference frames 91-94 lose the broad camera pull in
-                // roughly three 60-Hz samples while the character-owned
-                // horizontal slices persist. The compatibility Uber magnifies
-                // the native scalar, so retain 45% of the authored peak and
-                // finish this broad response at 0.1 s. The separately measured
-                // late crystal pulse below keeps its captured magnitude.
-                return Mathf.SmoothStep(
-                    initialPeak * 0.45f,
-                    0.0f,
-                    time / 0.1f);
-            }
-            // Retail frame 1818 registers the late Uber pulse peak at clean
-            // frame 264 / overview phase 4.350000 s. The former curve was
-            // five 60-Hz samples late. Preserve its captured rise/fall shape
-            // and move only this pulse to the measured source phase.
-            const float lateStartSeconds = 4.3166667f;
-            const float latePeakSeconds = 4.35f;
-            const float lateEndSeconds = 4.5166667f;
-            if (time < lateStartSeconds)
-                return 0.0f;
-            if (time <= latePeakSeconds)
-                return Mathf.SmoothStep(
-                    0.0f,
-                    latePeak,
-                    (time - lateStartSeconds) /
-                        (latePeakSeconds - lateStartSeconds));
-            if (time <= lateEndSeconds)
-                return Mathf.SmoothStep(
-                    latePeak,
-                    0.0f,
-                    (time - latePeakSeconds) /
-                        (lateEndSeconds - latePeakSeconds));
-            return 0.0f;
         }
 
         public static Vector2 GetRecoveredPostCenterViewport(Camera camera)

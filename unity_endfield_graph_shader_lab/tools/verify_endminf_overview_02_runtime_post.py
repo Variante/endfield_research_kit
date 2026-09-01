@@ -2,6 +2,7 @@
 """Fail-closed contract check for Endminf overview-02 runtime post state."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -15,6 +16,16 @@ CLOCK = (
     LAB
     / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
     / "EndfieldEndminfVisualCompatibilityClock.cs"
+)
+SOURCE_CURVES = (
+    LAB
+    / "Assets/EndfieldGraphShaderLab/Resources/EndfieldEndminfSourcePost"
+    / "endminf_overview_02_source_post_curves.json"
+)
+SOURCE_CURVE_RUNTIME = (
+    LAB
+    / "Assets/EndfieldGraphShaderLab/Runtime/Rendering"
+    / "EndfieldRecoveredEndminfSourcePostCurves.cs"
 )
 PIPELINE = (
     LAB
@@ -34,6 +45,9 @@ OPEN_WRAPPER = LAB / "open_character_recovery_lab.bat"
 
 EXPECTED_CLIP_SHA256 = (
     "9814b9de92d5af7902b1967c295f98d29327824bdd7b478984527c5ccccd076c"
+)
+EXPECTED_SOURCE_CURVE_PAYLOAD_SHA256 = (
+    "0919ae4aab01e7772fb0c3987ad16f2885ad6374ff6c88a4adc065e4ba19353c"
 )
 EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256 = (
     "3f490e1504c435541769ee03e881583df554e652df155e5b942a3a410d8e086b"
@@ -84,13 +98,61 @@ def verify() -> dict[str, object]:
     ):
         raise RuntimeError("Endminf combined Uber fragment hash mismatch")
 
+    source_curve_text = SOURCE_CURVES.read_text(encoding="utf-8")
+    normalized_source_curve_text = source_curve_text.replace("\r\n", "\n").replace(
+        "\r", "\n"
+    )
+    source_curve_payload_hash = hashlib.sha256(
+        normalized_source_curve_text.encode("utf-8")
+    ).hexdigest()
+    if source_curve_payload_hash != EXPECTED_SOURCE_CURVE_PAYLOAD_SHA256:
+        raise RuntimeError(
+            "generated overview-02 source-curve payload hash mismatch: "
+            f"{source_curve_payload_hash}"
+        )
+    source_curves = json.loads(normalized_source_curve_text)
+    if source_curves["schema"] != "endfield.endminf-overview-02-source-post-curves.v1":
+        raise RuntimeError("generated overview-02 source-curve schema mismatch")
+    if source_curves["sourceClip"]["sha256"] != EXPECTED_CLIP_SHA256:
+        raise RuntimeError("generated overview-02 source-curve clip hash mismatch")
+    if source_curves["target"] != {"name": "post (1)", "pathCrc32": 669740077}:
+        raise RuntimeError("generated overview-02 source-curve target mismatch")
+    if [row["role"] for row in source_curves["curves"]] != [
+        "chromaticIntensity",
+        "radialIntensity",
+        "radialPower",
+    ]:
+        raise RuntimeError("generated overview-02 source-curve role order mismatch")
+
+    source_curve_runtime = SOURCE_CURVE_RUNTIME.read_text(encoding="utf-8")
+    require_tokens(source_curve_runtime, (
+        'ExpectedSchema =\n            "endfield.endminf-overview-02-source-post-curves.v1"',
+        EXPECTED_CLIP_SHA256,
+        EXPECTED_SOURCE_CURVE_PAYLOAD_SHA256,
+        'Resources.Load<TextAsset>(ResourceName)',
+        '.Replace("\\r\\n", "\\n")',
+        'sha.ComputeHash(Encoding.UTF8.GetBytes(normalizedPayload))',
+        'JsonUtility.FromJson<SourcePostContract>(normalizedPayload)',
+        'Mathf.Clamp(',
+        'contract.sourceClip.startSeconds',
+        'contract.sourceClip.stopSeconds',
+        'return ((key.a * delta + key.b) * delta + key.c) * delta + key.d;',
+        'curve.keys.Length != keyCount',
+        'curve.pathCrc32 != 669740077L',
+        'curve.attributeCrc32 != attributeCrc32',
+    ), "exact source-curve runtime")
+
     clock = CLOCK.read_text(encoding="utf-8")
     require_tokens(clock, (
         "ClearOverview02(Transform effectRoot)",
         "overview02Root != null",
-        "EvaluateSourceCurve(elapsed, 0.127f, 0.101f)",
-        "EvaluateSourceCurve(elapsed, 0.152f, 0.109f)",
-        "const float animatedRadialPower = 1.0f",
+        "public static bool SourcePostClockAuthenticated => false;",
+        "!TryGetAuthenticatedSourcePostElapsed(out float elapsed)",
+        "private static bool TryGetAuthenticatedSourcePostElapsed(",
+        "elapsed = 0.0f;\n            return false;",
+        "EndfieldRecoveredEndminfSourcePostCurves.TryEvaluate(",
+        "out float animatedRadialPower",
+        '"Recovered Endminf source post failed closed: "',
         "Mathf.Lerp(",
         "1.0f,",
         "Mathf.Clamp01(radial / chromatic)",
@@ -104,12 +166,23 @@ def verify() -> dict[str, object]:
         "(signedCenter.normalized + Vector2.one) * 0.5f",
         "Mathf.Clamp01(center.x)",
         "Mathf.Clamp01(center.y)",
-        "time <= 0.1f",
-        "initialPeak * 0.45f",
-        "const float lateStartSeconds = 4.3166667f",
-        "const float latePeakSeconds = 4.35f",
-        "const float lateEndSeconds = 4.5166667f",
     ), "runtime clock")
+    forbidden_clock_tokens = (
+        "EvaluateSourceCurve(",
+        "initialPeak * 0.45f",
+        "lateStartSeconds = 4.3166667f",
+        "latePeakSeconds = 4.35f",
+        "lateEndSeconds = 4.5166667f",
+    )
+    leaked = [token for token in forbidden_clock_tokens if token in clock]
+    if leaked:
+        raise RuntimeError(f"video-fitted source-curve substitute remains: {leaked}")
+    evaluator = clock[
+        clock.index("public static bool TryEvaluateRecoveredPost("):
+        clock.index("private static bool TryGetAuthenticatedSourcePostElapsed(")
+    ]
+    if "TryGetElapsed(" in evaluator:
+        raise RuntimeError("source post still consumes the unauthenticated compatibility clock")
 
     pipeline = PIPELINE.read_text(encoding="utf-8")
     require_tokens(pipeline, (
@@ -123,13 +196,13 @@ def verify() -> dict[str, object]:
         "LastRecoveredEndminfPostSourceGraphicsFormat",
         "LastRecoveredEndminfBloomGraphicsFormat",
         "RecoveredEndminfPostSourceId",
-        "private const float EndminfCompatibilityUberIntensityScale = 0.25f;",
-        "endminfPost.radialIntensity *",
-        "EndminfCompatibilityUberIntensityScale",
-        "endminfPost.chromaticIntensity *",
+        "? new Vector4(\n                        endminfPost.radialIntensity,",
+        "endminfPost.chromaticIntensity,",
     ), "render-pipeline packing")
     if "EvaluateEndminfVisualCompatibility(" in pipeline:
         raise RuntimeError("retired empirical Effect-02 evaluator is still present")
+    if "EndminfCompatibilityUberIntensityScale" in pipeline:
+        raise RuntimeError("video-fitted Endminf Uber intensity scale remains")
 
     require_tokens(CAPTURE.read_text(encoding="utf-8"), (
         'private const string RecordingVisualPostPreRollSeconds = "0";',
@@ -214,13 +287,17 @@ def verify() -> dict[str, object]:
         raise RuntimeError("active radial-only Uber helper still splits RGB taps")
 
     return {
-        "status": "verified_source_state_center_and_active_radial_uber_kernel",
+        "status": (
+            "verified_exact_serialized_source_curves_native_apply_center_"
+            "and_active_radial_uber_kernel_clock_fail_closed"
+        ),
         "clipSha256": EXPECTED_CLIP_SHA256,
+        "sourceCurvePayloadSha256": EXPECTED_SOURCE_CURVE_PAYLOAD_SHA256,
         "combinedFragmentDxbcSha256": EXPECTED_COMBINED_FRAGMENT_DXBC_SHA256,
         "activeFragmentDxbcSha256": EXPECTED_ACTIVE_FRAGMENT_DXBC_SHA256,
         "curveCount": len(bindings),
         "runtime": {
-            "radialPower": 1.0,
+            "radialPower": "serialized_constant_curve_1.0",
             "combinedPowerBase": 1.0,
             "combinedMode": 6,
             "singleMode": 3,
@@ -229,19 +306,25 @@ def verify() -> dict[str, object]:
             "postSourceGraphicsFormat": "R16G16B16A16_SFloat",
             "bloomGraphicsFormat": "B10G11R11_UFloatPack32",
             "averageSteps": [0, 0],
-            "publicUnityFallbackIntensityScale": 0.25,
+            "publicUnityCurveTransport": "unscaled_serialized_values",
+            "sourcePostClockAuthenticated": False,
+            "presentationAdmitted": False,
             "particleClock": (
                 "selection/body timeline; only source-identified M20 smoke is "
                 "presentation-advanced by two ticks"
             ),
         },
         "boundary": (
-            "The animated values, ordinary/far-offscreen native center packing, "
+            "The exact serialized cubic scalar curves, constant radial-power "
+            "curve, native MonoBehaviour field/apply identities, ordinary/"
+            "far-offscreen native center packing, "
             "native mode/power packing, the captured active radial-only Uber "
             "kernel, source-only warp, and separate bloom sampling order are "
             "verified. The older combined radial/chromatic variant remains "
-            "asset evidence, not the active peak presentation. The public-Unity "
-            "presentation/binding ABI remains unresolved."
+            "asset evidence, not the active peak presentation. The outer "
+            "effect-start timestamp, SceneColor chronology, and public-Unity "
+            "presentation/binding ABI remain unresolved, so the runtime "
+            "publisher is explicitly fail-closed."
         ),
     }
 
