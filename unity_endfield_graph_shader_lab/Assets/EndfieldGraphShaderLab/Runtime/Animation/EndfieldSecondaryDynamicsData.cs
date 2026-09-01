@@ -28,6 +28,8 @@ namespace EndfieldGraphShaderLab
             public float[] vertexDepths;
             public int[] vertexRootIndices;
             public int[] vertexParentIndices;
+            public uint[] vertexChildIndexArray;
+            public ushort[] vertexChildDataArray;
             public Vector3[] vertexLocalPositions;
             public Quaternion[] vertexLocalRotations;
             public Quaternion[] vertexBindPoseRotations;
@@ -75,6 +77,11 @@ namespace EndfieldGraphShaderLab
             public float gravityFalloff;
             public float animationPoseRatio;
             public float blendWeight;
+
+            // Exact authored ClothParameters inputs for the disconnected
+            // CalcLine recovery. Storing them does not admit a runtime route.
+            public float rotationalInterpolation;
+            public float rootRotation;
 
             public float dampingValue;
             public bool dampingUsesCurve;

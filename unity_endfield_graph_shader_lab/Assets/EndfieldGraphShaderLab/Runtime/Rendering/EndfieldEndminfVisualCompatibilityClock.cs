@@ -174,6 +174,12 @@ namespace EndfieldGraphShaderLab
         public static bool SourcePostSeedAuthenticated =>
             TryGetAuthenticatedSourcePostElapsed(out _);
 
+        public static bool TryGetAuthenticatedSourceEffectElapsed(
+            out float elapsed)
+        {
+            return TryGetAuthenticatedSourcePostElapsed(out elapsed);
+        }
+
         // The pinned native path proves the one-shot seed and ordering. The
         // lab advances that seed with public Unity scaled time because the
         // retail EffectInstance tick implementation is not source-closed.

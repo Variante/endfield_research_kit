@@ -30,12 +30,15 @@ LITEFFECT_EXPECTED_INDEX_COUNTS = {
     "FrameAnalysis-2026-08-24-182850": [1080],
 }
 LITEFFECT_TEXTURE_HASHES = {
-    "t0": ("_ParallaxNoiseMap", "4e770fc3"),
-    "t1": ("_ParallaxMaskMap", "30ff729f"),
-    "t2": ("_ParallaxMap", "0091dfae"),
-    "t3": ("_NormalMap", "7fe21e44"),
-    "t4": ("_MROMap", "bb5905b2"),
-    "t5": ("_BaseColorMap", "bb5905b2"),
+    # Physical names come from serialized PackedBinding's fragment-register
+    # byte, not descriptor-list order. The resource hashes remain attached to
+    # their observed physical slots.
+    "t0": ("_BaseColorMap", "4e770fc3"),
+    "t1": ("_NormalMap", "30ff729f"),
+    "t2": ("_MROMap", "0091dfae"),
+    "t3": ("_ParallaxMap", "7fe21e44"),
+    "t4": ("_ParallaxMaskMap", "bb5905b2"),
+    "t5": ("_ParallaxNoiseMap", "bb5905b2"),
 }
 FRAME_NAMES = (
     "FrameAnalysis-2026-08-24-182534",
@@ -43,6 +46,10 @@ FRAME_NAMES = (
     "FrameAnalysis-2026-08-24-182744",
     "FrameAnalysis-2026-08-24-182819",
     "FrameAnalysis-2026-08-24-182850",
+)
+DEFAULT_REPORT = (
+    Path(__file__).resolve().parents[2]
+    / "reports/assets/character_recovery/endminf_deferred_pass0_frame_analysis.json"
 )
 TARGET_DSC_RE = re.compile(
     rf"^(?P<draw>\d{{6}})-(?P<binding>.+?)=(?P<resource>.+?)-"
@@ -76,6 +83,16 @@ def fnv1_64(data: bytes) -> str:
     for byte in data:
         value = ((value * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF) ^ byte
     return f"{value:016x}"
+
+
+def encoded_report(report: dict) -> bytes:
+    return (json.dumps(report, indent=2) + "\n").encode("utf-8")
+
+
+def published_report_is_current(report: dict, output: Path) -> bool:
+    if not output.is_file():
+        return False
+    return output.read_bytes().replace(b"\r\n", b"\n") == encoded_report(report)
 
 
 def parse_descriptor(text: str) -> dict[str, object]:
@@ -454,8 +471,12 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=repo_root / "reports/assets/character_recovery/"
-        "endminf_deferred_pass0_frame_analysis.json",
+        default=DEFAULT_REPORT,
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="fail if the published report differs from current evidence",
     )
     parser.add_argument(
         "--vs-blob", type=Path,
@@ -495,8 +516,14 @@ def main() -> int:
         frame_dirs, args.vs_blob, args.ps_blob, args.shader_source,
         args.liteffect_vs_blob, args.liteffect_ps_blob,
     )
+    if args.check:
+        if not published_report_is_current(report, args.output):
+            print(f"stale generated report: {args.output}")
+            return 1
+        print(f"{report['status']} and current: {args.output}")
+        return 0 if report["status"] == "ok" else 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    args.output.write_bytes(encoded_report(report))
     print(f"{report['status']}: {args.output}")
     for failure in report["failures"]:
         print(f"failure: {failure}")

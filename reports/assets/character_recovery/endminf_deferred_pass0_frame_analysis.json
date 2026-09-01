@@ -1263,27 +1263,27 @@
     },
     "textureResources": {
       "t0": {
-        "logicalName": "_ParallaxNoiseMap",
+        "logicalName": "_BaseColorMap",
         "resourceHash": "4e770fc3"
       },
       "t1": {
-        "logicalName": "_ParallaxMaskMap",
+        "logicalName": "_NormalMap",
         "resourceHash": "30ff729f"
       },
       "t2": {
-        "logicalName": "_ParallaxMap",
+        "logicalName": "_MROMap",
         "resourceHash": "0091dfae"
       },
       "t3": {
-        "logicalName": "_NormalMap",
+        "logicalName": "_ParallaxMap",
         "resourceHash": "7fe21e44"
       },
       "t4": {
-        "logicalName": "_MROMap",
+        "logicalName": "_ParallaxMaskMap",
         "resourceHash": "bb5905b2"
       },
       "t5": {
-        "logicalName": "_BaseColorMap",
+        "logicalName": "_ParallaxNoiseMap",
         "resourceHash": "bb5905b2"
       }
     },

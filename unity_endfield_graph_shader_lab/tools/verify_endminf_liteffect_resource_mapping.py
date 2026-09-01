@@ -28,6 +28,8 @@ EVIDENCE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldG
 CLOSURE_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_material_closure.json"
 MATERIAL_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "Material"
 REPORT_PATH = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Generated" / "Characters" / "Playable" / "Endminf" / "ExternalUiEffects" / "endminf_liteffect_resource_mapping.json"
+EXACT_UNITY_PORT = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Shaders" / "Recovered" / "EndfieldEndminfM27HGBuffer.shader"
+COMPATIBILITY_UNITY_PORT = ROOT / "unity_endfield_graph_shader_lab" / "Assets" / "EndfieldGraphShaderLab" / "Shaders" / "Recovered" / "EndfieldEndminfLitEffectVisualCompatibility.shader"
 
 VERTEX_FILE = "0114_endfield_dxbc_0.dxbc"
 FRAGMENT_FILE = "0115_endfield_dxbc_1.dxbc"
@@ -55,6 +57,22 @@ TEXTURE_NAMES = (
     "_MROMap",
     "_BaseColorMap",
 )
+EXPECTED_FRAGMENT_TEXTURE_REGISTERS = {
+    0: "_BaseColorMap",
+    1: "_NormalMap",
+    2: "_MROMap",
+    3: "_ParallaxMap",
+    4: "_ParallaxMaskMap",
+    5: "_ParallaxNoiseMap",
+}
+EXPECTED_FRAGMENT_SAMPLERS = {
+    0: "sampler_LinearClamp",
+    1: "sampler_LinearRepeat",
+    2: "sampler_LinearMirror",
+    3: "sampler_LinearMirrorOnce",
+    4: "sampler_PointClamp",
+    5: "sampler_PointRepeat",
+}
 PARALLAX_FLOATS = (
     "_EnableParallaxMap",
     "_ParallaxStrength",
@@ -663,6 +681,106 @@ def _map_vertex_fields(fields: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
+def _validate_unity_transport_ports(
+    exact_text: str | None = None,
+    compatibility_text: str | None = None,
+) -> dict[str, Any]:
+    """Gate only the source-proven sampling/channel subgraph in Unity ports.
+
+    Match coupled expressions after removing comments and normalizing
+    whitespace.  Disconnected declarations or channel tokens are not enough:
+    each admitted texture must remain paired with its physical sampler and
+    output channel, and the UV/MRO fields must remain in their proven roles.
+    """
+    if exact_text is None:
+        exact_text = EXACT_UNITY_PORT.read_text(encoding="utf-8")
+    if compatibility_text is None:
+        compatibility_text = COMPATIBILITY_UNITY_PORT.read_text(
+            encoding="utf-8")
+
+    def normalized_code(text: str) -> str:
+        text = re.sub(r"/\*.*?\*/", " ", text, flags=re.DOTALL)
+        text = re.sub(r"//[^\r\n]*", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    exact_code = normalized_code(exact_text)
+    compatibility_code = normalized_code(compatibility_text)
+    exact_required = (
+        "float2 baseUV = mad( lerp(input.uv0, input.uv1, _BaseUVSet), _BaseColorMap_ST.xy, _BaseColorMap_ST.zw);",
+        "float2 pbrUV = mad( lerp(input.uv0, input.uv1, _BasePbrMapUVSet), _NormalMap_ST.xy, _NormalMap_ST.zw);",
+        "float2 parallaxBaseUV = mad(_ParallaxMapUVType, uvDelta, input.uv0);",
+        "float4 baseSample = _BaseColorMap.SampleBias( sampler_LinearClamp, baseUV, _GlobalMipBias);",
+        "float4 normalSample = _NormalMap.SampleBias( sampler_LinearRepeat, pbrUV, _GlobalMipBias);",
+        "float4 mroSample = _MROMap.SampleBias( sampler_LinearMirror, pbrUV, _GlobalMipBias);",
+        "float maskTexture = _ParallaxMaskMap.SampleBias( sampler_PointClamp, input.uv1, _GlobalMipBias).r;",
+        "float sampledHeight = _ParallaxNoiseMap.SampleGrad( sampler_PointRepeat, parallaxBaseUV * _ParallaxNoiseMapTilling + rayOffset, uvDx, uvDy).r;",
+        "float parallaxSample = _ParallaxMap.SampleBias( sampler_LinearMirrorOnce, parallaxUV, _GlobalMipBias).g;",
+        "geometricNormal * normalZ + tangent * (normalXY.x * _NormalScale) + bitangent * (normalXY.y * _NormalScale)",
+        "float metallic = lerp( mroSample.r, _Metallic, saturate(_BaseTextureMapCount - 1.0));",
+        "float roughness = lerp( _RoughnessMin, _RoughnessMax, mroSample.g);",
+        "float occlusion = mad( _OcclusionStrength, mroSample.b - 1.0, 1.0);",
+        "output.gBufferA = float4( metallic, occlusion, 0.0,",
+        "output.gBufferB = float4( mad(octNormal, 0.5, 0.5), roughness,",
+    )
+    compatibility_required = (
+        "float2 baseUV = lerp(input.uv0, input.uv1, _BaseUVSet) * _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;",
+        "float2 pbrUV = lerp(input.uv0, input.uv1, _BasePbrMapUVSet) * _NormalMap_ST.xy + _NormalMap_ST.zw;",
+        "float2 parallaxBaseUV = lerp( input.uv0, input.uv1, _ParallaxMapUVType);",
+        "float4 baseSample = _BaseColorMap.SampleBias( sampler_LinearClamp, baseUV, 0.0) * _BaseColor;",
+        "float4 normalSample = _NormalMap.SampleBias( sampler_LinearRepeat, pbrUV, 0.0);",
+        "float3 mro = _MROMap.SampleBias( sampler_LinearMirror, pbrUV, 0.0).rgb;",
+        "float sampledHeight = _ParallaxNoiseMap.SampleGrad( sampler_PointRepeat, parallaxBaseUV * _ParallaxNoiseMapTilling + rayOffset, noiseDx, noiseDy).r;",
+        "float parallax = _ParallaxMap.SampleBias( sampler_LinearMirrorOnce, parallaxUV, 0.0).g;",
+        "float3 normalTS = float3( normalXY * _NormalScale, normalZ);",
+        "float metallic = saturate(lerp( mro.r, _Metallic, saturate(_BaseTextureMapCount - 1.0)));",
+        "float sourceRoughness = lerp( _RoughnessMin, _RoughnessMax, mro.g);",
+        "float occlusion = saturate(lerp( 1.0, mro.b, _OcclusionStrength));",
+    )
+    forbidden = (
+        "_ParallaxMap.SampleGrad(",
+        "_ParallaxNoiseMap.SampleBias(",
+        "float roughness = clamp(mro.r",
+        "float metallic = saturate(mro.g)",
+        "_MetallicMax",
+    )
+    for label, code, required in (
+        ("exact M27 producer", exact_code, exact_required),
+        ("M01/M38 visual compatibility port", compatibility_code,
+         compatibility_required),
+    ):
+        missing = [token for token in required if token not in code]
+        retained = [token for token in forbidden if token in code]
+        if missing or retained:
+            raise VerificationError(
+                f"{label} source sampling transport drifted: "
+                f"missing={missing!r} forbidden={retained!r}")
+    return {
+        "sourceProvenSubgraph": {
+            "physicalTextures": EXPECTED_FRAGMENT_TEXTURE_REGISTERS,
+            "physicalSamplers": EXPECTED_FRAGMENT_SAMPLERS,
+            "mroChannels": {
+                "r": "metallic",
+                "g": "roughness",
+                "b": "occlusion",
+            },
+            "parallax": (
+                "march _ParallaxNoiseMap.r with PointRepeat, then sample "
+                "_ParallaxMap.g with LinearMirrorOnce"
+            ),
+        },
+        "exactM27Producer": {
+            "path": str(EXACT_UNITY_PORT.relative_to(ROOT)).replace("\\", "/"),
+            "sha256": _sha256(EXACT_UNITY_PORT),
+            "classification": "source_equation_port_consumer_still_gated",
+        },
+        "m01M38Compatibility": {
+            "path": str(COMPATIBILITY_UNITY_PORT.relative_to(ROOT)).replace("\\", "/"),
+            "sha256": _sha256(COMPATIBILITY_UNITY_PORT),
+            "classification": "source_sampling_subgraph_forward_presentation_non_exact",
+        },
+    }
+
+
 def build_report() -> dict[str, Any]:
     vertex_path = BYTECODE_ROOT / VERTEX_FILE
     fragment_path = BYTECODE_ROOT / FRAGMENT_FILE
@@ -758,6 +876,24 @@ def build_report() -> dict[str, Any]:
     dynamic_samplers = {row["BindPoint"]: row["Name"] for row in fragment_meta["samplers"] if isinstance(row.get("BindPoint"), int) and 0 <= row["BindPoint"] <= 5 and str(row.get("Name", "")).startswith("_")}
     if dynamic_samplers != {i: name for i, name in enumerate(TEXTURE_NAMES)}:
         raise VerificationError(f"PerMaterial sampler/name order mismatch: {dynamic_samplers!r}")
+    # BindPoint is descriptor order, not the physical D3D texture register.
+    # PackedBinding byte 2 carries the fragment register and proves the
+    # non-monotonic logical mapping used by the selected retail variant.
+    texture_descriptor_rows = [
+        row for row in descriptor_contract["perMaterial"]
+        if row.get("DescriptorType") == 2
+    ]
+    physical_texture_names: dict[int, str] = {}
+    for row in texture_descriptor_rows:
+        register = _packed_stage_register(row, "fragment")
+        if register is None or register in physical_texture_names:
+            raise VerificationError(
+                "PerMaterial texture PackedBinding is absent or ambiguous")
+        physical_texture_names[register] = str(row.get("Name"))
+    if physical_texture_names != EXPECTED_FRAGMENT_TEXTURE_REGISTERS:
+        raise VerificationError(
+            "PerMaterial physical texture register map mismatch: "
+            f"{physical_texture_names!r}")
     vertex_resources = []
     for resource in vertex_reference["resources"]:
         if resource["register"] == 0:
@@ -772,15 +908,27 @@ def build_report() -> dict[str, Any]:
         slot = resource["register"]
         if resource.get("name") != expected_resource_names.get(slot):
             raise VerificationError(f"fragment texture resource name mismatch at t{slot}")
-        logical = dynamic_samplers.get(slot)
-        fragment_resources.append({**resource, "logicalName": logical, "status": "resolved" if logical else "gap", "basis": ["historical HLSL register", "serialized SamplerParameters BindPoint 0..5", "PerMaterial descriptor texture binding 6..11"] if logical else []})
+        logical = physical_texture_names.get(slot)
+        fragment_resources.append({
+            **resource,
+            "logicalName": logical,
+            "sampler": EXPECTED_FRAGMENT_SAMPLERS.get(slot),
+            "status": "resolved" if logical else "gap",
+            "basis": [
+                "historical HLSL physical register",
+                "serialized PerMaterial texture descriptor PackedBinding fragment byte",
+                "pinned static sampler declaration at the same physical slot",
+            ] if logical else [],
+        })
     if len(fragment_resources) != 6:
         raise VerificationError(f"expected six fragment texture resources, got {len(fragment_resources)}")
 
     static_samplers = [{**row, "status": "resolved_static_name"} for row in fragment_reference["samplers"]]
     if [row["register"] for row in static_samplers] != list(range(6)):
         raise VerificationError("fragment historical HLSL samplers are not the six s0..s5 slots")
-    expected_reference_samplers = ["sampler_LinearClamp", "sampler_LinearRepeat", "sampler_LinearMirror", "sampler_LinearMirrorOnce", "sampler_PointClamp", "sampler_PointRepeat"]
+    expected_reference_samplers = [
+        EXPECTED_FRAGMENT_SAMPLERS[index] for index in range(6)
+    ]
     if [row["name"] for row in static_samplers] != expected_reference_samplers:
         raise VerificationError("fragment historical HLSL sampler declarations changed")
     static_metadata_names = {row.get("Name") for row in fragment_meta["samplers"] if isinstance(row.get("BindPoint"), int) and 5 <= row["BindPoint"] <= 10 and str(row.get("Name", "")).startswith("s_")}
@@ -822,6 +970,7 @@ def build_report() -> dict[str, Any]:
         "reason": "AnimeStudio Shader JSON omits ParserBindChannels.m_Channels; DXBC ISGN/OSGN signatures above are the available interface reflection.",
         "serializedMetadataClass": "ParserBindChannels",
     }
+    unity_ports = _validate_unity_transport_ports()
     report = {
         "schema": "endfield.endminf-liteffect-resource-mapping.v1",
         "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps",
@@ -837,6 +986,7 @@ def build_report() -> dict[str, Any]:
         "fragmentInputs": fragment_reflection["inputs"],
         "mrtOutputs": fragment_reflection["outputs"],
         "resources": {"vertex": vertex_resources, "fragmentTextures": fragment_resources, "fragmentSamplers": static_samplers},
+        "unityTransportPorts": unity_ports,
         "crossPlatformSpirv": {
             "vertex": vertex_spirv_ubos,
             "fragment": fragment_spirv_ubos,

@@ -13,7 +13,6 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_UI_charChoose_12";
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
         private const float HalfWindowSeconds = 1.0f / 60.0f;
 
         private static ParticleSystemRenderer sourceRenderer;
@@ -173,31 +172,9 @@ namespace EndfieldGraphShaderLab
 
         private static int ResolvePacket(Transform actorRoot)
         {
-            EndfieldOverviewPlayback playback =
-                actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true);
-            Animator animator = playback != null ? playback.animatorSource : null;
-            float seconds;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf("overview_start",
-                        StringComparison.OrdinalIgnoreCase) < 0)
-                    return -1;
-                seconds = animator.GetCurrentAnimatorStateInfo(0).normalizedTime *
-                    clips[0].clip.length;
-            }
-            else
-            {
-                Animation animation =
-                    actorRoot.GetComponentInChildren<Animation>(true);
-                AnimationState state = animation != null
-                    ? animation["ui_overview_start"] : null;
-                if (state == null || !state.enabled) return -1;
-                seconds = state.time;
-            }
-            seconds = Mathf.Max(0.0f, seconds - ViewerLeadSeconds);
+            if (!EndfieldEndminfVisualCompatibilityClock
+                    .TryGetAuthenticatedSourceEffectElapsed(out float seconds))
+                return -1;
             float[] phases = EndfieldRecoveredOpeningStripCaptureData.PhaseSeconds;
             int nearest = -1;
             float distance = float.PositiveInfinity;

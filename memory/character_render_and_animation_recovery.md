@@ -536,8 +536,13 @@ the outer return; the false path remains intact and all 20 native tests pass.
   `UnityPerDraw`, `UnityPerMaterial`, and terrain subsurface constants. The
   shader parameter blob's pre-descriptor table closes all 37 named
   `UnityPerMaterial` members, including the complete `_PARALLAX_MAP` extension
-  from byte 352. Decompiled use also corrects the physical texture order to
-  BaseColor, Normal, MRO, ParallaxNoise, ParallaxMask, and Parallax at t0..t5.
+  from byte 352. Decompiled use and the serialized source table close the
+  physical PackedBinding order and static sampler ABI as BaseColor/LinearClamp
+  at t0, Normal/LinearRepeat at t1, MRO/LinearMirror at t2,
+  Parallax/LinearMirrorOnce at t3, Mask/PointClamp at t4, and Noise/PointRepeat
+  at t5. MRO stores metallic, roughness, and occlusion in R, G, and B;
+  parallax marching reads Noise.r and the final parallax contribution reads
+  Parallax.g.
   The selected `HGRP/DeferredLighting` pass closes the five-MRT A/B/C consumer
   at t23/t24/t25. Exact HGBuffer admission remains blocked only on live retail
   global/per-draw completeness and the complete deferred frame, not material
@@ -2022,12 +2027,17 @@ remains the owner of this gap.
 
 The missing peak gas is source-identified `overview_02/all/smoke (2)` using
 `M_fx_endminm_gfx_20`. Its authored 4.46-second delay and six-particle payload
-are retained, but Unity published it two render ticks after the matched retail
-frame. A narrow owner/material/parent gate now presentation-advances only that
-particle system by `2/60` seconds and resumes playback after simulation. A
-focused D3D11 report proves all six particles alive and playing at post time
-4.4333 (clean frame 269); crystals, stones, rays, and every other particle
-remain on the selection/body clock.
+are retained. The former owner-gated `2/60`-second `ParticleSystem.Simulate`
+advance came only from a matched retail frame and has been removed: it was a
+video-fitted timing correction, not recovered producer code. M20, crystals,
+stones, rays, and every other particle now start from their authored source
+delays on the selection/body clock. Recover the missing gas through its actual
+particle/render transport rather than an output-alignment offset. The separate
+runtime `2/60` Viewer lead used by packet replays was likewise an Editor
+capture-scheduler fit and has been removed from runtime diagnostics. Their
+phase arrays remain default-off capture diagnostics and select packets only
+from authenticated source-effect elapsed time; they do not retime source
+particles, animation, or effects.
 
 The CharInfo background now has a source-honest Endminf selector independent of
 the generic ready-subset diagnostic and fitted backdrop. It admits the exact
@@ -2264,8 +2274,13 @@ closure is logical rather than capture-byte-identical because the Full frame
 did not retain this draw's SRV payloads; do not claim exact texture bytes.
 M28 now has the corresponding hash-pinned ordinal-87 packet: 344 draw-local
 60-byte vertices, 1,764 R16 indices, exact instanced VFXRefract DXBC/constants,
-the source `T_fx_flow_121_M` and `T_fx_mask_17_C_M` textures, and a persistent
-packed-HDR snapshot of SceneColor for t2. The snapshot is copied immediately
+the source `T_fx_flow_121_M` and `T_fx_mask_17_C_M` texture identities, and a
+persistent packed-HDR snapshot of SceneColor for t2. For
+`T_fx_flow_121_M`, exactness means the hash-pinned decoded PNG plus the
+recovered 256x256, nine-source-mip, sRGB, Bilinear, Repeat, aniso-1,
+zero-mip-bias, mipmapped, non-streaming Texture2D/importer profile. It does not
+mean that the original native BC7 mip bytes were retained or reproduced. The
+snapshot is copied immediately
 before the draw, breaking the D3D11 SRV/RTV alias while the shader writes the
 live SceneColor+SceneMV MRT pair against the retained depth target. WARP
 validates both shaders and the input layout; the focused Viewer callback
@@ -2456,18 +2471,17 @@ about 29.7 to 27.5 against the clean reference despite a three-tick pose
 difference. Every playable profile now has a fail-closed mesh/importer
 orientation verifier. Keep the recovered Lua/layout placement fixed.
 
-M01/M38 stone texture identity is closed: their Unity materials already bind
-the exact recovered base, RG normal, MRO, and parallax maps. The flat-yellow
-surface came from the forward compatibility shader. Decompiled LitEffect
-proves roughness/metallic/occlusion in MRO R/G/B, parallax color from the green
-sample, and SceneColor energy gated by base alpha squared and `NdotV`; it does
-not clamp every parallax sample up to `_ParallaxMinBrightness`. The
-compatibility shader now follows those gates and uses the recovered MRO
-channels for bounded GGX lighting. Focused 4.5-second output changes the ten
-primary rocks from solid yellow shards to dark textured faces with amber
-energy regions, matching the retail surface class. This remains a non-exact
-ForwardOnly substitute for the retail HGBuffer/deferred path, so owner shape,
-lighting, and peak composition remain open.
+M01/M38 stone texture identity is closed: their Unity materials bind the exact
+recovered base, RG normal, MRO, and parallax maps. The physical shader samples
+BaseColor/Normal/MRO/Parallax/Mask/Noise through t0..t5 with the exact static
+samplers listed above; MRO is metallic/roughness/occlusion in R/G/B, the
+parallax march reads Noise.r, and final parallax color reads Parallax.g. The
+flat-yellow surface came from the forward compatibility path, not from missing
+stone textures. Its shader now preserves those source sampling/channel gates
+and bounded GGX behavior, but it is still a non-exact ForwardOnly substitute
+for retail HGBuffer/deferred lighting. Do not tune its light model, texture
+scale, owner placement, or effect curves as if it were exact presentation;
+deferred light/shadow/frame ownership and peak composition remain open.
 
 The measured opening-fracture reconstruction is diagnostic-only. Clean-reference
 frames 91-109 establish a bounded table for effect-clock frames 4-20, but its
@@ -3319,9 +3333,16 @@ corrects the stone normal sampling contract but does not claim retail lighting
 parity. The compatibility LitEffect shader still contains an approximate
 directional-light model, while exact deferred light, shadow, and HGBuffer frame
 ownership remain incomplete. Do not tune that heuristic or move effects to fit
-screenshots. Canonical and targeted renders now rebuild the four Overview VFX
-roots from the fingerprint-gated exact source stage and fail if it is missing
-or drifted, preventing stale prefab transforms from passing as current output.
+screenshots. The Overview VFX source-stage contract is now schema v2. It gates
+the exact four root GameObject/Transform identities and node/particle counts,
+carries exact hierarchy identities plus direct ParticleSystem,
+ParticleSystemRenderer, resolved material/mesh, and shape-texture references
+instead of positional list joins, and
+validates the complete saved particle/renderer payload by source PathID after
+effect-animation reconstruction. The checked-in generated Overview prefabs
+are still schema v1 and therefore fail closed until a clean, coordinated Unity
+rebuild regenerates and validates them; no current render is certified by the
+v2 gate yet.
 The exact deferred subset no longer substitutes a 1x1 zero texture at t10:
 `SetupMultiscatteringLut` is reproduced as a source-generated 32x32
 `R16_UNorm` Bilinear/Clamp LUT with exact 2,048-byte SHA-256
@@ -3682,7 +3703,13 @@ remain spatially different. Treat this as the stable non-crashing baseline, not
 retail parity or secondary-motion certification.
 
 The source-backed secondary-dynamics dependency chain is current, but the
-recovered solver remains disabled. Its 40-checkpoint comparison diverges at the
+recovered solver remains disabled. Exact per-owner child topology is now
+retained as inert source data: the four owners have 5/22/16/65 child entries,
+with packed UInt32 range headers and ordered UInt16 child arrays; MC_Hair
+parent 17's exact ordered children are `[19,18]`. The builder validates
+contiguous ranges, unique membership, and exact order, but no solver,
+coordinator, prefab, or writeback path consumes these arrays while the selected
+native CalcLine/Burst/managed route remains unresolved. Its 40-checkpoint comparison diverges at the
 first post-publication sample (36.45 mm/6.82 degrees mean) and reaches
 104.20 mm/10.89 degrees overall versus 20.24 mm/7.19 degrees with the solver
 off. The generated PostProxy contract now closes the hidden JobHandle ABI,

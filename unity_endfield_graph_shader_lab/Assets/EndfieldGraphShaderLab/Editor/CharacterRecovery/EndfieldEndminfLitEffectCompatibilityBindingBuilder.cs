@@ -72,21 +72,24 @@ namespace EndfieldGraphShaderLabEditor
             {
                 EndfieldRecoveredParticleEffectSource source =
                     root.GetComponent<EndfieldRecoveredParticleEffectSource>();
-                ParticleSystemRenderer[] renderers =
-                    root.GetComponentsInChildren<ParticleSystemRenderer>(true);
                 Require(source != null && source.contractSchema ==
                     EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema,
                     "Endminf overview_01 source contract drifted");
                 Require(source.particleNodes != null &&
-                    source.particleNodes.Length == renderers.Length,
-                    "Endminf retained particle-node/renderer order drifted");
+                    source.particleNodes.Length == 33 &&
+                    source.particleNodes.All(node => node != null &&
+                        node.generatedParticleSystem != null &&
+                        node.generatedRenderer != null) &&
+                    source.particleNodes.Select(node => node.generatedRenderer)
+                        .Distinct().Count() == source.particleNodes.Length,
+                    "Endminf retained particle direct-reference set drifted");
 
                 var rows = new List<EndfieldEndminfLitEffectCompatibilityBinding.Row>();
                 int material01Count = 0;
                 int material38Count = 0;
-                for (int index = 0; index < source.particleNodes.Length; index++)
+                foreach (EndfieldRecoveredParticleNodeSource node in
+                         source.particleNodes)
                 {
-                    EndfieldRecoveredParticleNodeSource node = source.particleNodes[index];
                     if (node.materialPathIds == null || node.materialPathIds.Length != 1 ||
                         node.meshPathIds == null || node.meshPathIds.Length != 1 ||
                         node.meshPathIds[0] != RockMeshPathId ||
@@ -94,7 +97,7 @@ namespace EndfieldGraphShaderLabEditor
                          node.materialPathIds[0] != Material38PathId))
                         continue;
 
-                    ParticleSystemRenderer renderer = renderers[index];
+                    ParticleSystemRenderer renderer = node.generatedRenderer;
                     Require(renderer != null,
                         "Endminf LitEffect target renderer is missing");
                     long materialPathId = node.materialPathIds[0];
@@ -109,15 +112,7 @@ namespace EndfieldGraphShaderLabEditor
                         renderer.renderMode == ParticleSystemRenderMode.Mesh &&
                         renderer.sharedMaterials.Length == 1 &&
                         renderer.sharedMaterial == material;
-                    // Repair the exact half-applied boundary produced by the
-                    // previous builder: direct compatibility rows were saved
-                    // default-off, but their source marker was left admitted.
-                    bool staleDefaultOffBoundary =
-                        !node.rendererFailClosedForUnrecoveredShader &&
-                        node.sourceRendererEnabled && !renderer.enabled &&
-                        renderer.sharedMaterials.Length == 0;
-                    Require(retainedFailClosed || freshlyAdmitted ||
-                        staleDefaultOffBoundary,
+                    Require(retainedFailClosed || freshlyAdmitted,
                         "Endminf LitEffect retained/admitted boundary drifted");
                     if (materialPathId == Material01PathId) material01Count++;
                     else material38Count++;
@@ -126,7 +121,6 @@ namespace EndfieldGraphShaderLabEditor
                     // supplies these references only under the explicit opt-in.
                     renderer.enabled = false;
                     renderer.sharedMaterials = Array.Empty<Material>();
-                    node.sourceRendererEnabled = false;
                     node.rendererFailClosedForUnrecoveredShader = true;
                     rows.Add(new EndfieldEndminfLitEffectCompatibilityBinding.Row {
                         particleRendererPathId = node.particleRendererPathId,
@@ -171,18 +165,19 @@ namespace EndfieldGraphShaderLabEditor
             {
                 EndfieldRecoveredParticleEffectSource source =
                     root.GetComponent<EndfieldRecoveredParticleEffectSource>();
-                ParticleSystemRenderer[] renderers =
-                    root.GetComponentsInChildren<ParticleSystemRenderer>(true);
                 Require(source != null && source.contractSchema ==
                     EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema &&
                     source.particleNodes != null &&
-                    source.particleNodes.Length == renderers.Length,
+                    source.particleNodes.Length == 18 &&
+                    source.particleNodes.All(node => node != null &&
+                        node.generatedParticleSystem != null &&
+                        node.generatedRenderer != null),
                     "Endminf overview_02 source contract drifted");
                 int index = Array.FindIndex(source.particleNodes,
                     node => node.particleRendererPathId == M27RendererPathId);
                 Require(index >= 0, "Endminf M27 renderer identity is missing");
                 EndfieldRecoveredParticleNodeSource node = source.particleNodes[index];
-                ParticleSystemRenderer renderer = renderers[index];
+                ParticleSystemRenderer renderer = node.generatedRenderer;
                 Require(node.materialPathIds != null && node.materialPathIds.Length == 1 &&
                     node.materialPathIds[0] == Material27PathId &&
                     node.meshPathIds != null && node.meshPathIds.Length == 1 &&
@@ -198,12 +193,7 @@ namespace EndfieldGraphShaderLabEditor
                     renderer.renderMode == ParticleSystemRenderMode.Mesh &&
                     renderer.sharedMaterials.Length == 1 &&
                     renderer.sharedMaterial == material && renderer.mesh == mesh;
-                bool staleDefaultOffBoundary =
-                    !node.rendererFailClosedForUnrecoveredShader &&
-                    node.sourceRendererEnabled && !renderer.enabled &&
-                    renderer.sharedMaterials.Length == 0 && renderer.mesh == null;
-                Require(retainedFailClosed || freshlyAdmitted ||
-                    staleDefaultOffBoundary,
+                Require(retainedFailClosed || freshlyAdmitted,
                     "Endminf M27 retained/admitted boundary drifted: " +
                     "failClosed=" + node.rendererFailClosedForUnrecoveredShader +
                     ", sourceEnabled=" + node.sourceRendererEnabled +
@@ -214,7 +204,6 @@ namespace EndfieldGraphShaderLabEditor
                 renderer.enabled = false;
                 renderer.sharedMaterials = Array.Empty<Material>();
                 renderer.SetMeshes(Array.Empty<Mesh>(), 0);
-                node.sourceRendererEnabled = false;
                 node.rendererFailClosedForUnrecoveredShader = true;
                 EndfieldEndminfLitEffectCompatibilityBinding binding =
                     root.GetComponent<EndfieldEndminfLitEffectCompatibilityBinding>();
@@ -263,7 +252,8 @@ namespace EndfieldGraphShaderLabEditor
             Require(source != null && source.particleNodes != null &&
                 binding.rows.All(row => source.particleNodes.Count(node =>
                     node.particleRendererPathId == row.particleRendererPathId &&
-                    !node.sourceRendererEnabled &&
+                    node.sourceRendererEnabled &&
+                    node.generatedRenderer == row.renderer &&
                     node.rendererFailClosedForUnrecoveredShader) == 1),
                 "Saved Endminf LitEffect marker boundary drifted");
 
@@ -287,7 +277,8 @@ namespace EndfieldGraphShaderLabEditor
             Require(m27Source != null && m27Source.particleNodes != null &&
                 m27Source.particleNodes.Count(node =>
                     node.particleRendererPathId == M27RendererPathId &&
-                    !node.sourceRendererEnabled &&
+                    node.sourceRendererEnabled &&
+                    node.generatedRenderer == m27.renderer &&
                     node.rendererFailClosedForUnrecoveredShader) == 1,
                 "Saved Endminf M27 marker boundary drifted");
         }

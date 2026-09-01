@@ -2,7 +2,14 @@
 from __future__ import annotations
 import hashlib
 import json
+import re
 from pathlib import Path
+
+from verify_endminf_liteffect_resource_mapping import (
+    REPORT_PATH as RESOURCE_MAPPING_REPORT,
+    VerificationError as ResourceMappingVerificationError,
+    build_report as build_resource_mapping_report,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 IMPORTER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfOverviewEffectImporter.cs"
@@ -33,9 +40,122 @@ ASSETS = {
         "e3bbdc9973e5f9dfb2d499fb440be36f99a525b525a22af8ce63b9c48402f8a7",
     ),
 }
+SOURCE_MATERIAL_ROOT = (
+    ROOT
+    / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material"
+)
+SOURCE_MATERIALS = {
+    "M01": (
+        SOURCE_MATERIAL_ROOT / "M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+        "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d",
+    ),
+    "M27": (
+        SOURCE_MATERIAL_ROOT / "M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+        "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46",
+    ),
+    "M38": (
+        SOURCE_MATERIAL_ROOT / "M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+        "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6",
+    ),
+}
+SOURCE_FLOATS = (
+    "_NormalScale", "_RoughnessMin", "_RoughnessMax",
+    "_OcclusionStrength", "_Metallic", "_BaseTextureMapCount",
+    "_BaseUVSet", "_BasePbrMapUVSet", "_ParallaxMapUVType",
+    "_ParallaxNoiseMapTilling", "_ParallaxFresnelStrength",
+)
 
 def sha256(path: Path) -> str | None:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
+def canonical_json(value: object) -> str:
+    """Compare reports through their serialized JSON representation.
+
+    JSON object keys are strings, while the freshly built mapping intentionally
+    uses integer physical-register keys.  Normalizing both sides prevents that
+    representational difference from making a current published report look
+    stale without weakening any value or ordering gate.
+    """
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def parsed_material_yaml(path: Path) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
+    floats: dict[str, float] = {}
+    colors: dict[str, dict[str, float]] = {}
+    section = ""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line == "    m_Floats:":
+            section = "floats"
+            continue
+        if line == "    m_Colors:":
+            section = "colors"
+            continue
+        if not line.startswith("    - "):
+            if line.startswith("  ") and not line.startswith("      "):
+                section = ""
+            continue
+        key, _, raw = line[6:].partition(":")
+        if not key or not raw:
+            continue
+        if section == "floats":
+            floats[key] = float(raw.strip())
+        elif section == "colors":
+            match = re.fullmatch(
+                r"\s*\{r: ([^,]+), g: ([^,]+), b: ([^,]+), a: ([^}]+)\}",
+                raw,
+            )
+            if match:
+                colors[key] = dict(zip(
+                    ("r", "g", "b", "a"),
+                    (float(value) for value in match.groups()),
+                ))
+    return floats, colors
+
+
+def validate_material_yaml(
+    name: str,
+    material_path: Path,
+    source_path: Path,
+    expected_source_sha256: str,
+) -> tuple[dict, list[str]]:
+    failures: list[str] = []
+    actual_source_sha256 = sha256(source_path)
+    if actual_source_sha256 != expected_source_sha256:
+        failures.append(f"source material hash drifted {name}")
+        return ({
+            "sourcePath": str(source_path.relative_to(ROOT)),
+            "sourceSha256": actual_source_sha256,
+            "expectedSourceSha256": expected_source_sha256,
+            "validated": False,
+        }, failures)
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    source_saved = source.get("m_SavedProperties") or {}
+    source_floats = source_saved.get("m_Floats") or {}
+    source_colors = source_saved.get("m_Colors") or {}
+    material_floats, material_colors = parsed_material_yaml(material_path)
+    for field in SOURCE_FLOATS:
+        if field not in source_floats or field not in material_floats or abs(
+            float(source_floats[field]) - material_floats[field]
+        ) > 1.0e-6:
+            failures.append(f"material source float drifted {name}.{field}")
+    expected_dark = source_colors.get("_ParallaxColorDark") or {}
+    actual_dark = material_colors.get("_ParallaxColorDark") or {}
+    if set(expected_dark) != {"r", "g", "b", "a"} or any(
+        abs(float(expected_dark[channel]) - float(actual_dark.get(channel, 1.0e30))) >
+        1.0e-6 for channel in ("r", "g", "b", "a")
+    ):
+        failures.append(f"material source color drifted {name}._ParallaxColorDark")
+    material_text = material_path.read_text(encoding="utf-8")
+    if "_RecoveredParallaxCompatibilityScale" in material_text:
+        failures.append(f"material retains capture-fitted scale {name}")
+    return ({
+        "sourcePath": str(source_path.relative_to(ROOT)),
+        "sourceSha256": actual_source_sha256,
+        "expectedSourceSha256": expected_source_sha256,
+        "sourceFields": list(SOURCE_FLOATS) + ["_ParallaxColorDark"],
+        "validated": not failures,
+    }, failures)
 
 def main() -> int:
     importer = IMPORTER.read_text(encoding="utf-8")
@@ -59,10 +179,32 @@ def main() -> int:
     required_shader = [
         'Hidden/Endfield/Compatibility/Endminf/LitEffectParallax',
         'VISUAL COMPATIBILITY ONLY', '"LightMode"="ForwardOnly"',
-        '_BaseColorMap', '_MROMap', '_NormalMap', '_ParallaxMap', '_ParallaxColor',
+        '_BaseColorMap', '_MROMap', '_NormalMap', '_ParallaxMap',
+        '_ParallaxNoiseMap', '_ParallaxColor',
+        'SamplerState sampler_LinearClamp;',
+        'SamplerState sampler_LinearRepeat;',
+        'SamplerState sampler_LinearMirror;',
+        'SamplerState sampler_LinearMirrorOnce;',
+        'SamplerState sampler_PointRepeat;',
+        '_ParallaxNoiseMap.SampleGrad(',
+        '_ParallaxMap.SampleBias(',
+        'float metallic = saturate(lerp(',
+        'float sourceRoughness = lerp(',
+        '_RoughnessMax,',
+        'mro.g);',
+        'mro.b,',
     ]
     failures = ["importer missing " + value for value in required_importer if value not in importer]
     failures += ["shader missing " + value for value in required_shader if value not in shader]
+    forbidden_shader = [
+        'float roughness = clamp(mro.r',
+        'float metallic = saturate(mro.g)',
+        '_ParallaxMap.SampleGrad(',
+        '_ParallaxNoiseMap.SampleBias(',
+        '_RecoveredParallaxCompatibilityScale',
+    ]
+    failures += ["shader retains disproven/fitted transport " + value
+                 for value in forbidden_shader if value in shader]
     required_runtime = [
         "endfield.endminf-liteffect-runtime-binding.v1",
         "ParticleSystemRenderMode.Mesh",
@@ -99,6 +241,48 @@ def main() -> int:
     ]
     failures += ["effect lifecycle still contains capture-fitted delay " + value
                  for value in forbidden_lifecycle if value in spawner]
+
+    resource_mapping_evidence = {
+        "path": str(RESOURCE_MAPPING_REPORT.relative_to(ROOT)),
+        "sha256": sha256(RESOURCE_MAPPING_REPORT),
+        "current": False,
+        "status": None,
+    }
+    try:
+        fresh_mapping = build_resource_mapping_report()
+        published_mapping = json.loads(
+            RESOURCE_MAPPING_REPORT.read_text(encoding="utf-8")
+        ) if RESOURCE_MAPPING_REPORT.is_file() else None
+        mapping_is_current = (
+            published_mapping is not None and
+            canonical_json(published_mapping) == canonical_json(fresh_mapping)
+        )
+        resource_mapping_evidence["current"] = mapping_is_current
+        resource_mapping_evidence["status"] = fresh_mapping.get("status")
+        source_subgraph = (
+            fresh_mapping.get("unityTransportPorts", {})
+            .get("sourceProvenSubgraph", {})
+        )
+        mapping_valid = (
+            mapping_is_current and
+            fresh_mapping.get("schema") ==
+                "endfield.endminf-liteffect-resource-mapping.v1" and
+            fresh_mapping.get("status") ==
+                "verified_with_selected_variant_material_offsets_and_consumer_gaps" and
+            source_subgraph.get("mroChannels") == {
+                "r": "metallic", "g": "roughness", "b": "occlusion"
+            } and
+            "_ParallaxNoiseMap.r" in source_subgraph.get("parallax", "") and
+            "_ParallaxMap.g" in source_subgraph.get("parallax", "")
+        )
+        if not mapping_valid:
+            failures.append(
+                "fresh verified LitEffect resource mapping is absent or stale"
+            )
+    except (OSError, ValueError, ResourceMappingVerificationError) as error:
+        resource_mapping_evidence["failure"] = str(error)
+        failures.append("LitEffect resource mapping verification failed")
+
     asset_evidence = {}
     for name, (path, expected) in ASSETS.items():
         actual = sha256(path)
@@ -106,6 +290,16 @@ def main() -> int:
                                 "expectedSha256": expected, "validated": actual == expected}
         if actual != expected:
             failures.append(f"asset hash drifted {name}")
+    material_source_evidence = {}
+    for name, (source_path, expected_source_sha256) in SOURCE_MATERIALS.items():
+        evidence, material_failures = validate_material_yaml(
+            name,
+            ASSETS[name][0],
+            source_path,
+            expected_source_sha256,
+        )
+        material_source_evidence[name] = evidence
+        failures.extend(material_failures)
 
     capture = json.loads(CAPTURE_REPORT.read_text(encoding="utf-8")) if CAPTURE_REPORT.is_file() else {}
     first = next((row for row in capture.get("frames", []) if row.get("effectRootCount") == 4), {})
@@ -120,7 +314,7 @@ def main() -> int:
     if not capture_valid:
         failures.append("canonical capture did not validate the eleven-row binding/two-row boundary")
     report = {
-        "schema": "endfield.endminf-liteffect-visual-compatibility.v2",
+        "schema": "endfield.endminf-liteffect-visual-compatibility.v3",
         "status": "verified_non_exact" if not failures else "failed",
         "classification": "visual_compatibility_not_source_exact",
         "defaultMode": "disabled_fail_closed",
@@ -134,6 +328,8 @@ def main() -> int:
                                              "M_fx_endminm_gfx_27": 1,
                                              "M_fx_endminm_gfx_38": 3}},
         "assetEvidence": asset_evidence,
+        "resourceMappingEvidence": resource_mapping_evidence,
+        "materialSourceEvidence": material_source_evidence,
         "runtimeBinding": {
             "schema": "endfield.endminf-liteffect-runtime-binding.v1",
             "policy": "eleven direct renderer/material/mesh references across two prefabs; no runtime hierarchy/name search",
@@ -147,9 +343,14 @@ def main() -> int:
             "remainingBoundary": "two non-LitEffect renderers remain separate",
         },
         "sourceInputsUsed": ["material identities", "_PARALLAX_MAP keyword", "queue 2000",
-                             "recovered texture identities", "serialized colors/floats"],
+                             "recovered texture identities", "hash-gated serialized colors/floats",
+                             "fresh verified PackedBinding physical t0..t5 mapping artifact",
+                             "fresh verified static sampler pairing",
+                             "fresh verified metallic/roughness/occlusion stores in MRO R/G/B",
+                             "fresh verified noise-height march then ParallaxMap.g sample"],
         "approximated": ["converted PNG texture derivatives where native payloads are absent",
-                         "forward lighting", "emission scale", "HGBuffer/deferred replacement"],
+                         "forward lighting", "particle phase/brightness",
+                         "HGBuffer/deferred replacement"],
         "measurementBoundary": "Restoring physical amber geometry is a completeness correction. Whole-frame ROI MAE is not an acceptance gate because this explicitly non-exact forward shader and the authored moving crystal occupy the compared pixels.",
         "failures": failures,
     }

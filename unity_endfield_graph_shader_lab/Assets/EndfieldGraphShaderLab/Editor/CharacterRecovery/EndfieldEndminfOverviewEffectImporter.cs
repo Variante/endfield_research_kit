@@ -23,6 +23,8 @@ namespace EndfieldGraphShaderLabEditor
             "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable/Endminf/Effects/Overview";
         private const string ExpectedStageFingerprint =
             "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3";
+        private const string ExpectedStageContentSha256 =
+            "cd3ae3fe97dac3c8c0ae64012401b7bb239b98aa8104933f2d516f227e739e3a";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string TextureRoot = GeneratedRoot + "/Textures";
         private const string MeshRoot = GeneratedRoot + "/Meshes";
@@ -38,6 +40,9 @@ namespace EndfieldGraphShaderLabEditor
             "FFD3A6F707D0D0A6C92D3012BEC11A41B59AB4949E377558F426EAD4AD22D672";
         private const string EndminfM14NativeTextureRoot =
             "Assets/EndfieldGraphShaderLab/Generated/OriginalData/TexturePayloads/Endminf";
+        private const long EndminfShapeTexture = 6970530313307194154L;
+        private const string EndminfShapeTexturePayloadSha256 =
+            "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb";
         // Exact PS4915 b3/c4 witnesses from graphics-only session
         // 20260826T000901Z, frame 13175. Every non-white witness is the
         // linear-space upload of its authored _TintColor Color property.
@@ -191,6 +196,10 @@ namespace EndfieldGraphShaderLabEditor
             string stageReportPath = Path.Combine(stage, "external_ui_effect_stage.json");
             L.Require(File.Exists(stageReportPath),
                 "Endminf exact effect stage is missing");
+            L.Require(
+                ComputeExactStageContentSha256(stage) ==
+                    ExpectedStageContentSha256,
+                "Endminf exact per-owner stage content drifted");
             Dictionary<string, object> stageReport = L.Dict(
                 ManifestMiniJson.Deserialize(File.ReadAllText(stageReportPath, Encoding.UTF8)));
             Dictionary<string, object> stageValidation = L.Dict(stageReport["validation"]);
@@ -207,6 +216,26 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<long, Dictionary<string, object>> behaviours = LoadType(stage, "MonoBehaviour");
             L.Require(gos.Count == 101 && transforms.Count == 101 && systems.Count == 70 &&
                 renderers.Count == 70, "Endminf effect stage census drifted");
+            L.Require(systems.Values.Count(row => L.Int(row, "scalingMode") == 1) == 60 &&
+                systems.Values.Count(row => L.Int(row, "scalingMode") == 0) == 10 &&
+                systems.Values.Count(row => L.Bool(row, "moveWithTransform")) == 10,
+                "Endminf particle transform/scaling-mode census drifted");
+            L.Require(systems.Values.Count(row =>
+                    L.Bool(L.Dict(row["ShapeModule"]), "enabled") &&
+                    L.Int(L.Dict(row["ShapeModule"]), "type") == 0) == 16 &&
+                systems.Values.Count(row =>
+                    L.Bool(L.Dict(row["ShapeModule"]), "enabled") &&
+                    L.Int(L.Dict(row["ShapeModule"]), "type") == 4) == 3,
+                "Endminf particle shape-module census drifted");
+            L.Require(systems.Values.All(row =>
+                !L.Bool(L.Dict(row["LightsModule"]), "enabled") &&
+                L.PPtrId(L.Dict(row["LightsModule"])["light"]) == 0),
+                "Endminf source unexpectedly gained a ParticleSystem Light owner");
+            L.Require(renderers.Values.All(row => L.Bool(row, "m_Enabled")) &&
+                renderers.Values.Sum(row => L.PPtrIds(row["m_Materials"]).Length) == 78 &&
+                renderers.Values.SelectMany(row => L.PPtrIds(row["m_Materials"]))
+                    .All(pathId => pathId != 0),
+                "Endminf renderer/material ownership census drifted");
             var transformByGo = transforms.ToDictionary(pair => L.PPtrId(pair.Value["m_GameObject"]), pair => pair.Key);
             var goByTransform = transformByGo.ToDictionary(pair => pair.Value, pair => pair.Key);
             var rootByTransform = new Dictionary<long, string>();
@@ -245,6 +274,24 @@ namespace EndfieldGraphShaderLabEditor
                     pair.Value.transform.localScale = L.Vector3Value(t["m_LocalScale"]);
                 }
                 GameObject root = generated.Values.Single(value => value.transform.parent == null);
+                long rootTransformId = generated.Single(pair => pair.Value == root).Key;
+                var hierarchyByTransform = new Dictionary<long, string>();
+                Func<long, string> hierarchyFor = null;
+                hierarchyFor = transformId =>
+                {
+                    if (hierarchyByTransform.TryGetValue(
+                            transformId,
+                            out string cachedHierarchy))
+                        return cachedHierarchy;
+                    Dictionary<string, object> transform = transforms[transformId];
+                    string objectName = L.Str(gos[goByTransform[transformId]], "m_Name");
+                    long father = L.PPtrId(transform["m_Father"]);
+                    string hierarchy = father == 0
+                        ? objectName
+                        : hierarchyFor(father) + "/" + objectName;
+                    hierarchyByTransform[transformId] = hierarchy;
+                    return hierarchy;
+                };
                 AttachExactLodActivation(root, rootName, generated, transformByGo,
                     goByTransform, gos, behaviours);
                 var markerNodes = new List<EndfieldRecoveredParticleNodeSource>();
@@ -255,42 +302,8 @@ namespace EndfieldGraphShaderLabEditor
                     GameObject host = generated[transformId]; ParticleSystem system = host.AddComponent<ParticleSystem>();
                     var serialized = new SerializedObject(system);
                     EndfieldZhuangfyParticleEffectImporter.DisableAllKnownModules(serialized);
-                    var safeParticle = new Dictionary<string, object>(pair.Value);
-                    // AnimeStudio provenance is validated by the staged source
-                    // contract; it is not a serialized ParticleSystem field.
-                    safeParticle.Remove("$animestudio");
-                    safeParticle.Remove("Name");
-                    if (safeParticle.TryGetValue("ShapeModule", out object shapeValue))
-                    {
-                        var shape = new Dictionary<string, object>(L.Dict(shapeValue));
-                        if (shape.TryGetValue("m_Texture", out object shapeTexture) &&
-                            L.PPtrId(shapeTexture) == 6970530313307194154L)
-                        {
-                            // This optional shape-mask texture is outside the
-                            // admitted material closure. Null it explicitly;
-                            // importing an unrelated texture would broaden the
-                            // evidence gate while every renderer is fail-closed.
-                            shape["m_Texture"] = new Dictionary<string, object> {
-                                { "m_FileID", 0L }, { "m_PathID", 0L }
-                            };
-                        }
-                        safeParticle["ShapeModule"] = shape;
-                    }
-                    if (safeParticle.TryGetValue("ExternalForcesModule", out object externalValue))
-                    {
-                        var external = new Dictionary<string, object>(L.Dict(externalValue));
-                        if (external.TryGetValue("influenceList", out object influenceValue) &&
-                            influenceValue is IList influenceList && influenceList.Count > 0)
-                        {
-                            // The referenced external-force producer is not part
-                            // of this exact prefab closure. Keep the particle
-                            // payload executable but fail this optional module
-                            // closed instead of fabricating its field object.
-                            external["enabled"] = false;
-                            external["influenceList"] = new List<object>();
-                        }
-                        safeParticle["ExternalForcesModule"] = external;
-                    }
+                    Dictionary<string, object> safeParticle =
+                        BuildSafeParticlePayload(pair.Value, context);
                     EndfieldZhuangfyParticleEffectImporter.ApplyTopLevelDictionary(serialized, safeParticle, context,
                         "Endminf.ParticleSystem");
                     foreach (KeyValuePair<string, object> module in safeParticle.Where(field =>
@@ -303,24 +316,31 @@ namespace EndfieldGraphShaderLabEditor
                                 "Endminf.ParticleSystem." + module.Key);
                     }
                     serialized.ApplyModifiedPropertiesWithoutUndo();
+                    VerifyFullParticlePayload(
+                        system,
+                        safeParticle,
+                        context,
+                        "Endminf.ParticleSystem");
                     var rendererRow = renderers.Single(row => L.PPtrId(row.Value["m_GameObject"]) == goId);
                     ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
-                    Dictionary<string, object> safeRenderer = new Dictionary<string, object>(rendererRow.Value);
-                    safeRenderer.Remove("$animestudio"); safeRenderer.Remove("Name");
-                    safeRenderer.Remove("m_Materials");
+                    Dictionary<string, object> safeRenderer =
+                        BuildSafeRendererPayload(rendererRow.Value);
                     long[] meshIds = rendererRow.Value
                         .Where(field => field.Key.StartsWith("m_Mesh", StringComparison.Ordinal))
                         .Select(field => L.PPtrId(field.Value))
                         .Where(id => id != 0)
                         .Distinct()
                         .ToArray();
-                    foreach (string meshField in safeRenderer.Keys
-                        .Where(key => key.StartsWith("m_Mesh", StringComparison.Ordinal)).ToArray())
-                        safeRenderer.Remove(meshField);
                     var rendererSerialized = new SerializedObject(renderer);
                     EndfieldZhuangfyParticleEffectImporter.ApplyTopLevelDictionary(rendererSerialized,
                         safeRenderer, context, "Endminf.ParticleSystemRenderer");
                     rendererSerialized.ApplyModifiedPropertiesWithoutUndo();
+                    VerifyFullRendererPayload(
+                        renderer,
+                        safeRenderer,
+                        context,
+                        "Endminf.ParticleSystemRenderer",
+                        false);
                     long[] materialIds = L.PPtrIds(rendererRow.Value["m_Materials"]);
                     bool admitted = meshIds.All(context.meshes.ContainsKey) && materialIds.Length > 0 &&
                         materialIds.All(context.materials.ContainsKey);
@@ -340,11 +360,40 @@ namespace EndfieldGraphShaderLabEditor
                         ? materialIds.Select(id => context.materials[id]).ToArray()
                         : Array.Empty<Material>();
                     renderer.enabled = admitted && sourceRendererEnabled;
+                    Dictionary<string, object> sourceShape =
+                        L.Dict(pair.Value["ShapeModule"]);
+                    Dictionary<string, object> sourceLights =
+                        L.Dict(pair.Value["LightsModule"]);
+                    ParticleSystem.ShapeModule generatedShape = system.shape;
+                    ParticleSystem.LightsModule generatedLights = system.lights;
                     var markerNode = new EndfieldRecoveredParticleNodeSource {
+                        hierarchy = hierarchyFor(transformId),
                         gameObjectPathId = goId, transformPathId = transformId,
                         particleSystemPathId = pair.Key, particleRendererPathId = rendererRow.Key,
                         materialPathIds = materialIds,
                         meshPathIds = meshIds,
+                        generatedParticleSystem = system,
+                        generatedRenderer = renderer,
+                        resolvedSourceMaterials = materialIds.All(
+                                context.materials.ContainsKey)
+                            ? materialIds.Select(id => context.materials[id]).ToArray()
+                            : Array.Empty<Material>(),
+                        resolvedSourceMeshes = meshIds.All(context.meshes.ContainsKey)
+                            ? meshIds.Select(id => context.meshes[id]).ToArray()
+                            : Array.Empty<Mesh>(),
+                        sourceRendererRenderMode = L.Int(
+                            rendererRow.Value, "m_RenderMode"),
+                        sourceScalingMode = L.Int(pair.Value, "scalingMode"),
+                        sourceMoveWithTransform = L.Bool(
+                            pair.Value, "moveWithTransform"),
+                        sourceShapeEnabled = L.Bool(sourceShape, "enabled"),
+                        sourceShapeType = L.Int(sourceShape, "type"),
+                        sourceShapeTexturePathId = L.PPtrId(
+                            sourceShape["m_Texture"]),
+                        generatedShapeTexture = generatedShape.texture,
+                        sourceLightsEnabled = L.Bool(sourceLights, "enabled"),
+                        sourceLightPathId = L.PPtrId(sourceLights["light"]),
+                        generatedLight = generatedLights.light,
                         sourceRendererEnabled = sourceRendererEnabled,
                         nativeParticlePayloadApplied = true,
                         nativeRendererPayloadApplied = true,
@@ -355,8 +404,22 @@ namespace EndfieldGraphShaderLabEditor
                     .Select(renderer => markerByHost[renderer.gameObject]).ToList();
                 var marker = root.AddComponent<EndfieldRecoveredParticleEffectSource>();
                 marker.contractSchema = EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema;
-                marker.effectRoot = rootName; marker.sourceEffectDuration = Durations[rootName];
+                marker.effectRoot = rootName;
+                marker.sourceHierarchy = hierarchyFor(rootTransformId);
+                marker.sourceGameObjectPathId = goByTransform[rootTransformId];
+                marker.sourceTransformPathId = rootTransformId;
+                marker.sourceEffectDuration = Durations[rootName];
                 marker.sourceEffectDelay = 0f; marker.sourceEffectLoops = false;
+                marker.sourceEffectRandomDelay = 0f;
+                marker.hierarchyNodes = generated
+                    .OrderBy(pair => hierarchyFor(pair.Key), StringComparer.Ordinal)
+                    .ThenBy(pair => pair.Key)
+                    .Select(pair => new EndfieldRecoveredParticleHierarchyNodeSource {
+                        hierarchy = hierarchyFor(pair.Key),
+                        gameObjectPathId = goByTransform[pair.Key],
+                        transformPathId = pair.Key,
+                        generatedTransform = pair.Value.transform,
+                    }).ToArray();
                 marker.particleNodes = markerNodes.ToArray();
                 PrefabUtility.SaveAsPrefabAsset(root, GeneratedRoot + "/" + rootName + ".prefab");
                 UnityEngine.Object.DestroyImmediate(root);
@@ -366,7 +429,7 @@ namespace EndfieldGraphShaderLabEditor
             // restore the separately decoded, source-closed transform clips
             // before validating or publishing the generated roots.
             EndfieldEndminfEffectAnimationImporter.BuildAndValidate();
-            ValidateGenerated();
+            ValidateGenerated(systems, renderers, context);
         }
 
         [MenuItem("Endfield/Character Recovery Lab/Rebuild Endminf M14 Material")]
@@ -920,25 +983,371 @@ namespace EndfieldGraphShaderLabEditor
             return result;
         }
 
-        private static void ValidateGenerated()
+        private static string ComputeExactStageContentSha256(string stage)
         {
+            string[] types = {
+                "GameObject", "Transform", "ParticleSystem",
+                "ParticleSystemRenderer", "MonoBehaviour"
+            };
+            var manifest = new StringBuilder();
+            foreach (string type in types)
+            {
+                string folder = Path.Combine(stage, type);
+                foreach (string path in Directory.GetFiles(folder, "*.json")
+                    .OrderBy(path => Path.GetFileName(path), StringComparer.Ordinal))
+                {
+                    string canonical = File.ReadAllText(path, Encoding.UTF8)
+                        .Replace("\r\n", "\n")
+                        .Replace("\r", "\n");
+                    manifest.Append(type).Append('/')
+                        .Append(Path.GetFileName(path)).Append(':')
+                        .Append(Sha256Lower(Encoding.UTF8.GetBytes(canonical)))
+                        .Append('\n');
+                }
+            }
+            return Sha256Lower(Encoding.UTF8.GetBytes(manifest.ToString()));
+        }
+
+        private static string Sha256Lower(byte[] bytes)
+        {
+            using (SHA256 sha = SHA256.Create())
+                return BitConverter.ToString(sha.ComputeHash(bytes))
+                    .Replace("-", "")
+                    .ToLowerInvariant();
+        }
+
+        private static Dictionary<string, object> BuildSafeParticlePayload(
+            Dictionary<string, object> source,
+            EndfieldZhuangfyParticleEffectImporter.Context context)
+        {
+            var safeParticle = new Dictionary<string, object>(source);
+            // AnimeStudio provenance is validated by the staged source
+            // contract; it is not a serialized ParticleSystem field.
+            safeParticle.Remove("$animestudio");
+            safeParticle.Remove("Name");
+            if (safeParticle.TryGetValue(
+                    "ShapeModule",
+                    out object shapeValue))
+            {
+                var shape = new Dictionary<string, object>(
+                    L.Dict(shapeValue));
+                if (shape.TryGetValue(
+                        "m_Texture",
+                        out object shapeTexture) &&
+                    L.PPtrId(shapeTexture) == EndminfShapeTexture)
+                {
+                    L.Require(
+                        context.textures.ContainsKey(EndminfShapeTexture) &&
+                        context.textures[EndminfShapeTexture] != null,
+                        "Exact Endminf particle shape texture is unavailable");
+                }
+                safeParticle["ShapeModule"] = shape;
+            }
+            if (safeParticle.TryGetValue(
+                    "ExternalForcesModule",
+                    out object externalValue))
+            {
+                var external = new Dictionary<string, object>(
+                    L.Dict(externalValue));
+                if (external.TryGetValue(
+                        "influenceList",
+                        out object influenceValue) &&
+                    influenceValue is IList influenceList &&
+                    influenceList.Count > 0)
+                {
+                    // The referenced external-force producer is not part of
+                    // this exact prefab closure. Keep the particle payload
+                    // executable but fail this optional module closed instead
+                    // of fabricating its field object.
+                    external["enabled"] = false;
+                    external["influenceList"] = new List<object>();
+                }
+                safeParticle["ExternalForcesModule"] = external;
+            }
+            return safeParticle;
+        }
+
+        private static Dictionary<string, object> BuildSafeRendererPayload(
+            Dictionary<string, object> source)
+        {
+            var safeRenderer = new Dictionary<string, object>(source);
+            safeRenderer.Remove("$animestudio");
+            safeRenderer.Remove("Name");
+            // Dependency references are installed from exact PathID joins
+            // after the ordinary renderer payload has been applied.
+            safeRenderer.Remove("m_Materials");
+            foreach (string meshField in safeRenderer.Keys
+                .Where(key => key.StartsWith(
+                    "m_Mesh",
+                    StringComparison.Ordinal))
+                .ToArray())
+            {
+                safeRenderer.Remove(meshField);
+            }
+            return safeRenderer;
+        }
+
+        private static void VerifyFullParticlePayload(
+            ParticleSystem system,
+            Dictionary<string, object> safeParticle,
+            EndfieldZhuangfyParticleEffectImporter.Context context,
+            string owner)
+        {
+            L.Require(system != null,
+                owner + " direct component reference is missing");
+            EndfieldZhuangfyParticleEffectImporter.VerifyTopLevelDictionary(
+                new SerializedObject(system),
+                safeParticle,
+                context,
+                owner);
+            foreach (KeyValuePair<string, object> module in
+                safeParticle.Where(field =>
+                    field.Key.EndsWith("Module", StringComparison.Ordinal) &&
+                    field.Value is Dictionary<string, object>))
+            {
+                Dictionary<string, object> fields = L.Dict(module.Value);
+                if (L.Bool(fields, "enabled"))
+                {
+                    EndfieldZhuangfyParticleEffectImporter
+                        .VerifyNamedDictionary(
+                            new SerializedObject(system),
+                            module.Key,
+                            fields,
+                            context,
+                            owner + "." + module.Key);
+                }
+            }
+        }
+
+        private static void VerifyFullRendererPayload(
+            ParticleSystemRenderer renderer,
+            Dictionary<string, object> safeRenderer,
+            EndfieldZhuangfyParticleEffectImporter.Context context,
+            string owner,
+            bool afterDependencyOverrides)
+        {
+            L.Require(renderer != null,
+                owner + " direct component reference is missing");
+            Dictionary<string, object> expected = safeRenderer;
+            if (afterDependencyOverrides)
+            {
+                // m_Enabled is deliberately recomputed from shader/material
+                // admission. Materials and mesh slots were already removed by
+                // BuildSafeRendererPayload because they are installed from
+                // exact PathID joins. The v2 selected gates verify all three
+                // dependency/admission results on the saved prefab.
+                expected = new Dictionary<string, object>(safeRenderer);
+                expected.Remove("m_Enabled");
+            }
+            EndfieldZhuangfyParticleEffectImporter.VerifyTopLevelDictionary(
+                new SerializedObject(renderer),
+                expected,
+                context,
+                owner);
+        }
+
+        private static void ValidateGenerated(
+            Dictionary<long, Dictionary<string, object>> systems,
+            Dictionary<long, Dictionary<string, object>> renderers,
+            EndfieldZhuangfyParticleEffectImporter.Context context)
+        {
+            L.Require(
+                systems != null && systems.Count == 70 &&
+                renderers != null && renderers.Count == 70 &&
+                context != null,
+                "Endminf saved-payload source context is incomplete");
             int total = 0;
             int admitted = 0;
+            var consumedSystems = new HashSet<long>();
+            var consumedRenderers = new HashSet<long>();
             foreach (string name in Roots)
             {
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(GeneratedRoot + "/" + name + ".prefab");
                 EndfieldRecoveredParticleEffectSource marker = prefab == null ? null : prefab.GetComponent<EndfieldRecoveredParticleEffectSource>();
-                L.Require(marker != null && marker.effectRoot == name && marker.particleNodes.Length > 0 &&
-                    marker.particleNodes.All(row => row.nativeParticlePayloadApplied &&
-                        row.nativeRendererPayloadApplied),
+                L.Require(marker != null && marker.contractSchema ==
+                        EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema &&
+                    marker.effectRoot == name &&
+                    marker.sourceHierarchy == name &&
+                    marker.sourceGameObjectPathId != 0 &&
+                    marker.sourceTransformPathId != 0 &&
+                    marker.hierarchyNodes != null && marker.hierarchyNodes.Length > 0 &&
+                    marker.hierarchyNodes.All(row => row != null &&
+                        !string.IsNullOrEmpty(row.hierarchy) &&
+                        row.gameObjectPathId != 0 && row.transformPathId != 0 &&
+                        row.generatedTransform != null &&
+                        (row.generatedTransform == prefab.transform ||
+                            row.generatedTransform.IsChildOf(prefab.transform))) &&
+                    marker.hierarchyNodes.Select(row => row.gameObjectPathId).Distinct().Count() ==
+                        marker.hierarchyNodes.Length &&
+                    marker.hierarchyNodes.Select(row => row.transformPathId).Distinct().Count() ==
+                        marker.hierarchyNodes.Length &&
+                    marker.particleNodes != null &&
+                    marker.particleNodes.Length > 0 &&
+                    marker.particleNodes.All(row => row != null &&
+                        row.generatedParticleSystem != null &&
+                        row.generatedRenderer != null &&
+                        row.resolvedSourceMaterials != null &&
+                        row.resolvedSourceMeshes != null &&
+                        row.sourceRendererEnabled &&
+                        row.nativeParticlePayloadApplied &&
+                        row.nativeRendererPayloadApplied &&
+                        ValidateMoveWithTransform(row) &&
+                        !string.IsNullOrEmpty(row.hierarchy) &&
+                        marker.hierarchyNodes.Any(node =>
+                            node.hierarchy == row.hierarchy &&
+                            node.gameObjectPathId == row.gameObjectPathId &&
+                            node.transformPathId == row.transformPathId)),
                     "Endminf executable fail-closed effect drifted: " + name);
+                L.Require(
+                    EndfieldRecoveredCharEffectSpawner
+                        .TryValidateEndminfV2MarkerForRecoveryAudit(
+                            prefab,
+                            out string v2Failure),
+                    "Endminf saved v2 source-owner validation failed: " +
+                    name + ": " + v2Failure);
+                VerifySavedSourcePayloads(
+                    prefab,
+                    marker,
+                    systems,
+                    renderers,
+                    context,
+                    consumedSystems,
+                    consumedRenderers);
                 total += marker.particleNodes.Length;
                 admitted += marker.particleNodes.Count(
                     row => !row.rendererFailClosedForUnrecoveredShader);
             }
+            L.Require(FindGeneratedHierarchyNodeCount() == 101,
+                "Endminf generated hierarchy marker census drifted");
             L.Require(total == 70, "Endminf generated particle census drifted");
+            L.Require(
+                consumedSystems.Count == systems.Count &&
+                consumedRenderers.Count == renderers.Count,
+                "Endminf saved particle PathID coverage drifted");
             L.Require(admitted > 0,
                 "Endminf exact BaseV2 material gate admitted no renderers");
+        }
+
+        private static void VerifySavedSourcePayloads(
+            GameObject prefab,
+            EndfieldRecoveredParticleEffectSource marker,
+            Dictionary<long, Dictionary<string, object>> systems,
+            Dictionary<long, Dictionary<string, object>> renderers,
+            EndfieldZhuangfyParticleEffectImporter.Context context,
+            HashSet<long> consumedSystems,
+            HashSet<long> consumedRenderers)
+        {
+            foreach (EndfieldRecoveredParticleNodeSource node in
+                marker.particleNodes)
+            {
+                Dictionary<string, object> sourceSystem = null;
+                Dictionary<string, object> sourceRenderer = null;
+                L.Require(
+                    node != null &&
+                    consumedSystems.Add(node.particleSystemPathId) &&
+                    consumedRenderers.Add(node.particleRendererPathId) &&
+                    systems.TryGetValue(
+                        node.particleSystemPathId,
+                        out sourceSystem) &&
+                    renderers.TryGetValue(
+                        node.particleRendererPathId,
+                        out sourceRenderer) &&
+                    L.PPtrId(sourceSystem["m_GameObject"]) ==
+                        node.gameObjectPathId &&
+                    L.PPtrId(sourceRenderer["m_GameObject"]) ==
+                        node.gameObjectPathId &&
+                    node.generatedParticleSystem != null &&
+                    node.generatedRenderer != null &&
+                    node.generatedParticleSystem.gameObject ==
+                        node.generatedRenderer.gameObject &&
+                    (node.generatedParticleSystem.transform ==
+                        prefab.transform ||
+                     node.generatedParticleSystem.transform.IsChildOf(
+                        prefab.transform)),
+                    "Endminf saved particle source PathID/direct-reference " +
+                    "join drifted: " + marker.effectRoot + "/" +
+                    (node == null ? "<null>" : node.hierarchy));
+
+                long[] sourceMaterialIds =
+                    L.PPtrIds(sourceRenderer["m_Materials"]);
+                long[] sourceMeshIds = sourceRenderer
+                    .Where(field => field.Key.StartsWith(
+                        "m_Mesh",
+                        StringComparison.Ordinal))
+                    .Select(field => L.PPtrId(field.Value))
+                    .Where(id => id != 0)
+                    .Distinct()
+                    .ToArray();
+                Dictionary<string, object> sourceShape =
+                    L.Dict(sourceSystem["ShapeModule"]);
+                Dictionary<string, object> sourceLights =
+                    L.Dict(sourceSystem["LightsModule"]);
+                L.Require(
+                    node.materialPathIds.SequenceEqual(sourceMaterialIds) &&
+                    node.meshPathIds.SequenceEqual(sourceMeshIds) &&
+                    node.sourceRendererEnabled ==
+                        L.Bool(sourceRenderer, "m_Enabled") &&
+                    node.sourceRendererRenderMode ==
+                        L.Int(sourceRenderer, "m_RenderMode") &&
+                    node.sourceScalingMode ==
+                        L.Int(sourceSystem, "scalingMode") &&
+                    node.sourceMoveWithTransform ==
+                        L.Bool(sourceSystem, "moveWithTransform") &&
+                    node.sourceShapeEnabled ==
+                        L.Bool(sourceShape, "enabled") &&
+                    node.sourceShapeType == L.Int(sourceShape, "type") &&
+                    node.sourceShapeTexturePathId ==
+                        L.PPtrId(sourceShape["m_Texture"]) &&
+                    node.sourceLightsEnabled ==
+                        L.Bool(sourceLights, "enabled") &&
+                    node.sourceLightPathId ==
+                        L.PPtrId(sourceLights["light"]),
+                    "Endminf saved particle selected source fields drifted: " +
+                    marker.effectRoot + "/" + node.hierarchy);
+
+                string owner = "Endminf.Saved." + marker.effectRoot + "." +
+                    node.particleSystemPathId.ToString(
+                        CultureInfo.InvariantCulture);
+                VerifyFullParticlePayload(
+                    node.generatedParticleSystem,
+                    BuildSafeParticlePayload(sourceSystem, context),
+                    context,
+                    owner + ".ParticleSystem");
+                VerifyFullRendererPayload(
+                    node.generatedRenderer,
+                    BuildSafeRendererPayload(sourceRenderer),
+                    context,
+                    owner + ".ParticleSystemRenderer",
+                    true);
+            }
+        }
+
+        private static bool ValidateMoveWithTransform(
+            EndfieldRecoveredParticleNodeSource node)
+        {
+            if (node == null || node.generatedParticleSystem == null)
+                return false;
+            var serialized = new SerializedObject(node.generatedParticleSystem);
+            SerializedProperty property = serialized.FindProperty(
+                "moveWithTransform");
+            return property != null &&
+                property.boolValue == node.sourceMoveWithTransform;
+        }
+
+        private static int FindGeneratedHierarchyNodeCount()
+        {
+            int count = 0;
+            foreach (string name in Roots)
+            {
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    GeneratedRoot + "/" + name + ".prefab");
+                EndfieldRecoveredParticleEffectSource marker = prefab == null
+                    ? null
+                    : prefab.GetComponent<EndfieldRecoveredParticleEffectSource>();
+                if (marker != null && marker.hierarchyNodes != null)
+                    count += marker.hierarchyNodes.Length;
+            }
+            return count;
         }
 
         private static EndfieldZhuangfyParticleEffectImporter.Context BuildAdmittedDependencies(string repo)
@@ -973,6 +1382,19 @@ namespace EndfieldGraphShaderLabEditor
                 "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D");
             string meshSourceRoot = Path.Combine(repo,
                 "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh");
+            RequireDecodedTextureSource(
+                textureSourceRoot,
+                EndminfShapeTexture,
+                EndminfShapeTexturePayloadSha256);
+            string shapeTextureAsset = BuildExactEndminfDecodedTexture(
+                EndminfShapeTexture,
+                textureSourceRoot);
+            ConfigureExactEndminfShapeTexture(shapeTextureAsset);
+            Texture2D shapeTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                shapeTextureAsset);
+            L.Require(shapeTexture != null,
+                "Exact Endminf particle shape texture import failed");
+            context.textures[EndminfShapeTexture] = shapeTexture;
             long[] admittedMeshIds = {
                 // P_fxui_endminm003_overview_02/all/kuosan. This exact
                 // Plane059 mesh is the expanding-ring producer paired with
@@ -1116,6 +1538,17 @@ namespace EndfieldGraphShaderLabEditor
                 if (material == null) { material = new Material(selectedShader); AssetDatabase.CreateAsset(material, asset); }
                 material.shader = selectedShader; material.name = name;
                 EndfieldZhuangfyParticleEffectImporter.ApplyRecoveredMaterialPayload(material, row, context);
+                if (LitEffectCompatibilityMaterials.Contains(id))
+                {
+                    RemoveSerializedMaterialProperty(
+                        material,
+                        "_RecoveredParallaxCompatibilityScale");
+                    L.Require(!HasSerializedMaterialProperty(
+                            material,
+                            "_RecoveredParallaxCompatibilityScale"),
+                        "Endminf LitEffect material retained the removed fitted scale: " +
+                        name);
+                }
                 foreach (KeyValuePair<string, object> textureRow in
                     L.Dict(L.Dict(row["m_SavedProperties"])["m_TexEnvs"]))
                 {
@@ -1156,6 +1589,69 @@ namespace EndfieldGraphShaderLabEditor
                         ? LitEffectShaderPathId : RefractShaderPathId;
             }
             return context;
+        }
+
+        private static void RemoveSerializedMaterialProperty(
+            Material material,
+            string propertyName)
+        {
+            var serialized = new SerializedObject(material);
+            bool changed = false;
+            foreach (string path in new[] {
+                "m_SavedProperties.m_Floats",
+                "m_SavedProperties.m_Colors",
+                "m_SavedProperties.m_TexEnvs",
+                "m_SavedProperties.m_Ints",
+            })
+            {
+                SerializedProperty values = serialized.FindProperty(path);
+                if (values == null || !values.isArray)
+                    continue;
+                for (int index = values.arraySize - 1; index >= 0; index--)
+                {
+                    SerializedProperty entry = values.GetArrayElementAtIndex(index);
+                    SerializedProperty key = entry.FindPropertyRelative("first");
+                    if (key == null || !string.Equals(
+                            key.stringValue,
+                            propertyName,
+                            StringComparison.Ordinal))
+                        continue;
+                    values.DeleteArrayElementAtIndex(index);
+                    changed = true;
+                }
+            }
+            if (changed)
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static bool HasSerializedMaterialProperty(
+            Material material,
+            string propertyName)
+        {
+            var serialized = new SerializedObject(material);
+            serialized.UpdateIfRequiredOrScript();
+            foreach (string path in new[] {
+                "m_SavedProperties.m_Floats",
+                "m_SavedProperties.m_Colors",
+                "m_SavedProperties.m_TexEnvs",
+                "m_SavedProperties.m_Ints",
+            })
+            {
+                SerializedProperty values = serialized.FindProperty(path);
+                if (values == null || !values.isArray)
+                    continue;
+                for (int index = 0; index < values.arraySize; index++)
+                {
+                    SerializedProperty key = values.GetArrayElementAtIndex(index)
+                        .FindPropertyRelative("first");
+                    if (key != null && string.Equals(
+                            key.stringValue,
+                            propertyName,
+                            StringComparison.Ordinal))
+                        return true;
+                }
+            }
+            return false;
         }
 
         private static void ApplyCapturedBaseV2TintTransport(
@@ -1511,6 +2007,55 @@ namespace EndfieldGraphShaderLabEditor
             L.Require(texture != null,
                 "Decoded Endminf texture import failed: p" + hex);
             return assetPath;
+        }
+
+        private static void ConfigureExactEndminfShapeTexture(string assetPath)
+        {
+            // Exact installed Texture2D descriptor row for PathID
+            // 6970530313307194154: source object 2807456b59eb005d at offset
+            // 793448011, descriptor SHA-256 E6F98C...97F40, 256x256,
+            // TextureFormat 25, nine mips, completeImageSize 87408 and
+            // sourceColorSpace 1. Keep this narrow Endminf copy independent
+            // of the ignored generic-actor postprocessor/absolute audit path.
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath)
+                as TextureImporter;
+            L.Require(importer != null,
+                "Exact Endminf shape-texture importer is unavailable");
+            importer.textureType = TextureImporterType.Default;
+            importer.textureShape = TextureImporterShape.Texture2D;
+            importer.sRGBTexture = true;
+            importer.mipmapEnabled = true;
+            importer.streamingMipmaps = false;
+            importer.streamingMipmapsPriority = 0;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.anisoLevel = 1;
+            importer.mipMapBias = 0f;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Repeat;
+            importer.wrapModeW = TextureWrapMode.Repeat;
+            importer.alphaIsTransparency = false;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.SaveAndReimport();
+            TextureImporter loaded = AssetImporter.GetAtPath(assetPath)
+                as TextureImporter;
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            L.Require(loaded != null && texture != null &&
+                texture.width == 256 && texture.height == 256 &&
+                texture.mipmapCount == 9 &&
+                loaded.textureType == TextureImporterType.Default &&
+                loaded.textureShape == TextureImporterShape.Texture2D &&
+                loaded.sRGBTexture && loaded.mipmapEnabled &&
+                !loaded.streamingMipmaps &&
+                loaded.streamingMipmapsPriority == 0 &&
+                loaded.filterMode == FilterMode.Bilinear &&
+                loaded.anisoLevel == 1 &&
+                Mathf.Abs(loaded.mipMapBias) <= 1.0e-6f &&
+                loaded.wrapModeU == TextureWrapMode.Repeat &&
+                loaded.wrapModeV == TextureWrapMode.Repeat &&
+                loaded.wrapModeW == TextureWrapMode.Repeat &&
+                !loaded.alphaIsTransparency &&
+                loaded.npotScale == TextureImporterNPOTScale.None,
+                "Exact Endminf shape-texture import profile drifted");
         }
 
         private static void ConfigureLitEffectCompatibilityTexture(

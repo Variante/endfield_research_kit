@@ -111,8 +111,13 @@ namespace EndfieldGraphShaderLab.Editor
 
             for (int index = 0; index < renderers.Length; index++)
             {
-                ParticleSystemRenderer renderer = renderers[index];
                 EndfieldRecoveredParticleNodeSource node = marker.particleNodes[index];
+                ParticleSystemRenderer renderer = string.Equals(
+                        marker.contractSchema,
+                        EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema,
+                        StringComparison.Ordinal)
+                    ? node.generatedRenderer
+                    : renderers[index];
                 if (renderer == null)
                 {
                     reason = "renderer is missing";

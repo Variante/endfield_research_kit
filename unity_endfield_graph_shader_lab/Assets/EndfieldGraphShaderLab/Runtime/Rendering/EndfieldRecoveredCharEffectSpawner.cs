@@ -21,10 +21,7 @@ namespace EndfieldGraphShaderLab
         public const string CharInfoContractSchema =
             "endfield.charinfo-char-effect-particle.v1";
         public const string EndminfOverviewContractSchema =
-            "endfield.endminf-overview-particle-stage.v1";
-        private const float EndminfSmoke20PresentationAdvanceSeconds = 2f / 60f;
-        private const string EndminfSmoke20MaterialName = "M_fx_endminm_gfx_20";
-
+            "endfield.endminf-overview-particle-stage.v2";
         public enum BindingKind
         {
             Particle = 0,
@@ -36,6 +33,48 @@ namespace EndfieldGraphShaderLab
             return string.Equals(schema, ExpectedContractSchema, StringComparison.Ordinal) ||
                 string.Equals(schema, CharInfoContractSchema, StringComparison.Ordinal) ||
                 string.Equals(schema, EndminfOverviewContractSchema, StringComparison.Ordinal);
+        }
+
+        public static bool TryGetEndminfOverviewRootContract(
+            string effectRoot,
+            out long gameObjectPathId,
+            out long transformPathId,
+            out int hierarchyCount,
+            out int particleCount)
+        {
+            gameObjectPathId = 0;
+            transformPathId = 0;
+            hierarchyCount = 0;
+            particleCount = 0;
+            switch (effectRoot)
+            {
+                case "P_fxui_endminm003_overview_01":
+                    gameObjectPathId = 644358100928130169L;
+                    transformPathId = 8425642429156191353L;
+                    hierarchyCount = 58;
+                    particleCount = 33;
+                    return true;
+                case "P_fxui_endminm003_overview_02":
+                    gameObjectPathId = 7701914037140635122L;
+                    transformPathId = 8369328719590309362L;
+                    hierarchyCount = 20;
+                    particleCount = 18;
+                    return true;
+                case "P_fxui_endminm003_overview_03":
+                    gameObjectPathId = 6277198576094749248L;
+                    transformPathId = -7537240925946174912L;
+                    hierarchyCount = 8;
+                    particleCount = 6;
+                    return true;
+                case "P_fxui_endminm003_overview_04":
+                    gameObjectPathId = -3166230417407544182L;
+                    transformPathId = 2872757505452405898L;
+                    hierarchyCount = 15;
+                    particleCount = 13;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         [Serializable]
@@ -225,7 +264,7 @@ namespace EndfieldGraphShaderLab
                 StartRecoveredLegacyAnimations(
                     instance,
                     out string legacyAnimationFailure);
-            PlayRecoveredParticleSystems(instance, systems);
+            PlayRecoveredParticleSystems(systems);
             if (string.Equals(binding.prefab.name,
                     "P_fxui_endminm003_overview_02",
                     StringComparison.Ordinal))
@@ -328,7 +367,6 @@ namespace EndfieldGraphShaderLab
         }
 
         private static void PlayRecoveredParticleSystems(
-            GameObject instance,
             ParticleSystem[] systems)
         {
             // The overview_02 post owner predates the first visible body by
@@ -339,55 +377,7 @@ namespace EndfieldGraphShaderLab
             // Keep particle delays on the selection/body timeline; only the
             // separately recovered compatibility post clock carries pre-roll.
             foreach (ParticleSystem system in systems)
-            {
                 system.Play(true);
-                if (IsEndminfSmoke20(instance, system))
-                {
-                    // The retained 4.46 s source delay is correct, but Unity's
-                    // public ParticleSystem publishes this six-particle plume
-                    // two render ticks after the matched retail frame. Advance
-                    // only the source-identified smoke owner; global particle
-                    // pre-roll shifts crystals, stones, rays and their seeds.
-                    system.Simulate(
-                        EndminfSmoke20PresentationAdvanceSeconds,
-                        false,
-                        false,
-                        true);
-                    // Simulate leaves a public-Unity ParticleSystem paused;
-                    // resume this owner without recursively restarting peers.
-                    system.Play(false);
-                }
-            }
-        }
-
-        private static bool IsEndminfSmoke20(
-            GameObject instance,
-            ParticleSystem system)
-        {
-            if (!EndfieldEndminfVisualCompatibilityClock.Requested ||
-                instance == null || system == null ||
-                instance.name.IndexOf(
-                    "P_fxui_endminm003_overview_02",
-                    StringComparison.Ordinal) < 0 ||
-                !string.Equals(system.name, "smoke (2)", StringComparison.Ordinal) ||
-                system.transform.parent == null ||
-                !string.Equals(system.transform.parent.name, "all", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
-            if (renderer == null)
-                return false;
-            foreach (Material material in renderer.sharedMaterials)
-            {
-                if (material != null && string.Equals(
-                        material.name,
-                        EndminfSmoke20MaterialName,
-                        StringComparison.Ordinal))
-                    return true;
-            }
-            return false;
         }
 
         private static void ApplyEndminfBillboardClampCompatibility(GameObject instance)
@@ -642,6 +632,18 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            bool isEndminfV2 = string.Equals(
+                marker.contractSchema,
+                EndminfOverviewContractSchema,
+                StringComparison.Ordinal);
+            if (isEndminfV2)
+                return TryValidateEndminfV2Marker(
+                    binding.prefab,
+                    marker,
+                    systems,
+                    renderers,
+                    out reason);
+
             foreach (EndfieldRecoveredParticleNodeSource node in marker.particleNodes)
             {
                 if (node == null ||
@@ -712,12 +714,328 @@ namespace EndfieldGraphShaderLab
             return true;
         }
 
+        private static bool TryValidateEndminfV2Marker(
+            GameObject prefab,
+            EndfieldRecoveredParticleEffectSource marker,
+            ParticleSystem[] systems,
+            ParticleSystemRenderer[] renderers,
+            out string reason)
+        {
+            reason = string.Empty;
+            if (!TryGetEndminfOverviewRootContract(
+                    marker.effectRoot,
+                    out long rootGameObjectPathId,
+                    out long rootTransformPathId,
+                    out int hierarchyCount,
+                    out int particleCount) ||
+                marker.sourceHierarchy != marker.effectRoot ||
+                marker.sourceGameObjectPathId != rootGameObjectPathId ||
+                marker.sourceTransformPathId != rootTransformPathId ||
+                marker.hierarchyNodes == null ||
+                marker.hierarchyNodes.Length != hierarchyCount ||
+                marker.particleNodes == null ||
+                marker.particleNodes.Length != particleCount ||
+                prefab.GetComponentsInChildren<Transform>(true).Length !=
+                    hierarchyCount)
+            {
+                reason = "Endminf v2 root identity or exact census drifted.";
+                return false;
+            }
+
+            var hierarchyByTransformPathId =
+                new Dictionary<long, EndfieldRecoveredParticleHierarchyNodeSource>();
+            var hierarchyGameObjectPathIds = new HashSet<long>();
+            var generatedTransforms = new HashSet<Transform>();
+            foreach (EndfieldRecoveredParticleHierarchyNodeSource row in
+                     marker.hierarchyNodes)
+            {
+                if (row == null || row.gameObjectPathId == 0 ||
+                    row.transformPathId == 0 || row.generatedTransform == null ||
+                    !hierarchyByTransformPathId.TryAdd(row.transformPathId, row) ||
+                    !hierarchyGameObjectPathIds.Add(row.gameObjectPathId) ||
+                    !generatedTransforms.Add(row.generatedTransform) ||
+                    !string.Equals(
+                        row.hierarchy,
+                        HierarchyIncludingRoot(row.generatedTransform, prefab.transform),
+                        StringComparison.Ordinal))
+                {
+                    reason = "Endminf v2 hierarchy identity/reference drifted.";
+                    return false;
+                }
+            }
+            if (!hierarchyByTransformPathId.TryGetValue(
+                    rootTransformPathId,
+                    out EndfieldRecoveredParticleHierarchyNodeSource rootRow) ||
+                rootRow.gameObjectPathId != rootGameObjectPathId ||
+                rootRow.generatedTransform != prefab.transform)
+            {
+                reason = "Endminf v2 root hierarchy reference drifted.";
+                return false;
+            }
+
+            var gameObjectPathIds = new HashSet<long>();
+            var particleSystemPathIds = new HashSet<long>();
+            var particleRendererPathIds = new HashSet<long>();
+            var boundSystems = new HashSet<ParticleSystem>();
+            var boundRenderers = new HashSet<ParticleSystemRenderer>();
+            int shapeTextureOwnerCount = 0;
+            foreach (EndfieldRecoveredParticleNodeSource node in
+                     marker.particleNodes)
+            {
+                if (node == null || !node.nativeParticlePayloadApplied ||
+                    !node.nativeRendererPayloadApplied ||
+                    node.gameObjectPathId == 0 || node.transformPathId == 0 ||
+                    node.particleSystemPathId == 0 ||
+                    node.particleRendererPathId == 0 ||
+                    node.generatedParticleSystem == null ||
+                    node.generatedRenderer == null ||
+                    !gameObjectPathIds.Add(node.gameObjectPathId) ||
+                    !particleSystemPathIds.Add(node.particleSystemPathId) ||
+                    !particleRendererPathIds.Add(node.particleRendererPathId) ||
+                    !boundSystems.Add(node.generatedParticleSystem) ||
+                    !boundRenderers.Add(node.generatedRenderer) ||
+                    !hierarchyByTransformPathId.TryGetValue(
+                        node.transformPathId,
+                        out EndfieldRecoveredParticleHierarchyNodeSource hierarchyRow) ||
+                    hierarchyRow.gameObjectPathId != node.gameObjectPathId ||
+                    hierarchyRow.generatedTransform !=
+                        node.generatedParticleSystem.transform ||
+                    node.generatedRenderer.transform !=
+                        node.generatedParticleSystem.transform ||
+                    node.generatedParticleSystem.GetComponents<ParticleSystem>().Length != 1 ||
+                    node.generatedParticleSystem
+                        .GetComponents<ParticleSystemRenderer>().Length != 1 ||
+                    node.generatedParticleSystem
+                        .GetComponent<ParticleSystemRenderer>() != node.generatedRenderer ||
+                    Array.IndexOf(systems, node.generatedParticleSystem) < 0 ||
+                    Array.IndexOf(renderers, node.generatedRenderer) < 0 ||
+                    !string.Equals(node.hierarchy, hierarchyRow.hierarchy,
+                        StringComparison.Ordinal) ||
+                    !node.sourceRendererEnabled ||
+                    (int)node.generatedRenderer.renderMode !=
+                        node.sourceRendererRenderMode ||
+                    (int)node.generatedParticleSystem.main.scalingMode !=
+                        node.sourceScalingMode)
+                {
+                    reason = "Endminf v2 particle owner/source identity drifted.";
+                    return false;
+                }
+
+                ParticleSystem.ShapeModule shape =
+                    node.generatedParticleSystem.shape;
+                if (shape.enabled != node.sourceShapeEnabled ||
+                    (int)shape.shapeType != node.sourceShapeType ||
+                    shape.texture != node.generatedShapeTexture ||
+                    (node.sourceShapeTexturePathId == 6970530313307194154L &&
+                     node.generatedShapeTexture == null) ||
+                    (node.sourceShapeTexturePathId != 0 &&
+                     node.sourceShapeTexturePathId != 6970530313307194154L) ||
+                    (node.sourceShapeTexturePathId == 0 &&
+                     node.generatedShapeTexture != null))
+                {
+                    reason = "Endminf v2 particle shape ownership drifted.";
+                    return false;
+                }
+                if (node.sourceShapeTexturePathId == 6970530313307194154L)
+                    shapeTextureOwnerCount++;
+                ParticleSystem.LightsModule lights =
+                    node.generatedParticleSystem.lights;
+                if (node.sourceLightsEnabled || node.sourceLightPathId != 0 ||
+                    node.generatedLight != null || lights.enabled ||
+                    lights.light != null)
+                {
+                    reason = "Endminf v2 particle Light ownership drifted.";
+                    return false;
+                }
+
+                if (node.materialPathIds == null || node.meshPathIds == null ||
+                    node.resolvedSourceMaterials == null ||
+                    node.resolvedSourceMeshes == null ||
+                    (node.resolvedSourceMaterials.Length > 0 &&
+                     node.resolvedSourceMaterials.Length !=
+                        node.materialPathIds.Length) ||
+                    (node.resolvedSourceMeshes.Length > 0 &&
+                     node.resolvedSourceMeshes.Length != node.meshPathIds.Length))
+                {
+                    reason = "Endminf v2 resolved render dependency set drifted.";
+                    return false;
+                }
+
+                if (!TryValidateParticleRendererState(
+                        node,
+                        node.generatedRenderer,
+                        true,
+                        out reason))
+                    return false;
+            }
+            int expectedShapeTextureOwners = marker.effectRoot ==
+                    "P_fxui_endminm003_overview_02" ||
+                marker.effectRoot == "P_fxui_endminm003_overview_04"
+                ? 2
+                : 0;
+            if (shapeTextureOwnerCount != expectedShapeTextureOwners)
+            {
+                reason = "Endminf v2 shape-texture owner census drifted.";
+                return false;
+            }
+            if (boundSystems.Count != systems.Length ||
+                boundRenderers.Count != renderers.Length)
+            {
+                reason = "Endminf v2 direct particle references are incomplete.";
+                return false;
+            }
+            return true;
+        }
+
+        private static string HierarchyIncludingRoot(
+            Transform target,
+            Transform root)
+        {
+            if (target == null || root == null)
+                return string.Empty;
+            var names = new List<string>();
+            Transform current = target;
+            while (current != null)
+            {
+                names.Add(current.name);
+                if (current == root)
+                {
+                    names.Reverse();
+                    return string.Join("/", names.ToArray());
+                }
+                current = current.parent;
+            }
+            return string.Empty;
+        }
+
+        private static bool TryValidateParticleRendererState(
+            EndfieldRecoveredParticleNodeSource node,
+            ParticleSystemRenderer renderer,
+            bool allowFailClosed,
+            out string reason)
+        {
+            reason = string.Empty;
+            if (renderer == null)
+            {
+                reason = "Particle renderer is missing.";
+                return false;
+            }
+            if (!node.sourceRendererEnabled)
+            {
+                if (renderer.enabled)
+                {
+                    reason = "Disabled source renderer became enabled.";
+                    return false;
+                }
+                return true;
+            }
+            if (node.rendererFailClosedForUnrecoveredShader && allowFailClosed)
+            {
+                if (renderer.enabled)
+                {
+                    reason = "Fail-closed Endminf renderer became enabled.";
+                    return false;
+                }
+                return true;
+            }
+            if (!renderer.enabled)
+            {
+                reason = "Enabled source renderer became disabled.";
+                return false;
+            }
+            if (renderer.sharedMaterials == null ||
+                renderer.sharedMaterials.Length == 0 ||
+                !SameMaterialReferences(
+                    renderer.sharedMaterials,
+                    node.resolvedSourceMaterials))
+            {
+                reason = "Enabled particle renderer material identity drifted.";
+                return false;
+            }
+            var meshes = new Mesh[renderer.meshCount];
+            renderer.GetMeshes(meshes);
+            if (!SameMeshReferences(meshes, node.resolvedSourceMeshes))
+            {
+                reason = "Enabled particle renderer mesh identity drifted.";
+                return false;
+            }
+            foreach (Material material in renderer.sharedMaterials)
+            {
+                if (material == null || material.shader == null ||
+                    material.shader.name.IndexOf(
+                        "Unavailable",
+                        StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    material.shader.name.IndexOf(
+                        "FailClosed",
+                        StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    reason =
+                        "Particle material/shader is unresolved or explicitly " +
+                        "fail-closed.";
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static bool SameMaterialReferences(
+            Material[] actual,
+            Material[] expected)
+        {
+            if (actual == null || expected == null ||
+                actual.Length != expected.Length)
+                return false;
+            for (int index = 0; index < actual.Length; index++)
+                if (actual[index] != expected[index])
+                    return false;
+            return true;
+        }
+
+        private static bool SameMeshReferences(Mesh[] actual, Mesh[] expected)
+        {
+            if (actual == null || expected == null ||
+                actual.Length != expected.Length)
+                return false;
+            for (int index = 0; index < actual.Length; index++)
+                if (actual[index] != expected[index])
+                    return false;
+            return true;
+        }
+
         public static bool TryValidateBindingForRecoveryAudit(
             Binding binding,
             EndfieldOverviewEffectRequest request,
             out string reason)
         {
             return TryValidateBinding(binding, request, out reason);
+        }
+
+        public static bool TryValidateEndminfV2MarkerForRecoveryAudit(
+            GameObject prefab,
+            out string reason)
+        {
+            reason = string.Empty;
+            if (prefab == null)
+            {
+                reason = "Endminf v2 prefab is null.";
+                return false;
+            }
+            EndfieldRecoveredParticleEffectSource marker =
+                prefab.GetComponent<EndfieldRecoveredParticleEffectSource>();
+            if (marker == null || !string.Equals(
+                    marker.contractSchema,
+                    EndminfOverviewContractSchema,
+                    StringComparison.Ordinal))
+            {
+                reason = "Endminf v2 source marker is missing or stale.";
+                return false;
+            }
+            return TryValidateEndminfV2Marker(
+                prefab,
+                marker,
+                prefab.GetComponentsInChildren<ParticleSystem>(true),
+                prefab.GetComponentsInChildren<ParticleSystemRenderer>(true),
+                out reason);
         }
 
         private static bool TryValidateStaticMeshBinding(Binding binding, out string reason)

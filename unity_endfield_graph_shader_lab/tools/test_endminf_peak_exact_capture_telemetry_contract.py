@@ -24,6 +24,33 @@ MANIFEST_SETUP = ROOT / (
     "Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/"
     "EndfieldManifestCharacterSetup.cs"
 )
+PACKET_RUNTIME_NAMES = (
+    "EndfieldRecoveredEndminfM13ExactRuntime.cs",
+    "EndfieldRecoveredEndminfM14ExactRuntime.cs",
+    "EndfieldRecoveredEndminfM18PeakExactRuntime.cs",
+    "EndfieldRecoveredEndminfM20PeakExactRuntime.cs",
+    "EndfieldRecoveredEndminfM21PeakExactRuntime.cs",
+    "EndfieldRecoveredEndminfM27ExactRuntime.cs",
+    "EndfieldRecoveredEndminfM28PeakExactRuntime.cs",
+    "EndfieldRecoveredEndminfM29ExactRuntime.cs",
+    "EndfieldRecoveredEndminfM31PeakExactRuntime.cs",
+    "EndfieldRecoveredEndminfOpeningStripExactRuntime.cs",
+    "EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime.cs",
+)
+PACKET_REPLAY_FLAGS = (
+    "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M14_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M27_EXACT_DXBC",
+    "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M29_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M30_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
+    "ENDFIELD_RECOVERED_ENDMINF_VFXBASEV2_PEAK_COHORT_EXACT",
+)
 
 
 class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
@@ -105,15 +132,12 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
         self,
     ) -> None:
         source = OPEN_WRAPPER.read_text(encoding="utf-8")
-        for flag in (
-            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M18_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M28_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
-        ):
+        for flag in PACKET_REPLAY_FLAGS:
             self.assertNotIn(f'set "{flag}=1"', source, flag)
+        self.assertNotIn(
+            'set "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT=1"',
+            source,
+        )
         self.assertIn("fixed geometry", source)
         self.assertIn("source runtime", source)
 
@@ -122,29 +146,43 @@ class EndminfPeakExactCaptureTelemetryContractTests(unittest.TestCase):
     ) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
         wrapper = OPEN_WRAPPER.read_text(encoding="utf-8")
-        expected = (
-            "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_M21_PEAK_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_UBER_EXACT",
-            "ENDFIELD_RECOVERED_ENDMINF_OPENING_STRIP_EXACT",
-        )
         self.assertIn("CanonicalVideoDefaultFlags", source)
         self.assertIn("if (videoExportRequested)", source)
         self.assertIn("Environment.GetEnvironmentVariable(flag)", source)
         self.assertIn('Environment.SetEnvironmentVariable(flag, "1")', source)
         start = source.index("CanonicalVideoDefaultFlags")
         defaults = source[start:source.index("};", start)]
-        for flag in expected:
+        for flag in PACKET_REPLAY_FLAGS:
             self.assertNotIn(flag, defaults, flag)
             self.assertNotIn(f'set "{flag}=1"', wrapper, flag)
-        self.assertNotIn(
-            "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT",
-            defaults,
-        )
-        self.assertNotIn(
-            'set "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT=1"',
-            wrapper,
-        )
+
+    def test_packet_replays_use_only_authenticated_source_effect_time(
+        self,
+    ) -> None:
+        for path in sorted(RUNTIME_ROOT.glob("EndfieldRecoveredEndminf*Runtime.cs")):
+            source = path.read_text(encoding="utf-8")
+            self.assertNotIn("ViewerLeadSeconds", source, path.name)
+        for name in PACKET_RUNTIME_NAMES:
+            source = (RUNTIME_ROOT / name).read_text(encoding="utf-8")
+            self.assertIn(
+                "TryGetAuthenticatedSourceEffectElapsed",
+                source,
+                name,
+            )
+            self.assertNotIn("GetCurrentAnimatorStateInfo", source, name)
+            self.assertNotIn('animation["ui_overview_start"]', source, name)
+
+    def test_obsolete_untracked_m30_runtime_has_no_tracked_consumers(self) -> None:
+        obsolete_runtime = "EndfieldRecoveredEndminfM" + "30ExactRuntime"
+        for path in (
+            RUNTIME_ROOT / "HGCompatRenderPipeline.cs",
+            CAPTURE,
+        ):
+            self.assertNotIn(
+                obsolete_runtime,
+                path.read_text(encoding="utf-8"),
+                path.name,
+            )
 
     def test_canonical_video_rejects_unclosed_uber_input_chronology(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")

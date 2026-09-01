@@ -71,29 +71,20 @@ class M27TemporalBuilderTests(unittest.TestCase):
             capture,
         )
 
-    def test_runtime_uses_the_normalized_actor_clock_each_frame(self) -> None:
+    def test_runtime_uses_the_authenticated_source_effect_clock_each_frame(
+        self,
+    ) -> None:
         runtime = (
             MODULE.REPO / "unity_endfield_graph_shader_lab/Assets"
             / "EndfieldGraphShaderLab/Runtime/Rendering"
             / "EndfieldRecoveredEndminfM27ExactRuntime.cs"
         ).read_text(encoding="utf-8")
-        self.assertIn("private const float ViewerLeadSeconds = 2.0f / 60.0f;",
-                      runtime)
-        self.assertIn("seconds - ViewerLeadSeconds", runtime)
+        self.assertIn("TryGetAuthenticatedSourceEffectElapsed", runtime)
+        self.assertNotIn("ViewerLeadSeconds", runtime)
+        self.assertNotIn("GetCurrentAnimatorStateInfo", runtime)
+        self.assertNotIn('animation["ui_overview_start"]', runtime)
         self.assertNotIn("overviewEpoch", runtime)
         self.assertNotIn("Time.time -", runtime)
-
-    def test_measured_450_viewer_clock_selects_the_15_stone_peak(self) -> None:
-        frames, _ = MODULE.collect(MODULE.CAPTURE, MODULE.REPORT)
-        # The current focused report measured 4.53425455 s on the actor clip
-        # at requested 4.50000048 s. Normalizing the established two-tick
-        # viewer lead must retain frame 2978, not advance to the four-stone
-        # frame-2987 tail.
-        source_seconds = 4.534254550933838 - 2.0 / 60.0
-        selected = min(frames, key=lambda row: abs(row["phase"] - source_seconds))
-        self.assertEqual(2978, selected["frame"])
-        self.assertEqual(1, len(selected["draws"]))
-        self.assertEqual(1080, selected["draws"][0]["index_count"])
 
     def test_exact_runtime_can_bootstrap_from_retained_inactive_binding(self) -> None:
         deferred = (

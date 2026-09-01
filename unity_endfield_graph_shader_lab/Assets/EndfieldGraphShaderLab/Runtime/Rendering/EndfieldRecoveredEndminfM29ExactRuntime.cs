@@ -17,11 +17,6 @@ namespace EndfieldGraphShaderLab
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_29";
 
-        // The focused viewer presents the body Animator two 60-Hz ticks ahead
-        // of its requested timestamp. Normalize its authoritative phase before
-        // selecting the nearest captured packet.
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
-
         private static readonly List<ParticleSystemRenderer> Renderers =
             new List<ParticleSystemRenderer>();
         private static IntPtr renderEvent;
@@ -164,39 +159,15 @@ namespace EndfieldGraphShaderLab
             float seconds = ResolveOverviewStartSeconds(actorRoot);
             if (float.IsNaN(seconds))
                 return -1;
-            return ResolveNearestPacket(Mathf.Max(0.0f,
-                seconds - ViewerLeadSeconds));
+            return ResolveNearestPacket(seconds);
         }
 
         private static float ResolveOverviewStartSeconds(Transform actorRoot)
         {
-            EndfieldOverviewPlayback playback = actorRoot != null
-                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                : null;
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf(
-                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    return float.NaN;
-                }
-                return animator.GetCurrentAnimatorStateInfo(0).normalizedTime *
-                    clips[0].clip.length;
-            }
-
-            Animation animation = actorRoot != null
-                ? actorRoot.GetComponentInChildren<Animation>(true)
-                : null;
-            AnimationState state = animation != null
-                ? animation["ui_overview_start"]
-                : null;
-            if (state == null || !state.enabled)
-                return float.NaN;
-            return state.time;
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float elapsed)
+                ? elapsed
+                : float.NaN;
         }
 
         private static int ResolveNearestPacket(float seconds)

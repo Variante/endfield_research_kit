@@ -153,6 +153,10 @@ namespace EndfieldGraphShaderLabEditor
                 float[] vertexDepths = FloatArray(arrays, "vertexDepths", ownerPath);
                 int[] rootIndices = IntArray(arrays, "vertexRootIndices", ownerPath);
                 int[] parentIndices = IntArray(arrays, "vertexParentIndices", ownerPath);
+                uint[] childIndices = UIntArray(
+                    arrays, "vertexChildIndexArray", ownerPath);
+                ushort[] childData = UShortArray(
+                    arrays, "vertexChildDataArray", ownerPath);
                 Vector3[] localPositions = Vector3Array(arrays, "vertexLocalPositions", ownerPath);
                 Quaternion[] localRotations = QuaternionArray(
                     arrays, "vertexLocalRotations", ownerPath);
@@ -180,6 +184,12 @@ namespace EndfieldGraphShaderLabEditor
                     localRotations,
                     vertexBindPoseRotations,
                     vertexToTransformRotations);
+                ValidateChildTopology(
+                    ownerPath,
+                    vertexCount,
+                    parentIndices,
+                    childIndices,
+                    childData);
                 ValidateBaselines(
                     ownerPath,
                     vertexCount,
@@ -242,6 +252,8 @@ namespace EndfieldGraphShaderLabEditor
                     vertexDepths = vertexDepths,
                     vertexRootIndices = rootIndices,
                     vertexParentIndices = parentIndices,
+                    vertexChildIndexArray = childIndices,
+                    vertexChildDataArray = childData,
                     vertexLocalPositions = localPositions,
                     vertexLocalRotations = localRotations,
                     vertexBindPoseRotations = vertexBindPoseRotations,
@@ -843,6 +855,9 @@ namespace EndfieldGraphShaderLabEditor
                 gravityFalloff = Float(parameters, "gravityFalloff", ownerPath),
                 animationPoseRatio = Float(parameters, "animationPoseRatio", ownerPath),
                 blendWeight = Float(parameters, "blendWeight", ownerPath),
+                rotationalInterpolation = Float(
+                    parameters, "rotationalInterpolation", ownerPath),
+                rootRotation = Float(parameters, "rootRotation", ownerPath),
                 dampingValue = Float(damping, "value", ownerPath),
                 dampingUsesCurve = Toggle(damping, "useCurve", ownerPath),
                 radiusValue = Float(radius, "value", ownerPath),
@@ -966,6 +981,52 @@ namespace EndfieldGraphShaderLabEditor
                     ownerPath + "." + field + "[" + element + "] is out of range.");
         }
 
+        private static void ValidateChildTopology(
+            string ownerPath,
+            int vertexCount,
+            int[] parentIndices,
+            uint[] packedIndices,
+            ushort[] childData)
+        {
+            if (packedIndices.Length != vertexCount)
+                throw new InvalidDataException(
+                    ownerPath + ".vertexChildIndexArray count " + packedIndices.Length +
+                    " differs from proxy vertex count " + vertexCount + ".");
+
+            var seen = new bool[vertexCount];
+            int cursor = 0;
+            for (int parent = 0; parent < vertexCount; parent++)
+            {
+                uint packed = packedIndices[parent];
+                int localStart = (int)(packed & 0x000fffffU);
+                int childCount = (int)(packed >> 20);
+                if (localStart != cursor || childCount > childData.Length - cursor)
+                    throw new InvalidDataException(
+                        ownerPath + ".vertexChildIndexArray[" + parent +
+                        "] does not describe the next bounded serialized child slice.");
+                for (int ordinal = 0; ordinal < childCount; ordinal++)
+                {
+                    int child = childData[cursor + ordinal];
+                    if (child >= vertexCount || parentIndices[child] != parent || seen[child])
+                        throw new InvalidDataException(
+                            ownerPath + ".vertexChildDataArray[" + (cursor + ordinal) +
+                            "] is not a unique child of packed parent " + parent + ".");
+                    seen[child] = true;
+                }
+                cursor += childCount;
+            }
+            if (cursor != childData.Length)
+                throw new InvalidDataException(
+                    ownerPath + ".vertexChildDataArray has unreferenced trailing values.");
+            for (int vertex = 0; vertex < vertexCount; vertex++)
+            {
+                if (seen[vertex] != (parentIndices[vertex] >= 0))
+                    throw new InvalidDataException(
+                        ownerPath + ".vertexChildDataArray membership disagrees with " +
+                        "vertexParentIndices[" + vertex + "].");
+            }
+        }
+
         private static void ValidateBaselines(
             string ownerPath,
             int vertexCount,
@@ -1059,6 +1120,16 @@ namespace EndfieldGraphShaderLabEditor
         {
             int[] values = IntArray(arrays, key, ownerPath);
             return ToUShort(values, ownerPath + "." + key);
+        }
+
+        private static uint[] UIntArray(
+            Dictionary<string, object> arrays, string key, string ownerPath)
+        {
+            Dictionary<string, object> record = ArrayRecord(arrays, key, ownerPath);
+            List<object> values = DirectArray(record, "values", ownerPath + "." + key);
+            RequireCount(values.Count, Count(record), ownerPath + "." + key);
+            return values.Select((value, index) => CheckedUInt32(
+                value, ownerPath + "." + key + "[" + index + "]")).ToArray();
         }
 
         private static float[] FloatArray(
@@ -1209,6 +1280,17 @@ namespace EndfieldGraphShaderLabEditor
                 number < int.MinValue || number > int.MaxValue)
                 throw new InvalidDataException("Expected 32-bit integer at " + context + ".");
             return (int)number;
+        }
+
+        private static uint CheckedUInt32(object value, string context)
+        {
+            double number = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+            if (double.IsNaN(number) || double.IsInfinity(number) ||
+                number != Math.Truncate(number) || number < uint.MinValue ||
+                number > uint.MaxValue)
+                throw new InvalidDataException(
+                    "Expected unsigned 32-bit integer at " + context + ".");
+            return (uint)number;
         }
 
         private static float Float(Dictionary<string, object> row, string key, string context) =>

@@ -15,7 +15,6 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M13_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_13";
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
         // Repeating the first retained packet backward to the midpoint before
         // 4.3833 s drew the large ring at clean-reference frames where retail
         // had not emitted it yet. Bound only that unsupported prefix to the
@@ -129,35 +128,9 @@ namespace EndfieldGraphShaderLab
 
         private static int ResolvePacket(Transform actorRoot)
         {
-            float seconds;
-            EndfieldOverviewPlayback playback = actorRoot != null
-                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                : null;
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf(
-                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                    return -1;
-                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-                seconds = info.normalizedTime * clips[0].clip.length;
-            }
-            else
-            {
-                Animation animation = actorRoot != null
-                    ? actorRoot.GetComponentInChildren<Animation>(true)
-                    : null;
-                AnimationState state = animation != null
-                    ? animation["ui_overview_start"]
-                    : null;
-                if (state == null || !state.enabled)
-                    return -1;
-                seconds = state.time;
-            }
-            seconds = Mathf.Max(0.0f, seconds - ViewerLeadSeconds);
+            if (!EndfieldEndminfVisualCompatibilityClock
+                    .TryGetAuthenticatedSourceEffectElapsed(out float seconds))
+                return -1;
             float[] phases = EndfieldRecoveredM13ExactCaptureData.PhaseSeconds;
             if (phases == null || phases.Length !=
                     EndfieldRecoveredM13ExactCaptureData.PacketCount ||

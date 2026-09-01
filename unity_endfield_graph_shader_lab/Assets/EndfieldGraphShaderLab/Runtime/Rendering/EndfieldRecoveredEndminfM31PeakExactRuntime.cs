@@ -19,7 +19,6 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M31_PEAK_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_31";
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
 
         private static readonly List<ParticleSystemRenderer> Renderers =
             new List<ParticleSystemRenderer>();
@@ -102,8 +101,7 @@ namespace EndfieldGraphShaderLab
 
             float seconds = ResolveOverviewSeconds(lightRig.actorRoot);
             selectedPacket = float.IsNaN(seconds) ? -1 :
-                ResolveNearestPacket(Mathf.Max(0.0f,
-                    seconds - ViewerLeadSeconds));
+                ResolveNearestPacket(seconds);
             selectedPacketThisFrame = selectedPacket;
             active = selectedPacket >= 0 && IsSupportedSchedule(
                 EndfieldRecoveredM31PeakCaptureData
@@ -336,8 +334,7 @@ namespace EndfieldGraphShaderLab
                 chronologyValidated.Length != packetCount ||
                 thirdEventAfterM18Observed.Length != packetCount)
                 return false;
-            int packet = ResolveNearestPacket(Mathf.Max(
-                0.0f, overviewSeconds - ViewerLeadSeconds));
+            int packet = ResolveNearestPacket(Mathf.Max(0.0f, overviewSeconds));
             return packet >= 0 && IsSupportedSchedule(
                 scheduleProfiles[packet], drawCounts[packet],
                 thirdEventAfterM18Observed[packet],
@@ -364,30 +361,10 @@ namespace EndfieldGraphShaderLab
 
         private static float ResolveOverviewSeconds(Transform actorRoot)
         {
-            EndfieldOverviewPlayback playback = actorRoot != null
-                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                : null;
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf(
-                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                    return float.NaN;
-                float seconds = animator.GetCurrentAnimatorStateInfo(0)
-                    .normalizedTime * clips[0].clip.length;
-                return Mathf.Max(0.0f, seconds);
-            }
-            Animation animation = actorRoot != null
-                ? actorRoot.GetComponentInChildren<Animation>(true)
-                : null;
-            AnimationState state = animation != null
-                ? animation["ui_overview_start"] : null;
-            if (state == null || !state.enabled)
-                return float.NaN;
-            return Mathf.Max(0.0f, state.time);
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float elapsed)
+                ? elapsed
+                : float.NaN;
         }
 
         internal static bool RenderFirst(

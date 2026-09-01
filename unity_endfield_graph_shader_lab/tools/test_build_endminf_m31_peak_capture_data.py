@@ -187,7 +187,6 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
         pre_m29 = pipeline.index(
             "EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime\n"
             "                        .RenderPreM29(")
-        m30 = pipeline.index("EndfieldRecoveredEndminfM30ExactRuntime.Render(")
         queue3000 = pipeline.index(".CompositeMainTransparentQueue3000(")
         m29 = pipeline.index("EndfieldRecoveredEndminfM29ExactRuntime.Render(")
         second = pipeline.index(
@@ -201,8 +200,7 @@ class BuildEndminfM31PeakCaptureDataTests(unittest.TestCase):
             ".RenderAfterM18BeforeQueue3001(")
         queue3001 = pipeline.index("new RenderQueueRange(3001, 3004)")
         self.assertLess(first, pre_m29)
-        self.assertLess(pre_m29, m30)
-        self.assertLess(m30, queue3000)
+        self.assertLess(pre_m29, queue3000)
         self.assertLess(queue3000, m29)
         self.assertLess(m29, second)
         self.assertLess(second, post_m29)

@@ -12,7 +12,6 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_RECOVERED_ENDMINF_M20_PEAK_EXACT";
         private const string NativeLibrary = "OriginalDxbcSwapPlugin";
         private const string MaterialName = "M_fx_endminm_gfx_20";
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
         private const float HalfWindowSeconds = 1.0f / 120.0f;
         private static IntPtr renderEvent;
         private static ParticleSystemRenderer selectedRenderer;
@@ -193,27 +192,9 @@ namespace EndfieldGraphShaderLab
 
         private static float ResolveOverviewSeconds(Transform actorRoot)
         {
-            EndfieldOverviewPlayback playback =
-                actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true);
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf("overview_start",
-                        StringComparison.OrdinalIgnoreCase) < 0)
-                    return float.NaN;
-                return Mathf.Max(0.0f,
-                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime *
-                    clips[0].clip.length - ViewerLeadSeconds);
-            }
-            Animation animation =
-                actorRoot.GetComponentInChildren<Animation>(true);
-            AnimationState state = animation != null
-                ? animation["ui_overview_start"] : null;
-            return state != null && state.enabled
-                ? Mathf.Max(0.0f, state.time - ViewerLeadSeconds)
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float elapsed)
+                ? elapsed
                 : float.NaN;
         }
 
