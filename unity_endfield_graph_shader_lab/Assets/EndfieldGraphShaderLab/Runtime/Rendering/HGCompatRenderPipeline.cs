@@ -1131,10 +1131,6 @@ namespace EndfieldGraphShaderLab
             bool exactEndminfM29Prepared =
                 EndfieldRecoveredEndminfM29ExactRuntime
                     .PrepareBeforeCulling(camera);
-            bool exactEndminfM30Prepared =
-                !exactEndminfVFXBaseV2PeakPrepared &&
-                EndfieldRecoveredEndminfM30ExactRuntime
-                    .PrepareBeforeCulling(camera);
             bool exactEndminfM31PeakPrepared =
                 !exactEndminfVFXBaseV2PeakPrepared &&
                 EndfieldRecoveredEndminfM31PeakExactRuntime
@@ -2400,21 +2396,6 @@ namespace EndfieldGraphShaderLab
                             "closed: " +
                             EndfieldRecoveredEndminfVFXBaseV2PeakCohortRuntime
                                 .Failure;
-                    }
-                }
-                if (mainReady && exactEndminfM30Prepared)
-                {
-                    mainReady = EndfieldRecoveredEndminfM30ExactRuntime.Render(
-                        context,
-                        camera,
-                        recoveredCurrentSceneColor,
-                        recoveredSceneMV,
-                        recoveredPrimarySceneDepth);
-                    if (!mainReady)
-                    {
-                        compositorFailure =
-                            "exact Endminf M30 transport failed closed: " +
-                            EndfieldRecoveredEndminfM30ExactRuntime.Failure;
                     }
                 }
                 if (mainReady)

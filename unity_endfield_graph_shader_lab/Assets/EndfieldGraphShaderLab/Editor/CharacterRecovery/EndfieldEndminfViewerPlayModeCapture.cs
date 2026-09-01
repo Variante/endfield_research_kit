@@ -1219,16 +1219,6 @@ namespace EndfieldGraphShaderLabEditor
                     "Exact Endminf M14 callback validation failed: " +
                     m14ValidationFailure);
             }
-            if (EndfieldRecoveredEndminfM30ExactRuntime.Requested &&
-                EndfieldRecoveredEndminfM30ExactRuntime.HasPendingValidation &&
-                !EndfieldRecoveredEndminfM30ExactRuntime
-                    .ValidatePendingAfterSynchronizedRender(
-                        out string m30ValidationFailure))
-            {
-                throw new InvalidOperationException(
-                    "Exact Endminf M30 callback validation failed: " +
-                    m30ValidationFailure);
-            }
             if (EndfieldRecoveredEndminfM29ExactRuntime.Requested &&
                 EndfieldRecoveredEndminfM29ExactRuntime.HasPendingValidation &&
                 !EndfieldRecoveredEndminfM29ExactRuntime

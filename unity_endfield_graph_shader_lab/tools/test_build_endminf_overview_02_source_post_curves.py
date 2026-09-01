@@ -226,12 +226,18 @@ class EndminfOverview02SourcePostCurveTests(unittest.TestCase):
         self.assertLess(create.index("instance.SetActive(true);"),
                         create.index("StartRecoveredLegacyAnimations("))
         self.assertLess(create.index("StartRecoveredLegacyAnimations("),
-                        create.index("PlayRecoveredParticleSystems(instance, systems);"))
-        self.assertLess(create.index("PlayRecoveredParticleSystems(instance, systems);"),
+                        create.index("PlayRecoveredParticleSystems(systems);"))
+        self.assertLess(create.index("PlayRecoveredParticleSystems(systems);"),
                         create.index("BindOverview02SourceClock("))
         self.assertIn("MarkOverview02CompatibilityStart(instance.transform);", create)
         self.assertIn("source_post_effect_startup_failed", create)
         self.assertIn("source_post_clock_bind_rejected", create)
+        for forbidden in (
+            "EndminfSmoke20PresentationAdvanceSeconds",
+            "IsEndminfSmoke20(",
+            "system.Simulate(",
+        ):
+            self.assertNotIn(forbidden, spawner)
 
         elapsed = clock[
             clock.index("private static bool TryGetAuthenticatedSourcePostElapsed("):

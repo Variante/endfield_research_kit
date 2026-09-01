@@ -17,9 +17,9 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
         _BaseColorBrighterScale ("Base Color Brighter Scale", Float) = 1
         _NormalScale ("Normal Scale", Float) = 1
         _TwoSidedNormal ("Two Sided Normal", Float) = 1
-        _Metallic ("Metallic Minimum", Float) = 0
-        _MetallicMax ("Metallic Maximum", Float) = 1
+        _Metallic ("Metallic", Float) = 0
         _RoughnessMin ("Roughness Minimum", Float) = 0
+        _RoughnessMax ("Roughness Maximum", Float) = 1
         _OcclusionStrength ("Occlusion Strength", Float) = 1
 
         _ParallaxStrength ("Parallax Strength", Float) = 0.096
@@ -132,8 +132,8 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
             float _NormalScale;
             float _TwoSidedNormal;
             float _Metallic;
-            float _MetallicMax;
             float _RoughnessMin;
+            float _RoughnessMax;
             float _OcclusionStrength;
 
             float _ParallaxStrength;
@@ -364,7 +364,10 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 [loop]
                 for (uint stepIndex = 0u; stepIndex < marchCount + 1u; ++stepIndex)
                 {
-                    float sampledHeight = _ParallaxMap.SampleGrad(
+                    // Physical t5 is _ParallaxNoiseMap. PackedBinding and
+                    // the pinned DXBC both place the height march here;
+                    // physical t3 is sampled only after the intersection.
+                    float sampledHeight = _ParallaxNoiseMap.SampleGrad(
                         sampler_PointRepeat,
                         parallaxBaseUV * _ParallaxNoiseMapTilling + rayOffset,
                         uvDx,
@@ -389,7 +392,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 float2 parallaxUV =
                     (parallaxBaseUV + rayStep * intersection + previousRayOffset) *
                     _ParallaxTilling;
-                float parallaxNoise = _ParallaxNoiseMap.SampleBias(
+                float parallaxSample = _ParallaxMap.SampleBias(
                     sampler_LinearMirrorOnce,
                     parallaxUV,
                     _GlobalMipBias).g;
@@ -446,7 +449,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 float3 parallaxColor = lerp(
                     _ParallaxColorDark.rgb,
                     _ParallaxColor.rgb,
-                    parallaxNoise);
+                    parallaxSample);
                 float3 emission = exposure * clamp(
                     brightness * fresnel * parallaxColor,
                     0.0,
@@ -485,16 +488,22 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                     taaNormal);
 
                 uint terrainProfile = (uint)_TerrainSubsurfaceProfileInt;
-                float roughness = lerp(
+                // The pinned b3 field map and fragment stores prove the
+                // source MRO layout: R=metallic, G=roughness, B=occlusion.
+                float metallic = lerp(
                     mroSample.r,
-                    _RoughnessMin,
+                    _Metallic,
                     saturate(_BaseTextureMapCount - 1.0));
+                float roughness = lerp(
+                    _RoughnessMin,
+                    _RoughnessMax,
+                    mroSample.g);
                 float occlusion = mad(
                     _OcclusionStrength,
                     mroSample.b - 1.0,
                     1.0);
                 output.gBufferA = float4(
-                    roughness,
+                    metallic,
                     occlusion,
                     0.0,
                     (float)(terrainProfile >> 2u) * 0.3333333432674408);
@@ -511,7 +520,7 @@ Shader "Hidden/Endfield/Recovered/Endminf/M27LitEffectHGBuffer"
                 }
                 output.gBufferB = float4(
                     mad(octNormal, 0.5, 0.5),
-                    lerp(_Metallic, _MetallicMax, mroSample.g),
+                    roughness,
                     (float)(terrainProfile & 3u) * 0.3333333432674408);
 
                 return output;

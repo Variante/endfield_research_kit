@@ -58,16 +58,19 @@ namespace EndfieldGraphShaderLabEditor
                 prefab.GetComponent<EndfieldRecoveredParticleEffectSource>();
             Require(source != null, "overview_02 prefab has no recovered particle source marker");
 
-            ParticleSystemRenderer[] renderers =
-                prefab.GetComponentsInChildren<ParticleSystemRenderer>(true);
             Require(
-                renderers.Length == source.particleNodes.Length,
-                $"marker/renderer count mismatch: {source.particleNodes.Length} != {renderers.Length}");
+                source.contractSchema ==
+                    EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema &&
+                source.particleNodes != null &&
+                source.particleNodes.All(value => value != null &&
+                    value.generatedRenderer != null),
+                "overview_02 v2 particle direct-reference contract drifted");
             int index = Array.FindIndex(
                 source.particleNodes,
                 value => value.particleRendererPathId == RendererPathId);
             Require(index >= 0, "retained marker has no M27 renderer PathID");
-            ParticleSystemRenderer renderer = renderers[index];
+            ParticleSystemRenderer renderer =
+                source.particleNodes[index].generatedRenderer;
             string hierarchy = Hierarchy(renderer.transform, prefab.transform);
             Require(hierarchy == "all/suikuai (2)", "M27 hierarchy drifted: " + hierarchy);
 

@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.endminf-liteffect-visual-compatibility.v2",
-  "status": "verified_non_exact",
+  "schema": "endfield.endminf-liteffect-visual-compatibility.v3",
+  "status": "failed",
   "classification": "visual_compatibility_not_source_exact",
   "defaultMode": "disabled_fail_closed",
   "optInEnvironment": "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1",
@@ -45,6 +45,74 @@
       "validated": true
     }
   },
+  "resourceMappingEvidence": {
+    "path": "unity_endfield_graph_shader_lab\\Assets\\EndfieldGraphShaderLab\\Generated\\Characters\\Playable\\Endminf\\ExternalUiEffects\\endminf_liteffect_resource_mapping.json",
+    "sha256": "64cc031e3b147eb4818e7b365c70f027cc8788eae846c8d6f7f7851dbf6b183d",
+    "current": true,
+    "status": "verified_with_selected_variant_material_offsets_and_consumer_gaps"
+  },
+  "materialSourceEvidence": {
+    "M01": {
+      "sourcePath": "export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\json_by_type\\Material\\M_fx_endminm_gfx_01_p5A6341E8A834E421.json",
+      "sourceSha256": "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d",
+      "expectedSourceSha256": "247e90600649b896249bdb4884abaa9d89aaa961d3a76d826cad9159a420426d",
+      "sourceFields": [
+        "_NormalScale",
+        "_RoughnessMin",
+        "_RoughnessMax",
+        "_OcclusionStrength",
+        "_Metallic",
+        "_BaseTextureMapCount",
+        "_BaseUVSet",
+        "_BasePbrMapUVSet",
+        "_ParallaxMapUVType",
+        "_ParallaxNoiseMapTilling",
+        "_ParallaxFresnelStrength",
+        "_ParallaxColorDark"
+      ],
+      "validated": false
+    },
+    "M27": {
+      "sourcePath": "export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\json_by_type\\Material\\M_fx_endminm_gfx_27_pA531A88850690EB8.json",
+      "sourceSha256": "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46",
+      "expectedSourceSha256": "bf067450ab4bfd747747bc7b0f15b0c865fdc042cc1ef119646e8bec6af22b46",
+      "sourceFields": [
+        "_NormalScale",
+        "_RoughnessMin",
+        "_RoughnessMax",
+        "_OcclusionStrength",
+        "_Metallic",
+        "_BaseTextureMapCount",
+        "_BaseUVSet",
+        "_BasePbrMapUVSet",
+        "_ParallaxMapUVType",
+        "_ParallaxNoiseMapTilling",
+        "_ParallaxFresnelStrength",
+        "_ParallaxColorDark"
+      ],
+      "validated": false
+    },
+    "M38": {
+      "sourcePath": "export_full\\recovered\\AnimeStudio-cli\\StreamingAssets\\json_by_type\\Material\\M_fx_endminm_gfx_38_pAFCE491DD7BC5724.json",
+      "sourceSha256": "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6",
+      "expectedSourceSha256": "3581bdfd934d8c8e3d3cdbdfdbe7188dd38f2a1b951f8114a6a47a7da34aa8f6",
+      "sourceFields": [
+        "_NormalScale",
+        "_RoughnessMin",
+        "_RoughnessMax",
+        "_OcclusionStrength",
+        "_Metallic",
+        "_BaseTextureMapCount",
+        "_BaseUVSet",
+        "_BasePbrMapUVSet",
+        "_ParallaxMapUVType",
+        "_ParallaxNoiseMapTilling",
+        "_ParallaxFresnelStrength",
+        "_ParallaxColorDark"
+      ],
+      "validated": false
+    }
+  },
   "runtimeBinding": {
     "schema": "endfield.endminf-liteffect-runtime-binding.v1",
     "policy": "eleven direct renderer/material/mesh references across two prefabs; no runtime hierarchy/name search",
@@ -62,14 +130,58 @@
     "_PARALLAX_MAP keyword",
     "queue 2000",
     "recovered texture identities",
-    "serialized colors/floats"
+    "hash-gated serialized colors/floats",
+    "fresh verified PackedBinding physical t0..t5 mapping artifact",
+    "fresh verified static sampler pairing",
+    "fresh verified metallic/roughness/occlusion stores in MRO R/G/B",
+    "fresh verified noise-height march then ParallaxMap.g sample"
   ],
   "approximated": [
     "converted PNG texture derivatives where native payloads are absent",
     "forward lighting",
-    "emission scale",
+    "particle phase/brightness",
     "HGBuffer/deferred replacement"
   ],
   "measurementBoundary": "Restoring physical amber geometry is a completeness correction. Whole-frame ROI MAE is not an acceptance gate because this explicitly non-exact forward shader and the authored moving crystal occupy the compared pixels.",
-  "failures": []
+  "failures": [
+    "material source float drifted M01._NormalScale",
+    "material source float drifted M01._RoughnessMin",
+    "material source float drifted M01._RoughnessMax",
+    "material source float drifted M01._OcclusionStrength",
+    "material source float drifted M01._Metallic",
+    "material source float drifted M01._BaseTextureMapCount",
+    "material source float drifted M01._BaseUVSet",
+    "material source float drifted M01._BasePbrMapUVSet",
+    "material source float drifted M01._ParallaxMapUVType",
+    "material source float drifted M01._ParallaxNoiseMapTilling",
+    "material source float drifted M01._ParallaxFresnelStrength",
+    "material source color drifted M01._ParallaxColorDark",
+    "material retains capture-fitted scale M01",
+    "material source float drifted M27._NormalScale",
+    "material source float drifted M27._RoughnessMin",
+    "material source float drifted M27._RoughnessMax",
+    "material source float drifted M27._OcclusionStrength",
+    "material source float drifted M27._Metallic",
+    "material source float drifted M27._BaseTextureMapCount",
+    "material source float drifted M27._BaseUVSet",
+    "material source float drifted M27._BasePbrMapUVSet",
+    "material source float drifted M27._ParallaxMapUVType",
+    "material source float drifted M27._ParallaxNoiseMapTilling",
+    "material source float drifted M27._ParallaxFresnelStrength",
+    "material source color drifted M27._ParallaxColorDark",
+    "material retains capture-fitted scale M27",
+    "material source float drifted M38._NormalScale",
+    "material source float drifted M38._RoughnessMin",
+    "material source float drifted M38._RoughnessMax",
+    "material source float drifted M38._OcclusionStrength",
+    "material source float drifted M38._Metallic",
+    "material source float drifted M38._BaseTextureMapCount",
+    "material source float drifted M38._BaseUVSet",
+    "material source float drifted M38._BasePbrMapUVSet",
+    "material source float drifted M38._ParallaxMapUVType",
+    "material source float drifted M38._ParallaxNoiseMapTilling",
+    "material source float drifted M38._ParallaxFresnelStrength",
+    "material source color drifted M38._ParallaxColorDark",
+    "material retains capture-fitted scale M38"
+  ]
 }

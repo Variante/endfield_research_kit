@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -20,6 +21,40 @@ class EndminfDeferredFrameAnalysisTests(unittest.TestCase):
         self.assertEqual(MODULE.fnv1_64(b""), "0000000000000000")
         self.assertEqual(MODULE.fnv1_64(b"a"), "0000000000000061")
         self.assertEqual(MODULE.fnv1_64(b"ab"), "000061000000a4b1")
+
+    def test_liteffect_physical_texture_names_are_not_descriptor_order(self):
+        self.assertEqual(
+            [MODULE.LITEFFECT_TEXTURE_HASHES[f"t{slot}"][0]
+             for slot in range(6)],
+            [
+                "_BaseColorMap", "_NormalMap", "_MROMap",
+                "_ParallaxMap", "_ParallaxMaskMap",
+                "_ParallaxNoiseMap",
+            ],
+        )
+
+    def test_published_report_uses_current_liteffect_physical_mapping(self):
+        published = json.loads(MODULE.DEFAULT_REPORT.read_text(encoding="utf-8"))
+        resources = published["litEffectInstancedParallax"]["textureResources"]
+        self.assertEqual(
+            [resources[f"t{slot}"]["logicalName"] for slot in range(6)],
+            [
+                MODULE.LITEFFECT_TEXTURE_HASHES[f"t{slot}"][0]
+                for slot in range(6)
+            ],
+        )
+
+    def test_published_report_check_rejects_stale_bytes(self):
+        report = {"status": "ok", "mapping": ["current"]}
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "report.json"
+            output.write_bytes(MODULE.encoded_report(report))
+            self.assertTrue(MODULE.published_report_is_current(report, output))
+            output.write_text(
+                json.dumps({"status": "ok", "mapping": ["stale"]}) + "\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(MODULE.published_report_is_current(report, output))
 
     def test_parses_texture_descriptor(self):
         descriptor = MODULE.parse_descriptor(

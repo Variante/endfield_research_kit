@@ -28,11 +28,6 @@ namespace EndfieldGraphShaderLab
         private static bool loggedFailure;
         private static int selectedPacket = -1;
         private static uint validatedDrawCount;
-        // The focused viewer advances the actor Animator by two 60 Hz ticks
-        // before presenting a requested timestamp. The M27 packet phases are
-        // measured on the requested/source timeline, like M21/M29/M30/M31.
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
-
         public static bool Requested => string.Equals(
             Environment.GetEnvironmentVariable(EnvironmentVariable),
             "1",
@@ -128,37 +123,10 @@ namespace EndfieldGraphShaderLab
 
         private static int ResolvePacket(Transform actorRoot)
         {
-            float seconds;
-            EndfieldOverviewPlayback playback = actorRoot != null
-                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                : null;
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf(
-                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                    return -1;
-                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-                seconds = info.normalizedTime * clips[0].clip.length;
-            }
-            else
-            {
-                Animation animation = actorRoot != null
-                    ? actorRoot.GetComponentInChildren<Animation>(true)
-                    : null;
-                AnimationState state = animation != null
-                    ? animation["ui_overview_start"]
-                    : null;
-                if (state == null || !state.enabled)
-                    return -1;
-                seconds = state.time;
-            }
-            return ResolveNearestPacket(Mathf.Max(
-                0.0f,
-                seconds - ViewerLeadSeconds));
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float seconds)
+                ? ResolveNearestPacket(seconds)
+                : -1;
         }
 
         private static int ResolveNearestPacket(float seconds)

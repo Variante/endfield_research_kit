@@ -19,7 +19,6 @@ namespace EndfieldGraphShaderLab
         // sequence's established phase rule is (referenceFrame - 3) / 60.
         private const float PhaseSeconds = 3.600000f;
         private const float HalfWindowSeconds = 0.05f;
-        private const float ViewerLeadSeconds = 2.0f / 60.0f;
         private static readonly HashSet<string> MaterialNames =
             new HashSet<string>(StringComparer.Ordinal)
             {
@@ -124,28 +123,9 @@ namespace EndfieldGraphShaderLab
 
         private static float ResolveOverviewSeconds(Transform actorRoot)
         {
-            EndfieldOverviewPlayback playback = actorRoot != null
-                ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                : null;
-            Animator animator = playback != null ? playback.animatorSource : null;
-            if (playback != null && playback.AnimatorContractActive &&
-                animator != null && animator.enabled)
-            {
-                AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                if (clips.Length == 0 || clips[0].clip == null ||
-                    clips[0].clip.name.IndexOf(
-                        "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                    return float.NaN;
-                return Mathf.Max(0.0f,
-                    animator.GetCurrentAnimatorStateInfo(0).normalizedTime *
-                    clips[0].clip.length - ViewerLeadSeconds);
-            }
-            Animation animation = actorRoot != null
-                ? actorRoot.GetComponentInChildren<Animation>(true) : null;
-            AnimationState state = animation != null
-                ? animation["ui_overview_start"] : null;
-            return state != null && state.enabled
-                ? Mathf.Max(0.0f, state.time - ViewerLeadSeconds)
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float elapsed)
+                ? elapsed
                 : float.NaN;
         }
 

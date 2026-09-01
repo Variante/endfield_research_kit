@@ -511,7 +511,7 @@ def verify() -> dict[str, object]:
         "EndfieldOverviewEffectSourceClock sourceClock)",
         "SpawnAfterDelay(binding, request, mount, sourceClock)",
         "CreateEffect(binding, request, mount, sourceClock)",
-        "PlayRecoveredParticleSystems(instance, systems)",
+        "PlayRecoveredParticleSystems(systems)",
         '"P_fxui_endminm003_overview_01"',
         "BindOverview02SourceClock(",
         "MarkOverview02CompatibilityStart(instance.transform)",
@@ -520,17 +520,21 @@ def verify() -> dict[str, object]:
         "reportedFailureKeys.Add(key)",
         "Keep particle delays on the selection/body timeline",
         "system.Play(true)",
-        "private const float EndminfSmoke20PresentationAdvanceSeconds = 2f / 60f;",
-        'private const string EndminfSmoke20MaterialName = "M_fx_endminm_gfx_20";',
-        "if (IsEndminfSmoke20(instance, system))",
-        "EndminfSmoke20PresentationAdvanceSeconds,",
-        "system.Play(false);",
-        '"P_fxui_endminm003_overview_02"',
-        '"smoke (2)"',
     ), "overview-02 split post/particle clocks")
-    if spawner.count("system.Simulate(") != 1:
+    for forbidden in (
+        "EndminfSmoke20PresentationAdvanceSeconds",
+        "EndminfSmoke20MaterialName",
+        "IsEndminfSmoke20(",
+        "system.Simulate(",
+    ):
+        if forbidden in spawner:
+            raise RuntimeError(
+                "video-fitted M20 particle timing remains in runtime: " +
+                forbidden
+            )
+    if spawner.count("system.Play(true)") != 1:
         raise RuntimeError(
-            "overview-02 must retain exactly one source-identified smoke correction"
+            "recovered particle startup no longer follows one authored-time path"
         )
     create = spawner[
         spawner.index("private void CreateEffect("):
@@ -539,7 +543,7 @@ def verify() -> dict[str, object]:
     if not (
         create.index("instance.SetActive(true);") <
         create.index("StartRecoveredLegacyAnimations(") <
-        create.index("PlayRecoveredParticleSystems(instance, systems);") <
+        create.index("PlayRecoveredParticleSystems(systems);") <
         create.index("BindOverview02SourceClock(")
     ):
         raise RuntimeError(
@@ -552,18 +556,6 @@ def verify() -> dict[str, object]:
         raise RuntimeError(
             "source post evaluator re-polls the body Animator instead of "
             "advancing the one-shot EffectInstance seed")
-    smoke_gate = re.search(
-        r"if \(IsEndminfSmoke20\(instance, system\)\).*?"
-        r"system\.Simulate\(.*?EndminfSmoke20PresentationAdvanceSeconds,.*?"
-        r"system\.Play\(false\);",
-        spawner,
-        re.DOTALL,
-    )
-    if smoke_gate is None:
-        raise RuntimeError(
-            "M20 smoke correction escaped its source-identified owner gate"
-        )
-
     shader = SHADER.read_text(encoding="utf-8")
     require_tokens(shader, (
         EXPECTED_ACTIVE_FRAGMENT_DXBC_SHA256,
@@ -621,10 +613,7 @@ def verify() -> dict[str, object]:
             "retailSceneColorChronologyExact": False,
             "retailPresentationExact": False,
             "presentationAdmitted": True,
-            "particleClock": (
-                "selection/body timeline; only source-identified M20 smoke is "
-                "presentation-advanced by two ticks"
-            ),
+            "particleClock": "authored source delay and selection/body timeline",
         },
         "boundary": (
             "The exact serialized cubic scalar curves, constant radial-power "

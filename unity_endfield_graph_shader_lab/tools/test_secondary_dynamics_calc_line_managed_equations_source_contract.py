@@ -26,8 +26,12 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
         self.assertTrue(
             contract["calc_line_directcall_managed_fallback_equivalence_closed"]
         )
+        # The exact SSE2/AVX2 Burst target identity is now statically closed.
+        # The broader normal/tangent numeric claim and the branch selected for
+        # a retail frame are not, so the runtime route and its IFix-dependent
+        # FromToRotation state must remain fail closed.
         self.assertFalse(contract["calc_line_normal_tangent_numerics_recovered"])
-        self.assertFalse(contract["calc_line_burst_function_pointer_target_closed"])
+        self.assertTrue(contract["calc_line_burst_function_pointer_target_closed"])
         self.assertFalse(contract["selected_calc_line_execution_route_closed"])
         self.assertFalse(contract["from_to_rotation_ifix_patch_state_closed"])
         self.assertFalse(contract["solver_implemented"])

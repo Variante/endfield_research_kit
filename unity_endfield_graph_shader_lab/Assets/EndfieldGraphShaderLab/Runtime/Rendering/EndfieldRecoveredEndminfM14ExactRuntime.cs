@@ -31,7 +31,6 @@ namespace EndfieldGraphShaderLab
         private static bool submissionPending;
         private static ParticleSystemRenderer selectedRenderer;
         private static int selectedPacket = -1;
-        private static float overviewEpoch = float.NaN;
 
         public static bool Requested => string.Equals(
             System.Environment.GetEnvironmentVariable(EnvironmentVariable),
@@ -132,42 +131,10 @@ namespace EndfieldGraphShaderLab
 
         private static int ResolvePacket(Transform actorRoot)
         {
-            float seconds;
-            if (!float.IsNaN(overviewEpoch))
-            {
-                seconds = Mathf.Max(0.0f, Time.time - overviewEpoch);
-            }
-            else
-            {
-                EndfieldOverviewPlayback playback = actorRoot != null
-                    ? actorRoot.GetComponentInChildren<EndfieldOverviewPlayback>(true)
-                    : null;
-                Animator animator = playback != null ? playback.animatorSource : null;
-                if (playback != null && playback.AnimatorContractActive &&
-                    animator != null && animator.enabled)
-                {
-                    AnimatorClipInfo[] clips = animator.GetCurrentAnimatorClipInfo(0);
-                    if (clips.Length == 0 || clips[0].clip == null ||
-                        clips[0].clip.name.IndexOf(
-                            "overview_start", StringComparison.OrdinalIgnoreCase) < 0)
-                        return -1;
-                    AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-                    seconds = info.normalizedTime * clips[0].clip.length;
-                    overviewEpoch = Time.time - seconds;
-                    return ResolveNearestPacket(seconds);
-                }
-                Animation animation = actorRoot != null
-                    ? actorRoot.GetComponentInChildren<Animation>(true)
-                    : null;
-                AnimationState state = animation != null
-                    ? animation["ui_overview_start"]
-                    : null;
-                if (state == null || !state.enabled)
-                    return -1;
-                seconds = state.time;
-                overviewEpoch = Time.time - seconds;
-            }
-            return ResolveNearestPacket(seconds);
+            return EndfieldEndminfVisualCompatibilityClock
+                .TryGetAuthenticatedSourceEffectElapsed(out float seconds)
+                ? ResolveNearestPacket(seconds)
+                : -1;
         }
 
         private static int ResolveNearestPacket(float seconds)

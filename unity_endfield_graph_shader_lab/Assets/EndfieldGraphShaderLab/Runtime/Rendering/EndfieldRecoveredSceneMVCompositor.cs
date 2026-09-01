@@ -673,7 +673,9 @@ namespace EndfieldGraphShaderLab
                         renderer.GetComponentInParent<EndfieldRecoveredParticleEffectSource>(true) is EndfieldRecoveredParticleEffectSource endminfSource &&
                         endminfSource.contractSchema == EndfieldRecoveredCharEffectSpawner.EndminfOverviewContractSchema &&
                         endminfSource.particleNodes != null &&
-                        endminfSource.particleNodes.Any(node => node.materialPathIds != null &&
+                        endminfSource.particleNodes.Any(node =>
+                            node != null && node.generatedRenderer == renderer &&
+                            node.materialPathIds != null &&
                             node.materialPathIds.Contains(exactEndminfQueue2999Material));
                     if (isBase && queue != 3000 && queue != 3005 &&
                         !isExactEndminfQueue2999 &&
