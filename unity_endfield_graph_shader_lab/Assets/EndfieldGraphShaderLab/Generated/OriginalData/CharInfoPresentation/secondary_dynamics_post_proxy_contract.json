@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-  "status": "post_proxy_managed_calc_line_equations_closed_runtime_routes_open",
+  "status": "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
   "manager_schedule_closed": true,
   "managed_job_payload_layout_closed": true,
   "generic_methodspec_identities_closed": true,
@@ -11,6 +11,9 @@
   "calc_line_managed_worker_equations_recovered": true,
   "calc_line_managed_worker_degeneracy_branches_recovered": true,
   "calc_line_data_layout_closed": true,
+  "calc_line_kernel_wrapper_route_recovered": true,
+  "calc_line_directcall_managed_fallback_equivalence_closed": true,
+  "calc_line_burst_function_pointer_target_closed": false,
   "create_list_kernel_numerics_recovered": false,
   "calc_line_normal_tangent_numerics_recovered": false,
   "selected_calc_line_execution_route_closed": false,
@@ -1298,7 +1301,247 @@
     "unusedParameters": [
       "parentIndices"
     ],
-    "numericBoundary": "The pinned unpatched managed-worker traversal and equations are closed. Overall runtime numerics remain fail-closed until the selected Burst/cross-frame/managed route and FromToRotation IFix patch state are proven."
+    "numericBoundary": "The pinned unpatched managed-worker traversal/equations and the generated DirectCall managed fallback are closed. Overall runtime numerics remain fail-closed until the selected Burst function pointer, cross-frame/managed route, and FromToRotation IFix patch state are proven."
+  },
+  "calcLineDirectCallRoute": {
+    "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",
+    "kernelWrapper": {
+      "methodIndex": 384854,
+      "token": "0x0600051f",
+      "method": "CalcLineNormalTangentKernel",
+      "startVa": "0x1867456e4",
+      "endVa": "0x18674580c",
+      "spanBytes": 296,
+      "bodySha256": "05af0def52b33451b7424296e8325c8f4819c7e27a0b64bfc1207b359431ba83",
+      "instructionCount": 55,
+      "invokeCallOffset": "0x10a",
+      "invokeMethodIndex": 384867
+    },
+    "generatedMethods": [
+      {
+        "methodIndex": 384862,
+        "token": "0x06000527",
+        "method": "GetFunctionPointerDiscard",
+        "startVa": "0x186746378",
+        "endVa": "0x18674647c",
+        "spanBytes": 260,
+        "bodySha256": "e01f62edf47a397a23be09da38d792201e7d14ebc2af0a2307786cb0b43cccab"
+      },
+      {
+        "methodIndex": 384863,
+        "token": "0x06000528",
+        "method": "GetFunctionPointer",
+        "startVa": "0x18674647c",
+        "endVa": "0x1867464d0",
+        "spanBytes": 84,
+        "bodySha256": "388ecee8eb261eb2f581b522a2bcb5d7ff521b9d7ad0d198149a345ced0eff33"
+      },
+      {
+        "methodIndex": 384867,
+        "token": "0x0600052c",
+        "method": "Invoke",
+        "startVa": "0x1867464d0",
+        "endVa": "0x1867466f0",
+        "spanBytes": 544,
+        "bodySha256": "3166eb9d2d86a50eb31524927b652850ffcdc6a22b5b6edd92db200959392de7"
+      }
+    ],
+    "invokeSelection": {
+      "burstEnabledGate": {
+        "methodIndex": 489283,
+        "type": "Unity.Burst.BurstCompiler",
+        "method": "get_IsEnabled",
+        "token": "0x0600000b",
+        "returnTypeName": "System.Boolean",
+        "startVa": "0x18307b8d0",
+        "spanBytes": 102,
+        "bodySha256": "7ede93cde144cea0e1a57122cafa2c367eda826992de1cc6e93eb55386d2db67",
+        "invokeCallOffset": "0x59",
+        "falseBranch": "directCallManagedFallback",
+        "runtimeValue": "unresolved"
+      },
+      "getFunctionPointer": {
+        "methodIndex": 384863,
+        "invokeCallOffset": "0x74",
+        "resolver": {
+          "methodIndex": 489285,
+          "type": "Unity.Burst.BurstCompiler",
+          "method": "GetILPPMethodFunctionPointer2",
+          "token": "0x0600000d",
+          "returnTypeName": "<type-index:117445>",
+          "startVa": "0x18474f6f0",
+          "getFunctionPointerDiscardCallOffset": "0xb5"
+        },
+        "nullBranch": "directCallManagedFallback",
+        "nonNullBranch": "indirect call through r10 at Invoke offset 0x13b",
+        "returnedPointer": "unresolved runtime value"
+      },
+      "managedFallbackCallOffset": "0x202",
+      "operation": "BurstCompiler.get_IsEnabled must be true and GetFunctionPointer must return nonzero to take the indirect Burst call; either failed gate calls the separate managed fallback body."
+    },
+    "directCallManagedFallback": {
+      "startVa": "0x186740adc",
+      "metadataMethodIdentity": null,
+      "identityBoundary": "This internal target is not a registered IL2CPP method pointer; its role is established by the exact method-384867 fallback call edge.",
+      "spanBytes": 1848,
+      "bodySha256": "0a7045f6a467730b13d1b7f540cf87f258f1dd3e6f5c74bfd00af0e1d525279e",
+      "throughRetBytes": 1841,
+      "throughRetSha256": "b1424aff822792c251bd1176f13d30a274612c86c11a0c5f19c471b363f8feeb"
+    },
+    "managedFallbackComparison": {
+      "managedMethodIndex": 384856,
+      "classification": "separately emitted numeric body statically equivalent to method 384856 modulo stack/local layout",
+      "throughFirstRetInstructionCount": 396,
+      "identicalMnemonicSequence": true,
+      "identicalOperandStructuralShapes": true,
+      "conditionalAndUnconditionalBranchCount": 18,
+      "identicalControlFlowTopologyByInstructionOrdinal": true,
+      "directCallCount": 22,
+      "identicalDirectCallTargetsAtSameInstructionOrdinals": true,
+      "pairedDirectCalls": [
+        {
+          "name": "staticInitialization",
+          "targetVa": "0x180035ed0",
+          "managedWorkerOffset": "0x85",
+          "directCallFallbackOffset": "0x85"
+        },
+        {
+          "name": "teamIsEnabled",
+          "targetVa": "0x1837ebd60",
+          "managedWorkerOffset": "0x152",
+          "directCallFallbackOffset": "0x152"
+        },
+        {
+          "name": "teamIsCullingInvisible",
+          "targetVa": "0x18673db7c",
+          "managedWorkerOffset": "0x168",
+          "directCallFallbackOffset": "0x168"
+        },
+        {
+          "name": "float3ComponentMultiply",
+          "targetVa": "0x184d886a0",
+          "managedWorkerOffset": "0x356",
+          "directCallFallbackOffset": "0x35c"
+        },
+        {
+          "name": "quaternionRotateFloat3",
+          "targetVa": "0x182facf20",
+          "managedWorkerOffset": "0x379",
+          "directCallFallbackOffset": "0x37f"
+        },
+        {
+          "name": "float3ToDouble3",
+          "targetVa": "0x18415f9a0",
+          "managedWorkerOffset": "0x39e",
+          "directCallFallbackOffset": "0x3a4"
+        },
+        {
+          "name": "double3Add",
+          "targetVa": "0x185f00d7c",
+          "managedWorkerOffset": "0x3d6",
+          "directCallFallbackOffset": "0x3df"
+        },
+        {
+          "name": "runtimeClassInit",
+          "targetVa": "0x1800036a0",
+          "managedWorkerOffset": "0x402",
+          "directCallFallbackOffset": "0x40b"
+        },
+        {
+          "name": "vertexAttributeMoveBit",
+          "targetVa": "0x18352b760",
+          "managedWorkerOffset": "0x40e",
+          "directCallFallbackOffset": "0x417"
+        },
+        {
+          "name": "float3ToDouble3",
+          "targetVa": "0x18415f9a0",
+          "managedWorkerOffset": "0x42f",
+          "directCallFallbackOffset": "0x438"
+        },
+        {
+          "name": "double3Add",
+          "targetVa": "0x185f00d7c",
+          "managedWorkerOffset": "0x460",
+          "directCallFallbackOffset": "0x469"
+        },
+        {
+          "name": "double3Subtract",
+          "targetVa": "0x185f00f40",
+          "managedWorkerOffset": "0x4a9",
+          "directCallFallbackOffset": "0x4b2"
+        },
+        {
+          "name": "double3Add",
+          "targetVa": "0x185f00d7c",
+          "managedWorkerOffset": "0x4e4",
+          "directCallFallbackOffset": "0x4ed"
+        },
+        {
+          "name": "float3ToDouble3",
+          "targetVa": "0x18415f9a0",
+          "managedWorkerOffset": "0x512",
+          "directCallFallbackOffset": "0x51b"
+        },
+        {
+          "name": "fromToRotation",
+          "targetVa": "0x1866aef20",
+          "managedWorkerOffset": "0x548",
+          "directCallFallbackOffset": "0x54e"
+        },
+        {
+          "name": "float4ComponentMultiply",
+          "targetVa": "0x1830e8750",
+          "managedWorkerOffset": "0x597",
+          "directCallFallbackOffset": "0x5a0"
+        },
+        {
+          "name": "quaternionHamiltonProduct",
+          "targetVa": "0x1830e8510",
+          "managedWorkerOffset": "0x5bd",
+          "directCallFallbackOffset": "0x5c6"
+        },
+        {
+          "name": "quaternionHamiltonProduct",
+          "targetVa": "0x1830e8510",
+          "managedWorkerOffset": "0x5ec",
+          "directCallFallbackOffset": "0x5f5"
+        },
+        {
+          "name": "runtimeClassInit",
+          "targetVa": "0x1800036a0",
+          "managedWorkerOffset": "0x633",
+          "directCallFallbackOffset": "0x63c"
+        },
+        {
+          "name": "vertexAttributeMoveBit",
+          "targetVa": "0x18352b760",
+          "managedWorkerOffset": "0x63f",
+          "directCallFallbackOffset": "0x648"
+        },
+        {
+          "name": "fromToRotation",
+          "targetVa": "0x1866aef20",
+          "managedWorkerOffset": "0x67e",
+          "directCallFallbackOffset": "0x684"
+        },
+        {
+          "name": "quaternionHamiltonProduct",
+          "targetVa": "0x1830e8510",
+          "managedWorkerOffset": "0x69b",
+          "directCallFallbackOffset": "0x6a1"
+        }
+      ],
+      "nonControlImmediateComparison": {
+        "allEqualExcept": "stack frame allocation",
+        "managedWorkerFrameBytes": "0x7c0",
+        "directCallFallbackFrameBytes": "0x7b0",
+        "numericConstantDifferenceObserved": false
+      },
+      "boundary": "Stack/local displacement changes do not alter the recovered traversal, branch topology, helper targets, or numeric constants. This comparison does not identify or prove the body behind a non-null Burst function pointer."
+    },
+    "selectedRuntimeRoute": "unresolved",
+    "burstFunctionPointerTarget": "unresolved"
   },
   "routeEvidence": {
     "coldSpans": [
@@ -1351,7 +1594,7 @@
         "sha256": "93473a002a7338a223d7d2e8a8e453df5b9b04a0df3f764570442a0d636a29e4"
       }
     ],
-    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present; static code alone does not select the runtime branch."
+    "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present. The CalcLine DirectCall branch conditions are statically closed, but their runtime values and the returned Burst target are not."
   },
   "workerTargets": [
     {
@@ -1427,21 +1670,20 @@
       "bodySha256": "d89a096b7cfbcecdca18c7180654860ba4504926eb1084917a61ea8b2d8ea56e"
     }
   ],
-  "nextDisassemblyTargets": [
+  "nextDisassemblyTargets": [],
+  "remainingRuntimeEvidence": [
     {
-      "methodIndex": 384854,
-      "method": "CalcLineNormalTangentKernel",
-      "reason": "resolve the selected Burst/direct-call target and prove whether its numeric body is equivalent to the now-closed managed worker"
+      "boundary": "CalcLine BurstDirectCall selected target",
+      "reason": "method 384854 and the managed fallback are closed, but a non-null GetILPPMethodFunctionPointer2 result is an unresolved runtime pointer"
     },
     {
-      "methodIndex": 386226,
-      "method": "MathUtility.FromToRotation",
-      "reason": "the unpatched body is closed; runtime IFix patch id 0x219 selection remains an external-state evidence boundary"
+      "boundary": "MathUtility.FromToRotation IFix patch 0x219 selection",
+      "reason": "the unpatched body is closed; runtime IFix selection remains external state"
     }
   ],
   "nonClaims": [
     "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-    "The managed CalcLineNormalTangent traversal/equations do not establish that retail selected the managed worker instead of the Burst/direct-call route.",
+    "The DirectCall managed fallback equivalence does not establish that retail selected it instead of the unresolved non-null Burst function pointer.",
     "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
     "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
     "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",

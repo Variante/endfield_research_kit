@@ -3699,10 +3699,17 @@ appends, and the pinned unpatched CalcLine managed worker. That worker's exact
 17-parameter ABI, packed child traversal, Move-bit branches, signed local
 rotation, parent/child quaternion equations, helper spans, and
 `FromToRotation` parallel/antiparallel degeneracy branches are code-closed.
-Despite the job name, this body writes rotations and has no separate
-normal/tangent output buffer. Overall numeric equivalence remains fail-closed:
-static code does not prove whether retail selected the managed worker or the
-Burst/direct-call route, and `FromToRotation` can be replaced through IFix
+Method `384854` is now also closed as a thin 296-byte argument forwarder into
+the generated BurstDirectCall `Invoke`; it contains no line/vector math.
+`Invoke` uses `BurstCompiler.get_IsEnabled` plus a nonzero
+`GetILPPMethodFunctionPointer2` result for its indirect call, otherwise it
+enters a separately emitted managed fallback. That fallback and method
+`384856` have the same 396-instruction mnemonic sequence, operand structures,
+18-branch control-flow topology, 22 direct-call targets, and numeric
+immediates; only stack/local layout differs. Despite the job name, these
+bodies write rotations and have no separate normal/tangent output buffer.
+Overall runtime selection remains fail-closed: the nonzero Burst function
+pointer is a runtime value, and `FromToRotation` can be replaced through IFix
 patch `0x219`, whose runtime state is unknown. The contract uses no captured
 positions, timing, curves, fitted constants, or replay data.
 
@@ -3775,11 +3782,12 @@ or shaders rather than hand-editing generated prefabs.
 ## Recovery queue
 
 1. Do not run the combined Endminf graphics-plus-dynamics wrapper while the
-   bulk Transform observer is withheld; it now rejects a real launch. Continue
-   offline recovery at the remaining CalcLine route boundary: disassemble and
-   compare the Burst/direct-call target at method index `384854`, and establish
-   the runtime IFix selection state for `FromToRotation` patch `0x219`. Do not
-   implement the managed equations as retail-active until those routes close.
+   bulk Transform observer is withheld; it now rejects a real launch. Method
+   `384854` and its DirectCall managed fallback are statically closed; the
+   remaining CalcLine route boundary is the runtime-selected nonzero Burst
+   function pointer plus the IFix selection state for `FromToRotation` patch
+   `0x219`. Do not implement the managed/fallback equations as retail-active
+   until those runtime states close.
    Keep the older trajectory capture validation-only. A new capture is useful
    only if it is narrowly instrumented for the selected CalcLine route or IFix
    patch state. If new graphics evidence is independently required, use

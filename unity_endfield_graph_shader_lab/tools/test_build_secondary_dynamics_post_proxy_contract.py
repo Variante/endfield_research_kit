@@ -26,7 +26,7 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         payload = self.payload
         self.assertEqual(
             payload["status"],
-            "post_proxy_managed_calc_line_equations_closed_runtime_routes_open",
+            "post_proxy_calc_line_directcall_fallback_equivalence_closed_runtime_selection_open",
         )
         self.assertTrue(payload["manager_schedule_closed"])
         self.assertTrue(payload["managed_job_payload_layout_closed"])
@@ -37,6 +37,9 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertTrue(payload["calc_line_managed_worker_equations_recovered"])
         self.assertTrue(payload["calc_line_managed_worker_degeneracy_branches_recovered"])
         self.assertTrue(payload["calc_line_data_layout_closed"])
+        self.assertTrue(payload["calc_line_kernel_wrapper_route_recovered"])
+        self.assertTrue(payload["calc_line_directcall_managed_fallback_equivalence_closed"])
+        self.assertFalse(payload["calc_line_burst_function_pointer_target_closed"])
         self.assertFalse(payload["create_list_kernel_numerics_recovered"])
         self.assertFalse(payload["calc_line_normal_tangent_numerics_recovered"])
         self.assertFalse(payload["selected_calc_line_execution_route_closed"])
@@ -87,8 +90,49 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertEqual(workers[384832]["bodySha256"], "02a0d53fed888f05f966dbe2250f59e4f2722d0cfac3928e7a2b268d39bb4bde")
         self.assertEqual(workers[384856]["startVa"], "0x186744fb0")
         self.assertEqual(workers[384856]["bodySha256"], "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829")
-        self.assertEqual([row["methodIndex"] for row in self.payload["nextDisassemblyTargets"]],
-                         [384854, 386226])
+        self.assertEqual(workers[384854]["startVa"], "0x1867456e4")
+        self.assertEqual(workers[384854]["bodySha256"],
+                         "05af0def52b33451b7424296e8325c8f4819c7e27a0b64bfc1207b359431ba83")
+        self.assertEqual(self.payload["nextDisassemblyTargets"], [])
+
+    def test_calc_line_directcall_wrapper_and_fallback_equivalence(self) -> None:
+        route = self.payload["calcLineDirectCallRoute"]
+        kernel = route["kernelWrapper"]
+        self.assertEqual(
+            (kernel["methodIndex"], kernel["startVa"], kernel["spanBytes"],
+             kernel["instructionCount"], kernel["invokeMethodIndex"]),
+            (384854, "0x1867456e4", 0x128, 55, 384867),
+        )
+        methods = {row["methodIndex"]: row for row in route["generatedMethods"]}
+        self.assertEqual(methods[384867]["startVa"], "0x1867464d0")
+        self.assertEqual(methods[384867]["bodySha256"],
+                         "3166eb9d2d86a50eb31524927b652850ffcdc6a22b5b6edd92db200959392de7")
+
+        selection = route["invokeSelection"]
+        self.assertEqual(selection["burstEnabledGate"]["methodIndex"], 489283)
+        self.assertEqual(selection["burstEnabledGate"]["runtimeValue"], "unresolved")
+        self.assertEqual(selection["getFunctionPointer"]["resolver"]["methodIndex"], 489285)
+        self.assertEqual(selection["getFunctionPointer"]["returnedPointer"],
+                         "unresolved runtime value")
+        self.assertEqual(route["selectedRuntimeRoute"], "unresolved")
+        self.assertEqual(route["burstFunctionPointerTarget"], "unresolved")
+
+        fallback = route["directCallManagedFallback"]
+        self.assertEqual((fallback["startVa"], fallback["spanBytes"],
+                          fallback["throughRetBytes"]),
+                         ("0x186740adc", 0x738, 0x731))
+        self.assertEqual(fallback["throughRetSha256"],
+                         "b1424aff822792c251bd1176f13d30a274612c86c11a0c5f19c471b363f8feeb")
+        comparison = route["managedFallbackComparison"]
+        self.assertEqual(comparison["throughFirstRetInstructionCount"], 396)
+        self.assertTrue(comparison["identicalMnemonicSequence"])
+        self.assertTrue(comparison["identicalOperandStructuralShapes"])
+        self.assertTrue(comparison["identicalControlFlowTopologyByInstructionOrdinal"])
+        self.assertEqual(comparison["conditionalAndUnconditionalBranchCount"], 18)
+        self.assertEqual(comparison["directCallCount"], 22)
+        self.assertFalse(
+            comparison["nonControlImmediateComparison"]["numericConstantDifferenceObserved"]
+        )
 
     def test_create_list_control_flow_is_code_derived(self) -> None:
         flow = self.payload["createListHotControlFlow"]
