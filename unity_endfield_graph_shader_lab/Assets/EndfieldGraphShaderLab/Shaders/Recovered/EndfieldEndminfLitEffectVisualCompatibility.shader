@@ -85,6 +85,8 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
             float _ParallaxFresnelStrength;
             float _GlobalMipBias;
             float _GlobalMipBiasPow2;
+            float4 _EndfieldCharSceneLightDirection;
+            float _EndfieldCharSourceMainLightReady;
 
             struct Attributes
             {
@@ -126,6 +128,11 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                 Varyings input,
                 bool isFrontFace : SV_IsFrontFace):SV_Target
             {
+                // The compatibility pass has no retail deferred LightData
+                // consumer.  It may reuse the serialized CharInfo scene-light
+                // direction, but must disappear when that direct-reference
+                // owner is unavailable instead of inventing a fixed light.
+                clip(_EndfieldCharSourceMainLightReady - 0.5);
                 float2 baseUV = lerp(input.uv0, input.uv1, _BaseUVSet) *
                     _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;
                 float2 pbrUV = lerp(input.uv0, input.uv1, _BasePbrMapUVSet) *
@@ -241,7 +248,7 @@ Shader "Hidden/Endfield/Compatibility/Endminf/LitEffectParallax"
                     sampler_LinearMirrorOnce,
                     parallaxUV,
                     _GlobalMipBias).g;
-                float3 l = normalize(float3(-0.35, 0.8, 0.45));
+                float3 l = normalize(_EndfieldCharSceneLightDirection.xyz);
                 float3 h = normalize(l + viewWS);
                 float ndl = saturate(dot(n, l));
                 float ndv = saturate(dot(n, viewWS));

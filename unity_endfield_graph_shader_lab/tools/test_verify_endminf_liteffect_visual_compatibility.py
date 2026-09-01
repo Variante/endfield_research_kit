@@ -94,6 +94,26 @@ class EndminfLitEffectVisualCompatibilityTests(unittest.TestCase):
         self.assertNotIn("sampler_LinearClamp, baseUV, 0.0", source)
         self.assertNotIn("sampler_LinearRepeat, pbrUV, 0.0", source)
 
+    def test_shader_uses_only_the_serialized_scene_light_direction(self) -> None:
+        shader = MODULE.SHADER.read_text(encoding="utf-8")
+        volume = MODULE.LIGHT_VOLUME.read_text(encoding="utf-8")
+        for token in (
+            "float4 _EndfieldCharSceneLightDirection;",
+            "float _EndfieldCharSourceMainLightReady;",
+            "clip(_EndfieldCharSourceMainLightReady - 0.5);",
+            "float3 l = normalize(_EndfieldCharSceneLightDirection.xyz);",
+        ):
+            self.assertIn(token, shader)
+        self.assertNotIn("normalize(float3(-0.35, 0.8, 0.45))", shader)
+        for token in (
+            'Shader.PropertyToID("_EndfieldCharSourceMainLightReady")',
+            "IsUsableDirectionalLight(sceneMainLight)",
+            "mainLight == sceneMainLight",
+            "sourceMainLightReady ? 1.0f : 0.0f",
+            "Shader.SetGlobalFloat(SourceMainLightReadyId, 0.0f)",
+        ):
+            self.assertIn(token, volume)
+
     def test_runtime_binding_rejoins_rows_to_the_exact_v2_source_marker(self) -> None:
         source = RUNTIME_BINDING.read_text(encoding="utf-8")
         validator = source[source.index(

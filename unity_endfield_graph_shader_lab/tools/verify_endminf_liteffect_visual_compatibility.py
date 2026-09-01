@@ -14,6 +14,7 @@ from verify_endminf_liteffect_resource_mapping import (
 ROOT = Path(__file__).resolve().parents[2]
 IMPORTER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfOverviewEffectImporter.cs"
 SHADER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Shaders/Recovered/EndfieldEndminfLitEffectVisualCompatibility.shader"
+LIGHT_VOLUME = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldHGRPCharacterLightingVolume.cs"
 RUNTIME = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/Rendering/EndfieldEndminfLitEffectCompatibilityBinding.cs"
 BUILDER = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfLitEffectCompatibilityBindingBuilder.cs"
 CAPTURE_SOURCE = ROOT / "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Editor/CharacterRecovery/EndfieldEndminfViewerPlayModeCapture.cs"
@@ -329,6 +330,7 @@ def validate_material_yaml(
 def main() -> int:
     importer = IMPORTER.read_text(encoding="utf-8")
     shader = SHADER.read_text(encoding="utf-8")
+    light_volume = LIGHT_VOLUME.read_text(encoding="utf-8")
     runtime = RUNTIME.read_text(encoding="utf-8")
     builder = BUILDER.read_text(encoding="utf-8")
     capture_source = CAPTURE_SOURCE.read_text(encoding="utf-8")
@@ -359,6 +361,10 @@ def main() -> int:
         '_ParallaxMap.SampleBias(',
         'float _GlobalMipBias;',
         'float _GlobalMipBiasPow2;',
+        'float4 _EndfieldCharSceneLightDirection;',
+        'float _EndfieldCharSourceMainLightReady;',
+        'clip(_EndfieldCharSourceMainLightReady - 0.5);',
+        'float3 l = normalize(_EndfieldCharSceneLightDirection.xyz);',
         'float3 sourceBaseColor = lerp(',
         'float sourceMetallic = lerp(',
         'float sourceRoughness = lerp(',
@@ -375,9 +381,19 @@ def main() -> int:
         '_ParallaxMap.SampleGrad(',
         '_ParallaxNoiseMap.SampleBias(',
         '_RecoveredParallaxCompatibilityScale',
+        'normalize(float3(-0.35, 0.8, 0.45))',
     ]
     failures += ["shader retains disproven/fitted transport " + value
                  for value in forbidden_shader if value in shader]
+    required_light_owner = [
+        'Shader.PropertyToID("_EndfieldCharSourceMainLightReady")',
+        'IsUsableDirectionalLight(sceneMainLight)',
+        'mainLight == sceneMainLight',
+        'sourceMainLightReady ? 1.0f : 0.0f',
+        'Shader.SetGlobalFloat(SourceMainLightReadyId, 0.0f)',
+    ]
+    failures += ["source light owner missing " + value
+                 for value in required_light_owner if value not in light_volume]
     required_runtime = [
         "endfield.endminf-liteffect-runtime-binding.v1",
         "TryValidateForRecoveryAudit",
@@ -552,9 +568,10 @@ def main() -> int:
                              "fresh verified PackedBinding physical t0..t5 mapping artifact",
                              "fresh verified static sampler pairing",
                              "fresh verified metallic/roughness/occlusion stores in MRO R/G/B",
-                             "fresh verified noise-height march then ParallaxMap.g sample"],
+                             "fresh verified noise-height march then ParallaxMap.g sample",
+                             "serialized CharInfo sceneMainLight direct-reference direction"],
         "approximated": ["converted PNG texture derivatives where native payloads are absent",
-                         "forward lighting", "particle phase/brightness",
+                         "forward BRDF and light intensity", "particle phase/brightness",
                          "HGBuffer/deferred replacement"],
         "measurementBoundary": "Restoring physical amber geometry is a completeness correction. Whole-frame ROI MAE is not an acceptance gate because this explicitly non-exact forward shader and the authored moving crystal occupy the compared pixels.",
         "failures": failures,
