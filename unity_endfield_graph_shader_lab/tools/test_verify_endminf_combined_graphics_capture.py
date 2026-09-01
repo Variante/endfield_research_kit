@@ -11,6 +11,49 @@ import verify_endminf_combined_graphics_capture as subject
 
 
 class CombinedGraphicsCaptureTests(unittest.TestCase):
+    @staticmethod
+    def m20_draw(*, stride: int = 36, atlas_width: int = 256,
+                 atlas_height: int = 128, atlas_format: int = 99,
+                 atlas_bytes: int = 32768) -> tuple[dict, dict]:
+        vertex, pixel = subject.M20_RETAIL_SHADER_PAIR
+        atlas_object = 9001
+        draw = {
+            "indexedInstanced": True,
+            "count": 36,
+            "instanceCount": 1,
+            "startInstance": 0,
+            "shaders": [
+                {"stage": 0, "identityHash": vertex},
+                {"stage": 4, "identityHash": pixel},
+            ],
+            "inputAssembler": {
+                "vertexBuffers": [
+                    {"slot": 0, "stride": stride},
+                    {"slot": 1, "stride": 0},
+                ],
+                "indexBuffer": {"format": 57},
+            },
+            "resources": [{
+                "stage": 4,
+                "slot": 1,
+                "kind": 3,
+                "objectId": atlas_object,
+            }],
+        }
+        metadata = {"selectedResourceRecords": [{
+            "captureKind": 3,
+            "stage": 4,
+            "slot": 1,
+            "objectId": atlas_object,
+            "completed": True,
+            "width": atlas_width,
+            "height": atlas_height,
+            "format": atlas_format,
+            "viewFormat": atlas_format,
+            "blobBytes": atlas_bytes,
+        }]}
+        return draw, metadata
+
     def test_live_m20_retail_pair_is_admitted(self) -> None:
         self.assertIn(
             (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188),
@@ -29,43 +72,47 @@ class CombinedGraphicsCaptureTests(unittest.TestCase):
             capture = Path(temporary)
             frame = capture / "graphics/frames/1"
             frame.mkdir(parents=True)
-            m20 = next(iter(subject.PEAK_SHADER_PAIRS["M20"]))
+            m20_draw, metadata = self.m20_draw()
             m21 = next(iter(subject.PEAK_SHADER_PAIRS["M21"]))
-            draws = []
-            for index, (vertex, pixel) in enumerate((m20, m21)):
-                draws.append({"count": 36 if index == 0 else 6, "shaders": [
-                    {"stage": 0, "identityHash": vertex},
-                    {"stage": 4, "identityHash": pixel},
-                ]})
+            draws = [m20_draw, {"count": 6, "shaders": [
+                {"stage": 0, "identityHash": m21[0]},
+                {"stage": 4, "identityHash": m21[1]},
+            ]}]
             (frame / "metadata.json").write_text(
-                json.dumps({"frame": 1, "drawRecords": draws}),
+                json.dumps({"frame": 1, "drawRecords": draws, **metadata}),
                 encoding="utf-8")
             report = subject.audit_peak_owner_presence(capture)
             self.assertEqual("validated_peak_owner_presence", report["status"])
             self.assertEqual([], report["errors"])
 
             (frame / "metadata.json").write_text(
-                json.dumps({"frame": 1, "drawRecords": draws[1:]}),
+                json.dumps({"frame": 1, "drawRecords": draws[1:], **metadata}),
                 encoding="utf-8")
             report = subject.audit_peak_owner_presence(capture)
             self.assertEqual("rejected", report["status"])
             self.assertTrue(any("M20" in error for error in report["errors"]))
 
-    def test_live_m20_shared_shader_requires_peak_geometry(self) -> None:
+    def test_live_m20_shared_shader_requires_exact_owner_shape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             capture = Path(temporary)
             frame = capture / "graphics/frames/1"
             frame.mkdir(parents=True)
-            vertex, pixel = (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188)
-            (frame / "metadata.json").write_text(json.dumps({
-                "frame": 1,
-                "drawRecords": [{"count": 6, "shaders": [
-                    {"stage": 0, "identityHash": vertex},
-                    {"stage": 4, "identityHash": pixel},
-                ]}],
-            }), encoding="utf-8")
-            report = subject.audit_peak_owner_presence(capture)
-            self.assertEqual(0, report["owners"]["M20"]["packetCount"])
+            for draw, metadata in (
+                self.m20_draw(stride=60),
+                self.m20_draw(atlas_width=256, atlas_height=256,
+                              atlas_bytes=65536),
+            ):
+                (frame / "metadata.json").write_text(json.dumps({
+                    "frame": 1,
+                    "drawRecords": [draw],
+                    **metadata,
+                }), encoding="utf-8")
+                report = subject.audit_peak_owner_presence(capture)
+                self.assertEqual(0, report["owners"]["M20"]["packetCount"])
+
+    def test_live_m20_exact_owner_shape_is_admitted(self) -> None:
+        draw, metadata = self.m20_draw()
+        self.assertTrue(subject.is_exact_m20_owner_packet(draw, metadata))
 
     def test_transparent_cape_is_a_required_palette_owner(self) -> None:
         self.assertEqual(subject.skinning.MESHES["cloth_02"], (2_286, 29))

@@ -50,13 +50,20 @@ MINIMUM_PER_SEQUENCE = {
 }
 MINIMUM_SEQUENCE_FRAMES = 48
 AUTOMATIC_SEQUENCE_FRAMES = 72
+M20_RETAIL_SHADER_PAIR = (
+    0x62A5CE6C09171DE9,
+    0x5558DEDDB1EE6188,
+)
+M20_VERTEX_STRIDE = 36
+M20_INDEX_FORMAT = 57
+M20_ATLAS_DESCRIPTOR = (256, 128, 99, 99, 32768)
 PEAK_SHADER_PAIRS = {
     "M20": {
-        (0xE8F38F2F7519383D, 0xFEA38543389B6FF4),
-        (0x04BEF98C73CA34880, 0x246A0F4F2D3C34F4),
-        # Actual retail route observed on the 36-index smoke packet in
-        # automatic full captures 20260828T224210Z/20260828T224407Z.
-        (0x62A5CE6C09171DE9, 0x5558DEDDB1EE6188),
+        # Actual retail route observed in automatic full captures
+        # 20260828T224210Z/20260828T224407Z.  The two source-compiled pairs
+        # remain useful shader evidence, but retail did not select them for
+        # the captured smoke (2) owner and they cannot certify this gate.
+        M20_RETAIL_SHADER_PAIR,
     },
     "M21": {
         (0xE7F5568D34FD467B, 0xC5B21FEE8E9936A6),
@@ -159,6 +166,85 @@ def logical_sequences(
     return split_sequences(frames)
 
 
+def _unique_binding(rows: Any, *, stage: int, slot: int,
+                    kind: int) -> dict[str, Any] | None:
+    matches = [
+        row for row in rows if isinstance(row, dict)
+        and int(row.get("stage", -1)) == stage
+        and int(row.get("slot", -1)) == slot
+        and int(row.get("kind", -1)) == kind
+    ] if isinstance(rows, list) else []
+    return matches[0] if len(matches) == 1 else None
+
+
+def is_exact_m20_owner_packet(
+    draw: dict[str, Any], metadata: dict[str, Any]
+) -> bool:
+    """Recognize only the source-authenticated retail smoke (2) packet.
+
+    The retail shader pair and a 36-index count are both shared.  Frame 1748's
+    exact owner additionally has a 36-byte primary stream, stride-zero
+    secondary stream, R16 indices, and one complete 256x128 BC7-sRGB atlas at
+    PS t1.  Requiring that joined draw-local shape prevents unrelated packets
+    from being promoted to M20 evidence.
+    """
+    identities = {
+        int(row.get("stage", -1)): int(row.get("identityHash", 0))
+        for row in draw.get("shaders", []) if isinstance(row, dict)
+    }
+    if (identities.get(0, 0), identities.get(4, 0)) != M20_RETAIL_SHADER_PAIR:
+        return False
+    if (draw.get("indexedInstanced") is not True
+            or int(draw.get("count", -1)) != 36
+            or int(draw.get("instanceCount", -1)) != 1
+            or int(draw.get("startInstance", -1)) != 0):
+        return False
+
+    assembler = draw.get("inputAssembler")
+    if not isinstance(assembler, dict):
+        return False
+    vertex_buffers = assembler.get("vertexBuffers")
+    if not isinstance(vertex_buffers, list):
+        return False
+    primary = [row for row in vertex_buffers if isinstance(row, dict)
+               and int(row.get("slot", -1)) == 0]
+    secondary = [row for row in vertex_buffers if isinstance(row, dict)
+                 and int(row.get("slot", -1)) == 1]
+    index_buffer = assembler.get("indexBuffer")
+    if (len(primary) != 1 or len(secondary) != 1
+            or not isinstance(index_buffer, dict)
+            or int(primary[0].get("stride", -1)) != M20_VERTEX_STRIDE
+            or int(secondary[0].get("stride", -1)) != 0
+            or int(index_buffer.get("format", -1)) != M20_INDEX_FORMAT):
+        return False
+
+    atlas_binding = _unique_binding(
+        draw.get("resources"), stage=4, slot=1, kind=3)
+    if atlas_binding is None:
+        return False
+    atlas_object = int(atlas_binding.get("objectId", 0))
+    atlas_rows = [
+        row for row in metadata.get("selectedResourceRecords", [])
+        if isinstance(row, dict)
+        and row.get("completed") is True
+        and int(row.get("captureKind", -1)) == 3
+        and int(row.get("stage", -1)) == 4
+        and int(row.get("slot", -1)) == 1
+        and int(row.get("objectId", 0)) == atlas_object
+    ]
+    if len(atlas_rows) != 1:
+        return False
+    atlas = atlas_rows[0]
+    descriptor = (
+        int(atlas.get("width", -1)),
+        int(atlas.get("height", -1)),
+        int(atlas.get("format", -1)),
+        int(atlas.get("viewFormat", -1)),
+        int(atlas.get("blobBytes", -1)),
+    )
+    return descriptor == M20_ATLAS_DESCRIPTOR
+
+
 def audit_peak_owner_presence(capture: Path) -> dict[str, Any]:
     """Require the narrow M20 gas and M21 stone owners in an automatic run."""
     packets: dict[str, list[dict[str, int]]] = {
@@ -177,11 +263,11 @@ def audit_peak_owner_presence(capture: Path) -> dict[str, Any]:
             pair = (identities.get(0, 0), identities.get(4, 0))
             for name, accepted in PEAK_SHADER_PAIRS.items():
                 index_count = int(draw.get("count", -1))
-                # The retail M20 program is a shared VFXBaseV2 route. Its
-                # identity alone admits hundreds of unrelated particle
-                # packets; the recovered smoke (2) peak owner is the measured
-                # DrawIndexedInstanced(36, 1, ...) packet.
-                if pair in accepted and (name != "M20" or index_count == 36):
+                if name == "M20":
+                    admitted = is_exact_m20_owner_packet(draw, metadata)
+                else:
+                    admitted = pair in accepted
+                if admitted:
                     packets[name].append({
                         "frame": frame,
                         "drawIndex": draw_index,
