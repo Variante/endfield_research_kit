@@ -3569,6 +3569,20 @@ checkpoint. Retain it as a literal pipeline correction; it does not authorize
 crystal, stone, or animation retiming, and the larger temporal/Uber residual
 remains open.
 
+The captured Endminf CharInfo LUT is now the maintained compatibility and
+exact-Uber resource only for the active source-recovered
+`chr_0003_endminf` profile. Admission requires its pinned byte length/hash and
+five CPU sentinels, then five texel-center samples through the actual
+bilinear/clamp GPU sampler into a 5x1 RGBA16F target and byte-exact D3D11
+readback. Capture schema v23 fails closed unless the profile, GPU result, hash,
+and exact compatibility binding hold on every published frame. A continuous
+770-frame run passes those gates plus the entrance, cleanup, transition, and
+settled-loop lifecycle. Against the same 555-row clean retail window, replacing
+the procedural LUT has only a negligible spatial regression and negligible
+temporal improvement; retain the source-exact LUT, but treat the remaining
+color/VFX mismatch as upstream scene-color, bloom/Uber chronology, or lighting
+rather than compensating with a fitted grade.
+
 The captured Endminf Uber packet remains diagnostic-only. Its native draw and
 resources validate, but the current input chronology regresses the three
 aligned effect samples against the otherwise identical exact-off control

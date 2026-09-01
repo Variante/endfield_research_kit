@@ -24,7 +24,7 @@ GYROSCOPE_MANIFEST = (
 class EndminfPlayModeCaptureTimingContractTests(unittest.TestCase):
     def test_report_separates_target_threshold_and_actual_clocks(self) -> None:
         source = CAPTURE.read_text(encoding="utf-8")
-        self.assertIn("endminf-viewer-playmode-sequence.v22", source)
+        self.assertIn("endminf-viewer-playmode-sequence.v23", source)
         for field in (
             "public float targetSeconds;",
             "public float requestedSeconds;",

@@ -192,7 +192,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v22";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v23";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -253,6 +253,11 @@ namespace EndfieldGraphShaderLabEditor
             public bool observedExactEndminfUberSubmitted;
             public bool observedExactEndminfUberValidated;
             public string exactEndminfUberFailure;
+            public bool observedExactEndminfLutProfileMatched;
+            public bool observedExactEndminfLutGpuValidated;
+            public bool observedCompatibilityExactEndminfLutBound;
+            public string exactEndminfLutSha256;
+            public string exactEndminfLutFailure;
             public bool observedOpeningStripCompatibilityBeforeTemporal;
             public bool observedOpeningStripSceneMVBeforeTemporal;
             public bool endminfOpeningStripExactRequested;
@@ -308,6 +313,12 @@ namespace EndfieldGraphShaderLabEditor
             public bool exactEndminfUberValidated;
             public string exactEndminfUberVariant;
             public string exactEndminfUberFailure;
+            public bool exactEndminfLutProfileMatched;
+            public bool exactEndminfLutGpuValidationPending;
+            public bool exactEndminfLutGpuValidated;
+            public bool compatibilityExactEndminfLutBound;
+            public string exactEndminfLutSha256;
+            public string exactEndminfLutFailure;
             public bool openingStripCompatibilityBeforeTemporal;
             public bool openingStripSceneMVBeforeTemporal;
             public bool unityPublicNgxProxyRequested;
@@ -1091,6 +1102,14 @@ namespace EndfieldGraphShaderLabEditor
             if (selectionSettleFrames > 0)
             {
                 selectionSettleFrames--;
+                if (selectionSettleFrames == 1 && camera != null)
+                {
+                    // Queue and synchronize the exact-LUT GPU sentinel readback
+                    // before capture time zero. The following settle edge
+                    // restarts Overview again, so this validation render cannot
+                    // advance the published animation or particle timeline.
+                    Render(camera);
+                }
                 if (selectionSettleFrames == 0 &&
                     CharacterRecoveryViewerUI.TryGetSelectedActorRoot(
                         out Transform selectedActor))
@@ -1518,6 +1537,18 @@ namespace EndfieldGraphShaderLabEditor
                     .LastRecoveredEndminfExactUberVariant,
                 exactEndminfUberFailure = HGCompatRenderPipeline
                     .LastRecoveredEndminfExactUberFailure,
+                exactEndminfLutProfileMatched = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactLutProfileMatched,
+                exactEndminfLutGpuValidationPending = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactLutGpuValidationPending,
+                exactEndminfLutGpuValidated = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactLutGpuValidated,
+                compatibilityExactEndminfLutBound = HGCompatRenderPipeline
+                    .LastRecoveredEndminfCompatibilityExactLutBound,
+                exactEndminfLutSha256 = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactLutSha256,
+                exactEndminfLutFailure = HGCompatRenderPipeline
+                    .LastRecoveredEndminfExactLutFailure,
                 openingStripCompatibilityBeforeTemporal = HGCompatRenderPipeline
                     .LastRecoveredEndminfOpeningStripCompatibilityApplied,
                 openingStripSceneMVBeforeTemporal = HGCompatRenderPipeline
@@ -2148,6 +2179,40 @@ namespace EndfieldGraphShaderLabEditor
                 .Select(value => value.exactEndminfUberFailure)
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
                 string.Empty;
+            bool observedExactEndminfLutProfileMatched =
+                Frames.Count > 0 && Frames.All(value =>
+                    value.exactEndminfLutProfileMatched);
+            bool observedExactEndminfLutGpuValidated =
+                Frames.Count > 0 && Frames.All(value =>
+                    value.exactEndminfLutGpuValidated &&
+                    !value.exactEndminfLutGpuValidationPending);
+            bool observedCompatibilityExactEndminfLutBound =
+                Frames.Count > 0 && Frames.All(value =>
+                    value.compatibilityExactEndminfLutBound);
+            string exactEndminfLutSha256 = Frames
+                .Select(value => value.exactEndminfLutSha256)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            string exactEndminfLutFailure = Frames
+                .Select(value => value.exactEndminfLutFailure)
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ??
+                string.Empty;
+            bool exactEndminfLutRequirementReady =
+                observedExactEndminfLutProfileMatched &&
+                observedExactEndminfLutGpuValidated &&
+                observedCompatibilityExactEndminfLutBound &&
+                string.Equals(
+                    exactEndminfLutSha256,
+                    "717c1d483662c00abe55e1c56a9d024f45e5c84c430ed9dd2854cb386f372482",
+                    StringComparison.Ordinal);
+            if (!exactEndminfLutRequirementReady)
+            {
+                missingObservations.Add(
+                    "D3D11-validated exact Endminf CharInfo LUT compatibility binding" +
+                    (string.IsNullOrWhiteSpace(exactEndminfLutFailure)
+                        ? string.Empty
+                        : " (" + exactEndminfLutFailure + ")"));
+            }
             bool observedOpeningStripCompatibilityBeforeTemporal = Frames.Any(
                 value => value.openingStripCompatibilityBeforeTemporal);
             bool observedOpeningStripSceneMVBeforeTemporal = Frames.Any(
@@ -2262,6 +2327,7 @@ namespace EndfieldGraphShaderLabEditor
                 backgroundPortraitIncluded &&
                 observedEndminfPostSourceRgba16 &&
                 observedEndminfBloomR11 &&
+                exactEndminfLutRequirementReady &&
                 exactEndminfUberRequirementReady &&
                 endminfOpeningStripExactRequirementReady &&
                 endminfM31ExactRequirementReady &&
@@ -2388,6 +2454,14 @@ namespace EndfieldGraphShaderLabEditor
                 observedExactEndminfUberValidated =
                     observedExactEndminfUberValidated,
                 exactEndminfUberFailure = exactEndminfUberFailure,
+                observedExactEndminfLutProfileMatched =
+                    observedExactEndminfLutProfileMatched,
+                observedExactEndminfLutGpuValidated =
+                    observedExactEndminfLutGpuValidated,
+                observedCompatibilityExactEndminfLutBound =
+                    observedCompatibilityExactEndminfLutBound,
+                exactEndminfLutSha256 = exactEndminfLutSha256,
+                exactEndminfLutFailure = exactEndminfLutFailure,
                 observedOpeningStripCompatibilityBeforeTemporal =
                     observedOpeningStripCompatibilityBeforeTemporal,
                 observedOpeningStripSceneMVBeforeTemporal =
