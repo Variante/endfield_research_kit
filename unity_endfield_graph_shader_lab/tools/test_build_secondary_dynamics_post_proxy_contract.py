@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import tempfile
@@ -40,6 +41,7 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertTrue(payload["calc_line_kernel_wrapper_route_recovered"])
         self.assertTrue(payload["calc_line_directcall_managed_fallback_equivalence_closed"])
         self.assertTrue(payload["calc_line_burst_function_pointer_target_closed"])
+        self.assertTrue(payload["from_to_rotation_installed_local_ifix_target_absent"])
         self.assertFalse(payload["create_list_kernel_numerics_recovered"])
         self.assertFalse(payload["calc_line_normal_tangent_numerics_recovered"])
         self.assertFalse(payload["selected_calc_line_execution_route_closed"])
@@ -237,6 +239,19 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertIn("abs(1.0 - dot) < epsilon", equations)
         self.assertIn("quaternion.identity", equations)
         self.assertEqual(from_to["ifixRoute"]["patchId"], "0x219")
+        self.assertEqual(
+            from_to["ifixRoute"]["installedLocalSnapshot"],
+            "sources.installedLocalIfix",
+        )
+        local_ifix = self.payload["sources"]["installedLocalIfix"]
+        self.assertEqual(
+            local_ifix["status"],
+            "hash_pinned_installed_local_payload_excludes_beyond_dynamic_bone",
+        )
+        self.assertEqual(local_ifix["parsedTargetCount"], 32)
+        self.assertEqual(local_ifix["beyondDynamicBoneTargetCount"], 0)
+        self.assertEqual(local_ifix["fromToRotationTargetCount"], 0)
+        self.assertIn("does not prove live slot ownership", local_ifix["runtimeBoundary"])
         self.assertEqual(from_to["ifixRoute"]["selectedAtRuntime"], "unresolved")
         self.assertIn("no explicit guard", from_to["degeneracyBranches"]["zeroOrNonFiniteInput"])
         self.assertIn("runtime numerics remain fail-closed", flow["numericBoundary"])
@@ -247,6 +262,42 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
             path.write_text("{}\n", encoding="utf-8")
             with self.assertRaises(builder.ContractError):
                 builder._source(path, "0" * 64)
+
+    def test_installed_ifix_join_rejects_native_build_drift(self) -> None:
+        report = json.loads(builder.DEFAULT_IFIX_REPORT.read_text(encoding="utf-8"))
+        report["source_build"]["game_assembly"]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(builder.ContractError, "native build drift"):
+            builder._validate_installed_ifix_payload(
+                report, self.payload["native_gate"], report["targets"]
+            )
+
+    def test_installed_ifix_join_rejects_beyond_dynamic_bone_target(self) -> None:
+        report = json.loads(builder.DEFAULT_IFIX_REPORT.read_text(encoding="utf-8"))
+        report = copy.deepcopy(report)
+        report["targets"].append({
+            "type": "BeyondDynamicBone.MathUtility",
+            "method": "FromToRotation",
+            "parameters": [
+                "Unity.Mathematics.double3",
+                "Unity.Mathematics.double3",
+                "System.Double",
+            ],
+            "implementation_index": 71,
+        })
+        report["patch_format"]["target_count"] += 1
+        with self.assertRaisesRegex(
+            builder.ContractError, "unexpectedly targets BeyondDynamicBone"
+        ):
+            builder._validate_installed_ifix_payload(
+                report, self.payload["native_gate"], report["targets"]
+            )
+
+    def test_installed_ifix_join_rejects_report_parser_divergence(self) -> None:
+        report = json.loads(builder.DEFAULT_IFIX_REPORT.read_text(encoding="utf-8"))
+        with self.assertRaisesRegex(builder.ContractError, "parsed target table"):
+            builder._validate_installed_ifix_payload(
+                report, self.payload["native_gate"], report["targets"][:-1]
+            )
 
     def test_builder_recomputes_published_contract(self) -> None:
         self.assertEqual(builder.build_contract(), self.payload)
