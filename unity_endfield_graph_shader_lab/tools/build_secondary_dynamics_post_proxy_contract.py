@@ -2,9 +2,10 @@
 """Build the pinned PostProxyMeshUpdate native scheduling contract.
 
 The contract closes the managed/native ABI, ordered job construction, job
-payload layouts, and exact generic scheduling identities.  It deliberately
-leaves the CreatePostProxyMeshUpdateList and CalcLineNormalTangent worker
-equations open; no capture samples, fitted curves, or replay data are inputs.
+payload layouts, exact generic scheduling identities, and the unpatched
+CalcLineNormalTangent managed-worker traversal/equations.  Runtime selection
+between Burst/cross-frame/managed routes and the IFix patch state remain open;
+no capture samples, fitted curves, or replay data are inputs.
 """
 
 from __future__ import annotations
@@ -199,6 +200,96 @@ WORKER_TARGETS = (
     (384857, "CalcLineNormalTangentRangeKernel$BurstManaged", 0x186741214),
 )
 
+CALC_LINE = {
+    "methodIndex": 384856,
+    "method": "CalcLineNormalTangentKernel$BurstManaged",
+    "startVa": 0x186744FB0,
+    "spanBytes": 1844,
+    "bodySha256": "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829",
+    "throughRetBytes": 0x72B,
+    "throughRetSha256": "3fd25c103794771a322506815060f2203fc2ef5d4830252122bd4b654c76df31",
+}
+
+# The parameter declaration and pointee identities come from global metadata
+# plus MetadataRegistration.types.  Strides/access are then independently
+# demonstrated by the pinned worker body's address arithmetic.
+CALC_LINE_PARAMETERS = (
+    ("jobBaseLineList", 117350, "System.Int32", 0x08, None, 4, "read"),
+    ("teamDataArray", 117510, "BeyondDynamicBone.TeamManager+TeamData", 0x11, 48233, 0x1D0, "read"),
+    ("parameterArray", 117243, "BeyondDynamicBone.ClothParameters", 0x11, 48002, 0x328, "read"),
+    ("attributes", 117438, "BeyondDynamicBone.VertexAttribute", 0x11, 48621, 1, "read"),
+    ("positions", 117455, "Unity.Mathematics.double3", 0x11, 57201, 24, "read"),
+    ("rotations", 117463, "Unity.Mathematics.quaternion", 0x11, 57247, 16, "readWrite"),
+    ("vertexLocalPositions", 117458, "Unity.Mathematics.float3", 0x11, 57216, 12, "read"),
+    ("vertexLocalRotations", 117463, "Unity.Mathematics.quaternion", 0x11, 57247, 16, "read"),
+    ("parentIndices", 117350, "System.Int32", 0x08, None, 4, "unusedByMethod384856"),
+    ("childIndexArray", 117409, "System.UInt32", 0x09, None, 4, "read"),
+    ("childDataArray", 117406, "System.UInt16", 0x07, None, 2, "read"),
+    ("baseLineFlags", 117259, "BeyondDynamicBone.ExBitFlag8", 0x11, 48538, 1, "readEntryGateThenIncomingStackSlotReused"),
+    ("baseLineTeamIds", 117347, "System.Int16", 0x06, None, 2, "read"),
+    ("baseLineStartIndices", 117406, "System.UInt16", 0x07, None, 2, "read"),
+    ("baseLineDataCounts", 117406, "System.UInt16", 0x07, None, 2, "read"),
+    ("baseLineData", 117406, "System.UInt16", 0x07, None, 2, "read"),
+    ("index", 148327, "System.Int32", 0x08, None, 4, "scalar"),
+)
+
+CALC_LINE_RELEVANT_FIELDS = (
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, "negativeScaleDirection", 229659, 171871, 0x68),
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, "negativeScaleQuaternionValue", 229662, 171886, 0x88),
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, "proxyCommonChunk", 229683, 136096, 0x124),
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, "proxyVertexChildDataChunk", 229684, 136096, 0x12C),
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, "baseLineDataChunk", 229691, 136096, 0x164),
+    ("BeyondDynamicBone.ClothParameters", 48002, "rotationalInterpolation", 228432, 163868, 0xA0),
+    ("BeyondDynamicBone.ClothParameters", 48002, "rootRotation", 228433, 163868, 0xA4),
+    ("BeyondDynamicBone.DataChunk", 48536, "startIndex", 230870, 148333, 0x00),
+    ("BeyondDynamicBone.DataChunk", 48536, "dataLength", 230871, 148333, 0x04),
+)
+
+CALC_LINE_TYPE_SIZES = (
+    ("BeyondDynamicBone.TeamManager+TeamData", 48233, 0x1D0),
+    ("BeyondDynamicBone.ClothParameters", 48002, 0x328),
+    ("BeyondDynamicBone.VertexAttribute", 48621, 1),
+    ("BeyondDynamicBone.ExBitFlag8", 48538, 1),
+    ("BeyondDynamicBone.DataChunk", 48536, 8),
+    ("Unity.Mathematics.double3", 57201, 24),
+    ("Unity.Mathematics.float3", 57216, 12),
+    ("Unity.Mathematics.float4", 57221, 16),
+    ("Unity.Mathematics.quaternion", 57247, 16),
+)
+
+CALC_LINE_CALLS = (
+    (0x356, 0x184D886A0),  # float3 component multiply
+    (0x379, 0x182FACF20),  # quaternion rotate float3
+    (0x39E, 0x18415F9A0),  # float3 -> double3
+    (0x3D6, 0x185F00D7C),  # double3 add
+    (0x40E, 0x18352B760),  # VertexAttribute Move-bit test
+    (0x42F, 0x18415F9A0),
+    (0x460, 0x185F00D7C),
+    (0x4A9, 0x185F00F40),  # double3 subtract
+    (0x4E4, 0x185F00D7C),
+    (0x512, 0x18415F9A0),
+    (0x548, 0x1866AEF20),  # MathUtility.FromToRotation
+    (0x597, 0x1830E8750),  # float4 component multiply
+    (0x5BD, 0x1830E8510),  # quaternion Hamilton product
+    (0x5EC, 0x1830E8510),
+    (0x63F, 0x18352B760),
+    (0x67E, 0x1866AEF20),
+    (0x69B, 0x1830E8510),
+)
+
+CALC_LINE_HELPER_SPANS = (
+    ("float3ComponentMultiply", 0x184D886A0, 0x31, "a2d2e46ffbeb6198dff49c5c0a7e4da77d367c0ab09fa9e9cc8dd8092c1e5084"),
+    ("quaternionRotateFloat3", 0x182FACF20, 0x275, "03a1a80c2ead230146ab4c2988e047bad9026de6272f4481370b166e211eae16"),
+    ("float3ToDouble3", 0x18415F9A0, 0x3B, "bc37b4cddfcb15deb3c2d8d3521eb30faf5bbd7c43102c1184a703f4cb4846f4"),
+    ("double3Add", 0x185F00D7C, 0x38, "355bec682557efb3d846bdb78aa4e2f82fd6d1478b92dea4340a1cf025b86ceb"),
+    ("vertexAttributeMoveBitHotPath", 0x18352B760, 0x2E, "2bf36191ae94ce2bae81b475e3902855e98eb859aae26d87d384161aacb79822"),
+    ("VertexAttribute.IsMove", 0x1866FF05C, 0x46, "6786da000a4eeed36be726cdd30026b208a4b44008203673bf85a5d9500d70cd"),
+    ("double3Subtract", 0x185F00F40, 0x38, "0a732489946664f570db7628b2e73c0f3ef7fc6e3363c25368267cff29b48200"),
+    ("MathUtility.FromToRotation", 0x1866AEF20, 0x307, "64bfab4167c7dacee770dc9f680ba205e6a8f277584d0ce917b1b39870883a0f"),
+    ("float4ComponentMultiply", 0x1830E8750, 0x41, "7cf87e0301a78d9cce4f3df394313d4e093798c46d0c6ac2c55024e407f6f232"),
+    ("quaternionHamiltonProduct", 0x1830E8510, 0x238, "e774acaece8257a4bdb8df10ad22b9a0c60995e2b8f4e9a1cfebbb761a70aab6"),
+)
+
 
 def _load(name: str, path: Path) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
@@ -283,6 +374,139 @@ def _field_layout(md: Any, pe: Any, registration: dict[str, Any], job: str) -> d
                        "nativePayloadOffset": f"0x{payload_offset:x}",
                        "boxedFieldOffset": f"0x{boxed_offset:x}"})
     return {"metadataTypeIndex": type_index, "nativePayloadBytes": size, "fields": fields}
+
+
+def _signed_i32(pe: Any, va: int) -> int:
+    return struct.unpack("<i", struct.pack("<I", pe.u32_at_va(va)))[0]
+
+
+def _native_type_size(md: Any, pe: Any, registration: dict[str, Any],
+                      type_index: int, expected_name: str, expected_size: int) -> dict[str, Any]:
+    typedef = md.types[type_index]
+    actual_name = md.type_full_name(typedef)
+    if actual_name != expected_name:
+        raise ContractError(f"native type identity drift for {expected_name}: {actual_name}")
+    sizes_table = int(registration["typeDefinitionsSizes"], 16)
+    sizes_pointer = pe.u64_at_va(sizes_table + type_index * 8)
+    if not sizes_pointer:
+        raise ContractError(f"missing native size for {expected_name}")
+    instance_size = pe.u32_at_va(sizes_pointer)
+    native_size = _signed_i32(pe, sizes_pointer + 4)
+    if (instance_size, native_size) != (expected_size + 0x10, expected_size):
+        raise ContractError(
+            f"native size drift for {expected_name}: instance={instance_size} native={native_size}"
+        )
+    return {"name": expected_name, "metadataTypeDefinitionIndex": type_index,
+            "instanceSizeBytes": instance_size, "nativeSizeBytes": native_size}
+
+
+def _calc_line_parameter_layout(md: Any, pe: Any,
+                                registration: dict[str, Any]) -> list[dict[str, Any]]:
+    method = md.methods[CALC_LINE["methodIndex"]]
+    if (md.string(method.name_index), f"0x{method.token:08x}", method.parameter_count) != (
+            CALC_LINE["method"], "0x06000521", len(CALC_LINE_PARAMETERS)):
+        raise ContractError("CalcLineNormalTangent managed parameter declaration drift")
+    types_table = int(registration["types"], 16)
+    primitive_names = {0x06: "System.Int16", 0x07: "System.UInt16",
+                       0x08: "System.Int32", 0x09: "System.UInt32"}
+    rows: list[dict[str, Any]] = []
+    for ordinal, expected in enumerate(CALC_LINE_PARAMETERS):
+        name, metadata_type_index, element_name, element_code, element_typedef, stride, access = expected
+        parameter = md.parameters[method.parameter_start + ordinal]
+        actual_name = md.string(parameter.name_index)
+        if (actual_name, parameter.type_index) != (name, metadata_type_index):
+            raise ContractError(
+                f"CalcLineNormalTangent parameter {ordinal} drift: "
+                f"{actual_name}/{parameter.type_index} != {name}/{metadata_type_index}"
+            )
+        type_pointer = pe.u64_at_va(types_table + metadata_type_index * 8)
+        type_data, type_bits = struct.unpack("<QI", pe.bytes_at_va(type_pointer, 12))
+        type_code = (type_bits >> 16) & 0xFF
+        if ordinal == len(CALC_LINE_PARAMETERS) - 1:
+            pointee_data, pointee_code = type_data, type_code
+            if type_code != element_code:
+                raise ContractError(f"CalcLineNormalTangent scalar type drift for {name}")
+        else:
+            if type_code != 0x0F:
+                raise ContractError(f"CalcLineNormalTangent {name} is no longer a native pointer")
+            pointee_data, pointee_bits = struct.unpack("<QI", pe.bytes_at_va(type_data, 12))
+            pointee_code = (pointee_bits >> 16) & 0xFF
+            if pointee_code != element_code:
+                raise ContractError(f"CalcLineNormalTangent pointee type-code drift for {name}")
+        if element_typedef is None:
+            actual_element_name = primitive_names.get(pointee_code)
+        else:
+            if pointee_data != element_typedef:
+                raise ContractError(f"CalcLineNormalTangent pointee TypeDef drift for {name}")
+            actual_element_name = md.type_full_name(md.types[element_typedef])
+        if actual_element_name != element_name:
+            raise ContractError(
+                f"CalcLineNormalTangent pointee identity drift for {name}: {actual_element_name}"
+            )
+        if ordinal < 4:
+            abi_location = ("rcx", "rdx", "r8", "r9")[ordinal]
+            worker_rbp_offset = None
+        else:
+            stack_offset = 0x28 + (ordinal - 4) * 8
+            abi_location = f"entry rsp+0x{stack_offset:x}"
+            worker_rbp_offset = f"0x{0x6F8 + stack_offset:x}"
+        rows.append({
+            "ordinal": ordinal,
+            "name": name,
+            "metadataParameterIndex": parameter.index,
+            "metadataTypeIndex": metadata_type_index,
+            "win64Location": abi_location,
+            "workerRbpOffset": worker_rbp_offset,
+            "elementType": element_name,
+            "elementTypeCode": f"0x{element_code:x}",
+            "elementTypeDefinitionIndex": element_typedef,
+            "elementStrideBytes": stride,
+            "access": access,
+        })
+    return rows
+
+
+def _calc_line_relevant_layouts(md: Any, pe: Any,
+                                registration: dict[str, Any]) -> dict[str, Any]:
+    sizes = [
+        _native_type_size(md, pe, registration, type_index, name, size)
+        for name, type_index, size in CALC_LINE_TYPE_SIZES
+    ]
+    fields: list[dict[str, Any]] = []
+    field_table = int(registration["fieldOffsets"], 16)
+    for type_name, type_index, field_name, field_index, field_type_index, native_offset in CALC_LINE_RELEVANT_FIELDS:
+        typedef = md.types[type_index]
+        field = md.fields[field_index]
+        ordinal = field_index - typedef.field_start
+        offset_pointer = pe.u64_at_va(field_table + type_index * 8)
+        boxed_offset = pe.u32_at_va(offset_pointer + ordinal * 4)
+        actual = (md.type_full_name(typedef), md.string(field.name_index), field.type_index,
+                  boxed_offset)
+        expected = (type_name, field_name, field_type_index, native_offset + 0x10)
+        if actual != expected:
+            raise ContractError(f"CalcLineNormalTangent field layout drift for {type_name}.{field_name}")
+        fields.append({
+            "declaringType": type_name,
+            "declaringTypeDefinitionIndex": type_index,
+            "field": field_name,
+            "fieldIndex": field_index,
+            "metadataTypeIndex": field_type_index,
+            "nativePayloadOffset": f"0x{native_offset:x}",
+            "boxedFieldOffset": f"0x{boxed_offset:x}",
+        })
+    return {"nativeTypes": sizes, "fieldsReadByMethod384856": fields}
+
+
+def _verified_helper_spans(pe: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for name, start, size, expected_hash in CALC_LINE_HELPER_SPANS:
+        data = pe.bytes_at_va(start, size)
+        actual_hash = hashlib.sha256(data).hexdigest()
+        if len(data) != size or data[-1:] != b"\xc3" or actual_hash != expected_hash:
+            raise ContractError(f"CalcLineNormalTangent helper drift for {name}: {actual_hash}")
+        rows.append({"name": name, "startVa": f"0x{start:x}",
+                     "throughRetBytes": size, "throughRetSha256": actual_hash})
+    return rows
 
 
 def _generic(index: dict[int, list[dict[str, Any]]], *, pointer: int, method_index: int,
@@ -453,6 +677,56 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     if create_hot_hash != "05248d617681f7cbce052c79fffc748936523f7230da3812c6c8bab0f3230213":
         raise ContractError(f"CreatePostProxyMeshUpdateList hot-path drift: {create_hot_hash}")
 
+    calc_line_body = pe.bytes_at_va(CALC_LINE["startVa"], CALC_LINE["spanBytes"])
+    calc_line_through_ret = calc_line_body[:CALC_LINE["throughRetBytes"]]
+    if (len(calc_line_body), hashlib.sha256(calc_line_body).hexdigest(),
+            calc_line_through_ret[-1:], hashlib.sha256(calc_line_through_ret).hexdigest()) != (
+            CALC_LINE["spanBytes"], CALC_LINE["bodySha256"], b"\xc3",
+            CALC_LINE["throughRetSha256"]):
+        raise ContractError("CalcLineNormalTangent managed worker body/return drift")
+    for call_offset, target_va in CALC_LINE_CALLS:
+        _validate_call(pe, CALC_LINE["startVa"] + call_offset, target_va)
+    helper_spans = _verified_helper_spans(pe)
+    parameter_layout = _calc_line_parameter_layout(md, pe, registration)
+    relevant_layouts = _calc_line_relevant_layouts(md, pe, registration)
+
+    from_to = _method_record(md, bone, unique, method_start, 386226,
+                             "FromToRotation", 0x1866AEF20)
+    if from_to["token"] != "0x06000a7b":
+        raise ContractError("MathUtility.FromToRotation token drift")
+    from_to_method = md.methods[386226]
+    from_to_parameters = [
+        (md.string(md.parameters[index].name_index), md.parameters[index].type_index)
+        for index in range(from_to_method.parameter_start,
+                           from_to_method.parameter_start + from_to_method.parameter_count)
+    ]
+    if from_to_parameters != [("from", 114557), ("to", 114557), ("t", 137548)]:
+        raise ContractError("MathUtility.FromToRotation parameter declaration drift")
+    is_move = _method_record(md, bone, unique, method_start, 386730,
+                             "IsMove", 0x1866FF05C)
+    if is_move["token"] != "0x06000c73":
+        raise ContractError("VertexAttribute.IsMove token drift")
+    if pe.bytes_at_va(0x1866AEF7B, 7) != bytes.fromhex("33 d2 b9 19 02 00 00"):
+        raise ContractError("MathUtility.FromToRotation IFix patch id drift")
+    for call_va, target_va in ((0x1866AEF82, 0x182F95A30),
+                               (0x1866AF1BB, 0x185396738),
+                               (0x1866AF1E6, 0x1866C4FE4)):
+        _validate_call(pe, call_va, target_va)
+    constants = (
+        ("one", 0x18B959238, struct.pack("<d", 1.0)),
+        ("minusOne", 0x18B9594F8, struct.pack("<d", -1.0)),
+        ("parallelEpsilon", 0x18DC807B8, bytes.fromhex("00 00 00 a0 f7 c6 b0 3e")),
+        ("pi", 0x18DC80A70, bytes.fromhex("00 00 00 60 fb 21 09 40")),
+        ("antiparallelYAxisXY", 0x18DA45B60, struct.pack("<dd", 0.0, 1.0)),
+        ("antiparallelXAxisXY", 0x18DC80FC0, struct.pack("<dd", 1.0, 0.0)),
+    )
+    constant_rows = []
+    for name, va, expected in constants:
+        actual = pe.bytes_at_va(va, len(expected))
+        if actual != expected:
+            raise ContractError(f"MathUtility.FromToRotation constant drift for {name}")
+        constant_rows.append({"name": name, "va": f"0x{va:x}", "bytes": actual.hex()})
+
     dependencies = {
         "callback": _dependency(DATA_ROOT / "secondary_dynamics_callback_contract.json",
                                 "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65",
@@ -464,15 +738,21 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
     sources["dependencies"] = dependencies
     return {
         "schema": "endfield.charinfo.secondary-dynamics-post-proxy.v1",
-        "status": "post_proxy_schedule_and_create_list_control_closed_calc_line_vectors_open",
+        "status": "post_proxy_managed_calc_line_equations_closed_runtime_routes_open",
         "manager_schedule_closed": True,
         "managed_job_payload_layout_closed": True,
         "generic_methodspec_identities_closed": True,
         "world_local_publication_equations_closed": True,
         "create_list_worker_control_flow_recovered": True,
         "calc_line_entry_control_flow_recovered": True,
+        "calc_line_child_traversal_recovered": True,
+        "calc_line_managed_worker_equations_recovered": True,
+        "calc_line_managed_worker_degeneracy_branches_recovered": True,
+        "calc_line_data_layout_closed": True,
         "create_list_kernel_numerics_recovered": False,
         "calc_line_normal_tangent_numerics_recovered": False,
+        "selected_calc_line_execution_route_closed": False,
+        "from_to_rotation_ifix_patch_state_closed": False,
         "selected_cross_frame_route_closed": False,
         "solver_implemented": False,
         "retail_equivalent": False,
@@ -534,29 +814,114 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
         },
         "calcLineEntryControlFlow": {
             "managedWorkerMethodIndex": 384856,
+            "startVa": "0x186744fb0",
+            "spanBytes": 1844,
             "bodySha256": "9868eee8cddc41aae648fead87025f7a53b4d158dca963865dfd2126a0f9a829",
+            "throughRetBytes": 0x72B,
+            "throughRetSha256": "3fd25c103794771a322506815060f2203fc2ef5d4830252122bd4b654c76df31",
+            "parameterLayout": parameter_layout,
+            "relevantNativeLayouts": relevant_layouts,
             "entryGates": [
                 {"offset": "0x98", "operation": "baseLineIndex = jobBaseLineList[index]"},
-                {"offset": "0xa3", "condition": "attributes[baseLineIndex] bit 0 is set"},
+                {"offset": "0xa3", "condition": "baseLineFlags[baseLineIndex].Value & 0x01 != 0 (bit semantic is not named by this method)"},
                 {"offset": "0xb4", "operation": "teamId = baseLineTeamIds[baseLineIndex]"},
                 {"offset": "0xb9", "condition": "teamId != 0"},
                 {"offset": "0x152", "call": "TeamData.get_IsEnable", "required": True},
                 {"offset": "0x168", "call": "TeamData.get_IsCullingInvisible", "required": False},
-                {"offset": "0x206", "operation": "childCount = baseLineDataCounts[baseLineIndex]"},
-                {"offset": "0x20b", "condition": "childCount != 0"},
+                {"offset": "0x1f5", "operation": "baseLineDataStart = baseLineStartIndices[baseLineIndex] + team.baseLineDataChunk.startIndex"},
+                {"offset": "0x206", "operation": "baseLineEntryCount = baseLineDataCounts[baseLineIndex]"},
+                {"offset": "0x20b", "condition": "baseLineEntryCount != 0"},
             ],
-            "numericBoundary": "The child traversal and normal/tangent math after offset 0x245 remain code-only disassembly targets; no capture-derived vector or curve is substituted.",
+            "childIndexEncoding": {
+                "readOffset": "0x27f",
+                "packedType": "System.UInt32",
+                "childCount": "packed >> 20 (upper 12 bits)",
+                "localStart": "packed & 0x000fffff (lower 20 bits)",
+                "absoluteStart": "localStart + team.proxyVertexChildDataChunk.startIndex",
+                "childVertex": "childDataArray[absoluteStart + childOrdinal] + team.proxyCommonChunk.startIndex",
+            },
+            "outerTraversal": {
+                "loopOffsets": ["0x245", "0x6cf"],
+                "parentVertex": "baseLineData[baseLineDataStart + baseLineOrdinal] + team.proxyCommonChunk.startIndex",
+                "parentPosition": "positions[parentVertex] (double3)",
+                "parentRotation": "rotations[parentVertex] (quaternion, loaded once before its child loop)",
+                "parentAttribute": "attributes[parentVertex].Value",
+                "zeroChildBranch": "packed childCount == 0 skips this parent without a rotation write",
+            },
+            "childTraversal": {
+                "loopOffsets": ["0x2f0", "0x61d"],
+                "restVector": "double3(math.mul(parentRotation, vertexLocalPositions[childVertex] * team.negativeScaleDirection))",
+                "restSum": "restSum + restVector for every child; restSum starts at double3.zero for each parentVertex",
+                "directionAccumulatorInitial": "double3.zero for each parentVertex",
+                "directionAccumulatorMoveBranch": "if attributes[childVertex].Value & VertexAttribute.Flag_Move (0x02) != 0: directionAccumulator += positions[childVertex] - parentPosition",
+                "moveBitSemanticEvidence": is_move,
+                "directionAccumulatorNonMoveBranch": "otherwise: directionAccumulator = restVector",
+                "childFromTo": "MathUtility.FromToRotation(restVector, directionAccumulator, 1.0)",
+                "signedLocalRotation": "quaternion(vertexLocalRotations[childVertex].value * team.negativeScaleQuaternionValue)",
+                "childRotationWrite": "rotations[childVertex] = math.mul(math.mul(parentRotation, signedLocalRotation), childFromTo)",
+                "writeOffsets": ["0x5f1", "0x5fe"],
+            },
+            "parentRotationWrite": {
+                "condition": "at least one child was traversed for parentVertex",
+                "interpolation": "attributes[parentVertex].Value & VertexAttribute.Flag_Move (0x02) != 0 ? parameter.rotationalInterpolation : parameter.rootRotation",
+                "parentFromTo": "MathUtility.FromToRotation(restSum, directionAccumulator, interpolation)",
+                "write": "rotations[parentVertex] = math.mul(parentFromTo, parentRotation)",
+                "writeOffsets": ["0x62c", "0x6b8"],
+            },
+            "helperSpans": helper_spans,
+            "fromToRotation": {
+                "methodIdentity": from_to,
+                "managedUnpatchedEquation": [
+                    "u = math.normalize(from); v = math.normalize(to)",
+                    "dot = math.clamp(math.dot(u, v), -1.0, 1.0); angle = acos(dot); axis = math.cross(u, v)",
+                    "if abs(dot + 1.0) < epsilon: angle = pi; reference = (0,1,0) when u.x > u.y and u.x > u.z, otherwise (1,0,0); axis = math.cross(u, reference)",
+                    "else if abs(1.0 - dot) < epsilon: return quaternion.identity",
+                    "axis = math.normalize(axis); return quaternion.AxisAngle(float3(axis), float(angle * t))",
+                ],
+                "constants": {"epsilon": 9.999999974752427e-07,
+                              "pi": 3.1415927410125732,
+                              "sourceBytes": constant_rows},
+                "degeneracyBranches": {
+                    "antiparallel": "abs(dot + 1.0) < epsilon selects a deterministic perpendicular axis and pi before t scaling",
+                    "parallel": "abs(1.0 - dot) < epsilon returns quaternion.identity without normalizing the zero cross product",
+                    "zeroOrNonFiniteInput": "no explicit guard exists before the two unconditional input normalizations; output is not claimed for zero/non-finite input",
+                },
+                "ifixRoute": {
+                    "patchId": "0x219",
+                    "patchSlot": 0,
+                    "isPatchedMethodIndex": 387384,
+                    "getPatchMethodIndex": 387383,
+                    "dynamicWrapperMethodIndex": 386959,
+                    "dynamicWrapper": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_178",
+                    "selectedAtRuntime": "unresolved",
+                },
+            },
+            "writes": ["rotations[childVertex]", "rotations[parentVertex]"],
+            "normalTangentNamingBoundary": "Despite the method name, method 384856 has no normal/tangent output array. Code proves the rest/direction vectors and quaternion writes above; it does not name either vector as a separately stored normal or tangent.",
+            "readOnlyInputs": [
+                "jobBaseLineList", "teamDataArray", "parameterArray", "attributes",
+                "positions", "vertexLocalPositions", "vertexLocalRotations",
+                "childIndexArray", "childDataArray", "baseLineFlags",
+                "baseLineTeamIds", "baseLineStartIndices", "baseLineDataCounts",
+                "baseLineData", "index",
+            ],
+            "unusedParameters": ["parentIndices"],
+            "numericBoundary": "The pinned unpatched managed-worker traversal and equations are closed. Overall runtime numerics remain fail-closed until the selected Burst/cross-frame/managed route and FromToRotation IFix patch state are proven.",
         },
         "routeEvidence": {"coldSpans": cold,
                           "classification": "Both parallel/cross-frame scheduling helpers and managed-worker fallback paths are present; static code alone does not select the runtime branch."},
-        "openWorkerTargets": workers,
+        "workerTargets": workers,
         "nextDisassemblyTargets": [
-            {"methodIndex": 384856, "method": "CalcLineNormalTangentKernel$BurstManaged",
-             "reason": "continue after the closed entry gates to recover child traversal, line normal/tangent equations, and degeneracy branches from code"},
+            {"methodIndex": 384854, "method": "CalcLineNormalTangentKernel",
+             "reason": "resolve the selected Burst/direct-call target and prove whether its numeric body is equivalent to the now-closed managed worker"},
+            {"methodIndex": 386226, "method": "MathUtility.FromToRotation",
+             "reason": "the unpatched body is closed; runtime IFix patch id 0x219 selection remains an external-state evidence boundary"},
         ],
         "nonClaims": [
             "The older 80-bone capture is not an implementation input and supplies no positions, timing, curves, or fitted constants.",
-            "CreatePostProxyMeshUpdateList queue control flow is closed, but CalcLineNormalTangent vector equations remain unresolved.",
+            "The managed CalcLineNormalTangent traversal/equations do not establish that retail selected the managed worker instead of the Burst/direct-call route.",
+            "The unpatched FromToRotation equation does not establish that IFix patch id 0x219 was absent at runtime.",
+            "parentIndices is present in the job ABI but is not read by method 384856. baseLineFlags is read only for the entry bit-0 gate; no stronger bit semantic is inferred.",
             "The presence of multiple schedule/fallback helpers does not establish which runtime branch is selected.",
             "This static contract is not a Unity execution or retail-equivalence result.",
         ],
