@@ -1488,10 +1488,12 @@ namespace EndfieldGraphShaderLab
             commandBuffer.SetGlobalVector(OverlayTaaJitterStrengthId, Vector4.zero);
             // Retail HGCamera.Update copies HGAdditionalCameraData.materialMipBias
             // into ShaderVariablesGlobal._GlobalMipBias and publishes
-            // _GlobalMipBiasPow2 = pow(2, bias). The original ExternalCamera
-            // used by the selected recovery scene serializes bias 0, matching
-            // every currently recovered camera component, so 0/1 is the exact
-            // authored pair rather than an unresolved compatibility fallback.
+            // _GlobalMipBiasPow2 = pow(2, bias). The recovery scene's serialized
+            // ExternalCamera owns the exact authored 0/1 pair used by this
+            // generic global fallback. It does not establish the selected
+            // Endminf M27 physical-camera producer, whose separately guarded b1
+            // publication remains fail-closed until the runtime source receipt
+            // joins camera, dynamic-resolution, publication, and exact draw.
             commandBuffer.SetGlobalFloat(GlobalMipBiasId, 0.0f);
             commandBuffer.SetGlobalFloat(GlobalMipBiasPow2Id, 1.0f);
             // UpdateShaderVariablesGraphFeaturesGlobalParam0 writes z/w = 1;
