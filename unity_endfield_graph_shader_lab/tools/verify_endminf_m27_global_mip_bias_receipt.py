@@ -176,12 +176,19 @@ def verify_receipt(
 
     identity = receipt.get("identity")
     _require(isinstance(identity, dict), "missing producer identities")
+    producer_ids = []
     for key in (
         "hgCameraId",
         "additionalCameraDataId",
         "dynamicResolutionHandlerId",
     ):
-        _require_int(identity.get(key), f"identity.{key}", positive=True)
+        producer_ids.append(
+            _require_int(identity.get(key), f"identity.{key}", positive=True)
+        )
+    _require(
+        len(set(producer_ids)) == len(producer_ids),
+        "producer identities are not distinct runtime objects",
+    )
     _require(
         identity.get("changedWithinEpoch") is False,
         "producer identity changed within epoch",
@@ -189,22 +196,30 @@ def verify_receipt(
 
     ordering = receipt.get("ordering")
     _require(isinstance(ordering, dict), "missing ordering evidence")
-    source_epoch = _require_int(ordering.get("sourceEpoch"), "sourceEpoch")
-    publish_epoch = _require_int(
-        ordering.get("publicationEpoch"), "publicationEpoch"
+    source_epoch = _require_int(
+        ordering.get("sourceEpoch"), "sourceEpoch", positive=True
     )
-    draw_epoch = _require_int(ordering.get("drawEpoch"), "drawEpoch")
+    publish_epoch = _require_int(
+        ordering.get("publicationEpoch"), "publicationEpoch", positive=True
+    )
+    draw_epoch = _require_int(
+        ordering.get("drawEpoch"), "drawEpoch", positive=True
+    )
     _require(
         source_epoch == publish_epoch == draw_epoch,
         "source, publication, and draw are not in one epoch",
     )
     source_sequence = _require_int(
-        ordering.get("sourceSequence"), "sourceSequence"
+        ordering.get("sourceSequence"), "sourceSequence", positive=True
     )
     publication_sequence = _require_int(
-        ordering.get("publicationSequence"), "publicationSequence"
+        ordering.get("publicationSequence"),
+        "publicationSequence",
+        positive=True,
     )
-    draw_sequence = _require_int(ordering.get("drawSequence"), "drawSequence")
+    draw_sequence = _require_int(
+        ordering.get("drawSequence"), "drawSequence", positive=True
+    )
     _require(
         source_sequence < publication_sequence < draw_sequence,
         "receipt ordering is not source < publication < draw",
