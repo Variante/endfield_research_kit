@@ -107,7 +107,7 @@ the outer return; the false path remains intact and all 20 native tests pass.
   evidence snapshots rather than active defaults. A full 41-frame D3D11
   Endminf capture passes the transition, settled-loop, entrance cleanup,
   rotation-only root-motion, 68-renderer admission, and exact two-row
-  fail-closed gates, and regenerates both maintained reference comparisons.
+  fail-closed gates, and regenerates the maintained reference comparisons.
 - Every canonical non-playable post-model identity has a dependency-safe
   static prefab baseline. These prove identity and admitted dependencies, not
   full runtime assembly or behavior.
@@ -130,6 +130,10 @@ the outer return; the false path remains intact and all 20 native tests pass.
   Unity 2022.3 still does not serialize the retail per-transition
   `m_EnableBlendRootMotion` field; that flag remains retained evidence for the
   transition/callback path rather than permission to apply translation.
+  Direct Viewer clip and recovered-state selection now enter the same manual
+  UI-composition owner as state-graph and restart playback, so the Endminf
+  entrance consistently starts its crystals, particles, Overview parameters,
+  and Wwise cue. Resuming a paused clip remains side-effect-free.
 - `videos/2026-08-26_21-25-50.mkv` is the primary clean visual reference. It
   is 3840x2160 at native 60 Hz, retains the grey Character Info field and faint
   Endminf portrait, and contains no foreground UI. One-based source frame 88
@@ -4341,28 +4345,25 @@ StreamingAssets export when the mirror is absent.
 
 1. Do not run the combined Endminf graphics-plus-dynamics wrapper while the
    bulk Transform per-entry identity join is unavailable; it rejects a real
-   launch even though the bounded receipt hook is installed. Method
-   `384854` and its DirectCall managed fallback are statically closed; the
-   remaining CalcLine route boundary is the runtime-selected nonzero Burst
-   function pointer plus the IFix selection state for `FromToRotation` patch
-   `0x219`. Do not implement the managed/fallback equations as retail-active
-   until those runtime states close.
-   The dedicated `burst_resolver_telemetry.py` v3 observer now supplies that
-   narrow lane without depending on the unavailable Transform identity join.
-   After the exact CalcLine
-   GetFunctionPointer wrapper returns, it reads only the hash-pinned resolver
-   slot at RVA `0x3c57b0`; validation names `x64_sse2` or `avx2` only for the
-   two source-authenticated entry RVAs and keeps missing, null, unreadable,
-   unknown, or conflicting observations incomplete. The same bounded trace
-   observes the exact Burst-enabled return and `IsPatched(0x219)` only on
-   admitted CalcLine caller stacks. Its installed-build preflight is:
+   launch even though the bounded receipt hook is installed. The current
+   installed build changes the CalcLine wrapper identities, resolver slot,
+   and Burst core bodies and removes the former `FromToRotation` IFix call;
+   the earlier method/slot/entry and patch-`0x219` facts remain evidence for
+   their pinned build only and must not be reused. The v4
+   `burst_resolver_telemetry.py` manifest now revalidates the current six
+   wrappers, one Burst-enabled route gate, resolver export set, and the two
+   current CPU entry candidates without claiming numerical equivalence.
+   Missing, null, unreadable, unknown, or conflicting live observations remain
+   incomplete. Its installed-build preflight is:
    `python endfield_reconstruction_lab/tools/burst_resolver_telemetry.py --check-only`.
-   `capture_endminf_burst_resolver.bat` now records unique trace, validation,
-   and immutable CalcLine-route paths, then rebuild-checks the artifact before
-   reporting route closure. The tooling does not itself close either live
-   route; collect one actual trace and require a checked route artifact before
-   selecting even the inert value kernel. Solver/writeback integration remains
-   a separate gate. Keep the older trajectory capture validation-only. If new
+   The downstream immutable CalcLine-route builder still expects the retired
+   v3 IFix event and therefore fails closed on v4 validation; migrate that
+   promotion boundary before using `capture_endminf_burst_resolver.bat`.
+   Afterward, collect one actual trace to observe the Burst-enabled result and
+   runtime CPU selection before selecting even the inert value kernel. The
+   changed Burst core still requires normalized disassembly and golden-vector
+   validation before solver/writeback integration. Keep the older trajectory
+   capture validation-only. If new
    registration identity evidence is needed, a compatible bounded observer may
    supply it; the maintained optional route is to close Endfield and run
    `tools\EndfieldCapture\StartCapture.bat bulk-transform-receipts`. Accept only
