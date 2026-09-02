@@ -26,11 +26,11 @@ exit /b 2
   rem Retain the ten source-identified M01/M38 fly-in rock owners. Exact M27
   rem replaces only the hand-crystal row and does not replace these owners.
   set "ENDFIELD_ENDMINF_LITEFFECT_VISUAL_COMPAT=1"
-  rem Keep the source-background composite as an explicit fail-closed probe.
-  rem Its floor/Far ordering is source-backed, but the SphereOutside resolver
-  rem still lacks a content-valid retail t11 screen-shadow resource.
-  rem Canonical presentation therefore uses the neutral preview clear.
+  rem Keep the physical source-background composite as an explicit fail-closed probe.
+  rem Canonical presentation retains the neutral preview clear as its carrier,
+  rem then adds only the exact source-backed Floor/Far forward overlay.
   set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=0"
+  set "ENDFIELD_ENDMINF_SOURCE_FORWARD_OVERLAY=1"
   set "ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE_MATERIAL_ONLY_DIAGNOSTIC=1"
   set "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY=0"
   set "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC=0"

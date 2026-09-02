@@ -24,6 +24,7 @@ namespace EndfieldGraphShaderLab
         public bool enableRecoveredPostSemantics = true;
         public bool enableRecoveredReadyPresentationSubset = true;
         public bool enableRecoveredEndminfSourceBackground;
+        public bool enableRecoveredEndminfSourceForwardOverlay;
         public bool enableSourceBackedClusteredNprLights = true;
         public bool enableSourceBackedLightBinning = true;
         public bool enableIsolatedPunctualSoftShadows;
@@ -75,6 +76,7 @@ namespace EndfieldGraphShaderLab
             {
                 physicalPresentation.enableReadySubsetDiagnostic = false;
                 physicalPresentation.enableEndminfSourceBackground = false;
+                physicalPresentation.enableEndminfSourceForwardOverlay = false;
                 physicalPresentation.RefreshSelection();
             }
         }
@@ -211,6 +213,8 @@ namespace EndfieldGraphShaderLab
                     enableRecoveredReadyPresentationSubset;
                 physicalPresentation.enableEndminfSourceBackground =
                     enableRecoveredEndminfSourceBackground;
+                physicalPresentation.enableEndminfSourceForwardOverlay =
+                    enableRecoveredEndminfSourceForwardOverlay;
                 physicalPresentation.RefreshSelection();
             }
         }

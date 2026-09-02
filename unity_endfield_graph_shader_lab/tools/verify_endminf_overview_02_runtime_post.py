@@ -412,6 +412,7 @@ def verify() -> dict[str, object]:
         "retail R16G16B16A16_FLOAT Uber source handoff",
         "retail R11G11B10_FLOAT Uber bloom handoff",
         "IsEndminfSourceBackgroundActive()",
+        "IsEndminfSourceForwardOverlayActive()",
         "IsBackgroundPortraitActive()",
         "if (!requiredCaptureContractReady)",
         "foregroundUiOverlayIncluded = false",
@@ -423,9 +424,12 @@ def verify() -> dict[str, object]:
         "value.endminfPostEvaluated && Mathf.Abs(",
         "authenticated Endminf overview_01 source-post clock",
         "public bool endminfSourceBackgroundIncluded;",
+        "public bool endminfSourceForwardOverlayRequested;",
+        "public bool sourceFloorGridOverlayIncluded;",
         "public bool fittedCompatibilityPlateActive;",
         "IsEndminfSourceBackgroundActive()",
         "value.EndminfSourceBackgroundActive",
+        "value.EndminfSourceForwardOverlayActive",
         "value.sourceContent.activeInHierarchy",
         "value.farGridRenderer.enabled",
         "value.shadowPlaneRenderer.enabled",
@@ -433,6 +437,12 @@ def verify() -> dict[str, object]:
         "IsFittedCompatibilityPlateActive()",
         "fitted Endminf compatibility plate remained active",
         '"ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT"',
+        "EndminfSourceForwardOverlayEnvironmentVariable",
+        "sourceFloorGridOverlayIncluded",
+        "value.floorRenderQueue == 2000",
+        "value.farGridRenderQueue == 2950",
+        "!value.sphereOutsidePresentationReady",
+        "!value.deferredExactConsumerReady",
     ), "August 24 capture scope and phase")
     if (
         "EndfieldEndminfVisualCompatibilityClock.TryGetElapsed(\n"
@@ -451,20 +461,13 @@ def verify() -> dict[str, object]:
     if selector_default is None:
         raise RuntimeError(
             "capture no longer defaults source post only when selector is absent")
-    source_background_default = re.search(
-        r"if \(string\.IsNullOrWhiteSpace\(Environment\.GetEnvironmentVariable\(\s*"
-        r"EndfieldRecoveredCharInfoPresentation\s*"
-        r"\.EndminfSourceBackgroundEnvironmentVariable\)\)\)\s*"
-        r"\{\s*Environment\.SetEnvironmentVariable\(\s*"
-        r"EndfieldRecoveredCharInfoPresentation\s*"
-        r"\.EndminfSourceBackgroundEnvironmentVariable,\s*"
-        r'"1"\);\s*\}',
-        capture,
-        re.DOTALL,
-    )
-    if source_background_default is None:
-        raise RuntimeError(
-            "capture no longer defaults source background only when unset")
+    require_tokens(capture, (
+        'sourceBackgroundSelection = "0";',
+        'sourceForwardOverlaySelection = "1";',
+        ".EndminfSourceBackgroundEnvironmentVariable,\n                    \"0\"",
+        ".EndminfSourceForwardOverlayEnvironmentVariable,\n                    \"1\"",
+        "SphereOutsidePresentationEnvironment",
+    ), "canonical neutral-clear plus source Floor/Far overlay policy")
     for selector in (
         "EndminfBackdropVisualCompatibilityEnvironmentVariable",
         "ReadySubsetEnvironmentVariable",
@@ -482,6 +485,8 @@ def verify() -> dict[str, object]:
         'set "ENDFIELD_ENDMINF_VISUAL_COMPATIBILITY_PREROLL_SECONDS=0"',
         'set "ENDFIELD_RECOVERED_ENDMINF_SOURCE_POST=1"',
         'set "ENDFIELD_RECOVERED_CHARINFO_BACKGROUND_PORTRAIT=1"',
+        'set "ENDFIELD_ENDMINF_SOURCE_BACKGROUND=0"',
+        'set "ENDFIELD_ENDMINF_SOURCE_FORWARD_OVERLAY=1"',
     ), "August 24 interactive reproduction profile")
 
     playback = PLAYBACK.read_text(encoding="utf-8")

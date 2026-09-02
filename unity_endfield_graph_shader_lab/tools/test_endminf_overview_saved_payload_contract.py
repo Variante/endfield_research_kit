@@ -43,6 +43,27 @@ SPAWNER = ROOT / (
     "Assets/EndfieldGraphShaderLab/Runtime/Rendering/"
     "EndfieldRecoveredCharEffectSpawner.cs"
 )
+PATH_ID_MASK = (1 << 64) - 1
+
+
+def stage_path_id(path: Path) -> int:
+    return int(path.stem.rsplit("_p", 1)[1], 16)
+
+
+def pptr_path_id(value: object) -> int:
+    if not isinstance(value, dict):
+        return 0
+    for key in ("m_PathID", "pathID", "PathID"):
+        if key in value:
+            return int(value[key]) & PATH_ID_MASK
+    return 0
+
+
+def load_stage_type(type_name: str) -> dict[int, dict]:
+    return {
+        stage_path_id(path): json.loads(path.read_text(encoding="utf-8"))
+        for path in (STAGE / type_name).glob("*.json")
+    }
 
 
 class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
@@ -89,6 +110,129 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
         self.assertIn(
             "consumedTransforms.Count == transforms.Count", self.source
         )
+
+    def test_source_child_graph_and_crystal_owner_order_are_exact(self) -> None:
+        transforms = load_stage_type("Transform")
+        renderers = load_stage_type("ParticleSystemRenderer")
+        self.assertEqual(len(transforms), 101)
+
+        referenced_children: set[int] = set()
+        root_count = 0
+        for parent_path_id, transform in transforms.items():
+            parent = pptr_path_id(transform["m_Father"])
+            if parent == 0:
+                root_count += 1
+            child_path_ids = [
+                pptr_path_id(value) for value in transform["m_Children"]
+            ]
+            self.assertEqual(len(child_path_ids), len(set(child_path_ids)))
+            for child_path_id in child_path_ids:
+                self.assertNotIn(child_path_id, referenced_children)
+                referenced_children.add(child_path_id)
+                self.assertIn(child_path_id, transforms)
+                self.assertEqual(
+                    pptr_path_id(transforms[child_path_id]["m_Father"]),
+                    parent_path_id,
+                )
+        self.assertEqual(root_count, 4)
+        self.assertEqual(len(referenced_children), 97)
+
+        game_object_to_transform = {
+            pptr_path_id(row["m_GameObject"]): path_id
+            for path_id, row in transforms.items()
+        }
+        target_materials = {
+            "M13": 0x57A25F1386F7012F,
+            "M14": 0xF6DCA5E6B2122169,
+            "M21": 0x8EE22B791F9A2753,
+            "M29": 0x7BCC4552203800A8,
+            "M30": 0x5FE318FDDD817ADA,
+        }
+        owners: dict[str, int] = {}
+        for owner, material_path_id in target_materials.items():
+            matches = []
+            for renderer in renderers.values():
+                materials = [
+                    pptr_path_id(value)
+                    for value in renderer["m_Materials"]
+                ]
+                if material_path_id in materials:
+                    matches.append(game_object_to_transform[
+                        pptr_path_id(renderer["m_GameObject"])
+                    ])
+            self.assertEqual(len(matches), 1, owner)
+            owners[owner] = matches[0]
+
+        overview02_parent = pptr_path_id(
+            transforms[owners["M13"]]["m_Father"]
+        )
+        self.assertEqual(
+            overview02_parent,
+            pptr_path_id(transforms[owners["M14"]]["m_Father"]),
+        )
+        self.assertEqual(
+            overview02_parent,
+            pptr_path_id(transforms[owners["M21"]]["m_Father"]),
+        )
+        overview02_children = [
+            pptr_path_id(value)
+            for value in transforms[overview02_parent]["m_Children"]
+        ]
+        self.assertEqual(
+            [overview02_children.index(owners[name])
+             for name in ("M13", "M14", "M21")],
+            [2, 3, 10],
+        )
+
+        overview04_parent = pptr_path_id(
+            transforms[owners["M29"]]["m_Father"]
+        )
+        self.assertEqual(
+            overview04_parent,
+            pptr_path_id(transforms[owners["M30"]]["m_Father"]),
+        )
+        overview04_children = [
+            pptr_path_id(value)
+            for value in transforms[overview04_parent]["m_Children"]
+        ]
+        self.assertEqual(
+            [overview04_children.index(owners[name])
+             for name in ("M29", "M30")],
+            [0, 1],
+        )
+
+    def test_importer_applies_and_revalidates_every_ordered_child(self) -> None:
+        build = self.source.index("public static void BuildAndValidate()")
+        validate_graph = self.source.index(
+            "ValidateExactSourceChildGraph(transforms);", build
+        )
+        validate_owners = self.source.index(
+            "ValidateExactCrystalOwnerSourceOrder(transforms);", validate_graph
+        )
+        construct = self.source.index("var obj = new GameObject", validate_owners)
+        apply_order = self.source.index(
+            "ApplyExactSourceChildOrder(generated, transforms);", construct
+        )
+        marker_order = self.source.index(
+            "GetComponentsInChildren<ParticleSystemRenderer>(true)", apply_order
+        )
+        self.assertLess(validate_graph, validate_owners)
+        self.assertLess(validate_owners, construct)
+        self.assertLess(construct, apply_order)
+        self.assertLess(apply_order, marker_order)
+
+        for token in (
+            "transforms.Count == 101",
+            'pair.Value["m_Children"]',
+            "referencedChildren.Count == transforms.Count - rootCount",
+            "child.transform.SetSiblingIndex(index);",
+            "generated.childCount == sourceChildPathIds.Length",
+            "childRow.generatedTransform.GetSiblingIndex() == index",
+            "generated.GetChild(index) == childRow.generatedTransform",
+            "expected M13 < M14 < M21",
+            "expected M29 < M30",
+        ):
+            self.assertIn(token, self.source)
 
     def test_saved_gate_identity_joins_source_rows_to_direct_components(self) -> None:
         start = self.source.index("private static void VerifySavedSourcePayloads(")

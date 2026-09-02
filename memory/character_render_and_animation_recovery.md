@@ -3997,26 +3997,38 @@ removes the former impossible descriptor/timestamp errors; it remains rejected
 only by six genuine incomplete-session gates. No additional capture is needed
 to diagnose those historical failures.
 
+The Endminf overview importer now preserves the complete serialized source
+hierarchy order rather than relying on Unity creation order. It validates all
+101 source nodes before mutation, applies every `m_Children` sequence, and
+revalidates saved sibling indices plus direct Transform references. In
+`overview_02/all`, M13/M14/M21 occupy source indices 2/3/10; in
+`overview_04/1`, M29/M30 occupy indices 0/1. This closes deterministic
+equal-queue source ordering only: no particle timing, scale, placement, TRS, or
+runtime packet-owner chronology was changed or inferred.
+
 The current 770-frame canonical source-authored Unity run at
-`scratch/character_recovery/endminf_v25_canonical_full_770_20260901` keeps captured
-secondary replay, the unverified source solver, measured opening rectangles,
-and content-invalid deferred presentation disabled. It completes the ACL-backed
-start-to-loop sequence with an upright portrait, all four VFX roots, 68 admitted
-entrance renderers, and no crash or device-removal signal. Its v25 telemetry
-proves valid source-decoded ACL binding and application across 278 transforms,
-with current state, next state, and transition weight matching the directly
-evaluated Animator on all 770 frames. Both alternate secondary-motion paths stay
+`scratch/character_recovery/endminf_v26_source_overlay_sibling_order_full_770_20260901`
+keeps captured secondary replay, the unverified source solver, measured opening
+rectangles, and content-invalid deferred presentation disabled. It completes
+the ACL-backed start-to-loop sequence with an upright portrait, all four VFX
+roots, 68 admitted entrance renderers, and no crash or device-removal signal.
+Its v26 telemetry retains the v25 source-decoded ACL/Animator closure across all
+770 frames and 278 transforms. Both alternate secondary-motion paths remain
 inactive, every maintained packet/deferred diagnostic selector is explicitly
-zero, and no selector escapes canonical policy. All 770 PNGs are byte-identical
-to the preceding ACL-publication baseline. A zero-offset comparison against the
-clean 2026-08-26 reference remains 33.3722/35.5934/15.4469
-ROI/effect/temporal MAE; it establishes the body publication boundary but no
-causal fidelity gain. Settled background-only regions measure 23.83-51.90 RGB
-MAE because the content-valid physical `SphereOutside`/floor/grid carrier is
-still missing. The settled post-cleanup motion is temporally stable, while
-entrance hair, coat, and strap silhouettes remain spatially different. Treat
-this as the stable source-authored body baseline, not retail parity or
-secondary-motion certification.
+zero, and no selector escapes canonical policy.
+
+This run also adds a distinct source-forward background subset over the neutral
+clear. Every frame admits only `CharFloorEffect` at queue 2000 and `GridFar` at
+queue 2950; `SphereOutside`, wall, ShadowPlane, the fitted plate, and the full
+source-background/deferred consumer stay off. The report therefore records the
+Floor/Far overlay as included while the full `SphereOutside`/floor/grid
+presentation remains false. At the unchanged zero-frame alignment, the clean
+2026-08-26 comparison improves from v25's 33.3722/35.5934/15.4469 to
+33.0418/35.2686/15.4466 actor/effect/temporal MAE. This is bounded causal
+progress from exact source order and ordinary background carriers, not retail
+parity: live content-valid `SphereOutside` t11 ownership is still absent, and
+entrance hair, coat, and strap silhouettes still lack certified secondary
+motion.
 
 The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Exact per-owner child topology is now
@@ -4072,8 +4084,8 @@ without one validated Burst gate observation plus exactly one matched CPU
 selection, or one validated Burst-disabled direct-call fallback with
 `IFix(0x219)=false`. It is not referenced by the solver, frame coordinator,
 prefabs, or Transform writeback. The live route remains the gate before global
-PostProxy scheduling or trajectory validation can begin. Overall
-Static runtime selection is narrower but remains fail-closed. The pinned Burst
+PostProxy scheduling or trajectory validation can begin. Overall static runtime
+selection is narrower but remains fail-closed. The pinned Burst
 initializers construct global `Options(true)` and publish `_IsEnabled=true`
 unless the exact disable command-line token or a non-empty/non-`0` disable
 environment value sets `ForceDisableBurstCompilation`; the player-build
@@ -4283,7 +4295,10 @@ project lock indicates shared use; it never removes or bypasses the lock.
    not reproduce retail's broad multi-exposure history. Recover the live
    pre-Uber owner and consumer chronology instead. Keep the rejected public NGX
    proxy and M31 replay diagnostic-only until that chronology is complete.
-2. Close the palm/crystal owner order from same-session evidence. Retain the
+2. Close the palm/crystal runtime owner chronology from same-session evidence.
+   Static serialized sibling order is already exact for the complete 101-node
+   hierarchy, including M13/M14/M21 at 2/3/10 and M29/M30 at 0/1; it does not
+   prove game-runtime packet admission or temporal-owner order. Retain the
    source-authored M13 and M21 timelines; their exact packet checkpoints remain
    bounded diagnostics and their controlled A/Bs reject compensatory resizing,
    retiming, or removal. M20's live gas checkpoint is already source-closed by
@@ -4295,8 +4310,8 @@ project lock indicates shared use; it never removes or bypasses the lock.
    transport diagnostic while the generating runtime is incomplete. Visually
    certify M29, M30, and M14 one at a time before changing defaults or
    suppressing their compatibility renderers. Preserve the captured hierarchy
-   transforms and equal-queue ordering unless a same-session packet-to-palm
-   registration proves a specific delta. Canonical Viewer report v25 now
+   transforms and serialized source sibling order unless a same-session
+   packet-to-palm registration proves a specific delta. Canonical Viewer report v26 now
    enumerates any presentation-diagnostic selector that escaped the maintained
    forced-off policy and fails video export unless the entire packet/deferred/
    Uber diagnostic set is explicitly zero. For M27, keep the independently

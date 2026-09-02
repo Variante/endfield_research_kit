@@ -143,6 +143,8 @@ namespace EndfieldGraphShaderLabEditor
             "ENDFIELD_RECOVERED_ENDMINF_M27_HGBUFFER",
             "ENDFIELD_RECOVERED_ENDMINF_LITEFFECT_HGBUFFER",
             "ENDFIELD_RECOVERED_DEFERRED_EXACT_CONSUMER",
+            EndfieldRecoveredCharInfoPresentation
+                .EndminfSourceBackgroundEnvironmentVariable,
             // These selectors cover the known content-invalid paths that
             // produced body-shaped resolves over the portrait.
             "ENDFIELD_RECOVERED_SCREEN_SHADOW_R_ATTACHMENT_DIAGNOSTIC",
@@ -192,7 +194,7 @@ namespace EndfieldGraphShaderLabEditor
         [Serializable]
         private sealed class Report
         {
-            public string schema = "endfield.endminf-viewer-playmode-sequence.v25";
+            public string schema = "endfield.endminf-viewer-playmode-sequence.v26";
             public string status = "ok";
             public int width = captureWidth;
             public int height = captureHeight;
@@ -204,10 +206,12 @@ namespace EndfieldGraphShaderLabEditor
                 !IncludeCharInfoBackground && !IncludeBackgroundPortrait;
             public bool charInfoBackgroundRequested = IncludeCharInfoBackground;
             public bool endminfSourceBackgroundRequested;
+            public bool endminfSourceForwardOverlayRequested;
             public bool canonicalSolidColorBackgroundRequested;
             public bool backgroundPortraitRequested = IncludeBackgroundPortrait;
             public bool charInfoBackgroundIncluded;
             public bool endminfSourceBackgroundIncluded;
+            public bool sourceFloorGridOverlayIncluded;
             public bool canonicalSourceSphereFloorGridBackgroundIncluded;
             public bool canonicalSolidColorBackgroundIncluded;
             public bool fittedCompatibilityPlateActive;
@@ -418,6 +422,11 @@ namespace EndfieldGraphShaderLabEditor
             public bool shadowPlaneInCameraFrustum;
             public Vector3 shadowPlaneBoundsCenter;
             public Vector3 shadowPlaneBoundsExtents;
+            public bool sphereOutsideEnabled;
+            public bool floorEnabled;
+            public bool floorActive;
+            public int floorRenderQueue;
+            public bool wallEnabled;
             public bool farGridEnabled;
             public bool farGridActive;
             public bool farGridInCameraFrustum;
@@ -634,14 +643,26 @@ namespace EndfieldGraphShaderLabEditor
                 Environment.GetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
                         .EndminfSourceBackgroundEnvironmentVariable);
-            if (videoExportRequested &&
-                string.IsNullOrWhiteSpace(sourceBackgroundSelection))
+            if (videoExportRequested)
             {
                 sourceBackgroundSelection = "0";
                 Environment.SetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
                         .EndminfSourceBackgroundEnvironmentVariable,
                     sourceBackgroundSelection);
+            }
+            string sourceForwardOverlaySelection =
+                Environment.GetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceForwardOverlayEnvironmentVariable);
+            if (videoExportRequested ||
+                string.IsNullOrWhiteSpace(sourceForwardOverlaySelection))
+            {
+                sourceForwardOverlaySelection = "1";
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceForwardOverlayEnvironmentVariable,
+                    sourceForwardOverlaySelection);
             }
             bool sourceBackgroundExplicitlyDisabled = string.Equals(
                 sourceBackgroundSelection,
@@ -700,20 +721,26 @@ namespace EndfieldGraphShaderLabEditor
                         .EndminfSourceBackgroundEnvironmentVariable,
                     "0");
                 Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceForwardOverlayEnvironmentVariable,
+                    "1");
+                Environment.SetEnvironmentVariable(
                     EndfieldRecoveredCharInfoSky
                         .MaterialOnlyDiagnosticEnvironmentVariable,
                     "1");
             }
             else if (string.IsNullOrWhiteSpace(sourceBackgroundSelection))
             {
+                sourceBackgroundSelection = "1";
                 Environment.SetEnvironmentVariable(
                     EndfieldRecoveredCharInfoPresentation
                         .EndminfSourceBackgroundEnvironmentVariable,
                     "1");
             }
-            // Canonical capture admits the bounded source-owned background.
-            // Hold the unrelated physical sky off: SphereOutside owns the
-            // opaque room and its failed presentation must remain visibly
+            // Hold the unrelated physical sky off in both modes. Canonical
+            // video owns only the neutral clear plus the source Floor/Far
+            // forward overlay; a diagnostic source-background request owns
+            // the isolated SphereOutside route and must remain visibly
             // fail-closed instead of being replaced by another background.
             Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoSky
@@ -748,6 +775,10 @@ namespace EndfieldGraphShaderLabEditor
                     EndfieldRecoveredCharInfoPresentation
                         .EndminfSourceBackgroundEnvironmentVariable,
                     "0");
+                Environment.SetEnvironmentVariable(
+                    EndfieldRecoveredCharInfoPresentation
+                        .EndminfSourceForwardOverlayEnvironmentVariable,
+                    "1");
                 EndfieldRecoveredCharInfoPresentation
                     .RefreshStandaloneSelection();
             }
@@ -1449,6 +1480,15 @@ namespace EndfieldGraphShaderLabEditor
                 : 0.0f;
             EndfieldRecoveredCharInfoPresentation charInfoPresentation =
                 UnityEngine.Object.FindObjectOfType<EndfieldRecoveredCharInfoPresentation>(true);
+            Renderer sphereOutside = charInfoPresentation == null
+                ? null
+                : charInfoPresentation.sphereOutsideRenderer;
+            Renderer floor = charInfoPresentation == null
+                ? null
+                : charInfoPresentation.floorRenderer;
+            Renderer wall = charInfoPresentation == null
+                ? null
+                : charInfoPresentation.wallRenderer;
             Renderer shadowPlane = charInfoPresentation == null
                 ? null
                 : charInfoPresentation.shadowPlaneRenderer;
@@ -1781,6 +1821,13 @@ namespace EndfieldGraphShaderLabEditor
                 shadowPlaneInCameraFrustum = shadowPlaneInFrustum,
                 shadowPlaneBoundsCenter = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.center,
                 shadowPlaneBoundsExtents = shadowPlane == null ? Vector3.zero : shadowPlane.bounds.extents,
+                sphereOutsideEnabled = sphereOutside != null && sphereOutside.enabled,
+                floorEnabled = floor != null && floor.enabled,
+                floorActive = floor != null && floor.gameObject.activeInHierarchy,
+                floorRenderQueue = floor == null || floor.sharedMaterial == null
+                    ? -1
+                    : floor.sharedMaterial.renderQueue,
+                wallEnabled = wall != null && wall.enabled,
                 farGridEnabled = farGrid != null && farGrid.enabled,
                 farGridActive = farGrid != null && farGrid.gameObject.activeInHierarchy,
                 farGridInCameraFrustum = farGridInFrustum,
@@ -2126,6 +2173,33 @@ namespace EndfieldGraphShaderLabEditor
             }
             bool endminfSourceBackgroundIncluded =
                 !IncludeCharInfoBackground || IsEndminfSourceBackgroundActive();
+            bool sourceFloorGridOverlayIncluded =
+                !IncludeCharInfoBackground ||
+                (IsEndminfSourceForwardOverlayActive() &&
+                 Frames.Count > 0 &&
+                 Frames.All(value =>
+                    !value.sphereOutsideEnabled &&
+                    value.floorEnabled &&
+                    value.floorActive &&
+                    value.floorRenderQueue == 2000 &&
+                    !value.wallEnabled &&
+                    !value.shadowPlaneEnabled &&
+                    value.farGridEnabled &&
+                    value.farGridActive &&
+                    value.farGridRenderQueue == 2950 &&
+                    !value.sphereOutsidePresentationReady &&
+                    !value.deferredExactConsumerReady) &&
+                 string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        EndfieldRecoveredCharInfoPresentation
+                            .EndminfSourceBackgroundEnvironmentVariable),
+                    "0",
+                    StringComparison.Ordinal) &&
+                 string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        SphereOutsidePresentationEnvironment),
+                    "0",
+                    StringComparison.Ordinal));
             bool fittedCompatibilityPlateActive =
                 IsFittedCompatibilityPlateActive();
             FrameRow[] canonicalBackgroundProofFrames =
@@ -2172,6 +2246,18 @@ namespace EndfieldGraphShaderLabEditor
                 canonicalSolidColorBackgroundIncluded;
             bool backgroundPortraitIncluded =
                 !IncludeBackgroundPortrait || IsBackgroundPortraitActive();
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        "ENDFIELD_ENDMINF_CAPTURE_VIDEO_EXPORT"),
+                    "1",
+                    StringComparison.Ordinal) &&
+                !sourceFloorGridOverlayIncluded)
+            {
+                missingObservations.Add(
+                    "source-only Endminf Floor/Far forward overlay over the " +
+                    "neutral clear, with q2000/q2950 renderers enabled and " +
+                    "SphereOutside/wall/ShadowPlane/t11 presentation disabled");
+            }
             if (!charInfoBackgroundIncluded)
                 missingObservations.Add(
                     "canonical Endminf background: expected the source " +
@@ -2509,10 +2595,18 @@ namespace EndfieldGraphShaderLabEditor
                             .EndminfSourceBackgroundEnvironmentVariable),
                     "1",
                     StringComparison.Ordinal),
+                endminfSourceForwardOverlayRequested = string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        EndfieldRecoveredCharInfoPresentation
+                            .EndminfSourceForwardOverlayEnvironmentVariable),
+                    "1",
+                    StringComparison.Ordinal),
                 canonicalSolidColorBackgroundRequested =
                     captureCanonicalSolidColorBackground,
                 endminfSourceBackgroundIncluded =
                     endminfSourceBackgroundIncluded,
+                sourceFloorGridOverlayIncluded =
+                    sourceFloorGridOverlayIncluded,
                 canonicalSourceSphereFloorGridBackgroundIncluded =
                     canonicalSourceSphereFloorGridBackgroundIncluded,
                 canonicalSolidColorBackgroundIncluded =
@@ -2732,6 +2826,37 @@ namespace EndfieldGraphShaderLabEditor
                     !value.wallRenderer.enabled &&
                     value.shadowPlaneRenderer != null &&
                     !value.shadowPlaneRenderer.enabled &&
+                    (value.compatibilityBackdropRenderer == null ||
+                     !value.compatibilityBackdropRenderer.enabled));
+        }
+
+        private static bool IsEndminfSourceForwardOverlayActive()
+        {
+            return UnityEngine.Object
+                .FindObjectsOfType<EndfieldRecoveredCharInfoPresentation>(true)
+                .Any(value =>
+                    value != null &&
+                    value.enabled &&
+                    value.gameObject.activeInHierarchy &&
+                    value.EndminfSourceForwardOverlayActive &&
+                    value.sourceContent != null &&
+                    value.sourceContent.activeInHierarchy &&
+                    value.sphereOutsideRenderer != null &&
+                    !value.sphereOutsideRenderer.enabled &&
+                    value.floorRenderer != null &&
+                    value.floorRenderer.enabled &&
+                    value.floorRenderer.gameObject.activeInHierarchy &&
+                    value.floorRenderer.sharedMaterial != null &&
+                    value.floorRenderer.sharedMaterial.renderQueue == 2000 &&
+                    value.wallRenderer != null &&
+                    !value.wallRenderer.enabled &&
+                    value.shadowPlaneRenderer != null &&
+                    !value.shadowPlaneRenderer.enabled &&
+                    value.farGridRenderer != null &&
+                    value.farGridRenderer.enabled &&
+                    value.farGridRenderer.gameObject.activeInHierarchy &&
+                    value.farGridRenderer.sharedMaterial != null &&
+                    value.farGridRenderer.sharedMaterial.renderQueue == 2950 &&
                     (value.compatibilityBackdropRenderer == null ||
                      !value.compatibilityBackdropRenderer.enabled));
         }

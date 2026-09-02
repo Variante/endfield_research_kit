@@ -48,6 +48,16 @@ namespace EndfieldGraphShaderLabEditor
         private const long EndminfShapeTexture = 6970530313307194154L;
         private const string EndminfShapeTexturePayloadSha256 =
             "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb";
+        private const long EndminfOverview02AllTransform =
+            unchecked((long)0xAC2A41D9A887BDF2UL);
+        private const long EndminfM13Transform = 0x0DB6FA0C8FD5BDF2L;
+        private const long EndminfM14Transform = 0x3A7432A76EC0BDF2L;
+        private const long EndminfM21Transform =
+            unchecked((long)0xF258A4F2E54FBDF2UL);
+        private const long EndminfOverview04OneTransform = 0x6B8268D37099F48AL;
+        private const long EndminfM29Transform =
+            unchecked((long)0xA175EF265A61F48AUL);
+        private const long EndminfM30Transform = 0x28CA3D6801DAF48AL;
         // Exact PS4915 b3/c4 witnesses from graphics-only session
         // 20260826T000901Z, frame 13175. Every non-white witness is the
         // linear-space upload of its authored _TintColor Color property.
@@ -221,6 +231,8 @@ namespace EndfieldGraphShaderLabEditor
             Dictionary<long, Dictionary<string, object>> behaviours = LoadType(stage, "MonoBehaviour");
             L.Require(gos.Count == 101 && transforms.Count == 101 && systems.Count == 70 &&
                 renderers.Count == 70, "Endminf effect stage census drifted");
+            ValidateExactSourceChildGraph(transforms);
+            ValidateExactCrystalOwnerSourceOrder(transforms);
             Dictionary<long, bool> authoredInitialActive =
                 LoadAuthoredInitialActive(repo, gos);
             L.Require(systems.Values.Count(row => L.Int(row, "scalingMode") == 1) == 60 &&
@@ -279,6 +291,7 @@ namespace EndfieldGraphShaderLabEditor
                     pair.Value.transform.localRotation = L.QuaternionValue(t["m_LocalRotation"]);
                     pair.Value.transform.localScale = L.Vector3Value(t["m_LocalScale"]);
                 }
+                ApplyExactSourceChildOrder(generated, transforms);
                 GameObject root = generated.Values.Single(value => value.transform.parent == null);
                 long rootTransformId = generated.Single(pair => pair.Value == root).Key;
                 var hierarchyByTransform = new Dictionary<long, string>();
@@ -1029,6 +1042,90 @@ namespace EndfieldGraphShaderLabEditor
             return result;
         }
 
+        private static void ValidateExactSourceChildGraph(
+            Dictionary<long, Dictionary<string, object>> transforms)
+        {
+            L.Require(transforms != null && transforms.Count == 101,
+                "Endminf source Transform child graph census drifted");
+            var referencedChildren = new HashSet<long>();
+            int rootCount = 0;
+            foreach (KeyValuePair<long, Dictionary<string, object>> pair in transforms)
+            {
+                long parentPathId = L.PPtrId(pair.Value["m_Father"]);
+                if (parentPathId == 0)
+                    rootCount++;
+                long[] childPathIds = L.PPtrIds(pair.Value["m_Children"]);
+                L.Require(childPathIds.Distinct().Count() == childPathIds.Length,
+                    "Endminf source Transform repeats an ordered child: " + pair.Key);
+                foreach (long childPathId in childPathIds)
+                {
+                    L.Require(referencedChildren.Add(childPathId) &&
+                        transforms.TryGetValue(childPathId,
+                            out Dictionary<string, object> child) &&
+                        L.PPtrId(child["m_Father"]) == pair.Key,
+                        "Endminf source Transform child/parent order join drifted: " +
+                        pair.Key + " -> " + childPathId);
+                }
+            }
+            L.Require(rootCount == Roots.Length &&
+                referencedChildren.Count == transforms.Count - rootCount,
+                "Endminf source Transform ordered child coverage drifted");
+        }
+
+        private static void ValidateExactCrystalOwnerSourceOrder(
+            Dictionary<long, Dictionary<string, object>> transforms)
+        {
+            L.Require(transforms.TryGetValue(EndminfOverview02AllTransform,
+                    out Dictionary<string, object> overview02All) &&
+                L.PPtrIds(overview02All["m_Children"]).Length == 18,
+                "Endminf overview_02/all source child order is missing");
+            long[] overview02Children = L.PPtrIds(overview02All["m_Children"]);
+            L.Require(overview02Children[2] == EndminfM13Transform &&
+                overview02Children[3] == EndminfM14Transform &&
+                overview02Children[10] == EndminfM21Transform,
+                "Endminf source crystal owner order drifted: expected M13 < M14 < M21");
+
+            L.Require(transforms.TryGetValue(EndminfOverview04OneTransform,
+                    out Dictionary<string, object> overview04One) &&
+                L.PPtrIds(overview04One["m_Children"]).Length == 11,
+                "Endminf overview_04/1 source child order is missing");
+            long[] overview04Children = L.PPtrIds(overview04One["m_Children"]);
+            L.Require(overview04Children[0] == EndminfM29Transform &&
+                overview04Children[1] == EndminfM30Transform,
+                "Endminf source palm owner order drifted: expected M29 < M30");
+        }
+
+        private static void ApplyExactSourceChildOrder(
+            Dictionary<long, GameObject> generated,
+            Dictionary<long, Dictionary<string, object>> transforms)
+        {
+            int validatedNodeCount = 0;
+            foreach (KeyValuePair<long, GameObject> pair in generated)
+            {
+                L.Require(transforms.TryGetValue(pair.Key,
+                        out Dictionary<string, object> sourceTransform),
+                    "Endminf generated Transform has no source row: " + pair.Key);
+                long[] sourceChildPathIds =
+                    L.PPtrIds(sourceTransform["m_Children"]);
+                L.Require(pair.Value.transform.childCount ==
+                        sourceChildPathIds.Length,
+                    "Endminf generated Transform child census drifted: " + pair.Key);
+                for (int index = 0; index < sourceChildPathIds.Length; index++)
+                {
+                    long childPathId = sourceChildPathIds[index];
+                    L.Require(generated.TryGetValue(childPathId,
+                            out GameObject child) &&
+                        child.transform.parent == pair.Value.transform,
+                        "Endminf generated Transform ordered child join drifted: " +
+                        pair.Key + "[" + index + "] -> " + childPathId);
+                    child.transform.SetSiblingIndex(index);
+                }
+                validatedNodeCount++;
+            }
+            L.Require(validatedNodeCount == generated.Count,
+                "Endminf generated Transform ordered child validation was partial");
+        }
+
         private static Dictionary<long, Dictionary<string, object>> LoadType(string stage, string type)
         {
             var result = new Dictionary<long, Dictionary<string, object>>();
@@ -1396,6 +1493,24 @@ namespace EndfieldGraphShaderLabEditor
                         L.Vector3Value(sourceTransform["m_LocalScale"])),
                     "Endminf saved GameObject/Transform payload drifted: " +
                     marker.effectRoot + "/" + row.hierarchy);
+                long[] sourceChildPathIds =
+                    L.PPtrIds(sourceTransform["m_Children"]);
+                L.Require(generated.childCount == sourceChildPathIds.Length,
+                    "Endminf saved Transform child census drifted: " +
+                    marker.effectRoot + "/" + row.hierarchy);
+                for (int index = 0; index < sourceChildPathIds.Length; index++)
+                {
+                    long childPathId = sourceChildPathIds[index];
+                    L.Require(markerByTransform.TryGetValue(childPathId,
+                            out EndfieldRecoveredParticleHierarchyNodeSource childRow) &&
+                        childRow != null && childRow.generatedTransform != null &&
+                        childRow.generatedTransform.parent == generated &&
+                        childRow.generatedTransform.GetSiblingIndex() == index &&
+                        generated.GetChild(index) == childRow.generatedTransform,
+                        "Endminf saved Transform ordered child drifted: " +
+                        marker.effectRoot + "/" + row.hierarchy + "[" + index +
+                        "] -> " + childPathId);
+                }
             }
         }
 
