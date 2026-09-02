@@ -164,6 +164,9 @@ namespace EndfieldGraphShaderLabEditor
                 EndfieldRecoveredCharInfoPresentation.EndminfSourceBackgroundEnvironmentVariable,
                 "0");
             Environment.SetEnvironmentVariable(
+                EndfieldRecoveredCharInfoPresentation.EndminfSourceForwardOverlayEnvironmentVariable,
+                "0");
+            Environment.SetEnvironmentVariable(
                 EndfieldRecoveredCharInfoPresentation.EndminfBackdropVisualCompatibilityEnvironmentVariable,
                 "0");
             Environment.SetEnvironmentVariable(
@@ -207,14 +210,16 @@ namespace EndfieldGraphShaderLabEditor
                 if (referenceBackdrop != null)
                 {
                     // Keep the fitted actor-bounds plate as a disabled
-                    // diagnostic dependency. The source SphereOutside composite
-                    // remains fail-closed until its content-valid retail t11
-                    // producer is recovered.
+                    // diagnostic dependency. The source-closed Floor/Far
+                    // overlay uses the neutral camera clear, while the full
+                    // SphereOutside composite remains fail-closed until its
+                    // content-valid retail t11 producer is recovered.
                     referenceBackdrop.enabled = false;
                     presentation.presentationBackdropRenderer = referenceBackdrop;
                 }
                 presentation.enableRecoveredReadyPresentationSubset = false;
                 presentation.enableRecoveredEndminfSourceBackground = false;
+                presentation.enableRecoveredEndminfSourceForwardOverlay = false;
                 presentation.enableSourceBackedClusteredNprLights = true;
                 presentation.enableSourceBackedLightBinning = true;
                 presentation.enableIsolatedPunctualSoftShadows = true;
@@ -226,6 +231,8 @@ namespace EndfieldGraphShaderLabEditor
                 {
                     presentation.physicalPresentation.enableRecoveredPresentation = false;
                     presentation.physicalPresentation.enableReadySubsetDiagnostic = false;
+                    presentation.physicalPresentation.enableEndminfSourceBackground = false;
+                    presentation.physicalPresentation.enableEndminfSourceForwardOverlay = false;
                     presentation.physicalPresentation.RefreshSelection();
                 }
                 EditorUtility.SetDirty(presentation);
@@ -235,9 +242,10 @@ namespace EndfieldGraphShaderLabEditor
                 if (camera.GetComponent<AudioListener>() == null)
                     camera.gameObject.AddComponent<AudioListener>();
                 camera.clearFlags = CameraClearFlags.SolidColor;
-                // Retain the measured neutral preview clear until the source
-                // SphereOutside -> floor -> Far path passes its exact-consumer
-                // and presented-pixel gate. This is not the fitted plate.
+                // The neutral preview clear remains the only background
+                // carrier claim. Exact Floor/Far forward pixels may overlay it;
+                // SphereOutside remains excluded until its exact-consumer and
+                // presented-pixel gate passes. This is not the fitted plate.
                 camera.backgroundColor = new Color(0.70f, 0.71f, 0.70f, 1.0f);
                 // The reference and all comparison renders are 1920x1080.
                 // Consume the serialized Endminf sensor aspect rather than a
@@ -247,6 +255,13 @@ namespace EndfieldGraphShaderLabEditor
             }
             EditorSceneManager.SaveScene(
                 UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ViewerScene);
+            // Keep the serialized scene default-off. The next Play-mode entry
+            // may select the exact Floor/Far overlay through the process
+            // environment without persisting an active diagnostic hierarchy.
+            Environment.SetEnvironmentVariable(
+                EndfieldRecoveredCharInfoPresentation
+                    .EndminfSourceForwardOverlayEnvironmentVariable,
+                "1");
         }
 
         private static float ResolveEndminfSourceAspect()

@@ -37,6 +37,12 @@ namespace EndfieldGraphShaderLab
             "ENDFIELD_ENDMINF_SOURCE_BACKGROUND";
         public const string EndminfSourceBackgroundCommandLineArgument =
             "-endfield-endminf-source-background";
+        public const string EndminfSourceForwardOverlayKeyword =
+            "ENDFIELD_ENDMINF_SOURCE_FORWARD_OVERLAY";
+        public const string EndminfSourceForwardOverlayEnvironmentVariable =
+            "ENDFIELD_ENDMINF_SOURCE_FORWARD_OVERLAY";
+        public const string EndminfSourceForwardOverlayCommandLineArgument =
+            "-endfield-endminf-source-forward-overlay";
         public const string EndminfBackdropVisualCompatibilityEnvironmentVariable =
             "ENDFIELD_ENDMINF_BACKDROP_VISUAL_COMPATIBILITY";
 
@@ -68,6 +74,13 @@ namespace EndfieldGraphShaderLab
                  "its recovered HGBuffer/Default-Lit sidecar owns the opaque " +
                  "carrier; ShadowPlane and the compatibility plate stay off.")]
         public bool enableEndminfSourceBackground;
+
+        [Tooltip("Requests only the source-closed Endminf CharFloorEffect and " +
+                 "GridDeco/Far forward overlay over the caller-owned camera " +
+                 "clear. SphereOutside, wall, ShadowPlane, and the fitted " +
+                 "compatibility plate remain off. This selector never claims " +
+                 "the physical CharInfo background carrier.")]
+        public bool enableEndminfSourceForwardOverlay;
 
         [Tooltip("Importer-owned wrapper containing the exact layer-13 source hierarchy.")]
         public GameObject sourceContent;
@@ -101,10 +114,12 @@ namespace EndfieldGraphShaderLab
         private static bool? standaloneSelectionRequested;
         private static bool? standaloneReadySubsetRequested;
         private static bool? standaloneEndminfSourceBackgroundRequested;
+        private static bool? standaloneEndminfSourceForwardOverlayRequested;
 
         private bool sourceStateApplied;
         private bool readySubsetStateApplied;
         private bool endminfSourceBackgroundStateApplied;
+        private bool endminfSourceForwardOverlayStateApplied;
         private bool previousBackdropEnabled;
         private Renderer appliedBackdropRenderer;
         private MaterialPropertyBlock endminfBackdropProperties;
@@ -113,6 +128,8 @@ namespace EndfieldGraphShaderLab
         private bool loggedReadySubsetActivation;
         private bool loggedEndminfSourceBackgroundFailure;
         private bool loggedEndminfSourceBackgroundActivation;
+        private bool loggedEndminfSourceForwardOverlayFailure;
+        private bool loggedEndminfSourceForwardOverlayActivation;
 
         private readonly bool[] previousRendererEnabled = new bool[5];
         private MaterialPropertyBlock previousFloorProperties;
@@ -137,7 +154,8 @@ namespace EndfieldGraphShaderLab
         public bool PresentationActive =>
             sourceStateApplied &&
             !readySubsetStateApplied &&
-            !endminfSourceBackgroundStateApplied;
+            !endminfSourceBackgroundStateApplied &&
+            !endminfSourceForwardOverlayStateApplied;
 
         public bool ReadySubsetDiagnosticRequested
         {
@@ -167,6 +185,20 @@ namespace EndfieldGraphShaderLab
         public bool EndminfSourceBackgroundActive =>
             sourceStateApplied && endminfSourceBackgroundStateApplied;
 
+        public bool EndminfSourceForwardOverlayRequested
+        {
+            get
+            {
+                InitializeStandaloneSelection();
+                return enabled && gameObject.activeInHierarchy &&
+                       (standaloneEndminfSourceForwardOverlayRequested ??
+                        enableEndminfSourceForwardOverlay);
+            }
+        }
+
+        public bool EndminfSourceForwardOverlayActive =>
+            sourceStateApplied && endminfSourceForwardOverlayStateApplied;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void PublishStandaloneSelection()
         {
@@ -174,6 +206,7 @@ namespace EndfieldGraphShaderLab
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
             Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
         }
 
         private static void InitializeStandaloneSelection()
@@ -193,6 +226,9 @@ namespace EndfieldGraphShaderLab
             standaloneEndminfSourceBackgroundRequested =
                 EndfieldRecoveredSelector.Explicit(
                     EndminfSourceBackgroundEnvironmentVariable);
+            standaloneEndminfSourceForwardOverlayRequested =
+                EndfieldRecoveredSelector.Explicit(
+                    EndminfSourceForwardOverlayEnvironmentVariable);
 
             string[] arguments = Environment.GetCommandLineArgs();
             for (int i = 0; i < arguments.Length; i++)
@@ -224,6 +260,16 @@ namespace EndfieldGraphShaderLab
                     continue;
                 standaloneEndminfSourceBackgroundRequested = true;
             }
+
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (!string.Equals(
+                        arguments[i],
+                        EndminfSourceForwardOverlayCommandLineArgument,
+                        StringComparison.OrdinalIgnoreCase))
+                    continue;
+                standaloneEndminfSourceForwardOverlayRequested = true;
+            }
         }
 
         /// <summary>
@@ -238,6 +284,7 @@ namespace EndfieldGraphShaderLab
             standaloneSelectionRequested = null;
             standaloneReadySubsetRequested = null;
             standaloneEndminfSourceBackgroundRequested = null;
+            standaloneEndminfSourceForwardOverlayRequested = null;
             InitializeStandaloneSelection();
         }
 
@@ -270,6 +317,7 @@ namespace EndfieldGraphShaderLab
         {
             if (!PresentationRequested &&
                 !EndminfSourceBackgroundRequested &&
+                !EndminfSourceForwardOverlayRequested &&
                 !ReadySubsetDiagnosticRequested)
             {
                 FailClosed();
@@ -278,6 +326,8 @@ namespace EndfieldGraphShaderLab
                 loggedReadySubsetActivation = false;
                 loggedEndminfSourceBackgroundFailure = false;
                 loggedEndminfSourceBackgroundActivation = false;
+                loggedEndminfSourceForwardOverlayFailure = false;
+                loggedEndminfSourceForwardOverlayActivation = false;
                 return;
             }
 
@@ -293,6 +343,12 @@ namespace EndfieldGraphShaderLab
             if (EndminfSourceBackgroundRequested)
             {
                 ApplyEndminfSourceBackground();
+                return;
+            }
+
+            if (EndminfSourceForwardOverlayRequested)
+            {
+                ApplyEndminfSourceForwardOverlay();
                 return;
             }
 
@@ -330,7 +386,7 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            BeginSourceState(false, false);
+            BeginSourceState(false, false, false);
 
             sourceContent.SetActive(true);
             SetRendererEnabledStates(true, true, true, true, true);
@@ -339,6 +395,7 @@ namespace EndfieldGraphShaderLab
             Shader.EnableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
             Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
             loggedReadinessFailure = false;
         }
 
@@ -362,7 +419,7 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            BeginSourceState(false, true);
+            BeginSourceState(false, true, false);
             sourceContent.SetActive(true);
             ApplySettledOpenState(openState, false);
             // SphereOutside must remain disabled in the ordinary cull: the
@@ -377,6 +434,7 @@ namespace EndfieldGraphShaderLab
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
             Shader.EnableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
             loggedEndminfSourceBackgroundFailure = false;
 
             if (!loggedEndminfSourceBackgroundActivation)
@@ -388,6 +446,51 @@ namespace EndfieldGraphShaderLab
                     "wall, ShadowPlane, and the compatibility plate are disabled.",
                     this);
                 loggedEndminfSourceBackgroundActivation = true;
+            }
+        }
+
+        private void ApplyEndminfSourceForwardOverlay()
+        {
+            string failure;
+            ReadySubsetOpenState openState;
+            if (!ValidateEndminfSourceForwardOverlayReadiness(
+                    out openState,
+                    out failure))
+            {
+                FailClosed();
+                if (!loggedEndminfSourceForwardOverlayFailure)
+                {
+                    Debug.LogError(
+                        "Recovered Endminf source forward overlay failed closed. " +
+                        failure,
+                        this);
+                    loggedEndminfSourceForwardOverlayFailure = true;
+                }
+                return;
+            }
+
+            BeginSourceState(false, false, true);
+            sourceContent.SetActive(true);
+            ApplySettledOpenState(openState, false);
+            SetRendererEnabledStates(false, true, false, false, true);
+            if (appliedBackdropRenderer != null)
+                appliedBackdropRenderer.enabled = false;
+            Shader.DisableKeyword(Keyword);
+            Shader.DisableKeyword(ReadySubsetKeyword);
+            Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.EnableKeyword(EndminfSourceForwardOverlayKeyword);
+            loggedEndminfSourceForwardOverlayFailure = false;
+
+            if (!loggedEndminfSourceForwardOverlayActivation)
+            {
+                Debug.LogWarning(
+                    "Recovered Endminf source forward overlay active: exact " +
+                    "CharFloorEffect and GridDeco/Far over the caller-owned " +
+                    "camera clear. SphereOutside, wall, ShadowPlane, and the " +
+                    "compatibility plate are disabled; physical background " +
+                    "parity is not asserted.",
+                    this);
+                loggedEndminfSourceForwardOverlayActivation = true;
             }
         }
 
@@ -411,7 +514,7 @@ namespace EndfieldGraphShaderLab
                 return;
             }
 
-            BeginSourceState(true, false);
+            BeginSourceState(true, false, false);
             sourceContent.SetActive(true);
 
             if (ApplyEndminfBackdropCompatibility(openState))
@@ -430,6 +533,7 @@ namespace EndfieldGraphShaderLab
             Shader.DisableKeyword(Keyword);
             Shader.EnableKeyword(ReadySubsetKeyword);
             Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
             loggedReadySubsetFailure = false;
 
             if (!loggedReadySubsetActivation)
@@ -526,6 +630,7 @@ namespace EndfieldGraphShaderLab
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
             Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
             loggedReadySubsetFailure = false;
             return true;
         }
@@ -616,7 +721,9 @@ namespace EndfieldGraphShaderLab
             out ReadySubsetOpenState openState,
             out string failure)
         {
-            if (!ValidateReadySubsetReadiness(out openState, out failure))
+            if (!ValidateEndminfSourceForwardOverlayReadiness(
+                    out openState,
+                    out failure))
                 return false;
 
             // ValidateReadySubsetReadiness explicitly verifies that both
@@ -629,6 +736,27 @@ namespace EndfieldGraphShaderLab
             // it must not enter maintained presentation.
             failure = string.Empty;
             return true;
+        }
+
+        public bool ValidateEndminfSourceForwardOverlayReadiness(
+            out string failure)
+        {
+            ReadySubsetOpenState ignored;
+            return ValidateEndminfSourceForwardOverlayReadiness(
+                out ignored,
+                out failure);
+        }
+
+        private bool ValidateEndminfSourceForwardOverlayReadiness(
+            out ReadySubsetOpenState openState,
+            out string failure)
+        {
+            // The ready-subset gate validates the exact Floor/Far assets,
+            // renderer identities, and source-authored settled values while
+            // requiring SphereOutside and ShadowPlane to remain excluded.
+            // The caller-owned clear is deliberately outside this renderer
+            // contract and must not be relabeled as the physical carrier.
+            return ValidateReadySubsetReadiness(out openState, out failure);
         }
 
         private bool ValidateReadySubsetReadiness(
@@ -852,6 +980,7 @@ namespace EndfieldGraphShaderLab
             Shader.DisableKeyword(Keyword);
             Shader.DisableKeyword(ReadySubsetKeyword);
             Shader.DisableKeyword(EndminfSourceBackgroundKeyword);
+            Shader.DisableKeyword(EndminfSourceForwardOverlayKeyword);
 
             if (!sourceStateApplied)
                 return;
@@ -859,11 +988,13 @@ namespace EndfieldGraphShaderLab
             sourceStateApplied = false;
             readySubsetStateApplied = false;
             endminfSourceBackgroundStateApplied = false;
+            endminfSourceForwardOverlayStateApplied = false;
         }
 
         private void BeginSourceState(
             bool readySubset,
-            bool endminfSourceBackground)
+            bool endminfSourceBackground,
+            bool endminfSourceForwardOverlay)
         {
             if (!sourceStateApplied)
             {
@@ -890,6 +1021,8 @@ namespace EndfieldGraphShaderLab
             }
             readySubsetStateApplied = readySubset;
             endminfSourceBackgroundStateApplied = endminfSourceBackground;
+            endminfSourceForwardOverlayStateApplied =
+                endminfSourceForwardOverlay;
         }
 
         private void SnapshotRendererState()

@@ -172,14 +172,21 @@ def verify_implementation() -> None:
             "public bool enableRecoveredPresentation;",
             "public bool enableReadySubsetDiagnostic;",
             "public bool enableEndminfSourceBackground;",
+            "public bool enableEndminfSourceForwardOverlay;",
             "public bool exactSourceAssetsReady;",
             "ENDFIELD_RECOVERED_CHARINFO_READY_SUBSET_DIAGNOSTIC",
             "ENDFIELD_ENDMINF_SOURCE_BACKGROUND",
+            "ENDFIELD_ENDMINF_SOURCE_FORWARD_OVERLAY",
             "SetRendererEnabledStates(false, true, true, false, true);",
             "SetRendererEnabledStates(false, true, false, false, true);",
             "ApplySettledOpenState(openState, false);",
             "ApplySettledOpenState(openState, true);",
             "ValidateEndminfSourceBackgroundReadiness",
+            "ValidateEndminfSourceForwardOverlayReadiness",
+            "private void ApplyEndminfSourceForwardOverlay()",
+            "EndminfSourceForwardOverlayActive",
+            "caller-owned",
+            "parity is not asserted",
             "ShadowPlane final-consumer route",
             "physical-camera stencil/color-target ownership is not closed",
             "new Color(0.509434f, 0.509434f, 0.509434f, 0.6f)",
@@ -207,6 +214,7 @@ def verify_implementation() -> None:
             "controller.enableRecoveredPresentation = false;",
             "controller.enableReadySubsetDiagnostic = false;",
             "controller.enableEndminfSourceBackground = false;",
+            "controller.enableEndminfSourceForwardOverlay = false;",
             "controller.settledOpenState = readySubsetOpenState;",
         ],
     )
@@ -222,6 +230,17 @@ def verify_implementation() -> None:
     assert "ApplySettledOpenState(openState, false);" in source_path
     assert "gridTint.a *= 0.125f;" not in source_path
     assert '"_TopColor"' not in source_path
+    overlay_start = runtime_source.index(
+        "private void ApplyEndminfSourceForwardOverlay()"
+    )
+    overlay_end = runtime_source.index(
+        "private void ApplyReadySubsetDiagnostic()", overlay_start
+    )
+    overlay_path = runtime_source[overlay_start:overlay_end]
+    assert "ApplySettledOpenState(openState, false);" in overlay_path
+    assert "SetRendererEnabledStates(false, true, false, false, true);" in overlay_path
+    assert "gridTint.a *= 0.125f;" not in overlay_path
+    assert '"_TopColor"' not in overlay_path
 
     require_tokens(
         recovered / "EndfieldCharInfoVFXDsWriteRecovered.shader",
@@ -288,7 +307,8 @@ def main() -> int:
         "full runtime selector remains default-off/fail-closed at HGRP/Lit; "
         "ready-subset diagnostic is default-off and excludes SphereOutside/ShadowPlane; "
         "independent Endminf source background admits exact floor and Far while "
-        "excluding SphereOutside, ShadowPlane, and the fitted plate."
+        "excluding SphereOutside, ShadowPlane, and the fitted plate; the distinct "
+        "source-forward overlay retains the neutral-clear carrier claim."
     )
     return 0
 
