@@ -4356,13 +4356,15 @@ StreamingAssets export when the mirror is absent.
    Missing, null, unreadable, unknown, or conflicting live observations remain
    incomplete. Its installed-build preflight is:
    `python endfield_reconstruction_lab/tools/burst_resolver_telemetry.py --check-only`.
-   The downstream immutable CalcLine-route builder still expects the retired
-   v3 IFix event and therefore fails closed on v4 validation; migrate that
-   promotion boundary before using `capture_endminf_burst_resolver.bat`.
-   Afterward, collect one actual trace to observe the Burst-enabled result and
-   runtime CPU selection before selecting even the inert value kernel. The
-   changed Burst core still requires normalized disassembly and golden-vector
-   validation before solver/writeback integration. Keep the older trajectory
+   The downstream immutable CalcLine-route builder now accepts only validated
+   v4 traces and can publish the observed Burst CPU family or current managed
+   direct-call fallback as an explicitly inert route artifact. The artifact
+   and Unity selector reject numerical-equivalence claims and cannot execute
+   the older value equations. After the active installed-game export finishes,
+   collect one actual trace with `capture_endminf_burst_resolver.bat` to observe
+   the Burst-enabled result and runtime CPU selection. The changed Burst core
+   still requires normalized disassembly and golden-vector validation before
+   solver/writeback integration. Keep the older trajectory
    capture validation-only. If new
    registration identity evidence is needed, a compatible bounded observer may
    supply it; the maintained optional route is to close Endfield and run
