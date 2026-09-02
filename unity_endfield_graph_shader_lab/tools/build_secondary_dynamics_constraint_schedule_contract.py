@@ -25,6 +25,72 @@ SIMULATION_STEP_VA = 0x182F8F430
 SIMULATION_STEP_BYTES = 5968
 SIMULATION_STEP_SHA256 = "5106aa8354dfe1d73e8a4ecb6a693cf8586938da5d456f7fc748267e08743335"
 
+NUMERIC_CONTRACTS = (
+    (
+        "tetherSemantics",
+        "secondary_dynamics_tether_semantics_contract.json",
+        "2e2a8aea902190c62ff2c6e730258fdede241d006e95f5793c53ab533fd756e7",
+        "endfield.charinfo.secondary-dynamics-tether-semantics.v1",
+        "compression_stretch_projection_and_velocity_position_writeback_closed",
+    ),
+    (
+        "tetherGolden",
+        "secondary_dynamics_tether_golden_vectors.json",
+        "f4ec55d7caa7f0e4460130d8a238c1dea2cbc7d3f4aa088e5dc5e66520273f78",
+        "endfield.charinfo.secondary-dynamics-tether-golden-vectors.v1",
+        "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases",
+    ),
+    (
+        "distanceSemantics",
+        "secondary_dynamics_distance_semantics_contract.json",
+        "fa0dd243a48982a79e3289b1786d30c418ff0a1ab8f9403adb440df5b041fa3c",
+        "endfield.charinfo.secondary-dynamics-distance-semantics.v1",
+        "two_pass_distance_projection_and_velocity_position_writeback_closed",
+    ),
+    (
+        "distanceGolden",
+        "secondary_dynamics_distance_golden_vectors.json",
+        "41cb4574c9f7ea431315afe4ba9c86241ba842fa790a773516baa141b22ca23e",
+        "endfield.charinfo.secondary-dynamics-distance-golden-vectors.v1",
+        "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases",
+    ),
+    (
+        "angleSemantics",
+        "secondary_dynamics_angle_semantics_contract.json",
+        "ead14c3ba8ef715fb80aede93651fc417a7a77ec47c71dd3b299a057fedd4cb4",
+        "endfield.charinfo.secondary-dynamics-angle-semantics.v1",
+        "three_sweep_limit_restoration_and_scratch_writeback_closed",
+    ),
+    (
+        "angleGolden",
+        "secondary_dynamics_angle_golden_vectors.json",
+        "de780914223dfa513862041bd70cfa825fe0687bfb24a2f84d19e688579728cf",
+        "endfield.charinfo.secondary-dynamics-angle-golden-vectors.v1",
+        "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases",
+    ),
+    (
+        "floatSinCosGolden",
+        "secondary_dynamics_float_sincos_golden_vectors.json",
+        "10374aaf8188a1d250bafb4979b45b07a96c25fe3db593f735ee83414e9eb9e3",
+        "endfield.charinfo.secondary-dynamics-float-sincos-golden-vectors.v1",
+        "native_helper_and_source_only_transcription_exact_for_controlled_and_boundary_cases",
+    ),
+    (
+        "pointCollisionSemantics",
+        "secondary_dynamics_point_collision_semantics_contract.json",
+        "4716855d45a4acd85570072fa469e69e972b58758adb3488b0003b5a06c680ec",
+        "endfield.charinfo.secondary-dynamics-point-collision-semantics.v1",
+        "endminf_point_capsule_projection_closed_and_edge_excluded",
+    ),
+    (
+        "pointCollisionGolden",
+        "secondary_dynamics_point_collision_golden_vectors.json",
+        "1459f81d2cf7e95d8ea25f3a978d79d9571143888fe54e90a3ea2dc0792854a0",
+        "endfield.charinfo.secondary-dynamics-point-collision-golden-vectors.v1",
+        "native_avx2_vectors_and_source_transcription_exact_for_bounded_point_capsule_cases",
+    ),
+)
+
 CALLS = (
     (0x07DC, 0x182F8E710, "ColliderManager.CreateUpdateColliderList", None),
     (0x0813, 0x183A95170, "ColliderManager.StartSimulationStep", None),
@@ -111,6 +177,97 @@ def _endminf_requirements() -> list[dict[str, Any]]:
     return rows
 
 
+def _numeric_constraint_coverage(
+    contracts: tuple[tuple[str, str, str, str, str], ...] | None = None,
+    source_root: Path | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    contract_rows = NUMERIC_CONTRACTS if contracts is None else contracts
+    root = SOURCE_ROOT if source_root is None else source_root
+    sources: dict[str, Any] = {}
+    payloads: dict[str, dict[str, Any]] = {}
+    for key, filename, expected_sha256, expected_schema, expected_status in contract_rows:
+        path = root / filename
+        actual_sha256 = _sha256(path)
+        if actual_sha256 != expected_sha256:
+            raise schedule.ContractError(
+                f"numeric contract drift for {filename}: {actual_sha256}"
+            )
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("schema") != expected_schema:
+            raise schedule.ContractError(f"numeric contract schema drift for {filename}")
+        if payload.get("status") != expected_status:
+            raise schedule.ContractError(f"numeric contract status drift for {filename}")
+        payloads[key] = payload
+        sources[key] = {
+            "path": path.relative_to(LAB_ROOT.parent).as_posix(),
+            "sha256": expected_sha256,
+            "schema": expected_schema,
+            "status": expected_status,
+        }
+
+    for key in ("tetherSemantics", "distanceSemantics", "angleSemantics", "pointCollisionSemantics"):
+        if payloads[key].get("implementationBoundary", {}).get("equationsClosed") is not True:
+            raise schedule.ContractError(f"{key} no longer closes its equations")
+
+    golden_requirements = {
+        "tetherGolden": (5, "sourceTranscriptionBinary64Matched"),
+        "distanceGolden": (8, "sourceTranscriptionBinary64Matched"),
+        "angleGolden": (25, "sourceTranscriptionAllWrittenBitsMatched"),
+        "pointCollisionGolden": (6, "sourceTranscriptionExactBitsMatched"),
+    }
+    vector_counts: dict[str, int] = {}
+    for key, (expected_count, exact_key) in golden_requirements.items():
+        payload = payloads[key]
+        boundary = payload.get("boundary", {})
+        count = len(payload.get("vectors", []))
+        if (
+            count != expected_count
+            or boundary.get("nativeCoreExecuted") is not True
+            or boundary.get(exact_key) is not True
+            or boundary.get("unityPortExecuted") is not True
+        ):
+            raise schedule.ContractError(f"{key} exact-vector boundary drift")
+        vector_counts[key.removesuffix("Golden")] = count
+
+    angle_boundary = payloads["angleGolden"].get("boundary", {})
+    if (
+        angle_boundary.get("orderedSweepCount") != 3
+        or angle_boundary.get("orderedInterParticleWritesPreserved") is not True
+        or angle_boundary.get("endminfFullBaselineVectorCount") != 18
+        or angle_boundary.get("standaloneSincosTranscriptionComplete") is not True
+    ):
+        raise schedule.ContractError("angle ordered-sweep or Endminf baseline coverage drift")
+
+    sincos_boundary = payloads["floatSinCosGolden"].get("boundary", {})
+    if (
+        sincos_boundary.get("sourceOnlyTranscriptionMatchedBitForBit") is not True
+        or sincos_boundary.get("unityPortExecuted") is not True
+        or sincos_boundary.get("nativeCpuVariantsExecuted") != ["x64_sse2", "avx2"]
+        or sincos_boundary.get("caseCount") != 24
+    ):
+        raise schedule.ContractError("float sin/cos helper coverage drift")
+
+    coverage = {
+        "scope": "source-static Endminf active constraint candidate; no retail route selection",
+        "cpuCandidate": "avx2",
+        "closedFamilies": ["tether", "distance", "angle", "pointCollider"],
+        "nativeGoldenVectorCounts": vector_counts,
+        "angleEndminfBaselineVectorCount": 18,
+        "floatSinCosHelper": {
+            "nativeCpuVariants": ["x64_sse2", "avx2"],
+            "caseCount": 24,
+            "sourceAndUnityBitsClosed": True,
+        },
+        "sourceStaticEquationsClosed": True,
+        "nativeCandidateVectorsMatched": True,
+        "unityValuePortsExecuted": True,
+        "selectedRetailCpuRouteProven": False,
+        "runtimeSolverCompositionConnected": False,
+        "transformWritebackConnected": False,
+    }
+    return sources, coverage
+
+
 def build_contract() -> dict[str, Any]:
     gate = schedule._gate(None, None)
     _, native = schedule._helpers()
@@ -156,9 +313,10 @@ def build_contract() -> dict[str, Any]:
         family: [row["owner"] for row in owners if row["activeFamilies"][family]]
         for family in owners[0]["activeFamilies"]
     }
+    numeric_sources, numeric_coverage = _numeric_constraint_coverage()
     return {
-        "schema": "endfield.charinfo.secondary-dynamics-constraint-schedule.v1",
-        "status": "managed_projection_and_collider_call_order_closed_endminf_requirements_source_bound",
+        "schema": "endfield.charinfo.secondary-dynamics-constraint-schedule.v2",
+        "status": "endminf_active_constraint_candidate_equations_and_managed_order_closed_route_unobserved",
         "nativeGate": gate,
         "source": {
             "simulationStepUpdate": {
@@ -174,6 +332,7 @@ def build_contract() -> dict[str, Any]:
                 "path": PAYLOAD_DECODE.relative_to(LAB_ROOT.parent).as_posix(),
                 "sha256": PAYLOAD_DECODE_SHA256,
             },
+            "numericContracts": numeric_sources,
         },
         "orderedCalls": call_rows,
         "burstKernels": kernel_rows,
@@ -199,12 +358,17 @@ def build_contract() -> dict[str, Any]:
             "edgeColliderBoundary": "Edge requires mode 2, so Endminf line-edge topology does not activate the Edge collision kernel",
             "hairAngleLimitEnabled": owners[1]["activeFamilies"]["angle"],
         },
+        "activeConstraintCandidate": numeric_coverage,
         "implementationBoundary": {
             "managedCallOrderClosed": True,
             "endminfAuthoredActivationClosed": True,
+            "endminfActiveAvx2CandidateNumericsClosed": True,
             "constraintBurstNumericsClosed": False,
             "colliderContactNumericsClosed": False,
             "solverImplemented": False,
+            "selectedRetailRouteProven": False,
+            "runtimeSolverCompositionConnected": False,
+            "transformWritebackConnected": False,
             "retailEquivalent": False,
         },
     }

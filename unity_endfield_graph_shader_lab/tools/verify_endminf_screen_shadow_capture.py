@@ -47,6 +47,14 @@ DEFAULT_OWNER = 4
 SCREEN_SHADOW_OUTPUT_OWNER = 5
 COPY_BEFORE_OWNER = 1
 COPY_AFTER_OWNER = 2
+TEXTURE2D_VIEW = 4
+SCREEN_SHADOW_FULLSCREEN_VS = 0xA6AFE2C96CAA3FD9
+SCREEN_SHADOW_SCENE_PS = 0x94EC04847D39E4FD
+SCREEN_SHADOW_CHARACTER_PS = 0xCA52C7456B7E13B4
+DEFAULT_DEFERRED_PS = 0xB21A1E35EDA1C5BC
+SPHERE_OUTSIDE_VS = 0xF246D3A8B632882E
+SPHERE_OUTSIDE_PS = 0x6481DAAB2B862054
+SPHERE_OUTSIDE_INDEX_COUNT = 2304
 
 
 class VerificationError(RuntimeError):
@@ -91,6 +99,17 @@ def _shader_pair_complete(resolver: dict[str, Any]) -> bool:
                for stage in (0, PS_STAGE))
 
 
+def _exact_shader_pair(
+    resolver: dict[str, Any], vertex: int, pixel: int
+) -> bool:
+    identities = {
+        row.get("stage"): row.get("identityHash")
+        for row in resolver.get("shaders", [])
+        if isinstance(row, dict)
+    }
+    return identities.get(0) == vertex and identities.get(PS_STAGE) == pixel
+
+
 def _pipeline_target(
     resolver: dict[str, Any], target: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -132,8 +151,24 @@ def _descriptor_valid(row: dict[str, Any], width: int, height: int) -> bool:
     return (
         row.get("width") == width
         and row.get("height") == height
+        and row.get("depthOrArray") == 1
         and row.get("format") in TEXTURE_FORMATS
         and row.get("viewFormat") == VIEW_FORMAT
+        and row.get("viewDimension") == TEXTURE2D_VIEW
+        and row.get("byteSize") == width * height * BYTES_PER_PIXEL
+    )
+
+
+def _pipeline_descriptor_valid(
+    row: dict[str, Any], width: int, height: int
+) -> bool:
+    return (
+        row.get("width") == width
+        and row.get("height") == height
+        and row.get("textureFormat") in TEXTURE_FORMATS
+        and row.get("viewFormat") == VIEW_FORMAT
+        and row.get("viewDimension") == TEXTURE2D_VIEW
+        and row.get("sampleCount") == 1
     )
 
 
@@ -146,6 +181,9 @@ def _selected_descriptor_valid(
         and row.get("resourceKind") == 1
         and row.get("stage") == PS_STAGE
         and _descriptor_valid(row, width, height)
+        and row.get("mipLevels") == 1
+        and row.get("sampleCount") == 1
+        and row.get("sampleQuality") == 0
         and row.get("subresource") == 0
         and row.get("requestedBytes") == expected_bytes
         and row.get("byteSize") == expected_bytes
@@ -357,6 +395,7 @@ def verify_frame(
 
     producer_ordinals: list[int] = []
     producer_slots: list[int] = []
+    producer_by_occurrence: dict[int, dict[str, Any]] = {}
     for index, resolver in enumerate(producers):
         target = _matching_target(resolver, object_id)
         assert target is not None
@@ -366,8 +405,29 @@ def verify_frame(
             failures.append(f"producer {index + 1} target descriptor is invalid")
         pipeline_target = _pipeline_target(resolver, target)
         if (pipeline_target is None or pipeline_target.get("bound") is not True
-                or not _descriptor_valid(pipeline_target, width, height)):
+                or not _pipeline_descriptor_valid(
+                    pipeline_target, width, height)):
             failures.append(f"producer {index + 1} pipeline target is invalid")
+        occurrence = resolver.get("deferredOwnerOccurrence")
+        if (resolver.get("deferredOwner") != SCREEN_SHADOW_OUTPUT_OWNER
+                or occurrence not in (1, 2)
+                or occurrence in producer_by_occurrence):
+            failures.append(
+                f"producer {index + 1} owner/occurrence is invalid: "
+                f"owner={resolver.get('deferredOwner')!r}, "
+                f"occurrence={occurrence!r}"
+            )
+        else:
+            producer_by_occurrence[occurrence] = resolver
+            expected_pixel = (
+                SCREEN_SHADOW_SCENE_PS if occurrence == 1
+                else SCREEN_SHADOW_CHARACTER_PS
+            )
+            if not _exact_shader_pair(
+                    resolver, SCREEN_SHADOW_FULLSCREEN_VS, expected_pixel):
+                failures.append(
+                    f"producer occurrence {occurrence} shader pair is not exact"
+                )
         ordinal = resolver.get("unifiedCallOrdinal")
         slot = target.get("slot")
         if not isinstance(ordinal, int) or ordinal <= 0:
@@ -386,6 +446,16 @@ def verify_frame(
         assert resource is not None
         if not _shader_pair_complete(consumer):
             failures.append("consumer shader pair is incomplete")
+        if not _exact_shader_pair(
+                consumer, SCREEN_SHADOW_FULLSCREEN_VS, DEFAULT_DEFERRED_PS):
+            failures.append("consumer shader pair is not exact Default Deferred")
+        if (consumer.get("deferredOwner") != DEFAULT_OWNER
+                or consumer.get("deferredOwnerOccurrence") != 1):
+            failures.append(
+                "consumer owner/occurrence is invalid: "
+                f"owner={consumer.get('deferredOwner')!r}, "
+                f"occurrence={consumer.get('deferredOwnerOccurrence')!r}"
+            )
         if not _descriptor_valid(resource, width, height):
             failures.append("consumer t11 descriptor is invalid")
         state = consumer.get("pipelineState")
@@ -411,6 +481,34 @@ def verify_frame(
             failures.append("producer-to-consumer chronology is invalid")
     if len(set(producer_slots)) > 1:
         failures.append(f"producer render-target slots differ: {producer_slots}")
+
+    sphere_rows = [
+        row for row in metadata.get("drawRecords", [])
+        if isinstance(row, dict)
+        and row.get("indexedInstanced") is True
+        and row.get("prioritySphereOutsideGeometry") is True
+        and row.get("count") == SPHERE_OUTSIDE_INDEX_COUNT
+        and row.get("instanceCount") == 1
+        and _exact_shader_pair(row, SPHERE_OUTSIDE_VS, SPHERE_OUTSIDE_PS)
+    ]
+    if len(sphere_rows) != 1:
+        failures.append(
+            f"found {len(sphere_rows)} exact SphereOutside carrier draws, expected 1"
+        )
+    elif len(producer_ordinals) == 2 and consumer_ordinal is not None:
+        sphere = sphere_rows[0]
+        sphere_ordinal = sphere.get("unifiedCallOrdinal")
+        sphere_epoch = sphere.get("presentEpoch")
+        consumer_epoch = consumer.get("presentEpoch") if len(consumers) == 1 else None
+        if (not isinstance(sphere_ordinal, int) or sphere_ordinal <= 0
+                or sphere_ordinal >= min(producer_ordinals)
+                or not isinstance(sphere_epoch, int) or sphere_epoch <= 0
+                or sphere_epoch != consumer_epoch):
+            failures.append(
+                "SphereOutside carrier chronology is invalid: "
+                f"ordinal={sphere_ordinal!r}, epoch={sphere_epoch!r}, "
+                f"consumerEpoch={consumer_epoch!r}"
+            )
 
     selected = [
         row for row in metadata.get("selectedResourceRecords", [])
@@ -506,6 +604,29 @@ def verify_frame(
             failures.append("selected payload call ordinals are missing")
         elif not (record_ordinals[0] < record_ordinals[1] < record_ordinals[2]):
             failures.append(f"selected payload chronology is invalid: {record_ordinals}")
+        if set(producer_by_occurrence) == {1, 2} and len(consumers) == 1:
+            expected_ordinals = [
+                producer_by_occurrence[1].get("unifiedCallOrdinal"),
+                producer_by_occurrence[2].get("unifiedCallOrdinal"),
+                consumers[0].get("unifiedCallOrdinal"),
+            ]
+            if record_ordinals != expected_ordinals:
+                failures.append(
+                    "selected payload owners do not match resolver draws: "
+                    f"selected={record_ordinals}, resolvers={expected_ordinals}"
+                )
+            resolver_epochs = [
+                producer_by_occurrence[1].get("presentEpoch"),
+                producer_by_occurrence[2].get("presentEpoch"),
+                consumers[0].get("presentEpoch"),
+            ]
+            selected_epoch = output_rows[0].get("deferredPresentEpoch")
+            if (len(set(resolver_epochs)) != 1
+                    or resolver_epochs[0] != selected_epoch):
+                failures.append(
+                    "selected payload Present epoch does not match resolver draws: "
+                    f"selected={selected_epoch!r}, resolvers={resolver_epochs}"
+                )
 
     return {
         "frame": metadata.get("frame"),
@@ -514,6 +635,10 @@ def verify_frame(
         "admission": telemetry,
         "producerCallOrdinals": sorted(producer_ordinals),
         "consumerCallOrdinal": consumer_ordinal,
+        "sphereOutsideCallOrdinal": (
+            sphere_rows[0].get("unifiedCallOrdinal")
+            if len(sphere_rows) == 1 else None
+        ),
         "content": content,
         "records": record_reports,
         "artifacts": artifacts,

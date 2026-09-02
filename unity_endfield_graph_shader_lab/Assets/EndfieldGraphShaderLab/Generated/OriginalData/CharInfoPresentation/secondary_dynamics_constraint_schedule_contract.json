@@ -1,6 +1,6 @@
 {
-  "schema": "endfield.charinfo.secondary-dynamics-constraint-schedule.v1",
-  "status": "managed_projection_and_collider_call_order_closed_endminf_requirements_source_bound",
+  "schema": "endfield.charinfo.secondary-dynamics-constraint-schedule.v2",
+  "status": "endminf_active_constraint_candidate_equations_and_managed_order_closed_route_unobserved",
   "nativeGate": {
     "gameAssembly": {
       "path": "D:/Program Files/Endfield Game/GameAssembly.dll",
@@ -26,6 +26,62 @@
     "payloadDecode": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
       "sha256": "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
+    },
+    "numericContracts": {
+      "tetherSemantics": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_tether_semantics_contract.json",
+        "sha256": "2e2a8aea902190c62ff2c6e730258fdede241d006e95f5793c53ab533fd756e7",
+        "schema": "endfield.charinfo.secondary-dynamics-tether-semantics.v1",
+        "status": "compression_stretch_projection_and_velocity_position_writeback_closed"
+      },
+      "tetherGolden": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_tether_golden_vectors.json",
+        "sha256": "f4ec55d7caa7f0e4460130d8a238c1dea2cbc7d3f4aa088e5dc5e66520273f78",
+        "schema": "endfield.charinfo.secondary-dynamics-tether-golden-vectors.v1",
+        "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases"
+      },
+      "distanceSemantics": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_distance_semantics_contract.json",
+        "sha256": "fa0dd243a48982a79e3289b1786d30c418ff0a1ab8f9403adb440df5b041fa3c",
+        "schema": "endfield.charinfo.secondary-dynamics-distance-semantics.v1",
+        "status": "two_pass_distance_projection_and_velocity_position_writeback_closed"
+      },
+      "distanceGolden": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_distance_golden_vectors.json",
+        "sha256": "41cb4574c9f7ea431315afe4ba9c86241ba842fa790a773516baa141b22ca23e",
+        "schema": "endfield.charinfo.secondary-dynamics-distance-golden-vectors.v1",
+        "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases"
+      },
+      "angleSemantics": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_angle_semantics_contract.json",
+        "sha256": "ead14c3ba8ef715fb80aede93651fc417a7a77ec47c71dd3b299a057fedd4cb4",
+        "schema": "endfield.charinfo.secondary-dynamics-angle-semantics.v1",
+        "status": "three_sweep_limit_restoration_and_scratch_writeback_closed"
+      },
+      "angleGolden": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_angle_golden_vectors.json",
+        "sha256": "de780914223dfa513862041bd70cfa825fe0687bfb24a2f84d19e688579728cf",
+        "schema": "endfield.charinfo.secondary-dynamics-angle-golden-vectors.v1",
+        "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases"
+      },
+      "floatSinCosGolden": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_float_sincos_golden_vectors.json",
+        "sha256": "10374aaf8188a1d250bafb4979b45b07a96c25fe3db593f735ee83414e9eb9e3",
+        "schema": "endfield.charinfo.secondary-dynamics-float-sincos-golden-vectors.v1",
+        "status": "native_helper_and_source_only_transcription_exact_for_controlled_and_boundary_cases"
+      },
+      "pointCollisionSemantics": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_point_collision_semantics_contract.json",
+        "sha256": "4716855d45a4acd85570072fa469e69e972b58758adb3488b0003b5a06c680ec",
+        "schema": "endfield.charinfo.secondary-dynamics-point-collision-semantics.v1",
+        "status": "endminf_point_capsule_projection_closed_and_edge_excluded"
+      },
+      "pointCollisionGolden": {
+        "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_point_collision_golden_vectors.json",
+        "sha256": "1459f81d2cf7e95d8ea25f3a978d79d9571143888fe54e90a3ea2dc0792854a0",
+        "schema": "endfield.charinfo.secondary-dynamics-point-collision-golden-vectors.v1",
+        "status": "native_avx2_vectors_and_source_transcription_exact_for_bounded_point_capsule_cases"
+      }
     }
   },
   "orderedCalls": [
@@ -330,12 +386,47 @@
     "edgeColliderBoundary": "Edge requires mode 2, so Endminf line-edge topology does not activate the Edge collision kernel",
     "hairAngleLimitEnabled": true
   },
+  "activeConstraintCandidate": {
+    "scope": "source-static Endminf active constraint candidate; no retail route selection",
+    "cpuCandidate": "avx2",
+    "closedFamilies": [
+      "tether",
+      "distance",
+      "angle",
+      "pointCollider"
+    ],
+    "nativeGoldenVectorCounts": {
+      "tether": 5,
+      "distance": 8,
+      "angle": 25,
+      "pointCollision": 6
+    },
+    "angleEndminfBaselineVectorCount": 18,
+    "floatSinCosHelper": {
+      "nativeCpuVariants": [
+        "x64_sse2",
+        "avx2"
+      ],
+      "caseCount": 24,
+      "sourceAndUnityBitsClosed": true
+    },
+    "sourceStaticEquationsClosed": true,
+    "nativeCandidateVectorsMatched": true,
+    "unityValuePortsExecuted": true,
+    "selectedRetailCpuRouteProven": false,
+    "runtimeSolverCompositionConnected": false,
+    "transformWritebackConnected": false
+  },
   "implementationBoundary": {
     "managedCallOrderClosed": true,
     "endminfAuthoredActivationClosed": true,
+    "endminfActiveAvx2CandidateNumericsClosed": true,
     "constraintBurstNumericsClosed": false,
     "colliderContactNumericsClosed": false,
     "solverImplemented": false,
+    "selectedRetailRouteProven": false,
+    "runtimeSolverCompositionConnected": false,
+    "transformWritebackConnected": false,
     "retailEquivalent": false
   }
 }

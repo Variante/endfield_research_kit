@@ -1156,7 +1156,16 @@ all-character pass:
   translated, rotated, tapered, no-contact, and near-contact/friction capsule
   paths exactly. Distance has eight native cases and a Unity source port that
   matches their binary64 outputs exactly; the Point port also matches all six
-  cases. Both remain disconnected from transform writeback.
+  cases. The v2 constraint-schedule contract now hash-joins these active
+  Tether, two-pass Distance, three-sweep Angle, and Point-capsule contracts to
+  the pinned managed call order and Endminf's authored activation census. It
+  admits only the source-static AVX2 candidate: 5/8/25/6 native vectors,
+  eighteen complete Endminf Angle baselines, and the separately closed
+  dual-CPU float sin/cos helper all retain exact source/Unity results. This
+  closes one bounded active constraint/collision candidate, not the
+  process-selected retail route. Runtime solver composition and Transform
+  writeback remain disconnected until the live CalcLine route artifact is
+  admitted.
   Collider Start export `8b3d2761aaaac71a35d4a2557d570456`
   is now closed to its AVX2 `0x243810` core and canonical 16-pointer ABI.
   Ten native/source vectors match every output byte across bypass, static and
@@ -3554,17 +3563,21 @@ The first writes scene-shadow R as
 `1 + strength * (min(sceneShadow, 1) - 1)` and the second preserves that R
 while adding character-shadow G; neutral R is 1. Capture `20260829T224523Z`
 retains the deferred consumer but missed those ordinary-draw producer payloads.
-EndfieldCapture commit `3102f11` closes the observer transport gap: the joined
-M27+Default lane now retains distinct producer-1-after, producer-2-after, and
-Default-consumer-before t11 snapshots for the same RG8 object. Admission
-requires exact shader/pipeline identity, descriptor and Present-epoch equality,
-strict `P1 < P2 < consumer` draw chronology, complete readbacks, and byte-equal
-P2/consumer payloads; exact Endminf publication requires exactly one passing
-joined packet. The independent
-`tools/verify_endminf_screen_shadow_capture.py` verifier also authenticates the
-collector inventory and pinned client build, re-derives those rows, requires
-scene-shadow R preservation plus a changed/non-constant character-shadow G,
-and fails closed with structured diagnostics. Pass `--artifact-dir <scratch>`
+The joined M27+Default lane retains distinct producer-1-after,
+producer-2-after, and Default-consumer-before t11 snapshots for the same RG8
+object. Its current static admission is exact rather than descriptor-only: it
+requires the pinned fullscreen VS, scene-R PS, character-G PS, and Default Lit
+PS in that order; the exact one-draw SphereOutside HGBuffer carrier must precede
+both producers in the same Present epoch. The independent verifier repeats
+those program, owner/occurrence, resolver-to-readback ordinal, Present-epoch,
+Texture2D/no-mip/no-MSAA descriptor, and carrier gates using the serialized
+capture rather than trusting the native boolean. It also authenticates the
+collector inventory and pinned client build, requires scene-shadow R
+preservation plus a changed/non-constant character-shadow G, and fails closed
+with structured diagnostics. This closes a static false-admission boundary; it
+does not close game-only ECS/grass/tree caster content or authorize the
+persistent SphereOutside presentation without live same-frame bytes. Pass
+`--artifact-dir <scratch>`
 to emit lossless native-row-order PNGs for both R/G channels of P1, P2, the
 consumer, and the producer deltas; these are comparison evidence, not runtime
 textures. `Numpad 9` finalizes providers but does not run the collector. After
