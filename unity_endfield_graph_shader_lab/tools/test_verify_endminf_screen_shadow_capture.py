@@ -360,6 +360,24 @@ class VerifyEndminfScreenShadowCaptureTests(unittest.TestCase):
                 "content gate failed: producer2EqualsConsumer", report["failures"]
             )
 
+    def test_rejects_aliased_draw_local_snapshot_ranges(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            def mutate(metadata, _blob):
+                producer2 = metadata["selectedResourceRecords"][1]
+                consumer = metadata["selectedResourceRecords"][2]
+                consumer["blobOffset"] = producer2["blobOffset"]
+
+            frame = self.make_frame(Path(temporary), mutate)
+            report = MODULE.verify_frame(
+                frame, width=self.WIDTH, height=self.HEIGHT
+            )
+            self.assertFalse(report["valid"])
+            self.assertIn(
+                "selected payload ranges overlap; draw-local snapshots are not "
+                "independently stored",
+                report["failures"],
+            )
+
     def test_rejects_character_channel_that_never_changes(self):
         with tempfile.TemporaryDirectory() as temporary:
             frame = self.make_frame(Path(temporary))
