@@ -4060,24 +4060,25 @@ publication handler identities are rejected. Its Release build, complete
 nonlaunching exact-installed-build preflight all pass. A maintained raw-session
 promoter now re-runs every inventory, source, identity, hash, equation, and
 authority gate before it can write the minimal Unity Resource. The Resource is
-intentionally absent until such a receipt exists; its Unity owner fails closed,
-and the c26 overlay preserves every other b1 source lane. The focused Python
-suite passes 23 tests, and the Unity D3D11 verifier compiles the owner and reports
-the inline, malformed, pow2, overlay, lane-preservation, and absent-Resource
-checks valid. Its unrelated historical source-audit input is absent on this
+still absent pending explicit promotion; its Unity owner fails closed, and the
+c26 overlay preserves every other b1 source lane. The focused Python suite and
+Unity D3D11 verifier pass the inline, malformed, pow2, overlay,
+lane-preservation, and absent-Resource checks. Its unrelated historical
+source-audit input is absent on this
 checkout, so the aggregate verifier remains red even though the focused c26
 component is valid. The current AssetMap revalidates the same renderer PathID,
 material, mesh, and source VS, but the exact PS changed from the historical
 8200-byte program to the current 8260-byte program. The capture and receipt
 gates pin the current PS identity. The static mesh remains 72 indices; the
 historical 1080-index runtime expansion remains a strict expected draw gate
-and must be confirmed by the fresh capture rather than inferred. No
-authenticated retail receipt has been collected, so `c26.xy` remains
-unpromoted; adjacent `c19` TAA jitter and unrelated `c105` are not substitutes.
-Use
-`tools\EndfieldCapture\StartEndminfM27MipBiasCapture.bat` with Endfield closed,
-keep the first Endminf overview entry visible through its first settled loop
-wrap, then press Numpad 9. The inventoried session verifier remains explicitly
+and is now confirmed by the authenticated current-build draw. The inventoried
+retail receipt admits the source equation with material and dynamic terms both
+zero, equal 3840-wide input/output, and published `c26.xy=(0,1)`. This is source
+authority for the observed physical-camera state even though it coincides with
+the serialized virtual-camera default; captured constants were not used as the
+source. `c26.xy` remains unpromoted until the maintained raw-session promoter
+writes the Unity Resource. Adjacent `c19` TAA jitter and unrelated `c105` are
+not substitutes. The inventoried session verifier remains explicitly
 non-authoritative for presentation.
 
 The archived `20260826T091023Z` exact M27 draw independently decodes
@@ -4239,17 +4240,18 @@ an explicit lab carrier, not as proof of the retail selected-frame HGVFX
 identity. The authenticated c26 Resource/overlay route is now statically
 connected, but the Resource is absent, so c19, c26, and c105 remain zero/unready
 and exact b1 admission remains closed. The historical July capture observed
-c26.xy=(-1,0.5), while serialized virtual-camera defaults only prove (0,1);
-neither pair is a current selected-value authority. The exact-build observer
+c26.xy=(-1,0.5), while the current authenticated physical-camera receipt proves
+c26.xy=(0,1) for its observed selected state. The exact-build observer
 now admits any finite live value only when the authenticated source equation,
 later publication, and exact M27 draw join in one ordered epoch. Its dedicated
 collector ignores only unrelated aggregate graphics-provider incompleteness
-and still requires balanced deferred publication, a complete source receipt,
-the Animator gate, exact session/runtime identity, and strict inventory
-verification. The strict inventoried session verifier and raw-session promoter
-are ready to authenticate and publish the live assignment path, but no admitted
-retail receipt exists yet; do not substitute either value before it does.
-Admission also still
+and safely unfinished generic deferred frames; explicit deferred failure or
+impossible publication-counter ordering still rejects. It requires a complete
+source receipt, the Animator gate, exact session/runtime identity, and strict
+inventory verification. The strict inventoried session verifier and
+raw-session promoter admit the current receipt as source evidence, but the
+Resource has not yet been promoted and the result grants no presentation
+authority. Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
 bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted
@@ -4389,9 +4391,10 @@ project lock indicates shared use; it never removes or bypasses the lock.
    forced-off policy and fails video export unless the entire packet/deferred/
    Uber diagnostic set is explicitly zero. For M27, keep the independently
    pinned source shell at t0-t5 and the source-closed b0/b3 producers; leave b1
-   closed until each live owner is recovered. Run the dedicated M27 mip-bias
-   launcher once to authenticate the physical-camera `c26` producer instead of
-   copying the captured constant. Retain engine-produced b2 and use the next
+   closed until each live owner is recovered. Promote the admitted inventoried
+   M27 receipt through the maintained raw-session builder when the c26 Resource
+   is intentionally enabled; do not copy the captured constant. Retain
+   engine-produced b2 and use the next
    admissible observer run to join its inactive skin bit to the already observed bound,
    complete VS t0 palette payload, s0-s5 descriptors, b4 producer/value
    lifecycle, and synchronized target evidence. Require the live

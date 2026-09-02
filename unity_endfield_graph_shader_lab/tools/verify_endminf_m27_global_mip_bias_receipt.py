@@ -65,6 +65,11 @@ def _canonical_bytes(value: Any) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
 
+def _contract_artifact_bytes(value: Any) -> bytes:
+    """Serialize the pinned Windows-generated contract artifact exactly."""
+    return _canonical_bytes(value).replace(b"\n", b"\r\n")
+
+
 def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -123,7 +128,7 @@ def load_validated_contract(
         and rebuilt.get("safeToPopulateFromCapturedC26") is False,
         "static contract authority boundary drift",
     )
-    return rebuilt, _sha256_bytes(_canonical_bytes(rebuilt))
+    return rebuilt, _sha256_bytes(_contract_artifact_bytes(rebuilt))
 
 
 def verify_receipt(

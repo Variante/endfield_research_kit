@@ -112,8 +112,12 @@ class EndminfM27GlobalMipBiasContractTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.contract = BUILDER.build_contract()
         cls.contract_sha256 = VERIFIER._sha256_bytes(
-            VERIFIER._canonical_bytes(cls.contract)
+            VERIFIER._contract_artifact_bytes(cls.contract)
         )
+        if cls.contract_sha256 != (
+            "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9"
+        ):
+            raise AssertionError("pinned Windows contract artifact hash drifted")
 
     def test_static_contract_closes_equation_not_selected_lifecycle(self) -> None:
         self.assertTrue(self.contract["sourceEquationClosed"])
