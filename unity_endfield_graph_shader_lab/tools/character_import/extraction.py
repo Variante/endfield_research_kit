@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -48,15 +49,32 @@ EXTERNAL_UI_EFFECT_TYPES = (
     "TrailRenderer:Both",
     "ParticleSystem:Both",
     "ParticleSystemRenderer:Both",
+    "ParticleSystemForceField:Both",
     "MonoBehaviour:Both",
     "MeshFilter:Both",
     "Mesh:Both",
     "Material:Both",
     "Texture2D:Both",
+    "Texture3D:Both",
 )
 EXPLICIT_EXTERNAL_UI_EFFECT_CLIP_EVIDENCE = (
     "explicit_actor_keyed_fx_clip_in_external_ui_effect_prefab_container"
 )
+ENDMINF_FORCE_FIELD_VECTOR_FIELD = {
+    "character_id": "chr_0003_endminf",
+    "source_name": "FC784A3D097236EF3B3E84F44E1B28D2.chk",
+    "source_bytes": 974649680,
+    "source_sha256": "d56fbb1b95eb9381ca97329e92f8da66e2d2c838eae81d5498ca09eebd55c254",
+    "cab": "CAB-40349914e91e3ff488688f280280046d",
+    "path_id": -72851360742510437,
+    "offset": 823310266,
+    "type": "Texture3D",
+    "class_id": 117,
+    "raw_bytes": 18844,
+    "raw_sha256": "9ba4b500ba9b8d152eba102b962902067d8fa95942084b89cdc6b0798b2a1bfe",
+    "payload_bytes": 18724,
+    "payload_sha256": "778df2d4e841830ff2f23ec6de9d593971a863a9c1dfc0f84882891b8101fcd7",
+}
 
 
 class CharacterImportError(RuntimeError):
@@ -124,6 +142,14 @@ def _source_snapshots(entries: Iterable[dict[str, Any]]) -> list[dict[str, Any]]
             }
         )
     return snapshots
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _run(command: list[str], *, dry_run: bool = False) -> None:
@@ -656,11 +682,51 @@ def select_external_ui_effect_entries(
             raise CharacterImportError(f"external UI-effect prefab container is empty: {group['container']}")
 
     all_entries = [entry for group in containers.values() for entry in group["entries"]]
+    source_dependencies: list[dict[str, Any]] = []
+    if str(character.get("character_id") or "") == ENDMINF_FORCE_FIELD_VECTOR_FIELD["character_id"]:
+        source_name = str(ENDMINF_FORCE_FIELD_VECTOR_FIELD["source_name"])
+        matching_sources = {
+            Path(str(entry.get("Source") or "")).resolve()
+            for entry in all_entries
+            if Path(str(entry.get("Source") or "")).name.casefold() == source_name.casefold()
+        }
+        if len(matching_sources) != 1:
+            raise CharacterImportError(
+                "Endminf force-field Texture3D source CAB is not uniquely present in the "
+                f"selected exact closure: {source_name}"
+            )
+        source = matching_sources.pop()
+        if source.stat().st_size != int(ENDMINF_FORCE_FIELD_VECTOR_FIELD["source_bytes"]):
+            raise CharacterImportError(
+                "Endminf force-field Texture3D source byte length drifted: "
+                f"{source}"
+            )
+        if _sha256_file(source) != str(ENDMINF_FORCE_FIELD_VECTOR_FIELD["source_sha256"]):
+            raise CharacterImportError(
+                "Endminf force-field Texture3D source SHA-256 drifted: "
+                f"{source}"
+            )
+        dependency = {
+            "Name": "",
+            "Container": "",
+            "Source": str(source),
+            "PathID": int(ENDMINF_FORCE_FIELD_VECTOR_FIELD["path_id"]),
+            "Type": str(ENDMINF_FORCE_FIELD_VECTOR_FIELD["type"]),
+            "Offset": int(ENDMINF_FORCE_FIELD_VECTOR_FIELD["offset"]),
+            "_asset_root": "StreamingAssets",
+            "_ownership_evidence": (
+                "six exact ParticleSystemForceField m_VectorField PPtrs share this "
+                "unique CAB-map Texture3D target"
+            ),
+        }
+        all_entries.append(dependency)
+        source_dependencies.append(dependency)
     return {
         "asset_maps": [str(path) for path in maps],
         "prefabs": list(containers.values()),
         "entries": all_entries,
         "entry_count": len(all_entries),
+        "source_dependencies": source_dependencies,
         "expected_root_identities": sorted(expected_roots, key=str),
         "expected_clip_identities": sorted(expected_clips, key=str),
         "evidence_boundary": (
@@ -852,10 +918,52 @@ def validate_external_ui_effect_export(
             "external UI-effect export is missing exact type-directory root/clip files: "
             f"{len(missing)}"
         )
+    dependency_count = 0
+    for dependency in selection.get("source_dependencies") or []:
+        path_id = int(dependency["PathID"])
+        suffix = f"_p{path_id & ((1 << 64) - 1):016X}.json"
+        candidates = sorted((output / "Texture3D").glob(f"*{suffix}"))
+        if len(candidates) != 1:
+            raise CharacterImportError(
+                "Endminf force-field Texture3D export is missing or duplicated: "
+                f"{suffix}"
+            )
+        path = candidates[0]
+        try:
+            row = json.loads(path.read_text(encoding="utf-8"))
+            metadata = row["$animestudio"]
+            payload = base64.b64decode(row["image data"], validate=True)
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise CharacterImportError(
+                f"Endminf force-field Texture3D export is malformed: {path}"
+            ) from exc
+        expected = ENDMINF_FORCE_FIELD_VECTOR_FIELD
+        if not (
+            metadata.get("pathId") == expected["path_id"]
+            and metadata.get("type") == expected["type"]
+            and metadata.get("classId") == expected["class_id"]
+            and metadata.get("sourceFile") == expected["cab"]
+            and metadata.get("sourceOffset") == expected["offset"]
+            and metadata.get("rawDataLength") == expected["raw_bytes"]
+            and metadata.get("rawDataSha256") == expected["raw_sha256"]
+            and row.get("m_Name") == "T_fx_noise_worley3d_01"
+            and row.get("m_Format") == 8
+            and [row.get("m_Width"), row.get("m_Height"), row.get("m_Depth")] == [16, 16, 16]
+            and row.get("m_MipCount") == 5
+            and row.get("m_DataSize") == expected["payload_bytes"]
+            and len(payload) == expected["payload_bytes"]
+            and hashlib.sha256(payload).hexdigest() == expected["payload_sha256"]
+            and row.get("m_StreamData") == {"offset": 0, "size": 0, "path": ""}
+        ):
+            raise CharacterImportError(
+                f"Endminf force-field Texture3D exact source contract drifted: {path}"
+            )
+        dependency_count += 1
     return {
         "object_index_summaries": summaries,
         "root_clip_count": len(expected_file_keys),
         "stage_fingerprint": stamp["fingerprint"],
+        "source_dependency_count": dependency_count,
     }
 
 

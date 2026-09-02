@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import base64
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -75,7 +77,7 @@ class ExtractionTests(unittest.TestCase):
         map_path = root / "StreamingAssets" / "maps" / "assets.json"
         _write_effect_map(map_path, entries)
         character = {
-            "character_id": "chr_0003_endminf",
+            "character_id": "test_chr_0003_endminf",
             "actor_token": "endminf",
             "ui_animation": {
                 "external_ui_effect_prefab_entries": [root_entry],
@@ -161,6 +163,73 @@ class ExtractionTests(unittest.TestCase):
             self.assertEqual(len(selection["expected_root_identities"]), 1)
             self.assertEqual(len(selection["expected_clip_identities"]), 1)
             self.assertEqual(selection["entries"][0]["_asset_root"], "StreamingAssets")
+
+    def test_endminf_selector_and_validator_close_exact_force_field_texture3d(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            character, map_path, entries, _source = self._external_effect_fixture(root)
+            source = root / "VFS" / "FC784A3D097236EF3B3E84F44E1B28D2.chk"
+            source.write_bytes(b"exact pinned Texture3D CAB source")
+            for entry in entries:
+                entry["Source"] = str(source)
+            _write_effect_map(map_path, entries)
+            character["character_id"] = "chr_0003_endminf"
+            payload = b"payload"
+            exact = {
+                "source_bytes": source.stat().st_size,
+                "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "payload_bytes": len(payload),
+                "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            }
+            with patch.dict(
+                "character_import.extraction.ENDMINF_FORCE_FIELD_VECTOR_FIELD",
+                exact,
+            ):
+                selection = select_external_ui_effect_entries(character, [map_path])
+                self.assertEqual(selection["entry_count"], 4)
+                self.assertEqual(
+                    selection["source_dependencies"][0]["PathID"],
+                    -72851360742510437,
+                )
+                output = root / "output"
+                index = self._write_external_validation_fixture(
+                    output, selection, entries
+                )
+                texture_path = (
+                    output
+                    / "Texture3D"
+                    / "Texture3D#2_pFEFD2E12C989F09B.json"
+                )
+                texture_path.parent.mkdir(parents=True, exist_ok=True)
+                texture_path.write_text(
+                    json.dumps(
+                        {
+                            "$animestudio": {
+                                "pathId": -72851360742510437,
+                                "type": "Texture3D",
+                                "classId": 117,
+                                "sourceFile": "CAB-40349914e91e3ff488688f280280046d",
+                                "sourceOffset": 823310266,
+                                "rawDataLength": 18844,
+                                "rawDataSha256": "9ba4b500ba9b8d152eba102b962902067d8fa95942084b89cdc6b0798b2a1bfe",
+                            },
+                            "m_Name": "T_fx_noise_worley3d_01",
+                            "m_Format": 8,
+                            "m_Width": 16,
+                            "m_Height": 16,
+                            "m_Depth": 16,
+                            "m_MipCount": 5,
+                            "m_DataSize": len(payload),
+                            "image data": base64.b64encode(payload).decode("ascii"),
+                            "m_StreamData": {"offset": 0, "size": 0, "path": ""},
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                validated = validate_external_ui_effect_export(
+                    output, selection, [index]
+                )
+                self.assertEqual(validated["source_dependency_count"], 1)
 
     def test_external_effect_selector_fails_when_catalogued_clip_is_not_exactly_in_map(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -261,6 +330,7 @@ class ExtractionTests(unittest.TestCase):
             self.assertEqual(report["entry_count"], 3)
             self.assertEqual(len(commands), 1)
             self.assertEqual(commands[0][commands[0].index("--types") + 1 : commands[0].index("--export_type")], list(EXTERNAL_UI_EFFECT_TYPES))
+            self.assertIn("ParticleSystemForceField:Both", EXTERNAL_UI_EFFECT_TYPES)
             self.assertIn("--object_index_jsonl", commands[0])
             self.assertFalse(output.exists())
 

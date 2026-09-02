@@ -4006,29 +4006,45 @@ revalidates saved sibling indices plus direct Transform references. In
 equal-queue source ordering only: no particle timing, scale, placement, TRS, or
 runtime packet-owner chronology was changed or inferred.
 
-The current 770-frame canonical source-authored Unity run at
-`scratch/character_recovery/endminf_v26_source_overlay_sibling_order_full_770_20260901`
-keeps captured secondary replay, the unverified source solver, measured opening
-rectangles, and content-invalid deferred presentation disabled. It completes
-the ACL-backed start-to-loop sequence with an upright portrait, all four VFX
-roots, 68 admitted entrance renderers, and no crash or device-removal signal.
-Its v26 telemetry retains the v25 source-decoded ACL/Animator closure across all
-770 frames and 278 transforms. Both alternate secondary-motion paths remain
-inactive, every maintained packet/deferred diagnostic selector is explicitly
-zero, and no selector escapes canonical policy.
+The six `overview_01` stone systems no longer discard their authored external
+forces. The exact stage now closes six enabled `ParticleSystemForceField`
+owners on the source `suikuai (3)` through `suikuai (6)` hosts, with one unique
+ordered influence per particle system. All six share one exact 16x16x16,
+five-mip RGBA vector field recovered from its unique CAB-map carrier. The
+extractor gates the carrier plus raw and inline payload identities; the Unity
+importer reconstructs the `Texture3D`, applies every force-field payload, adds
+the typed influences, and revalidates complete saved-prefab coverage. No
+particle clock, material, transform, placement, scale, or source sibling order
+was changed.
 
-This run also adds a distinct source-forward background subset over the neutral
-clear. Every frame admits only `CharFloorEffect` at queue 2000 and `GridFar` at
-queue 2950; `SphereOutside`, wall, ShadowPlane, the fitted plate, and the full
-source-background/deferred consumer stay off. The report therefore records the
-Floor/Far overlay as included while the full `SphereOutside`/floor/grid
-presentation remains false. At the unchanged zero-frame alignment, the clean
-2026-08-26 comparison improves from v25's 33.3722/35.5934/15.4469 to
-33.0418/35.2686/15.4466 actor/effect/temporal MAE. This is bounded causal
-progress from exact source order and ordinary background carriers, not retail
-parity: live content-valid `SphereOutside` t11 ownership is still absent, and
-entrance hair, coat, and strap silhouettes still lack certified secondary
-motion.
+The current 770-frame canonical source-authored Unity run at
+`scratch/character_recovery/endminf_v27_force_fields_full_770_d3d11_20260902_retry2`
+is D3D11/status-ok and completes the ACL-backed start-to-loop sequence with all
+four VFX roots and the settled loop. Captured secondary replay, the unverified
+source solver, measured opening rectangles, and content-invalid deferred
+presentation remain disabled. It retains the neutral preview clear plus only
+the source `CharFloorEffect` queue-2000 and `GridFar` queue-2950 forward
+overlay; `SphereOutside`, wall, ShadowPlane, the fitted plate, and the full
+source-background/deferred consumer stay off.
+
+Across the same 554-row clean-reference window, the best alignment remains the
+bounded -1-frame candidate. V27 measures 32.2892 actor ROI, 34.1848 effect ROI,
+and 15.2547 temporal-delta MAE, versus v26's 32.2896/34.1855/15.2507. The exact
+external forces change 118 frames from indices 30 through 181 and peak near
+frame 41; the actor/effect means improve slightly while temporal delta worsens
+slightly. This is a small source-correct stone-motion change, not retail parity.
+The dominant opening residual remains the unresolved broad multi-exposure and
+SceneColor transport, while entrance hair, coat, and strap silhouettes still
+lack certified secondary motion.
+
+The strict retail screen-shadow verifier now also requires the two producer
+snapshots and the consumer snapshot to occupy three valid, non-overlapping
+stored payload ranges. One stored readback can no longer masquerade as multiple
+draw-local observations. A fresh authenticated current-build receipt is still
+required. M27's global mip-bias equation is source-closed, but the live physical
+camera, branch state, and dynamic-resolution input pair selecting the observed
+`c26.xy` remain unjoined; adjacent `c19` TAA jitter and unrelated `c105` are not
+substitutes.
 
 The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Exact per-owner child topology is now

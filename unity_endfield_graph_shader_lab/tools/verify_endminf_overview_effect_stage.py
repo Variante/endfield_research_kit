@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -68,11 +69,19 @@ CLIPS = {
     "A_fx_endminf_ui_overview_04": (-2625895420410042749, 772927267),
     "A_actor_endminf_ui_overview_02": (-7994037904239017215, 937624865),
 }
-STAGE_FINGERPRINT = "130cf736dcc4c4f031e9a4f15521157e90bc7fed9085b9354cc61748f6249ea3"
-STAGE_CONTENT_SHA256 = "873f17793284de92f7680448b7efe282b73cbaea85522297e3f412e49508d302"
+STAGE_FINGERPRINT = "9c8ae51e440d82fde419e494d9654bfb0d13c81323d71a2241c998bda072f60e"
+STAGE_CONTENT_SHA256 = "691f6bccad173aede9008fc9d40b961dc9f67938f8e815dc9682ea9a1efb5a87"
 STAGE_CONTENT_TYPES = (
     "GameObject", "Transform", "ParticleSystem",
-    "ParticleSystemRenderer", "MonoBehaviour", "AnimationClip",
+    "ParticleSystemRenderer", "ParticleSystemForceField", "Texture3D",
+    "MonoBehaviour", "AnimationClip",
+)
+FORCE_FIELD_VECTOR_TEXTURE_PATH_ID = -72851360742510437
+FORCE_FIELD_VECTOR_TEXTURE_PAYLOAD_SHA256 = (
+    "778df2d4e841830ff2f23ec6de9d593971a863a9c1dfc0f84882891b8101fcd7"
+)
+FORCE_FIELD_VECTOR_TEXTURE_RAW_SHA256 = (
+    "9ba4b500ba9b8d152eba102b962902067d8fa95942084b89cdc6b0798b2a1bfe"
 )
 SHAPE_TEXTURE_PATH_ID = 6970530313307194154
 SHAPE_TEXTURE_SHA256 = "8eeab0f7fad4e618db4d033180c5bee70aee6f9229a19566cd6bbba513b3d1eb"
@@ -142,6 +151,11 @@ def validate(stage: Path, closure_path: Path) -> dict:
     require(validation.get("stage_fingerprint") == STAGE_FINGERPRINT, "stage fingerprint drifted")
     require(report.get("expected_root_count") == 4, "expected root count drifted")
     require(report.get("expected_clip_count") == 1, "expected rig clip count drifted")
+    require("ParticleSystemForceField:Both" in (report.get("types") or []),
+            "particle force-field extraction type is missing")
+    require("Texture3D:Both" in (report.get("types") or []) and
+            validation.get("source_dependency_count") == 1,
+            "force-field Texture3D extraction closure is missing")
     summaries = validation.get("object_index_summaries") or []
     require(len(summaries) == 2 and all(row.get("complete") is True for row in summaries),
             "object index is incomplete")
@@ -165,10 +179,41 @@ def validate(stage: Path, closure_path: Path) -> dict:
     transforms = objects_by_path_id(stage, "Transform")
     particles = objects_by_path_id(stage, "ParticleSystem")
     renderers = objects_by_path_id(stage, "ParticleSystemRenderer")
+    force_fields = objects_by_path_id(stage, "ParticleSystemForceField")
+    texture3ds = objects_by_path_id(stage, "Texture3D")
     require(len(game_objects) == 101 and len(transforms) == 101,
             "four-root hierarchy census drifted")
     require(len(particles) == 70 and len(renderers) == 70,
             "four-root particle/renderer census drifted")
+    require(len(force_fields) == 6,
+            "four-root particle force-field census drifted")
+    require(set(texture3ds) == {FORCE_FIELD_VECTOR_TEXTURE_PATH_ID},
+            "force-field Texture3D PathID closure drifted")
+    vector_texture = texture3ds[FORCE_FIELD_VECTOR_TEXTURE_PATH_ID]
+    vector_metadata = vector_texture.get("$animestudio") or {}
+    vector_payload = base64.b64decode(
+        vector_texture.get("image data") or "", validate=True
+    )
+    require(
+        vector_metadata.get("type") == "Texture3D" and
+        vector_metadata.get("classId") == 117 and
+        vector_metadata.get("sourceFile") ==
+            "CAB-40349914e91e3ff488688f280280046d" and
+        vector_metadata.get("sourceOffset") == 823310266 and
+        vector_metadata.get("rawDataLength") == 18844 and
+        vector_metadata.get("rawDataSha256") ==
+            FORCE_FIELD_VECTOR_TEXTURE_RAW_SHA256 and
+        vector_texture.get("m_Name") == "T_fx_noise_worley3d_01" and
+        vector_texture.get("m_Format") == 8 and
+        [vector_texture.get("m_Width"), vector_texture.get("m_Height"),
+         vector_texture.get("m_Depth")] == [16, 16, 16] and
+        vector_texture.get("m_MipCount") == 5 and
+        vector_texture.get("m_DataSize") == len(vector_payload) == 18724 and
+        hashlib.sha256(vector_payload).hexdigest() ==
+            FORCE_FIELD_VECTOR_TEXTURE_PAYLOAD_SHA256 and
+        vector_texture.get("m_StreamData") == {"offset": 0, "size": 0, "path": ""},
+        "force-field Texture3D exact descriptor/payload drifted",
+    )
 
     transform_by_game_object: dict[int, int] = {}
     for transform_id, row in transforms.items():
@@ -259,6 +304,47 @@ def validate(stage: Path, closure_path: Path) -> dict:
         for row in particles.values()),
         "source particle LightsModule unexpectedly gained a Light owner")
 
+    influenced_particles: list[tuple[dict, list[int]]] = []
+    referenced_force_fields: list[int] = []
+    for row in particles.values():
+        external = row.get("ExternalForcesModule") or {}
+        influences = [pptr_id(value) for value in external.get("influenceList", [])]
+        if not influences:
+            continue
+        require(bool(external.get("enabled")) and len(influences) == 1,
+                "source particle external-force owner cardinality drifted")
+        pptr_rows = (row.get("$animestudio") or {}).get("pptrReferences") or []
+        source_reference = [
+            value for value in pptr_rows
+            if value.get("path") == "$.ExternalForcesModule.influenceList[0]"
+        ]
+        require(len(source_reference) == 1 and
+                source_reference[0].get("resolutionStatus") == "resolved" and
+                source_reference[0].get("targetType") ==
+                "ParticleSystemForceField" and
+                int(source_reference[0].get("targetPathId") or 0) == influences[0],
+                "source particle external-force PPtr provenance drifted")
+        influenced_particles.append((row, influences))
+        referenced_force_fields.extend(influences)
+    require(len(influenced_particles) == 6 and
+            len(set(referenced_force_fields)) == 6 and
+            set(referenced_force_fields) == set(force_fields),
+            "source particle force-field ownership closure drifted")
+    for force_field_id, row in force_fields.items():
+        source = row.get("$animestudio") or {}
+        host = pptr_id(row.get("m_GameObject"))
+        require(source.get("type") == "ParticleSystemForceField" and
+                source.get("classId") == 330 and bool(row.get("m_Enabled")) and
+                host in transform_by_game_object and host in game_objects and
+                str(game_objects[host].get("m_Name") or "").startswith("suikuai (") and
+                force_field_id in referenced_force_fields,
+                f"source particle force-field payload drifted: {force_field_id}")
+        require(
+            pptr_id((row.get("m_Parameters") or {}).get("m_VectorField")) ==
+                FORCE_FIELD_VECTOR_TEXTURE_PATH_ID,
+            f"source particle force-field vector texture drifted: {force_field_id}",
+        )
+
     particle_hosts = [pptr_id(row.get("m_GameObject")) for row in particles.values()]
     renderer_hosts = [pptr_id(row.get("m_GameObject")) for row in renderers.values()]
     require(len(set(particle_hosts)) == 70 and
@@ -300,6 +386,17 @@ def validate(stage: Path, closure_path: Path) -> dict:
         '"Endminf particle transform/scaling-mode census drifted"',
         '"Endminf particle shape-module census drifted"',
         '"Endminf source unexpectedly gained a ParticleSystem Light owner"',
+        'LoadType(stage, "ParticleSystemForceField")',
+        'LoadType(stage, "Texture3D")',
+        "context.texture3Ds[EndminfForceFieldVectorTexture] =",
+        "BuildExactEndminfForceFieldVectorTexture(vectorFieldSource)",
+        "TextureFormat.RGBA32, 5",
+        "(int)loaded.graphicsFormat == 8",
+        f'"{FORCE_FIELD_VECTOR_TEXTURE_PAYLOAD_SHA256}"',
+        "forceFieldHost.AddComponent<ParticleSystemForceField>()",
+        "generatedExternal.AddInfluence(forceField);",
+        "generatedExternal.GetInfluence(index) == expected",
+        "consumedForceFields.Count == forceFields.Count",
         "EndminfShapeTexture = 6970530313307194154L;",
         f'"{SHAPE_TEXTURE_SHA256}"',
         '"Exact Endminf particle shape texture is unavailable"',
@@ -358,6 +455,8 @@ def validate(stage: Path, closure_path: Path) -> dict:
         "roots": len(ROOTS),
         "hierarchyNodes": len(transforms),
         "particleRenderers": len(renderers),
+        "particleForceFields": len(force_fields),
+        "forceFieldVectorTextures": len(texture3ds),
         "materialOwners": len(set(material_ids)),
         "shapeTextureOwners": len(shape_texture_owners),
         "particleLightOwners": 0,
