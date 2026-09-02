@@ -133,6 +133,24 @@ class EndminfM27GlobalMipBiasContractTest(unittest.TestCase):
         with self.assertRaisesRegex(VERIFIER.ReceiptError, "not in one epoch"):
             VERIFIER.verify_receipt(receipt, self.contract_sha256)
 
+    def test_non_distinct_producer_identities_are_rejected(self) -> None:
+        receipt = _receipt(self.contract_sha256)
+        receipt["identity"]["dynamicResolutionHandlerId"] = receipt[
+            "identity"
+        ]["hgCameraId"]
+        with self.assertRaisesRegex(
+            VERIFIER.ReceiptError, "not distinct runtime objects"
+        ):
+            VERIFIER.verify_receipt(receipt, self.contract_sha256)
+
+    def test_nonpositive_epoch_or_sequence_is_rejected(self) -> None:
+        for key in ("sourceEpoch", "sourceSequence"):
+            with self.subTest(key=key):
+                receipt = _receipt(self.contract_sha256)
+                receipt["ordering"][key] = 0
+                with self.assertRaisesRegex(VERIFIER.ReceiptError, "positive"):
+                    VERIFIER.verify_receipt(receipt, self.contract_sha256)
+
     def test_lost_or_changed_identity_receipts_are_rejected(self) -> None:
         for mutation, expected in (
             (("eventLossCount",), "lost events"),
