@@ -51,8 +51,33 @@ def _receipt(contract_sha256: str) -> dict:
         },
         "draw": {
             "rendererPathId": VERIFIER.EXPECTED_RENDERER_PATH_ID,
+            "rendererIdentityAuthority": (
+                "pinned-source-to-exact-shader-ia-draw-join"
+            ),
             "vertexShaderSha256": VERIFIER.EXPECTED_VERTEX_SHA256,
             "pixelShaderSha256": VERIFIER.EXPECTED_PIXEL_SHA256,
+            "observedVertexShaderIdentity": (
+                VERIFIER.EXPECTED_VERTEX_IDENTITY
+            ),
+            "observedPixelShaderIdentity": VERIFIER.EXPECTED_PIXEL_IDENTITY,
+            "observedIndexCount": VERIFIER.EXPECTED_INDEX_COUNT,
+            "observedInstanceCount": 1,
+            "observedIndexedInstanced": True,
+        },
+        "diagnostics": {
+            "hooksInstalled": True,
+            "callbacksQuiescent": True,
+            "sourceObservations": 1,
+            "sourceAttemptFailures": 0,
+            "publicationObservations": 1,
+            "publicationAttemptFailures": 0,
+            "identityValidationRejections": 0,
+            "drawObservations": 1,
+            "admittedJoinCount": 1,
+            "cameraSlotCapacityRejections": 0,
+            "candidateLockRejections": 0,
+            "ambiguousDrawJoins": 0,
+            "duplicateReceipts": 0,
         },
         "identity": {
             "hgCameraId": 0x1000,
@@ -149,6 +174,38 @@ class EndminfM27GlobalMipBiasContractTest(unittest.TestCase):
                 receipt = _receipt(self.contract_sha256)
                 receipt["ordering"][key] = 0
                 with self.assertRaisesRegex(VERIFIER.ReceiptError, "positive"):
+                    VERIFIER.verify_receipt(receipt, self.contract_sha256)
+
+    def test_observed_draw_identity_and_mode_are_required(self) -> None:
+        mutations = (
+            ("observedVertexShaderIdentity", 1, "observed vertex shader"),
+            ("observedPixelShaderIdentity", 1, "observed pixel shader"),
+            ("observedIndexCount", 72, "observed index count"),
+            ("observedInstanceCount", 2, "observed instance count"),
+            ("observedIndexedInstanced", False, "observed draw mode"),
+        )
+        for key, value, expected in mutations:
+            with self.subTest(key=key):
+                receipt = _receipt(self.contract_sha256)
+                receipt["draw"][key] = value
+                with self.assertRaisesRegex(VERIFIER.ReceiptError, expected):
+                    VERIFIER.verify_receipt(receipt, self.contract_sha256)
+
+    def test_renderer_authority_and_diagnostics_are_required(self) -> None:
+        receipt = _receipt(self.contract_sha256)
+        receipt["draw"]["rendererIdentityAuthority"] = "asserted"
+        with self.assertRaisesRegex(VERIFIER.ReceiptError, "authority"):
+            VERIFIER.verify_receipt(receipt, self.contract_sha256)
+
+        for key, value, expected in (
+            ("callbacksQuiescent", False, "not quiescent"),
+            ("ambiguousDrawJoins", 1, "ambiguousDrawJoins"),
+            ("admittedJoinCount", 2, "exactly one"),
+        ):
+            with self.subTest(key=key):
+                receipt = _receipt(self.contract_sha256)
+                receipt["diagnostics"][key] = value
+                with self.assertRaisesRegex(VERIFIER.ReceiptError, expected):
                     VERIFIER.verify_receipt(receipt, self.contract_sha256)
 
     def test_lost_or_changed_identity_receipts_are_rejected(self) -> None:

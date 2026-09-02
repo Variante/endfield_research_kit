@@ -39,6 +39,9 @@ EXPECTED_VERTEX_SHA256 = (
 EXPECTED_PIXEL_SHA256 = (
     "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e"
 )
+EXPECTED_VERTEX_IDENTITY = 0xC0266E7FAC0046C1
+EXPECTED_PIXEL_IDENTITY = 0x92D80A93ADD9C714
+EXPECTED_INDEX_COUNT = 1080
 EXPECTED_C26_X_BITS = 0xBF800000
 EXPECTED_C26_Y_BITS = 0x3F000000
 
@@ -173,6 +176,86 @@ def verify_receipt(
         draw.get("pixelShaderSha256") == EXPECTED_PIXEL_SHA256,
         "pixel shader identity mismatch",
     )
+    _require(
+        draw.get("rendererIdentityAuthority")
+        == "pinned-source-to-exact-shader-ia-draw-join",
+        "renderer identity authority mismatch",
+    )
+    _require(
+        _require_int(
+            draw.get("observedVertexShaderIdentity"),
+            "observedVertexShaderIdentity",
+            positive=True,
+        )
+        == EXPECTED_VERTEX_IDENTITY,
+        "observed vertex shader identity mismatch",
+    )
+    _require(
+        _require_int(
+            draw.get("observedPixelShaderIdentity"),
+            "observedPixelShaderIdentity",
+            positive=True,
+        )
+        == EXPECTED_PIXEL_IDENTITY,
+        "observed pixel shader identity mismatch",
+    )
+    _require(
+        _require_int(
+            draw.get("observedIndexCount"),
+            "observedIndexCount",
+            positive=True,
+        )
+        == EXPECTED_INDEX_COUNT,
+        "observed index count mismatch",
+    )
+    _require(
+        _require_int(
+            draw.get("observedInstanceCount"),
+            "observedInstanceCount",
+            positive=True,
+        )
+        == 1,
+        "observed instance count mismatch",
+    )
+    _require(
+        draw.get("observedIndexedInstanced") is True,
+        "observed draw mode mismatch",
+    )
+
+    diagnostics = receipt.get("diagnostics")
+    _require(isinstance(diagnostics, dict), "missing receipt diagnostics")
+    _require(diagnostics.get("hooksInstalled") is True, "hooks were not installed")
+    _require(
+        diagnostics.get("callbacksQuiescent") is True,
+        "observer callbacks were not quiescent",
+    )
+    for key in (
+        "sourceObservations",
+        "publicationObservations",
+        "drawObservations",
+    ):
+        _require_int(diagnostics.get(key), f"diagnostics.{key}", positive=True)
+    _require(
+        _require_int(
+            diagnostics.get("admittedJoinCount"),
+            "diagnostics.admittedJoinCount",
+        )
+        == 1,
+        "receipt does not contain exactly one admitted join",
+    )
+    for key in (
+        "sourceAttemptFailures",
+        "publicationAttemptFailures",
+        "identityValidationRejections",
+        "cameraSlotCapacityRejections",
+        "candidateLockRejections",
+        "ambiguousDrawJoins",
+        "duplicateReceipts",
+    ):
+        _require(
+            _require_int(diagnostics.get(key), f"diagnostics.{key}") == 0,
+            f"receipt reports {key}",
+        )
 
     identity = receipt.get("identity")
     _require(isinstance(identity, dict), "missing producer identities")
