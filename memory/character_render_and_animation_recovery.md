@@ -4044,6 +4044,11 @@ draw-local observations. A fresh authenticated current-build receipt is still
 required. The installed 2026-08-25 client replaces the previously pinned
 native pair, so the dedicated observation-only EndfieldCapture lane now has a
 separate current-build manifest rather than weakening the July audio manifest.
+That manifest also authenticates the current signed Streamline 2.10.3
+`sl.interposer.dll` and unchanged `sl.dlss.dll` before attachment. The August
+interposer keeps the required x64 exports and ABI but has a different exact
+file identity from the July module; the runtime pin and preflight manifest now
+agree, so this drift fails before launch rather than after injection.
 M27's global mip-bias equation is re-closed against that exact pair: the field
 offsets survive, and the producer, publication, and dynamic-handler-accessor
 bodies are re-hashed. The current publication no longer re-calls the accessor,
