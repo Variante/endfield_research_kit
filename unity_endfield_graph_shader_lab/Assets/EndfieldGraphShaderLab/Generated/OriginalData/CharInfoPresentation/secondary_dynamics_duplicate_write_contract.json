@@ -1,6 +1,6 @@
 {
   "schema": "endfield.charinfo.secondary-dynamics-duplicate-write.v1",
-  "status": "endminf_transform_access_duplicates_closed_full_target_route_fail_closed",
+  "status": "endminf_transform_access_duplicates_and_installed_target_route_closed",
   "nativeGate": {
     "status": "validated",
     "gameAssembly": {
@@ -39,6 +39,11 @@
       "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_payload_decode.json",
       "size": 1161329,
       "sha256": "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a"
+    },
+    "installedIfixPatchState": {
+      "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
+      "size": 19511,
+      "sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af"
     }
   },
   "native": {
@@ -152,7 +157,14 @@
     ],
     "route": "unpatched native WriteTransform route only",
     "ifixWriteTransformPatchId": "0x32a",
-    "ifixPatchedRouteRecovered": false
+    "ifixPatchedRouteRecovered": false,
+    "installedIfixBoundary": {
+      "targetCount": 32,
+      "beyondDynamicBoneTargetCount": 0,
+      "locallyReplaced": false,
+      "scope": "hash-pinned installed local IFix snapshot",
+      "liveOrFuturePayloadExcluded": true
+    }
   },
   "ordering": {
     "managerEntryOrder": "126 entries retain AddTransform/source insertion order and managerIndex 0..125",
@@ -169,9 +181,13 @@
     "writeTransformSelector": "ClothUpdate tests a native mode byte at the pinned +0xb8c comparison before the +0xbbc WriteTransform call",
     "animatorWriteCallOffset": "0x10b5",
     "animatorWriteSelector": "a separate native mode-byte branch reaches WriteAnimatorBufferData",
-    "targetSelectedRouteProven": false,
-    "reason": "The accepted static payload, callback, schedule, and ui_overview clip evidence do not contain the live global mode-byte values. The existing transform-read contract therefore also leaves the target ReadTransform/animator-buffer branch unresolved.",
-    "consequence": "The exact result below applies to the pinned unpatched TransformAccess WriteTransform route; it is not promoted to a full retail ui_overview_start/loop winner claim."
+    "targetSelectedRouteProven": true,
+    "selectorField": "MagicaManager.UseAnimatorTransform at static_fields+0x0a",
+    "targetValue": false,
+    "writerAudit": "the cctor false store is the sole compiled writer; pinned metadata has no managed setter",
+    "runtimeTelemetryRequired": false,
+    "reason": "The pinned transform-read contract proves UseAnimatorTransform=false from its sole compiled cctor writer, selecting TransformAccess WriteTransform and excluding animator-buffer writeback.",
+    "consequence": "The duplicate result is promoted for the hash-pinned installed target route; a changed IFix snapshot or a future/live payload remains a fail-closed rebuild boundary."
   },
   "writeGating": {
     "staticBranchPrecedence": "world when (flag & 0x02) != 0; else local when (flag & 0x04) != 0; else no TransformAccess setter",
@@ -2792,7 +2808,7 @@
   },
   "runtimePolicyBoundary": {
     "transformAccessRoutePolicyCanBeEvidenceBacked": true,
-    "fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked": false,
+    "fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked": true,
     "policy": "On the pinned TransformAccess route, preserve all 126 entries and apply the native per-entry flags and dynamic gates. A route-local deduplicated publication view may use the sole write-eligible Ribbon2/Ribbon entry on 24 paths and publish nothing from either entry on the two fixed/fixed paths.",
     "ownerWinnerCounts": {
       "MC_Ribbon2": 6,
@@ -2802,9 +2818,10 @@
     "coatWinnerCount": 0,
     "requiresAssumedSourceOrderWinner": false,
     "requiresCompatibilityPriority": false,
-    "staticallyProvenFullTargetWinner": false,
-    "failClosedReason": "ui_overview_start/loop lacks a pinned live callback-route selector, and the animator-buffer duplicate write route is not closed by this contract.",
-    "failClosedRule": "Do not enable a full target runtime duplicate policy until the target callback route is selected by pinned evidence. Any future duplicate group containing more than one write-eligible entry, any source/hash drift, or any IFix-patched route also fails closed; never infer a winner from manager index or owner order.",
+    "staticallyProvenFullTargetWinner": true,
+    "installedSnapshotScope": "The selected callback route and absence of BeyondDynamicBone IFix targets are proven for the exact installed files. Runtime-only, downloaded, or future patches are outside this static snapshot.",
+    "failClosedReason": "",
+    "failClosedRule": "Any future duplicate group containing more than one write-eligible entry, any source/hash drift, or any IFix-patched route fails closed; never infer a winner from manager index or owner order.",
     "runtimeModified": false
   }
 }

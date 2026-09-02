@@ -4086,6 +4086,21 @@ constraint, collision, cross-frame ownership, and writeback selection remain
 separate unresolved stages. No captured positions, curves, or timing are used
 as implementation input.
 
+Endminf's duplicate TransformAccess publication rule is now closed for the
+hash-pinned installed target rather than left behind a stale route assertion.
+The transform-read contract proves `UseAnimatorTransform=false` from its sole
+compiled cctor writer, so the target selects ordinary TransformAccess
+`WriteTransform`; the installed IFix snapshot has no `BeyondDynamicBone`
+target. All 126 source lanes remain distinct, but every one of the 26 duplicate
+paths has at most one write-eligible entry: Ribbon2 owns six, Ribbon owns
+eighteen, and the two fixed/fixed pairs publish neither entry. Execution order
+and owner priority are therefore irrelevant, and the Unity publication adapter
+already applies the matching per-entry flags. Changed files, a future/live IFix
+payload, or any duplicate group with two eligible writers still fail closed.
+This removes duplicate-winner selection from the current blocker set; it does
+not select the live CalcLine route, supply cross-frame/team state, validate the
+solver trajectory, or authorize default writeback.
+
 CalcLine route promotion is now an explicit immutable evidence boundary rather
 than a manual interpretation of the general telemetry report. The dedicated
 `build_secondary_dynamics_calc_line_route_artifact.py` builder independently
