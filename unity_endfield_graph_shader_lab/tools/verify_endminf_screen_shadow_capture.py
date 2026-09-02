@@ -206,6 +206,23 @@ def _payload(blob: bytes, row: dict[str, Any]) -> bytes:
     return blob[start:end]
 
 
+def _payload_ranges_are_disjoint(
+    rows: list[dict[str, Any]],
+) -> bool | None:
+    """Require independently stored bytes for each draw-local snapshot."""
+    ranges: list[tuple[int, int]] = []
+    for row in rows:
+        start = row.get("blobOffset")
+        size = row.get("blobBytes")
+        if (isinstance(start, bool) or not isinstance(start, int)
+                or isinstance(size, bool) or not isinstance(size, int)
+                or start < 0 or size <= 0):
+            return None
+        ranges.append((start, start + size))
+    ranges.sort()
+    return all(left[1] <= right[0] for left, right in zip(ranges, ranges[1:]))
+
+
 def _channel_summary(payload: bytes, channel: int) -> dict[str, Any]:
     values = payload[channel::BYTES_PER_PIXEL]
     histogram = [0] * 256
@@ -545,6 +562,16 @@ def verify_frame(
         for index, row in enumerate(rows):
             if not _selected_descriptor_valid(row, width, height):
                 failures.append(f"{name} payload {index + 1} descriptor/readback is invalid")
+    selected_snapshots = [*output_rows, *consumer_rows]
+    if len(selected_snapshots) == 3:
+        ranges_disjoint = _payload_ranges_are_disjoint(selected_snapshots)
+        if ranges_disjoint is None:
+            failures.append("selected payload range metadata is invalid")
+        elif not ranges_disjoint:
+            failures.append(
+                "selected payload ranges overlap; draw-local snapshots are not "
+                "independently stored"
+            )
 
     record_reports: list[dict[str, Any]] = []
     artifacts: dict[str, Any] = {}
