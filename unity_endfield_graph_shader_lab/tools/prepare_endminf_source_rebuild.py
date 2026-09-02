@@ -54,11 +54,11 @@ EFFECT_LOD_ACTIVATION_CONTRACT = (
     "endminf_effect_lod_activation_contract.json"
 )
 EFFECT_LOD_ACTIVATION_CONTRACT_SHA256 = (
-    "7e938a5fa0ddc9d9d337ae3cddfbe2131e5c8d1829a45375f0c57a25a7507a0d"
+    "bde2fcd48a7562610933d19698445d94aa558dfe7dfcfedfccc57c701f8a427b"
 )
 EFFECT_LOD_NATIVE_HASHES = {
-    "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
-    "metadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "gameAssembly": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadata": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
 }
 EFFECT_ANIMATION_CONTRACT = (
     LAB

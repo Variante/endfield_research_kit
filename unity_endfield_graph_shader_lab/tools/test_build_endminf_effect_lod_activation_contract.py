@@ -55,7 +55,7 @@ class EndminfEffectLodActivationContractTests(unittest.TestCase):
         self.assertEqual(
             [int(row["callVirtualAddress"], 16)
              for row in native["setAllTargetLayersDirectCallers"]],
-            [0x1834FADCE, 0x1834FAEC9, 0x185090CD2, 0x185090D45],
+            [0x183237E09, 0x183238163, 0x18323819A, 0x184D46F41],
         )
 
     def test_runtime_uses_normal_creation_masks_and_authored_initial_state(self) -> None:
@@ -112,7 +112,7 @@ class EndminfEffectLodActivationContractTests(unittest.TestCase):
 
         def changed(path: Path, offset: int, size: int) -> bytes:
             value = original(path, offset, size)
-            if offset == 0x3C2DCE7:
+            if offset == 0x3AE329B:
                 value = bytes([value[0] ^ 1]) + value[1:]
             return value
 
@@ -127,7 +127,7 @@ class EndminfEffectLodActivationContractTests(unittest.TestCase):
 
         def changed(path: Path, offset: int, size: int) -> bytes:
             value = original(path, offset, size)
-            if offset == 0x339BE31:
+            if offset == 0x31F52D1:
                 value = value[:-1] + bytes([value[-1] ^ 1])
             return value
 
@@ -142,7 +142,7 @@ class EndminfEffectLodActivationContractTests(unittest.TestCase):
 
         def changed(path: Path, offset: int, size: int) -> bytes:
             value = original(path, offset, size)
-            if offset == 0x508F280:
+            if offset == 0x4D458CE:
                 value = bytes([value[0] ^ 1]) + value[1:]
             return value
 

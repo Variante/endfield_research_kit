@@ -381,6 +381,9 @@ def _validate_m27_global_mip_bias_source_contract(
         "publicconststringPayloadStatus=\"source_authenticated_for_c26_only\";",
         f'publicconststringStaticContractSha256="{M27_MIP_BIAS_STATIC_CONTRACT_SHA256}";',
         f'publicconststringRendererPathId="{RENDERER_PATH_ID}";',
+        'publicconststringSourceSession="20260902T164359Z";',
+        'privateconstuintExpectedGlobalMipBiasBits=0x00000000u;',
+        'privateconstuintExpectedGlobalMipBiasPow2Bits=0x3f800000u;',
     ))
     absent_resource_fails_closed = all(marker in ensure_loaded for marker in (
         "TextAssetsource=Resources.Load<TextAsset>(ResourceName);",
@@ -394,11 +397,16 @@ def _validate_m27_global_mip_bias_source_contract(
         "string.Equals(payload.status,PayloadStatus,StringComparison.Ordinal)",
     ))
     hash_identity_gate = all(marker in validate_payload for marker in (
-        "!IsLowerHex(payload.sourceReportSha256,64)",
-        "!IsLowerHex(payload.receiptSha256,64)",
-        "!IsLowerHex(payload.runtimePackageSha256,64)",
+        "string.Equals(payload.sourceSession,SourceSession,StringComparison.Ordinal)",
+        "string.Equals(payload.sourceReportSha256,SourceReportSha256,StringComparison.Ordinal)",
+        "string.Equals(payload.receiptSha256,ReceiptSha256,StringComparison.Ordinal)",
+        "string.Equals(payload.runtimePackageSha256,RuntimePackageSha256,StringComparison.Ordinal)",
         "string.Equals(payload.staticContractSha256,StaticContractSha256,StringComparison.Ordinal)",
         "string.Equals(payload.rendererPathId,RendererPathId,StringComparison.Ordinal)",
+    )) and all(marker in compact_source for marker in (
+        'publicconststringSourceReportSha256="770dfbadc4e3ac86d56a180a46bcf13ace2bfa84bc8203196632e7772072f650";',
+        'publicconststringReceiptSha256="a3eacd21d0839819a60ce728b3483526b1bf3adb339cf08311dc4b816ddda416";',
+        'publicconststringRuntimePackageSha256="8952d381680d3f5ad53d6376d9f7e3982fc6959c29a40926934d761a152e3e0e";',
     ))
     authority_gate = (
         "if(!payload.canPopulatePhysicalCameraMipBiasSource||"
@@ -410,6 +418,8 @@ def _validate_m27_global_mip_bias_source_contract(
         "TryParseBits(payload.publishedC26YBits,outuintpow2Bits)",
         "FloatBits(material+dynamicTerm)!=globalBits",
         "FloatBits(Mathf.Pow(2.0f,global))!=pow2Bits",
+        "globalBits!=ExpectedGlobalMipBiasBits",
+        "pow2Bits!=ExpectedGlobalMipBiasPow2Bits",
         "value=global;returntrue;",
     ))
     overlay_preserves_other_sources = (
@@ -1064,11 +1074,17 @@ def _validate_runtime_b3_material_source(
                          "runtime _ParallaxMarchNum is not an exact uint")
             records.append({"property": name, "source": "generated_mat_float"})
 
-    _require({row["property"] for row in records} == {
+    actual_properties = {row["property"] for row in records}
+    expected_properties = {
         "_BaseColor", "_BaseColorMap_ST", "_NormalMap_ST",
         "_ParallaxColor", "_ParallaxIntensity", "_ParallaxMarchNum",
         "_ParallaxMinBrightness", "_ParallaxStrength", "_ParallaxTilling",
-    }, "runtime M27 material selected b3 override coverage drifted")
+    }
+    _require(
+        actual_properties == expected_properties,
+        "runtime M27 material selected b3 override coverage drifted: "
+        f"expected={sorted(expected_properties)}, actual={sorted(actual_properties)}",
+    )
     return {
         "name": "M_fx_endminm_gfx_27",
         "selectedB3OverrideCount": len(records),

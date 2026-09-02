@@ -106,6 +106,58 @@ class RefreshIfixPatchTests(unittest.TestCase):
                 )
         self.assertEqual(observed, patch)
 
+    def test_animestudio_targeted_index_allows_empty_companion_chunk(self) -> None:
+        patch = synthetic_patch()
+        actual_md5 = hashlib.md5(patch).hexdigest().upper()
+        index = {
+            "blocks": [{
+                "name": "IFixPatchOut",
+                "chunks": [
+                    {
+                        "absolutePath": "C:/fixture/patch.chk",
+                        "byteCount": len(patch),
+                        "fileCount": 1,
+                        "files": [{"name": MODULE.PATCH_NAME}],
+                    },
+                    {
+                        "absolutePath": "C:/fixture/empty.chk",
+                        "byteCount": 0,
+                        "fileCount": 0,
+                        "files": [],
+                    },
+                ],
+            }],
+            "files": [{
+                "fileName": MODULE.PATCH_NAME,
+                "fileDataMd5": actual_md5,
+                "length": len(patch),
+            }],
+        }
+
+        with tempfile.TemporaryDirectory() as folder:
+            index_path = Path(folder) / "index.json"
+
+            def run(args: list[str]) -> SimpleNamespace:
+                if args[0] == "vfs-index":
+                    index_path.write_text(json.dumps(index), encoding="utf-8")
+                    return SimpleNamespace(stdout="", stderr="", returncode=0)
+                row = {
+                    "fileName": MODULE.PATCH_NAME,
+                    "dataBase64": base64.b64encode(patch).decode("ascii"),
+                }
+                return SimpleNamespace(
+                    stdout=json.dumps(row), stderr="", returncode=0
+                )
+
+            with mock.patch.object(MODULE, "_run_animestudio", side_effect=run):
+                _, _, chunk, observed = MODULE._extract_current_ifix(
+                    Path("C:/fixture/Persistent"),
+                    Path("C:/fixture/StreamingAssets"),
+                    index_path,
+                )
+        self.assertEqual(chunk["absolutePath"], "C:/fixture/patch.chk")
+        self.assertEqual(observed, patch)
+
     def test_animestudio_stream_md5_mismatch_fails_closed(self) -> None:
         patch = synthetic_patch()
         index = {

@@ -460,7 +460,7 @@ namespace EndfieldGraphShaderLabEditor
                 admissionDiagnostic.IndexOf(
                     "c19.zw",
                     StringComparison.Ordinal) >= 0;
-            string exactPayload = BuildInlineM27C26Payload("3f000000");
+            string exactPayload = BuildInlineM27C26Payload("3f800000");
             bool c26InlineAccepted =
                 EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
                     exactPayload,
@@ -468,7 +468,7 @@ namespace EndfieldGraphShaderLabEditor
                     out _);
             bool c26InlineValueMatches = c26InlineAccepted &&
                 unchecked((uint)BitConverter.SingleToInt32Bits(c26InlineValue)) ==
-                    0xbf800000u;
+                    0x00000000u;
             bool c26MalformedRejected =
                 !EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
                     "{\"schema\":\"bad\"}",
@@ -476,7 +476,7 @@ namespace EndfieldGraphShaderLabEditor
                     out _);
             bool c26Pow2MismatchRejected =
                 !EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
-                    BuildInlineM27C26Payload("3f800000"),
+                    BuildInlineM27C26Payload("3f000000"),
                     out _,
                     out _);
             EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs
@@ -499,7 +499,7 @@ namespace EndfieldGraphShaderLabEditor
             bool c26OverlayPopulated = overlayBuildAccepted && VectorBitsEqual(
                 overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
                     .GlobalMipBiasVector],
-                new Vector4(-1.0f, 0.5f, 0.0f, 0.0f));
+                new Vector4(0.0f, 1.0f, 0.0f, 0.0f));
             bool c26OverlayPreservedPartialSources = overlayBuildAccepted &&
                 VectorBitsEqual(
                     overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
@@ -528,7 +528,7 @@ namespace EndfieldGraphShaderLabEditor
             bool c26ResourceStateValid = c26ResourceExists
                 ? c26ResourceReady &&
                     unchecked((uint)BitConverter.SingleToInt32Bits(
-                        c26ResourceValue)) == 0xbf800000u
+                        c26ResourceValue)) == 0x00000000u
                 : !c26ResourceReady;
             return new M27PartialSourceReport
             {
@@ -570,25 +570,26 @@ namespace EndfieldGraphShaderLabEditor
         private static string BuildInlineM27C26Payload(
             string publishedC26YBits)
         {
-            string sha1 = new string('1', 64);
-            string sha2 = new string('2', 64);
-            string sha3 = new string('3', 64);
             return "{" +
                 "\"schema\":\"" +
                 EndfieldRecoveredM27GlobalMipBiasSource.PayloadSchema + "\"," +
                 "\"status\":\"" +
                 EndfieldRecoveredM27GlobalMipBiasSource.PayloadStatus + "\"," +
-                "\"sourceSession\":\"test\"," +
-                "\"sourceReportSha256\":\"" + sha1 + "\"," +
-                "\"receiptSha256\":\"" + sha2 + "\"," +
-                "\"runtimePackageSha256\":\"" + sha3 + "\"," +
+                "\"sourceSession\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.SourceSession + "\"," +
+                "\"sourceReportSha256\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.SourceReportSha256 + "\"," +
+                "\"receiptSha256\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.ReceiptSha256 + "\"," +
+                "\"runtimePackageSha256\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.RuntimePackageSha256 + "\"," +
                 "\"staticContractSha256\":\"" +
                 EndfieldRecoveredM27GlobalMipBiasSource.StaticContractSha256 +
                 "\",\"rendererPathId\":\"" +
                 EndfieldRecoveredM27GlobalMipBiasSource.RendererPathId + "\"," +
                 "\"materialMipBiasBits\":\"00000000\"," +
-                "\"dynamicTermBits\":\"bf800000\"," +
-                "\"globalMipBiasBits\":\"bf800000\"," +
+                "\"dynamicTermBits\":\"00000000\"," +
+                "\"globalMipBiasBits\":\"00000000\"," +
                 "\"publishedC26YBits\":\"" + publishedC26YBits + "\"," +
                 "\"canPopulatePhysicalCameraMipBiasSource\":true," +
                 "\"presentationAuthority\":false}";

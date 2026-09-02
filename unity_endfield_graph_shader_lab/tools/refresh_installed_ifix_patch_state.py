@@ -83,7 +83,28 @@ def _extract_current_ifix(
         )
     block = blocks[0]
     chunks = block.get("chunks") or []
-    if (block.get("name") != "IFixPatchOut" or len(chunks) != 1 or
+    legacy_single_chunk = (
+        len(chunks) == 1
+        and "fileCount" not in chunks[0]
+        and "files" not in chunks[0]
+    )
+    file_chunks = [
+        row for row in chunks
+        if legacy_single_chunk or (
+            int(row.get("fileCount", len(row.get("files") or []))) == 1
+            and len(row.get("files") or []) == 1
+            and (row.get("files") or [{}])[0].get("name") == PATCH_NAME
+        )
+    ]
+    empty_chunks = [
+        row for row in chunks
+        if not legacy_single_chunk
+        and int(row.get("fileCount", len(row.get("files") or []))) == 0
+        and not (row.get("files") or [])
+        and int(row.get("byteCount", 0)) == 0
+    ]
+    if (block.get("name") != "IFixPatchOut" or len(file_chunks) != 1 or
+            len(file_chunks) + len(empty_chunks) != len(chunks) or
             files[0].get("fileName") != PATCH_NAME):
         raise ValueError("targeted IFix VFS index identity drifted")
 
@@ -112,7 +133,7 @@ def _extract_current_ifix(
             "IFix patch MD5 mismatch: " + actual_md5 +
             f" != {expected_md5} (VFS byte order)"
         )
-    return index_payload, block, chunks[0], patch_bytes
+    return index_payload, block, file_chunks[0], patch_bytes
 
 
 def _build_base_ifix_index(
@@ -490,6 +511,7 @@ def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str
     game_assembly_record = dynamic_file_record(game_assembly)
     metadata_record = dynamic_file_record(metadata)
     loader_recovery = report.get("loader_recovery") or {}
+    selected_code_registration = None
     for key in ("metadata_catalog", "native_map"):
         record = loader_recovery.get(key) or {}
         relative = record.get("repo_path")
@@ -512,12 +534,20 @@ def refresh(game_root: Path, report_path: Path, evidence_root: Path) -> dict[str
         record["size"] = artifact.stat().st_size
         record["sha256"] = sha256(artifact)
         if key == "native_map":
+            selected_code_registration = str(
+                (artifact_payload.get("codeRegistration") or {}).get("va") or ""
+            ).lower()
+            if not selected_code_registration.startswith("0x"):
+                raise ValueError(
+                    "loader native map is missing its CodeRegistration identity"
+                )
             record["mapped_targets"] = int(
                 artifact_payload["summary"]["mappedTargetCount"]
             )
     source_build = report.setdefault("source_build", {})
     source_build["game_assembly"] = game_assembly_record
     source_build["global_metadata"] = metadata_record
+    source_build["code_registration"] = selected_code_registration
 
     vfs = report.setdefault("vfs_state", {})
     base = vfs.setdefault("base_streaming_assets", {})
