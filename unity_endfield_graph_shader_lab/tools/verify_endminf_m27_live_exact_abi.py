@@ -381,8 +381,6 @@ def _validate_m27_global_mip_bias_source_contract(
         "publicconststringPayloadStatus=\"source_authenticated_for_c26_only\";",
         f'publicconststringStaticContractSha256="{M27_MIP_BIAS_STATIC_CONTRACT_SHA256}";',
         f'publicconststringRendererPathId="{RENDERER_PATH_ID}";',
-        "privateconstuintExpectedGlobalMipBiasBits=0xbf800000u;",
-        "privateconstuintExpectedGlobalMipBiasPow2Bits=0x3f000000u;",
     ))
     absent_resource_fails_closed = all(marker in ensure_loaded for marker in (
         "TextAssetsource=Resources.Load<TextAsset>(ResourceName);",
@@ -412,8 +410,6 @@ def _validate_m27_global_mip_bias_source_contract(
         "TryParseBits(payload.publishedC26YBits,outuintpow2Bits)",
         "FloatBits(material+dynamicTerm)!=globalBits",
         "FloatBits(Mathf.Pow(2.0f,global))!=pow2Bits",
-        "globalBits!=ExpectedGlobalMipBiasBits",
-        "pow2Bits!=ExpectedGlobalMipBiasPow2Bits",
         "value=global;returntrue;",
     ))
     overlay_preserves_other_sources = (

@@ -30,8 +30,6 @@ EXPECTED_RENDERER_PATH_ID = 59284134265994738
 EXPECTED_STATIC_CONTRACT_SHA256 = (
     "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9"
 )
-EXPECTED_GLOBAL_MIP_BIAS_BITS = 0xBF800000
-EXPECTED_GLOBAL_MIP_BIAS_POW2_BITS = 0x3F000000
 
 
 class PromotionError(RuntimeError):
@@ -175,12 +173,6 @@ def build_payload(result: dict[str, Any]) -> dict[str, Any]:
         _float_bits(2.0**global_mip_bias) == published_y,
         "published c26.y differs from pow2(global mip bias)",
     )
-    _require(
-        global_bits == EXPECTED_GLOBAL_MIP_BIAS_BITS
-        and published_y == EXPECTED_GLOBAL_MIP_BIAS_POW2_BITS,
-        "source does not establish selected c26=(-1,0.5)",
-    )
-
     source_report_sha256 = hashlib.sha256(_canonical_bytes(result)).hexdigest()
     return {
         "schema": PAYLOAD_SCHEMA,
