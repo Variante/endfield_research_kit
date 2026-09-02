@@ -158,6 +158,40 @@ def verify_inventory_binding(
     return result
 
 
+def verify_session(
+    session_root: Path,
+    *,
+    contract: Path | None = None,
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
+) -> dict[str, Any]:
+    """Return the admitted session result after every inventory/source gate."""
+    receipt_path = session_root / RECEIPT_RELATIVE_PATH
+    receipt = _load_json(receipt_path, "M27 mip-bias receipt")
+    hashes = verify_inventory_binding(session_root, receipt)
+    verifier = _load_receipt_verifier()
+    contract_args: dict[str, Any] = {}
+    if contract is not None:
+        contract_args["contract_path"] = contract
+    if gameassembly is not None:
+        contract_args["gameassembly"] = gameassembly
+    if metadata is not None:
+        contract_args["metadata"] = metadata
+    _contract, contract_sha256 = verifier.load_validated_contract(
+        **contract_args
+    )
+    source_result = verifier.verify_receipt(receipt, contract_sha256)
+    return {
+        "schema": RESULT_SCHEMA,
+        "status": "inventoried_source_receipt_admitted",
+        "session": receipt["session"]["sessionId"],
+        "receiptSha256": hashes[RECEIPT_RELATIVE_PATH],
+        "runtimePackageSha256": hashes[RUNTIME_RELATIVE_PATH],
+        "sourceVerification": source_result,
+        "presentationAuthority": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("session_root", type=Path)
@@ -167,30 +201,12 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     try:
-        receipt_path = args.session_root / RECEIPT_RELATIVE_PATH
-        receipt = _load_json(receipt_path, "M27 mip-bias receipt")
-        hashes = verify_inventory_binding(args.session_root, receipt)
-        verifier = _load_receipt_verifier()
-        contract_args: dict[str, Any] = {}
-        if args.contract is not None:
-            contract_args["contract_path"] = args.contract
-        if args.gameassembly is not None:
-            contract_args["gameassembly"] = args.gameassembly
-        if args.metadata is not None:
-            contract_args["metadata"] = args.metadata
-        _contract, contract_sha256 = verifier.load_validated_contract(
-            **contract_args
+        result = verify_session(
+            args.session_root,
+            contract=args.contract,
+            gameassembly=args.gameassembly,
+            metadata=args.metadata,
         )
-        source_result = verifier.verify_receipt(receipt, contract_sha256)
-        result = {
-            "schema": RESULT_SCHEMA,
-            "status": "inventoried_source_receipt_admitted",
-            "session": receipt["session"]["sessionId"],
-            "receiptSha256": hashes[RECEIPT_RELATIVE_PATH],
-            "runtimePackageSha256": hashes[RUNTIME_RELATIVE_PATH],
-            "sourceVerification": source_result,
-            "presentationAuthority": False,
-        }
     except (
         OSError,
         KeyError,

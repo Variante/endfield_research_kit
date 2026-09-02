@@ -29,6 +29,12 @@ TERRAIN_NATIVE_CONTRACT_SCHEMA = (
     "endfield.endminf-m27-terrain-profile-native-contract.v1")
 TERRAIN_SELECTED_FRAME_SCHEMA = (
     "endfield.endminf-m27-terrain-profile-selected-frame.v1")
+M27_MIP_BIAS_SOURCE_SCHEMA = (
+    "endfield.endminf-m27-global-mip-bias-unity-source.v1")
+M27_MIP_BIAS_RESOURCE_NAME = (
+    "EndfieldRecoveredM27/endminf_m27_global_mip_bias_source")
+M27_MIP_BIAS_STATIC_CONTRACT_SHA256 = (
+    "3206c46847f98c7821b800aa52b3792ebf8cf7622ab1054ce21f51f872a7e1d3")
 
 VS_SHA256 = "c0266e7fac0046c18ef9ce4ca229873284198d3b2202af0e2db86d073dd57c3c"
 PS_SHA256 = "92d80a93add9c714daeb265a66d3fe6e841c32825728d6af4268cede13c0c44e"
@@ -350,10 +356,141 @@ def _method_body(source: str, signature: str) -> str:
     return ""
 
 
+def _validate_m27_global_mip_bias_source_contract(
+        source_text: str,
+        contract_text: str,
+        pipeline_text: str) -> dict[str, Any]:
+    """Audit the absent-by-default authenticated c26 Resource bridge."""
+    compact_source = re.sub(r"\s+", "", source_text)
+    compact_contract = re.sub(r"\s+", "", contract_text)
+    ensure_loaded = re.sub(
+        r"\s+", "", _method_body(source_text, "private void EnsureLoaded()"))
+    validate_payload = re.sub(
+        r"\s+", "", _method_body(
+            source_text,
+            "public static bool TryValidatePayloadJson("))
+    overlay_method = re.sub(
+        r"\s+", "", _method_body(
+            contract_text,
+            "public M27SourceInputs WithPhysicalCameraGlobalMipBias("))
+
+    identity_and_resource_gate = all(marker in compact_source for marker in (
+        "publicsealedclassEndfieldRecoveredM27GlobalMipBiasSource",
+        f'publicconststringResourceName="{M27_MIP_BIAS_RESOURCE_NAME}";',
+        f'publicconststringPayloadSchema="{M27_MIP_BIAS_SOURCE_SCHEMA}";',
+        "publicconststringPayloadStatus=\"source_authenticated_for_c26_only\";",
+        f'publicconststringStaticContractSha256="{M27_MIP_BIAS_STATIC_CONTRACT_SHA256}";',
+        f'publicconststringRendererPathId="{RENDERER_PATH_ID}";',
+        "privateconstuintExpectedGlobalMipBiasBits=0xbf800000u;",
+        "privateconstuintExpectedGlobalMipBiasPow2Bits=0x3f000000u;",
+    ))
+    absent_resource_fails_closed = all(marker in ensure_loaded for marker in (
+        "TextAssetsource=Resources.Load<TextAsset>(ResourceName);",
+        "if(source==null)",
+        'diagnostic="authenticatedEndminfM27global-mip-biasResourceisabsent";',
+        "return;",
+        "ready=TryValidatePayloadJson(source.text,outglobalMipBias,outdiagnostic);",
+    ))
+    schema_status_gate = all(marker in validate_payload for marker in (
+        "string.Equals(payload.schema,PayloadSchema,StringComparison.Ordinal)",
+        "string.Equals(payload.status,PayloadStatus,StringComparison.Ordinal)",
+    ))
+    hash_identity_gate = all(marker in validate_payload for marker in (
+        "!IsLowerHex(payload.sourceReportSha256,64)",
+        "!IsLowerHex(payload.receiptSha256,64)",
+        "!IsLowerHex(payload.runtimePackageSha256,64)",
+        "string.Equals(payload.staticContractSha256,StaticContractSha256,StringComparison.Ordinal)",
+        "string.Equals(payload.rendererPathId,RendererPathId,StringComparison.Ordinal)",
+    ))
+    authority_gate = (
+        "if(!payload.canPopulatePhysicalCameraMipBiasSource||"
+        "payload.presentationAuthority)" in validate_payload)
+    bit_and_equation_gate = all(marker in validate_payload for marker in (
+        "TryParseBits(payload.materialMipBiasBits,outuintmaterialBits)",
+        "TryParseBits(payload.dynamicTermBits,outuintdynamicBits)",
+        "TryParseBits(payload.globalMipBiasBits,outuintglobalBits)",
+        "TryParseBits(payload.publishedC26YBits,outuintpow2Bits)",
+        "FloatBits(material+dynamicTerm)!=globalBits",
+        "FloatBits(Mathf.Pow(2.0f,global))!=pow2Bits",
+        "globalBits!=ExpectedGlobalMipBiasBits",
+        "pow2Bits!=ExpectedGlobalMipBiasPow2Bits",
+        "value=global;returntrue;",
+    ))
+    overlay_preserves_other_sources = (
+        "if(!ready)returnthis;returnnewM27SourceInputs("
+        "targetDimensionsReady,perspectiveCameraReady,taaJitterStrength,"
+        "taaJitterReady,value,true,exposureAdaptation,exposureReady,"
+        "vfxPlayerPosition,vfxClockSeconds,vfxParams0Ready,vfxParams2,"
+        "vfxParams2Ready);" in overlay_method and
+        "publicreadonlyfloatphysicalCameraGlobalMipBias;" in compact_contract and
+        "publicreadonlyboolphysicalCameraGlobalMipBiasReady;" in compact_contract)
+
+    compact_pipeline = re.sub(r"\s+", "", pipeline_text)
+    owner_lifecycle = all(marker in compact_pipeline for marker in (
+        "privatereadonlyEndfieldRecoveredM27GlobalMipBiasSource"
+        "recoveredM27GlobalMipBiasSource;",
+        "recoveredM27GlobalMipBiasSource="
+        "newEndfieldRecoveredM27GlobalMipBiasSource();",
+    ))
+    try_get_call = _call_text(
+        pipeline_text,
+        "recoveredM27GlobalMipBiasSource.TryGetGlobalMipBias")
+    try_get_arguments = _call_arguments(try_get_call)
+    try_get_exact = try_get_arguments == [
+        "out float recoveredM27GlobalMipBias", "out _"]
+    source_assignments = _assignment_expressions(pipeline_text, "m27SourceInputs")
+    source_assignment_expressions = [
+        re.sub(r"\s+", "", row[2]) for row in source_assignments]
+    expected_initial = (
+        "EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs."
+        "CurrentTargetPerspectiveExposureAndVFXPlayer("
+        "recoveredCurrentCameraExposure,recoveredCurrentCameraExposureReady,"
+        "recoveredVFXPlayerPosition,recoveredVFXClockSeconds,"
+        "recoveredVFXParams0Ready)")
+    expected_overlay = (
+        "m27SourceInputs.WithPhysicalCameraGlobalMipBias("
+        "recoveredM27GlobalMipBias,true)")
+    exact_two_stage_assignment = (
+        source_assignment_expressions == [expected_initial, expected_overlay])
+    publish_call = _call_text(
+        pipeline_text, "recoveredShaderVariablesGlobal.PrepareAndPublish")
+    publish_arguments = _call_arguments(publish_call)
+    publish_position = pipeline_text.find(publish_call)
+    try_get_position = pipeline_text.find(try_get_call)
+    overlay_ordered_before_publish = (
+        len(source_assignments) == 2 and
+        source_assignments[0][1] < try_get_position <
+        source_assignments[1][0] < source_assignments[1][1] < publish_position and
+        len(publish_arguments) == 8 and
+        publish_arguments[5] == "m27SourceInputs")
+
+    checks = {
+        "namedSourceOwner": identity_and_resource_gate,
+        "absentResourceFailsClosed": absent_resource_fails_closed,
+        "schemaStatusGate": schema_status_gate,
+        "hashIdentityGate": hash_identity_gate,
+        "authorityGate": authority_gate,
+        "bitAndEquationGate": bit_and_equation_gate,
+        "overlayPreservesOtherSources": overlay_preserves_other_sources,
+        "pipelineOwnerLifecycle": owner_lifecycle,
+        "pipelineTryGetExact": try_get_exact,
+        "exactTwoStageAssignment": exact_two_stage_assignment,
+        "overlayOrderedBeforePublisher": overlay_ordered_before_publish,
+    }
+    return {
+        "resourceName": M27_MIP_BIAS_RESOURCE_NAME,
+        "payloadSchema": M27_MIP_BIAS_SOURCE_SCHEMA,
+        "resourceRequiredAtAuditTime": False,
+        "checks": checks,
+        "connectionAudited": all(checks.values()),
+    }
+
+
 def _validate_b1_source_contract(
         contract_text: str,
         owner_text: str,
-        pipeline_text: str) -> dict[str, Any]:
+        pipeline_text: str,
+        m27_mip_bias_source_text: str) -> dict[str, Any]:
     """Audit source-owned M27 b1 equations separately from live owners."""
     compact_contract = re.sub(r"\s+", "", contract_text)
     compact_owner = re.sub(r"\s+", "", owner_text)
@@ -369,7 +506,7 @@ def _validate_b1_source_contract(
         "c4.w": "public readonly bool perspectiveCameraReady;",
         "c19.zw": "public readonly bool taaJitterReady;",
         "c26.xy": (
-            "public readonly bool physicalCameraMaterialMipBiasReady;"),
+            "public readonly bool physicalCameraGlobalMipBiasReady;"),
         "c27.y": "public readonly bool exposureReady;",
         "c103.xyzw": "public readonly bool vfxParams0Ready;",
         "c105.xyzw": "public readonly bool vfxParams2Ready;",
@@ -388,9 +525,9 @@ def _validate_b1_source_contract(
             "if(m27Inputs.taaJitterReady)" in compact_contract and
             "m27Inputs.taaJitterStrength" in compact_contract),
         "physicalCameraMipBiasInputGuarded": (
-            "if(m27Inputs.physicalCameraMaterialMipBiasReady)" in
+            "if(m27Inputs.physicalCameraGlobalMipBiasReady)" in
             compact_contract and
-            "Mathf.Pow(2.0f,m27Inputs.physicalCameraMaterialMipBias)" in
+            "Mathf.Pow(2.0f,m27Inputs.physicalCameraGlobalMipBias)" in
             compact_contract),
         "exposureReciprocalInputGuarded": (
             "if(m27Inputs.exposureReady)" in compact_contract and
@@ -513,10 +650,15 @@ def _validate_b1_source_contract(
             "recoveredVFXPlayerPosition,recoveredVFXClockSeconds,"
             "recoveredVFXParams0Ready)"),
     }
-    assignments = {
+    assignments: dict[str, tuple[int, int, str] | None] = {
         variable: _unique_compact_assignment(pipeline_text, variable)
-        for variable in expected_assignments
+        for variable in expected_assignments if variable != "m27SourceInputs"
     }
+    m27_assignments = _assignment_expressions(pipeline_text, "m27SourceInputs")
+    assignments["m27SourceInputs"] = (
+        (m27_assignments[0][0], m27_assignments[0][1],
+         re.sub(r"\s+", "", m27_assignments[0][2]))
+        if len(m27_assignments) == 2 else None)
     assignment_shapes_audited = {
         variable: assignment is not None and assignment[2] == expected
         for variable, expected in expected_assignments.items()
@@ -559,11 +701,18 @@ def _validate_b1_source_contract(
     partial_source_join_audited = (
         source_input_expression == "m27SourceInputs" and
         partial_factory_audited and partial_pipeline_join_audited)
+    mip_bias_source_contract = _validate_m27_global_mip_bias_source_contract(
+        m27_mip_bias_source_text,
+        contract_text,
+        pipeline_text)
+    c26_source_connection_audited = (
+        partial_source_join_audited and
+        mip_bias_source_contract["connectionAudited"])
     runtime_read_connections = {
         "c0.zw": partial_source_join_audited,
         "c4.w": partial_source_join_audited,
         "c19.zw": False,
-        "c26.xy": False,
+        "c26.xy": c26_source_connection_audited,
         "c27.y": partial_source_join_audited,
         "c103.xyzw": partial_source_join_audited,
         "c105.xyzw": False,
@@ -571,7 +720,8 @@ def _validate_b1_source_contract(
     # A named owner property is only a connection candidate. Its per-field
     # readiness/lifecycle still needs a separate audit. The current audited
     # connection is instead a local partial join with explicitly bounded lanes.
-    named_source_owner_contract_audited = False
+    named_source_owner_contract_audited = mip_bias_source_contract[
+        "connectionAudited"]
     explicit_inputs_reach_runtime = (
         len(pipeline_publish_arguments) == 8 and
         (partial_source_join_audited or
@@ -607,6 +757,7 @@ def _validate_b1_source_contract(
             "assignmentOrderAudited": assignment_order_audited,
             "partialPipelineJoinAudited": partial_pipeline_join_audited,
             "partialSourceJoinAudited": partial_source_join_audited,
+            "m27GlobalMipBiasSource": mip_bias_source_contract,
         },
         "runtimeReadConnections": runtime_read_connections,
         "populatedSelectedReads": [
@@ -998,6 +1149,9 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     global_owner_path = repo / (
         "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
         "Rendering/EndfieldRecoveredShaderVariablesGlobal.cs")
+    m27_mip_bias_source_path = repo / (
+        "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
+        "Rendering/EndfieldRecoveredM27GlobalMipBiasSource.cs")
     frame_runtime_path = repo / (
         "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Runtime/"
         "Rendering/EndfieldRecoveredDeferredGBufferFrame.cs")
@@ -1022,6 +1176,7 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         compatibility_shader_meta_path, b0_source_contract_path,
         transform_contract_path,
         transform_owner_path, global_contract_path, global_owner_path,
+        m27_mip_bias_source_path,
         frame_runtime_path, generative_runtime_path, pipeline_path,
         binding_policy_path,
     ]
@@ -1381,6 +1536,7 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     transform_owner = transform_owner_path.read_text(encoding="utf-8")
     global_contract = global_contract_path.read_text(encoding="utf-8")
     global_owner = global_owner_path.read_text(encoding="utf-8")
+    m27_mip_bias_source = m27_mip_bias_source_path.read_text(encoding="utf-8")
     _require("public const int SizeBytes = 1312;" in transform_contract and
              "public const int VectorCount = 82;" in transform_contract and
              "EndfieldRecoveredDeferredTransformVariablesContract.SizeBytes" in transform_owner,
@@ -1417,7 +1573,8 @@ def _validate_static(repo: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     b1_source_contract = _validate_b1_source_contract(
         global_contract,
         global_owner,
-        pipeline_text)
+        pipeline_text,
+        m27_mip_bias_source)
     compatibility_text = compatibility_binding_path.read_text(encoding="utf-8")
     shell_observer_text = shell_observer_path.read_text(encoding="utf-8")
     generative_forbidden_packet_data = (

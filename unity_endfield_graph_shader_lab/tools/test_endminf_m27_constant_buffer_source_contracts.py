@@ -208,7 +208,7 @@ class EndminfM27ConstantBufferSourceContractsTest(unittest.TestCase):
             "targetDimensionsReady",
             "perspectiveCameraReady",
             "taaJitterReady",
-            "physicalCameraMaterialMipBiasReady",
+            "physicalCameraGlobalMipBiasReady",
             "exposureReady",
             "vfxParams0Ready",
             "vfxParams2Ready",

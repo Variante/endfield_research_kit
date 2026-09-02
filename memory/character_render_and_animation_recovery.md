@@ -4045,14 +4045,31 @@ required. M27's global mip-bias equation is source-closed, and the maintained
 observation-only EndfieldCapture lane can now join the completed physical-camera
 update, branch state, dynamic-resolution inputs, later global-buffer
 publication, and exact M27 draw within one Present epoch. Its Release build,
-33-test native gate, 18-test source/session verifier gate, batch contract, and
-nonlaunching exact-installed-build preflight pass. No authenticated retail
-receipt has been collected yet, so `c26.xy` remains unpromoted; adjacent `c19`
-TAA jitter and unrelated `c105` are not substitutes. Use
+33-test native gate, source/session verifier gate, batch contract, and
+nonlaunching exact-installed-build preflight pass. A maintained raw-session
+promoter now re-runs every inventory, source, identity, hash, equation, and
+authority gate before it can write the minimal Unity Resource. The Resource is
+intentionally absent until such a receipt exists; its Unity owner fails closed,
+and the c26 overlay preserves every other b1 source lane. The focused Python
+suite passes 23 tests, and the Unity D3D11 verifier compiles the owner and reports
+the inline, malformed, pow2, overlay, lane-preservation, and absent-Resource
+checks valid. Its unrelated historical source-audit input is absent on this
+checkout, so the aggregate verifier remains red even though the focused c26
+component is valid. No authenticated retail receipt has been collected, so
+`c26.xy` remains unpromoted; adjacent `c19` TAA jitter and unrelated `c105` are
+not substitutes. Use
 `tools\EndfieldCapture\StartEndminfM27MipBiasCapture.bat` with Endfield closed,
 keep the first Endminf overview entry visible through its first settled loop
 wrap, then press Numpad 9. The inventoried session verifier remains explicitly
 non-authoritative for presentation.
+
+The archived `20260826T091023Z` exact M27 draw independently decodes
+`c105=(0,0,0,0)`, but a strict existing-session verifier rejects it at inventory
+binding because the contemporaneous collection inventory and source-frame
+alignment artifact are absent. Those bytes remain one-draw validation evidence:
+they do not establish the HGVFXManager field lifecycle, a sequence default, a
+canonical publisher value, or presentation authority. Unity c105 therefore
+remains disconnected.
 
 The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Exact per-owner child topology is now
@@ -4191,18 +4208,20 @@ remain validation-only. All 50 selected b3 words are tied bit-exactly to 37
 original material fields, explicit packoffsets, the generated Unity material,
 and the compatibility shader's effective defaults. The b1 source contract has
 distinct readiness for target dimensions, perspective, TAA jitter,
-physical-camera material mip bias, exposure, VFX player/time, and the HGVFX
+physical-camera global mip bias, exposure, VFX player/time, and the HGVFX
 anchor. Its partial live publisher admits c27 only from the source-closed
 Manual-exposure path with the exact selected camera/environment gate,
 automatic exposure disabled, a persistent non-null state, and finite positive
 exposure. It publishes c103 from the unique actor root plus `Time.time` only as
 an explicit lab carrier, not as proof of the retail selected-frame HGVFX
-identity. c19, c26, and c105 remain zero/unready, so exact b1 admission remains
-closed. The selected physical camera publishes c26.xy=(-1,0.5), while
-serialized virtual-camera defaults only prove (0,1). The exact-build observer
-and strict inventoried session verifier are ready to authenticate the live
-physical-camera assignment path, but no admitted retail receipt exists yet;
-do not substitute either value before it does. Admission also still
+identity. The authenticated c26 Resource/overlay route is now statically
+connected, but the Resource is absent, so c19, c26, and c105 remain zero/unready
+and exact b1 admission remains closed. The selected physical-camera equation
+targets c26.xy=(-1,0.5), while serialized virtual-camera defaults only prove
+(0,1). The exact-build observer, strict inventoried session verifier, and
+raw-session promoter are ready to authenticate and publish the live assignment
+path, but no admitted retail receipt exists yet; do not substitute either value
+before it does. Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
 bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted

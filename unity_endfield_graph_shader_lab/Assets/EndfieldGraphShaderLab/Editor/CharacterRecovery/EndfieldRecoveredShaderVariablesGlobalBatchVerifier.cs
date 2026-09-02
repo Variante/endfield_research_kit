@@ -46,6 +46,15 @@ namespace EndfieldGraphShaderLabEditor
             public bool unresolvedTaaC19Zero;
             public bool unresolvedMipBiasC26Zero;
             public bool unresolvedAnchorC105Zero;
+            public bool c26InlineSourceAccepted;
+            public bool c26InlineValueMatches;
+            public bool c26MalformedSourceRejected;
+            public bool c26Pow2MismatchRejected;
+            public bool c26OverlayPopulated;
+            public bool c26OverlayPreservedPartialSources;
+            public bool c26ResourceStateValid;
+            public bool c26ResourceReady;
+            public string c26ResourceDiagnostic;
             public bool m27AdmissionRejected;
             public string admissionDiagnostic;
         }
@@ -270,7 +279,7 @@ namespace EndfieldGraphShaderLabEditor
                 if (!partialOwnedSources.valid)
                 {
                     failures.Add(
-                        "partial_m27_owned_sources: c27/c103 propagation or " +
+                        "partial_m27_owned_sources: c26/c27/c103 propagation or " +
                         "fail-closed admission validation failed");
                 }
 
@@ -451,6 +460,76 @@ namespace EndfieldGraphShaderLabEditor
                 admissionDiagnostic.IndexOf(
                     "c19.zw",
                     StringComparison.Ordinal) >= 0;
+            string exactPayload = BuildInlineM27C26Payload("3f000000");
+            bool c26InlineAccepted =
+                EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
+                    exactPayload,
+                    out float c26InlineValue,
+                    out _);
+            bool c26InlineValueMatches = c26InlineAccepted &&
+                unchecked((uint)BitConverter.SingleToInt32Bits(c26InlineValue)) ==
+                    0xbf800000u;
+            bool c26MalformedRejected =
+                !EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
+                    "{\"schema\":\"bad\"}",
+                    out _,
+                    out _);
+            bool c26Pow2MismatchRejected =
+                !EndfieldRecoveredM27GlobalMipBiasSource.TryValidatePayloadJson(
+                    BuildInlineM27C26Payload("3f800000"),
+                    out _,
+                    out _);
+            EndfieldRecoveredShaderVariablesGlobalContract.M27SourceInputs
+                overlayInputs = inputs.WithPhysicalCameraGlobalMipBias(
+                    c26InlineValue,
+                    c26InlineAccepted);
+            var overlayValues = new Vector4[
+                EndfieldRecoveredShaderVariablesGlobalContract.VectorCount];
+            bool overlayBuildAccepted =
+                EndfieldRecoveredShaderVariablesGlobalContract.TryBuild(
+                    camera,
+                    640,
+                    720,
+                    EndfieldRecoveredShaderVariablesGlobalContract
+                        .SelectedEnvironmentParams,
+                    true,
+                    overlayInputs,
+                    overlayValues,
+                    out _);
+            bool c26OverlayPopulated = overlayBuildAccepted && VectorBitsEqual(
+                overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
+                    .GlobalMipBiasVector],
+                new Vector4(-1.0f, 0.5f, 0.0f, 0.0f));
+            bool c26OverlayPreservedPartialSources = overlayBuildAccepted &&
+                VectorBitsEqual(
+                    overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
+                        .ExposureWithMiscParamsVector],
+                    values[EndfieldRecoveredShaderVariablesGlobalContract
+                        .ExposureWithMiscParamsVector]) &&
+                VectorBitsEqual(
+                    overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
+                        .VFXParams0Vector],
+                    values[EndfieldRecoveredShaderVariablesGlobalContract
+                        .VFXParams0Vector]) &&
+                VectorBitsEqual(
+                    overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
+                        .TaaJitterStrengthVector],
+                    Vector4.zero) &&
+                VectorBitsEqual(
+                    overlayValues[EndfieldRecoveredShaderVariablesGlobalContract
+                        .VFXParams2Vector],
+                    Vector4.zero);
+            var resourceOwner = new EndfieldRecoveredM27GlobalMipBiasSource();
+            bool c26ResourceReady = resourceOwner.TryGetGlobalMipBias(
+                out float c26ResourceValue,
+                out string c26ResourceDiagnostic);
+            bool c26ResourceExists = Resources.Load<TextAsset>(
+                EndfieldRecoveredM27GlobalMipBiasSource.ResourceName) != null;
+            bool c26ResourceStateValid = c26ResourceExists
+                ? c26ResourceReady &&
+                    unchecked((uint)BitConverter.SingleToInt32Bits(
+                        c26ResourceValue)) == 0xbf800000u
+                : !c26ResourceReady;
             return new M27PartialSourceReport
             {
                 valid = buildAccepted &&
@@ -459,6 +538,13 @@ namespace EndfieldGraphShaderLabEditor
                     taaZero &&
                     mipBiasZero &&
                     anchorZero &&
+                    c26InlineAccepted &&
+                    c26InlineValueMatches &&
+                    c26MalformedRejected &&
+                    c26Pow2MismatchRejected &&
+                    c26OverlayPopulated &&
+                    c26OverlayPreservedPartialSources &&
+                    c26ResourceStateValid &&
                     admissionRejected,
                 buildAccepted = buildAccepted,
                 exposureC27Populated = exposurePopulated,
@@ -466,9 +552,46 @@ namespace EndfieldGraphShaderLabEditor
                 unresolvedTaaC19Zero = taaZero,
                 unresolvedMipBiasC26Zero = mipBiasZero,
                 unresolvedAnchorC105Zero = anchorZero,
+                c26InlineSourceAccepted = c26InlineAccepted,
+                c26InlineValueMatches = c26InlineValueMatches,
+                c26MalformedSourceRejected = c26MalformedRejected,
+                c26Pow2MismatchRejected = c26Pow2MismatchRejected,
+                c26OverlayPopulated = c26OverlayPopulated,
+                c26OverlayPreservedPartialSources =
+                    c26OverlayPreservedPartialSources,
+                c26ResourceStateValid = c26ResourceStateValid,
+                c26ResourceReady = c26ResourceReady,
+                c26ResourceDiagnostic = c26ResourceDiagnostic,
                 m27AdmissionRejected = admissionRejected,
                 admissionDiagnostic = admissionDiagnostic,
             };
+        }
+
+        private static string BuildInlineM27C26Payload(
+            string publishedC26YBits)
+        {
+            string sha1 = new string('1', 64);
+            string sha2 = new string('2', 64);
+            string sha3 = new string('3', 64);
+            return "{" +
+                "\"schema\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.PayloadSchema + "\"," +
+                "\"status\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.PayloadStatus + "\"," +
+                "\"sourceSession\":\"test\"," +
+                "\"sourceReportSha256\":\"" + sha1 + "\"," +
+                "\"receiptSha256\":\"" + sha2 + "\"," +
+                "\"runtimePackageSha256\":\"" + sha3 + "\"," +
+                "\"staticContractSha256\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.StaticContractSha256 +
+                "\",\"rendererPathId\":\"" +
+                EndfieldRecoveredM27GlobalMipBiasSource.RendererPathId + "\"," +
+                "\"materialMipBiasBits\":\"00000000\"," +
+                "\"dynamicTermBits\":\"bf800000\"," +
+                "\"globalMipBiasBits\":\"bf800000\"," +
+                "\"publishedC26YBits\":\"" + publishedC26YBits + "\"," +
+                "\"canPopulatePhysicalCameraMipBiasSource\":true," +
+                "\"presentationAuthority\":false}";
         }
 
         private static RejectionReport VerifyDimensionRejection(Camera camera)

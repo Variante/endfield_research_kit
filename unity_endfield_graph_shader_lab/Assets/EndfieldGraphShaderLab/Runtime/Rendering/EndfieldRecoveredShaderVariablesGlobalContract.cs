@@ -52,8 +52,8 @@ namespace EndfieldGraphShaderLab
             public readonly bool perspectiveCameraReady;
             public readonly Vector4 taaJitterStrength;
             public readonly bool taaJitterReady;
-            public readonly float physicalCameraMaterialMipBias;
-            public readonly bool physicalCameraMaterialMipBiasReady;
+            public readonly float physicalCameraGlobalMipBias;
+            public readonly bool physicalCameraGlobalMipBiasReady;
             public readonly float exposureAdaptation;
             public readonly bool exposureReady;
             public readonly Vector3 vfxPlayerPosition;
@@ -67,8 +67,8 @@ namespace EndfieldGraphShaderLab
                 bool perspectiveCameraReady,
                 Vector4 taaJitterStrength,
                 bool taaJitterReady,
-                float physicalCameraMaterialMipBias,
-                bool physicalCameraMaterialMipBiasReady,
+                float physicalCameraGlobalMipBias,
+                bool physicalCameraGlobalMipBiasReady,
                 float exposureAdaptation,
                 bool exposureReady,
                 Vector3 vfxPlayerPosition,
@@ -81,10 +81,10 @@ namespace EndfieldGraphShaderLab
                 this.perspectiveCameraReady = perspectiveCameraReady;
                 this.taaJitterStrength = taaJitterStrength;
                 this.taaJitterReady = taaJitterReady;
-                this.physicalCameraMaterialMipBias =
-                    physicalCameraMaterialMipBias;
-                this.physicalCameraMaterialMipBiasReady =
-                    physicalCameraMaterialMipBiasReady;
+                this.physicalCameraGlobalMipBias =
+                    physicalCameraGlobalMipBias;
+                this.physicalCameraGlobalMipBiasReady =
+                    physicalCameraGlobalMipBiasReady;
                 this.exposureAdaptation = exposureAdaptation;
                 this.exposureReady = exposureReady;
                 this.vfxPlayerPosition = vfxPlayerPosition;
@@ -152,6 +152,32 @@ namespace EndfieldGraphShaderLab
                     vfxParams0Ready,
                     Vector4.zero,
                     false);
+            }
+
+            /// <summary>
+            /// Overlays only the authenticated post-dynamic HGCamera.globalMipBias
+            /// producer. A missing owner preserves the prior readiness/value.
+            /// </summary>
+            public M27SourceInputs WithPhysicalCameraGlobalMipBias(
+                float value,
+                bool ready)
+            {
+                if (!ready)
+                    return this;
+                return new M27SourceInputs(
+                    targetDimensionsReady,
+                    perspectiveCameraReady,
+                    taaJitterStrength,
+                    taaJitterReady,
+                    value,
+                    true,
+                    exposureAdaptation,
+                    exposureReady,
+                    vfxPlayerPosition,
+                    vfxClockSeconds,
+                    vfxParams0Ready,
+                    vfxParams2,
+                    vfxParams2Ready);
             }
         }
 
@@ -259,11 +285,11 @@ namespace EndfieldGraphShaderLab
                 failure = "M27 b1 c19 Halton TAA jitter must be finite";
                 return false;
             }
-            if (m27Inputs.physicalCameraMaterialMipBiasReady &&
-                !IsFinite(m27Inputs.physicalCameraMaterialMipBias))
+            if (m27Inputs.physicalCameraGlobalMipBiasReady &&
+                !IsFinite(m27Inputs.physicalCameraGlobalMipBias))
             {
                 failure =
-                    "M27 b1 c26 physical-camera material mip bias must be finite";
+                    "M27 b1 c26 physical-camera global mip bias must be finite";
                 return false;
             }
             if (m27Inputs.exposureReady &&
@@ -321,11 +347,11 @@ namespace EndfieldGraphShaderLab
                 destination[TaaJitterStrengthVector] =
                     m27Inputs.taaJitterStrength;
             }
-            if (m27Inputs.physicalCameraMaterialMipBiasReady)
+            if (m27Inputs.physicalCameraGlobalMipBiasReady)
             {
                 float globalMipBiasPow2 = Mathf.Pow(
                     2.0f,
-                    m27Inputs.physicalCameraMaterialMipBias);
+                    m27Inputs.physicalCameraGlobalMipBias);
                 if (!IsFinite(globalMipBiasPow2))
                 {
                     failure = "M27 b1 c26.y mip-bias pow2 overflowed";
@@ -335,7 +361,7 @@ namespace EndfieldGraphShaderLab
                 // branch-dead behind the source-backed disabled-volumetric
                 // c83.z=0.
                 destination[GlobalMipBiasVector] = new Vector4(
-                    m27Inputs.physicalCameraMaterialMipBias,
+                    m27Inputs.physicalCameraGlobalMipBias,
                     globalMipBiasPow2,
                     0.0f,
                     0.0f);
@@ -429,10 +455,10 @@ namespace EndfieldGraphShaderLab
                     "M27 b1 c19.zw requires authoritative live HGCamera Halton jitter";
                 return false;
             }
-            if (!m27Inputs.physicalCameraMaterialMipBiasReady)
+            if (!m27Inputs.physicalCameraGlobalMipBiasReady)
             {
                 failure =
-                    "M27 b1 c26.xy requires authoritative physical-camera material mip bias";
+                    "M27 b1 c26.xy requires authoritative physical-camera global mip bias";
                 return false;
             }
             if (!m27Inputs.exposureReady)
