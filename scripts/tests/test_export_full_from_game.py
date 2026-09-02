@@ -13,6 +13,8 @@ from scripts import export_full_from_game
 from scripts.export_full_from_game import (
     ANIMESTUDIO_STORY_JSON_TYPES,
     CommandResult,
+    animestudio_managed_reference_diagnostics_export_is_relevant,
+    animestudio_managed_reference_diagnostics_part_path,
     animestudio_object_index_export_is_relevant,
     animestudio_object_index_dir,
     animestudio_object_index_is_enabled,
@@ -754,6 +756,61 @@ class AnimeStudioObjectIndexTests(unittest.TestCase):
             self.assertIn("--object_index_jsonl", captured[0])
             self.assertIsNone(unindexed.object_index_jsonl)
             self.assertNotIn("--object_index_jsonl", captured[1])
+
+    def test_managed_reference_diagnostics_are_atomic_and_monobehaviour_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            command_name = "Persistent_animestudio_json_by_type_MonoBehaviour"
+            part = animestudio_managed_reference_diagnostics_part_path(
+                root, "Persistent", command_name
+            )
+            part.parent.mkdir(parents=True)
+            part.write_text("stale", encoding="utf-8")
+            part.with_name(part.name + ".tmp").write_text("stale", encoding="utf-8")
+            captured: list[list[str]] = []
+
+            def fake_run(name, argv, cwd, reports_dir, stream_output=False):
+                self.assertFalse(part.exists())
+                self.assertFalse(part.with_name(part.name + ".tmp").exists())
+                captured.append(argv)
+                return CommandResult(name, argv, str(cwd), 0, 0.0, "", "")
+
+            with mock.patch.object(export_full_from_game, "run_logged_command", side_effect=fake_run):
+                result = run_animestudio_stage(
+                    source="Persistent",
+                    input_root=root / "input",
+                    output_root=root,
+                    reports_dir=root / "reports",
+                    animestudio_exe=root / "AnimeStudio.CLI.exe",
+                    animestudio_dummy_dlls=None,
+                    mono_behaviour_type_tree_priority="SerializedFirst",
+                    stage="json_by_type",
+                    export_type="JSON",
+                    types=("MonoBehaviour:Both",),
+                    command_name=command_name,
+                    managed_reference_diagnostics_enabled=True,
+                    managed_reference_diagnostic_types=("AbilitySystemData$", "ProjectileComponentData$"),
+                    managed_reference_diagnostics_include_exact_matches=True,
+                )
+
+            self.assertEqual(result.managed_reference_diagnostics_jsonl, str(part))
+            self.assertIn("--managed_reference_diagnostics_jsonl", captured[0])
+            self.assertIn("--managed_reference_diagnostics_include_exact_matches", captured[0])
+            type_flag = captured[0].index("--managed_reference_diagnostic_types")
+            self.assertEqual(
+                captured[0][type_flag + 1 : type_flag + 3],
+                ["AbilitySystemData$", "ProjectileComponentData$"],
+            )
+            self.assertTrue(
+                animestudio_managed_reference_diagnostics_export_is_relevant(
+                    "json_by_type", "JSON", ("MonoBehaviour:Both",)
+                )
+            )
+            self.assertFalse(
+                animestudio_managed_reference_diagnostics_export_is_relevant(
+                    "json_by_type", "JSON", ("TextAsset:Both",)
+                )
+            )
 
 
 class WorldSceneChunkExportTests(unittest.TestCase):

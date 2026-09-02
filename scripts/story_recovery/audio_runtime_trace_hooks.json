@@ -31,7 +31,9 @@
     "audio_chain_v1": {
       "enabled": [
         "AudioAdapter._PostEventWithExternalSource",
+        "AudioAdapter._PostEvent",
         "AkSoundEngine.SourceMediaLookup",
+        "AkSoundEngine.SourceProviderPreparation",
         "AkSoundEngine.DefaultIoOpenDispatch"
       ],
       "deferred": {
@@ -384,6 +386,78 @@
         "info": {"index": 2, "kind": "u64"}
       },
       "returnKind": "void"
+    }
+  ],
+  "semanticHooks": [
+    {
+      "name": "Beyond.Gameplay.Core.ModifyDynamicBlackboard.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x2f4cfb0",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x0600dd9e",
+      "dataTypeToken": "0x02002455",
+      "dataWordCount": 5,
+      "expectedBytes": "488bc448895808488970104889781855"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.StoreBuffCount.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x6d385ec",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x0600e1de",
+      "dataTypeToken": "0x02002579",
+      "dataWordCount": 4,
+      "expectedBytes": "488bc44889581048894808574881ecf0"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.Conditions.CheckBuffStackNum.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x718ed58",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x060157ba",
+      "dataTypeToken": "0x02003305",
+      "dataWordCount": 4,
+      "expectedBytes": "48895c24084889742410574883ec4080"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.Conditions.CheckHp.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x7190100",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x060157fb",
+      "dataTypeToken": "0x02003320",
+      "dataWordCount": 3,
+      "expectedBytes": "488bc448895808574883ec60803dad5d"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x33a6da0",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x0601580a",
+      "dataTypeToken": "0x02003326",
+      "dataWordCount": 1,
+      "expectedBytes": "4889542410534883ec20488bd933d2b9"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x71906e0",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x0601580f",
+      "dataTypeToken": "0x02003328",
+      "dataWordCount": 2,
+      "expectedBytes": "488bc448895808488968184889702048"
+    },
+    {
+      "name": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual.ExecuteInternal",
+      "module": "GameAssembly.dll",
+      "rva": "0x71c3ac8",
+      "abiId": "win64.il2cpp_instance_bool_target_data_words.v1",
+      "methodToken": "0x0601588d",
+      "dataTypeToken": "0x0200335b",
+      "dataWordCount": 2,
+      "expectedBytes": "488bc448895808488970104889781855"
     }
   ],
   "nativeHooks": [

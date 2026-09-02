@@ -135,7 +135,7 @@
 .mr-float.is-collapsed .mr-float-head { border-bottom-color: transparent; }
 .mr-float.is-collapsed { resize: none; }
 
-.mr-float--controls { top: 12px; left: 12px; width: min(760px, calc(100% - 408px)); }
+.mr-float--controls { top: 12px; left: 12px; width: min(1160px, calc(100% - 24px)); }
 .mr-float--inspector { top: 12px; right: 12px; width: 372px; }
 
 .mr-coords {
@@ -327,7 +327,7 @@
 
 .mr-browser-tree {
   display: grid;
-  grid-template-columns: minmax(170px, 0.85fr) minmax(200px, 1fr) minmax(190px, 0.95fr);
+  grid-template-columns: minmax(150px, 0.78fr) minmax(180px, 0.92fr) minmax(220px, 1.15fr) minmax(270px, 1.35fr);
   gap: 10px;
   min-height: 0;
 }
@@ -349,6 +349,34 @@
 
 .mr-map-column { padding-right: 9px; border-right: 1px solid var(--border); }
 .mr-task-column { padding-right: 7px; }
+
+/* Inspector is a regular fourth browser column, with the same heading and
+   divider treatment as the map, mission, and object-filter columns. */
+.mr-inspector-column {
+  min-width: 0;
+  max-height: min(56vh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-left: 7px;
+  border-left: 1px solid var(--border);
+}
+.mr-inspector-column > h2 {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.mr-inspector-column .mr-inspector-head {
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+.mr-inspector-column .mr-inspector-body {
+  padding: 10px 0 14px;
+  overflow: visible;
+}
+
 /* The group name is the heading of its list, so it carries the weight; the map
    rows under it stay at normal weight and are told apart by position. */
 .mr-map-group + .mr-map-group { margin-top: 11px; }
@@ -881,6 +909,7 @@
 .mr-floor-tip strong { display: block; overflow-wrap: anywhere; font-size: 12px; }
 .mr-tip span,
 .mr-floor-tip span { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; overflow-wrap: anywhere; }
+.mr-tip .mr-tip-dialog { margin-top: 5px; color: var(--text); font-family: inherit; line-height: 1.45; white-space: normal; }
 .mr-coordinate-tip {
   padding: 4px 7px;
   color: var(--text);
@@ -1122,7 +1151,7 @@
 /* ---------------------------------------------------------------- responsive */
 
 @media (max-width: 1180px) {
-  .mr-float--controls { width: min(720px, calc(100% - 348px)); }
+  .mr-float--controls { width: min(980px, calc(100% - 24px)); }
   .mr-float--inspector { width: 312px; }
 }
 
@@ -1135,7 +1164,7 @@
   .mr-height-dock { grid-template-columns: auto minmax(100px, 1fr); }
   .mr-height-range { width: 100%; }
   .mr-height-dock output { grid-column: 1 / -1; text-align: left; }
-  .mr-browser-tree { grid-template-columns: minmax(150px, .85fr) minmax(180px, 1fr) minmax(170px, .95fr); }
+  .mr-browser-tree { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

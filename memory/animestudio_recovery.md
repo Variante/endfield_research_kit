@@ -16,6 +16,7 @@ certification, schema depth, and peak-memory reduction rather than basic access.
 git submodule update --init tools/AnimeStudio
 .\scripts\animestudio\setup_dotnet9.bat
 .\scripts\animestudio\rebuild.bat -Target CLI
+dotnet run --project tools\AnimeStudio\AnimeStudio.CLI.Tests\AnimeStudio.CLI.Tests.csproj -c Release
 
 .\export.bat --from-game
 .\export.bat --from-game --with-assets
@@ -56,6 +57,7 @@ set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStud
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
 %ASCLI% certify-index --index OBJECT_INDEX.jsonl
+%ASCLI% dummydll-index --input tools\DummyDll --output DUMMYDLL_TYPES.json
 %ASCLI% replay --index OBJECT_INDEX.jsonl --requests RECOVERY_REQUESTS.jsonl
 %ASCLI% schema-diff --left LEFT.json --right RIGHT.json
 ```
@@ -69,7 +71,9 @@ counts; it is an index gate, not a claim that every object is semantically
 complete. `replay` consumes one request object per line (`pathId`, optional
 `source` and `type`) and fails if any request has no match. `schema-diff` compares
 JSON shape (including object properties and the first array element), so equal
-shape does not mean equal values. Keep request files and probe output under
+shape does not mean equal values. `dummydll-index` records every readable,
+named managed type definition and reports unnamed malformed definitions rather
+than pretending that a readable assembly has complete schemas. Keep request files and probe output under
 `scratch/animestudio/` or a generated `reports/` topic directory.
 
 ## Export model
@@ -159,6 +163,104 @@ from another build.
 The safe default is `serialized-first`. Use `script-first` only for targeted
 MonoBehaviour experiments; it must fall back cleanly when DummyDlls are absent,
 stale, malformed, or incomplete.
+
+The exact-build catalog coverage audit is maintained at
+`tools/endfield-il2cpp/audit_catalog_coverage.py`. It validates the catalog,
+DummyDLL generation manifest and DLL bytes, and each object-index terminal
+commit marker before joining type identities. Current accepted Persistent
+evidence shows that the default exporter overwhelmingly decodes through
+serialized TypeTrees; its partial MonoBehaviour rows are concentrated in a
+small catalog-confirmed class set missing from usable DummyDLL metadata. The
+current Cpp2IL set is not a safe script-schema source: readable name-only rows
+do not align with their exact-build TypeDef tokens, so the audit downgrades
+them instead of allowing accidental class-name matches. Treat the partial
+MonoBehaviour join as the immediate schema-recovery queue and fix the Cpp2IL
+metadata-layout interpretation or add a catalog-backed schema provider before
+enabling script-first broadly. Broad catalog types missing from Cpp2IL output
+are not equivalent to failed exports. The current
+StreamingAssets object index has no terminal summary and therefore remains
+excluded from coverage claims until regenerated or recovered by the maintained
+merge path.
+
+Managed-reference output has an additional fail-closed registry gate after
+TypeTree decoding. Invalid versions or arrays, zero/duplicate RIDs, malformed
+type headers, and recovered count mismatches are recorded in object metadata
+and downgrade the object from `decoded` to `partial`; a TypeTree read that
+merely reaches the end is not sufficient certification. Registry validation
+runs only when the final top-level TypeTree field is exactly
+`references:ManagedReferencesRegistry`; ordinary fields such as
+`references:BipedReferences` are not registries. When Unity's zero-sized
+`ReferencedObjectData` node breaks generic framing, AnimeStudio decodes the
+exact TypeTree prefix, locates the raw registry boundary, and recovers each
+bounded entry. The owning `SerializedFile` must follow both raw-recovery and
+normal registry-enrichment paths so resolved managed-reference TypeTrees stay
+available.
+
+Resolved serialized managed-reference TypeTrees are now the preferred exact
+reader for the formerly partial large layouts, with the maintained semantic
+readers retained as fail-closed fallbacks for incompatible builds. A final
+top-level `ManagedReferencesRegistry` in an individual reference TypeTree is
+correctly treated as storage outside that bounded payload. The focused
+`EnemySettlementBattleGraphData` decoder still uses the serialized ID-only
+form of its battle/patrol gameplay tags. Recovery tests cover its observed
+fixed and nested stimulus-response payload shapes, exact exported
+managed-reference payloads, trailing-byte rejection, malformed-header
+rejection, registry-type gating, validation-failure recovery, and the exact
+`LineFollower` PPtr/alignment shape.
+
+Exact exported-byte fixtures now cover the observed Blackboard cast-skill,
+simple-attack, and gameplay-tag families; Guide `UIToggleSetValue`, the small
+Guide condition/action layouts, and both camera-blend actions; both observed
+`CameraControlLockEnemyConfig` curve variants; and the derived
+`AbilitySystemForEnemyPartData` and `EnemyPartsRootComponentData` layouts.
+Each decoder follows the resolved serialized TypeTree order and requires exact
+payload consumption. Completed broad Persistent and StreamingAssets sweeps
+with explicit exact-match diagnostics confirmed every observed readable
+variant of those 12 focused classes, including all enemy-part/root lengths,
+without rebuilding published WebUI data. The former 928-byte enemy-part gap is
+structurally exact: serialized `healthType=1` is preserved with its semantic
+name unresolved. Negative mutation fixtures prove that trailing, truncated,
+or invalid-bool payloads lose the exact marker and remain visibly incomplete.
+The changing per-class inventory and exact source hashes live in
+`reports/animestudio/managed_reference_class_sweep_latest.md`.
+
+Completed, unsuppressed Persistent and StreamingAssets sweeps now contain no
+top-level structural `$partial`, `$unparsed`, or `$heuristic`
+managed-reference rows. The former `invalidRegistryVersion` and
+`invalidTypeHeader` warnings were false registry classification or recoverable
+Unity framing, not an unreadable-registry boundary. `LineFollower.line` is an
+exact `PPtr<$LineRenderer>` (`m_FileID` plus `m_PathID`), and its fixture proves
+the observed aligned row stride. The remaining emitted rows are
+`$inferred` only: their bounded class structure is consumed, while enum/hash,
+Blackboard, and runtime-behavior meanings remain deliberately cautious.
+Continue only when native/runtime observation or another independent semantic
+source can name those meanings; do not relax the registry gate or replace
+honest inference labels merely to reduce a count. Changing inventories and
+source hashes live in
+`reports/animestudio/managed_reference_class_sweep_latest.md`.
+
+The observation path for that next boundary is now implemented in
+`tools/EndfieldCapture` as the explicit `semantics` provider. It is pinned to
+the catalog's exact metadata/GameAssembly pair and observes seven native
+`ExecuteInternal` consumers covering the five residual condition identities
+plus `ModifyDynamicBlackboard` and `StoreBuffCount`. Each record preserves the
+boolean result, opaque target carrier, and bounded raw words from the action's
+data object; it does not assign meanings to those words. Collection fails
+closed unless all seven consumers execute, every sampled data object is
+readable, no per-hook distinct-signature budget overflows, and hooks stop
+quiescently. Equivalent data/outcome observations are coalesced with
+occurrence, first/last-time, and context-variation evidence; independent
+per-hook budgets prevent a hot action or volatile target addresses from
+starving rare conditions. The first reviewed retail session exercised
+six consumers with readable data and both boolean branches for several
+conditions, but did not exercise `StoreBuffCount`; its original global buffer
+also saturated before retaining the rare-condition details. Treat that session
+as hook-validation diagnostics only. No AnimeStudio `$inferred` label should
+be promoted until a bounded follow-up correlates retained runtime observations
+with the exported rows. A second retail diagnostic exercised all seven hooks,
+including `StoreBuffCount`, with readable data; it confirmed the complete hook
+set while exposing volatile executor/target addresses as unsuitable retention
+identity fields.
 
 ## Diagnostics
 

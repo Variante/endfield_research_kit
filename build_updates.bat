@@ -114,8 +114,14 @@ if "%PRUNE_OLD%"=="1" if "%DRY_RUN%"=="0" set "MODE_ARGS=%MODE_ARGS% --prune-pre
 rem Unnamed sides fall back to endfield_paths.bat.
 if not defined OLD_EXPORT if defined ENDFIELD_PREVIOUS_EXPORT_ROOT set "OLD_EXPORT=%ENDFIELD_PREVIOUS_EXPORT_ROOT%"
 if not defined NEW_EXPORT if defined ENDFIELD_EXPORT_ROOT set "NEW_EXPORT=%ENDFIELD_EXPORT_ROOT%"
-if defined OLD_EXPORT set "ROOT_ARGS=%ROOT_ARGS% --previous-export-root "%OLD_EXPORT%""
-if defined NEW_EXPORT set "ROOT_ARGS=%ROOT_ARGS% --export-root "%NEW_EXPORT%""
+rem Normalize folder paths so a trailing backslash cannot escape a closing
+rem quote when cmd.exe passes the value to Python.
+if "%OLD_EXPORT:~-1%"=="\" set "OLD_EXPORT=%OLD_EXPORT:~0,-1%"
+if "%NEW_EXPORT:~-1%"=="\" set "NEW_EXPORT=%NEW_EXPORT:~0,-1%"
+if defined OLD_EXPORT for %%I in ("%OLD_EXPORT%") do set "OLD_EXPORT=%%~fI"
+if defined NEW_EXPORT for %%I in ("%NEW_EXPORT%") do set "NEW_EXPORT=%%~fI"
+if defined OLD_EXPORT set ROOT_ARGS=%ROOT_ARGS% --previous-export-root "%OLD_EXPORT%"
+if defined NEW_EXPORT set ROOT_ARGS=%ROOT_ARGS% --export-root "%NEW_EXPORT%"
 
 rem Naming a different old folder invalidates its cached scan, so rebuild that
 rem baseline here instead of making the user remember to ask for it.

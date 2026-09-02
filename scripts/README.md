@@ -1297,6 +1297,35 @@ python -m scripts.animestudio.generate_dummydll --replace
 Missing or stale DummyDlls warn and fall back to serialized schemas. Never
 reuse native registration addresses across game builds.
 
+Managed-reference schema work can opt into a separate fail-closed JSONL
+sidecar without changing normal JSON or object-index output:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics
+python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemData$"
+python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemForEnemyPartData$" --animestudio-managed-reference-diagnostics-include-exact-matches
+```
+
+Each MonoBehaviour worker writes a unique atomic part under
+`export_full/recovered/AnimeStudio-cli/<source>/managed_reference_diagnostics/parts/`.
+Only partial managed references are included by default. Exact class sweeps
+may add `--animestudio-managed-reference-diagnostics-include-exact-matches`,
+which requires at least one explicit diagnostic type filter and includes exact
+and partial matches for those identities. Rows carry exact object/RID/type
+identity, payload offset and length, SHA-256, bounded full base64 payload, and
+reader failure cursors when a focused decoder rejected the payload. When the
+serialized file supplies a matching managed-reference type entry, the row also
+carries its exact script/type hashes and bounded full TypeTree node list so
+field order is tied to the asset's serialized schema rather than runtime
+metadata alone. Payloads
+up to the explicit 1 MiB per-record cap include full base64 bytes; larger rows
+retain their exact range/hash with `truncated=true` and omit base64. A final
+file is published only after a successful worker and ends with a complete
+terminal summary; absent, temporary, truncated, errored, or incomplete parts
+are not evidence. Repeat the type option to constrain capture by
+`assembly::namespace.class` regex. The option is rejected outside Story/all
+MonoBehaviour JSON scope.
+
 ## Updates
 
 Updates compare two complete export folders. Pass `OLD NEW`, or configure

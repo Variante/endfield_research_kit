@@ -193,6 +193,16 @@ RELATION_ORDER = [
 ]
 
 DETAIL_ALIAS_MAP = {
+    "int_erosion_sludge_core": {
+        "canonical": "erosion_sludge_core",
+        "zh": "\u4fb5\u8680\u6838\u5fc3",
+        "en": "Erosion core",
+    },
+    "int_dungeon_exit_challenge": {
+        "canonical": "dungeon_exit_challenge",
+        "zh": "\u526f\u672c\u51fa\u53e3",
+        "en": "Dungeon exit",
+    },
     "int_simple_travel_pole": {
         "canonical": "travel_pole_1",
         "zh": "滑索架",
@@ -223,6 +233,9 @@ DETAIL_ALIAS_MAP = {
 # recovered. None of these rules claim the entity is reachable in play; that
 # stays in `interactionStatus`.
 DETAIL_KIND_RULES: tuple[tuple[str, str, str, str, str], ...] = (
+    ("int_erosion_sludge_core", "device", "erosion_core", "\u4fb5\u8680\u6838\u5fc3", "interactive_type"),
+    ("int_dungeon_exit_challenge", "device", "dungeon_exit", "\u526f\u672c\u51fa\u53e3", "interactive_type"),
+    ("int_bridge", "travel", "bridge", "\u6865", "interactive_type"),
     ("int_system_spaceship_visit_portal", "travel", "spaceship_visit_portal", "访问传送门", "authored_visit_portal"),
     ("int_teleport", "travel", "teleport_point", "传送点", "interactive_type"),
     ("BTomb", "scenery", "tomb", "墓碑", "not_proven_interactive"),

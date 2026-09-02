@@ -16,6 +16,70 @@ python scripts\animestudio\generate_dummydll.py --dry-run
 directly. It does not need the game running, `GameAssembly.dll`, Cpp2IL, or
 Il2CppDumper.
 
+## Exact-build core type-surface catalog
+
+`build_catalog.py` emits a build-specific core metadata/type-surface JSON
+catalog for one exact pair of native inputs. It validates the complete
+CodeRegistration module set and derives
+MetadataRegistration using the same registration primitives as the DummyDll
+generator:
+
+```bat
+python tools\endfield-il2cpp\build_catalog.py ^
+  --metadata "...\global-metadata.dat" ^
+  --gameassembly "...\GameAssembly.dll" ^
+  --out reports\il2cpp\catalog.json
+```
+
+Every parsed metadata type, field, method, and parameter row is retained as a
+top-level row. Type rows
+carry `resolved` or `malformed` status; native layouts and method pointers
+carry `resolved` or `unresolved` status when registration rows are null,
+out-of-range, or unavailable. The output records both source SHA-256 hashes
+and registration provenance and must not be reused after either input changes.
+This first schema does not yet decode events, properties, generic parameters or
+containers, exported type definitions, custom attributes, method specs, or
+generic method tables; those are listed explicitly in
+`diagnostics.unhandledMetadataSections` rather than being presented as full
+game-class coverage.
+The current exact build produces a large catalog, so publication uses compact
+JSON and an atomic sibling staging file. Consumers should still avoid loading
+multiple copies concurrently when a streaming query or future split-table
+format would suffice.
+
+### Coverage audit against AnimeStudio
+
+After generating the exact-build catalog, inventory the managed type
+definitions that AnimeStudio can actually load from the generated DummyDLLs,
+then join them to committed object-index evidence:
+
+```bat
+set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
+
+%ASCLI% dummydll-index ^
+  --input tools\DummyDll ^
+  --output scratch\animestudio\dummydll_types.json
+
+python tools\endfield-il2cpp\audit_catalog_coverage.py ^
+  --catalog reports\il2cpp\catalog.json ^
+  --dummydll-index scratch\animestudio\dummydll_types.json ^
+  --object-index export_full\recovered\AnimeStudio-cli\Persistent\object_index ^
+  --object-index export_full\recovered\AnimeStudio-cli\StreamingAssets\object_index ^
+  --out-json reports\export\il2cpp_catalog_coverage_latest.json ^
+  --out-md reports\export\il2cpp_catalog_coverage_latest.md
+```
+
+The audit fails closed when native hashes differ, a DummyDLL no longer matches
+`generation.json`, or an object index lacks its complete terminal summary or
+committed output hashes. Rejected indexes remain visible in the report but do
+not contribute object rows. Catalog-to-DummyDLL gaps are Cpp2IL schema gaps,
+not proof that an IL2CPP class is absent; the actionable exporter queue is the
+smaller join of catalog-confirmed script identities with partial
+MonoBehaviours and no usable DummyDLL type. A name-only match is not considered
+usable: the generated TypeDef token must identify that same catalog type. This
+detects shifted or corrupted Cpp2IL type identities that Mono.Cecil can still
+read structurally.
+
 ## DummyDll Generation
 
 AnimeStudio can optionally use IL2CPP dummy assemblies to recover a
