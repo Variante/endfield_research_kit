@@ -20,9 +20,6 @@ namespace EndfieldGraphShaderLab
             "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9";
         public const string RendererPathId = "59284134265994738";
 
-        private const uint ExpectedGlobalMipBiasBits = 0xbf800000u;
-        private const uint ExpectedGlobalMipBiasPow2Bits = 0x3f000000u;
-
         [Serializable]
         private sealed class Payload
         {
@@ -149,9 +146,7 @@ namespace EndfieldGraphShaderLab
             if (!IsFinite(material) || !IsFinite(dynamicTerm) ||
                 !IsFinite(global) || !IsFinite(publishedPow2) ||
                 FloatBits(material + dynamicTerm) != globalBits ||
-                FloatBits(Mathf.Pow(2.0f, global)) != pow2Bits ||
-                globalBits != ExpectedGlobalMipBiasBits ||
-                pow2Bits != ExpectedGlobalMipBiasPow2Bits)
+                FloatBits(Mathf.Pow(2.0f, global)) != pow2Bits)
             {
                 failure = "M27 global-mip-bias source equation/selected pair failed";
                 return false;

@@ -138,6 +138,22 @@ class EndminfM27GlobalMipBiasContractTest(unittest.TestCase):
         self.assertTrue(result["canPopulatePhysicalCameraMipBiasSource"])
         self.assertFalse(result["presentationAuthority"])
 
+    def test_nonhistorical_source_value_is_admitted(self) -> None:
+        receipt = _receipt(self.contract_sha256)
+        receipt["diagnostics"]["publicationAttemptFailures"] = 3
+        receipt["values"].update(
+            {
+                "inputWidth": 1920,
+                "outputWidth": 1920,
+                "dynamicTermBits": _bits(0.0),
+                "globalMipBiasBits": _bits(0.0),
+                "publishedC26XBits": _bits(0.0),
+                "publishedC26YBits": _bits(1.0),
+            }
+        )
+        result = VERIFIER.verify_receipt(receipt, self.contract_sha256)
+        self.assertEqual(result["publishedC26Bits"], [_bits(0.0), _bits(1.0)])
+
     def test_captured_constant_source_is_rejected(self) -> None:
         receipt = _receipt(self.contract_sha256)
         receipt["capturedConstantsUsedAsSource"] = True

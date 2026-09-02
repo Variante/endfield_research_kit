@@ -4238,12 +4238,18 @@ exposure. It publishes c103 from the unique actor root plus `Time.time` only as
 an explicit lab carrier, not as proof of the retail selected-frame HGVFX
 identity. The authenticated c26 Resource/overlay route is now statically
 connected, but the Resource is absent, so c19, c26, and c105 remain zero/unready
-and exact b1 admission remains closed. The selected physical-camera equation
-targets c26.xy=(-1,0.5), while serialized virtual-camera defaults only prove
-(0,1). The exact-build observer, strict inventoried session verifier, and
-raw-session promoter are ready to authenticate and publish the live assignment
-path, but no admitted retail receipt exists yet; do not substitute either value
-before it does. Admission also still
+and exact b1 admission remains closed. The historical July capture observed
+c26.xy=(-1,0.5), while serialized virtual-camera defaults only prove (0,1);
+neither pair is a current selected-value authority. The exact-build observer
+now admits any finite live value only when the authenticated source equation,
+later publication, and exact M27 draw join in one ordered epoch. Its dedicated
+collector ignores only unrelated aggregate graphics-provider incompleteness
+and still requires balanced deferred publication, a complete source receipt,
+the Animator gate, exact session/runtime identity, and strict inventory
+verification. The strict inventoried session verifier and raw-session promoter
+are ready to authenticate and publish the live assignment path, but no admitted
+retail receipt exists yet; do not substitute either value before it does.
+Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
 bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted

@@ -60,6 +60,20 @@ class M27GlobalMipBiasPromotionTests(unittest.TestCase):
             hashlib.sha256(MODULE._canonical_bytes(result)).hexdigest(),
         )
 
+    def test_nonhistorical_admitted_value_builds_source(self) -> None:
+        result = admitted_result()
+        source = result["sourceVerification"]
+        source["sourceValues"].update(
+            {
+                "dynamicTermBits": 0x00000000,
+                "globalMipBiasBits": 0x00000000,
+            }
+        )
+        source["publishedC26Bits"] = [0x00000000, 0x3F800000]
+        payload = MODULE.build_payload(result)
+        self.assertEqual(payload["globalMipBiasBits"], "00000000")
+        self.assertEqual(payload["publishedC26YBits"], "3f800000")
+
     def test_authority_and_identity_drift_fail_closed(self) -> None:
         mutations = (
             (("status",), "rejected", "not admitted"),
