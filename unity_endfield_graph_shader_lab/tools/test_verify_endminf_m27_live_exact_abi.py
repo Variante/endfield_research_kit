@@ -515,6 +515,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             encoding="utf-8")
         cls.global_owner = (root / "Runtime/Rendering/EndfieldRecoveredShaderVariablesGlobal.cs").read_text(
             encoding="utf-8")
+        cls.mip_bias_source = (root / "Runtime/Rendering/EndfieldRecoveredM27GlobalMipBiasSource.cs").read_text(
+            encoding="utf-8")
         cls.terrain = (root / "Runtime/Rendering/EndfieldRecoveredTerrainSubsurfaceConstants.cs").read_text(
             encoding="utf-8")
         cls.observer = (root / "Editor/CharacterRecovery/EndfieldM27ShellHashCapture.cs").read_text(
@@ -587,7 +589,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            self.pipeline)
+            self.pipeline,
+            self.mip_bias_source)
         self.assertTrue(contract["sourceOwnedInputContractComplete"])
         self.assertTrue(contract["defaultRuntimeFailsClosed"])
         self.assertTrue(contract["explicitInputsReachRuntimePublisher"])
@@ -597,10 +600,10 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         self.assertTrue(all(contract["sourceEquations"].values()))
         self.assertEqual(
             contract["populatedSelectedReads"],
-            ["c0.zw", "c4.w", "c27.y", "c103.xyzw"],
+            ["c0.zw", "c4.w", "c26.xy", "c27.y", "c103.xyzw"],
         )
         self.assertFalse(contract["runtimeReadConnections"]["c19.zw"])
-        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+        self.assertTrue(contract["runtimeReadConnections"]["c26.xy"])
         self.assertFalse(contract["runtimeReadConnections"]["c105.xyzw"])
         connection = contract["runtimeSourceInputConnection"]
         self.assertTrue(connection["namedSourceInputExpression"])
@@ -614,6 +617,11 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
             connection["uniqueAssignmentShapesAudited"].values()))
         self.assertTrue(connection["partialPipelineJoinAudited"])
         self.assertTrue(connection["partialSourceJoinAudited"])
+        self.assertTrue(connection["namedSourceOwnerContractAudited"])
+        self.assertTrue(
+            connection["m27GlobalMipBiasSource"]["connectionAudited"])
+        self.assertFalse(
+            connection["m27GlobalMipBiasSource"]["resourceRequiredAtAuditTime"])
         self.assertIn(
             "retail_selected_frame_HGVFX_player_identity_unproven",
             contract["runtimeSourceSemantics"]["c103.xyzw"],
@@ -627,9 +635,98 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             mutated,
             self.global_owner,
-            self.pipeline)
+            self.pipeline,
+            self.mip_bias_source)
         self.assertFalse(contract["readinessBits"]["c19.zw"])
         self.assertFalse(contract["sourceOwnedInputContractComplete"])
+
+    def test_b1_c26_source_schema_drift_fails_only_c26_connection(self) -> None:
+        mutated = self.mip_bias_source.replace(
+            MODULE.M27_MIP_BIAS_SOURCE_SCHEMA,
+            "endfield.invalid-m27-mip-source.v1",
+            1)
+        self.assertNotEqual(mutated, self.mip_bias_source)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            self.pipeline,
+            mutated)
+        source = contract["runtimeSourceInputConnection"][
+            "m27GlobalMipBiasSource"]
+        self.assertFalse(source["checks"]["namedSourceOwner"])
+        self.assertFalse(source["connectionAudited"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+        self.assertTrue(contract["runtimeReadConnections"]["c27.y"])
+
+    def test_b1_c26_source_hash_gate_drift_fails_closed(self) -> None:
+        mutated = self.mip_bias_source.replace(
+            "payload.runtimePackageSha256, 64",
+            "payload.runtimePackageSha256, 63",
+            1)
+        self.assertNotEqual(mutated, self.mip_bias_source)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            self.pipeline,
+            mutated)
+        source = contract["runtimeSourceInputConnection"][
+            "m27GlobalMipBiasSource"]
+        self.assertFalse(source["checks"]["hashIdentityGate"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+
+    def test_b1_c26_authority_gate_drift_fails_closed(self) -> None:
+        mutated = self.mip_bias_source.replace(
+            "payload.presentationAuthority)",
+            "false)",
+            1)
+        self.assertNotEqual(mutated, self.mip_bias_source)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            self.pipeline,
+            mutated)
+        source = contract["runtimeSourceInputConnection"][
+            "m27GlobalMipBiasSource"]
+        self.assertFalse(source["checks"]["authorityGate"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+
+    def test_b1_c26_pipeline_overlay_bypass_fails_closed(self) -> None:
+        mutated = self.pipeline.replace(
+            "m27SourceInputs.WithPhysicalCameraGlobalMipBias(",
+            "m27SourceInputs.WithUnauditedGlobalMipBias(",
+            1)
+        self.assertNotEqual(mutated, self.pipeline)
+        contract = MODULE._validate_b1_source_contract(
+            self.global_contract,
+            self.global_owner,
+            mutated,
+            self.mip_bias_source)
+        source = contract["runtimeSourceInputConnection"][
+            "m27GlobalMipBiasSource"]
+        self.assertFalse(source["checks"]["exactTwoStageAssignment"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
+
+    def test_b1_c26_overlay_must_preserve_other_source_lanes(self) -> None:
+        mutated = self.global_contract.replace(
+            "                    vfxPlayerPosition,\n"
+            "                    vfxClockSeconds,\n"
+            "                    vfxParams0Ready,\n"
+            "                    vfxParams2,",
+            "                    Vector3.zero,\n"
+            "                    vfxClockSeconds,\n"
+            "                    vfxParams0Ready,\n"
+            "                    vfxParams2,",
+            1)
+        self.assertNotEqual(mutated, self.global_contract)
+        contract = MODULE._validate_b1_source_contract(
+            mutated,
+            self.global_owner,
+            self.pipeline,
+            self.mip_bias_source)
+        source = contract["runtimeSourceInputConnection"][
+            "m27GlobalMipBiasSource"]
+        self.assertFalse(source["checks"]["overlayPreservesOtherSources"])
+        self.assertFalse(contract["runtimeReadConnections"]["c26.xy"])
 
     def test_b1_default_runtime_input_cannot_claim_source_owner(self) -> None:
         mutated = self.pipeline.replace(
@@ -640,7 +737,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertEqual(connection["argumentCount"], 8)
         self.assertTrue(connection["inlineDefaultRejected"])
@@ -660,7 +758,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertEqual(connection["argumentCount"], 8)
         self.assertTrue(connection["inlineConstructorRejected"])
@@ -676,7 +775,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertEqual(connection["argumentCount"], 8)
         self.assertTrue(connection["namedSourceOwnerExpression"])
@@ -692,7 +792,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(connection["partialPipelineJoinAudited"])
         self.assertFalse(connection["partialSourceJoinAudited"])
@@ -707,7 +808,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(connection["partialPipelineJoinAudited"])
         self.assertFalse(connection["partialSourceJoinAudited"])
@@ -727,7 +829,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(
             connection["uniqueAssignmentShapesAudited"]
@@ -747,7 +850,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(
             connection["uniqueAssignmentShapesAudited"]
@@ -764,7 +868,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(connection["exposureLaneAudited"])
         self.assertFalse(connection["partialSourceJoinAudited"])
@@ -778,7 +883,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(connection["sourceClosedManualExposureGateAudited"])
         self.assertFalse(connection["exposureLaneAudited"])
@@ -793,7 +899,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
         contract = MODULE._validate_b1_source_contract(
             self.global_contract,
             self.global_owner,
-            mutated)
+            mutated,
+            self.mip_bias_source)
         connection = contract["runtimeSourceInputConnection"]
         self.assertFalse(connection["sourceClosedManualExposureReturnAudited"])
         self.assertFalse(connection["exposureLaneAudited"])

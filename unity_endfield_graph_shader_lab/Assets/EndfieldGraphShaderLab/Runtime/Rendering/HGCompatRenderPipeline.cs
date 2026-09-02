@@ -610,6 +610,8 @@ namespace EndfieldGraphShaderLab
             recoveredDeferredTransformVariables;
         private readonly EndfieldRecoveredShaderVariablesGlobal
             recoveredShaderVariablesGlobal;
+        private readonly EndfieldRecoveredM27GlobalMipBiasSource
+            recoveredM27GlobalMipBiasSource;
         private readonly EndfieldRecoveredDeferredLightData
             recoveredDeferredLightData;
         private readonly EndfieldRecoveredEndminfFullDeferredLightData
@@ -758,6 +760,8 @@ namespace EndfieldGraphShaderLab
                 new EndfieldRecoveredDeferredTransformVariables();
             recoveredShaderVariablesGlobal =
                 new EndfieldRecoveredShaderVariablesGlobal();
+            recoveredM27GlobalMipBiasSource =
+                new EndfieldRecoveredM27GlobalMipBiasSource();
             recoveredDeferredLightData =
                 new EndfieldRecoveredDeferredLightData();
             recoveredEndminfFullDeferredLightData =
@@ -1594,6 +1598,15 @@ namespace EndfieldGraphShaderLab
                             recoveredVFXPlayerPosition,
                             recoveredVFXClockSeconds,
                             recoveredVFXParams0Ready);
+            if (recoveredM27GlobalMipBiasSource.TryGetGlobalMipBias(
+                    out float recoveredM27GlobalMipBias,
+                    out _))
+            {
+                m27SourceInputs =
+                    m27SourceInputs.WithPhysicalCameraGlobalMipBias(
+                        recoveredM27GlobalMipBias,
+                        true);
+            }
             if (useRecoveredSceneMV &&
                 recoveredVFXExposureReady &&
                 recoveredVFXParams0Ready)
