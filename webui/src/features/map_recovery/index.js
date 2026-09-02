@@ -14,6 +14,7 @@
   const POINT_HEIGHT_SLICE_COUNT = 32;
   const MAP_ASSET_VERSION = "20260823-map112";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
+  const MAP_RAIL_OFFSET = 72; // keep the map's visual centre clear of the left rail
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
   const GEO_LABEL_ZOOM = 0.3; // keep one primary name per sibling at region view
   const GEO_LOCAL_ZOOM = 1.25; // reveal local place names after the map is readable
@@ -426,8 +427,11 @@
     return rows.filter((pin) => !mapWide && pin.strength !== "weak");
   };
 
+  const isEnvironmentTalkNode = (node) => [node?.detailId, node?.storyKey, node?.label, ...(node?.sceneKeys || [])]
+    .some((value) => String(value || "").startsWith("env_envTalk"));
   const nodeDisplayLabel = (node) => {
     if (node.type === "quest") return String(node.questId).replace("e0m0_", "");
+    if (isEnvironmentTalkNode(node)) return isZh() ? "\u73af\u5883\u5bf9\u8bdd" : "Environment dialogue";
     const alias = node.detailAlias && (isZh() ? node.detailAlias.zh : node.detailAlias.en);
     const base = alias && alias !== node.label ? `${alias} / ${node.label}` : String(node.label || node.identity);
     return node.kind === "npc" && node.phaseLabel ? `${base} · ${node.phaseLabel}` : base;
@@ -499,6 +503,7 @@
       missionStart: "Mission start",
       missionEnd: "Mission end",
       entityNode: "Entity node",
+      environmentTalk: "Environment dialogue",
       noNodes: "No plotted nodes for current layers.",
       questPoints: "quest points",
       entityMarkers: "markers",
@@ -976,7 +981,7 @@
       const scale = clamp(Math.min((WIDTH - 2 * PAD) / width, (HEIGHT - 2 * PAD) / height), MIN_SCALE, MAX_SCALE);
       return clamped({
         scale,
-        x: WIDTH / 2 - scale * (Number(target.x) + width / 2),
+        x: WIDTH / 2 - scale * (Number(target.x) + width / 2) + MAP_RAIL_OFFSET,
         y: HEIGHT / 2 - scale * (Number(target.y) + height / 2),
       });
     }
@@ -994,7 +999,7 @@
     const minY = Math.min(...ys) - pad;
     const maxY = Math.max(...ys) + pad;
     const scale = clamp(Math.min(WIDTH / Math.max(1, maxX - minX), HEIGHT / Math.max(1, maxY - minY)), MIN_SCALE, MAX_SCALE);
-    return clamped({ scale, x: WIDTH / 2 - scale * (minX + maxX) / 2, y: HEIGHT / 2 - scale * (minY + maxY) / 2 });
+    return clamped({ scale, x: WIDTH / 2 - scale * (minX + maxX) / 2 + MAP_RAIL_OFFSET, y: HEIGHT / 2 - scale * (minY + maxY) / 2 });
   }
 
   function stopAnimation() {
@@ -1181,9 +1186,14 @@
     if (tip.dataset.node !== node.id) {
       tip.dataset.node = node.id;
       const files = relatedFiles(node).length;
+      const detailId = String(node.detailId || "").trim();
       tip.innerHTML = `<strong>${esc(nodeTitle(node))}</strong>`
+        + (detailId ? `<span>${esc(t("detailId"))}: ${esc(detailId)}</span>` : "")
         + `<span>${esc(node.type === "quest" ? t("questPoint") : node.kind || t("entityNode"))} · X ${esc(node.position.x)} / Z ${esc(node.position.z)}</span>`
         + (files ? `<span>${esc(`${files} ${t("relatedFiles")}`)}</span>` : "");
+      if (isEnvironmentTalkNode(node)) {
+        void loadEnvironmentTalkTip(node, tip);
+      }
     }
     tip.hidden = false;
     const width = tip.offsetWidth || 200;
@@ -1191,6 +1201,25 @@
     const right = node.px.x + 16 + width <= m.width - 6;
     tip.style.left = `${clamp(right ? node.px.x + 16 : node.px.x - 16 - width, 6, Math.max(6, m.width - width - 6))}px`;
     tip.style.top = `${clamp(node.px.y - height - 12, 6, Math.max(6, m.height - height - 6))}px`;
+  }
+
+  async function loadEnvironmentTalkTip(node, tip) {
+    const keys = [...new Set([node.detailId, node.storyKey, node.label, ...(node.sceneKeys || [])]
+      .map((key) => String(key || ""))
+      .filter((key) => key.startsWith("env_envTalk")))].slice(0, 3);
+    if (!keys.length) return;
+    const results = await Promise.all(keys.map((key) => getFile(`/data/lang/CN/conv/${encodeURIComponent(key)}.json`)));
+    if (tip.dataset.node !== node.id) return;
+    const lines = results.flatMap((result) => result.kind === "conv" ? (result.conv?.lines || []) : [])
+      .map((line) => plainText(line?.text))
+      .filter(Boolean)
+      .slice(0, 4);
+    if (!lines.length) return;
+    const block = document.createElement("span");
+    block.className = "mr-tip-dialog";
+    block.textContent = lines.join(" / ");
+    tip.appendChild(block);
+    syncTip();
   }
 
   function mapFloorChoice(event) {
@@ -2255,6 +2284,11 @@
             <nav class="mr-map-column" aria-label="${esc(t("title"))}">${mapTreeHtml()}</nav>
             <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${variantControls}${missionControls}<div class="mr-task-map-status">${mapMetrics}${surfaceAccuracy}</div></section>
             ${objectFilters}
+            <section class="mr-inspector-column" aria-label="${esc(t("inspector"))}">
+              <h2>${esc(t("inspector"))}</h2>
+              <div class="mr-inspector-head"></div>
+              <div class="mr-inspector-body"></div>
+            </section>
           </div>
           <div class="mr-technical-evidence">
           <h2>${esc(t("evidence"))}</h2>
@@ -2299,14 +2333,7 @@
           </details></div>
         </div>
       </aside>
-      <aside class="mr-float mr-float--inspector" data-panel="inspector" aria-label="${esc(t("inspector"))}">
-        <div class="mr-float-head" data-panel-drag>
-          <h2 class="mr-float-title">${esc(t("inspector"))}</h2>
-          <button type="button" class="mr-float-toggle" data-panel-toggle aria-label="${esc(t("collapse"))}">–</button>
-        </div>
-        <div class="mr-inspector-head"></div>
-        <div class="mr-inspector-body"></div>
-      </aside>`;
+      `;
     bindMap(host);
     revealSelectedMap(host);
     state.inspectorKey = "";
@@ -2508,7 +2535,7 @@
         toggle.setAttribute("title", t(collapsed ? "expand" : "collapse"));
       };
       paintToggle(!!saved.collapsed);
-      if (Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+      if (key !== "inspector" && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
         panel.style.left = `${saved.x}px`;
         panel.style.top = `${saved.y}px`;
         panel.style.right = "auto";
@@ -2520,7 +2547,7 @@
         panelUi.set(key, flags);
         paintToggle(flags.collapsed);
       });
-      const head = panel.querySelector("[data-panel-drag]");
+      const head = key === "inspector" ? null : panel.querySelector("[data-panel-drag]");
       if (!head) return;
       let drag = null;
       head.addEventListener("pointerdown", (event) => {

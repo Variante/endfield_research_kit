@@ -4363,9 +4363,10 @@ StreamingAssets export when the mirror is absent.
    route; collect one actual trace and require a checked route artifact before
    selecting even the inert value kernel. Solver/writeback integration remains
    a separate gate. Keep the older trajectory capture validation-only. If new
-   registration identity evidence is needed, close Endfield and run
-   `tools\EndfieldCapture\StartCapture.bat bulk-transform-receipts`; require a
-   complete diagnostic-only two-hook artifact before designing post-writeback
+   registration identity evidence is needed, a compatible bounded observer may
+   supply it; the maintained optional route is to close Endfield and run
+   `tools\EndfieldCapture\StartCapture.bat bulk-transform-receipts`. Accept only
+   a complete diagnostic two-hook artifact before designing post-writeback
    pointer/hierarchy enrichment, and never treat that artifact itself as
    secondary-dynamics evidence. If new
    graphics evidence is independently

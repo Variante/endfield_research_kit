@@ -13,6 +13,11 @@ python serve.py 9000
 Reuse `http://127.0.0.1:8765/` when it is already running. A custom port is for
 an explicitly separate server.
 
+When present, root-level `endfield_paths.bat` supplies the current and previous
+export mounts through `ENDFIELD_EXPORT_ROOT` and
+`ENDFIELD_PREVIOUS_EXPORT_ROOT`. Explicit process environment values take
+precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
+
 ## Pages
 
 | Page | Scope |

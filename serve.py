@@ -23,14 +23,44 @@ from urllib.parse import urlsplit
 DEFAULT_PORT = 8765
 PROJECT_ROOT = Path(__file__).parent
 WEBUI_ROOT = PROJECT_ROOT / "webui"
-EXPORT_FULL_ROOT = PROJECT_ROOT / "export_full"
 DATA_EXPORT_ROOT_ENV = "WEBUI_DATA_EXPORT_ROOT"
-DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" / "Data"
 STORY_ORDER_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "story_order.json"
 CHARACTER_MERGES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "character_merges.json"
 CHARACTER_NAME_OVERRIDES_PATH = WEBUI_ROOT / "overrides" / "character_name_overrides.json"
 AUDIO_NOTES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "audio_notes.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
+
+
+def read_paths_bat_value(name: str) -> str:
+    """Read one quoted ``set`` value from the optional local path config."""
+    try:
+        text = (PROJECT_ROOT / "endfield_paths.bat").read_text(
+            encoding="utf-8-sig", errors="replace"
+        )
+    except OSError:
+        return ""
+    match = re.search(
+        rf'^\s*(?:@\s*)?set\s+"{re.escape(name)}=([^"\r\n]*)"\s*$',
+        text,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def resolve_project_path(value: str) -> Path:
+    root = Path(value.strip().strip('"'))
+    return root if root.is_absolute() else PROJECT_ROOT / root
+
+
+def resolve_export_full_root() -> Path:
+    value = os.environ.get("ENDFIELD_EXPORT_ROOT", "").strip()
+    if not value:
+        value = read_paths_bat_value("ENDFIELD_EXPORT_ROOT")
+    return resolve_project_path(value or "export_full")
+
+
+EXPORT_FULL_ROOT = resolve_export_full_root()
+DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" / "Data"
 
 
 def resolve_data_export_root() -> Path:
@@ -42,10 +72,13 @@ def resolve_data_export_root() -> Path:
 
 
 def resolve_previous_export_root() -> Path:
-    env_root = os.environ.get("WEBUI_PREVIOUS_EXPORT_ROOT")
-    if env_root:
-        root = Path(env_root)
-        return root if root.is_absolute() else PROJECT_ROOT / root
+    value = os.environ.get("WEBUI_PREVIOUS_EXPORT_ROOT", "").strip()
+    if not value:
+        value = os.environ.get("ENDFIELD_PREVIOUS_EXPORT_ROOT", "").strip()
+    if not value:
+        value = read_paths_bat_value("ENDFIELD_PREVIOUS_EXPORT_ROOT")
+    if value:
+        return resolve_project_path(value)
 
     feed_path = WEBUI_ROOT / "data" / "updates" / "latest.json"
     try:
@@ -57,8 +90,7 @@ def resolve_previous_export_root() -> Path:
         or (payload.get("tracker") or {}).get("previousSourceRoot")
         or "export_1d2"
     )
-    root = Path(str(previous_root))
-    return root if root.is_absolute() else PROJECT_ROOT / root
+    return resolve_project_path(str(previous_root))
 
 
 DATA_EXPORT_ROOT = resolve_data_export_root()

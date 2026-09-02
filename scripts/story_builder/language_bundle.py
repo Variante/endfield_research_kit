@@ -5878,6 +5878,16 @@ def build_language_bundle(
         cutscene = ensure_cutscene_asset(cutscene_key)
         if cutscene_key in unconfirmed_text_by_key and cutscene_key not in suppressed_text_by_key:
             cutscene["textOnlyUnconfirmed"] = True
+        # A mission-runtime source link can retain a text group even when the
+        # installed-game export has no matching Timeline asset.  It is still
+        # useful to publish that localized text, but it must use the explicit
+        # text-only semantic shape rather than reaching the fail-closed guard
+        # below with no authored carrier evidence.
+        if (
+            not cutscene.get("variants")
+            and not cutscene.get("levelscriptFmvBindings")
+        ):
+            cutscene["textOnlyUnconfirmed"] = True
     for target_key, groups in suppressed_duplicate_groups_by_target.items():
         if target_key in cutscene_assets:
             existing = cutscene_assets[target_key].setdefault("suppressedTextOnlyGroups", [])

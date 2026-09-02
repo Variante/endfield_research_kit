@@ -4,6 +4,10 @@ export*
 !export.bat
 !export_assets.bat
 tools/*
+!tools/endfield-il2cpp/
+tools/endfield-il2cpp/*
+!tools/endfield-il2cpp/build_catalog.py
+!tools/endfield-il2cpp/audit_catalog_coverage.py
 reports
 CLAUDE.md
 scratch

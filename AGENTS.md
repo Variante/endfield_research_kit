@@ -394,7 +394,11 @@ Browser data inputs and outputs:
 Tool pointers:
 
 - `tools/AnimeStudio/` is the tracked AnimeStudio fork submodule used by
-  installed-game Story and asset export paths.
+  installed-game Story and asset export paths. During audio or visual recovery,
+  agents may patch this fork and its wrapper integration when doing so improves
+  extraction quality, evidence coverage, or reproducibility. Keep changes
+  narrowly scoped, validate them with the AnimeStudio workflow, and preserve
+  existing fail-closed source/build gates.
 - `tools/endfield_source_graph.py` builds/query local SQLite evidence across
   generated WebUI story/text-table data, selected tables, audio, videos,
   assets, material links, and optional AnimeStudio asset maps.
@@ -472,12 +476,15 @@ of these workflows, open the matching `SKILL.md` before acting:
   `webui/overrides/options.json`.
 - `.codex/skills/animestudio-workflow/`: building, running, patching, and
   debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
+- `.codex/skills/map-interactive-legend/`: regenerating and reviewing the
+  offline map `detailId` legend under `reports/map_recovery/`.
 
-`tools/EndfieldCapture/README.md` is the local usage and requirements guide for
-the optional native observer. It requires Windows x64, Visual Studio 2022 C++
-build tools, CMake 3.23+, and an exact installed Endfield build selected by
-`ENDFIELD_GAME_ROOT` or `ENDFIELD_GAME_EXE`. Build and test it from the
-submodule with:
+`tools/EndfieldCapture/README.md` is the local usage guide for the optional
+native observer. No WebUI, export, or recovery workflow requires
+EndfieldCapture. When an investigation chooses to use it, the local environment
+needs Windows x64, Visual Studio 2022 C++ build tools, CMake 3.23+, and an exact
+installed Endfield build selected by `ENDFIELD_GAME_ROOT` or
+`ENDFIELD_GAME_EXE`. Build and test it from the submodule with:
 
 ```bat
 cmake -S tools\EndfieldCapture -B tools\EndfieldCapture\build-local -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=ON
@@ -493,6 +500,10 @@ modules, hash mismatches, hook errors, lost events, and incomplete provider
 summaries as failed evidence. Keep raw sessions under
 `scratch/reverse_engineering/endfield_capture/` and publish only compact,
 validated findings under the owning report or memory topic.
+During audio or visual recovery, agents may patch EndfieldCapture itself to
+improve observation coverage, event fidelity, diagnostics, or collection
+reproducibility, provided it remains observation-only and the exact-build,
+bounded-session, failure-reporting, build, and test gates above remain intact.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the
@@ -562,6 +573,16 @@ export folder so the cached scanner baseline is rebuilt.
 
 ## Repo Rules
 
+- For repository and local-data file discovery, always use the Everything CLI
+  at `tools\\EverythingCLI\\es.exe` first. Do not use the Everything GUI, search
+  unrelated locations, or perform broad shell/IDE file searches. Prefer
+  Everything search syntax with explicit path scoping (for example,
+  `es.exe -search "path:D:\\fluffy-dump <name-or-pattern>"`); use a `content:`
+  query when indexed content search is appropriate. If the CLI command fails
+  or Everything is unavailable, fall back to `rg`; use other tools only when
+  `rg` is unavailable or the task needs exact repository-content semantics
+  that Everything cannot provide. Once candidate files are known, direct
+  reads and narrowly scoped content searches are allowed.
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
   `scripts/`, and `unity_endfield_graph_shader_lab/`.
 - Keep `README.md` focused on active WebUI usage and headline recovery

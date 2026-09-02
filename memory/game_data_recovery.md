@@ -455,6 +455,44 @@ failed to create an `Endfield.exe` process before the bounded wait expired.
 No runtime event stream was emitted, so this is an environment/startup
 boundary rather than negative playback evidence; the external-key-to-file,
 decoder, and PCM join remains the highest-value recovery gap.
+The bounded EndfieldCapture audio observer now also treats the selected-build
+`AudioAdapter._PostEvent` ABI as a required fourth hook alongside external
+source posting, source-media lookup, and default-I/O open. Its ordinary-event
+records preserve Event id, audio-object id, callback type, and the returned
+internal playing id, so a live Numpad-2 window can distinguish an authored or
+managed request from an observed adapter call and join the request to current
+named-Event candidates. This does not prove Wwise acceptance, selected media,
+audibility, or a causal relation to a later asynchronous lookup/open merely
+because they share the same window; exact call nesting or an independently
+recovered identity is still required. Activation remains all-or-nothing and
+fingerprint-gated for the selected `GameAssembly.dll`, metadata, and
+`AkSoundEngine.dll` build.
+Retail activation exposed Windows exception `0xc00000fd` in EndfieldCapture's
+MSVC stack probe before `runtime.ready`. Removing the former fixed audio
+lookback was insufficient: the runtime worker still compiled the shared
+1,024-record event queue plus two graphics frame snapshots into a roughly
+815 KiB entry frame, leaving unsafe headroom on the injected thread. The event
+queue and graphics snapshots are now heap-owned, and explicit audio windows no
+longer retain a lookback ring. The same audit also corrected both managed
+PostEvent trampolines to forward
+IL2CPP's trailing hidden `MethodInfo*`. A subsequent exact-build session
+reached ready, recorded two bounded windows, stopped and collected cleanly,
+and reported zero dropped or unresolved audio callback records. One window
+observed `chr_extrsour_sim_hello` with the exact formatted Wulfa Chinese voice
+key, audio-object id, callback type, and returned internal playing id. This is
+the first complete retail proof of the managed external-source request/key
+boundary. No source-media lookup or default-I/O-open callback occurred within
+that window, so the downstream key-to-source/file/decode join remains open;
+events merely sharing a requested time window are not treated as causal.
+A controlled character-profile window subsequently observed Ardelia
+`chr_0025_ardelia_chrbark_squad_01` through default Event
+`chr_extrsour_mono`, with the exact Chinese `Voice/...wem` key, the global
+audio-object id, callback type, and a resolved internal playing-id return.
+This validates the static `AudioDialogConfigs.charMonoOverrideEvent ->
+VoicePlayer.SetDefaultEvent/PlayVoice` interpretation for one live profile
+voice request. Sibling profile rows remain static candidates until each is
+present in an accepted window; UI-button and voice posts in the same window
+remain separate calls rather than a claimed parent/child chain.
 The installed tree has no matching PDB or separate `AkOpus`/`Vorbis` codec DLL;
 the selected `AkSoundEngine.dll` is the only Wwise engine binary, so the
 remaining codec consumer must be an imported/runtime-computed target in this
@@ -1819,16 +1857,20 @@ runtime call-structure evidence rather than an asynchronous ownership, file,
 decoder, or PCM join.
 
 The optional native capture host supports this audio contract and the graphics
-provider. Exact executable/native-input gates, the audited three-hook audio
-adapter, bounded relationship windows, shared writing, and fail-closed
+provider. Exact executable/native-input gates, the audited five-hook audio
+adapter, explicit relationship windows, shared writing, and fail-closed
 collection are implemented and synthetically tested. Raw graphics/audio
 sessions use one provenance root under the relevant scratch recovery topic.
 Audio runtime capture records bounded keys, paths, pointers, call/result
 relationships, and provider completeness under the shared event stream plus
-`audio/` sidecars; it does not dump PCM or copy opened game files. Its bounded
-relationship-evidence window uses two seconds of lookback and five seconds
-after the request; the request does not imply PCM recording or a successful
-provider observation. Compact validated audio summaries
+`audio/` sidecars; it does not dump PCM or copy opened game files. Numpad 2
+starts an explicit relationship-evidence window and its next press stops and
+publishes it; the request does not imply PCM recording or a successful provider
+observation. In addition to the two post paths, source-media lookup, and default
+I/O-open dispatch, the selected-build observer records source-provider
+preparation with the selected numeric source key, bounded optional path,
+decoder identity, returned provider identity, and preserved preparation flag.
+Compact validated audio summaries
 may be generated under `reports/story/recovery/audio/`, while durable
 interpretation remains here.
 
