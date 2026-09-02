@@ -56,12 +56,12 @@ if /I "%ARG%"=="--skip-assets" (
 )
 
 echo Unknown option: %ARG%
-echo Run setup_first_time.bat --help for usage.
+echo Run quick_start.bat --help for usage.
 exit /b 2
 
 :missing_game_root
 echo Missing value for --game-root.
-echo Example: setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+echo Example: quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
 exit /b 2
 
 :parsed_args
@@ -98,9 +98,10 @@ python --version
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 2/6] Initializing the AnimeStudio submodule...
+echo [setup 2/6] Initializing the required AnimeStudio submodule...
 git submodule update --init tools/AnimeStudio
 if errorlevel 1 goto :failed
+echo [setup] Optional submodules are not initialized: EndfieldCapture and endfield_reconstruction_lab.
 
 echo.
 echo [setup 3/6] Building the AnimeStudio CLI...
@@ -203,12 +204,12 @@ exit /b %errorlevel%
 
 :failed
 echo.
-echo [setup] Setup failed. Fix the message above, then rerun setup_first_time.bat.
+echo [setup] Setup failed. Fix the message above, then rerun quick_start.bat.
 popd
 exit /b 1
 
 :help
-echo Usage: setup_first_time.bat [--game-root PATH] [--no-serve]
+echo Usage: quick_start.bat [--game-root PATH] [--no-serve]
 echo.
 echo Runs the full first-time WebUI setup from an installed Endfield client:
 echo   1. check Git, Python, and PowerShell
@@ -230,9 +231,9 @@ echo   --help                 Show this help text.
 echo.
 echo Examples:
 echo   notepad endfield_paths.bat
-echo   setup_first_time.bat
-echo   setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
-echo   setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
+echo   quick_start.bat
+echo   quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+echo   quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
 echo.
 endlocal
 exit /b 0
