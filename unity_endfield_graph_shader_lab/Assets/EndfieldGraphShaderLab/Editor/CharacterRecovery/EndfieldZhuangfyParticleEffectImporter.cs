@@ -461,6 +461,7 @@ namespace EndfieldGraphShaderLabEditor
             public Dictionary<long, Material> materials = new Dictionary<long, Material>();
             public Dictionary<long, Mesh> meshes = new Dictionary<long, Mesh>();
             public Dictionary<long, Texture2D> textures = new Dictionary<long, Texture2D>();
+            public Dictionary<long, Texture3D> texture3Ds = new Dictionary<long, Texture3D>();
             public Dictionary<long, Dictionary<string, object>> nativeTextureRecords =
                 new Dictionary<long, Dictionary<string, object>>();
             public Dictionary<long, string> materialNames = new Dictionary<long, string>();
@@ -3521,6 +3522,8 @@ namespace EndfieldGraphShaderLabEditor
             long pathId = Long(pptr, "m_PathID");
             if (pathId == 0)
                 return null;
+            if (context.texture3Ds.TryGetValue(pathId, out Texture3D texture3D))
+                return texture3D;
             if (path.Contains("m_Materials", StringComparison.Ordinal))
             {
                 Require(context.materials.TryGetValue(pathId, out Material material),

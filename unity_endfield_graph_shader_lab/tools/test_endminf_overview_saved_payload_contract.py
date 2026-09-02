@@ -77,7 +77,7 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
             "EndfieldEndminfEffectAnimationImporter.BuildAndValidate();", build
         )
         validate = self.source.index(
-            "ValidateGenerated(gos, transforms, systems, renderers, context);",
+            "ValidateGenerated(gos, transforms, systems, renderers, forceFields,",
             animation,
         )
         self.assertLess(animation, validate)
@@ -251,6 +251,74 @@ class EndminfOverviewSavedPayloadContractTests(unittest.TestCase):
             "VerifyFullRendererPayload(",
         ):
             self.assertIn(token, body)
+
+    def test_six_stone_force_fields_are_exact_and_fail_closed(self) -> None:
+        systems = load_stage_type("ParticleSystem")
+        force_fields = load_stage_type("ParticleSystemForceField")
+        game_objects = load_stage_type("GameObject")
+        transforms = load_stage_type("Transform")
+        game_object_to_transform = {
+            pptr_path_id(row["m_GameObject"]): path_id
+            for path_id, row in transforms.items()
+        }
+        game_object_names = {
+            path_id: row["m_Name"] for path_id, row in game_objects.items()
+        }
+
+        influenced_systems = []
+        referenced_force_fields = []
+        for row in systems.values():
+            external = row["ExternalForcesModule"]
+            influences = [
+                pptr_path_id(value)
+                for value in external["influenceList"]
+            ]
+            if not influences:
+                continue
+            influenced_systems.append(row)
+            self.assertTrue(external["enabled"])
+            self.assertEqual(len(influences), 1)
+            referenced_force_fields.extend(influences)
+            pptr_rows = row["$animestudio"]["pptrReferences"]
+            source_reference = next(
+                item for item in pptr_rows
+                if item["path"] ==
+                    "$.ExternalForcesModule.influenceList[0]"
+            )
+            self.assertEqual(source_reference["resolutionStatus"], "resolved")
+            self.assertEqual(
+                source_reference["targetType"],
+                "ParticleSystemForceField",
+            )
+            self.assertEqual(
+                pptr_path_id({"m_PathID": source_reference["targetPathId"]}),
+                influences[0],
+            )
+
+        self.assertEqual(len(influenced_systems), 6)
+        self.assertEqual(len(set(referenced_force_fields)), 6)
+        self.assertEqual(set(referenced_force_fields), set(force_fields))
+        for path_id, row in force_fields.items():
+            self.assertEqual(row["$animestudio"]["type"],
+                             "ParticleSystemForceField")
+            self.assertEqual(row["$animestudio"]["classId"], 330)
+            self.assertEqual(row["m_Enabled"], 1)
+            game_object_path_id = pptr_path_id(row["m_GameObject"])
+            self.assertIn(game_object_path_id, game_object_to_transform)
+            self.assertRegex(game_object_names[game_object_path_id],
+                             r"^suikuai \([3-6]\)$")
+
+        for token in (
+            'LoadType(stage, "ParticleSystemForceField")',
+            "forceFields.Count == 6",
+            "forceFieldHost.AddComponent<ParticleSystemForceField>()",
+            'external.Remove("influenceList")',
+            "generatedExternal.RemoveAllInfluences();",
+            "generatedExternal.AddInfluence(forceField);",
+            "generatedExternal.GetInfluence(index) == expected",
+            "consumedForceFields.Count == forceFields.Count",
+        ):
+            self.assertIn(token, self.source)
 
     def test_safe_payload_helpers_are_shared_by_import_and_saved_gate(self) -> None:
         self.assertGreaterEqual(self.source.count("BuildSafeParticlePayload("), 3)
