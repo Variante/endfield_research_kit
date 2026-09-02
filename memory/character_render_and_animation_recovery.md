@@ -4041,10 +4041,18 @@ The strict retail screen-shadow verifier now also requires the two producer
 snapshots and the consumer snapshot to occupy three valid, non-overlapping
 stored payload ranges. One stored readback can no longer masquerade as multiple
 draw-local observations. A fresh authenticated current-build receipt is still
-required. M27's global mip-bias equation is source-closed, but the live physical
-camera, branch state, and dynamic-resolution input pair selecting the observed
-`c26.xy` remain unjoined; adjacent `c19` TAA jitter and unrelated `c105` are not
-substitutes.
+required. M27's global mip-bias equation is source-closed, and the maintained
+observation-only EndfieldCapture lane can now join the completed physical-camera
+update, branch state, dynamic-resolution inputs, later global-buffer
+publication, and exact M27 draw within one Present epoch. Its Release build,
+33-test native gate, 18-test source/session verifier gate, batch contract, and
+nonlaunching exact-installed-build preflight pass. No authenticated retail
+receipt has been collected yet, so `c26.xy` remains unpromoted; adjacent `c19`
+TAA jitter and unrelated `c105` are not substitutes. Use
+`tools\EndfieldCapture\StartEndminfM27MipBiasCapture.bat` with Endfield closed,
+keep the first Endminf overview entry visible through its first settled loop
+wrap, then press Numpad 9. The inventoried session verifier remains explicitly
+non-authoritative for presentation.
 
 The source-backed secondary-dynamics dependency chain is current, but the
 recovered solver remains disabled. Exact per-owner child topology is now
@@ -4191,8 +4199,10 @@ exposure. It publishes c103 from the unique actor root plus `Time.time` only as
 an explicit lab carrier, not as proof of the retail selected-frame HGVFX
 identity. c19, c26, and c105 remain zero/unready, so exact b1 admission remains
 closed. The selected physical camera publishes c26.xy=(-1,0.5), while
-serialized virtual-camera defaults only prove (0,1); do not substitute either
-without the missing physical-camera assignment path. Admission also still
+serialized virtual-camera defaults only prove (0,1). The exact-build observer
+and strict inventoried session verifier are ready to authenticate the live
+physical-camera assignment path, but no admitted retail receipt exists yet;
+do not substitute either value before it does. Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
 bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted
@@ -4332,9 +4342,10 @@ project lock indicates shared use; it never removes or bypasses the lock.
    forced-off policy and fails video export unless the entire packet/deferred/
    Uber diagnostic set is explicitly zero. For M27, keep the independently
    pinned source shell at t0-t5 and the source-closed b0/b3 producers; leave b1
-   closed until each live
-   owner is recovered. Retain engine-produced b2 and use the next admissible
-   observer run to join its inactive skin bit to the already observed bound,
+   closed until each live owner is recovered. Run the dedicated M27 mip-bias
+   launcher once to authenticate the physical-camera `c26` producer instead of
+   copying the captured constant. Retain engine-produced b2 and use the next
+   admissible observer run to join its inactive skin bit to the already observed bound,
    complete VS t0 palette payload, s0-s5 descriptors, b4 producer/value
    lifecycle, and synchronized target evidence. Require the live
    exact-ABI verifier to admit the generative ParticleSystemRenderer draw before
