@@ -4041,12 +4041,18 @@ The strict retail screen-shadow verifier now also requires the two producer
 snapshots and the consumer snapshot to occupy three valid, non-overlapping
 stored payload ranges. One stored readback can no longer masquerade as multiple
 draw-local observations. A fresh authenticated current-build receipt is still
-required. M27's global mip-bias equation is source-closed, and the maintained
-observation-only EndfieldCapture lane can now join the completed physical-camera
-update, branch state, dynamic-resolution inputs, later global-buffer
-publication, and exact M27 draw within one Present epoch. Its Release build,
+required. The installed 2026-08-25 client replaces the previously pinned
+native pair, so the dedicated observation-only EndfieldCapture lane now has a
+separate current-build manifest rather than weakening the July audio manifest.
+M27's global mip-bias equation is re-closed against that exact pair: the field
+offsets survive, and the producer, publication, and dynamic-handler-accessor
+bodies are re-hashed. The current publication no longer re-calls the accessor,
+so the observer carries the accessor-authenticated handler identity from the
+same HGCamera source slot only after its camera, epoch, sequence, and
+additional-camera identity gates pass under the slot lock; caller-supplied
+publication handler identities are rejected. Its Release build, complete
 33-test native gate, source/session verifier gate, batch contract, and
-nonlaunching exact-installed-build preflight pass. A maintained raw-session
+nonlaunching exact-installed-build preflight all pass. A maintained raw-session
 promoter now re-runs every inventory, source, identity, hash, equation, and
 authority gate before it can write the minimal Unity Resource. The Resource is
 intentionally absent until such a receipt exists; its Unity owner fails closed,
@@ -4055,9 +4061,15 @@ suite passes 23 tests, and the Unity D3D11 verifier compiles the owner and repor
 the inline, malformed, pow2, overlay, lane-preservation, and absent-Resource
 checks valid. Its unrelated historical source-audit input is absent on this
 checkout, so the aggregate verifier remains red even though the focused c26
-component is valid. No authenticated retail receipt has been collected, so
-`c26.xy` remains unpromoted; adjacent `c19` TAA jitter and unrelated `c105` are
-not substitutes. Use
+component is valid. The current AssetMap revalidates the same renderer PathID,
+material, mesh, and source VS, but the exact PS changed from the historical
+8200-byte program to the current 8260-byte program. The capture and receipt
+gates pin the current PS identity. The static mesh remains 72 indices; the
+historical 1080-index runtime expansion remains a strict expected draw gate
+and must be confirmed by the fresh capture rather than inferred. No
+authenticated retail receipt has been collected, so `c26.xy` remains
+unpromoted; adjacent `c19` TAA jitter and unrelated `c105` are not substitutes.
+Use
 `tools\EndfieldCapture\StartEndminfM27MipBiasCapture.bat` with Endfield closed,
 keep the first Endminf overview entry visible through its first settled loop
 wrap, then press Numpad 9. The inventoried session verifier remains explicitly
@@ -4198,9 +4210,14 @@ conflicting, or tampered inputs fail closed. The resulting selector payload is
 still inert: it does not connect the solver, frame coordinator, scene assets,
 Transforms, or writeback.
 
-The M27 live exact-ABI admission verifier validates the source subprogram-113
-shader pair, actual ParticleSystemRenderer/mesh/material identities, 60/68-byte
-IA layouts, five MRT/depth descriptors, and full t0-t3 texture mip payloads.
+The historical M27 live exact-ABI admission verifier validates the prior source
+subprogram-113 shader pair, actual ParticleSystemRenderer/mesh/material
+identities, 60/68-byte IA layouts, five MRT/depth descriptors, and full t0-t3
+texture mip payloads. The current exact keyword pair moved to source subprogram
+107: its VS is byte-identical, while its PS changed, so the historical pair is
+no longer a current-build admission authority. The current capture gate pins
+the new PS; the wider Unity exact-ABI artifact must be regenerated from that
+current program before it can claim current-build presentation admission.
 Its b0 producer is now source-closed from the live camera plus per-camera
 contiguous history: all 22 published vectors pass the D3D11 GPU verifier, reset
 and discontinuity reuse the current frame, and captured constant-buffer bytes
