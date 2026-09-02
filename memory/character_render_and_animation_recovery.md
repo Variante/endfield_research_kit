@@ -1297,9 +1297,9 @@ all-character pass:
   gate plus exact body/call-target verification; no live attach, selected-route
   result, or kernel execution observation has been performed.
   Regenerate with
-  `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
+  `python endfield_reconstruction_lab/tools/build_secondary_dynamics_proxy_layout_contract.py`,
   then publish the read-only decode explicitly with
-  `python unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_payload_decoder.py --allow-source-hash-mismatch`
+  `python endfield_reconstruction_lab/tools/build_secondary_dynamics_payload_decoder.py --allow-source-hash-mismatch`
   while the three disposable target-filter inputs are absent. All constraint
   families activated by Endminf now have managed numeric ports; the remaining
   gate is exact center/team frame-state publication, composition into the
@@ -1336,7 +1336,7 @@ The canonical grey carrier remains a neutral clear while the physical
 content-valid t11 producer/consumer join; foreground UI remains excluded.
 
 The maintained video-to-frame workflow is
-`unity_endfield_graph_shader_lab/scripts/reference_video/`. Its config records
+`endfield_reconstruction_lab/scripts/reference_video/`. Its config records
 explicit character intervals and uncertain identities; generated PNG sequences
 and source-pinned sidecars stay disposable under the lab's
 `scratch/character_recovery/reference_sequences/` tree. The focused Endminf
@@ -3587,7 +3587,7 @@ and require validated collector JSON plus
 `20260831T184411Z` session omitted this required collection step. After a
 capture passes, run
 `python tools/build_endminf_screen_shadow_capture_artifact.py <capture>
---output-dir <scratch-output>` from `unity_endfield_graph_shader_lab/` to emit
+--output-dir <scratch-output>` from `endfield_reconstruction_lab/` to emit
 the inventory-authenticated raw P2 RG8 bytes plus a deterministic manifest.
 The builder refuses output inside the authenticated capture and labels the
 result `diagnosticReplayOnly`; it does not authorize presentation or certify
@@ -3784,7 +3784,7 @@ and joins the trajectory through the first settled exact Endminf overview-loop
 wrap. This is capture readiness, not recovered motion evidence; a fresh retail
 run must pass the gate.
 The maintained consumer gate is
-`unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py`.
+`endfield_reconstruction_lab/tools/verify_endminf_streamline_surface_capture.py`.
 It independently rechecks the collected/runtime/graphics summaries, exact
 Streamline options/token/constants/tag/evaluate/Present joins, the supported
 1x1 exposure descriptor and payload, both packet schemas, formats, extents,
@@ -4259,7 +4259,7 @@ writer, and the actual generative ParticleSystemRenderer path. Captured packet c
 placement, transforms, curves, texture sampling, or lighting are never an
 admissible substitute.
 After that gate passes,
-`unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py`
+`endfield_reconstruction_lab/tools/analyze_endminf_streamline_surface_pair.py`
 decodes the captured R11G11B10 input and RGBA16F output without third-party
 packages, writes fixed-exposure input/output/difference PNGs for both frames,
 and reports sampled consecutive input-versus-output temporal change. It is an
@@ -4300,7 +4300,7 @@ such.
 ## Maintained workflow
 
 ```bat
-cd unity_endfield_graph_shader_lab
+cd endfield_reconstruction_lab
 .\open_character_recovery_lab.bat
 .\build_all_character_recovery.bat
 ```
@@ -4308,7 +4308,7 @@ cd unity_endfield_graph_shader_lab
 Canonical scene:
 
 ```text
-unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity
+endfield_reconstruction_lab/Assets/EndfieldGraphShaderLab/Generated/Characters/Scenes/CharacterRecoveryViewer.unity
 ```
 
 Generated assets are rebuildable. Change generators, importers, runtime code,
@@ -4356,7 +4356,7 @@ StreamingAssets export when the mirror is absent.
    unknown, or conflicting observations incomplete. The same bounded trace
    observes the exact Burst-enabled return and `IsPatched(0x219)` only on
    admitted CalcLine caller stacks. Its installed-build preflight is:
-   `python unity_endfield_graph_shader_lab/tools/burst_resolver_telemetry.py --check-only`.
+   `python endfield_reconstruction_lab/tools/burst_resolver_telemetry.py --check-only`.
    `capture_endminf_burst_resolver.bat` now records unique trace, validation,
    and immutable CalcLine-route paths, then rebuild-checks the artifact before
    reporting route closure. The tooling does not itself close either live
@@ -4378,9 +4378,9 @@ StreamingAssets export when the mirror is absent.
    `post-init-feature0-runtime-proof`, while all initialization-argument
    consumers remain incomplete. Validate any graphics-only Streamline result
    with
-   `python unity_endfield_graph_shader_lab/tools/verify_endminf_streamline_surface_capture.py SESSION`
+   `python endfield_reconstruction_lab/tools/verify_endminf_streamline_surface_capture.py SESSION`
    before generating Unity diagnostic assets, then run
-   `python unity_endfield_graph_shader_lab/tools/analyze_endminf_streamline_surface_pair.py SESSION`
+   `python endfield_reconstruction_lab/tools/analyze_endminf_streamline_surface_pair.py SESSION`
    to compare the exact input/output pair offline.
    The screenshot-measured opening strip is now default-off in canonical and
    interactive presentation; its correctly ordered pre-temporal diagnostic did

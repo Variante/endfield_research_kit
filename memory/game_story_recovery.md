@@ -238,10 +238,10 @@ Manual order is a presentation override, not source evidence:
 
 ## Validation policy
 
-Batch recovery edits. During a batch, use unit tests, direct probes, or
-`--mission-pipeline-data-only` while Story/evidence inputs are current. Run the
-canonical Mission Pipeline rebuild after at least three independent changes or
-at the end of a coherent 30–60 minute batch.
+Batch recovery edits. During a batch, use unit tests and direct probes while
+Story/evidence inputs are current. Run the direct Mission Pipeline Python
+sequence after at least three independent changes or at the end of a coherent
+30–60 minute batch.
 
 Every validator must fail closed and report the validator, gate, affected
 mission or Story key, source path, bounded expected/actual values, and source
@@ -256,8 +256,8 @@ python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
-.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
-.\export.bat --mission-pipeline-data-only
+python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
+python -m scripts.build_map_recovery_data --with-preview
 ```
 
 Do not use reference reuse after an installed-game refresh or together with

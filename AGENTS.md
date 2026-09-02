@@ -56,11 +56,11 @@ index can supply both names and hashes.
 ## Commands
 
 ```bat
-.\setup_first_time.bat
+.\setup.bat
 .\export.bat
 .\export.bat --with-assets
 .\export.bat --from-game
-.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
+python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
 .\build_updates.bat
 .\build_updates.bat OLD NEW
 .\export_assets.bat
@@ -92,7 +92,7 @@ installed game data are rejected with an explanatory message when
 CRLF: cmd.exe mis-resolves backward `goto` in LF-only batch files, which
 breaks their argument loops.
 
-`setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
+`setup.bat` is the user-facing all-in-one first-time setup path. It
 initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
 integrated AnimeStudio VFS/audio commands, runs `export.bat --from-game
 --story-only --animestudio-story-monobehaviour-names`,
@@ -100,6 +100,8 @@ prints optional `export_assets.bat --from-game` and plain `export.bat` follow-up
 commands for the remaining semantic views, explains that Updates requires two
 complete exports, then starts or reuses the default WebUI server.
 Pass `--no-serve` when setup should finish without starting `serve.py`.
+The `endfield_reconstruction_lab` and `tools/EndfieldCapture` submodules are
+optional and are not initialized by this quick-start path.
 
 `export.bat` is the canonical Story/Text Tables and curated semantic-view WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed
@@ -118,14 +120,11 @@ rebuilds `reports/source_graph/endfield_source_graph.sqlite` with only the exact
 original AssetMap source/PathID rows consumed by WebUI material, shader,
 texture, and FMV edges, then builds the Combat view. Pass
 `--full-source-graph` only when exhaustive Unity-object/PathID investigation and
-generated graph follow-up reports are required. Pass `--mission-pipeline-only`
-for the Story/Mission Pipeline edit loop; it stops before unrelated semantic
-views and the graph. Pass `--mission-pipeline-data-only` when generated Story
-bundles/evidence are already current and only Mission Pipeline JSON or frontend
-work changed; it verifies export freshness, then deliberately skips Story,
-evidence, other semantic views, and the graph. Its shared data-only plan
-validates the protocol registry and rebuilds Mission Pipeline/map JSON without
-refreshing the source-story gap queue or map previews. The Combat builder refuses graph edges when the database predates
+generated graph follow-up reports are required. For a focused Mission Pipeline
+edit loop, call the direct Python builders listed in the project Mission
+Pipeline skill; the wrapper no longer owns a Mission Pipeline-only scope. The
+data-only sequence omits source-story gap refresh and map preview rendering.
+The Combat builder refuses graph edges when the database predates
 its Gameplay/manifest/asset/AbilityEntity/CharacterTemplate inputs and records a
 visible degraded-mode reason instead of treating stale edges as direct.
 `export.bat` does not refresh `webui/overrides/story_order.json`; active Story
@@ -195,10 +194,10 @@ sharding. `--animestudio-broad-json-jobs N` bounds concurrent broad loads and
 defaults to 1; values above 1 are not supported by any measurement.
 
 For repeated Mission Pipeline recovery builds with unchanged Timeline and
-Table inputs, use `--mission-pipeline-only --reuse-timeline-orders
---reuse-reference`. Reference reuse validates the existing localized reference
-index/files and is rejected with `--from-game`; omit both reuse flags
-after any installed-game refresh.
+Table inputs, use the direct Python sequences in
+`.codex/skills/endfield-mission-pipeline-build/SKILL.md`. Story reference reuse
+belongs to the direct Story builder and must not be used after an installed-game
+refresh.
 
 ### Mission Recovery Edit-Loop Policy
 
@@ -206,11 +205,9 @@ Do not run a canonical Story/Mission Pipeline rebuild after every individual
 recovery edit. Work in small validated batches:
 
 - accumulate at least three independently validated recovery changes before
-  running `export.bat --mission-pipeline-only`, or run it at the end of a
-  coherent 30-60 minute recovery batch;
-- during the batch, use focused unit tests, direct parser/builder probes, and
-  `--mission-pipeline-data-only` when generated Story bundles and evidence are
-  already current;
+  running the direct Mission Pipeline Python sequence, or run it at the end of
+  a coherent 30-60 minute recovery batch;
+- during the batch, use focused unit tests and direct parser/builder probes;
 - focused commits may be made after targeted validation; run the canonical
   rebuild once at the batch boundary before publishing generated WebUI data,
   documenting final counts, or declaring the batch complete;
@@ -284,7 +281,7 @@ longer shell timeout, such as 10-15 minutes (`timeout_ms` of at least
 Unity character recovery lab:
 
 ```bat
-cd unity_endfield_graph_shader_lab
+cd endfield_reconstruction_lab
 .\open_character_recovery_lab.bat
 .\build_all_character_recovery.bat
 ```
@@ -466,9 +463,17 @@ README-shaped or dated snapshots; update the current source of truth instead:
 Project-only Codex skills live under `.codex/skills/`. When a task matches one
 of these workflows, open the matching `SKILL.md` before acting:
 
-- `.codex/skills/endfield-webui-workflow/`: WebUI refresh, serving, packaging,
-  Updates tab, and static frontend scope, including current SNS inline-image
-  behavior.
+- `.codex/skills/endfield-webui-frontend/`: frontend behavior, routing, labels,
+  styles, and page contracts.
+- `.codex/skills/endfield-webui-serve-package/`: serving, smoke tests, and
+  static packaging.
+- `.codex/skills/endfield-story-recovery-build/`: Story/Text Tables and Story
+  evidence builders.
+- `.codex/skills/endfield-mission-pipeline-build/`: Mission Pipeline and map
+  recovery Python builders.
+- `.codex/skills/endfield-assets-audio-build/`: asset indexes, audio links, and
+  gameplay sound sidecars.
+- `.codex/skills/endfield-updates-build/`: Updates comparison feed.
 - `.codex/skills/endfield-source-graph/`: source graph build/query and
   graph-backed follow-up reports.
 - `.codex/skills/endfield-option-overrides/`: editing and validating
@@ -508,7 +513,7 @@ bounded-session, failure-reporting, build, and test gates above remain intact.
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the
 active docs (`README.md`, `scripts/README.md`, `webui/README.md`, and
-`unity_endfield_graph_shader_lab/README.md`) plus the existing source-graph
+`endfield_reconstruction_lab/README.md`) plus the existing source-graph
 skill when graph evidence is relevant.
 
 The retired exploration snapshots were collapsed because they mixed active
@@ -573,18 +578,8 @@ export folder so the cached scanner baseline is rebuilt.
 
 ## Repo Rules
 
-- For repository and local-data file discovery, always use the Everything CLI
-  at `tools\\EverythingCLI\\es.exe` first. Do not use the Everything GUI, search
-  unrelated locations, or perform broad shell/IDE file searches. Prefer
-  Everything search syntax with explicit path scoping (for example,
-  `es.exe -search "path:D:\\fluffy-dump <name-or-pattern>"`); use a `content:`
-  query when indexed content search is appropriate. If the CLI command fails
-  or Everything is unavailable, fall back to `rg`; use other tools only when
-  `rg` is unavailable or the task needs exact repository-content semantics
-  that Everything cannot provide. Once candidate files are known, direct
-  reads and narrowly scoped content searches are allowed.
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
-  `scripts/`, and `unity_endfield_graph_shader_lab/`.
+  `scripts/`, and `endfield_reconstruction_lab/`.
 - Keep `README.md` focused on active WebUI usage and headline recovery
   progress. Preserve its screenshots, Chinese links, and acknowledgements.
 - Keep active READMEs and memory topics concise. Put exhaustive implementation
@@ -625,7 +620,7 @@ export folder so the cached scanner baseline is rebuilt.
   project folder.
 - Preserve narrow, surgical changes when adjusting exporters or builders.
 - Do not promote an ad-hoc script into `scripts/` unless it supports WebUI or
-  `unity_endfield_graph_shader_lab`.
+  `endfield_reconstruction_lab`.
 
 ## Active Script Groups
 
@@ -684,7 +679,7 @@ Story recovery audit/refresh tools, not run by `export.bat`:
 
 Unity character recovery lab:
 
-- project-local scripts under `unity_endfield_graph_shader_lab/`
+- project-local scripts under `endfield_reconstruction_lab/`
 
 The old archived-script bucket has been retired. Do not recreate it; put
 disposable scripts in `scratch/` or `tmp/`, and promote only maintained

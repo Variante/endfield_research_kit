@@ -41,10 +41,10 @@ DEFAULT_GAME_ROOT = core.DEFAULT_GAME_ROOT
 DEFAULT_MANIFEST = SCRIPT_DIR / "mission_runtime_trace_hooks.json"
 DEFAULT_AGENT = SCRIPT_DIR / "mission_runtime_trace_agent.js"
 DEFAULT_SHADER_MANIFEST = (
-    ROOT / "unity_endfield_graph_shader_lab" / "config" / "shader_runtime_trace_hooks.json"
+    ROOT / "endfield_reconstruction_lab" / "config" / "shader_runtime_trace_hooks.json"
 )
 DEFAULT_SHADER_AGENT = (
-    ROOT / "unity_endfield_graph_shader_lab" / "tools" / "shader_runtime_trace_agent.js"
+    ROOT / "endfield_reconstruction_lab" / "tools" / "shader_runtime_trace_agent.js"
 )
 EVENT_SCHEMA = "missionRuntimeTrace.event.v1"
 MANIFEST_SCHEMA = "missionRuntimeTrace.hooks.v2"

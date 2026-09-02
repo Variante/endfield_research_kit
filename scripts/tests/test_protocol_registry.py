@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 
 from scripts.story_builder import levelscript_binary
@@ -12,6 +16,37 @@ from scripts.story_builder.native_protocol import il2cpp
 
 
 class ProtocolRegistryAuditTests(unittest.TestCase):
+    def test_main_gates_the_recorded_native_build_before_refresh(self):
+        args = SimpleNamespace(
+            gameassembly=Path("GameAssembly.dll"),
+            metadata=Path("global-metadata.dat"),
+        )
+        native = SimpleNamespace(
+            validated=False,
+            status="mismatched",
+            detail="fixture build mismatch",
+        )
+        stderr = io.StringIO()
+        with (
+            patch.object(audit, "parse_args", return_value=args),
+            patch.object(
+                audit,
+                "check_installed_native_inputs",
+                return_value=native,
+            ) as gate,
+            patch.object(audit, "native_evidence_required", return_value=False),
+            redirect_stderr(stderr),
+        ):
+            self.assertEqual(0, audit.main())
+
+        gate.assert_called_once_with(
+            audit.RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+            audit.RECORDED_NATIVE_METADATA_SHA256,
+            gameassembly=args.gameassembly,
+            metadata=args.metadata,
+        )
+        self.assertIn("[protocol-registry] skipped:", stderr.getvalue())
+
     def test_levelscript_native_header_contract_fails_closed_by_build(self):
         missing = levelscript_binary.levelscript_native_header_contract("", "")
         self.assertEqual(missing["status"], "missing")

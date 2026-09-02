@@ -140,35 +140,6 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertEqual(asset_command[asset_command.index("--mode") + 1], "debug")
         self.assertNotIn("--skip-decode", commands_for(phases, "audio")[0])
 
-    def test_mission_only_plan_has_no_unrelated_views(self) -> None:
-        args = build_webui_views.parse_args(["--mission-pipeline-only"])
-        phases = build_webui_views.build_phases(args)
-
-        self.assertEqual(task_names(phases), [["mission_pipeline"]])
-        protocol_command = commands_for(phases, "mission_pipeline")[0]
-        self.assertEqual(
-            protocol_command[1:3],
-            ("-m", "scripts.story_builder.protocol_registry"),
-        )
-        map_command = commands_for(phases, "mission_pipeline")[-1]
-        self.assertIn("--with-preview", map_command)
-
-    def test_mission_data_only_plan_skips_evidence_refresh_and_preview(self) -> None:
-        args = build_webui_views.parse_args(["--mission-pipeline-data-only"])
-        phases = build_webui_views.build_phases(args)
-
-        self.assertEqual(task_names(phases), [["mission_pipeline_data"]])
-        commands = commands_for(phases, "mission_pipeline_data")
-        self.assertEqual(
-            commands[0][1:3],
-            ("-m", "scripts.story_builder.protocol_registry"),
-        )
-        self.assertIn("scripts.build_mission_pipeline_data", commands[1])
-        self.assertNotIn("--refresh-source-story-gap-queue", commands[1])
-        self.assertIn("scripts.build_map_recovery_data", commands[2])
-        self.assertNotIn("--with-preview", commands[2])
-        self.assertNotIn("--preview-only", commands[2])
-
     def test_full_plan_refreshes_preview_without_rebuilding_map_data(self) -> None:
         phases = build_webui_views.build_phases(build_webui_views.parse_args([]))
         mission_commands = commands_for(phases, "mission_pipeline")
@@ -258,31 +229,18 @@ class WebuiViewPlanTests(unittest.TestCase):
             self.assertIn(message, source)
 
     def test_export_wrapper_owns_no_second_copy_of_the_mission_stage(self) -> None:
-        # `--mission-pipeline-data-only` used to inline protocol_registry,
-        # build_mission_pipeline_data and build_map_recovery_data, which drifted
-        # from the mission_pipeline task: no gap-queue refresh, single-threaded
-        # map build, stale previews. It now routes through the shared plan.
+        # Mission Pipeline is maintained as a direct Python workflow. The
+        # wrapper delegates the complete post-Story plan to this module.
         source = (ROOT / "export.bat").read_text(encoding="utf-8")
-        for builder in (
-            "build_mission_pipeline_data",
-            "build_map_recovery_data",
-            "story_builder.protocol_registry",
-        ):
-            self.assertNotIn(builder, source)
-
-        args = build_webui_views.parse_args(["--mission-pipeline-only"])
         mission_commands = commands_for(
-            build_webui_views.build_phases(args), "mission_pipeline"
+            build_webui_views.build_phases(build_webui_views.parse_args([])),
+            "mission_pipeline",
         )
         self.assertIn("--refresh-source-story-gap-queue", mission_commands[1])
-        self.assertIn("--with-preview", mission_commands[-1])
-
-        data_args = build_webui_views.parse_args(["--mission-pipeline-data-only"])
-        data_commands = commands_for(
-            build_webui_views.build_phases(data_args), "mission_pipeline_data"
-        )
-        self.assertNotIn("--refresh-source-story-gap-queue", data_commands[1])
-        self.assertNotIn("--with-preview", data_commands[-1])
+        self.assertIn("--preview-only", commands_for(
+            build_webui_views.build_phases(build_webui_views.parse_args([])),
+            "map_recovery",
+        )[0])
 
     def test_export_wrapper_preflights_the_arguments_it_will_actually_run(self) -> None:
         source = (ROOT / "export.bat").read_text(encoding="utf-8")
@@ -296,7 +254,8 @@ class WebuiViewPlanTests(unittest.TestCase):
             source.index('set "WEBUI_VIEW_ARGS=--jobs "'),
             source.index(preflight),
         )
-        self.assertNotIn("--mission-pipeline-only --dry-run", source)
+        self.assertNotIn("--mission-pipeline-only", source)
+        self.assertNotIn("--mission-pipeline-data-only", source)
         self.assertNotIn("if \"%POST_STORY_VIEWS%\"==\"0\" goto :preflight_done", source)
 
     def test_export_wrapper_forwards_configured_output_to_extraction(self) -> None:

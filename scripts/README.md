@@ -8,12 +8,12 @@ focused development or validation.
 
 | Goal | Command |
 | --- | --- |
-| First-time Story/Text setup | `.\setup_first_time.bat` |
+| First-time Story/Text setup | `.\setup.bat` |
 | Rebuild from the current export | `.\export.bat` |
 | Refresh Story from the game | `.\export.bat --from-game` |
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` |
-| Story/Mission recovery loop | `.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference` |
-| Mission Pipeline JSON only | `.\export.bat --mission-pipeline-data-only` |
+| Story recovery loop | `python -m scripts.story_builder.build --languages CN --default-language CN` |
+| Mission Pipeline recovery | `python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue` then `python -m scripts.build_map_recovery_data --with-preview` |
 | Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
 | Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
@@ -21,6 +21,10 @@ focused development or validation.
 
 The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
 wrapper with `--help` for its supported options.
+
+`setup.bat` initializes only the required `tools/AnimeStudio` submodule.
+`endfield_reconstruction_lab` and `tools/EndfieldCapture` are optional and are
+not needed for the normal WebUI build.
 
 ## Export rules
 
@@ -45,8 +49,7 @@ Useful shared flags:
 - The configured `ENDFIELD_EXPORT_ROOT` is passed to installed-game extraction
   as `--output` and to downstream builders as `--export-root`; both halves of
   a run therefore use the same tree.
-- `--story-only`, `--mission-pipeline-only`,
-  `--mission-pipeline-data-only`, and `--assets-only` select the build scope;
+- `--story-only` and `--assets-only` select the wrapper build scope;
   at most one may be given. `--assets-only` skips Story evidence, Story, and
   Text Tables, and implies `--with-assets`; `export_assets.bat` is a thin
   wrapper that adds it.
@@ -217,15 +220,15 @@ recovery-script subprocess.
 
 Work in small validated batches:
 
-1. Use focused unit tests, parser probes, or
-   `--mission-pipeline-data-only` while generated Story inputs are current.
+1. Use focused unit tests and parser probes while generated Story inputs are current.
 2. After at least three independent changes, or at the end of a coherent
-   30–60 minute batch, run the canonical `--mission-pipeline-only` rebuild.
+   30–60 minute batch, run the direct Mission Pipeline Python sequence.
 3. Rebuild earlier only for changed installed inputs, stale generated data, or
    a cross-cutting schema change that focused tests cannot validate.
 
-Reuse Timeline order and localized references only when their inputs are
-unchanged. `--reuse-reference` is incompatible with `--from-game`.
+Reuse Timeline order and localized references only through the direct Story
+builder when their inputs are unchanged. These options are not accepted by
+`export.bat` and must not be used with `--from-game`.
 
 Validators fail closed. A failure must name the validator, gate, affected
 mission or Story key, source path, bounded expected/actual values, and relevant
@@ -318,9 +321,9 @@ post-Story views while reusing existing decoded assets and audio.
 `export_assets.bat` is a thin wrapper around `export.bat --assets-only`, so it
 shares one option parser, runs `verify_export_freshness.py`, and writes a
 benchmark under `reports/export/benchmarks/` with an `export_assets_` label.
-The shared data-only Mission Pipeline plan validates the protocol registry and
-rebuilds Mission Pipeline/map JSON without refreshing Story gap evidence or
-rendering map previews. Asset-only installed-game extraction leaves structured
+The Mission Pipeline data-only Python sequence validates the protocol registry
+and calls `build_mission_pipeline_data.py` and `build_map_recovery_data.py`
+without refreshing Story gap evidence or rendering map previews. Asset-only installed-game extraction leaves structured
 Story/Table outputs untouched and preserves their previous source fingerprints;
 its current asset scan is recorded separately, so it cannot make stale Story
 data pass the freshness guard after a client update.

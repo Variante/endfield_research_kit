@@ -5,8 +5,8 @@ description: Build, run, debug, and modify the local Endfield AnimeStudio export
 
 # AnimeStudio Workflow
 
-Work from the repository root. For normal WebUI refresh decisions, also use
-the `endfield-webui-workflow` skill. Read `references/animestudio.md` before
+Work from the repository root. For WebUI delivery, use the relevant
+specialized WebUI skill. Read `references/animestudio.md` before
 changing exporter code, diagnosing nontrivial logs, or working with DummyDlls;
 it contains CLI details, code structure, and focused verification patterns.
 

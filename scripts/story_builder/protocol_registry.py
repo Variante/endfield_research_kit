@@ -27,6 +27,8 @@ from typing import Any
 
 if __package__ == "story_builder":
     from common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
         ROOT,
         check_installed_native_inputs,
         md_escape,
@@ -39,6 +41,8 @@ if __package__ == "story_builder":
     )
 elif __package__ == "scripts.story_builder":
     from scripts.common import (
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
         ROOT,
         check_installed_native_inputs,
         md_escape,
@@ -9240,6 +9244,8 @@ def current_report_status(
 def main() -> int:
     args = parse_args()
     native = check_installed_native_inputs(
+        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+        RECORDED_NATIVE_METADATA_SHA256,
         gameassembly=args.gameassembly,
         metadata=args.metadata,
     )
