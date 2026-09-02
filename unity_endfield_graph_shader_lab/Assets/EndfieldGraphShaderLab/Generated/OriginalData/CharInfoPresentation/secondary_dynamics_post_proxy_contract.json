@@ -422,10 +422,10 @@
       },
       "calcLineBurstNumerics": {
         "repoPath": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_calc_line_burst_golden_vectors.json",
-        "size": 5917,
-        "sha256": "5d2c7ea2f80243405bc2d3dd54f5a01035cc4777e8d02c64182285331caf93a1",
-        "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v1",
-        "status": "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases",
+        "size": 228420,
+        "sha256": "7e674976994a11a5c0e6acd3e86b8b96e2f25221c5c6cfb8e2dc4f562496105b",
+        "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v2",
+        "status": "dual_cpu_core_source_and_endminf_topology_exact",
         "boundary": {
           "nativeCpuVariantsExecuted": [
             "x64_sse2",
@@ -433,8 +433,14 @@
           ],
           "sourceOnlyTranscriptionMatchedBitForBit": true,
           "caseCount": 7,
+          "endminfOwnerCount": 4,
+          "endminfStateCountPerOwner": 3,
+          "endminfTopologyCaseCount": 12,
+          "fullBaselinePackedChildTraversalExecuted": true,
+          "rotationOnlyMutationProven": true,
           "captureUsed": false,
           "runtimeRouteSelected": false,
+          "writebackConnected": false,
           "managedIfixPatchStateClosed": false,
           "solverImplemented": false,
           "retailEquivalent": false
@@ -442,8 +448,10 @@
         "equations": {
           "traversal": "baseline list -> bit-0/team gates -> baseline parents -> packed child list; select one per-child direction, add it to the parent direction sum, and pass that per-child direction to child FromTo",
           "rest": "double3(float3(rotateBinary32(parentRotation, localPosition*negativeScaleDirection)))",
-          "childRotation": "mulBinary32(mulBinary32(parentRotation, localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))",
-          "parentRotation": "mulBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+          "childRotation": "mulBurstBinary32(fromTo(rest,direction,1), mulBurstBinary32(parentRotation, localRotation*negativeScaleQuaternion))",
+          "childWriteGate": "only children with attributes & Flag_Move (0x02) write rotations; fixed children contribute rest direction but preserve their incoming lane",
+          "parentRotation": "mulBurstBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+          "quaternionGrouping": "Unity.Mathematics packed float4 grouping: (left.wwww*right + (left.xyzx*right.wwwx + left.yzxy*right.zxyy)*float4(1,1,1,-1)) - left.zxyz*right.yzxz",
           "acos64PolynomialCoefficients": [
             0.031615876506539346,
             0.012153605255773773,
@@ -2099,8 +2107,10 @@
     "equations": {
       "traversal": "baseline list -> bit-0/team gates -> baseline parents -> packed child list; select one per-child direction, add it to the parent direction sum, and pass that per-child direction to child FromTo",
       "rest": "double3(float3(rotateBinary32(parentRotation, localPosition*negativeScaleDirection)))",
-      "childRotation": "mulBinary32(mulBinary32(parentRotation, localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))",
-      "parentRotation": "mulBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+      "childRotation": "mulBurstBinary32(fromTo(rest,direction,1), mulBurstBinary32(parentRotation, localRotation*negativeScaleQuaternion))",
+      "childWriteGate": "only children with attributes & Flag_Move (0x02) write rotations; fixed children contribute rest direction but preserve their incoming lane",
+      "parentRotation": "mulBurstBinary32(fromTo(restSum,direction,selectedInterpolation), incomingParentRotation)",
+      "quaternionGrouping": "Unity.Mathematics packed float4 grouping: (left.wwww*right + (left.xyzx*right.wwwx + left.yzxy*right.zxyy)*float4(1,1,1,-1)) - left.zxyz*right.yzxz",
       "acos64PolynomialCoefficients": [
         0.031615876506539346,
         0.012153605255773773,
@@ -2125,8 +2135,8 @@
       "zeroOrNonFinite": "there is no explicit normalization guard; IEEE infinity/NaN values propagate through the exact polynomial and sincos special cases",
       "emptyChild": "no parent or child rotation write occurs"
     },
-    "classification": "Both pinned CPU cores match the source-only transcription bit for bit across parallel, quarter-turn, antiparallel, non-move, multi-child, empty-child, and zero-axis branch cases.",
-    "runtimeBoundary": "This closes Burst-core numerics, not the branch selected by retail. A selected managed route can still enter live IFix patch 0x219."
+    "classification": "Both pinned CPU cores match the source-only transcription bit for bit across parallel, quarter-turn, antiparallel, non-move, multi-child, empty-child, and zero-axis branch cases, plus all four Endminf owners across bind/rest and two deterministic perturbed states. The topology fixture covers full baseline/packed-child traversal, the Burst packed-float4 quaternion grouping and left-applied child FromTo, and the fixed-child no-write gate.",
+    "runtimeBoundary": "This closes Burst-core numerics, not the branch selected by retail. The fixture remains disconnected from scene writeback. A selected managed route can still enter live IFix patch 0x219."
   },
   "calcLineDirectCallRoute": {
     "classification": "Method 384854 is a thin generated argument-forwarding wrapper. It contains no line traversal or vector/quaternion math and calls BurstDirectCall.Invoke method 384867.",

@@ -309,8 +309,29 @@ class SecondaryDynamicsPostProxyTests(unittest.TestCase):
         self.assertIn("no normal/tangent output array", flow["normalTangentNamingBoundary"])
         burst_numeric = self.payload["calcLineBurstNumerics"]
         self.assertIn("z2=z*z", burst_numeric["equations"]["acos64Grouping"])
+        self.assertIn(
+            "mulBurstBinary32(fromTo", burst_numeric["equations"]["childRotation"]
+        )
+        self.assertIn("Flag_Move", burst_numeric["equations"]["childWriteGate"])
+        self.assertIn(
+            "packed float4 grouping", burst_numeric["equations"]["quaternionGrouping"]
+        )
         self.assertIn("zero cross axis", burst_numeric["degeneracy"]["negativeXAxis"])
+        self.assertIn("all four Endminf owners", burst_numeric["classification"])
+        self.assertIn("disconnected from scene writeback", burst_numeric["runtimeBoundary"])
         self.assertIn("live IFix patch 0x219", burst_numeric["runtimeBoundary"])
+        dependency = self.payload["sources"]["dependencies"]["calcLineBurstNumerics"]
+        self.assertEqual(
+            dependency["schema"],
+            "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v2",
+        )
+        self.assertEqual(
+            dependency["status"], "dual_cpu_core_source_and_endminf_topology_exact"
+        )
+        self.assertEqual(dependency["boundary"]["endminfTopologyCaseCount"], 12)
+        self.assertTrue(dependency["boundary"]["rotationOnlyMutationProven"])
+        self.assertFalse(dependency["boundary"]["runtimeRouteSelected"])
+        self.assertFalse(dependency["boundary"]["writebackConnected"])
 
     def test_from_to_rotation_equation_and_degeneracy_boundary(self) -> None:
         flow = self.payload["calcLineEntryControlFlow"]

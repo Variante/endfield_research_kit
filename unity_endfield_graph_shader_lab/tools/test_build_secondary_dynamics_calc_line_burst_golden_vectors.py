@@ -25,7 +25,11 @@ class SecondaryDynamicsCalcLineBurstGoldenVectorTests(unittest.TestCase):
         payload = self.payload
         self.assertEqual(
             payload["status"],
-            "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases",
+            "dual_cpu_core_source_and_endminf_topology_exact",
+        )
+        self.assertEqual(
+            payload["schema"],
+            "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v2",
         )
         self.assertEqual(
             [(row["cpuVariant"], row["rva"], row["sha256"]) for row in payload["cores"]],
@@ -54,6 +58,9 @@ class SecondaryDynamicsCalcLineBurstGoldenVectorTests(unittest.TestCase):
         equations = self.payload["equations"]
         self.assertIn("per-child direction", equations["traversal"])
         self.assertIn("parent direction sum", equations["traversal"])
+        self.assertIn("mulBurstBinary32(fromTo", equations["childRotation"])
+        self.assertIn("Flag_Move", equations["childWriteGate"])
+        self.assertIn("packed float4 grouping", equations["quaternionGrouping"])
         self.assertEqual(len(equations["acos64PolynomialCoefficients"]), 12)
         self.assertIn("even0=z2*(z*c0+c2)", equations["acos64Grouping"])
         self.assertIn("CPU-local pinned sincos helper", equations["axisAngle"])
@@ -91,9 +98,109 @@ class SecondaryDynamicsCalcLineBurstGoldenVectorTests(unittest.TestCase):
         boundary = self.payload["boundary"]
         self.assertFalse(boundary["captureUsed"])
         self.assertFalse(boundary["runtimeRouteSelected"])
+        self.assertFalse(boundary["writebackConnected"])
         self.assertFalse(boundary["managedIfixPatchStateClosed"])
         self.assertFalse(boundary["solverImplemented"])
         self.assertFalse(boundary["retailEquivalent"])
+
+    def test_hash_pinned_endminf_topology_fixture_is_complete(self) -> None:
+        sources = self.payload["sourceFiles"]
+        self.assertEqual(
+            sources["payloadDecode"]["sha256"],
+            "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a",
+        )
+        self.assertEqual(
+            sources["solverInputs"]["sha256"],
+            "fe91726b102a1104ed223be0aeb9138a76d58887a79851cc70736fd0d4ed6251",
+        )
+        owners = self.payload["endminfTopologyCases"]
+        self.assertEqual(
+            [owner["ownerPath"] for owner in owners],
+            ["MC_Ribbon2", "MC_Hair", "MC_Ribbon", "MC_Coat"],
+        )
+        self.assertEqual(
+            [owner["coverage"] for owner in owners],
+            [
+                {
+                    "vertexCount": 6,
+                    "lineCount": 5,
+                    "baselineCount": 1,
+                    "baselineParentVisitCount": 6,
+                    "rootCount": 1,
+                    "leafCount": 1,
+                    "multiChildParentCount": 0,
+                    "fixedVertexCount": 1,
+                    "movableVertexCount": 5,
+                },
+                {
+                    "vertexCount": 30,
+                    "lineCount": 22,
+                    "baselineCount": 8,
+                    "baselineParentVisitCount": 29,
+                    "rootCount": 8,
+                    "leafCount": 9,
+                    "multiChildParentCount": 1,
+                    "fixedVertexCount": 9,
+                    "movableVertexCount": 21,
+                },
+                {
+                    "vertexCount": 20,
+                    "lineCount": 16,
+                    "baselineCount": 4,
+                    "baselineParentVisitCount": 18,
+                    "rootCount": 4,
+                    "leafCount": 4,
+                    "multiChildParentCount": 0,
+                    "fixedVertexCount": 6,
+                    "movableVertexCount": 14,
+                },
+                {
+                    "vertexCount": 70,
+                    "lineCount": 65,
+                    "baselineCount": 5,
+                    "baselineParentVisitCount": 32,
+                    "rootCount": 5,
+                    "leafCount": 14,
+                    "multiChildParentCount": 5,
+                    "fixedVertexCount": 43,
+                    "movableVertexCount": 27,
+                },
+            ],
+        )
+        for owner in owners:
+            self.assertEqual(
+                [state["name"] for state in owner["states"]],
+                ["bind_rest", "seeded_perturbation_a", "seeded_perturbation_b"],
+            )
+            self.assertEqual(len(owner["attributes"]), owner["coverage"]["vertexCount"])
+            self.assertEqual(
+                len(owner["localPositionBitsLe"]), owner["coverage"]["vertexCount"]
+            )
+            self.assertEqual(
+                len(owner["localRotationBitsLe"]), owner["coverage"]["vertexCount"]
+            )
+            for state in owner["states"]:
+                self.assertEqual(
+                    len(state["outputRotationBitsLe"]), owner["coverage"]["vertexCount"]
+                )
+                for variant in ("x64_sse2", "avx2"):
+                    mutation = state["nativeMutation"][variant]
+                    self.assertEqual(mutation["declaredMutableBuffers"], ["rotations"])
+                    self.assertEqual(mutation["changedBuffers"], ["rotations"])
+                    self.assertEqual(
+                        mutation["immutableBeforeSha256"],
+                        mutation["immutableAfterSha256"],
+                    )
+                    self.assertNotEqual(
+                        mutation["rotationBeforeSha256"],
+                        mutation["rotationAfterSha256"],
+                    )
+        boundary = self.payload["boundary"]
+        self.assertEqual(boundary["endminfOwnerCount"], 4)
+        self.assertEqual(boundary["endminfStateCountPerOwner"], 3)
+        self.assertEqual(boundary["endminfTopologyCaseCount"], 12)
+        self.assertTrue(boundary["fullBaselinePackedChildTraversalExecuted"])
+        self.assertTrue(boundary["rotationOnlyMutationProven"])
 
     def test_generated_contract_matches(self) -> None:
         expected = json.dumps(self.payload, indent=2, allow_nan=True) + "\n"

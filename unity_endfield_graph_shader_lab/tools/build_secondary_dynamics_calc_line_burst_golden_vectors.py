@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Execute and source-transcribe the pinned CalcLine SSE2/AVX2 cores.
 
-The cases are synthetic character-neutral values.  They carry no captured
-positions, curves, frame timing, or Endminf-specific constants.
+The branch cases are synthetic character-neutral values.  The detached
+Endminf topology cases join hash-pinned serialized proxy topology to three
+deterministic finite states; they carry no capture, frame timing, route
+selection, scene writeback, or visual-equivalence claim.
 """
 
 from __future__ import annotations
@@ -21,9 +23,35 @@ import build_secondary_dynamics_float_sincos_golden_vectors as sincos
 
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
+DATA_ROOT = LAB_ROOT / (
+    "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
+)
 OUTPUT = LAB_ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
     "secondary_dynamics_calc_line_burst_golden_vectors.json"
+)
+PAYLOAD_DECODE = DATA_ROOT / "secondary_dynamics_payload_decode.json"
+SOLVER_INPUTS = DATA_ROOT / "secondary_dynamics_solver_inputs.json"
+EXPECTED_PAYLOAD_DECODE_SHA256 = (
+    "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a"
+)
+EXPECTED_SOLVER_INPUTS_SHA256 = (
+    "fe91726b102a1104ed223be0aeb9138a76d58887a79851cc70736fd0d4ed6251"
+)
+EXPECTED_ENDMINF_OWNERS = ("MC_Ribbon2", "MC_Hair", "MC_Ribbon", "MC_Coat")
+TOPOLOGY_ARRAY_KEYS = (
+    "attributes",
+    "vertexParentIndices",
+    "vertexChildIndexArray",
+    "vertexChildDataArray",
+    "vertexLocalPositions",
+    "vertexLocalRotations",
+    "vertexBindPosePositions",
+    "vertexBindPoseRotations",
+    "baseLineFlags",
+    "baseLineStartDataIndices",
+    "baseLineDataCounts",
+    "baseLineData",
 )
 
 CORE_VARIANTS = (
@@ -277,6 +305,28 @@ def _quat_mul(a: tuple[float, ...], b: tuple[float, ...]) -> tuple[float, float,
             _fadd(z_first, z_cross), w)
 
 
+def _quat_mul_burst(
+    a: tuple[float, ...],
+    b: tuple[float, ...],
+) -> tuple[float, float, float, float]:
+    """Pinned Unity.Mathematics float4 grouping used by both Burst cores."""
+    first = tuple(_fmul(a[3], b[index]) for index in range(4))
+    positive = (
+        _fadd(_fmul(a[0], b[3]), _fmul(a[1], b[2])),
+        _fadd(_fmul(a[1], b[3]), _fmul(a[2], b[0])),
+        _fadd(_fmul(a[2], b[3]), _fmul(a[0], b[1])),
+        _fsub(0.0, _fadd(_fmul(a[0], b[0]), _fmul(a[1], b[1]))),
+    )
+    last = (
+        _fmul(a[2], b[1]),
+        _fmul(a[0], b[2]),
+        _fmul(a[1], b[0]),
+        _fmul(a[2], b[2]),
+    )
+    return tuple(_fsub(_fadd(first[index], positive[index]), last[index])
+                 for index in range(4))
+
+
 def _rotate(q: tuple[float, ...], v: tuple[float, ...]) -> tuple[float, float, float]:
     tx = _fmul(2.0, _fsub(_fmul(q[1], v[2]), _fmul(q[2], v[1])))
     ty = _fmul(2.0, _fsub(_fmul(q[2], v[0]), _fmul(q[0], v[2])))
@@ -303,7 +353,8 @@ def source_port(case: dict[str, Any]) -> list[tuple[float, float, float, float]]
         rest32 = _rotate(parent_rotation, local)
         rest = tuple(float(value) for value in rest32)
         rest_sum = tuple(rest_sum[axis] + rest[axis] for axis in range(3))
-        if int(child["attribute"]) & 2:
+        child_moves = bool(int(child["attribute"]) & 2)
+        if child_moves:
             child_direction = tuple(float(child["position"][axis]) - parent_position[axis]
                                     for axis in range(3))
         else:
@@ -312,14 +363,19 @@ def source_port(case: dict[str, Any]) -> list[tuple[float, float, float, float]]
         child_from_to = _from_to(rest, child_direction, 1.0)
         local_rotation = tuple(_fmul(child["localRotation"][axis], signed_quaternion[axis])
                                for axis in range(4))
-        rotations[child_index] = _quat_mul(
-            _quat_mul(parent_rotation, local_rotation), child_from_to
-        )
+        if child_moves:
+            rotations[child_index] = _quat_mul_burst(
+                child_from_to,
+                _quat_mul_burst(parent_rotation, local_rotation),
+            )
     if case["children"]:
         interpolation = (float(case["rotationalInterpolation"])
                          if int(case["parentAttribute"]) & 2
                          else float(case["rootRotation"]))
-        rotations[0] = _quat_mul(_from_to(rest_sum, direction, interpolation), parent_rotation)
+        rotations[0] = _quat_mul_burst(
+            _from_to(rest_sum, direction, interpolation),
+            parent_rotation,
+        )
     return rotations
 
 
@@ -391,6 +447,461 @@ def _rotation_bits(rows: list[tuple[float, ...]]) -> list[list[str]]:
     return [[struct.pack("<f", value).hex() for value in row] for row in rows]
 
 
+def _position_bits(rows: list[tuple[float, ...]]) -> list[list[str]]:
+    return [[struct.pack("<d", value).hex() for value in row] for row in rows]
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _load_pinned_json(path: Path, expected_sha256: str, schema: str) -> dict[str, Any]:
+    actual_sha256 = _sha256(path)
+    if actual_sha256 != expected_sha256:
+        raise burst.ContractError(
+            f"{path.name} hash drift: expected {expected_sha256}, got {actual_sha256}"
+        )
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise burst.ContractError(f"unable to read {path}: {exc}") from exc
+    if not isinstance(value, dict) or value.get("schema") != schema:
+        raise burst.ContractError(f"{path.name} schema drift")
+    return value
+
+
+def _object(value: Any, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise burst.ContractError(f"{label} must be an object")
+    return value
+
+
+def _array(value: Any, label: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise burst.ContractError(f"{label} must be an array")
+    return value
+
+
+def _array_field(arrays: dict[str, Any], key: str) -> dict[str, Any]:
+    row = _object(arrays.get(key), key)
+    values = _array(row.get("values"), f"{key}.values")
+    count = row.get("count")
+    if isinstance(count, bool) or not isinstance(count, int) or count != len(values):
+        raise burst.ContractError(f"{key} count differs from values")
+    digest = row.get("array_bytes_sha256")
+    if not isinstance(digest, str) or len(digest) != 64:
+        raise burst.ContractError(f"{key} has no pinned array byte hash")
+    return row
+
+
+def _integer_values(arrays: dict[str, Any], key: str) -> list[int]:
+    values = _array_field(arrays, key)["values"]
+    result: list[int] = []
+    for index, value in enumerate(values):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise burst.ContractError(f"{key}[{index}] is not an integer")
+        result.append(value)
+    return result
+
+
+def _vector_values(arrays: dict[str, Any], key: str, width: int) -> list[tuple[float, ...]]:
+    values = _array_field(arrays, key)["values"]
+    result: list[tuple[float, ...]] = []
+    for index, value in enumerate(values):
+        lanes = _array(value, f"{key}[{index}]")
+        if len(lanes) != width:
+            raise burst.ContractError(f"{key}[{index}] width differs from {width}")
+        converted = tuple(float(lane) for lane in lanes)
+        if not all(math.isfinite(lane) for lane in converted):
+            raise burst.ContractError(f"{key}[{index}] is not finite")
+        result.append(converted)
+    return result
+
+
+def _topology_hash(topology: dict[str, Any]) -> str:
+    keys = (
+        "ownerPath", "attributes", "parentIndices", "childIndices", "childData",
+        "localPositions", "localRotations", "bindPositions", "bindRotations",
+        "baselineFlags", "baselineStarts", "baselineCounts", "baselineData",
+        "rotationalInterpolation", "rootRotation",
+    )
+    payload = json.dumps(
+        {key: topology[key] for key in keys},
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _decode_endminf_topologies(
+    payload_decode: dict[str, Any],
+    solver_inputs: dict[str, Any],
+) -> list[dict[str, Any]]:
+    payload_actor = _object(_object(payload_decode.get("actors"), "payload actors").get(
+        "endminf"), "payload endminf")
+    solver_actor = _object(_object(solver_inputs.get("actors"), "solver actors").get(
+        "endminf"), "solver endminf")
+    payload_cloths = _array(payload_actor.get("cloths"), "payload endminf cloths")
+    solver_cloths = _array(solver_actor.get("cloths"), "solver endminf cloths")
+    solver_by_owner = {
+        str(_object(row, "solver cloth").get("game_object_path")): _object(row, "solver cloth")
+        for row in solver_cloths
+    }
+    owners: list[dict[str, Any]] = []
+    for cloth_value in payload_cloths:
+        cloth = _object(cloth_value, "payload cloth")
+        owner_path = cloth.get("game_object_path")
+        if not isinstance(owner_path, str) or owner_path not in solver_by_owner:
+            raise burst.ContractError(f"unjoined Endminf owner {owner_path!r}")
+        arrays = _object(cloth.get("proxy_mesh_arrays"), f"{owner_path}.proxy_mesh_arrays")
+        solver_cloth = solver_by_owner[owner_path]
+        serialized = _object(solver_cloth.get("serialized_data"), f"{owner_path}.serialized_data")
+        rotational_interpolation = float(serialized.get("rotationalInterpolation"))
+        root_rotation = float(serialized.get("rootRotation"))
+        if not math.isfinite(rotational_interpolation) or not math.isfinite(root_rotation):
+            raise burst.ContractError(f"{owner_path} interpolation scalars are not finite")
+        topology = {
+            "ownerPath": owner_path,
+            "attributes": _integer_values(arrays, "attributes"),
+            "parentIndices": _integer_values(arrays, "vertexParentIndices"),
+            "childIndices": _integer_values(arrays, "vertexChildIndexArray"),
+            "childData": _integer_values(arrays, "vertexChildDataArray"),
+            "localPositions": _vector_values(arrays, "vertexLocalPositions", 3),
+            "localRotations": _vector_values(arrays, "vertexLocalRotations", 4),
+            "bindPositions": _vector_values(arrays, "vertexBindPosePositions", 3),
+            "bindRotations": _vector_values(arrays, "vertexBindPoseRotations", 4),
+            "baselineFlags": _integer_values(arrays, "baseLineFlags"),
+            "baselineStarts": _integer_values(arrays, "baseLineStartDataIndices"),
+            "baselineCounts": _integer_values(arrays, "baseLineDataCounts"),
+            "baselineData": _integer_values(arrays, "baseLineData"),
+            "rotationalInterpolation": rotational_interpolation,
+            "rootRotation": root_rotation,
+            "lineCount": int(_array_field(arrays, "lines")["count"]),
+            "sourceArraySha256": {
+                key: str(_array_field(arrays, key)["array_bytes_sha256"])
+                for key in TOPOLOGY_ARRAY_KEYS
+            },
+        }
+        vertex_count = len(topology["attributes"])
+        vertex_fields = (
+            "parentIndices", "childIndices", "localPositions", "localRotations",
+            "bindPositions", "bindRotations",
+        )
+        if vertex_count == 0 or any(len(topology[key]) != vertex_count for key in vertex_fields):
+            raise burst.ContractError(f"{owner_path} vertex cardinalities drift")
+        baseline_count = len(topology["baselineFlags"])
+        if any(len(topology[key]) != baseline_count
+               for key in ("baselineStarts", "baselineCounts")):
+            raise burst.ContractError(f"{owner_path} baseline cardinalities drift")
+        cursor = 0
+        seen_children: set[int] = set()
+        for parent, packed in enumerate(topology["childIndices"]):
+            local_start = packed & 0xFFFFF
+            child_count = packed >> 20
+            if local_start != cursor or cursor + child_count > len(topology["childData"]):
+                raise burst.ContractError(f"{owner_path} packed child slice drift at {parent}")
+            for child in topology["childData"][cursor:cursor + child_count]:
+                if (child < 0 or child >= vertex_count or child in seen_children or
+                        topology["parentIndices"][child] != parent):
+                    raise burst.ContractError(f"{owner_path} child membership drift at {parent}")
+                seen_children.add(child)
+            cursor += child_count
+        if cursor != len(topology["childData"]):
+            raise burst.ContractError(f"{owner_path} child data has trailing values")
+        for baseline, (start, count) in enumerate(zip(
+                topology["baselineStarts"], topology["baselineCounts"])):
+            if start < 0 or count < 0 or start + count > len(topology["baselineData"]):
+                raise burst.ContractError(f"{owner_path} baseline slice drift at {baseline}")
+            for parent in topology["baselineData"][start:start + count]:
+                if parent < 0 or parent >= vertex_count:
+                    raise burst.ContractError(f"{owner_path} baseline parent out of range")
+        topology["topologySha256"] = _topology_hash(topology)
+        owners.append(topology)
+    if tuple(owner["ownerPath"] for owner in owners) != EXPECTED_ENDMINF_OWNERS:
+        raise burst.ContractError("Endminf owner order drift")
+    return owners
+
+
+def _perturbed_state(
+    topology: dict[str, Any],
+    owner_index: int,
+    state_index: int,
+) -> tuple[list[tuple[float, ...]], list[tuple[float, ...]]]:
+    positions = [tuple(float(lane) for lane in row) for row in topology["bindPositions"]]
+    rotations = [tuple(_f32(lane) for lane in row) for row in topology["bindRotations"]]
+    if state_index == 0:
+        return positions, rotations
+    position_scale = 0.00035 if state_index == 1 else -0.00055
+    rotation_scale = 0.00125 if state_index == 1 else -0.00175
+    for vertex in range(len(positions)):
+        seed = (owner_index + 1) * 97 + (vertex + 1) * 31 + state_index * 17
+        offset = tuple(
+            position_scale * (((seed >> (axis * 3)) % 7) - 3)
+            for axis in range(3)
+        )
+        positions[vertex] = tuple(positions[vertex][axis] + offset[axis] for axis in range(3))
+        x = _f32(rotation_scale * (((seed >> 1) % 5) - 2))
+        y = _f32(rotation_scale * (((seed >> 4) % 5) - 2))
+        z = _f32(rotation_scale * (((seed >> 7) % 5) - 2))
+        magnitude = float(x) * x + float(y) * y + float(z) * z
+        if magnitude >= 1.0:
+            raise burst.ContractError("deterministic rotation perturbation is not bounded")
+        delta = (x, y, z, _f32(math.sqrt(1.0 - magnitude)))
+        rotations[vertex] = _quat_mul(rotations[vertex], delta)
+    if not all(math.isfinite(lane) for row in positions + rotations for lane in row):
+        raise burst.ContractError("deterministic topology state is not finite")
+    return positions, rotations
+
+
+def _source_topology_state(
+    topology: dict[str, Any],
+    positions: list[tuple[float, ...]],
+    input_rotations: list[tuple[float, ...]],
+) -> list[tuple[float, ...]]:
+    rotations = list(input_rotations)
+    for baseline, flag in enumerate(topology["baselineFlags"]):
+        if not flag & 1:
+            continue
+        start = topology["baselineStarts"][baseline]
+        count = topology["baselineCounts"][baseline]
+        for parent in topology["baselineData"][start:start + count]:
+            packed = topology["childIndices"][parent]
+            child_start = packed & 0xFFFFF
+            child_count = packed >> 20
+            children_indices = topology["childData"][child_start:child_start + child_count]
+            if not children_indices:
+                continue
+            parent_position = positions[parent]
+            parent_rotation = rotations[parent]
+            rest_sum = (0.0, 0.0, 0.0)
+            direction_sum = (0.0, 0.0, 0.0)
+            for child in children_indices:
+                local = topology["localPositions"][child]
+                rest = tuple(float(value) for value in _rotate(parent_rotation, local))
+                rest_sum = tuple(rest_sum[axis] + rest[axis] for axis in range(3))
+                child_moves = bool(topology["attributes"][child] & 2)
+                direction = (
+                    tuple(positions[child][axis] - parent_position[axis] for axis in range(3))
+                    if child_moves else rest
+                )
+                direction_sum = tuple(
+                    direction_sum[axis] + direction[axis] for axis in range(3)
+                )
+                if child_moves:
+                    child_from_to = _from_to(rest, direction, 1.0)
+                    signed_local = topology["localRotations"][child]
+                    rotations[child] = _quat_mul_burst(
+                        child_from_to,
+                        _quat_mul_burst(parent_rotation, signed_local),
+                    )
+            interpolation = (
+                topology["rotationalInterpolation"]
+                if topology["attributes"][parent] & 2
+                else topology["rootRotation"]
+            )
+            rotations[parent] = _quat_mul_burst(
+                _from_to(rest_sum, direction_sum, interpolation),
+                parent_rotation,
+            )
+    return rotations
+
+
+def _ctypes_bytes(value: Any) -> bytes:
+    return ctypes.string_at(ctypes.addressof(value), ctypes.sizeof(value))
+
+
+def _buffer_sha256(value: Any) -> str:
+    return hashlib.sha256(_ctypes_bytes(value)).hexdigest()
+
+
+def _immutable_sha256(buffers: dict[str, Any]) -> str:
+    digest = hashlib.sha256()
+    for name in sorted(buffers):
+        if name == "rotations":
+            continue
+        digest.update(name.encode("ascii"))
+        digest.update(b"\0")
+        digest.update(_ctypes_bytes(buffers[name]))
+    return digest.hexdigest()
+
+
+def _native_topology_state(
+    module: Any,
+    core_rva: int,
+    topology: dict[str, Any],
+    positions_values: list[tuple[float, ...]],
+    rotation_values: list[tuple[float, ...]],
+) -> tuple[list[tuple[float, ...]], dict[str, Any]]:
+    vertex_count = len(topology["attributes"])
+    baseline_count = len(topology["baselineFlags"])
+    child_data_count = len(topology["childData"])
+    baseline_data_count = len(topology["baselineData"])
+    team_data = ctypes.create_string_buffer(2 * 0x1D0)
+    team = 0x1D0
+    struct.pack_into("<Q", team_data, team, 2)
+    struct.pack_into("<3f", team_data, team + 0x68, 1.0, 1.0, 1.0)
+    struct.pack_into("<4f", team_data, team + 0x88, 1.0, 1.0, 1.0, 1.0)
+    struct.pack_into("<ii", team_data, team + 0x124, 0, vertex_count)
+    struct.pack_into("<ii", team_data, team + 0x12C, 0, child_data_count)
+    struct.pack_into("<ii", team_data, team + 0x164, 0, baseline_count)
+    parameters = ctypes.create_string_buffer(2 * 0x328)
+    struct.pack_into("<f", parameters, 0x328 + 0xA0, topology["rotationalInterpolation"])
+    struct.pack_into("<f", parameters, 0x328 + 0xA4, topology["rootRotation"])
+    job_baselines = (ctypes.c_int32 * baseline_count)(*range(baseline_count))
+    attributes = (ctypes.c_uint8 * vertex_count)(*topology["attributes"])
+    positions = (ctypes.c_double * (vertex_count * 3))(
+        *(lane for row in positions_values for lane in row)
+    )
+    rotations = (ctypes.c_float * (vertex_count * 4))(
+        *(lane for row in rotation_values for lane in row)
+    )
+    local_positions = (ctypes.c_float * (vertex_count * 3))(
+        *(lane for row in topology["localPositions"] for lane in row)
+    )
+    local_rotations = (ctypes.c_float * (vertex_count * 4))(
+        *(lane for row in topology["localRotations"] for lane in row)
+    )
+    parent_indices = (ctypes.c_int32 * vertex_count)(*topology["parentIndices"])
+    child_indices = (ctypes.c_uint32 * vertex_count)(*topology["childIndices"])
+    child_data = (ctypes.c_uint16 * child_data_count)(*topology["childData"])
+    baseline_flags = (ctypes.c_uint8 * baseline_count)(*topology["baselineFlags"])
+    baseline_team_ids = (ctypes.c_int16 * baseline_count)(*([1] * baseline_count))
+    baseline_starts = (ctypes.c_uint16 * baseline_count)(*topology["baselineStarts"])
+    baseline_counts = (ctypes.c_uint16 * baseline_count)(*topology["baselineCounts"])
+    baseline_data = (ctypes.c_uint16 * baseline_data_count)(*topology["baselineData"])
+    buffers = {
+        "jobBaselines": job_baselines,
+        "teamData": team_data,
+        "parameters": parameters,
+        "attributes": attributes,
+        "positions": positions,
+        "rotations": rotations,
+        "localPositions": local_positions,
+        "localRotations": local_rotations,
+        "parentIndices": parent_indices,
+        "childIndices": child_indices,
+        "childData": child_data,
+        "baselineFlags": baseline_flags,
+        "baselineTeamIds": baseline_team_ids,
+        "baselineStarts": baseline_starts,
+        "baselineCounts": baseline_counts,
+        "baselineData": baseline_data,
+    }
+    before = {name: _buffer_sha256(value) for name, value in buffers.items()}
+    immutable_before = _immutable_sha256(buffers)
+    signature = ctypes.CFUNCTYPE(None, *([ctypes.c_void_p] * 16), ctypes.c_int32)
+    function = signature(module._handle + core_rva)
+    ordered = tuple(buffers[name] for name in (
+        "jobBaselines", "teamData", "parameters", "attributes", "positions", "rotations",
+        "localPositions", "localRotations", "parentIndices", "childIndices", "childData",
+        "baselineFlags", "baselineTeamIds", "baselineStarts", "baselineCounts", "baselineData",
+    ))
+    for job_index in range(baseline_count):
+        function(*(ctypes.cast(value, ctypes.c_void_p) for value in ordered), job_index)
+    after = {name: _buffer_sha256(value) for name, value in buffers.items()}
+    changed = [name for name in buffers if before[name] != after[name]]
+    if changed != ["rotations"]:
+        raise burst.ContractError(
+            f"CalcLine native mutation boundary differs for {topology['ownerPath']}: {changed!r}"
+        )
+    immutable_after = _immutable_sha256(buffers)
+    if immutable_before != immutable_after:
+        raise burst.ContractError(f"CalcLine immutable aggregate changed for {topology['ownerPath']}")
+    result = [tuple(float(rotations[vertex * 4 + axis]) for axis in range(4))
+              for vertex in range(vertex_count)]
+    return result, {
+        "declaredMutableBuffers": ["rotations"],
+        "changedBuffers": changed,
+        "rotationBeforeSha256": before["rotations"],
+        "rotationAfterSha256": after["rotations"],
+        "immutableBuffers": sorted(name for name in buffers if name != "rotations"),
+        "immutableBeforeSha256": immutable_before,
+        "immutableAfterSha256": immutable_after,
+    }
+
+
+def _coverage(topology: dict[str, Any]) -> dict[str, int]:
+    child_counts = [packed >> 20 for packed in topology["childIndices"]]
+    return {
+        "vertexCount": len(topology["attributes"]),
+        "lineCount": topology["lineCount"],
+        "baselineCount": len(topology["baselineFlags"]),
+        "baselineParentVisitCount": sum(topology["baselineCounts"]),
+        "rootCount": sum(1 for parent in topology["parentIndices"] if parent < 0),
+        "leafCount": sum(1 for count in child_counts if count == 0),
+        "multiChildParentCount": sum(1 for count in child_counts if count > 1),
+        "fixedVertexCount": sum(1 for value in topology["attributes"] if not value & 2),
+        "movableVertexCount": sum(1 for value in topology["attributes"] if value & 2),
+    }
+
+
+def _topology_fixture(
+    module: Any,
+    topologies: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    owners: list[dict[str, Any]] = []
+    state_names = ("bind_rest", "seeded_perturbation_a", "seeded_perturbation_b")
+    for owner_index, topology in enumerate(topologies):
+        states = []
+        for state_index, state_name in enumerate(state_names):
+            positions, input_rotations = _perturbed_state(topology, owner_index, state_index)
+            source = _source_topology_state(topology, positions, input_rotations)
+            source_bits = _rotation_bits(source)
+            native_mutation: dict[str, Any] = {}
+            for variant, rva, _size, _sha256, _helper in CORE_VARIANTS:
+                native, mutation = _native_topology_state(
+                    module, rva, topology, positions, input_rotations
+                )
+                native_bits = _rotation_bits(native)
+                if native_bits != source_bits:
+                    first = next(
+                        index for index, (native_row, source_row) in enumerate(
+                            zip(native_bits, source_bits)
+                        ) if native_row != source_row
+                    )
+                    raise burst.ContractError(
+                        f"CalcLine topology transcription differs for "
+                        f"{variant}/{topology['ownerPath']}/{state_name} at vertex {first}: "
+                        f"native={native_bits[first]!r} source={source_bits[first]!r}"
+                    )
+                native_mutation[variant] = mutation
+            states.append({
+                "name": state_name,
+                "positionBitsLe": _position_bits(positions),
+                "inputRotationBitsLe": _rotation_bits(input_rotations),
+                "outputRotationBitsLe": source_bits,
+                "nativeMutation": native_mutation,
+            })
+        owners.append({
+            "ownerPath": topology["ownerPath"],
+            "topologySha256": topology["topologySha256"],
+            "sourceArraySha256": topology["sourceArraySha256"],
+            "coverage": _coverage(topology),
+            "attributes": topology["attributes"],
+            "parentIndices": topology["parentIndices"],
+            "childIndices": topology["childIndices"],
+            "childData": topology["childData"],
+            "localPositionBitsLe": [
+                [struct.pack("<f", lane).hex() for lane in row]
+                for row in topology["localPositions"]
+            ],
+            "localRotationBitsLe": _rotation_bits(topology["localRotations"]),
+            "baselineFlags": topology["baselineFlags"],
+            "baselineStarts": topology["baselineStarts"],
+            "baselineCounts": topology["baselineCounts"],
+            "baselineData": topology["baselineData"],
+            "negativeScaleDirectionBitsLe": [struct.pack("<f", 1.0).hex()] * 3,
+            "negativeScaleQuaternionBitsLe": [struct.pack("<f", 1.0).hex()] * 4,
+            "rotationalInterpolationBitsLe": struct.pack(
+                "<f", topology["rotationalInterpolation"]
+            ).hex(),
+            "rootRotationBitsLe": struct.pack("<f", topology["rootRotation"]).hex(),
+            "states": states,
+        })
+    return owners
+
+
 def build_contract() -> dict[str, Any]:
     gate = burst._native_gate(None, None)
     dll = Path(gate["libBurstGenerated"]["path"])
@@ -402,6 +913,18 @@ def build_contract() -> dict[str, Any]:
         if calls != [helper_rva, helper_rva]:
             raise burst.ContractError(f"CalcLine helper call graph drift at 0x{rva:x}")
     module = ctypes.WinDLL(str(dll))
+    payload_decode = _load_pinned_json(
+        PAYLOAD_DECODE,
+        EXPECTED_PAYLOAD_DECODE_SHA256,
+        "endfield.charinfo.secondary-dynamics-payload-decoder.v2",
+    )
+    solver_inputs = _load_pinned_json(
+        SOLVER_INPUTS,
+        EXPECTED_SOLVER_INPUTS_SHA256,
+        "endfield.charinfo.secondary-dynamics-solver-inputs.v1",
+    )
+    topologies = _decode_endminf_topologies(payload_decode, solver_inputs)
+    topology_cases = _topology_fixture(module, topologies)
     rows = []
     for case in CASES:
         source = source_port(case)
@@ -423,9 +946,23 @@ def build_contract() -> dict[str, Any]:
             "rotationBitsLe": source_bits,
         })
     return {
-        "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v1",
-        "status": "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases",
+        "schema": "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v2",
+        "status": "dual_cpu_core_source_and_endminf_topology_exact",
         "nativeGate": gate,
+        "sourceFiles": {
+            "payloadDecode": {
+                "repoPath": str(PAYLOAD_DECODE.relative_to(LAB_ROOT.parent)).replace("\\", "/"),
+                "size": PAYLOAD_DECODE.stat().st_size,
+                "sha256": EXPECTED_PAYLOAD_DECODE_SHA256,
+                "schema": payload_decode["schema"],
+            },
+            "solverInputs": {
+                "repoPath": str(SOLVER_INPUTS.relative_to(LAB_ROOT.parent)).replace("\\", "/"),
+                "size": SOLVER_INPUTS.stat().st_size,
+                "sha256": EXPECTED_SOLVER_INPUTS_SHA256,
+                "schema": solver_inputs["schema"],
+            },
+        },
         "cores": [
             {"cpuVariant": variant, "rva": f"0x{rva:x}", "bytes": size,
              "sha256": sha256, "sincosHelperRva": f"0x{helper_rva:x}"}
@@ -442,12 +979,23 @@ def build_contract() -> dict[str, Any]:
                 "localPosition*negativeScaleDirection)))"
             ),
             "childRotation": (
-                "mulBinary32(mulBinary32(parentRotation, "
-                "localRotation*negativeScaleQuaternion), fromTo(rest,direction,1))"
+                "mulBurstBinary32(fromTo(rest,direction,1), "
+                "mulBurstBinary32(parentRotation, "
+                "localRotation*negativeScaleQuaternion))"
+            ),
+            "childWriteGate": (
+                "only children with attributes & Flag_Move (0x02) write rotations; "
+                "fixed children contribute rest direction but preserve their incoming lane"
             ),
             "parentRotation": (
-                "mulBinary32(fromTo(restSum,direction,selectedInterpolation), "
+                "mulBurstBinary32(fromTo(restSum,direction,selectedInterpolation), "
                 "incomingParentRotation)"
+            ),
+            "quaternionGrouping": (
+                "Unity.Mathematics packed float4 grouping: "
+                "(left.wwww*right + (left.xyzx*right.wwwx + "
+                "left.yzxy*right.zxyy)*float4(1,1,1,-1)) - "
+                "left.zxyz*right.yzxz"
             ),
             "acos64PolynomialCoefficients": list(ACOS64_COEFFICIENTS),
             "acos64Grouping": (
@@ -478,12 +1026,19 @@ def build_contract() -> dict[str, Any]:
             "emptyChild": "no parent or child rotation write occurs",
         },
         "vectors": rows,
+        "endminfTopologyCases": topology_cases,
         "boundary": {
             "nativeCpuVariantsExecuted": [variant for variant, *_rest in CORE_VARIANTS],
             "sourceOnlyTranscriptionMatchedBitForBit": True,
             "caseCount": len(rows),
+            "endminfOwnerCount": len(topology_cases),
+            "endminfStateCountPerOwner": 3,
+            "endminfTopologyCaseCount": sum(len(owner["states"]) for owner in topology_cases),
+            "fullBaselinePackedChildTraversalExecuted": True,
+            "rotationOnlyMutationProven": True,
             "captureUsed": False,
             "runtimeRouteSelected": False,
+            "writebackConnected": False,
             "managedIfixPatchStateClosed": False,
             "solverImplemented": False,
             "retailEquivalent": False,

@@ -44,7 +44,7 @@ EXPECTED_LIB_BURST_SHA256 = "ee8702dd63dec2db7dc29d5bc23b8acd032f0e19a0daad5f69e
 EXPECTED_METADATA_EVIDENCE_SHA256 = "d1533b659e33a2e561c444cb4aec9a929dfac355a8d3409748c009e9c277a295"
 EXPECTED_NATIVE_EVIDENCE_SHA256 = "3bad91ae59e34b7abc50b5f88aafb77ea9e2c1395fba1346cc503deafb982b5d"
 EXPECTED_CALC_LINE_BURST_NUMERICS_SHA256 = (
-    "5d2c7ea2f80243405bc2d3dd54f5a01035cc4777e8d02c64182285331caf93a1"
+    "7e674976994a11a5c0e6acd3e86b8b96e2f25221c5c6cfb8e2dc4f562496105b"
 )
 EXPECTED_CODE_REGISTRATION = 0x18B9217D0
 EXPECTED_METADATA_REGISTRATION = 0x18B921C30
@@ -999,9 +999,9 @@ def _calc_line_burst_numerics_dependency(path: Path) -> dict[str, Any]:
     source = _source(path, EXPECTED_CALC_LINE_BURST_NUMERICS_SHA256)
     payload = json.loads(path.read_text(encoding="utf-8"))
     if (payload.get("schema") !=
-            "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v1" or
+            "endfield.charinfo.secondary-dynamics-calc-line-burst-golden-vectors.v2" or
             payload.get("status") !=
-            "dual_cpu_core_and_source_transcription_exact_for_branch_golden_cases"):
+            "dual_cpu_core_source_and_endminf_topology_exact"):
         raise ContractError("CalcLine Burst numeric dependency schema/status drift")
     gate = payload.get("nativeGate", {})
     if (gate.get("gameAssembly", {}).get("sha256") != EXPECTED_GAME_ASSEMBLY_SHA256 or
@@ -1011,8 +1011,14 @@ def _calc_line_burst_numerics_dependency(path: Path) -> dict[str, Any]:
     boundary = payload.get("boundary", {})
     if (boundary.get("nativeCpuVariantsExecuted") != ["x64_sse2", "avx2"] or
             boundary.get("sourceOnlyTranscriptionMatchedBitForBit") is not True or
+            boundary.get("endminfOwnerCount") != 4 or
+            boundary.get("endminfStateCountPerOwner") != 3 or
+            boundary.get("endminfTopologyCaseCount") != 12 or
+            boundary.get("fullBaselinePackedChildTraversalExecuted") is not True or
+            boundary.get("rotationOnlyMutationProven") is not True or
             boundary.get("captureUsed") is not False or
             boundary.get("runtimeRouteSelected") is not False or
+            boundary.get("writebackConnected") is not False or
             boundary.get("managedIfixPatchStateClosed") is not False or
             boundary.get("solverImplemented") is not False or
             boundary.get("retailEquivalent") is not False):
@@ -1023,6 +1029,18 @@ def _calc_line_burst_numerics_dependency(path: Path) -> dict[str, Any]:
         "empty_child_no_write", "negative_x_antiparallel_zero_axis",
     ]:
         raise ContractError("CalcLine Burst numeric dependency vector set drift")
+    topology_cases = payload.get("endminfTopologyCases", [])
+    if ([row.get("ownerPath") for row in topology_cases] !=
+            ["MC_Ribbon2", "MC_Hair", "MC_Ribbon", "MC_Coat"] or
+            any([state.get("name") for state in row.get("states", [])] != [
+                "bind_rest", "seeded_perturbation_a", "seeded_perturbation_b"
+            ] for row in topology_cases)):
+        raise ContractError("CalcLine Burst numeric dependency topology fixture drift")
+    equations = payload.get("equations", {})
+    if ("mulBurstBinary32(fromTo" not in equations.get("childRotation", "") or
+            "Flag_Move" not in equations.get("childWriteGate", "") or
+            "packed float4 grouping" not in equations.get("quaternionGrouping", "")):
+        raise ContractError("CalcLine Burst numeric dependency equation drift")
     return {**source, "schema": payload["schema"], "status": payload["status"],
             "boundary": boundary, "equations": payload["equations"],
             "degeneracy": payload["degeneracy"]}
@@ -1889,11 +1907,16 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
             "classification": (
                 "Both pinned CPU cores match the source-only transcription bit for "
                 "bit across parallel, quarter-turn, antiparallel, non-move, "
-                "multi-child, empty-child, and zero-axis branch cases."
+                "multi-child, empty-child, and zero-axis branch cases, plus all four "
+                "Endminf owners across bind/rest and two deterministic perturbed states. "
+                "The topology fixture covers full baseline/packed-child traversal, the "
+                "Burst packed-float4 quaternion grouping and left-applied child FromTo, "
+                "and the fixed-child no-write gate."
             ),
             "runtimeBoundary": (
                 "This closes Burst-core numerics, not the branch selected by retail. "
-                "A selected managed route can still enter live IFix patch 0x219."
+                "The fixture remains disconnected from scene writeback. A selected managed "
+                "route can still enter live IFix patch 0x219."
             ),
         },
         "calcLineDirectCallRoute": {
