@@ -19,8 +19,8 @@ SOURCE_ROOT = LAB_ROOT / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/C
 SOLVER_INPUTS = SOURCE_ROOT / "secondary_dynamics_solver_inputs.json"
 PAYLOAD_DECODE = SOURCE_ROOT / "secondary_dynamics_payload_decode.json"
 OUTPUT = SOURCE_ROOT / "secondary_dynamics_constraint_schedule_contract.json"
-SOLVER_INPUTS_SHA256 = "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
-PAYLOAD_DECODE_SHA256 = "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"
+SOLVER_INPUTS_SHA256 = "fe91726b102a1104ed223be0aeb9138a76d58887a79851cc70736fd0d4ed6251"
+PAYLOAD_DECODE_SHA256 = "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a"
 SIMULATION_STEP_VA = 0x182F8F430
 SIMULATION_STEP_BYTES = 5968
 SIMULATION_STEP_SHA256 = "5106aa8354dfe1d73e8a4ecb6a693cf8586938da5d456f7fc748267e08743335"
@@ -64,7 +64,7 @@ NUMERIC_CONTRACTS = (
     (
         "angleGolden",
         "secondary_dynamics_angle_golden_vectors.json",
-        "de780914223dfa513862041bd70cfa825fe0687bfb24a2f84d19e688579728cf",
+        "1a885ce498f96de821b26bf25100b51307262d8caa986bd1db51e92280aca99d",
         "endfield.charinfo.secondary-dynamics-angle-golden-vectors.v1",
         "native_avx2_vectors_and_source_transcription_exact_for_bounded_cases",
     ),

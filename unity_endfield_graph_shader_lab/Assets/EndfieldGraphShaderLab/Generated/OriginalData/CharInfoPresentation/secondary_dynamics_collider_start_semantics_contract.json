@@ -173,16 +173,16 @@
     },
     "source": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
-      "size": 20353,
-      "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+      "size": 28008,
+      "sha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa"
     }
   },
   "candidateSource": {
     "builderPath": "unity_endfield_graph_shader_lab/tools/build_secondary_dynamics_burst_export_contract.py",
     "contract": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_burst_export_contract.json",
-      "size": 599987,
-      "sha256": "2646f5a3e5eae353747878f116d262f40288722c414fd38a95e26e8660db07e7"
+      "size": 633706,
+      "sha256": "4661dc65bfbd26fd2860c49a8739f6aba164a0c07c859ce3a5962a3ffb335b73"
     },
     "candidateCount": 3,
     "candidateHashes": [

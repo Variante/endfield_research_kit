@@ -2290,7 +2290,7 @@
           },
           "persistent_ifix_patch_overlay": {
             "name": "IFixPatchOut",
-            "block_version": 23167343,
+            "block_version": 23605201,
             "file_count": 1,
             "chunk_count": 1,
             "byte_count": 86926,
@@ -3448,7 +3448,7 @@
           "d3d11_register_t8": "_HDPLSScreenSpaceShadowMask"
         },
         "installed_ifix_state_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
-        "installed_ifix_state_sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9",
+        "installed_ifix_state_sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af",
         "installed_ifix_state": {
           "base_file_count": 0,
           "persistent_file_count": 1,

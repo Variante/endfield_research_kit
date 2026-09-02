@@ -15,6 +15,8 @@ import argparse
 from collections import Counter
 from pathlib import Path
 
+from character_import.controllers import recover_main_overview_controller
+
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = LAB_ROOT.parent
@@ -35,11 +37,6 @@ IFIX_CONTRACT = (
     LAB_ROOT
     / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json"
 )
-CONTROLLER_AUDIT = (
-    LAB_ROOT
-    / "scratch/character_recovery/overview_controller_native/controller_asset_audit.json"
-)
-
 SCRIPT_TYPES = {
     -4499696877219864329: "BeyondDynamicBone.BeyondBoneCloth",
     -8854559673020325403: "BeyondDynamicBone.BeyondBoneCapsuleCollider",
@@ -242,8 +239,37 @@ def actor_manifest(actor: dict) -> tuple[Path, dict]:
         / "Assets/EndfieldGraphShaderLab/Generated/Characters/Playable"
         / actor["manifest_dir"]
     )
-    path = next(root.glob("*_ui_recovery_manifest.json"))
+    candidates = sorted(root.glob("*_ui_recovery_manifest.json"))
+    if len(candidates) != 1:
+        raise ValueError(
+            f"{actor['manifest_dir']}: expected one maintained UI recovery manifest, "
+            f"found {len(candidates)} under {root}"
+        )
+    path = candidates[0]
     return path, load_json(path)
+
+
+def overview_controller_path(token: str, actor: dict, manifest: dict) -> Path:
+    """Resolve the source controller directly from maintained manifest inputs."""
+
+    usage = manifest.get("original_usage") or {}
+    overview = recover_main_overview_controller(
+        {
+            "character_id": actor["character_id"],
+            "ui_animation": {
+                "selected_entries": usage.get("selected_ui_clip_assets") or [],
+                "selected_companion_widget_entries": (
+                    usage.get("selected_ui_item_widget_clip_assets") or []
+                ),
+            },
+        }
+    )
+    source = str(overview.get("source_json") or "")
+    if not source:
+        raise ValueError(
+            f"{token}: maintained controller recovery did not resolve an Overview source JSON"
+        )
+    return Path(source)
 
 
 def actor_contract(token: str, actor: dict) -> dict:
@@ -421,13 +447,7 @@ def actor_contract(token: str, actor: dict) -> dict:
             }
         )
 
-    controller_audit = load_json(CONTROLLER_AUDIT)
-    controller_actor = next(
-        row
-        for row in controller_audit["actors"]
-        if row["character_id"] == actor["character_id"]
-    )
-    controller_path = Path(controller_actor["main_overview"]["source_json"])
+    controller_path = overview_controller_path(token, actor, manifest)
     source_rows = {(row["Source"], int(row["Offset"])) for row in filters}
     if len(source_rows) != 1:
         raise ValueError(f"{token}: expected one source/offset, got {source_rows}")
@@ -655,6 +675,38 @@ def runtime_contract() -> dict:
     }
 
 
+def ifix_boundary_contract(state_path: Path = IFIX_CONTRACT) -> dict:
+    ifix = load_json(state_path)
+    overlay = ifix["vfs_state"]["persistent_overlay"]
+    targets = ifix["targets"]
+    if overlay["file_count"] != 1:
+        raise ValueError("installed IFix contract no longer has exactly one patch file")
+    if ifix["patch_format"]["target_count"] != len(targets):
+        raise ValueError("installed IFix contract target count does not match its target rows")
+    if any(target["type"].startswith("BeyondDynamicBone") for target in targets):
+        raise ValueError("installed IFix contract unexpectedly targets BeyondDynamicBone")
+    return {
+        **file_record(state_path, repo_path=True),
+        "persistent_patch_file_count": 1,
+        "persistent_patch_assembly": "Gameplay.Beyond",
+        "persistent_target_count": len(targets),
+        "beyond_dynamic_bone_patch_present": False,
+        "charui_model_target_present": any(
+            target["type"] == "Beyond.Gameplay.View.CharUIModelMono"
+            for target in targets
+        ),
+        "boundary": "This proves the current local snapshot only. A later Persistent or network-delivered patch requires a fresh audit.",
+    }
+
+
+def refresh_ifix_boundary_payload(payload: dict, state_path: Path = IFIX_CONTRACT) -> dict:
+    if payload.get("schema") != "endfield.charinfo.secondary-dynamics-owner.v1":
+        raise ValueError("secondary-dynamics owner report schema drifted")
+    refreshed = dict(payload)
+    refreshed["ifix_boundary"] = ifix_boundary_contract(state_path)
+    return refreshed
+
+
 def charinfo_environment_contract() -> dict:
     filter_path = EVIDENCE_ROOT / "charinfochar_monobehaviour_filter.json"
     export_root = EVIDENCE_ROOT / "charinfochar_monobehaviour_export/MonoBehaviour"
@@ -716,12 +768,6 @@ def build_contract() -> dict:
     for row in actor_rows.values():
         total_counts.update(row["dynamic_component_counts"])
 
-    ifix = load_json(IFIX_CONTRACT)
-    if ifix["vfs_state"]["persistent_overlay"]["file_count"] != 1:
-        raise ValueError("installed IFix contract no longer has exactly one patch file")
-    if any(target["type"].startswith("BeyondDynamicBone") for target in ifix["targets"]):
-        raise ValueError("installed IFix contract unexpectedly targets BeyondDynamicBone")
-
     return {
         "schema": "endfield.charinfo.secondary-dynamics-owner.v1",
         "recovered_at": "2026-07-17",
@@ -760,18 +806,7 @@ def build_contract() -> dict:
         },
         "runtime": runtime_contract(),
         "charinfo_environment": charinfo_environment_contract(),
-        "ifix_boundary": {
-            **file_record(IFIX_CONTRACT, repo_path=True),
-            "persistent_patch_file_count": 1,
-            "persistent_patch_assembly": "Gameplay.Beyond",
-            "persistent_target_count": len(ifix["targets"]),
-            "beyond_dynamic_bone_patch_present": False,
-            "charui_model_target_present": any(
-                target["type"] == "Beyond.Gameplay.View.CharUIModelMono"
-                for target in ifix["targets"]
-            ),
-            "boundary": "This proves the current local snapshot only. A later Persistent or network-delivered patch requires a fresh audit.",
-        },
+        "ifix_boundary": ifix_boundary_contract(),
         "implementation_boundary": {
             "lab_solver_implemented": False,
             "reason": "The project does not contain BeyondDynamicBone.dll's runtime/Burst solver. Serialized ownership, parameter bridges, lifecycle, manager construction, and callback delegates are recovered, but exact PlayerLoop anchor strings, Burst job numerics, transform writeback, cross-frame scheduling, and retail-frame numeric fixtures remain open. A substitute spring chain would not be original-game recovery.",
@@ -782,20 +817,32 @@ def build_contract() -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--prepare-filters",
         action="store_true",
         help="write bounded postmodel MonoBehaviour filters and stop",
+    )
+    mode.add_argument(
+        "--refresh-ifix-boundary",
+        action="store_true",
+        help="refresh only the installed IFix projection in the checked-in owner report",
     )
     args = parser.parse_args()
     if args.prepare_filters:
         prepare_actor_filters()
         return 0
-    payload = build_contract()
+    if args.refresh_ifix_boundary:
+        payload = refresh_ifix_boundary_payload(load_json(OUTPUT))
+    else:
+        payload = build_contract()
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {OUTPUT}")
-    print(json.dumps(payload["totals"], indent=2))
+    if args.refresh_ifix_boundary:
+        print(json.dumps(payload["ifix_boundary"], indent=2))
+    else:
+        print(json.dumps(payload["totals"], indent=2))
     return 0
 
 

@@ -905,7 +905,7 @@
           "classification": "writeback_pointer_unresolved"
         }
       ],
-      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+      "canonicalStaticContractSha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa"
     },
     {
       "methodIndex": 385699,
@@ -967,7 +967,7 @@
           "classification": "writeback_pointer_unresolved"
         }
       ],
-      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+      "canonicalStaticContractSha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa"
     },
     {
       "methodIndex": 385700,
@@ -1111,12 +1111,12 @@
           "classification": "writeback_pointer_unresolved"
         }
       ],
-      "canonicalStaticContractSha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+      "canonicalStaticContractSha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa"
     }
   ],
   "canonicalStaticContract": {
     "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
-    "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed",
+    "sha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa",
     "status": "native_spans_hash_pinned",
     "sourceHashesCrossChecked": true,
     "nextPointersRecomputed": true

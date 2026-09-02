@@ -18,8 +18,8 @@
   "sourceContracts": {
     "solverStatic": {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_static_contract.json",
-      "size": 20353,
-      "sha256": "102361db8cca663e826c225fdbe6dbb7e0cea6f32bcb0b9f098ad4d51b4b0bed"
+      "size": 28008,
+      "sha256": "8df93bb9d452c03e2f64be05c902d216e76c7c271611439cb6c6ce8de817beaa"
     }
   },
   "method": {

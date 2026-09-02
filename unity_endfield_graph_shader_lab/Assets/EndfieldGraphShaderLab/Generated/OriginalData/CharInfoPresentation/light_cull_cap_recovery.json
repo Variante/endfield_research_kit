@@ -24,7 +24,7 @@
     },
     "installedIfixState": {
       "path": "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
-      "sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9",
+      "sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af",
       "targetCount": 32,
       "hgrpSettingOrLightClusterTargets": []
     },

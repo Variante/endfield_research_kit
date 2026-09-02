@@ -667,18 +667,18 @@
       },
       "installed_ifix_patch_index": {
         "repo_path": "unity_endfield_graph_shader_lab/scratch/character_recovery/ifix_patch_state/persistent_primary_ifix_vfs_index.json",
-        "sha256": "5fd873477d882e796299dcfa549c72d5b1dc1de38d0819b89ebad7de00e8bde7",
+        "sha256": "b2189aba66e16ad71f3ee4d37123462277be00efa285d1c56588cf87ac56b5c2",
         "block": "IFixPatchOut",
         "file_count": 1,
         "chunk_count": 1,
         "byte_count": 86926,
-        "block_version": 23167343,
+        "block_version": 23605201,
         "target_count": 32,
         "character_recovery_locally_replaced": false,
         "state_report": {
           "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
           "size": 19509,
-          "sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9"
+          "sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af"
         }
       }
     },

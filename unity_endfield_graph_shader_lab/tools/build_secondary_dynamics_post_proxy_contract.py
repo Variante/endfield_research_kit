@@ -1582,10 +1582,10 @@ def build_contract(*, game_assembly: Path | None = DEFAULT_GAME_ASSEMBLY,
 
     dependencies = {
         "callback": _dependency(DATA_ROOT / "secondary_dynamics_callback_contract.json",
-                                "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65",
+                                "f10af3ffc84f3283af1773e62b1214198bb042712882fb90ad7b5946662f0ac0",
                                 "endfield.charinfo.secondary-dynamics-callback-writeback.v1"),
         "transformWriteback": _dependency(DATA_ROOT / "secondary_dynamics_transform_writeback_contract.json",
-                                          "f3e44da89e706cf5a43e625f774196091790b5d548ab720d35b0d8ce77c520c8",
+                                          "e5f9b12aeecd89e92e82484111f9492459782e04bd1c99353a28085e556d249e",
                                           "endfield.charinfo.secondary-dynamics-transform-writeback.v1"),
         "calcLineBurstExport": _calc_line_burst_dependency(DEFAULT_BURST_CONTRACT),
         "calcLineBurstNumerics": _calc_line_burst_numerics_dependency(

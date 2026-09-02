@@ -11829,8 +11829,8 @@
     "conclusion": "The Character Info environment prefab does not own a local secondary-dynamics component or wind zone. Dynamics arrive with the selected character postmodel."
   },
   "ifix_boundary": {
-    "size": 19509,
-    "sha256": "ca4e750748a6d0664a0b0abbed5f246116d239fb5a44aada67ab98521cc2cbe9",
+    "size": 19511,
+    "sha256": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af",
     "repo_path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/installed_ifix_patch_state.json",
     "persistent_patch_file_count": 1,
     "persistent_patch_assembly": "Gameplay.Beyond",
