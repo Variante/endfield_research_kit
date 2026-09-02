@@ -6,3 +6,7 @@
 	path = tools/EndfieldCapture
 	url = https://github.com/Variante/EndfieldCapture.git
 	branch = main
+[submodule "endfield_reconstruction_lab"]
+	path = endfield_reconstruction_lab
+	url = https://github.com/Variante/endfield_reconstruction_lab.git
+	branch = main
