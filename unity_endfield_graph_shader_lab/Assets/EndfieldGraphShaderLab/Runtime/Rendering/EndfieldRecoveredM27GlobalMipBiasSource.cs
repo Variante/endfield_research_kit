@@ -6,8 +6,8 @@ namespace EndfieldGraphShaderLab
 {
     /// <summary>
     /// Source-authenticated owner for the selected Endminf M27 c26.xy pair.
-    /// The Resource is intentionally absent until a raw inventoried retail
-    /// session passes the maintained Python promoter.
+    /// The Resource is generated only after a raw inventoried retail session
+    /// passes the maintained Python promoter.
     /// </summary>
     public sealed class EndfieldRecoveredM27GlobalMipBiasSource
     {
@@ -19,6 +19,16 @@ namespace EndfieldGraphShaderLab
         public const string StaticContractSha256 =
             "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9";
         public const string RendererPathId = "59284134265994738";
+        public const string SourceSession = "20260902T164359Z";
+        public const string SourceReportSha256 =
+            "770dfbadc4e3ac86d56a180a46bcf13ace2bfa84bc8203196632e7772072f650";
+        public const string ReceiptSha256 =
+            "a3eacd21d0839819a60ce728b3483526b1bf3adb339cf08311dc4b816ddda416";
+        public const string RuntimePackageSha256 =
+            "8952d381680d3f5ad53d6376d9f7e3982fc6959c29a40926934d761a152e3e0e";
+
+        private const uint ExpectedGlobalMipBiasBits = 0x00000000u;
+        private const uint ExpectedGlobalMipBiasPow2Bits = 0x3f800000u;
 
         [Serializable]
         private sealed class Payload
@@ -105,10 +115,22 @@ namespace EndfieldGraphShaderLab
                 failure = "M27 global-mip-bias source schema/status mismatch";
                 return false;
             }
-            if (string.IsNullOrWhiteSpace(payload.sourceSession) ||
-                !IsLowerHex(payload.sourceReportSha256, 64) ||
-                !IsLowerHex(payload.receiptSha256, 64) ||
-                !IsLowerHex(payload.runtimePackageSha256, 64) ||
+            if (!string.Equals(
+                    payload.sourceSession,
+                    SourceSession,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    payload.sourceReportSha256,
+                    SourceReportSha256,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    payload.receiptSha256,
+                    ReceiptSha256,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    payload.runtimePackageSha256,
+                    RuntimePackageSha256,
+                    StringComparison.Ordinal) ||
                 !string.Equals(
                     payload.staticContractSha256,
                     StaticContractSha256,
@@ -146,7 +168,9 @@ namespace EndfieldGraphShaderLab
             if (!IsFinite(material) || !IsFinite(dynamicTerm) ||
                 !IsFinite(global) || !IsFinite(publishedPow2) ||
                 FloatBits(material + dynamicTerm) != globalBits ||
-                FloatBits(Mathf.Pow(2.0f, global)) != pow2Bits)
+                FloatBits(Mathf.Pow(2.0f, global)) != pow2Bits ||
+                globalBits != ExpectedGlobalMipBiasBits ||
+                pow2Bits != ExpectedGlobalMipBiasPow2Bits)
             {
                 failure = "M27 global-mip-bias source equation/selected pair failed";
                 return false;

@@ -1,0 +1,16 @@
+{
+  "schema": "endfield.endminf-m27-global-mip-bias-unity-source.v1",
+  "status": "source_authenticated_for_c26_only",
+  "sourceSession": "20260902T164359Z",
+  "sourceReportSha256": "770dfbadc4e3ac86d56a180a46bcf13ace2bfa84bc8203196632e7772072f650",
+  "receiptSha256": "a3eacd21d0839819a60ce728b3483526b1bf3adb339cf08311dc4b816ddda416",
+  "runtimePackageSha256": "8952d381680d3f5ad53d6376d9f7e3982fc6959c29a40926934d761a152e3e0e",
+  "staticContractSha256": "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9",
+  "rendererPathId": "59284134265994738",
+  "materialMipBiasBits": "00000000",
+  "dynamicTermBits": "00000000",
+  "globalMipBiasBits": "00000000",
+  "publishedC26YBits": "3f800000",
+  "canPopulatePhysicalCameraMipBiasSource": true,
+  "presentationAuthority": false
+}

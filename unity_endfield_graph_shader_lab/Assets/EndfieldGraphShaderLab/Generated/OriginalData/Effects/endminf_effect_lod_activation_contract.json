@@ -12,445 +12,439 @@
     "targetLayers": 1
   },
   "nativeEvidence": {
-    "gameAssemblySha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
-    "globalMetadataSha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
     "methodIdentities": [
       {
         "key": "overview_on_state_enter",
         "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
-        "typeToken": "0x02000210",
+        "typeToken": "0x0200021e",
         "method": "OnStateEnter",
-        "methodIndex": 3566,
-        "token": "0x06000def",
-        "virtualAddress": "0x186b85e54",
-        "moduleMethodSlot": 3566
+        "methodIndex": 3694,
+        "token": "0x06000e6f",
+        "virtualAddress": "0x183760e70",
+        "moduleMethodSlot": 3694
       },
       {
         "key": "effect_instance_init_lod",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "InitLod",
-        "methodIndex": 23218,
-        "token": "0x06005ab3",
-        "virtualAddress": "0x1834f7fb0",
-        "moduleMethodSlot": 23218
+        "methodIndex": 24579,
+        "token": "0x06006004",
+        "virtualAddress": "0x1831f2e90",
+        "moduleMethodSlot": 24579
       },
       {
         "key": "effect_instance_set_setting",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "SetSettingLodLevel",
-        "methodIndex": 23188,
-        "token": "0x06005a95",
-        "virtualAddress": "0x1834f98c0",
-        "moduleMethodSlot": 23188
+        "methodIndex": 24549,
+        "token": "0x06005fe6",
+        "virtualAddress": "0x1831f3c20",
+        "moduleMethodSlot": 24549
       },
       {
         "key": "effect_instance_load_immediately",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "LoadImmediately",
-        "methodIndex": 23245,
-        "token": "0x06005ace",
-        "virtualAddress": "0x183b76030",
-        "moduleMethodSlot": 23245
+        "methodIndex": 24606,
+        "token": "0x0600601f",
+        "virtualAddress": "0x183760a10",
+        "moduleMethodSlot": 24606
       },
       {
         "key": "effect_instance_load_finish",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "LoadFinish",
-        "methodIndex": 23244,
-        "token": "0x06005acd",
-        "virtualAddress": "0x183963320",
-        "moduleMethodSlot": 23244
+        "methodIndex": 24605,
+        "token": "0x0600601e",
+        "virtualAddress": "0x183233430",
+        "moduleMethodSlot": 24605
       },
       {
         "key": "effect_manager_ctor",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": ".ctor",
-        "methodIndex": 23430,
-        "token": "0x06005b87",
-        "virtualAddress": "0x1840e6020",
-        "moduleMethodSlot": 23430
+        "methodIndex": 24796,
+        "token": "0x060060dd",
+        "virtualAddress": "0x184035580",
+        "moduleMethodSlot": 24796
       },
       {
         "key": "effect_manager_get_quality",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "get_qualitySettingLodLevel",
-        "methodIndex": 23434,
-        "token": "0x06005b8b",
-        "virtualAddress": "0x1834f80f0",
-        "moduleMethodSlot": 23434
+        "methodIndex": 24800,
+        "token": "0x060060e1",
+        "virtualAddress": "0x1831f3810",
+        "moduleMethodSlot": 24800
       },
       {
         "key": "effect_manager_set_quality",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "SetQualitySettingLodLevel",
-        "methodIndex": 23457,
-        "token": "0x06005ba2",
-        "virtualAddress": "0x183f92910",
-        "moduleMethodSlot": 23457
+        "methodIndex": 24823,
+        "token": "0x060060f8",
+        "virtualAddress": "0x18391e330",
+        "moduleMethodSlot": 24823
       },
       {
         "key": "effect_manager_normalize",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "_NormalizeSingleSettingLodLevel",
-        "methodIndex": 23464,
-        "token": "0x06005ba9",
-        "virtualAddress": "0x183f929c0",
-        "moduleMethodSlot": 23464
+        "methodIndex": 24830,
+        "token": "0x060060ff",
+        "virtualAddress": "0x18391e3e0",
+        "moduleMethodSlot": 24830
       },
       {
         "key": "effect_manager_create_stationary_3",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "CreateStationaryEffect",
-        "methodIndex": 23505,
-        "token": "0x06005bd2",
-        "virtualAddress": "0x183287d20",
-        "moduleMethodSlot": 23505
+        "methodIndex": 24872,
+        "token": "0x06006129",
+        "virtualAddress": "0x18375fb40",
+        "moduleMethodSlot": 24872
       },
       {
         "key": "effect_manager_create_stationary_4",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "CreateStationaryEffect",
-        "methodIndex": 23506,
-        "token": "0x06005bd3",
-        "virtualAddress": "0x1833d1300",
-        "moduleMethodSlot": 23506
+        "methodIndex": 24873,
+        "token": "0x0600612a",
+        "virtualAddress": "0x18375f2c0",
+        "moduleMethodSlot": 24873
       },
       {
         "key": "effect_setting_set_all_setting",
         "type": "Beyond.Gameplay.EffectSetting",
-        "typeToken": "0x02000db1",
+        "typeToken": "0x02000e45",
         "method": "SetAllSettingLod",
-        "methodIndex": 23665,
-        "token": "0x06005c72",
-        "virtualAddress": "0x18339b920",
-        "moduleMethodSlot": 23665
+        "methodIndex": 25034,
+        "token": "0x060061cb",
+        "virtualAddress": "0x1831f5b70",
+        "moduleMethodSlot": 25034
       },
       {
         "key": "effect_setting_set_all_target",
         "type": "Beyond.Gameplay.EffectSetting",
-        "typeToken": "0x02000db1",
+        "typeToken": "0x02000e45",
         "method": "SetAllTargetLayers",
-        "methodIndex": 23667,
-        "token": "0x06005c74",
-        "virtualAddress": "0x1834fc030",
-        "moduleMethodSlot": 23667
+        "methodIndex": 25036,
+        "token": "0x060061cd",
+        "virtualAddress": "0x1831f4260",
+        "moduleMethodSlot": 25036
       },
       {
         "key": "battle_normal_refresh_guard_lod_alpha",
         "type": "Beyond.Gameplay.BattleNormalEffect",
-        "typeToken": "0x02000d90",
+        "typeToken": "0x02000e24",
         "method": "_RefreshGuardLodAlpha",
-        "methodIndex": 23312,
-        "token": "0x06005b11",
-        "virtualAddress": "0x1834fac90",
-        "moduleMethodSlot": 23312
+        "methodIndex": 24673,
+        "token": "0x06006062",
+        "virtualAddress": "0x183237fc0",
+        "moduleMethodSlot": 24673
       },
       {
         "key": "battle_normal_refresh_tower_lod",
         "type": "Beyond.Gameplay.BattleNormalEffect",
-        "typeToken": "0x02000d90",
+        "typeToken": "0x02000e24",
         "method": "_RefreshTowerLod",
-        "methodIndex": 23318,
-        "token": "0x06005b17",
-        "virtualAddress": "0x1834faaf0",
-        "moduleMethodSlot": 23318
+        "methodIndex": 24679,
+        "token": "0x06006068",
+        "virtualAddress": "0x183237c60",
+        "moduleMethodSlot": 24679
       },
       {
         "key": "effect_lod_init_data",
         "type": "Beyond.Gameplay.EffectLodCfg",
-        "typeToken": "0x02000db9",
+        "typeToken": "0x02000e4d",
         "method": "InitData",
-        "methodIndex": 23690,
-        "token": "0x06005c8b",
-        "virtualAddress": "0x18339d940",
-        "moduleMethodSlot": 23690
+        "methodIndex": 25059,
+        "token": "0x060061e4",
+        "virtualAddress": "0x1831f69f0",
+        "moduleMethodSlot": 25059
       },
       {
         "key": "effect_lod_refresh",
         "type": "Beyond.Gameplay.EffectLodCfg",
-        "typeToken": "0x02000db9",
+        "typeToken": "0x02000e4d",
         "method": "_RefreshLod",
-        "methodIndex": 23694,
-        "token": "0x06005c8f",
-        "virtualAddress": "0x18339d7d0",
-        "moduleMethodSlot": 23694
+        "methodIndex": 25063,
+        "token": "0x060061e8",
+        "virtualAddress": "0x1831f6870",
+        "moduleMethodSlot": 25063
       },
       {
         "key": "effect_lod_ctor",
         "type": "Beyond.Gameplay.EffectLodCfg",
-        "typeToken": "0x02000db9",
+        "typeToken": "0x02000e4d",
         "method": ".ctor",
-        "methodIndex": 23717,
-        "token": "0x06005ca6",
-        "virtualAddress": "0x183c2f600",
-        "moduleMethodSlot": 23717
+        "methodIndex": 25086,
+        "token": "0x060061ff",
+        "virtualAddress": "0x183ae45a0",
+        "moduleMethodSlot": 25086
       }
     ],
     "fieldIdentities": [
       {
         "type": "Beyond.Gameplay.EffectInstance",
         "field": "m_settingLodLevel",
-        "token": "0x04004de1",
-        "nativeOffset": "0x8c"
+        "token": "0x04005245",
+        "nativeOffset": "0xac"
       },
       {
         "type": "Beyond.Gameplay.EffectManager",
         "field": "m_qualitySettingLodLevel",
-        "token": "0x04004e63",
+        "token": "0x040052c8",
         "nativeOffset": "0x120"
       },
       {
         "type": "Beyond.Gameplay.EffectSetting",
         "field": "lodSetting",
-        "token": "0x04004eec",
+        "token": "0x04005351",
         "nativeOffset": "0xb0"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "settingLodLevel",
-        "token": "0x04004f27",
+        "token": "0x0400538c",
         "nativeOffset": "0x40"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "targetLayer",
-        "token": "0x04004f29",
+        "token": "0x0400538e",
         "nativeOffset": "0x48"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_initActive",
-        "token": "0x04004f2b",
+        "token": "0x04005390",
         "nativeOffset": "0x58"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_curActive",
-        "token": "0x04004f2c",
+        "token": "0x04005391",
         "nativeOffset": "0x59"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_isShowLod",
-        "token": "0x04004f32",
+        "token": "0x04005397",
         "nativeOffset": "0x6d"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_showSettingLodLevel",
-        "token": "0x04004f33",
+        "token": "0x04005398",
         "nativeOffset": "0x70"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_distanceLodInfo",
-        "token": "0x04004f34",
+        "token": "0x04005399",
         "nativeOffset": "0x78"
       },
       {
         "type": "Beyond.Gameplay.EffectLodCfg",
         "field": "m_showTargetLayers",
-        "token": "0x04004f3d",
+        "token": "0x040053a2",
         "nativeOffset": "0xc0"
       }
     ],
     "methodBodies": [
       {
         "key": "overview_on_state_enter",
-        "virtualAddress": "0x186b85e54",
-        "fileOffset": "0x6b84454",
+        "virtualAddress": "0x183760e70",
+        "fileOffset": "0x375f870",
         "scanByteCount": 1528,
-        "sha256": "ece99aba984d97b01f050e3b5b4ae512a1df5dc26d0fd0388a1abb5e994f7f0e"
+        "sha256": "fe8826c696469d704c4ae4a8712e8ff63b0a499611c806fc00f4e3361876ad8e"
       },
       {
         "key": "effect_instance_init_lod",
-        "virtualAddress": "0x1834f7fb0",
-        "fileOffset": "0x34f65b0",
+        "virtualAddress": "0x1831f2e90",
+        "fileOffset": "0x31f1890",
         "scanByteCount": 309,
-        "sha256": "f2232ed06251f2d5c70374c51581c07aaf1c5a3cb5ecc7033d1ce31b964b4094"
+        "sha256": "90af78f3b75084ede0b2fc00003fa21d4f5e370a28a5fc9711b08e7b4542d1cc"
       },
       {
         "key": "effect_instance_set_setting",
-        "virtualAddress": "0x1834f98c0",
-        "fileOffset": "0x34f7ec0",
+        "virtualAddress": "0x1831f3c20",
+        "fileOffset": "0x31f2620",
         "scanByteCount": 227,
-        "sha256": "f668ea4c2e5fc43a6edb56aa3a2b5de7011b214e130a2430b1faa05d5cee27ae"
+        "sha256": "14b9e21228d65c35acfc659a8193431186c33d97fd21cd9fdab793964f80b918"
       },
       {
         "key": "effect_instance_load_immediately",
-        "virtualAddress": "0x183b76030",
-        "fileOffset": "0x3b74630",
+        "virtualAddress": "0x183760a10",
+        "fileOffset": "0x375f410",
         "scanByteCount": 240,
-        "sha256": "64183251a8b5de49da081bfeaef247da8d2e9d59ebd69da3136ccde6ab19a5bb"
+        "sha256": "58889b5b7b66255144d408c04d9c5eeb30bc116146592ab7aaa2b6f339d8b76b"
       },
       {
         "key": "effect_instance_load_finish",
-        "virtualAddress": "0x183963320",
-        "fileOffset": "0x3961920",
+        "virtualAddress": "0x183233430",
+        "fileOffset": "0x3231e30",
         "scanByteCount": 240,
-        "sha256": "57bb65439641fc8c51f86b29aa9f55803480d536fee3e19494a890bdd91c69ab"
+        "sha256": "66b93983a1635139653f3552ec81f551fbe422e1ab53736d2de3213b2f6ca3fb"
       },
       {
         "key": "effect_manager_ctor",
-        "virtualAddress": "0x1840e6020",
-        "fileOffset": "0x40e4620",
-        "scanByteCount": 1120,
-        "sha256": "468ef91bda0ddc521e7fc4642080c8960564d9d32474cef68c8e4935f18b53b7"
+        "virtualAddress": "0x184035580",
+        "fileOffset": "0x4033f80",
+        "scanByteCount": 7542,
+        "sha256": "afdff33c72cd37efddfc65442d266592847d7e9fbd19c098b4f873e6bb632279"
       },
       {
         "key": "effect_manager_get_quality",
-        "virtualAddress": "0x1834f80f0",
-        "fileOffset": "0x34f66f0",
+        "virtualAddress": "0x1831f3810",
+        "fileOffset": "0x31f2210",
         "scanByteCount": 48,
-        "sha256": "8addebd709c459ad542000c7e889693f2d2b91b1a5479193d44054878986f07c"
+        "sha256": "7ab8284069387d06350c6b9be83973771e757d71107c4b8752f74b6509ee4c85"
       },
       {
         "key": "effect_manager_set_quality",
-        "virtualAddress": "0x183f92910",
-        "fileOffset": "0x3f90f10",
+        "virtualAddress": "0x18391e330",
+        "fileOffset": "0x391cd30",
         "scanByteCount": 176,
-        "sha256": "4ab4d06af5a49c3ee913d57fbb956422d5f58070db01f225ea5e9e22b3647f68"
+        "sha256": "1a0b79789e62a15722842a26e180fcae95ac12ba7294e51b4a35fb2585503428"
       },
       {
         "key": "effect_manager_normalize",
-        "virtualAddress": "0x183f929c0",
-        "fileOffset": "0x3f90fc0",
-        "scanByteCount": 64,
-        "sha256": "31be9f58e68c86724d59ba9b8e023aa79ca30a37911cfc19a5b5d778699a1de9"
+        "virtualAddress": "0x18391e3e0",
+        "fileOffset": "0x391cde0",
+        "scanByteCount": 97,
+        "sha256": "04dc2273e943b9a3c1a18740b4207725ef60a1336b261a3aebf1efb05be449d2"
       },
       {
         "key": "effect_manager_create_stationary_3",
-        "virtualAddress": "0x183287d20",
-        "fileOffset": "0x3286320",
+        "virtualAddress": "0x18375fb40",
+        "fileOffset": "0x375e540",
         "scanByteCount": 352,
-        "sha256": "cada808963deaa752d22161d1aee57d7e1193e159b1f73866329c39b15cc5f30"
+        "sha256": "38e5463be2c9ab56ff4fc44d06d704d250d9d1868650deef99ef2c5a308a2042"
       },
       {
         "key": "effect_manager_create_stationary_4",
-        "virtualAddress": "0x1833d1300",
-        "fileOffset": "0x33cf900",
+        "virtualAddress": "0x18375f2c0",
+        "fileOffset": "0x375dcc0",
         "scanByteCount": 384,
-        "sha256": "e0394fde17f20729ceadb855619a26c29776bece98b049bf6866fc4a7f49d376"
+        "sha256": "b6a54b98bbd5805f8912bae36602147979341443c4c545f4162576f2bdf40eaa"
       },
       {
         "key": "effect_setting_set_all_setting",
-        "virtualAddress": "0x18339b920",
-        "fileOffset": "0x3399f20",
+        "virtualAddress": "0x1831f5b70",
+        "fileOffset": "0x31f4570",
         "scanByteCount": 1376,
-        "sha256": "17eb415f3ef38bd3e3a9b81fbe9de848d96d2b52818eb84c07111e740348bc48"
+        "sha256": "b88aab7391555c735febf0cb6fa78a8abbf75dc45f0822a3498050b21aff56ff"
       },
       {
         "key": "effect_setting_set_all_target",
-        "virtualAddress": "0x1834fc030",
-        "fileOffset": "0x34fa630",
+        "virtualAddress": "0x1831f4260",
+        "fileOffset": "0x31f2c60",
         "scanByteCount": 1104,
-        "sha256": "71849fe5fd0029f26a2ff5d12c26159073ccebff73faec3aa84f39231fef4a2f"
+        "sha256": "48572b48e9c9053ffff311cba6289a5e8b77719952e5375ce30adb4d5e6298f4"
       },
       {
         "key": "battle_normal_refresh_guard_lod_alpha",
-        "virtualAddress": "0x1834fac90",
-        "fileOffset": "0x34f9290",
+        "virtualAddress": "0x183237fc0",
+        "fileOffset": "0x32369c0",
         "scanByteCount": 704,
-        "sha256": "717b3738f2628eb90fcf1a6303dc23c60f382558def12cc80518d63fd9b0ec7c"
+        "sha256": "8651b52ed6aa970a7e57a0ff367df7fa9e4bc9a9314f49227654ebf552a86e25"
       },
       {
         "key": "battle_normal_refresh_tower_lod",
-        "virtualAddress": "0x1834faaf0",
-        "fileOffset": "0x34f90f0",
-        "scanByteCount": 272,
-        "sha256": "d4d44ea96f75b55d10b70393c4a5fdc91e006264cc997967d0d65110a69dfdd3"
+        "virtualAddress": "0x183237c60",
+        "fileOffset": "0x3236660",
+        "scanByteCount": 592,
+        "sha256": "60cf6a46467202609b0cf8ea9901c27b8ee3dffc4f30d42289cfa7ebf4bff146"
       },
       {
         "key": "effect_lod_init_data",
-        "virtualAddress": "0x18339d940",
-        "fileOffset": "0x339bf40",
+        "virtualAddress": "0x1831f69f0",
+        "fileOffset": "0x31f53f0",
         "scanByteCount": 3184,
-        "sha256": "b8608c742c988a67fd3a813355673e6a9d9319ce2c7f37fd00afc6825352b6e4"
+        "sha256": "e957d6825e82f4cd40c6ac0b6f3969e161026cf24e75a001c0cb805a0d5a34c0"
       },
       {
         "key": "effect_lod_refresh",
-        "virtualAddress": "0x18339d7d0",
-        "fileOffset": "0x339bdd0",
+        "virtualAddress": "0x1831f6870",
+        "fileOffset": "0x31f5270",
         "scanByteCount": 368,
-        "sha256": "fb68df2db8aa3bf21590207f6079d54809b4f82888b9cb9cac3134367741d1a7"
+        "sha256": "67887805a2c160e4413322a48f1d8762a48114a8f1c1b30687978074fd3a7189"
       },
       {
         "key": "effect_lod_ctor",
-        "virtualAddress": "0x183c2f600",
-        "fileOffset": "0x3c2dc00",
-        "scanByteCount": 288,
-        "sha256": "6dcd0766663144c3ee19571a633601344f3719d5811e4094cfa9825ff86fb6fe"
+        "virtualAddress": "0x183ae45a0",
+        "fileOffset": "0x3ae2fa0",
+        "scanByteCount": 799,
+        "sha256": "7a1999284d25a61e4e983d8bdb7ba49e82fb6ae368c8c589e31beaf4e0db4091"
       }
     ],
     "byteGates": [
       {
         "name": "effect_lod_ctor_defaults",
-        "fileOffset": "0x3c2dce7",
-        "bytes": "c7 43 70 08 00 00 00 c7 83 c0 00 00 00 01 00 00 00",
+        "fileOffset": "0x3ae329b",
+        "bytes": "c7 46 70 08 00 00 00 c7 86 c0 00 00 00 01 00 00 00",
         "meaning": "EffectLodCfg runtime show defaults are quality=8 and target=1"
       },
       {
         "name": "effect_manager_ctor_quality_default",
-        "fileOffset": "0x40e4a4d",
+        "fileOffset": "0x403538b",
         "bytes": "c7 83 20 01 00 00 08 00 00 00",
         "meaning": "EffectManager quality default at +0x120 is 8"
       },
       {
         "name": "set_quality_normalize_fallback_and_store",
-        "fileOffset": "0x3f90f58",
+        "fileOffset": "0x391cd78",
         "bytes": "45 33 c0 ba 08 00 00 00 8b ce e8 59 00 00 00 89 83 20 01 00 00",
         "meaning": "SetQuality passes fallback 8 to Normalize and stores its result at +0x120"
       },
       {
-        "name": "normalize_quality_hot",
-        "fileOffset": "0x3f90fe2",
-        "bytes": "8d 57 ff 83 fa 03 0f 85 46 4d 2a 01 bb 04 00 00 00",
-        "meaning": "Normalize admits 4 in the hot body and branches every other input to the cold body"
-      },
-      {
-        "name": "normalize_quality_cold",
-        "fileOffset": "0x5235d34",
-        "bytes": "85 d2 74 28 83 ea 01 74 19 83 fa 01 0f 84 ad b2 d5 fe 83 ff 08 0f 85 a4 b2 d5 fe 8b df e9 9d b2 d5 fe bb 02 00 00 00 e9 93 b2 d5 fe bb 01 00 00 00",
-        "meaning": "Normalize admits 1,2,8 and otherwise retains fallback 8"
+        "name": "normalize_quality_domain",
+        "fileOffset": "0x391ce02",
+        "bytes": "8d 47 ff 83 f8 01 74 22 85 c0 74 2c 83 e8 02 74 0c 83 f8 01 74 1b 83 ff 08 75 02 8b df 8b c3 48 8b 5c 24 30 48 83 c4 20 5f c3 bb 02 00 00 00 eb ec bb 04 00 00 00 eb e5 bb 01 00 00 00 eb de",
+        "meaning": "Normalize admits 1,2,4,8 and otherwise retains fallback 8"
       },
       {
         "name": "init_lod_get_quality_then_set",
-        "fileOffset": "0x34f667a",
-        "bytes": "33 d2 e8 6f 00 00 00 45 33 c9 41 b0 01 8b d0 48 8b cb 48 83 c4 30 5b e9 2a 18 00 00",
+        "fileOffset": "0x31f195a",
+        "bytes": "33 d2 e8 af 08 00 00 45 33 c9 41 b0 01 8b d0 48 8b cb 48 83 c4 30 5b e9 aa 0c 00 00",
         "meaning": "InitLod gets manager quality and tail-enters SetSettingLodLevel(init=true)"
       },
       {
         "name": "set_setting_to_all_rows",
-        "fileOffset": "0x34f7f33",
-        "bytes": "48 8b 8b 80 00 00 00 48 85 c9 74 5e 45 33 c0 8b d6 e8 d7 1f ea ff",
+        "fileOffset": "0x31f26bc",
+        "bytes": "48 8b 8b a0 00 00 00 48 85 c9 0f 84 8a 00 00 00 45 33 c0 8b d6 e8 9a 1e 00 00",
         "meaning": "SetSettingLodLevel calls EffectSetting.SetAllSettingLod"
       },
       {
         "name": "set_all_setting_refresh",
-        "fileOffset": "0x339a0d0",
-        "bytes": "44 89 76 70 45 33 c0 33 d2 48 8b ce e8 ef 1c 00 00",
+        "fileOffset": "0x31f47e0",
+        "bytes": "44 89 76 70 45 33 c0 33 d2 48 8b ce e8 7f 0a 00 00",
         "meaning": "SetAllSettingLod writes m_showSettingLodLevel and calls _RefreshLod(false)"
       },
       {
         "name": "init_data_active_self",
-        "fileOffset": "0x339c2c1",
+        "fileOffset": "0x31f57f1",
         "bytes": "ff d0 48 8b 5f 18 88 47 58 88 47 59",
         "meaning": "InitData copies the GameObject active getter result into m_initActive/m_curActive"
       },
       {
         "name": "refresh_predicate_and_set_active",
-        "fileOffset": "0x339be31",
-        "bytes": "8b 43 70 c6 43 10 00 85 43 40 0f 84 8e 00 00 00 8b 83 c0 00 00 00 b9 00 00 00 00 85 43 48 0f 97 c0 88 43 6d 48 83 7b 78 00 74 14 84 c0 74 78 48 8b 43 78 0f b6 40 14 85 c0 0f 95 c0 88 43 6d 80 7b 6d 00 74 04 0f b6 4b 58 85 c9 40 0f 95 c7 40 84 f6 75 32 48 8b 73 18 48 85 f6 74 6d 48 8b 05 cb 23 fd 0b 48 85 c0 74 78 40 0f b6 d7 48 8b ce ff d0 40 88 7b 59",
+        "fileOffset": "0x31f52d1",
+        "bytes": "8b 43 70 c6 43 10 00 85 43 40 0f 84 96 00 00 00 8b 83 c0 00 00 00 b9 00 00 00 00 85 43 48 0f 97 c0 88 43 6d 48 83 7b 78 00 74 14 84 c0 74 73 48 8b 43 78 0f b6 40 14 85 c0 0f 95 c0 88 43 6d 80 7b 6d 00 74 04 0f b6 4b 58 85 c9 40 0f 95 c7 40 84 f6 75 36 48 8b 73 18 48 85 f6 0f 84 a9 00 00 00 48 8b 05 e7 81 cb 0a 48 85 c0 74 72 40 0f b6 d7 48 8b ce ff d0 40 88 7b 59",
         "meaning": "_RefreshLod intersects both masks and distance-active, ANDs m_initActive, calls GameObject.SetActive, and stores m_curActive"
       }
     ],
@@ -458,48 +452,48 @@
       {
         "name": "set_quality_normalize_fallback_and_store",
         "target": "effect_manager_normalize",
-        "targetVirtualAddress": "0x183f929c0"
+        "targetVirtualAddress": "0x18391e3e0"
       },
       {
         "name": "init_lod_get_quality",
         "target": "effect_manager_get_quality",
-        "targetVirtualAddress": "0x1834f80f0"
+        "targetVirtualAddress": "0x1831f3810"
       },
       {
         "name": "init_lod_tail_set_setting",
         "target": "effect_instance_set_setting",
-        "targetVirtualAddress": "0x1834f98c0"
+        "targetVirtualAddress": "0x1831f3c20"
       },
       {
         "name": "set_setting_to_all_rows",
         "target": "effect_setting_set_all_setting",
-        "targetVirtualAddress": "0x18339b920"
+        "targetVirtualAddress": "0x1831f5b70"
       },
       {
         "name": "set_all_setting_refresh",
         "target": "effect_lod_refresh",
-        "targetVirtualAddress": "0x18339d7d0"
+        "targetVirtualAddress": "0x1831f6870"
       }
     ],
     "setAllTargetLayersDirectCallers": [
       {
-        "fileOffset": "0x34f93ce",
-        "callVirtualAddress": "0x1834fadce",
+        "fileOffset": "0x3236809",
+        "callVirtualAddress": "0x183237e09",
         "section": "il2cpp"
       },
       {
-        "fileOffset": "0x34f94c9",
-        "callVirtualAddress": "0x1834faec9",
+        "fileOffset": "0x3236b63",
+        "callVirtualAddress": "0x183238163",
         "section": "il2cpp"
       },
       {
-        "fileOffset": "0x508f2d2",
-        "callVirtualAddress": "0x185090cd2",
+        "fileOffset": "0x3236b9a",
+        "callVirtualAddress": "0x18323819a",
         "section": "il2cpp"
       },
       {
-        "fileOffset": "0x508f345",
-        "callVirtualAddress": "0x185090d45",
+        "fileOffset": "0x4d45941",
+        "callVirtualAddress": "0x184d46f41",
         "section": "il2cpp"
       }
     ],
@@ -508,20 +502,20 @@
         "owner": {
           "key": "battle_normal_refresh_guard_lod_alpha",
           "type": "Beyond.Gameplay.BattleNormalEffect",
-          "typeToken": "0x02000d90",
+          "typeToken": "0x02000e24",
           "method": "_RefreshGuardLodAlpha",
-          "methodIndex": 23312,
-          "token": "0x06005b11",
-          "virtualAddress": "0x1834fac90",
-          "moduleMethodSlot": 23312
+          "methodIndex": 24673,
+          "token": "0x06006062",
+          "virtualAddress": "0x183237fc0",
+          "moduleMethodSlot": 24673
         },
         "bodyRange": [
-          "0x1834fac90",
-          "0x1834faf50"
+          "0x183237fc0",
+          "0x183238280"
         ],
         "callVirtualAddresses": [
-          "0x1834fadce",
-          "0x1834faec9"
+          "0x183238163",
+          "0x18323819a"
         ],
         "codePlacement": "pinned hot method body"
       },
@@ -529,92 +523,92 @@
         "owner": {
           "key": "battle_normal_refresh_tower_lod",
           "type": "Beyond.Gameplay.BattleNormalEffect",
-          "typeToken": "0x02000d90",
+          "typeToken": "0x02000e24",
           "method": "_RefreshTowerLod",
-          "methodIndex": 23318,
-          "token": "0x06005b17",
-          "virtualAddress": "0x1834faaf0",
-          "moduleMethodSlot": 23318
+          "methodIndex": 24679,
+          "token": "0x06006068",
+          "virtualAddress": "0x183237c60",
+          "moduleMethodSlot": 24679
         },
         "bodyRange": [
-          "0x1834faaf0",
-          "0x1834fac00"
+          "0x183237c60",
+          "0x183237eb0"
         ],
         "coldWindow": {
           "name": "battle_normal_refresh_tower_lod_cold",
-          "virtualAddress": "0x185090c80",
-          "fileOffset": "0x508f280",
-          "byteCount": 218,
-          "sha256": "ba2305de6d6800dd541efb86a3ae7ac44ab184e5f7ad6dcc01c2717cbdc2ae4b"
+          "virtualAddress": "0x184d46ece",
+          "fileOffset": "0x4d458ce",
+          "byteCount": 135,
+          "sha256": "f9b3ef1f9750f4d47ae727a63482efd639f5d1e566455fc65da5160a55886111"
         },
-        "coldReturnVirtualAddress": "0x1834fabc6",
+        "coldReturnVirtualAddress": "0x183237d61",
         "callVirtualAddresses": [
-          "0x185090cd2",
-          "0x185090d45"
+          "0x183237e09",
+          "0x184d46f41"
         ],
-        "codePlacement": "hash-pinned cold blocks with exact jumps into hot body"
+        "codePlacement": "hash-pinned hot and cold blocks with an exact jump into the hot body"
       }
     ],
     "normalCreationRouteMethodIdentities": [
       {
         "key": "overview_on_state_enter",
         "type": "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
-        "typeToken": "0x02000210",
+        "typeToken": "0x0200021e",
         "method": "OnStateEnter",
-        "methodIndex": 3566,
-        "token": "0x06000def",
-        "virtualAddress": "0x186b85e54",
-        "moduleMethodSlot": 3566
+        "methodIndex": 3694,
+        "token": "0x06000e6f",
+        "virtualAddress": "0x183760e70",
+        "moduleMethodSlot": 3694
       },
       {
         "key": "effect_manager_create_stationary_3",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "CreateStationaryEffect",
-        "methodIndex": 23505,
-        "token": "0x06005bd2",
-        "virtualAddress": "0x183287d20",
-        "moduleMethodSlot": 23505
+        "methodIndex": 24872,
+        "token": "0x06006129",
+        "virtualAddress": "0x18375fb40",
+        "moduleMethodSlot": 24872
       },
       {
         "key": "effect_manager_create_stationary_4",
         "type": "Beyond.Gameplay.EffectManager",
-        "typeToken": "0x02000d98",
+        "typeToken": "0x02000e2c",
         "method": "CreateStationaryEffect",
-        "methodIndex": 23506,
-        "token": "0x06005bd3",
-        "virtualAddress": "0x1833d1300",
-        "moduleMethodSlot": 23506
+        "methodIndex": 24873,
+        "token": "0x0600612a",
+        "virtualAddress": "0x18375f2c0",
+        "moduleMethodSlot": 24873
       },
       {
         "key": "effect_instance_load_immediately",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "LoadImmediately",
-        "methodIndex": 23245,
-        "token": "0x06005ace",
-        "virtualAddress": "0x183b76030",
-        "moduleMethodSlot": 23245
+        "methodIndex": 24606,
+        "token": "0x0600601f",
+        "virtualAddress": "0x183760a10",
+        "moduleMethodSlot": 24606
       },
       {
         "key": "effect_instance_load_finish",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "LoadFinish",
-        "methodIndex": 23244,
-        "token": "0x06005acd",
-        "virtualAddress": "0x183963320",
-        "moduleMethodSlot": 23244
+        "methodIndex": 24605,
+        "token": "0x0600601e",
+        "virtualAddress": "0x183233430",
+        "moduleMethodSlot": 24605
       },
       {
         "key": "effect_instance_init_lod",
         "type": "Beyond.Gameplay.EffectInstance",
-        "typeToken": "0x02000d8e",
+        "typeToken": "0x02000e22",
         "method": "InitLod",
-        "methodIndex": 23218,
-        "token": "0x06005ab3",
-        "virtualAddress": "0x1834f7fb0",
-        "moduleMethodSlot": 23218
+        "methodIndex": 24579,
+        "token": "0x06006004",
+        "virtualAddress": "0x1831f2e90",
+        "moduleMethodSlot": 24579
       }
     ],
     "normalCreationRouteDirectCallerExcluded": true,
@@ -623,8 +617,7 @@
       "il2cpp",
       ".tvm0"
     ],
-    "recordedInstalledIfixNonreplacement": true,
-    "lifecycleAuditSha256": "1414f67ae318e8afbca752eb45a8dda615be0198f88d60e66ea1331ee182d438"
+    "recordedInstalledIfixNonreplacement": true
   },
   "source": {
     "kind": "original Unity GameObject TypeTree Dump",

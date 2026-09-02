@@ -660,8 +660,8 @@ class RepositoryGenerativeRouteTests(unittest.TestCase):
 
     def test_b1_c26_source_hash_gate_drift_fails_closed(self) -> None:
         mutated = self.mip_bias_source.replace(
-            "payload.runtimePackageSha256, 64",
-            "payload.runtimePackageSha256, 63",
+            "8952d381680d3f5ad53d6376d9f7e3982fc6959c29a40926934d761a152e3e0e",
+            "0" * 64,
             1)
         self.assertNotEqual(mutated, self.mip_bias_source)
         contract = MODULE._validate_b1_source_contract(

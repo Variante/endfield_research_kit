@@ -4238,8 +4238,10 @@ automatic exposure disabled, a persistent non-null state, and finite positive
 exposure. It publishes c103 from the unique actor root plus `Time.time` only as
 an explicit lab carrier, not as proof of the retail selected-frame HGVFX
 identity. The authenticated c26 Resource/overlay route is now statically
-connected, but the Resource is absent, so c19, c26, and c105 remain zero/unready
-and exact b1 admission remains closed. The historical July capture observed
+connected and the current inventoried session `20260902T164359Z` is promoted
+as the exact `(globalMipBias, globalMipBiasPow2) = (0, 1)` source. The promoted
+receipt explicitly grants no presentation authority; c19 and c105 remain
+zero/unready and exact b1 admission remains closed. The historical July capture observed
 c26.xy=(-1,0.5), while the current authenticated physical-camera receipt proves
 c26.xy=(0,1) for its observed selected state. The exact-build observer
 now admits any finite live value only when the authenticated source equation,
@@ -4249,9 +4251,8 @@ and safely unfinished generic deferred frames; explicit deferred failure or
 impossible publication-counter ordering still rejects. It requires a complete
 source receipt, the Animator gate, exact session/runtime identity, and strict
 inventory verification. The strict inventoried session verifier and
-raw-session promoter admit the current receipt as source evidence, but the
-Resource has not yet been promoted and the result grants no presentation
-authority. Admission also still
+raw-session promoter admit the current receipt as source evidence and bind the
+Unity Resource to the session/report/receipt/runtime identities. Admission also still
 requires a synchronized runtime join for engine-produced b2, its inactive skin
 bit plus the authenticated draw-local VS t0 outcome, b4, ordered MRTs, s0-s5, the observation
 writer, and the actual generative ParticleSystemRenderer path. Captured packet constants and fitted
@@ -4279,6 +4280,12 @@ observe the nonzero Burst DirectCall target/CPU variant and IFix
 `FromToRotation` patch `0x219`, integrate only the selected exact kernel through
 the existing 5/22/16/65 child arrays, and require the 40-checkpoint trajectory
 regression to beat solver-off before enabling writeback.
+
+The latest full-frame comparison still places the largest overall visual gap
+earlier than that animation residual: roughly 0.4-1.25 seconds of the opening
+needs the live multi-exposure/SceneColor temporal owner chronology. The rejected
+opening-strip approximation remains default-off; recover the live pre-Uber
+producer/consumer order before changing canonical presentation.
 
 Beyond this selected scope, remaining runtime systems include generalized
 controller and rotation-only root-motion routing, broader Avatar transport,
@@ -4320,6 +4327,15 @@ the cached viewer and verifies portrait orientation. This replaces the former
 path that could reuse a stale Endminf prefab or erase ACL `.asset` files without
 regenerating them. The batch waits while Unity, Unity Hub, Endfield, or the
 project lock indicates shared use; it never removes or bypasses the lock.
+The effect-LOD contract is pinned to the current installed native build and
+retains all 18 methods and 11 fields; only
+`EffectInstance.m_settingLodLevel` moved from `0x8c` to `0xac`. Its exact
+quality/target masks, initialization, refresh predicate, hot/cold caller
+ownership, and installed-IFix nonreplacement gates remain closed. Current
+AssetMap/CAB remapping also refreshes the exact 39-material/12-mesh/45-texture
+Overview dependency set without a broad asset export. Skeletal-morph avatar
+loading prefers the historical Persistent mirror and falls back to the current
+StreamingAssets export when the mirror is absent.
 
 ## Recovery queue
 
@@ -4392,8 +4408,9 @@ project lock indicates shared use; it never removes or bypasses the lock.
    Uber diagnostic set is explicitly zero. For M27, keep the independently
    pinned source shell at t0-t5 and the source-closed b0/b3 producers; leave b1
    closed until each live owner is recovered. Promote the admitted inventoried
-   M27 receipt through the maintained raw-session builder when the c26 Resource
-   is intentionally enabled; do not copy the captured constant. Retain
+   M27 receipt through the maintained raw-session builder when refreshing the
+   c26 Resource; the current promoted receipt remains source-only and must not
+   be treated as presentation authority. Do not copy the captured constant. Retain
    engine-produced b2 and use the next
    admissible observer run to join its inactive skin bit to the already observed bound,
    complete VS t0 palette payload, s0-s5 descriptors, b4 producer/value

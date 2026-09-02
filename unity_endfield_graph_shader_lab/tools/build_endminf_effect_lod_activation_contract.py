@@ -36,108 +36,107 @@ IFIX_STATE = (
     LAB / "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation"
     / "installed_ifix_patch_state.json"
 )
-LIFECYCLE_AUDIT = REPO / "reports/assets/endminf_effect_lifecycle_native_audit.json"
 METADATA_TOOL = REPO / "tools/endfield-il2cpp/catalog_option_flow_metadata.py"
 NATIVE_MAP_TOOL = REPO / "tools/endfield-il2cpp/map_body_targets_to_gameassembly.py"
 NATIVE_HASHES = {
-    "gameAssembly": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce",
-    "metadata": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e",
-    "ifix": "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af",
-    "lifecycleAudit": "1414f67ae318e8afbca752eb45a8dda615be0198f88d60e66ea1331ee182d438",
+    "gameAssembly": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadata": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "ifix": "20e4244e60a47fa67c3d1bdebf9eb7722c64181abc979092498510ad7f612445",
 }
+CODE_REGISTRATION = 0x18A88E640
 NATIVE_METHODS = (
     # key, type, type token, method, index, token, parameter names/types,
     # return type, VA, file offset, pinned scan size/hash
     ("overview_on_state_enter", "Beyond.Gameplay.AnimatorBehaviourPlayEffect",
-     "0x02000210", "OnStateEnter", 3566, "0x06000def",
+     "0x0200021e", "OnStateEnter", 3694, "0x06000e6f",
      ("animator", "stateInfo", "layerIndex"),
      ("UnityEngine.Animator+AnimationEventCallback&",
       "UnityEngine.AnimatorStateInfo", "System.Int32"), "System.Void",
-     0x186B85E54, 0x6B84454, 1528,
-     "ece99aba984d97b01f050e3b5b4ae512a1df5dc26d0fd0388a1abb5e994f7f0e"),
-    ("effect_instance_init_lod", "Beyond.Gameplay.EffectInstance", "0x02000d8e",
-     "InitLod", 23218, "0x06005ab3", (), (), "System.Void",
-     0x1834F7FB0, 0x34F65B0, 309,
-     "f2232ed06251f2d5c70374c51581c07aaf1c5a3cb5ecc7033d1ce31b964b4094"),
-    ("effect_instance_set_setting", "Beyond.Gameplay.EffectInstance", "0x02000d8e",
-     "SetSettingLodLevel", 23188, "0x06005a95", ("settingLodLevel", "init"),
+     0x183760E70, 0x375F870, 1528,
+     "fe8826c696469d704c4ae4a8712e8ff63b0a499611c806fc00f4e3361876ad8e"),
+    ("effect_instance_init_lod", "Beyond.Gameplay.EffectInstance", "0x02000e22",
+     "InitLod", 24579, "0x06006004", (), (), "System.Void",
+     0x1831F2E90, 0x31F1890, 309,
+     "90af78f3b75084ede0b2fc00003fa21d4f5e370a28a5fc9711b08e7b4542d1cc"),
+    ("effect_instance_set_setting", "Beyond.Gameplay.EffectInstance", "0x02000e22",
+     "SetSettingLodLevel", 24549, "0x06005fe6", ("settingLodLevel", "init"),
      ("Beyond.Gameplay.SettingLodLevel", "System.Boolean"), "System.Void",
-     0x1834F98C0, 0x34F7EC0, 227,
-     "f668ea4c2e5fc43a6edb56aa3a2b5de7011b214e130a2430b1faa05d5cee27ae"),
+     0x1831F3C20, 0x31F2620, 227,
+     "14b9e21228d65c35acfc659a8193431186c33d97fd21cd9fdab793964f80b918"),
     ("effect_instance_load_immediately", "Beyond.Gameplay.EffectInstance",
-     "0x02000d8e", "LoadImmediately", 23245, "0x06005ace", (), (),
-     "System.Void", 0x183B76030, 0x3B74630, 240,
-     "64183251a8b5de49da081bfeaef247da8d2e9d59ebd69da3136ccde6ab19a5bb"),
+     "0x02000e22", "LoadImmediately", 24606, "0x0600601f", (), (),
+     "System.Void", 0x183760A10, 0x375F410, 240,
+     "58889b5b7b66255144d408c04d9c5eeb30bc116146592ab7aaa2b6f339d8b76b"),
     ("effect_instance_load_finish", "Beyond.Gameplay.EffectInstance",
-     "0x02000d8e", "LoadFinish", 23244, "0x06005acd",
+     "0x02000e22", "LoadFinish", 24605, "0x0600601e",
      ("effectGameObject",), ("UnityEngine.GameObject",), "System.Void",
-     0x183963320, 0x3961920, 240,
-     "57bb65439641fc8c51f86b29aa9f55803480d536fee3e19494a890bdd91c69ab"),
-    ("effect_manager_ctor", "Beyond.Gameplay.EffectManager", "0x02000d98",
-     ".ctor", 23430, "0x06005b87", (), (), "System.Void",
-     0x1840E6020, 0x40E4620, 1120,
-     "468ef91bda0ddc521e7fc4642080c8960564d9d32474cef68c8e4935f18b53b7"),
-    ("effect_manager_get_quality", "Beyond.Gameplay.EffectManager", "0x02000d98",
-     "get_qualitySettingLodLevel", 23434, "0x06005b8b", (), (),
-     "Beyond.Gameplay.SettingLodLevel", 0x1834F80F0, 0x34F66F0, 48,
-     "8addebd709c459ad542000c7e889693f2d2b91b1a5479193d44054878986f07c"),
-    ("effect_manager_set_quality", "Beyond.Gameplay.EffectManager", "0x02000d98",
-     "SetQualitySettingLodLevel", 23457, "0x06005ba2",
+     0x183233430, 0x3231E30, 240,
+     "66b93983a1635139653f3552ec81f551fbe422e1ab53736d2de3213b2f6ca3fb"),
+    ("effect_manager_ctor", "Beyond.Gameplay.EffectManager", "0x02000e2c",
+     ".ctor", 24796, "0x060060dd", (), (), "System.Void",
+     0x184035580, 0x4033F80, 7542,
+     "afdff33c72cd37efddfc65442d266592847d7e9fbd19c098b4f873e6bb632279"),
+    ("effect_manager_get_quality", "Beyond.Gameplay.EffectManager", "0x02000e2c",
+     "get_qualitySettingLodLevel", 24800, "0x060060e1", (), (),
+     "Beyond.Gameplay.SettingLodLevel", 0x1831F3810, 0x31F2210, 48,
+     "7ab8284069387d06350c6b9be83973771e757d71107c4b8752f74b6509ee4c85"),
+    ("effect_manager_set_quality", "Beyond.Gameplay.EffectManager", "0x02000e2c",
+     "SetQualitySettingLodLevel", 24823, "0x060060f8",
      ("settingLodLevel", "refresh"),
-     ("Beyond.Gameplay.SettingLodLevel", "<type-index:130844>"), "System.Void",
-     0x183F92910, 0x3F90F10, 176,
-     "4ab4d06af5a49c3ee913d57fbb956422d5f58070db01f225ea5e9e22b3647f68"),
-    ("effect_manager_normalize", "Beyond.Gameplay.EffectManager", "0x02000d98",
-     "_NormalizeSingleSettingLodLevel", 23464, "0x06005ba9",
+     ("Beyond.Gameplay.SettingLodLevel", "<type-index:108383>"), "System.Void",
+     0x18391E330, 0x391CD30, 176,
+     "1a0b79789e62a15722842a26e180fcae95ac12ba7294e51b4a35fb2585503428"),
+    ("effect_manager_normalize", "Beyond.Gameplay.EffectManager", "0x02000e2c",
+     "_NormalizeSingleSettingLodLevel", 24830, "0x060060ff",
      ("settingLodLevel", "fallback"),
      ("Beyond.Gameplay.SettingLodLevel", "Beyond.Gameplay.SettingLodLevel"),
-     "Beyond.Gameplay.SettingLodLevel", 0x183F929C0, 0x3F90FC0, 64,
-     "31be9f58e68c86724d59ba9b8e023aa79ca30a37911cfc19a5b5d778699a1de9"),
+     "Beyond.Gameplay.SettingLodLevel", 0x18391E3E0, 0x391CDE0, 97,
+     "04dc2273e943b9a3c1a18740b4207725ef60a1336b261a3aebf1efb05be449d2"),
     ("effect_manager_create_stationary_3", "Beyond.Gameplay.EffectManager",
-     "0x02000d98", "CreateStationaryEffect", 23505, "0x06005bd2",
+     "0x02000e2c", "CreateStationaryEffect", 24872, "0x06006129",
      ("name", "position", "rotation"),
      ("System.String+TrimType&", "UnityEngine.Vector3", "UnityEngine.Quaternion"),
-     "<type-index:84351>", 0x183287D20, 0x3286320, 352,
-     "cada808963deaa752d22161d1aee57d7e1193e159b1f73866329c39b15cc5f30"),
+     "<type-index:71153>", 0x18375FB40, 0x375E540, 352,
+     "38e5463be2c9ab56ff4fc44d06d704d250d9d1868650deef99ef2c5a308a2042"),
     ("effect_manager_create_stationary_4", "Beyond.Gameplay.EffectManager",
-     "0x02000d98", "CreateStationaryEffect", 23506, "0x06005bd3",
+     "0x02000e2c", "CreateStationaryEffect", 24873, "0x0600612a",
      ("name", "position", "rotation", "scale"),
      ("System.String+TrimType&", "UnityEngine.Vector3", "UnityEngine.Quaternion",
-      "UnityEngine.Vector3"), "<type-index:84351>",
-     0x1833D1300, 0x33CF900, 384,
-     "e0394fde17f20729ceadb855619a26c29776bece98b049bf6866fc4a7f49d376"),
-    ("effect_setting_set_all_setting", "Beyond.Gameplay.EffectSetting", "0x02000db1",
-     "SetAllSettingLod", 23665, "0x06005c72", ("settingLodLevel",),
+      "UnityEngine.Vector3"), "<type-index:71153>",
+     0x18375F2C0, 0x375DCC0, 384,
+     "b6a54b98bbd5805f8912bae36602147979341443c4c545f4162576f2bdf40eaa"),
+    ("effect_setting_set_all_setting", "Beyond.Gameplay.EffectSetting", "0x02000e45",
+     "SetAllSettingLod", 25034, "0x060061cb", ("settingLodLevel",),
      ("Beyond.Gameplay.SettingLodLevel",), "System.Void",
-     0x18339B920, 0x3399F20, 1376,
-     "17eb415f3ef38bd3e3a9b81fbe9de848d96d2b52818eb84c07111e740348bc48"),
-    ("effect_setting_set_all_target", "Beyond.Gameplay.EffectSetting", "0x02000db1",
-     "SetAllTargetLayers", 23667, "0x06005c74", ("targetLayers",),
+     0x1831F5B70, 0x31F4570, 1376,
+     "b88aab7391555c735febf0cb6fa78a8abbf75dc45f0822a3498050b21aff56ff"),
+    ("effect_setting_set_all_target", "Beyond.Gameplay.EffectSetting", "0x02000e45",
+     "SetAllTargetLayers", 25036, "0x060061cd", ("targetLayers",),
      ("Beyond.Gameplay.EffectTargetLayers",), "System.Void",
-     0x1834FC030, 0x34FA630, 1104,
-     "71849fe5fd0029f26a2ff5d12c26159073ccebff73faec3aa84f39231fef4a2f"),
+     0x1831F4260, 0x31F2C60, 1104,
+     "48572b48e9c9053ffff311cba6289a5e8b77719952e5375ce30adb4d5e6298f4"),
     ("battle_normal_refresh_guard_lod_alpha", "Beyond.Gameplay.BattleNormalEffect",
-     "0x02000d90", "_RefreshGuardLodAlpha", 23312, "0x06005b11",
-     ("dynamicChange",), ("<type-index:130844>",), "System.Void",
-     0x1834FAC90, 0x34F9290, 704,
-     "717b3738f2628eb90fcf1a6303dc23c60f382558def12cc80518d63fd9b0ec7c"),
+     "0x02000e24", "_RefreshGuardLodAlpha", 24673, "0x06006062",
+     ("dynamicChange",), ("<type-index:108383>",), "System.Void",
+     0x183237FC0, 0x32369C0, 704,
+     "8651b52ed6aa970a7e57a0ff367df7fa9e4bc9a9314f49227654ebf552a86e25"),
     ("battle_normal_refresh_tower_lod", "Beyond.Gameplay.BattleNormalEffect",
-     "0x02000d90", "_RefreshTowerLod", 23318, "0x06005b17", (), (),
-     "System.Void", 0x1834FAAF0, 0x34F90F0, 272,
-     "d4d44ea96f75b55d10b70393c4a5fdc91e006264cc997967d0d65110a69dfdd3"),
-    ("effect_lod_init_data", "Beyond.Gameplay.EffectLodCfg", "0x02000db9",
-     "InitData", 23690, "0x06005c8b", (), (), "System.Void",
-     0x18339D940, 0x339BF40, 3184,
-     "b8608c742c988a67fd3a813355673e6a9d9319ce2c7f37fd00afc6825352b6e4"),
-    ("effect_lod_refresh", "Beyond.Gameplay.EffectLodCfg", "0x02000db9",
-     "_RefreshLod", 23694, "0x06005c8f", ("isLodFade",),
-     ("<type-index:130844>",), "System.Void",
-     0x18339D7D0, 0x339BDD0, 368,
-     "fb68df2db8aa3bf21590207f6079d54809b4f82888b9cb9cac3134367741d1a7"),
-    ("effect_lod_ctor", "Beyond.Gameplay.EffectLodCfg", "0x02000db9",
-     ".ctor", 23717, "0x06005ca6", (), (), "System.Void",
-     0x183C2F600, 0x3C2DC00, 288,
-     "6dcd0766663144c3ee19571a633601344f3719d5811e4094cfa9825ff86fb6fe"),
+     "0x02000e24", "_RefreshTowerLod", 24679, "0x06006068", (), (),
+     "System.Void", 0x183237C60, 0x3236660, 592,
+     "60cf6a46467202609b0cf8ea9901c27b8ee3dffc4f30d42289cfa7ebf4bff146"),
+    ("effect_lod_init_data", "Beyond.Gameplay.EffectLodCfg", "0x02000e4d",
+     "InitData", 25059, "0x060061e4", (), (), "System.Void",
+     0x1831F69F0, 0x31F53F0, 3184,
+     "e957d6825e82f4cd40c6ac0b6f3969e161026cf24e75a001c0cb805a0d5a34c0"),
+    ("effect_lod_refresh", "Beyond.Gameplay.EffectLodCfg", "0x02000e4d",
+     "_RefreshLod", 25063, "0x060061e8", ("isLodFade",),
+     ("<type-index:108383>",), "System.Void",
+     0x1831F6870, 0x31F5270, 368,
+     "67887805a2c160e4413322a48f1d8762a48114a8f1c1b30687978074fd3a7189"),
+    ("effect_lod_ctor", "Beyond.Gameplay.EffectLodCfg", "0x02000e4d",
+     ".ctor", 25086, "0x060061ff", (), (), "System.Void",
+     0x183AE45A0, 0x3AE2FA0, 799,
+     "7a1999284d25a61e4e983d8bdb7ba49e82fb6ae368c8c589e31beaf4e0db4091"),
 )
 NORMAL_CREATION_ROUTE_METHOD_KEYS = (
     "overview_on_state_enter",
@@ -148,54 +147,51 @@ NORMAL_CREATION_ROUTE_METHOD_KEYS = (
     "effect_instance_init_lod",
 )
 TARGET_LAYER_CALLER_WINDOWS = (
-    # _RefreshTowerLod has compiler-split cold blocks. The exact calls and
-    # jumps back into its pinned hot body close their method ownership.
-    ("battle_normal_refresh_tower_lod_cold", 0x185090C80, 0x508F280, 218,
-     "ba2305de6d6800dd541efb86a3ae7ac44ab184e5f7ad6dcc01c2717cbdc2ae4b"),
+    # _RefreshTowerLod retains one compiler-split cold call. Its exact call
+    # and jump back into the expanded pinned hot body close method ownership.
+    ("battle_normal_refresh_tower_lod_cold", 0x184D46ECE, 0x4D458CE, 135,
+     "f9b3ef1f9750f4d47ae727a63482efd639f5d1e566455fc65da5160a55886111"),
 )
 NATIVE_FIELDS = (
-    ("Beyond.Gameplay.EffectInstance", "m_settingLodLevel", "0x04004de1", 0x8C),
-    ("Beyond.Gameplay.EffectManager", "m_qualitySettingLodLevel", "0x04004e63", 0x120),
-    ("Beyond.Gameplay.EffectSetting", "lodSetting", "0x04004eec", 0xB0),
-    ("Beyond.Gameplay.EffectLodCfg", "settingLodLevel", "0x04004f27", 0x40),
-    ("Beyond.Gameplay.EffectLodCfg", "targetLayer", "0x04004f29", 0x48),
-    ("Beyond.Gameplay.EffectLodCfg", "m_initActive", "0x04004f2b", 0x58),
-    ("Beyond.Gameplay.EffectLodCfg", "m_curActive", "0x04004f2c", 0x59),
-    ("Beyond.Gameplay.EffectLodCfg", "m_isShowLod", "0x04004f32", 0x6D),
-    ("Beyond.Gameplay.EffectLodCfg", "m_showSettingLodLevel", "0x04004f33", 0x70),
-    ("Beyond.Gameplay.EffectLodCfg", "m_distanceLodInfo", "0x04004f34", 0x78),
-    ("Beyond.Gameplay.EffectLodCfg", "m_showTargetLayers", "0x04004f3d", 0xC0),
+    ("Beyond.Gameplay.EffectInstance", "m_settingLodLevel", "0x04005245", 0xAC),
+    ("Beyond.Gameplay.EffectManager", "m_qualitySettingLodLevel", "0x040052c8", 0x120),
+    ("Beyond.Gameplay.EffectSetting", "lodSetting", "0x04005351", 0xB0),
+    ("Beyond.Gameplay.EffectLodCfg", "settingLodLevel", "0x0400538c", 0x40),
+    ("Beyond.Gameplay.EffectLodCfg", "targetLayer", "0x0400538e", 0x48),
+    ("Beyond.Gameplay.EffectLodCfg", "m_initActive", "0x04005390", 0x58),
+    ("Beyond.Gameplay.EffectLodCfg", "m_curActive", "0x04005391", 0x59),
+    ("Beyond.Gameplay.EffectLodCfg", "m_isShowLod", "0x04005397", 0x6D),
+    ("Beyond.Gameplay.EffectLodCfg", "m_showSettingLodLevel", "0x04005398", 0x70),
+    ("Beyond.Gameplay.EffectLodCfg", "m_distanceLodInfo", "0x04005399", 0x78),
+    ("Beyond.Gameplay.EffectLodCfg", "m_showTargetLayers", "0x040053a2", 0xC0),
 )
 NATIVE_GATES = (
-    ("effect_lod_ctor_defaults", 0x3C2DCE7,
-     bytes.fromhex("c7 43 70 08 00 00 00 c7 83 c0 00 00 00 01 00 00 00"),
+    ("effect_lod_ctor_defaults", 0x3AE329B,
+     bytes.fromhex("c7 46 70 08 00 00 00 c7 86 c0 00 00 00 01 00 00 00"),
      "EffectLodCfg runtime show defaults are quality=8 and target=1"),
-    ("effect_manager_ctor_quality_default", 0x40E4A4D,
+    ("effect_manager_ctor_quality_default", 0x403538B,
      bytes.fromhex("c7 83 20 01 00 00 08 00 00 00"),
      "EffectManager quality default at +0x120 is 8"),
-    ("set_quality_normalize_fallback_and_store", 0x3F90F58,
+    ("set_quality_normalize_fallback_and_store", 0x391CD78,
      bytes.fromhex("45 33 c0 ba 08 00 00 00 8b ce e8 59 00 00 00 89 83 20 01 00 00"),
      "SetQuality passes fallback 8 to Normalize and stores its result at +0x120"),
-    ("normalize_quality_hot", 0x3F90FE2,
-     bytes.fromhex("8d 57 ff 83 fa 03 0f 85 46 4d 2a 01 bb 04 00 00 00"),
-     "Normalize admits 4 in the hot body and branches every other input to the cold body"),
-    ("normalize_quality_cold", 0x5235D34,
-     bytes.fromhex("85 d2 74 28 83 ea 01 74 19 83 fa 01 0f 84 ad b2 d5 fe 83 ff 08 0f 85 a4 b2 d5 fe 8b df e9 9d b2 d5 fe bb 02 00 00 00 e9 93 b2 d5 fe bb 01 00 00 00"),
-     "Normalize admits 1,2,8 and otherwise retains fallback 8"),
-    ("init_lod_get_quality_then_set", 0x34F667A,
-     bytes.fromhex("33 d2 e8 6f 00 00 00 45 33 c9 41 b0 01 8b d0 48 8b cb 48 83 c4 30 5b e9 2a 18 00 00"),
+    ("normalize_quality_domain", 0x391CE02,
+     bytes.fromhex("8d 47 ff 83 f8 01 74 22 85 c0 74 2c 83 e8 02 74 0c 83 f8 01 74 1b 83 ff 08 75 02 8b df 8b c3 48 8b 5c 24 30 48 83 c4 20 5f c3 bb 02 00 00 00 eb ec bb 04 00 00 00 eb e5 bb 01 00 00 00 eb de"),
+     "Normalize admits 1,2,4,8 and otherwise retains fallback 8"),
+    ("init_lod_get_quality_then_set", 0x31F195A,
+     bytes.fromhex("33 d2 e8 af 08 00 00 45 33 c9 41 b0 01 8b d0 48 8b cb 48 83 c4 30 5b e9 aa 0c 00 00"),
      "InitLod gets manager quality and tail-enters SetSettingLodLevel(init=true)"),
-    ("set_setting_to_all_rows", 0x34F7F33,
-     bytes.fromhex("48 8b 8b 80 00 00 00 48 85 c9 74 5e 45 33 c0 8b d6 e8 d7 1f ea ff"),
+    ("set_setting_to_all_rows", 0x31F26BC,
+     bytes.fromhex("48 8b 8b a0 00 00 00 48 85 c9 0f 84 8a 00 00 00 45 33 c0 8b d6 e8 9a 1e 00 00"),
      "SetSettingLodLevel calls EffectSetting.SetAllSettingLod"),
-    ("set_all_setting_refresh", 0x339A0D0,
-     bytes.fromhex("44 89 76 70 45 33 c0 33 d2 48 8b ce e8 ef 1c 00 00"),
+    ("set_all_setting_refresh", 0x31F47E0,
+     bytes.fromhex("44 89 76 70 45 33 c0 33 d2 48 8b ce e8 7f 0a 00 00"),
      "SetAllSettingLod writes m_showSettingLodLevel and calls _RefreshLod(false)"),
-    ("init_data_active_self", 0x339C2C1,
+    ("init_data_active_self", 0x31F57F1,
      bytes.fromhex("ff d0 48 8b 5f 18 88 47 58 88 47 59"),
      "InitData copies the GameObject active getter result into m_initActive/m_curActive"),
-    ("refresh_predicate_and_set_active", 0x339BE31,
-     bytes.fromhex("8b 43 70 c6 43 10 00 85 43 40 0f 84 8e 00 00 00 8b 83 c0 00 00 00 b9 00 00 00 00 85 43 48 0f 97 c0 88 43 6d 48 83 7b 78 00 74 14 84 c0 74 78 48 8b 43 78 0f b6 40 14 85 c0 0f 95 c0 88 43 6d 80 7b 6d 00 74 04 0f b6 4b 58 85 c9 40 0f 95 c7 40 84 f6 75 32 48 8b 73 18 48 85 f6 74 6d 48 8b 05 cb 23 fd 0b 48 85 c0 74 78 40 0f b6 d7 48 8b ce ff d0 40 88 7b 59"),
+    ("refresh_predicate_and_set_active", 0x31F52D1,
+     bytes.fromhex("8b 43 70 c6 43 10 00 85 43 40 0f 84 96 00 00 00 8b 83 c0 00 00 00 b9 00 00 00 00 85 43 48 0f 97 c0 88 43 6d 48 83 7b 78 00 74 14 84 c0 74 73 48 8b 43 78 0f b6 40 14 85 c0 0f 95 c0 88 43 6d 80 7b 6d 00 74 04 0f b6 4b 58 85 c9 40 0f 95 c7 40 84 f6 75 36 48 8b 73 18 48 85 f6 0f 84 a9 00 00 00 48 8b 05 e7 81 cb 0a 48 85 c0 74 72 40 0f b6 d7 48 8b ce ff d0 40 88 7b 59"),
      "_RefreshLod intersects both masks and distance-active, ANDs m_initActive, calls GameObject.SetActive, and stores m_curActive"),
 )
 EXPECTED_ROOTS = {
@@ -304,8 +300,7 @@ def validate_metadata_and_pointers(gameassembly: Path, metadata: Path) -> tuple[
 
     mapper = load_module("endminf_lod_activation_mapper", NATIVE_MAP_TOOL)
     pe = mapper.PeImage(gameassembly)
-    code_registration = 0x18B9217D0
-    modules = mapper.parse_codegen_modules(pe, code_registration)
+    modules = mapper.parse_codegen_modules(pe, CODE_REGISTRATION)
     ranges = mapper.image_method_ranges(md)
     pointers_by_image, _ = mapper.build_pointer_indexes(pe, md, modules, ranges)
     image_range = ranges["Gameplay.Beyond.dll"]
@@ -352,12 +347,12 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
 
     method_by_key = {row[0]: row for row in NATIVE_METHODS}
     call_gates = (
-        ("set_quality_normalize_fallback_and_store", 0x183F92958, 10,
+        ("set_quality_normalize_fallback_and_store", 0x18391E378, 10,
          "effect_manager_normalize"),
-        ("init_lod_get_quality", 0x1834F807A, 2, "effect_manager_get_quality"),
-        ("init_lod_tail_set_setting", 0x1834F807A, 23, "effect_instance_set_setting"),
-        ("set_setting_to_all_rows", 0x1834F9933, 17, "effect_setting_set_all_setting"),
-        ("set_all_setting_refresh", 0x18339BAD0, 12, "effect_lod_refresh"),
+        ("init_lod_get_quality", 0x1831F2F5A, 2, "effect_manager_get_quality"),
+        ("init_lod_tail_set_setting", 0x1831F2F5A, 23, "effect_instance_set_setting"),
+        ("set_setting_to_all_rows", 0x1831F3CBC, 21, "effect_setting_set_all_setting"),
+        ("set_all_setting_refresh", 0x1831F5DE0, 12, "effect_lod_refresh"),
     )
     calls = []
     gate_by_name = {row[0]: row for row in NATIVE_GATES}
@@ -380,7 +375,7 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
     )
     require(
         [int(row["callVirtualAddress"], 16) for row in target_xrefs] ==
-        [0x1834FADCE, 0x1834FAEC9, 0x185090CD2, 0x185090D45],
+        [0x183237E09, 0x183238163, 0x18323819A, 0x184D46F41],
         "SetAllTargetLayers direct-caller census drifted",
     )
     cold_windows = []
@@ -401,19 +396,22 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
         gameassembly, TARGET_LAYER_CALLER_WINDOWS[0][2],
         TARGET_LAYER_CALLER_WINDOWS[0][3],
     )
-    for index in (0x13E, 0x239):
+    for index in (0x1A3, 0x1DA):
         require(relative_target(guard[9], guard_body, index) ==
                 method_by_key["effect_setting_set_all_target"][9],
                 "hot SetAllTargetLayers caller edge drifted")
-    cold_edges = ((0x52, "call"), (0x62, "return"),
-                  (0xC5, "call"), (0xD4, "return"))
+    require(relative_target(tower[9], read_native_window(
+        gameassembly, tower[10], tower[11]), 0x1A9) ==
+        method_by_key["effect_setting_set_all_target"][9],
+        "hot _RefreshTowerLod SetAllTargetLayers edge drifted")
+    cold_edges = ((0x73, "call"), (0x82, "return"))
     for index, kind in cold_edges:
         target = relative_target(TARGET_LAYER_CALLER_WINDOWS[0][1], cold, index)
         expected = (method_by_key["effect_setting_set_all_target"][9]
-                    if kind == "call" else 0x1834FABC6)
+                    if kind == "call" else 0x183237D61)
         require(target == expected,
                 f"cold SetAllTargetLayers caller {kind} edge drifted")
-    require(tower[9] <= 0x1834FABC6 < tower[9] + tower[11],
+    require(tower[9] <= 0x183237D61 < tower[9] + tower[11],
             "cold _RefreshTowerLod return target left its pinned hot body")
 
     caller_keys = {
@@ -427,16 +425,16 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
         {
             "owner": identity_by_key["battle_normal_refresh_guard_lod_alpha"],
             "bodyRange": [f"0x{guard[9]:x}", f"0x{guard[9] + guard[11]:x}"],
-            "callVirtualAddresses": ["0x1834fadce", "0x1834faec9"],
+            "callVirtualAddresses": ["0x183238163", "0x18323819a"],
             "codePlacement": "pinned hot method body",
         },
         {
             "owner": identity_by_key["battle_normal_refresh_tower_lod"],
             "bodyRange": [f"0x{tower[9]:x}", f"0x{tower[9] + tower[11]:x}"],
             "coldWindow": cold_windows[0],
-            "coldReturnVirtualAddress": "0x1834fabc6",
-            "callVirtualAddresses": ["0x185090cd2", "0x185090d45"],
-            "codePlacement": "hash-pinned cold blocks with exact jumps into hot body",
+            "coldReturnVirtualAddress": "0x183237d61",
+            "callVirtualAddresses": ["0x183237e09", "0x184d46f41"],
+            "codePlacement": "hash-pinned hot and cold blocks with an exact jump into the hot body",
         },
     ]
 
@@ -445,7 +443,9 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
     ifix = json.loads(ifix_state.read_text(encoding="utf-8"))
     source_build = ifix["source_build"]
     require(source_build["game_assembly"]["sha256"] == NATIVE_HASHES["gameAssembly"] and
-            source_build["global_metadata"]["sha256"] == NATIVE_HASHES["metadata"],
+            source_build["global_metadata"]["sha256"] == NATIVE_HASHES["metadata"] and
+            str(source_build.get("code_registration", "")).lower() ==
+            f"0x{CODE_REGISTRATION:x}",
             "installed IFix snapshot build join drifted")
     relevant = {(row[1], row[3]) for row in NATIVE_METHODS}
     observed = {(str(row.get("type")), str(row.get("method")))
@@ -453,16 +453,6 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
     require(not (relevant & observed),
             f"installed IFix snapshot replaces LOD route: {sorted(relevant & observed)}")
 
-    require(sha256_file(LIFECYCLE_AUDIT) == NATIVE_HASHES["lifecycleAudit"],
-            "pinned lifecycle native audit hash drifted")
-    lifecycle = json.loads(LIFECYCLE_AUDIT.read_text(encoding="utf-8"))
-    refresh = next(row for row in lifecycle["methods"]
-                   if row.get("type") == "Beyond.Gameplay.EffectLodCfg" and
-                   row.get("method") == "_RefreshLod")
-    require(refresh["virtualAddress"] == "0x18339d7d0" and
-            refresh["calls"] == ["Beyond.Gameplay.EffectLodCfg.InitData",
-                                 "UnityEngine.GameObject.SetActive"],
-            "pinned _RefreshLod GameObject.SetActive identity drifted")
     return {
         "gameAssemblySha256": NATIVE_HASHES["gameAssembly"],
         "globalMetadataSha256": NATIVE_HASHES["metadata"],
@@ -476,7 +466,6 @@ def validate_native(gameassembly: Path | None, metadata: Path | None,
         "normalCreationRouteDirectCallerExcluded": True,
         "executableSectionsScanned": [row["name"] for row in sections],
         "recordedInstalledIfixNonreplacement": True,
-        "lifecycleAuditSha256": NATIVE_HASHES["lifecycleAudit"],
     }
 
 
