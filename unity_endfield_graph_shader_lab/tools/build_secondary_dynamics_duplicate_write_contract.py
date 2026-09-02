@@ -27,6 +27,7 @@ DEFAULT_READ = DATA_ROOT / "secondary_dynamics_transform_read_contract.json"
 DEFAULT_CALLBACK = DATA_ROOT / "secondary_dynamics_callback_contract.json"
 DEFAULT_SCHEDULE = DATA_ROOT / "secondary_dynamics_schedule_contract.json"
 DEFAULT_PAYLOAD = DATA_ROOT / "secondary_dynamics_payload_decode.json"
+DEFAULT_IFIX = DATA_ROOT / "installed_ifix_patch_state.json"
 DEFAULT_OUTPUT = DATA_ROOT / "secondary_dynamics_duplicate_write_contract.json"
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
@@ -37,6 +38,7 @@ EXPECTED_INPUTS = {
     "callback": (17561, "f10af3ffc84f3283af1773e62b1214198bb042712882fb90ad7b5946662f0ac0"),
     "schedule": (14618, "d442c5ee85e85e863923a13af5b1caf6bb696c8f4e3ecb554a47d9991357288e"),
     "payload": (1161329, "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a"),
+    "ifix": (19511, "71eaa80479920463835ef5fabc7697dfeea5fef9f287c109e994fca7edcdb9af"),
 }
 
 # Full managed/native method spans where available.  The WriteTransformJob hot
@@ -248,16 +250,76 @@ def _duplicate_groups(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any
     return groups, summary
 
 
+def _validate_callback_route(read_contract: dict[str, Any]) -> dict[str, Any]:
+    selector = read_contract.get("callbackWritebackSelector")
+    expected = {
+        "selectorField": "MagicaManager.UseAnimatorTransform at static_fields+0x0a",
+        "targetValue": False,
+        "targetValueClosed": True,
+        "targetRoute": "TransformAccess WriteTransform",
+        "animatorBufferWritebackSelected": False,
+        "runtimeTelemetryRequired": False,
+    }
+    if not isinstance(selector, dict):
+        raise ContractError("transform-read callback selector is missing")
+    for key, value in expected.items():
+        if selector.get(key) != value:
+            raise ContractError(
+                f"transform-read callback selector drift for {key}: "
+                f"{selector.get(key)!r} != {value!r}")
+    execution = read_contract.get("executionBoundary", {})
+    if execution.get("callbackWritebackSelectorClosed") is not True or \
+            execution.get("animatorBufferBranchClosed") is not True:
+        raise ContractError("transform-read callback route is not closed")
+    return selector
+
+
+def _validate_ifix_snapshot(ifix: dict[str, Any]) -> dict[str, Any]:
+    if ifix.get("schema") != "endfield.charinfo.installed-ifix-patch-state.v1":
+        raise ContractError("installed IFix snapshot schema drift")
+    source = ifix.get("source_build", {})
+    if source.get("game_assembly", {}).get("sha256") != EXPECTED_GAME_ASSEMBLY_SHA256 or \
+            source.get("global_metadata", {}).get("sha256") != EXPECTED_METADATA_SHA256:
+        raise ContractError("installed IFix snapshot native-build drift")
+    targets = ifix.get("targets")
+    if not isinstance(targets, list) or len(targets) != 32:
+        raise ContractError("installed IFix target-table cardinality drift")
+    protected = [
+        row for row in targets
+        if isinstance(row, dict) and
+        str(row.get("type", "")).startswith("BeyondDynamicBone.")
+    ]
+    if protected:
+        identities = [
+            f"{row.get('type', '')}.{row.get('method', '')}" for row in protected
+        ]
+        raise ContractError(
+            "installed IFix snapshot targets secondary dynamics: " +
+            ", ".join(identities))
+    audit = ifix.get("character_recovery_target_audit", {})
+    if audit.get("locally_replaced") is not False:
+        raise ContractError("installed IFix protected-target audit drift")
+    return {
+        "targetCount": len(targets),
+        "beyondDynamicBoneTargetCount": 0,
+        "locallyReplaced": False,
+        "scope": "hash-pinned installed local IFix snapshot",
+        "liveOrFuturePayloadExcluded": True,
+    }
+
+
 def build_contract(*, game_assembly: Path | None = None, metadata: Path | None = None,
                    writeback_path: Path = DEFAULT_WRITEBACK, read_path: Path = DEFAULT_READ,
                    callback_path: Path = DEFAULT_CALLBACK, schedule_path: Path = DEFAULT_SCHEDULE,
-                   payload_path: Path = DEFAULT_PAYLOAD) -> dict[str, Any]:
+                   payload_path: Path = DEFAULT_PAYLOAD,
+                   ifix_path: Path = DEFAULT_IFIX) -> dict[str, Any]:
     ga, native_gate = _native_gate(game_assembly, metadata)
     writeback, writeback_source = _load_pinned("writeback", writeback_path)
     read_contract, read_source = _load_pinned("read", read_path)
     callback, callback_source = _load_pinned("callback", callback_path)
     schedule, schedule_source = _load_pinned("schedule", schedule_path)
     payload, payload_source = _load_pinned("payload", payload_path)
+    ifix, ifix_source = _load_pinned("ifix", ifix_path)
 
     if writeback["status"] != "transform_writeback_contract_closed_with_duplicate_boundary":
         raise ContractError("writeback status drift")
@@ -277,9 +339,11 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
     spans, call_sites = _pin_native(ga)
     entries = _ordered_entries(read_contract)
     groups, duplicate_summary = _duplicate_groups(entries)
+    callback_selector = _validate_callback_route(read_contract)
+    ifix_boundary = _validate_ifix_snapshot(ifix)
     return {
         "schema": "endfield.charinfo.secondary-dynamics-duplicate-write.v1",
-        "status": "endminf_transform_access_duplicates_closed_full_target_route_fail_closed",
+        "status": "endminf_transform_access_duplicates_and_installed_target_route_closed",
         "nativeGate": native_gate,
         "sources": {
             "transformWriteback": writeback_source,
@@ -287,6 +351,7 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "callback": callback_source,
             "schedule": schedule_source,
             "payloadDecode": payload_source,
+            "installedIfixPatchState": ifix_source,
         },
         "native": {
             "bodyPins": spans,
@@ -294,6 +359,7 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "route": "unpatched native WriteTransform route only",
             "ifixWriteTransformPatchId": "0x32a",
             "ifixPatchedRouteRecovered": False,
+            "installedIfixBoundary": ifix_boundary,
         },
         "ordering": {
             "managerEntryOrder": "126 entries retain AddTransform/source insertion order and managerIndex 0..125",
@@ -310,9 +376,13 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
             "writeTransformSelector": "ClothUpdate tests a native mode byte at the pinned +0xb8c comparison before the +0xbbc WriteTransform call",
             "animatorWriteCallOffset": "0x10b5",
             "animatorWriteSelector": "a separate native mode-byte branch reaches WriteAnimatorBufferData",
-            "targetSelectedRouteProven": False,
-            "reason": "The accepted static payload, callback, schedule, and ui_overview clip evidence do not contain the live global mode-byte values. The existing transform-read contract therefore also leaves the target ReadTransform/animator-buffer branch unresolved.",
-            "consequence": "The exact result below applies to the pinned unpatched TransformAccess WriteTransform route; it is not promoted to a full retail ui_overview_start/loop winner claim.",
+            "targetSelectedRouteProven": True,
+            "selectorField": callback_selector["selectorField"],
+            "targetValue": callback_selector["targetValue"],
+            "writerAudit": callback_selector["writerAudit"],
+            "runtimeTelemetryRequired": callback_selector["runtimeTelemetryRequired"],
+            "reason": "The pinned transform-read contract proves UseAnimatorTransform=false from its sole compiled cctor writer, selecting TransformAccess WriteTransform and excluding animator-buffer writeback.",
+            "consequence": "The duplicate result is promoted for the hash-pinned installed target route; a changed IFix snapshot or a future/live payload remains a fail-closed rebuild boundary.",
         },
         "writeGating": {
             "staticBranchPrecedence": "world when (flag & 0x02) != 0; else local when (flag & 0x04) != 0; else no TransformAccess setter",
@@ -334,15 +404,16 @@ def build_contract(*, game_assembly: Path | None = None, metadata: Path | None =
         },
         "runtimePolicyBoundary": {
             "transformAccessRoutePolicyCanBeEvidenceBacked": True,
-            "fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked": False,
+            "fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked": True,
             "policy": "On the pinned TransformAccess route, preserve all 126 entries and apply the native per-entry flags and dynamic gates. A route-local deduplicated publication view may use the sole write-eligible Ribbon2/Ribbon entry on 24 paths and publish nothing from either entry on the two fixed/fixed paths.",
             "ownerWinnerCounts": {"MC_Ribbon2": 6, "MC_Ribbon": 18, "none": 2},
             "coatWinnerCount": 0,
             "requiresAssumedSourceOrderWinner": False,
             "requiresCompatibilityPriority": False,
-            "staticallyProvenFullTargetWinner": False,
-            "failClosedReason": "ui_overview_start/loop lacks a pinned live callback-route selector, and the animator-buffer duplicate write route is not closed by this contract.",
-            "failClosedRule": "Do not enable a full target runtime duplicate policy until the target callback route is selected by pinned evidence. Any future duplicate group containing more than one write-eligible entry, any source/hash drift, or any IFix-patched route also fails closed; never infer a winner from manager index or owner order.",
+            "staticallyProvenFullTargetWinner": True,
+            "installedSnapshotScope": "The selected callback route and absence of BeyondDynamicBone IFix targets are proven for the exact installed files. Runtime-only, downloaded, or future patches are outside this static snapshot.",
+            "failClosedReason": "",
+            "failClosedRule": "Any future duplicate group containing more than one write-eligible entry, any source/hash drift, or any IFix-patched route fails closed; never infer a winner from manager index or owner order.",
             "runtimeModified": False,
         },
     }

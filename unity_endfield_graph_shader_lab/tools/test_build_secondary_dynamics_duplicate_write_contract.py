@@ -66,22 +66,39 @@ class DuplicateWriteContractTests(unittest.TestCase):
         self.assertFalse(gates["teamOrWeightMutualExclusionProven"])
         self.assertIn("not a pairwise exclusion gate", gates["weightRole"])
 
-    def test_route_policy_is_closed_but_full_target_fails_closed(self) -> None:
+    def test_route_policy_and_installed_target_are_closed(self) -> None:
         boundary = self.contract["runtimePolicyBoundary"]
         self.assertTrue(boundary["transformAccessRoutePolicyCanBeEvidenceBacked"])
-        self.assertFalse(boundary["fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked"])
-        self.assertFalse(boundary["staticallyProvenFullTargetWinner"])
+        self.assertTrue(boundary["fullTargetRuntimeDuplicatePolicyCanBeEvidenceBacked"])
+        self.assertTrue(boundary["staticallyProvenFullTargetWinner"])
         self.assertFalse(boundary["requiresAssumedSourceOrderWinner"])
         self.assertFalse(boundary["requiresCompatibilityPriority"])
         self.assertEqual(boundary["coatWinnerCount"], 0)
+        self.assertEqual(boundary["failClosedReason"], "")
         self.assertFalse(boundary["runtimeModified"])
 
-    def test_target_callback_route_remains_fail_closed(self) -> None:
+    def test_target_callback_route_is_source_statically_closed(self) -> None:
         route = self.contract["callbackRouteBoundary"]
         self.assertEqual(route["writeTransformCallOffset"], "0xbbc")
         self.assertEqual(route["animatorWriteCallOffset"], "0x10b5")
-        self.assertFalse(route["targetSelectedRouteProven"])
-        self.assertIn("not promoted", route["consequence"])
+        self.assertTrue(route["targetSelectedRouteProven"])
+        self.assertFalse(route["targetValue"])
+        self.assertFalse(route["runtimeTelemetryRequired"])
+        self.assertIn("promoted", route["consequence"])
+
+    def test_mutated_callback_selector_fails_closed(self) -> None:
+        data = json.loads(builder.DEFAULT_READ.read_text(encoding="utf-8"))
+        data["callbackWritebackSelector"]["targetValue"] = True
+        with self.assertRaises(builder.ContractError):
+            builder._validate_callback_route(data)
+
+    def test_mutated_ifix_target_fails_closed(self) -> None:
+        data = json.loads(builder.DEFAULT_IFIX.read_text(encoding="utf-8"))
+        data["targets"][0]["type"] = (
+            "BeyondDynamicBone.DynamicBoneTransformManager")
+        data["targets"][0]["method"] = "WriteTransform"
+        with self.assertRaises(builder.ContractError):
+            builder._validate_ifix_snapshot(data)
 
     def test_native_bodies_and_call_sites_are_pinned(self) -> None:
         bodies = {row["name"]: row for row in self.contract["native"]["bodyPins"]}
