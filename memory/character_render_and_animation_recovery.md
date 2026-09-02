@@ -3940,25 +3940,31 @@ EndfieldCapture commit `dac972a` fixed the regular-tail staging defect, but its
 new process-wide bulk Transform registration detour was not retail-safe.
 Session `20260831T225915Z` reached login and ordinary resource loading, then
 ended as Windows Application Hang event 1002 rather than a native crash. It
-never wrote final provider summaries or a usable recovery payload. The only new
-path exercised was one bulk registration callback with a valid 13-entry result;
-the detour then performed per-entry engine identity calls, hierarchy walks,
-hashing, and a registry transaction inline on the game's resource-loading
-thread. The prior `20260831T184411Z` session had not patched that entry and did
-not hang. Treat this as sufficient evidence to remove the risky observation,
-not as permission to retry it.
+never wrote final provider summaries or a usable recovery payload. The old v1
+status proves one decoded 13-entry callback and one aggregate rejection before
+the hang event; no stack or dump proves which getter or lock branch executed.
+The reachable inline per-entry engine getters, hierarchy walk, hashing, and
+registry transaction are therefore the bounded correlated suspect, not an
+established mechanism. The prior `20260831T184411Z` session had not patched that
+entry and did not hang. Do not retry that per-entry design.
 
-EndfieldCapture commit `a67832a` keeps the exact bulk function/body identity
-for offline analysis but never creates or enables its hook. Secondary
-registration evidence therefore remains explicitly incomplete in every session: live status
-separates partial observers from evidence readiness, the overlay never labels
-the provider ready or accepts `Numpad 5`, the final aggregate hook claim stays
-false, and the combined Endminf wrapper refuses a retail launch before starting
-the host or game. The Full Release suite, focused Debug secondary test, overlay
-readiness self-test, withheld-launch test, all 24 trajectory-verifier tests, and
-installed-client nonlaunching preflight pass. The graphics-only Full profile
-remains available for independent graphics evidence, but it cannot claim the
-missing secondary lifecycle join.
+EndfieldCapture commit `051d835` re-enables the exact bulk function/body hook
+only as a constant-work receipt observer. It forwards once through a non-null
+MinHook trampoline with byte-identical arguments, never dereferences the
+manager/container/MethodInfo pointers, and publishes one POD call/result receipt
+to a fixed 1,024-slot lock-free ledger. Missing trampolines, ambiguous zero,
+capacity exhaustion, callback non-quiescence, call-count mismatch, and
+publication mismatch all fail closed. Clean stop writes
+`secondary-dynamics/bulk-transform-observations.json`; the exact 976-byte body
+hash and prologue still gate installation. This receipt does not materialize
+the inserted per-entry Transform identities, so registration evidence remains
+explicitly incomplete: evidence readiness stays false, the overlay rejects
+`Numpad 5`, and the combined Endminf wrapper refuses a retail launch. The
+post-fix Release build and full CTest suite pass 28/28, including preflight,
+overlay, withheld-launch, and secondary-dynamics tests. This is synthetic and
+disassembly-backed safety evidence only; no new retail run has tested the
+replacement hook. The graphics-only Full profile remains available for
+independent graphics evidence, but it cannot claim the missing lifecycle join.
 
 The deferred-capture consumer audit now uses one exact observer-build contract
 for Animator, Streamline, and M31 verification. It pins the current Release
@@ -4205,14 +4211,16 @@ project lock indicates shared use; it never removes or bypasses the lock.
 ## Recovery queue
 
 1. Do not run the combined Endminf graphics-plus-dynamics wrapper while the
-   bulk Transform observer is withheld; it now rejects a real launch. Method
+   bulk Transform per-entry identity join is unavailable; it rejects a real
+   launch even though the bounded receipt hook is installed. Method
    `384854` and its DirectCall managed fallback are statically closed; the
    remaining CalcLine route boundary is the runtime-selected nonzero Burst
    function pointer plus the IFix selection state for `FromToRotation` patch
    `0x219`. Do not implement the managed/fallback equations as retail-active
    until those runtime states close.
    The dedicated `burst_resolver_telemetry.py` v3 observer now supplies that
-   narrow lane without the withheld bulk hook. After the exact CalcLine
+   narrow lane without depending on the unavailable Transform identity join.
+   After the exact CalcLine
    GetFunctionPointer wrapper returns, it reads only the hash-pinned resolver
    slot at RVA `0x3c57b0`; validation names `x64_sse2` or `avx2` only for the
    two source-authenticated entry RVAs and keeps missing, null, unreadable,
