@@ -3966,6 +3966,24 @@ disassembly-backed safety evidence only; no new retail run has tested the
 replacement hook. The graphics-only Full profile remains available for
 independent graphics evidence, but it cannot claim the missing lifecycle join.
 
+EndfieldCapture commit `2605bc0` adds the separate, exclusive
+`bulk-transform-receipts` diagnostic profile needed to validate that boundary
+without enabling the full secondary provider. It installs exactly two
+hash-gated hooks: bulk `AddTransform(VirtualMeshContainer, teamId)` and its
+source-loop `VirtualMeshContainer.GetTransformFromIndex` callee. A TLS token,
+exact return-address/container/thread checks, and fixed 1,024-row lock-free
+ledgers retain the outer `DataChunk` plus each ordinal/opaque Transform pointer;
+null identity, per-token reordering, duplicate/missing/range/count/token,
+capacity, trampoline, publication, and teardown failures remain incomplete.
+The profile creates no secondary recorder, snapshot, window event, Animator
+trigger, or other dynamics hook, and its collector accepts only
+`bulk-transform-receipts/{summary,observations}.json` labeled
+`secondaryDynamicsEvidence=false`. Acceptance closes before hook disable; late
+prologues forward through process-lifetime-retained trampolines without
+publication. Independent callback/lifetime and profile-isolation reviews pass,
+as does the final Release suite at 31/31. No retail run has tested this profile,
+so the per-entry join and full dynamics evidence readiness remain false.
+
 The deferred-capture consumer audit now uses one exact observer-build contract
 for Animator, Streamline, and M31 verification. It pins the current Release
 observer's source identity, DLL size/hash, 8,192-row Animator capacity, and
@@ -4234,6 +4252,11 @@ project lock indicates shared use; it never removes or bypasses the lock.
    route; collect one actual trace and require a checked route artifact before
    selecting even the inert value kernel. Solver/writeback integration remains
    a separate gate. Keep the older trajectory capture validation-only. If new
+   registration identity evidence is needed, close Endfield and run
+   `tools\EndfieldCapture\StartCapture.bat bulk-transform-receipts`; require a
+   complete diagnostic-only two-hook artifact before designing post-writeback
+   pointer/hierarchy enrichment, and never treat that artifact itself as
+   secondary-dynamics evidence. If new
    graphics evidence is independently
    required, use
    `StartCapture.bat graphics full` with Endfield closed and do not interpret
