@@ -6,8 +6,8 @@ description: Query and rebuild Endfield's local SQLite evidence graph with tools
 # Endfield Source Graph
 
 Use the graph for evidence lookup, not as authority to change recovery logic.
-When the task is primarily a WebUI refresh or frontend change, use the
-`endfield-webui-workflow` skill and treat this skill as supporting evidence.
+When the task is primarily a WebUI refresh or frontend change, use the relevant
+specialized WebUI skill and treat this skill as supporting evidence.
 
 ## Query First
 

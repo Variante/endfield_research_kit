@@ -20,8 +20,6 @@ set "ASSET_MODE=default"
 set "FULL_SOURCE_GRAPH=0"
 set "BUILD_SCOPE=full"
 set "SCOPE_FLAG="
-set "REUSE_TIMELINE_ORDERS=0"
-set "REUSE_REFERENCE=0"
 set "ANIMESTUDIO_OBJECT_INDEX=0"
 set "WEBUI_JOBS=4"
 set "FIRST_PASSTHROUGH="
@@ -64,13 +62,7 @@ if /I "%~1"=="--debug-assets" goto :assets_debug
 
 rem Build scope. At most one of these may be given.
 if /I "%~1"=="--story-only" goto :opt_story_only
-if /I "%~1"=="--mission-pipeline-only" goto :opt_pipeline_only
-if /I "%~1"=="--mission-pipeline-data-only" goto :opt_pipeline_data_only
 if /I "%~1"=="--assets-only" goto :opt_assets_only
-
-rem Faster partial rebuilds.
-if /I "%~1"=="--reuse-timeline-orders" goto :opt_reuse_timeline
-if /I "%~1"=="--reuse-reference" goto :opt_reuse_reference
 
 rem Tuning.
 if /I "%~1"=="--webui-jobs" goto :opt_webui_jobs
@@ -126,34 +118,10 @@ if errorlevel 1 exit /b 2
 shift
 goto :parse_args
 
-:opt_pipeline_only
-call :set_scope mission-pipeline --mission-pipeline-only
-if errorlevel 1 exit /b 2
-shift
-goto :parse_args
-
-:opt_pipeline_data_only
-call :set_scope mission-pipeline-data --mission-pipeline-data-only
-if errorlevel 1 exit /b 2
-shift
-goto :parse_args
-
 :opt_assets_only
 call :set_scope assets --assets-only
 if errorlevel 1 exit /b 2
 set "WITH_ASSETS=1"
-shift
-goto :parse_args
-
-:opt_reuse_timeline
-set "REUSE_TIMELINE_ORDERS=1"
-set "STORY_BUILD_ARGS=%STORY_BUILD_ARGS% --timeline-recovery never"
-shift
-goto :parse_args
-
-:opt_reuse_reference
-set "REUSE_REFERENCE=1"
-set "STORY_BUILD_ARGS=%STORY_BUILD_ARGS% --reuse-reference"
 shift
 goto :parse_args
 
@@ -189,24 +157,13 @@ rem checks stay out of the pipeline below.
 set "STORY_BUILD=1"
 set "POST_STORY_VIEWS=1"
 if "%BUILD_SCOPE%"=="story" set "POST_STORY_VIEWS=0"
-if "%BUILD_SCOPE%"=="mission-pipeline-data" set "STORY_BUILD=0"
 if "%BUILD_SCOPE%"=="assets" set "STORY_BUILD=0"
 
 rem Reject contradictory input before starting any Python process.
 call :validate_asset_mode "%ASSET_MODE%"
 if errorlevel 1 exit /b 2
 if "%EXPORT_FROM_GAME%"=="0" if defined FIRST_PASSTHROUGH goto :passthrough_needs_game
-if "%STORY_BUILD%"=="0" if "%REUSE_TIMELINE_ORDERS%"=="1" goto :reuse_without_story
-if "%STORY_BUILD%"=="0" if "%REUSE_REFERENCE%"=="1" goto :reuse_without_story
 if "%STORY_BUILD%"=="0" if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" goto :object_index_without_story
-if "%REUSE_TIMELINE_ORDERS%"=="1" if "%EXPORT_FROM_GAME%"=="1" (
-  echo --reuse-timeline-orders cannot be combined with --from-game because refreshed game data may change Timeline order.
-  exit /b 2
-)
-if "%REUSE_REFERENCE%"=="1" if "%EXPORT_FROM_GAME%"=="1" (
-  echo --reuse-reference cannot be combined with --from-game because refreshed Table inputs may change Text Tables.
-  exit /b 2
-)
 if "%BUILD_SCOPE%"=="story" if "%WITH_ASSETS%"=="1" (
   echo --story-only cannot be combined with --with-assets or an asset scope.
   exit /b 2
@@ -215,28 +172,9 @@ if "%BUILD_SCOPE%"=="story" if "%FULL_SOURCE_GRAPH%"=="1" (
   echo --story-only cannot be combined with --full-source-graph.
   exit /b 2
 )
-if "%BUILD_SCOPE%"=="mission-pipeline" if "%WITH_ASSETS%"=="1" (
-  echo --mission-pipeline-only cannot be combined with --with-assets.
-  exit /b 2
-)
-if "%BUILD_SCOPE%"=="mission-pipeline-data" if "%EXPORT_FROM_GAME%"=="1" (
-  echo --mission-pipeline-data-only reuses generated Story data and cannot be combined with --from-game.
-  exit /b 2
-)
-if "%BUILD_SCOPE%"=="mission-pipeline-data" if "%WITH_ASSETS%"=="1" (
-  echo --mission-pipeline-data-only cannot be combined with asset refresh flags.
-  exit /b 2
-)
-if "%BUILD_SCOPE%"=="mission-pipeline-data" if "%FULL_SOURCE_GRAPH%"=="1" (
-  echo --mission-pipeline-data-only cannot be combined with --full-source-graph.
-  exit /b 2
-)
-
 rem Assemble the post-Story view arguments now so the preflight below can check
 rem the exact combination this run will use, not a stand-in.
 set "WEBUI_VIEW_ARGS=--jobs "%WEBUI_JOBS%" --asset-mode "%ASSET_MODE%""
-if "%BUILD_SCOPE%"=="mission-pipeline" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --mission-pipeline-only"
-if "%BUILD_SCOPE%"=="mission-pipeline-data" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --mission-pipeline-data-only"
 if "%WITH_ASSETS%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --with-assets"
 if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --decode-audio"
 if "%FULL_SOURCE_GRAPH%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --full-source-graph"
@@ -246,8 +184,6 @@ if "%EXPORT_FROM_GAME%"=="1" (echo [export.bat] Source: installed game refresh) 
 if "%WITH_ASSETS%"=="1" (echo [export.bat] Assets/audio: enabled, scope %ASSET_MODE%) else (echo [export.bat] Assets/audio: skipped)
 if "%BUILD_SCOPE%"=="full" echo [export.bat] Build scope: complete curated WebUI pipeline
 if "%BUILD_SCOPE%"=="story" echo [export.bat] Build scope: Story and Text Tables only
-if "%BUILD_SCOPE%"=="mission-pipeline" echo [export.bat] Build scope: Story, Mission Pipeline, and map recovery
-if "%BUILD_SCOPE%"=="mission-pipeline-data" echo [export.bat] Build scope: Mission Pipeline data only; current Story is reused
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Build scope: assets, audio, and post-Story views; current Story is reused
 echo [export.bat] Post-Story worker limit: %WEBUI_JOBS%
 
@@ -321,15 +257,11 @@ if "%POST_STORY_VIEWS%"=="0" (
   goto :done
 )
 
-if "%BUILD_SCOPE%"=="mission-pipeline" call :stage "Building Mission Pipeline and map recovery views"
-if "%BUILD_SCOPE%"=="mission-pipeline-data" call :stage "Rebuilding Mission Pipeline JSON and map recovery from current Story bundles"
 if "%BUILD_SCOPE%"=="assets" call :stage "Building Mission Pipeline, map recovery, Characters, Gameplay, projectiles, Assets, CN audio, source graph, and combat relationships"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Mission Pipeline, Characters, Gameplay, map recovery, source graph, and graph consumers"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery, source graph, and graph consumers"
 python .\scripts\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
 if errorlevel 1 exit /b %errorlevel%
-if "%BUILD_SCOPE%"=="mission-pipeline" echo [export.bat] Mission Pipeline refresh complete; skipped unrelated semantic views and source graph.
-if "%BUILD_SCOPE%"=="mission-pipeline-data" echo [export.bat] Mission Pipeline data refresh complete; no Story, evidence, or unrelated semantic-view rebuild was run.
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and audio refresh complete; Story was not rebuilt.
 
 :done
@@ -345,10 +277,6 @@ if not "%BUILD_SCOPE%"=="full" (
 set "BUILD_SCOPE=%~1"
 set "SCOPE_FLAG=%~2"
 exit /b 0
-
-:reuse_without_story
-echo %SCOPE_FLAG% already skips the Story build; omit --reuse-timeline-orders and --reuse-reference.
-exit /b 2
 
 :object_index_without_story
 echo %SCOPE_FLAG% skips Story evidence, so --animestudio-object-index would not refresh its Story consumer evidence.
@@ -419,14 +347,6 @@ echo Build scope. At most one of these may be given:
 echo   --story-only       Build Story and Text Tables, then stop before Mission
 echo                      Pipeline and every post-Story semantic view. May be
 echo                      combined with --from-game for a lean first export.
-echo   --mission-pipeline-only
-echo                      Story evidence, CN Story and Mission Pipeline, then
-echo                      stop before Gameplay, Projectile, graph and Combat.
-echo   --mission-pipeline-data-only
-echo                      Rebuild only Mission Pipeline JSON and map recovery
-echo                      from the Story bundles already on disk. Checks export
-echo                      freshness, then skips every other stage. Use this for
-echo                      pipeline builder or frontend work.
 echo   --assets-only      Rebuild every post-Story semantic view, the Assets
 echo                      indexes and CN audio from the current generated
 echo                      Story. Skips Story evidence, Story and Text Tables.
@@ -434,15 +354,6 @@ echo                      Implies --with-assets. This is what export_assets.bat
 echo                      now runs. With --from-game it preserves structured
 echo                      Story/Table freshness and fails closed after a game
 echo                      update; use --from-game --with-assets then.
-echo.
-echo Faster partial rebuilds:
-echo   --reuse-timeline-orders
-echo                      Keep the current Timeline line-order index during a
-echo                      Story rebuild. Only correct while export_full and the
-echo                      recovered Timeline inputs are unchanged.
-echo   --reuse-reference  Keep the current localized Text Tables bundle during
-echo                      a Story rebuild. Only correct while the exported
-echo                      Tables are unchanged.
 echo.
 echo Tuning:
 echo   --webui-jobs N     Concurrent post-Story builders. Default 4. Dependency
@@ -461,11 +372,12 @@ echo.
 echo Examples:
 echo   export.bat
 echo   export.bat --from-game
-echo   export.bat --story-only --reuse-timeline-orders --reuse-reference
 echo   export.bat --from-game --with-assets --focused-assets
 echo   export.bat --assets-only --from-game --focused-assets
 echo   export.bat --from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
-echo   export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
+echo   python -m scripts.story_builder.protocol_registry --ensure-current
+echo   python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
+echo   python -m scripts.build_map_recovery_data --with-preview
 echo.
 echo Notes:
 echo   For repeated runs, edit endfield_paths.bat instead of passing --game-root.

@@ -13,11 +13,19 @@ comparisons into one searchable interface.
   <img src="res/map_screenshot.png" alt="Map browser showing the full Wuling region with recovered elevation, color surface, and water layers" height="150">
 </p>
 
-> Research only. Use a legally obtained client, do not redistribute proprietary
-> game content, and expect spoilers. Most recovery work was produced with LLM
-> assistance and should be verified against the original data.
+> [!CAUTION]
+> This is an unofficial community project and is not affiliated with or endorsed
+> by the game's developers or publishers. Use a legally obtained client, do not
+> redistribute proprietary game content, and expect spoilers. Most recovery
+> work was produced with LLM assistance and should be verified against the
+> original data.
+>
+> This project and its documentation are provided **AS IS**, without warranties
+> of any kind. There is no promise of support, bug fixes, compatibility with
+> future game or operating-system updates, or long-term maintenance. Use it at
+> your own risk; you should not expect assistance or continued updates.
 
-中文: [b站专栏](https://www.bilibili.com/opus/1212936027582234627)，[百度盘](http://pan.baidu.com/s/1nLaAc6-AdZAbZb6jGObtmA?pwd=94p7)
+中文: [bilibili](https://space.bilibili.com/1008854785)，[百度盘](http://pan.baidu.com/s/1nLaAc6-AdZAbZb6jGObtmA?pwd=94p7) 
 
 ## Quick start
 
@@ -28,13 +36,25 @@ preferably 64 GiB RAM for default asset exports.
 git clone https://github.com/Variante/endfield_research_kit.git
 cd endfield_research_kit
 notepad endfield_paths.bat
-.\setup_first_time.bat
+.\setup.bat
 ```
 
 Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` directory.
-`setup_first_time.bat` builds AnimeStudio, exports CN Story and Text data, and
+`setup.bat` builds AnimeStudio, exports CN Story and Text data, and
 starts or reuses `http://127.0.0.1:8765/`. Pass `--no-serve` to build without
-starting the server.
+starting the server. When setup finishes, the **Story** and **Text** pages are
+ready to browse. The remaining pages are separate so the first useful build
+finishes sooner.
+
+For a complete refresh from the installed client, including exported media and
+CN audio, run this after setup:
+
+```bat
+.\export.bat --from-game --with-assets
+```
+
+Asset decoding can take several hours and requires substantially more disk
+space and memory than the initial Story/Text setup.
 
 ## WebUI
 
@@ -54,97 +74,30 @@ starting the server.
 - **Updates** compares exported game data across two saved versions.
 - **Mission Pipeline** is an experimental debug-only quest/Story evidence view.
 
-First-time setup generates Story and Text. Run `export.bat --from-game --with-assets` to build the remaining WebUI data and refresh assets and audio. Updates requires two complete exports.
+### Pages prepared by each command
 
-## Common workflows
+After a command succeeds, the named pages are ready or refreshed. Pages not
+listed keep their previously generated data.
 
-```bat
-:: Rebuild WebUI data from the current export_full
-.\export.bat
+| Command | Pages ready or refreshed | What it uses |
+| --- | --- | --- |
+| `.\setup.bat` | **Story**, **Text** | Installed client; also builds AnimeStudio and starts the WebUI server by default |
+| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Mission Pipeline** | The current, freshness-checked export; existing Assets and Audio are unchanged |
+| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Mission Pipeline** | Refreshes structured data from the installed client first |
+| `.\export.bat --with-assets` | Every page except **Updates** | Reuses the current export and its existing media; also rebuilds Assets and relinks Audio |
+| `.\export.bat --from-game --with-assets` | Every page except **Updates** | Complete installed-client refresh, including asset extraction and CN audio decoding |
+| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Mission Pipeline** | Reuses current Story/Text and existing exported media |
+| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Mission Pipeline** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
+| `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
-:: Refresh Story and assets in one installed-game export
-.\export.bat --from-game --with-assets
+Asset-enabled commands without `--from-game` can only publish media already
+present in the current export. Use `--from-game` when that media has not yet
+been extracted or the installed client changed.
 
-:: Rebuild Story and Mission Pipeline with reusable inputs
-.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
-
-:: Rebuild only Mission Pipeline/map JSON when Story inputs are current
-.\export.bat --mission-pipeline-data-only
-
-:: Rebuild post-Story views plus existing assets/audio
-.\export_assets.bat
-:: Refresh assets only when Story/Table exports already match this game build
-.\export_assets.bat --from-game
-
-:: Serve or package the static WebUI
-python serve.py
-python scripts\pack_webui.py
-```
-
-`export.bat` reuses `export_full/` and checks it against the installed client.
-Add `--from-game` only for an intentional extraction. Asset scope runs from
-`--focused-assets` through `--default-assets` to `--debug-assets`;
-`--asset-jobs N` and `--webui-jobs N` cap concurrency. Every wrapper supports
-`--help`.
-
-Audio is lossless FLAC by default and is encoded directly without temporary WAV
-files or `ffmpeg`. Optional asset decoding can take several hours and substantial
-disk space and memory.
-
-To build more languages:
-
-```bat
-python -m scripts.story_builder.build --languages CN EN JP --default-language CN
-```
-
-## Game updates
-
-```bat
-:: Compare two complete exports, old folder first
-.\build_updates.bat OLD NEW
-```
-
-The wrapper accepts `OLD NEW` or reads both roots from `endfield_paths.bat`.
-It compares exported text, image, model, video, and decoded audio data; local
-changes under `webui/`, `reports/`, `memory/`, or `scratch/` never appear in the
-feed. See [scripts/README.md](scripts/README.md) for focused, text-only, and
-exact-hash options.
-
-### Story
-
-- The CN build contains 5,563 Story files; 4,236 have an accepted pipeline
-  connection and 1,327 remain unlinked.
-- The source-only graph is cycle-free but sparse. It is an evidence-typed
-  partial order, not a claimed canonical playthrough.
-
-Current counts live in
-[`reports/story/build/mission_pipeline_story_binding_coverage_CN.md`](reports/story/build/mission_pipeline_story_binding_coverage_CN.md)
-and [`reports/mission_order/source_story_partial_order_CN.md`](reports/mission_order/source_story_partial_order_CN.md).
-Stable conclusions and next work live in
-[`memory/game_story_recovery.md`](memory/game_story_recovery.md).
-
-### Game data and combat
-
-- Stock-client damage, defense, resistance, critical, healing, poise, and
-  shield paths are recovered from binaries, IL2CPP metadata, and authored data.
-- Skills and buffs retain action, modifier, timing, and ownership evidence.
-  Server corrections, active patches, and live branch selection remain outside
-  the proven boundary.
-
-See [`memory/game_data_recovery.md`](memory/game_data_recovery.md) for the
-formula overview and current limits.
-
-### Character models and animation
-
-- All 31 playable models render in the Unity lab, and all 156 canonical
-  post-model identities have generated prefab paths.
-- Playable UI animation coverage is complete for the selected scope. Retail
-  lighting, material state, controllers, IK, facial behavior, physics, and
-  non-playable animation remain incomplete.
-
-See
-[`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md)
-for the current evidence boundary.
+**Mission Pipeline** is only visible after enabling **Show debug info**.
+`python serve.py` serves whatever has already been generated; it does not build
+page data. `python scripts\pack_webui.py` packages the current generated WebUI
+without refreshing it.
 
 ## Project map
 
@@ -155,7 +108,11 @@ for the current evidence boundary.
 - `reports/`: generated inventories and audits.
 - `memory/`: current conclusions, evidence boundaries, and recovery queues.
 - `scratch/`: revisitable experiments; `tmp/`: disposable intermediates.
-- `unity_endfield_graph_shader_lab/`: character rendering and animation lab.
+- `endfield_reconstruction_lab/`: character rendering and animation lab (Git submodule).
+
+Only `tools/AnimeStudio` is initialized by `setup.bat`. The
+`endfield_reconstruction_lab` and `tools/EndfieldCapture` submodules are
+optional and are not required for the normal WebUI workflow.
 
 Technical documentation:
 

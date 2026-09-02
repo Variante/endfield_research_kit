@@ -56,12 +56,12 @@ if /I "%ARG%"=="--skip-assets" (
 )
 
 echo Unknown option: %ARG%
-echo Run quick_start.bat --help for usage.
+echo Run setup.bat --help for usage.
 exit /b 2
 
 :missing_game_root
 echo Missing value for --game-root.
-echo Example: quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+echo Example: setup.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
 exit /b 2
 
 :parsed_args
@@ -204,12 +204,12 @@ exit /b %errorlevel%
 
 :failed
 echo.
-echo [setup] Setup failed. Fix the message above, then rerun quick_start.bat.
+echo [setup] Setup failed. Fix the message above, then rerun setup.bat.
 popd
 exit /b 1
 
 :help
-echo Usage: quick_start.bat [--game-root PATH] [--no-serve]
+echo Usage: setup.bat [--game-root PATH] [--no-serve]
 echo.
 echo Runs the full first-time WebUI setup from an installed Endfield client:
 echo   1. check Git, Python, and PowerShell
@@ -231,9 +231,9 @@ echo   --help                 Show this help text.
 echo.
 echo Examples:
 echo   notepad endfield_paths.bat
-echo   quick_start.bat
-echo   quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
-echo   quick_start.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
+echo   setup.bat
+echo   setup.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+echo   setup.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
 echo.
 endlocal
 exit /b 0

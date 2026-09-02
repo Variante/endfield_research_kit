@@ -4777,6 +4777,44 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             result["validationFailures"][0]["gate"],
         )
 
+    def test_protocol_runtime_contracts_degrade_stale_native_sources(self):
+        loader_names = (
+            "load_state_update_application_contract",
+            "load_action_extra_thread_scheduler_contract",
+            "load_levelscript_task_authority_contract",
+            "load_levelscript_task_lifecycle_contract",
+            "load_levelscript_start_policy_contract",
+            "load_levelscript_manual_self_control_contract",
+            "load_levelscript_activation_control_contract",
+        )
+        error = RuntimeError(
+            "validator=fixture gate=sourceHash expected='old' actual='new' "
+            "source=GameAssembly.dll"
+        )
+        patchers = [
+            patch.object(pipeline, name, side_effect=error)
+            for name in loader_names
+        ]
+        try:
+            for patcher in patchers:
+                patcher.start()
+            with patch.object(
+                pipeline, "native_evidence_required", return_value=False
+            ):
+                contracts = pipeline.load_protocol_runtime_contracts()
+        finally:
+            for patcher in reversed(patchers):
+                patcher.stop()
+
+        self.assertEqual(7, len(contracts))
+        for contract in contracts.values():
+            self.assertEqual("mismatched", contract["status"])
+            self.assertFalse(contract["nativeConclusionsAvailable"])
+            self.assertEqual(
+                "unavailable_fail_closed",
+                contract["validation"]["status"],
+            )
+
     def test_level_sequence_action_name_comes_from_binary_formatter_mapping(self):
         self.assertEqual(
             "LoadLevelSequenceAction",

@@ -7452,6 +7452,55 @@ def env_talk_trigger_manifest(report: dict[str, Any]) -> dict[str, dict[str, Any
     return manifest
 
 
+def load_protocol_runtime_contracts() -> dict[str, dict[str, Any]]:
+    """Load protocol projections without publishing stale native facts."""
+    loaders = {
+        "stateUpdateApplicationAudit": load_state_update_application_contract,
+        "actionExtraThreadSchedulerAudit": (
+            load_action_extra_thread_scheduler_contract
+        ),
+        "levelScriptTaskAuthorityAudit": load_levelscript_task_authority_contract,
+        "levelScriptTaskLifecycleAudit": load_levelscript_task_lifecycle_contract,
+        "levelScriptStartPolicyAudit": load_levelscript_start_policy_contract,
+        "levelScriptManualSelfControlAudit": (
+            load_levelscript_manual_self_control_contract
+        ),
+        "levelScriptActivationControlAudit": (
+            load_levelscript_activation_control_contract
+        ),
+    }
+    contracts: dict[str, dict[str, Any]] = {}
+    for name, loader in loaders.items():
+        try:
+            contracts[name] = loader()
+        except RuntimeError as exc:
+            diagnostic = str(exc)
+            unavailable_source = (
+                "gate=sourceHash" in diagnostic
+                or "gate=sourceExists" in diagnostic
+            )
+            if not unavailable_source or native_evidence_required():
+                raise
+            status = "missing" if "gate=sourceExists" in diagnostic else "mismatched"
+            contracts[name] = {
+                "status": status,
+                "source": repo_path(DEFAULT_PROTOCOL_REGISTRY_AUDIT),
+                "diagnostic": diagnostic,
+                "nativeConclusionsAvailable": False,
+                "validation": {
+                    "status": "unavailable_fail_closed",
+                    "failures": [{
+                        "validator": "protocol_runtime_contract_loader",
+                        "gate": "originalNativeSource",
+                        "expected": "audit source hash matches selected native input",
+                        "actual": diagnostic,
+                        "sourceFile": repo_path(DEFAULT_PROTOCOL_REGISTRY_AUDIT),
+                    }],
+                },
+            }
+    return contracts
+
+
 def build_all(
     mission_root: Path,
     output_root: Path,
@@ -7588,19 +7637,11 @@ def build_all(
             "selectedRoot": repo_path(mission_root),
             "selection": "explicit_mission_root",
         }
-    state_update_contract = load_state_update_application_contract()
-    extra_thread_scheduler_contract = (
-        load_action_extra_thread_scheduler_contract()
-    )
-    task_authority_contract = load_levelscript_task_authority_contract()
-    task_lifecycle_contract = load_levelscript_task_lifecycle_contract()
-    start_policy_contract = load_levelscript_start_policy_contract()
-    manual_self_control_contract = (
-        load_levelscript_manual_self_control_contract()
-    )
-    activation_control_contract = (
-        load_levelscript_activation_control_contract()
-    )
+    protocol_contracts = load_protocol_runtime_contracts()
+    state_update_contract = protocol_contracts["stateUpdateApplicationAudit"]
+    extra_thread_scheduler_contract = protocol_contracts[
+        "actionExtraThreadSchedulerAudit"
+    ]
     ifix_patch_contract = load_ifix_patch_contract()
     runtime_contract = {
         **project_ifix_runtime_contract(RUNTIME_CONTRACT, ifix_patch_contract),
@@ -7613,13 +7654,7 @@ def build_all(
         "nativeCrossSystemConsumerCensus": (
             load_cross_system_consumers_contract()
         ),
-        "stateUpdateApplicationAudit": state_update_contract,
-        "actionExtraThreadSchedulerAudit": extra_thread_scheduler_contract,
-        "levelScriptTaskAuthorityAudit": task_authority_contract,
-        "levelScriptTaskLifecycleAudit": task_lifecycle_contract,
-        "levelScriptStartPolicyAudit": start_policy_contract,
-        "levelScriptManualSelfControlAudit": manual_self_control_contract,
-        "levelScriptActivationControlAudit": activation_control_contract,
+        **protocol_contracts,
     }
     quest_action_dispatch = (
         state_update_contract.get("questSucceedActionApplication") or {}
@@ -7630,6 +7665,9 @@ def build_all(
     quest_enable_application = (
         state_update_contract.get("questEnableLifecycleApplication") or {}
     )
+    protocol_native_available = (
+        state_update_contract.get("nativeConclusionsAvailable") is not False
+    )
     quest_action_dispatch_counts: Counter[str] = Counter()
     quest_state_application_counts: Counter[str] = Counter()
     quest_enable_application_counts: Counter[str] = Counter()
@@ -7638,24 +7676,25 @@ def build_all(
         payload = read_json(mission_path)
         if not isinstance(payload, dict):
             continue
-        quest_action_dispatch_counts.update(
-            quest_payload_projection.annotate_quest_action_dispatch(
-                payload,
-                quest_action_dispatch,
+        if protocol_native_available:
+            quest_action_dispatch_counts.update(
+                quest_payload_projection.annotate_quest_action_dispatch(
+                    payload,
+                    quest_action_dispatch,
+                )
             )
-        )
-        quest_state_application_counts.update(
-            annotate_quest_fork_state_application(
-                payload,
-                quest_state_application,
+            quest_state_application_counts.update(
+                annotate_quest_fork_state_application(
+                    payload,
+                    quest_state_application,
+                )
             )
-        )
-        quest_enable_application_counts.update(
-            annotate_quest_fork_enable_application(
-                payload,
-                quest_enable_application,
+            quest_enable_application_counts.update(
+                annotate_quest_fork_enable_application(
+                    payload,
+                    quest_enable_application,
+                )
             )
-        )
         write_json(mission_path, payload)
     index = {
         "schemaVersion": SCHEMA_VERSION,
@@ -7772,57 +7811,57 @@ def build_all(
             "questForkServerEnableApplicationArms": quest_enable_application_counts[
                 "arms"
             ],
-            "stateUpdateApplicationCandidates": state_update_contract[
-                "candidateCount"
-            ],
-            "stateUpdateApplicationCandidatesValidated": state_update_contract[
-                "validatedCandidateCount"
-            ],
-            "stateUpdateClientSuccessorSelectors": state_update_contract[
-                "clientSuccessorSelectors"
-            ],
-            "questStartPredecessorReads": state_update_contract[
-                "questStartApplication"
-            ].get("fieldReadCounts", {}).get("prevQuestIdList", 0),
-            "questStartFlowIndexReads": state_update_contract[
-                "questStartApplication"
-            ].get("fieldReadCounts", {}).get("flowIndex", 0),
+            "stateUpdateApplicationCandidates": state_update_contract.get(
+                "candidateCount", 0
+            ),
+            "stateUpdateApplicationCandidatesValidated": state_update_contract.get(
+                "validatedCandidateCount", 0
+            ),
+            "stateUpdateClientSuccessorSelectors": state_update_contract.get(
+                "clientSuccessorSelectors", 0
+            ),
+            "questStartPredecessorReads": state_update_contract.get(
+                "questStartApplication", {}
+            ).get("fieldReadCounts", {}).get("prevQuestIdList", 0),
+            "questStartFlowIndexReads": state_update_contract.get(
+                "questStartApplication", {}
+            ).get("fieldReadCounts", {}).get("flowIndex", 0),
             "questStartTopologyTraversalCalls": len(
-                state_update_contract["questStartApplication"].get(
+                state_update_contract.get("questStartApplication", {}).get(
                     "topologyTraversalCalls", []
                 )
             ),
-            "questTopologyActivePredecessorConsumers": state_update_contract[
-                "questTopologyFieldConsumers"
-            ].get("activePredecessorConsumerCount", 0),
-            "questTopologyFlowIndexNonSortConsumers": state_update_contract[
-                "questTopologyFieldConsumers"
-            ].get("flowIndexNonSortConsumerCount", 0),
+            "questTopologyActivePredecessorConsumers": state_update_contract.get(
+                "questTopologyFieldConsumers", {}
+            ).get("activePredecessorConsumerCount", 0),
+            "questTopologyFlowIndexNonSortConsumers": state_update_contract.get(
+                "questTopologyFieldConsumers", {}
+            ).get("flowIndexNonSortConsumerCount", 0),
             "questTopologyLifecycleCalls": len(
-                state_update_contract["questTopologyFieldConsumers"].get(
+                state_update_contract.get("questTopologyFieldConsumers", {}).get(
                     "topologyLifecycleCalls", []
                 )
             ),
             "questTypeConsumers": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("questType", {})
                 .get("consumerCount", 0)
             ),
             "questTypePostLifecycleConsumers": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("questType", {})
                 .get("postLifecycleConsumerCount", 0)
             ),
             "questTypeBlockNotificationConsumers": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("questType", {})
                 .get("blockNotificationConsumerCount", 0)
             ),
             "questOptionalObjectiveFlagValidated": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("optionalObjectiveFlag", {})
                 .get("validation", {})
@@ -7830,13 +7869,13 @@ def build_all(
                 == "validated"
             ),
             "questShowModeConsumers": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("showMode", {})
                 .get("consumerCount", 0)
             ),
             "questShowModeLifecycleConsumers": (
-                state_update_contract["questTopologyFieldConsumers"]
+                state_update_contract.get("questTopologyFieldConsumers", {})
                 .get("questSemanticFields", {})
                 .get("showMode", {})
                 .get("lifecycleConsumerCount", 0)

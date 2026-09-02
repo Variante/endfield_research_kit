@@ -33,11 +33,11 @@ progression, projectile, asset, and sound information lives in Gameplay.
 ## Build and serve
 
 ```bat
-.\setup_first_time.bat
+.\setup.bat
 .\export.bat
 .\export.bat --from-game --with-assets
-.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
-.\export.bat --mission-pipeline-data-only
+python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
+python -m scripts.build_map_recovery_data --with-preview
 .\export_assets.bat
 python serve.py
 python scripts\pack_webui.py

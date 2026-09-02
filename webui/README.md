@@ -828,8 +828,8 @@ Use the smallest relevant root workflow:
 
 ```bat
 .\export.bat
-.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
-.\export.bat --mission-pipeline-data-only
+python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
+python -m scripts.build_map_recovery_data --with-preview
 .\export_assets.bat
 python scripts\pack_webui.py
 ```
@@ -855,9 +855,10 @@ and audio first only when the structured Story/Table export already matches
 that installed build; asset-only extraction never advances structured-data
 freshness provenance.
 
-`--mission-pipeline-data-only` validates the current protocol registry and
-rebuilds Mission Pipeline/map JSON, but deliberately skips Story gap-evidence
-refresh and map preview rendering.
+The Mission Pipeline data-only Python sequence validates the current protocol
+registry, rebuilds Mission Pipeline/map JSON, and deliberately skips Story
+gap-evidence refresh and map preview rendering. See the dedicated project
+skill for the exact command sequence.
 
 Before reading an existing extraction, run
 `python scripts\verify_export_freshness.py` unless freshness is already known.

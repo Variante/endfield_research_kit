@@ -73,13 +73,8 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
 
     # The map builder's per-level loop is process-parallel. When it runs beside
     # other builders it gets one process so the phase keeps `--jobs` as its
-    # total process budget; both Mission Pipeline-only scopes collapse the
-    # phase to one task, so there the whole budget is its to spend.
-    map_recovery_jobs = str(
-        args.jobs
-        if args.mission_pipeline_only or args.mission_pipeline_data_only
-        else 1
-    )
+    # total process budget.
+    map_recovery_jobs = "1"
 
     mission = TaskSpec(
         "mission_pipeline",
@@ -119,46 +114,6 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
             ),
         ),
     )
-
-    if args.mission_pipeline_only:
-        mission = TaskSpec(
-            mission.name,
-            (
-                *mission.commands[:-1],
-                module(
-                    "scripts.build_map_recovery_data",
-                    "--jobs",
-                    map_recovery_jobs,
-                    "--with-preview",
-                ),
-            ),
-        )
-        return [("post_story", [mission])]
-
-    if args.mission_pipeline_data_only:
-        return [
-            (
-                "post_story_data",
-                [
-                    TaskSpec(
-                        "mission_pipeline_data",
-                        (
-                            python_module(
-                                "scripts.story_builder.protocol_registry",
-                                "--ensure-current",
-                                environment=environment,
-                            ),
-                            module("scripts.build_mission_pipeline_data"),
-                            module(
-                                "scripts.build_map_recovery_data",
-                                "--jobs",
-                                map_recovery_jobs,
-                            ),
-                        ),
-                    )
-                ],
-            )
-        ]
 
     gameplay = TaskSpec(
         "gameplay",
@@ -396,8 +351,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=4,
         help="Maximum concurrent independent builders (default: 4).",
     )
-    parser.add_argument("--mission-pipeline-only", action="store_true")
-    parser.add_argument("--mission-pipeline-data-only", action="store_true")
     parser.add_argument("--with-assets", action="store_true")
     parser.add_argument(
         "--asset-mode",
@@ -416,14 +369,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.jobs < 1:
         parser.error("--jobs must be at least 1")
-    if args.mission_pipeline_only and args.with_assets:
-        parser.error("--mission-pipeline-only cannot be combined with --with-assets")
-    if args.mission_pipeline_data_only and args.with_assets:
-        parser.error("--mission-pipeline-data-only cannot be combined with --with-assets")
-    if args.mission_pipeline_only and args.mission_pipeline_data_only:
-        parser.error(
-            "--mission-pipeline-only cannot be combined with --mission-pipeline-data-only"
-        )
     if args.decode_audio and not args.with_assets:
         parser.error("--decode-audio requires --with-assets")
     return args
@@ -464,8 +409,6 @@ def main(argv: list[str] | None = None) -> int:
         "jobs": args.jobs,
         "wallSeconds": round(time.perf_counter() - started, 3),
         "options": {
-            "missionPipelineOnly": args.mission_pipeline_only,
-            "missionPipelineDataOnly": args.mission_pipeline_data_only,
             "withAssets": args.with_assets,
             "assetMode": args.asset_mode,
             "decodeAudio": args.decode_audio,
