@@ -54,7 +54,7 @@ LAYOUT_CONTRACT = (
 # These values are intentionally duplicated as a small gate.  A decoder must
 # never treat a newly substituted installed build as the pinned source used by
 # the reviewed static-input contract.
-EXPECTED_INPUT_SHA256 = "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b"
+EXPECTED_INPUT_SHA256 = "fe91726b102a1104ed223be0aeb9138a76d58887a79851cc70736fd0d4ed6251"
 EXPECTED_LAYOUT_SHA256 = "d176af62924a288fec60823e4ac7b2d62784669f6ecdc10defddf3fbceab62da"
 EXPECTED_SOURCE_BUILD = {
     "game_assembly": {

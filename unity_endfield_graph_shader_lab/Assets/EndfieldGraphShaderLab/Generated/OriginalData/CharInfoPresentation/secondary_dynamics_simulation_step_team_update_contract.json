@@ -30,7 +30,7 @@
     {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_center_update_contract.json",
       "size": 67892,
-      "sha256": "ce5717656a589f8e3286dd212eb9e2518b31b35f76906d1f9273dd83dad29034",
+      "sha256": "5932c009cca91ebda08cc44611de05935fab37db3b5e39adce238fae5a6744f7",
       "schema": "endfield.charinfo.secondary-dynamics-center-update.v1",
       "status": "no_wind_fixed_center_rotation_and_zero_root_smoothing_closed_downstream_step_inertia_fail_closed"
     },
@@ -58,7 +58,7 @@
     {
       "path": "unity_endfield_graph_shader_lab/Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/secondary_dynamics_solver_inputs.json",
       "size": 1447800,
-      "sha256": "1f8e4a881a7f82aefe159e0596220e730653ea101e765163757cac756dfffd2b",
+      "sha256": "fe91726b102a1104ed223be0aeb9138a76d58887a79851cc70736fd0d4ed6251",
       "schema": "endfield.charinfo.secondary-dynamics-solver-inputs.v1",
       "status": "static_inputs_recovered_solver_unimplemented"
     }

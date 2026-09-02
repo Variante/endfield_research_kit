@@ -24,7 +24,7 @@ OWNER_RECOVERY = LAB_ROOT / (
     "Assets/EndfieldGraphShaderLab/Generated/OriginalData/CharInfoPresentation/"
     "secondary_dynamics_owner_recovery.json"
 )
-OWNER_RECOVERY_SHA256 = "14222f72f6789f5bdc709b7a5a495e7b7a22f950596fc31bdef44a13a8c1a15a"
+OWNER_RECOVERY_SHA256 = "1051703d0695e26769be9e98a89e57d91ded27939b4888115d59f1e0fe0edaa6"
 CORE_RVA = 0x25E830
 CORE_BYTES = 5074
 CORE_SHA256 = "19b635fc37d878779e286408bcb58ea5abd3746f2f508f90fe634028d6bae9cc"

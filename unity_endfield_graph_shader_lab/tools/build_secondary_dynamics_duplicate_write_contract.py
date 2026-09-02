@@ -32,11 +32,11 @@ DEFAULT_OUTPUT = DATA_ROOT / "secondary_dynamics_duplicate_write_contract.json"
 EXPECTED_GAME_ASSEMBLY_SHA256 = "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
 EXPECTED_METADATA_SHA256 = "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
 EXPECTED_INPUTS = {
-    "writeback": (89667, "c7512092a2568e14f91f4fb5856eb5884d592f241ddfeb6554a189e1b9bd2887"),
-    "read": (170017, "87ea60222e32d9037ef2d8968d441109c0de61933187f17e51a338361dea66b8"),
-    "callback": (17561, "a6143a667a6df88f088201fe314522589f9faf5149ed2f20a1dc581cf3f27f65"),
+    "writeback": (102059, "e5f9b12aeecd89e92e82484111f9492459782e04bd1c99353a28085e556d249e"),
+    "read": (170018, "67167af46bc3363f2b0676f82896fecbfe7d3d22c7e218e3e7748006afd21d9a"),
+    "callback": (17561, "f10af3ffc84f3283af1773e62b1214198bb042712882fb90ad7b5946662f0ac0"),
     "schedule": (14618, "d442c5ee85e85e863923a13af5b1caf6bb696c8f4e3ecb554a47d9991357288e"),
-    "payload": (1161329, "3e1841d21c8e249b505ca74379632b8ab308a1ffedc166130206a9f706737e35"),
+    "payload": (1161329, "6c8eed435f2acd645d3fb3560acf7c993b5ef34c8ff2336de1a9fa87a1cbff1a"),
 }
 
 # Full managed/native method spans where available.  The WriteTransformJob hot
