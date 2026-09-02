@@ -17,7 +17,7 @@ namespace EndfieldGraphShaderLab
             "endfield.endminf-m27-global-mip-bias-unity-source.v1";
         public const string PayloadStatus = "source_authenticated_for_c26_only";
         public const string StaticContractSha256 =
-            "3206c46847f98c7821b800aa52b3792ebf8cf7622ab1054ce21f51f872a7e1d3";
+            "01d703a635fa1b2f2cf463cc78c501bab2e1e97d93444605fb82be62f9f5d0d9";
         public const string RendererPathId = "59284134265994738";
 
         private const uint ExpectedGlobalMipBiasBits = 0xbf800000u;

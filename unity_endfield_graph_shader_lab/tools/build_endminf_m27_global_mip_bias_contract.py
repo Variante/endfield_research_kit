@@ -28,13 +28,13 @@ DEFAULT_OUTPUT = (
 )
 
 EXPECTED_GAME_ASSEMBLY_SHA256 = (
-    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
 )
 EXPECTED_METADATA_SHA256 = (
-    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
 )
-EXPECTED_CODE_REGISTRATION = 0x18B9217D0
-EXPECTED_METADATA_REGISTRATION = 0x18B921C30
+EXPECTED_CODE_REGISTRATION = 0x18A88E640
+EXPECTED_METADATA_REGISTRATION = 0x18A88E860
 
 MIP_BIAS_INVENTORY = (
     REPO_ROOT
@@ -54,18 +54,18 @@ M27_PARTICLE_ABI_SHA256 = (
 
 TYPES = {
     "additionalCameraData": (
-        38091,
-        0x020002D7,
+        35102,
+        0x020002D8,
         "HG.Rendering.Runtime.HGAdditionalCameraData",
     ),
-    "hgCamera": (38102, 0x020002E6, "HG.Rendering.Runtime.HGCamera"),
+    "hgCamera": (35113, 0x020002E7, "HG.Rendering.Runtime.HGCamera"),
     "dynamicResolutionHandler": (
-        56898,
+        51037,
         0x02000087,
         "UnityEngine.Rendering.DynamicResolutionHandler",
     ),
     "globalDynamicResolutionSettings": (
-        56901,
+        51040,
         0x0200008C,
         "UnityEngine.Rendering.GlobalDynamicResolutionSettings",
     ),
@@ -73,82 +73,82 @@ TYPES = {
 
 FIELDS = {
     "materialMipBias": (
-        "additionalCameraData", 172322, 0x04001351, "materialMipBias", 0xA0
+        "additionalCameraData", 177378, 0x0400135E, "materialMipBias", 0xA0
     ),
-    "taaJitter": ("hgCamera", 172398, 0x0400139D, "taaJitter", 0x68),
+    "taaJitter": ("hgCamera", 177454, 0x040013AA, "taaJitter", 0x68),
     "globalMipBias": (
         "hgCamera",
-        172465,
-        0x040013E0,
+        177521,
+        0x040013ED,
         "<globalMipBias>k__BackingField",
         0x960,
     ),
     "additionalCameraData": (
-        "hgCamera", 172512, 0x0400140F, "m_AdditionalCameraData", 0xAC0
+        "hgCamera", 177568, 0x0400141C, "m_AdditionalCameraData", 0xAC0
     ),
     "handlerUseMipBias": (
-        "dynamicResolutionHandler", 277555, 0x04000265, "m_UseMipBias", 0x11
+        "dynamicResolutionHandler", 264105, 0x04000265, "m_UseMipBias", 0x11
     ),
     "settingsUseMipBias": (
-        "globalDynamicResolutionSettings", 277601, 0x04000293, "useMipBias", 0x11
+        "globalDynamicResolutionSettings", 264151, 0x04000293, "useMipBias", 0x11
     ),
 }
 
 METHODS = {
     "hgCameraUpdate": {
         "type": "hgCamera",
-        "index": 286739,
-        "token": 0x06000E8F,
+        "index": 268396,
+        "token": 0x06000E98,
         "name": "Update",
-        "va": 0x183100120,
-        "end": 0x183101A30,
-        "sha256": "e99e96070212c96c1a888447c81469d3952541d12c7a2e5548f7e1b2c45c9c1f",
+        "va": 0x182D2DFE0,
+        "end": 0x182D2FAA0,
+        "sha256": "248accea1930aa4131137dccf1439ae7e919b1b675dc4e90b38152639ddb79ed",
     },
     "updateShaderVariablesGlobalCB": {
         "type": "hgCamera",
-        "index": 286748,
-        "token": 0x06000E98,
+        "index": 268405,
+        "token": 0x06000EA1,
         "name": "UpdateShaderVariablesGlobalCB",
-        "va": 0x1832E0020,
-        "end": 0x1832E0B60,
-        "sha256": "31937f3310ede8f299b5387a85b35bb290973c0e049d1baa5de99356a0d17539",
+        "va": 0x182FD36E0,
+        "end": 0x182FD4270,
+        "sha256": "c51516142b7d15e87f2aae738caa763dc3719ff5963a9cf7edd81db27128fbdf",
     },
     "calculateMipBias": {
         "type": "dynamicResolutionHandler",
-        "index": 448020,
+        "index": 408815,
         "token": 0x0600031E,
         "name": "CalculateMipBias",
-        "va": 0x183EC96B0,
-        "end": 0x183EC9780,
-        "sha256": "7773e057bbfcb0ed669b8f0546ac835f9e8397f03922d19bcd23d622b46f641c",
+        "va": 0x183E85550,
+        "end": 0x183E85620,
+        "sha256": "3e90cb5c37ccbdc05b0c2c8cbf050035eef9023ee896e80efe7983574684a10b",
     },
     "processSettings": {
         "type": "dynamicResolutionHandler",
-        "index": 448018,
+        "index": 408813,
         "token": 0x0600031C,
         "name": "ProcessSettings",
-        "va": 0x18B2BF104,
-        "end": 0x18B2BF2CC,
-        "sha256": "41a7b4f7e3d57d9711cdaafd8b3c50fa94fe869621dbd3a7f2af5bc3c929392b",
+        "va": 0x18A218238,
+        "end": 0x18A218400,
+        "sha256": "8e81dbfe53511d4920cf23f9b0ac42dd23749683fd63bc314fd5a57f4116d11c",
     },
 }
 
 INSTRUCTION_SITES = {
-    "additionalCameraDataLoad": ("hgCameraUpdate", 0x58B, "488b86c00a0000"),
-    "materialMipBiasLoad": ("hgCameraUpdate", 0x59B, "f30f1080a0000000"),
+    "additionalCameraDataLoad": ("hgCameraUpdate", 0x59A, "488b86c00a0000"),
+    "materialMipBiasLoad": ("hgCameraUpdate", 0x5AA, "f30f1080a0000000"),
     "initialGlobalMipBiasStore": (
-        "hgCameraUpdate", 0x5A5, "f30f118660090000"
+        "hgCameraUpdate", 0x5B4, "f30f118660090000"
     ),
     "globalMipBiasBeforeDynamicTerm": (
-        "hgCameraUpdate", 0x7E8, "f30f10b660090000"
+        "hgCameraUpdate", 0x7F7, "f30f10b660090000"
     ),
-    "dynamicHandlerInstanceCall": ("hgCameraUpdate", 0x7FD, "e8ce100000"),
+    "dynamicHandlerInstanceCall": ("hgCameraUpdate", 0x80C, "e86f120000"),
     "dynamicUseMipBiasBranch": (
-        "hgCameraUpdate", 0x80B, "443860110f85d96d"
+        "hgCameraUpdate", 0x81A, "443860110f852ee2"
     ),
     "noDynamicTermAndFinalStore": (
         "hgCameraUpdate",
-        0x815,
+        0x824,
         "0f57c9f30f58cef30f118e60090000",
     ),
     "c19JitterPublication": (
@@ -159,11 +159,11 @@ INSTRUCTION_SITES = {
     ),
     "c26YPowPublication": (
         "updateShaderVariablesGlobalCB",
-        0x4B8,
-        "0f28c8f20f10054d8d6708e8c842effc",
+        0x486,
+        "f20f10051af18e070f5acee8ea5807fd",
     ),
     "c26YStore": (
-        "updateShaderVariablesGlobalCB", 0x4E7, "f20f5ac0f30f1187a4010000"
+        "updateShaderVariablesGlobalCB", 0x499, "f20f5ac8f30f118fa4010000"
     ),
     "settingsUseMipBiasCopy": (
         "processSettings", 0xA8, "488b0348c1e808884711"
@@ -172,20 +172,20 @@ INSTRUCTION_SITES = {
 
 COLD_SLICES = {
     "hgCameraUpdateDynamicMipBias": {
-        "va": 0x184FB770E,
+        "va": 0x184C3CA32,
         "size": 0x47,
-        "sha256": "8f6e03de2f4eb702394290bd6e10069ab85a531eec79ccc8749ac3ec4efdff0f",
+        "sha256": "a36c9a5c8ca2866c367cd556a97c79b10545bc69a8a9b5d41ef756c5774da42d",
         "mathLogCallOffset": 0x36,
-        "mathLogTarget": 0x182F115B0,
-        "baseTwoVa": 0x18B959230,
+        "mathLogTarget": 0x182D18690,
+        "baseTwoVa": 0x18A8C2C88,
     },
     "calculateMipBiasDynamicTerm": {
-        "va": 0x18521CBB4,
+        "va": 0x184F31492,
         "size": 0x42,
-        "sha256": "f7b2204298807ba8fcef01951e8be7adfcce0a95eeba8b8ca32880dcb160cee6",
+        "sha256": "c9fd229ae12b1ba0d77466b004dbb3995773f1e56ec8b5cc0919dd9de54899b5",
         "mathLogCallOffset": 0x34,
-        "mathLogTarget": 0x182F115B0,
-        "baseTwoVa": 0x18B959230,
+        "mathLogTarget": 0x182D18690,
+        "baseTwoVa": 0x18A8C2C88,
     },
 }
 
