@@ -50,6 +50,12 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "directionAccumulator = Add(directionAccumulator, childDirection);",
             "MultiplyQuaternionBinary32(parent.rotation, signedLocalRotation)",
             "MultiplyQuaternionBinary32(parentFromTo, parent.rotation)",
+            "MultiplyQuaternionBurstBinary32(parent.rotation, signedLocalRotation)",
+            "MultiplyQuaternionBurstBinary32(childFromTo, parentLocalRotation)",
+            "MultiplyQuaternionBurstBinary32(parentFromTo, parent.rotation)",
+            "if ((child.attribute & FlagMove) != 0)",
+            "Fixed children still contribute their",
+            "must not enter the undefined child",
             "u.x > u.y && u.x > u.z",
             "Math.Abs(dot + 1.0) < ParallelEpsilon",
             "Math.Abs(1.0 - dot) < ParallelEpsilon",
@@ -138,16 +144,21 @@ class CalcLineManagedEquationsSourceContractTests(unittest.TestCase):
             "VerifyPerChildDirectionAndParentSum",
             "VerifyEmptyAndUndefinedBranchesFailClosed",
             "VerifyDualCpuBurstEquations",
+            "VerifyEndminfTopologyFixture",
             "VerifyLiveRouteAdmissionFailsClosed",
         ):
             self.assertIn(method + "();", source)
         self.assertIn("zero FromTo input must fail closed", source)
         self.assertIn("negative-X antiparallel zero-axis branch must fail closed", source)
+        self.assertIn("fixed zero-offset child must skip child FromTo/write branch", source)
         self.assertIn("non-move child direction uses rest vector", source)
         self.assertIn("parent direction sums every child direction", source)
         self.assertIn("0x3f3504f4U, 0x3f3504f3U", source)
         self.assertIn("BitConverter.SingleToInt32Bits", source)
         self.assertIn("unknown Burst CPU variant must fail closed", source)
+        self.assertIn("full baseline/packed-child traversal boundary", source)
+        self.assertIn("topology fixture must remain disconnected from writeback", source)
+        self.assertIn("The native child write is gated by Flag_Move", source)
         self.assertIn("patched managed FromToRotation must fail closed", source)
         self.assertIn("conflicting Burst gate observations must fail closed", source)
         self.assertIn("conflicting IFix observations must fail closed", source)

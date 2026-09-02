@@ -7,7 +7,7 @@ namespace EndfieldGraphShaderLab
     /// <summary>
     /// Value-only transcription of the pinned client's CalcLineNormalTangent
     /// equations for one parent and its children. It carries separate unpatched
-    /// managed and common dual-CPU Burst acos paths. This helper is deliberately
+    /// managed and dual-CPU Burst acos/quaternion paths. This helper is deliberately
     /// not scheduled or connected to scene state; the selected retail route and
     /// managed FromToRotation IFix state remain open.
     /// </summary>
@@ -149,8 +149,8 @@ namespace EndfieldGraphShaderLab
         }
 
         /// <summary>
-        /// Computes the same CalcLine iteration with the exact scalar equations
-        /// shared by the pinned SSE2 and AVX2 Burst cores. The variant is kept
+        /// Computes the same CalcLine iteration with the exact scalar and packed
+        /// quaternion equations shared by the pinned SSE2 and AVX2 Burst cores. The variant is kept
         /// explicit so a caller cannot silently guess the live CPU route. Both
         /// admitted variants execute the same source-closed value path.
         /// </summary>
@@ -212,23 +212,39 @@ namespace EndfieldGraphShaderLab
                     : restVector;
                 directionAccumulator = Add(directionAccumulator, childDirection);
 
-                if (!TryFromToRotationCore(
-                        restVector,
-                        childDirection,
-                        1.0,
-                        useBurstAcos,
-                        out K.Float4 childFromTo))
+                K.Float4 childRotation = default;
+                // The native child FromTo and rotation write are both inside
+                // the Flag_Move branch. Fixed children still contribute their
+                // rest vector to both parent accumulators, but even a zero
+                // authored local offset must not enter the undefined child
+                // FromTo path.
+                if ((child.attribute & FlagMove) != 0)
                 {
-                    value = default;
-                    return false;
-                }
+                    if (!TryFromToRotationCore(
+                            restVector,
+                            childDirection,
+                            1.0,
+                            useBurstAcos,
+                            out K.Float4 childFromTo))
+                    {
+                        value = default;
+                        return false;
+                    }
 
-                K.Float4 signedLocalRotation = MultiplyComponents(
-                    child.localRotation,
-                    parent.negativeScaleQuaternionValue);
-                K.Float4 childRotation = MultiplyQuaternionBinary32(
-                    MultiplyQuaternionBinary32(parent.rotation, signedLocalRotation),
-                    childFromTo);
+                    K.Float4 signedLocalRotation = MultiplyComponents(
+                        child.localRotation,
+                        parent.negativeScaleQuaternionValue);
+                    K.Float4 parentLocalRotation = useBurstAcos
+                        ? MultiplyQuaternionBurstBinary32(parent.rotation, signedLocalRotation)
+                        : MultiplyQuaternionBinary32(parent.rotation, signedLocalRotation);
+                    // The pinned Burst cores use Unity.Mathematics' packed float4
+                    // grouping and left-apply childFromTo. The managed fallback's
+                    // Hamilton helper is kept separate because the two paths only
+                    // commute in the older identity/simple branch vectors.
+                    childRotation = useBurstAcos
+                        ? MultiplyQuaternionBurstBinary32(childFromTo, parentLocalRotation)
+                        : MultiplyQuaternionBinary32(parentLocalRotation, childFromTo);
+                }
                 childValues[index] = new ChildValue(
                     restVector,
                     childDirection,
@@ -249,11 +265,14 @@ namespace EndfieldGraphShaderLab
                 return false;
             }
 
+            K.Float4 parentRotation = useBurstAcos
+                ? MultiplyQuaternionBurstBinary32(parentFromTo, parent.rotation)
+                : MultiplyQuaternionBinary32(parentFromTo, parent.rotation);
             value = new ParentValue(
                 true,
                 restSum,
                 directionAccumulator,
-                MultiplyQuaternionBinary32(parentFromTo, parent.rotation),
+                parentRotation,
                 childValues);
             return true;
         }
@@ -475,6 +494,46 @@ namespace EndfieldGraphShaderLab
                 AddBinary32(yFirst, yCross),
                 AddBinary32(zFirst, zCross),
                 w);
+        }
+
+        /// <summary>
+        /// Pinned Unity.Mathematics packed-float4 grouping emitted by both
+        /// CalcLine Burst cores. It is deliberately separate from the managed
+        /// fallback Hamilton grouping because reassociation changes low bits.
+        /// </summary>
+        public static K.Float4 MultiplyQuaternionBurstBinary32(K.Float4 left, K.Float4 right)
+        {
+            float firstX = MultiplyBinary32(left.w, right.x);
+            float firstY = MultiplyBinary32(left.w, right.y);
+            float firstZ = MultiplyBinary32(left.w, right.z);
+            float firstW = MultiplyBinary32(left.w, right.w);
+            float positiveX = AddBinary32(
+                MultiplyBinary32(left.x, right.w),
+                MultiplyBinary32(left.y, right.z));
+            float positiveY = AddBinary32(
+                MultiplyBinary32(left.y, right.w),
+                MultiplyBinary32(left.z, right.x));
+            float positiveZ = AddBinary32(
+                MultiplyBinary32(left.z, right.w),
+                MultiplyBinary32(left.x, right.y));
+            float positiveW = SubtractBinary32(
+                0.0f,
+                AddBinary32(
+                    MultiplyBinary32(left.x, right.x),
+                    MultiplyBinary32(left.y, right.y)));
+            return new K.Float4(
+                SubtractBinary32(
+                    AddBinary32(firstX, positiveX),
+                    MultiplyBinary32(left.z, right.y)),
+                SubtractBinary32(
+                    AddBinary32(firstY, positiveY),
+                    MultiplyBinary32(left.x, right.z)),
+                SubtractBinary32(
+                    AddBinary32(firstZ, positiveZ),
+                    MultiplyBinary32(left.y, right.x)),
+                SubtractBinary32(
+                    AddBinary32(firstW, positiveW),
+                    MultiplyBinary32(left.z, right.z)));
         }
 
         /// <summary>

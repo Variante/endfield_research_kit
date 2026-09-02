@@ -4097,18 +4097,26 @@ live ownership: `InitWrapperArray` or a later remote/memory-only load could
 still populate the patch-id entry used by `0x219`. The contract uses
 no captured positions, timing, curves, fitted constants, or replay data.
 A pure C# CalcLine value model now transcribes the managed/direct-call-fallback
-equations with explicit binary32 operation grouping and bit-exact verifier
-vectors. It decodes packed child ranges, preserves the per-child direction plus
-ordered parent-sum dataflow, and computes child/parent quaternion writes, but it is not
-referenced by the solver, frame coordinator, generated prefabs, scenes, or
-assets. Zero/non-finite and the finite negative-X antiparallel zero-axis case
-fail closed. This is executable code recovery, not evidence that retail chose
-the Burst or managed route on a particular frame. The broader CalcLine numeric
-readiness therefore remains false until live DirectCall and IFix selection are
-closed, and it is not a retail-equivalent secondary solver: simulation,
-constraint, collision, cross-frame ownership, and writeback selection remain
-separate unresolved stages. No captured positions, curves, or timing are used
-as implementation input.
+and both pinned Burst CPU equations with explicit binary32 grouping. Its v2
+detached identity-negative-scale/team fixture executes every baseline and
+packed-child visit for Endminf's four hash-pinned owners in bind/rest plus two
+deterministic synthetic perturbed states: all 12 topology cases match the
+source transcription bit-for-bit on the native SSE2 and AVX2 cores, and only
+the rotation buffer mutates. This broader gate exposed two
+details hidden by the earlier branch vectors: Burst uses its packed-float4
+quaternion grouping with child `FromTo` left-applied, while fixed/non-Move
+children contribute their rest direction but neither execute child `FromTo`
+nor write a rotation. The Unity verifier covers both rules, including MC_Hair's
+fixed zero-offset child. The model still is not referenced by the solver, frame
+coordinator, generated prefabs, scenes, assets, or Transform writeback.
+Zero/non-finite and the finite negative-X antiparallel zero-axis case fail
+closed. This is executable code recovery, not evidence that retail chose the
+Burst or managed route on a particular frame. CalcLine runtime readiness
+therefore remains false until live DirectCall and IFix selection are closed,
+and it is not a retail-equivalent secondary solver: simulation, constraint,
+collision, cross-frame ownership, and writeback selection remain separate
+unresolved stages. No captured positions, curves, or timing are used as
+implementation input.
 
 Endminf's duplicate TransformAccess publication rule is now closed for the
 hash-pinned installed target rather than left behind a stale route assertion.
