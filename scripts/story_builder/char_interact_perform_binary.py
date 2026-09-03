@@ -411,3 +411,28 @@ def decode_char_interact_audio_actions(data: bytes) -> list[dict[str, Any]]:
             f"candidates={candidate_offsets}, accepted={accepted_offsets}"
         )
     return rows
+
+
+def decode_char_interact_complete_frame(data: bytes) -> dict[str, Any]:
+    """Validate one complete current-build CharInteractPerform frame.
+
+    Unlike :func:`decode_char_interact_audio_actions`, this entry point is a
+    framing gate even when the owner contains no audio action.  It consumes
+    the complete 27-member owner and requires the cursor to reach EOF.  The
+    returned action rows are only the typed action records that the existing
+    reader can prove; unknown action unions remain a hard, reproducible
+    failure and are never skipped as opaque bytes.
+    """
+    if not isinstance(data, (bytes, bytearray, memoryview)):
+        raise CharInteractPerformDecodeError("input: expected bytes-like payload")
+    payload = bytes(data)
+    reader = _Reader(payload)
+    actions = reader.decode()
+    return {
+        "status": "exact_current_char_interact_frame",
+        "schemaMappingId": SCHEMA_MAPPING_ID,
+        "serializedMemberCount": OUTER_MEMBER_COUNT,
+        "bytesConsumed": len(payload),
+        "actionCount": len(actions),
+        "audioActions": actions,
+    }
