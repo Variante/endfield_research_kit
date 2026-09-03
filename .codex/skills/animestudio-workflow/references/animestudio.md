@@ -12,6 +12,7 @@ Primary parent-repo build wrappers:
 
 ```bat
 .\scripts\animestudio\setup_dotnet9.bat
+.\scripts\animestudio\setup_vgmstream.bat
 .\scripts\animestudio\rebuild.bat -Target CLI
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
@@ -122,8 +123,11 @@ AnimeStudio.CLI.exe list
 `--file-regex` filters. The fallback is consulted for `.blc` block metadata and
 `.chk` payloads; the WebUI wrapper configures StreamingAssets and Persistent as
 sibling fallbacks in both directions. `stream` writes matching file payloads as JSONL base64.
-The `audio` command defaults to direct lossless FLAC through the in-process
-CUETools FLAKE encoder. Use `--format wav` or `--format wem` only when that
+The `audio` command defaults to direct lossless FLAC. The pinned repo-local
+vgmstream CLI decodes WEM to a PCM pipe consumed by the in-process CUETools
+FLAKE encoder, without an intermediate WAV file. `setup_vgmstream.bat` installs
+the decoder under `tools/vgmstream/`; `ANIMESTUDIO_VGMSTREAM_CLI` remains an
+explicit override. Use `--format wav` or `--format wem` only when that
 compatibility output is explicitly required.
 `vfs-index --jsonl` writes compact streaming metadata records while its default
 output remains the existing JSON document.
@@ -158,11 +162,11 @@ The stable code and fixture entry points are:
 | IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
 | Streaming | `scripts/game_data/streaming.py` | `scripts/tests/test_streaming.py` |
 | DynamicStreaming | `scripts/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
-| Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing plus bounded index filename tables) |
+| Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing, bounded index filename tables, and single-file v3 index-directed payload ranges) |
 | Terrain | `scripts/terrain_tret.py` | `scripts/tests/test_terrain_tret.py` |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
-| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; current SkillData/BuffData envelope censuses stay non-exact |
+| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; current SkillData/BuffData and LevelData/LevelScriptData partial framings stay non-exact |
 | ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_mmap_extend_data.py` |
 | Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
@@ -234,11 +238,14 @@ but still authenticates the selected VFS files and requires exact BNK section
 and HIRC object consumption. Preserve numeric HIRC type IDs; object-envelope
 framing is not object behavior, event selection, or audibility.
 
-For IV recovery, `parse_region_file` and `parse_index_bytes` are distinct
-claims. The index parser proves one unambiguous count-prefixed UTF-16LE
-`iv_*.bytes` filename table and retains the remainder as opaque; it does not
-parse the referenced irradiance payload records. Preserve the numeric magic
-until consumer evidence supplies a stable semantic name.
+For IV recovery, region, index filename-table, and index-directed payload
+framing are distinct claims. `parse_index_bytes` proves one unambiguous count-
+prefixed UTF-16LE `iv_*.bytes` filename table. For supported single-file v3
+indexes, `parse_indexed_payload_framing` additionally accepts one directory
+only when its raw range words uniquely cover the authenticated payload from
+zero through EOF without gaps or overlaps. It keeps all non-range words and
+surrounding bytes opaque. Multi-filename and legacy layouts remain unsupported;
+preserve numeric magic values until consumer evidence supplies stable names.
 Do not add a generic `ReadFile`/CRT capture for the remaining payloads. A narrow
 UnityPlayer parser/cursor candidate exists, but a capture must still pin exact
 build hashes, RVAs, entry bytes/body hashes, resolver/caller gates, path/hash
@@ -252,11 +259,15 @@ missing bounds or establish a record start.
 
 For SkillData/BuffData work, begin with the current envelope censuses under
 `tmp/animestudio/` and the exact-build metadata hash recorded there. Member
-counts and metadata field-name sets are discovery gates only. Do not label a
-family exact until nested unions, field order, bounds, and EOF consumption are
-covered by maintained positive and negative tests plus a full current sweep.
-For LevelScriptData, an apparent tail ending at EOF is likewise insufficient:
-the complete top-level object and ActionSerializedMap must be consumed first.
+counts and metadata field-name sets are discovery gates only. The maintained
+SkillData framer may certify an anonymous EOF terminal shape while keeping its
+prefix opaque and multiple starts ambiguous; this is not a whole schema. Do
+not label a family exact until nested unions, field order, bounds, and EOF
+consumption are covered by maintained positive and negative tests plus a full
+current sweep. For LevelScriptData and LevelData, maintained prefix/suffix
+framers may expose exact ranges with an opaque middle, but an apparent tail at
+EOF remains insufficient for whole-schema status: the complete top-level
+object and any ActionSerializedMap must be consumed first.
 Current v29 metadata can identify formatter/wrapper methods and setter
 declarations, but lacks a usable TypeSpec/MethodSpec mapping; if the recorded
 native code registration maps outside the current image, fail closed. Do not
@@ -286,11 +297,13 @@ task; it is not silently replaced by sparse registry points.
 structured logical files by decoded MD5, length, numeric type, path, and
 encryption identity. It dumps additions/modifications with exact full-path
 `--file-regex` filters, removes deleted outputs, and validates the staged file
-set. Bundle-derived AnimeStudio outputs are refreshed broadly because changed
-bundles do not establish safe per-output ownership. The private local snapshot
-advances only after every normal WebUI builder succeeds. This mode never calls
-the Updates builder or touches its previous-export baseline; Updates remains
-the separate `build_updates.bat OLD NEW` workflow.
+set. It reuses existing bundle-derived AnimeStudio outputs and decoded audio,
+then runs every normal WebUI builder. The private local snapshot advances only
+after every builder succeeds. A retry after a later-stage failure may reuse
+already-applied structured files only when the aborted manifest matches the
+exact game root, output root, dump mode, and current source fingerprints. This
+mode never calls the Updates builder or touches its previous-export baseline;
+Updates remains the separate `build_updates.bat OLD NEW` workflow.
 
 ## Wrapper Integration
 

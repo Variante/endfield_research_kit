@@ -104,7 +104,12 @@ if errorlevel 1 goto :failed
 echo [setup] Optional submodules are not initialized: EndfieldCapture and endfield_reconstruction_lab.
 
 echo.
-echo [setup 3/6] Building the AnimeStudio CLI...
+echo [setup 3/7] Installing the AnimeStudio audio decoder...
+call .\scripts\animestudio\setup_vgmstream.bat
+if errorlevel 1 goto :failed
+
+echo.
+echo [setup 4/7] Building the AnimeStudio CLI...
 call .\scripts\animestudio\setup_dotnet9.bat
 if errorlevel 1 goto :failed
 call .\scripts\animestudio\rebuild.bat -Target CLI
@@ -116,7 +121,7 @@ if not exist "%ANIMESTUDIO_EXE%" (
 )
 
 echo.
-echo [setup 4/6] Verifying AnimeStudio VFS commands...
+echo [setup 5/7] Verifying AnimeStudio VFS commands...
 call :check_animestudio_vfs_help dump
 if errorlevel 1 goto :failed
 call :check_animestudio_vfs_help audio
@@ -127,15 +132,15 @@ call :check_animestudio_vfs_help list
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 5/6] Exporting Story and Text Tables data from the installed game...
+echo [setup 6/7] Exporting Story and Text Tables data from the installed game...
 echo [setup] Building Story and Text Tables only; all semantic views are a
 echo [setup] separate run so first-time setup reaches a browsable WebUI sooner.
 call .\export.bat --from-game --story-only --animestudio-story-monobehaviour-names --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 6/6] Optional follow-up steps for a fuller WebUI experience...
-echo [setup] Mission Pipeline, Characters, Gameplay, and the source graph were skipped by step 5.
+echo [setup 7/7] Optional follow-up steps for a fuller WebUI experience...
+echo [setup] Mission Pipeline, Characters, Gameplay, and the source graph were skipped by step 6.
 echo [setup] Build them from the export you just made (no re-export needed):
 echo [setup]   .\export.bat
 echo [setup] Asset media and CN audio export is optional and can take several hours.
@@ -214,12 +219,12 @@ echo.
 echo Runs the full first-time WebUI setup from an installed Endfield client:
 echo   1. check Git, Python, and PowerShell
 echo   2. initialize tools\AnimeStudio
-echo   3. build the AnimeStudio CLI
-echo   4. verify AnimeStudio VFS/audio commands
-echo   5. run export.bat --from-game --story-only with the lean
+echo   3. install the pinned vgmstream audio decoder
+echo   4. build the AnimeStudio CLI
+echo   5. verify AnimeStudio VFS/audio commands
+echo   6. run export.bat --from-game --story-only with the lean
 echo      Story MonoBehaviour name filter
-echo   6. print the follow-up commands for the remaining views and media
-echo   7. start python serve.py, unless a default server is already running
+echo   7. print follow-up commands and start or reuse the WebUI server
 echo.
 echo Options:
 echo   --game-root PATH        Installed Endfield_Data folder. Defaults to

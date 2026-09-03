@@ -25,8 +25,6 @@ comparisons into one searchable interface.
 > future game or operating-system updates, or long-term maintenance. Use it at
 > your own risk; you should not expect assistance or continued updates.
 
-中文: [bilibili](https://space.bilibili.com/1008854785)，[百度盘](http://pan.baidu.com/s/1nLaAc6-AdZAbZb6jGObtmA?pwd=94p7) 
-
 ## Quick start
 
 Requirements: Git, Python 3, a local Endfield client, adequate disk space, and

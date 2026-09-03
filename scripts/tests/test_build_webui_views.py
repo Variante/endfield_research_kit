@@ -158,7 +158,7 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertIn("--all-published-map-scenes", joined_map_task.commands[0].argv)
         self.assertIn("--preview-only", joined_map_task.commands[1].argv)
 
-    def test_normal_map_build_uses_worker_budget_but_asset_build_stays_serial(self) -> None:
+    def test_map_build_uses_worker_budget_with_and_without_assets(self) -> None:
         normal = commands_for(
             build_webui_views.build_phases(build_webui_views.parse_args(["--jobs", "3"])),
             "map_recovery",
@@ -172,8 +172,8 @@ class WebuiViewPlanTests(unittest.TestCase):
             ),
             "map_recovery",
         )
-        self.assertEqual(with_assets[0][with_assets[0].index("--jobs") + 1], "1")
-        self.assertEqual(with_assets[1][with_assets[1].index("--jobs") + 1], "1")
+        self.assertEqual(with_assets[0][with_assets[0].index("--jobs") + 1], "3")
+        self.assertEqual(with_assets[1][with_assets[1].index("--jobs") + 1], "3")
 
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
         args = build_webui_views.parse_args(["--full-source-graph"])
@@ -294,7 +294,7 @@ class WebuiViewPlanTests(unittest.TestCase):
             for line in source.splitlines()
             if line.startswith("python .\\scripts\\export_full_from_game.py")
         ]
-        self.assertEqual(len(extraction_lines), 3)
+        self.assertEqual(len(extraction_lines), 4)
         for line in extraction_lines:
             self.assertIn("%EXTRACTION_OUTPUT_ARG%", line)
 

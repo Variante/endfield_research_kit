@@ -24,7 +24,7 @@ evidence needs a domain join or presentation contract.
 | --- | --- | --- |
 | Refresh Story/Text | `.\export.bat --from-game` | structured focused dump, maps, broad Story JSON |
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` | one combined Story/asset pass |
-| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files, full bundle-derived refresh, all WebUI builders |
+| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files, reuse bundle-derived outputs, all WebUI builders |
 | Refresh assets and CN audio only | `.\export_assets.bat --from-game` | skip structured Story, asset maps/conversion/JSON, VFS index, audio |
 
 The focused structured dump includes Table, JsonData, and video. It excludes raw
@@ -58,6 +58,7 @@ After extraction, page builders consume `export_full/`; see
 ```bat
 git submodule update --init tools/AnimeStudio
 .\scripts\animestudio\setup_dotnet9.bat
+.\scripts\animestudio\setup_vgmstream.bat
 .\scripts\animestudio\rebuild.bat -Target CLI
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
@@ -72,7 +73,9 @@ Use direct `dump`, `audio`, `stream`, `vfs-index`, or `list` only for a bounded
 probe. Inspect each subcommand's `--help`; do not maintain another option
 catalog here. `dump`, `audio`, `stream`, and `vfs-index` support the sibling
 root fallback. `dump`, `stream`, and `vfs-index` support repeated block-type and
-file-regex filters. Audio defaults to direct lossless FLAC.
+file-regex filters. Audio defaults to direct lossless FLAC: the CLI pipes PCM
+from the pinned repo-local vgmstream decoder into its in-process FLAC encoder,
+without an intermediate WAV file or `ffmpeg`.
 
 ## Export model and provenance
 
@@ -139,7 +142,9 @@ Current durable boundaries:
 - Bundle and InitBundle nested-container framing, current VFS logical-file
   reads, Terrain and Streaming envelopes, all five DynamicStreaming root
   families, LipSync payloads, video outer framing, and several routed JsonData
-  families have fail-closed readers.
+  families have fail-closed readers. SpawnerConfig framing treats the integer
+  dictionary key and serialized string wave key as independent fields; exact
+  wave maps still require one unique bounded parse through physical EOF.
 - The current Table corpus has a direct low-output sweep covering selected
   overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
   EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
@@ -151,8 +156,12 @@ Current durable boundaries:
   claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
-  remaining payloads exactly once. Those payload records and renderer meanings
-  remain unresolved.
+  remaining payloads exactly once. Single-file v3 indexes now provide strict
+  index-directed interval framing for part of that payload set: raw range words
+  must cover byte zero through payload EOF without gaps or overlaps, while all
+  other directory words and renderer meanings remain opaque. Multi-filename
+  and legacy layouts remain unresolved; current counts live in the payload
+  audit report.
 - IV runtime capture has a narrow UnityPlayer parser/cursor candidate, but must
   still close exact module/build/entry/caller, buffer-length, and final-cursor
   contracts. A generic file-I/O hook cannot preserve the authenticated virtual-
@@ -165,16 +174,21 @@ Current durable boundaries:
   unknown types. HIRC behavior, selected runtime playback, and audibility
   remain separate.
 - SkillData and BuffData have current exact-build member-count and file-hash
-  censuses, but nested MemoryPack unions and whole-file EOF consumption are not
-  proven. BuffData remains blocked on an untyped ability-event union and an
-  unresolved modifier interval. LevelScriptData candidate tails do not consume
-  the preceding top-level object/action map. Keep these families unclassified
-  until formatter IL or a bounded deserialization trace closes the cursor.
+  censuses, but nested MemoryPack unions and whole-file ownership are not
+  proven. SkillData now has a strict anonymous EOF terminal-shape reader that
+  keeps its prefix opaque and preserves multiple valid starts as ambiguity.
+  BuffData has exact post-id tails for most current rows but remains blocked on
+  explicit stacking/timeline/ignite/shield shapes and an untyped ability-event
+  union. LevelScriptData and LevelData now expose strict partial top-level
+  frames only when independently parsed prefix/suffix regions are unique and
+  EOF-exact; intervening bytes stay opaque. Keep all of these families
+  unclassified until formatter IL or a bounded deserialization trace closes
+  the complete cursor.
   Current v29 metadata identifies formatter/wrapper methods and setters, but
   its missing generic mapping and mismatched native code-registration witness
   do not prove serialized field order. The current residual JsonData census
-  keeps 9,388 outer-verified rows across 14 families explicitly unclassified;
-  SkillData is the largest by bytes and still lacks whole-object cursor proof.
+  keeps every outer-verified unresolved row explicitly unclassified; SkillData
+  is the largest by bytes and still lacks whole-object cursor proof.
 - Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
   data, patch-instruction/runtime, and remaining JsonData semantics are
   incomplete.

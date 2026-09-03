@@ -453,10 +453,10 @@ def _decode_group_map(
 def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
     """Decode one uniquely delimited current-build SpawnerConfig wave map.
 
-    The dictionary key is accepted only when its decimal representation equals
-    the serialized ``waveKey``.  That deliberately narrow guard covers the
-    current authored configs used by Story wave events and rejects other or
-    changed shapes rather than guessing.
+    The MemoryPack dictionary key and the serialized ``waveKey`` are separate
+    fields.  Current authored rows commonly use keys such as ``1``/``2`` with
+    values such as ``w1``/``w2``.  Both are retained, and a frame is accepted
+    only when exactly one complete wave/group parse reaches physical EOF.
     """
     if not data or data[0] != SPAWNER_CONFIG_MEMBER_COUNT:
         raise SpawnerWaveDecodeError("SpawnerConfig member count changed")
@@ -464,13 +464,13 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
     if not config_id:
         raise SpawnerWaveDecodeError("missing configId")
 
-    tail_candidates: dict[str, list[tuple[dict[str, Any], int]]] = {}
+    tail_candidates: list[tuple[dict[str, Any], int]] = []
     for offset in range(config_id_end, max(config_id_end, len(data) - 10)):
         try:
             row, end = _read_wave_tail(data, offset)
         except SpawnerWaveDecodeError:
             continue
-        tail_candidates.setdefault(row["waveKey"], []).append((row, end))
+        tail_candidates.append((row, end))
 
     @lru_cache(maxsize=None)
     def parse_entries(offset: int, remaining: int) -> tuple[tuple[dict[str, Any], ...], ...]:
@@ -487,7 +487,7 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
             return ()
 
         solutions: list[tuple[dict[str, Any], ...]] = []
-        for candidate, next_offset in tail_candidates.get(str(map_key), ()):
+        for candidate, next_offset in tail_candidates:
             if candidate["tailOffset"] <= value_start + 5:
                 continue
             try:
@@ -500,6 +500,7 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
                 continue
             row = {
                 **candidate,
+                "mapKey": map_key,
                 "entryOffset": offset,
                 "valueOffset": value_start,
                 "groupMapOffset": value_start + 5,
@@ -530,6 +531,8 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
     if len(solutions) != 1:
         raise SpawnerWaveDecodeError("no unique complete waveMap")
     wave_map_offset, rows = solutions[0]
+    if len({row["mapKey"] for row in rows}) != len(rows):
+        raise SpawnerWaveDecodeError("duplicate wave map key")
     if len({row["waveKey"] for row in rows}) != len(rows):
         raise SpawnerWaveDecodeError("duplicate waveKey")
     return {
