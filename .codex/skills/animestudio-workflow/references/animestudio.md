@@ -172,6 +172,11 @@ The stable code and fixture entry points are:
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
 | Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, CLI `audio-audit`, `scripts/build_audio.py` | `EndfieldAkpkTests.cs` plus audio-domain tests under `scripts/tests/` |
 
+The mmap ExtendData reader proves count, fixed record widths, bounded string/TRS
+ranges, non-overlap, and exact EOF for the current StringPathHash dictionaries.
+FacBoneTRS still requires a current-build unit-count witness; its opaque gaps
+and 64-byte value meaning must not be promoted to a self-describing schema.
+
 Changing counts, hashes, source roots, and per-file failures belong in the
 reports or `tmp/animestudio/`, not in this reference. A parser may be promoted
 from observational to exact only after bounded positive fixtures, malformed /
@@ -239,6 +244,9 @@ Use `--hirc-only` for a lower-I/O BNK/HIRC census. It skips media magic checks
 but still authenticates the selected VFS files and requires exact BNK section
 and HIRC object consumption. Preserve numeric HIRC type IDs; object-envelope
 framing is not object behavior, event selection, or audibility.
+Numeric HIRC type `0x02` additionally has a bounded 14-byte source prefix and,
+for plugin type `0x02`, a checked length-prefixed parameter range. Keep its
+NodeBase and remaining tail bytes opaque until separately proven.
 
 For IV recovery, region, index filename-table, and index-directed payload
 framing are distinct claims. `parse_index_bytes` proves one unambiguous count-
