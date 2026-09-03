@@ -58,7 +58,9 @@ Useful shared flags:
   controller JSON stays on the broad dependency-loading path so cross-bundle
   PPtr targets are not silently withheld.
 - `--asset-jobs N` caps AnimeStudio workers; `--webui-jobs N` caps independent
-  post-Story builders.
+  post-Story builders and supplies the Map data/streaming worker count on
+  normal semantic rebuilds. Runs that also rebuild assets keep Map at one
+  worker to avoid competing with image/model conversion for disk and memory.
 - `--game-root PATH` overrides the configured client for one run.
 - The configured `ENDFIELD_EXPORT_ROOT` is passed to installed-game extraction
   as `--output` and to downstream builders as `--export-root`; both halves of
