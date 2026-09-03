@@ -67,6 +67,38 @@ def _root_fixture(field_count: int, object_size: int) -> bytes:
     return bytes(data[: root + object_size])
 
 
+def _compressed_init_fixture() -> bytes:
+    """Eight-field root with six empty, non-overlapping vectors."""
+
+    data = bytearray(88)
+    struct.pack_into("<I", data, 0, 24)
+    struct.pack_into("<HH", data, 4, 20, 40)
+    for index, relative in enumerate((4, 8, 16, 20, 24, 28, 32, 36)):
+        struct.pack_into("<H", data, 8 + index * 2, relative)
+    struct.pack_into("<i", data, 24, 20)
+    struct.pack_into("<I", data, 28, 47)
+    struct.pack_into("<I", data, 32, 0xFFFFFFFF)
+    for index, address in enumerate((40, 44, 48, 52, 56, 60)):
+        target = 64 + index * 4
+        struct.pack_into("<I", data, address, target - address)
+        struct.pack_into("<I", data, target, 0)
+    return struct.pack("<I", len(data)) + _literal_only_inverted_lz4(bytes(data))
+
+
+def _stream_area_fixture() -> bytes:
+    # Generated FBStreamAreaTotalData witness: three byte vectors, a
+    # 24-byte inline bounds record, and fixed-width record vectors.
+    return bytes.fromhex(
+        "1800000000001200340004000c000800"
+        "1c001800100014001200000030000000"
+        "34000000340000003c00000034000000"
+        "380000000050c3470050c3470050c3c7"
+        "0050c3c70050c3470050c3c701000000"
+        "00000000000000000100000000000000"
+        "000000000000000000000000"
+    )
+
+
 class DynamicStreamingTests(unittest.TestCase):
     def test_decodes_exact_length_prefixed_envelope(self):
         clear = _chunk_fixture()
@@ -119,20 +151,56 @@ class DynamicStreamingTests(unittest.TestCase):
             parse_dynamic_chunk_framing(bytes(data))
 
     def test_parses_all_five_observed_dynamic_file_kinds(self):
-        compressed = struct.pack("<I", 72) + _literal_only_inverted_lz4(_root_fixture(8, 40))
+        compressed = _compressed_init_fixture()
         for kind in ("init", "streaming"):
             parsed = parse_dynamic_file(kind, compressed)
             self.assertEqual(parsed["kind"], kind)
             self.assertEqual(parsed["root"]["fieldCount"], 8)
-            self.assertEqual(parsed["decodedBytes"], 72)
+            self.assertEqual(parsed["decodedBytes"], 88)
 
-        for kind, fields, size in (("stream_area", 7, 52), ("version", 3, 16)):
-            parsed = parse_dynamic_file(kind, _root_fixture(fields, size))
+        for kind, fields, size, fixture in (
+            ("stream_area", 7, 52, _stream_area_fixture()),
+            ("version", 3, 16, _root_fixture(3, 16)),
+        ):
+            parsed = parse_dynamic_file(kind, fixture)
             self.assertEqual(parsed["root"]["fieldCount"], fields)
             self.assertEqual(parsed["root"]["objectSize"], size)
 
         parsed = parse_dynamic_file("main", _chunk_fixture())
         self.assertEqual(parsed["Version"], OBSERVED_CHUNK_VERSION)
+
+    def test_frames_stream_area_vectors_and_inline_record(self):
+        parsed = parse_dynamic_file("stream_area", _stream_area_fixture())
+        self.assertEqual(parsed["Vectors"][0]["count"], 1)
+        self.assertEqual(parsed["Vectors"][0]["elementWidth"], 4)
+        self.assertEqual(parsed["Vectors"][1]["elementWidth"], 1)
+        vectors = {row["fieldIndex"]: row for row in parsed["Vectors"]}
+        self.assertEqual(vectors[4]["elementWidth"], 12)
+        self.assertEqual(vectors[5]["elementWidth"], 36)
+        self.assertEqual(vectors[6]["elementWidth"], 8)
+        self.assertEqual(parsed["InlineFields"][0]["width"], 24)
+
+    def test_rejects_stream_area_vector_overrun(self):
+        data = bytearray(_stream_area_fixture())
+        # field 4 points to the final vector count at offset 104.
+        struct.pack_into("<I", data, 104, 1)
+        with self.assertRaisesRegex(ValueError, "field 4 vector length"):
+            parse_dynamic_file("stream_area", bytes(data))
+
+    def test_rejects_stream_area_trailing_bytes(self):
+        with self.assertRaisesRegex(ValueError, "expected payload EOF"):
+            parse_dynamic_file("stream_area", _stream_area_fixture() + b"\x00")
+
+    def test_rejects_compressed_root_vector_overrun(self):
+        clear = bytearray(
+            decode_length_prefixed_inverted_lz4(_compressed_init_fixture())
+        )
+        # The final vector body is empty at offset 84; a nonzero count cannot
+        # fit and must fail before any element is interpreted.
+        struct.pack_into("<I", clear, 84, 1)
+        packed = struct.pack("<I", len(clear)) + _literal_only_inverted_lz4(clear)
+        with self.assertRaisesRegex(ValueError, "field 7 vector length"):
+            parse_dynamic_file("init", packed)
 
     def test_rejects_compression_for_raw_auxiliary_kind(self):
         packed = struct.pack("<I", 72) + _literal_only_inverted_lz4(_root_fixture(3, 16))
