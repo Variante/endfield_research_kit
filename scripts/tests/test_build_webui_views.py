@@ -55,7 +55,7 @@ class WebuiViewPlanTests(unittest.TestCase):
             task_names(phases),
             [
                 [
-                    "mission_pipeline",
+                    "map_recovery",
                     "characters",
                     "gameplay",
                     "projectiles",
@@ -67,7 +67,7 @@ class WebuiViewPlanTests(unittest.TestCase):
         )
         self.assertIn("--relevant-asset-maps", commands_for(phases, "source_graph")[0])
         self.assertNotIn("audio", [name for phase in task_names(phases) for name in phase])
-        for task_name in ("mission_pipeline", "characters", "gameplay", "projectiles"):
+        for task_name in ("map_recovery", "characters", "gameplay", "projectiles"):
             self.assertEqual(commands_for(phases, task_name)[-1][1], "-m")
 
     def test_gameplay_base_is_followed_by_recovery_audit_in_same_task(self) -> None:
@@ -129,7 +129,7 @@ class WebuiViewPlanTests(unittest.TestCase):
         )
         phases = build_webui_views.build_phases(args)
 
-        self.assertEqual(task_names(phases)[0][:3], ["mission_pipeline", "assets", "gameplay"])
+        self.assertEqual(task_names(phases)[0][:3], ["map_recovery", "assets", "gameplay"])
         self.assertNotIn("characters", task_names(phases)[0])
         self.assertEqual(
             task_names(phases)[1],
@@ -142,15 +142,21 @@ class WebuiViewPlanTests(unittest.TestCase):
 
     def test_full_plan_refreshes_preview_without_rebuilding_map_data(self) -> None:
         phases = build_webui_views.build_phases(build_webui_views.parse_args([]))
-        mission_commands = commands_for(phases, "mission_pipeline")
         map_commands = [
             command
-            for command in mission_commands + commands_for(phases, "map_recovery")
+            for command in commands_for(phases, "map_recovery")
             if "scripts.build_map_recovery_data" in command
         ]
         self.assertEqual(len(map_commands), 2)
         self.assertNotIn("--preview-only", map_commands[0])
         self.assertIn("--preview-only", map_commands[1])
+        joined_map_task = next(
+            task for name, tasks in phases if name == "joined_sidecars"
+            for task in tasks if task.name == "map_recovery"
+        )
+        self.assertIn("recover_map_streaming_instances.py", joined_map_task.commands[0].argv[1])
+        self.assertIn("--all-published-map-scenes", joined_map_task.commands[0].argv)
+        self.assertIn("--preview-only", joined_map_task.commands[1].argv)
 
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
         args = build_webui_views.parse_args(["--full-source-graph"])
@@ -216,7 +222,7 @@ class WebuiViewPlanTests(unittest.TestCase):
             "Checking export_full freshness",
             "Refreshing Story recovery evidence",
             "Building CN Story conversations",
-            "Building Mission Pipeline, map recovery, Characters",
+            "Building Characters, Gameplay, map recovery",
             "source graph, and combat relationships",
             "Export pipeline complete",
         )
@@ -229,18 +235,20 @@ class WebuiViewPlanTests(unittest.TestCase):
             self.assertIn(message, source)
 
     def test_export_wrapper_owns_no_second_copy_of_the_mission_stage(self) -> None:
-        # Mission Pipeline is maintained as a direct Python workflow. The
-        # wrapper delegates the complete post-Story plan to this module.
+        # Mission Pipeline is maintained as a direct Python workflow and is
+        # intentionally absent from the WebUI export plan.
         source = (ROOT / "export.bat").read_text(encoding="utf-8")
-        mission_commands = commands_for(
-            build_webui_views.build_phases(build_webui_views.parse_args([])),
+        self.assertNotIn(
             "mission_pipeline",
+            [name for phase in task_names(build_webui_views.build_phases(build_webui_views.parse_args([]))) for name in phase],
         )
-        self.assertIn("--refresh-source-story-gap-queue", mission_commands[1])
-        self.assertIn("--preview-only", commands_for(
-            build_webui_views.build_phases(build_webui_views.parse_args([])),
-            "map_recovery",
-        )[0])
+        self.assertTrue(any(
+            "--preview-only" in command
+            for command in commands_for(
+                build_webui_views.build_phases(build_webui_views.parse_args([])),
+                "map_recovery",
+            )
+        ))
 
     def test_export_wrapper_preflights_the_arguments_it_will_actually_run(self) -> None:
         source = (ROOT / "export.bat").read_text(encoding="utf-8")

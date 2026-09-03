@@ -1651,7 +1651,7 @@ def render_hlod_point_samples(
         raw_vertices, texcoords, faces = parsed
         used_textures.add(texture["textureRel"])
         corners = []
-        for vertex_face, texture_face in faces:
+        for vertex_face, texture_face, _submesh_index in faces:
             corners.extend(zip(vertex_face, texture_face))
         for vertex_index, texture_index in corners:
             try:
@@ -3041,6 +3041,37 @@ def level_points(path: Path) -> list[tuple[float, float]]:
     return [(x, z) for x, _y, z in level_positions(path)]
 
 
+def refresh_exact_point_fallback_manifests(
+    maps_root: Path,
+    output_root: Path,
+    only: set[str],
+    surface_point_density: float,
+) -> int:
+    """Attach cheap exact point layers without rerasterizing HLOD meshes."""
+    refreshed = 0
+    for map_path in sorted(maps_root.glob("*.json")):
+        level_id = map_path.stem
+        if only and level_id not in only:
+            continue
+        manifest_path = output_root / f"{level_id}_hlod_grid_inferred.json"
+        if not manifest_path.is_file():
+            continue
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not str(manifest.get("status") or "").startswith("inferred_hlod_"):
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        fallback = render_point_cloud(
+            level_id, level_positions(map_path), output_root, payload,
+            surface_point_density=surface_point_density,
+        )
+        if fallback is None:
+            continue
+        manifest["exactPointFallback"] = fallback
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        refreshed += 1
+    return refreshed
+
+
 def minimap_world_bounds(payload: dict) -> dict[str, float] | None:
     """Return the authoritative screen rectangle when in-game art exists."""
     bounds = (payload.get("minimap") or {}).get("worldBounds") or {}
@@ -3102,6 +3133,10 @@ def main(argv: list[str] | None = None) -> int:
         help="skip inferred HLOD rendering and publish only exact registry/quest transform point layers",
     )
     parser.add_argument(
+        "--refresh-exact-fallbacks-only", action="store_true",
+        help="attach exact registry/quest point layers to existing inferred HLOD manifests without rerasterizing meshes",
+    )
+    parser.add_argument(
         "--surface-point-density", type=float, default=DEFAULT_SURFACE_POINT_DENSITY,
         help=("exact-matrix HLOD surface samples per square metre; default 0.25 "
               "(approximately 2 m spacing); presentation only"),
@@ -3109,6 +3144,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
         raise SystemExit("--surface-point-density must be a finite number greater than zero")
+    if args.refresh_exact_fallbacks_only:
+        refreshed = refresh_exact_point_fallback_manifests(
+            args.maps_root, args.output_root, set(args.level), args.surface_point_density,
+        )
+        print(f"map previews: refreshed {refreshed} exact point fallbacks")
+        return 0
 
     # Asset export is optional. HLOD rendering needs the AssetMap, while the
     # exact-transform point-cloud fallback remains available without it.
@@ -3222,11 +3263,15 @@ def main(argv: list[str] | None = None) -> int:
             index.get("waterSectors") or {}, texture_files, args.output_root,
         )
         manifest["assetMapSha256"] = index["assetMapSha256"]
-        if not minimap_world_bounds(payload):
-            manifest["exactPointFallback"] = render_point_cloud(
-                level_id, points, args.output_root, payload,
-                surface_point_density=args.surface_point_density,
-            )
+        # The inferred HLOD surface is deliberately suppressed by the
+        # publisher until its authored transform is recovered. Preserve this
+        # map's independently exact registry/quest point layer regardless of
+        # whether an authored minimap exists, so suppression does not leave a
+        # level without its own spatial preview.
+        manifest["exactPointFallback"] = render_point_cloud(
+            level_id, level_positions(map_path), args.output_root, payload,
+            surface_point_density=args.surface_point_density,
+        )
         exact_projection = projection_streaming_scene(level_id)
         manifest_name = (
             f"{level_id}_hlod_diagnostic.json" if exact_projection else
@@ -3302,7 +3347,7 @@ def main(argv: list[str] | None = None) -> int:
             "boundary": "Source-art reuse only; this non-seamless gameplay map remains an independent WebUI region.",
         }
         manifest["exactPointFallback"] = render_point_cloud(
-            level_id, points, args.output_root, payload,
+            level_id, level_positions(map_path), args.output_root, payload,
             surface_point_density=args.surface_point_density,
         )
         (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(

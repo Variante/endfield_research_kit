@@ -1,17 +1,46 @@
 import tempfile
+import json
 import unittest
 from collections import Counter
 from pathlib import Path
 from unittest import mock
 
 from scripts import recover_map_streaming_instances as recovery
-from scripts.recover_map_streaming_instances import decompress_inverted_lz4, entity_base
+from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
+from scripts.recover_map_streaming_instances import entity_base
 
 
 class StreamingInstanceRecoveryTests(unittest.TestCase):
+    def test_published_scene_discovery_partitions_regions_and_deduplicates_shared_scenes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for level_id in ("map01_lv001", "map01_lv002", "blackbox_miner_1", "indie_dg002"):
+                (root / f"{level_id}.json").write_text(
+                    json.dumps({"levelId": level_id}), encoding="utf-8"
+                )
+            def authored(level_id):
+                return {
+                    "map01_lv001": {"sceneId": "map01"},
+                    "map01_lv002": {"sceneId": "map01"},
+                    "blackbox_miner_1": {"sceneId": "blackbox01_dg001"},
+                    "indie_dg002": {"sceneId": "indie_dg002"},
+                }.get(level_id)
+            with mock.patch.object(recovery, "authored_streaming_scene", side_effect=authored):
+                result = recovery.published_streaming_scene_ids(root)
+
+        self.assertEqual(result, [
+            "blackbox01_dg001", "indie_dg002", "map01_lv001", "map01_lv002",
+        ])
+
     def test_literal_only_inverted_lz4_block(self):
         # Inverted nibble 0x03 decodes to a three-byte literal and no match.
         self.assertEqual(decompress_inverted_lz4(b"\x03abc", 3), b"abc")
+
+    def test_inverted_lz4_rejects_truncated_extended_lengths(self):
+        with self.assertRaisesRegex(ValueError, "literal length"):
+            decompress_inverted_lz4(b"\x33", 16)
+        with self.assertRaisesRegex(ValueError, "match length"):
+            decompress_inverted_lz4(b"\xcdA\x00\x01", 20)
 
     def test_entity_base_strips_instance_suffixes(self):
         self.assertEqual(

@@ -72,7 +72,6 @@ space and memory than the initial Story/Text setup.
   recovered references.
 - **Text** provides searchable localized tables and source records.
 - **Updates** compares exported game data across two saved versions.
-- **Mission Pipeline** is an experimental debug-only quest/Story evidence view.
 
 ### Pages prepared by each command
 
@@ -82,22 +81,24 @@ listed keep their previously generated data.
 | Command | Pages ready or refreshed | What it uses |
 | --- | --- | --- |
 | `.\setup.bat` | **Story**, **Text** | Installed client; also builds AnimeStudio and starts the WebUI server by default |
-| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Mission Pipeline** | The current, freshness-checked export; existing Assets and Audio are unchanged |
-| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Mission Pipeline** | Refreshes structured data from the installed client first |
+| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | The current, freshness-checked export; existing Assets and Audio are unchanged |
+| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | Refreshes structured data from the installed client first |
 | `.\export.bat --with-assets` | Every page except **Updates** | Reuses the current export and its existing media; also rebuilds Assets and relinks Audio |
 | `.\export.bat --from-game --with-assets` | Every page except **Updates** | Complete installed-client refresh, including asset extraction and CN audio decoding |
-| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Mission Pipeline** | Reuses current Story/Text and existing exported media |
-| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Mission Pipeline** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
+| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Reuses current Story/Text and existing exported media |
+| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
 Asset-enabled commands without `--from-game` can only publish media already
 present in the current export. Use `--from-game` when that media has not yet
 been extracted or the installed client changed.
 
-**Mission Pipeline** is only visible after enabling **Show debug info**.
 `python serve.py` serves whatever has already been generated; it does not build
 page data. `python scripts\pack_webui.py` packages the current generated WebUI
 without refreshing it.
+
+Mission Pipeline recovery remains available as a separate direct Python
+workflow, but is no longer a WebUI page or part of the WebUI export commands.
 
 ## Project map
 

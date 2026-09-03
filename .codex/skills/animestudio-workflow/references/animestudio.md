@@ -180,6 +180,15 @@ audit first and use its input-set fingerprint for every downstream census.
 through `vfs-index`, then decodes CN audio through `audio` before relinking
 browser conversations.
 
+The canonical post-Story map phase also runs
+`recover_map_streaming_instances.py --all-published-map-scenes` before map
+preview rendering. This uses AnimeStudio.CLI `stream` against the installed
+game's `Streaming` blocks to recover exact `InitChunkData` matrices, then joins
+the current exported AssetMap and Mesh OBJ files. Colored top-down surfaces and
+point samples additionally require the Material JSON and Texture2D outputs
+provided by the default asset scope. A stream/sidecar failure stops the map
+task; it is not silently replaced by sparse registry points.
+
 `build_updates_by_patch.bat` uses `vfs-index --jsonl` to detect logical source
 changes. Its patch apply path dumps changed Table/JsonData/Video/AuditVideo/Lua
 files with exact `--file-regex` filters. If other changed blocks can affect
@@ -194,13 +203,14 @@ the cloned staging export rather than claiming unsafe per-output ownership.
 python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
 ```
 
-Its structured VFS dump defaults to `--structured-dump-mode webui`, which dumps
+Its structured VFS dump defaults to `--structured-dump-mode focused`, which dumps
 only `table`, `json-data`, and video blocks. This skips raw asset bundles
 (`Bundle`, `InitBundle`, and `BundleManifest`), audio PCK/media files, world
 streaming, dynamic streaming, irradiance volumes, extend-data bins, patch bytes,
 and Lua. `build_audio.py` streams Wwise bank metadata directly from VFS when
 relinking audio events.
-`--structured-dump-mode full` keeps the same production skip rules; pass
+`--structured-dump-mode default` adds only Terrain `_H` height grids (not the
+larger `C/T/S/A/N` families) while keeping the same production exclusions; pass
 `--structured-dump-mode debug` for the old broad dump when diagnosing VFS
 coverage.
 

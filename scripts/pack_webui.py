@@ -76,7 +76,7 @@ COMPANION_FEATURE_FILES = {
 }
 COMPANION_LANGUAGE_FEATURE_RE = re.compile(r"^data/lang/[^/]+/(?:characters|gameplay)(?:/|$)")
 
-PAGE_REFERENCE_PREFIXES = ("data/gameplay/", "data/map_recovery/", "data/mission_pipeline/")
+PAGE_REFERENCE_PREFIXES = ("data/gameplay/", "data/map_recovery/")
 PAGE_REFERENCE_FILES = {"data/assets/gameplay_refs.json", "data/assets/story_media.json"}
 PAGE_REFERENCE_LANGUAGE_RE = re.compile(
     r"^data/lang/[^/]+/(?:conv|mission|characters|gameplay)(?:/|$)"
@@ -90,10 +90,10 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "mission-pipeline", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline"]);
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "mission-pipeline": "gameplay" });
+  const DEBUG_ONLY_VIEWS = new Set();
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay" });
   let activeView = "story";
 
   function resolveViewFromHash() {
@@ -193,7 +193,7 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes Story, Text, Updates, the experimental Mission Pipeline,
+This package includes Story, Text, and Updates,
 the debug-only Audio semantic index, shared WebUI code, emoji images, and
 compact media indexes. Map, Characters, Gameplay, and larger exported images
 and videos are in the companion assets zip. Decoded audio and raw audio indexes

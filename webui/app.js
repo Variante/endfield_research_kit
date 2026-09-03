@@ -3286,7 +3286,7 @@ function applyUiStrings() {
   const brandTitle = $("#brand-title");
   if (brandTitle) brandTitle.textContent = uiText("suiteTitle");
 
-  // Every nav tab (story, characters, gameplay, mission-pipeline, ...) carries
+  // Every nav tab (story, characters, gameplay, ...) carries
   // its label key as data-i18n; this is the one place that applies it, so a
   // new tab only needs the attribute plus an app_labels.js entry.
   $$("[data-i18n]").forEach((el) => {

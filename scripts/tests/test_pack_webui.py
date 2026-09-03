@@ -18,7 +18,6 @@ class PackWebuiAudioTests(unittest.TestCase):
             "data/assets/story_media.json",
             "data/gameplay/projectiles.json",
             "data/map_recovery/index.json",
-            "data/mission_pipeline/index.json",
             "data/lang/CN/conv/example.json",
             "data/lang/CN/mission/example.json",
             "data/lang/CN/characters/index.json",
@@ -211,18 +210,21 @@ class PackWebuiAudioTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), b"replacement")
             self.assertEqual(list(root.glob("*.tmp")), [])
 
-    def test_live_router_keeps_audio_normal_and_debug_mission_views(self) -> None:
+    def test_live_router_keeps_audio_and_map_normal_views(self) -> None:
         project_root = SCRIPT.parents[1]
         router = (project_root / "webui" / "assets.js").read_text(encoding="utf-8")
         html = (project_root / "webui" / "index.html").read_text(encoding="utf-8")
 
-        # Mission Pipeline remains debug-only, while Audio and Map are
-        # normal views that must stay directly addressable with debug disabled.
-        debug_only = re.search(r"const DEBUG_ONLY_VIEWS = new Set\(\[(.*?)\]\);", router)
+        # Audio and Map are normal views that must stay directly addressable
+        # with debug disabled; Mission Pipeline is retired from the shell.
+        debug_only = re.search(
+            r"const DEBUG_ONLY_VIEWS = new Set(?:\((?:\[(.*?)\])?\));",
+            router,
+        )
         self.assertIsNotNone(debug_only)
-        self.assertIn('"mission-pipeline"', debug_only.group(1))
-        self.assertNotIn('"audio"', debug_only.group(1))
-        self.assertNotIn('"map-recovery"', debug_only.group(1))
+        self.assertNotIn('"mission-pipeline"', router)
+        self.assertNotIn('"audio"', debug_only.group(1) or "")
+        self.assertNotIn('"map-recovery"', debug_only.group(1) or "")
         self.assertIn('audio: "gameplay"', router)
         self.assertIn('id="audio-tab"', html)
         self.assertIn('data-view="audio" data-i18n="audioTab"', html)

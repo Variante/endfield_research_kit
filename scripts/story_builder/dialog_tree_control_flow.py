@@ -143,6 +143,7 @@ OPEN_UI_FAMILY = StaticPortFamilySpec(
 
 
 _CONTRACT_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
+_CONTRACT_FAILURE_CACHE: dict[tuple[Any, ...], str] = {}
 
 
 def _load_module(name: str, path: Path) -> Any:
@@ -1092,7 +1093,7 @@ def recover_installed_lua_external_result_router(
     return result
 
 
-def recover_static_port_family_contract(
+def _recover_static_port_family_contract_uncached(
     spec: StaticPortFamilySpec,
     *,
     game_assembly_path: Path = DEFAULT_GAME_ASSEMBLY,
@@ -1378,6 +1379,39 @@ def recover_static_port_family_contract(
     }
     _CONTRACT_CACHE[cache_key] = contract
     return contract
+
+
+def recover_static_port_family_contract(
+    spec: StaticPortFamilySpec,
+    *,
+    game_assembly_path: Path = DEFAULT_GAME_ASSEMBLY,
+    metadata_path: Path = DEFAULT_METADATA,
+    ifix_contract_path: Path = DEFAULT_IFIX_CONTRACT,
+) -> dict[str, Any]:
+    """Recover one contract once, including memoizing deterministic failures."""
+    cache_key = (
+        spec,
+        str(game_assembly_path.resolve()),
+        str(metadata_path.resolve()),
+        str(ifix_contract_path.resolve()),
+    )
+    cached_failure = _CONTRACT_FAILURE_CACHE.get(cache_key)
+    if cached_failure is not None:
+        raise ContractError(cached_failure)
+    cached_contract = _CONTRACT_CACHE.get(cache_key)
+    if cached_contract is not None:
+        return cached_contract
+    try:
+        return _recover_static_port_family_contract_uncached(
+            spec,
+            game_assembly_path=game_assembly_path,
+            metadata_path=metadata_path,
+            ifix_contract_path=ifix_contract_path,
+        )
+    except (OSError, ValueError, ContractError) as exc:
+        message = str(exc)
+        _CONTRACT_FAILURE_CACHE[cache_key] = message
+        raise
 
 
 def selector_value(node: dict[str, Any], path: Iterable[str]) -> tuple[int, bool]:

@@ -1,5 +1,16 @@
 # Asset recovery
 
+This topic owns semantic bindings between exported Unity assets and Story,
+characters, gameplay entities, world objects, audio, and video. The Assets page
+only inventories browser-visible files; AnimeStudio only extracts them.
+
+## Why this file remains
+
+Cross-domain identity and ownership rules are reused by Map, Characters,
+Gameplay, Audio, packaging, and the source graph. They therefore remain separate
+from [`webui/assets.md`](webui/assets.md), which documents page publication, and
+[`animestudio_recovery.md`](animestudio_recovery.md), which documents extraction.
+
 ## Current status
 
 Asset extraction and discovery are strong. The project can index images,

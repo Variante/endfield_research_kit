@@ -56,6 +56,7 @@ from scripts.story_builder.native_contracts.cutscene_case_resolution import (
     load_cutscene_case_resolution_contract,
 )
 from scripts.map_recovery_sources import authored_streaming_scene, isolated_art_source
+from scripts.terrain_height import render_height_layer, write_height_index
 
 
 GAMEPLAY_CONFIG = "export_full/structured/StreamingAssets/Data/Json/GameplayConfig"
@@ -82,6 +83,12 @@ MISSION_NAMES_REL = "webui/data/lang/{0}/missions.json"
 TEXT_TABLE_REL = "export_full/structured/StreamingAssets/Table/TextTable.json"
 MAP_UI_CONFIG_DIR = "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
 MAP_TILE_DIR = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+TERRAIN_HEIGHT_DIR = "export_full/structured/StreamingAssets/Data/Terrain/PC"
+TERRAIN_HEIGHT_INDEX_REL = "reports/assets/map_recovery/terrain_height_index.json"
+ANIMESTUDIO_ASSET_MAP_REL = (
+    "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/"
+    "endfield_streamingassets_assets.json"
+)
 MODEL_ROOT_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 MAP_MARK_TEMP_REL = "export_full/structured/StreamingAssets/Table/MapMarkTempTable.json"
 MODEL_TABLE_REL = f"{GAMEPLAY_CONFIG}/ModelTable.json"
@@ -97,6 +104,8 @@ _NATIVE_TRIGGER_FRONTIER_CACHE_KEY: tuple[str, int, int] | None = None
 _NPC_PROXY_EX_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 _NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
 _ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
+_MAP_TEXTURE_CONTAINER_CACHE: dict[int, str] | None = None
+_MAP_TEXTURE_CONTAINER_CACHE_KEY: tuple[str, int, int] | None = None
 
 
 def _native_trigger_frontier() -> dict:
@@ -3083,14 +3092,95 @@ def _png_write(path: Path, width: int, height: int, rows: list[bytearray]) -> No
     path.write_bytes(png)
 
 
+def _iter_asset_map_entries(path: Path, chunk_size: int = 1 << 20):
+    """Stream AnimeStudio's large ``AssetEntries`` array without loading it."""
+    decoder = json.JSONDecoder()
+    with path.open("r", encoding="utf-8") as stream:
+        buffer = ""
+        while '"AssetEntries"' not in buffer:
+            chunk = stream.read(chunk_size)
+            if not chunk:
+                raise ValueError(f"AssetEntries array not found in {path}")
+            buffer += chunk
+        buffer = buffer.split('"AssetEntries"', 1)[1]
+        while "[" not in buffer:
+            buffer += stream.read(chunk_size)
+        buffer = buffer.split("[", 1)[1]
+        cursor = 0
+        while True:
+            while cursor < len(buffer) and buffer[cursor] in " \t\r\n,":
+                cursor += 1
+            if cursor < len(buffer) and buffer[cursor] == "]":
+                return
+            try:
+                value, cursor = decoder.raw_decode(buffer, cursor)
+            except json.JSONDecodeError:
+                chunk = stream.read(chunk_size)
+                if not chunk:
+                    raise
+                buffer = buffer[cursor:] + chunk
+                cursor = 0
+                continue
+            if isinstance(value, dict):
+                yield value
+            if cursor >= chunk_size:
+                buffer = buffer[cursor:]
+                cursor = 0
+
+
+def _map_texture_containers() -> dict[int, str]:
+    """Texture PathID -> exact map-art container from AnimeStudio's AssetMap."""
+    global _MAP_TEXTURE_CONTAINER_CACHE, _MAP_TEXTURE_CONTAINER_CACHE_KEY
+    path = ROOT / ANIMESTUDIO_ASSET_MAP_REL
+    try:
+        stat = path.stat()
+        cache_key = (str(path.resolve()), stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        cache_key = (str(path.resolve()), -1, -1)
+    if _MAP_TEXTURE_CONTAINER_CACHE is not None and cache_key == _MAP_TEXTURE_CONTAINER_CACHE_KEY:
+        return _MAP_TEXTURE_CONTAINER_CACHE
+    result: dict[int, str] = {}
+    if path.is_file():
+        for entry in _iter_asset_map_entries(path):
+            if entry.get("Type") != "Texture2D" or not isinstance(entry.get("PathID"), int):
+                continue
+            container = str(entry.get("Container") or "").replace("\\", "/").lower()
+            if "/levelmap/levelmapchunks/" in container:
+                result[int(entry["PathID"]) & ((1 << 64) - 1)] = container
+    _MAP_TEXTURE_CONTAINER_CACHE = result
+    _MAP_TEXTURE_CONTAINER_CACHE_KEY = cache_key
+    return result
+
+
+def _choose_minimap_texture(paths: list[Path]) -> Path | None:
+    """Resolve an exported-name collision through exact AssetMap ownership.
+
+    Map chunks have both a runtime ``ui/sprites`` Texture2D and a same-named
+    source ``ui/textures`` Texture2D.  The config consumes the sprite-side
+    object.  Choosing by the hexadecimal PathID filename happened to alternate
+    between those two families and produced a visibly scrambled composite.
+    """
+    if len(paths) == 1:
+        return paths[0]
+    containers = _map_texture_containers()
+    exact: list[Path] = []
+    for path in paths:
+        match = re.search(r"_p([0-9A-Fa-f]+)\.png$", path.name)
+        if not match:
+            continue
+        container = containers.get(int(match.group(1), 16), "")
+        if "/ui/sprites/levelmap/levelmapchunks/" in container:
+            exact.append(path)
+    return exact[0] if len(exact) == 1 else None
+
+
 def _minimap_tiles(layer: str, level_id: str) -> dict[tuple[int, int], Path]:
     """`(x, y) -> texture file` for one map-screen layer of one level.
 
-    Chunk art is exported once per unique PathId, so a cell can own several
-    near-identical files (the variants differ by single-digit channels at most);
-    the lexicographically first filename is the stable choice, and the composite
-    records every chosen file by hash so a rebuilt export that changed the art
-    is never silently reused.
+    A chunk name can resolve to both the runtime Sprite-side Texture2D and its
+    same-named source Texture2D. Exact AssetMap container ownership selects the
+    runtime map art; ambiguous collisions fail closed instead of choosing an
+    unrelated object by hexadecimal PathID order.
     """
     root = ROOT / MAP_TILE_DIR
     if not root.is_dir():
@@ -3101,7 +3191,12 @@ def _minimap_tiles(layer: str, level_id: str) -> dict[tuple[int, int], Path]:
         match = pattern.match(name)
         if match:
             by_cell.setdefault((int(match.group(1)), int(match.group(2))), []).append(name)
-    return {cell: root / sorted(names)[0] for cell, names in by_cell.items()}
+    result = {}
+    for cell, names in by_cell.items():
+        chosen = _choose_minimap_texture([root / name for name in sorted(names)])
+        if chosen is not None:
+            result[cell] = chosen
+    return result
 
 
 def _minimap_tier_tiles(layer: str, level_id: str, tier_id: str) -> dict[tuple[int, int], Path]:
@@ -3123,7 +3218,12 @@ def _minimap_tier_tiles(layer: str, level_id: str, tier_id: str) -> dict[tuple[i
         match = pattern.match(name)
         if match:
             by_cell.setdefault((int(match.group(1)), int(match.group(2))), []).append(name)
-    return {cell: root / sorted(names)[0] for cell, names in by_cell.items()}
+    result = {}
+    for cell, names in by_cell.items():
+        chosen = _choose_minimap_texture([root / name for name in sorted(names)])
+        if chosen is not None:
+            result[cell] = chosen
+    return result
 
 
 def _world_rect(row: object) -> tuple[float, float, float, float] | None:
@@ -3492,6 +3592,17 @@ def _minimap_background(level_id: str) -> dict:
     sidecar_path = render_root / f"{level_id}_minimap.sources.json"
     config = _load_json(ROOT / f"{MAP_UI_CONFIG_DIR}/{level_id}.json", {}) or {}
     inverted = bool((config.get("basic") or {}).get("needInverseXZ"))
+    config_world_bounds = _map_ui_world_bounds(config)
+    scene_match = re.match(r"^(map01|map02)_lv\d+$", level_id, re.IGNORECASE)
+    terrain_height = None
+    if config_world_bounds and scene_match:
+        terrain_height = render_height_layer(
+            ROOT / TERRAIN_HEIGHT_DIR,
+            scene_match.group(1).lower(),
+            config_world_bounds,
+            render_root / f"{level_id}_terrain_height.png",
+            relative_to=ROOT,
+        )
     tier_layers = _render_tier_layers(level_id, config, inverted)
     for layer, config_key in (("m", "mediumChunks"), ("h", "highChunks"), ("l", "lowChunks")):
         chunks = config.get(config_key) or {}
@@ -3563,6 +3674,7 @@ def _minimap_background(level_id: str) -> dict:
                 "tileCount": len(rects),
                 "inverted": inverted,
                 "layers": tier_layers,
+                "elevationUnderlay": terrain_height,
                 "boundary": _MINIMAP_BOUNDARY,
             }
         decoded = {cell: _png_decode(tiles[cell]) for cell in sorted(rects)}
@@ -3639,15 +3751,17 @@ def _minimap_background(level_id: str) -> dict:
             "worldBounds": world_bounds,
             "layer": layer,
                 "tileCount": len(rects),
-                "inverted": inverted,
-                "layers": tier_layers,
-                "boundary": _MINIMAP_BOUNDARY,
+            "inverted": inverted,
+            "layers": tier_layers,
+            "elevationUnderlay": terrain_height,
+            "boundary": _MINIMAP_BOUNDARY,
         }
     return {
         "status": "in_game_minimap_missing",
         "src": None,
             "worldBounds": None,
             "layers": tier_layers,
+            "elevationUnderlay": terrain_height,
             "boundary": (
             "The in-game map screen publishes no complete chunk grid or no exported chunk art for "
             "this level, so the background falls back to the strongest available diagnostic preview."
@@ -4613,7 +4727,10 @@ def _render_background(level_id: str) -> dict:
             exact_fallback = preview.get("exactPointFallback")
             if (
                 isinstance(exact_fallback, dict)
-                and exact_fallback.get("status") == "exact_registry_transform_point_cloud"
+                and exact_fallback.get("status") in {
+                    "exact_registry_transform_point_cloud",
+                    "exact_registry_transform_elevation_only",
+                }
                 and exact_fallback.get("src")
                 and exact_fallback.get("worldBounds")
             ):
@@ -5787,6 +5904,16 @@ def main() -> int:
 
     if args.preview_only:
         return build_previews_and_refresh(args.level)
+
+    terrain_index = write_height_index(
+        ROOT / TERRAIN_HEIGHT_DIR,
+        ROOT / TERRAIN_HEIGHT_INDEX_REL,
+        relative_to=ROOT,
+    )
+    print(
+        "map recovery: Terrain height index "
+        f"{terrain_index['status']} ({terrain_index['tileCount']} tiles)"
+    )
 
     if args.level:
         payloads = build_all(language, set(args.level))

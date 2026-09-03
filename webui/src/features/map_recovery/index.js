@@ -218,7 +218,7 @@
     const hasMinimap = state.backgrounds.some((row) => row.sourceKind === "minimap");
     if (!state.modelBackgrounds.length && !hasMinimap) return "";
     const rows = [
-      ["elevation", "modelElevation", state.modelBackgrounds.some((row) => row.elevationUnderlay?.src)],
+      ["elevation", "modelElevation", [...state.backgrounds, ...state.modelBackgrounds].some((row) => row.elevationUnderlay?.src)],
       ["surface", "modelSurface", state.modelBackgrounds.some((row) => row.status !== "inferred_registry_point_cloud_preview")],
       ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src)],
       ["points", "modelPoints", state.modelBackgrounds.some((row) => row.pointCloudOverlay?.src)],
@@ -2022,7 +2022,12 @@
     const minimapLayer = minimapImages
       ? `<g class="mr-bg-minimap-layer" style="opacity:${layerOpacity("minimap")}">${minimapImages}</g>`
       : "";
-    const elevationImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "elevation")).join("");
+    const elevationRectKey = ({ bg }) => `${bg.levelId}|${bg.elevationUnderlay?.src || ""}`;
+    const elevationRects = [...new Map([
+      ...modelOverlayRects,
+      ...bgRects.filter(({ bg }) => bg.elevationUnderlay?.src),
+    ].map((rect) => [elevationRectKey(rect), rect])).values()];
+    const elevationImages = elevationRects.map((rect) => modelImages(rect, rect.overMinimap, "elevation")).join("");
     // Elevation PNGs use translucent edge pixels. Normalize every materially
     // covered source pixel to opaque before composing sibling screens so an overlap
     // replaces the previous value instead of accumulating a darker shade.

@@ -253,13 +253,13 @@ echo [export.bat] Reusing current generated Story bundles and evidence.
 
 :story_done
 if "%POST_STORY_VIEWS%"=="0" (
-  echo [export.bat] Story-only refresh complete; skipped Mission Pipeline and all post-Story semantic views.
+  echo [export.bat] Story-only refresh complete; skipped all post-Story semantic views.
   goto :done
 )
 
-if "%BUILD_SCOPE%"=="assets" call :stage "Building Mission Pipeline, map recovery, Characters, Gameplay, projectiles, Assets, CN audio, source graph, and combat relationships"
-if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Mission Pipeline, Characters, Gameplay, map recovery, source graph, and graph consumers"
-if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery, source graph, and graph consumers"
+if "%BUILD_SCOPE%"=="assets" call :stage "Building map recovery with exact Streaming sidecars, Characters, Gameplay, projectiles, Assets, CN audio, source graph, and combat relationships"
+if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Characters, Gameplay, map recovery with exact Streaming sidecars, source graph, and graph consumers"
+if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery with exact Streaming sidecars, source graph, and graph consumers"
 python .\scripts\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
 if errorlevel 1 exit /b %errorlevel%
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and audio refresh complete; Story was not rebuilt.
@@ -325,7 +325,7 @@ exit /b 1
 echo Usage: export.bat [options]
 echo.
 echo Rebuilds the WebUI from the export_full folder already on disk: CN Story
-echo and Text Tables, Mission Pipeline, Gameplay and Projectile data, the
+echo and Text Tables, Gameplay and Projectile data, the
 echo source graph, then Combat. It first checks that export_full still matches
 echo the installed game. It does not read installed game data unless asked.
 echo.
@@ -381,6 +381,10 @@ echo   python -m scripts.build_map_recovery_data --with-preview
 echo.
 echo Notes:
 echo   For repeated runs, edit endfield_paths.bat instead of passing --game-root.
+echo   Map preview recovery uses AnimeStudio.CLI stream against the installed
+echo   game's InitChunkData, then joins the exported AssetMap, Mesh, Material,
+echo   and Texture2D outputs. Default assets provide the complete visual chain;
+echo   focused assets do not refresh every scene mesh or material.
 echo   Story sort order in webui\overrides\story_order.json is yours to manage;
 echo   export.bat never rewrites it.
 echo   Every run writes a wall-time and RAM benchmark under reports\export.

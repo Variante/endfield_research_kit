@@ -37,6 +37,7 @@ from scripts.export_full_from_game import (
     structured_dump_steps_for_source,
     structured_dump_steps_with_world_scenes,
     world_scene_chunk_file_regex,
+    refresh_animestudio_plan_output_counts,
 )
 
 
@@ -188,6 +189,64 @@ class SourceFreshnessFingerprintTests(unittest.TestCase):
 
             self.assertEqual(summary["files"], 1)
             self.assertEqual(summary["bytes"], len(b"source"))
+
+
+class AnimeStudioOutputCountTests(unittest.TestCase):
+    def test_counts_all_selected_types_and_separates_marker_only_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            stage_root = (
+                output_root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
+                / "convert_by_type"
+            )
+            animation_dir = stage_root / "AnimationClip"
+            animator_dir = stage_root / "Animator"
+            empty_dir = stage_root / "Texture2D"
+            animation_dir.mkdir(parents=True)
+            animator_dir.mkdir()
+            empty_dir.mkdir()
+            (animation_dir / "walk.anim").write_bytes(b"anim")
+            (animation_dir / "run.anim").write_bytes(b"anim")
+            (animation_dir / "nested").mkdir()
+            (animation_dir / "nested" / "diagnostic.json").write_text("{}")
+            (animator_dir / "empty.fbx.empty.json").write_text("{}")
+
+            plan = {
+                "items": [
+                    {"type_spec": "AnimationClip:Both"},
+                    {"type_spec": "Animator:Both"},
+                    {"type_spec": "Texture2D:Both"},
+                ]
+            }
+            refresh_animestudio_plan_output_counts(
+                output_root, "StreamingAssets", "convert_by_type", plan
+            )
+
+            self.assertEqual(
+                plan["item_file_counts"],
+                {"AnimationClip": 2, "Animator": 1, "Texture2D": 0},
+            )
+            self.assertEqual(
+                plan["item_marker_file_counts"],
+                {"AnimationClip": 0, "Animator": 1, "Texture2D": 0},
+            )
+
+    def test_duplicate_type_specs_are_counted_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            type_dir = (
+                output_root / "recovered" / "AnimeStudio-cli" / "Persistent"
+                / "json_by_type" / "TextAsset"
+            )
+            type_dir.mkdir(parents=True)
+            (type_dir / "a.json").write_text("{}")
+            plan = {"items": [{"type_spec": "TextAsset:Both"}, {"type_spec": "TextAsset:Parse"}]}
+
+            refresh_animestudio_plan_output_counts(
+                output_root, "Persistent", "json_by_type", plan
+            )
+
+            self.assertEqual(plan["item_file_counts"], {"TextAsset": 1})
 
 
 class AnimeStudioStageOptionsTests(unittest.TestCase):
@@ -840,12 +899,27 @@ class WorldSceneChunkExportTests(unittest.TestCase):
         )
 
     def test_world_scene_step_only_runs_for_streaming_assets(self) -> None:
-        steps = structured_dump_steps_with_world_scenes("webui", (("map02", 2, -13),))
+        steps = structured_dump_steps_with_world_scenes("focused", (("map02", 2, -13),))
 
         streaming_steps = structured_dump_steps_for_source(steps, "StreamingAssets")
         persistent_steps = structured_dump_steps_for_source(steps, "Persistent")
         self.assertEqual([step["name"] for step in streaming_steps], ["required", "world_scene_chunks"])
         self.assertEqual([step["name"] for step in persistent_steps], ["required"])
+
+    def test_default_structured_dump_adds_filtered_terrain_height_step(self) -> None:
+        focused = structured_dump_steps_with_world_scenes("focused", ())
+        default = structured_dump_steps_with_world_scenes("default", ())
+
+        self.assertEqual(default[0], focused[0])
+        self.assertEqual([step["name"] for step in default], ["required", "terrain_height"])
+        self.assertEqual(default[1]["block_types"], ("terrain",))
+        self.assertEqual(default[1]["sources"], ("StreamingAssets",))
+        self.assertRegex("Data/Terrain/PC/map02/Terrain_6_16_32_H.bytes", default[1]["file_regexes"][0])
+        self.assertNotRegex("Data/Terrain/PC/map02/Terrain_6_16_32_C.bytes", default[1]["file_regexes"][0])
+
+    def test_rejects_unknown_structured_dump_mode(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unsupported structured dump mode"):
+            structured_dump_steps_with_world_scenes("unknown", ())
 
 
 class StoryMonoBehaviourNameFilterTests(unittest.TestCase):

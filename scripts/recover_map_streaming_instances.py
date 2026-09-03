@@ -29,11 +29,14 @@ if str(ROOT) not in sys.path:
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.common import resolve_installed_game_data_root
+from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
+from scripts.map_recovery_sources import authored_streaming_scene
 
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
 DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
 DEFAULT_MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
 DEFAULT_OUTPUT_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
+DEFAULT_PUBLISHED_MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 LEVEL_RE = re.compile(r"^[a-z0-9_]+$", re.IGNORECASE)
 REGION_LEVEL_RE = re.compile(r"^(map0[12])_lv(\d+)$", re.IGNORECASE)
 HLOD_MESH_RE = re.compile(r"^S_(HLOD\d+_-?\d+_-?\d+_Cluster_-?\d+)$", re.IGNORECASE)
@@ -42,58 +45,6 @@ HLOD_INSTANCE_RE = re.compile(
     re.IGNORECASE,
 )
 HLOD_LEVEL_CONTAINER_RE = re.compile(r"/([a-z0-9_]+)_art/hlod_v2/", re.IGNORECASE)
-
-
-def decompress_inverted_lz4(source: bytes, expected: int) -> bytes:
-    output = bytearray(expected)
-    source_pos = output_pos = 0
-    while source_pos < len(source) and output_pos < expected:
-        token = source[source_pos]
-        source_pos += 1
-        literal_length = token & 0x33
-        match_length = (token & 0xCC) >> 2
-        match_length = (match_length & 3) | (match_length >> 2)
-        literal_length = (literal_length & 3) | (literal_length >> 2)
-        if literal_length == 15:
-            while True:
-                value = source[source_pos]
-                source_pos += 1
-                literal_length += value
-                if value != 255:
-                    break
-        if source_pos + literal_length > len(source) or output_pos + literal_length > expected:
-            raise ValueError("truncated inverted-LZ4 literal")
-        output[output_pos:output_pos + literal_length] = source[source_pos:source_pos + literal_length]
-        source_pos += literal_length
-        output_pos += literal_length
-        if source_pos >= len(source):
-            break
-        if source_pos + 2 > len(source):
-            raise ValueError("truncated inverted-LZ4 match offset")
-        offset = (source[source_pos] << 8) | source[source_pos + 1]
-        source_pos += 2
-        if offset <= 0 or offset > output_pos:
-            raise ValueError(f"invalid inverted-LZ4 match offset: {offset}")
-        if match_length == 15:
-            while True:
-                value = source[source_pos]
-                source_pos += 1
-                match_length += value
-                if value != 255:
-                    break
-        match_length += 4
-        match_pos = output_pos - offset
-        if output_pos + match_length > expected:
-            raise ValueError("inverted-LZ4 match exceeds output")
-        for _ in range(match_length):
-            output[output_pos] = output[match_pos]
-            output_pos += 1
-            match_pos += 1
-    if source_pos != len(source) or output_pos != expected:
-        raise ValueError(
-            f"inverted-LZ4 size mismatch: source={source_pos}/{len(source)}, output={output_pos}/{expected}"
-        )
-    return bytes(output)
 
 
 def _u16(data: bytes, offset: int) -> int:
@@ -653,9 +604,37 @@ def recover_many(
     return [by_id[level_id.lower()] for level_id in level_ids]
 
 
+def published_streaming_scene_ids(maps_root: Path) -> list[str]:
+    """Resolve published maps to the exact streaming scenes they declare."""
+    scene_ids: set[str] = set()
+    for path in sorted(maps_root.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        level_id = str(payload.get("levelId") or payload.get("id") or path.stem)
+        authored = authored_streaming_scene(level_id)
+        if not authored:
+            continue
+        scene_id = str(authored["sceneId"]).lower()
+        # Map01/Map02 store one regional InitChunkData stream whose HLOD rows
+        # must be partitioned back to the published member levels by the exact
+        # AssetMap key/member-suffix contract.
+        if scene_id in {"map01", "map02"} and REGION_LEVEL_RE.fullmatch(level_id):
+            scene_ids.add(level_id.lower())
+        else:
+            scene_ids.add(scene_id)
+    return sorted(scene_ids)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--level", action="append", required=True, help="scene id to recover (repeatable)")
+    parser.add_argument("--level", action="append", default=[], help="scene id to recover (repeatable)")
+    parser.add_argument(
+        "--all-published-map-scenes", action="store_true",
+        help="recover every exact streaming scene declared by the current published map payloads",
+    )
+    parser.add_argument("--published-maps-root", type=Path, default=DEFAULT_PUBLISHED_MAPS_ROOT)
     parser.add_argument("--jobs", type=int, default=1, help="parallel AnimeStudio stream processes")
     parser.add_argument("--cli", type=Path, default=DEFAULT_CLI)
     parser.add_argument("--game-root", type=Path, default=None)
@@ -663,7 +642,12 @@ def main() -> int:
     parser.add_argument("--mesh-root", type=Path, default=DEFAULT_MESH_ROOT)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     args = parser.parse_args()
-    level_ids = list(dict.fromkeys(args.level))
+    level_ids = list(dict.fromkeys([
+        *args.level,
+        *(published_streaming_scene_ids(args.published_maps_root) if args.all_published_map_scenes else []),
+    ]))
+    if not level_ids:
+        parser.error("provide --level at least once or use --all-published-map-scenes")
     for level_id in level_ids:
         if not LEVEL_RE.fullmatch(level_id):
             raise SystemExit(f"Unsafe level id: {level_id!r}")
