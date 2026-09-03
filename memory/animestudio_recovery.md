@@ -146,7 +146,9 @@ Current durable boundaries:
   have current exact framing sweeps. BundleManifest additionally has exact
   inner-file-count, basename-multiplicity, and row-index witnesses, but no
   serialized field ownership; stale AssetMap source chunks cannot supply it.
-  IFix instruction/runtime meanings remain separate claims.
+  Exact method pins exist, but unresolved stream/ref-out carriers still block a
+  safe lookup capture ABI. IFix instruction/runtime meanings remain separate
+  claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
   remaining payloads exactly once. Those payload records and renderer meanings
