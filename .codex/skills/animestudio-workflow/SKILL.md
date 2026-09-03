@@ -86,15 +86,21 @@ filtered exports match byte-for-byte; equal object counts are insufficient.
 
 ## DummyDll Recovery
 
-Use DummyDlls only when script-derived MonoBehaviour schemas matter. After an
-installed-game update, or when provenance is stale, run:
+Use DummyDlls only when script-derived MonoBehaviour schemas matter. Before
+schema-dependent work, and after an installed-game, generator, or maintained
+Cpp2IL patch change, check the repo-local set first:
 
 ```bat
+python -m scripts.animestudio.generate_dummydll --status-only
 python -m scripts.animestudio.generate_dummydll --dry-run
 ```
 
-Run `--replace` only after unique registration and staged validation pass.
-Never reuse registration addresses from an earlier build. Missing or stale
+If status is missing, stale, invalid, or degraded and script schemas are in
+scope, refresh it proactively: require the dry run's unique registration and
+patch checks, then run `--replace` and re-run `--status-only`. Never reuse
+registration addresses from an earlier build. The generator must block a
+required-image skip or catastrophic size regression by default; do not use its
+coverage-regression override during routine refreshes. Missing or unusable
 DummyDlls must warn and fall back cleanly; normal exports must continue.
 
 Keep serialized-first TypeTree priority by default. Treat Cpp2IL skip counts as

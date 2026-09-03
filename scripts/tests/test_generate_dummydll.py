@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import subprocess
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -33,6 +35,26 @@ class GenerateDummyDllTests(unittest.TestCase):
         self.assertIn("fieldDefinition.Attributes &= ~FieldAttributes.HasDefault", patch_text)
         self.assertIn("Skipping malformed generic constraint", patch_text)
         self.assertIn("module.ImportReference(constraintType)", patch_text)
+        self.assertNotIn("first type {imageDef.firstTypeIndex} has no managed module", patch_text)
+        self.assertIn("ManagedToUnmanagedAssemblies.TryGetValue", patch_text)
+        self.assertIn(
+            "PopulateStubTypesInAssembly(imageDef, assembly, suppressAttributes)",
+            patch_text,
+        )
+
+    def test_direct_script_help_does_not_require_game_configuration(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            result = subprocess.run(
+                [sys.executable, str(Path(generator.__file__).resolve()), "--help"],
+                cwd=temp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        self.assertEqual(0, result.returncode, result.stdout)
+        self.assertIn("--status-only", result.stdout)
 
     def test_resolve_game_paths_accepts_data_root(self) -> None:
         generator = load_generator()
@@ -84,9 +106,106 @@ class GenerateDummyDllTests(unittest.TestCase):
 
             cpp2il = manifest["cpp2il"]
             self.assertEqual(1, cpp2il["skippedMalformedImageCount"])
+            self.assertEqual(
+                [{"name": "Bad.dll", "reason": "first type is unavailable."}],
+                cpp2il["skippedMalformedImageDiagnostics"],
+            )
             self.assertEqual(7, cpp2il["skippedMalformedTypeCount"])
             self.assertEqual(1, cpp2il["skippedMalformedFieldDefaultCount"])
             self.assertEqual(1, cpp2il["skippedMalformedGenericConstraintCount"])
+            self.assertEqual(generator.sha256_file(Path(generator.__file__)), manifest["generatorSha256"])
+
+    def test_publication_regressions_block_required_skips_and_size_collapse(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "DummyDll"
+            output.mkdir()
+            previous_files = [
+                {"name": name, "bytes": 1000, "sha256": "old"}
+                for name in sorted(generator.REQUIRED_ASSEMBLIES)
+            ]
+            (output / "generation.json").write_text(
+                json.dumps(
+                    {
+                        "assemblies": {
+                            "bytes": 3000,
+                            "files": previous_files,
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            next_manifest = {
+                "cpp2il": {
+                    "skippedMalformedImages": ["Assembly-CSharp.dll"],
+                    "skippedMalformedTypeCount": 95,
+                    "expectedTypeCount": 100,
+                },
+                "assemblies": {
+                    "bytes": 300,
+                    "files": [dict(row, bytes=100) for row in previous_files],
+                },
+            }
+
+            regressions = generator.publication_regressions(output, next_manifest)
+
+            self.assertTrue(any("required images skipped" in row for row in regressions))
+            self.assertTrue(any("malformed type coverage collapsed" in row for row in regressions))
+            self.assertTrue(any("total assembly bytes collapsed" in row for row in regressions))
+
+    def test_current_output_status_verifies_files_and_rejects_degraded_coverage(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = root / "DummyDll"
+            output.mkdir()
+            gameassembly = root / "GameAssembly.dll"
+            metadata = root / "global-metadata.dat"
+            dll = output / "Assembly-CSharp.dll"
+            gameassembly.write_bytes(b"game")
+            metadata.write_bytes(b"metadata")
+            dll.write_bytes(managed_stub())
+            manifest = {
+                "schema": 1,
+                "generatorSha256": generator.sha256_file(Path(generator.__file__)),
+                "game": {
+                    "gameAssemblySha256": generator.sha256_file(gameassembly),
+                    "metadataSha256": generator.sha256_file(metadata),
+                },
+                "cpp2il": {
+                    "patchSha256": generator.sha256_file(generator.CPP2IL_PATCH),
+                    "skippedMalformedImageCount": 0,
+                    "skippedMalformedImages": [],
+                    "skippedMalformedTypeCount": 1,
+                    "expectedTypeCount": 100,
+                },
+                "assemblies": {
+                    "count": 1,
+                    "bytes": dll.stat().st_size,
+                    "files": [{
+                        "name": dll.name,
+                        "bytes": dll.stat().st_size,
+                        "sha256": generator.sha256_file(dll),
+                    }],
+                },
+            }
+            (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+            self.assertEqual(
+                "current",
+                generator.current_output_status(output, gameassembly, metadata)[0],
+            )
+            manifest["cpp2il"]["skippedMalformedTypeCount"] = 95
+            (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
+            self.assertEqual(
+                "degraded",
+                generator.current_output_status(output, gameassembly, metadata)[0],
+            )
+            dll.write_bytes(managed_stub() + b"corrupt")
+            self.assertEqual(
+                "invalid",
+                generator.current_output_status(output, gameassembly, metadata)[0],
+            )
 
     def test_validate_generated_requires_exact_metadata_dll_set(self) -> None:
         generator = load_generator()

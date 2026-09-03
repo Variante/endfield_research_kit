@@ -21,12 +21,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-if __package__ != "scripts.animestudio":
-    raise SystemExit(
-        "Run this command from the repository root with "
-        "`python -m scripts.animestudio.generate_dummydll`."
-    )
-from ..common import resolve_installed_game_data_root, sha256_file
+if __package__ == "scripts.animestudio":
+    from ..common import resolve_installed_game_data_root, sha256_file
+else:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from scripts.common import resolve_installed_game_data_root, sha256_file
 DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-src-2022.0.7"
 DEFAULT_OUTPUT = ROOT / "tools" / "DummyDll"
 CPP2IL_REPOSITORY = "https://github.com/SamboyCoding/Cpp2IL.git"
@@ -39,6 +39,8 @@ REQUIRED_ASSEMBLIES = {
     "Gameplay.Beyond.dll",
     "UnityEngine.CoreModule.dll",
 }
+MIN_PREVIOUS_BYTE_RATIO = 0.5
+MAX_SKIPPED_TYPE_RATIO = 0.9
 
 
 def fail(message: str) -> "NoReturn":
@@ -126,7 +128,7 @@ def run_command(
 
 def git_apply_state(source: Path) -> str:
     applied = run_command(
-        ["git", "apply", "--reverse", "--check", str(CPP2IL_PATCH)],
+        ["git", "apply", "--reverse", "--check", "--unidiff-zero", str(CPP2IL_PATCH)],
         cwd=source,
         check=False,
         show=False,
@@ -134,7 +136,7 @@ def git_apply_state(source: Path) -> str:
     if applied.returncode == 0:
         return "applied"
     clean = run_command(
-        ["git", "apply", "--check", str(CPP2IL_PATCH)],
+        ["git", "apply", "--check", "--unidiff-zero", str(CPP2IL_PATCH)],
         cwd=source,
         check=False,
         show=False,
@@ -167,7 +169,7 @@ def prepare_cpp2il(source: Path, *, dry_run: bool) -> None:
         if dry_run:
             print(f"Would apply {CPP2IL_PATCH}")
         else:
-            run_command(["git", "apply", str(CPP2IL_PATCH)], cwd=source)
+            run_command(["git", "apply", "--unidiff-zero", str(CPP2IL_PATCH)], cwd=source)
     else:
         print("Cpp2IL Endfield patch is already applied.")
 
@@ -233,6 +235,8 @@ def discover_registrations(
     summary = {
         "code": il2cpp.code_registration_summary(pe, code_registration),
         "metadata": il2cpp.metadata_registration_summary(pe, metadata_registration),
+        "metadataImageCount": len(md.images),
+        "metadataTypeCount": len(md.types),
     }
     print(f"CodeRegistration: 0x{code_registration:x}")
     print(f"MetadataRegistration: 0x{metadata_registration:x}")
@@ -260,29 +264,90 @@ def validate_generated(raw_output: Path, image_names: set[str]) -> list[Path]:
     return dlls
 
 
-def report_current_output_status(output: Path, gameassembly: Path, metadata: Path) -> None:
+def current_output_status(
+    output: Path, gameassembly: Path, metadata: Path
+) -> tuple[str, str]:
+    """Validate the published manifest and every recorded assembly."""
+
     if not output.exists():
-        print("Current DummyDll status: missing")
-        return
+        return "missing", f"output directory is missing: {output}"
     manifest_path = output / "generation.json"
     if not manifest_path.is_file():
-        print(
-            "Current DummyDll status: unverified (generation.json is missing); "
-            "regenerate before relying on script-derived schemas."
-        )
-        return
+        return "unverified", "generation.json is missing"
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        if manifest.get("schema") != 1:
+            return "invalid", f"unsupported manifest schema {manifest.get('schema')!r}"
         recorded_game = manifest["game"]
-        matches = (
-            recorded_game["gameAssemblySha256"] == sha256_file(gameassembly)
-            and recorded_game["metadataSha256"] == sha256_file(metadata)
-            and manifest["cpp2il"]["patchSha256"] == sha256_file(CPP2IL_PATCH)
-        )
+        stale_inputs = []
+        if recorded_game["gameAssemblySha256"] != sha256_file(gameassembly):
+            stale_inputs.append("GameAssembly.dll")
+        if recorded_game["metadataSha256"] != sha256_file(metadata):
+            stale_inputs.append("global-metadata.dat")
+        if manifest["cpp2il"]["patchSha256"] != sha256_file(CPP2IL_PATCH):
+            stale_inputs.append("Cpp2IL patch")
+        if manifest.get("generatorSha256") != sha256_file(Path(__file__)):
+            stale_inputs.append("generator")
+        if stale_inputs:
+            return "stale", "changed inputs: " + ", ".join(stale_inputs)
+
+        assemblies = manifest["assemblies"]
+        rows = assemblies["files"]
+        if not isinstance(rows, list):
+            return "invalid", "assemblies.files is not a list"
+        names = [str(row["name"]) for row in rows]
+        folded_names = [name.casefold() for name in names]
+        if len(set(folded_names)) != len(folded_names):
+            return "invalid", "manifest contains duplicate assembly names"
+        disk = sorted(output.glob("*.dll"), key=lambda path: path.name.casefold())
+        if {path.name.casefold() for path in disk} != set(folded_names):
+            return "invalid", "published DLL names differ from generation.json"
+        if assemblies["count"] != len(rows) or assemblies["count"] != len(disk):
+            return "invalid", "assembly count does not match manifest and disk"
+        by_name = {path.name.casefold(): path for path in disk}
+        total_bytes = 0
+        for row in rows:
+            path = by_name[str(row["name"]).casefold()]
+            size = path.stat().st_size
+            total_bytes += size
+            if row["bytes"] != size:
+                return "invalid", f"assembly size mismatch: {path.name}"
+            if str(row["sha256"]).casefold() != sha256_file(path).casefold():
+                return "invalid", f"assembly hash mismatch: {path.name}"
+        if assemblies["bytes"] != total_bytes:
+            return "invalid", "assembly byte total does not match manifest"
     except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        print(f"Current DummyDll status: invalid generation manifest ({exc})")
-        return
-    print("Current DummyDll status: current" if matches else "Current DummyDll status: stale")
+        return "invalid", f"generation manifest validation failed: {exc}"
+    gaps = manifest.get("cpp2il") or {}
+    skipped_images = {
+        str(name).casefold() for name in gaps.get("skippedMalformedImages") or []
+    }
+    skipped_required = sorted(
+        name for name in REQUIRED_ASSEMBLIES if name.casefold() in skipped_images
+    )
+    expected_types = int(gaps.get("expectedTypeCount") or 0)
+    skipped_types = int(gaps.get("skippedMalformedTypeCount") or 0)
+    detail = (
+        f"{len(rows)} assemblies; coverage gaps: "
+        f"{int(gaps.get('skippedMalformedImageCount') or 0)} images, "
+        f"{int(gaps.get('skippedMalformedTypeCount') or 0)} types"
+    )
+    if skipped_required:
+        return "degraded", detail + "; required images skipped: " + ", ".join(skipped_required)
+    if expected_types and skipped_types >= expected_types * MAX_SKIPPED_TYPE_RATIO:
+        return (
+            "degraded",
+            detail + f"; skipped {skipped_types / expected_types:.1%} of metadata types",
+        )
+    return "current", detail
+
+
+def report_current_output_status(
+    output: Path, gameassembly: Path, metadata: Path
+) -> str:
+    status, detail = current_output_status(output, gameassembly, metadata)
+    print(f"Current DummyDll status: {status} ({detail})")
+    return status
 
 
 def generation_manifest(
@@ -298,7 +363,10 @@ def generation_manifest(
 ) -> dict[str, Any]:
     commit = run_command(["git", "rev-parse", "HEAD"], cwd=source).stdout.strip()
     clean_cpp2il_output = re.sub(r"\x1b\[[0-9;]*m", "", cpp2il_output)
-    skipped_images = sorted(set(re.findall(r"Skipping malformed image ([^:]+):", clean_cpp2il_output)))
+    skipped_image_rows = re.findall(
+        r"Skipping malformed image ([^:]+):\s*([^\r\n]+)", clean_cpp2il_output
+    )
+    skipped_images = sorted({name for name, _reason in skipped_image_rows})
     skipped_type_count = sum(
         int(value) for value in re.findall(r"Skipped (\d+) malformed types", clean_cpp2il_output)
     )
@@ -312,6 +380,7 @@ def generation_manifest(
         "schema": 1,
         "generatedAtUtc": datetime.now(timezone.utc).isoformat(),
         "generator": "scripts/animestudio/generate_dummydll.py",
+        "generatorSha256": sha256_file(Path(__file__)),
         "game": {
             "gameAssembly": str(gameassembly),
             "gameAssemblyBytes": gameassembly.stat().st_size,
@@ -333,7 +402,12 @@ def generation_manifest(
             "patchSha256": sha256_file(CPP2IL_PATCH),
             "skippedMalformedImageCount": len(skipped_images),
             "skippedMalformedImages": skipped_images,
+            "skippedMalformedImageDiagnostics": [
+                {"name": name, "reason": reason}
+                for name, reason in skipped_image_rows
+            ],
             "skippedMalformedTypeCount": skipped_type_count,
+            "expectedTypeCount": int(registration_summary.get("metadataTypeCount") or 0),
             "skippedMalformedFieldDefaultCount": len(skipped_field_defaults),
             "skippedMalformedFieldDefaultSamples": skipped_field_defaults[:50],
             "skippedMalformedGenericConstraintCount": len(skipped_generic_constraints),
@@ -357,6 +431,55 @@ def generation_manifest(
             "The set is valid only for the recorded GameAssembly.dll and global-metadata.dat hashes.",
         ],
     }
+
+
+def publication_regressions(output: Path, manifest: dict[str, Any]) -> list[str]:
+    """Return fail-closed coverage regressions against the current publication."""
+
+    regressions: list[str] = []
+    skipped = {
+        str(name).casefold()
+        for name in manifest.get("cpp2il", {}).get("skippedMalformedImages", [])
+    }
+    required_skipped = sorted(
+        name for name in REQUIRED_ASSEMBLIES if name.casefold() in skipped
+    )
+    if required_skipped:
+        regressions.append("required images skipped: " + ", ".join(required_skipped))
+    cpp2il = manifest.get("cpp2il", {})
+    expected_types = int(cpp2il.get("expectedTypeCount") or 0)
+    skipped_types = int(cpp2il.get("skippedMalformedTypeCount") or 0)
+    if expected_types and skipped_types >= expected_types * MAX_SKIPPED_TYPE_RATIO:
+        regressions.append(
+            "malformed type coverage collapsed: "
+            f"{skipped_types}/{expected_types} ({skipped_types / expected_types:.1%}) skipped"
+        )
+
+    previous_path = output / "generation.json"
+    if not previous_path.is_file():
+        return regressions
+    try:
+        previous = json.loads(previous_path.read_text(encoding="utf-8-sig"))
+        previous_assemblies = previous["assemblies"]
+        next_assemblies = manifest["assemblies"]
+        previous_names = {
+            str(row["name"]).casefold() for row in previous_assemblies["files"]
+        }
+        next_names = {str(row["name"]).casefold() for row in next_assemblies["files"]}
+        previous_bytes = int(previous_assemblies["bytes"])
+        next_bytes = int(next_assemblies["bytes"])
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError):
+        return regressions
+    if (
+        previous_names == next_names
+        and previous_bytes > 0
+        and next_bytes < previous_bytes * MIN_PREVIOUS_BYTE_RATIO
+    ):
+        regressions.append(
+            "total assembly bytes collapsed to "
+            f"{next_bytes}/{previous_bytes} ({next_bytes / previous_bytes:.1%})"
+        )
+    return regressions
 
 
 def publish(
@@ -400,7 +523,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate and validate Endfield DummyDll assemblies for AnimeStudio."
     )
-    parser.add_argument("--game-root", type=Path, default=configured_game_root())
+    parser.add_argument("--game-root", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--cpp2il-source", type=Path, default=DEFAULT_CPP2IL_SOURCE)
     parser.add_argument("--dotnet", default="dotnet")
@@ -410,11 +533,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-build", action="store_true")
     parser.add_argument("--keep-work-dir", action="store_true")
     parser.add_argument(
+        "--allow-coverage-regression",
+        action="store_true",
+        help="publish despite a required-image skip or catastrophic size regression",
+    )
+    parser.add_argument(
         "--no-prepare",
         action="store_true",
         help="Require an already patched Cpp2IL checkout; do not clone or apply the maintained patch.",
     )
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--status-only",
+        action="store_true",
+        help="validate the current published set without scanning registrations or running Cpp2IL",
+    )
     return parser.parse_args()
 
 
@@ -422,7 +555,12 @@ def main() -> int:
     args = parse_args()
     if not CPP2IL_PATCH.is_file():
         fail(f"Missing maintained Cpp2IL patch: {CPP2IL_PATCH}")
-    install_root, gameassembly, metadata, exe_name = resolve_game_paths(args.game_root)
+    game_root = args.game_root or configured_game_root()
+    install_root, gameassembly, metadata, exe_name = resolve_game_paths(game_root)
+    output = args.output.expanduser().resolve()
+    if args.status_only:
+        status = report_current_output_status(output, gameassembly, metadata)
+        return 0 if status == "current" else 1
     code_registration, metadata_registration, image_names, registration_summary = discover_registrations(
         gameassembly,
         metadata,
@@ -430,7 +568,6 @@ def main() -> int:
         args.metadata_registration,
     )
     source = args.cpp2il_source.expanduser().resolve()
-    output = args.output.expanduser().resolve()
     print(f"Cpp2IL source: {source}")
     print(f"Publish target: {output}")
     report_current_output_status(output, gameassembly, metadata)
@@ -444,6 +581,10 @@ def main() -> int:
         if source.exists():
             validate_patched_cpp2il(source)
         print("Dry run complete; no build, generation, or publication was performed.")
+        print(
+            "If script-derived schemas are needed, rerun without --dry-run and "
+            "with --replace."
+        )
         return 0
     validate_patched_cpp2il(source)
     if output.exists() and not args.replace:
@@ -497,6 +638,22 @@ def main() -> int:
         dlls=dlls,
         cpp2il_output=result.stdout or "",
     )
+    regressions = publication_regressions(output, manifest)
+    manifest["publicationGate"] = {
+        "status": "override" if regressions and args.allow_coverage_regression else (
+            "blocked" if regressions else "passed"
+        ),
+        "regressions": regressions,
+        "minimumPreviousByteRatio": MIN_PREVIOUS_BYTE_RATIO,
+        "maximumSkippedTypeRatio": MAX_SKIPPED_TYPE_RATIO,
+    }
+    if regressions and not args.allow_coverage_regression:
+        fail(
+            "Refusing to publish degraded DummyDll output: "
+            + "; ".join(regressions)
+            + f". Raw output and cpp2il.log retained at {work_dir}. "
+            "Fix the generator/patch, or use --allow-coverage-regression only after review."
+        )
     backup = publish(output, dlls, manifest, replace=args.replace, stamp=stamp)
     print(f"Published {len(dlls)} assemblies to {output}")
     print(f"Generation manifest: {output / 'generation.json'}")

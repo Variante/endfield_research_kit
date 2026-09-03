@@ -5,9 +5,10 @@ assign names or meanings to FlatBuffer fields.  The current build contains
 two length-prefixed inverted-LZ4 families (``InitChunkData`` and
 ``StreamingChunkData``) and a raw ``StreamingChunkInfo`` family.  The latter's
 selected-build table/vector graph is framed exactly while every field remains
-anonymous.  A small DevOnly subset is raw despite sharing the first two path
-families, so the decoder accepts raw only after independently validating the
-observed root shape.
+anonymous. Both data families additionally expose one exact anonymous paired-
+group subgraph; their other root fields remain opaque. A small DevOnly subset
+is raw despite sharing the first two path families, so the decoder accepts raw
+only after independently validating the observed root shape.
 """
 
 from __future__ import annotations
@@ -29,6 +30,11 @@ _INFO_ROOTS = {
 }
 _INFO_STANDARD_ROW = (2, 16, (0, 1))
 _INFO_DEVONLY_ROW = (3, 20, (0, 1, 2))
+_INIT_ID_WRAPPER = (1, 8, (0,))
+_INIT_GROUP_ROWS = {
+    (5, 56, tuple(range(5))),
+    (5, 60, tuple(range(5))),
+}
 
 
 def _u16(data: bytes, offset: int) -> int:
@@ -77,6 +83,7 @@ def _root_layout(data: bytes) -> dict[str, Any]:
         "vtableSize": vtable_size,
         "objectSize": object_size,
         "fieldCount": field_count,
+        "fields": fields,
         "presentFields": [index for index, value in enumerate(fields) if value],
         "opaqueTailBytes": len(data) - (root + object_size),
     }
@@ -268,6 +275,247 @@ def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_paired_group_subgraph(
+    data: bytes, root: dict[str, Any], family: str
+) -> dict[str, Any]:
+    """Frame one selected-build paired group subgraph without naming fields."""
+
+    ranges: list[tuple[int, int, str, str]] = []
+    shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
+    descriptor_count = 0
+    value_count = 0
+    blob_bytes = 0
+
+    def own(start: int, end: int, kind: str, label: str) -> None:
+        if start < 0 or end < start or end > len(data):
+            raise ValueError(
+                f"Streaming {label} range {start}:{end} outside payload {len(data)}"
+            )
+        ranges.append((start, end, kind, label))
+
+    def own_table(layout: dict[str, Any], label: str) -> None:
+        own(
+            int(layout["vtableOffset"]),
+            int(layout["vtableOffset"]) + int(layout["vtableSize"]),
+            "vtable",
+            f"{label} vtable",
+        )
+        own(
+            int(layout["tableOffset"]),
+            int(layout["tableOffset"]) + int(layout["objectSize"]),
+            "table",
+            f"{label} table",
+        )
+        shape = (
+            int(layout["fieldCount"]),
+            int(layout["objectSize"]),
+            tuple(int(value) for value in layout["presentFields"]),
+        )
+        shapes[shape] += 1
+
+    root_layout = {
+        "tableOffset": root["rootOffset"],
+        "vtableOffset": root["vtableOffset"],
+        "vtableSize": root["vtableSize"],
+        "objectSize": root["objectSize"],
+        "fieldCount": root["fieldCount"],
+        "fields": root["fields"],
+        "presentFields": root["presentFields"],
+    }
+
+    def table_vector(index: int, label: str) -> tuple[int, list[dict[str, Any]]]:
+        start, count, end = _bounded_vector(data, root_layout, index, 4, label)
+        own(start, end, "table-vector", label)
+        body = start + 4
+        tables = []
+        for row_index in range(count):
+            slot = body + row_index * 4
+            relative = _u32(data, slot)
+            target = slot + relative
+            if relative == 0 or target <= slot:
+                raise ValueError(
+                    f"Streaming {label} row {row_index} has invalid table target {target}"
+                )
+            layout = _table_layout(data, target)
+            own_table(layout, f"{label} row {row_index}")
+            tables.append(layout)
+        return count, tables
+
+    id_group_count, id_wrappers = table_vector(
+        6, f"{family} field 6 table slots"
+    )
+    data_group_count, data_groups = table_vector(
+        7, f"{family} field 7 table slots"
+    )
+    if id_group_count != data_group_count:
+        raise ValueError(
+            f"Streaming {family} paired group count mismatch: "
+            f"{id_group_count}/{data_group_count}"
+        )
+
+    for index, (id_wrapper, group) in enumerate(zip(id_wrappers, data_groups)):
+        id_shape = (
+            id_wrapper["fieldCount"],
+            id_wrapper["objectSize"],
+            tuple(id_wrapper["presentFields"]),
+        )
+        if id_shape != _INIT_ID_WRAPPER:
+            raise ValueError(
+                f"Streaming {family} field 6 row {index} shape {id_shape}, "
+                f"expected {_INIT_ID_WRAPPER}"
+            )
+        ids_start, group_value_count, ids_end = _bounded_vector(
+            data, id_wrapper, 0, 4, f"{family} field 6 row {index} values"
+        )
+        own(
+            ids_start,
+            ids_end,
+            "u32-vector",
+            f"{family} field 6 row {index} values",
+        )
+
+        group_shape = (
+            group["fieldCount"],
+            group["objectSize"],
+            tuple(group["presentFields"]),
+        )
+        if group_shape not in _INIT_GROUP_ROWS:
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} shape {group_shape}, "
+                f"expected one of {sorted(_INIT_GROUP_ROWS)}"
+            )
+        count_address = _field_address(group, 1)
+        if count_address is None:
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} count is absent"
+            )
+        if count_address + 4 > int(group["tableOffset"]) + int(group["objectSize"]):
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} count slot exceeds table object"
+            )
+        inline_count = _u32(data, count_address)
+        if inline_count != group_value_count:
+            raise ValueError(
+                f"Streaming {family} row {index} value count mismatch: "
+                f"{group_value_count}/{inline_count}"
+            )
+
+        descriptor_start, row_descriptor_count, descriptor_end = _bounded_vector(
+            data, group, 3, 8, f"{family} field 7 row {index} descriptors"
+        )
+        own(
+            descriptor_start,
+            descriptor_end,
+            "descriptor-vector",
+            f"{family} field 7 row {index} descriptors",
+        )
+        descriptor_body = descriptor_start + 4
+        expected_blob_bytes = 0
+        for descriptor_index in range(row_descriptor_count):
+            _anonymous_id, stride, reserved = struct.unpack_from(
+                "<HHI", data, descriptor_body + descriptor_index * 8
+            )
+            if reserved:
+                raise ValueError(
+                    f"Streaming {family} row {index} descriptor {descriptor_index} "
+                    f"reserved value {reserved}"
+                )
+            if stride == 0:
+                raise ValueError(
+                    f"Streaming {family} row {index} descriptor {descriptor_index} "
+                    "has zero stride"
+                )
+            expected_blob_bytes += inline_count * stride
+
+        wrapper_address = _field_address(group, 4)
+        if wrapper_address is None:
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} blob wrapper is absent"
+            )
+        if wrapper_address + 4 > int(group["tableOffset"]) + int(
+            group["objectSize"]
+        ):
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} blob wrapper slot exceeds table object"
+            )
+        wrapper_relative = _u32(data, wrapper_address)
+        wrapper_target = wrapper_address + wrapper_relative
+        if wrapper_relative == 0 or wrapper_target <= wrapper_address:
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} has invalid blob wrapper "
+                f"target {wrapper_target}"
+            )
+        blob_wrapper = _table_layout(data, wrapper_target)
+        own_table(blob_wrapper, f"{family} field 7 row {index} blob wrapper")
+        blob_wrapper_shape = (
+            blob_wrapper["fieldCount"],
+            blob_wrapper["objectSize"],
+            tuple(blob_wrapper["presentFields"]),
+        )
+        if blob_wrapper_shape != _INIT_ID_WRAPPER:
+            raise ValueError(
+                f"Streaming {family} field 7 row {index} blob wrapper shape "
+                f"{blob_wrapper_shape}, expected {_INIT_ID_WRAPPER}"
+            )
+        blob_start, actual_blob_bytes, blob_end = _bounded_vector(
+            data, blob_wrapper, 0, 1, f"{family} field 7 row {index} blob"
+        )
+        own(
+            blob_start,
+            blob_end,
+            "byte-vector",
+            f"{family} field 7 row {index} blob",
+        )
+        if actual_blob_bytes != expected_blob_bytes:
+            raise ValueError(
+                f"Streaming {family} row {index} blob length mismatch: "
+                f"{actual_blob_bytes}/{expected_blob_bytes}"
+            )
+        descriptor_count += row_descriptor_count
+        value_count += inline_count
+        blob_bytes += actual_blob_bytes
+
+    ordered = sorted(ranges)
+    reused_vtables = 0
+    for previous, current in zip(ordered, ordered[1:]):
+        if current[0] >= previous[1]:
+            continue
+        same_vtable = (
+            previous[:3] == current[:3]
+            and previous[2] == "vtable"
+        )
+        if same_vtable:
+            reused_vtables += 1
+            continue
+        raise ValueError(
+            f"Streaming {family} subgraph structural ranges overlap: "
+            f"{previous[3]}={previous[0]}:{previous[1]} and "
+            f"{current[3]}={current[0]}:{current[1]}"
+        )
+    unique_ranges = {(start, end, kind) for start, end, kind, _label in ranges}
+    return {
+        "status": "exact_anonymous_subgraph",
+        "pairedGroupCount": id_group_count,
+        "valueCount": value_count,
+        "descriptorCount": descriptor_count,
+        "blobBytes": blob_bytes,
+        "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
+        "rangeCount": len(unique_ranges),
+        "reusedVtableReferences": reused_vtables,
+        "tableShapes": [
+            {
+                "fieldCount": shape[0],
+                "objectSize": shape[1],
+                "presentFields": list(shape[2]),
+                "count": count,
+            }
+            for shape, count in shapes.items()
+        ],
+        "fieldStatus": "anonymous-structural-only",
+        "wholeFileStatus": "partial",
+    }
+
+
 def _check_root(kind: str, layout: dict[str, Any]) -> None:
     if kind == "info":
         if (
@@ -371,6 +619,10 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
     }
     if kind == "info":
         result["anonymousInner"] = _parse_info_inner(clear, layout)
+    elif kind in {"init", "streaming"}:
+        result["anonymousGroupSubgraph"] = _parse_paired_group_subgraph(
+            clear, layout, kind
+        )
     return result
 
 
