@@ -47,6 +47,10 @@ Inspect subcommand help rather than duplicating its full option surface:
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe audio --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe stream --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-audit --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-profile --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-inner-audit --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe audio-audit --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe list --help
 ```
 
@@ -61,6 +65,11 @@ family to its maintained reader, negative fixtures, corpus reports, and the
 remaining evidence boundary. Read the outer-boundary report before an inner
 format report: a valid offset/hash proves the bytes being studied, not their
 internal schema or runtime meaning.
+
+After any installed-game change, rerun `vfs-audit` first and treat its
+`inputSetSha256` as the provenance gate for every inner census. Do not transfer
+a prior type-level "current corpus" result merely because file counts stayed
+constant; rejoin identities/hashes or rerun the relevant sweep.
 
 ## Scope and Concurrency
 
