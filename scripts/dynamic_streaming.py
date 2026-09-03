@@ -30,6 +30,22 @@ OBSERVED_ROOT_SHAPES = {
     "stream_area": (7, 52, tuple(range(7))),
     "version": (3, 16, tuple(range(3))),
 }
+# These widths are structural contracts from the selected-build FlatBuffer
+# layouts.  They intentionally do not name the values carried by the vectors.
+# The FBStreamAreaTotalData accessors additionally expose the byte-vector
+# fields and the fixed-size FBStreamArea/FBStreamAreaTrigger/FBStreamAreaCoord
+# records; the two compressed roots have only corpus-observed vector widths.
+OBSERVED_INIT_VECTOR_WIDTHS = (4, 4, 1, 4, 4, 4)
+OBSERVED_STREAM_AREA_VECTOR_WIDTHS = {
+    0: 4,
+    1: 1,
+    2: 1,
+    4: 12,
+    5: 36,
+    6: 8,
+}
+OBSERVED_STREAM_AREA_INLINE_WIDTHS = {3: 24}
+OBSERVED_VERSION_SCALAR_WIDTH = 4
 REJECTED_DATA_MASK_PRESENCE_CANDIDATE = (
     "sum(1 << (fieldIndex - base)) for every nonempty vector field at or after base"
 )
@@ -121,10 +137,21 @@ def _field_span(data: bytes, layout: dict[str, Any], index: int, width: int) -> 
     return address
 
 
-def _vector(data: bytes, layout: dict[str, Any], index: int) -> tuple[int, int]:
+def _bounded_vector(
+    data: bytes, layout: dict[str, Any], index: int, element_width: int
+) -> tuple[int, int, int]:
+    """Return ``(body, count, end)`` for a bounded fixed-width vector.
+
+    FlatBuffers stores the element count immediately before the body.  The
+    width is a framing contract only: this helper never decodes an element or
+    assigns it a domain meaning.
+    """
+
+    if element_width <= 0:
+        raise ValueError(f"field {index} has invalid vector element width {element_width}")
     address = _field_span(data, layout, index, 4)
     if address is None:
-        return 0, 0
+        return 0, 0, 0
     relative = _u32(data, address)
     if relative == 0:
         raise ValueError(f"field {index} has a zero vector offset")
@@ -132,10 +159,20 @@ def _vector(data: bytes, layout: dict[str, Any], index: int) -> tuple[int, int]:
     if target <= address or target + 4 > len(data):
         raise ValueError(f"field {index} vector target {target} outside payload")
     count = _u32(data, target)
-    end = target + 4 + count * 4
+    available = len(data) - (target + 4)
+    if count > available // element_width:
+        raise ValueError(
+            f"field {index} vector length {count} * width {element_width} "
+            f"exceeds payload at {target + 4}/{len(data)}"
+        )
+    end = target + 4 + count * element_width
     if end > len(data):
         raise ValueError(f"field {index} vector end {end} outside payload")
-    return target + 4, count
+    return target + 4, count, end
+
+
+def _vector(data: bytes, layout: dict[str, Any], index: int) -> tuple[int, int]:
+    return _bounded_vector(data, layout, index, 4)[:2]
 
 
 def _validate_string_vector(data: bytes, vector: int, count: int) -> None:
@@ -245,6 +282,109 @@ def parse_dynamic_chunk_framing(data: bytes) -> dict[str, Any]:
     }
 
 
+def _parse_observed_init_or_streaming(
+    kind: str, data: bytes, widths: tuple[int, ...]
+) -> dict[str, Any]:
+    """Frame one of the eight-field compressed DynamicStreaming roots.
+
+    The generated build does not provide an accessor witness for these root
+    tables.  Consequently the result reports only scalar widths, vector
+    lengths, and byte spans.  It does not call the vectors by guessed semantic
+    names or inspect their elements.
+    """
+
+    root = _root_layout(data)
+    _check_observed_root(kind, root)
+    scalar_values = []
+    for index in (0, 1):
+        address = _field_span(data, root, index, 4)
+        if address is None:
+            raise ValueError(f"{kind} root scalar field {index} is absent")
+        scalar_values.append(_u32(data, address))
+    vectors = []
+    for index, width in enumerate(widths, start=2):
+        body, count, end = _bounded_vector(data, root, index, width)
+        vectors.append(
+            {
+                "fieldIndex": index,
+                "elementWidth": width,
+                "count": count,
+                "bodyOffset": body,
+                "endOffset": end,
+                "bodyBytes": end - body,
+            }
+        )
+    # A valid FlatBuffer may contain alignment bytes, but overlapping vector
+    # bodies indicate an incorrect element-width contract or malformed data.
+    ordered = sorted(vectors, key=lambda item: item["bodyOffset"])
+    for previous, current in zip(ordered, ordered[1:]):
+        if current["bodyOffset"] < previous["endOffset"]:
+            raise ValueError(
+                f"{kind} vector fields {previous['fieldIndex']} and {current['fieldIndex']} overlap"
+            )
+    return {
+        "root": root,
+        "ScalarFieldValues": scalar_values,
+        "Vectors": vectors,
+    }
+
+
+def _parse_stream_area_framing(data: bytes) -> dict[str, Any]:
+    """Frame the generated ``FBStreamAreaTotalData`` root.
+
+    ``Get*Bytes`` accessors prove the first three vectors are byte vectors;
+    the generated record types prove the remaining vector widths.  Record
+    contents remain opaque here, including the 24-byte inline bounds value.
+    """
+
+    root = _root_layout(data)
+    _check_observed_root("stream_area", root)
+    inline = []
+    for index, width in OBSERVED_STREAM_AREA_INLINE_WIDTHS.items():
+        address = _field_span(data, root, index, width)
+        if address is None:
+            raise ValueError(f"stream_area root inline field {index} is absent")
+        inline.append({"fieldIndex": index, "offset": address, "width": width})
+    vectors = []
+    for index, width in OBSERVED_STREAM_AREA_VECTOR_WIDTHS.items():
+        body, count, end = _bounded_vector(data, root, index, width)
+        vectors.append(
+            {
+                "fieldIndex": index,
+                "elementWidth": width,
+                "count": count,
+                "bodyOffset": body,
+                "endOffset": end,
+                "bodyBytes": end - body,
+            }
+        )
+    ordered = sorted(vectors, key=lambda item: item["bodyOffset"])
+    for previous, current in zip(ordered, ordered[1:]):
+        if current["bodyOffset"] < previous["endOffset"]:
+            raise ValueError(
+                f"stream_area vector fields {previous['fieldIndex']} and {current['fieldIndex']} overlap"
+            )
+    if ordered and ordered[-1]["endOffset"] != len(data):
+        raise ValueError(
+            f"stream_area vector data ends at {ordered[-1]['endOffset']}, expected payload EOF {len(data)}"
+        )
+    return {"root": root, "InlineFields": inline, "Vectors": vectors}
+
+
+def _parse_version_framing(data: bytes) -> dict[str, Any]:
+    """Frame the generated three-scalar ``fb_version`` root without naming it."""
+
+    root = _root_layout(data)
+    _check_observed_root("version", root)
+    values = []
+    for index in range(3):
+        address = _field_span(data, root, index, OBSERVED_VERSION_SCALAR_WIDTH)
+        if address is None:
+            raise ValueError(f"version root scalar field {index} is absent")
+        values.append(_u32(data, address))
+    return {"root": root, "ScalarFieldValues": values}
+
+
 def decode_dynamic_payload(kind: str, packed: bytes) -> bytes:
     """Decode exactly the envelope used by one DynamicStreaming family.
 
@@ -283,14 +423,22 @@ def _check_observed_root(kind: str, root: dict[str, Any]) -> None:
 def parse_dynamic_file(kind: str, packed: bytes) -> dict[str, Any]:
     """Decode and frame any of the five observed DynamicStreaming roots.
 
-    Only ``main`` has selected-build generated accessor names in the local
-    metadata (``FBDynamicSceneChunkData`` and ``FBDynamicSceneSingleGrid``).
-    The other roots are returned as exact unnamed table layouts.
+    ``main`` and ``stream_area`` use selected-build generated accessor
+    witnesses; the compressed roots and ``version`` remain unnamed and are
+    returned as exact scalar/vector framing observations.
     """
 
     clear = decode_dynamic_payload(kind, packed)
     if kind == "main":
         parsed = parse_dynamic_chunk_framing(clear)
+    elif kind in ("init", "streaming"):
+        parsed = _parse_observed_init_or_streaming(
+            kind, clear, OBSERVED_INIT_VECTOR_WIDTHS
+        )
+    elif kind == "stream_area":
+        parsed = _parse_stream_area_framing(clear)
+    elif kind == "version":
+        parsed = _parse_version_framing(clear)
     else:
         root = _root_layout(clear)
         _check_observed_root(kind, root)
