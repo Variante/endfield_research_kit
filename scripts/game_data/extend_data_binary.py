@@ -157,6 +157,14 @@ def parse_string_path_hash(data: bytes, *, source: str = "<memory>") -> StringPa
         raise BinaryFormatError(
             f"{source}: bucket records alias ({bucket_count - distinct_bucket_count} duplicate starts)"
         )
+    ordered_bucket_ranges = sorted(bucket_ranges)
+    for previous, current in zip(ordered_bucket_ranges, ordered_bucket_ranges[1:]):
+        if current[0] < previous[1]:
+            raise BinaryFormatError(
+                f"{source}: bucket ranges overlap at "
+                f"[{current[0]}, {current[1]}) and "
+                f"[{previous[0]}, {previous[1]})"
+            )
 
     # Parse every string record and retain only record starts.  Strict decoding
     # is deliberate: a malformed UTF-16 payload is not silently classified as
@@ -340,7 +348,15 @@ def parse_fac_bone_trs(
             trs_ranges.append((trs_offset, trs_offset + byte_size))
             total_bones += 1
 
-    merged_trs = _union(trs_ranges)
+    ordered_trs = sorted(trs_ranges)
+    for previous, current in zip(ordered_trs, ordered_trs[1:]):
+        if current[0] < previous[1]:
+            raise BinaryFormatError(
+                f"{source}: TRS ranges overlap at "
+                f"[{current[0]}, {current[1]}) and "
+                f"[{previous[0]}, {previous[1]})"
+            )
+    merged_trs = _union(ordered_trs)
     max_trs_end = max(end for _start, end in merged_trs)
     if max_trs_end != len(data):
         raise BinaryFormatError(
