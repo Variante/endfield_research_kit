@@ -149,6 +149,10 @@ Current durable boundaries:
   have a bounded unique UTF-16LE filename-table parser that references the 138
   remaining payloads exactly once. Those payload records and renderer meanings
   remain unresolved.
+- IV runtime capture must wait for the actual payload reader's exact native
+  module/RVA/body/entry-byte and base/length/cursor contract. A generic file-I/O
+  hook cannot preserve the authenticated virtual-path/hash join, and a stale
+  capture manifest must fail preflight before the game starts.
 - Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
   HIRC behavior, selected runtime playback, and audibility remain separate.
 - SkillData and BuffData have current exact-build member-count and file-hash

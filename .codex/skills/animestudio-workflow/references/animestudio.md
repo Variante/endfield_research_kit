@@ -224,6 +224,12 @@ claims. The index parser proves one unambiguous count-prefixed UTF-16LE
 `iv_*.bytes` filename table and retains the remainder as opaque; it does not
 parse the referenced irradiance payload records. Preserve the numeric magic
 until consumer evidence supplies a stable semantic name.
+Do not add a generic `ReadFile`/CRT capture for the remaining payloads. First
+pin the actual reader in the owning native module with exact build hashes, RVA,
+entry bytes/body hash, path/hash carrier, payload base/length, and cursor/loop
+contract; otherwise the observation cannot join back to one authenticated VFS
+logical file. A capture preflight mismatch is failed evidence and must be fixed
+before asking the user to run the game.
 
 For SkillData/BuffData work, begin with the current envelope censuses under
 `tmp/animestudio/` and the exact-build metadata hash recorded there. Member
