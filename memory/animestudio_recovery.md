@@ -143,8 +143,10 @@ Current durable boundaries:
 - The current Table corpus has a direct low-output sweep covering selected
   overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
   EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
-  have current exact framing sweeps; their row/instruction/runtime meanings are
-  separate claims.
+  have current exact framing sweeps. BundleManifest additionally has exact
+  inner-file-count, basename-multiplicity, and row-index witnesses, but no
+  serialized field ownership; stale AssetMap source chunks cannot supply it.
+  IFix instruction/runtime meanings remain separate claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
   remaining payloads exactly once. Those payload records and renderer meanings
