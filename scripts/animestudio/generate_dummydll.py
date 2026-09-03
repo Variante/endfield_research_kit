@@ -2,7 +2,7 @@
 """Generate Endfield IL2CPP DummyDll assemblies for AnimeStudio.
 
 The script discovers the build-specific IL2CPP registration addresses, prepares
-the tested Cpp2IL 2022.0.7 patch, generates assemblies into a staging folder,
+the pinned Cpp2IL-Endfield release, generates assemblies into a staging folder,
 validates the complete metadata image set, and atomically publishes tools/DummyDll.
 """
 from __future__ import annotations
@@ -27,11 +27,21 @@ else:
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from scripts.common import resolve_installed_game_data_root, sha256_file
-DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-src-2022.0.7"
+DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-Endfield"
 DEFAULT_OUTPUT = ROOT / "tools" / "DummyDll"
-CPP2IL_REPOSITORY = "https://github.com/SamboyCoding/Cpp2IL.git"
-CPP2IL_TAG = "2022.0.7"
-CPP2IL_PATCH = Path(__file__).with_name("cpp2il-2022.0.7-endfield.patch")
+DEFAULT_ANIMESTUDIO = (
+    ROOT
+    / "tools"
+    / "AnimeStudio"
+    / "AnimeStudio.CLI"
+    / "bin"
+    / "Release"
+    / "net9.0-windows"
+    / "AnimeStudio.CLI.exe"
+)
+CPP2IL_REPOSITORY = "https://github.com/Variante/Cpp2IL-Endfield.git"
+CPP2IL_TAG = "endfield-2022.0.7-v3"
+CPP2IL_COMMIT = "c9885ce465e4d57c1b736055639203b99533f6ba"
 IL2CPP_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 METADATA_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 REQUIRED_ASSEMBLIES = {
@@ -126,29 +136,25 @@ def run_command(
     return result
 
 
-def git_apply_state(source: Path) -> str:
-    applied = run_command(
-        ["git", "apply", "--reverse", "--check", "--unidiff-zero", str(CPP2IL_PATCH)],
-        cwd=source,
-        check=False,
-        show=False,
-    )
-    if applied.returncode == 0:
-        return "applied"
-    clean = run_command(
-        ["git", "apply", "--check", "--unidiff-zero", str(CPP2IL_PATCH)],
-        cwd=source,
-        check=False,
-        show=False,
-    )
-    return "clean" if clean.returncode == 0 else "conflict"
+def canonical_git_remote(value: str) -> str:
+    return value.strip().rstrip("/").removesuffix(".git").casefold()
 
 
-def prepare_cpp2il(source: Path, *, dry_run: bool) -> None:
+def cpp2il_tracked_changes(source: Path) -> str:
+    return run_command(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=source,
+        show=False,
+    ).stdout.strip()
+
+
+def prepare_cpp2il(source: Path, *, dry_run: bool) -> bool:
+    """Clone or safely advance a clean checkout to the immutable source pin."""
+
     if not source.exists():
         if dry_run:
             print(f"Would clone Cpp2IL {CPP2IL_TAG} into {source}")
-            return
+            return False
         source.parent.mkdir(parents=True, exist_ok=True)
         run_command(
             [
@@ -159,24 +165,65 @@ def prepare_cpp2il(source: Path, *, dry_run: bool) -> None:
         )
     if not (source / ".git").exists():
         fail(f"Cpp2IL source is not a Git checkout: {source}")
-    state = git_apply_state(source)
-    if state == "conflict":
+    current = cpp2il_source_commit(source)
+    if current == CPP2IL_COMMIT:
+        return True
+    changes = cpp2il_tracked_changes(source)
+    if changes:
         fail(
-            f"The Endfield patch neither applies nor reverses cleanly in {source}. "
-            f"Use a clean Cpp2IL {CPP2IL_TAG} checkout or inspect {CPP2IL_PATCH}."
+            "Refusing to update a Cpp2IL-Endfield checkout with tracked local "
+            f"changes: {source}"
         )
-    if state == "clean":
-        if dry_run:
-            print(f"Would apply {CPP2IL_PATCH}")
-        else:
-            run_command(["git", "apply", "--unidiff-zero", str(CPP2IL_PATCH)], cwd=source)
-    else:
-        print("Cpp2IL Endfield patch is already applied.")
+    origin = run_command(
+        ["git", "remote", "get-url", "origin"], cwd=source, show=False
+    ).stdout.strip()
+    if canonical_git_remote(origin) != canonical_git_remote(CPP2IL_REPOSITORY):
+        fail(
+            f"Cpp2IL-Endfield origin is {origin!r}, expected {CPP2IL_REPOSITORY!r}."
+        )
+    if dry_run:
+        print(
+            f"Would update clean Cpp2IL-Endfield checkout from {current} to "
+            f"{CPP2IL_COMMIT} ({CPP2IL_TAG})"
+        )
+        return False
+    run_command(
+        ["git", "fetch", "--depth", "1", "origin", "tag", CPP2IL_TAG],
+        cwd=source,
+    )
+    tag_commit = run_command(
+        ["git", "rev-parse", f"refs/tags/{CPP2IL_TAG}^{{}}"],
+        cwd=source,
+        show=False,
+    ).stdout.strip().casefold()
+    if tag_commit != CPP2IL_COMMIT:
+        fail(
+            f"Cpp2IL-Endfield tag {CPP2IL_TAG} resolves to {tag_commit}, "
+            f"expected {CPP2IL_COMMIT}."
+        )
+    run_command(["git", "checkout", "--detach", CPP2IL_COMMIT], cwd=source)
+    return True
 
 
-def validate_patched_cpp2il(source: Path) -> None:
+def cpp2il_source_commit(source: Path) -> str:
+    return run_command(
+        ["git", "rev-parse", "HEAD"], cwd=source, show=False
+    ).stdout.strip().casefold()
+
+
+def validate_cpp2il_source(source: Path) -> None:
+    commit = cpp2il_source_commit(source)
+    if commit != CPP2IL_COMMIT:
+        fail(
+            f"Cpp2IL-Endfield source is at {commit}, expected pinned commit "
+            f"{CPP2IL_COMMIT} ({CPP2IL_TAG})."
+        )
+    changes = cpp2il_tracked_changes(source)
+    if changes:
+        fail(f"Cpp2IL-Endfield source has tracked local changes: {source}")
     markers = {
         source / "LibCpp2IL" / "Il2CppBinary.cs": "CPP2IL_METADATA_REGISTRATION",
+        source / "LibCpp2IL" / "Metadata" / "Il2CppTypeDefinition.cs": "endfieldUnknownIndex",
         source / "Cpp2IL.Core" / "StubAssemblyBuilder.cs": "TryAddType",
         source / "Cpp2IL.Core" / "AssemblyPopulator.cs": "Skipping malformed image",
         source / "Cpp2IL.Core" / "AssemblyPopulator.cs": "Skipping malformed field default",
@@ -185,7 +232,7 @@ def validate_patched_cpp2il(source: Path) -> None:
     }
     missing = [str(path) for path, marker in markers.items() if not path.is_file() or marker not in path.read_text(encoding="utf-8-sig")]
     if missing:
-        fail("Cpp2IL checkout is missing required Endfield patch markers: " + ", ".join(missing))
+        fail("Cpp2IL-Endfield checkout is missing required compatibility markers: " + ", ".join(missing))
 
 
 def discover_registrations(
@@ -193,7 +240,13 @@ def discover_registrations(
     metadata: Path,
     code_override: int | None,
     metadata_override: int | None,
-) -> tuple[int, int, set[str], dict[str, Any]]:
+) -> tuple[
+    int,
+    int,
+    set[str],
+    dict[str, Any],
+    dict[tuple[str, int], str],
+]:
     il2cpp = load_module("endfield_dummydll_il2cpp", IL2CPP_HELPER)
     catalog = load_module("endfield_dummydll_metadata", METADATA_HELPER)
     print(f"Loading IL2CPP metadata: {metadata}")
@@ -240,7 +293,28 @@ def discover_registrations(
     }
     print(f"CodeRegistration: 0x{code_registration:x}")
     print(f"MetadataRegistration: 0x{metadata_registration:x}")
-    return code_registration, metadata_registration, image_names, summary
+    expected_identities: dict[tuple[str, int], str] = {}
+    for type_def in md.types:
+        image_name = md.image_name_by_type_index.get(type_def.index, "")
+        if (
+            not image_name.casefold().endswith(".dll")
+            or md.string(type_def.name_index) == "<Module>"
+        ):
+            continue
+        key = (image_name.casefold(), int(type_def.token))
+        if key in expected_identities:
+            fail(
+                "Metadata contains a duplicate type identity key: "
+                f"{image_name} token=0x{type_def.token:08x}"
+            )
+        expected_identities[key] = md.type_full_name(type_def)
+    return (
+        code_registration,
+        metadata_registration,
+        image_names,
+        summary,
+        expected_identities,
+    )
 
 
 def validate_generated(raw_output: Path, image_names: set[str]) -> list[Path]:
@@ -264,6 +338,100 @@ def validate_generated(raw_output: Path, image_names: set[str]) -> list[Path]:
     return dlls
 
 
+def compare_schema_identities(
+    expected: dict[tuple[str, int], str], payload: dict[str, Any]
+) -> tuple[dict[str, Any], list[str]]:
+    """Compare indexed managed TypeDefs with exact metadata identities."""
+
+    failures: list[str] = []
+    if payload.get("schema") != "animestudio.dummydll-index.v1":
+        failures.append(f"unexpected index schema {payload.get('schema')!r}")
+    if not payload.get("complete"):
+        failures.append("AnimeStudio reported an incomplete DummyDll index")
+    if payload.get("errors"):
+        failures.append(f"AnimeStudio reported {len(payload['errors'])} assembly errors")
+    invalid_count = int(payload.get("invalidTypeCount") or 0)
+    if invalid_count:
+        failures.append(f"{invalid_count} indexed types have invalid FullName values")
+
+    actual: dict[tuple[str, int], str] = {}
+    duplicate_keys: list[tuple[str, int]] = []
+    for assembly in payload.get("assemblies") or []:
+        module = str(assembly.get("module") or "").casefold()
+        for type_row in assembly.get("types") or []:
+            key = (module, parse_int(str(type_row["token"])))
+            if key in actual:
+                duplicate_keys.append(key)
+            actual[key] = str(type_row["fullName"])
+    if duplicate_keys:
+        failures.append(f"{len(duplicate_keys)} duplicate assembly/token keys in index")
+
+    expected_keys = set(expected)
+    actual_keys = set(actual)
+    missing = sorted(expected_keys - actual_keys)
+    extra = sorted(actual_keys - expected_keys)
+    mismatched = sorted(
+        key for key in expected_keys & actual_keys if expected[key] != actual[key]
+    )
+    if missing:
+        failures.append(f"{len(missing)} metadata type identities are missing")
+    if extra:
+        failures.append(f"{len(extra)} indexed type identities are unexpected")
+    if mismatched:
+        samples = "; ".join(
+            f"{key[0]} 0x{key[1]:08x}: expected {expected[key]!r}, got {actual[key]!r}"
+            for key in mismatched[:5]
+        )
+        failures.append(f"{len(mismatched)} FullName values mismatch ({samples})")
+    summary = {
+        "status": "failed" if failures else "passed",
+        "schema": payload.get("schema"),
+        "expectedTypeCount": len(expected),
+        "indexedTypeCount": len(actual),
+        "exactIdentityCount": len(expected_keys & actual_keys) - len(mismatched),
+        "invalidFullNameCount": invalid_count,
+        "missingIdentityCount": len(missing),
+        "unexpectedIdentityCount": len(extra),
+        "mismatchedFullNameCount": len(mismatched),
+        "failureSamples": failures[:10],
+    }
+    return summary, failures
+
+
+def validate_schema_identities(
+    animestudio: Path,
+    raw_output: Path,
+    work_dir: Path,
+    expected: dict[tuple[str, int], str],
+) -> dict[str, Any]:
+    if not animestudio.is_file():
+        fail(
+            "AnimeStudio CLI is required for the DummyDll semantic publication gate: "
+            f"{animestudio}. Build it with the AnimeStudio workflow first."
+        )
+    index_path = work_dir / "dummydll-index.json"
+    run_command(
+        [
+            str(animestudio),
+            "dummydll-index",
+            "--input",
+            str(raw_output),
+            "--output",
+            str(index_path),
+        ],
+        cwd=ROOT,
+    )
+    payload = json.loads(index_path.read_text(encoding="utf-8-sig"))
+    summary, failures = compare_schema_identities(expected, payload)
+    if failures:
+        fail(
+            "DummyDll semantic identity gate failed: "
+            + "; ".join(failures)
+            + f". Raw output and index retained at {work_dir}."
+        )
+    return summary
+
+
 def current_output_status(
     output: Path, gameassembly: Path, metadata: Path
 ) -> tuple[str, str]:
@@ -284,8 +452,13 @@ def current_output_status(
             stale_inputs.append("GameAssembly.dll")
         if recorded_game["metadataSha256"] != sha256_file(metadata):
             stale_inputs.append("global-metadata.dat")
-        if manifest["cpp2il"]["patchSha256"] != sha256_file(CPP2IL_PATCH):
-            stale_inputs.append("Cpp2IL patch")
+        recorded_cpp2il = manifest.get("cpp2il") or {}
+        if recorded_cpp2il.get("repository") != CPP2IL_REPOSITORY:
+            stale_inputs.append("Cpp2IL-Endfield repository")
+        if recorded_cpp2il.get("tag") != CPP2IL_TAG:
+            stale_inputs.append("Cpp2IL-Endfield release")
+        if str(recorded_cpp2il.get("commit") or "").casefold() != CPP2IL_COMMIT:
+            stale_inputs.append("Cpp2IL-Endfield commit")
         if manifest.get("generatorSha256") != sha256_file(Path(__file__)):
             stale_inputs.append("generator")
         if stale_inputs:
@@ -316,6 +489,13 @@ def current_output_status(
                 return "invalid", f"assembly hash mismatch: {path.name}"
         if assemblies["bytes"] != total_bytes:
             return "invalid", "assembly byte total does not match manifest"
+        schema_validation = manifest.get("schemaIdentityValidation") or {}
+        if schema_validation.get("status") != "passed":
+            return "invalid", "semantic type identity validation is missing or failed"
+        if schema_validation.get("exactIdentityCount") != schema_validation.get(
+            "expectedTypeCount"
+        ):
+            return "invalid", "semantic type identity coverage is incomplete"
     except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
         return "invalid", f"generation manifest validation failed: {exc}"
     gaps = manifest.get("cpp2il") or {}
@@ -360,8 +540,9 @@ def generation_manifest(
     source: Path,
     dlls: list[Path],
     cpp2il_output: str,
+    schema_identity_validation: dict[str, Any],
 ) -> dict[str, Any]:
-    commit = run_command(["git", "rev-parse", "HEAD"], cwd=source).stdout.strip()
+    commit = cpp2il_source_commit(source)
     clean_cpp2il_output = re.sub(r"\x1b\[[0-9;]*m", "", cpp2il_output)
     skipped_image_rows = re.findall(
         r"Skipping malformed image ([^:]+):\s*([^\r\n]+)", clean_cpp2il_output
@@ -398,8 +579,6 @@ def generation_manifest(
             "repository": CPP2IL_REPOSITORY,
             "tag": CPP2IL_TAG,
             "commit": commit,
-            "patch": str(CPP2IL_PATCH.relative_to(ROOT)),
-            "patchSha256": sha256_file(CPP2IL_PATCH),
             "skippedMalformedImageCount": len(skipped_images),
             "skippedMalformedImages": skipped_images,
             "skippedMalformedImageDiagnostics": [
@@ -425,6 +604,7 @@ def generation_manifest(
                 for path in dlls
             ],
         },
+        "schemaIdentityValidation": schema_identity_validation,
         "limitations": [
             "DummyDll assemblies contain recovered type/schema metadata, not original managed implementations.",
             "Cpp2IL may skip malformed images, types, field defaults, or generic constraints; inspect cpp2il skip counts before relying on a class.",
@@ -526,6 +706,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--game-root", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--cpp2il-source", type=Path, default=DEFAULT_CPP2IL_SOURCE)
+    parser.add_argument("--animestudio", type=Path, default=DEFAULT_ANIMESTUDIO)
     parser.add_argument("--dotnet", default="dotnet")
     parser.add_argument("--code-registration", type=parse_int)
     parser.add_argument("--metadata-registration", type=parse_int)
@@ -540,7 +721,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-prepare",
         action="store_true",
-        help="Require an already patched Cpp2IL checkout; do not clone or apply the maintained patch.",
+        help="Require an existing checkout of the pinned Cpp2IL-Endfield release; do not clone it.",
     )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
@@ -553,15 +734,19 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if not CPP2IL_PATCH.is_file():
-        fail(f"Missing maintained Cpp2IL patch: {CPP2IL_PATCH}")
     game_root = args.game_root or configured_game_root()
     install_root, gameassembly, metadata, exe_name = resolve_game_paths(game_root)
     output = args.output.expanduser().resolve()
     if args.status_only:
         status = report_current_output_status(output, gameassembly, metadata)
         return 0 if status == "current" else 1
-    code_registration, metadata_registration, image_names, registration_summary = discover_registrations(
+    (
+        code_registration,
+        metadata_registration,
+        image_names,
+        registration_summary,
+        expected_identities,
+    ) = discover_registrations(
         gameassembly,
         metadata,
         args.code_registration,
@@ -576,17 +761,17 @@ def main() -> int:
         if not source.exists():
             fail(f"Cpp2IL source does not exist: {source}")
     else:
-        prepare_cpp2il(source, dry_run=args.dry_run)
+        source_ready = prepare_cpp2il(source, dry_run=args.dry_run)
     if args.dry_run:
-        if source.exists():
-            validate_patched_cpp2il(source)
+        if source.exists() and (args.no_prepare or source_ready):
+            validate_cpp2il_source(source)
         print("Dry run complete; no build, generation, or publication was performed.")
         print(
             "If script-derived schemas are needed, rerun without --dry-run and "
             "with --replace."
         )
         return 0
-    validate_patched_cpp2il(source)
+    validate_cpp2il_source(source)
     if output.exists() and not args.replace:
         fail(f"Output already exists: {output}. Rerun with --replace after reviewing --dry-run.")
 
@@ -597,7 +782,7 @@ def main() -> int:
         )
     cpp2il = source / "Cpp2IL" / "bin" / "Release" / "net6.0" / "Cpp2IL.exe"
     if not cpp2il.is_file():
-        fail(f"Patched Cpp2IL executable was not built: {cpp2il}")
+        fail(f"Cpp2IL-Endfield executable was not built: {cpp2il}")
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     work_dir = ROOT / "tmp" / "animestudio" / "dummydll" / stamp
@@ -628,6 +813,12 @@ def main() -> int:
         fail(f"Cpp2IL did not confirm the validated registration addresses; retained: {work_dir}")
 
     dlls = validate_generated(raw_output, image_names)
+    schema_identity_validation = validate_schema_identities(
+        args.animestudio.expanduser().resolve(),
+        raw_output,
+        work_dir,
+        expected_identities,
+    )
     manifest = generation_manifest(
         gameassembly=gameassembly,
         metadata=metadata,
@@ -637,6 +828,7 @@ def main() -> int:
         source=source,
         dlls=dlls,
         cpp2il_output=result.stdout or "",
+        schema_identity_validation=schema_identity_validation,
     )
     regressions = publication_regressions(output, manifest)
     manifest["publicationGate"] = {
@@ -652,7 +844,7 @@ def main() -> int:
             "Refusing to publish degraded DummyDll output: "
             + "; ".join(regressions)
             + f". Raw output and cpp2il.log retained at {work_dir}. "
-            "Fix the generator/patch, or use --allow-coverage-regression only after review."
+            "Fix Cpp2IL-Endfield or the generator, or use --allow-coverage-regression only after review."
         )
     backup = publish(output, dlls, manifest, replace=args.replace, stamp=stamp)
     print(f"Published {len(dlls)} assemblies to {output}")

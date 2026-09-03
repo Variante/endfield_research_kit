@@ -205,13 +205,26 @@ Current durable boundaries:
 ```bat
 python -m scripts.animestudio.generate_dummydll --dry-run
 python -m scripts.animestudio.generate_dummydll --replace
+python -m scripts.animestudio.generate_dummydll --status-only
 ```
 
 DummyDll generation is tied to the exact installed `GameAssembly.dll` and
 `global-metadata.dat`. The generator must uniquely recover registrations,
 validate a complete staged managed image set, publish atomically, preserve the
-previous set, and record provenance in `tools/DummyDll/generation.json`. Never
-reuse registration addresses from another build.
+previous set, and record provenance in `tools/DummyDll/generation.json`. It
+must reject required-image skips and catastrophic type/size regressions by
+default, and must join every staged non-module TypeDef to the selected metadata
+on assembly, token, and full name before publication. Endfield Cpp2IL compatibility is maintained as source in
+`Variante/Cpp2IL-Endfield` on `endfield/2022.0.7`; the generator consumes an
+immutable release pinned by tag and commit instead of applying a local patch.
+Never reuse registration addresses from another build.
+
+The selected v29 build uses exact 92-byte TypeDef rows: the prefix is the stock
+v29 layout, while one additional int32 occurs after the eight range-start
+fields and before the ushort counts. Keep that slot semantically unnamed. The
+image ranges, all eight start/count families, nested-child relationships, and
+token sequences close exactly under this boundary; a retained-byref prefix
+interpretation is disproven.
 
 The safe TypeTree priority is `serialized-first`. Use `script-first` only for a
 focused comparison. Missing, stale, malformed, or incomplete DummyDlls warn and

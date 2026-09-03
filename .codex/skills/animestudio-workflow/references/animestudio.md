@@ -352,21 +352,32 @@ The generator uses the installed `GameAssembly.dll` and matching
 Unity 2021 x64 CodeRegistration module table; derives the nearby
 MetadataRegistration from the registration call site; and rejects missing,
 ambiguous, or pointer-invalid results. The addresses are build-specific and
-must never be copied from an earlier patch.
+must never be copied from an earlier game build.
 
-It prepares a local Cpp2IL `2022.0.7` checkout with the maintained
-`scripts/animestudio/cpp2il-2022.0.7-endfield.patch`. That patch tolerates
-Endfield's malformed packing/type relationships, skips bad images/types rather
-than aborting the whole set, makes `--suppress-attributes` cover attribute
-restoration, and accepts the generator's validated registration environment
-overrides without interactive prompts. Raw work stays under
+It clones the immutable `endfield-2022.0.7-vN` release pinned by both tag and
+commit from `https://github.com/Variante/Cpp2IL-Endfield`. The maintained
+source tolerates Endfield's malformed packing/type relationships, skips bad
+images/types rather than aborting the whole set, makes
+`--suppress-attributes` cover attribute restoration, and accepts the
+generator's validated registration environment overrides without interactive
+prompts. Endfield source changes belong on that fork's
+`endfield/2022.0.7` branch; build and tag them there, then update both pins in
+the generator. A clean checkout with the expected origin advances to a new pin
+automatically; tracked local changes or a foreign origin fail closed. Do not
+reintroduce an in-repo patch. Raw work stays under
 `tmp/animestudio/dummydll/` on failure or with `--keep-work-dir`.
 
 Before publication, every generated DLL name must exactly match the DLL images
-in metadata and each file must be a managed PE. Publication is atomic;
+in metadata and each file must be a managed PE. The built AnimeStudio CLI then
+indexes the staged set, and every non-module metadata type must match exactly
+on assembly, token, and full name; invalid, missing, unexpected, or mismatched
+identities fail closed. Required-image skips,
+catastrophic skipped-type ratios, and same-image-set size collapse are blocked
+unless explicitly overridden for a reviewed diagnostic publication. Publication is atomic;
 `--replace` moves the previous folder to a timestamped sibling. The resulting
-`generation.json` records both source hashes, registration summaries, Cpp2IL
-and patch provenance, per-DLL hashes, and malformed-image/type skip counts.
+`generation.json` records both native source hashes, registration summaries,
+Cpp2IL-Endfield repository/tag/commit provenance, per-DLL hashes,
+malformed-image/type skip counts, and the exact identity-join counts.
 
 DummyDlls supply names, inheritance, and serialized field shapes, not original
 method implementations. A loaded assembly does not prove a particular type was

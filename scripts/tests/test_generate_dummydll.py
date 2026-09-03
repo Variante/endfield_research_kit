@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 from scripts.animestudio import generate_dummydll
@@ -26,21 +27,14 @@ def managed_stub() -> bytes:
 
 
 class GenerateDummyDllTests(unittest.TestCase):
-    def test_patch_guards_malformed_value_type_field_defaults(self) -> None:
+    def test_pins_cpp2il_endfield_release(self) -> None:
         generator = load_generator()
-        patch_text = generator.CPP2IL_PATCH.read_text(encoding="utf-8")
-
-        self.assertIn("ValidateConstantTypeReference(fieldTypeRef)", patch_text)
-        self.assertIn("Skipping malformed field default", patch_text)
-        self.assertIn("fieldDefinition.Attributes &= ~FieldAttributes.HasDefault", patch_text)
-        self.assertIn("Skipping malformed generic constraint", patch_text)
-        self.assertIn("module.ImportReference(constraintType)", patch_text)
-        self.assertNotIn("first type {imageDef.firstTypeIndex} has no managed module", patch_text)
-        self.assertIn("ManagedToUnmanagedAssemblies.TryGetValue", patch_text)
-        self.assertIn(
-            "PopulateStubTypesInAssembly(imageDef, assembly, suppressAttributes)",
-            patch_text,
+        self.assertEqual(
+            "https://github.com/Variante/Cpp2IL-Endfield.git",
+            generator.CPP2IL_REPOSITORY,
         )
+        self.assertEqual("endfield-2022.0.7-v3", generator.CPP2IL_TAG)
+        self.assertRegex(generator.CPP2IL_COMMIT, r"^[0-9a-f]{40}$")
 
     def test_direct_script_help_does_not_require_game_configuration(self) -> None:
         generator = load_generator()
@@ -55,6 +49,40 @@ class GenerateDummyDllTests(unittest.TestCase):
             )
         self.assertEqual(0, result.returncode, result.stdout)
         self.assertIn("--status-only", result.stdout)
+
+    def test_prepare_cpp2il_advances_only_clean_expected_origin(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Cpp2IL-Endfield"
+            (source / ".git").mkdir(parents=True)
+            completed = [
+                subprocess.CompletedProcess([], 0, generator.CPP2IL_REPOSITORY + "\n"),
+                subprocess.CompletedProcess([], 0, ""),
+                subprocess.CompletedProcess([], 0, generator.CPP2IL_COMMIT + "\n"),
+                subprocess.CompletedProcess([], 0, ""),
+            ]
+            with (
+                mock.patch.object(
+                    generator, "cpp2il_source_commit", return_value="0" * 40
+                ),
+                mock.patch.object(
+                    generator, "cpp2il_tracked_changes", return_value=""
+                ),
+                mock.patch.object(
+                    generator, "run_command", side_effect=completed
+                ) as run,
+            ):
+                self.assertTrue(generator.prepare_cpp2il(source, dry_run=False))
+
+            commands = [call.args[0] for call in run.call_args_list]
+            self.assertIn(
+                ["git", "fetch", "--depth", "1", "origin", "tag", generator.CPP2IL_TAG],
+                commands,
+            )
+            self.assertIn(
+                ["git", "checkout", "--detach", generator.CPP2IL_COMMIT],
+                commands,
+            )
 
     def test_resolve_game_paths_accepts_data_root(self) -> None:
         generator = load_generator()
@@ -93,18 +121,29 @@ class GenerateDummyDllTests(unittest.TestCase):
                 ]
             )
 
-            manifest = generator.generation_manifest(
-                gameassembly=gameassembly,
-                metadata=metadata,
-                code_registration=1,
-                metadata_registration=2,
-                registration_summary={},
-                source=generator.DEFAULT_CPP2IL_SOURCE,
-                dlls=[dll],
-                cpp2il_output=output,
-            )
+            with mock.patch.object(
+                generator, "cpp2il_source_commit", return_value=generator.CPP2IL_COMMIT
+            ):
+                manifest = generator.generation_manifest(
+                    gameassembly=gameassembly,
+                    metadata=metadata,
+                    code_registration=1,
+                    metadata_registration=2,
+                    registration_summary={},
+                    source=generator.DEFAULT_CPP2IL_SOURCE,
+                    dlls=[dll],
+                    cpp2il_output=output,
+                    schema_identity_validation={
+                        "status": "passed",
+                        "expectedTypeCount": 1,
+                        "exactIdentityCount": 1,
+                    },
+                )
 
             cpp2il = manifest["cpp2il"]
+            self.assertEqual(generator.CPP2IL_REPOSITORY, cpp2il["repository"])
+            self.assertEqual(generator.CPP2IL_TAG, cpp2il["tag"])
+            self.assertEqual(generator.CPP2IL_COMMIT, cpp2il["commit"])
             self.assertEqual(1, cpp2il["skippedMalformedImageCount"])
             self.assertEqual(
                 [{"name": "Bad.dll", "reason": "first type is unavailable."}],
@@ -173,7 +212,9 @@ class GenerateDummyDllTests(unittest.TestCase):
                     "metadataSha256": generator.sha256_file(metadata),
                 },
                 "cpp2il": {
-                    "patchSha256": generator.sha256_file(generator.CPP2IL_PATCH),
+                    "repository": generator.CPP2IL_REPOSITORY,
+                    "tag": generator.CPP2IL_TAG,
+                    "commit": generator.CPP2IL_COMMIT,
                     "skippedMalformedImageCount": 0,
                     "skippedMalformedImages": [],
                     "skippedMalformedTypeCount": 1,
@@ -188,6 +229,11 @@ class GenerateDummyDllTests(unittest.TestCase):
                         "sha256": generator.sha256_file(dll),
                     }],
                 },
+                "schemaIdentityValidation": {
+                    "status": "passed",
+                    "expectedTypeCount": 1,
+                    "exactIdentityCount": 1,
+                },
             }
             (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
 
@@ -195,6 +241,13 @@ class GenerateDummyDllTests(unittest.TestCase):
                 "current",
                 generator.current_output_status(output, gameassembly, metadata)[0],
             )
+            manifest["cpp2il"]["commit"] = "0" * 40
+            (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
+            self.assertEqual(
+                "stale",
+                generator.current_output_status(output, gameassembly, metadata)[0],
+            )
+            manifest["cpp2il"]["commit"] = generator.CPP2IL_COMMIT
             manifest["cpp2il"]["skippedMalformedTypeCount"] = 95
             (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
             self.assertEqual(
@@ -206,6 +259,49 @@ class GenerateDummyDllTests(unittest.TestCase):
                 "invalid",
                 generator.current_output_status(output, gameassembly, metadata)[0],
             )
+
+    def test_schema_identity_gate_requires_exact_assembly_token_and_name(self) -> None:
+        generator = load_generator()
+        expected = {
+            ("gameplay.beyond.dll", 0x02000002): "Beyond.Outer+Inner",
+            ("common.beyond.dll", 0x02000003): "Beyond.Value",
+        }
+        payload = {
+            "schema": "animestudio.dummydll-index.v1",
+            "complete": True,
+            "invalidTypeCount": 0,
+            "errors": [],
+            "assemblies": [
+                {
+                    "module": "Gameplay.Beyond.dll",
+                    "types": [
+                        {
+                            "token": "0x02000002",
+                            "fullName": "Beyond.Outer+Inner",
+                        }
+                    ],
+                },
+                {
+                    "module": "Common.Beyond.dll",
+                    "types": [
+                        {"token": "0x02000003", "fullName": "Beyond.Value"}
+                    ],
+                },
+            ],
+        }
+
+        summary, failures = generator.compare_schema_identities(expected, payload)
+        self.assertEqual([], failures)
+        self.assertEqual("passed", summary["status"])
+        self.assertEqual(2, summary["exactIdentityCount"])
+
+        payload["assemblies"][0]["types"][0]["fullName"] = (
+            "Beyond.Outer+Beyond.Inner"
+        )
+        summary, failures = generator.compare_schema_identities(expected, payload)
+        self.assertEqual("failed", summary["status"])
+        self.assertEqual(1, summary["mismatchedFullNameCount"])
+        self.assertTrue(any("FullName values mismatch" in row for row in failures))
 
     def test_validate_generated_requires_exact_metadata_dll_set(self) -> None:
         generator = load_generator()

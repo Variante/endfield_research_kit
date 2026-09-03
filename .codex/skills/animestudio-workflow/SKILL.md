@@ -87,8 +87,8 @@ filtered exports match byte-for-byte; equal object counts are insufficient.
 ## DummyDll Recovery
 
 Use DummyDlls only when script-derived MonoBehaviour schemas matter. Before
-schema-dependent work, and after an installed-game, generator, or maintained
-Cpp2IL patch change, check the repo-local set first:
+schema-dependent work, and after an installed-game, generator, or pinned
+Cpp2IL-Endfield release change, check the repo-local set first:
 
 ```bat
 python -m scripts.animestudio.generate_dummydll --status-only
@@ -97,15 +97,26 @@ python -m scripts.animestudio.generate_dummydll --dry-run
 
 If status is missing, stale, invalid, or degraded and script schemas are in
 scope, refresh it proactively: require the dry run's unique registration and
-patch checks, then run `--replace` and re-run `--status-only`. Never reuse
+source-provenance checks, then run `--replace` and re-run `--status-only`. Never reuse
 registration addresses from an earlier build. The generator must block a
-required-image skip or catastrophic size regression by default; do not use its
-coverage-regression override during routine refreshes. Missing or unusable
+required-image skip, catastrophic size regression, or any mismatch in the
+full metadata-to-DummyDll `(assembly, token, FullName)` identity join by
+default; do not use its coverage-regression override during routine refreshes.
+The identity gate requires a built AnimeStudio CLI. Missing or unusable
 DummyDlls must warn and fall back cleanly; normal exports must continue.
 
 Keep serialized-first TypeTree priority by default. Treat Cpp2IL skip counts as
 coverage gaps, verify the required full type name exists in the generated
 assembly, and use script-first only for a focused comparison.
+
+Cpp2IL Endfield compatibility is owned by
+`https://github.com/Variante/Cpp2IL-Endfield`, branch
+`endfield/2022.0.7`. Make source changes there, build them, publish a new
+immutable `endfield-2022.0.7-vN` tag, and update both the tag and commit pin in
+`generate_dummydll.py`. The generator may advance an existing checkout only
+when its tracked files are clean and its origin matches that repository; a
+dirty or foreign checkout must fail closed. Do not restore the retired in-repo
+patch workflow.
 
 ## Diagnose and Change Safely
 
