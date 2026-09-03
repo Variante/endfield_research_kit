@@ -1,10 +1,10 @@
 """Fail-closed framing for current ``NPC/MontageJson/MontageNew`` payloads.
 
 The selected build uses a compact MemoryPack object with three top-level
-members and a 24-member montage record.  This reader intentionally supports
-only the corpus shape whose two variable collections are empty.  Nested
-fixed-size value records are bounded but remain anonymous: metadata names
-alone do not establish their serialized field order.
+members and a 24-member montage record.  One variable collection remains an
+explicit coverage gap.  The other is count-framed and contains five-member
+fixed-width records.  Nested values remain anonymous: metadata names alone do
+not establish their serialized field order.
 """
 
 from __future__ import annotations
@@ -20,11 +20,15 @@ from .core import MEMORYPACK_NULL_COUNT, format_offset
 NPC_MONTAGE_ROOT_MEMBER_COUNT = 3
 NPC_MONTAGE_DATA_MEMBER_COUNT = 24
 NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT = 7
+NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT = 5
 NPC_MONTAGE_RELATIVE_PREFIX = "Data/Json/NPC/MontageJson/MontageNew/"
 
 _GUID_PROXY_SIZE = 16
 _ASYNC_CLIP_INFO_SIZE = 36
 _TRANSITION_INFO_SIZE = 32
+_MEMBER18_RECORD_BODY_SIZE = 20
+_MEMBER18_RECORD_SIZE = 21
+_POST_MEMBER18_SUFFIX_SIZE = 72
 _MAX_ANONYMOUS_UTF8_BYTES = 512
 
 
@@ -147,12 +151,44 @@ def _read_clip_info(reader: _Reader) -> dict[str, Any]:
     }
 
 
+def _read_member18_records(reader: _Reader, count: int) -> list[dict[str, Any]]:
+    remaining = len(reader.data) - reader.offset
+    required = count * _MEMBER18_RECORD_SIZE + _POST_MEMBER18_SUFFIX_SIZE
+    if required > remaining:
+        raise NpcMontageFramingError(
+            "data.member18:truncated-count-envelope "
+            f"count={count} need={required} remaining={remaining}"
+        )
+    records: list[dict[str, Any]] = []
+    for index in range(count):
+        start = reader.offset
+        member_count = reader.u8(f"data.member18[{index}].memberCount")
+        if member_count != NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT:
+            raise NpcMontageFramingError(
+                f"data.member18[{index}].memberCount:"
+                f"expected={NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT} "
+                f"actual={member_count}"
+            )
+        body_range = reader.skip(
+            _MEMBER18_RECORD_BODY_SIZE,
+            f"data.member18[{index}].anonymousBody",
+        )
+        records.append(
+            {
+                "memberCount": member_count,
+                "startOffset": start,
+                "endOffset": reader.offset,
+                "anonymousBodyRange": body_range,
+            }
+        )
+    return records
+
+
 def frame_npc_montage(data: bytes) -> dict[str, Any]:
     """Frame one supported current-build NPC montage through physical EOF.
 
-    The two collection counts must be zero.  Non-empty dynamic-entity and
-    transition-override records remain an explicit coverage gap rather than
-    being skipped by scanning for a plausible suffix.
+    Member3 must be empty. Member18 is consumed only through its explicit
+    count and per-record member-count markers. No suffix scanning is used.
     """
     reader = _Reader(data)
     root_count = reader.u8("root.memberCount")
@@ -205,11 +241,7 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
 
     override_count_offset = reader.offset
     override_count = reader.u32("data.member18.count")
-    if override_count != 0:
-        raise NpcMontageFramingError(
-            "data.member18:unsupported-nonempty-collection "
-            f"count={override_count} offset={format_offset(override_count_offset)}"
-        )
+    member18_records = _read_member18_records(reader, override_count)
     reader.i32("data.member19")
     reader.f32("data.member20")
     anonymous_ranges.append(
@@ -229,13 +261,22 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
         )
 
     return {
-        "status": "exact_current_npc_montage_empty_collection_frame",
+        "status": (
+            "exact_current_npc_montage_empty_collection_frame"
+            if override_count == 0
+            else "exact_current_npc_montage_member18_counted_frame"
+        ),
         "schemaStatus": "anonymous_exact_frame",
         "serializedMemberCount": root_count,
         "nestedDataMemberCount": data_count,
         "bytesConsumed": reader.offset,
         "clipInfo": clip_info,
-        "emptyCollectionOffsets": [dynamic_count_offset, override_count_offset],
+        "collectionCountOffsets": [dynamic_count_offset, override_count_offset],
+        "emptyCollectionOffsets": [
+            dynamic_count_offset,
+            *([override_count_offset] if override_count == 0 else []),
+        ],
+        "member18Records": member18_records,
         "rootRawMembers": [
             {"index": 0, "offset": 1, "value": root_member0},
             {"index": 2, "offset": root_member2_offset, "value": root_member2},
@@ -245,7 +286,9 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
             "The complete supported shape is consumed through physical EOF. "
             "The nested UTF-8 value and all scalar/fixed-size records stay "
             "anonymous; non-empty strings are gated to the observed A_* shape. "
-            "Non-empty member3/member18 collections are not decoded."
+            "Member18 records are bounded by an explicit collection count and "
+            "five-member record markers; their values remain anonymous. "
+            "Non-empty member3 collections are not decoded."
         ),
     }
 
@@ -269,7 +312,7 @@ def decode_npc_montage_memorypack(
         "subtype": "NPCMontageJson",
         "summary": (
             "MemoryPack NPCMontageJson; 3-member root; 24-member montage; "
-            "empty variable collections; exact length"
+            "count-framed anonymous records; exact length"
         ),
         "rows": 1,
         "keys": ["anonymousUtf8"],

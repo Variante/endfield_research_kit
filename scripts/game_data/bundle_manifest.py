@@ -3,10 +3,11 @@
 The installed build provides unusually strong evidence for this family: the
 outer file is one Brotli stream and the decompressed bytes have two fixed
 headers, three size/count-delimited fixed-width row regions, and one
-size-delimited variable region with a repeated footer witness.  This module
-only certifies those boundaries.  Row fields and variable-region bytes are
-kept opaque because the available native metadata does not establish their
-field-to-byte mapping or the variable records' internal format.
+size-delimited variable region with a repeated footer witness.  The 48-byte
+rows also index one bounded anonymous region made of a length-prefixed UTF-16
+fragment and three count-delimited 32-bit lists per row.  This module only
+certifies those boundaries.  Row fields, the surrounding variable-region
+bytes, and all indexed values remain semantically unnamed.
 
 ``parse_bundle_manifest`` accepts the compressed ``.hgmmap`` bytes.  Use
 ``parse_decompressed_bundle_manifest`` only when a caller has already checked
@@ -111,7 +112,7 @@ class OpaqueTable:
 
 @dataclass(frozen=True)
 class OpaqueVariableRegion:
-    """One bounded variable-width region whose internal records stay opaque."""
+    """One bounded variable-width region with one anonymously indexed span."""
 
     section_offset: int
     size_witness: int
@@ -123,6 +124,17 @@ class OpaqueVariableRegion:
     footer_offset: int
     footer_size_witness: int
     end_offset: int
+    opaque_prefix_length: int
+    indexed_region_offset: int
+    indexed_region_length: int
+    indexed_record_count: int
+    indexed_utf16_bytes: int
+    indexed_integer_list_count: int
+    indexed_integer_value_count: int
+    indexed_max_integer_list_count: int
+    indexed_region_sha256: str
+    opaque_suffix_offset: int
+    opaque_suffix_length: int
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -136,7 +148,29 @@ class OpaqueVariableRegion:
             "footerOffset": self.footer_offset,
             "footerSizeWitness": self.footer_size_witness,
             "endOffset": self.end_offset,
-            "recordStatus": "opaque",
+            "opaquePrefix": {
+                "relativeOffset": 0,
+                "length": self.opaque_prefix_length,
+                "fieldStatus": "opaque",
+            },
+            "anonymousIndexedRegion": {
+                "relativeOffset": self.indexed_region_offset,
+                "length": self.indexed_region_length,
+                "recordCount": self.indexed_record_count,
+                "utf16RecordCount": self.indexed_record_count,
+                "utf16Bytes": self.indexed_utf16_bytes,
+                "integerListCount": self.indexed_integer_list_count,
+                "integerValueCount": self.indexed_integer_value_count,
+                "maxIntegerListCount": self.indexed_max_integer_list_count,
+                "sha256": self.indexed_region_sha256,
+                "fieldStatus": "anonymous-structural-only",
+            },
+            "opaqueSuffix": {
+                "relativeOffset": self.opaque_suffix_offset,
+                "length": self.opaque_suffix_length,
+                "fieldStatus": "opaque",
+            },
+            "recordStatus": "partially-framed-anonymous",
         }
 
 
@@ -160,7 +194,7 @@ class BundleManifestSummary:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "format": "endfield-bundle-manifest-hgmmap-v2",
+            "format": "endfield-bundle-manifest-hgmmap-v3",
             "source": self.source,
             "compressed": {
                 "length": self.compressed_length,
@@ -181,7 +215,7 @@ class BundleManifestSummary:
             "tables": [table.to_dict() for table in self.tables],
             "opaqueVariableRegion": self.variable_region.to_dict(),
             "consumedBytes": self.consumed_bytes,
-            "status": "format_framed_bounded_opaque",
+            "status": "format_framed_partial_anonymous",
         }
 
 
@@ -249,7 +283,149 @@ def _table_section(
     return table, section_offset + 4 + section_size
 
 
-def _variable_region(data: bytes, section_offset: int, source: str) -> OpaqueVariableRegion:
+def _counted_utf16_component(
+    payload: bytes,
+    start: int,
+    end: int,
+    label: str,
+) -> int:
+    _need(payload, start, 4, f"{label} length")
+    byte_length = _u32(payload, start, f"{label} length")
+    if byte_length % 2:
+        raise BinaryFormatError(f"{label}: odd UTF-16 byte length {byte_length}")
+    expected_end = start + 4 + byte_length + 2
+    if end != expected_end:
+        raise BinaryFormatError(
+            f"{label}: indexed range [{start}, {end}) does not match "
+            f"4 + UTF-16 length {byte_length} + 2 ({expected_end - start} bytes)"
+        )
+    _need(payload, start, expected_end - start, label)
+    if payload[end - 2 : end] != b"\0\0":
+        raise BinaryFormatError(f"{label}: missing 2-byte zero terminator")
+    try:
+        payload[start + 4 : start + 4 + byte_length].decode(
+            "utf-16-le", errors="strict"
+        )
+    except UnicodeDecodeError as exc:
+        raise BinaryFormatError(f"{label}: not strict UTF-16LE: {exc}") from exc
+    return byte_length
+
+
+def _counted_u32_component(
+    payload: bytes,
+    start: int,
+    end: int,
+    label: str,
+) -> int:
+    _need(payload, start, 4, f"{label} count")
+    count = _u32(payload, start, f"{label} count")
+    expected_end = start + 4 + count * 4 + 2
+    if end != expected_end:
+        raise BinaryFormatError(
+            f"{label}: indexed range [{start}, {end}) does not match "
+            f"4 + count*4 + 2 for count {count} ({expected_end - start} bytes)"
+        )
+    _need(payload, start, expected_end - start, label)
+    if payload[end - 2 : end] != b"\0\0":
+        raise BinaryFormatError(f"{label}: missing 2-byte zero terminator")
+    return count
+
+
+def _indexed_anonymous_region(
+    data: bytes,
+    payload: bytes,
+    table: OpaqueTable,
+    source: str,
+) -> dict[str, int | str]:
+    """Validate the four relative component pointers in every 48-byte row."""
+
+    if table.row_count <= 0:
+        raise BinaryFormatError(f"{source}: indexed table is empty")
+    first_row = struct.unpack_from("<12I", data, table.offset)
+    indexed_start = first_row[1]
+    if indexed_start >= len(payload):
+        raise BinaryFormatError(
+            f"{source}: first indexed offset {indexed_start} outside variable "
+            f"payload length {len(payload)}"
+        )
+
+    previous_end = indexed_start
+    utf16_bytes = 0
+    integer_value_count = 0
+    max_integer_list_count = 0
+    for index in range(table.row_count):
+        row_offset = table.offset + index * table.row_size
+        row = struct.unpack_from("<12I", data, row_offset)
+        starts = row[1:5]
+        if starts[0] != previous_end:
+            raise BinaryFormatError(
+                f"{source}: indexed row {index} starts at {starts[0]}, "
+                f"previous row ends at {previous_end}"
+            )
+        if not (starts[0] <= starts[1] <= starts[2] <= starts[3]):
+            raise BinaryFormatError(
+                f"{source}: indexed row {index} component pointers are not monotonic"
+            )
+        if index + 1 < table.row_count:
+            next_row_offset = row_offset + table.row_size
+            next_start = struct.unpack_from("<I", data, next_row_offset + 4)[0]
+        else:
+            _need(payload, starts[3], 4, f"{source} indexed row {index} list 3 count")
+            final_count = _u32(
+                payload, starts[3], f"{source} indexed row {index} list 3 count"
+            )
+            next_start = starts[3] + 4 + final_count * 4 + 2
+        if starts[3] > next_start:
+            raise BinaryFormatError(
+                f"{source}: indexed row {index} final pointer {starts[3]} "
+                f"exceeds row end {next_start}"
+            )
+
+        utf16_bytes += _counted_utf16_component(
+            payload,
+            starts[0],
+            starts[1],
+            f"{source} indexed row {index} UTF-16 component",
+        )
+        component_ends = (starts[2], starts[3], next_start)
+        for component_index, (start, end) in enumerate(
+            zip(starts[1:], component_ends), 1
+        ):
+            count = _counted_u32_component(
+                payload,
+                start,
+                end,
+                f"{source} indexed row {index} list {component_index}",
+            )
+            integer_value_count += count
+            max_integer_list_count = max(max_integer_list_count, count)
+        previous_end = next_start
+
+    _need(
+        payload,
+        indexed_start,
+        previous_end - indexed_start,
+        f"{source} anonymous indexed region",
+    )
+    return {
+        "offset": indexed_start,
+        "length": previous_end - indexed_start,
+        "record_count": table.row_count,
+        "utf16_bytes": utf16_bytes,
+        "integer_list_count": table.row_count * 3,
+        "integer_value_count": integer_value_count,
+        "max_integer_list_count": max_integer_list_count,
+        "sha256": _digest(payload[indexed_start:previous_end]),
+        "end": previous_end,
+    }
+
+
+def _variable_region(
+    data: bytes,
+    section_offset: int,
+    indexed_table: OpaqueTable,
+    source: str,
+) -> OpaqueVariableRegion:
     _need(data, section_offset, 8, f"{source} variable-region envelope")
     size_witness = _u32(data, section_offset, f"{source} variable-region size witness")
     payload_offset = section_offset + 4
@@ -273,6 +449,8 @@ def _variable_region(data: bytes, section_offset: int, source: str) -> OpaqueVar
             f"({len(data) - end_offset} bytes) after variable-region footer"
         )
     payload = data[payload_offset:footer_offset]
+    indexed = _indexed_anonymous_region(data, payload, indexed_table, source)
+    indexed_end = int(indexed["end"])
     return OpaqueVariableRegion(
         section_offset=section_offset,
         size_witness=size_witness,
@@ -284,6 +462,17 @@ def _variable_region(data: bytes, section_offset: int, source: str) -> OpaqueVar
         footer_offset=footer_offset,
         footer_size_witness=footer_size_witness,
         end_offset=end_offset,
+        opaque_prefix_length=int(indexed["offset"]),
+        indexed_region_offset=int(indexed["offset"]),
+        indexed_region_length=int(indexed["length"]),
+        indexed_record_count=int(indexed["record_count"]),
+        indexed_utf16_bytes=int(indexed["utf16_bytes"]),
+        indexed_integer_list_count=int(indexed["integer_list_count"]),
+        indexed_integer_value_count=int(indexed["integer_value_count"]),
+        indexed_max_integer_list_count=int(indexed["max_integer_list_count"]),
+        indexed_region_sha256=str(indexed["sha256"]),
+        opaque_suffix_offset=indexed_end,
+        opaque_suffix_length=len(payload) - indexed_end,
     )
 
 
@@ -345,7 +534,7 @@ def parse_decompressed_bundle_manifest(
             f"{source}: fixed-width-48 count witness {table3.row_count} != "
             f"fixed-width-56 count {table2.row_count}"
         )
-    variable_region = _variable_region(data, variable_region_offset, source)
+    variable_region = _variable_region(data, variable_region_offset, table3, source)
     return BundleManifestSummary(
         source=source,
         compressed_length=0,
