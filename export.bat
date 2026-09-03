@@ -5,6 +5,7 @@ rem Rebuilds the WebUI from the export_full folder that is already on disk.
 rem
 rem   export.bat                     rebuild from the current export_full
 rem   export.bat --from-game         re-extract from the installed game first
+rem   export.bat --changed-only      refresh changed VFS files, then run all WebUI flows
 rem   export.bat --with-assets       also rebuild assets and CN audio
 rem   export.bat --assets-only       assets and post-Story views, no Story rebuild
 rem   export.bat --help              all options
@@ -15,8 +16,11 @@ set "EXPORT_ROOT_ARG="
 set "EXTRACTION_OUTPUT_ARG="
 set "STORY_BUILD_ARGS="
 set "EXPORT_FROM_GAME=0"
+set "CHANGED_ONLY=0"
+set "CHANGED_PREPARED=0"
 set "WITH_ASSETS=0"
 set "ASSET_MODE=default"
+set "STRUCTURED_DUMP_MODE=focused"
 set "FULL_SOURCE_GRAPH=0"
 set "BUILD_SCOPE=full"
 set "SCOPE_FLAG="
@@ -32,6 +36,8 @@ rem so a new stage cannot silently miss it the way a per-stage copy can.
 if defined ENDFIELD_GAME_ROOT set "GAME_ROOT_ARG=--game-root "%ENDFIELD_GAME_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT set "EXPORT_ROOT_ARG=--export-root "%ENDFIELD_EXPORT_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT set "EXTRACTION_OUTPUT_ARG=--output "%ENDFIELD_EXPORT_ROOT%""
+if defined ENDFIELD_EXPORT_ROOT (set "CHANGED_OUTPUT_ROOT=%ENDFIELD_EXPORT_ROOT%") else (set "CHANGED_OUTPUT_ROOT=%~dp0export_full")
+set "CHANGED_MANIFEST=%CHANGED_OUTPUT_ROOT%\recovered\AnimeStudio-cli\local_incremental\pending_manifest.json"
 
 rem Answer any help request, and pick the benchmark label, before the benchmark
 rem wrapper re-runs this script.
@@ -39,6 +45,7 @@ for %%A in (%*) do (
   call :is_help "%%~A"
   if not errorlevel 1 goto :help
   if /I "%%~A"=="--assets-only" set "BENCH_LABEL=export_assets"
+  if /I "%%~A"=="--changed-only" set "BENCH_LABEL=export_changed"
 )
 
 if defined ENDFIELD_EXPORT_BENCHMARK_ACTIVE goto :parse_args
@@ -52,7 +59,9 @@ if "%~1"=="" goto :parsed_args
 
 rem Where the data comes from.
 if /I "%~1"=="--from-game" goto :opt_from_game
+if /I "%~1"=="--changed-only" goto :opt_changed_only
 if /I "%~1"=="--game-root" goto :opt_game_root
+if /I "%~1"=="--structured-dump-mode" goto :opt_structured_dump_mode
 
 rem Assets and audio.
 if /I "%~1"=="--with-assets" goto :opt_with_assets
@@ -81,10 +90,26 @@ set "EXPORT_FROM_GAME=1"
 shift
 goto :parse_args
 
+:opt_changed_only
+set "CHANGED_ONLY=1"
+set "EXPORT_FROM_GAME=1"
+set "WITH_ASSETS=1"
+shift
+goto :parse_args
+
 :opt_game_root
 if "%~2"=="" goto :missing_game_root
 set "GAME_ROOT_ARG=--game-root "%~2""
 set "ENDFIELD_GAME_ROOT=%~2"
+shift
+shift
+goto :parse_args
+
+:opt_structured_dump_mode
+if "%~2"=="" goto :missing_structured_dump_mode
+set "STRUCTURED_DUMP_MODE=%~2"
+set "EXPORT_ARGS=%EXPORT_ARGS% --structured-dump-mode "%~2""
+if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=--structured-dump-mode"
 shift
 shift
 goto :parse_args
@@ -162,6 +187,8 @@ if "%BUILD_SCOPE%"=="assets" set "STORY_BUILD=0"
 rem Reject contradictory input before starting any Python process.
 call :validate_asset_mode "%ASSET_MODE%"
 if errorlevel 1 exit /b 2
+call :validate_structured_dump_mode "%STRUCTURED_DUMP_MODE%"
+if errorlevel 1 exit /b 2
 if "%EXPORT_FROM_GAME%"=="0" if defined FIRST_PASSTHROUGH goto :passthrough_needs_game
 if "%STORY_BUILD%"=="0" if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" goto :object_index_without_story
 if "%BUILD_SCOPE%"=="story" if "%WITH_ASSETS%"=="1" (
@@ -172,6 +199,14 @@ if "%BUILD_SCOPE%"=="story" if "%FULL_SOURCE_GRAPH%"=="1" (
   echo --story-only cannot be combined with --full-source-graph.
   exit /b 2
 )
+if "%CHANGED_ONLY%"=="1" if not "%BUILD_SCOPE%"=="full" (
+  echo --changed-only always runs the complete WebUI pipeline and cannot be combined with %SCOPE_FLAG%.
+  exit /b 2
+)
+if "%CHANGED_ONLY%"=="1" if /I "%STRUCTURED_DUMP_MODE%"=="debug" (
+  echo --changed-only supports focused or default structured dump mode, not debug.
+  exit /b 2
+)
 rem Assemble the post-Story view arguments now so the preflight below can check
 rem the exact combination this run will use, not a stand-in.
 set "WEBUI_VIEW_ARGS=--jobs "%WEBUI_JOBS%" --asset-mode "%ASSET_MODE%""
@@ -180,7 +215,7 @@ if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI
 if "%FULL_SOURCE_GRAPH%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --full-source-graph"
 
 call :stage "Resolved export options"
-if "%EXPORT_FROM_GAME%"=="1" (echo [export.bat] Source: installed game refresh) else (echo [export.bat] Source: existing export_full)
+if "%CHANGED_ONLY%"=="1" (echo [export.bat] Source: local changed-only installed-game refresh; Updates integration disabled) else if "%EXPORT_FROM_GAME%"=="1" (echo [export.bat] Source: installed game refresh) else (echo [export.bat] Source: existing export_full)
 if "%WITH_ASSETS%"=="1" (echo [export.bat] Assets/audio: enabled, scope %ASSET_MODE%) else (echo [export.bat] Assets/audio: skipped)
 if "%BUILD_SCOPE%"=="full" echo [export.bat] Build scope: complete curated WebUI pipeline
 if "%BUILD_SCOPE%"=="story" echo [export.bat] Build scope: Story and Text Tables only
@@ -199,9 +234,20 @@ rem - preserve OCR-managed Story sort order under webui\overrides
 rem - optionally rebuild Assets tab indexes and relink/decode CN audio with --with-assets
 rem - when --from-game and --with-assets are combined, run one AnimeStudio scope for Story and assets
 if "%EXPORT_FROM_GAME%"=="0" goto :extract_skipped
+if "%CHANGED_ONLY%"=="1" goto :extract_changed
 if "%BUILD_SCOPE%"=="assets" goto :extract_assets
 if "%WITH_ASSETS%"=="1" goto :extract_story_and_assets
 goto :extract_story
+
+:extract_changed
+call :stage "Indexing VFS metadata and exporting only changed structured logical files"
+python .\scripts\export_changed_game_data.py prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
+if errorlevel 1 exit /b %errorlevel%
+set "CHANGED_PREPARED=1"
+call :stage "Refreshing all bundle-derived AnimeStudio outputs after the local VFS delta"
+python .\scripts\export_full_from_game.py --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+if errorlevel 1 goto :pipeline_failed
+goto :extract_done
 
 :extract_story
 call :stage "Extracting Story and Table inputs from the installed game (AnimeStudio maps and JSON)"
@@ -230,22 +276,22 @@ rem Every scope gets this check, including the fast ones: a scoped rebuild must
 rem still report when its inputs no longer match the installed original data.
 call :stage "Checking export_full freshness against the installed game"
 python .\scripts\verify_export_freshness.py %GAME_ROOT_ARG%
-if errorlevel 1 exit /b %errorlevel%
+if errorlevel 1 goto :pipeline_failed
 
 if "%STORY_BUILD%"=="0" goto :story_reused
 if "%ANIMESTUDIO_OBJECT_INDEX%"=="0" goto :refresh_evidence
 call :stage "Refreshing AnimeStudio guide-runtime Story consumer evidence"
 python -m scripts.story_builder.animestudio_story_guide
-if errorlevel 1 exit /b %errorlevel%
+if errorlevel 1 goto :pipeline_failed
 
 :refresh_evidence
 call :stage "Refreshing Story recovery evidence and source links"
 python -m scripts.story_builder.refresh_evidence
-if errorlevel 1 exit /b %errorlevel%
+if errorlevel 1 goto :pipeline_failed
 
 call :stage "Building CN Story conversations, missions, and Text Tables"
 python -m scripts.story_builder.build --languages CN --default-language CN %STORY_BUILD_ARGS%
-if errorlevel 1 exit /b %errorlevel%
+if errorlevel 1 goto :pipeline_failed
 goto :story_done
 
 :story_reused
@@ -261,13 +307,28 @@ if "%BUILD_SCOPE%"=="assets" call :stage "Building map recovery with exact Strea
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Characters, Gameplay, map recovery with exact Streaming sidecars, source graph, and graph consumers"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery with exact Streaming sidecars, source graph, and graph consumers"
 python .\scripts\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
-if errorlevel 1 exit /b %errorlevel%
+if errorlevel 1 goto :pipeline_failed
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and audio refresh complete; Story was not rebuilt.
+
+if "%CHANGED_ONLY%"=="1" (
+  call :stage "Committing the local changed-only source baseline"
+  python .\scripts\export_changed_game_data.py finalize --manifest "%CHANGED_MANIFEST%"
+  if errorlevel 1 goto :pipeline_failed
+  set "CHANGED_PREPARED=0"
+)
 
 :done
 call :stage "Export pipeline complete"
 endlocal
 exit /b 0
+
+:pipeline_failed
+set "PIPELINE_ERROR=%errorlevel%"
+if "%CHANGED_PREPARED%"=="1" (
+  echo [export.bat] A later stage failed; the local VFS baseline will not advance.
+  python .\scripts\export_changed_game_data.py abort --manifest "%CHANGED_MANIFEST%"
+)
+endlocal & exit /b %PIPELINE_ERROR%
 
 :set_scope
 if not "%BUILD_SCOPE%"=="full" (
@@ -300,11 +361,23 @@ exit /b 2
 echo Missing value for --asset-jobs. Expected a worker count, for example 8.
 exit /b 2
 
+:missing_structured_dump_mode
+echo Missing value for --structured-dump-mode. Expected focused, default, or debug.
+exit /b 2
+
 :validate_asset_mode
 if /I "%~1"=="focused" exit /b 0
 if /I "%~1"=="default" exit /b 0
 if /I "%~1"=="debug" exit /b 0
 echo Invalid asset mode: "%~1"
+echo Expected focused, default, or debug.
+exit /b 2
+
+:validate_structured_dump_mode
+if /I "%~1"=="focused" exit /b 0
+if /I "%~1"=="default" exit /b 0
+if /I "%~1"=="debug" exit /b 0
+echo Invalid structured dump mode: "%~1"
 echo Expected focused, default, or debug.
 exit /b 2
 
@@ -332,6 +405,11 @@ echo.
 echo Common options:
 echo   --from-game        Re-extract export_full from the installed game first.
 echo                      Slow; needed after the game updates itself.
+echo   --changed-only     Compare logical-file MD5/length metadata with the last
+echo                      successful local run, dump only changed structured
+echo                      VFS files, refresh bundle-derived assets, then run
+echo                      every WebUI builder. Implies --from-game and
+echo                      --with-assets. Does not build or modify Updates.
 echo   --with-assets      Also rebuild the Assets tab and relink/decode CN
 echo                      audio. Together with --from-game this runs one
 echo                      combined AnimeStudio Story+asset export instead of

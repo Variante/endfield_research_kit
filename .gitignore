@@ -1,6 +1,6 @@
 \.*
-diff-log
 export*
+!scripts/export_changed_game_data.py
 !export.bat
 !export_assets.bat
 tools/*
@@ -11,6 +11,8 @@ scratch
 cookies/
 videos/
 *.pyc
+*.nbc
+*.nbi
 Maps
 tmp
 blender

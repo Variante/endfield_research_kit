@@ -24,12 +24,24 @@ evidence needs a domain join or presentation contract.
 | --- | --- | --- |
 | Refresh Story/Text | `.\export.bat --from-game` | structured focused dump, maps, broad Story JSON |
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` | one combined Story/asset pass |
+| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files, full bundle-derived refresh, all WebUI builders |
 | Refresh assets and CN audio only | `.\export_assets.bat --from-game` | skip structured Story, asset maps/conversion/JSON, VFS index, audio |
 
 The focused structured dump includes Table, JsonData, and video. It excludes raw
 bundles, audio packages, world streaming, irradiance, ExtendData, patch data,
 and Lua. `--structured-dump-mode default` additionally includes the maintained
 Terrain height subset; `debug` is for broad diagnosis.
+
+Changed-only export keeps a private, export-root-local logical-file snapshot
+and compares decoded FileDataMd5 plus length/type/path/encryption identity. It
+uses exact full-path dump filters for changed structured files, validates the
+staged output set, and handles deletions explicitly. The first post-update run
+may seed the old side only from a certified VFS ledger whose input set and
+physical inventory bind to the previous export summary; otherwise it fails
+closed and requires a full export. Bundle-derived maps, objects, assets, and
+audio are refreshed broadly because a changed bundle does not prove safe
+per-output ownership. The snapshot commits only after the complete WebUI
+pipeline succeeds, and this local mode never reads or writes Updates state.
 
 Asset modes are intentionally ordered:
 

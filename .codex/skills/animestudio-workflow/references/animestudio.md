@@ -203,11 +203,15 @@ point samples additionally require the Material JSON and Texture2D outputs
 provided by the default asset scope. A stream/sidecar failure stops the map
 task; it is not silently replaced by sparse registry points.
 
-`build_updates_by_patch.bat` uses `vfs-index --jsonl` to detect logical source
-changes. Its patch apply path dumps changed Table/JsonData/Video/AuditVideo/Lua
-files with exact `--file-regex` filters. If other changed blocks can affect
-Unity assets or Story objects, it refreshes the configured AnimeStudio scope in
-the cloned staging export rather than claiming unsafe per-output ownership.
+`export.bat --changed-only` uses `vfs-index --jsonl` to compare focused
+structured logical files by decoded MD5, length, numeric type, path, and
+encryption identity. It dumps additions/modifications with exact full-path
+`--file-regex` filters, removes deleted outputs, and validates the staged file
+set. Bundle-derived AnimeStudio outputs are refreshed broadly because changed
+bundles do not establish safe per-output ownership. The private local snapshot
+advances only after every normal WebUI builder succeeds. This mode never calls
+the Updates builder or touches its previous-export baseline; Updates remains
+the separate `build_updates.bat OLD NEW` workflow.
 
 ## Wrapper Integration
 

@@ -31,6 +31,7 @@ Choose the smallest workflow that owns the changed input:
 | Rebuild all generated views from current `export_full/` | `.\export.bat` |
 | Refresh installed-game Story/Table data, then rebuild | `.\export.bat --from-game` |
 | Refresh Story and assets in one extraction, then rebuild | `.\export.bat --from-game --with-assets` |
+| Apply changed installed VFS files locally, then rebuild every normal view | `.\export.bat --changed-only` |
 | Story is current; rebuild downstream views/assets/audio | `.\export_assets.bat` |
 | Story is current; refresh installed-game assets/audio first | `.\export_assets.bat --from-game` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
@@ -57,6 +58,12 @@ The canonical full flow is:
 AnimeStudio workers. `--focused-assets`, `--default-assets`, and
 `--debug-assets` select increasing extraction scope. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
+
+`--changed-only` is a local refresh, not an Updates comparison. It runs the
+same complete Story, semantic-view, asset, audio, graph, and graph-consumer
+publication path as a full installed-game asset refresh, but it neither calls
+the Updates builder nor advances any previous-export/Updates baseline. Its
+private VFS snapshot commits only after all publication stages succeed.
 
 ## Shared contracts
 
