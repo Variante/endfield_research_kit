@@ -17,6 +17,7 @@ Initialize and build the tracked submodule:
 ```bat
 git submodule update --init tools/AnimeStudio
 .\scripts\animestudio\setup_dotnet9.bat
+.\scripts\animestudio\setup_vgmstream.bat
 .\scripts\animestudio\rebuild.bat -Target CLI
 ```
 

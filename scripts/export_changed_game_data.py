@@ -478,6 +478,37 @@ def _fingerprint_equal(left: dict[str, Any], right: dict[str, Any]) -> bool:
     return all(left.get(key) == right.get(key) for key in ("files", "bytes", "fingerprint", "latest_mtime_ns"))
 
 
+def can_retry_applied_abort(
+    manifest: dict[str, Any],
+    *,
+    game_root: Path,
+    output_root: Path,
+    mode: str,
+    current_sizes: dict[str, dict[str, Any]],
+) -> bool:
+    """Accept only an exact retry of files published by a completed prepare."""
+
+    if not (
+        manifest.get("schemaVersion") == SCHEMA_VERSION
+        and manifest.get("complete") is True
+        and manifest.get("aborted") is True
+        and manifest.get("structuredFilesApplied") is True
+        and manifest.get("structuredDumpMode") == mode
+    ):
+        return False
+    try:
+        manifest_game_root = Path(str(manifest["gameRoot"])).resolve()
+        manifest_output_root = Path(str(manifest["outputRoot"])).resolve()
+    except (KeyError, TypeError, OSError):
+        return False
+    if os.path.normcase(str(manifest_game_root)) != os.path.normcase(str(game_root)):
+        return False
+    if os.path.normcase(str(manifest_output_root)) != os.path.normcase(str(output_root)):
+        return False
+    manifest_sizes = manifest.get("sourceFingerprints") or {}
+    return all(_fingerprint_equal(manifest_sizes.get(source) or {}, current_sizes[source]) for source in SOURCES)
+
+
 def prepare(args: argparse.Namespace) -> dict[str, Any]:
     game_root = args.game_root.resolve()
     output_root = args.output.resolve()
@@ -509,6 +540,13 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         )
     previous_sizes = previous_summary.get("source_sizes") or {}
     current_sizes = collect_source_sizes(game_root, SOURCES)
+    retry_applied_abort = can_retry_applied_abort(
+        existing_manifest,
+        game_root=game_root,
+        output_root=output_root,
+        mode=args.structured_dump_mode,
+        current_sizes=current_sizes,
+    )
     if not previous_sizes:
         raise ChangedExportError("previous export summary has no source_sizes; run one full export first")
 
@@ -527,7 +565,10 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             )
             baseline_path = _snapshot_path(output_root, source)
             baseline_kind = "local_snapshot"
-            if baseline_path.is_file():
+            if retry_applied_abort:
+                previous_rows = current_rows
+                baseline_kind = "applied_aborted_retry"
+            elif baseline_path.is_file():
                 baseline = _read_snapshot(baseline_path)
                 if baseline.get("structuredDumpMode") != args.structured_dump_mode:
                     raise ChangedExportError(
@@ -614,6 +655,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         "mode": "check" if args.check else "prepare",
         "complete": True,
         "applied": not args.check,
+        "structuredFilesApplied": not args.check,
         "updatesIntegration": "disabled",
         "gameRoot": str(game_root),
         "outputRoot": str(output_root),
@@ -680,6 +722,9 @@ def abort(args: argparse.Namespace) -> dict[str, Any]:
         raise ChangedExportError(f"incremental manifest has no valid output root: {args.manifest}") from exc
     for source in SOURCES:
         _pending_snapshot_path(output_root, source).unlink(missing_ok=True)
+    manifest["structuredFilesApplied"] = bool(
+        manifest.get("structuredFilesApplied") is True or manifest.get("applied") is True
+    )
     manifest["mode"] = "aborted"
     manifest["applied"] = False
     manifest["aborted"] = True

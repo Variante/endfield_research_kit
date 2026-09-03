@@ -5,11 +5,21 @@ import unittest
 from scripts.game_data.irradiance_volume import (
     IrradianceFormatError,
     INDEX_MAGIC_LEGACY_GACHA,
+    INDEX_MAGIC_V3_GACHA,
     INDEX_MAGIC_V3_SCENE,
+    INDEXED_PAYLOAD_OPAQUE_PREFIX_SIZE,
+    INDEXED_PAYLOAD_RECORD_SIZE,
+    INDEXED_PAYLOAD_SCENE_RECORD_SIZE,
     REGION_HEADER_SIZE,
     REGION_RECORD_SIZE,
     parse_index_bytes,
+    parse_grouped_indexed_payload_bytes,
+    parse_grouped_indexed_payload_framing,
+    parse_indexed_payload_bytes,
+    parse_indexed_payload_framing,
     parse_region_bytes,
+    validate_indexed_payload_stream,
+    validate_grouped_indexed_payload_streams,
     validate_region_stream,
 )
 
@@ -45,6 +55,90 @@ def index_fixture(
         data.extend(encoded)
     data.extend(opaque)
     return bytes(data)
+
+
+def indexed_payload_fixture(
+    ranges=((0, 5), (5, 7)),
+    names=("iv_0_0.bytes",),
+    magic=INDEX_MAGIC_V3_GACHA,
+    opaque=None,
+):
+    if opaque is None:
+        opaque = bytes(INDEXED_PAYLOAD_OPAQUE_PREFIX_SIZE)
+    directory = bytearray(struct.pack("<I", len(ranges)))
+    for index, (offset, length) in enumerate(ranges):
+        directory.extend(
+            struct.pack(
+                "<8I",
+                0x10000000 + index,
+                0x20000000 + index,
+                offset,
+                length,
+                0x40000000 + index,
+                0x50000000 + index,
+                0x60000000 + index,
+                0x70000000 + index,
+            )
+        )
+    return index_fixture(names, magic, opaque + directory)
+
+
+def scene_indexed_payload_fixture(
+    ranges=((0, 4), (4, 6)),
+    opaque_prefix=b"opaque-prefix---",
+    opaque_suffix=b"opaque-suffix",
+):
+    directory = bytearray(struct.pack("<I", len(ranges)))
+    for index, (offset, length) in enumerate(ranges):
+        directory.extend(
+            struct.pack(
+                "<9I",
+                0x11000000 + index,
+                0x22000000 + index,
+                offset,
+                length,
+                0x44000000 + index,
+                0x55000000 + index,
+                0x66000000 + index,
+                0x77000000 + index,
+                0x88000000 + index,
+            )
+        )
+    return index_fixture(
+        ("iv_0_0.bytes",),
+        INDEX_MAGIC_V3_SCENE,
+        opaque_prefix + directory + opaque_suffix,
+    )
+
+
+def grouped_scene_indexed_payload_fixture(
+    groups=(((0, 3), (3, 2)), ((0, 4), (4, 3))),
+    names=("iv_0_0.bytes", "iv_0_1.bytes"),
+    opaque_prefix=b"pref",
+    opaque_suffix=b"suffix--",
+):
+    ranges = [item for group in groups for item in group]
+    directory = bytearray(struct.pack("<I", len(ranges)))
+    for index, (offset, length) in enumerate(ranges):
+        directory.extend(
+            struct.pack(
+                "<9I",
+                0x11000000 + index,
+                0x22000000 + index,
+                offset,
+                length,
+                0x44000000 + index,
+                0x55000000 + index,
+                0x66000000 + index,
+                0x77000000 + index,
+                0x88000000 + index,
+            )
+        )
+    return index_fixture(
+        names,
+        INDEX_MAGIC_V3_SCENE,
+        opaque_prefix + directory + opaque_suffix,
+    )
 
 
 class IrradianceVolumeTests(unittest.TestCase):
@@ -145,6 +239,256 @@ class IrradianceVolumeTests(unittest.TestCase):
         second = index_fixture(("iv_1_0.bytes",), opaque=b"")
         with self.assertRaisesRegex(IrradianceFormatError, "boundary ambiguous"):
             parse_index_bytes(first + second[20:])
+
+    def test_indexed_payload_exact_directory_and_payload(self):
+        index_data = indexed_payload_fixture()
+        framing = parse_indexed_payload_bytes(index_data, b"hello" + b"payload")
+        self.assertEqual(framing.schema_version, 1)
+        self.assertEqual(framing.magic, INDEX_MAGIC_V3_GACHA)
+        self.assertEqual(framing.payload_filename, "iv_0_0.bytes")
+        self.assertEqual(
+            framing.opaque_prefix_end - framing.opaque_prefix_start,
+            INDEXED_PAYLOAD_OPAQUE_PREFIX_SIZE,
+        )
+        self.assertEqual(framing.record_count, 2)
+        self.assertEqual(framing.record_size, INDEXED_PAYLOAD_RECORD_SIZE)
+        self.assertEqual(
+            [(record.offset, record.length, record.end) for record in framing.records],
+            [(0, 5, 5), (5, 7, 12)],
+        )
+        self.assertEqual(framing.payload_length, 12)
+        self.assertEqual(framing.directory_end, len(index_data))
+        self.assertEqual(framing.opaque_suffix_start, len(index_data))
+        self.assertEqual(framing.opaque_suffix_end, len(index_data))
+
+    def test_scene_indexed_payload_unique_directory_and_opaque_ranges(self):
+        index_data = scene_indexed_payload_fixture()
+        framing = parse_indexed_payload_bytes(index_data, b"0123456789")
+        parsed_index = parse_index_bytes(index_data)
+        self.assertEqual(framing.magic, INDEX_MAGIC_V3_SCENE)
+        self.assertEqual(framing.record_count, 2)
+        self.assertEqual(framing.record_size, INDEXED_PAYLOAD_SCENE_RECORD_SIZE)
+        self.assertEqual(len(framing.records[0].words), 9)
+        self.assertEqual(
+            (framing.opaque_prefix_start, framing.opaque_prefix_end),
+            (parsed_index.table_end, parsed_index.table_end + len(b"opaque-prefix---")),
+        )
+        self.assertEqual(
+            (framing.opaque_suffix_start, framing.opaque_suffix_end),
+            (len(index_data) - len(b"opaque-suffix"), len(index_data)),
+        )
+        self.assertEqual(framing.payload_length, 10)
+
+    def test_scene_indexed_payload_requires_authenticated_length(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "authenticated payload length"):
+            parse_indexed_payload_framing(scene_indexed_payload_fixture())
+
+    def test_scene_indexed_payload_rejects_no_matching_directory(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_indexed_payload_framing(scene_indexed_payload_fixture(), 11)
+
+    def test_scene_indexed_payload_rejects_ambiguous_directory(self):
+        base = parse_index_bytes(scene_indexed_payload_fixture())
+        one = scene_indexed_payload_fixture(opaque_prefix=b"", opaque_suffix=b"")
+        directory = one[base.table_end:]
+        data = index_fixture(
+            ("iv_0_0.bytes",),
+            INDEX_MAGIC_V3_SCENE,
+            b"pref" + directory + b"mid-" + directory + b"suffix--",
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "2 candidates"):
+            parse_indexed_payload_framing(data, 10)
+
+    def test_grouped_scene_payload_directory_and_filename_groups(self):
+        index_data = grouped_scene_indexed_payload_fixture()
+        framing = parse_grouped_indexed_payload_bytes(
+            index_data,
+            {
+                "iv_0_0.bytes": b"abcde",
+                "iv_0_1.bytes": b"1234567",
+            },
+        )
+        parsed_index = parse_index_bytes(index_data)
+        self.assertEqual(framing.payload_filenames, parsed_index.filenames)
+        self.assertEqual(framing.record_count, 4)
+        self.assertEqual(framing.record_size, INDEXED_PAYLOAD_SCENE_RECORD_SIZE)
+        self.assertEqual(
+            [
+                (
+                    group.payload_filename,
+                    group.first_record_index,
+                    group.payload_length,
+                    [(record.offset, record.length) for record in group.records],
+                )
+                for group in framing.groups
+            ],
+            [
+                ("iv_0_0.bytes", 0, 5, [(0, 3), (3, 2)]),
+                ("iv_0_1.bytes", 2, 7, [(0, 4), (4, 3)]),
+            ],
+        )
+        self.assertEqual(
+            (framing.opaque_prefix_start, framing.opaque_prefix_end),
+            (parsed_index.table_end, parsed_index.table_end + 4),
+        )
+        self.assertEqual(
+            (framing.opaque_suffix_start, framing.opaque_suffix_end),
+            (len(index_data) - 8, len(index_data)),
+        )
+
+    def test_grouped_scene_payload_rejects_filename_set_mismatch(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "filenames mismatch"):
+            parse_grouped_indexed_payload_framing(
+                grouped_scene_indexed_payload_fixture(),
+                {"iv_0_0.bytes": 5, "iv_wrong.bytes": 7},
+            )
+
+    def test_grouped_scene_payload_rejects_filename_group_order_mismatch(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_grouped_indexed_payload_framing(
+                grouped_scene_indexed_payload_fixture(),
+                {"iv_0_0.bytes": 7, "iv_0_1.bytes": 5},
+            )
+
+    def test_grouped_scene_payload_rejects_missing_offset_restart(self):
+        data = grouped_scene_indexed_payload_fixture(
+            groups=(((0, 3), (3, 2)), ((5, 4), (9, 3)))
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_grouped_indexed_payload_framing(
+                data, {"iv_0_0.bytes": 5, "iv_0_1.bytes": 12}
+            )
+
+    def test_grouped_scene_payload_rejects_group_gap(self):
+        data = grouped_scene_indexed_payload_fixture(
+            groups=(((0, 3), (4, 2)), ((0, 4), (4, 3)))
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_grouped_indexed_payload_framing(
+                data, {"iv_0_0.bytes": 6, "iv_0_1.bytes": 7}
+            )
+
+    def test_grouped_scene_payload_rejects_group_overlap(self):
+        data = grouped_scene_indexed_payload_fixture(
+            groups=(((0, 3), (2, 2)), ((0, 4), (4, 3)))
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_grouped_indexed_payload_framing(
+                data, {"iv_0_0.bytes": 4, "iv_0_1.bytes": 7}
+            )
+
+    def test_grouped_scene_payload_rejects_ambiguous_directory(self):
+        one = grouped_scene_indexed_payload_fixture(
+            opaque_prefix=b"", opaque_suffix=b""
+        )
+        parsed = parse_index_bytes(one)
+        directory = one[parsed.table_end:]
+        data = index_fixture(
+            parsed.filenames,
+            INDEX_MAGIC_V3_SCENE,
+            b"pref" + directory + b"mid-" + directory + b"suffix--",
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "2 candidates"):
+            parse_grouped_indexed_payload_framing(
+                data, {"iv_0_0.bytes": 5, "iv_0_1.bytes": 7}
+            )
+
+    def test_grouped_scene_payload_rejects_unaligned_directory(self):
+        data = grouped_scene_indexed_payload_fixture(
+            names=("iv_10_0.bytes", "iv_0_1.bytes"),
+            opaque_prefix=b"",
+        )
+        with self.assertRaisesRegex(IrradianceFormatError, "0 candidates"):
+            parse_grouped_indexed_payload_framing(
+                data, {"iv_10_0.bytes": 5, "iv_0_1.bytes": 7}
+            )
+
+    def test_grouped_scene_payload_rejects_short_named_stream(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "iv_0_1.bytes.*short read"):
+            validate_grouped_indexed_payload_streams(
+                grouped_scene_indexed_payload_fixture(),
+                {
+                    "iv_0_0.bytes": io.BytesIO(b"abcde"),
+                    "iv_0_1.bytes": io.BytesIO(b"short"),
+                },
+                {"iv_0_0.bytes": 5, "iv_0_1.bytes": 7},
+            )
+
+    def test_grouped_scene_payload_rejects_trailing_named_stream(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "iv_0_1.bytes.*trailing bytes"):
+            validate_grouped_indexed_payload_streams(
+                grouped_scene_indexed_payload_fixture(),
+                {
+                    "iv_0_0.bytes": io.BytesIO(b"abcde"),
+                    "iv_0_1.bytes": io.BytesIO(b"1234567x"),
+                },
+                {"iv_0_0.bytes": 5, "iv_0_1.bytes": 7},
+            )
+
+    def test_indexed_payload_streaming_validator(self):
+        framing = validate_indexed_payload_stream(
+            indexed_payload_fixture(((0, 3), (3, 2))), io.BytesIO(b"abcde")
+        )
+        self.assertEqual(framing.payload_length, 5)
+
+    def test_indexed_payload_rejects_other_numeric_magic(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "unsupported.*0x01000043"):
+            parse_indexed_payload_framing(
+                indexed_payload_fixture(magic=INDEX_MAGIC_LEGACY_GACHA)
+            )
+
+    def test_indexed_payload_rejects_multiple_filenames(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "exactly one filename"):
+            parse_indexed_payload_framing(
+                indexed_payload_fixture(names=("iv_0_0.bytes", "iv_1_0.bytes"))
+            )
+
+    def test_indexed_payload_rejects_short_opaque_prefix(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "directory count: short read"):
+            parse_indexed_payload_framing(indexed_payload_fixture(opaque=b"short"))
+
+    def test_indexed_payload_rejects_count_bound(self):
+        data = bytearray(indexed_payload_fixture())
+        directory_offset = len(data) - 2 * INDEXED_PAYLOAD_RECORD_SIZE - 4
+        struct.pack_into("<I", data, directory_offset, 0xFFFFFFFF)
+        with self.assertRaisesRegex(IrradianceFormatError, "count .* exceeds bound"):
+            parse_indexed_payload_framing(bytes(data))
+
+    def test_indexed_payload_rejects_truncated_directory(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "directory truncated"):
+            parse_indexed_payload_framing(indexed_payload_fixture()[:-1])
+
+    def test_indexed_payload_rejects_directory_trailing_bytes(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "directory trailing bytes"):
+            parse_indexed_payload_framing(indexed_payload_fixture() + b"x")
+
+    def test_indexed_payload_rejects_zero_record_length(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "zero byte length"):
+            parse_indexed_payload_framing(indexed_payload_fixture(((0, 0),)))
+
+    def test_indexed_payload_rejects_gap(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "gap"):
+            parse_indexed_payload_framing(indexed_payload_fixture(((0, 5), (6, 2))))
+
+    def test_indexed_payload_rejects_overlap(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "overlap"):
+            parse_indexed_payload_framing(indexed_payload_fixture(((0, 5), (4, 2))))
+
+    def test_indexed_payload_rejects_uint32_end_overflow(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "exceeds uint32 range"):
+            parse_indexed_payload_framing(
+                indexed_payload_fixture(((0, 0xFFFFFFFF), (0xFFFFFFFF, 2)))
+            )
+
+    def test_indexed_payload_rejects_short_payload(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "short read"):
+            parse_indexed_payload_bytes(indexed_payload_fixture(), b"short")
+
+    def test_indexed_payload_rejects_payload_trailing_bytes(self):
+        with self.assertRaisesRegex(IrradianceFormatError, "payload: trailing bytes"):
+            parse_indexed_payload_bytes(
+                indexed_payload_fixture(), b"hellopayload" + b"x"
+            )
 
 
 if __name__ == "__main__":

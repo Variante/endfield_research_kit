@@ -211,7 +211,7 @@ rem Assemble the post-Story view arguments now so the preflight below can check
 rem the exact combination this run will use, not a stand-in.
 set "WEBUI_VIEW_ARGS=--jobs "%WEBUI_JOBS%" --asset-mode "%ASSET_MODE%""
 if "%WITH_ASSETS%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --with-assets"
-if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --decode-audio"
+if "%EXPORT_FROM_GAME%"=="1" if "%WITH_ASSETS%"=="1" if "%CHANGED_ONLY%"=="0" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --decode-audio"
 if "%FULL_SOURCE_GRAPH%"=="1" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --full-source-graph"
 
 call :stage "Resolved export options"
@@ -244,8 +244,8 @@ call :stage "Indexing VFS metadata and exporting only changed structured logical
 python .\scripts\export_changed_game_data.py prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
 if errorlevel 1 exit /b %errorlevel%
 set "CHANGED_PREPARED=1"
-call :stage "Refreshing all bundle-derived AnimeStudio outputs after the local VFS delta"
-python .\scripts\export_full_from_game.py --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+call :stage "Recording the incremental structured refresh without re-exporting unchanged bundles"
+python .\scripts\export_full_from_game.py --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --skip-animestudio %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG%
 if errorlevel 1 goto :pipeline_failed
 goto :extract_done
 
@@ -407,9 +407,9 @@ echo   --from-game        Re-extract export_full from the installed game first.
 echo                      Slow; needed after the game updates itself.
 echo   --changed-only     Compare logical-file MD5/length metadata with the last
 echo                      successful local run, dump only changed structured
-echo                      VFS files, refresh bundle-derived assets, then run
-echo                      every WebUI builder. Implies --from-game and
-echo                      --with-assets. Does not build or modify Updates.
+echo                      VFS files, reuse existing assets and decoded audio,
+echo                      then run every WebUI builder. Implies --from-game
+echo                      and --with-assets. Does not build or modify Updates.
 echo   --with-assets      Also rebuild the Assets tab and relink/decode CN
 echo                      audio. Together with --from-game this runs one
 echo                      combined AnimeStudio Story+asset export instead of

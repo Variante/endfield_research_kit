@@ -62,10 +62,12 @@ AnimeStudio workers. `--focused-assets`, `--default-assets`, and
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
 
 `--changed-only` is a local refresh, not an Updates comparison. It runs the
-same complete Story, semantic-view, asset, audio, graph, and graph-consumer
-publication path as a full installed-game asset refresh, but it neither calls
-the Updates builder nor advances any previous-export/Updates baseline. Its
-private VFS snapshot commits only after all publication stages succeed.
+same complete Story, semantic-view, asset, audio-linking, graph, and
+graph-consumer publication path while reusing existing bundle-derived assets
+and decoded audio. Only changed structured VFS logical files are extracted; it
+neither calls the Updates builder nor advances any previous-export/Updates
+baseline. Its private VFS snapshot commits only after all publication stages
+succeed.
 
 ## Shared contracts
 

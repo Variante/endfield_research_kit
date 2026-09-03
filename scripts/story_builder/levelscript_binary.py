@@ -912,6 +912,10 @@ ACTION_SERIALIZED_MAP_ORDER_EVIDENCE = (
 )
 
 
+class LevelScriptTopLevelFramingError(ValueError):
+    """Raised when a strict partial top-level frame cannot be proved."""
+
+
 def _u32(data: bytes, offset: int) -> int | None:
     if offset < 0 or offset + 4 > len(data):
         return None
@@ -1305,6 +1309,129 @@ def decode_levelscript_action_map_lists(
         if row.get("name") in ACTION_SERIALIZED_MAP_LIST_ORDER
     }
     return _drop_empty(out)
+
+
+def frame_levelscript_empty_action_map_top_level(
+    data: bytes,
+) -> dict[str, Any]:
+    """Frame a current ``LevelScriptData`` object with an empty action map.
+
+    This is deliberately a *partial schema* reader.  It proves the outer
+    27-member marker, the complete three-list ``ActionSerializedMap`` at the
+    front, and one uniquely positioned tail that consumes through EOF.  Bytes
+    between those two independently framed regions are returned as one opaque
+    range; they are not assigned to fields or interpreted from setter order.
+
+    Non-empty action maps stay unsupported until every polymorphic record can
+    advance a real cursor. Candidate suffixes are found from their bounded byte
+    grammar, not from a filename-derived identifier. Multiple exact candidates
+    fail closed instead of selecting the highest-scoring one.
+    """
+    if not data:
+        raise LevelScriptTopLevelFramingError("truncated LevelScriptData: empty payload")
+    if data[0] != 27:
+        raise LevelScriptTopLevelFramingError(
+            f"LevelScriptData member count mismatch: expected=27 actual={data[0]}"
+        )
+    if len(data) < 15:
+        raise LevelScriptTopLevelFramingError(
+            "truncated ActionSerializedMap: expected at least 15 bytes"
+        )
+
+    action_map = decode_levelscript_action_map_lists(data, [])
+    if action_map.get("exactEmptyActionMap") is not True:
+        raise LevelScriptTopLevelFramingError(
+            "unsupported non-empty or incomplete ActionSerializedMap"
+        )
+    action_map_end = 15
+
+    candidates: list[dict[str, Any]] = []
+    for script_id_offset in range(
+        action_map_end,
+        max(action_map_end, len(data) - 19),
+    ):
+        candidate = levelscript_top_level_tail.decode_tail_candidate(
+            data,
+            script_id_offset,
+        )
+        trigger_volumes = candidate.get("triggerVolumes") or {}
+        trigger_end = trigger_volumes.get("endOffset")
+        try:
+            trigger_end_int = int(str(trigger_end), 0)
+        except (TypeError, ValueError):
+            continue
+        if (
+            candidate.get("startShapeListStatus") not in {"null", "present"}
+            or not candidate.get("startTypeName")
+            or candidate.get("taskMapStatus") not in {"null", "present"}
+            or candidate.get("taskMapCount") not in {None, 0}
+            or trigger_volumes.get("status") not in {"null", "present"}
+            or trigger_volumes.get("parseStatus") == "truncated"
+            or trigger_end_int != len(data)
+        ):
+            continue
+        candidates.append(candidate)
+
+    if len(candidates) != 1:
+        raise LevelScriptTopLevelFramingError(
+            "LevelScriptData tail is not unique and exact: "
+            f"candidates={len(candidates)} length={len(data)}"
+        )
+
+    tail = candidates[0]
+    tail_start = int(tail["scriptIdOffset"])
+    trigger_observation = tail.get("triggerVolumes") or {}
+    opaque_ranges = []
+    if tail_start > action_map_end:
+        opaque_ranges.append({
+            "startOffset": action_map_end,
+            "endOffset": tail_start,
+            "length": tail_start - action_map_end,
+            "status": "opaque_unassigned_top_level_members",
+        })
+    return {
+        "status": "exact_boundaries_with_opaque_top_level_range",
+        "schemaStatus": "partial",
+        "serializedMemberCount": 27,
+        "bytesConsumed": len(data),
+        "ranges": {
+            "memberCount": {"startOffset": 0, "endOffset": 1},
+            "actionSerializedMap": {
+                "startOffset": 1,
+                "endOffset": action_map_end,
+                "serializedMemberCount": 3,
+                "rawListCounts": [0, 0, 0],
+                "serializedFieldOrderStatus":
+                    "unproven_for_current_native_build",
+            },
+            "opaqueTopLevelMembers": opaque_ranges,
+            "suffixEnvelope": {
+                "startOffset": tail_start,
+                "endOffset": len(data),
+            },
+        },
+        "suffixEnvelope": {
+            "startOffset": tail_start,
+            "endOffset": len(data),
+            "anchorU64": int.from_bytes(
+                data[tail_start : tail_start + 8],
+                "little",
+                signed=False,
+            ),
+            "firstCollection": tail.get("startShapeList") or {},
+            "rawSelectorI32": tail.get("startTypeRaw"),
+            "secondCollectionStatus": tail.get("taskMapStatus") or "",
+            "secondCollectionCount": tail.get("taskMapCount"),
+            "finalCollection": trigger_observation,
+            "fieldIdentityStatus": "unproven_for_current_native_build",
+        },
+        "evidenceBoundary": (
+            "Every file byte is assigned to an exact outer range, but the opaque "
+            "middle is neither split into members nor given field semantics; "
+            "the three zero ActionSerializedMap values are not assigned field "
+            "names without a current-build formatter body."
+        ),
+    }
 
 
 def levelscript_action_map_membership(

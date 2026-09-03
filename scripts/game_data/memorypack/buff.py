@@ -6757,6 +6757,11 @@ BUFF_OPAQUE_STACK_EFFECT_ACTION_LAYOUTS = {
     #               total fixed bytes excluding effectName bytes, trailing shape)
     15: (74, 37, 471, "target-settings-u32"),
     17: (85, 71, 581, "target-settings-u32-plus-guard-bool"),
+    # Current-build anonymous structural variant.  Across the complete
+    # outer-authenticated stacking blocker family, every non-empty action has
+    # this member/discriminator/marker/name/tail shape.  The bytes between the
+    # anchors stay opaque; no setter-order field ownership is asserted here.
+    18: (13, 138, 648, "target-settings-u32-plus-guard-bool"),
 }
 
 
@@ -6822,7 +6827,13 @@ def skip_buff_stack_effects_effect_actions_body(
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}]:discriminator={discriminator}"
                 )
-            marker = struct.unpack_from("<I", data, action_start + 18)[0]
+            # The current member-18 shape begins with a one-byte nested member
+            # count at +18; older shapes carry a four-byte marker there.
+            marker = (
+                data[action_start + 18]
+                if member_count == 18
+                else struct.unpack_from("<I", data, action_start + 18)[0]
+            )
             if marker != cfg_member_count:
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:marker={marker}")
             name_len = struct.unpack_from("<I", data, action_start + name_offset)[0]
@@ -6845,7 +6856,7 @@ def skip_buff_stack_effects_effect_actions_body(
                 raise ValueError(
                     f"stackEffects[{item_index}].effectActions[{action_index}].effectName:unexpected={effect_name[:24]}"
                 )
-            if member_count == 17:
+            if member_count in (17, 18):
                 if struct.unpack_from("<I", data, name_end)[0] != 0:
                     raise ValueError(
                         f"stackEffects[{item_index}].effectActions[{action_index}]"
@@ -6928,7 +6939,9 @@ def skip_buff_stack_effects_effect_actions_body(
         "stackEffectsBodyShape": (
             "opaque EffectAction list with exact versioned byte boundaries; memberCount=15 uses "
             "EffectActionCfg memberCount=74/name@+37/fixed=471, while memberCount=17 uses "
-            "EffectActionCfg memberCount=85/name@+71/fixed=581 and the added guard-source tail"
+            "EffectActionCfg memberCount=85/name@+71/fixed=581 and memberCount=18 uses an "
+            "anonymous current-build marker=13/name@+138/fixed=648 shape; the latter two retain "
+            "the added guard-source tail"
         ),
         "stackingKeyPrefixOffset": format_offset(stacking_key_prefix_offset),
         "stackingKeyPrefixHandling": stacking_key_prefix_handling,

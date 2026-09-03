@@ -8,6 +8,7 @@ from pathlib import Path
 from scripts.export_changed_game_data import (
     ChangedExportError,
     _load_index_rows,
+    can_retry_applied_abort,
     classify_changes,
     output_relative_path,
     publish_transaction,
@@ -102,6 +103,38 @@ class PublicationTests(unittest.TestCase):
 
 
 class ProvenanceGateTests(unittest.TestCase):
+    def test_applied_abort_retry_requires_exact_current_fingerprints(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw).resolve()
+            game = root / "game"
+            output = root / "output"
+            sizes = {
+                source: {"files": 1, "bytes": 2, "fingerprint": source, "latest_mtime_ns": 3}
+                for source in ("StreamingAssets", "Persistent")
+            }
+            manifest = {
+                "schemaVersion": 1,
+                "complete": True,
+                "aborted": True,
+                "structuredFilesApplied": True,
+                "structuredDumpMode": "focused",
+                "gameRoot": str(game),
+                "outputRoot": str(output),
+                "sourceFingerprints": sizes,
+            }
+            self.assertTrue(
+                can_retry_applied_abort(
+                    manifest, game_root=game, output_root=output, mode="focused", current_sizes=sizes
+                )
+            )
+            changed = {key: dict(value) for key, value in sizes.items()}
+            changed["Persistent"]["bytes"] = 9
+            self.assertFalse(
+                can_retry_applied_abort(
+                    manifest, game_root=game, output_root=output, mode="focused", current_sizes=changed
+                )
+            )
+
     def test_audit_inventory_must_reconstruct_previous_source(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
@@ -142,6 +175,18 @@ class WrapperContractTests(unittest.TestCase):
         self.assertIn("export_changed_game_data.py prepare", wrapper)
         self.assertIn("export_changed_game_data.py finalize", wrapper)
         self.assertNotIn("python .\\scripts\\build_updates", wrapper.lower())
+
+    def test_changed_only_does_not_reexport_bundles_or_decode_audio(self) -> None:
+        wrapper = (Path(__file__).resolve().parents[2] / "export.bat").read_text(encoding="utf-8")
+        changed_branch = wrapper.split("\n:extract_changed\n", 1)[1].split("\n:extract_story\n", 1)[0]
+        self.assertIn("--structured-incremental-manifest", changed_branch)
+        self.assertIn("--skip-animestudio", changed_branch)
+        self.assertNotIn("--animestudio-scope all", changed_branch)
+        self.assertIn('if "%CHANGED_ONLY%"=="0" set "WEBUI_VIEW_ARGS=%WEBUI_VIEW_ARGS% --decode-audio"', wrapper)
+        exporter = (Path(__file__).resolve().parents[1] / "export_full_from_game.py").read_text(encoding="utf-8")
+        self.assertIn('animestudio_summary["reused_without_export"] = True', exporter)
+        self.assertIn('failed_txt.read_text(encoding="utf-8").splitlines()', exporter)
+        self.assertIn('manifest_txt.read_text(encoding="utf-8").splitlines()', exporter)
 
     def test_incremental_manifest_requires_exact_current_fingerprints(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

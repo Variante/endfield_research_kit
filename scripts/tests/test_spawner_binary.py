@@ -76,22 +76,22 @@ def wave_entry(
     )
 
 
-def spawner_fixture(second_mode: int = 2) -> bytes:
+def spawner_fixture(second_mode: int = 2, second_map_key: int = 5) -> bytes:
     wave_map = (
         struct.pack("<I", 2)
         + wave_entry(
             4,
             wave_id=186,
-            wave_key="4",
+            wave_key="w4",
             mode=2,
             kill_count=5,
             target_key="2",
             groups=[group_entry(1, group_id=1, group_key="401", mode=0)],
         )
         + wave_entry(
-            5,
+            second_map_key,
             wave_id=193,
-            wave_key="5",
+            wave_key="elite",
             mode=second_mode,
             kill_count=5,
             target_key="4",
@@ -202,6 +202,7 @@ class SpawnerBinaryTests(unittest.TestCase):
 
         self.assertEqual(result["configId"], "sc_map_test_1004")
         self.assertEqual(result["waveCount"], 2)
+        self.assertEqual([row["mapKey"] for row in result["waves"]], [4, 5])
         self.assertEqual(
             [
                 (
@@ -212,7 +213,7 @@ class SpawnerBinaryTests(unittest.TestCase):
                 )
                 for row in result["waves"]
             ],
-            [("4", 2, 5, "2"), ("5", 2, 5, "4")],
+            [("w4", 2, 5, "2"), ("elite", 2, 5, "4")],
         )
         self.assertEqual(
             [
@@ -231,8 +232,8 @@ class SpawnerBinaryTests(unittest.TestCase):
                 for row in result["waves"]
             ],
             [
-                ("4", [(1, "401", 0, "")]),
-                ("5", [(1, "501", 0, ""), (2, "502", 2, "501")]),
+                ("w4", [(1, "401", 0, "")]),
+                ("elite", [(1, "501", 0, ""), (2, "502", 2, "501")]),
             ],
         )
 
@@ -266,6 +267,10 @@ class SpawnerBinaryTests(unittest.TestCase):
     def test_rejects_changed_wave_mode_shape(self) -> None:
         with self.assertRaises(SpawnerWaveDecodeError):
             decode_spawner_wave_map(spawner_fixture(second_mode=7))
+
+    def test_rejects_duplicate_wave_map_keys(self) -> None:
+        with self.assertRaisesRegex(SpawnerWaveDecodeError, "duplicate wave map key"):
+            decode_spawner_wave_map(spawner_fixture(second_map_key=4))
 
     def test_rejects_changed_group_member_shape(self) -> None:
         fixture = spawner_fixture()

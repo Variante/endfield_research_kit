@@ -5760,6 +5760,11 @@ def main() -> int:
         "stages_selected": list(selected_animestudio_stages),
         "sources": {},
     }
+    reuse_incremental_extraction = bool(structured_incremental_manifest is not None and args.skip_animestudio)
+    if reuse_incremental_extraction:
+        raw_summary = dict(previous_summary.get("raw_vfs") or {})
+        animestudio_summary = dict(previous_summary.get("animestudio") or animestudio_summary)
+        animestudio_summary["reused_without_export"] = True
 
     for source in selected_sources:
         source_root = game_root / source
@@ -6221,19 +6226,22 @@ def main() -> int:
 
     unresolved_dir = ensure_dir(output_root / "unresolved")
     log(f"writing unresolved summaries to {unresolved_dir}")
-    failed_lines = build_failed_decode_text(structured_failures_by_source, raw_failures_by_source, selected_sources)
     failed_txt = unresolved_dir / "failed_to_decode.txt"
-    failed_txt.write_text("\n".join(failed_lines) if failed_lines else "", encoding="utf-8")
-    manifest_lines = build_manifest_missing_text(
-        structured_manifest_by_source,
-        raw_manifest_chunks_by_source,
-        selected_sources,
-    )
     manifest_txt = unresolved_dir / "manifest_reference_missing.txt"
-    manifest_txt.write_text("\n".join(manifest_lines) if manifest_lines else "", encoding="utf-8")
+    failed_lines = failed_txt.read_text(encoding="utf-8").splitlines() if failed_txt.is_file() else []
+    manifest_lines = manifest_txt.read_text(encoding="utf-8").splitlines() if manifest_txt.is_file() else []
+    if not reuse_incremental_extraction:
+        failed_lines = build_failed_decode_text(structured_failures_by_source, raw_failures_by_source, selected_sources)
+        failed_txt.write_text("\n".join(failed_lines) if failed_lines else "", encoding="utf-8")
+        manifest_lines = build_manifest_missing_text(
+            structured_manifest_by_source,
+            raw_manifest_chunks_by_source,
+            selected_sources,
+        )
+        manifest_txt.write_text("\n".join(manifest_lines) if manifest_lines else "", encoding="utf-8")
     command_failures = [item for item in command_results if item.returncode != 0]
     summary_commands = [asdict(item) for item in command_results]
-    if args.report_only and not summary_commands:
+    if (args.report_only or reuse_incremental_extraction) and not summary_commands:
         summary_commands = previous_summary.get("commands", [])
 
     structured_source_sizes = structured_freshness_source_sizes(
@@ -6379,7 +6387,9 @@ def main() -> int:
     md_lines.append("- Skipped")
 
     md_lines.extend(["", "## AnimeStudio Export"])
-    if args.skip_animestudio:
+    if reuse_incremental_extraction:
+        md_lines.append("- Reused previous bundle-derived outputs; no AnimeStudio export was run")
+    elif args.skip_animestudio:
         md_lines.append("- Skipped")
     else:
         md_lines.append(f"- Executable: `{animestudio}`")

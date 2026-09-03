@@ -101,6 +101,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--export-root", type=Path, default=EXPORT_ROOT)
     parser.add_argument("--out-dir", type=Path, default=LANG_DIR)
     parser.add_argument("--asset-index", type=Path, default=OUT_DIR / "assets" / "index.json")
+    parser.add_argument(
+        "--snapshot-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Versioned character-catalog snapshot directory. Defaults to "
+            "<export-root>/recovered/WebUI/characters for Updates comparisons."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -510,6 +519,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Missing table directories under {args.export_root / 'structured'}")
         return 2
     fallback = str(args.default_language).strip().upper() or "CN"
+    snapshot_dir = args.snapshot_dir or (args.export_root / "recovered/WebUI/characters")
     outputs = []
     for raw_language in args.languages:
         language = str(raw_language).strip().upper()
@@ -519,6 +529,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_language_payload(language, roots, fallback, actor_path, args.asset_index)
         output = args.out_dir / language / "characters" / "index.json"
         write_json(output, payload)
+        write_json(snapshot_dir / f"{language}.json", payload)
         outputs.append((language, output, payload["counts"]))
     for language, output, counts in outputs:
         print(f"{language}: wrote {rel_path(output)} ({counts['records']} character/NPC identities)")

@@ -5,10 +5,32 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.build_character_data import build_language_payload, table_roots
+from scripts.build_character_data import build_language_payload, main, table_roots
 
 
 class BuildCharacterDataTests(unittest.TestCase):
+    def test_main_writes_versioned_catalog_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            tables = root / "structured/StreamingAssets/Table"
+            tables.mkdir(parents=True)
+            (tables / "CharacterTable.json").write_text(
+                json.dumps({"chr_0001_test": {"charId": "test", "name": {"text": "Test"}}}),
+                encoding="utf-8",
+            )
+
+            result = main([
+                "--export-root", str(root),
+                "--out-dir", str(root / "webui/data/lang"),
+                "--asset-index", str(root / "missing-assets.json"),
+                "--languages", "CN",
+            ])
+
+            self.assertEqual(result, 0)
+            snapshot = root / "recovered/WebUI/characters/CN.json"
+            self.assertTrue(snapshot.is_file())
+            self.assertEqual(json.loads(snapshot.read_text(encoding="utf-8"))["records"][0]["id"], "test")
+
     def test_collects_and_merges_name_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

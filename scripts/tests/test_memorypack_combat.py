@@ -740,6 +740,47 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
             decoded["stackingKeyPrefixHandling"],
         )
 
+    def test_current_member18_stack_effect_boundary_is_exact_but_semantically_opaque(self) -> None:
+        effect_name = b"P_fixture_current_member18"
+        fixed_bytes = 648
+        action = bytearray(fixed_bytes + len(effect_name))
+        action[0] = 18
+        struct.pack_into("<I", action, 1, 1)
+        action[18] = 13
+        struct.pack_into("<I", action, 138, len(effect_name))
+        action[142:142 + len(effect_name)] = effect_name
+        struct.pack_into("<I", action, len(action) - 5, 4)
+        action[-1] = 0
+        stacking_key = b"CurrentStack"
+        data = b"".join((
+            b"\x01",
+            struct.pack("<I", 1),
+            bytes(action),
+            struct.pack("<I", len(stacking_key)),
+            stacking_key,
+        ))
+
+        decoded, end = memorypack_buff.skip_buff_stack_effects_effect_actions_body(data, 0, 1)
+
+        self.assertEqual(5 + len(action), end)
+        self.assertEqual({"18": 1}, decoded["effectActionMemberCountCounts"])
+        self.assertEqual("P_fixture_current_member18", decoded["opaqueEffectActionSamples"][0]["effectName"])
+        self.assertEqual("partial-effectActions-unproven-field-order", decoded["effectActionsSemanticStatus"])
+
+    def test_current_member18_stack_effect_rejects_bad_terminal_guard_shape(self) -> None:
+        effect_name = b"P_fixture_bad_tail"
+        action = bytearray(648 + len(effect_name))
+        action[0] = 18
+        struct.pack_into("<I", action, 1, 1)
+        action[18] = 13
+        struct.pack_into("<I", action, 138, len(effect_name))
+        action[142:142 + len(effect_name)] = effect_name
+        action[-5:] = b"\x05\x00\x00\x00\x02"
+        data = b"\x01" + struct.pack("<I", 1) + bytes(action) + struct.pack("<I", 0)
+
+        with self.assertRaisesRegex(ValueError, "missing-target-settings-tail-or-guard-bool"):
+            memorypack_buff.skip_buff_stack_effects_effect_actions_body(data, 0, 1)
+
     def test_buff_compact_tag_id_list_keeps_packed_ids(self) -> None:
         data = b"".join((
             b"\x00",

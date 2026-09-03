@@ -79,16 +79,27 @@ class CharacterUpdateTests(unittest.TestCase):
         names: dict[str, str] | None = None,
         language: str = "CN",
     ) -> None:
-        table_root = export_root / "structured/StreamingAssets/Table"
-        table_root.mkdir(parents=True, exist_ok=True)
-        build_updates.write_json(table_root / "CharacterTable.json", characters, indent=2, compact=False)
-        if names is not None:
-            build_updates.write_json(
-                table_root / f"I18nTextTable_{language}.json",
-                names,
-                indent=2,
-                compact=False,
-            )
+        records = []
+        for key, row in characters.items():
+            if not isinstance(row, dict):
+                records.append(row)
+                continue
+            name_node = row.get("name")
+            text_id = str(name_node.get("id") or "") if isinstance(name_node, dict) else ""
+            primary_name = (names or {}).get(text_id, key)
+            source = str(row.get("source") or "CharacterTable")
+            records.append({
+                "id": key,
+                "kind": row.get("kind", "character"),
+                "primaryName": primary_name,
+                "names": [{"text": primary_name, "source": source, "key": key}],
+                "aliases": [row.get("charId", key)],
+                "evidence": [{"source": source, "type": "fixture", "key": key}],
+                "sourceTypes": [source],
+                "fixtureRow": row,
+            })
+        snapshot = export_root / "recovered/WebUI/characters" / f"{language}.json"
+        build_updates.write_json(snapshot, {"language": language, "records": records}, indent=2, compact=False)
 
     def test_character_diff_covers_add_modify_delete_and_localized_names(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -122,13 +133,36 @@ class CharacterUpdateTests(unittest.TestCase):
             self.assertEqual(payload["totals"], {"added": 1, "modified": 2, "deleted": 1, "changed": 4})
             by_key = {entry["characterKey"]: entry for entry in payload["entries"]}
             self.assertNotIn("chr_0001_keep", by_key)
-            self.assertEqual(by_key["chr_0002_change"]["changedFields"], ["characterRow"])
-            self.assertEqual(by_key["chr_0004_translate"]["changedFields"], ["localizedNames"])
+            self.assertEqual(by_key["chr_0002_change"]["changedFields"], ["finalRecord"])
+            self.assertEqual(by_key["chr_0004_translate"]["changedFields"], ["finalRecord"])
             self.assertEqual(by_key["chr_0004_translate"]["oldNames"], {"CN": "旧译名"})
             self.assertEqual(by_key["chr_0004_translate"]["newNames"], {"CN": "新译名"})
             self.assertEqual(by_key["chr_0003_delete"]["oldNames"], {"CN": "删除"})
 
-    def test_missing_character_table_fails_closed(self) -> None:
+    def test_character_diff_covers_non_character_table_final_records(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            old_root = root / "old"
+            new_root = root / "new"
+            self.write_tables(old_root, {
+                "story_actor": {"kind": "actor", "source": "Story actor registry"},
+                "asset_npc": {"kind": "asset_npc", "source": "Exported assets", "assetCount": 1},
+            })
+            self.write_tables(new_root, {
+                "story_actor": {"kind": "actor", "source": "Story actor registry"},
+                "asset_npc": {"kind": "asset_npc", "source": "Exported assets", "assetCount": 2},
+                "sns_actor": {"kind": "npc", "source": "SNSChatTable"},
+            })
+
+            payload = build_updates.build_character_updates(old_root, new_root)
+
+            self.assertTrue(payload["available"])
+            by_key = {entry["characterKey"]: entry for entry in payload["entries"]}
+            self.assertEqual(by_key["asset_npc"]["status"], "modified")
+            self.assertEqual(by_key["sns_actor"]["status"], "added")
+            self.assertNotIn("story_actor", by_key)
+
+    def test_missing_character_catalog_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.write_tables(root / "current", {"chr_0001_new": {"charId": "new"}})
@@ -138,8 +172,8 @@ class CharacterUpdateTests(unittest.TestCase):
             self.assertFalse(payload["available"])
             self.assertEqual(payload["entries"], [])
             self.assertEqual(payload["totals"]["changed"], 0)
-            self.assertEqual(payload["skipReason"], "missing_or_invalid_character_table")
-            self.assertIn("previous CharacterTable.json missing or invalid", payload["diagnostics"])
+            self.assertEqual(payload["skipReason"], "missing_or_invalid_character_catalog")
+            self.assertIn("previous final character catalog missing", payload["diagnostics"])
 
     def test_empty_or_non_object_character_rows_fail_closed(self) -> None:
         for invalid_rows in ({}, {"chr_0001_bad": "not an object"}):
@@ -152,24 +186,24 @@ class CharacterUpdateTests(unittest.TestCase):
 
                 self.assertFalse(payload["available"])
                 self.assertEqual(payload["entries"], [])
-                self.assertIn("previous CharacterTable has no valid object rows", payload["diagnostics"])
+                self.assertTrue(any("final character catalog" in item for item in payload["diagnostics"]))
 
     def test_invalid_character_overlay_is_not_masked_by_valid_base(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.write_tables(root / "old", {"chr_0001_old": {"charId": "old"}})
-            bad_overlay = root / "old/structured/Persistent/Table/CharacterTable.json"
-            bad_overlay.parent.mkdir(parents=True)
+            bad_overlay = root / "old/recovered/WebUI/characters/JP.json"
+            bad_overlay.parent.mkdir(parents=True, exist_ok=True)
             bad_overlay.write_text("not json", encoding="utf-8")
             self.write_tables(root / "new", {"chr_0002_new": {"charId": "new"}})
 
             payload = build_updates.build_character_updates(root / "old", root / "new")
 
             self.assertFalse(payload["available"])
-            self.assertIn("previous CharacterTable overlay invalid", payload["diagnostics"])
+            self.assertIn("previous final character catalog invalid", payload["diagnostics"])
             self.assertEqual(
                 payload["invalidSourceFiles"]["previous"],
-                ["structured/Persistent/Table/CharacterTable.json"],
+                ["recovered/WebUI/characters/JP.json"],
             )
 
     def test_only_common_valid_localizations_are_compared(self) -> None:
@@ -190,14 +224,7 @@ class CharacterUpdateTests(unittest.TestCase):
             self.assertTrue(payload["available"])
             self.assertEqual(payload["entries"], [])
             self.assertEqual(payload["localization"]["comparedLanguages"], ["CN"])
-            self.assertEqual(
-                payload["localization"]["skippedLanguages"],
-                [
-                    {"language": "EN", "reason": "missing_on_one_side"},
-                    {"language": "JP", "reason": "missing_on_one_side"},
-                    {"language": "KR", "reason": "invalid_on_one_or_both_sides"},
-                ],
-            )
+            self.assertEqual(payload["localization"]["skippedLanguages"], [])
 
     def test_main_writes_character_sidecar_in_text_only_mode(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
