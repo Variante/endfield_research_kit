@@ -161,7 +161,9 @@ Current durable boundaries:
   final EOF check, and repeated in-payload magic values rule out signature
   scanning as a replacement boundary witness.
 - Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
-  HIRC behavior, selected runtime playback, and audibility remain separate.
+  its non-voice HIRC lane now exact-frames numeric object envelopes and keeps
+  unknown types. HIRC behavior, selected runtime playback, and audibility
+  remain separate.
 - SkillData and BuffData have current exact-build member-count and file-hash
   censuses, but nested MemoryPack unions and whole-file EOF consumption are not
   proven. BuffData remains blocked on an untyped ability-event union and an
