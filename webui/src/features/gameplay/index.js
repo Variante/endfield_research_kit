@@ -2063,14 +2063,6 @@
       fact(text("element"), entry.elementLabel || entry.element),
       fact(text("weaponType"), entry.weaponTypeLabel || entry.weaponType),
       fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
-      fact(
-        text("characterEvidenceStatus"),
-        entry.identityStatus === "character_namespace_only" ? text("characterNamespaceOnly") : "",
-      ),
-      fact(
-        text("evidenceBoundary"),
-        entry.identityStatus === "character_namespace_only" ? text("characterNamespaceBoundary") : "",
-      ),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean);
     const skillRows = (variantEntry.skillGroups || []).map((group) => renderActiveSkillRow(group, variantEntry)).join("");

@@ -11,8 +11,7 @@ Combat & Projectiles pages.
 
 1. `scripts.build_gameplay --stage base --stage audit` reads gameplay Tables
    and exact binary/serialized contracts, localizes entries, and publishes
-   sharded data. Exact `chr_0NNN_token` identities from `StrIdNumTable` are
-   retained when `CharacterTable` has no row, with a namespace-only boundary.
+   sharded data.
 2. `--stage projectiles` publishes immutable projectile behavior separately.
 3. `--stage asset-refs` joins current Gameplay identities to the Assets index
    and is the sole writer of `webui/data/assets/gameplay_refs.json`.
@@ -37,8 +36,6 @@ Primary outputs are `webui/data/lang/<LANG>/gameplay/**`,
   candidates. Unresolved ownership remains collapsed/debuggable, not assigned.
 - Asset availability, event registration, or graph proximity does not prove
   runtime use.
-- A namespace-only character proves the exact registered `chr_0NNN_token`
-  identity, not release, progression, runtime use, or playable status.
 
 ## Focused refresh
 

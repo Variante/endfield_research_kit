@@ -114,7 +114,6 @@ TALENT_KIND_LABELS = {
 
 PASSIVE_NODE_RE = re.compile(r"^(?P<base>.+_passive_skill_(?P<rank>\d+))_(?P<level>\d+)$")
 FACTORY_NODE_RE = re.compile(r"^fac_(?P<char>chr_.+)_(?P<rank>\d+)_(?P<level>\d+)$")
-CHARACTER_NAMESPACE_RE = re.compile(r"^chr_0\d{3}_[a-z0-9]+$", re.IGNORECASE)
 CHAR_BREAK_RE = re.compile(r"^charBreak(?P<level>\d+)$")
 EQUIP_BREAK_RE = re.compile(r"^equipBreakT(?P<tier>\d+)$")
 CURVE_SAMPLE_LEVELS = (1, 20, 40, 60, 70, 80, 90)
@@ -3036,30 +3035,6 @@ def build_enemy_entries(
         })
     return entries
 
-def discover_character_namespace_ids(value: Any) -> set[str]:
-    """Collect exact character namespace ids without promoting child skill ids."""
-
-    found: set[str] = set()
-
-    def visit(current: Any) -> None:
-        if isinstance(current, dict):
-            for key, child in current.items():
-                normalized = normalize_id(key)
-                if CHARACTER_NAMESPACE_RE.fullmatch(normalized):
-                    found.add(normalized)
-                visit(child)
-        elif isinstance(current, list):
-            for child in current:
-                visit(child)
-        elif isinstance(current, str):
-            normalized = normalize_id(current)
-            if CHARACTER_NAMESPACE_RE.fullmatch(normalized):
-                found.add(normalized)
-
-    visit(value)
-    return found
-
-
 def build_character_entries(
     tables: dict[str, Any],
     i18n: dict[str, Any],
@@ -3075,30 +3050,14 @@ def build_character_entries(
     level_curve = character_level_curve_payload(tables.get("CharLevelUpTable.json") or {})
     attr_meta = tables.get("AttributeMetaTable.json") or {}
     break_stages = character_break_stage_payload(tables, item_table, i18n, fallback_i18n)
-    namespace_ids = discover_character_namespace_ids(tables.get("StrIdNumTable.json") or {})
-    character_rows = {
-        char_id: row
-        for char_id, row in chars.items()
-        if isinstance(char_id, str)
-    }
-    for char_id in namespace_ids:
-        character_rows.setdefault(char_id, {})
     entries = []
-    for char_id, row in sorted(character_rows.items(), key=lambda item: character_sort_key(item[0], item[1])):
+    for char_id, row in sorted(chars.items(), key=lambda item: character_sort_key(item[0], item[1])):
         if char_id in HIDDEN_CHARACTER_IDS:
             continue
         if not isinstance(row, dict):
             continue
         growth_row = growth.get(char_id) or {}
-        namespace_only = char_id not in chars
-        actor_token = CHARACTER_NAMESPACE_RE.fullmatch(char_id)
-        npc_name_key = f"npcName_{actor_token.group(0).split('_', 2)[2]}" if actor_token else ""
-        name = (
-            i18n_text(i18n, row.get("name"), fallback_i18n)
-            or i18n_text(i18n, text_table.get(npc_name_key), fallback_i18n)
-            or normalize_id(row.get("engName"))
-            or char_id
-        )
+        name = i18n_text(i18n, row.get("name"), fallback_i18n) or normalize_id(row.get("engName")) or char_id
         profession_label = label_lookup(professions, row.get("profession"), i18n, fallback_i18n)
         type_row = char_types.get(normalize_id(row.get("charTypeId"))) or {}
         element_label = i18n_text(i18n, type_row.get("name"), fallback_i18n) or normalize_id(row.get("charTypeId"))
@@ -3199,17 +3158,7 @@ def build_character_entries(
             "breakthroughs": breakthroughs,
             "potentials": potentials,
             "stats": stats,
-            "source": {
-                "table": "StrIdNumTable.json" if namespace_only else "CharacterTable.json",
-                "id": char_id,
-            },
-            "characterTablePresent": not namespace_only,
-            "identityStatus": "character_namespace_only" if namespace_only else "character_table_row",
-            "evidenceBoundary": (
-                "The exact chr_0NNN_token namespace is registered, but CharacterTable has no row; "
-                "availability, progression, runtime use, and playable status remain unproven."
-                if namespace_only else None
-            ),
+            "source": {"table": "CharacterTable.json", "id": char_id},
             "storyWikiKey": story_wiki_keys[0],
             "storyWikiKeys": story_wiki_keys,
             "search": search.lower(),
@@ -3287,7 +3236,6 @@ def build_language_payload(
         "WeaponUpgradeTemplateTable.json",
         "WeaponUpgradeTemplateSumTable.json",
         "SkillPatchTable.json",
-        "StrIdNumTable.json",
         "CharacterTable.json",
         "CharGrowthTable.json",
         "CharLevelUpTable.json",

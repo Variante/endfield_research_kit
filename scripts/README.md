@@ -118,11 +118,11 @@ four are built:
 in `gameplay_builder/`; its `asset-refs` stage calls the public
 `asset_builder.gameplay_refs` API with the current Gameplay and Assets indexes
 and is the sole writer of `webui/data/assets/gameplay_refs.json`.
-The base stage publishes every exact `chr_0NNN_token` identity registered in
+The base stage publishes every exact `chr_NNNN_token` identity registered in
 `StrIdNumTable`, even when `CharacterTable` has no row. Such namespace-only
 records remain visibly evidence-limited and do not claim availability,
 progression, runtime use, or playable status; longer skill/Buff/projectile ids
-and `chr_9*` placeholders are not promoted to characters.
+are not promoted to characters.
 The base stage also resolves every BuffData id referenced by active Gameplay
 rows into a compact, fail-closed lifecycle/stacking/value catalog. Native enemy
 modifier, ability-event, skill-type, and cooldown-operation enum names are
