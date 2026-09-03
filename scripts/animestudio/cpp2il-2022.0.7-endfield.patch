@@ -1,5 +1,5 @@
 diff --git a/Cpp2IL.Core/AssemblyPopulator.cs b/Cpp2IL.Core/AssemblyPopulator.cs
-index e39ae61..88e7b0d 100644
+index e39ae61..7057017 100644
 --- a/Cpp2IL.Core/AssemblyPopulator.cs
 +++ b/Cpp2IL.Core/AssemblyPopulator.cs
 @@ -35,15 +35,33 @@ namespace Cpp2IL.Core
@@ -68,26 +68,29 @@ index e39ae61..88e7b0d 100644
  
              var analysisFailedExceptionType = new TypeDefinition(InjectedNamespaceName, "AnalysisFailedException", TypeAttributes.BeforeFieldInit, exceptionTypeReference);
              var defaultConstructor = new MethodDefinition(
-@@ -126,24 +144,37 @@ namespace Cpp2IL.Core
+@@ -124,26 +142,36 @@ namespace Cpp2IL.Core
+             imageDef.MainModule.Types.Add(analysisFailedExceptionType);
+         }
  
-         public static void PopulateStubTypesInAssembly(Il2CppImageDefinition imageDef, bool suppressAttributes)
+-        public static void PopulateStubTypesInAssembly(Il2CppImageDefinition imageDef, bool suppressAttributes)
++        public static void PopulateStubTypesInAssembly(Il2CppImageDefinition imageDef, AssemblyDefinition currentAssembly, bool suppressAttributes)
          {
 -            var firstTypeDefinition = SharedState.TypeDefsByIndex[imageDef.firstTypeIndex];
-+            if (!SharedState.TypeDefsByIndex.TryGetValue(imageDef.firstTypeIndex, out var firstTypeDefinition) || firstTypeDefinition.Module == null)
-+            {
-+                Logger.WarnNewline($"Skipping malformed image {imageDef.Name}: first type {imageDef.firstTypeIndex} has no managed module.");
-+                return;
-+            }
-+
-             var currentAssembly = firstTypeDefinition.Module.Assembly;
-             
-                 InjectOurTypes(currentAssembly, suppressAttributes);
+-            var currentAssembly = firstTypeDefinition.Module.Assembly;
+-
+-                InjectOurTypes(currentAssembly, suppressAttributes);
++            InjectOurTypes(currentAssembly, suppressAttributes);
  
 +            var skippedTypes = 0;
              foreach (var il2CppTypeDefinition in imageDef.Types!)
              {
 -                var managedType = SharedState.UnmanagedToManagedTypes[il2CppTypeDefinition];
 +                if (!SharedState.UnmanagedToManagedTypes.TryGetValue(il2CppTypeDefinition, out var managedType))
++                {
++                    skippedTypes++;
++                    continue;
++                }
++                if (managedType.Module != currentAssembly.MainModule)
 +                {
 +                    skippedTypes++;
 +                    continue;
@@ -110,7 +113,7 @@ index e39ae61..88e7b0d 100644
          }
  
          public static void FixupExplicitOverridesInAssembly(Il2CppImageDefinition imageDef)
-@@ -257,13 +288,15 @@ namespace Cpp2IL.Core
+@@ -257,13 +285,15 @@ namespace Cpp2IL.Core
              if (!suppressAttributes)
                  (addressAttribute, fieldOffsetAttribute, tokenAttribute) = GetInjectedAttributes(ilTypeDefinition);
  
@@ -128,7 +131,7 @@ index e39ae61..88e7b0d 100644
                  ilTypeDefinition.CustomAttributes.Add(customTokenAttribute);
              }
  
-@@ -328,7 +361,27 @@ namespace Cpp2IL.Core
+@@ -328,7 +358,27 @@ namespace Cpp2IL.Core
              return (addressAttribute, fieldOffsetAttribute, tokenAttribute);
          }
  
@@ -157,7 +160,7 @@ index e39ae61..88e7b0d 100644
          {
              var fields = new List<FieldInType>();
  
-@@ -348,7 +401,21 @@ namespace Cpp2IL.Core
+@@ -348,7 +398,21 @@ namespace Cpp2IL.Core
                  //Field default values
                  if (fieldDefinition.HasDefault)
                  {
@@ -180,7 +183,7 @@ index e39ae61..88e7b0d 100644
                  }
  
                  //Field Initial Values (used for allocation of Array Literals)
-@@ -364,14 +431,14 @@ namespace Cpp2IL.Core
+@@ -364,14 +428,14 @@ namespace Cpp2IL.Core
                  {
                      //Add [FieldOffset(Offset = "0xDEADBEEF")]
                      var fieldOffsetAttributeInst = new CustomAttribute(ilTypeDefinition.Module.ImportReference(fieldOffsetAttribute));
@@ -197,7 +200,7 @@ index e39ae61..88e7b0d 100644
                      fieldDefinition.CustomAttributes.Add(customTokenAttribute);
                  }
              }
-@@ -380,25 +447,25 @@ namespace Cpp2IL.Core
+@@ -380,25 +444,25 @@ namespace Cpp2IL.Core
              SharedState.FieldsByType[ilTypeDefinition] = fields;
          }
  
@@ -228,7 +231,7 @@ index e39ae61..88e7b0d 100644
                      methodDefinition.CustomAttributes.Add(customTokenAttribute);
                  }
  
-@@ -419,17 +486,17 @@ namespace Cpp2IL.Core
+@@ -419,17 +483,17 @@ namespace Cpp2IL.Core
                      var customAttribute = new CustomAttribute(ilTypeDefinition.Module.ImportReference(addressAttribute));
                      if (methodPointer > 0)
                      {
@@ -250,7 +253,7 @@ index e39ae61..88e7b0d 100644
                      }
  
                      methodDefinition.CustomAttributes.Add(customAttribute);
-@@ -463,7 +530,7 @@ namespace Cpp2IL.Core
+@@ -463,7 +527,7 @@ namespace Cpp2IL.Core
              }
          }
  
@@ -259,7 +262,7 @@ index e39ae61..88e7b0d 100644
          {
              foreach (var propertyDef in cppTypeDefinition.Properties!)
              {
-@@ -481,7 +548,7 @@ namespace Cpp2IL.Core
+@@ -481,7 +545,7 @@ namespace Cpp2IL.Core
                  if (tokenAttribute != null)
                  {
                      var customTokenAttribute = new CustomAttribute(ilTypeDefinition.Module.ImportReference(tokenAttribute));
@@ -268,7 +271,7 @@ index e39ae61..88e7b0d 100644
                      propertyDefinition.CustomAttributes.Add(customTokenAttribute);
                  }
  
-@@ -492,7 +559,7 @@ namespace Cpp2IL.Core
+@@ -492,7 +556,7 @@ namespace Cpp2IL.Core
              }
          }
  
@@ -277,7 +280,7 @@ index e39ae61..88e7b0d 100644
          {
              foreach (var il2cppEventDef in cppTypeDefinition.Events!)
              {
-@@ -506,7 +573,7 @@ namespace Cpp2IL.Core
+@@ -506,7 +570,7 @@ namespace Cpp2IL.Core
                  if (tokenAttribute != null)
                  {
                      var customTokenAttribute = new CustomAttribute(ilTypeDefinition.Module.ImportReference(tokenAttribute));
@@ -286,7 +289,7 @@ index e39ae61..88e7b0d 100644
                      monoDef.CustomAttributes.Add(customTokenAttribute);
                  }
  
-@@ -653,4 +720,4 @@ namespace Cpp2IL.Core
+@@ -653,4 +717,4 @@ namespace Cpp2IL.Core
              return typeMetaText;
          }
      }
@@ -294,10 +297,19 @@ index e39ae61..88e7b0d 100644
 \ No newline at end of file
 +}
 diff --git a/Cpp2IL.Core/Cpp2IlApi.cs b/Cpp2IL.Core/Cpp2IlApi.cs
-index 5d17508..398e433 100644
+index 5d17508..bc2876e 100644
 --- a/Cpp2IL.Core/Cpp2IlApi.cs
 +++ b/Cpp2IL.Core/Cpp2IlApi.cs
-@@ -401,6 +401,47 @@ namespace Cpp2IL.Core
+@@ -268 +268 @@ namespace Cpp2IL.Core
+-            foreach (var imageDef in LibCpp2IlMain.TheMetadata!.imageDefinitions)
++            foreach (var assembly in Assemblies)
+@@ -269,0 +270,2 @@ namespace Cpp2IL.Core
++                if (!SharedState.ManagedToUnmanagedAssemblies.TryGetValue(assembly, out var imageDef))
++                    throw new InvalidOperationException($"No IL2CPP image mapping exists for generated assembly {assembly.Name}.");
+@@ -274 +276 @@ namespace Cpp2IL.Core
+-                AssemblyPopulator.PopulateStubTypesInAssembly(imageDef, suppressAttributes);
++                AssemblyPopulator.PopulateStubTypesInAssembly(imageDef, assembly, suppressAttributes);
+@@ -401,6 +403,47 @@ namespace Cpp2IL.Core
  
          public static void SaveAssemblies(string toWhere) => SaveAssemblies(toWhere, GeneratedAssemblies);
  
@@ -345,7 +357,7 @@ index 5d17508..398e433 100644
          public static void SaveAssemblies(string toWhere, List<AssemblyDefinition> assemblies)
          {
              Logger.InfoNewline($"Saving {assemblies.Count} assembl{(assemblies.Count != 1 ? "ies" : "y")} to " + toWhere + "...");
-@@ -415,6 +456,17 @@ namespace Cpp2IL.Core
+@@ -415,6 +458,17 @@ namespace Cpp2IL.Core
              {
                  var dllPath = Path.Combine(toWhere, assembly.MainModule.Name);
  
@@ -363,7 +375,7 @@ index 5d17508..398e433 100644
                  //Remove NetCore Dependencies 
                  var reference = assembly.MainModule.AssemblyReferences.FirstOrDefault(a => a.Name == "System.Private.CoreLib");
                  if (reference != null)
-@@ -706,4 +758,4 @@ namespace Cpp2IL.Core
+@@ -706,4 +760,4 @@ namespace Cpp2IL.Core
                  throw new LibraryNotInitializedException();
          }
      }

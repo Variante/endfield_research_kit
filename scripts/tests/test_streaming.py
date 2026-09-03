@@ -6,6 +6,8 @@ from scripts.game_data.streaming import parse_streaming_file
 def _root(kind: str, devonly_info: bool = False) -> bytes:
     if kind == "info":
         return _info_root(devonly_info)
+    if kind in {"init", "streaming"}:
+        return _data_root()
     root, vtable_size, object_size = 24, 20, 40
     fields = [4, 8, 16, 20, 24, 28, 32, 36]
     size = 80
@@ -17,6 +19,66 @@ def _root(kind: str, devonly_info: bool = False) -> bytes:
     data[root : root + 4] = (root - vtable).to_bytes(4, "little", signed=True)
     for index, value in enumerate(fields):
         data[vtable + 4 + index * 2 : vtable + 6 + index * 2] = value.to_bytes(2, "little")
+    return bytes(data)
+
+
+def _data_root(*, populated: bool = False) -> bytes:
+    size = 252 if populated else 92
+    data = bytearray(size)
+    root, root_vtable = 24, 4
+    data[0:4] = root.to_bytes(4, "little")
+    data[root_vtable : root_vtable + 2] = (20).to_bytes(2, "little")
+    data[root_vtable + 2 : root_vtable + 4] = (40).to_bytes(2, "little")
+    for index, value in enumerate((4, 8, 16, 20, 24, 28, 32, 36)):
+        data[root_vtable + 4 + index * 2 : root_vtable + 6 + index * 2] = (
+            value.to_bytes(2, "little")
+        )
+    data[root : root + 4] = (root - root_vtable).to_bytes(
+        4, "little", signed=True
+    )
+    for field_index, target in zip(range(2, 6), range(64, 80, 4)):
+        slot = root + (16, 20, 24, 28)[field_index - 2]
+        data[slot : slot + 4] = (target - slot).to_bytes(4, "little")
+        data[target : target + 4] = (0).to_bytes(4, "little")
+    field6_slot, field7_slot = root + 32, root + 36
+    data[field6_slot : field6_slot + 4] = (80 - field6_slot).to_bytes(4, "little")
+    data[field7_slot : field7_slot + 4] = (88 - field7_slot).to_bytes(4, "little")
+    if not populated:
+        data[80:84] = (0).to_bytes(4, "little")
+        data[88:92] = (0).to_bytes(4, "little")
+        return bytes(data)
+
+    # The two root vectors each contain one table offset. The one-field
+    # wrappers deliberately reuse a vtable which is forward of the first
+    # wrapper and backward from the second wrapper.
+    data[80:84] = (1).to_bytes(4, "little")
+    data[84:88] = (112 - 84).to_bytes(4, "little")
+    data[88:92] = (1).to_bytes(4, "little")
+    data[92:96] = (160 - 92).to_bytes(4, "little")
+
+    data[112:116] = (-20).to_bytes(4, "little", signed=True)
+    data[116:120] = (120 - 116).to_bytes(4, "little")
+    data[120:132] = (2).to_bytes(4, "little") + (10).to_bytes(
+        4, "little"
+    ) + (20).to_bytes(4, "little")
+    data[132:138] = (6).to_bytes(2, "little") + (8).to_bytes(
+        2, "little"
+    ) + (4).to_bytes(2, "little")
+
+    data[140:154] = (14).to_bytes(2, "little") + (56).to_bytes(
+        2, "little"
+    ) + b"".join(value.to_bytes(2, "little") for value in (4, 8, 12, 16, 20))
+    data[160:164] = (20).to_bytes(4, "little", signed=True)
+    data[168:172] = (2).to_bytes(4, "little")
+    data[176:180] = (216 - 176).to_bytes(4, "little")
+    data[180:184] = (232 - 180).to_bytes(4, "little")
+    data[216:228] = (1).to_bytes(4, "little") + (7).to_bytes(
+        2, "little"
+    ) + (4).to_bytes(2, "little") + (0).to_bytes(4, "little")
+
+    data[232:236] = (100).to_bytes(4, "little", signed=True)
+    data[236:240] = (240 - 236).to_bytes(4, "little")
+    data[240:252] = (8).to_bytes(4, "little") + bytes(range(8))
     return bytes(data)
 
 
@@ -94,17 +156,114 @@ def _literal_only(data: bytes) -> bytes:
     return bytes([0x33]) + bytes(extension) + data
 
 
+def _packed(data: bytes) -> bytes:
+    return len(data).to_bytes(4, "little") + _literal_only(data)
+
+
 class StreamingTests(unittest.TestCase):
     def test_compressed_init_exact_root(self):
         clear = _root("init")
-        packed = len(clear).to_bytes(4, "little") + _literal_only(clear)
-        result = parse_streaming_file("init", packed)
+        result = parse_streaming_file("init", _packed(clear))
         self.assertEqual(result["encoding"], "inverted_lz4")
         self.assertEqual(result["decodedBytes"], len(clear))
+        self.assertEqual(
+            result["anonymousGroupSubgraph"]["status"],
+            "exact_anonymous_subgraph",
+        )
+        self.assertEqual(result["anonymousGroupSubgraph"]["pairedGroupCount"], 0)
+
+    def test_init_anonymous_group_subgraph(self):
+        result = parse_streaming_file("init", _packed(_data_root(populated=True)))
+        subgraph = result["anonymousGroupSubgraph"]
+        self.assertEqual(subgraph["pairedGroupCount"], 1)
+        self.assertEqual(subgraph["valueCount"], 2)
+        self.assertEqual(subgraph["descriptorCount"], 1)
+        self.assertEqual(subgraph["blobBytes"], 8)
+        self.assertGreaterEqual(subgraph["reusedVtableReferences"], 1)
+        self.assertEqual(subgraph["wholeFileStatus"], "partial")
+
+    def test_init_group_count_and_descriptor_fail_closed(self):
+        clear = bytearray(_data_root(populated=True))
+        clear[88:92] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "paired group count mismatch"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[168:172] = (1).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "value count mismatch"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[224:228] = (1).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "reserved value"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[222:224] = (0).to_bytes(2, "little")
+        with self.assertRaisesRegex(ValueError, "zero stride"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+    def test_init_blob_length_and_subgraph_overlap_fail_closed(self):
+        clear = bytearray(_data_root(populated=True))
+        clear[240:244] = (7).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "blob length mismatch"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True) + b"\0" * 4)
+        clear[120:124] = (3).to_bytes(4, "little")
+        clear[168:172] = (3).to_bytes(4, "little")
+        clear[240:244] = (12).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "structural ranges overlap"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+    def test_init_malformed_group_offset_and_truncation_fail_closed(self):
+        clear = bytearray(_data_root(populated=True))
+        clear[92:96] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "invalid table target"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[152:154] = (54).to_bytes(2, "little")
+        with self.assertRaisesRegex(ValueError, "wrapper slot exceeds table object"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = _data_root(populated=True)[:-1]
+        with self.assertRaisesRegex(ValueError, "exceeds payload"):
+            parse_streaming_file("init", _packed(clear))
+
+    def test_init_wrapper_group_shapes_and_descriptor_count_fail_closed(self):
+        clear = bytearray(_data_root(populated=True))
+        clear[134:136] = (12).to_bytes(2, "little")
+        with self.assertRaisesRegex(ValueError, "field 6 row 0 shape"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[142:144] = (52).to_bytes(2, "little")
+        with self.assertRaisesRegex(ValueError, "field 7 row 0 shape"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_data_root(populated=True))
+        clear[216:220] = (0xFFFF_FFFF).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "descriptors count"):
+            parse_streaming_file("init", _packed(bytes(clear)))
 
     def test_raw_devonly_streaming_root(self):
         result = parse_streaming_file("streaming", _root("streaming"), allow_raw=True)
         self.assertEqual(result["encoding"], "raw_flatbuffer")
+        self.assertEqual(
+            result["anonymousGroupSubgraph"]["status"],
+            "exact_anonymous_subgraph",
+        )
+
+    def test_streaming_anonymous_group_subgraph(self):
+        result = parse_streaming_file(
+            "streaming", _packed(_data_root(populated=True))
+        )
+        subgraph = result["anonymousGroupSubgraph"]
+        self.assertEqual(subgraph["pairedGroupCount"], 1)
+        self.assertEqual(subgraph["valueCount"], 2)
+        self.assertEqual(subgraph["blobBytes"], 8)
+        self.assertEqual(subgraph["wholeFileStatus"], "partial")
 
     def test_raw_info_root(self):
         result = parse_streaming_file("info", _root("info"))

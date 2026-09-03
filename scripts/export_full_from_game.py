@@ -24,6 +24,7 @@ if __package__:
         resolve_env_emoji_prefab_key,
     )
     from .common import resolve_installed_game_data_root
+    from .animestudio.generate_dummydll import current_output_status as dummy_dll_status
     from .animestudio_object_index import (
         MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
         PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
@@ -42,6 +43,7 @@ else:
         resolve_env_emoji_prefab_key,
     )
     from common import resolve_installed_game_data_root
+    from animestudio.generate_dummydll import current_output_status as dummy_dll_status
     from animestudio_object_index import (
         MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
         PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
@@ -2986,7 +2988,9 @@ def normalize_dummy_dll_path(path: Path | str) -> Path:
     return Path(text).expanduser()
 
 
-def validate_dummy_dll_dir(path: Path | str, source: str) -> Path | None:
+def validate_dummy_dll_dir(
+    path: Path | str, source: str, game_root: Path
+) -> Path | None:
     candidate = normalize_dummy_dll_path(path)
     if not looks_like_dummy_dll_dir(candidate):
         log(
@@ -2995,17 +2999,33 @@ def validate_dummy_dll_dir(path: Path | str, source: str) -> Path | None:
             "continuing without that DummyDll path"
         )
         return None
+    data_root = game_root.resolve()
+    gameassembly = data_root.parent / "GameAssembly.dll"
+    metadata = data_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+    if not gameassembly.is_file() or not metadata.is_file():
+        log(
+            f"  warning: cannot validate AnimeStudio DummyDll provenance from {source}; "
+            "installed native inputs are missing; continuing without that DummyDll path"
+        )
+        return None
+    status, detail = dummy_dll_status(candidate.resolve(), gameassembly, metadata)
+    if status != "current":
+        log(
+            f"  warning: AnimeStudio DummyDll directory from {source} is {status} "
+            f"({detail}); continuing without that DummyDll path"
+        )
+        return None
     return candidate.resolve()
 
 
 def resolve_animestudio_dummy_dlls(explicit: Path | None, game_root: Path) -> tuple[Path | None, str | None]:
     if explicit is not None:
-        resolved = validate_dummy_dll_dir(explicit, "--animestudio-dummy-dlls")
+        resolved = validate_dummy_dll_dir(explicit, "--animestudio-dummy-dlls", game_root)
         return (resolved, "--animestudio-dummy-dlls") if resolved is not None else (None, None)
 
     env_value = os.environ.get(ANIMESTUDIO_DUMMY_DLL_ENV, "").strip()
     if env_value:
-        resolved = validate_dummy_dll_dir(env_value, ANIMESTUDIO_DUMMY_DLL_ENV)
+        resolved = validate_dummy_dll_dir(env_value, ANIMESTUDIO_DUMMY_DLL_ENV, game_root)
         if resolved is not None:
             return resolved, ANIMESTUDIO_DUMMY_DLL_ENV
     candidates = (
@@ -3022,7 +3042,9 @@ def resolve_animestudio_dummy_dlls(explicit: Path | None, game_root: Path) -> tu
             continue
         seen.add(key)
         if looks_like_dummy_dll_dir(candidate):
-            return candidate.resolve(), source
+            resolved = validate_dummy_dll_dir(candidate, source, game_root)
+            if resolved is not None:
+                return resolved, source
     return None, None
 
 
