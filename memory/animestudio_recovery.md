@@ -170,7 +170,9 @@ Current durable boundaries:
   until formatter IL or a bounded deserialization trace closes the cursor.
   Current v29 metadata identifies formatter/wrapper methods and setters, but
   its missing generic mapping and mismatched native code-registration witness
-  do not prove serialized field order.
+  do not prove serialized field order. The current residual JsonData census
+  keeps 9,388 outer-verified rows across 14 families explicitly unclassified;
+  SkillData is the largest by bytes and still lacks whole-object cursor proof.
 - Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
   data, patch-instruction/runtime, and remaining JsonData semantics are
   incomplete.
