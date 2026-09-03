@@ -6,6 +6,7 @@ import unittest
 from scripts.game_data.memorypack.npc_montage import (
     NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT,
     NPC_MONTAGE_DATA_MEMBER_COUNT,
+    NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT,
     NPC_MONTAGE_ROOT_MEMBER_COUNT,
     NpcMontageFramingError,
     decode_npc_montage_memorypack,
@@ -13,7 +14,10 @@ from scripts.game_data.memorypack.npc_montage import (
 )
 
 
-def _fixture(clip_name: str | None = "A_actor_fixture_idle_loop") -> bytes:
+def _fixture(
+    clip_name: str | None = "A_actor_fixture_idle_loop",
+    member18_records: list[tuple[int, int, float, float, float]] | None = None,
+) -> bytes:
     out = bytearray([NPC_MONTAGE_ROOT_MEMBER_COUNT])
     out.extend(struct.pack("<i", 1))
     out.append(NPC_MONTAGE_DATA_MEMBER_COUNT)
@@ -38,7 +42,11 @@ def _fixture(clip_name: str | None = "A_actor_fixture_idle_loop") -> bytes:
     out.extend(b"\x00" * 36)
     out.extend(struct.pack("<i", 0))
     out.extend(b"\x00" * 32)
-    out.extend(struct.pack("<I", 0))
+    records = member18_records or []
+    out.extend(struct.pack("<I", len(records)))
+    for record in records:
+        out.append(NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT)
+        out.extend(struct.pack("<IIfff", *record))
     out.extend(struct.pack("<if", 1, 0.0))
     out.extend(b"\x00" * (36 + 16 + 8))
     out.extend(struct.pack("<i", 1494188745))
@@ -109,15 +117,50 @@ class NpcMontageMemoryPackTests(unittest.TestCase):
         ):
             frame_npc_montage(bytes(payload))
 
-    def test_nonempty_override_collection_is_explicitly_unsupported(self) -> None:
-        payload = bytearray(_fixture())
-        override_count_offset = len(payload) - (4 + 4 + 4 + 4 + 36 + 16 + 8)
-        struct.pack_into("<I", payload, override_count_offset, 1)
-        with self.assertRaisesRegex(
-            NpcMontageFramingError,
-            "data.member18:unsupported-nonempty-collection",
-        ):
-            frame_npc_montage(bytes(payload))
+    def test_member18_counted_records_consume_exactly_to_eof(self) -> None:
+        records = [
+            (0xA6E99673, 0xDB923E88, 0.0, 0.25, 0.85),
+            (0xA785FD3A, 0xA6E99673, 0.0, 0.25, 0.85),
+            (0xF75C5933, 0xA785FD3A, 0.0, 0.25, 0.85),
+            (0xA785FD3A, 0xF75C5933, 0.0, 0.25, 0.85),
+        ]
+        for count in (1, 2, 4):
+            with self.subTest(count=count):
+                payload = _fixture(member18_records=records[:count])
+                decoded = frame_npc_montage(payload)
+                self.assertEqual(
+                    "exact_current_npc_montage_member18_counted_frame",
+                    decoded["status"],
+                )
+                self.assertEqual(len(payload), decoded["bytesConsumed"])
+                self.assertEqual(count, len(decoded["member18Records"]))
+                self.assertTrue(
+                    all(
+                        record["memberCount"]
+                        == NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT
+                        for record in decoded["member18Records"]
+                    )
+                )
+
+    def test_member18_truncated_trailing_and_malformed_records_fail_closed(self) -> None:
+        records = [(0xA6E99673, 0xDB923E88, 0.0, 0.25, 0.85)]
+        payload = _fixture(member18_records=records)
+        record_offset = len(payload) - (21 + 72)
+
+        with self.assertRaisesRegex(NpcMontageFramingError, "truncated"):
+            frame_npc_montage(payload[: record_offset + 20])
+        with self.assertRaisesRegex(NpcMontageFramingError, "trailing-bytes"):
+            frame_npc_montage(payload + b"\x00")
+
+        malformed = bytearray(payload)
+        malformed[record_offset] = NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT - 1
+        with self.assertRaisesRegex(NpcMontageFramingError, "memberCount"):
+            frame_npc_montage(bytes(malformed))
+
+        wrong_count = bytearray(payload)
+        struct.pack_into("<I", wrong_count, record_offset - 4, 2)
+        with self.assertRaisesRegex(NpcMontageFramingError, "count-envelope"):
+            frame_npc_montage(bytes(wrong_count))
 
     def test_clip_record_drift_and_unobserved_string_prefix_fail_closed(self) -> None:
         payload = bytearray(_fixture())

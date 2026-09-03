@@ -7,12 +7,18 @@ def _literal_only_inverted_lz4(data: bytes) -> bytes:
     length = len(data)
     if length < 15:
         return bytes([length]) + data
-    return bytes([0x33, length - 15]) + data
+    remaining = length - 15
+    extension = bytearray()
+    while remaining >= 255:
+        extension.append(255)
+        remaining -= 255
+    extension.append(remaining)
+    return bytes([0x33]) + bytes(extension) + data
 
 
 class TerrainTretTests(unittest.TestCase):
     def test_parses_only_observed_framing(self):
-        opaque = b"opaque"
+        opaque = b"\x5a" * 2312
         words = (34, 34, 1, 6, len(opaque), 0)
         body_prefix = b"TRET" + (1).to_bytes(4, "little") + b"".join(
             value.to_bytes(2, "little") for value in words
@@ -30,9 +36,18 @@ class TerrainTretTests(unittest.TestCase):
         self.assertEqual(parsed.body_payload_length_u32le, len(opaque))
         self.assertEqual(parsed.body_fixed_prefix, body_prefix[:FIXED_BODY_PREFIX_SIZE])
         self.assertEqual(parsed.opaque_payload, opaque)
+        self.assertEqual("exact_anonymous_record_tiling", parsed.anonymous_tiling_status)
+        self.assertEqual(1, len(parsed.anonymous_record_ranges))
+        record_range = parsed.anonymous_record_ranges[0]
+        self.assertEqual((20, 2332), (
+            record_range.start_offset,
+            record_range.end_offset,
+        ))
+        self.assertEqual(1156, record_range.record_count)
+        self.assertEqual(2, record_range.record_stride)
 
     def test_decodes_compressed_envelope_before_parsing(self):
-        opaque = b"opaque"
+        opaque = b"\x5a" * 2312
         words = (34, 34, 1, 6, len(opaque), 0)
         clear = b"TRET" + (1).to_bytes(4, "little") + b"".join(
             value.to_bytes(2, "little") for value in words
@@ -48,6 +63,49 @@ class TerrainTretTests(unittest.TestCase):
         self.assertEqual(parsed.body_u16le_offsets_8_18, words)
         self.assertEqual(parsed.body_payload_length_u32le, len(opaque))
         self.assertEqual(parsed.opaque_payload, opaque)
+
+    def test_tiles_exact_multi_range_shape(self):
+        payload_length = 1398101
+        words = (
+            1024,
+            1024,
+            11,
+            5,
+            payload_length & 0xFFFF,
+            payload_length >> 16,
+        )
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + b"\x00" * payload_length
+        )
+        parsed = parse_tret_record(body)
+        ranges = parsed.anonymous_record_ranges
+        self.assertEqual("exact_anonymous_record_tiling", parsed.anonymous_tiling_status)
+        self.assertEqual(11, len(ranges))
+        self.assertEqual([4, 1], [item.record_count for item in ranges[-2:]])
+        self.assertEqual(len(body), ranges[-1].end_offset)
+
+    def test_keeps_unproven_multi_range_shapes_bounded_opaque(self):
+        payload_length = 1398128
+        words = (
+            1024,
+            1024,
+            11,
+            108,
+            payload_length & 0xFFFF,
+            payload_length >> 16,
+        )
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + b"\x5a" * payload_length
+        )
+        parsed = parse_tret_record(body)
+        self.assertEqual("bounded_opaque_current_shape", parsed.anonymous_tiling_status)
+        self.assertEqual((), parsed.anonymous_record_ranges)
 
     def test_rejects_decoded_payload_without_magic(self):
         clear = b"not-a-terrain-record" + b"\x00"
@@ -109,6 +167,62 @@ class TerrainTretTests(unittest.TestCase):
             ValueError, "payload length mismatch: declared 4294967295, actual 0"
         ):
             parse_tret_record(prefix)
+
+    def test_rejects_truncated_anonymous_tiling_with_valid_outer_length(self):
+        opaque = b"\x00" * 2311
+        words = (34, 34, 1, 6, len(opaque), 0)
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + opaque
+        )
+        with self.assertRaisesRegex(ValueError, "range 0 exceeds decoded body"):
+            parse_tret_record(body)
+
+    def test_rejects_trailing_anonymous_tiling_with_valid_outer_length(self):
+        opaque = b"\x00" * 2313
+        words = (34, 34, 1, 6, len(opaque), 0)
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + opaque
+        )
+        with self.assertRaisesRegex(ValueError, "ranges end at 2332.*ends at 2333"):
+            parse_tret_record(body)
+
+    def test_rejects_malformed_anonymous_layout_words_and_axes(self):
+        def body(words: tuple[int, int, int, int, int, int]) -> bytes:
+            return (
+                b"TRET"
+                + (1).to_bytes(4, "little")
+                + b"".join(value.to_bytes(2, "little") for value in words)
+            )
+
+        with self.assertRaisesRegex(ValueError, "axes must be positive"):
+            parse_tret_record(body((0, 1, 1, 6, 0, 0)))
+        with self.assertRaisesRegex(ValueError, "unsupported TRET anonymous layout"):
+            parse_tret_record(body((34, 34, 2, 6, 0, 0)))
+
+    def test_rejects_changed_bounded_opaque_aggregate_length(self):
+        payload_length = 1398127
+        words = (
+            1024,
+            1024,
+            11,
+            108,
+            payload_length & 0xFFFF,
+            payload_length >> 16,
+        )
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + b"\x00" * payload_length
+        )
+        with self.assertRaisesRegex(ValueError, "bounded opaque body length mismatch"):
+            parse_tret_record(body)
 
 
 if __name__ == "__main__":
