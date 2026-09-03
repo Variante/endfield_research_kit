@@ -152,7 +152,7 @@ The stable code and fixture entry points are:
 
 | Family | Maintained reader or classifier | Focused fixtures |
 |---|---|---|
-| VFS catalog, overlay, hashes | `AnimeStudio/Endfield/Vfs/EndfieldVfsLoader.cs`, `EndfieldVfsCorpusClassifier.cs`, CLI `vfs-audit`/`vfs-profile` | `AnimeStudio.CLI.Tests/Program.cs`, `AnimeStudio.VfsCorpus.Tests` |
+| VFS catalog, overlay, hashes | `AnimeStudio/Endfield/Vfs/EndfieldVfsLoader.cs`, `EndfieldVfsCorpusClassifier.cs`, CLI `vfs-audit`/`vfs-profile` | `AnimeStudio.CLI.Tests/Program.cs`, `AnimeStudio.CorpusClassifier.Tests` |
 | Bundle / InitBundle inner container | `AnimeStudio/VFSFile.cs`, `AnimeStudio/Crypto/VFSUtils.cs` | `VFSFileType5Tests.cs`, `VFSDirectoryInfoTests.cs`, `StreamExtensionsTests.cs` |
 | BundleManifest | `scripts/game_data/bundle_manifest.py` | `scripts/tests/test_bundle_manifest.py` |
 | IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
@@ -163,7 +163,7 @@ The stable code and fixture entry points are:
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
 | JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py` |
-| ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_extend_data_binary.py` |
+| ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_mmap_extend_data.py` |
 | Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
 | Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, `scripts/build_audio.py` | audio-domain tests under `scripts/tests/` |
