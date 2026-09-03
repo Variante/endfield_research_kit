@@ -228,11 +228,13 @@ AnimeStudio.CLI.exe audio-audit --streaming-assets PERSISTENT --fallback-assets 
 ```
 
 The default audit covers `InitAudio`, `Audio`, `AuditAudio`, `HotfixAudio`, and
-`AudioChinese`, and explicitly excludes EN/JP/KR voice blocks. A verified row
+all language audio blocks. A verified row
 proves bounded AKPK sectors, bank/media intervals, BNK/DIDX/DATA framing,
 required decryption, and RIFF/RIFX or PLUG envelopes. It does not prove HIRC
-behavior, posted events, selected media, or audibility. Missing AuditAudio
-chunks remain nonzero failures.
+behavior, posted events, selected media, or audibility. Any audio block whose
+declared chunks are all absent from both roots emits an explicit
+`excluded_missing_audio` terminal row and does not fail; if any chunk exists,
+the block enters normal parsing and partial absence or corruption fails.
 Use `--hirc-only` for a lower-I/O BNK/HIRC census. It skips media magic checks
 but still authenticates the selected VFS files and requires exact BNK section
 and HIRC object consumption. Preserve numeric HIRC type IDs; object-envelope

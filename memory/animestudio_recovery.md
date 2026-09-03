@@ -173,6 +173,11 @@ Current durable boundaries:
   its non-voice HIRC lane now exact-frames numeric object envelopes and keeps
   unknown types. HIRC behavior, selected runtime playback, and audibility
   remain separate.
+- Audio availability is data-driven rather than type-excluded: shared and all
+  language blocks parse normally whenever any declared chunk exists. A block
+  wholly absent from both overlay roots remains visible as a conditional
+  missing terminal state and does not fail; partial presence, bad hashes, and
+  malformed payloads remain fail-closed.
 - SkillData and BuffData have current exact-build member-count and file-hash
   censuses, but nested MemoryPack unions and whole-file ownership are not
   proven. SkillData now has a strict anonymous EOF terminal-shape reader that
