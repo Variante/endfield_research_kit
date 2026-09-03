@@ -3,11 +3,12 @@
 The installed build provides unusually strong evidence for this family: the
 outer file is one Brotli stream and the decompressed bytes have two fixed
 headers, three size/count-delimited fixed-width row regions, and one
-size-delimited variable region with a repeated footer witness.  The 48-byte
-rows also index one bounded anonymous region made of a length-prefixed UTF-16
-fragment and three count-delimited 32-bit lists per row.  This module only
-certifies those boundaries.  Row fields, the surrounding variable-region
-bytes, and all indexed values remain semantically unnamed.
+size-delimited variable region with a repeated footer witness. The variable
+payload begins with a sequential anonymous record region; the 48-byte rows
+then index a second region with the same record grammar. Each record contains
+a length-prefixed UTF-16 fragment and three count-delimited 32-bit lists. This
+module only certifies those boundaries. Row fields, record values, ordering,
+ownership, and the terminal variable-region bytes remain semantically unnamed.
 
 ``parse_bundle_manifest`` accepts the compressed ``.hgmmap`` bytes.  Use
 ``parse_decompressed_bundle_manifest`` only when a caller has already checked
@@ -112,7 +113,7 @@ class OpaqueTable:
 
 @dataclass(frozen=True)
 class OpaqueVariableRegion:
-    """One bounded variable-width region with one anonymously indexed span."""
+    """One bounded variable-width region with two anonymous record spans."""
 
     section_offset: int
     size_witness: int
@@ -124,7 +125,13 @@ class OpaqueVariableRegion:
     footer_offset: int
     footer_size_witness: int
     end_offset: int
-    opaque_prefix_length: int
+    sequential_region_length: int
+    sequential_record_count: int
+    sequential_utf16_bytes: int
+    sequential_integer_list_count: int
+    sequential_integer_value_count: int
+    sequential_max_integer_list_count: int
+    sequential_region_sha256: str
     indexed_region_offset: int
     indexed_region_length: int
     indexed_record_count: int
@@ -148,10 +155,17 @@ class OpaqueVariableRegion:
             "footerOffset": self.footer_offset,
             "footerSizeWitness": self.footer_size_witness,
             "endOffset": self.end_offset,
-            "opaquePrefix": {
+            "anonymousSequentialRegion": {
                 "relativeOffset": 0,
-                "length": self.opaque_prefix_length,
-                "fieldStatus": "opaque",
+                "length": self.sequential_region_length,
+                "recordCount": self.sequential_record_count,
+                "utf16RecordCount": self.sequential_record_count,
+                "utf16Bytes": self.sequential_utf16_bytes,
+                "integerListCount": self.sequential_integer_list_count,
+                "integerValueCount": self.sequential_integer_value_count,
+                "maxIntegerListCount": self.sequential_max_integer_list_count,
+                "sha256": self.sequential_region_sha256,
+                "fieldStatus": "anonymous-structural-only",
             },
             "anonymousIndexedRegion": {
                 "relativeOffset": self.indexed_region_offset,
@@ -170,7 +184,7 @@ class OpaqueVariableRegion:
                 "length": self.opaque_suffix_length,
                 "fieldStatus": "opaque",
             },
-            "recordStatus": "partially-framed-anonymous",
+            "recordStatus": "two-regions-framed-anonymous",
         }
 
 
@@ -194,7 +208,7 @@ class BundleManifestSummary:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "format": "endfield-bundle-manifest-hgmmap-v3",
+            "format": "endfield-bundle-manifest-hgmmap-v4",
             "source": self.source,
             "compressed": {
                 "length": self.compressed_length,
@@ -331,6 +345,100 @@ def _counted_u32_component(
     return count
 
 
+def _sequential_anonymous_region(
+    payload: bytes,
+    end: int,
+    expected_record_count: int,
+    source: str,
+) -> dict[str, int | str]:
+    """Consume anonymous records sequentially from payload offset zero."""
+
+    if end <= 0 or end > len(payload):
+        raise BinaryFormatError(
+            f"{source}: sequential region end {end} outside variable payload "
+            f"length {len(payload)}"
+        )
+    cursor = 0
+    record_count = 0
+    utf16_bytes = 0
+    integer_value_count = 0
+    max_integer_list_count = 0
+    while cursor < end:
+        record_start = cursor
+        _need(payload, cursor, 4, f"{source} sequential row {record_count} UTF-16 length")
+        byte_length = _u32(
+            payload, cursor, f"{source} sequential row {record_count} UTF-16 length"
+        )
+        string_end = cursor + 4 + byte_length + 2
+        if string_end > end:
+            raise BinaryFormatError(
+                f"{source}: sequential row {record_count} UTF-16 component ends at "
+                f"{string_end}, after region end {end}"
+            )
+        utf16_bytes += _counted_utf16_component(
+            payload,
+            cursor,
+            string_end,
+            f"{source} sequential row {record_count} UTF-16 component",
+        )
+        cursor = string_end
+        for component_index in range(1, 4):
+            _need(
+                payload,
+                cursor,
+                4,
+                f"{source} sequential row {record_count} list {component_index} count",
+            )
+            count = _u32(
+                payload,
+                cursor,
+                f"{source} sequential row {record_count} list {component_index} count",
+            )
+            component_end = cursor + 4 + count * 4 + 2
+            if component_end > end:
+                raise BinaryFormatError(
+                    f"{source}: sequential row {record_count} list "
+                    f"{component_index} ends at {component_end}, after region end {end}"
+                )
+            _counted_u32_component(
+                payload,
+                cursor,
+                component_end,
+                f"{source} sequential row {record_count} list {component_index}",
+            )
+            integer_value_count += count
+            max_integer_list_count = max(max_integer_list_count, count)
+            cursor = component_end
+        if cursor <= record_start:
+            raise BinaryFormatError(
+                f"{source}: sequential row {record_count} did not advance"
+            )
+        record_count += 1
+        if record_count > expected_record_count:
+            raise BinaryFormatError(
+                f"{source}: sequential region has more than expected "
+                f"{expected_record_count} records"
+            )
+    if cursor != end:
+        raise BinaryFormatError(
+            f"{source}: sequential region ended at {cursor}, expected {end}"
+        )
+    if record_count != expected_record_count:
+        raise BinaryFormatError(
+            f"{source}: sequential record count {record_count} != indexed table "
+            f"row count {expected_record_count}"
+        )
+    return {
+        "length": end,
+        "record_count": record_count,
+        "utf16_bytes": utf16_bytes,
+        "integer_list_count": record_count * 3,
+        "integer_value_count": integer_value_count,
+        "max_integer_list_count": max_integer_list_count,
+        "sha256": _digest(payload[:end]),
+    }
+
+
 def _indexed_anonymous_region(
     data: bytes,
     payload: bytes,
@@ -450,6 +558,12 @@ def _variable_region(
         )
     payload = data[payload_offset:footer_offset]
     indexed = _indexed_anonymous_region(data, payload, indexed_table, source)
+    sequential = _sequential_anonymous_region(
+        payload,
+        int(indexed["offset"]),
+        indexed_table.row_count,
+        source,
+    )
     indexed_end = int(indexed["end"])
     return OpaqueVariableRegion(
         section_offset=section_offset,
@@ -462,7 +576,15 @@ def _variable_region(
         footer_offset=footer_offset,
         footer_size_witness=footer_size_witness,
         end_offset=end_offset,
-        opaque_prefix_length=int(indexed["offset"]),
+        sequential_region_length=int(sequential["length"]),
+        sequential_record_count=int(sequential["record_count"]),
+        sequential_utf16_bytes=int(sequential["utf16_bytes"]),
+        sequential_integer_list_count=int(sequential["integer_list_count"]),
+        sequential_integer_value_count=int(sequential["integer_value_count"]),
+        sequential_max_integer_list_count=int(
+            sequential["max_integer_list_count"]
+        ),
+        sequential_region_sha256=str(sequential["sha256"]),
         indexed_region_offset=int(indexed["offset"]),
         indexed_region_length=int(indexed["length"]),
         indexed_record_count=int(indexed["record_count"]),
@@ -483,9 +605,10 @@ def parse_decompressed_bundle_manifest(
 
     Each fixed-width section starts with a 32-bit size witness followed by a
     32-bit row count.  The size is exactly ``4 + count * row_size`` and measures
-    the count word plus rows, not its own four bytes.  The terminal variable
-    region uses a leading size word, that many opaque bytes, and the same size
-    word as its footer.  These are structural witnesses only.
+    the count word plus rows, not its own four bytes. The terminal variable
+    region uses a leading size word, two anonymous record spans, an opaque
+    suffix, and the same size word as its footer. These are structural
+    witnesses only.
     """
 
     if not isinstance(data, (bytes, bytearray, memoryview)):
