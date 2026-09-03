@@ -58,6 +58,12 @@ class StringPathHashTests(unittest.TestCase):
         with self.assertRaises(BinaryFormatError):
             parse_string_path_hash(bytes(data), source="bad-path")
 
+    def test_bucket_ranges_must_not_overlap(self) -> None:
+        data = bytearray(_string_path_fixture())
+        struct.pack_into("<I", data, 16, 48)
+        with self.assertRaises(BinaryFormatError):
+            parse_string_path_hash(bytes(data), source="overlapping-buckets")
+
     def test_string_terminator_is_required(self) -> None:
         data = bytearray(_string_path_fixture())
         data[-1] = 1
@@ -89,6 +95,14 @@ class FacBoneTRSTests(unittest.TestCase):
         with self.assertRaises(BinaryFormatError):
             parse_fac_bone_trs(
                 bytes(data), unit_record_count=2, source="bad-trs", allow_final_sentinel=False
+            )
+
+    def test_trs_ranges_must_not_overlap(self) -> None:
+        data = bytearray(_fac_fixture())
+        struct.pack_into("<I", data, 816 + 12, 864)
+        with self.assertRaises(BinaryFormatError):
+            parse_fac_bone_trs(
+                bytes(data), unit_record_count=2, source="overlapping-trs", allow_final_sentinel=False
             )
 
     def test_final_trs_end_must_consume_source(self) -> None:
