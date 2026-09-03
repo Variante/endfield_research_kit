@@ -46,6 +46,11 @@ python scripts\build_map_recovery_preview.py --level LEVEL
 python scripts\build_map_recovery_preview.py --refresh-exact-fallbacks-only
 ```
 
+Exact streaming, point-layer, and inferred HLOD previews checkpoint after each
+completed scene and reuse matching outputs on later runs. Use
+`--no-render-cache` only when auditing a forced rerender; normal input changes
+invalidate the affected cache.
+
 Use the canonical export when installed inputs or extracted assets changed.
 Mission Pipeline remains a standalone recovery workflow, not a WebUI page.
 

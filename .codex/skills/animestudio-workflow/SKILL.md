@@ -35,8 +35,9 @@ Use repository wrappers for production workflows:
 
 - Story refresh: `export.bat --from-game`.
 - Story and assets together: `export.bat --from-game --with-assets`.
+- Local changed-file refresh with every normal WebUI builder: `export.bat --changed-only`.
 - Assets and CN audio only: `export_assets.bat --from-game`.
-- Installed-data patch workflow: `build_updates_by_patch.bat`.
+- Updates publication from two complete exports: `build_updates.bat OLD NEW`.
 
 Use direct CLI calls only for targeted parity probes, extraction, or debugging.
 Inspect subcommand help rather than duplicating its full option surface:

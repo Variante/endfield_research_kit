@@ -282,6 +282,34 @@ class PreviewInputTests(unittest.TestCase):
             self.assertTrue(image.is_file())
             self.assertEqual(image.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
 
+    def test_point_render_cache_reuses_complete_outputs_and_invalidates_missing_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_root = Path(tmp)
+            positions = [(-10.0, -2.0, 20.0), (30.0, 12.0, -40.0)]
+            first = render_point_cloud("cached_level", positions, output_root)
+            cache_path = output_root / ".cache/cached_level.json"
+            self.assertTrue(cache_path.is_file())
+
+            with mock.patch.object(builder, "write_png", side_effect=AssertionError("cache miss")):
+                second = render_point_cloud("cached_level", positions, output_root)
+            self.assertEqual(first, second)
+
+            (output_root / "cached_level_registry_elevation_points.png").unlink()
+            signature = json.loads(cache_path.read_text(encoding="utf-8"))["signature"]
+            self.assertIsNone(
+                builder._load_point_render_cache(output_root, "cached_level", signature)
+            )
+
+    def test_point_render_cache_signature_changes_with_render_inputs(self):
+        bounds = {"minX": 0.0, "maxX": 1.0, "minZ": 0.0, "maxZ": 1.0}
+        base = builder._point_render_cache_signature(
+            "level", [(0.0, 0.0, 0.0)], {}, bounds, 0.25, [], {}
+        )
+        changed = builder._point_render_cache_signature(
+            "level", [(0.0, 1.0, 0.0)], {}, bounds, 0.25, [], {}
+        )
+        self.assertNotEqual(base, changed)
+
     def test_streaming_static_meshes_are_rasterized_instead_of_drawn_as_location_points(self):
         payload = {"markers": [{"streamingInstance": {
             "sourceFile": "Data/Streaming/PC/test/Streaming/InitChunkData_0_0_0_0.bytes",
@@ -1104,6 +1132,33 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertIsNone(manifest["pointCloudOverlay"])
         self.assertIsNone(manifest["surfaceRender"])
         self.assertIsNotNone(manifest["elevationUnderlay"])
+
+    def test_hlod_render_cache_reuses_a_complete_preview(self):
+        bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
+        fit = {"originX": 0.0, "originZ": 0.0}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._cluster_obj(
+                tmp, "g c\nv 30 5 -30\nv -30 5 -30\nv -30 5 30\nf 1 2 3\n"
+            )
+            clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
+            arguments = dict(
+                clusters=clusters,
+                level_id="cached_hlod",
+                lod=1,
+                fit=fit,
+                bounds=bounds,
+                mesh_files={"1": path},
+                output_root=Path(tmp),
+            )
+            with mock.patch.object(builder, "raster_size", return_value=(16, 16)):
+                first = render_level(**arguments)
+            self.assertTrue((Path(tmp) / ".cache/cached_hlod.hlod.json").is_file())
+            with (
+                mock.patch.object(builder, "raster_size", return_value=(16, 16)),
+                mock.patch.object(builder, "rasterise_depth", side_effect=AssertionError("cache miss")),
+            ):
+                second = render_level(**arguments)
+            self.assertEqual(first, second)
 
     def test_layered_point_samples_fail_closed_without_texture(self):
         bounds = {"minX": -1.0, "maxX": 1.0, "minZ": -1.0, "maxZ": 1.0}

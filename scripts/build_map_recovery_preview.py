@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import hashlib
 import io
 import json
 import math
@@ -66,6 +67,7 @@ RENDERER_INDEX = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/r
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
+RENDER_CACHE_ROOT = ROOT / "reports/assets/map_recovery/render_cache"
 ASSET_INDEX = ROOT / "webui/data/assets/index.json"
 
 CLUSTER_RE = re.compile(r"^S_HLOD(\d+)_(-?\d+)_(-?\d+)_Cluster_")
@@ -147,6 +149,10 @@ DETAIL_HORIZONTAL_NORMAL_Y = 0.985
 DETAIL_HORIZONTAL_AREA = 0.1
 DETAIL_PROP_ONLY_LEVELS = {"base01_lv001", "base01_lv003"}
 DEFAULT_SURFACE_POINT_DENSITY = 0.25  # deterministic world-space samples per square metre
+POINT_RENDER_CACHE_SCHEMA = 1
+# Bump whenever a rendering rule changes without changing its explicit inputs.
+POINT_RENDER_ALGORITHM_VERSION = 1
+_USE_RENDER_CACHE = True
 # HLOD cluster indices use one fixed region grid. The dominant exact fits are
 # Map01=(-1024,-1024) and Map02=(-2048,-2048); individual level marker
 # occupancy must not move a member by one cell. GameAssembly's map UI path maps
@@ -161,6 +167,7 @@ _HLOD_TEXTURE_BINDINGS: dict[tuple[str, int, int], dict] | None = None
 _RENDERER_TEXTURE_BINDINGS: dict[tuple[str, int], dict] | None = None
 _TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
 _MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
+_RENDER_CACHE_STATS = {"hits": 0, "writes": 0}
 
 
 def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
@@ -168,8 +175,9 @@ def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
     return index.get(f"{unsigned:016X}") or index.get(f"{unsigned:X}")
 
 
+_raster_triangle_numba = None
 if _numba_njit is not None:
-    @_numba_njit(cache=False)
+    @_numba_njit(cache=True)
     def _raster_triangle_numba(
         depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo, width,
         x0, x1, y0, y1, row_w0, row_w1, w0_dx, w0_dy, w1_dx, w1_dy,
@@ -230,8 +238,205 @@ if _numba_njit is not None:
             row_w0 += w0_dy
             row_w1 += w1_dy
         return textured_hit
-else:
-    _raster_triangle_numba = None
+
+
+def _source_stat(path: Path) -> dict[str, int | str]:
+    """Return a cheap local-build invalidation token for one exported source."""
+    try:
+        stat = path.stat()
+    except OSError:
+        return {"path": str(path), "missing": 1}
+    return {"path": str(path), "size": stat.st_size, "mtimeNs": stat.st_mtime_ns}
+
+
+def _binding_source_paths(binding: dict | None) -> list[Path]:
+    if not isinstance(binding, dict):
+        return []
+    paths = []
+    for key in ("materialPath", "texturePath"):
+        value = binding.get(key)
+        if isinstance(value, Path):
+            paths.append(value)
+        elif isinstance(value, str) and value:
+            paths.append(Path(value))
+    for child in binding.get("submeshBindings") or []:
+        paths.extend(_binding_source_paths(child))
+    return paths
+
+
+def _point_render_cache_signature(
+    level_id: str,
+    positions: list[tuple[float, float, float]],
+    map_payload: dict | None,
+    bounds: dict[str, float],
+    density: float,
+    resolved: list[dict],
+    bindings: dict[str, dict],
+) -> str:
+    source_paths: set[Path] = set()
+    for instance in resolved:
+        for mesh in _instance_meshes(instance):
+            value = mesh.get("obj")
+            if value:
+                source_paths.add((ROOT / str(value)).resolve())
+            binding = bindings.get(_asset_rel_from_obj(value))
+            source_paths.update(path.resolve() for path in _binding_source_paths(binding))
+    payload = {
+        "schema": POINT_RENDER_CACHE_SCHEMA,
+        "algorithm": POINT_RENDER_ALGORITHM_VERSION,
+        "levelId": level_id,
+        "positions": positions,
+        "mapPayload": map_payload or {},
+        "bounds": bounds,
+        "density": density,
+        "renderConstants": {
+            "longEdge": LONG_EDGE,
+            "edgeEpsilon": EDGE_EPSILON,
+            "detailNormalY": DETAIL_HORIZONTAL_NORMAL_Y,
+            "detailArea": DETAIL_HORIZONTAL_AREA,
+        },
+        "sources": [_source_stat(path) for path in sorted(source_paths, key=str)],
+        "rendererIndex": _source_stat(RENDERER_INDEX),
+        "assetMap": _source_stat(DEFAULT_ASSET_MAP),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _manifest_output_paths(manifest: dict, output_root: Path) -> list[Path]:
+    result: set[Path] = set()
+
+    def visit(value: object) -> None:
+        if isinstance(value, dict):
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+        elif isinstance(value, str) and value.startswith("render/"):
+            result.add(output_root / value.removeprefix("render/"))
+
+    visit(manifest)
+    return sorted(result, key=str)
+
+
+def _load_point_render_cache(output_root: Path, level_id: str, signature: str) -> dict | None:
+    if not _USE_RENDER_CACHE:
+        return None
+    path = _point_render_cache_path(output_root, level_id)
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    manifest = cached.get("manifest")
+    if cached.get("schemaVersion") != POINT_RENDER_CACHE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(manifest, dict) or not all(path.is_file() for path in _manifest_output_paths(manifest, output_root)):
+        return None
+    _RENDER_CACHE_STATS["hits"] += 1
+    return manifest
+
+
+def _write_point_render_cache(output_root: Path, level_id: str, signature: str, manifest: dict) -> None:
+    if not _USE_RENDER_CACHE:
+        return
+    output_root.mkdir(parents=True, exist_ok=True)
+    path = _point_render_cache_path(output_root, level_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps({
+            "schemaVersion": POINT_RENDER_CACHE_SCHEMA,
+            "signature": signature,
+            "manifest": manifest,
+        }, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+    _RENDER_CACHE_STATS["writes"] += 1
+
+
+def _point_render_cache_path(output_root: Path, level_id: str) -> Path:
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    return cache_root / f"{level_id}.json"
+
+
+def _hlod_render_cache_signature(
+    level_id: str,
+    clusters: list[dict],
+    lod: int,
+    fit: dict,
+    bounds: dict[str, float],
+    mesh_files: dict[str, Path],
+    scan_mode: str,
+    bindings: dict[int, dict],
+) -> str:
+    mesh_paths = {
+        path
+        for cluster in clusters
+        if (path := _path_id_file(mesh_files, int(cluster["pathId"]))) is not None
+    }
+    binding_paths = {
+        path.resolve()
+        for binding in bindings.values()
+        for path in _binding_source_paths(binding)
+    }
+    payload = {
+        "schema": POINT_RENDER_CACHE_SCHEMA,
+        "algorithm": POINT_RENDER_ALGORITHM_VERSION,
+        "kind": "hlod",
+        "levelId": level_id,
+        "clusters": clusters,
+        "lod": lod,
+        "fit": fit,
+        "bounds": bounds,
+        "scanMode": scan_mode,
+        "renderConstants": {"longEdge": LONG_EDGE, "edgeEpsilon": EDGE_EPSILON},
+        "sources": [
+            _source_stat(path)
+            for path in sorted(mesh_paths | binding_paths, key=str)
+        ],
+        "assetMap": _source_stat(DEFAULT_ASSET_MAP),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _load_render_cache(output_root: Path, cache_name: str, signature: str) -> dict | None:
+    if not _USE_RENDER_CACHE:
+        return None
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    path = cache_root / f"{cache_name}.json"
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    manifest = cached.get("manifest")
+    if cached.get("schemaVersion") != POINT_RENDER_CACHE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(manifest, dict) or not all(path.is_file() for path in _manifest_output_paths(manifest, output_root)):
+        return None
+    _RENDER_CACHE_STATS["hits"] += 1
+    return manifest
+
+
+def _write_render_cache(output_root: Path, cache_name: str, signature: str, manifest: dict) -> None:
+    if not _USE_RENDER_CACHE:
+        return
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    cache_root.mkdir(parents=True, exist_ok=True)
+    path = cache_root / f"{cache_name}.json"
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps({
+            "schemaVersion": POINT_RENDER_CACHE_SCHEMA,
+            "signature": signature,
+            "manifest": manifest,
+        }, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+    _RENDER_CACHE_STATS["writes"] += 1
 
 
 def build_hlod_index(asset_map: Path) -> dict:
@@ -1059,6 +1264,20 @@ def render_point_cloud(
         row for row in streaming
         if _instance_meshes(row) and not _is_explicit_overhead_cover(row)
     ]
+    render_bindings = streaming_texture_bindings(level_id, resolved) if resolved else {}
+    cache_signature = _point_render_cache_signature(
+        level_id,
+        positions,
+        map_payload,
+        bounds,
+        surface_point_density,
+        resolved,
+        render_bindings,
+    )
+    cached = _load_point_render_cache(output_root, level_id, cache_signature)
+    if cached is not None:
+        print(f"{level_id}: reused persistent point/streaming render cache")
+        return cached
     rendered_instances = rendered_triangles = rendered_vertex_samples = 0
     textured_instances = textured_triangles = textured_pixels = 0
     used_textures: list[str] = []
@@ -1068,7 +1287,6 @@ def render_point_cloud(
     detail_albedo: bytearray | None = None
     detail_triangles = excluded_detail_triangles = 0
     if resolved:
-        render_bindings = streaming_texture_bindings(level_id, resolved)
         detail_props_only = level_id in DETAIL_PROP_ONLY_LEVELS
         if detail_props_only:
             raster = rasterise_streaming_depth(
@@ -1213,7 +1431,7 @@ def render_point_cloud(
         if not rendered_instances and elevation_underlay else
         f"render/{image_name}"
     )
-    return {
+    manifest = {
         "schemaVersion": 1,
         "status": (
             "recovered_streaming_textured_topdown" if textured_pixels else
@@ -1278,6 +1496,8 @@ def render_point_cloud(
             "Points are not connected into terrain and do not claim recovered scene geometry."
         ),
     }
+    _write_point_render_cache(output_root, level_id, cache_signature, manifest)
+    return manifest
 
 
 def mesh_file_index(mesh_root: Path) -> dict[str, Path]:
@@ -2542,6 +2762,13 @@ def render_level(
     """Render recovered HLOD geometry as a dense orthographic point cloud."""
     width, height = raster_size(bounds["maxX"] - bounds["minX"], bounds["maxZ"] - bounds["minZ"])
     mode = scan_mode or LEVEL_SCAN_MODES.get(level_id, "depth_points")
+    cache_signature = _hlod_render_cache_signature(
+        level_id, clusters, lod, fit, bounds, mesh_files, mode, bindings or {},
+    )
+    cached = _load_render_cache(output_root, f"{level_id}.hlod", cache_signature)
+    if cached is not None:
+        print(f"{level_id}: reused persistent HLOD render cache")
+        return cached
     material_colors = bytearray(width * height * 4) if bindings else None
     if mode == "mesh_vertices":
         depth, used, primitive_count = rasterise_vertices(
@@ -2695,6 +2922,7 @@ def render_level(
     alignment = LEVEL_RENDER_ALIGNMENTS.get(level_id)
     if alignment:
         result["renderAlignment"] = alignment
+    _write_render_cache(output_root, f"{level_id}.hlod", cache_signature, result)
     return result
 
 
@@ -3110,6 +3338,7 @@ def preferred_background_preview(exact: dict | None, hlod: dict | None) -> dict 
 
 
 def main(argv: list[str] | None = None) -> int:
+    global _USE_RENDER_CACHE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--asset-map", type=Path, default=DEFAULT_ASSET_MAP)
     parser.add_argument("--mesh-root", type=Path, default=MESH_ROOT)
@@ -3118,6 +3347,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
     parser.add_argument("--hlod-index", type=Path, default=HLOD_INDEX)
     parser.add_argument("--refresh-index", action="store_true", help="rescan the asset map even if the cache matches")
+    parser.add_argument(
+        "--no-render-cache",
+        action="store_true",
+        help="rerender point/streaming layers even when their persistent source signature matches",
+    )
     parser.add_argument("--lod", type=int, default=None, help="preferred HLOD level; overrides the verified per-level choice")
     parser.add_argument(
         "--scan-mode", choices=("auto", "mesh_vertices", "depth_points"), default="auto",
@@ -3142,6 +3376,8 @@ def main(argv: list[str] | None = None) -> int:
               "(approximately 2 m spacing); presentation only"),
     )
     args = parser.parse_args(argv)
+    _USE_RENDER_CACHE = not args.no_render_cache
+    _RENDER_CACHE_STATS.update(hits=0, writes=0)
     if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
         raise SystemExit("--surface-point-density must be a finite number greater than zero")
     if args.refresh_exact_fallbacks_only:
@@ -3487,6 +3723,10 @@ def main(argv: list[str] | None = None) -> int:
     for level_id, reason in skipped:
         print(f"{level_id}: skipped - {reason}")
     print(f"map previews: {len(published)} HLOD, {len(point_clouds)} point clouds, {len(skipped)} skipped")
+    print(
+        "map previews: persistent render cache "
+        f"{_RENDER_CACHE_STATS['hits']} hits, {_RENDER_CACHE_STATS['writes']} writes"
+    )
     return 0
 
 
