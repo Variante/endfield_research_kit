@@ -201,6 +201,70 @@ class MetadataParseError(RuntimeError):
     pass
 
 
+def parse_type_reference_prefix(
+    buf: bytes, pos: int, record_size: int
+) -> tuple[int, int, int, int | None, int, int, int | None, int, int]:
+    """Parse the selected v29+ TypeDef reference prefix and return the next offset."""
+
+    name_index, namespace_index, byval_type_index = struct.unpack_from(
+        "<iii", buf, pos
+    )
+    pos += 12
+    declaring_type_index = struct.unpack_from("<i", buf, pos)[0]
+    parent_index = struct.unpack_from("<i", buf, pos + 4)[0]
+    pos += 8
+    element_type_index: int | None = None
+    if record_size in (88, 92):
+        element_type_index = struct.unpack_from("<i", buf, pos)[0]
+        pos += 4
+    byref_type_index: int | None = None
+    generic_container_index = struct.unpack_from("<i", buf, pos)[0]
+    pos += 4
+    return (
+        name_index,
+        namespace_index,
+        byval_type_index,
+        byref_type_index,
+        declaring_type_index,
+        parent_index,
+        element_type_index,
+        generic_container_index,
+        pos,
+    )
+
+
+def parse_type_layout_tail(
+    buf: bytes, pos: int, record_size: int
+) -> tuple[
+    int,
+    tuple[int, ...],
+    int | None,
+    tuple[int, ...],
+    int,
+    int,
+    int,
+]:
+    """Parse flags, ranges, counts, bitfield, and token at the measured boundary."""
+
+    flags = struct.unpack_from("<I", buf, pos)[0]
+    pos += 4
+    starts = struct.unpack_from("<iiiiiiii", buf, pos)
+    pos += 32
+    extra_index: int | None = None
+    if record_size == 92:
+        # The selected Endfield v29 dialect inserts one int32 between the
+        # eight range starts and the ushort count block. Its semantics are
+        # intentionally left unnamed until established.
+        extra_index = struct.unpack_from("<i", buf, pos)[0]
+        pos += 4
+    counts = struct.unpack_from("<HHHHHHHH", buf, pos)
+    pos += 16
+    bitfield = struct.unpack_from("<I", buf, pos)[0]
+    token = struct.unpack_from("<I", buf, pos + 4)[0]
+    pos += 8
+    return flags, starts, extra_index, counts, bitfield, token, pos
+
+
 class Metadata:
     def __init__(self, path: Path):
         self.path = path
@@ -283,10 +347,9 @@ class Metadata:
 
     def _type_record_size(self) -> int:
         section_size = self.sections["typeDefinitions"].size
-        # Endfield's v29 metadata keeps byrefTypeIndex, so the type record is
-        # 92 bytes. It also uses the field/method/property start block before
-        # flags. Some newer parsers describe a trimmed 88-byte v29 shape, so
-        # infer the local stride instead of assuming one dialect.
+        # Endfield's selected v29 metadata adds one int32 after the range-start
+        # block, so the type record is 92 bytes. Infer the local stride instead
+        # of assuming one dialect.
         for size in (92, 88, 84):
             if section_size % size == 0:
                 return size
@@ -322,32 +385,26 @@ class Metadata:
         out: list[TypeDef] = []
         for index in range(section.count(self.type_record_size)):
             pos = section.offset + index * self.type_record_size
-            name_index = self._i32(pos)
-            namespace_index = self._i32(pos + 4)
-            pos += 8
-            byval_type_index = self._i32(pos)
-            pos += 4
-            byref_type_index: int | None = None
-            if self.type_record_size in (92,):
-                byref_type_index = self._i32(pos)
-                pos += 4
-            declaring_type_index = self._i32(pos)
-            parent_index = self._i32(pos + 4)
-            pos += 8
-            element_type_index: int | None = None
-            if self.type_record_size in (88, 92):
-                element_type_index = self._i32(pos)
-                pos += 4
-            generic_container_index = self._i32(pos)
-            pos += 4
-            starts = struct.unpack_from("<iiiiiiii", self.buf, pos)
-            pos += 32
-            flags = self._u32(pos)
-            pos += 4
-            counts = struct.unpack_from("<HHHHHHHH", self.buf, pos)
-            pos += 16
-            bitfield = self._u32(pos)
-            token = self._u32(pos + 4)
+            (
+                name_index,
+                namespace_index,
+                byval_type_index,
+                byref_type_index,
+                declaring_type_index,
+                parent_index,
+                element_type_index,
+                generic_container_index,
+                pos,
+            ) = parse_type_reference_prefix(self.buf, pos, self.type_record_size)
+            (
+                flags,
+                starts,
+                _extra_index,
+                counts,
+                bitfield,
+                token,
+                pos,
+            ) = parse_type_layout_tail(self.buf, pos, self.type_record_size)
             out.append(
                 TypeDef(
                     index=index,
