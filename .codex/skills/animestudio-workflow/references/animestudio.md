@@ -190,6 +190,21 @@ serialized Unity object boundaries, TypeTrees, PPtrs, or gameplay meaning. The
 decoded custom-header `size` word must remain unnamed unless a specific flag
 uses it; current files disprove treating it as the logical container length.
 
+For a low-output current-corpus SparkBuffer framing check, build the CLI test
+project and run:
+
+```bat
+AnimeStudio.CLI.Tests.exe table-sweep PERSISTENT STREAMING_ASSETS tmp\animestudio\table_sparkbuffer_sweep.json INPUT_SET_SHA256
+```
+
+The sweep uses the maintained VFS loader, verifies each decoded FileDataMd5,
+records the selected primary/fallback chunk and exact bytes read, invokes
+`EndfieldSparkBuffer.ParseBytes`, and requires exact EOF for every metadata
+declaration. Any file failure or count mismatch writes a structured report and
+returns nonzero. Treat the supplied input-set SHA as a provenance label: obtain
+it from the current `vfs-audit` report and reject the result during review if it
+does not match; the sweep does not compute that aggregate fingerprint itself.
+
 For shared/CN audio package work, run the low-output structural gate before
 event/HIRC semantics:
 

@@ -140,6 +140,11 @@ Current durable boundaries:
   reads, Terrain and Streaming envelopes, all five DynamicStreaming root
   families, LipSync payloads, video outer framing, and several routed JsonData
   families have fail-closed readers.
+- The current Table corpus has a direct low-output sweep covering selected
+  overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
+  EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
+  have current exact framing sweeps; their row/instruction/runtime meanings are
+  separate claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
   remaining payloads exactly once. Those payload records and renderer meanings
@@ -149,8 +154,9 @@ Current durable boundaries:
 - SkillData and BuffData have current exact-build member-count and file-hash
   censuses, but nested MemoryPack unions and whole-file EOF consumption are not
   proven. Keep them `envelope_header_observed_unclassified_inner`.
-- Deeper Terrain, streaming, manifest, mmap-oriented string/hash and bone data,
-  patch, and remaining JsonData semantics are incomplete.
+- Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
+  data, patch-instruction/runtime, and remaining JsonData semantics are
+  incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not
   prove renderer ownership, selected variants, final lighting, or appearance.
 
