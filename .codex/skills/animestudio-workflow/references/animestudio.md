@@ -229,6 +229,10 @@ proves bounded AKPK sectors, bank/media intervals, BNK/DIDX/DATA framing,
 required decryption, and RIFF/RIFX or PLUG envelopes. It does not prove HIRC
 behavior, posted events, selected media, or audibility. Missing AuditAudio
 chunks remain nonzero failures.
+Use `--hirc-only` for a lower-I/O BNK/HIRC census. It skips media magic checks
+but still authenticates the selected VFS files and requires exact BNK section
+and HIRC object consumption. Preserve numeric HIRC type IDs; object-envelope
+framing is not object behavior, event selection, or audibility.
 
 For IV recovery, `parse_region_file` and `parse_index_bytes` are distinct
 claims. The index parser proves one unambiguous count-prefixed UTF-16LE
