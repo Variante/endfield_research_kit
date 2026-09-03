@@ -190,6 +190,13 @@ serialized Unity object boundaries, TypeTrees, PPtrs, or gameplay meaning. The
 decoded custom-header `size` word must remain unnamed unless a specific flag
 uses it; current files disprove treating it as the logical container length.
 
+For BundleManifest field recovery, join the manifest to this current inner
+ledger before consulting generated AssetMaps. Equal table/file counts, exact
+bundle-name multiplicity, and a numeric row-index sequence are structural
+witnesses, not serialized field ownership. Reject an AssetMap as current-build
+evidence when any recorded source chunk does not join the authoritative outer
+ledger; do not infer field names from managed field order or row size.
+
 For a low-output current-corpus SparkBuffer framing check, build the CLI test
 project and run:
 
