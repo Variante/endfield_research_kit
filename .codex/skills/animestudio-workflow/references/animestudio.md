@@ -258,6 +258,10 @@ declarations, but lacks a usable TypeSpec/MethodSpec mapping; if the recorded
 native code registration maps outside the current image, fail closed. Do not
 promote setter declaration order or the union-tag registry to serialized cursor
 order without current method bodies or a bounded trace.
+For residual JsonData prioritization, start from
+`tmp/animestudio/jsondata_unclassified_family_census_20260903.json`; keep its
+outer-verified rows in the denominator, and do not treat SkillData's uniform
+`30 02` prefix as more than a 48-member envelope witness.
 Use the payload-understanding report's current blocker/evidence pointers before
 adding another family-specific probe.
 
