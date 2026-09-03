@@ -176,6 +176,20 @@ framing, authored field names, cross-file ownership, and observed runtime
 behavior as separate claims. For a future client update, rerun the boundary
 audit first and use its input-set fingerprint for every downstream census.
 
+For nested Bundle/InitBundle container work, run the structural gate directly
+before Unity object loading:
+
+```bat
+AnimeStudio.CLI.exe vfs-inner-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --block-type initial-bundle --block-type bundle --output reports/animestudio/vfs_inner_understanding_files_latest.jsonl.gz --summary-json reports/animestudio/vfs_inner_understanding_latest.json
+```
+
+`inner_structure_verified` proves exact outer extraction/FileDataMd5, custom
+VFS header and block-info framing, block decompression sizes, directory path
+and interval validity, non-overlap, and exact node reads. It does not prove
+serialized Unity object boundaries, TypeTrees, PPtrs, or gameplay meaning. The
+decoded custom-header `size` word must remain unnamed unless a specific flag
+uses it; current files disprove treating it as the logical container length.
+
 `export_assets.bat --from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking
 browser conversations.
