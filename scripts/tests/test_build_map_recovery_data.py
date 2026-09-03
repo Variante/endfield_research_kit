@@ -15,6 +15,44 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         builder._NPC_PROXY_EX_STORY_INDEX_CACHE.clear()
         builder._NPC_PROXY_ENV_TALK_STORY_INDEX_CACHE.clear()
         builder._ATMOSPHERIC_ENV_TALK_MARKER_INDEX_CACHE.clear()
+        builder._MAP_TEXTURE_CONTAINER_CACHE = None
+        builder._MAP_TEXTURE_CONTAINER_CACHE_KEY = None
+
+    def test_minimap_tiles_resolve_same_name_collision_through_sprite_container(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            texture_root = root / builder.MAP_TILE_DIR
+            texture_root.mkdir(parents=True)
+            sprite_id = 0x11
+            source_id = 0x22
+            sprite = texture_root / f"m_map_fixture_1_1_p{sprite_id:016X}.png"
+            source = texture_root / f"m_map_fixture_1_1_p{source_id:016X}.png"
+            sprite.write_bytes(b"sprite")
+            source.write_bytes(b"source")
+            asset_map = root / builder.ANIMESTUDIO_ASSET_MAP_REL
+            asset_map.parent.mkdir(parents=True)
+            asset_map.write_text(json.dumps({"AssetEntries": [
+                {
+                    "Type": "Texture2D", "PathID": sprite_id,
+                    "Container": "assets/beyond/dynamicassets/gameplay/ui/sprites/levelmap/levelmapchunks/mapfixture/m_map_fixture_1_1.png",
+                },
+                {
+                    "Type": "Texture2D", "PathID": source_id,
+                    "Container": "assets/beyond/dynamicassets/gameplay/ui/textures/levelmap/levelmapchunks/mapfixture/m_map_fixture_1_1.png",
+                },
+            ]}), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                self.assertEqual({(1, 1): sprite}, builder._minimap_tiles("m", "map_fixture"))
+
+    def test_minimap_tiles_fail_closed_on_unproven_duplicate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            texture_root = root / builder.MAP_TILE_DIR
+            texture_root.mkdir(parents=True)
+            (texture_root / "m_map_fixture_1_1_p0000000000000011.png").write_bytes(b"a")
+            (texture_root / "m_map_fixture_1_1_p0000000000000022.png").write_bytes(b"b")
+            with mock.patch.object(builder, "ROOT", root):
+                self.assertEqual({}, builder._minimap_tiles("m", "map_fixture"))
 
     def test_refresh_render_backgrounds_only_rewrites_preview_field(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1969,6 +2007,30 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
         self.assertEqual(background["src"], "render/test_registry_point_cloud.png")
         self.assertTrue(background["suppressedInferredSurface"])
 
+    def test_inferred_hlod_restores_current_grayscale_exact_point_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            render = root / "webui/data/map_recovery/render"
+            render.mkdir(parents=True)
+            expected = {
+                "status": "inferred_hlod_textured_preview",
+                "src": "render/test_hlod_surface.png",
+                "exactPointFallback": {
+                    "status": "exact_registry_transform_elevation_only",
+                    "src": "render/test_registry_elevation_points.png",
+                    "worldBounds": {"minX": 0, "maxX": 1, "minZ": 0, "maxZ": 1},
+                    "elevationUnderlay": {"src": "render/test_registry_elevation_points.png"},
+                    "pointCloudOverlay": None,
+                },
+            }
+            (render / "test_hlod_grid_inferred.json").write_text(json.dumps(expected), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                background = builder._render_background("test")
+
+        self.assertEqual(background["status"], "exact_registry_transform_elevation_only")
+        self.assertEqual(background["src"], "render/test_registry_elevation_points.png")
+        self.assertTrue(background["suppressedInferredSurface"])
+
     def test_danger_surface_accuracy_labels_are_evidence_specific(self):
         for level_id in (
             "dung01_bdg001", "dung01_bdg002", "dung01_bdg003", "dung02_bdg001",
@@ -2933,11 +2995,23 @@ class MapNamingAndMinimapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self._write_config(root, "test_lv001", [(1, 1), (1, 2)])
-            # Cell (1,1) owns two near-duplicate exports; the lexicographically
-            # first filename is the stable choice, so green wins over red.
+            # Cell (1,1) owns same-named Sprite-side and source Texture2Ds.
+            # Exact AssetMap ownership selects the runtime Sprite-side art.
             self._write_tile(root, "m_test_lv001_1_1_pAAAA.png", red)
             self._write_tile(root, "m_test_lv001_1_1_p0000.png", green)
             self._write_tile(root, "m_test_lv001_1_2_pBBBB.png", blue)
+            asset_map = root / builder.ANIMESTUDIO_ASSET_MAP_REL
+            asset_map.parent.mkdir(parents=True)
+            asset_map.write_text(json.dumps({"AssetEntries": [
+                {
+                    "Type": "Texture2D", "PathID": 0x0000,
+                    "Container": "assets/gameplay/ui/sprites/levelmap/levelmapchunks/test/m_test_lv001_1_1.png",
+                },
+                {
+                    "Type": "Texture2D", "PathID": 0xAAAA,
+                    "Container": "assets/gameplay/ui/textures/levelmap/levelmapchunks/test/m_test_lv001_1_1.png",
+                },
+            ]}), encoding="utf-8")
             with mock.patch.object(builder, "ROOT", root):
                 info = builder._minimap_background("test_lv001")
                 self.assertEqual(info["status"], "in_game_minimap")

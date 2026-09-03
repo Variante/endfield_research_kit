@@ -30,7 +30,11 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 | Assets | Exported images, models, materials, video, and metadata |
 | Text | Searchable localized table/reference rows |
 | Updates | Exported game-data changes between two complete versions |
-| Mission Pipeline | Experimental debug-only mission/Story evidence |
+
+Recovery inputs, builder sequence, evidence boundaries, and focused refresh
+commands for each page are indexed in
+[`memory/webui/README.md`](../memory/webui/README.md). Keep this file limited to
+frontend behavior and generated-data contracts.
 
 Factory, World, Presentation, Progression, and standalone Combat & Projectiles
 pages are retired. Useful progression, projectile, and sound information lives
@@ -46,7 +50,6 @@ in Gameplay.
 - `src/features/characters/`: Characters view and runtime overrides.
 - `src/features/gameplay/`: Gameplay datasets and sound players.
 - `src/features/audio/`: Audio evidence browser.
-- `src/features/mission_pipeline/`: debug-only Mission Pipeline.
 - `src/features/map_recovery/`: normal Map view immediately after Story, with a full-bleed world surface, a three-column map/task/object-filter tree, a detailed JSON/file inspector, stitched config-proven regions, authored quest routes, and evidence-linked markers. Unnamed single-mission maps use the localized mission code/name; authored cross-map Story continuations are explicit navigation links.
   Current-build validated local Story trigger volumes are drawn from their
   decoded Box/Sphere geometry at authored X/Z position and rotation. Their
@@ -121,8 +124,6 @@ webui/data/lang/<LANG>/gameplay/**
 webui/data/lang/<LANG>/gameplay/projectile_audio.json
 webui/data/lang/<LANG>/audio/{index,events,media}.json
 webui/data/gameplay/projectiles.json
-webui/data/mission_pipeline/index.json
-webui/data/mission_pipeline/missions/*.json
 webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
 webui/data/map_recovery/render/*.{json,png}
@@ -147,10 +148,8 @@ builder never writes this consumer-specific sidecar.
 
 - Normal navigation exposes Story, Characters, Gameplay, Audio, Assets, Text,
   and Updates.
-- Mission Pipeline appears only while `Show debug info` is enabled. Turning
-  debug off while it is active returns to a visible page and normalizes the URL.
-- Debug state controls raw source blocks, recovery evidence, Mission Pipeline,
-  manual Story-order tools, and unresolved ownership details. Story issue and
+- Debug state controls raw source blocks, recovery evidence, manual Story-order
+  tools, and unresolved ownership details. Story issue and
   recovery-method filters remain visible in normal mode.
 - Missing optional data is a visible unavailable/degraded state, not an empty
   success state.
@@ -658,24 +657,6 @@ Responsive enemy-voice contexts may show the fingerprint-locked
 `EnemyTriggerVoiceAction` voice-type-to-trigger-key mapping, while live branch
 selection and audibility remain unobserved.
 
-## Mission Pipeline
-
-Mission Pipeline shows evidence-typed trigger chains and the gaps between
-Story definitions, mission ownership, activation, and playback.
-
-- Native registration or code-address order never implies mission order.
-- Definition-only rows remain distinct from activation evidence.
-- Unlinked native playback keeps an explicit ownership gap.
-- Unlinked native playback rows show per-Story active-overlay trigger
-  confirmation, including decoded slot/shape and source hash for spatial
-  volumes or the exact event carrier for non-spatial triggers. This is local
-  context only, not proof of ownership, firing, branch choice, or order.
-- The Mission Pipeline spatial map draws exact authored trigger volumes from
-  decoded X/Z position, size/radius, and rotation. Exact non-spatial event
-  carriers and files with no trigger lead remain separate named lists.
-- Strong and weak graph edges remain visually and semantically separate.
-- Manual/OCR order may guide research but does not upgrade source evidence.
-
 ## Map
 
 Map is a normal page immediately after Story. It plots authored Unity X/Z
@@ -788,6 +769,11 @@ Evidence boundaries:
   The frontend applies no image-registration scale or translation. A level
   with no exact Mesh join remains transform points only rather than falling
   back to inferred geometry.
+- Exported Terrain `_H` records provide a faster independent elevation layer.
+  The builder indexes only the validated finest Map01/Map02 grids, decodes only
+  cells intersecting the selected level's authored world rectangle, and reuses
+  unchanged PNGs through source sidecars. The layer preserves relative uint16
+  relief but does not claim an absolute world-Y scale or no-data sentinel.
 - Water requires both authored minimap water pixels and exact WaterData scene
   evidence. Packed flowmaps alone are not coverage.
 - Explicitly named roof/ceiling instances are omitted from every recovered
@@ -828,7 +814,6 @@ Use the smallest relevant root workflow:
 
 ```bat
 .\export.bat
-python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
 python -m scripts.build_map_recovery_data --with-preview
 .\export_assets.bat
 python scripts\pack_webui.py
@@ -848,17 +833,15 @@ Use a comma-separated positional selection to build any subset, for example
 selection builds all four archives.
 
 `export_assets.bat` assumes generated Story and Story evidence are current. It
-rebuilds every downstream semantic view: Mission Pipeline, map recovery,
+rebuilds every downstream WebUI semantic view: map recovery,
 Characters, Gameplay/projectiles, Assets/audio, the curated source graph, and
 debug-only combat relationships. Use `--from-game` to refresh decoded assets
 and audio first only when the structured Story/Table export already matches
 that installed build; asset-only extraction never advances structured-data
 freshness provenance.
 
-The Mission Pipeline data-only Python sequence validates the current protocol
-registry, rebuilds Mission Pipeline/map JSON, and deliberately skips Story
-gap-evidence refresh and map preview rendering. See the dedicated project
-skill for the exact command sequence.
+Mission Pipeline recovery is a separate direct Python workflow and is not a
+WebUI page. See the dedicated project skill for its exact command sequence.
 
 Before reading an existing extraction, run
 `python scripts\verify_export_freshness.py` unless freshness is already known.
@@ -867,11 +850,10 @@ If it is stale, refresh with `.\export.bat --from-game`.
 After frontend or generated-data changes:
 
 1. Load every normal page and check the browser console.
-2. Toggle debug mode and verify Mission Pipeline routing in both directions.
-3. Check Story reset, recovery filters, and SNS emoji/sticker fixtures.
-4. Open a playable character and enemy; verify variants, progression, skills,
+2. Check Story reset, recovery filters, and SNS emoji/sticker fixtures.
+3. Open a playable character and enemy; verify variants, progression, skills,
    projectiles, sounds, and asset links.
-5. Confirm unavailable optional inputs produce a clear degraded state.
+4. Confirm unavailable optional inputs produce a clear degraded state.
 
 Useful Story media fixtures are `test_sns_emojicomment`, `test_sns_sticker`,
 and `sns_topic_map02_lv005_12002`.

@@ -65,16 +65,17 @@ SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_ASSET_MODES = ("focused", "default", "debug")
-STRUCTURED_DUMP_MODES = ("webui", "full", "debug")
+STRUCTURED_DUMP_MODES = ("focused", "default", "debug")
 WORLD_SCENE_CHUNK_SPEC_RE = re.compile(
     r"^(?P<map>[A-Za-z0-9_]+):(?P<x>-?\d+):(?P<z>-?\d+)$"
 )
-WEBUI_STRUCTURED_REQUIRED_BLOCK_TYPES = (
+FOCUSED_STRUCTURED_BLOCK_TYPES = (
     "table",
     "json-data",
     "video",
     "audit-video",
 )
+TERRAIN_HEIGHT_FILE_REGEX = r"^Data/Terrain/PC/[^/]+/Terrain_[0-9]+_[0-9]+_[0-9]+_H\.bytes$"
 ANIMESTUDIO_STAGE_MERGE_MODES = ("auto", "never", "aggressive")
 ANIMESTUDIO_STAGE_MERGE_PRIMARY_STAGE = "convert_by_type"
 ANIMESTUDIO_STAGE_MERGE_SECONDARY_STAGE = "json_by_type"
@@ -2191,6 +2192,7 @@ def plan_animestudio_stage(
         "run_items": run_items,
         "forced_refresh_items": [],
         "item_file_counts": {},
+        "item_marker_file_counts": {},
         "type_specs_to_run": tuple(type_specs_to_run),
         "should_run": bool(run_items),
         "cache_state": "no_cache",
@@ -2226,10 +2228,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--structured-dump-mode",
         choices=STRUCTURED_DUMP_MODES,
-        default="webui",
+        default="focused",
         help=(
-            "`webui` and `full` dump only WebUI-required structured VFS data and skip audio PCK/media files. "
-            "`debug` preserves the old broad dump of every dumpable block type."
+            "`focused` dumps the compact Story/Table/video VFS set; `default` also dumps Terrain `_H` height grids. "
+            "Both skip audio PCK/media files. `debug` dumps every dumpable block type."
         ),
     )
     parser.add_argument(
@@ -2576,13 +2578,28 @@ def structured_dump_steps_with_world_scenes(
 ) -> list[dict[str, Any]]:
     if mode == "debug":
         return [{"name": "debug_all", "block_types": (), "file_regexes": ()}]
+    if mode not in {"focused", "default"}:
+        raise ValueError(f"unsupported structured dump mode: {mode}")
     steps = [
         {
             "name": "required",
-            "block_types": WEBUI_STRUCTURED_REQUIRED_BLOCK_TYPES,
+            "block_types": FOCUSED_STRUCTURED_BLOCK_TYPES,
             "file_regexes": (),
         },
     ]
+    if mode == "default":
+        # Terrain's six equal-sized record families total roughly 1.1 GiB in
+        # the current build. Map recovery needs only the compact `_H` height
+        # grids (about 64 MiB), so keep the production dump proportional to its
+        # consumer instead of exporting C/T/S/A/N payloads speculatively.
+        steps.append(
+            {
+                "name": "terrain_height",
+                "block_types": ("terrain",),
+                "file_regexes": (TERRAIN_HEIGHT_FILE_REGEX,),
+                "sources": ("StreamingAssets",),
+            }
+        )
     if world_scene_chunks:
         steps.append(
             {
@@ -2861,6 +2878,50 @@ def count_files(path: Path) -> int:
     if not path.exists():
         return 0
     return sum(1 for item in path.rglob("*") if item.is_file())
+
+
+def refresh_animestudio_plan_output_counts(
+    output_root: Path,
+    source: str,
+    stage: str,
+    plan: dict[str, Any],
+) -> None:
+    """Record every selected type's actual files after its stage has run.
+
+    A stage can dispatch several type items in one merged process, and an
+    asset-map/report-only path can populate one type's status before the other
+    items are summarized.  Counting while each item is processed therefore
+    loses siblings (the old ``item_file_counts`` map retained only whichever
+    type happened to be written last).  The output directories are the final
+    authority: enumerate each selected type once after all workers finish.
+
+    Marker files are real emitted evidence, but they are kept separate so a
+    marker-only directory is not mistaken for a successful decoded asset.
+    """
+    file_counts: dict[str, int] = {}
+    marker_counts: dict[str, int] = {}
+    stage_root = animestudio_stage_dir(output_root, source, stage)
+    for item in plan.get("items", []):
+        type_spec = item.get("type_spec")
+        if type_spec is None:
+            continue
+        type_name = animestudio_type_name(type_spec)
+        if type_name in file_counts:
+            continue
+        type_dir = stage_root / type_name
+        if not type_dir.is_dir():
+            files: list[Path] = []
+        else:
+            # AnimeStudio writes one output file per type directory.  Use a
+            # direct listing so unrelated nested diagnostic files cannot inflate
+            # the emitted asset count.
+            files = [path for path in type_dir.iterdir() if path.is_file()]
+        file_counts[type_name] = len(files)
+        marker_counts[type_name] = sum(
+            1 for path in files if animestudio_is_marker_output_path(path, type_name)
+        )
+    plan["item_file_counts"] = file_counts
+    plan["item_marker_file_counts"] = marker_counts
 
 
 def looks_like_dummy_dll_dir(path: Path) -> bool:
@@ -4849,6 +4910,7 @@ def run_animestudio_stage_plan(
     plan["failed_items"] = list(dict.fromkeys(failed))
     plan["stdout_log"] = stdout_log if all_results or plan.get("asset_caches") else default_stdout_log
     plan["stderr_log"] = stderr_log if all_results or plan.get("asset_caches") else default_stderr_log
+    refresh_animestudio_plan_output_counts(output_root, source, stage, plan)
     return all_results
 
 
@@ -5235,6 +5297,23 @@ def summarize_animestudio_source(
             plan.get("forced_refresh_items", []) if plan else previous_stage.get("forced_refresh_items", [])
         )
         result[stage]["item_file_counts"] = plan.get("item_file_counts", {}) if plan else previous_stage.get("item_file_counts", {})
+        result[stage]["item_marker_file_counts"] = (
+            plan.get("item_marker_file_counts", {})
+            if plan
+            else previous_stage.get("item_marker_file_counts", {})
+        )
+        marker_counts = result[stage]["item_marker_file_counts"]
+        if isinstance(marker_counts, dict):
+            result[stage]["marker_file_count"] = sum(
+                int(value) for value in marker_counts.values()
+            )
+            file_counts = result[stage]["item_file_counts"]
+            total_files = sum(int(value) for value in file_counts.values()) if isinstance(file_counts, dict) else 0
+            result[stage]["marker_file_ratio"] = (
+                result[stage]["marker_file_count"] / total_files
+                if total_files
+                else 0.0
+            )
         result[stage]["cache_state"] = plan.get("cache_state") if plan else previous_stage.get("cache_state")
         if plan and plan.get("stage_merge"):
             result[stage]["stage_merge"] = plan["stage_merge"]
@@ -5892,6 +5971,10 @@ def main() -> int:
                             item_names=succeeded_items,
                             skip_existing_types=True,
                         )
+                    # Asset status publication may have touched only one type;
+                    # refresh the complete per-type inventory after every stage
+                    # (including merged and shard-backed stages).
+                    refresh_animestudio_plan_output_counts(output_root, source, stage, plan)
                     failed_items = plan.get("failed_items", [])
                     if failed_items:
                         log(f"  animestudio stage {stage} for {source} failed items: {', '.join(failed_items)}")
@@ -5987,6 +6070,7 @@ def main() -> int:
                         stage=stage,
                         plan=plan,
                     )
+                    refresh_animestudio_plan_output_counts(output_root, source, stage, plan)
                     if plan["run_items"]:
                         log(
                             f"  animestudio report-only {stage} for {source}: "

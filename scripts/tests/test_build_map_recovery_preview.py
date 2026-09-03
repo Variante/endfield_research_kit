@@ -1118,6 +1118,32 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertIsNone(overlay)
         self.assertFalse((Path(tmp) / "stacked_hlod_vertex_points.samples").exists())
 
+    def test_layered_point_samples_accept_textured_faces_with_submesh_index(self):
+        bounds = {"minX": -1.0, "maxX": 1.0, "minZ": -1.0, "maxZ": 1.0}
+        fit = {"originX": 0.0, "originZ": 0.0}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = self._cluster_obj(
+                tmp,
+                "g c\nv 32 10 -32\nv 31 20 -32\nv 32 30 -31\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n",
+            )
+            texture = root / "texture.png"
+            builder.write_png(texture, 1, 1, [bytes((120, 80, 40, 255))])
+            clusters = [{"i": 0, "j": 0, "pathId": 1, "name": "S_HLOD1_0_0_Cluster_1"}]
+            bindings = {1: {
+                "slot": "_BaseColorMap",
+                "textureRel": "texture.png", "texturePath": texture,
+                "materialRel": "material.json", "materialPath": root / "missing.json",
+            }}
+            overlay = builder.render_hlod_point_samples(
+                "stacked", clusters, 1, fit, bounds, {"1": path}, 8, 8, root, bindings
+            )
+
+        self.assertIsNotNone(overlay)
+        self.assertEqual(overlay["baseColorTextures"], ["texture.png"])
+        self.assertGreater(overlay["sampleSet"]["recordCount"], 0)
+
     def test_dg002_uses_irregular_mesh_vertex_scan_without_coordinate_echo(self):
         bounds = {"minX": 0.0, "maxX": 8.0, "minZ": 0.0, "maxZ": 8.0}
         fit = {"originX": 0.0, "originZ": 0.0}

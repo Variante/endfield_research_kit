@@ -4,7 +4,6 @@ const UI_TEXTS = {
   zh: {
     suiteTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
     storyTab: "\u5267\u60c5",
-    missionPipelineTab: "\u4efb\u52a1\u6d41\u7a0b",
     mapRecoveryTab: "\u5730\u56fe",
     assetsTab: "\u8d44\u6e90",
     gameplayTab: "\u73a9\u6cd5",
@@ -21,7 +20,6 @@ const UI_TEXTS = {
     charactersPageTitle: "\u4eba\u7269",
     gameplayPageTitle: "\u73a9\u6cd5\u6570\u636e",
     audioPageTitle: "\u97f3\u9891\u7cfb\u7edf",
-    missionPipelinePageTitle: "\u4efb\u52a1\u6d41\u7a0b",
     mapRecoveryPageTitle: "\u5730\u56fe",
     assetsPageTitle: "\u5bfc\u51fa\u8d44\u6e90",
     referencePageTitle: "\u6587\u672c\u8868",
@@ -439,7 +437,6 @@ const UI_TEXTS = {
   en: {
     suiteTitle: "Endfield Research Kit",
     storyTab: "Story",
-    missionPipelineTab: "Mission Pipeline",
     mapRecoveryTab: "Map",
     assetsTab: "Assets",
     gameplayTab: "Gameplay",
@@ -456,7 +453,6 @@ const UI_TEXTS = {
     charactersPageTitle: "Characters & NPCs",
     gameplayPageTitle: "Gameplay Data",
     audioPageTitle: "Audio System",
-    missionPipelinePageTitle: "Mission Pipeline",
     mapRecoveryPageTitle: "Map",
     assetsPageTitle: "Exported Assets",
     referencePageTitle: "Text Tables",

@@ -76,29 +76,32 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     # total process budget.
     map_recovery_jobs = "1"
 
-    mission = TaskSpec(
-        "mission_pipeline",
-        (
-            python_module(
-                "scripts.story_builder.protocol_registry",
-                "--ensure-current",
-                environment=environment,
-            ),
-            module(
-                "scripts.build_mission_pipeline_data",
-                "--refresh-source-story-gap-queue",
-            ),
-            module("scripts.build_map_recovery_data", "--jobs", map_recovery_jobs),
-        ),
+    # Mission Pipeline is a standalone recovery tool now. Keep map recovery
+    # in the WebUI build, but do not make the export wrapper run Mission
+    # Pipeline's expensive native/story recovery pass.
+    map_recovery_build = TaskSpec(
+        "map_recovery",
+        (module("scripts.build_map_recovery_data", "--jobs", map_recovery_jobs),),
     )
 
     # HLOD fitting needs the freshly published marker coordinates and, when
     # requested, the completed asset export. Keep this as a later task rather
     # than running it beside the asset exporter; its final data pass embeds the
     # manifest and cannot race a producer that is still writing OBJ files.
-    map_recovery = TaskSpec(
+    streaming_args = ["--all-published-map-scenes", "--jobs", map_recovery_jobs]
+    if args.game_root:
+        streaming_args.extend(("--game-root", str(args.game_root)))
+    if args.export_root:
+        anime_root = args.export_root / "recovered/AnimeStudio-cli/StreamingAssets"
+        streaming_args.extend((
+            "--asset-map", str(anime_root / "maps/endfield_streamingassets_assets.json"),
+            "--mesh-root", str(anime_root / "convert_by_type/Mesh"),
+            "--output-root", str(anime_root / "map_streaming_instances"),
+        ))
+    map_recovery_preview = TaskSpec(
         "map_recovery",
         (
+            command("scripts/recover_map_streaming_instances.py", *streaming_args),
             module("scripts.build_map_recovery_data", "--preview-only"),
         ),
     )
@@ -136,7 +139,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         (module("scripts.build_gameplay", "--stage", "projectiles"),),
     )
 
-    phase_one = [mission]
+    phase_one = [map_recovery_build]
     if args.with_assets:
         phase_one.append(
             TaskSpec(
@@ -169,7 +172,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         )
 
     gameplay_refs = gameplay_asset_refs_task("gameplay_asset_refs")
-    phase_two = [gameplay_refs, map_recovery]
+    phase_two = [gameplay_refs, map_recovery_preview]
     if args.with_assets:
         audio_args: list[str] = []
         if not args.decode_audio:
@@ -181,7 +184,7 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         phase_two = [
             character,
             gameplay_refs,
-            map_recovery,
+            map_recovery_preview,
             TaskSpec(
                 "audio",
                 (module("scripts.build_audio", *audio_args),),

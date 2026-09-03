@@ -395,6 +395,11 @@ DEFAULT_INSTALLED_GAME_DATA_ROOT = Path(
     r"D:\Program Files\Endfield Game\Endfield_Data"
 )
 GLOBAL_METADATA_REL = Path("il2cpp_data") / "Metadata" / "global-metadata.dat"
+
+# Hashes are frequently used as build gates while a single export process
+# walks many generated rows. Cache by the file's current identity so repeated
+# validation of the same immutable input does not reread the whole file.
+_SHA256_FILE_CACHE: dict[tuple[str, int, int, int], str] = {}
 NATIVE_EVIDENCE_VALIDATED = "validated"
 NATIVE_EVIDENCE_MISSING = "missing"
 NATIVE_EVIDENCE_MISMATCHED = "mismatched"
@@ -456,11 +461,19 @@ def installed_game_data_root_candidates(
 
 def sha256_file(path: Path, *, chunk_bytes: int = 1024 * 1024) -> str:
     """Return the lowercase SHA-256 of a file, read in bounded chunks."""
+    resolved = Path(path).resolve()
+    stat = resolved.stat()
+    cache_key = (str(resolved), stat.st_size, stat.st_mtime_ns, chunk_bytes)
+    cached = _SHA256_FILE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
     digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
+    with resolved.open("rb") as handle:
         for chunk in iter(lambda: handle.read(chunk_bytes), b""):
             digest.update(chunk)
-    return digest.hexdigest()
+    result = digest.hexdigest()
+    _SHA256_FILE_CACHE[cache_key] = result
+    return result
 
 
 def resolve_installed_game_data_root(

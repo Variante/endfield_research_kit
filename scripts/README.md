@@ -13,7 +13,7 @@ focused development or validation.
 | Refresh Story from the game | `.\export.bat --from-game` |
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` |
 | Story recovery loop | `python -m scripts.story_builder.build --languages CN --default-language CN` |
-| Mission Pipeline recovery | `python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue` then `python -m scripts.build_map_recovery_data --with-preview` |
+| Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue` |
 | Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
 | Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
@@ -21,6 +21,10 @@ focused development or validation.
 
 The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
 wrapper with `--help` for its supported options.
+
+For the recovery path and evidence boundary of an individual WebUI page, use
+[`memory/webui/README.md`](../memory/webui/README.md). This file remains the
+command and module-ownership map.
 
 `setup.bat` initializes only the required `tools/AnimeStudio` submodule.
 `endfield_reconstruction_lab` and `tools/EndfieldCapture` are optional and are
@@ -74,8 +78,8 @@ a degraded reason instead of using them as direct evidence.
 | Story evidence | `story_builder/refresh_evidence.py` | `reports/story/` evidence |
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
-| Mission Pipeline | `build_mission_pipeline_data.py` | `webui/data/mission_pipeline/` |
-| Map | `build_map_recovery_data.py --with-preview` publishes map data, renders previews, then refreshes only the preview-backed payload field; `--preview-only` reuses current map data. `build_map_recovery_preview.py [--surface-point-density N]` remains the direct renderer (`N` is exact-surface samples/m2, default `0.25`). `recover_map_streaming_instances.py --level LEVEL [--level LEVEL ...] --jobs N` refreshes schema-2 exact-transform sidecars with one shared AssetMap mesh scan | `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
+| Mission Pipeline recovery | `build_mission_pipeline_data.py` | standalone recovery reports/data |
+| Map | `export.bat` runs map data, then `recover_map_streaming_instances.py --all-published-map-scenes`, then preview publication; a sidecar failure stops the phase instead of silently degrading to registry points. The recovery streams installed-game `InitChunkData` through AnimeStudio.CLI and joins the exported AssetMap/Mesh; colored output additionally needs Material JSON and Texture2D from the default asset scope. `build_map_recovery_data.py --with-preview` remains the direct data/preview path, while `--preview-only` reuses current map data and sidecars. `build_map_recovery_preview.py --refresh-exact-fallbacks-only` cheaply refreshes registry/quest point fallbacks. | `reports/assets/map_recovery/terrain_height_index.json`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
@@ -169,6 +173,7 @@ AnimeStudio offline recovery probes:
 
 ```bat
 set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
+%ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -177,7 +182,10 @@ set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStud
 %ASCLI% schema-diff --left LEFT.json --right RIGHT.json
 ```
 
-These are bundle-free, fail-closed diagnostics. Object indexes may be JSONL or
+These are bundle-free, fail-closed diagnostics. `vfs-audit` streams each
+selected physical chunk once and intentionally returns non-zero for any missing
+or unauthenticated declaration while still publishing its terminal ledger.
+Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
 and `schema-diff` compares shape rather than values. Keep probes and request
@@ -195,7 +203,8 @@ Production parsing, validation, attachment, and generated schemas live in
 `story_recovery/`; they may import stable builder primitives, but production
 builders must not import or execute recovery modules.
 
-Mission Pipeline reads the canonical shipped-Lua consumer index through
+Mission Pipeline is a standalone recovery/reporting workflow; the WebUI export
+does not run it. It reads the canonical shipped-Lua consumer index through
 `story_builder.lua_consumer_references`; it does not consume a recovery-script
 artifact. Cinematic-handle classification and typed action-producer joins come
 from the reviewed, installed-build-gated
@@ -313,17 +322,16 @@ message IDs, and field offsets have one mutable source of truth.
 
 Prefer `export.bat --from-game --with-assets` when both Story and assets need a
 fresh extraction. When generated Story is already current,
-`export_assets.bat --from-game` refreshes assets/audio and rebuilds Mission
-Pipeline, map recovery, Characters, Gameplay/projectiles, the curated source
+`export_assets.bat --from-game` refreshes assets/audio and rebuilds map
+recovery, Characters, Gameplay/projectiles, the curated source
 graph, and combat relationships. Plain `export_assets.bat` rebuilds the same
 post-Story views while reusing existing decoded assets and audio.
 
 `export_assets.bat` is a thin wrapper around `export.bat --assets-only`, so it
 shares one option parser, runs `verify_export_freshness.py`, and writes a
 benchmark under `reports/export/benchmarks/` with an `export_assets_` label.
-The Mission Pipeline data-only Python sequence validates the protocol registry
-and calls `build_mission_pipeline_data.py` and `build_map_recovery_data.py`
-without refreshing Story gap evidence or rendering map previews. Asset-only installed-game extraction leaves structured
+Mission Pipeline is no longer part of the post-Story WebUI semantic builders;
+run its direct Python command separately when needed. Asset-only installed-game extraction leaves structured
 Story/Table outputs untouched and preserves their previous source fingerprints;
 its current asset scan is recorded separately, so it cannot make stale Story
 data pass the freshness guard after a client update.

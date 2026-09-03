@@ -15,8 +15,11 @@ Keep the active documentation hierarchy concise:
   exhaustive implementation narrative.
 - `webui/README.md` documents only frontend scope, data layout, and behavior
   contracts.
-- each `memory/*.md` topic records current status, stable evidence boundaries,
-  essential commands, and the highest-value remaining gaps.
+- `memory/webui_recovery.md` documents only the shared WebUI export/publication
+  flow and cross-page contracts.
+- `memory/webui/` contains one recovery guide per active page.
+- the other indexed `memory/*_recovery.md` files document non-UI recovery
+  domains that remain useful independently of any one page.
 
 Fold durable observations, conclusions, and recovery status into the existing
 topic documents under `memory/`. Do not recreate one-file-per-investigation or
@@ -34,8 +37,9 @@ build-specific catalog across files:
   frontend evidence/filter contracts.
 - `memory/game_data_recovery.md` owns durable Wwise, serialized-data, and
   native-consumer conclusions plus the highest-value recovery gaps.
-- `memory/webui_recovery.md` owns the current user-visible Audio recovery
-  state and UI-facing evidence boundary.
+- `memory/webui/audio.md` owns the current user-visible Audio recovery state and
+  UI-facing evidence boundary; `memory/webui_recovery.md` owns only shared
+  cross-page and export contracts.
 - Per-build addresses, method tokens, hashes, mapping tables, and full
   inventories belong in versioned code contracts or generated reports, not in
   `AGENTS.md`, active READMEs, or memory prose. Changing counts belong in
@@ -145,7 +149,7 @@ comparing sizes. The wrapper forwards any other option to
 Use `export_assets.bat` (a thin wrapper around `export.bat --assets-only`, so
 it shares one option parser, freshness check, and benchmark report) when
 generated Story is already current to rebuild
-Mission Pipeline, map recovery, Characters, Gameplay/projectiles, WebUI Assets
+map recovery, Characters, Gameplay/projectiles, WebUI Assets
 indexes, compact Story media, CN audio links, the curated source graph, and
 combat relationships. Pass `--from-game` only when the user explicitly asks
 to run the default AnimeStudio image/model decode, `Material` JSON, and CN
@@ -307,9 +311,8 @@ Browser behavior:
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
 - Normal semantic navigation exposes Gameplay and Characters. Mission Pipeline
-  is experimental and hidden unless the top-right `Show debug info` switch is
-  enabled; disabling debug while it is active must normalize to a visible page
-  and URL. The standalone Combat & Projectiles page is retired. Keep useful
+  recovery is standalone and is no longer a WebUI page or export stage. The
+  standalone Combat & Projectiles page is retired. Keep useful
   projectile behavior and playable sound links in Gameplay character skills;
   expose recovered character-skill and enemy SFX there as compact collapsed
   players with inferred ownership labeled;
@@ -338,13 +341,13 @@ Setup and export internals:
   `--fallback-assets <FALLBACK_ASSETS>`. `dump`, `stream`, and `vfs-index` accept repeated
   `--block-type` flags plus repeated `--file-regex` filters; `stream` exposes the
   same targeted VFS filtering for JSONL byte streaming.
-- Installed-game Story exports use `--structured-dump-mode webui` by default:
+- Installed-game Story exports use `--structured-dump-mode focused` by default:
   they dump only WebUI-consumed VFS blocks (`table`, `json-data`, and video)
   and skip raw asset bundles, audio PCK/media files, world-streaming bytes,
   irradiance volumes, extend-data bins, patch bytes, and Lua. `build_audio.py`
   streams Wwise bank metadata directly from VFS when relinking audio events.
-  `--structured-dump-mode full` keeps the same production skip rules; use
-  `--structured-dump-mode debug` only for broad VFS diagnostics.
+  `--structured-dump-mode default` adds Terrain while retaining the production
+  exclusions; use `--structured-dump-mode debug` only for broad VFS diagnostics.
 - `export_assets.bat --from-game` (that is, `export.bat --assets-only
   --from-game`) passes `--skip-structured`, writes a
   lightweight VFS metadata index, runs WebUI-facing image/model/Material
@@ -377,8 +380,7 @@ Browser data inputs and outputs:
   `webui/data/`.
 - Generated browser outputs include `webui/data/manifest.json`,
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
-  `reference/**`, `webui/data/mission_pipeline/index.json`,
-  `webui/data/mission_pipeline/missions/*.json`, `webui/data/gameplay/projectiles.json`,
+  `reference/**`, `webui/data/gameplay/projectiles.json`,
   `webui/data/lang/<code>/gameplay/projectile_audio.json`,
   `webui/data/lang/<code>/gameplay/sound_effects.json`,
   `webui/data/lang/<code>/characters/index.json`,
@@ -422,24 +424,79 @@ Script notes:
 
 ## Memory Maintenance Rule
 
-`memory/` is intentionally flat and limited to the topic files indexed by
-`memory/README.md`. Treat those files as living sources of truth:
+`memory/` is limited to the ownership topics indexed by `memory/README.md`.
+Top-level recovery domains stay flat; the one deliberate exception is
+`memory/webui/`, which contains one guide per active WebUI page. Treat these
+documents as living sources of truth:
 
-- update the current conclusion, evidence boundary, commands, and recovery
-  queue in the owning topic;
-- keep the topic concise; replace superseded conclusions instead of appending
-  investigation chronology, native-address catalogs, hash inventories, or
-  per-session proof logs;
+- update the current conclusion, evidence boundary, essential commands, and
+  recovery queue in the owning topic;
+- keep each top-level recovery topic concise enough to scan as a maintenance
+  contract. Aim for roughly 250 lines or fewer; when a topic grows beyond that,
+  remove report-like detail or split only along a genuinely independent
+  ownership boundary;
+- replace superseded conclusions instead of appending investigation chronology,
+  native-address catalogs, hash inventories, per-session proof logs, long
+  object lists, or case-by-case current-corpus narration;
 - keep changing counts, exhaustive inventories, and generated audits in
   `reports/`, with only headline progress and durable interpretation in memory;
 - keep disposable probes and intermediate output in `scratch/` or `tmp/`;
-- add a new memory file only for a genuinely new durable topic, and update
-  `memory/README.md`, this guidance list, and relevant active docs together.
+- add a new top-level memory file only for a genuinely new durable topic;
+- add or remove a `memory/webui/` guide only with the corresponding active page,
+  and update `memory/README.md`, `memory/webui/README.md`, this guidance list,
+  and relevant active docs together.
 
-The owning topics are WebUI, Story recovery, game-data recovery, semantic asset
-recovery, AnimeStudio exporter recovery, and character render/animation
-recovery. Cross-topic improvement plans should be split into the recovery
-queues of those owning files rather than maintained as a second status source.
+Every `memory/webui/<page>.md` guide follows the same compact structure:
+
+1. purpose;
+2. inputs and recovery flow;
+3. primary generated outputs;
+4. evidence boundary;
+5. focused refresh commands;
+6. highest-value remaining gaps.
+
+Do not put general frontend behavior, a complete script option catalog,
+per-build counts, or long implementation narratives in a page guide. Link to
+`webui/README.md`, `scripts/README.md`, the owning recovery topic, project
+skill, or generated report instead. A page guide describes how evidence reaches
+that page; it does not become a second source of truth for the underlying
+Story, game-data, asset, or exporter semantics.
+
+The owning top-level topics are WebUI/export, Story recovery, game-data
+recovery, semantic asset recovery, AnimeStudio exporter recovery, and character
+render/animation recovery. WebUI page contracts are owned by their page guides;
+cross-page export and frontend rules remain in `memory/webui_recovery.md`.
+Cross-topic improvement plans should be split into the recovery queues of those
+owning files rather than maintained as a second status source.
+
+### Documentation change routing
+
+Update only the layers affected by a durable contract change:
+
+| Changed contract | Required documentation owner |
+| --- | --- |
+| User-facing quick start or headline capability | `README.md` |
+| Script command, module ownership, builder input/output | `scripts/README.md` |
+| Frontend routing, controls, layout, generated-data schema consumption | `webui/README.md` |
+| Shared export phases, wrapper selection, cross-page publication | `memory/webui_recovery.md` |
+| One page's inputs, recovery flow, outputs, evidence boundary, or gaps | matching `memory/webui/<page>.md` |
+| Story reconstruction truth conditions shared across consumers | `memory/game_story_recovery.md` |
+| Raw formats, overlay rules, native gates, gameplay/audio semantics, source graph | `memory/game_data_recovery.md` |
+| Cross-domain Unity asset/entity ownership | `memory/asset_recovery.md` |
+| AnimeStudio extraction, VFS/schema, scheduling, DummyDll, or exporter diagnostics | `memory/animestudio_recovery.md` |
+| Optional Unity character parity lab or retail graphics observation | `memory/character_render_and_animation_recovery.md` |
+
+Do not touch every document after every code change. Update a memory topic only
+when a durable conclusion, boundary, workflow, or recovery queue changed. A
+changing count or one successful/failed run updates its generated report, not
+memory prose. If a change crosses layers, update each actual owner and use links
+instead of copying the same explanation.
+
+Before deleting or merging a recovery topic, verify that its evidence and
+workflow cannot exist independently of the proposed destination, search all
+code/docs/skills for consumers, and update `memory/README.md` plus every
+reference in the same change. The current six top-level recovery topics are
+intentional; WebUI page splitting alone is not a reason to remove them.
 
 ## Current Guidance Locations
 
@@ -451,7 +508,8 @@ README-shaped or dated snapshots; update the current source of truth instead:
 - script/workflow contract: `scripts/README.md`
 - WebUI frontend scope: `webui/README.md`
 - memory topic index and writing rules: `memory/README.md`
-- concise WebUI recovery status: `memory/webui_recovery.md`
+- WebUI export and shared recovery contract: `memory/webui_recovery.md`
+- per-page WebUI recovery flows: `memory/webui/README.md`
 - Story reconstruction conclusions: `memory/game_story_recovery.md`
 - game-data formats, semantics, and source graph: `memory/game_data_recovery.md`
 - semantic asset/entity recovery: `memory/asset_recovery.md`
@@ -519,7 +577,8 @@ skill when graph evidence is relevant.
 The retired exploration snapshots were collapsed because they mixed active
 workflow guidance with stale conclusions and repeated generated-report status.
 Keep generated reports in `reports/`, concise durable conclusions in the six
-owning memory topics, and disposable experiments in `scratch/` or `tmp/`.
+top-level recovery topics, page publication contracts in `memory/webui/`, and
+disposable experiments in `scratch/` or `tmp/`.
 
 ## Update Tracking Rule
 
