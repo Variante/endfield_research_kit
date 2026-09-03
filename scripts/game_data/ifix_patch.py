@@ -28,6 +28,8 @@ PATCH_MAGIC = 0x2DF86FA52CF233A2
 OPAQUE_PREFIX_SIZE = 128
 MAX_COUNT = 1_000_000
 MAX_STRING_BYTES = 1 << 20
+INSTRUCTION_WORD_SIZE = 8
+EXCEPTION_RECORD_SIZE = 24
 
 
 class BinaryFormatError(ValueError):
@@ -50,14 +52,38 @@ class OpaqueRegion:
     sha256: str
     prefix_hex: str
     suffix_hex: str
+    unit_count: int | None = None
+    unit_size: int | None = None
 
     @classmethod
-    def make(cls, name: str, data: bytes, offset: int, end: int) -> "OpaqueRegion":
+    def make(
+        cls,
+        name: str,
+        data: bytes,
+        offset: int,
+        end: int,
+        *,
+        unit_count: int | None = None,
+        unit_size: int | None = None,
+    ) -> "OpaqueRegion":
         raw = data[offset:end]
-        return cls(name, offset, len(raw), _sha256(raw), raw[:16].hex(), raw[-16:].hex())
+        if (unit_count is None) != (unit_size is None):
+            raise ValueError("unit_count and unit_size must be supplied together")
+        if unit_count is not None and unit_count * unit_size != len(raw):
+            raise ValueError("opaque unit count/size does not cover the region exactly")
+        return cls(
+            name,
+            offset,
+            len(raw),
+            _sha256(raw),
+            raw[:16].hex(),
+            raw[-16:].hex(),
+            unit_count,
+            unit_size,
+        )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "name": self.name,
             "offset": self.offset,
             "length": self.length,
@@ -66,6 +92,10 @@ class OpaqueRegion:
             "suffixHex": self.suffix_hex,
             "fieldStatus": "opaque",
         }
+        if self.unit_count is not None:
+            result["unitCount"] = self.unit_count
+            result["unitSize"] = self.unit_size
+        return result
 
 
 @dataclass(frozen=True)
@@ -200,8 +230,10 @@ class _Reader:
         start = self.offset
         value_len = 0
         shift = 0
+        encoded_length_bytes = 0
         for index in range(5):
             byte = self.u8(f"{label} 7-bit length")
+            encoded_length_bytes += 1
             value_len |= (byte & 0x7F) << shift
             if byte < 0x80:
                 break
@@ -211,6 +243,16 @@ class _Reader:
         if value_len > MAX_STRING_BYTES:
             raise BinaryFormatError(
                 f"{self.source}: {label} UTF-8 length {value_len} exceeds {MAX_STRING_BYTES}"
+            )
+        minimal_length_bytes = 1
+        remaining = value_len >> 7
+        while remaining:
+            minimal_length_bytes += 1
+            remaining >>= 7
+        if encoded_length_bytes != minimal_length_bytes:
+            raise BinaryFormatError(
+                f"{self.source}: {label} uses non-canonical 7-bit length encoding "
+                f"({encoded_length_bytes} bytes for value {value_len})"
             )
         _, end, raw = self.raw(value_len, f"{label} UTF-8 payload")
         try:
@@ -291,10 +333,16 @@ def parse_ifix_patch(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]:
         record_offset = reader.offset
         code_size = reader.count(f"{source} method {index} code")
         code_offset = reader.offset
-        _, code_end, _ = reader.raw(code_size * 8, f"{source} method {index} instruction words")
+        _, code_end, _ = reader.raw(
+            code_size * INSTRUCTION_WORD_SIZE,
+            f"{source} method {index} instruction words",
+        )
         exception_count = reader.count(f"{source} method {index} exception")
         exception_offset = reader.offset
-        _, end_offset, _ = reader.raw(exception_count * 24, f"{source} method {index} exception records")
+        _, end_offset, _ = reader.raw(
+            exception_count * EXCEPTION_RECORD_SIZE,
+            f"{source} method {index} exception records",
+        )
         methods.append(
             MethodBody(
                 index=index,
@@ -305,8 +353,22 @@ def parse_ifix_patch(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]:
                 exception_count=exception_count,
                 exception_offset=exception_offset,
                 end_offset=end_offset,
-                code_opaque=OpaqueRegion.make(f"method-{index}-instruction-words", data, code_offset, code_end),
-                exception_opaque=OpaqueRegion.make(f"method-{index}-exception-records", data, exception_offset, end_offset),
+                code_opaque=OpaqueRegion.make(
+                    f"method-{index}-instruction-words",
+                    data,
+                    code_offset,
+                    code_end,
+                    unit_count=code_size,
+                    unit_size=INSTRUCTION_WORD_SIZE,
+                ),
+                exception_opaque=OpaqueRegion.make(
+                    f"method-{index}-exception-records",
+                    data,
+                    exception_offset,
+                    end_offset,
+                    unit_count=exception_count,
+                    unit_size=EXCEPTION_RECORD_SIZE,
+                ),
             )
         )
 
