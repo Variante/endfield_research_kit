@@ -10,6 +10,7 @@
   const state = {
     container: null,
     data: null,
+    updateData: null,
     language: "",
     query: "",
     kind: "all",
@@ -19,6 +20,7 @@
     evidenceGroupsRange: [0, Infinity],
     assetCountRange: [0, Infinity],
     specialFilters: new Set(),
+    updateFilters: new Set(),
     selectedId: "",
     loadToken: 0,
     filterPanel: null,
@@ -57,6 +59,12 @@
     npc_asset: ui("Asset NPC", "资源 NPC"),
   }[type] || type);
   const SPECIAL_FILTERS = ["no_i18n", "merged", "needs_merge", "name_overridden"];
+  const UPDATE_STATUSES = ["added", "modified", "deleted"];
+  const updateStatusLabel = (status) => ({
+    added: ui("Added", "新增"),
+    modified: ui("Modified", "修改"),
+    deleted: ui("Deleted", "删除"),
+  }[status] || status);
   const SORT_KEYS = ["default", "alphabet", "identities", "evidence_groups", "assets", "names", "sources"];
   const DEFAULT_SORT_DIRECTIONS = {
     default: "asc",
@@ -120,6 +128,70 @@
 
   function dataPath(language) {
     return `data/lang/${encodeURIComponent(language)}/characters/index.json`;
+  }
+
+  function updateDataPath() {
+    return "data/updates/characters.json";
+  }
+
+  function normalizedUpdateEntries() {
+    const payload = state.updateData;
+    const raw = Array.isArray(payload) ? payload : (Array.isArray(payload?.entries) ? payload.entries : []);
+    return raw.flatMap((entry) => {
+      if (!entry || typeof entry !== "object") return [];
+      const status = String(entry.status || entry.change || entry.type || "").toLowerCase();
+      const id = String(entry.characterKey || entry.id || entry.characterId || entry.character_id || entry.key || "").trim();
+      if (!UPDATE_STATUSES.includes(status) || !id) return [];
+      const oldNames = entry.oldNames || entry.names?.old;
+      const newNames = entry.newNames || entry.names?.new;
+      const localizedName = (value) => {
+        if (typeof value === "string") return value.trim();
+        if (!value || typeof value !== "object") return "";
+        return String(value[state.language] || value.CN || value.EN || Object.values(value).find(Boolean) || "").trim();
+      };
+      return [{
+        ...entry,
+        id,
+        ids: [entry.characterKey, entry.characterId, entry.id, entry.character_id, entry.key]
+          .map((value) => String(value ?? "").trim()).filter(Boolean),
+        status,
+        oldName: String(entry.oldName || entry.old_name || entry.previousName || localizedName(oldNames) || "").trim(),
+        newName: String(entry.newName || entry.new_name || entry.name || localizedName(newNames) || "").trim(),
+      }];
+    });
+  }
+
+  function updateStatusesForGroup(row) {
+    const ids = new Set([
+      row.id,
+      ...(row.mergedIds || []),
+      ...(row.aliases || []),
+      ...(row.records || []).flatMap((record) => [record.id, ...(record.aliases || [])]),
+    ].map(normalizedName).filter(Boolean));
+    return [...new Set(normalizedUpdateEntries()
+      .filter((entry) => entry.status !== "deleted" && (entry.ids || [entry.id]).some((id) => ids.has(normalizedName(id))))
+      .map((entry) => entry.status))];
+  }
+
+  function deletedUpdateRows() {
+    return normalizedUpdateEntries()
+      .filter((entry) => entry.status === "deleted")
+      .map((entry) => ({
+        id: `__deleted__:${entry.id}`,
+        updateId: entry.id,
+        primaryName: entry.oldName || entry.newName || entry.id,
+        oldName: entry.oldName || entry.newName || "",
+        updateStatuses: ["deleted"],
+        deletedUpdate: entry,
+        records: [], kinds: [], sourceTypes: [], aliases: [entry.id], names: [], mergedIds: [],
+      }));
+  }
+
+  function displayRecords() {
+    return [
+      ...groupedRecords().map((row) => ({ ...row, updateStatuses: updateStatusesForGroup(row) })),
+      ...deletedUpdateRows(),
+    ];
   }
 
   function normalizedName(value) {
@@ -421,7 +493,9 @@
   function filteredRecords() {
     const tokens = window.WebUI.parseQuery(state.query);
     const activeCountFilters = activeCountRangeFilters();
-    const rows = groupedRecords().filter((row) => {
+    const rows = displayRecords().filter((row) => {
+      if (state.updateFilters.size && ![...state.updateFilters].some((status) => (row.updateStatuses || []).includes(status))) return false;
+      if (row.deletedUpdate && !state.updateFilters.has("deleted")) return false;
       if (state.kind !== "all" && !(row.kinds || []).includes(state.kind)) return false;
       if (state.source !== "all" && !(row.sourceTypes || []).includes(state.source)) return false;
       if (state.evidenceType !== "all") {
@@ -470,6 +544,7 @@
     const buildChips = window.WebUI?.filters?.buildChips;
     if (!buildChips) return;
     const records = groupedRecords();
+    const displayRows = displayRecords();
     const kindCounts = new Map();
     const sourceCounts = new Map();
     for (const row of records) {
@@ -538,6 +613,19 @@
       active: state.specialFilters,
       label: (key) => specialFilterLabel(key),
       count: specialCounts,
+      onToggle: () => {
+        renderFilterChips();
+        renderList();
+      },
+    });
+    const updateCounts = new Map(UPDATE_STATUSES.map((status) => [
+      status,
+      displayRows.filter((row) => (row.updateStatuses || []).includes(status)).length,
+    ]));
+    buildChips("#characters-update-filter", UPDATE_STATUSES, {
+      active: state.updateFilters,
+      label: (status) => updateStatusLabel(status),
+      count: updateCounts,
       onToggle: () => {
         renderFilterChips();
         renderList();
@@ -756,6 +844,14 @@
               <div id="characters-special-filter" class="chips" data-multi="1"></div>
             </div>
           </section>
+          ${state.updateData ? `<section class="filter-section is-collapsed" data-filter-section="characters-updates">
+            <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-update-filter-body">
+              <span id="characters-update-filter-label">${ui("Version changes", "版本变化")}</span>
+            </button>
+            <div id="characters-update-filter-body" class="filter-section-body" hidden>
+              <div id="characters-update-filter" class="chips" data-multi="1"></div>
+            </div>
+          </section>` : ""}
         </div>
         <div id="characters-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize character filters" aria-orientation="horizontal" tabindex="0"></div>
         <div id="characters-list-meta" class="characters-list-meta"></div>
@@ -791,6 +887,7 @@
       state.evidenceGroupsRange = [0, Infinity];
       state.assetCountRange = [0, Infinity];
       state.specialFilters.clear();
+      state.updateFilters.clear();
       state.sortKey = "default";
       state.sortDirection = "asc";
       const search = state.container.querySelector("#characters-q");
@@ -823,6 +920,7 @@
       "characters-evidence-type": state.evidenceType === "all" ? 0 : 1,
       "characters-counts": activeCountRangeFilters().length,
       "characters-special": state.specialFilters.size,
+      "characters-updates": state.updateFilters.size,
     });
   }
 
@@ -842,9 +940,10 @@
       const evidenceTypes = [...new Set(row.records.flatMap((r) => (r.evidence || []).map((e) => e.type).filter(Boolean)))].sort();
       const typeTags = evidenceTypes.map((t) => `<span class="characters-evidence-type" data-evidence-type="${esc(t)}">${esc(evidenceTypeLabel(t))}</span>`).join("");
       const stats = rowStats(row);
+      const updateTags = (row.updateStatuses || []).map((status) => `<span class="characters-update-badge" data-update-status="${esc(status)}">${esc(updateStatusLabel(status))}</span>`).join(" ");
       return `
-      <button class="characters-list-row${row.id === state.selectedId ? " is-selected" : ""}" type="button" data-character-id="${esc(row.id)}">
-        <span class="characters-row-name">${(row.kinds || []).map((kind) => `<span class="characters-kind">${esc(kindLabel(kind))}</span>`).join(" ")} ${esc(row.primaryName || row.id)}</span>
+      <button class="characters-list-row${row.id === state.selectedId ? " is-selected" : ""}${row.deletedUpdate ? " is-deleted" : ""}" type="button" data-character-id="${esc(row.id)}">
+        <span class="characters-row-name">${(row.kinds || []).map((kind) => `<span class="characters-kind">${esc(kindLabel(kind))}</span>`).join(" ")} ${updateTags} ${esc(row.primaryName || row.id)}</span>
         ${typeTags ? `<span class="characters-row-sources">${typeTags}</span>` : ""}
         <span class="characters-row-meta">
           <span>${(row.kinds || []).map((kind) => esc(kindLabel(kind))).join(" · ")}</span>
@@ -927,9 +1026,25 @@
   function renderDetail() {
     const detail = state.container?.querySelector("#characters-detail");
     if (!detail) return;
-    const row = groupedRecords().find((item) => item.id === state.selectedId);
+    const row = displayRecords().find((item) => item.id === state.selectedId);
     if (!row) {
       detail.innerHTML = `<div class="characters-empty">${ui("Select an identity to inspect its names and evidence.", "选择一个身份以查看名称与证据。")}</div>`;
+      return;
+    }
+    if (row.deletedUpdate) {
+      detail.innerHTML = `
+        <header class="characters-detail-header">
+          <div>
+            <span class="characters-update-badge" data-update-status="deleted">${esc(updateStatusLabel("deleted"))}</span>
+            <h2>${esc(row.primaryName)}</h2>
+            <code>${esc(row.updateId)}</code>
+          </div>
+        </header>
+        <section class="characters-section characters-deleted-snapshot">
+          <h3>${ui("Previous-version snapshot", "旧版本快照")}</h3>
+          <p>${ui("This identity is absent from the current CharacterTable. It is shown only from the Updates comparison and cannot be merged or renamed here.", "该身份已不在当前 CharacterTable 中。此处仅展示 Updates 比较保存的旧版本快照，不能在这里合并或改名。")}</p>
+          ${row.oldName ? `<div class="characters-name"><strong>${esc(row.oldName)}</strong><span>${ui("Previous name", "旧版名称")}</span></div>` : ""}
+        </section>`;
       return;
     }
     const stats = rowStats(row);
@@ -939,6 +1054,7 @@
         <div>
           ${(row.kinds || []).map((kind) => `<span class="characters-kind">${esc(kindLabel(kind))}</span>`).join(" ")}
           ${row.nameOverridden ? `<span class="characters-kind characters-name-override-badge">${esc(ui("Renamed", "已改名"))}</span>` : ""}
+          ${(row.updateStatuses || []).map((status) => `<span class="characters-update-badge" data-update-status="${esc(status)}">${esc(updateStatusLabel(status))}</span>`).join(" ")}
           <h2>${esc(row.primaryName || row.id)}</h2>
           <code>${stats.identities.toLocaleString()} ${ui(stats.identities === 1 ? "grouped identity" : "grouped identities", "已合并身份")}</code>
         </div>
@@ -1288,8 +1404,11 @@
     state.language = nextLanguage;
     if (state.container) state.container.innerHTML = `<div class="characters-empty">${ui("Loading character evidence…", "正在加载人物证据…")}</div>`;
     try {
-      const [response] = await Promise.all([
+      const [response, updateData] = await Promise.all([
         fetch(dataPath(nextLanguage), { cache: "no-store" }),
+        fetch(updateDataPath(), { cache: "no-store" })
+          .then((res) => res.ok ? res.json() : null)
+          .catch(() => null),
         loadMergeOverrides(force),
         loadNameOverrides(force),
       ]);
@@ -1297,6 +1416,8 @@
       const data = await response.json();
       if (token !== state.loadToken) return null;
       state.data = data;
+      state.updateData = updateData?.available === false || !Array.isArray(updateData?.entries) ? null : updateData;
+      if (!state.updateData) state.updateFilters.clear();
       state.selectedId = "";
       renderShell();
       return data;

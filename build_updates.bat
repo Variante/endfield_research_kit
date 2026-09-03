@@ -134,8 +134,9 @@ echo [build_updates] new: %NEW_EXPORT%
 
 rem Updates pipeline:
 rem - compare WebUI-facing text JSON in the two exports
+rem - compare CharacterTable rows and localized names for Characters-page tags
 rem - compare exported image/model/video/audio assets by default
-rem - write webui\data\updates\latest.json for the Updates tab
+rem - write Updates feed and Characters-page change sidecar
 python .\scripts\build_updates.py%ROOT_ARGS%%MODE_ARGS%%EXTRA_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
@@ -224,6 +225,7 @@ echo   build_updates.bat "D:\exports\Endfield_old" "D:\exports\Endfield_new"
 echo.
 echo Writes:
 echo   webui\data\updates\latest.json
+echo   webui\data\updates\characters.json
 echo   reports\updates\game-data-change-summary.json and .md
 echo.
 echo Notes:

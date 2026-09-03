@@ -86,7 +86,7 @@ a degraded reason instead of using them as direct evidence.
 | Assets | `build_assets.py` | asset indexes and media lookup |
 | Audio | `build_audio.py` | decoded/relinked audio data |
 | Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
-| Updates | `build_updates.py` | `webui/data/updates/latest.json` |
+| Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
 Packaging emits four matching archives. The main archive owns WebUI code and
@@ -118,6 +118,11 @@ four are built:
 in `gameplay_builder/`; its `asset-refs` stage calls the public
 `asset_builder.gameplay_refs` API with the current Gameplay and Assets indexes
 and is the sole writer of `webui/data/assets/gameplay_refs.json`.
+The base stage publishes every exact `chr_NNNN_token` identity registered in
+`StrIdNumTable`, even when `CharacterTable` has no row. Such namespace-only
+records remain visibly evidence-limited and do not claim availability,
+progression, runtime use, or playable status; longer skill/Buff/projectile ids
+are not promoted to characters.
 The base stage also resolves every BuffData id referenced by active Gameplay
 rows into a compact, fail-closed lifecycle/stacking/value catalog. Native enemy
 modifier, ability-event, skill-type, and cooldown-operation enum names are
@@ -1357,6 +1362,18 @@ The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
 audits only.
+
+Every comparison also writes `webui/data/updates/characters.json` for the
+Characters page. This sidecar compares stable `CharacterTable` keys, complete
+semantic rows, and names resolved through available `I18nTextTable_<LANG>`
+tables on both sides. Only common, valid localization tables participate;
+missing or invalid languages are recorded as degraded instead of changing
+every character. It reports `added`, `modified`, and `deleted` independently of asset
+flags, including under `--text-only`. Missing or invalid `CharacterTable`
+input, invalid overlays, or a table without valid object rows on either side
+publishes an unavailable empty sidecar instead of
+treating the current roster as entirely new. It does not modify or participate
+in `build_character_data.py` recovery and grouping.
 
 Pruning is destructive. Preview byte-identical files in the previous export
 with `.\build_updates.bat --prune-old --dry-run`; run without `--dry-run` only
