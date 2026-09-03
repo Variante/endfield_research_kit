@@ -153,7 +153,7 @@ The stable code and fixture entry points are:
 | Family | Maintained reader or classifier | Focused fixtures |
 |---|---|---|
 | VFS catalog, overlay, hashes | `AnimeStudio/Endfield/Vfs/EndfieldVfsLoader.cs`, `EndfieldVfsCorpusClassifier.cs`, CLI `vfs-audit`/`vfs-profile` | `AnimeStudio.CLI.Tests/Program.cs`, `AnimeStudio.CorpusClassifier.Tests` |
-| Bundle / InitBundle inner container | `AnimeStudio/VFSFile.cs`, `AnimeStudio/Crypto/VFSUtils.cs` | `VFSFileType5Tests.cs`, `VFSDirectoryInfoTests.cs`, `StreamExtensionsTests.cs` |
+| Bundle / InitBundle inner container | `AnimeStudio/VFSFile.cs`, `AnimeStudio/Crypto/VFSUtils.cs`, CLI `vfs-inner-audit` | `VFSFileType5Tests.cs`, `VFSDirectoryInfoTests.cs`, `VFSInnerStructureTests.cs`, `StreamExtensionsTests.cs` |
 | BundleManifest | `scripts/game_data/bundle_manifest.py` | `scripts/tests/test_bundle_manifest.py` |
 | IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
 | Streaming | `scripts/game_data/streaming.py` | `scripts/tests/test_streaming.py` |

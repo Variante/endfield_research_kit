@@ -124,9 +124,10 @@ fingerprints belong in generated reports.
 
 Current durable boundaries:
 
-- InitBundle framing, current VFS logical-file reads, selected Terrain height
-  envelopes, DynamicStreaming envelopes, LipSync payloads, video outer framing,
-  and several routed JsonData families have fail-closed readers.
+- Bundle and InitBundle nested-container framing, current VFS logical-file
+  reads, Terrain and Streaming envelopes, all five DynamicStreaming root
+  families, LipSync payloads, video outer framing, and several routed JsonData
+  families have fail-closed readers.
 - Deeper Terrain, streaming, irradiance, manifest, mmap-oriented string/hash and
   bone data, patch, and remaining JsonData semantics are incomplete.
 - Audio decodes and indexes AKPK/Wwise data, but graph/control evidence still
