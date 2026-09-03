@@ -157,7 +157,10 @@ Current durable boundaries:
   HIRC behavior, selected runtime playback, and audibility remain separate.
 - SkillData and BuffData have current exact-build member-count and file-hash
   censuses, but nested MemoryPack unions and whole-file EOF consumption are not
-  proven. Keep them `envelope_header_observed_unclassified_inner`.
+  proven. BuffData remains blocked on an untyped ability-event union and an
+  unresolved modifier interval. LevelScriptData candidate tails do not consume
+  the preceding top-level object/action map. Keep these families unclassified
+  until formatter IL or a bounded deserialization trace closes the cursor.
 - Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
   data, patch-instruction/runtime, and remaining JsonData semantics are
   incomplete.

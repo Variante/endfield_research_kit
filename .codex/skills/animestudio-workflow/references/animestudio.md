@@ -236,6 +236,10 @@ For SkillData/BuffData work, begin with the current envelope censuses under
 counts and metadata field-name sets are discovery gates only. Do not label a
 family exact until nested unions, field order, bounds, and EOF consumption are
 covered by maintained positive and negative tests plus a full current sweep.
+For LevelScriptData, an apparent tail ending at EOF is likewise insufficient:
+the complete top-level object and ActionSerializedMap must be consumed first.
+Use the payload-understanding report's current blocker/evidence pointers before
+adding another family-specific probe.
 
 `export_assets.bat --from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking
