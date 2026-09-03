@@ -669,9 +669,10 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
         self.assertEqual(30, BUFF_MEMBER_COUNT)
         self.assertEqual(BUFF_MEMBER_COUNT, len(buff_schema))
         self.assertEqual("onlyUseSelfTimeDilation", buff_schema[21])
-        self.assertEqual(47, SKILL_MEMBER_COUNT)
+        self.assertEqual(48, SKILL_MEMBER_COUNT)
         self.assertEqual(SKILL_MEMBER_COUNT, len(skill_schema))
         self.assertEqual("aiExclusiveFrame", skill_schema[1])
+        self.assertEqual("canCastInWater", skill_schema[7])
         self.assertEqual("useAIExclusiveFrame", skill_schema[-1])
 
     def test_buff_post_id_suffix_consumes_self_time_dilation_flag(self) -> None:
