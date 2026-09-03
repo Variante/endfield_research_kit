@@ -248,6 +248,23 @@
   background: color-mix(in srgb, var(--muted) 10%, var(--hover));
 }
 
+.characters-update-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: .08rem .42rem;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.characters-update-badge[data-update-status="added"] { color: #38a169; }
+.characters-update-badge[data-update-status="modified"] { color: #d69e2e; }
+.characters-update-badge[data-update-status="deleted"] { color: #e05d5d; }
+.characters-list-row.is-deleted { border-style: dashed; opacity: .86; }
+.characters-deleted-snapshot { max-width: 48rem; }
+
 .characters-row-sources .characters-evidence-type {
   font-size: .64rem;
   color: color-mix(in srgb, var(--muted) 65%, transparent);

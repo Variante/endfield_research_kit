@@ -41,6 +41,7 @@ if __package__:
     from .asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
     from .source_paths import resolve_asset_source_roots
     from .updates_builder.scanner import ScanConfig, scan_export_changes
+    from .updates_builder.characters import build_character_updates
 else:
     from common import (
         EXPORT_ROOT,
@@ -57,11 +58,13 @@ else:
     from asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
     from source_paths import resolve_asset_source_roots
     from updates_builder.scanner import ScanConfig, scan_export_changes
+    from updates_builder.characters import build_character_updates
 
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
 DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_1d2"
 DEFAULT_OUT = OUT_DIR / "updates" / "latest.json"
+DEFAULT_CHARACTERS_OUT = OUT_DIR / "updates" / "characters.json"
 DEFAULT_REPORT_JSON = UPDATES_REPORTS_DIR / "game-data-change-summary.json"
 DEFAULT_REPORT_MD = UPDATES_REPORTS_DIR / "game-data-change-summary.md"
 SCHEMA_VERSION = 1
@@ -138,6 +141,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=DEFAULT_OUT,
         help="WebUI update feed JSON path.",
+    )
+    parser.add_argument(
+        "--characters-out",
+        type=Path,
+        default=DEFAULT_CHARACTERS_OUT,
+        help="Characters-page added/modified/deleted sidecar JSON path.",
     )
     parser.add_argument(
         "--report-json",
@@ -1273,6 +1282,7 @@ def main(argv: list[str] | None = None) -> int:
     export_root = args.export_root.resolve()
     previous_export_root = args.previous_export_root.resolve()
     out_path = args.out.resolve()
+    characters_out_path = args.characters_out.resolve()
     report_json = args.report_json.resolve()
     report_md = args.report_md.resolve()
 
@@ -1332,6 +1342,7 @@ def main(argv: list[str] | None = None) -> int:
         hash_asset_updates=bool(args.hash_asset_updates),
         skip_audio_updates=bool(args.skip_audio_updates),
     )
+    character_updates = build_character_updates(previous_export_root, export_root)
 
     prune_result: dict[str, Any] | None = None
     if prune_requested:
@@ -1343,6 +1354,7 @@ def main(argv: list[str] | None = None) -> int:
         webui_payload["previousExportPrune"] = prune_result
 
     write_json(out_path, webui_payload, indent=2, compact=False)
+    write_json(characters_out_path, character_updates, indent=2, compact=False)
     write_update_feed_history(webui_payload, state_dir)
 
     totals = webui_payload["gameTotals"]
@@ -1354,6 +1366,7 @@ def main(argv: list[str] | None = None) -> int:
         f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
         f"{scope_note}"
     )
+
     if previous_baseline_rebuilt:
         print(f"[build_updates] Cached previous-export baseline rebuilt from {previous_export_root}")
     asset_totals = webui_payload.get("assetTotals") or {}
@@ -1383,6 +1396,17 @@ def main(argv: list[str] | None = None) -> int:
                 f" {unchanged_current}/{tracked_files} file(s)"
             )
     print(f"[build_updates] WebUI feed: {out_path}")
+    character_totals = character_updates["totals"]
+    if character_updates.get("available"):
+        print(
+            "[build_updates] Character changes:"
+            f" added={character_totals['added']},"
+            f" modified={character_totals['modified']},"
+            f" deleted={character_totals['deleted']}"
+        )
+    else:
+        print(f"[build_updates] Character changes: skipped ({character_updates.get('skipReason')})")
+    print(f"[build_updates] Character change sidecar: {characters_out_path}")
     return 0
 
 
