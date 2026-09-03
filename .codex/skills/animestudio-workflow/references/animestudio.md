@@ -158,15 +158,15 @@ The stable code and fixture entry points are:
 | IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
 | Streaming | `scripts/game_data/streaming.py` | `scripts/tests/test_streaming.py` |
 | DynamicStreaming | `scripts/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
-| Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` |
+| Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing plus bounded index filename tables) |
 | Terrain | `scripts/terrain_tret.py` | `scripts/tests/test_terrain_tret.py` |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
-| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py` |
+| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; current SkillData/BuffData envelope censuses stay non-exact |
 | ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_mmap_extend_data.py` |
 | Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
-| Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, `scripts/build_audio.py` | audio-domain tests under `scripts/tests/` |
+| Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, CLI `audio-audit`, `scripts/build_audio.py` | `EndfieldAkpkTests.cs` plus audio-domain tests under `scripts/tests/` |
 
 Changing counts, hashes, source roots, and per-file failures belong in the
 reports or `tmp/animestudio/`, not in this reference. A parser may be promoted
@@ -189,6 +189,32 @@ and interval validity, non-overlap, and exact node reads. It does not prove
 serialized Unity object boundaries, TypeTrees, PPtrs, or gameplay meaning. The
 decoded custom-header `size` word must remain unnamed unless a specific flag
 uses it; current files disprove treating it as the logical container length.
+
+For shared/CN audio package work, run the low-output structural gate before
+event/HIRC semantics:
+
+```bat
+AnimeStudio.CLI.exe audio-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --output tmp/animestudio/audio_structure_audit.json
+```
+
+The default audit covers `InitAudio`, `Audio`, `AuditAudio`, `HotfixAudio`, and
+`AudioChinese`, and explicitly excludes EN/JP/KR voice blocks. A verified row
+proves bounded AKPK sectors, bank/media intervals, BNK/DIDX/DATA framing,
+required decryption, and RIFF/RIFX or PLUG envelopes. It does not prove HIRC
+behavior, posted events, selected media, or audibility. Missing AuditAudio
+chunks remain nonzero failures.
+
+For IV recovery, `parse_region_file` and `parse_index_bytes` are distinct
+claims. The index parser proves one unambiguous count-prefixed UTF-16LE
+`iv_*.bytes` filename table and retains the remainder as opaque; it does not
+parse the referenced irradiance payload records. Preserve the numeric magic
+until consumer evidence supplies a stable semantic name.
+
+For SkillData/BuffData work, begin with the current envelope censuses under
+`tmp/animestudio/` and the exact-build metadata hash recorded there. Member
+counts and metadata field-name sets are discovery gates only. Do not label a
+family exact until nested unions, field order, bounds, and EOF consumption are
+covered by maintained positive and negative tests plus a full current sweep.
 
 `export_assets.bat --from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking

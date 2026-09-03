@@ -140,10 +140,17 @@ Current durable boundaries:
   reads, Terrain and Streaming envelopes, all five DynamicStreaming root
   families, LipSync payloads, video outer framing, and several routed JsonData
   families have fail-closed readers.
-- Deeper Terrain, streaming, irradiance, manifest, mmap-oriented string/hash and
-  bone data, patch, and remaining JsonData semantics are incomplete.
-- Audio decodes and indexes AKPK/Wwise data, but graph/control evidence still
-  does not prove selected runtime playback or audibility.
+- Irradiance-volume region framing is exact for seven files; all 92 IV indexes
+  have a bounded unique UTF-16LE filename-table parser that references the 138
+  remaining payloads exactly once. Those payload records and renderer meanings
+  remain unresolved.
+- Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
+  HIRC behavior, selected runtime playback, and audibility remain separate.
+- SkillData and BuffData have current exact-build member-count and file-hash
+  censuses, but nested MemoryPack unions and whole-file EOF consumption are not
+  proven. Keep them `envelope_header_observed_unclassified_inner`.
+- Deeper Terrain, streaming, manifest, mmap-oriented string/hash and bone data,
+  patch, and remaining JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not
   prove renderer ownership, selected variants, final lighting, or appearance.
 
