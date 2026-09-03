@@ -135,6 +135,47 @@ scripts\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDI
 scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 ```
 
+### VFS recovery evidence index
+
+Use this index before starting a new format or semantic investigation. It
+separates three evidence layers:
+
+1. `reports/animestudio/vfs_understanding_latest.md` plus its JSON and gzip
+   ledger certify the installed-build logical-file boundaries and hashes.
+2. `reports/animestudio/vfs_payload_understanding_latest.md` records current
+   payload-family framing, exact-consumption gates, corpus coverage, and
+   unresolved sections.
+3. `reports/animestudio/vfs_understanding_audit_latest.md` is the detailed
+   design/diagnostic audit and recovery queue.
+
+The stable code and fixture entry points are:
+
+| Family | Maintained reader or classifier | Focused fixtures |
+|---|---|---|
+| VFS catalog, overlay, hashes | `AnimeStudio/Endfield/Vfs/EndfieldVfsLoader.cs`, `EndfieldVfsCorpusClassifier.cs`, CLI `vfs-audit`/`vfs-profile` | `AnimeStudio.CLI.Tests/Program.cs`, `AnimeStudio.VfsCorpus.Tests` |
+| Bundle / InitBundle inner container | `AnimeStudio/VFSFile.cs`, `AnimeStudio/Crypto/VFSUtils.cs` | `VFSFileType5Tests.cs`, `VFSDirectoryInfoTests.cs`, `StreamExtensionsTests.cs` |
+| BundleManifest | `scripts/game_data/bundle_manifest.py` | `scripts/tests/test_bundle_manifest.py` |
+| IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
+| Streaming | `scripts/game_data/streaming.py` | `scripts/tests/test_streaming.py` |
+| DynamicStreaming | `scripts/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
+| Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` |
+| Terrain | `scripts/terrain_tret.py` | `scripts/tests/test_terrain_tret.py` |
+| Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
+| JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
+| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py` |
+| ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_extend_data_binary.py` |
+| Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
+| Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
+| Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, `scripts/build_audio.py` | audio-domain tests under `scripts/tests/` |
+
+Changing counts, hashes, source roots, and per-file failures belong in the
+reports or `tmp/animestudio/`, not in this reference. A parser may be promoted
+from observational to exact only after bounded positive fixtures, malformed /
+truncated / trailing-byte negatives, and a current-corpus sweep. Keep envelope
+framing, authored field names, cross-file ownership, and observed runtime
+behavior as separate claims. For a future client update, rerun the boundary
+audit first and use its input-set fingerprint for every downstream census.
+
 `export_assets.bat --from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking
 browser conversations.

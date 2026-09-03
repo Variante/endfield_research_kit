@@ -54,6 +54,13 @@ Inspect subcommand help rather than duplicating its full option surface:
 `--file-regex` filters. Audio defaults to direct lossless FLAC; request WAV or
 WEM only for explicit compatibility needs.
 
+For VFS-format or payload-semantic recovery, start with the "VFS recovery
+evidence index" in `references/animestudio.md`. It maps every active block
+family to its maintained reader, negative fixtures, corpus reports, and the
+remaining evidence boundary. Read the outer-boundary report before an inner
+format report: a valid offset/hash proves the bytes being studied, not their
+internal schema or runtime meaning.
+
 ## Scope and Concurrency
 
 Use `--focused-assets`, `--default-assets`, or `--debug-assets` from narrowest
