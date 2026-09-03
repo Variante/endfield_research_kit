@@ -253,6 +253,11 @@ family exact until nested unions, field order, bounds, and EOF consumption are
 covered by maintained positive and negative tests plus a full current sweep.
 For LevelScriptData, an apparent tail ending at EOF is likewise insufficient:
 the complete top-level object and ActionSerializedMap must be consumed first.
+Current v29 metadata can identify formatter/wrapper methods and setter
+declarations, but lacks a usable TypeSpec/MethodSpec mapping; if the recorded
+native code registration maps outside the current image, fail closed. Do not
+promote setter declaration order or the union-tag registry to serialized cursor
+order without current method bodies or a bounded trace.
 Use the payload-understanding report's current blocker/evidence pointers before
 adding another family-specific probe.
 

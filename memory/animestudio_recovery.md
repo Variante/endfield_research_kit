@@ -168,6 +168,9 @@ Current durable boundaries:
   unresolved modifier interval. LevelScriptData candidate tails do not consume
   the preceding top-level object/action map. Keep these families unclassified
   until formatter IL or a bounded deserialization trace closes the cursor.
+  Current v29 metadata identifies formatter/wrapper methods and setters, but
+  its missing generic mapping and mismatched native code-registration witness
+  do not prove serialized field order.
 - Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
   data, patch-instruction/runtime, and remaining JsonData semantics are
   incomplete.
