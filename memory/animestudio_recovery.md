@@ -157,7 +157,9 @@ Current durable boundaries:
   still close exact module/build/entry/caller, buffer-length, and final-cursor
   contracts. A generic file-I/O hook cannot preserve the authenticated virtual-
   path/hash join, and a stale capture manifest must fail preflight before the
-  game starts.
+  game starts. The current native parsers have no payload-length parameter or
+  final EOF check, and repeated in-payload magic values rule out signature
+  scanning as a replacement boundary witness.
 - Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
   HIRC behavior, selected runtime playback, and audibility remain separate.
 - SkillData and BuffData have current exact-build member-count and file-hash

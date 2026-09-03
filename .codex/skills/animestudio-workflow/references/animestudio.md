@@ -241,7 +241,10 @@ build hashes, RVAs, entry bytes/body hashes, resolver/caller gates, path/hash
 carrier, payload base/length, and final cursor/result contract; otherwise the
 observation cannot join back to one authenticated VFS logical file. A capture
 preflight mismatch is failed evidence and must be fixed before asking the user
-to run the game.
+to run the game. The current native parser signatures carry no payload length
+and perform no final cursor/EOF comparison. Their numeric magic values recur
+inside the same payloads, so signature scanning cannot substitute for those
+missing bounds or establish a record start.
 
 For SkillData/BuffData work, begin with the current envelope censuses under
 `tmp/animestudio/` and the exact-build metadata hash recorded there. Member
