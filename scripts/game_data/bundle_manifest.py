@@ -2,10 +2,11 @@
 
 The installed build provides unusually strong evidence for this family: the
 outer file is one Brotli stream and the decompressed bytes have two fixed
-headers, three fixed-width row regions, and one trailing region.  This module
-only certifies those boundaries.  The row fields and trailing bytes are kept
-opaque because the available native metadata does not establish their
-field-to-byte mapping or the postfix format.
+headers, three size/count-delimited fixed-width row regions, and one
+size-delimited variable region with a repeated footer witness.  This module
+only certifies those boundaries.  Row fields and variable-region bytes are
+kept opaque because the available native metadata does not establish their
+field-to-byte mapping or the variable records' internal format.
 
 ``parse_bundle_manifest`` accepts the compressed ``.hgmmap`` bytes.  Use
 ``parse_decompressed_bundle_manifest`` only when a caller has already checked
@@ -27,11 +28,12 @@ from typing import Any, Iterable
 HEAD1 = 0xFF11FF11
 HEAD2 = 0xF1F2F3F4
 HEADER_SIZE = 156
-TABLE1_OFFSET = 156
-TABLE1_ROW_OFFSET = 160
+TABLE1_SECTION_OFFSET = HEADER_SIZE
+TABLE_SECTION_HEADER_SIZE = 8
 TABLE1_ROW_SIZE = 32
 TABLE2_ROW_SIZE = 56
 TABLE3_ROW_SIZE = 48
+VARIABLE_REGION_FOOTER_SIZE = 4
 
 
 class BinaryFormatError(ValueError):
@@ -71,6 +73,8 @@ class OpaqueTable:
     """One fixed-width table whose individual fields are deliberately opaque."""
 
     name: str
+    section_offset: int
+    section_size_witness: int
     offset: int
     row_count: int
     row_size: int
@@ -78,10 +82,13 @@ class OpaqueTable:
     sha256: str
     first_row_hex: str
     last_row_hex: str
+    row_sequence_word_offset: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "name": self.name,
+            "sectionOffset": self.section_offset,
+            "sectionSizeWitness": self.section_size_witness,
             "offset": self.offset,
             "rowCount": self.row_count,
             "rowSize": self.row_size,
@@ -90,6 +97,46 @@ class OpaqueTable:
             "firstRowHex": self.first_row_hex,
             "lastRowHex": self.last_row_hex,
             "fieldStatus": "opaque",
+        }
+        if self.row_sequence_word_offset is not None:
+            result["rowSequenceWitness"] = {
+                "wordOffset": self.row_sequence_word_offset,
+                "first": 0,
+                "last": self.row_count - 1,
+                "mismatchCount": 0,
+                "fieldStatus": "structural-only",
+            }
+        return result
+
+
+@dataclass(frozen=True)
+class OpaqueVariableRegion:
+    """One bounded variable-width region whose internal records stay opaque."""
+
+    section_offset: int
+    size_witness: int
+    payload_offset: int
+    payload_length: int
+    payload_sha256: str
+    payload_prefix_hex: str
+    payload_suffix_hex: str
+    footer_offset: int
+    footer_size_witness: int
+    end_offset: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "sectionOffset": self.section_offset,
+            "sizeWitness": self.size_witness,
+            "payloadOffset": self.payload_offset,
+            "payloadLength": self.payload_length,
+            "payloadSha256": self.payload_sha256,
+            "payloadPrefixHex": self.payload_prefix_hex,
+            "payloadSuffixHex": self.payload_suffix_hex,
+            "footerOffset": self.footer_offset,
+            "footerSizeWitness": self.footer_size_witness,
+            "endOffset": self.end_offset,
+            "recordStatus": "opaque",
         }
 
 
@@ -108,16 +155,12 @@ class BundleManifestSummary:
     head2: int
     head2_text: str
     tables: tuple[OpaqueTable, ...]
-    opaque_tail_offset: int
-    opaque_tail_length: int
-    opaque_tail_sha256: str
-    opaque_tail_prefix_hex: str
-    opaque_tail_suffix_hex: str
+    variable_region: OpaqueVariableRegion
     consumed_bytes: int
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "format": "endfield-bundle-manifest-hgmmap-v1",
+            "format": "endfield-bundle-manifest-hgmmap-v2",
             "source": self.source,
             "compressed": {
                 "length": self.compressed_length,
@@ -136,38 +179,111 @@ class BundleManifestSummary:
                 "byteLength": HEADER_SIZE,
             },
             "tables": [table.to_dict() for table in self.tables],
-            "opaqueTail": {
-                "offset": self.opaque_tail_offset,
-                "length": self.opaque_tail_length,
-                "sha256": self.opaque_tail_sha256,
-                "prefixHex": self.opaque_tail_prefix_hex,
-                "suffixHex": self.opaque_tail_suffix_hex,
-                "fieldStatus": "opaque",
-            },
+            "opaqueVariableRegion": self.variable_region.to_dict(),
             "consumedBytes": self.consumed_bytes,
             "status": "format_framed_bounded_opaque",
         }
 
 
-def _table(data: bytes, name: str, offset: int, row_count: int, row_size: int) -> OpaqueTable:
+def _table_section(
+    data: bytes,
+    name: str,
+    section_offset: int,
+    row_size: int,
+    source: str,
+    *,
+    row_sequence_word_offset: int | None = None,
+) -> tuple[OpaqueTable, int]:
+    _need(data, section_offset, TABLE_SECTION_HEADER_SIZE, f"{source} {name} section header")
+    section_size = _u32(data, section_offset, f"{source} {name} size witness")
+    row_count = _u32(data, section_offset + 4, f"{source} {name} count witness")
     if row_count <= 0:
         raise BinaryFormatError(f"{name} row count {row_count} is not positive")
-    if row_count > (len(data) - offset) // row_size:
+    expected_size = 4 + row_count * row_size
+    if section_size != expected_size:
         raise BinaryFormatError(
-            f"{name} row count {row_count} exceeds source bounds at offset {offset}"
+            f"{source}: {name} size witness {section_size} != "
+            f"4 + count*{row_size} ({expected_size})"
+        )
+    row_offset = section_offset + TABLE_SECTION_HEADER_SIZE
+    if row_count > (len(data) - row_offset) // row_size:
+        raise BinaryFormatError(
+            f"{name} row count {row_count} exceeds source bounds at offset {row_offset}"
         )
     byte_length = row_count * row_size
-    _need(data, offset, byte_length, f"{name} rows")
-    rows = data[offset : offset + byte_length]
-    return OpaqueTable(
+    _need(data, row_offset, byte_length, f"{name} rows")
+    rows = data[row_offset : row_offset + byte_length]
+    if row_sequence_word_offset is not None:
+        if (
+            row_sequence_word_offset < 0
+            or row_sequence_word_offset + 4 > row_size
+            or row_sequence_word_offset % 4
+        ):
+            raise ValueError("row sequence witness must be an aligned word inside each row")
+        for index in range(row_count):
+            value = struct.unpack_from(
+                "<I", rows, index * row_size + row_sequence_word_offset
+            )[0]
+            if value != index:
+                raise BinaryFormatError(
+                    f"{source}: {name} row {index} sequence witness {value} != {index} "
+                    f"at row byte offset {row_sequence_word_offset}"
+                )
+    table = OpaqueTable(
         name=name,
-        offset=offset,
+        section_offset=section_offset,
+        section_size_witness=section_size,
+        offset=row_offset,
         row_count=row_count,
         row_size=row_size,
         byte_length=byte_length,
         sha256=_digest(rows),
         first_row_hex=rows[:row_size].hex(),
         last_row_hex=rows[-row_size:].hex(),
+        row_sequence_word_offset=row_sequence_word_offset,
+    )
+    # The size word measures the following count word plus all rows.  Returning
+    # this arithmetic boundary prevents a count word from being mistaken for
+    # the first row and prevents the final row bytes from leaking into the next
+    # section.
+    return table, section_offset + 4 + section_size
+
+
+def _variable_region(data: bytes, section_offset: int, source: str) -> OpaqueVariableRegion:
+    _need(data, section_offset, 8, f"{source} variable-region envelope")
+    size_witness = _u32(data, section_offset, f"{source} variable-region size witness")
+    payload_offset = section_offset + 4
+    _need(
+        data,
+        payload_offset,
+        size_witness + VARIABLE_REGION_FOOTER_SIZE,
+        f"{source} variable-region payload and footer",
+    )
+    footer_offset = payload_offset + size_witness
+    footer_size_witness = _u32(data, footer_offset, f"{source} variable-region footer")
+    if footer_size_witness != size_witness:
+        raise BinaryFormatError(
+            f"{source}: variable-region footer size witness {footer_size_witness} != "
+            f"leading witness {size_witness}"
+        )
+    end_offset = footer_offset + VARIABLE_REGION_FOOTER_SIZE
+    if end_offset != len(data):
+        raise BinaryFormatError(
+            f"{source}: trailing bytes [{end_offset}, {len(data)}) "
+            f"({len(data) - end_offset} bytes) after variable-region footer"
+        )
+    payload = data[payload_offset:footer_offset]
+    return OpaqueVariableRegion(
+        section_offset=section_offset,
+        size_witness=size_witness,
+        payload_offset=payload_offset,
+        payload_length=len(payload),
+        payload_sha256=_digest(payload),
+        payload_prefix_hex=payload[:32].hex(),
+        payload_suffix_hex=payload[-32:].hex() if payload else "",
+        footer_offset=footer_offset,
+        footer_size_witness=footer_size_witness,
+        end_offset=end_offset,
     )
 
 
@@ -176,11 +292,11 @@ def parse_decompressed_bundle_manifest(
 ) -> BundleManifestSummary:
     """Parse the observed decompressed layout with exact table boundaries.
 
-    The first 32-bit value at offset 156 is a section-size witness equal to
-    ``4 + table1_count * 32``.  The first row of table 1 repeats the count at
-    offset 160.  Table 2's first row carries equivalent size/count witnesses at
-    offsets +4/+8, and table 3 repeats its row count at +16.  These are kept as
-    structural witnesses rather than assigned field names or meanings.
+    Each fixed-width section starts with a 32-bit size witness followed by a
+    32-bit row count.  The size is exactly ``4 + count * row_size`` and measures
+    the count word plus rows, not its own four bytes.  The terminal variable
+    region uses a leading size word, that many opaque bytes, and the same size
+    word as its footer.  These are structural witnesses only.
     """
 
     if not isinstance(data, (bytes, bytearray, memoryview)):
@@ -210,38 +326,26 @@ def parse_decompressed_bundle_manifest(
     if _u32(data, 152, f"{source} header padding") != 0:
         raise BinaryFormatError(f"{source}: non-zero 4-byte header padding")
 
-    table1_section_size = _u32(data, TABLE1_OFFSET, f"{source} table1 size witness")
-    if table1_section_size < 4 or (table1_section_size - 4) % TABLE1_ROW_SIZE:
+    table1, table2_offset = _table_section(
+        data, "fixed-width-32", TABLE1_SECTION_OFFSET, TABLE1_ROW_SIZE, source
+    )
+    table2, table3_offset = _table_section(
+        data, "fixed-width-56", table2_offset, TABLE2_ROW_SIZE, source
+    )
+    table3, variable_region_offset = _table_section(
+        data,
+        "fixed-width-48",
+        table3_offset,
+        TABLE3_ROW_SIZE,
+        source,
+        row_sequence_word_offset=0,
+    )
+    if table3.row_count != table2.row_count:
         raise BinaryFormatError(
-            f"{source}: table1 size witness {table1_section_size} is not 4 + N*32"
+            f"{source}: fixed-width-48 count witness {table3.row_count} != "
+            f"fixed-width-56 count {table2.row_count}"
         )
-    table1_count = (table1_section_size - 4) // TABLE1_ROW_SIZE
-    if _u32(data, TABLE1_ROW_OFFSET, f"{source} table1 count witness") != table1_count:
-        raise BinaryFormatError(f"{source}: table1 count witness disagrees with size witness")
-    table1 = _table(data, "asset-like-32", TABLE1_ROW_OFFSET, table1_count, TABLE1_ROW_SIZE)
-
-    table2_offset = TABLE1_OFFSET + table1_section_size
-    _need(data, table2_offset, 12, f"{source} table2 witnesses")
-    table2_size_witness = _u32(data, table2_offset + 4, f"{source} table2 size witness")
-    table2_count = _u32(data, table2_offset + 8, f"{source} table2 count witness")
-    if table2_size_witness != 4 + table2_count * TABLE2_ROW_SIZE:
-        raise BinaryFormatError(
-            f"{source}: table2 size witness {table2_size_witness} != "
-            f"4 + count*56 ({4 + table2_count * TABLE2_ROW_SIZE})"
-        )
-    table2 = _table(data, "bundle-like-56", table2_offset, table2_count, TABLE2_ROW_SIZE)
-
-    table3_offset = table2_offset + table2.byte_length
-    table3_count = _u32(data, table3_offset + 16, f"{source} table3 count witness")
-    if table3_count != table2_count:
-        raise BinaryFormatError(
-            f"{source}: table3 count witness {table3_count} != table2 count {table2_count}"
-        )
-    table3 = _table(data, "bundle-info-like-48", table3_offset, table3_count, TABLE3_ROW_SIZE)
-
-    tail_offset = table3_offset + table3.byte_length
-    _need(data, tail_offset, 0, f"{source} opaque tail")
-    tail = data[tail_offset:]
+    variable_region = _variable_region(data, variable_region_offset, source)
     return BundleManifestSummary(
         source=source,
         compressed_length=0,
@@ -254,12 +358,8 @@ def parse_decompressed_bundle_manifest(
         head2=head2,
         head2_text=head2_text,
         tables=(table1, table2, table3),
-        opaque_tail_offset=tail_offset,
-        opaque_tail_length=len(tail),
-        opaque_tail_sha256=_digest(tail),
-        opaque_tail_prefix_hex=tail[:32].hex(),
-        opaque_tail_suffix_hex=tail[-32:].hex() if tail else "",
-        consumed_bytes=len(data),
+        variable_region=variable_region,
+        consumed_bytes=variable_region.end_offset,
     )
 
 
@@ -298,11 +398,7 @@ def parse_bundle_manifest(data: bytes, *, source: str = "<compressed>") -> Bundl
         head2=parsed.head2,
         head2_text=parsed.head2_text,
         tables=parsed.tables,
-        opaque_tail_offset=parsed.opaque_tail_offset,
-        opaque_tail_length=parsed.opaque_tail_length,
-        opaque_tail_sha256=parsed.opaque_tail_sha256,
-        opaque_tail_prefix_hex=parsed.opaque_tail_prefix_hex,
-        opaque_tail_suffix_hex=parsed.opaque_tail_suffix_hex,
+        variable_region=parsed.variable_region,
         consumed_bytes=parsed.consumed_bytes,
     )
 

@@ -49,6 +49,9 @@ class IFixPatchTests(unittest.TestCase):
         self.assertEqual(result["input"]["sha256"], hashlib.sha256(data).hexdigest())
         self.assertEqual(result["methods"]["records"][0]["codeSize"], 1)
         self.assertEqual(result["methods"]["records"][0]["code"]["fieldStatus"], "opaque")
+        self.assertEqual(result["methods"]["records"][0]["code"]["unitCount"], 1)
+        self.assertEqual(result["methods"]["records"][0]["code"]["unitSize"], 8)
+        self.assertEqual(result["methods"]["records"][0]["exceptions"]["unitSize"], 24)
         self.assertEqual(result["fixRecords"]["records"][0]["activationStatus"], "not-established-by-file-framing")
 
     def test_rejects_magic_mutation(self):
@@ -74,6 +77,15 @@ class IFixPatchTests(unittest.TestCase):
         data[offset] = 2
         with self.assertRaises(BinaryFormatError):
             parse_ifix_patch(data, source="bad-bool")
+
+    def test_rejects_noncanonical_string_length(self):
+        data = bytearray(_fixture())
+        length_offset = OPAQUE_PREFIX_SIZE + 8
+        length = data[length_offset]
+        self.assertLess(length, 0x80)
+        data[length_offset : length_offset + 1] = bytes((length | 0x80, 0))
+        with self.assertRaises(BinaryFormatError):
+            parse_ifix_patch(data, source="overlong-string-length")
 
 
 if __name__ == "__main__":

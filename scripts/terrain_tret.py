@@ -27,6 +27,7 @@ class TretRecord:
     body_fixed_prefix: bytes
     body_version_u32le: int
     body_u16le_offsets_8_18: tuple[int, int, int, int, int, int]
+    body_payload_length_u32le: int
     opaque_payload: bytes
 
 
@@ -49,7 +50,9 @@ def parse_tret_record(raw: bytes) -> TretRecord:
 
     The envelope is decoded before inspecting the TRET body.  The parser
     rejects missing magic and decoded bodies shorter than the observed fixed
-    20-byte body prefix.
+    20-byte body prefix.  The final anonymous ``u32`` in that prefix must
+    exactly equal the remaining body length, so truncation and trailing bytes
+    cannot be hidden inside the opaque payload.
     """
 
     body, storage_mode, declared_length = decode_terrain_envelope(raw)
@@ -66,6 +69,13 @@ def parse_tret_record(raw: bytes) -> TretRecord:
         raise ValueError(
             f"unsupported TRET body version: {body_version} != {SUPPORTED_BODY_VERSION}"
         )
+    body_payload_length = int.from_bytes(body[16:20], "little")
+    actual_body_payload_length = len(body) - FIXED_BODY_PREFIX_SIZE
+    if body_payload_length != actual_body_payload_length:
+        raise ValueError(
+            "TRET body payload length mismatch: "
+            f"declared {body_payload_length}, actual {actual_body_payload_length}"
+        )
 
     return TretRecord(
         raw_length=len(raw),
@@ -76,5 +86,6 @@ def parse_tret_record(raw: bytes) -> TretRecord:
         body_fixed_prefix=body[:FIXED_BODY_PREFIX_SIZE],
         body_version_u32le=body_version,
         body_u16le_offsets_8_18=tuple(u16(offset) for offset in range(8, 20, 2)),
+        body_payload_length_u32le=body_payload_length,
         opaque_payload=body[FIXED_BODY_PREFIX_SIZE:],
     )
