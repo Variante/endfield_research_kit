@@ -54,7 +54,9 @@ The canonical full flow is:
 5. Write step timings and process-tree memory benchmarks under
    `reports/export/`.
 
-`--webui-jobs N` limits post-Story concurrency; `--asset-jobs N` limits
+`--webui-jobs N` limits post-Story concurrency and supplies Map's internal
+workers when assets are being reused; asset rebuilds keep Map serial while the
+asset converter owns the heavy disk/memory phase. `--asset-jobs N` limits
 AnimeStudio workers. `--focused-assets`, `--default-assets`, and
 `--debug-assets` select increasing extraction scope. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.

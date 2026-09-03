@@ -158,6 +158,23 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertIn("--all-published-map-scenes", joined_map_task.commands[0].argv)
         self.assertIn("--preview-only", joined_map_task.commands[1].argv)
 
+    def test_normal_map_build_uses_worker_budget_but_asset_build_stays_serial(self) -> None:
+        normal = commands_for(
+            build_webui_views.build_phases(build_webui_views.parse_args(["--jobs", "3"])),
+            "map_recovery",
+        )
+        self.assertEqual(normal[0][normal[0].index("--jobs") + 1], "3")
+        self.assertEqual(normal[1][normal[1].index("--jobs") + 1], "3")
+
+        with_assets = commands_for(
+            build_webui_views.build_phases(
+                build_webui_views.parse_args(["--jobs", "3", "--with-assets"])
+            ),
+            "map_recovery",
+        )
+        self.assertEqual(with_assets[0][with_assets[0].index("--jobs") + 1], "1")
+        self.assertEqual(with_assets[1][with_assets[1].index("--jobs") + 1], "1")
+
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
         args = build_webui_views.parse_args(["--full-source-graph"])
         graph_command = commands_for(build_webui_views.build_phases(args), "source_graph")[0]

@@ -71,10 +71,12 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
     def module(name: str, *command_args: str) -> CommandSpec:
         return python_module(name, *command_args, environment=environment)
 
-    # The map builder's per-level loop is process-parallel. When it runs beside
-    # other builders it gets one process so the phase keeps `--jobs` as its
-    # total process budget.
-    map_recovery_jobs = "1"
+    # The map builder's per-level loop and streaming extractor are independently
+    # process-parallel. A normal semantic rebuild gives them the configured
+    # worker budget because the neighbouring tasks are small. Asset rebuilds
+    # keep one map worker: image/model conversion is already the dominant disk
+    # and memory consumer in both phases.
+    map_recovery_jobs = "1" if args.with_assets else str(args.jobs)
 
     # Mission Pipeline is a standalone recovery tool now. Keep map recovery
     # in the WebUI build, but do not make the export wrapper run Mission
