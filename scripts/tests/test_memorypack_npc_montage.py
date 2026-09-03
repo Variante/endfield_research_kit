@@ -6,6 +6,9 @@ import unittest
 from scripts.game_data.memorypack.npc_montage import (
     NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT,
     NPC_MONTAGE_DATA_MEMBER_COUNT,
+    NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT,
+    NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT,
+    NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT,
     NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT,
     NPC_MONTAGE_ROOT_MEMBER_COUNT,
     NpcMontageFramingError,
@@ -14,8 +17,53 @@ from scripts.game_data.memorypack.npc_montage import (
 )
 
 
+def _utf8(value: str | None) -> bytes:
+    if value is None:
+        return struct.pack("<I", 0xFFFFFFFF)
+    raw = value.encode("utf-8")
+    return struct.pack("<I", len(raw)) + raw
+
+
+def _member3_inner_record(
+    value_a: str = "P_fixture",
+    value_b: str = "",
+    value_c: str = "Root/fixture",
+) -> bytes:
+    return b"".join(
+        [
+            bytes([NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT]),
+            _utf8(value_a),
+            b"\x00" * 20,
+            _utf8(value_b),
+            _utf8(value_c),
+        ]
+    )
+
+
+def _member3_record(
+    value_a: str = "",
+    value_b: str = "",
+    inner_records: list[bytes] | None = None,
+) -> bytes:
+    nested = inner_records or []
+    return b"".join(
+        [
+            bytes([NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT]),
+            _utf8(value_a),
+            b"\x00" * 10,
+            bytes([NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT]),
+            b"\x00" * 9,
+            _utf8(value_b),
+            struct.pack("<I", len(nested)),
+            *nested,
+            b"\x00" * 38,
+        ]
+    )
+
+
 def _fixture(
     clip_name: str | None = "A_actor_fixture_idle_loop",
+    member3_records: list[bytes] | None = None,
     member18_records: list[tuple[int, int, float, float, float]] | None = None,
 ) -> bytes:
     out = bytearray([NPC_MONTAGE_ROOT_MEMBER_COUNT])
@@ -32,7 +80,10 @@ def _fixture(
         out.extend(struct.pack("<I", len(raw)))
         out.extend(raw)
         out.extend(struct.pack("<ff", 0.0, 0.0))
-    out.extend(struct.pack("<I", 0))
+    dynamic_records = member3_records or []
+    out.extend(struct.pack("<I", len(dynamic_records)))
+    for record in dynamic_records:
+        out.extend(record)
     out.extend(b"\x00\x00")
     out.extend(b"\x00" * 36)
     out.append(0)
@@ -51,6 +102,10 @@ def _fixture(
     out.extend(b"\x00" * (36 + 16 + 8))
     out.extend(struct.pack("<i", 1494188745))
     return bytes(out)
+
+
+def _member3_count_offset(clip_name: str = "A_actor_fixture_idle_loop") -> int:
+    return 45 + len(clip_name.encode("utf-8")) + 8
 
 
 class NpcMontageMemoryPackTests(unittest.TestCase):
@@ -106,16 +161,104 @@ class NpcMontageMemoryPackTests(unittest.TestCase):
         with self.assertRaisesRegex(NpcMontageFramingError, "memberCount"):
             frame_npc_montage(bytes(payload))
 
-    def test_nonempty_collection_is_explicitly_unsupported(self) -> None:
-        payload = bytearray(_fixture())
-        name_length = struct.unpack_from("<I", payload, 41)[0]
-        dynamic_count_offset = 45 + name_length + 8
-        struct.pack_into("<I", payload, dynamic_count_offset, 1)
-        with self.assertRaisesRegex(
-            NpcMontageFramingError,
-            "unsupported-nonempty-collection",
-        ):
-            frame_npc_montage(bytes(payload))
+    def test_member3_counted_records_consume_exactly_to_eof(self) -> None:
+        records = [
+            _member3_record(
+                "P_fixture",
+                "spark",
+                [_member3_inner_record()],
+            ),
+            _member3_record("P_second", "smoke"),
+            _member3_record("", ""),
+            _member3_record("P_fourth", "trail"),
+        ]
+        for count in (1, 2, 3, 4):
+            with self.subTest(count=count):
+                payload = _fixture(member3_records=records[:count])
+                decoded = frame_npc_montage(payload)
+                self.assertEqual(
+                    "exact_current_npc_montage_member3_counted_frame",
+                    decoded["status"],
+                )
+                self.assertEqual(len(payload), decoded["bytesConsumed"])
+                self.assertEqual(count, len(decoded["member3Records"]))
+                self.assertTrue(
+                    all(
+                        record["memberCount"]
+                        == NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT
+                        for record in decoded["member3Records"]
+                    )
+                )
+        first = frame_npc_montage(
+            _fixture(member3_records=records[:1])
+        )["member3Records"][0]
+        self.assertEqual(
+            NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT,
+            first["nestedObjectMemberCount"],
+        )
+        self.assertEqual(1, len(first["innerRecords"]))
+        self.assertEqual(
+            NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT,
+            first["innerRecords"][0]["memberCount"],
+        )
+
+    def test_member3_malformed_markers_and_counts_fail_closed(self) -> None:
+        payload = _fixture(
+            member3_records=[
+                _member3_record(
+                    "P_fixture",
+                    "spark",
+                    [_member3_inner_record()],
+                )
+            ]
+        )
+        decoded = frame_npc_montage(payload)
+        record = decoded["member3Records"][0]
+        count_offset = _member3_count_offset()
+
+        malformed = bytearray(payload)
+        malformed[record["startOffset"]] = NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT - 1
+        with self.assertRaisesRegex(NpcMontageFramingError, "memberCount"):
+            frame_npc_montage(bytes(malformed))
+
+        malformed = bytearray(payload)
+        nested_marker_offset = record["anonymousFixedRanges"][0]["endOffset"]
+        malformed[nested_marker_offset] = (
+            NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT - 1
+        )
+        with self.assertRaisesRegex(NpcMontageFramingError, "nestedObject.memberCount"):
+            frame_npc_montage(bytes(malformed))
+
+        malformed = bytearray(payload)
+        malformed[record["innerCountOffset"] + 4] = (
+            NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT - 1
+        )
+        with self.assertRaisesRegex(NpcMontageFramingError, "inner.*memberCount"):
+            frame_npc_montage(bytes(malformed))
+
+        wrong_count = bytearray(payload)
+        struct.pack_into("<I", wrong_count, count_offset, 100)
+        with self.assertRaisesRegex(NpcMontageFramingError, "count-envelope"):
+            frame_npc_montage(bytes(wrong_count))
+
+        inner_overrun = bytearray(payload)
+        struct.pack_into("<I", inner_overrun, record["innerCountOffset"], 0xFFFFFFFF)
+        with self.assertRaisesRegex(NpcMontageFramingError, "count-overrun"):
+            frame_npc_montage(bytes(inner_overrun))
+
+    def test_member3_invalid_utf8_and_truncation_fail_closed(self) -> None:
+        payload = _fixture(member3_records=[_member3_record("X", "")])
+        decoded = frame_npc_montage(payload)
+        record = decoded["member3Records"][0]
+
+        malformed = bytearray(payload)
+        malformed[record["startOffset"] + 5] = 0xFF
+        with self.assertRaisesRegex(NpcMontageFramingError, "invalid-utf8"):
+            frame_npc_montage(bytes(malformed))
+
+        truncated = payload[: record["endOffset"] - 1]
+        with self.assertRaisesRegex(NpcMontageFramingError, "truncated"):
+            frame_npc_montage(truncated)
 
     def test_member18_counted_records_consume_exactly_to_eof(self) -> None:
         records = [
@@ -141,6 +284,17 @@ class NpcMontageMemoryPackTests(unittest.TestCase):
                         for record in decoded["member18Records"]
                     )
                 )
+
+    def test_member3_and_member18_can_both_be_nonempty(self) -> None:
+        payload = _fixture(
+            member3_records=[_member3_record("P_fixture", "spark")],
+            member18_records=[(0xA6E99673, 0xDB923E88, 0.0, 0.25, 0.85)],
+        )
+        decoded = frame_npc_montage(payload)
+
+        self.assertEqual(len(payload), decoded["bytesConsumed"])
+        self.assertEqual(1, len(decoded["member3Records"]))
+        self.assertEqual(1, len(decoded["member18Records"]))
 
     def test_member18_truncated_trailing_and_malformed_records_fail_closed(self) -> None:
         records = [(0xA6E99673, 0xDB923E88, 0.0, 0.25, 0.85)]

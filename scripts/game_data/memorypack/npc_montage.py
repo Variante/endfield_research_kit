@@ -1,10 +1,9 @@
 """Fail-closed framing for current ``NPC/MontageJson/MontageNew`` payloads.
 
 The selected build uses a compact MemoryPack object with three top-level
-members and a 24-member montage record.  One variable collection remains an
-explicit coverage gap.  The other is count-framed and contains five-member
-fixed-width records.  Nested values remain anonymous: metadata names alone do
-not establish their serialized field order.
+members and a 24-member montage record. Both observed variable collections are
+count-framed. Nested values remain anonymous: metadata names alone do not
+establish their serialized field order.
 """
 
 from __future__ import annotations
@@ -20,12 +19,22 @@ from .core import MEMORYPACK_NULL_COUNT, format_offset
 NPC_MONTAGE_ROOT_MEMBER_COUNT = 3
 NPC_MONTAGE_DATA_MEMBER_COUNT = 24
 NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT = 7
+NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT = 12
+NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT = 3
+NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT = 4
 NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT = 5
 NPC_MONTAGE_RELATIVE_PREFIX = "Data/Json/NPC/MontageJson/MontageNew/"
 
 _GUID_PROXY_SIZE = 16
 _ASYNC_CLIP_INFO_SIZE = 36
 _TRANSITION_INFO_SIZE = 32
+_MEMBER3_RECORD_FIXED_PREFIX_SIZE = 10
+_MEMBER3_NESTED_OBJECT_BODY_SIZE = 9
+_MEMBER3_INNER_RECORD_FIXED_SIZE = 20
+_MEMBER3_RECORD_FIXED_SUFFIX_SIZE = 38
+_MEMBER3_MIN_RECORD_SIZE = 71
+_MEMBER3_MIN_INNER_RECORD_SIZE = 33
+_POST_MEMBER3_MIN_SUFFIX_SIZE = 231
 _MEMBER18_RECORD_BODY_SIZE = 20
 _MEMBER18_RECORD_SIZE = 21
 _POST_MEMBER18_SUFFIX_SIZE = 72
@@ -184,11 +193,150 @@ def _read_member18_records(reader: _Reader, count: int) -> list[dict[str, Any]]:
     return records
 
 
+def _read_anonymous_utf8(reader: _Reader, field: str) -> dict[str, Any]:
+    start = reader.offset
+    length = reader.u32(f"{field}.length")
+    if length == MEMORYPACK_NULL_COUNT:
+        return {
+            "startOffset": start,
+            "endOffset": reader.offset,
+            "byteLength": None,
+            "isNull": True,
+        }
+    if length > _MAX_ANONYMOUS_UTF8_BYTES:
+        raise NpcMontageFramingError(f"{field}:invalid-length={length}")
+    raw_offset = reader.require(length, f"{field}.bytes")
+    try:
+        reader.data[raw_offset:reader.offset].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise NpcMontageFramingError(
+            f"{field}:invalid-utf8 offset={format_offset(raw_offset)}"
+        ) from exc
+    return {
+        "startOffset": start,
+        "endOffset": reader.offset,
+        "byteLength": length,
+        "isNull": False,
+    }
+
+
+def _read_member3_records(reader: _Reader, count: int) -> list[dict[str, Any]]:
+    remaining = len(reader.data) - reader.offset
+    required = count * _MEMBER3_MIN_RECORD_SIZE + _POST_MEMBER3_MIN_SUFFIX_SIZE
+    if required > remaining:
+        raise NpcMontageFramingError(
+            "data.member3:truncated-count-envelope "
+            f"count={count} need-at-least={required} remaining={remaining}"
+        )
+
+    records: list[dict[str, Any]] = []
+    for index in range(count):
+        start = reader.offset
+        member_count = reader.u8(f"data.member3[{index}].memberCount")
+        if member_count != NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT:
+            raise NpcMontageFramingError(
+                f"data.member3[{index}].memberCount:"
+                f"expected={NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT} "
+                f"actual={member_count}"
+            )
+        anonymous_utf8_a = _read_anonymous_utf8(
+            reader, f"data.member3[{index}].anonymousUtf8A"
+        )
+        fixed_prefix = reader.skip(
+            _MEMBER3_RECORD_FIXED_PREFIX_SIZE,
+            f"data.member3[{index}].anonymousFixedPrefix",
+        )
+        nested_member_count = reader.u8(
+            f"data.member3[{index}].nestedObject.memberCount"
+        )
+        if nested_member_count != NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT:
+            raise NpcMontageFramingError(
+                f"data.member3[{index}].nestedObject.memberCount:"
+                f"expected={NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT} "
+                f"actual={nested_member_count}"
+            )
+        nested_body = reader.skip(
+            _MEMBER3_NESTED_OBJECT_BODY_SIZE,
+            f"data.member3[{index}].nestedObject.anonymousBody",
+        )
+        anonymous_utf8_b = _read_anonymous_utf8(
+            reader, f"data.member3[{index}].anonymousUtf8B"
+        )
+        inner_count_offset = reader.offset
+        inner_count = reader.u32(f"data.member3[{index}].inner.count")
+        if inner_count > (
+            len(reader.data) - reader.offset
+        ) // _MEMBER3_MIN_INNER_RECORD_SIZE:
+            raise NpcMontageFramingError(
+                f"data.member3[{index}].inner:count-overrun "
+                f"count={inner_count} remaining={len(reader.data) - reader.offset}"
+            )
+        inner_records: list[dict[str, Any]] = []
+        for inner_index in range(inner_count):
+            inner_start = reader.offset
+            inner_member_count = reader.u8(
+                f"data.member3[{index}].inner[{inner_index}].memberCount"
+            )
+            if inner_member_count != NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT:
+                raise NpcMontageFramingError(
+                    f"data.member3[{index}].inner[{inner_index}].memberCount:"
+                    f"expected={NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT} "
+                    f"actual={inner_member_count}"
+                )
+            inner_utf8_a = _read_anonymous_utf8(
+                reader,
+                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8A",
+            )
+            inner_fixed = reader.skip(
+                _MEMBER3_INNER_RECORD_FIXED_SIZE,
+                f"data.member3[{index}].inner[{inner_index}].anonymousFixed",
+            )
+            inner_utf8_b = _read_anonymous_utf8(
+                reader,
+                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8B",
+            )
+            inner_utf8_c = _read_anonymous_utf8(
+                reader,
+                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8C",
+            )
+            inner_records.append(
+                {
+                    "memberCount": inner_member_count,
+                    "startOffset": inner_start,
+                    "endOffset": reader.offset,
+                    "anonymousUtf8Ranges": [
+                        inner_utf8_a,
+                        inner_utf8_b,
+                        inner_utf8_c,
+                    ],
+                    "anonymousFixedRange": inner_fixed,
+                }
+            )
+        fixed_suffix = reader.skip(
+            _MEMBER3_RECORD_FIXED_SUFFIX_SIZE,
+            f"data.member3[{index}].anonymousFixedSuffix",
+        )
+        records.append(
+            {
+                "memberCount": member_count,
+                "startOffset": start,
+                "endOffset": reader.offset,
+                "nestedObjectMemberCount": nested_member_count,
+                "anonymousUtf8Ranges": [anonymous_utf8_a, anonymous_utf8_b],
+                "anonymousFixedRanges": [fixed_prefix, nested_body, fixed_suffix],
+                "innerCountOffset": inner_count_offset,
+                "innerRecords": inner_records,
+            }
+        )
+    return records
+
+
 def frame_npc_montage(data: bytes) -> dict[str, Any]:
     """Frame one supported current-build NPC montage through physical EOF.
 
-    Member3 must be empty. Member18 is consumed only through its explicit
-    count and per-record member-count markers. No suffix scanning is used.
+    Both variable collections are consumed only through explicit counts,
+    length-prefixed values, fixed anonymous extents, and per-record member-count
+    markers. No suffix scanning is used.
     """
     reader = _Reader(data)
     root_count = reader.u8("root.memberCount")
@@ -211,11 +359,7 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
 
     dynamic_count_offset = reader.offset
     dynamic_count = reader.u32("data.member3.count")
-    if dynamic_count != 0:
-        raise NpcMontageFramingError(
-            "data.member3:unsupported-nonempty-collection "
-            f"count={dynamic_count} offset={format_offset(dynamic_count_offset)}"
-        )
+    member3_records = _read_member3_records(reader, dynamic_count)
     reader.boolean("data.member4")
     reader.boolean("data.member5")
     anonymous_ranges = [
@@ -262,9 +406,13 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
 
     return {
         "status": (
-            "exact_current_npc_montage_empty_collection_frame"
-            if override_count == 0
-            else "exact_current_npc_montage_member18_counted_frame"
+            "exact_current_npc_montage_member3_counted_frame"
+            if dynamic_count
+            else (
+                "exact_current_npc_montage_empty_collection_frame"
+                if override_count == 0
+                else "exact_current_npc_montage_member18_counted_frame"
+            )
         ),
         "schemaStatus": "anonymous_exact_frame",
         "serializedMemberCount": root_count,
@@ -273,9 +421,10 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
         "clipInfo": clip_info,
         "collectionCountOffsets": [dynamic_count_offset, override_count_offset],
         "emptyCollectionOffsets": [
-            dynamic_count_offset,
+            *([dynamic_count_offset] if dynamic_count == 0 else []),
             *([override_count_offset] if override_count == 0 else []),
         ],
+        "member3Records": member3_records,
         "member18Records": member18_records,
         "rootRawMembers": [
             {"index": 0, "offset": 1, "value": root_member0},
@@ -286,9 +435,9 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
             "The complete supported shape is consumed through physical EOF. "
             "The nested UTF-8 value and all scalar/fixed-size records stay "
             "anonymous; non-empty strings are gated to the observed A_* shape. "
-            "Member18 records are bounded by an explicit collection count and "
-            "five-member record markers; their values remain anonymous. "
-            "Non-empty member3 collections are not decoded."
+            "Member3 and member18 records are bounded by explicit collection "
+            "counts and nested member-count markers; their values remain "
+            "anonymous."
         ),
     }
 

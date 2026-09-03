@@ -23,7 +23,7 @@ def _anonymous_record(text: str, lists: tuple[tuple[int, ...], ...]):
     return bytes(record), tuple(pointers[:4])
 
 
-def _fixture(*, count1=2, count2=2, opaque_prefix=b"pre!", opaque_suffix=b"suffix"):
+def _fixture(*, count1=2, count2=2, opaque_suffix=b"suffix"):
     text1 = "a" * 36
     text2 = "b" * 32
     out = bytearray()
@@ -44,13 +44,21 @@ def _fixture(*, count1=2, count2=2, opaque_prefix=b"pre!", opaque_suffix=b"suffi
     out += struct.pack("<I", 4 + count2 * 48)
     out += struct.pack("<I", count2)
     rows3 = bytearray(count2 * 48)
-    variable_payload = bytearray(opaque_prefix)
-    for index in range(count2):
-        struct.pack_into("<I", rows3, index * 48, index)
-        record, relative_pointers = _anonymous_record(
+    records = [
+        _anonymous_record(
             f"row-{index}",
             ((index,), (), (index, index + 1)),
         )
+        for index in range(count2)
+    ]
+    # The selected manifests contain the same anonymous grammar in two
+    # differently ordered regions. The parser proves each region's framing,
+    # not an ordering or ownership relationship between them.
+    variable_payload = bytearray(
+        b"".join(record for record, _pointers in reversed(records))
+    )
+    for index, (record, relative_pointers) in enumerate(records):
+        struct.pack_into("<I", rows3, index * 48, index)
         record_start = len(variable_payload)
         for pointer_index, relative_pointer in enumerate(relative_pointers, 1):
             struct.pack_into(
@@ -83,8 +91,14 @@ class BundleManifestTests(unittest.TestCase):
             result.tables[2].to_dict()["rowSequenceWitness"]["wordOffset"], 0
         )
         self.assertEqual(result.variable_region.indexed_record_count, 3)
-        self.assertEqual(result.variable_region.opaque_prefix_length, len(b"pre!"))
+        self.assertEqual(result.variable_region.sequential_record_count, 3)
+        self.assertEqual(
+            result.variable_region.sequential_region_length,
+            result.variable_region.indexed_region_length,
+        )
         self.assertEqual(result.variable_region.opaque_suffix_length, len(b"suffix"))
+        self.assertEqual(result.variable_region.sequential_integer_list_count, 9)
+        self.assertEqual(result.variable_region.sequential_integer_value_count, 9)
         self.assertEqual(result.variable_region.indexed_integer_list_count, 9)
         self.assertEqual(result.variable_region.indexed_integer_value_count, 9)
         self.assertEqual(result.variable_region.end_offset, len(decoded))
@@ -95,7 +109,7 @@ class BundleManifestTests(unittest.TestCase):
         self.assertEqual(result.tables[0].to_dict()["fieldStatus"], "opaque")
         self.assertEqual(
             result.variable_region.to_dict()["recordStatus"],
-            "partially-framed-anonymous",
+            "two-regions-framed-anonymous",
         )
 
     def test_compressed_input_records_hashes(self):
@@ -145,6 +159,61 @@ class BundleManifestTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(BinaryFormatError, "indexed range"):
             parse_decompressed_bundle_manifest(decoded, source="pointer-gap")
+
+    def test_rejects_sequential_utf16_terminator_mutation(self):
+        decoded = bytearray(_fixture(count2=1))
+        parsed = parse_decompressed_bundle_manifest(decoded, source="control")
+        string_terminator = (
+            parsed.variable_region.payload_offset
+            + 4
+            + len("row-0".encode("utf-16-le"))
+        )
+        decoded[string_terminator] = 1
+        with self.assertRaisesRegex(
+            BinaryFormatError, "sequential row 0 UTF-16 component.*terminator"
+        ):
+            parse_decompressed_bundle_manifest(decoded, source="bad-prefix-string")
+
+    def test_rejects_sequential_invalid_utf16(self):
+        decoded = bytearray(_fixture(count2=1))
+        parsed = parse_decompressed_bundle_manifest(decoded, source="control")
+        string_bytes = parsed.variable_region.payload_offset + 4
+        decoded[string_bytes : string_bytes + 2] = b"\0\xd8"
+        with self.assertRaisesRegex(
+            BinaryFormatError, "sequential row 0 UTF-16 component.*strict UTF-16LE"
+        ):
+            parse_decompressed_bundle_manifest(decoded, source="bad-prefix-utf16")
+
+    def test_rejects_sequential_list_count_overrun(self):
+        decoded = bytearray(_fixture(count2=1))
+        parsed = parse_decompressed_bundle_manifest(decoded, source="control")
+        first_list = (
+            parsed.variable_region.payload_offset
+            + 4
+            + len("row-0".encode("utf-16-le"))
+            + 2
+        )
+        struct.pack_into("<I", decoded, first_list, 999)
+        with self.assertRaisesRegex(
+            BinaryFormatError, "sequential row 0 list 1 ends.*after region end"
+        ):
+            parse_decompressed_bundle_manifest(decoded, source="bad-prefix-count")
+
+    def test_rejects_sequential_list_terminator_mutation(self):
+        decoded = bytearray(_fixture(count2=1))
+        parsed = parse_decompressed_bundle_manifest(decoded, source="control")
+        first_list = (
+            parsed.variable_region.payload_offset
+            + 4
+            + len("row-0".encode("utf-16-le"))
+            + 2
+        )
+        count = struct.unpack_from("<I", decoded, first_list)[0]
+        decoded[first_list + 4 + count * 4] = 1
+        with self.assertRaisesRegex(
+            BinaryFormatError, "sequential row 0 list 1.*terminator"
+        ):
+            parse_decompressed_bundle_manifest(decoded, source="bad-prefix-list-end")
 
     def test_rejects_indexed_nonmonotonic_pointers(self):
         decoded = bytearray(_fixture(count2=1))
