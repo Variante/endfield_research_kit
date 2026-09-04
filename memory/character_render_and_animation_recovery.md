@@ -128,9 +128,11 @@ only.
   until the retail producer and consumer are independently closed.
 - The graphics-only Full screen-shadow observer is pinned to the August 25
   client through a dedicated five-file manifest and passes installed-client
-  preflight without native gameplay/IL2CPP hooks. Deferred presentation remains
-  fail-closed until a complete current-outfit session validates the same-frame
-  t11 producer-to-Default-resolver content handoff.
+  preflight without native gameplay/IL2CPP hooks. Current dense evidence proves
+  that two instanced fullscreen producers write one RG8 resource consumed by
+  Default Deferred at PS t7; Default t11 is a distinct upstream resource also
+  sampled by the scene producer at t5. Deferred presentation remains fail-closed
+  until a corrected current-outfit capture validates the draw-local t7 payload.
 - The AnimeStudio-owned shader recovery path may provide readable code and
   metadata. It does not prove runtime variant selection or final appearance.
 
@@ -170,15 +172,21 @@ sessions.
 That lifecycle question now has a distinct observation contract rather than a
 weakened trajectory claim. EndfieldCapture's diagnostic-only
 `registration-timing full` profile retains one name-authenticated AddCloth
-return QPC per Endminf owner plus counts and native identities independently of
-trajectory-window readiness; its domain gate rejects recreated owners, clock,
-thread, lifecycle, hierarchy, publication, and shutdown failures. The lab
+return QPC per Endminf owner plus a bounded ledger of every matching clock,
+team/generation, and object identity independently of trajectory-window
+readiness. Its native source gate requires complete ledger accounting and rejects
+capacity loss, missing owners, clock, thread, lifecycle, hierarchy, publication,
+and shutdown failures; the lab semantic verifier still rejects repeated names
+without a visible-actor identity join. The lab
 verifier joins those ticks only to the same session's complete Animator
 timeline. A dedicated August 25 manifest now authenticates all five visual
 files, and the runtime pins only the current AddCloth/identity dependencies;
 trajectory hooks and windows remain disabled. The installed-client preflight
-passes. Three fresh-process timing sessions remain to distinguish deterministic
-pre-visible warm-up from cache state.
+passes. One diagnostic session observed four registrations per name among 179
+distinct cloth teams in one complete Animator entry; those first timestamps are
+not attributable to the visible actor. The v2 observer now retains every named
+registration; one new session must establish the identity cohorts before a
+visible-actor join and fresh-process timing can distinguish warm-up from cache state.
 
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
