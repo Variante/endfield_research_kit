@@ -338,6 +338,10 @@ build and collection procedure.
   dedicated worker attempts deferred preallocation with no attached device.
   The observer now publishes readiness only after attachment and hook success,
   with a real D3D11 bootstrap/first-Present regression covering this boundary.
+  Its timing-only mode also excludes the regular Present-driven scheduler and
+  rejects unrelated lanes: startup and post-Play waiting must remain idle until
+  the authenticated shader draw. WARP regressions cover both waiting intervals;
+  a fresh retail collection is still required.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
