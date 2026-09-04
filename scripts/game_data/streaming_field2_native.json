@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.streaming-field2-native-contract.v2",
+  "schema": "endfield.streaming-field2-native-contract.v3",
   "status": "validated",
-  "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-and-field5-vector-layout",
+  "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-carrier-and-scene-object-chain",
   "nativeInputs": {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
     "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
@@ -207,13 +207,198 @@
       "size": 10,
       "bodySha256": "A43D363F0749CA35AA40EAF4A93204B5FAF80ABC661B42A4A9BF6BB40BE29624",
       "entryBytesHex": "8BC2486BC038480301C3"
+    },
+    {
+      "role": "createInjectedManagedMarshaller",
+      "rva": 3660912,
+      "fileOffset": 3658352,
+      "size": 165,
+      "bodySha256": "38DA5872E79F4D49C76DDD83E9EBED58F2C8195AB3589F6B965E6D9C952961A4",
+      "entryBytesHex": "48895C24084C89442418574883EC50488BFA488BD9488B124885D27421488D4C"
+    },
+    {
+      "role": "streamingChunkInfoPathFormatter",
+      "rva": 3668336,
+      "fileOffset": 3665776,
+      "size": 74,
+      "bodySha256": "7379CADCF4602893979E46E7C05EB3DDF4E16E36ACA6D671A9DCBB8A758F192A",
+      "entryBytesHex": "4C8BDC534883EC50488B05D9B88E01488BD9498943E8488D05FB1D8E01498943"
+    },
+    {
+      "role": "streamingPathLookupPrologue",
+      "rva": 1967200,
+      "fileOffset": 1964640,
+      "size": 9,
+      "bodySha256": "2A0A80622A2957403616D31E7C7F290A8384AF183959A050966F2F7768923B27",
+      "entryBytesHex": "40574881ECB0010000"
+    },
+    {
+      "role": "streamingPathLookupBody",
+      "rva": 1967209,
+      "fileOffset": 1964649,
+      "size": 607,
+      "bodySha256": "1CD689A3D6691CE87439E4EDE555E9473C30860CEB2B5C43F2B90E901219C3BB",
+      "entryBytesHex": "48899C24C8010000488BFA488BD9E83803D700488D4C2470488B90C8010000E8"
+    },
+    {
+      "role": "scenePrimaryManagerWrapperConstructor",
+      "rva": 3668416,
+      "fileOffset": 3665856,
+      "size": 68,
+      "bodySha256": "245E7A9F1CC83B6D6801CFBC08DB80B2816AE2C4E33960CBF5F8B6AE9C21C51E",
+      "entryBytesHex": "4889114C8D0DFE554E018B024533C04489411C8941204C8949084C8941108B02"
+    },
+    {
+      "role": "sceneRootField3VectorAccessor",
+      "rva": 16048720,
+      "fileOffset": 16046160,
+      "size": 41,
+      "bodySha256": "AE5C7AF45D93DE016AEB76B75AD6D5BCB79764F2FBF56C282B6CC19ED210577D",
+      "entryBytesHex": "486301488BD1482BD0B80A000000663B0273130FB7420A488D14016685C07406"
+    },
+    {
+      "role": "sceneRootRowField0InlineAccessorThunk",
+      "rva": 16070324,
+      "fileOffset": 16067764,
+      "size": 10,
+      "bodySha256": "609AA01939A861DB8963A861BDB46D90204CCB2AD5ECFEFEE1DB49BFA53CD84A",
+      "entryBytesHex": "BA04000000E9927F26FF"
+    },
+    {
+      "role": "sceneRootRowField1PairVectorAccessor",
+      "rva": 16070360,
+      "fileOffset": 16067800,
+      "size": 41,
+      "bodySha256": "D33FB48FDFEEDD1D29604F2DF59A484B7CC8D15B97D0D933180BEF6B64A0F4D0",
+      "entryBytesHex": "486301488BD1482BD0B806000000663B0273130FB74206488D14016685C07406"
+    },
+    {
+      "role": "sceneRootPairSetInsert",
+      "rva": 3664832,
+      "fileOffset": 3662272,
+      "size": 145,
+      "bodySha256": "12AAEFE316862EB5B09E54C1757C8283DBD7A913CE6AD435FDCD9A89B323F519",
+      "entryBytesHex": "4889742410574883EC30488BF2488BF94C8BC24883C128488D542420E8CF0200"
+    },
+    {
+      "role": "setStateInjected",
+      "rva": 5561248,
+      "fileOffset": 5558688,
+      "size": 15,
+      "bodySha256": "0006CBF9B9D63E1642D28E5A7AA4DB9039E0CAB5EE1630FEC3ABFD9A68B41250",
+      "entryBytesHex": "488B094584C0410F95C0E985F01101"
+    },
+    {
+      "role": "setStateManagerThunk",
+      "rva": 23514164,
+      "fileOffset": 23511604,
+      "size": 9,
+      "bodySha256": "704A4997D8E4FBF1AD3D11F7CBE226ED28AE9202674D53DCCA05D9A79E184D3D",
+      "entryBytesHex": "488B4908E92320D1FE"
+    },
+    {
+      "role": "managerStateFilter",
+      "rva": 3664992,
+      "fileOffset": 3662432,
+      "size": 423,
+      "bodySha256": "1F58195AD0D60ABB9CDB20DEA47293F03A95D32B145DEBB7918AF174CDC5C925",
+      "entryBytesHex": "895424104154415541574883EC70450FB6E0448BEA4C8BF94C8D842498000000"
+    },
+    {
+      "role": "updateSetInjected",
+      "rva": 5645472,
+      "fileOffset": 5642912,
+      "size": 8,
+      "bodySha256": "68FD616955B90D52884A4D820E2E3062913E5A9FB05BB825587BD9D1E93105D9",
+      "entryBytesHex": "488B09E9F829CFFF"
+    },
+    {
+      "role": "anonymousSceneObjectCaller",
+      "rva": 2442896,
+      "fileOffset": 2440336,
+      "size": 367,
+      "bodySha256": "E6BA2C6B60B8FB6702607199150D6C5903BBD8517A65A46CF8E483E0A94A5F96",
+      "entryBytesHex": "48895C240848896C2410488974241848897C242041564883EC204C8B5108488B"
+    },
+    {
+      "role": "wrapperCandidatePopulation",
+      "rva": 2441520,
+      "fileOffset": 2438960,
+      "size": 758,
+      "bodySha256": "86CEE98EBA7730FCC2D767D59CEC26B1DC63B8D179A534CB6F14FC291FA05435",
+      "entryBytesHex": "48895C241048894C24085556574154415541564157488D6C24D94881ECB00000"
+    },
+    {
+      "role": "rootRecordSpatialSelection",
+      "rva": 2452400,
+      "fileOffset": 2449840,
+      "size": 422,
+      "bodySha256": "D6B1104FC68C4FAC085EB72A68135516B01AA9CD7FBDB862ACF374DD0C4EC753",
+      "entryBytesHex": "405541544155415641574883EC70F30F10024D8BF0F30F5C42080F297424504C"
+    },
+    {
+      "role": "rootRecordHandleAssembly",
+      "rva": 2452832,
+      "fileOffset": 2450272,
+      "size": 179,
+      "bodySha256": "AD754836EED2C97D722A3DEC4F4DDE2B6178F83AE9861FA92BED322C1DCCBF51",
+      "entryBytesHex": "48895C241848896C24204889542410574883EC50488BF9498BE8488B094C8D44"
+    },
+    {
+      "role": "rowConsumerCaller",
+      "rva": 2443824,
+      "fileOffset": 2441264,
+      "size": 581,
+      "bodySha256": "5ABB955BB77D71F413904EB6A9DABB9A4158672717639CD55BF87ADE46AB170C",
+      "entryBytesHex": "48895C2420555657488D6C24B94881EC90000000488BF1498BD84883C128488B"
+    },
+    {
+      "role": "secondaryPathFormatterA",
+      "rva": 5035104,
+      "fileOffset": 5032544,
+      "size": 292,
+      "bodySha256": "3D4181C7B81D781D88A217747E58FD51AA68DE369085F714CCD950FD98DD6568",
+      "entryBytesHex": "40534883EC70488D05F79A3A014584C94889842488000000488BD9488D05D87C"
+    },
+    {
+      "role": "secondaryPathFormatterB",
+      "rva": 5035408,
+      "fileOffset": 5032848,
+      "size": 292,
+      "bodySha256": "694B4683D9E0E86136684D73E370BE94710851380450C07456906CEBB708C767",
+      "entryBytesHex": "40534883EC70488D058B993A014584C94889842488000000488BD9488D05A87B"
+    },
+    {
+      "role": "secondarySuccessfulBase",
+      "rva": 2086896,
+      "fileOffset": 2084336,
+      "size": 39,
+      "bodySha256": "57A33E8289BD53E787EAF42009EEBAD2BA6FA1EAD0059802A4478A7BD57A7658",
+      "entryBytesHex": "40534883EC20488BD9E8A2FCFFFF85C0750D488B03488B40684883C4205BC333"
+    },
+    {
+      "role": "secondaryRootResolver",
+      "rva": 5198736,
+      "fileOffset": 5196176,
+      "size": 244,
+      "bodySha256": "A34D06E040D5B811548036A00ECED256F5E664C9C544CACD8C98A6ED00014BC9",
+      "entryBytesHex": "48895C2408574883EC70488BF9498BD8488BCAE84884D0FF4885C0750433D2EB"
+    },
+    {
+      "role": "secondaryRootField2VectorAccessor",
+      "rva": 16070404,
+      "fileOffset": 16067844,
+      "size": 41,
+      "bodySha256": "E4C2E5D3E33A0C3469F1A29C7FAC66A36E7CC4B4B0C83C030221377697161F95",
+      "entryBytesHex": "486301488BD1482BD0B808000000663B0273130FB74208488D14016685C07406"
     }
   ],
   "utf8Strings": [
     {"role": "field2DuplicateDiagnostic", "rva": 26979248, "text": "Grid with layer %u / sceneStateId %d / pos (%d, %d) already exist"},
     {"role": "streamingNormalPathTemplate", "rva": 26978976, "text": "{0}/{1}.bytes"},
     {"role": "streamingDevPathTemplate", "rva": 26978880, "text": "{0}/[dev]{1}.bytes"},
-    {"role": "streamingLoadFailureDiagnostic", "rva": 26978944, "text": "[Streaming] Failed to load %s"}
+    {"role": "streamingLoadFailureDiagnostic", "rva": 26978944, "text": "[Streaming] Failed to load %s"},
+    {"role": "streamingStaticFirstReadLeaf", "rva": 27951632, "text": "StreamingChunkInfo"}
   ],
   "rowLayout": [
     {"fieldIndex": 0, "vtableEntryOffset": 4, "representation": "little-endian-scalar32"},
@@ -258,14 +443,18 @@
     "rootRepresentation": "payload-base+little-endian-u32(payload-base)",
     "rootVersionField0RequiredValue": 1,
     "baseLengthStatus": "exact-selected-build-family-level-native-carrier",
-    "logicalFileJoinStatus": "candidate-family-only-no-concrete-runtime-path",
-    "finalCursorStatus": "unresolved-not-exposed-to-flatbuffer-accessors",
-    "rowConsumerCarrierJoinStatus": "unresolved-runtime-handle-intermediate"
+    "staticFirstReadLeaf": "StreamingChunkInfo",
+    "staticFirstReadNormalTemplate": "{runtimeRoot}/StreamingChunkInfo.bytes",
+    "staticFirstReadDevTemplate": "{runtimeRoot}/[dev]StreamingChunkInfo.bytes",
+    "logicalFileJoinStatus": "bounded-authenticated-candidates-no-concrete-runtime-root",
+    "finalCursorStatus": "exact-selected-closure-pointer-only-no-final-cursor",
+    "rowConsumerCarrierJoinStatus": "exact-static-object-chain-concrete-create-instance-unresolved",
+    "rowConsumerRuntimeHandleRepresentation": "anonymous-little-endian-dword[4]"
   },
   "evidenceBoundary": {
     "exact": "Current GameAssembly.dll, global-metadata.dat, UnityPlayer.dll, the bounded row construction and runtime-consumer bodies, record copy/index helpers, scalar lookup, and each accessor body are hash-gated before the representation claim is published.",
-    "direct": "The selected row consumer reads fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed 32-bit loads, and field 4 through an inline pointer followed by six float32 loads. It stores the source row pointer at byte 16 of a copied 72-byte runtime record. A later state consumer reloads that pointer, obtains vtable entry 14, reads the vector count, and loads each element at vector+4+index*4 before passing the 32-bit value as a hash-table lookup key.",
-    "structuralOnly": "The contract proves stored value representations for anonymous fields 0-5, direct field-5 iteration, and a family-level carrier base/requested-length/actual-length contract. It does not prove a managed serialized field order, the key namespace, or the identity of one authenticated logical file at the native carrier boundary.",
-    "unresolved": "The concrete runtime path-to-authenticated-logical-file join, an outer-length check in FlatBuffer accessors, a final cursor, and the intermediate object path from scene root to the later row consumer are not closed. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved."
+    "direct": "The selected row consumer reads fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed 32-bit loads, and field 4 through an inline pointer followed by six float32 loads. It stores the source row pointer at byte 16 of a copied 72-byte runtime record. A later state consumer reloads that pointer, obtains vtable entry 14, reads the vector count, and loads each element at vector+4+index*4 before passing the 32-bit value as a hash-table lookup key. The first scene read formats the static leaf StreamingChunkInfo under an unavailable runtime root. A separate static object chain propagates anonymous scene-root pairs through a state-selected 16-byte handle to two secondary reads, then reaches the second secondary root's vtable-entry-8 row vector and this row consumer.",
+    "structuralOnly": "The contract proves stored value representations for anonymous fields 0-5, direct field-5 iteration, a family-level carrier base/requested-length/actual-length contract, and the selected static scene-object chain. It does not prove a managed serialized field order, the key namespace, one concrete Create instance, or the identity of one authenticated logical file at either native read boundary.",
+    "unresolved": "The concrete runtime root/path-to-authenticated-logical-file joins and scheduler edge to one Create instance are not closed. The selected closure is proven pointer-only after I/O and therefore has no outer-length offset checks, parsed-length result, or final cursor; differently encoded, inlined, dynamically dispatched, or unconnected verifier code elsewhere remains unexcluded. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved."
   }
 }

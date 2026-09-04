@@ -11,7 +11,7 @@ from scripts.tests.test_streaming import (
     _field2_streaming_full_layout_root,
     _info_root,
     _packed,
-    _parallel_data_root,
+    _parallel_nested_data_root,
 )
 
 
@@ -33,9 +33,11 @@ class StreamingCorpusTests(unittest.TestCase):
             ],
             "carrierObservations": {
                 "baseLengthStatus": "exact-selected-build-family-level-native-carrier",
-                "logicalFileJoinStatus": "candidate-family-only-no-concrete-runtime-path",
-                "finalCursorStatus": "unresolved-not-exposed-to-flatbuffer-accessors",
-                "rowConsumerCarrierJoinStatus": "unresolved-runtime-handle-intermediate",
+                "staticFirstReadLeaf": "StreamingChunkInfo",
+                "logicalFileJoinStatus": "bounded-authenticated-candidates-no-concrete-runtime-root",
+                "finalCursorStatus": "exact-selected-closure-pointer-only-no-final-cursor",
+                "rowConsumerCarrierJoinStatus": "exact-static-object-chain-concrete-create-instance-unresolved",
+                "rowConsumerRuntimeHandleRepresentation": "anonymous-little-endian-dword[4]",
             },
             "validationFailures": [],
         }
@@ -47,7 +49,7 @@ class StreamingCorpusTests(unittest.TestCase):
 
     def _fixture(self, root: Path) -> tuple[Path, Path, Path, str]:
         input_set = "A" * 64
-        init = _packed(_parallel_data_root())
+        init = _packed(_parallel_nested_data_root())
         streaming_clear = bytearray(_field2_streaming_full_layout_root())
         streaming_clear[128:132] = (7).to_bytes(4, "little")
         streaming_clear[132:136] = (9).to_bytes(4, "little")
@@ -198,16 +200,27 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(numeric["field2PresentAndToken3Match"], 1)
         self.assertEqual(numeric["field3FloorDiv128BothLanesMatch"], 1)
         self.assertEqual(numeric["field3ResidualValues"], [32, 96])
-        self.assertEqual(result["layer3"]["parallelRowCount"], 2)
-        self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 2)
+        self.assertEqual(result["layer3"]["parallelRowCount"], 1)
+        self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 1)
         self.assertEqual(result["layer3"]["field5Field0Representation"], "ambiguous")
+        self.assertEqual(result["layer3"]["parallelField5Field5VectorCount"], 1)
+        self.assertEqual(result["layer3"]["parallelField5Field5ValueCount"], 0)
+        self.assertEqual(
+            result["layer3"]["parallelField5Field3NestedTableCount"], 1
+        )
+        self.assertEqual(
+            result["layer3"]["parallelField5Field3NestedParallelCount"], 2
+        )
         self.assertEqual(
             result["layer4"]["nativeCarrierStatus"],
             "exact-selected-build-family-level-native-carrier",
         )
         self.assertEqual(
             result["layer4"]["nativeFinalCursorStatus"],
-            "unresolved-not-exposed-to-flatbuffer-accessors",
+            "exact-selected-closure-pointer-only-no-final-cursor",
+        )
+        self.assertEqual(
+            result["layer4"]["nativeStaticFirstReadLeaf"], "StreamingChunkInfo"
         )
 
     def test_stale_input_set_fails_provenance(self):

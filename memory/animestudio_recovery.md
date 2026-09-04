@@ -244,26 +244,34 @@ Current durable boundaries:
   integers. The Global family has a separate present-field 1/2 relation to its
   two integers. A separately hash-gated family-level native read path now
   closes its payload base, requested length, returned byte count, exact-read
-  success branch, and `base + u32(base)` root calculation. It does not expose
-  the concrete runtime path, pass the outer length into FlatBuffer accessors,
-  or produce a final cursor, so it is not joined to one authenticated logical
-  file. These fields remain anonymous: the field-5 key namespace and signedness
-  are unresolved, and the matching managed `GridData` shape is candidate-only.
-  Root fields
-  3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables, and a
-  bounded row-field-0 byte range whose string/byte-vector representation stays
-  ambiguous. Root fields 6/7 retain paired-group, descriptor, and blob-length
-  closure. Bytes outside the three subgraphs stay opaque; no union, entity,
-  component, matrix, descriptor, field name, or runtime meaning follows.
+  success branch, and `base + u32(base)` root calculation. Its first formatted
+  leaf is exactly `StreamingChunkInfo`, but the runtime root is unavailable,
+  leaving a bounded authenticated candidate set instead of one logical-file
+  identity. After I/O the selected closure is proven pointer-only: outer
+  length never reaches the FlatBuffer accessors and no parsed-length or final
+  cursor exists there. A separate hash-gated static chain carries anonymous
+  scene-root pairs through a state-selected 16-byte handle to two secondary
+  reads and the second root's field-2 row vector; the scheduler edge to one
+  concrete Create instance and both concrete paths remain unresolved. These
+  fields remain anonymous: the field-5 key namespace and signedness are
+  unresolved, and the matching managed `GridData` shape is candidate-only.
+  Root fields 3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables,
+  and a bounded row-field-0 byte range whose string/byte-vector representation
+  stays ambiguous. Rows with field 5 also close that field as a width-4 vector
+  and field 3 as a nested table whose fields 3/4/5 are equal-count
+  width-4/1/4 vectors; their elements and targets remain opaque. Root fields
+  6/7 retain paired-group, descriptor, and blob-length closure. Bytes outside
+  the certified subgraphs stay opaque; no union, entity, component, matrix,
+  descriptor, field name, or runtime meaning follows.
 - Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
   and value pools. FacBoneTRS proves its file-provided unit count, observed
   boundary overlaps, contiguous bone records, and 64-byte ranges through EOF;
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Terrain block/channel meaning, Streaming's concrete carrier-to-authenticated-
-  file/final-cursor join and field-5 key namespace/ownership, deeper parallel
-  field-5 children,
+- Terrain block/channel meaning, Streaming's concrete runtime-root/secondary-
+  path joins and field-5 key namespace/ownership, nested parallel-vector
+  element targets,
   remaining tails,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
@@ -344,8 +352,8 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 ## Remaining gaps
 
 - Complete inner semantics for the unresolved VFS payload families, starting
-  with the Streaming carrier's concrete authenticated-file/final-cursor join
-  and field-5 key namespace/ownership.
+  with Streaming's concrete runtime-root/secondary-path joins, nested
+  parallel-vector element targets, and field-5 key namespace/ownership.
 - Improve per-object clean/partial/error certification and dependency diagnostics.
 - Recover more exact MonoBehaviour and managed-reference schemas.
 - Expand shader-container coverage and complete semantic shader fixtures.

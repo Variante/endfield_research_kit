@@ -82,19 +82,27 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   Current numeric filenames exactly relate to present
   fields 1/2 and the floor-divided field-3 lanes, while Global filenames keep
   a separate exact fields-1/2 relation. These are anonymous structural
-  relations, not coordinate or gameplay names. Root fields
-  3/4/5 use widths 4/1/4 with equal counts,
-  bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
-  independent paired-group subgraph. The field-0 representation remains
-  string/byte-vector ambiguous; deeper row children, cross-file ownership,
-  runtime use, and all game semantics remain unresolved. A separately gated
-  family-level native reader closes payload base, requested length, returned
-  count, exact-read success, and `base + u32(base)` root calculation. Its
-  concrete runtime path is unavailable, its FlatBuffer accessors receive no
-  outer length, and it exposes no final cursor, so it is not joined to one
-  authenticated logical file. A managed `GridData` shape and the consumer
-  diagnostic provide name candidates only; field-5 signedness/key namespace is
-  not established, so no serialized field name is promoted.
+  relations, not coordinate or gameplay names. Root fields 3/4/5 use widths
+  4/1/4 with equal counts, bounded field-5 row tables and row-field-0 byte
+  ranges; fields 6/7 form the independent paired-group subgraph. For rows with
+  field 5, that field is an independent width-4 vector and field 3 reaches an
+  anonymous nested table whose fields 3/4/5 are equal-count width-4/1/4
+  vectors. The field-0 representation remains string/byte-vector ambiguous;
+  nested vector elements/targets, cross-file ownership, runtime use, and all
+  game semantics remain unresolved. A separately gated family-level native
+  reader closes payload base, requested length, returned count, exact-read
+  success, and `base + u32(base)` root calculation. Its first formatted leaf
+  is exactly `StreamingChunkInfo`, but the runtime root remains unavailable,
+  so the authenticated current files are a bounded candidate set rather than
+  one joined identity. The selected post-I/O closure is pointer-only: outer
+  length does not reach the FlatBuffer accessors and no parsed length or final
+  cursor is represented. A second hash-gated static chain propagates anonymous
+  scene-root pairs through a state-selected 16-byte handle, two secondary
+  reads, and the second root's field-2 row vector; its scheduler-to-concrete-
+  Create edge and concrete secondary paths remain unresolved. A managed
+  `GridData` shape and the consumer diagnostic provide name candidates only;
+  field-5 signedness/key namespace is not established, so no serialized field
+  name is promoted.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -242,8 +250,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete the Streaming carrier's concrete authenticated-file/final-cursor
-  join and field-5 key namespace/deep-row structure, Terrain
+- Complete Streaming's concrete runtime-root/secondary-path joins, nested
+  parallel-vector element targets, and field-5 key namespace, then Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

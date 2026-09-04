@@ -9,6 +9,9 @@ anonymous. Both data families additionally expose three exact anonymous
 subgraphs: the paired groups under root fields 6/7, the parallel first-level
 vectors/rows under root fields 3/4/5, and the root-field-2 vector, its direct
 tables/vtables, and the anonymous width-4 vectors reached through row field 5.
+For parallel rows that expose field 5, that field is framed as a width-4 vector
+and field 3 reaches a nested table with equal-count width-4/1/4 vectors; those
+elements and their possible targets remain opaque.
 For the selected build, hash-gated native accessors and consumers establish row
 fields 0--2 as single 32-bit loads, field 3 as two signed 32-bit loads, field 4
 as six 32-bit floating-point loads, and every field-5 vector element as a
@@ -540,15 +543,27 @@ def _parse_parallel_root_subgraph(
 
     The selected corpus proves three equal-length first-level vectors. Field 5
     contains table offsets; each row's field 0 reaches a length-prefixed byte
-    range followed by zero. That physical representation is compatible with
-    both a FlatBuffer string and a byte vector followed by alignment, so this
-    parser deliberately keeps the serialized type ambiguous.
+    range followed by zero. Rows with field 5 also carry an empty width-4
+    vector and field 3 reaches a nested table whose fields 3/4/5 are equal-
+    count width-4/width-1/width-4 vectors. The nested width-4 elements and any
+    objects they may reference remain opaque. Field 0's physical
+    representation is compatible with both a FlatBuffer string and a byte
+    vector followed by alignment, so this parser deliberately keeps the
+    serialized type ambiguous.
     """
 
     ranges: list[tuple[int, int, str, str]] = []
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
     byte_values: Counter[int] = Counter()
     referenced_bytes = 0
+    outer_field5_vectors = 0
+    outer_field5_values = 0
+    nested_tables = 0
+    nested_shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
+    nested_parallel_rows = 0
+    nested_field3_values = 0
+    nested_field4_values = 0
+    nested_field5_values = 0
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -674,6 +689,122 @@ def _parse_parallel_root_subgraph(
         )
         referenced_bytes += value_length
 
+        # Six-field rows expose two additional references. The selected
+        # corpus closes the immediate ranges without assigning a union or
+        # element type: row field 5 is a width-4 vector (empty in the current
+        # corpus), while row field 3 reaches a nested table with three equal-
+        # count parallel vectors.
+        row_field5 = _field_address(row, 5)
+        if row_field5 is not None:
+            ordered_addresses = sorted(
+                int(address)
+                for field_index in row["presentFields"]
+                if (address := _field_address(row, int(field_index))) is not None
+            )
+            slot_spans = {
+                address: (
+                    ordered_addresses[position + 1]
+                    if position + 1 < len(ordered_addresses)
+                    else int(row["tableOffset"]) + int(row["objectSize"])
+                )
+                - address
+                for position, address in enumerate(ordered_addresses)
+            }
+            row_field3 = _field_address(row, 3)
+            if row_field3 is None:
+                raise ValueError(
+                    f"Streaming {family} field 5 row {index} has field 5 "
+                    "without field 3"
+                )
+            for field_index, address in ((3, row_field3), (5, row_field5)):
+                if slot_spans.get(int(address)) != 4:
+                    raise ValueError(
+                        f"Streaming {family} field 5 row {index} field "
+                        f"{field_index} expected 4-byte reference slot, actual "
+                        f"{slot_spans.get(int(address))}"
+                    )
+
+            field5_vector, field5_value_count, field5_vector_end = _bounded_vector(
+                data,
+                row,
+                5,
+                4,
+                f"{family} field 5 row {index} field 5",
+            )
+            own(
+                field5_vector,
+                field5_vector_end,
+                "width-4-vector",
+                f"{family} field 5 row {index} field 5",
+            )
+            outer_field5_vectors += 1
+            outer_field5_values += field5_value_count
+
+            nested_relative = _u32(data, row_field3)
+            nested_target = row_field3 + nested_relative
+            if (
+                nested_relative == 0
+                or nested_target <= row_field3
+                or nested_target + 4 > len(data)
+            ):
+                raise ValueError(
+                    f"Streaming {family} field 5 row {index} field 3 table "
+                    f"target {nested_target} outside payload {len(data)}"
+                )
+            nested = _table_layout(data, nested_target)
+            own(
+                int(nested["vtableOffset"]),
+                int(nested["vtableOffset"]) + int(nested["vtableSize"]),
+                "vtable",
+                f"{family} field 5 row {index} field 3 vtable",
+            )
+            own(
+                int(nested["tableOffset"]),
+                int(nested["tableOffset"]) + int(nested["objectSize"]),
+                "table",
+                f"{family} field 5 row {index} field 3 table",
+            )
+            nested_shape = (
+                int(nested["fieldCount"]),
+                int(nested["objectSize"]),
+                tuple(int(value) for value in nested["presentFields"]),
+            )
+            nested_shapes[nested_shape] += 1
+            nested_vectors = []
+            for nested_field, width in ((3, 4), (4, 1), (5, 4)):
+                vector_start, vector_count, vector_end = _bounded_vector(
+                    data,
+                    nested,
+                    nested_field,
+                    width,
+                    (
+                        f"{family} field 5 row {index} field 3 nested "
+                        f"field {nested_field}"
+                    ),
+                )
+                own(
+                    vector_start,
+                    vector_end,
+                    f"width-{width}-vector",
+                    (
+                        f"{family} field 5 row {index} field 3 nested "
+                        f"field {nested_field}"
+                    ),
+                )
+                nested_vectors.append((nested_field, vector_count))
+            nested_counts = tuple(count for _field, count in nested_vectors)
+            if len(set(nested_counts)) != 1:
+                raise ValueError(
+                    f"Streaming {family} field 5 row {index} field 3 nested "
+                    f"parallel count mismatch: field 3={nested_counts[0]}, "
+                    f"field 4={nested_counts[1]}, field 5={nested_counts[2]}"
+                )
+            nested_tables += 1
+            nested_parallel_rows += nested_counts[0]
+            nested_field3_values += nested_counts[0]
+            nested_field4_values += nested_counts[1]
+            nested_field5_values += nested_counts[2]
+
     # FlatBuffers may reuse vtables and referenced objects. Exact duplicate
     # ranges are references, not overlaps; every non-identical overlap fails.
     unique_ranges = sorted(
@@ -709,6 +840,27 @@ def _parse_parallel_root_subgraph(
             "flatbuffer-string",
             "byte-vector-with-following-zero",
         ],
+        "field5Field5VectorCount": outer_field5_vectors,
+        "field5Field5ValueCount": outer_field5_values,
+        "field5Field5Representation": "count-prefixed-width-4-vector",
+        "field5Field3NestedTableCount": nested_tables,
+        "field5Field3NestedTableShapes": [
+            {
+                "fieldCount": shape[0],
+                "objectSize": shape[1],
+                "presentFields": list(shape[2]),
+                "count": count,
+            }
+            for shape, count in nested_shapes.items()
+        ],
+        "field5Field3NestedParallelWidths": {"3": 4, "4": 1, "5": 4},
+        "field5Field3NestedParallelCount": nested_parallel_rows,
+        "field5Field3NestedFieldValueCounts": {
+            "3": nested_field3_values,
+            "4": nested_field4_values,
+            "5": nested_field5_values,
+        },
+        "field5Field3NestedElementStatus": "opaque-unresolved",
         "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
         "rangeCount": len(unique_ranges),
         "reusedReferences": reused_references,

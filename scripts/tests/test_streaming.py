@@ -124,6 +124,63 @@ def _parallel_data_root() -> bytes:
     return bytes(data)
 
 
+def _parallel_nested_data_root() -> bytes:
+    """One six-field row closes an empty vector and nested parallel vectors."""
+
+    data = bytearray(300)
+    root, root_vtable = 24, 4
+    data[0:4] = root.to_bytes(4, "little")
+    data[root_vtable : root_vtable + 2] = (20).to_bytes(2, "little")
+    data[root_vtable + 2 : root_vtable + 4] = (40).to_bytes(2, "little")
+    for index, value in enumerate((4, 8, 16, 20, 24, 28, 32, 36)):
+        data[root_vtable + 4 + index * 2 : root_vtable + 6 + index * 2] = (
+            value.to_bytes(2, "little")
+        )
+    data[root : root + 4] = (root - root_vtable).to_bytes(
+        4, "little", signed=True
+    )
+    for slot, target in zip(
+        (40, 44, 48, 52, 56, 60),
+        (296, 68, 80, 88, 104, 112),
+    ):
+        data[slot : slot + 4] = (target - slot).to_bytes(4, "little")
+    data[68:76] = (1).to_bytes(4, "little") + (7).to_bytes(4, "little")
+    data[80:85] = (1).to_bytes(4, "little") + b"\x02"
+    data[88:96] = (1).to_bytes(4, "little") + (144 - 92).to_bytes(
+        4, "little"
+    )
+    data[104:108] = (0).to_bytes(4, "little")
+    data[112:116] = (0).to_bytes(4, "little")
+    data[296:300] = (0).to_bytes(4, "little")
+
+    data[128:144] = (16).to_bytes(2, "little") + (40).to_bytes(
+        2, "little"
+    ) + b"".join(value.to_bytes(2, "little") for value in (4, 8, 12, 16, 20, 36))
+    data[144:148] = (16).to_bytes(4, "little", signed=True)
+    data[148:152] = (260 - 148).to_bytes(4, "little")
+    data[152:156] = (5).to_bytes(4, "little")
+    data[156:160] = (6).to_bytes(4, "little")
+    data[160:164] = (200 - 160).to_bytes(4, "little")
+    data[164:180] = bytes(16)
+    data[180:184] = (272 - 180).to_bytes(4, "little")
+
+    data[184:200] = (16).to_bytes(2, "little") + (16).to_bytes(
+        2, "little"
+    ) + b"".join(value.to_bytes(2, "little") for value in (0, 0, 0, 4, 8, 12))
+    data[200:204] = (16).to_bytes(4, "little", signed=True)
+    data[204:208] = (220 - 204).to_bytes(4, "little")
+    data[208:212] = (232 - 208).to_bytes(4, "little")
+    data[212:216] = (240 - 212).to_bytes(4, "little")
+    data[220:232] = (2).to_bytes(4, "little") + (11).to_bytes(
+        4, "little"
+    ) + (13).to_bytes(4, "little")
+    data[232:238] = (2).to_bytes(4, "little") + b"\x01\x00"
+    data[240:252] = (2).to_bytes(4, "little") + bytes(8)
+    data[260:268] = (3).to_bytes(4, "little") + b"abc\0"
+    data[272:276] = (0).to_bytes(4, "little")
+    return bytes(data)
+
+
 def _field2_streaming_root() -> bytes:
     """One field-2 row and its terminal anonymous width-4 vector."""
 
@@ -609,6 +666,43 @@ class StreamingTests(unittest.TestCase):
                 )
                 self.assertEqual(subgraph["reusedReferences"], 2)
                 self.assertEqual(subgraph["wholeFileStatus"], "partial")
+
+    def test_parallel_nested_vectors_are_exact_but_elements_remain_opaque(self):
+        result = parse_streaming_file(
+            "streaming", _packed(_parallel_nested_data_root())
+        )
+        subgraph = result["anonymousParallelSubgraph"]
+        self.assertEqual(subgraph["field5Field5VectorCount"], 1)
+        self.assertEqual(subgraph["field5Field5ValueCount"], 0)
+        self.assertEqual(subgraph["field5Field3NestedTableCount"], 1)
+        self.assertEqual(
+            subgraph["field5Field3NestedParallelWidths"],
+            {"3": 4, "4": 1, "5": 4},
+        )
+        self.assertEqual(subgraph["field5Field3NestedParallelCount"], 2)
+        self.assertEqual(
+            subgraph["field5Field3NestedFieldValueCounts"],
+            {"3": 2, "4": 2, "5": 2},
+        )
+        self.assertEqual(
+            subgraph["field5Field3NestedElementStatus"], "opaque-unresolved"
+        )
+
+    def test_parallel_nested_offsets_and_counts_fail_closed(self):
+        clear = bytearray(_parallel_nested_data_root())
+        clear[160:164] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 3 table target"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_nested_data_root())
+        clear[232:236] = (1).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "nested parallel count mismatch"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_nested_data_root())
+        clear[240:244] = (0xFFFF_FFFF).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "count 4294967295"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
 
     def test_parallel_subgraph_counts_and_offsets_fail_closed(self):
         clear = bytearray(_parallel_data_root())
