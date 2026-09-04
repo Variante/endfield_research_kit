@@ -208,6 +208,7 @@ AnimeStudio offline recovery probes:
 ```bat
 set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 %ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
+python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -219,6 +220,9 @@ set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStud
 These are bundle-free, fail-closed diagnostics. `vfs-audit` streams each
 selected physical chunk once and intentionally returns non-zero for any missing
 or unauthenticated declaration while still publishing its terminal ledger.
+`streaming_corpus` reauthenticates block-15 rows from that ledger and writes
+`reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
+exact `inputSetSha256` from the current outer summary.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

@@ -222,9 +222,14 @@ Current durable boundaries:
   table/vector graph in all 89 current files, including reused/forward vtables
   and 4/8/12-byte vector widths; every nonzero byte is owned and the sole
   four-byte gap is zero alignment. InitChunkData and StreamingChunkData also
-  share one exact anonymous root-field6/7 paired-group subgraph across all
-  current files. Other root fields and remaining bytes stay opaque; no entity,
-  component, matrix, descriptor, or field meaning follows from this structural
+  share two exact anonymous subgraphs across all current files. Root fields
+  3/4/5 are selected-build vectors with observed element widths 4/1/4, equal
+  counts, bounded field-5 row tables, and a bounded row-field-0 byte range.
+  The latter remains ambiguous between a FlatBuffer string and a byte vector
+  followed by zero. Root fields 6/7 retain the paired-group, descriptor, and
+  blob-length closure. Root field 2, all other field-5 children, and bytes
+  outside the two subgraphs stay opaque; no union, entity, component, matrix,
+  descriptor, field name, or runtime meaning follows from this structural
   result.
 - Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
   and value pools. FacBoneTRS proves its file-provided unit count, observed
@@ -232,7 +237,8 @@ Current durable boundaries:
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Terrain block/channel meaning, Init/Streaming tails and field meaning,
+- Terrain block/channel meaning, Streaming root field 2, deeper field-5
+  children, remaining tails and field meaning,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not

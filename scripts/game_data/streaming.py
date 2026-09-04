@@ -5,10 +5,12 @@ assign names or meanings to FlatBuffer fields.  The current build contains
 two length-prefixed inverted-LZ4 families (``InitChunkData`` and
 ``StreamingChunkData``) and a raw ``StreamingChunkInfo`` family.  The latter's
 selected-build table/vector graph is framed exactly while every field remains
-anonymous. Both data families additionally expose one exact anonymous paired-
-group subgraph; their other root fields remain opaque. A small DevOnly subset
-is raw despite sharing the first two path families, so the decoder accepts raw
-only after independently validating the observed root shape.
+anonymous. Both data families additionally expose two exact anonymous
+subgraphs: the paired groups under root fields 6/7, and the parallel first-level
+vectors/rows under root fields 3/4/5. Root field 2 and the child objects reached
+from field-5 rows remain opaque. A small DevOnly subset is raw despite sharing
+the first two path families, so the decoder accepts raw only after independently
+validating the observed root shape.
 """
 
 from __future__ import annotations
@@ -516,6 +518,190 @@ def _parse_paired_group_subgraph(
     }
 
 
+def _parse_parallel_root_subgraph(
+    data: bytes, root: dict[str, Any], family: str
+) -> dict[str, Any]:
+    """Frame root fields 3/4/5 without interpreting their values or children.
+
+    The selected corpus proves three equal-length first-level vectors. Field 5
+    contains table offsets; each row's field 0 reaches a length-prefixed byte
+    range followed by zero. That physical representation is compatible with
+    both a FlatBuffer string and a byte vector followed by alignment, so this
+    parser deliberately keeps the serialized type ambiguous.
+    """
+
+    ranges: list[tuple[int, int, str, str]] = []
+    shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
+    byte_values: Counter[int] = Counter()
+    referenced_bytes = 0
+
+    def own(start: int, end: int, kind: str, label: str) -> None:
+        if start < 0 or end < start or end > len(data):
+            raise ValueError(
+                f"Streaming {label} range {start}:{end} outside payload {len(data)}"
+            )
+        ranges.append((start, end, kind, label))
+
+    root_layout = {
+        "tableOffset": root["rootOffset"],
+        "vtableOffset": root["vtableOffset"],
+        "vtableSize": root["vtableSize"],
+        "objectSize": root["objectSize"],
+        "fieldCount": root["fieldCount"],
+        "fields": root["fields"],
+        "presentFields": root["presentFields"],
+    }
+
+    field3_start, field3_count, field3_end = _bounded_vector(
+        data, root_layout, 3, 4, f"{family} field 3"
+    )
+    own(field3_start, field3_end, "width-4-vector", f"{family} field 3")
+    field4_start, field4_count, field4_end = _bounded_vector(
+        data, root_layout, 4, 1, f"{family} field 4"
+    )
+    own(field4_start, field4_end, "byte-vector", f"{family} field 4")
+    byte_values.update(data[field4_start + 4 : field4_end])
+    field5_start, field5_count, field5_end = _bounded_vector(
+        data, root_layout, 5, 4, f"{family} field 5 table slots"
+    )
+    own(
+        field5_start,
+        field5_end,
+        "table-vector",
+        f"{family} field 5 table slots",
+    )
+    if (field3_count, field4_count, field5_count) != (
+        field3_count,
+        field3_count,
+        field3_count,
+    ):
+        raise ValueError(
+            f"Streaming {family} parallel root count mismatch: "
+            f"field 3={field3_count}, field 4={field4_count}, "
+            f"field 5={field5_count}"
+        )
+
+    field5_body = field5_start + 4
+    for index in range(field5_count):
+        slot = field5_body + index * 4
+        relative = _u32(data, slot)
+        target = slot + relative
+        if relative == 0 or target <= slot:
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} has invalid table "
+                f"target {target} at slot {slot}"
+            )
+        row = _table_layout(data, target)
+        own(
+            int(row["vtableOffset"]),
+            int(row["vtableOffset"]) + int(row["vtableSize"]),
+            "vtable",
+            f"{family} field 5 row {index} vtable",
+        )
+        own(
+            int(row["tableOffset"]),
+            int(row["tableOffset"]) + int(row["objectSize"]),
+            "table",
+            f"{family} field 5 row {index} table",
+        )
+        shape = (
+            int(row["fieldCount"]),
+            int(row["objectSize"]),
+            tuple(int(value) for value in row["presentFields"]),
+        )
+        shapes[shape] += 1
+
+        field0 = _field_address(row, 0)
+        if field0 is None:
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 is absent"
+            )
+        if field0 + 4 > int(row["tableOffset"]) + int(row["objectSize"]):
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 slot "
+                "exceeds table object"
+            )
+        value_relative = _u32(data, field0)
+        value_target = field0 + value_relative
+        if (
+            value_relative == 0
+            or value_target <= field0
+            or value_target + 4 > len(data)
+        ):
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 target "
+                f"{value_target} from slot {field0} outside payload {len(data)}"
+            )
+        value_length = _u32(data, value_target)
+        value_end = value_target + 4 + value_length
+        if value_end >= len(data):
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 length "
+                f"{value_length} ends at {value_end}, actual EOF {len(data)}"
+            )
+        if data[value_end] != 0:
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 expected "
+                f"following zero at offset {value_end}, actual {data[value_end]}"
+            )
+        try:
+            data[value_target + 4 : value_end].decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                f"Streaming {family} field 5 row {index} field 0 is not "
+                f"UTF-8-compatible at offset {value_target + 4}"
+            ) from exc
+        own(
+            value_target,
+            value_end,
+            "length-prefixed-byte-range",
+            f"{family} field 5 row {index} field 0",
+        )
+        referenced_bytes += value_length
+
+    # FlatBuffers may reuse vtables and referenced objects. Exact duplicate
+    # ranges are references, not overlaps; every non-identical overlap fails.
+    unique_ranges = sorted(
+        {(start, end, kind) for start, end, kind, _label in ranges}
+    )
+    reused_references = len(ranges) - len(unique_ranges)
+    for previous, current in zip(unique_ranges, unique_ranges[1:]):
+        if current[0] < previous[1]:
+            raise ValueError(
+                f"Streaming {family} parallel subgraph structural ranges "
+                f"overlap: {previous[0]}:{previous[1]} ({previous[2]}) and "
+                f"{current[0]}:{current[1]} ({current[2]})"
+            )
+    return {
+        "status": "exact_anonymous_subgraph",
+        "parallelCount": field3_count,
+        "fieldWidths": {"3": 4, "4": 1, "5": 4},
+        "field4ByteValueCounts": dict(sorted(byte_values.items())),
+        "field5RowCount": field5_count,
+        "field5RowShapes": [
+            {
+                "fieldCount": shape[0],
+                "objectSize": shape[1],
+                "presentFields": list(shape[2]),
+                "count": count,
+            }
+            for shape, count in shapes.items()
+        ],
+        "field5Field0ReferenceCount": field5_count,
+        "field5Field0ReferencedBytes": referenced_bytes,
+        "field5Field0Representation": "ambiguous",
+        "field5Field0RepresentationCandidates": [
+            "flatbuffer-string",
+            "byte-vector-with-following-zero",
+        ],
+        "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
+        "rangeCount": len(unique_ranges),
+        "reusedReferences": reused_references,
+        "fieldStatus": "anonymous-structural-only",
+        "wholeFileStatus": "partial",
+    }
+
+
 def _check_root(kind: str, layout: dict[str, Any]) -> None:
     if kind == "info":
         if (
@@ -564,9 +750,9 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
     is attempted first; raw is accepted only when its root has the exact same
     observed 8-field shape.  Raw data-family input is rejected unless the
     caller has independently established the raw exception (the installed
-    corpus uses this only for DevOnly files).  Init/Streaming bytes after the
-    root table remain explicitly opaque.  Info files additionally return an
-    exact anonymous inner table/vector framing.
+    corpus uses this only for DevOnly files). Init/Streaming bytes outside the
+    two certified subgraphs remain explicitly opaque. Info files additionally
+    return an exact anonymous inner table/vector framing.
     """
 
     if kind not in {"init", "streaming", "info"}:
@@ -620,6 +806,9 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
     if kind == "info":
         result["anonymousInner"] = _parse_info_inner(clear, layout)
     elif kind in {"init", "streaming"}:
+        result["anonymousParallelSubgraph"] = _parse_parallel_root_subgraph(
+            clear, layout, kind
+        )
         result["anonymousGroupSubgraph"] = _parse_paired_group_subgraph(
             clear, layout, kind
         )

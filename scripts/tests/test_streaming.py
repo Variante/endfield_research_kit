@@ -82,6 +82,47 @@ def _data_root(*, populated: bool = False) -> bytes:
     return bytes(data)
 
 
+def _parallel_data_root() -> bytes:
+    """Two field-5 rows share both a vtable and one field-0 target."""
+
+    data = bytearray(168)
+    root, root_vtable = 24, 4
+    data[0:4] = root.to_bytes(4, "little")
+    data[root_vtable : root_vtable + 2] = (20).to_bytes(2, "little")
+    data[root_vtable + 2 : root_vtable + 4] = (40).to_bytes(2, "little")
+    for index, value in enumerate((4, 8, 16, 20, 24, 28, 32, 36)):
+        data[root_vtable + 4 + index * 2 : root_vtable + 6 + index * 2] = (
+            value.to_bytes(2, "little")
+        )
+    data[root : root + 4] = (root - root_vtable).to_bytes(
+        4, "little", signed=True
+    )
+
+    targets = (64, 68, 80, 88, 104, 108)
+    for slot, target in zip((40, 44, 48, 52, 56, 60), targets):
+        data[slot : slot + 4] = (target - slot).to_bytes(4, "little")
+    data[64:68] = (0).to_bytes(4, "little")
+    data[68:80] = (2).to_bytes(4, "little") + (7).to_bytes(
+        4, "little"
+    ) + (9).to_bytes(4, "little")
+    data[80:86] = (2).to_bytes(4, "little") + bytes((1, 2))
+    data[88:100] = (2).to_bytes(4, "little") + (28).to_bytes(
+        4, "little"
+    ) + (40).to_bytes(4, "little")
+    data[104:108] = (0).to_bytes(4, "little")
+    data[108:112] = (0).to_bytes(4, "little")
+
+    data[112:118] = (6).to_bytes(2, "little") + (8).to_bytes(
+        2, "little"
+    ) + (4).to_bytes(2, "little")
+    data[120:124] = (8).to_bytes(4, "little", signed=True)
+    data[124:128] = (160 - 124).to_bytes(4, "little")
+    data[136:140] = (24).to_bytes(4, "little", signed=True)
+    data[140:144] = (160 - 140).to_bytes(4, "little")
+    data[160:168] = (3).to_bytes(4, "little") + b"abc\0"
+    return bytes(data)
+
+
 def _info_root(devonly: bool = False) -> bytes:
     if devonly:
         data = bytearray(104)
@@ -181,6 +222,89 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(subgraph["blobBytes"], 8)
         self.assertGreaterEqual(subgraph["reusedVtableReferences"], 1)
         self.assertEqual(subgraph["wholeFileStatus"], "partial")
+
+    def test_anonymous_parallel_subgraph_and_ambiguity(self):
+        for family in ("init", "streaming"):
+            with self.subTest(family=family):
+                result = parse_streaming_file(
+                    family, _packed(_parallel_data_root())
+                )
+                subgraph = result["anonymousParallelSubgraph"]
+                self.assertEqual(subgraph["status"], "exact_anonymous_subgraph")
+                self.assertEqual(subgraph["parallelCount"], 2)
+                self.assertEqual(
+                    subgraph["fieldWidths"], {"3": 4, "4": 1, "5": 4}
+                )
+                self.assertEqual(subgraph["field4ByteValueCounts"], {1: 1, 2: 1})
+                self.assertEqual(subgraph["field5RowCount"], 2)
+                self.assertEqual(subgraph["field5Field0ReferenceCount"], 2)
+                self.assertEqual(subgraph["field5Field0ReferencedBytes"], 6)
+                self.assertEqual(subgraph["field5Field0Representation"], "ambiguous")
+                self.assertEqual(
+                    subgraph["field5Field0RepresentationCandidates"],
+                    ["flatbuffer-string", "byte-vector-with-following-zero"],
+                )
+                self.assertEqual(subgraph["reusedReferences"], 2)
+                self.assertEqual(subgraph["wholeFileStatus"], "partial")
+
+    def test_parallel_subgraph_counts_and_offsets_fail_closed(self):
+        clear = bytearray(_parallel_data_root())
+        clear[68:72] = (1).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "parallel root count mismatch"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[92:96] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "invalid table target"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[88:92] = (0xFFFF_FFFF).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "count .* exceeds payload"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[80:84] = (1).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 4=1"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[48:52] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 4 vector target 48"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+    def test_parallel_subgraph_truncation_and_terminator_fail_closed(self):
+        with self.assertRaisesRegex(ValueError, "actual EOF"):
+            parse_streaming_file("init", _packed(_parallel_data_root()[:-1]))
+
+        clear = bytearray(_parallel_data_root())
+        clear[167] = 1
+        with self.assertRaisesRegex(ValueError, "expected following zero"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[124:128] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "target 124 from slot 124"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+        clear = bytearray(_parallel_data_root())
+        clear[160:164] = (0xFFFF_FFFF).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "length 4294967295"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+    def test_parallel_subgraph_nonidentical_overlap_fails_closed(self):
+        clear = bytearray(_parallel_data_root())
+        clear[44:48] = (88 - 44).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "structural ranges overlap"):
+            parse_streaming_file("init", _packed(bytes(clear)))
+
+    def test_parallel_subgraph_trailing_bytes_remain_explicitly_partial(self):
+        result = parse_streaming_file(
+            "init", _packed(_parallel_data_root() + b"\x7f")
+        )
+        self.assertEqual(
+            result["anonymousParallelSubgraph"]["wholeFileStatus"], "partial"
+        )
 
     def test_init_group_count_and_descriptor_fail_closed(self):
         clear = bytearray(_data_root(populated=True))

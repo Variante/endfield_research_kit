@@ -63,6 +63,13 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
 - DynamicStreaming is a generated FlatBuffers family with validated version,
   grid, string, resource/state, and area accessors. The deeper meaning of its
   DataMask and several record fields remains unresolved.
+- StreamingChunkInfo has an exact anonymous EOF graph. The two data families
+  now also have exact selected-build first-level root-field3/4/5 vectors with
+  widths 4/1/4, equal counts, bounded field-5 row tables and row-field-0 byte
+  ranges, plus the independent field6/7 paired-group subgraph. The field-0
+  representation remains string/byte-vector ambiguous; field 2, deeper row
+  children, cross-file ownership, runtime use, and all game semantics remain
+  unresolved.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -210,8 +217,9 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Terrain block/channel semantics, DynamicStreaming,
-  irradiance, manifest, mmap, patch, and JsonData body semantics.
+- Complete unresolved Streaming field-2/deep-row structure, Terrain
+  block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
+  patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without
   treating native names as byte-layout proof.
 - Close more authored and observed audio consumers through exact Event/media
