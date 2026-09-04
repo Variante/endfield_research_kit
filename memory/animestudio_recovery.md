@@ -261,7 +261,8 @@ Current durable boundaries:
   not its element width, and field 3 as a nested table with equal-count
   width-4/1/4 vectors. The marker-17 wrapper/byte-range closure and its
   unresolved type boundary are owned by `game_data_recovery.md`; all other
-  nested targets remain opaque. Root fields
+  nested targets remain opaque. Marker 15 additionally has bounded uoffset
+  targets, with widths unresolved and no target-byte ownership. Root fields
   6/7 retain paired-group, descriptor, and blob-length closure. Bytes outside
   the certified subgraphs stay opaque; no union, entity, component, matrix,
   descriptor, field name, or runtime meaning follows.

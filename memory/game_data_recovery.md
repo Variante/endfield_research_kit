@@ -96,6 +96,14 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   to a different outer-row shape, outside this maintained branch.
   These are structural-only marker associations, not a proven union registry,
   serialized field names, cross-file ownership, or runtime/game semantics.
+  Marker-15 slots now fail closed unless their nonzero relative offsets reach
+  readable decoded positions; per-file source hashes and ordered slot/target
+  digests bind this directory. Its target contents remain opaque and own zero
+  additional bytes. File-byte availability and non-overlapping probe widths
+  do not resolve record width. Independent 16-byte native reads still lack
+  both the context-to-nested-table and marker-15 joins, so they are not width
+  evidence for these targets (gated candidates:
+  `reports/animestudio/streaming_marker15_native_latest.json`).
   A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
   success, and `base + u32(base)` root calculation. Its first formatted leaf
@@ -257,8 +265,9 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Close Streaming's remaining nested marker targets, prioritizing marker 15's
-  fixed-width candidate, then marker-17 opaque byte bodies, before concrete
+- Resolve marker 15's context/table and discriminator joins before promoting
+  any consumed span or fixed record width; its uoffset directory is bounded,
+  not its records. Then close marker-17 opaque byte bodies before concrete
   runtime-root/secondary-path joins or field-5 key namespace.
   Fixed-size-looking targets still need independent width/cursor
   evidence; do not derive sizes solely from neighboring addresses. Then Terrain

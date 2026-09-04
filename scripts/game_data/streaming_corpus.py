@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v8"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v9"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -308,6 +308,9 @@ def sweep(
         )
     }
     nested_element_opaque = 0
+    marker15_references = 0
+    marker15_prefix_fits: collections.Counter[str] = collections.Counter()
+    marker15_files = []
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
@@ -745,6 +748,23 @@ def sweep(
                         parallel.get("field5Field3NestedParallelCount", 0)
                     )
                     nested_element_opaque += int(parallel.get("nestedElementOpaqueCount", 0))
+                    refs15 = parallel.get("nestedMarker15References", {})
+                    marker15_references += int(refs15.get("count", 0))
+                    for width, count in refs15.get("probeWidthFitCounts", {}).items():
+                        marker15_prefix_fits[str(width)] += int(count)
+                    if refs15.get("count", 0):
+                        marker15_files.append({
+                            "virtualPath": virtual_path,
+                            "physicalChunkPath": str(chunk_path),
+                            "physicalChunkSource": row.get("physicalChunkSource"),
+                            "metadataProvenance": row.get("metadataProvenance"),
+                            "overlayState": row.get("overlayState"),
+                            "offset": offset,
+                            "length": length,
+                            "packedSha256": hashlib.sha256(raw).hexdigest().upper(),
+                            "referenceCount": refs15["count"],
+                            "orderedSlotTargetSha256": refs15["orderedSlotTargetSha256"],
+                        })
                     for key, totals in nested_element_totals.items():
                         for marker, count in parallel.get(key, {}).items():
                             totals[str(marker)] += int(count)
@@ -1049,6 +1069,19 @@ def sweep(
                 "marker17Representation": "two-wrappers-to-opaque-counted-bytes",
                 "markerMeaning": "unresolved-not-a-proven-union-registry",
             },
+            "nestedMarker15ReferenceBounds": {
+                "status": "bounded-anonymous-forward-uoffset-targets" if not failed else "unvalidated",
+                "evidenceLevel": "structural-only",
+                "referenceCount": marker15_references,
+                "filesWithReferences": len(marker15_files),
+                "widthStatus": "unresolved",
+                "probeWidthFitCounts": dict(sorted(marker15_prefix_fits.items(), key=lambda item: int(item[0]))),
+                "probeMeaning": "available-file-bytes-only-not-layout-candidates-or-ownership",
+                "targetOwnedBytes": 0,
+                "nativeWidthJoin": "unresolved-context-table-and-marker-join",
+                "slotTargetDigestEncoding": "concatenated-little-endian-u64-slot-u64-target-in-vector-order",
+                "files": sorted(marker15_files, key=lambda item: item["virtualPath"]),
+            },
             "pairedGroupSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -1135,6 +1168,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Field-5 row field-5 empty count prefixes: {layer3.get('parallelField5Field5VectorCount', 0):,}; values: {layer3.get('parallelField5Field5ValueCount', 0):,}; element width unresolved.",
         f"- Field-5 row field-3 nested tables: {layer3.get('parallelField5Field3NestedTableCount', 0):,}; equal-count width-4/1/4 rows: {layer3.get('parallelField5Field3NestedParallelCount', 0):,}; shapes: `{layer3.get('parallelField5Field3NestedTableShapeCounts')}`.",
         f"- Nested marker-17 target framing: `{layer3.get('nestedElementFraming')}`.",
+        f"- Marker-15 bounded references: {layer3.get('nestedMarker15ReferenceBounds', {}).get('referenceCount', 0):,}; files: {layer3.get('nestedMarker15ReferenceBounds', {}).get('filesWithReferences', 0):,}. Width unresolved; target bytes are not owned. Per-file source identities and ordered slot/target digests are in the JSON report.",
+        f"- Marker-15 available-file-byte width probes: `{layer3.get('nestedMarker15ReferenceBounds', {}).get('probeWidthFitCounts', {})}`. These are not an exhaustive layout search and do not select an element width or reject overlaps with unknown objects.",
         f"- Paired field-6/7 groups: {layer3.get('pairedGroupCount', 0):,}; values: {layer3.get('pairedGroupValueCount', 0):,}; descriptors: {layer3.get('descriptorCount', 0):,}; blob bytes: {layer3.get('blobBytes', 0):,}.",
         f"- Paired-group per-file range sums: {layer3.get('pairedGroupRangeCountPerFileSum', 0):,} ranges; {layer3.get('pairedGroupOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         "",

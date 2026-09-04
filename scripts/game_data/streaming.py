@@ -14,6 +14,9 @@ the element width remains unresolved. Field 3 reaches a nested table with
 equal-count width-4/1/4 vectors. Marker 17 elements frame two anonymous
 wrappers and a counted byte range; their byte contents and all other element
 targets remain opaque. The marker association is not a proven union registry.
+Marker 15 slots additionally require nonzero forward offsets to readable
+payload positions. This authenticates reference bounds only: no target bytes
+are claimed as owned and no element width or object type is selected.
 For the selected build, hash-gated native accessors and consumers establish row
 fields 0--2 as single 32-bit loads, field 3 as two signed 32-bit loads, field 4
 as six 32-bit floating-point loads, and every field-5 vector element as a
@@ -25,6 +28,7 @@ shape.
 
 from __future__ import annotations
 
+import hashlib
 import struct
 from collections import Counter
 from typing import Any
@@ -538,6 +542,18 @@ def _parse_paired_group_subgraph(
     }
 
 
+def _bounded_anonymous_target(data: bytes, slot: int, label: str) -> int:
+    """Bound an anonymous uoffset without assuming its target representation."""
+    relative = _u32(data, slot)
+    target = slot + relative
+    if relative == 0 or target >= len(data):
+        raise ValueError(
+            f"Streaming {label} at slot {slot}: expected nonzero forward "
+            f"target below EOF {len(data)}, actual relative {relative}, target {target}"
+        )
+    return target
+
+
 def _nested_reference_ranges(
     data: bytes, slot: int, marker: int, label: str
 ) -> tuple[list[tuple[int, int, str, str]], int]:
@@ -610,6 +626,11 @@ def _parse_parallel_root_subgraph(
     nested_markers: Counter[int] = Counter()
     nested_framed: Counter[int] = Counter()
     nested_bytes: Counter[int] = Counter()
+    marker15_references = 0
+    marker15_targets_digest = hashlib.sha256()
+    marker15_prefix_fits: Counter[int] = Counter()
+    # These are probes, not an exhaustive registry or selectable layouts.
+    marker15_probe_widths = (1, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64)
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -861,6 +882,18 @@ def _parse_parallel_root_subgraph(
             for element_index in range(nested_counts[0]):
                 marker = data[nested_starts[4] + 4 + element_index]
                 nested_markers[marker] += 1
+                if marker == 15:
+                    slot = nested_starts[5] + 4 + element_index * 4
+                    target = _bounded_anonymous_target(
+                        data, slot,
+                        f"{family} field 5 row {index} nested element {element_index} marker 15",
+                    )
+                    marker15_references += 1
+                    marker15_targets_digest.update(struct.pack('<QQ', slot, target))
+                    for width in marker15_probe_widths:
+                        if width <= len(data) - target:
+                            marker15_prefix_fits[width] += 1
+                    continue
                 if marker != 17:
                     continue
                 label = (
@@ -936,6 +969,18 @@ def _parse_parallel_root_subgraph(
         "nestedElementByteCounts": dict(sorted(nested_bytes.items())),
         "nestedElementOpaqueCount": sum(nested_markers.values()) - sum(nested_framed.values()),
         "nestedMarker17Representation": "two-wrappers-to-opaque-counted-bytes",
+        "nestedMarker15References": {
+            "status": "bounded-anonymous-forward-uoffset-targets",
+            "evidenceLevel": "structural-only",
+            "count": marker15_references,
+            "orderedSlotTargetSha256": marker15_targets_digest.hexdigest().upper(),
+            "widthStatus": "unresolved",
+            "probeWidthFitCounts": dict(sorted(marker15_prefix_fits.items())),
+            "probeWidths": list(marker15_probe_widths),
+            "probeMeaning": "available-file-bytes-only-not-layout-candidates-or-ownership",
+            "targetOwnedBytes": 0,
+            "nativeWidthJoin": "unresolved-context-table-and-marker-join",
+        },
         "nestedMarkerMeaning": "unresolved-not-a-proven-union-registry",
         "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
         "rangeCount": len(unique_ranges),
@@ -1318,7 +1363,7 @@ def parse_streaming_file(
     observed 8-field shape.  Raw data-family input is rejected unless the
     caller has independently established the raw exception (the installed
     corpus uses this only for DevOnly files). Init/Streaming bytes outside the
-    two certified subgraphs remain explicitly opaque. Info files additionally
+    certified subgraphs remain explicitly opaque. Info files additionally
     return an exact anonymous inner table/vector framing. Field-2 typed loads
     are published only when the caller has separately revalidated the selected-
     build native contract and passes ``native_layout_validated=True``.

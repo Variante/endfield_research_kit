@@ -1,6 +1,9 @@
+import hashlib
 import unittest
 
-from scripts.game_data.streaming import _nested_reference_ranges, parse_streaming_file
+from scripts.game_data.streaming import (
+    _bounded_anonymous_target, _nested_reference_ranges, parse_streaming_file,
+)
 
 
 def _root(kind: str, devonly_info: bool = False) -> bytes:
@@ -771,6 +774,49 @@ class StreamingTests(unittest.TestCase):
         graph = result["anonymousParallelSubgraph"]
         self.assertEqual(graph["nestedElementFramedCounts"], {17: 1})
         self.assertEqual(graph["nestedElementOpaqueCount"], 1)
+
+    def test_marker15_reference_bounds_do_not_resolve_width_ambiguity(self):
+        data = bytearray(_parallel_target_data_root())
+        data[236] = 15
+        graph = parse_streaming_file("streaming", _packed(bytes(data)))["anonymousParallelSubgraph"]
+        refs = graph["nestedMarker15References"]
+        self.assertEqual(refs["count"], 1)
+        self.assertEqual(refs["widthStatus"], "unresolved")
+        self.assertEqual(refs["targetOwnedBytes"], 0)
+        self.assertEqual(
+            refs["orderedSlotTargetSha256"],
+            hashlib.sha256((244).to_bytes(8, "little") + (300).to_bytes(8, "little")).hexdigest().upper(),
+        )
+        self.assertEqual(set(refs["probeWidthFitCounts"].values()), {1})
+        self.assertNotIn("selectedWidth", refs)
+        self.assertEqual(graph["nestedElementOpaqueCount"], 1)
+        self.assertNotIn(15, graph["nestedElementFramedCounts"])
+        # Arbitrary target contents do not acquire a table/16-byte type.
+        data[300:316] = bytes(range(16))
+        changed = parse_streaming_file("streaming", _packed(bytes(data)))["anonymousParallelSubgraph"]
+        self.assertEqual(changed["nestedMarker15References"], refs)
+
+    def test_marker15_zero_and_overflowing_offsets_fail_closed(self):
+        for relative in (0, 384 - 244, 0xFFFFFFFF):
+            data = bytearray(_parallel_target_data_root())
+            data[236] = 15
+            data[244:248] = relative.to_bytes(4, "little")
+            with self.subTest(relative=relative):
+                with self.assertRaisesRegex(ValueError, "marker 15 at slot 244.*expected.*actual"):
+                    parse_streaming_file("streaming", _packed(bytes(data)))
+
+    def test_marker15_bounded_target_truncation_does_not_assume_sixteen_bytes(self):
+        data = (4).to_bytes(4, "little") + b"x"
+        self.assertEqual(_bounded_anonymous_target(data, 0, "fixture"), 4)
+        for broken in (data[:3], data[:4]):
+            with self.assertRaises(ValueError):
+                _bounded_anonymous_target(broken, 0, "fixture")
+
+    def test_marker15_trailing_fixture_still_fails_file_eof_gate(self):
+        data = bytearray(_parallel_target_data_root())
+        data[236] = 15
+        with self.assertRaises(ValueError):
+            parse_streaming_file("streaming", _packed(bytes(data) + b"x"))
 
     def test_parallel_nested_offsets_and_counts_fail_closed(self):
         clear = bytearray(_parallel_nested_data_root())

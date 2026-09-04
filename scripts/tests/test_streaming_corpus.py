@@ -49,7 +49,9 @@ class StreamingCorpusTests(unittest.TestCase):
 
     def _fixture(self, root: Path) -> tuple[Path, Path, Path, str]:
         input_set = "A" * 64
-        init = _packed(_parallel_target_data_root())
+        init_clear = bytearray(_parallel_target_data_root())
+        init_clear[236] = 15
+        init = _packed(bytes(init_clear))
         streaming_clear = bytearray(_field2_streaming_full_layout_root())
         streaming_clear[128:132] = (7).to_bytes(4, "little")
         streaming_clear[132:136] = (9).to_bytes(4, "little")
@@ -215,6 +217,15 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(framing["nestedElementFramedCounts"], {"17": 1})
         self.assertEqual(framing["nestedElementByteCounts"], {"17": 4})
         self.assertEqual(framing["opaqueElementCount"], 1)
+        refs15 = result["layer3"]["nestedMarker15ReferenceBounds"]
+        self.assertEqual(refs15["referenceCount"], 1)
+        self.assertEqual(refs15["filesWithReferences"], 1)
+        self.assertEqual(refs15["widthStatus"], "unresolved")
+        self.assertEqual(refs15["targetOwnedBytes"], 0)
+        self.assertEqual(refs15["files"][0]["referenceCount"], 1)
+        self.assertEqual(refs15["files"][0]["offset"], 0)
+        self.assertEqual(len(refs15["files"][0]["packedSha256"]), 64)
+        self.assertEqual(len(refs15["files"][0]["orderedSlotTargetSha256"]), 64)
         self.assertEqual(
             result["layer4"]["nativeCarrierStatus"],
             "exact-selected-build-family-level-native-carrier",
@@ -245,6 +256,7 @@ class StreamingCorpusTests(unittest.TestCase):
         )
         self.assertEqual(result["layer3"]["field2Rows0To4Status"], "unvalidated")
         self.assertEqual(result["layer3"]["field2Rows0To5Status"], "unvalidated")
+        self.assertEqual(result["layer3"]["nestedMarker15ReferenceBounds"]["status"], "unvalidated")
         self.assertEqual(
             {item["status"] for item in result["layer3"]["field2RowSlotSpans"]},
             {"unvalidated"},
