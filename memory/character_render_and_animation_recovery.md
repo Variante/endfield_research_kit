@@ -212,8 +212,11 @@ across multiple 90 Hz substeps, and publishes current state at the frame
 boundary. Its two-frame moving-collider verifier fails if registration reasserts
 `Reset` or caller-provided stale previous samples replace retained history.
 
-Sparse Unity comparison runs must use the capture report's `targetSeconds`;
-image ordinals are not elapsed 60 Hz time. On synchronized retail checkpoints,
+Unity image comparisons use physical `actualSeconds` relative to the first
+saved frame, gated by its annotated body phase; sparse runs must include time
+zero. Requested times and image ordinals can disagree with rendered phase.
+This relative join preserves the video anchor's existing uncertainty.
+On synchronized retail checkpoints,
 the current solver is worse than animation-only in both translation and
 rotation, and adding the recovered rotation-only post-proxy CalcLine stage does
 not repair the positional error. CalcLine therefore remains an independently
