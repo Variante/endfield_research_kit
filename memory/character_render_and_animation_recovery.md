@@ -333,7 +333,11 @@ build and collection procedure.
   directly from authenticated `Play`, including IA/VB/IB, constants,
   `_VertexSkinMatrices`, SRVs/samplers, MRT/depth, and PSO. Collect one new
   session and compare it with a live Unity D3D11 draw before changing the
-  reusable shader or renderer.
+  reusable shader or renderer. Capture readiness must follow actual application
+  device/context attachment, not private WARP hook bootstrap; otherwise the
+  dedicated worker attempts deferred preallocation with no attached device.
+  The observer now publishes readiness only after attachment and hook success,
+  with a real D3D11 bootstrap/first-Present regression covering this boundary.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
