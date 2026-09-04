@@ -134,6 +134,11 @@ only.
   both surfaces, localizing their producer downstream of DLAA to Uber/final or
   recording presentation. The lab's ordinary TAAU consumer remains
   compatibility-only pending an exact reusable DLAA integration.
+- The observation-only Streamline schema-v2 capture is prepared to retain a
+  hashed 4K swapchain color immediately before each accepted packet's closing
+  `Present`, alongside its DLAA/depth/motion data on the same QPC chronology.
+  This is a collection capability, not evidence, until a fresh exact-build
+  session publishes and validates the new files.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
