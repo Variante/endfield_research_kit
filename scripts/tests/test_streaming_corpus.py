@@ -99,6 +99,21 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["layer3"]["field2DirectRowCount"], 0)
         self.assertEqual(result["layer3"]["field2Field5VectorCount"], 0)
         self.assertEqual(result["layer3"]["field2Field5ValueCount"], 0)
+        self.assertEqual(
+            result["layer3"]["field2RowObjectPartitionStatus"],
+            "exact-anonymous-slot-spans",
+        )
+        self.assertEqual(
+            [
+                item["slotToNextBoundaryBytes"]
+                for item in result["layer3"]["field2RowSlotSpans"]
+            ],
+            [4, 4, 4, 8, 24, 4],
+        )
+        self.assertEqual(
+            result["layer3"]["field2RowSlotSpansMayContainPadding"],
+            [0, 1, 2, 3, 4],
+        )
         self.assertEqual(result["layer3"]["field2InitEmptyVectorAtEofFiles"], 1)
         self.assertEqual(result["layer3"]["parallelRowCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 2)
@@ -116,6 +131,14 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertTrue(result["failed"])
         self.assertTrue(
             any(item.get("field") == "inputSetSha256" for item in result["failures"])
+        )
+        self.assertEqual(
+            result["layer3"]["field2RowObjectPartitionStatus"], "unvalidated"
+        )
+        self.assertEqual(result["layer3"]["field2Rows0To4Status"], "unvalidated")
+        self.assertEqual(
+            {item["status"] for item in result["layer3"]["field2RowSlotSpans"]},
+            {"unvalidated"},
         )
 
     def test_physical_hash_mismatch_reports_file_and_offset(self):

@@ -281,12 +281,75 @@ class StreamingTests(unittest.TestCase):
         field2 = result["anonymousField2TerminalSubgraph"]
         self.assertEqual(field2["status"], "exact_anonymous_eof_subgraph")
         self.assertEqual(field2["rowCount"], 1)
-        self.assertEqual(field2["rowFields0To4Status"], "opaque")
         self.assertEqual(field2["field5Status"], "exact-anonymous-vector")
         self.assertEqual(field2["field5ElementWidth"], 4)
         self.assertEqual(field2["field5VectorCount"], 1)
         self.assertEqual(field2["field5ValueCount"], 2)
         self.assertEqual(field2["structuralRange"], [96, 172])
+        self.assertEqual(
+            field2["rowObjectPartitionStatus"],
+            "exact-anonymous-slot-spans",
+        )
+        self.assertEqual(field2["rowObjectPrefixBytes"], 4)
+        self.assertEqual(
+            field2["rowSlotSpans"],
+            [
+                {
+                    "fieldIndex": 0,
+                    "slotToNextBoundaryBytes": 4,
+                    "presentCount": 0,
+                    "absentCount": 1,
+                    "totalSpanBytes": 0,
+                    "status": "exact-anonymous-span-only",
+                },
+                {
+                    "fieldIndex": 1,
+                    "slotToNextBoundaryBytes": 4,
+                    "presentCount": 0,
+                    "absentCount": 1,
+                    "totalSpanBytes": 0,
+                    "status": "exact-anonymous-span-only",
+                },
+                {
+                    "fieldIndex": 2,
+                    "slotToNextBoundaryBytes": 4,
+                    "presentCount": 0,
+                    "absentCount": 1,
+                    "totalSpanBytes": 0,
+                    "status": "exact-anonymous-span-only",
+                },
+                {
+                    "fieldIndex": 3,
+                    "slotToNextBoundaryBytes": 8,
+                    "presentCount": 1,
+                    "absentCount": 0,
+                    "totalSpanBytes": 8,
+                    "status": "exact-anonymous-span-only",
+                },
+                {
+                    "fieldIndex": 4,
+                    "slotToNextBoundaryBytes": 24,
+                    "presentCount": 1,
+                    "absentCount": 0,
+                    "totalSpanBytes": 24,
+                    "status": "exact-anonymous-span-only",
+                },
+                {
+                    "fieldIndex": 5,
+                    "slotToNextBoundaryBytes": 4,
+                    "presentCount": 1,
+                    "absentCount": 0,
+                    "totalSpanBytes": 4,
+                    "status": "exact-vector-uoffset-slot",
+                },
+            ],
+        )
+        self.assertEqual(
+            field2["rowFields0To4Status"], "exact-anonymous-slot-spans"
+        )
+        self.assertEqual(field2["rowFields0To4RepresentationStatus"], "unresolved")
+        self.assertEqual(field2["rowSlotSpansMayContainPadding"], [0, 1, 2, 3, 4])
+        self.assertNotIn("rowFieldValues", field2)
         self.assertEqual(
             field2["rowLayouts"],
             [
@@ -433,6 +496,12 @@ class StreamingTests(unittest.TestCase):
                     "count": 1,
                 }
             ],
+        )
+        spans = result["anonymousField2TerminalSubgraph"]["rowSlotSpans"]
+        self.assertEqual([item["presentCount"] for item in spans], [1] * 6)
+        self.assertEqual(
+            [item["slotToNextBoundaryBytes"] for item in spans],
+            [4, 4, 4, 8, 24, 4],
         )
 
     def test_init_anonymous_group_subgraph(self):

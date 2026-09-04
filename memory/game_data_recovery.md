@@ -69,7 +69,10 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   immediate table/vtable rows close against seven layouts. Each row's field 5
   points directly after the table to an exact count-prefixed vector of
   anonymous width-4 values; the combined field-2 subgraph is continuous to
-  decoded EOF. Row fields 0--4 and the field-5 values stay opaque. Root fields
+  decoded EOF. The table objects partition into a four-byte vtable displacement
+  plus present slot-to-next-boundary spans of 4/4/4/8/24/4 bytes for fields
+  0--5. Spans 0--4 may contain padding, so their value widths, internal
+  composite layout, and all values stay opaque. Root fields
   3/4/5 use widths 4/1/4 with equal counts,
   bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
   independent paired-group subgraph. The field-0 representation remains
@@ -223,7 +226,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Streaming field-2 row fields 0--4 and field-5 value/deep-row structure, Terrain
+- Complete unresolved Streaming field-2 row span padding/internal value layout
+  and field-5 value/deep-row structure, Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

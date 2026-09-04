@@ -225,8 +225,9 @@ or unauthenticated declaration while still publishing its terminal ledger.
 exact `inputSetSha256` from the current outer summary. The gate covers the
 anonymous field-2 vector, immediate table/vtable framing, and terminal row
 field-5 width-4 vectors through EOF, as well as the field3/4/5 and field6/7
-subgraphs. It intentionally leaves field-2 row fields 0--4 and every terminal
-vector value opaque.
+subgraphs. It also verifies the field-2 row object's four-byte prefix plus
+anonymous slot-to-next-boundary partition. Fields 0--4 may include padding;
+their value layouts and every terminal vector value remain opaque.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

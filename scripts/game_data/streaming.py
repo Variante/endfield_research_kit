@@ -48,6 +48,7 @@ _FIELD2_STREAMING_ROWS = {
     (6, 48, (0, 2, 3, 4, 5)): (4, 0, 8, 12, 20, 44),
     (6, 52, (0, 1, 2, 3, 4, 5)): (4, 8, 12, 16, 24, 48),
 }
+_FIELD2_STREAMING_SLOT_SPANS = (4, 4, 4, 8, 24, 4)
 
 
 def _u16(data: bytes, offset: int) -> int:
@@ -744,6 +745,8 @@ def _parse_field2_terminal_subgraph(
     child_vector_count = 0
     child_value_count = 0
     child_ranges: list[tuple[int, int, str]] = []
+    slot_presence: Counter[int] = Counter()
+    slot_span_bytes: Counter[int] = Counter()
 
     body = vector_start + 4
     for index in range(row_count):
@@ -777,6 +780,29 @@ def _parse_field2_terminal_subgraph(
                 f"expected {expected_fields} for shape {shape}"
             )
         layouts[(shape[0], shape[1], shape[2], fields)] += 1
+        present_fields = shape[2]
+        if not present_fields or fields[present_fields[0]] != 4:
+            raise ValueError(
+                f"Streaming {family} field 2 row {index} first slot starts at "
+                f"{fields[present_fields[0]] if present_fields else 'absent'}, "
+                "expected object offset 4"
+            )
+        for position, field_index in enumerate(present_fields):
+            start = fields[field_index]
+            end = (
+                fields[present_fields[position + 1]]
+                if position + 1 < len(present_fields)
+                else int(row["objectSize"])
+            )
+            span = end - start
+            expected_span = _FIELD2_STREAMING_SLOT_SPANS[field_index]
+            if span != expected_span:
+                raise ValueError(
+                    f"Streaming {family} field 2 row {index} field {field_index} "
+                    f"slot-to-next-boundary span {span}, expected {expected_span}"
+                )
+            slot_presence[field_index] += 1
+            slot_span_bytes[field_index] += span
         ranges.append(
             (
                 int(row["vtableOffset"]),
@@ -895,7 +921,26 @@ def _parse_field2_terminal_subgraph(
         "field5RangeCount": len(unique_child_ranges),
         "field5ReusedReferences": len(child_ranges) - len(unique_child_ranges),
         "field5Status": "exact-anonymous-vector",
-        "rowFields0To4Status": "opaque",
+        "rowObjectPartitionStatus": "exact-anonymous-slot-spans",
+        "rowObjectPrefixBytes": row_count * 4,
+        "rowSlotSpans": [
+            {
+                "fieldIndex": field_index,
+                "slotToNextBoundaryBytes": span,
+                "presentCount": slot_presence[field_index],
+                "absentCount": row_count - slot_presence[field_index],
+                "totalSpanBytes": slot_span_bytes[field_index],
+                "status": (
+                    "exact-vector-uoffset-slot"
+                    if field_index == 5
+                    else "exact-anonymous-span-only"
+                ),
+            }
+            for field_index, span in enumerate(_FIELD2_STREAMING_SLOT_SPANS)
+        ],
+        "rowFields0To4Status": "exact-anonymous-slot-spans",
+        "rowFields0To4RepresentationStatus": "unresolved",
+        "rowSlotSpansMayContainPadding": [0, 1, 2, 3, 4],
         "field5ValuesStatus": "opaque",
         "wholeFileStatus": "partial",
     }

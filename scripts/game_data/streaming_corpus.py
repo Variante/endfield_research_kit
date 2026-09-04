@@ -15,12 +15,13 @@ from typing import Any
 from scripts.game_data.streaming import parse_streaming_file
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v3"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v4"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/StreamingChunkData_Global_0_0.bytes",
 }
+FIELD2_SLOT_SPANS = {0: 4, 1: 4, 2: 4, 3: 8, 4: 24, 5: 4}
 
 
 def _sha256_file(path: Path) -> str:
@@ -259,6 +260,10 @@ def sweep(
     field2_child_vectors = field2_child_values = field2_child_bytes = 0
     field2_child_ranges = field2_child_reused = 0
     field2_init_eof_files = 0
+    field2_object_prefix_bytes = 0
+    field2_slot_presence: collections.Counter[int] = collections.Counter()
+    field2_slot_absence: collections.Counter[int] = collections.Counter()
+    field2_slot_bytes: collections.Counter[int] = collections.Counter()
     row_failure_count = unsupported_count = 0
     identity_rows = []
 
@@ -397,6 +402,8 @@ def sweep(
                         or groups.get("status") != "exact_anonymous_subgraph"
                         or field2.get("status")
                         != "exact_anonymous_eof_subgraph"
+                        or field2.get("rowObjectPartitionStatus")
+                        != "exact-anonymous-slot-spans"
                     ):
                         row_failure_count += 1
                         if len(failures) < FAILURE_SAMPLE_LIMIT:
@@ -410,7 +417,33 @@ def sweep(
                                         "parallel": parallel.get("status"),
                                         "groups": groups.get("status"),
                                         "field2": field2.get("status"),
+                                        "field2RowObjectPartition": field2.get(
+                                            "rowObjectPartitionStatus"
+                                        ),
                                     },
+                                )
+                        )
+                        continue
+                    row_slot_spans = field2.get("rowSlotSpans") or []
+                    actual_slot_spans = {
+                        int(slot.get("fieldIndex", -1)): int(
+                            slot.get("slotToNextBoundaryBytes", 0)
+                        )
+                        for slot in row_slot_spans
+                    }
+                    if (
+                        len(row_slot_spans) != len(FIELD2_SLOT_SPANS)
+                        or actual_slot_spans != FIELD2_SLOT_SPANS
+                    ):
+                        row_failure_count += 1
+                        if len(failures) < FAILURE_SAMPLE_LIMIT:
+                            failures.append(
+                                _failure(
+                                    virtual_path,
+                                    "parse",
+                                    "field-2 row slot span contract mismatch",
+                                    expected=FIELD2_SLOT_SPANS,
+                                    actual=actual_slot_spans,
                                 )
                             )
                         continue
@@ -434,6 +467,33 @@ def sweep(
                     field2_child_reused += int(
                         field2.get("field5ReusedReferences", 0)
                     )
+                    field2_object_prefix_bytes += int(
+                        field2.get("rowObjectPrefixBytes", 0)
+                    )
+                    for slot in row_slot_spans:
+                        field_index = int(slot.get("fieldIndex", -1))
+                        if field_index < 0 or field_index > 5:
+                            row_failure_count += 1
+                            if len(failures) < FAILURE_SAMPLE_LIMIT:
+                                failures.append(
+                                    _failure(
+                                        virtual_path,
+                                        "parse",
+                                        "field-2 row slot index is outside 0..5",
+                                        expected="0..5",
+                                        actual=field_index,
+                                    )
+                                )
+                            continue
+                        field2_slot_presence[field_index] += int(
+                            slot.get("presentCount", 0)
+                        )
+                        field2_slot_absence[field_index] += int(
+                            slot.get("absentCount", 0)
+                        )
+                        field2_slot_bytes[field_index] += int(
+                            slot.get("totalSpanBytes", 0)
+                        )
                     if family == "init" and field2.get("vectorEndsAtEof") is True:
                         field2_init_eof_files += 1
                     for layout in field2.get("rowLayouts") or []:
@@ -579,7 +639,34 @@ def sweep(
             "field2TerminalOwnedBytesPerFileSum": field2_owned_bytes,
             "field2TerminalRangeCountPerFileSum": field2_ranges,
             "field2TerminalReusedReferenceCount": field2_reused,
-            "field2Rows0To4Status": "opaque",
+            "field2RowObjectPartitionStatus": (
+                "exact-anonymous-slot-spans" if not failed else "unvalidated"
+            ),
+            "field2RowObjectPrefixBytesPerFileSum": field2_object_prefix_bytes,
+            "field2RowSlotSpans": [
+                {
+                    "fieldIndex": field_index,
+                    "slotToNextBoundaryBytes": FIELD2_SLOT_SPANS[field_index],
+                    "presentCount": field2_slot_presence[field_index],
+                    "absentCount": field2_slot_absence[field_index],
+                    "totalSpanBytes": field2_slot_bytes[field_index],
+                    "status": (
+                        (
+                            "exact-vector-uoffset-slot"
+                            if field_index == 5
+                            else "exact-anonymous-span-only"
+                        )
+                        if not failed
+                        else "unvalidated"
+                    ),
+                }
+                for field_index in range(6)
+            ],
+            "field2Rows0To4Status": (
+                "exact-anonymous-slot-spans" if not failed else "unvalidated"
+            ),
+            "field2Rows0To4RepresentationStatus": "unresolved",
+            "field2RowSlotSpansMayContainPadding": [0, 1, 2, 3, 4],
             "field2Field5ValuesStatus": "opaque",
             "parallelSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
@@ -613,9 +700,9 @@ def sweep(
         },
         "evidenceBoundary": {
             "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF.",
-            "structuralOnly": "Field indices, widths, record shapes, counts, ranges, and equal-count relations are serialized structure only.",
+            "structuralOnly": "Field indices, slot-to-next-boundary spans, record shapes, counts, ranges, and equal-count relations are serialized structure only; spans may include padding and are not field-type widths.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "Field-2 row fields 0-4, field-2 field-5 vector values, field names, cross-file ownership, runtime use, and game semantics are not claimed.",
+            "unresolved": "Field-2 row slot padding/value representations, field-2 field-5 vector values, field names, cross-file ownership, runtime use, and game semantics are not claimed.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -638,6 +725,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Root field 2 uses width-4 table offsets; direct rows: {layer3.get('field2DirectRowCount', 0):,}; Init empty vectors at EOF: {layer3.get('field2InitEmptyVectorAtEofFiles', 0):,}.",
         f"- Streaming row field 5 is an anonymous count-prefixed width-4 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values.",
+        "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus anonymous slot-to-next-boundary spans; fields 0-4 remain representation-unresolved and their spans may include padding.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
@@ -647,7 +735,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. Field-2 row fields 0-4 and every field-5 vector value remain opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. Field-2 row slot spans are exact, but possible padding and value representations in fields 0-4 and every field-5 vector value remain opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:
