@@ -113,6 +113,11 @@ only.
   serialized prefab ownership, including fail-closed renderers, is the required
   shader-census starting point. The later overview_02 M27 and overview_02/03
   M28 owners remain separately gated.
+- Recovered LitEffect material handoff uses one character-neutral, fail-closed
+  schema for the complete serialized texture, transform, color, and float
+  surface shared by the compatibility and five-MRT shaders. That contract does
+  not admit physical fallback-resource identities or per-frame/per-draw globals;
+  those still require their own exact runtime evidence.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
