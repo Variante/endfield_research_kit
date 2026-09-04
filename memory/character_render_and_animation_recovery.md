@@ -350,8 +350,10 @@ build and collection procedure.
   before readiness and arms on a new Animator/graphics trigger without waiting
   for Full mode's Streamline publication. Follow its README procedure. Retained
   palettes remain frame-end samples; metadata clocks and VS resource aliases
-  do not establish same-draw consumption. Retail early-phase coverage is still
-  unverified.
+  do not establish same-draw consumption. The first validated retail pose
+  session reaches the early entrance; use its phase-joined packets for an
+  independent Unity palette comparison. See the lab progress log and generated
+  pose-timing session review for the retained sample and startup-join gaps.
 - Close the character-neutral retail render frame: exact shader variants,
   bindings, lighting/shadow resources, post-processing, a phase-joined final
   swapchain boundary, and final presentation route.
