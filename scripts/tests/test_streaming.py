@@ -125,9 +125,9 @@ def _parallel_data_root() -> bytes:
 
 
 def _field2_streaming_root() -> bytes:
-    """One field-2 row with only its direct table/vtable framed."""
+    """One field-2 row and its terminal anonymous width-4 vector."""
 
-    data = bytearray(_data_root() + bytes(64))
+    data = bytearray(_data_root() + bytes(76))
     data[40:44] = (96 - 40).to_bytes(4, "little")
     data[96:100] = (1).to_bytes(4, "little")
     data[100:104] = (120 - 100).to_bytes(4, "little")
@@ -137,34 +137,46 @@ def _field2_streaming_root() -> bytes:
     data[120:124] = (16).to_bytes(4, "little", signed=True)
     data[124:132] = bytes(range(8))
     data[132:156] = bytes(range(24))
-    data[156:160] = (0xA5A5A5A5).to_bytes(4, "little")
+    data[156:160] = (4).to_bytes(4, "little")
+    data[160:172] = (2).to_bytes(4, "little") + bytes(range(8))
     return bytes(data)
 
 
 def _field2_streaming_shared_vtable_root() -> bytes:
-    """Two direct rows reuse one backward vtable."""
+    """Two terminal rows reuse one vtable between their child vectors."""
 
-    data = bytearray(_data_root() + bytes(120))
+    data = bytearray(_data_root() + bytes(132))
     data[40:44] = (96 - 40).to_bytes(4, "little")
     data[96:100] = (2).to_bytes(4, "little")
-    data[100:104] = (136 - 100).to_bytes(4, "little")
+    data[100:104] = (108 - 100).to_bytes(4, "little")
     data[104:108] = (176 - 104).to_bytes(4, "little")
-    data[120:136] = (16).to_bytes(2, "little") + (40).to_bytes(
+    data[108:112] = (-52).to_bytes(4, "little", signed=True)
+    data[144:148] = (4).to_bytes(4, "little")
+    data[148:160] = (2).to_bytes(4, "little") + bytes(range(8))
+    data[160:176] = (16).to_bytes(2, "little") + (40).to_bytes(
         2, "little"
     ) + b"".join(value.to_bytes(2, "little") for value in (0, 0, 0, 4, 12, 36))
-    data[136:140] = (16).to_bytes(4, "little", signed=True)
-    data[176:180] = (56).to_bytes(4, "little", signed=True)
+    data[176:180] = (16).to_bytes(4, "little", signed=True)
+    data[212:216] = (4).to_bytes(4, "little")
+    data[216:228] = (2).to_bytes(4, "little") + bytes(range(8, 16))
     return bytes(data)
 
 
 def _field2_streaming_full_layout_root() -> bytes:
     """The seventh corpus layout has all six anonymous fields present."""
 
-    data = bytearray(_field2_streaming_root() + bytes(12))
-    data[106:108] = (52).to_bytes(2, "little")
+    data = bytearray(_data_root() + bytes(88))
+    data[40:44] = (96 - 40).to_bytes(4, "little")
+    data[96:100] = (1).to_bytes(4, "little")
+    data[100:104] = (120 - 100).to_bytes(4, "little")
+    data[104:108] = (16).to_bytes(2, "little") + (52).to_bytes(2, "little")
     data[108:120] = b"".join(
         value.to_bytes(2, "little") for value in (4, 8, 12, 16, 24, 48)
     )
+    data[120:124] = (16).to_bytes(4, "little", signed=True)
+    data[124:168] = bytes(range(44))
+    data[168:172] = (4).to_bytes(4, "little")
+    data[172:184] = (2).to_bytes(4, "little") + bytes(range(8))
     return bytes(data)
 
 
@@ -257,19 +269,24 @@ class StreamingTests(unittest.TestCase):
             "exact_anonymous_subgraph",
         )
         self.assertEqual(result["anonymousGroupSubgraph"]["pairedGroupCount"], 0)
-        field2 = result["anonymousField2DirectSubgraph"]
-        self.assertEqual(field2["status"], "exact_anonymous_direct_subgraph")
+        field2 = result["anonymousField2TerminalSubgraph"]
+        self.assertEqual(field2["status"], "exact_anonymous_eof_subgraph")
         self.assertEqual(field2["rowCount"], 0)
         self.assertTrue(field2["vectorEndsAtEof"])
 
-    def test_streaming_field2_direct_rows_are_structural_only(self):
+    def test_streaming_field2_terminal_rows_are_structural_only(self):
         result = parse_streaming_file(
             "streaming", _packed(_field2_streaming_root())
         )
-        field2 = result["anonymousField2DirectSubgraph"]
-        self.assertEqual(field2["status"], "exact_anonymous_direct_subgraph")
+        field2 = result["anonymousField2TerminalSubgraph"]
+        self.assertEqual(field2["status"], "exact_anonymous_eof_subgraph")
         self.assertEqual(field2["rowCount"], 1)
-        self.assertEqual(field2["rowFieldsStatus"], "opaque")
+        self.assertEqual(field2["rowFields0To4Status"], "opaque")
+        self.assertEqual(field2["field5Status"], "exact-anonymous-vector")
+        self.assertEqual(field2["field5ElementWidth"], 4)
+        self.assertEqual(field2["field5VectorCount"], 1)
+        self.assertEqual(field2["field5ValueCount"], 2)
+        self.assertEqual(field2["structuralRange"], [96, 172])
         self.assertEqual(
             field2["rowLayouts"],
             [
@@ -321,8 +338,8 @@ class StreamingTests(unittest.TestCase):
             parse_streaming_file("streaming", _packed(bytes(clear)))
 
         clear = bytearray(_field2_streaming_root())
-        clear[106:108] = (41).to_bytes(2, "little")
-        with self.assertRaisesRegex(ValueError, "object size 41 exceeds payload at 120"):
+        clear[106:108] = (200).to_bytes(2, "little")
+        with self.assertRaisesRegex(ValueError, "object size 200 exceeds payload at 120"):
             parse_streaming_file("streaming", _packed(bytes(clear)))
 
         clear = bytearray(_field2_streaming_root())
@@ -335,55 +352,78 @@ class StreamingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "field offsets .* expected"):
             parse_streaming_file("streaming", _packed(bytes(clear)))
 
+    def test_field2_field5_vector_fails_closed(self):
+        clear = bytearray(_field2_streaming_root())
+        clear[156:160] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 5 vector target 156"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
+        clear = bytearray(_field2_streaming_root())
+        clear[156:160] = (0xFFFF_FFF0).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 5 vector target .* outside payload"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
+        clear = bytearray(_field2_streaming_root())
+        clear[156:160] = (8).to_bytes(4, "little")
+        clear[164:168] = (0).to_bytes(4, "little")
+        with self.assertRaisesRegex(
+            ValueError, "field 5 vector target 164, expected table end 160"
+        ):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
+        clear = bytearray(_field2_streaming_root())
+        clear[160:164] = (0xFFFF_FFFF).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "field 5 count 4294967295 .* exceeds payload"):
+            parse_streaming_file("streaming", _packed(bytes(clear)))
+
     def test_field2_truncation_overlap_and_trailing_bytes(self):
-        with self.assertRaisesRegex(ValueError, "object size 40 exceeds payload at 120"):
+        with self.assertRaisesRegex(ValueError, "field 5 count 2 .* exceeds payload"):
             parse_streaming_file(
                 "streaming", _packed(_field2_streaming_root()[:-1])
             )
 
-        clear = bytearray(_field2_streaming_root())
-        clear[120:124] = (-4).to_bytes(4, "little", signed=True)
-        clear[124:140] = (16).to_bytes(2, "little") + (40).to_bytes(
+        clear = bytearray(_data_root() + bytes(68))
+        clear[40:44] = (96 - 40).to_bytes(4, "little")
+        clear[96:100] = (1).to_bytes(4, "little")
+        clear[100:104] = (4).to_bytes(4, "little")
+        clear[104:108] = (-44).to_bytes(4, "little", signed=True)
+        clear[140:144] = (4).to_bytes(4, "little")
+        clear[144:148] = (2).to_bytes(4, "little")
+        clear[148:164] = (16).to_bytes(2, "little") + (40).to_bytes(
             2, "little"
         ) + b"".join(
             value.to_bytes(2, "little") for value in (0, 0, 0, 4, 12, 36)
         )
-        with self.assertRaisesRegex(ValueError, "direct structural ranges overlap"):
+        with self.assertRaisesRegex(ValueError, "terminal structural ranges overlap"):
             parse_streaming_file("streaming", _packed(bytes(clear)))
 
         with self.assertRaisesRegex(ValueError, "empty vector expected EOF 96, actual 97"):
             parse_streaming_file("init", _packed(_data_root() + b"\0"))
 
-        base = parse_streaming_file("streaming", _packed(_field2_streaming_root()))
-        result = parse_streaming_file(
-            "streaming", _packed(_field2_streaming_root() + b"\x7f")
-        )
-        self.assertEqual(
-            result["anonymousField2DirectSubgraph"]["wholeFileStatus"], "partial"
-        )
-        self.assertEqual(
-            result["anonymousField2DirectSubgraph"]["ownedBytes"],
-            base["anonymousField2DirectSubgraph"]["ownedBytes"],
-        )
-        self.assertEqual(
-            result["anonymousField2DirectSubgraph"]["rangeCount"],
-            base["anonymousField2DirectSubgraph"]["rangeCount"],
-        )
+        for trailing in (b"\0", b"\x7f"):
+            with self.subTest(trailing=trailing):
+                with self.assertRaisesRegex(
+                    ValueError, "terminal structural ranges end at 172, expected EOF 173"
+                ):
+                    parse_streaming_file(
+                        "streaming", _packed(_field2_streaming_root() + trailing)
+                    )
 
     def test_field2_shared_vtable_is_an_exact_reference(self):
         result = parse_streaming_file(
             "streaming", _packed(_field2_streaming_shared_vtable_root())
         )
-        field2 = result["anonymousField2DirectSubgraph"]
+        field2 = result["anonymousField2TerminalSubgraph"]
         self.assertEqual(field2["rowCount"], 2)
         self.assertEqual(field2["reusedReferences"], 1)
+        self.assertEqual(field2["field5ReusedReferences"], 0)
 
     def test_field2_full_six_field_layout(self):
         result = parse_streaming_file(
             "streaming", _packed(_field2_streaming_full_layout_root())
         )
         self.assertEqual(
-            result["anonymousField2DirectSubgraph"]["rowLayouts"],
+            result["anonymousField2TerminalSubgraph"]["rowLayouts"],
             [
                 {
                     "fieldCount": 6,
@@ -480,9 +520,9 @@ class StreamingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "structural ranges overlap"):
             parse_streaming_file("init", _packed(bytes(clear)))
 
-    def test_parallel_subgraph_trailing_bytes_remain_explicitly_partial(self):
+    def test_parallel_subgraph_remains_explicitly_partial(self):
         result = parse_streaming_file(
-            "streaming", _packed(_parallel_data_root() + b"\x7f")
+            "streaming", _packed(_field2_streaming_root())
         )
         self.assertEqual(
             result["anonymousParallelSubgraph"]["wholeFileStatus"], "partial"

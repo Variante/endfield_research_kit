@@ -93,10 +93,12 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["summary"]["exactInfo"], 1)
         self.assertEqual(result["summary"]["partialData"], 1)
         self.assertEqual(
-            result["layer3"]["field2DirectSubgraphStatus"],
-            "exact_anonymous_direct_subgraph",
+            result["layer3"]["field2TerminalSubgraphStatus"],
+            "exact_anonymous_eof_subgraph",
         )
         self.assertEqual(result["layer3"]["field2DirectRowCount"], 0)
+        self.assertEqual(result["layer3"]["field2Field5VectorCount"], 0)
+        self.assertEqual(result["layer3"]["field2Field5ValueCount"], 0)
         self.assertEqual(result["layer3"]["field2InitEmptyVectorAtEofFiles"], 1)
         self.assertEqual(result["layer3"]["parallelRowCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 2)

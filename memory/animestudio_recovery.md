@@ -225,7 +225,10 @@ Current durable boundaries:
   share three exact anonymous subgraphs across all current files. Root field 2
   is a width-4 table-offset vector: Init has an empty vector ending at EOF;
   Streaming closes each immediate table/vtable against seven selected-build
-  layouts while every row field and child target stays opaque. Root fields
+  layouts, and row field 5 is an exact count-prefixed vector of anonymous
+  width-4 values. This terminal subgraph is continuous from the field-2 vector
+  start through decoded EOF. Row fields 0--4 and every field-5 value stay
+  opaque. Root fields
   3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables, and a
   bounded row-field-0 byte range whose string/byte-vector representation stays
   ambiguous. Root fields 6/7 retain paired-group, descriptor, and blob-length
@@ -237,8 +240,8 @@ Current durable boundaries:
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Terrain block/channel meaning, Streaming field-2 row children, deeper field-5
-  children, remaining tails and field meaning,
+- Terrain block/channel meaning, Streaming field-2 row fields 0--4 and field-5
+  value structure/meaning, deeper parallel field-5 children, remaining tails,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not

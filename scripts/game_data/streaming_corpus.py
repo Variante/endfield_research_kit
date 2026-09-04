@@ -15,7 +15,7 @@ from typing import Any
 from scripts.game_data.streaming import parse_streaming_file
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v2"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v3"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -255,6 +255,9 @@ def sweep(
     parallel_owned_bytes = parallel_ranges = parallel_reused = 0
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
+    field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
+    field2_child_vectors = field2_child_values = field2_child_bytes = 0
+    field2_child_ranges = field2_child_reused = 0
     field2_init_eof_files = 0
     row_failure_count = unsupported_count = 0
     identity_rows = []
@@ -388,12 +391,12 @@ def sweep(
                 else:
                     parallel = parsed.get("anonymousParallelSubgraph") or {}
                     groups = parsed.get("anonymousGroupSubgraph") or {}
-                    field2 = parsed.get("anonymousField2DirectSubgraph") or {}
+                    field2 = parsed.get("anonymousField2TerminalSubgraph") or {}
                     if (
                         parallel.get("status") != "exact_anonymous_subgraph"
                         or groups.get("status") != "exact_anonymous_subgraph"
                         or field2.get("status")
-                        != "exact_anonymous_direct_subgraph"
+                        != "exact_anonymous_eof_subgraph"
                     ):
                         row_failure_count += 1
                         if len(failures) < FAILURE_SAMPLE_LIMIT:
@@ -417,6 +420,20 @@ def sweep(
                     field2_owned_bytes += int(field2.get("ownedBytes", 0))
                     field2_ranges += int(field2.get("rangeCount", 0))
                     field2_reused += int(field2.get("reusedReferences", 0))
+                    field2_direct_owned_bytes += int(
+                        field2.get("directOwnedBytes", 0)
+                    )
+                    field2_direct_ranges += int(field2.get("directRangeCount", 0))
+                    field2_direct_reused += int(
+                        field2.get("directReusedReferences", 0)
+                    )
+                    field2_child_vectors += int(field2.get("field5VectorCount", 0))
+                    field2_child_values += int(field2.get("field5ValueCount", 0))
+                    field2_child_bytes += int(field2.get("field5OwnedBytes", 0))
+                    field2_child_ranges += int(field2.get("field5RangeCount", 0))
+                    field2_child_reused += int(
+                        field2.get("field5ReusedReferences", 0)
+                    )
                     if family == "init" and field2.get("vectorEndsAtEof") is True:
                         field2_init_eof_files += 1
                     for layout in field2.get("rowLayouts") or []:
@@ -542,18 +559,28 @@ def sweep(
             "infoStatus": "exact_anonymous_eof" if not failed else "unvalidated",
             "infoRowCount": info_rows,
             "dataWholeFileStatus": "partial",
-            "field2DirectSubgraphStatus": (
-                "exact_anonymous_direct_subgraph" if not failed else "unvalidated"
+            "field2TerminalSubgraphStatus": (
+                "exact_anonymous_eof_subgraph" if not failed else "unvalidated"
             ),
             "field2VectorElementWidth": 4,
             "field2FamilyFileCounts": dict(sorted(field2_family_files.items())),
             "field2InitEmptyVectorAtEofFiles": field2_init_eof_files,
             "field2DirectRowCount": field2_rows,
             "field2DirectRowLayoutCounts": dict(sorted(field2_layouts.items())),
-            "field2OwnedBytesPerFileSum": field2_owned_bytes,
-            "field2RangeCountPerFileSum": field2_ranges,
-            "field2ReusedReferenceCount": field2_reused,
-            "field2RowFieldsStatus": "opaque",
+            "field2DirectOwnedBytesPerFileSum": field2_direct_owned_bytes,
+            "field2DirectRangeCountPerFileSum": field2_direct_ranges,
+            "field2DirectReusedReferenceCount": field2_direct_reused,
+            "field2Field5VectorElementWidth": 4,
+            "field2Field5VectorCount": field2_child_vectors,
+            "field2Field5ValueCount": field2_child_values,
+            "field2Field5OwnedBytesPerFileSum": field2_child_bytes,
+            "field2Field5RangeCountPerFileSum": field2_child_ranges,
+            "field2Field5ReusedReferenceCount": field2_child_reused,
+            "field2TerminalOwnedBytesPerFileSum": field2_owned_bytes,
+            "field2TerminalRangeCountPerFileSum": field2_ranges,
+            "field2TerminalReusedReferenceCount": field2_reused,
+            "field2Rows0To4Status": "opaque",
+            "field2Field5ValuesStatus": "opaque",
             "parallelSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -582,13 +609,13 @@ def sweep(
             "pairedGroupRangeCountPerFileSum": group_ranges,
             "pairedGroupReusedVtableReferenceCount": group_reused_vtables,
             "rangeAccountingNote": "Per-subgraph sums are not a whole-file union and must not be subtracted from decoded bytes to derive the opaque remainder.",
-            "opaque": "field-2 row fields and child targets, field-5 row children other than field 0, and all bytes outside certified subgraphs",
+            "opaque": "field-2 row fields 0-4, field-2 field-5 vector values, field-5 row children other than field 0, and all bytes outside certified subgraphs",
         },
         "evidenceBoundary": {
-            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte.",
+            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF.",
             "structuralOnly": "Field indices, widths, record shapes, counts, ranges, and equal-count relations are serialized structure only.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "Field-2 row fields/targets, field names, values, child payloads, cross-file ownership, runtime use, and game semantics are not claimed.",
+            "unresolved": "Field-2 row fields 0-4, field-2 field-5 vector values, field names, cross-file ownership, runtime use, and game semantics are not claimed.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -610,7 +637,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "## Proven structure",
         "",
         f"- Root field 2 uses width-4 table offsets; direct rows: {layer3.get('field2DirectRowCount', 0):,}; Init empty vectors at EOF: {layer3.get('field2InitEmptyVectorAtEofFiles', 0):,}.",
-        f"- Field-2 direct subgraph per-file range sums: {layer3.get('field2RangeCountPerFileSum', 0):,} ranges; {layer3.get('field2OwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
+        f"- Streaming row field 5 is an anonymous count-prefixed width-4 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values.",
+        f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         f"- Field-5 row field-0 references: {layer3.get('field5Field0ReferenceCount', 0):,}; referenced bytes: {layer3.get('field5Field0ReferencedBytes', 0):,}.",
@@ -619,7 +647,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. Field-2 row fields and child targets remain opaque. Field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. Field-2 row fields 0-4 and every field-5 vector value remain opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:

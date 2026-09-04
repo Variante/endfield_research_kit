@@ -66,8 +66,11 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
 - StreamingChunkInfo has an exact anonymous EOF graph. The two data families
   now also have three exact selected-build anonymous subgraphs. Root field 2 is
   a width-4 table-offset vector: Init is empty through EOF, while Streaming's
-  immediate table/vtable rows close against seven layouts; their fields and child
-  targets stay opaque. Root fields 3/4/5 use widths 4/1/4 with equal counts,
+  immediate table/vtable rows close against seven layouts. Each row's field 5
+  points directly after the table to an exact count-prefixed vector of
+  anonymous width-4 values; the combined field-2 subgraph is continuous to
+  decoded EOF. Row fields 0--4 and the field-5 values stay opaque. Root fields
+  3/4/5 use widths 4/1/4 with equal counts,
   bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
   independent paired-group subgraph. The field-0 representation remains
   string/byte-vector ambiguous; deeper row children, cross-file ownership,
@@ -220,7 +223,7 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Streaming field-2 row children/deep-row structure, Terrain
+- Complete unresolved Streaming field-2 row fields 0--4 and field-5 value/deep-row structure, Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

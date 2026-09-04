@@ -7,11 +7,12 @@ two length-prefixed inverted-LZ4 families (``InitChunkData`` and
 selected-build table/vector graph is framed exactly while every field remains
 anonymous. Both data families additionally expose three exact anonymous
 subgraphs: the paired groups under root fields 6/7, the parallel first-level
-vectors/rows under root fields 3/4/5, and the root-field-2 vector plus its
-immediate tables/vtables. Field-2 row fields and the child objects reached from
-field-5 rows remain opaque. A small DevOnly subset is raw despite sharing the
-first two path families, so the decoder accepts raw only after independently
-validating the observed root shape.
+vectors/rows under root fields 3/4/5, and the root-field-2 vector, its direct
+tables/vtables, and the anonymous width-4 vectors reached through row field 5.
+The values in those terminal vectors and row fields 0--4 remain opaque. A
+small DevOnly subset is raw despite sharing the first two path families, so the
+decoder accepts raw only after independently validating the observed root
+shape.
 """
 
 from __future__ import annotations
@@ -712,14 +713,14 @@ def _parse_parallel_root_subgraph(
     }
 
 
-def _parse_field2_direct_subgraph(
+def _parse_field2_terminal_subgraph(
     data: bytes, root: dict[str, Any], family: str
 ) -> dict[str, Any]:
-    """Frame root field 2 and only its immediate table/vtable records.
+    """Frame the selected-build root-field-2 terminal subgraph to EOF.
 
-    The row fields and every target they may encode deliberately remain
-    opaque.  A numerically forward-compatible word is not sufficient proof
-    that an anonymous slot is an offset.
+    Row field 5 is an exact count-prefixed vector reference with anonymous
+    width-4 elements. Row fields 0--4 and every vector element deliberately
+    remain opaque.
     """
 
     root_layout = {
@@ -740,6 +741,9 @@ def _parse_field2_direct_subgraph(
     layouts: Counter[
         tuple[int, int, tuple[int, ...], tuple[int, ...]]
     ] = Counter()
+    child_vector_count = 0
+    child_value_count = 0
+    child_ranges: list[tuple[int, int, str]] = []
 
     body = vector_start + 4
     for index in range(row_count):
@@ -789,6 +793,26 @@ def _parse_field2_direct_subgraph(
                 f"{family} field 2 row {index} table",
             )
         )
+        table_end = int(row["tableOffset"]) + int(row["objectSize"])
+        child_start, child_count, child_end = _bounded_vector(
+            data,
+            row,
+            5,
+            4,
+            f"{family} field 2 row {index} field 5",
+        )
+        if child_start != table_end:
+            raise ValueError(
+                f"Streaming {family} field 2 row {index} field 5 vector "
+                f"target {child_start}, expected table end {table_end}"
+            )
+        child_range = (child_start, child_end, "anonymous-width4-vector")
+        ranges.append(
+            (*child_range, f"{family} field 2 row {index} field 5")
+        )
+        child_ranges.append(child_range)
+        child_vector_count += 1
+        child_value_count += child_count
 
     if family == "init":
         if row_count != 0:
@@ -801,22 +825,42 @@ def _parse_field2_direct_subgraph(
                 f"actual {len(data)}"
             )
 
-    # Exact duplicate vtables/tables are shared references. Any other overlap
-    # is malformed for this selected-build direct subgraph.
+    # Exact duplicate ranges of the same structural kind are shared
+    # references. Any other overlap is malformed. The selected-build terminal
+    # subgraph is continuous from the root-field-2 vector through decoded EOF.
     unique_ranges = sorted(
         {(start, end, kind) for start, end, kind, _label in ranges}
     )
+    unique_child_ranges = sorted(set(child_ranges))
+    unique_direct_ranges = [
+        item for item in unique_ranges if item[2] != "anonymous-width4-vector"
+    ]
     reused_references = len(ranges) - len(unique_ranges)
+    if unique_ranges[0][0] != vector_start:
+        raise ValueError(
+            f"Streaming {family} field 2 terminal structural ranges start at "
+            f"{unique_ranges[0][0]}, expected vector start {vector_start}"
+        )
     for previous, current in zip(unique_ranges, unique_ranges[1:]):
         if current[0] < previous[1]:
             raise ValueError(
-                f"Streaming {family} field 2 direct structural ranges overlap: "
+                f"Streaming {family} field 2 terminal structural ranges overlap: "
                 f"{previous[0]}:{previous[1]} ({previous[2]}) and "
                 f"{current[0]}:{current[1]} ({current[2]})"
             )
+        if current[0] > previous[1]:
+            raise ValueError(
+                f"Streaming {family} field 2 terminal structural gap "
+                f"{previous[1]}:{current[0]} before {current[2]}"
+            )
+    if unique_ranges[-1][1] != len(data):
+        raise ValueError(
+            f"Streaming {family} field 2 terminal structural ranges end at "
+            f"{unique_ranges[-1][1]}, expected EOF {len(data)}"
+        )
 
     return {
-        "status": "exact_anonymous_direct_subgraph",
+        "status": "exact_anonymous_eof_subgraph",
         "rowCount": row_count,
         "vectorRange": [vector_start, vector_end],
         "vectorEndsAtEof": vector_end == len(data),
@@ -833,7 +877,26 @@ def _parse_field2_direct_subgraph(
         "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
         "rangeCount": len(unique_ranges),
         "reusedReferences": reused_references,
-        "rowFieldsStatus": "opaque",
+        "directOwnedBytes": sum(
+            end - start for start, end, _kind in unique_direct_ranges
+        ),
+        "directRangeCount": len(unique_direct_ranges),
+        "directReusedReferences": (
+            len(ranges) - len(child_ranges) - len(unique_direct_ranges)
+        ),
+        "structuralRange": [vector_start, len(data)],
+        "field5VectorCount": child_vector_count,
+        "field5ElementWidth": 4,
+        "field5ValueCount": child_value_count,
+        "field5ReferencedBytes": sum(end - start for start, end, _kind in child_ranges),
+        "field5OwnedBytes": sum(
+            end - start for start, end, _kind in unique_child_ranges
+        ),
+        "field5RangeCount": len(unique_child_ranges),
+        "field5ReusedReferences": len(child_ranges) - len(unique_child_ranges),
+        "field5Status": "exact-anonymous-vector",
+        "rowFields0To4Status": "opaque",
+        "field5ValuesStatus": "opaque",
         "wholeFileStatus": "partial",
     }
 
@@ -948,7 +1011,7 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
         result["anonymousGroupSubgraph"] = _parse_paired_group_subgraph(
             clear, layout, kind
         )
-        result["anonymousField2DirectSubgraph"] = _parse_field2_direct_subgraph(
+        result["anonymousField2TerminalSubgraph"] = _parse_field2_terminal_subgraph(
             clear, layout, kind
         )
     return result
