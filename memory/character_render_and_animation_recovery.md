@@ -102,10 +102,23 @@ only.
 - Character Info's common `CharEffect` is one scene-level non-looping particle
   system. Selection activates it and calls `Play`; repeated selection while it
   is in flight preserves its survivor clock and must not inject `Stop/Clear`.
+- Exact-build session `20260904T180646Z` proves a retained completed effect is
+  stopped at time 1/count 0 before `Play` and playing at time 0/count 0 after
+  it. The first overview Tick follows about 16.734 ms later. Its body clock is
+  already seeded to 0.034241635 s before Play, so Animator state time and
+  particle time remain distinct; the recovered scheduling must not add a
+  preroll, delayed actor start, or Animator-aliased effect clock.
 - Its recovered owner publishes a fail-closed generation plus source
   hierarchy, Unity identities, system clocks, and live trail count. Exact
   retained packet selection may use that evidence diagnostically, but
   canonical output continues to simulate the source system.
+- Deterministic capture setup must not age the shared system while settling the
+  actor. The Endminf harness recreates the observed retained-completed
+  precondition, then invokes the same production-order Animator entry and
+  `Play`; this is a capture precondition, not a runtime particle-time override.
+  The corrected first saved frame measures 0.016666668 s particle time and
+  0.050908305 s body time, agreeing with the retail/QPC join within about
+  0.101 ms.
 - A controller or effect definition proves authored composition, not that the
   retail frame executed it.
 
@@ -314,14 +327,13 @@ build and collection procedure.
   swapchain boundary, and final presentation route.
 - Recover Endminf's complete secondary-dynamics numeric solver, owner identity,
   job completion, and writeback/history.
-- Close the shared CharEffect particle lifecycle: retail submits 1,935 trail
-  quads near the source system's 0.20 s state while Endminf's body clip is only
-  at 0.051 s, while canonical Unity starts visibly at 0.05 s/4,000 particles.
-  EndfieldCapture's exact-build Animator schema v5 now records the authenticated
-  `ParticleSystem.Play(bool)` pre/post state and shared QPC/Present clock. Run
-  `StartEndminfCharEffectTimingCapture.bat`, validate it with the lab timing
-  verifier, and recover the selection/model-ready chronology before changing
-  canonical timing; do not encode the gap as an actor-specific pre-roll.
+- Close the shared CharEffect live render packet. Production lifecycle timing
+  is source-joined; the old 1,935-quad packet is a later automatic tail sample.
+  The exact-build observer now captures the first two VS/PS draw occurrences
+  directly from authenticated `Play`, including IA/VB/IB, constants,
+  `_VertexSkinMatrices`, SRVs/samplers, MRT/depth, and PSO. Collect one new
+  session and compare it with a live Unity D3D11 draw before changing the
+  reusable shader or renderer.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
