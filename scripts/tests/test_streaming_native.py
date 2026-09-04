@@ -32,6 +32,7 @@ class StreamingNativeTests(unittest.TestCase):
         gameassembly.write_bytes(b"gameassembly")
         image = _one_section_pe()
         image[0x210:0x214] = b"ABCD"
+        image[0x214:0x218] = b"EFGH"
         diagnostic = b"layout diagnostic\0"
         image[0x220 : 0x220 + len(diagnostic)] = diagnostic
         unity_player = root / "UnityPlayer.dll"
@@ -53,9 +54,24 @@ class StreamingNativeTests(unittest.TestCase):
                     "size": 4,
                     "bodySha256": hashlib.sha256(b"ABCD").hexdigest().upper(),
                     "entryBytesHex": b"ABCD".hex().upper(),
+                },
+                {
+                    "role": "fixtureField5Consumer",
+                    "rva": 0x1014,
+                    "fileOffset": 0x214,
+                    "size": 4,
+                    "bodySha256": hashlib.sha256(b"EFGH").hexdigest().upper(),
+                    "entryBytesHex": b"EFGH".hex().upper(),
                 }
             ],
             "rowLayout": [{"fieldIndex": 0, "representation": "scalar32"}],
+            "utf8Strings": [
+                {
+                    "role": "fixtureCarrierPath",
+                    "rva": 0x1020,
+                    "text": "layout diagnostic",
+                }
+            ],
             "consumerObservations": {
                 "diagnosticRva": 0x1020,
                 "diagnosticUtf8": "layout diagnostic",
@@ -115,6 +131,60 @@ class StreamingNativeTests(unittest.TestCase):
         self.assertTrue(
             any(
                 failure["gate"] == "fixtureAccessor.body_sha256"
+                for failure in report["validationFailures"]
+            )
+        )
+
+    def test_changed_field5_consumer_body_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            game_root, contract_path, native = self._fixture(Path(directory))
+            contract_hash = hashlib.sha256(contract_path.read_bytes()).hexdigest().upper()
+            unity_player = native.gameassembly.parent / "UnityPlayer.dll"
+            image = bytearray(unity_player.read_bytes())
+            image[0x214] ^= 0xFF
+            unity_player.write_bytes(image)
+            with (
+                patch.object(streaming_native, "CONTRACT_SHA256", contract_hash),
+                patch.object(
+                    streaming_native,
+                    "check_installed_native_inputs",
+                    return_value=native,
+                ),
+            ):
+                report = streaming_native.validate_streaming_field2_native_contract(
+                    contract_path=contract_path, game_root=game_root
+                )
+        self.assertEqual("validation_failed", report["status"])
+        self.assertTrue(
+            any(
+                failure["gate"] == "fixtureField5Consumer.body_sha256"
+                for failure in report["validationFailures"]
+            )
+        )
+
+    def test_changed_carrier_string_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            game_root, contract_path, native = self._fixture(Path(directory))
+            contract_hash = hashlib.sha256(contract_path.read_bytes()).hexdigest().upper()
+            unity_player = native.gameassembly.parent / "UnityPlayer.dll"
+            image = bytearray(unity_player.read_bytes())
+            image[0x220] ^= 0xFF
+            unity_player.write_bytes(image)
+            with (
+                patch.object(streaming_native, "CONTRACT_SHA256", contract_hash),
+                patch.object(
+                    streaming_native,
+                    "check_installed_native_inputs",
+                    return_value=native,
+                ),
+            ):
+                report = streaming_native.validate_streaming_field2_native_contract(
+                    contract_path=contract_path, game_root=game_root
+                )
+        self.assertEqual("validation_failed", report["status"])
+        self.assertTrue(
+            any(
+                failure["gate"] == "fixtureCarrierPath.utf8"
                 for failure in report["validationFailures"]
             )
         )

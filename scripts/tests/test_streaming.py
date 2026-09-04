@@ -283,7 +283,14 @@ class StreamingTests(unittest.TestCase):
         field2 = result["anonymousField2TerminalSubgraph"]
         self.assertEqual(field2["status"], "exact_anonymous_eof_subgraph")
         self.assertEqual(field2["rowCount"], 1)
-        self.assertEqual(field2["field5Status"], "exact-anonymous-vector")
+        self.assertEqual(
+            field2["field5Status"],
+            "exact-anonymous-native-consumed-scalar32-vector",
+        )
+        self.assertEqual(
+            field2["field5ValuesStatus"],
+            "exact-anonymous-selected-build-native-scalar32-keys",
+        )
         self.assertEqual(field2["field5ElementWidth"], 4)
         self.assertEqual(field2["field5VectorCount"], 1)
         self.assertEqual(field2["field5ValueCount"], 2)
@@ -354,6 +361,14 @@ class StreamingTests(unittest.TestCase):
             field2["rowFields0To4RepresentationStatus"],
             "exact-selected-build-native-loads",
         )
+        self.assertEqual(
+            field2["rowFields0To5Status"],
+            "exact-anonymous-native-consumed-layout",
+        )
+        self.assertEqual(
+            field2["rowFields0To5RepresentationStatus"],
+            "exact-selected-build-native-loads",
+        )
         self.assertEqual(field2["rowSlotSpansMayContainPadding"], [])
         self.assertEqual(
             [item["representation"] for item in field2["rowFieldRepresentations"]],
@@ -363,6 +378,7 @@ class StreamingTests(unittest.TestCase):
                 "little-endian-scalar32",
                 "little-endian-int32[2]",
                 "little-endian-float32[6]",
+                "count-prefixed-little-endian-scalar32[]",
             ],
         )
         self.assertEqual(
@@ -382,6 +398,7 @@ class StreamingTests(unittest.TestCase):
                         319951120,
                         387323156,
                     ],
+                    "field5Scalar32Bits": [50462976, 117835012],
                 }
             ],
         )
@@ -406,6 +423,14 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(
             "unvalidated-native-contract",
             field2["rowFields0To4RepresentationStatus"],
+        )
+        self.assertEqual(
+            "unvalidated-native-contract",
+            field2["rowFields0To5RepresentationStatus"],
+        )
+        self.assertEqual(
+            "unvalidated-native-contract",
+            field2["field5ValuesStatus"],
         )
         self.assertEqual([], field2["rowFieldRepresentations"])
         self.assertEqual([], field2["rowValueRecords"])

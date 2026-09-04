@@ -224,14 +224,20 @@ or unauthenticated declaration while still publishing its terminal ledger.
 `reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
 exact `inputSetSha256` from the current outer summary. The gate covers the
 anonymous field-2 vector, immediate table/vtable framing, and terminal row
-field-5 width-4 vectors through EOF, as well as the field3/4/5 and field6/7
+field-5 scalar32 vectors through EOF, as well as the field3/4/5 and field6/7
 subgraphs. It also verifies the field-2 row object's four-byte prefix plus
-slot-to-next-boundary partition. Before publishing fields 0--4 as anonymous
-scalar32/scalar32/scalar32/int32[2]/float32[6], it revalidates the selected
-GameAssembly, metadata, UnityPlayer, and bounded accessor/consumer bodies. The
-report also gates the current numeric/Global filename-token relations. Native
-carrier length/final-cursor, field names, semantics, and every terminal vector
-value remain unresolved.
+slot-to-next-boundary partition. Before publishing fields 0--5 as anonymous
+scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[], it revalidates the
+selected GameAssembly, metadata, UnityPlayer, and bounded accessor/consumer
+bodies. The field-5 consumer reloads the retained row pointer from a 72-byte
+runtime record, iterates the count-prefixed vector with four-byte loads, and
+uses each value as a hash-table key. The report also gates the current
+numeric/Global filename-token relations. The selected family-level native read
+path closes payload base, requested length, actual-count equality, and root
+calculation. The concrete runtime path is unavailable, FlatBuffer accessors
+receive no outer length, and no final cursor is exposed, so the carrier is not
+joined to one authenticated logical file. Key namespace and signedness, field
+names, and semantics remain unresolved.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

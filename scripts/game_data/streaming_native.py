@@ -11,10 +11,10 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
 
-SCHEMA = "endfield.streaming-field2-native-contract.v1"
+SCHEMA = "endfield.streaming-field2-native-contract.v2"
 DEFAULT_CONTRACT = Path(__file__).with_name("streaming_field2_native.json")
 # Updated only after the reviewed JSON contract is finalized.
-CONTRACT_SHA256 = "1C19A813F446C26FAE6CE1344280A2A947C072279336119029439473D187CB5B"
+CONTRACT_SHA256 = "50CD76D22F36A6F15330720DB63870E39A5F687D37EA8D9F018142D19A59AD7A"
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -161,6 +161,21 @@ def validate_streaming_field2_native_contract(
         except (KeyError, TypeError, ValueError) as exc:
             reject("consumer_diagnostic", "valid bounded UTF-8 diagnostic", str(exc))
 
+        for row in contract.get("utf8Strings") or []:
+            role = str(row.get("role", "unknown"))
+            try:
+                expected_text = str(row["text"]).encode("utf-8") + b"\0"
+                offset = _pe_file_offset(unity_image, int(row["rva"]))
+                actual_text = unity_image[offset : offset + len(expected_text)]
+                if actual_text != expected_text:
+                    reject(
+                        f"{role}.utf8",
+                        expected_text.hex().upper(),
+                        actual_text.hex().upper(),
+                    )
+            except (KeyError, TypeError, ValueError) as exc:
+                reject(f"{role}.utf8", "valid bounded UTF-8 string", str(exc))
+
     status = NATIVE_EVIDENCE_VALIDATED if not failures else "validation_failed"
     return {
         "status": status,
@@ -171,6 +186,7 @@ def validate_streaming_field2_native_contract(
         "unityPlayerSha256": actual_unity_sha256,
         "rowLayout": contract.get("rowLayout"),
         "consumerObservations": contract.get("consumerObservations"),
+        "carrierObservations": contract.get("carrierObservations"),
         "evidenceBoundary": contract.get("evidenceBoundary"),
         "validationFailures": failures,
     }

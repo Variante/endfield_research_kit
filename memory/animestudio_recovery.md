@@ -226,20 +226,30 @@ Current durable boundaries:
   is a width-4 table-offset vector: Init has an empty vector ending at EOF;
   Streaming closes each immediate table/vtable against seven selected-build
   layouts, and row field 5 is an exact count-prefixed vector of anonymous
-  width-4 values. This terminal subgraph is continuous from the field-2 vector
+  little-endian scalar32 values. This terminal subgraph is continuous from the
+  field-2 vector
   start through decoded EOF. Each row object also partitions exactly into its
   four-byte vtable displacement and present slot-to-next-boundary spans:
   fields 0/1/2 use 4-byte spans, field 3 uses 8, field 4 uses 24, and field 5
   uses its proven 4-byte uoffset slot. A current-build hash-gated UnityPlayer
-  consumer and five accessors directly close fields 0--2 as scalar32, field 3
-  as two int32 loads, and field 4 as six float32 loads, so these spans contain
-  no padding. The numeric filename family has an exact current-corpus relation:
+  consumer and accessors directly close fields 0--2 as scalar32, field 3
+  as two int32 loads, and field 4 as six float32 loads. The same producer
+  retains the source row pointer at offset 16 of a copied 72-byte runtime
+  record; a later state consumer reloads it, reads the field-5 count and each
+  `vector+4+index*4` element, and passes the scalar32 value to a hash-table
+  lookup. Fields 0--5 therefore contain no padding and are directly consumed
+  in these representations. The numeric filename family has an exact current-corpus relation:
   the field-3 lanes floor-divided by 128 equal the first two filename integers,
   with residuals limited to 0/32/64/96; present fields 1/2 equal the last two
   integers. The Global family has a separate present-field 1/2 relation to its
-  two integers. These fields remain anonymous: the native raw carrier
-  base/length and final cursor are not closed, and the matching managed
-  `GridData` shape is candidate-only. Root fields
+  two integers. A separately hash-gated family-level native read path now
+  closes its payload base, requested length, returned byte count, exact-read
+  success branch, and `base + u32(base)` root calculation. It does not expose
+  the concrete runtime path, pass the outer length into FlatBuffer accessors,
+  or produce a final cursor, so it is not joined to one authenticated logical
+  file. These fields remain anonymous: the field-5 key namespace and signedness
+  are unresolved, and the matching managed `GridData` shape is candidate-only.
+  Root fields
   3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables, and a
   bounded row-field-0 byte range whose string/byte-vector representation stays
   ambiguous. Root fields 6/7 retain paired-group, descriptor, and blob-length
@@ -251,8 +261,9 @@ Current durable boundaries:
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Terrain block/channel meaning, Streaming field-2 raw native carrier and
-  field-5 value meaning, deeper parallel field-5 children,
+- Terrain block/channel meaning, Streaming's concrete carrier-to-authenticated-
+  file/final-cursor join and field-5 key namespace/ownership, deeper parallel
+  field-5 children,
   remaining tails,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
@@ -333,8 +344,8 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 ## Remaining gaps
 
 - Complete inner semantics for the unresolved VFS payload families, starting
-  with the Streaming field-2 carrier/base+length/final-cursor join and field-5
-  element consumer.
+  with the Streaming carrier's concrete authenticated-file/final-cursor join
+  and field-5 key namespace/ownership.
 - Improve per-object clean/partial/error certification and dependency diagnostics.
 - Recover more exact MonoBehaviour and managed-reference schemas.
 - Expand shader-container coverage and complete semantic shader fixtures.

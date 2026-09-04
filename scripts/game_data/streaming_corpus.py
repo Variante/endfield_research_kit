@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v5"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v6"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -244,6 +244,19 @@ def sweep(
                     "actual": native_contract.get("validationFailures"),
                 }
             )
+        carrier_contract = native_contract.get("carrierObservations") or {}
+        if carrier_contract.get("baseLengthStatus") != (
+            "exact-selected-build-family-level-native-carrier"
+        ):
+            failures.append(
+                {
+                    "scope": "streaming-native-carrier-contract",
+                    "stage": "native-provenance",
+                    "message": "selected-build carrier base/length contract did not validate",
+                    "expected": "exact-selected-build-family-level-native-carrier",
+                    "actual": carrier_contract.get("baseLengthStatus"),
+                }
+            )
     except Exception as exc:
         return {
             "schema": SCHEMA,
@@ -290,6 +303,12 @@ def sweep(
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
     field2_child_vectors = field2_child_values = field2_child_bytes = 0
     field2_child_ranges = field2_child_reused = 0
+    field2_child_zero_values = field2_child_high_bit_values = 0
+    field2_child_strictly_increasing_rows = 0
+    field2_child_unsorted_rows = field2_child_duplicate_rows = 0
+    field2_child_min: int | None = None
+    field2_child_max: int | None = None
+    field2_child_ordered_sha256 = hashlib.sha256()
     field2_init_eof_files = 0
     field2_object_prefix_bytes = 0
     field2_slot_presence: collections.Counter[int] = collections.Counter()
@@ -449,6 +468,10 @@ def sweep(
                         != "exact_anonymous_eof_subgraph"
                         or field2.get("rowObjectPartitionStatus")
                         != "exact-anonymous-slot-spans"
+                        or field2.get("rowFields0To5RepresentationStatus")
+                        != "exact-selected-build-native-loads"
+                        or field2.get("field5ValuesStatus")
+                        != "exact-anonymous-selected-build-native-scalar32-keys"
                     ):
                         row_failure_count += 1
                         if len(failures) < FAILURE_SAMPLE_LIMIT:
@@ -464,6 +487,12 @@ def sweep(
                                         "field2": field2.get("status"),
                                         "field2RowObjectPartition": field2.get(
                                             "rowObjectPartitionStatus"
+                                        ),
+                                        "field2RowRepresentation": field2.get(
+                                            "rowFields0To5RepresentationStatus"
+                                        ),
+                                        "field2Field5Values": field2.get(
+                                            "field5ValuesStatus"
                                         ),
                                     },
                                 )
@@ -529,6 +558,25 @@ def sweep(
                                 )
                             )
                         continue
+                    consumed_field5_values = sum(
+                        len(value_record.get("field5Scalar32Bits") or [])
+                        for value_record in value_records
+                    )
+                    if consumed_field5_values != int(
+                        field2.get("field5ValueCount", 0)
+                    ):
+                        row_failure_count += 1
+                        if len(failures) < FAILURE_SAMPLE_LIMIT:
+                            failures.append(
+                                _failure(
+                                    virtual_path,
+                                    "parse",
+                                    "field-2 field-5 consumed scalar32 count mismatch",
+                                    expected=field2.get("field5ValueCount"),
+                                    actual=consumed_field5_values,
+                                )
+                            )
+                        continue
                     file_name = virtual_path.rsplit("/", 1)[-1]
                     numeric_match = _NUMERIC_STREAMING_NAME.fullmatch(file_name)
                     global_match = _GLOBAL_STREAMING_NAME.fullmatch(file_name)
@@ -543,6 +591,46 @@ def sweep(
                     else:
                         tokens = ()
                     for value_record in value_records:
+                        field5_values = [
+                            int(value)
+                            for value in value_record.get("field5Scalar32Bits", [])
+                        ]
+                        field2_child_ordered_sha256.update(
+                            len(field5_values).to_bytes(4, "little")
+                        )
+                        for value in field5_values:
+                            field2_child_ordered_sha256.update(
+                                value.to_bytes(4, "little")
+                            )
+                        if field5_values:
+                            row_min = min(field5_values)
+                            row_max = max(field5_values)
+                            field2_child_min = (
+                                row_min
+                                if field2_child_min is None
+                                else min(field2_child_min, row_min)
+                            )
+                            field2_child_max = (
+                                row_max
+                                if field2_child_max is None
+                                else max(field2_child_max, row_max)
+                            )
+                        field2_child_zero_values += sum(
+                            value == 0 for value in field5_values
+                        )
+                        field2_child_high_bit_values += sum(
+                            bool(value & 0x8000_0000) for value in field5_values
+                        )
+                        if all(
+                            left < right
+                            for left, right in zip(field5_values, field5_values[1:])
+                        ):
+                            field2_child_strictly_increasing_rows += 1
+                        else:
+                            field2_child_unsorted_rows += 1
+                        field2_child_duplicate_rows += int(
+                            len(set(field5_values)) != len(field5_values)
+                        )
                         field4_bits = [
                             int(value)
                             for value in value_record.get("field4Float32Bits", [])
@@ -798,6 +886,17 @@ def sweep(
             "field2Field5OwnedBytesPerFileSum": field2_child_bytes,
             "field2Field5RangeCountPerFileSum": field2_child_ranges,
             "field2Field5ReusedReferenceCount": field2_child_reused,
+            "field2Field5Scalar32Stats": {
+                "minimum": field2_child_min,
+                "maximum": field2_child_max,
+                "zeroCount": field2_child_zero_values,
+                "highBitSetCount": field2_child_high_bit_values,
+                "strictlyIncreasingRowCount": field2_child_strictly_increasing_rows,
+                "notStrictlyIncreasingRowCount": field2_child_unsorted_rows,
+                "duplicateWithinRowCount": field2_child_duplicate_rows,
+                "orderedValuesSha256": field2_child_ordered_sha256.hexdigest().upper(),
+                "status": "current-corpus-structural-statistics",
+            },
             "field2TerminalOwnedBytesPerFileSum": field2_owned_bytes,
             "field2TerminalRangeCountPerFileSum": field2_ranges,
             "field2TerminalReusedReferenceCount": field2_reused,
@@ -830,6 +929,12 @@ def sweep(
             "field2Rows0To4RepresentationStatus": (
                 "exact-selected-build-native-loads" if not failed else "unvalidated"
             ),
+            "field2Rows0To5Status": (
+                "exact-anonymous-native-consumed-layout" if not failed else "unvalidated"
+            ),
+            "field2Rows0To5RepresentationStatus": (
+                "exact-selected-build-native-loads" if not failed else "unvalidated"
+            ),
             "field2RowFieldRepresentations": (
                 native_contract.get("rowLayout") if not failed else []
             ),
@@ -857,7 +962,11 @@ def sweep(
                     "status": "exact-current-corpus-structural-relation",
                 },
             },
-            "field2Field5ValuesStatus": "opaque",
+            "field2Field5ValuesStatus": (
+                "exact-anonymous-selected-build-native-scalar32-keys"
+                if not failed
+                else "unvalidated"
+            ),
             "parallelSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -886,19 +995,38 @@ def sweep(
             "pairedGroupRangeCountPerFileSum": group_ranges,
             "pairedGroupReusedVtableReferenceCount": group_reused_vtables,
             "rangeAccountingNote": "Per-subgraph sums are not a whole-file union and must not be subtracted from decoded bytes to derive the opaque remainder.",
-            "opaque": "field-2 field-5 vector values, field-5 row children other than field 0, and all bytes outside certified subgraphs",
+            "opaque": "field-5 row children other than field 0 and all bytes outside certified subgraphs",
         },
         "layer4": {
             "streamingField2NativeContract": native_contract,
             "managedShapeCandidateStatus": "candidate-only",
-            "nativeCarrierStatus": "unresolved-base-length-and-final-cursor",
+            "nativeCarrierStatus": (
+                carrier_contract.get("baseLengthStatus")
+                if not failed
+                else "unvalidated"
+            ),
+            "nativeLogicalFileJoinStatus": (
+                carrier_contract.get("logicalFileJoinStatus")
+                if not failed
+                else "unvalidated"
+            ),
+            "nativeFinalCursorStatus": (
+                carrier_contract.get("finalCursorStatus")
+                if not failed
+                else "unvalidated"
+            ),
+            "nativeRowConsumerCarrierJoinStatus": (
+                carrier_contract.get("rowConsumerCarrierJoinStatus")
+                if not failed
+                else "unvalidated"
+            ),
         },
         "evidenceBoundary": {
-            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF. Current native hashes and bounded accessor/consumer bodies establish the stored representations of row fields 0-4.",
-            "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, and field 4 is six float32 loads. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
-            "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, and filename-token relations remain anonymous serialized structure; no field names or game meaning are assigned.",
+            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF. Current native hashes and bounded accessor/consumer bodies establish the stored representations of row fields 0-5. The selected family-level native read path carries a payload base and requested length, records actual bytes read, and accepts success only when requested and actual lengths match.",
+            "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, field 4 is six float32 loads, and field 5 is a count-prefixed vector whose elements are loaded as scalar32 hash-table keys. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
+            "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, filename-token relations, and the family-level carrier remain anonymous structure. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "The Streaming native carrier base/length and final cursor, field-2 field-5 vector values, field names, cross-file ownership, runtime selection, and game semantics are not claimed.",
+            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, scene-root-to-row-consumer object path, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -920,8 +1048,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "## Proven structure",
         "",
         f"- Root field 2 uses width-4 table offsets; direct rows: {layer3.get('field2DirectRowCount', 0):,}; Init empty vectors at EOF: {layer3.get('field2InitEmptyVectorAtEofFiles', 0):,}.",
-        f"- Streaming row field 5 is an anonymous count-prefixed width-4 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values.",
-        "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6], followed by the field-5 uoffset slot. These representations are selected-build native-gated and remain anonymous.",
+        f"- Streaming row field 5 is an anonymous count-prefixed scalar32 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values. A selected-build consumer loads every element as a 32-bit hash-table key.",
+        f"- Field-5 scalar32 statistics: `{layer3.get('field2Field5Scalar32Stats')}`.",
+        "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[]. These representations are selected-build native-gated and remain anonymous.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
@@ -933,7 +1062,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. The selected-build native contract proves only the stored representations and direct load shapes of fields 0-4; it does not close the raw carrier base/length or final cursor and therefore does not promote managed names or game semantics. Every field-5 vector value remains opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime selection, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. The selected-build native contract proves the stored representations and direct load shapes of fields 0-5. Its family-level read path also carries base/requested length, records the actual count, and accepts success only for equality. The runtime path value is unavailable, FlatBuffer accessors receive no outer length, and no final cursor is exposed, so the carrier is not joined to one authenticated logical file and does not promote managed names or game semantics. Field-5 scalar32 signedness and key namespace remain unresolved. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime selection, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:

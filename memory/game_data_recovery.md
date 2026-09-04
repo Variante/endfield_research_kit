@@ -68,13 +68,18 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   a width-4 table-offset vector: Init is empty through EOF, while Streaming's
   immediate table/vtable rows close against seven layouts. Each row's field 5
   points directly after the table to an exact count-prefixed vector of
-  anonymous width-4 values; the combined field-2 subgraph is continuous to
+  anonymous little-endian scalar32 values; the combined field-2 subgraph is
+  continuous to
   decoded EOF. The table objects partition into a four-byte vtable displacement
   plus present slot-to-next-boundary spans of 4/4/4/8/24/4 bytes for fields
   0--5. A selected-build native contract revalidates all three client hashes,
   the bounded row consumer, and accessor bodies before publishing fields 0--2
-  as scalar32, field 3 as int32[2], and field 4 as float32[6]; those spans
-  contain no padding. Current numeric filenames exactly relate to present
+  as scalar32, field 3 as int32[2], and field 4 as float32[6]. The row producer
+  also retains its source pointer at offset 16 in a copied 72-byte runtime
+  record. A later consumer reloads that pointer, iterates field 5 using its
+  dword count and `vector+4+index*4` dword elements, and passes each scalar32
+  value into a hash-table lookup. Those field 0--5 spans contain no padding.
+  Current numeric filenames exactly relate to present
   fields 1/2 and the floor-divided field-3 lanes, while Global filenames keep
   a separate exact fields-1/2 relation. These are anonymous structural
   relations, not coordinate or gameplay names. Root fields
@@ -82,10 +87,14 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
   independent paired-group subgraph. The field-0 representation remains
   string/byte-vector ambiguous; deeper row children, cross-file ownership,
-  runtime use, and all game semantics remain unresolved. A managed `GridData`
-  shape and the consumer diagnostic provide name candidates only: the native
-  raw carrier base/length and final cursor remain unresolved, so no serialized
-  field name is promoted.
+  runtime use, and all game semantics remain unresolved. A separately gated
+  family-level native reader closes payload base, requested length, returned
+  count, exact-read success, and `base + u32(base)` root calculation. Its
+  concrete runtime path is unavailable, its FlatBuffer accessors receive no
+  outer length, and it exposes no final cursor, so it is not joined to one
+  authenticated logical file. A managed `GridData` shape and the consumer
+  diagnostic provide name candidates only; field-5 signedness/key namespace is
+  not established, so no serialized field name is promoted.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -233,8 +242,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete the Streaming field-2 raw carrier/base+length/final-cursor join and
-  field-5 value/deep-row structure, Terrain
+- Complete the Streaming carrier's concrete authenticated-file/final-cursor
+  join and field-5 key namespace/deep-row structure, Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

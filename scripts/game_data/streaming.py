@@ -9,10 +9,10 @@ anonymous. Both data families additionally expose three exact anonymous
 subgraphs: the paired groups under root fields 6/7, the parallel first-level
 vectors/rows under root fields 3/4/5, and the root-field-2 vector, its direct
 tables/vtables, and the anonymous width-4 vectors reached through row field 5.
-For the selected build, hash-gated native accessors establish row fields 0--2
-as single 32-bit loads, field 3 as two signed 32-bit loads, and field 4 as six
-32-bit floating-point loads. The values and names remain anonymous, and the
-terminal field-5 vector values remain opaque. A
+For the selected build, hash-gated native accessors and consumers establish row
+fields 0--2 as single 32-bit loads, field 3 as two signed 32-bit loads, field 4
+as six 32-bit floating-point loads, and every field-5 vector element as a
+32-bit hash-table lookup key. The values and names remain anonymous. A
 small DevOnly subset is raw despite sharing the first two path families, so the
 decoder accepts raw only after independently validating the observed root
 shape.
@@ -727,9 +727,9 @@ def _parse_field2_terminal_subgraph(
     """Frame the selected-build root-field-2 terminal subgraph to EOF.
 
     Row field 5 is an exact count-prefixed vector reference with anonymous
-    width-4 elements. Selected-build native accessors establish the stored
-    representations of row fields 0--4, but their names and meanings and every
-    field-5 vector element deliberately remain opaque. The current-corpus gate
+    width-4 elements. Selected-build native accessors and consumers establish
+    the stored representations of row fields 0--5, but their names, signedness,
+    key namespace, and meanings remain unresolved. The current-corpus gate
     independently revalidates that native contract before publishing these
     representations as current evidence.
     """
@@ -814,8 +814,9 @@ def _parse_field2_terminal_subgraph(
                 )
             slot_presence[field_index] += 1
             slot_span_bytes[field_index] += span
+        row_values: dict[str, Any] | None = None
         if native_layout_validated:
-            row_values: dict[str, Any] = {"rowIndex": index}
+            row_values = {"rowIndex": index}
             for field_index in range(3):
                 offset = fields[field_index]
                 row_values[f"field{field_index}Scalar32Bits"] = (
@@ -834,7 +835,6 @@ def _parse_field2_terminal_subgraph(
             row_values["field4Float32Bits"] = list(
                 struct.unpack_from("<6I", data, target + field4_offset)
             )
-            row_value_records.append(row_values)
         ranges.append(
             (
                 int(row["vtableOffset"]),
@@ -871,6 +871,12 @@ def _parse_field2_terminal_subgraph(
         child_ranges.append(child_range)
         child_vector_count += 1
         child_value_count += child_count
+        if row_values is not None:
+            row_values["field5Scalar32Bits"] = [
+                _u32(data, child_start + 4 + value_index * 4)
+                for value_index in range(child_count)
+            ]
+            row_value_records.append(row_values)
 
     if family == "init":
         if row_count != 0:
@@ -952,7 +958,11 @@ def _parse_field2_terminal_subgraph(
         ),
         "field5RangeCount": len(unique_child_ranges),
         "field5ReusedReferences": len(child_ranges) - len(unique_child_ranges),
-        "field5Status": "exact-anonymous-vector",
+        "field5Status": (
+            "exact-anonymous-native-consumed-scalar32-vector"
+            if native_layout_validated
+            else "exact-anonymous-vector"
+        ),
         "rowObjectPartitionStatus": "exact-anonymous-slot-spans",
         "rowObjectPrefixBytes": row_count * 4,
         "rowSlotSpans": [
@@ -984,6 +994,16 @@ def _parse_field2_terminal_subgraph(
             if native_layout_validated
             else "unvalidated-native-contract"
         ),
+        "rowFields0To5Status": (
+            "exact-anonymous-native-consumed-layout"
+            if native_layout_validated
+            else "exact-anonymous-slot-spans"
+        ),
+        "rowFields0To5RepresentationStatus": (
+            "exact-selected-build-native-loads"
+            if native_layout_validated
+            else "unvalidated-native-contract"
+        ),
         "rowFieldRepresentations": ([
             {
                 "fieldIndex": field_index,
@@ -998,6 +1018,7 @@ def _parse_field2_terminal_subgraph(
                     "little-endian-scalar32",
                     "little-endian-int32[2]",
                     "little-endian-float32[6]",
+                    "count-prefixed-little-endian-scalar32[]",
                 )
             )
         ] if native_layout_validated else []),
@@ -1005,7 +1026,11 @@ def _parse_field2_terminal_subgraph(
         "rowSlotSpansMayContainPadding": (
             [] if native_layout_validated else [0, 1, 2, 3, 4]
         ),
-        "field5ValuesStatus": "opaque",
+        "field5ValuesStatus": (
+            "exact-anonymous-selected-build-native-scalar32-keys"
+            if native_layout_validated
+            else "unvalidated-native-contract"
+        ),
         "wholeFileStatus": "partial",
     }
 

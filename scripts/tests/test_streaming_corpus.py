@@ -26,7 +26,17 @@ class StreamingCorpusTests(unittest.TestCase):
                 {"fieldIndex": 2, "representation": "little-endian-scalar32"},
                 {"fieldIndex": 3, "representation": "little-endian-int32[2]"},
                 {"fieldIndex": 4, "representation": "little-endian-float32[6]"},
+                {
+                    "fieldIndex": 5,
+                    "representation": "count-prefixed-little-endian-scalar32[]",
+                },
             ],
+            "carrierObservations": {
+                "baseLengthStatus": "exact-selected-build-family-level-native-carrier",
+                "logicalFileJoinStatus": "candidate-family-only-no-concrete-runtime-path",
+                "finalCursorStatus": "unresolved-not-exposed-to-flatbuffer-accessors",
+                "rowConsumerCarrierJoinStatus": "unresolved-runtime-handle-intermediate",
+            },
             "validationFailures": [],
         }
         with patch(
@@ -154,6 +164,32 @@ class StreamingCorpusTests(unittest.TestCase):
             result["layer3"]["field2Rows0To4RepresentationStatus"],
             "exact-selected-build-native-loads",
         )
+        self.assertEqual(
+            result["layer3"]["field2Rows0To5RepresentationStatus"],
+            "exact-selected-build-native-loads",
+        )
+        self.assertEqual(
+            result["layer3"]["field2Field5ValuesStatus"],
+            "exact-anonymous-selected-build-native-scalar32-keys",
+        )
+        self.assertEqual(
+            result["layer3"]["field2Field5Scalar32Stats"],
+            {
+                "minimum": 50462976,
+                "maximum": 117835012,
+                "zeroCount": 0,
+                "highBitSetCount": 0,
+                "strictlyIncreasingRowCount": 1,
+                "notStrictlyIncreasingRowCount": 0,
+                "duplicateWithinRowCount": 0,
+                "orderedValuesSha256": hashlib.sha256(
+                    (2).to_bytes(4, "little") + bytes(range(8))
+                )
+                .hexdigest()
+                .upper(),
+                "status": "current-corpus-structural-statistics",
+            },
+        )
         self.assertEqual(result["layer3"]["field2InitEmptyVectorAtEofFiles"], 1)
         numeric = result["layer3"]["field2PathRelations"]["numericPattern"]
         self.assertEqual(numeric["fileCount"], 1)
@@ -165,6 +201,14 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["layer3"]["parallelRowCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0Representation"], "ambiguous")
+        self.assertEqual(
+            result["layer4"]["nativeCarrierStatus"],
+            "exact-selected-build-family-level-native-carrier",
+        )
+        self.assertEqual(
+            result["layer4"]["nativeFinalCursorStatus"],
+            "unresolved-not-exposed-to-flatbuffer-accessors",
+        )
 
     def test_stale_input_set_fails_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -183,6 +227,7 @@ class StreamingCorpusTests(unittest.TestCase):
             result["layer3"]["field2RowObjectPartitionStatus"], "unvalidated"
         )
         self.assertEqual(result["layer3"]["field2Rows0To4Status"], "unvalidated")
+        self.assertEqual(result["layer3"]["field2Rows0To5Status"], "unvalidated")
         self.assertEqual(
             {item["status"] for item in result["layer3"]["field2RowSlotSpans"]},
             {"unvalidated"},
@@ -239,6 +284,8 @@ class StreamingCorpusTests(unittest.TestCase):
                 )
         self.assertEqual("failed", result["status"])
         self.assertEqual("unvalidated", result["layer3"]["field2Rows0To4RepresentationStatus"])
+        self.assertEqual("unvalidated", result["layer3"]["field2Rows0To5RepresentationStatus"])
+        self.assertEqual("unvalidated", result["layer3"]["field2Field5ValuesStatus"])
         self.assertEqual([], result["layer3"]["field2RowFieldRepresentations"])
         self.assertTrue(
             any(
