@@ -35,6 +35,10 @@ Current durable state:
   poses at recorded Animator phases. That consistency does not authenticate
   frame-end bytes as draw-consumed data or resolve the earlier visual pose gap;
   the maintained palette audit preserves both phase candidates and both banks.
+  Draw metadata clocks bound observer state reads and constant copies, while
+  palette SRV aliases prove binding identity; neither establishes frame-end
+  palette bytes as draw-consumed data. Full capture's Streamline publication
+  prerequisite can postpone dense palette sampling beyond the early pose gap.
 
 Changing actor counts, shader hashes, frame metrics, session ids, and capture
 inventories belong in `reports/assets/character_recovery/`.
