@@ -137,6 +137,16 @@ across multiple 90 Hz substeps, and publishes current state at the frame
 boundary. Its two-frame moving-collider verifier fails if registration reasserts
 `Reset` or caller-provided stale previous samples replace retained history.
 
+Sparse Unity comparison runs must use the capture report's `targetSeconds`;
+image ordinals are not elapsed 60 Hz time. On synchronized retail checkpoints,
+the current solver is worse than animation-only in both translation and
+rotation, and adding the recovered rotation-only post-proxy CalcLine stage does
+not repair the positional error. CalcLine therefore remains an independently
+gated diagnostic, while canonical output keeps solver writeback disabled. Angle
+jobs consume exactly their serialized baseline slices: the first
+`baseLineData` vertex is the local root even when its hierarchy parent is
+outside that slice.
+
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
 frequently observed TeamData address are insufficient; evidence must join the
