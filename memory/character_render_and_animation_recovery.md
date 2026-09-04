@@ -164,9 +164,11 @@ return QPC per Endminf owner plus counts and native identities independently of
 trajectory-window readiness; its domain gate rejects recreated owners, clock,
 thread, lifecycle, hierarchy, publication, and shutdown failures. The lab
 verifier joins those ticks only to the same session's complete Animator
-timeline. The currently installed client does not match the observer manifest,
-so the hooks must be re-pinned before collecting the requested fresh-process
-timing sessions.
+timeline. A dedicated August 25 manifest now authenticates all five visual
+files, and the runtime pins only the current AddCloth/identity dependencies;
+trajectory hooks and windows remain disabled. The installed-client preflight
+passes. Three fresh-process timing sessions remain to distinguish deterministic
+pre-visible warm-up from cache state.
 
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
