@@ -33,7 +33,7 @@ class GenerateDummyDllTests(unittest.TestCase):
             "https://github.com/Variante/Cpp2IL-Endfield.git",
             generator.CPP2IL_REPOSITORY,
         )
-        self.assertEqual("endfield-2022.0.7-v3", generator.CPP2IL_TAG)
+        self.assertEqual("endfield-2022.0.7-v4", generator.CPP2IL_TAG)
         self.assertRegex(generator.CPP2IL_COMMIT, r"^[0-9a-f]{40}$")
 
     def test_direct_script_help_does_not_require_game_configuration(self) -> None:
@@ -177,7 +177,7 @@ class GenerateDummyDllTests(unittest.TestCase):
             next_manifest = {
                 "cpp2il": {
                     "skippedMalformedImages": ["Assembly-CSharp.dll"],
-                    "skippedMalformedTypeCount": 95,
+                    "skippedMalformedTypeCount": 1,
                     "expectedTypeCount": 100,
                 },
                 "assemblies": {
@@ -189,7 +189,7 @@ class GenerateDummyDllTests(unittest.TestCase):
             regressions = generator.publication_regressions(output, next_manifest)
 
             self.assertTrue(any("required images skipped" in row for row in regressions))
-            self.assertTrue(any("malformed type coverage collapsed" in row for row in regressions))
+            self.assertTrue(any("type population incomplete" in row for row in regressions))
             self.assertTrue(any("total assembly bytes collapsed" in row for row in regressions))
 
     def test_current_output_status_verifies_files_and_rejects_degraded_coverage(self) -> None:
@@ -238,7 +238,7 @@ class GenerateDummyDllTests(unittest.TestCase):
             (output / "generation.json").write_text(json.dumps(manifest), encoding="utf-8")
 
             self.assertEqual(
-                "current",
+                "degraded",
                 generator.current_output_status(output, gameassembly, metadata)[0],
             )
             manifest["cpp2il"]["commit"] = "0" * 40

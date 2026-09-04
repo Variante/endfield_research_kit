@@ -212,12 +212,20 @@ DummyDll generation is tied to the exact installed `GameAssembly.dll` and
 `global-metadata.dat`. The generator must uniquely recover registrations,
 validate a complete staged managed image set, publish atomically, preserve the
 previous set, and record provenance in `tools/DummyDll/generation.json`. It
-must reject required-image skips and catastrophic type/size regressions by
-default, and must join every staged non-module TypeDef to the selected metadata
-on assembly, token, and full name before publication. Endfield Cpp2IL compatibility is maintained as source in
+must reject any type-population failure, required-image skip, and catastrophic
+type/size regression by default, and must join every staged non-module TypeDef
+to the selected metadata on assembly, token, and full name before publication.
+Endfield Cpp2IL compatibility is maintained as source in
 `Variante/Cpp2IL-Endfield` on `endfield/2022.0.7`; the generator consumes an
 immutable release pinned by tag and commit instead of applying a local patch.
 Never reuse registration addresses from another build.
+
+Cpp2IL must attach a method shell and predeclare every method generic parameter
+in metadata order before importing constraints, return types, or parameters.
+Importing an MVAR-bearing return through the declaring type fails, while lazy
+return-first parameter creation can silently reorder multi-generic signatures.
+Commit global method maps only after signature construction succeeds and roll
+back the shell plus newly registered parameters on failure.
 
 The selected v29 build uses exact 92-byte TypeDef rows: the prefix is the stock
 v29 layout, while one additional int32 occurs after the eight range-start

@@ -98,16 +98,20 @@ python -m scripts.animestudio.generate_dummydll --dry-run
 If status is missing, stale, invalid, or degraded and script schemas are in
 scope, refresh it proactively: require the dry run's unique registration and
 source-provenance checks, then run `--replace` and re-run `--status-only`. Never reuse
-registration addresses from an earlier build. The generator must block a
-required-image skip, catastrophic size regression, or any mismatch in the
-full metadata-to-DummyDll `(assembly, token, FullName)` identity join by
-default; do not use its coverage-regression override during routine refreshes.
+registration addresses from an earlier build. The generator must block any
+type-population failure, a required-image skip, catastrophic size regression,
+or any mismatch in the full metadata-to-DummyDll `(assembly, token, FullName)`
+identity join by default; do not use its coverage-regression override during
+routine refreshes.
 The identity gate requires a built AnimeStudio CLI. Missing or unusable
 DummyDlls must warn and fall back cleanly; normal exports must continue.
 
-Keep serialized-first TypeTree priority by default. Treat Cpp2IL skip counts as
-coverage gaps, verify the required full type name exists in the generated
-assembly, and use script-first only for a focused comparison.
+Keep serialized-first TypeTree priority by default. Treat historical or
+experimental Cpp2IL type skips as coverage gaps, verify the required full type
+name exists in the generated assembly, and use script-first only for a focused
+comparison. Method generic parameters must be declared in metadata order before
+constraints, return types, or parameters are imported; return-first lazy MVAR
+creation can silently reorder multi-generic signatures.
 
 Cpp2IL Endfield compatibility is owned by
 `https://github.com/Variante/Cpp2IL-Endfield`, branch
