@@ -260,6 +260,11 @@ evidence retroactively.
   generated report.
 - Comparison frames must join exact no-frame-generation source frames and the
   corresponding Unity clock/state. Do not align by appearance alone.
+- Annotate visible pointer/controller changes and split input-stable frames
+  from camera-motion-affected frames. Deterministic animation renders use the
+  actor's serialized camera entry state; capture-specific input endpoints or
+  trajectories remain external reference evidence and never become actor or
+  runtime constants.
 - Report spatial, temporal, silhouette, effect, and color errors separately.
   One aggregate score can hide a regression in a critical layer.
 - Captured resources and replayed lab outputs keep their color space, format,
