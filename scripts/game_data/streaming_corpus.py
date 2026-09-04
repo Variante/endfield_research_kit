@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v9"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v10"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -1097,6 +1097,9 @@ def sweep(
         },
         "layer4": {
             "streamingField2NativeContract": native_contract,
+            "nestedContextStaticChain": (
+                native_contract.get("nestedContextObservations") if not failed else None
+            ),
             "managedShapeCandidateStatus": "candidate-only",
             "nativeCarrierStatus": (
                 carrier_contract.get("baseLengthStatus")
@@ -1134,7 +1137,7 @@ def sweep(
             "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, field 4 is six float32 loads, and field 5 is a count-prefixed vector whose elements are loaded as scalar32 hash-table keys. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
             "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, filename-token relations, nested parallel vectors, and the family-level carrier remain anonymous structure. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, scene-root-to-row-consumer object path, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed.",
+            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, callback selection to the asset-reading API, nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The static root.field5 row.field3-to-context write chain does not join a particular authenticated file or establish a target width.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -1159,6 +1162,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Streaming row field 5 is an anonymous count-prefixed scalar32 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values. A selected-build consumer loads every element as a 32-bit hash-table key.",
         f"- Field-5 scalar32 statistics: `{layer3.get('field2Field5Scalar32Stats')}`.",
         "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[]. These representations are selected-build native-gated and remain anonymous.",
+        "- Native context evidence is separately gated in layer4.nestedContextStaticChain: the static root.field5 row.field3 pointer is installed at context+0x80 during a callback scope. This does not close callback-to-asset-API selection, nested marker15 selection, or record extent, and adds no parser-owned target bytes.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",

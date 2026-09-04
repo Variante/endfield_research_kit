@@ -100,10 +100,16 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   readable decoded positions; per-file source hashes and ordered slot/target
   digests bind this directory. Its target contents remain opaque and own zero
   additional bytes. File-byte availability and non-overlapping probe widths
-  do not resolve record width. Independent 16-byte native reads still lack
-  both the context-to-nested-table and marker-15 joins, so they are not width
-  evidence for these targets (gated candidates:
-  `reports/animestudio/streaming_marker15_native_latest.json`).
+  do not resolve record width. The selected-build native contract now proves
+  a conditional static chain from the first secondary root's field-5 row,
+  through its field-3 target, into a callback-scoped context pointer; that
+  pointer is cleared on return. This is direct carrier evidence, not a
+  concrete file receipt. Callback selection to the independent 16-byte read
+  APIs and nested marker-15 selection remain unresolved, so those reads still
+  prove no target width. The maintained chain and its explicit ABI boundary
+  are in `streaming_field2_native.json` and the focused corpus report's
+  `layer4.nestedContextStaticChain`; unjoined read candidates remain in
+  `reports/animestudio/streaming_marker15_native_latest.json`.
   A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
   success, and `base + u32(base)` root calculation. Its first formatted leaf
@@ -265,8 +271,10 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Resolve marker 15's context/table and discriminator joins before promoting
-  any consumed span or fixed record width; its uoffset directory is bounded,
+- Resolve the scoped callback-to-reader and marker-15 selection joins before
+  promoting any consumed span or fixed record width. The conditional static
+  root-row-to-context write chain is closed; its concrete file instance and
+  numeric dispatch selection are not. The uoffset directory is bounded,
   not its records. Then close marker-17 opaque byte bodies before concrete
   runtime-root/secondary-path joins or field-5 key namespace.
   Fixed-size-looking targets still need independent width/cursor

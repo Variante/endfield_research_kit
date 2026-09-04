@@ -77,6 +77,11 @@ class StreamingNativeTests(unittest.TestCase):
                 "diagnosticUtf8": "layout diagnostic",
             },
             "evidenceBoundary": {},
+            "nestedContextObservations": {
+                "status": "direct-static-root-field5-row-field3-to-context",
+                "marker15SelectionStatus": "unresolved",
+                "recordExtentStatus": "unresolved",
+            },
         }
         contract_path = root / "contract.json"
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
@@ -196,6 +201,36 @@ class StreamingNativeTests(unittest.TestCase):
             )
         self.assertEqual("validation_failed", report["status"])
         self.assertEqual("read_valid_contract", report["validationFailures"][0]["gate"])
+
+    def test_bounded_native_span_rejects_invalid_ranges(self):
+        image = _one_section_pe()
+        self.assertEqual((0x210, bytes(image[0x210:0x214])), streaming_native._bounded_pe_range(image, 0x1010, 4))
+        for rva, size in ((-1, 4), (0x1010, 0), (0x1010, -4), (0x10FE, 4)):
+            with self.subTest(rva=rva, size=size), self.assertRaisesRegex(ValueError, "expected.*actual"):
+                streaming_native._bounded_pe_range(image, rva, size)
+        with self.assertRaisesRegex(ValueError, "expected end.*actual"):
+            streaming_native._bounded_pe_range(image[:0x212], 0x1010, 4)
+        # Appended bytes cannot make a span outside the section readable.
+        with self.assertRaisesRegex(ValueError, "crossing section"):
+            streaming_native._bounded_pe_range(image + b"tail", 0x10FE, 4)
+
+    def test_context_evidence_is_withheld_after_native_body_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            game_root, contract_path, native = self._fixture(Path(directory))
+            contract_hash = hashlib.sha256(contract_path.read_bytes()).hexdigest().upper()
+            with (
+                patch.object(streaming_native, "CONTRACT_SHA256", contract_hash),
+                patch.object(streaming_native, "check_installed_native_inputs", return_value=native),
+            ):
+                report = streaming_native.validate_streaming_field2_native_contract(contract_path=contract_path, game_root=game_root)
+                self.assertEqual("validated", report["status"])
+                self.assertEqual("unresolved", report["nestedContextObservations"]["marker15SelectionStatus"])
+                self.assertEqual("unresolved", report["nestedContextObservations"]["recordExtentStatus"])
+                unity = native.gameassembly.parent / "UnityPlayer.dll"
+                unity.write_bytes(unity.read_bytes()[:0x212])
+                report = streaming_native.validate_streaming_field2_native_contract(contract_path=contract_path, game_root=game_root)
+        self.assertEqual("validation_failed", report["status"])
+        self.assertIsNone(report["nestedContextObservations"])
 
 
 if __name__ == "__main__":

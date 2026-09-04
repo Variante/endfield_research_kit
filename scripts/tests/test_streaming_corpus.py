@@ -40,6 +40,11 @@ class StreamingCorpusTests(unittest.TestCase):
                 "rowConsumerRuntimeHandleRepresentation": "anonymous-little-endian-dword[4]",
             },
             "validationFailures": [],
+            "nestedContextObservations": {
+                "status": "direct-static-root-field5-row-field3-to-context",
+                "marker15SelectionStatus": "unresolved",
+                "recordExtentStatus": "unresolved",
+            },
         }
         with patch(
             "scripts.game_data.streaming_corpus.validate_streaming_field2_native_contract",
@@ -222,6 +227,10 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(refs15["filesWithReferences"], 1)
         self.assertEqual(refs15["widthStatus"], "unresolved")
         self.assertEqual(refs15["targetOwnedBytes"], 0)
+        context = result["layer4"]["nestedContextStaticChain"]
+        self.assertEqual(context["status"], "direct-static-root-field5-row-field3-to-context")
+        self.assertEqual(context["marker15SelectionStatus"], "unresolved")
+        self.assertEqual(context["recordExtentStatus"], "unresolved")
         self.assertEqual(refs15["files"][0]["referenceCount"], 1)
         self.assertEqual(refs15["files"][0]["offset"], 0)
         self.assertEqual(len(refs15["files"][0]["packedSha256"]), 64)
@@ -257,6 +266,7 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["layer3"]["field2Rows0To4Status"], "unvalidated")
         self.assertEqual(result["layer3"]["field2Rows0To5Status"], "unvalidated")
         self.assertEqual(result["layer3"]["nestedMarker15ReferenceBounds"]["status"], "unvalidated")
+        self.assertIsNone(result["layer4"]["nestedContextStaticChain"])
         self.assertEqual(
             {item["status"] for item in result["layer3"]["field2RowSlotSpans"]},
             {"unvalidated"},

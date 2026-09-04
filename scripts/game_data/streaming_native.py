@@ -11,10 +11,10 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
 
-SCHEMA = "endfield.streaming-field2-native-contract.v3"
+SCHEMA = "endfield.streaming-field2-native-contract.v4"
 DEFAULT_CONTRACT = Path(__file__).with_name("streaming_field2_native.json")
 # Updated only after the reviewed JSON contract is finalized.
-CONTRACT_SHA256 = "C26E27E77F1102F177AA1C2DF6F27FD46A191665FBE61DF4058333ECF5D633BC"
+CONTRACT_SHA256 = "1AAFE8DD77A626726DC79E3EE8A29853503B649935CC28247F9799380CFC827A"
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -29,7 +29,9 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest().upper()
 
 
-def _pe_file_offset(image: bytes, rva: int) -> int:
+def _pe_file_offset(image: bytes, rva: int, *, size: int = 1) -> int:
+    if rva < 0 or size <= 0:
+        raise ValueError(f"PE range RVA {rva}: expected nonnegative RVA and positive size, actual size {size}")
     if len(image) < 0x40:
         raise ValueError(f"PE image too short: expected at least 64, actual {len(image)}")
     pe_offset = struct.unpack_from("<I", image, 0x3C)[0]
@@ -49,12 +51,21 @@ def _pe_file_offset(image: bytes, rva: int) -> int:
         )
         if virtual_address <= rva < virtual_address + max(virtual_size, raw_size):
             delta = rva - virtual_address
-            if delta >= raw_size:
+            if delta + size > raw_size:
                 raise ValueError(
-                    f"RVA 0x{rva:X} lies in virtual-only bytes of PE section {index}"
+                    f"RVA 0x{rva:X} size {size}: expected section {index} raw end <= {raw_size}, actual {delta + size} (virtual-only or crossing section)"
                 )
             return raw_pointer + delta
     raise ValueError(f"RVA 0x{rva:X} is outside all PE sections")
+
+
+def _bounded_pe_range(image: bytes, rva: int, size: int) -> tuple[int, bytes]:
+    """Reject invalid or non-contiguous mapped spans before slicing evidence."""
+    offset = _pe_file_offset(image, rva, size=size)
+    end = offset + size
+    if end > len(image):
+        raise ValueError(f"PE range RVA 0x{rva:X} file offset {offset}: expected end <= {len(image)}, actual {end}")
+    return offset, image[offset:end]
 
 
 def validate_streaming_field2_native_contract(
@@ -126,10 +137,9 @@ def validate_streaming_field2_native_contract(
                 rva = int(row["rva"])
                 recorded_offset = int(row["fileOffset"])
                 size = int(row["size"])
-                actual_offset = _pe_file_offset(unity_image, rva)
+                actual_offset, body = _bounded_pe_range(unity_image, rva, size)
                 if actual_offset != recorded_offset:
                     reject(f"{role}.file_offset", recorded_offset, actual_offset)
-                body = unity_image[actual_offset : actual_offset + size]
                 if len(body) != size:
                     reject(f"{role}.body_size", size, len(body))
                     continue
@@ -187,6 +197,9 @@ def validate_streaming_field2_native_contract(
         "rowLayout": contract.get("rowLayout"),
         "consumerObservations": contract.get("consumerObservations"),
         "carrierObservations": contract.get("carrierObservations"),
+        "nestedContextObservations": (
+            contract.get("nestedContextObservations") if not failures else None
+        ),
         "evidenceBoundary": contract.get("evidenceBoundary"),
         "validationFailures": failures,
     }

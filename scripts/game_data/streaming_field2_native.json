@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-field2-native-contract.v3",
+  "schema": "endfield.streaming-field2-native-contract.v4",
   "status": "validated",
   "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-carrier-and-scene-object-chain",
   "nativeInputs": {
@@ -8,6 +8,54 @@
     "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
   },
   "unityPlayerRanges": [
+    {
+      "role": "parallelRootRowScopeDispatch",
+      "rva": 436432,
+      "fileOffset": 433872,
+      "size": 1354,
+      "bodySha256": "8F2BEDE92AFC05E74B38C6F2D07474E32D93D9924573125CEFEB3FBBF33A04FA",
+      "entryBytesHex": "48895C24185556574154415541564157488D6C24E14881EC900000000FB6014C"
+    },
+    {
+      "role": "parallelRowField3ContextScopeA",
+      "rva": 1820000,
+      "fileOffset": 1817440,
+      "size": 366,
+      "bodySha256": "8E710C622206028EEA5E19EBA8F175C682DD32558719B0D4AAAA9A326AEBC5BF",
+      "entryBytesHex": "48895C24084889742410574881EC80000000410FB6C0488BF94869F088020000"
+    },
+    {
+      "role": "parallelRowField3ContextScopeB",
+      "rva": 1821072,
+      "fileOffset": 1818512,
+      "size": 371,
+      "bodySha256": "7CFBE79E00714973BD479E0C83EA0BC4B536AA1B4E868AC52867E72A1F1CA8FD",
+      "entryBytesHex": "48895C24084889742410574881EC80000000410FB6C04C8BDA4869F088020000"
+    },
+    {
+      "role": "parallelScopeCallbackBridgeA",
+      "rva": 1820368,
+      "fileOffset": 1817808,
+      "size": 92,
+      "bodySha256": "388CA5CBCB2523A663811148AEDAC5B6C1A7059A58E9CDC4EC21C89F8CA59BBD",
+      "entryBytesHex": "4C8944241848895424104883EC2848837938004D8BC8488BC2743B4C8B513849"
+    },
+    {
+      "role": "parallelScopeCallbackBridgeB",
+      "rva": 1821936,
+      "fileOffset": 1819376,
+      "size": 75,
+      "bodySha256": "563FDA3EDD3C2C4ED9DACD6C5325CA401BD7C2C1AA814F8E730153C30F5D2A9D",
+      "entryBytesHex": "4C894424184883EC2848837938004C8BD27432488B4938488B014C8B4810488D"
+    },
+    {
+      "role": "parallelRootField4VectorAccessor",
+      "rva": 16048808,
+      "fileOffset": 16046248,
+      "size": 41,
+      "bodySha256": "E45D09C9D5D54A7334D027B7B3F51600B49FF4722217EB8770A5476ABDFD97C9",
+      "entryBytesHex": "486301488BD1482BD0B80C000000663B0273130FB7420C488D14016685C07406"
+    },
     {
       "role": "streamingField2RowConsumer",
       "rva": 438000,
@@ -450,6 +498,77 @@
     "finalCursorStatus": "exact-selected-closure-pointer-only-no-final-cursor",
     "rowConsumerCarrierJoinStatus": "exact-static-object-chain-concrete-create-instance-unresolved",
     "rowConsumerRuntimeHandleRepresentation": "anonymous-little-endian-dword[4]"
+  },
+  "nestedContextObservations": {
+    "status": "direct-static-root-field5-row-field3-to-context",
+    "evidenceLevel": "direct",
+    "rootCarrier": "first secondary root at runtime carrier +0x28; concrete file identity unresolved",
+    "observations": {
+      "rootField4ByteLoadRva": 439531,
+      "rootField5DispatchCallerRva": 439594,
+      "rootField5RowTargetResolutionA": [
+        436511,
+        436581,
+        436583
+      ],
+      "rootField5RowTargetResolutionB": [
+        436906,
+        436976,
+        436978
+      ],
+      "scopeArgumentRowPointerStores": [
+        436770,
+        437122
+      ],
+      "scopeCalls": [
+        436784,
+        437137
+      ],
+      "scopeField3VtableEntry": 10,
+      "scopeField3ContextPointerOffset": 128,
+      "scopeField3ContextPointerStores": [
+        1820235,
+        1821309
+      ],
+      "sameContextCallbackArgumentRvas": [
+        1820253,
+        1821330
+      ],
+      "callbackBridgeCalls": [
+        1820263,
+        1821340
+      ],
+      "callbackDynamicCallRvas": [
+        1820428,
+        1820449,
+        1821988,
+        1822000
+      ],
+      "scopeContextPointerClears": [
+        1820319,
+        1821396
+      ]
+    },
+    "abi": {
+      "dispatcher": "RCX=runtime row record; EDX=row scalar; R8=runtime root-carrier record; R9D=parallel vector index. Root-table source is [R8+0x28]. Selected branches resolve root.field5[index] as unsigned-relative pointer and pass it in R9.",
+      "scope": "RCX=context; R9=outer row table; R8B=selector derived from outer row.field2; RDX=callback argument. scope stores row.field3 relative target at context+0x80 and passes the unchanged context to callback bridge as R8.",
+      "callback": "recognized branch invokes dynamically selected function with RDX=context; other branch passes saved context by reference. No unique callback target is proved."
+    },
+    "boundary": {
+      "exact": "Current-image body bytes and local field3->context+0x80 dataflow are validated. Static route from root.field5 selected row to scope is independent of managed declarations.",
+      "structuralOnly": "This establishes a native context carrier for the anonymous nested table. It does not add byte ownership, serialized semantic names or exact file receipt.",
+      "unresolved": [
+        "root marker dispatch table numeric selection",
+        "nested field4 marker15 selection",
+        "callback target to asset helper",
+        "concrete authenticated file instance",
+        "final source cursor/record extent"
+      ]
+    },
+    "marker15SelectionStatus": "unresolved",
+    "callbackToAssetApiStatus": "unresolved",
+    "recordExtentStatus": "unresolved",
+    "additionalTargetOwnedBytes": 0
   },
   "evidenceBoundary": {
     "exact": "Current GameAssembly.dll, global-metadata.dat, UnityPlayer.dll, the bounded row construction and runtime-consumer bodies, record copy/index helpers, scalar lookup, and each accessor body are hash-gated before the representation claim is published.",
