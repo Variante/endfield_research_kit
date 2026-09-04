@@ -71,14 +71,21 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   anonymous width-4 values; the combined field-2 subgraph is continuous to
   decoded EOF. The table objects partition into a four-byte vtable displacement
   plus present slot-to-next-boundary spans of 4/4/4/8/24/4 bytes for fields
-  0--5. Spans 0--4 may contain padding, so their value widths, internal
-  composite layout, and all values stay opaque. Root fields
+  0--5. A selected-build native contract revalidates all three client hashes,
+  the bounded row consumer, and accessor bodies before publishing fields 0--2
+  as scalar32, field 3 as int32[2], and field 4 as float32[6]; those spans
+  contain no padding. Current numeric filenames exactly relate to present
+  fields 1/2 and the floor-divided field-3 lanes, while Global filenames keep
+  a separate exact fields-1/2 relation. These are anonymous structural
+  relations, not coordinate or gameplay names. Root fields
   3/4/5 use widths 4/1/4 with equal counts,
   bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
   independent paired-group subgraph. The field-0 representation remains
   string/byte-vector ambiguous; deeper row children, cross-file ownership,
-  runtime use, and all game semantics remain unresolved. Current native inputs
-  expose no exact field-2 consumer, carrier, ABI, or final cursor.
+  runtime use, and all game semantics remain unresolved. A managed `GridData`
+  shape and the consumer diagnostic provide name candidates only: the native
+  raw carrier base/length and final cursor remain unresolved, so no serialized
+  field name is promoted.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -226,8 +233,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Streaming field-2 row span padding/internal value layout
-  and field-5 value/deep-row structure, Terrain
+- Complete the Streaming field-2 raw carrier/base+length/final-cursor join and
+  field-5 value/deep-row structure, Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

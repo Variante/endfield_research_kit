@@ -8,20 +8,31 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Any
 
 from scripts.game_data.streaming import parse_streaming_file
+from scripts.game_data.streaming_native import (
+    DEFAULT_CONTRACT as STREAMING_NATIVE_CONTRACT,
+    validate_streaming_field2_native_contract,
+)
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v4"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v5"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/StreamingChunkData_Global_0_0.bytes",
 }
 FIELD2_SLOT_SPANS = {0: 4, 1: 4, 2: 4, 3: 8, 4: 24, 5: 4}
+_NUMERIC_STREAMING_NAME = re.compile(
+    r"^StreamingChunkData_(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.bytes$"
+)
+_GLOBAL_STREAMING_NAME = re.compile(
+    r"^StreamingChunkData_Global_(-?\d+)_(-?\d+)\.bytes$"
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -171,6 +182,7 @@ def sweep(
     outer_summary_path: Path,
     outer_ledger_path: Path,
     expected_input_set_sha256: str,
+    game_root: Path | None = None,
 ) -> dict[str, Any]:
     """Authenticate and parse every current block-15 row from one VFS audit."""
 
@@ -211,8 +223,27 @@ def sweep(
         module_root = Path(__file__).resolve().parent
         parser_path = module_root / "streaming.py"
         gate_path = Path(__file__).resolve()
+        native_validator_path = module_root / "streaming_native.py"
         provenance["parserSha256"] = _sha256_file(parser_path)
         provenance["corpusGateSha256"] = _sha256_file(gate_path)
+        provenance["nativeValidatorSha256"] = _sha256_file(native_validator_path)
+        provenance["nativeContractSha256"] = _sha256_file(STREAMING_NATIVE_CONTRACT)
+        if game_root is None:
+            primary_assets = Path(str(provenance.get("primaryAssets", "")))
+            game_root = primary_assets.parent
+        native_contract = validate_streaming_field2_native_contract(
+            game_root=game_root
+        )
+        provenance["streamingNativeContract"] = native_contract
+        if native_contract.get("status") != "validated":
+            failures.append(
+                {
+                    "scope": "streaming-field2-native-contract",
+                    "stage": "native-provenance",
+                    "message": "selected-build row representation contract did not validate",
+                    "actual": native_contract.get("validationFailures"),
+                }
+            )
     except Exception as exc:
         return {
             "schema": SCHEMA,
@@ -264,6 +295,15 @@ def sweep(
     field2_slot_presence: collections.Counter[int] = collections.Counter()
     field2_slot_absence: collections.Counter[int] = collections.Counter()
     field2_slot_bytes: collections.Counter[int] = collections.Counter()
+    field2_field4_classes: collections.Counter[str] = collections.Counter()
+    numeric_path_files = numeric_path_rows = 0
+    numeric_f1_present = numeric_f1_match = 0
+    numeric_f2_present = numeric_f2_match = 0
+    numeric_f3_match = 0
+    numeric_f3_residuals: set[int] = set()
+    global_path_files = global_path_rows = 0
+    global_f1_present = global_f1_match = 0
+    global_f2_present = global_f2_match = 0
     row_failure_count = unsupported_count = 0
     identity_rows = []
 
@@ -361,7 +401,12 @@ def sweep(
                     continue
                 try:
                     parsed = parse_streaming_file(
-                        family, raw, allow_raw=virtual_path in RAW_DATA_EXCEPTIONS
+                        family,
+                        raw,
+                        allow_raw=virtual_path in RAW_DATA_EXCEPTIONS,
+                        native_layout_validated=(
+                            native_contract.get("status") == "validated"
+                        ),
                     )
                 except Exception as exc:
                     row_failure_count += 1
@@ -470,6 +515,82 @@ def sweep(
                     field2_object_prefix_bytes += int(
                         field2.get("rowObjectPrefixBytes", 0)
                     )
+                    value_records = field2.get("rowValueRecords") or []
+                    if len(value_records) != int(field2.get("rowCount", 0)):
+                        row_failure_count += 1
+                        if len(failures) < FAILURE_SAMPLE_LIMIT:
+                            failures.append(
+                                _failure(
+                                    virtual_path,
+                                    "parse",
+                                    "field-2 row value record count mismatch",
+                                    expected=field2.get("rowCount"),
+                                    actual=len(value_records),
+                                )
+                            )
+                        continue
+                    file_name = virtual_path.rsplit("/", 1)[-1]
+                    numeric_match = _NUMERIC_STREAMING_NAME.fullmatch(file_name)
+                    global_match = _GLOBAL_STREAMING_NAME.fullmatch(file_name)
+                    if family == "streaming" and numeric_match:
+                        tokens = tuple(int(value) for value in numeric_match.groups())
+                        numeric_path_files += 1
+                        numeric_path_rows += len(value_records)
+                    elif family == "streaming" and global_match:
+                        tokens = tuple(int(value) for value in global_match.groups())
+                        global_path_files += 1
+                        global_path_rows += len(value_records)
+                    else:
+                        tokens = ()
+                    for value_record in value_records:
+                        field4_bits = [
+                            int(value)
+                            for value in value_record.get("field4Float32Bits", [])
+                        ]
+                        if len(field4_bits) != 6:
+                            row_failure_count += 1
+                            if len(failures) < FAILURE_SAMPLE_LIMIT:
+                                failures.append(
+                                    _failure(
+                                        virtual_path,
+                                        "parse",
+                                        "field-2 field 4 expected six float32 lanes",
+                                        expected=6,
+                                        actual=len(field4_bits),
+                                    )
+                                )
+                            continue
+                        finite = all((bits & 0x7F800000) != 0x7F800000 for bits in field4_bits)
+                        if finite:
+                            field2_field4_classes["all-six-finite"] += 1
+                        elif field4_bits == [0xFFC00000] * 6:
+                            field2_field4_classes["all-six-negative-qnan"] += 1
+                        else:
+                            field2_field4_classes["other-non-finite"] += 1
+                        if numeric_match:
+                            f1 = value_record.get("field1Scalar32Bits")
+                            f2 = value_record.get("field2Scalar32Bits")
+                            if f1 is not None:
+                                numeric_f1_present += 1
+                                numeric_f1_match += int(int(f1) == tokens[2])
+                            if f2 is not None:
+                                numeric_f2_present += 1
+                                numeric_f2_match += int(int(f2) == tokens[3])
+                            lanes = [int(value) for value in value_record["field3Int32Lanes"]]
+                            lane_match = lanes[0] // 128 == tokens[0] and lanes[1] // 128 == tokens[1]
+                            numeric_f3_match += int(lane_match)
+                            numeric_f3_residuals.update(
+                                (lanes[0] - tokens[0] * 128, lanes[1] - tokens[1] * 128)
+                            )
+                        elif global_match:
+                            f1 = value_record.get("field1Scalar32Bits")
+                            f2 = value_record.get("field2Scalar32Bits")
+                            if f1 is not None:
+                                global_f1_present += 1
+                                global_f1_match += int(int(f1) == tokens[0])
+                            if f2 is not None:
+                                global_f2_present += 1
+                                global_f2_match += int(int(f2) == tokens[1])
                     for slot in row_slot_spans:
                         field_index = int(slot.get("fieldIndex", -1))
                         if field_index < 0 or field_index > 5:
@@ -559,9 +680,21 @@ def sweep(
 
     parser_sha256_at_end = _sha256_file(parser_path)
     gate_sha256_at_end = _sha256_file(gate_path)
+    native_validator_sha256_at_end = _sha256_file(native_validator_path)
+    native_contract_sha256_at_end = _sha256_file(STREAMING_NATIVE_CONTRACT)
     for label, expected_sha256, actual_sha256 in (
         ("parserSha256", provenance["parserSha256"], parser_sha256_at_end),
         ("corpusGateSha256", provenance["corpusGateSha256"], gate_sha256_at_end),
+        (
+            "nativeValidatorSha256",
+            provenance["nativeValidatorSha256"],
+            native_validator_sha256_at_end,
+        ),
+        (
+            "nativeContractSha256",
+            provenance["nativeContractSha256"],
+            native_contract_sha256_at_end,
+        ),
     ):
         if actual_sha256 != expected_sha256:
             failures.append(
@@ -574,6 +707,35 @@ def sweep(
                     "actual": actual_sha256,
                 }
             )
+
+    relation_checks = (
+        ("numeric field1/token2", numeric_f1_present, numeric_f1_match),
+        ("numeric field2/token3", numeric_f2_present, numeric_f2_match),
+        ("numeric field3/path quotient", numeric_path_rows, numeric_f3_match),
+        ("global field1/token0", global_f1_present, global_f1_match),
+        ("global field2/token1", global_f2_present, global_f2_match),
+    )
+    for label, expected, actual in relation_checks:
+        if actual != expected:
+            failures.append(
+                {
+                    "scope": "field2-cross-file-relation",
+                    "stage": "current-corpus",
+                    "message": f"{label} no longer covers every applicable row",
+                    "expected": expected,
+                    "actual": actual,
+                }
+            )
+    if numeric_path_rows and not numeric_f3_residuals.issubset({0, 32, 64, 96}):
+        failures.append(
+            {
+                "scope": "field2-cross-file-relation",
+                "stage": "current-corpus",
+                "message": "numeric field3/path quotient residual left the selected-build domain",
+                "expected": "subset of [0, 32, 64, 96]",
+                "actual": sorted(numeric_f3_residuals),
+            }
+        )
 
     failed = bool(
         failures
@@ -654,7 +816,7 @@ def sweep(
                         (
                             "exact-vector-uoffset-slot"
                             if field_index == 5
-                            else "exact-anonymous-span-only"
+                            else "exact-native-consumed-representation"
                         )
                         if not failed
                         else "unvalidated"
@@ -663,10 +825,38 @@ def sweep(
                 for field_index in range(6)
             ],
             "field2Rows0To4Status": (
-                "exact-anonymous-slot-spans" if not failed else "unvalidated"
+                "exact-anonymous-native-consumed-layout" if not failed else "unvalidated"
             ),
-            "field2Rows0To4RepresentationStatus": "unresolved",
-            "field2RowSlotSpansMayContainPadding": [0, 1, 2, 3, 4],
+            "field2Rows0To4RepresentationStatus": (
+                "exact-selected-build-native-loads" if not failed else "unvalidated"
+            ),
+            "field2RowFieldRepresentations": (
+                native_contract.get("rowLayout") if not failed else []
+            ),
+            "field2RowSlotSpansMayContainPadding": [],
+            "field2Field4Float32ClassCounts": dict(sorted(field2_field4_classes.items())),
+            "field2PathRelations": {
+                "numericPattern": {
+                    "fileCount": numeric_path_files,
+                    "rowCount": numeric_path_rows,
+                    "field1PresentAndToken2Match": numeric_f1_match,
+                    "field1PresentCount": numeric_f1_present,
+                    "field2PresentAndToken3Match": numeric_f2_match,
+                    "field2PresentCount": numeric_f2_present,
+                    "field3FloorDiv128BothLanesMatch": numeric_f3_match,
+                    "field3ResidualValues": sorted(numeric_f3_residuals),
+                    "status": "exact-current-corpus-structural-relation",
+                },
+                "globalPattern": {
+                    "fileCount": global_path_files,
+                    "rowCount": global_path_rows,
+                    "field1PresentAndToken0Match": global_f1_match,
+                    "field1PresentCount": global_f1_present,
+                    "field2PresentAndToken1Match": global_f2_match,
+                    "field2PresentCount": global_f2_present,
+                    "status": "exact-current-corpus-structural-relation",
+                },
+            },
             "field2Field5ValuesStatus": "opaque",
             "parallelSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
@@ -696,13 +886,19 @@ def sweep(
             "pairedGroupRangeCountPerFileSum": group_ranges,
             "pairedGroupReusedVtableReferenceCount": group_reused_vtables,
             "rangeAccountingNote": "Per-subgraph sums are not a whole-file union and must not be subtracted from decoded bytes to derive the opaque remainder.",
-            "opaque": "field-2 row fields 0-4, field-2 field-5 vector values, field-5 row children other than field 0, and all bytes outside certified subgraphs",
+            "opaque": "field-2 field-5 vector values, field-5 row children other than field 0, and all bytes outside certified subgraphs",
+        },
+        "layer4": {
+            "streamingField2NativeContract": native_contract,
+            "managedShapeCandidateStatus": "candidate-only",
+            "nativeCarrierStatus": "unresolved-base-length-and-final-cursor",
         },
         "evidenceBoundary": {
-            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF.",
-            "structuralOnly": "Field indices, slot-to-next-boundary spans, record shapes, counts, ranges, and equal-count relations are serialized structure only; spans may include padding and are not field-type widths.",
+            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF. Current native hashes and bounded accessor/consumer bodies establish the stored representations of row fields 0-4.",
+            "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, and field 4 is six float32 loads. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
+            "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, and filename-token relations remain anonymous serialized structure; no field names or game meaning are assigned.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "Field-2 row slot padding/value representations, field-2 field-5 vector values, field names, cross-file ownership, runtime use, and game semantics are not claimed.",
+            "unresolved": "The Streaming native carrier base/length and final cursor, field-2 field-5 vector values, field names, cross-file ownership, runtime selection, and game semantics are not claimed.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -725,7 +921,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Root field 2 uses width-4 table offsets; direct rows: {layer3.get('field2DirectRowCount', 0):,}; Init empty vectors at EOF: {layer3.get('field2InitEmptyVectorAtEofFiles', 0):,}.",
         f"- Streaming row field 5 is an anonymous count-prefixed width-4 vector: {layer3.get('field2Field5VectorCount', 0):,} vectors; {layer3.get('field2Field5ValueCount', 0):,} values.",
-        "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus anonymous slot-to-next-boundary spans; fields 0-4 remain representation-unresolved and their spans may include padding.",
+        "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6], followed by the field-5 uoffset slot. These representations are selected-build native-gated and remain anonymous.",
+        f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
+        f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
@@ -735,7 +933,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. Field-2 row slot spans are exact, but possible padding and value representations in fields 0-4 and every field-5 vector value remain opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. The selected-build native contract proves only the stored representations and direct load shapes of fields 0-4; it does not close the raw carrier base/length or final cursor and therefore does not promote managed names or game semantics. Every field-5 vector value remains opaque. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other parallel field-5 children, cross-file ownership, runtime selection, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:
@@ -759,6 +957,11 @@ def main() -> int:
     )
     parser.add_argument("--input-set-sha256", required=True)
     parser.add_argument(
+        "--game-root",
+        type=Path,
+        help="Endfield_Data root; defaults to the parent of the audited Persistent root",
+    )
+    parser.add_argument(
         "--output-json",
         type=Path,
         default=Path("reports/animestudio/streaming_root_subgraphs_latest.json"),
@@ -773,6 +976,7 @@ def main() -> int:
         outer_summary_path=args.outer_summary,
         outer_ledger_path=args.outer_ledger,
         expected_input_set_sha256=args.input_set_sha256,
+        game_root=args.game_root,
     )
     _atomic_write_text(args.output_json, json.dumps(report, indent=2) + "\n")
     _atomic_write_text(args.output_md, render_markdown(report))

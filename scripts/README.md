@@ -226,8 +226,12 @@ exact `inputSetSha256` from the current outer summary. The gate covers the
 anonymous field-2 vector, immediate table/vtable framing, and terminal row
 field-5 width-4 vectors through EOF, as well as the field3/4/5 and field6/7
 subgraphs. It also verifies the field-2 row object's four-byte prefix plus
-anonymous slot-to-next-boundary partition. Fields 0--4 may include padding;
-their value layouts and every terminal vector value remain opaque.
+slot-to-next-boundary partition. Before publishing fields 0--4 as anonymous
+scalar32/scalar32/scalar32/int32[2]/float32[6], it revalidates the selected
+GameAssembly, metadata, UnityPlayer, and bounded accessor/consumer bodies. The
+report also gates the current numeric/Global filename-token relations. Native
+carrier length/final-cursor, field names, semantics, and every terminal vector
+value remain unresolved.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

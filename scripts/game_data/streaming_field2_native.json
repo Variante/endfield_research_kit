@@ -1,0 +1,88 @@
+{
+  "schema": "endfield.streaming-field2-native-contract.v1",
+  "status": "validated",
+  "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-layout",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerRanges": [
+    {
+      "role": "streamingField2RowConsumer",
+      "rva": 438000,
+      "fileOffset": 435440,
+      "size": 2412,
+      "bodySha256": "BD44277B87CBF26CA5CF6F4A10B37A667BB5F08C04553BDD26582318D9A8ABDD",
+      "entryBytesHex": "40555356574157488D6C24B04881EC50010000488B31488BDA4C8BC2488D5424"
+    },
+    {
+      "role": "field0ScalarAccessor",
+      "rva": 16070288,
+      "fileOffset": 16067728,
+      "size": 35,
+      "bodySha256": "D79FC509B7A0C27BE253D26DF7CE3CA498BF904696FCFCE49AC40B8AEF5C3699",
+      "entryBytesHex": "486301488BD1482BD0B804000000663B02730D0FB742046685C074048B0408C3"
+    },
+    {
+      "role": "field1ScalarAccessor",
+      "rva": 5803720,
+      "fileOffset": 5801160,
+      "size": 35,
+      "bodySha256": "2E9801AFDD4C72571189DCD316DBBAD883E863AAA05D3EE632F52435622F186A",
+      "entryBytesHex": "486301488BD1482BD0B806000000663B02730D0FB742066685C074048B0408C3"
+    },
+    {
+      "role": "field2ScalarAccessor",
+      "rva": 16077380,
+      "fileOffset": 16074820,
+      "size": 35,
+      "bodySha256": "C7BF6817AA86248AC4E4C7ABE496854891B9D0EAD173A92184E70155B8362AD4",
+      "entryBytesHex": "486301488BD1482BD0B808000000663B02730D0FB742086685C074048B0408C3"
+    },
+    {
+      "role": "inlineSlotAccessor",
+      "rva": 1816144,
+      "fileOffset": 1813584,
+      "size": 36,
+      "bodySha256": "1058B248F0C62717733D64B2C2F6D75202B2FB2150CA81E30DDA06C9E7D7CBA9",
+      "entryBytesHex": "4C6301488BC1492BC0663B1073130FB7D2440FB70402664585C074054A8D0401"
+    },
+    {
+      "role": "field3AccessorThunk",
+      "rva": 23514812,
+      "fileOffset": 23512252,
+      "size": 12,
+      "bodySha256": "61E77499A70AFB4F39F939A9A2F1A6BD49C8334EEFE08DCCB9C22FFB34DEFD80",
+      "entryBytesHex": "BA0A000000E98AE7B4FECCCC"
+    },
+    {
+      "role": "field4AccessorThunk",
+      "rva": 23514800,
+      "fileOffset": 23512240,
+      "size": 12,
+      "bodySha256": "AEEACA4DB854B6689C94769BDBE4F609CDFDDE54B03871B65A74BD984E76FD30",
+      "entryBytesHex": "BA0C000000E996E7B4FECCCC"
+    }
+  ],
+  "rowLayout": [
+    {"fieldIndex": 0, "vtableEntryOffset": 4, "representation": "little-endian-scalar32"},
+    {"fieldIndex": 1, "vtableEntryOffset": 6, "representation": "little-endian-scalar32"},
+    {"fieldIndex": 2, "vtableEntryOffset": 8, "representation": "little-endian-scalar32"},
+    {"fieldIndex": 3, "vtableEntryOffset": 10, "representation": "little-endian-int32[2]"},
+    {"fieldIndex": 4, "vtableEntryOffset": 12, "representation": "little-endian-float32[6]"}
+  ],
+  "consumerObservations": {
+    "diagnosticRva": 26979248,
+    "diagnosticUtf8": "Grid with layer %u / sceneStateId %d / pos (%d, %d) already exist",
+    "diagnosticXrefRva": 439861,
+    "field3Loads": [439749, 439752],
+    "field4Loads": [440023, 440028, 440032, 440037, 440042, 440055]
+  },
+  "evidenceBoundary": {
+    "exact": "Current GameAssembly.dll, global-metadata.dat, UnityPlayer.dll, the bounded consumer body, and each accessor body are hash-gated before the representation claim is published.",
+    "direct": "The selected consumer reads row fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed-diagnostic 32-bit loads, and field 4 through an inline pointer followed by six float32 loads.",
+    "structuralOnly": "The contract proves stored value representations for anonymous fields 0-4. It does not prove a managed serialized field order or the identity of the root logical file at the native carrier boundary.",
+    "unresolved": "The native carrier base/length and final cursor are not closed. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved."
+  }
+}

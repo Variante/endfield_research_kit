@@ -9,7 +9,10 @@ anonymous. Both data families additionally expose three exact anonymous
 subgraphs: the paired groups under root fields 6/7, the parallel first-level
 vectors/rows under root fields 3/4/5, and the root-field-2 vector, its direct
 tables/vtables, and the anonymous width-4 vectors reached through row field 5.
-The values in those terminal vectors and row fields 0--4 remain opaque. A
+For the selected build, hash-gated native accessors establish row fields 0--2
+as single 32-bit loads, field 3 as two signed 32-bit loads, and field 4 as six
+32-bit floating-point loads. The values and names remain anonymous, and the
+terminal field-5 vector values remain opaque. A
 small DevOnly subset is raw despite sharing the first two path families, so the
 decoder accepts raw only after independently validating the observed root
 shape.
@@ -715,13 +718,20 @@ def _parse_parallel_root_subgraph(
 
 
 def _parse_field2_terminal_subgraph(
-    data: bytes, root: dict[str, Any], family: str
+    data: bytes,
+    root: dict[str, Any],
+    family: str,
+    *,
+    native_layout_validated: bool,
 ) -> dict[str, Any]:
     """Frame the selected-build root-field-2 terminal subgraph to EOF.
 
     Row field 5 is an exact count-prefixed vector reference with anonymous
-    width-4 elements. Row fields 0--4 and every vector element deliberately
-    remain opaque.
+    width-4 elements. Selected-build native accessors establish the stored
+    representations of row fields 0--4, but their names and meanings and every
+    field-5 vector element deliberately remain opaque. The current-corpus gate
+    independently revalidates that native contract before publishing these
+    representations as current evidence.
     """
 
     root_layout = {
@@ -747,6 +757,7 @@ def _parse_field2_terminal_subgraph(
     child_ranges: list[tuple[int, int, str]] = []
     slot_presence: Counter[int] = Counter()
     slot_span_bytes: Counter[int] = Counter()
+    row_value_records: list[dict[str, Any]] = []
 
     body = vector_start + 4
     for index in range(row_count):
@@ -803,6 +814,27 @@ def _parse_field2_terminal_subgraph(
                 )
             slot_presence[field_index] += 1
             slot_span_bytes[field_index] += span
+        if native_layout_validated:
+            row_values: dict[str, Any] = {"rowIndex": index}
+            for field_index in range(3):
+                offset = fields[field_index]
+                row_values[f"field{field_index}Scalar32Bits"] = (
+                    _u32(data, target + offset) if offset else None
+                )
+            field3_offset = fields[3]
+            field4_offset = fields[4]
+            if not field3_offset or not field4_offset:
+                raise ValueError(
+                    f"Streaming {family} field 2 row {index} native-consumed "
+                    "fields 3 and 4 must both be present"
+                )
+            row_values["field3Int32Lanes"] = list(
+                struct.unpack_from("<2i", data, target + field3_offset)
+            )
+            row_values["field4Float32Bits"] = list(
+                struct.unpack_from("<6I", data, target + field4_offset)
+            )
+            row_value_records.append(row_values)
         ranges.append(
             (
                 int(row["vtableOffset"]),
@@ -933,14 +965,46 @@ def _parse_field2_terminal_subgraph(
                 "status": (
                     "exact-vector-uoffset-slot"
                     if field_index == 5
-                    else "exact-anonymous-span-only"
+                    else (
+                        "exact-native-consumed-representation"
+                        if native_layout_validated
+                        else "exact-anonymous-span-only"
+                    )
                 ),
             }
             for field_index, span in enumerate(_FIELD2_STREAMING_SLOT_SPANS)
         ],
-        "rowFields0To4Status": "exact-anonymous-slot-spans",
-        "rowFields0To4RepresentationStatus": "unresolved",
-        "rowSlotSpansMayContainPadding": [0, 1, 2, 3, 4],
+        "rowFields0To4Status": (
+            "exact-anonymous-native-consumed-layout"
+            if native_layout_validated
+            else "exact-anonymous-slot-spans"
+        ),
+        "rowFields0To4RepresentationStatus": (
+            "exact-selected-build-native-loads"
+            if native_layout_validated
+            else "unvalidated-native-contract"
+        ),
+        "rowFieldRepresentations": ([
+            {
+                "fieldIndex": field_index,
+                "representation": representation,
+                "evidence": "selected-build-native-accessor-and-consumer",
+                "semanticStatus": "unresolved",
+            }
+            for field_index, representation in enumerate(
+                (
+                    "little-endian-scalar32",
+                    "little-endian-scalar32",
+                    "little-endian-scalar32",
+                    "little-endian-int32[2]",
+                    "little-endian-float32[6]",
+                )
+            )
+        ] if native_layout_validated else []),
+        "rowValueRecords": row_value_records,
+        "rowSlotSpansMayContainPadding": (
+            [] if native_layout_validated else [0, 1, 2, 3, 4]
+        ),
         "field5ValuesStatus": "opaque",
         "wholeFileStatus": "partial",
     }
@@ -986,7 +1050,13 @@ def _decode_compressed(packed: bytes) -> bytes:
     return decompress_inverted_lz4(packed[4:], expected)
 
 
-def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -> dict[str, Any]:
+def parse_streaming_file(
+    kind: str,
+    packed: bytes,
+    *,
+    allow_raw: bool = False,
+    native_layout_validated: bool = False,
+) -> dict[str, Any]:
     """Validate one block-15 file's observed envelope and root table.
 
     ``kind`` is a maintained path-family classification: ``init``,
@@ -996,7 +1066,9 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
     caller has independently established the raw exception (the installed
     corpus uses this only for DevOnly files). Init/Streaming bytes outside the
     two certified subgraphs remain explicitly opaque. Info files additionally
-    return an exact anonymous inner table/vector framing.
+    return an exact anonymous inner table/vector framing. Field-2 typed loads
+    are published only when the caller has separately revalidated the selected-
+    build native contract and passes ``native_layout_validated=True``.
     """
 
     if kind not in {"init", "streaming", "info"}:
@@ -1057,7 +1129,10 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
             clear, layout, kind
         )
         result["anonymousField2TerminalSubgraph"] = _parse_field2_terminal_subgraph(
-            clear, layout, kind
+            clear,
+            layout,
+            kind,
+            native_layout_validated=native_layout_validated,
         )
     return result
 

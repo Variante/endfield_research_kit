@@ -274,9 +274,11 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(field2["rowCount"], 0)
         self.assertTrue(field2["vectorEndsAtEof"])
 
-    def test_streaming_field2_terminal_rows_are_structural_only(self):
+    def test_streaming_field2_terminal_rows_have_exact_anonymous_representations(self):
         result = parse_streaming_file(
-            "streaming", _packed(_field2_streaming_root())
+            "streaming",
+            _packed(_field2_streaming_root()),
+            native_layout_validated=True,
         )
         field2 = result["anonymousField2TerminalSubgraph"]
         self.assertEqual(field2["status"], "exact_anonymous_eof_subgraph")
@@ -300,7 +302,7 @@ class StreamingTests(unittest.TestCase):
                     "presentCount": 0,
                     "absentCount": 1,
                     "totalSpanBytes": 0,
-                    "status": "exact-anonymous-span-only",
+                    "status": "exact-native-consumed-representation",
                 },
                 {
                     "fieldIndex": 1,
@@ -308,7 +310,7 @@ class StreamingTests(unittest.TestCase):
                     "presentCount": 0,
                     "absentCount": 1,
                     "totalSpanBytes": 0,
-                    "status": "exact-anonymous-span-only",
+                    "status": "exact-native-consumed-representation",
                 },
                 {
                     "fieldIndex": 2,
@@ -316,7 +318,7 @@ class StreamingTests(unittest.TestCase):
                     "presentCount": 0,
                     "absentCount": 1,
                     "totalSpanBytes": 0,
-                    "status": "exact-anonymous-span-only",
+                    "status": "exact-native-consumed-representation",
                 },
                 {
                     "fieldIndex": 3,
@@ -324,7 +326,7 @@ class StreamingTests(unittest.TestCase):
                     "presentCount": 1,
                     "absentCount": 0,
                     "totalSpanBytes": 8,
-                    "status": "exact-anonymous-span-only",
+                    "status": "exact-native-consumed-representation",
                 },
                 {
                     "fieldIndex": 4,
@@ -332,7 +334,7 @@ class StreamingTests(unittest.TestCase):
                     "presentCount": 1,
                     "absentCount": 0,
                     "totalSpanBytes": 24,
-                    "status": "exact-anonymous-span-only",
+                    "status": "exact-native-consumed-representation",
                 },
                 {
                     "fieldIndex": 5,
@@ -345,11 +347,44 @@ class StreamingTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            field2["rowFields0To4Status"], "exact-anonymous-slot-spans"
+            field2["rowFields0To4Status"],
+            "exact-anonymous-native-consumed-layout",
         )
-        self.assertEqual(field2["rowFields0To4RepresentationStatus"], "unresolved")
-        self.assertEqual(field2["rowSlotSpansMayContainPadding"], [0, 1, 2, 3, 4])
-        self.assertNotIn("rowFieldValues", field2)
+        self.assertEqual(
+            field2["rowFields0To4RepresentationStatus"],
+            "exact-selected-build-native-loads",
+        )
+        self.assertEqual(field2["rowSlotSpansMayContainPadding"], [])
+        self.assertEqual(
+            [item["representation"] for item in field2["rowFieldRepresentations"]],
+            [
+                "little-endian-scalar32",
+                "little-endian-scalar32",
+                "little-endian-scalar32",
+                "little-endian-int32[2]",
+                "little-endian-float32[6]",
+            ],
+        )
+        self.assertEqual(
+            field2["rowValueRecords"],
+            [
+                {
+                    "rowIndex": 0,
+                    "field0Scalar32Bits": None,
+                    "field1Scalar32Bits": None,
+                    "field2Scalar32Bits": None,
+                    "field3Int32Lanes": [50462976, 117835012],
+                    "field4Float32Bits": [
+                        50462976,
+                        117835012,
+                        185207048,
+                        252579084,
+                        319951120,
+                        387323156,
+                    ],
+                }
+            ],
+        )
         self.assertEqual(
             field2["rowLayouts"],
             [
@@ -363,6 +398,18 @@ class StreamingTests(unittest.TestCase):
             ],
         )
         self.assertEqual(field2["wholeFileStatus"], "partial")
+
+    def test_streaming_field2_representation_fails_closed_without_native_gate(self):
+        field2 = parse_streaming_file(
+            "streaming", _packed(_field2_streaming_root())
+        )["anonymousField2TerminalSubgraph"]
+        self.assertEqual(
+            "unvalidated-native-contract",
+            field2["rowFields0To4RepresentationStatus"],
+        )
+        self.assertEqual([], field2["rowFieldRepresentations"])
+        self.assertEqual([], field2["rowValueRecords"])
+        self.assertEqual([0, 1, 2, 3, 4], field2["rowSlotSpansMayContainPadding"])
 
     def test_field2_counts_offsets_and_layouts_fail_closed(self):
         clear = bytearray(_field2_streaming_root())

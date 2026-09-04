@@ -4,18 +4,49 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.game_data.streaming_corpus import sweep
-from scripts.tests.test_streaming import _info_root, _packed, _parallel_data_root
+from scripts.tests.test_streaming import (
+    _field2_streaming_full_layout_root,
+    _info_root,
+    _packed,
+    _parallel_data_root,
+)
 
 
 class StreamingCorpusTests(unittest.TestCase):
+    @staticmethod
+    def _sweep(**kwargs):
+        native = {
+            "status": "validated",
+            "rowLayout": [
+                {"fieldIndex": 0, "representation": "little-endian-scalar32"},
+                {"fieldIndex": 1, "representation": "little-endian-scalar32"},
+                {"fieldIndex": 2, "representation": "little-endian-scalar32"},
+                {"fieldIndex": 3, "representation": "little-endian-int32[2]"},
+                {"fieldIndex": 4, "representation": "little-endian-float32[6]"},
+            ],
+            "validationFailures": [],
+        }
+        with patch(
+            "scripts.game_data.streaming_corpus.validate_streaming_field2_native_contract",
+            return_value=native,
+        ):
+            return sweep(**kwargs)
+
     def _fixture(self, root: Path) -> tuple[Path, Path, Path, str]:
         input_set = "A" * 64
         init = _packed(_parallel_data_root())
+        streaming_clear = bytearray(_field2_streaming_full_layout_root())
+        streaming_clear[128:132] = (7).to_bytes(4, "little")
+        streaming_clear[132:136] = (9).to_bytes(4, "little")
+        streaming_clear[136:140] = (-160).to_bytes(4, "little", signed=True)
+        streaming_clear[140:144] = (416).to_bytes(4, "little", signed=True)
+        streaming = _packed(bytes(streaming_clear))
         info = _info_root()
         chunk = root / "fixture.chk"
-        chunk.write_bytes(init + info)
+        chunk.write_bytes(init + streaming + info)
         header = {
             "recordType": "audit_header",
             "schemaVersion": 1,
@@ -31,8 +62,13 @@ class StreamingCorpusTests(unittest.TestCase):
                 init,
             ),
             (
-                "Data/Streaming/PC/test/Streaming/StreamingChunkInfo.bytes",
+                "Data/Streaming/PC/test/Streaming/StreamingChunkData_-2_3_7_9.bytes",
                 len(init),
+                streaming,
+            ),
+            (
+                "Data/Streaming/PC/test/Streaming/StreamingChunkInfo.bytes",
+                len(init) + len(streaming),
                 info,
             ),
         ):
@@ -82,23 +118,23 @@ class StreamingCorpusTests(unittest.TestCase):
     def test_complete_fixture(self):
         with tempfile.TemporaryDirectory() as temporary:
             summary, ledger, _chunk, input_set = self._fixture(Path(temporary))
-            result = sweep(
+            result = self._sweep(
                 outer_summary_path=summary,
                 outer_ledger_path=ledger,
                 expected_input_set_sha256=input_set,
             )
         self.assertEqual(result["status"], "complete")
         self.assertFalse(result["failed"])
-        self.assertEqual(result["summary"]["parsed"], 2)
+        self.assertEqual(result["summary"]["parsed"], 3)
         self.assertEqual(result["summary"]["exactInfo"], 1)
-        self.assertEqual(result["summary"]["partialData"], 1)
+        self.assertEqual(result["summary"]["partialData"], 2)
         self.assertEqual(
             result["layer3"]["field2TerminalSubgraphStatus"],
             "exact_anonymous_eof_subgraph",
         )
-        self.assertEqual(result["layer3"]["field2DirectRowCount"], 0)
-        self.assertEqual(result["layer3"]["field2Field5VectorCount"], 0)
-        self.assertEqual(result["layer3"]["field2Field5ValueCount"], 0)
+        self.assertEqual(result["layer3"]["field2DirectRowCount"], 1)
+        self.assertEqual(result["layer3"]["field2Field5VectorCount"], 1)
+        self.assertEqual(result["layer3"]["field2Field5ValueCount"], 2)
         self.assertEqual(
             result["layer3"]["field2RowObjectPartitionStatus"],
             "exact-anonymous-slot-spans",
@@ -112,9 +148,20 @@ class StreamingCorpusTests(unittest.TestCase):
         )
         self.assertEqual(
             result["layer3"]["field2RowSlotSpansMayContainPadding"],
-            [0, 1, 2, 3, 4],
+            [],
+        )
+        self.assertEqual(
+            result["layer3"]["field2Rows0To4RepresentationStatus"],
+            "exact-selected-build-native-loads",
         )
         self.assertEqual(result["layer3"]["field2InitEmptyVectorAtEofFiles"], 1)
+        numeric = result["layer3"]["field2PathRelations"]["numericPattern"]
+        self.assertEqual(numeric["fileCount"], 1)
+        self.assertEqual(numeric["rowCount"], 1)
+        self.assertEqual(numeric["field1PresentAndToken2Match"], 1)
+        self.assertEqual(numeric["field2PresentAndToken3Match"], 1)
+        self.assertEqual(numeric["field3FloorDiv128BothLanesMatch"], 1)
+        self.assertEqual(numeric["field3ResidualValues"], [32, 96])
         self.assertEqual(result["layer3"]["parallelRowCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0ReferenceCount"], 2)
         self.assertEqual(result["layer3"]["field5Field0Representation"], "ambiguous")
@@ -122,7 +169,7 @@ class StreamingCorpusTests(unittest.TestCase):
     def test_stale_input_set_fails_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
             summary, ledger, _chunk, _input_set = self._fixture(Path(temporary))
-            result = sweep(
+            result = self._sweep(
                 outer_summary_path=summary,
                 outer_ledger_path=ledger,
                 expected_input_set_sha256="B" * 64,
@@ -147,7 +194,7 @@ class StreamingCorpusTests(unittest.TestCase):
             data = bytearray(chunk.read_bytes())
             data[0] ^= 0xFF
             chunk.write_bytes(data)
-            result = sweep(
+            result = self._sweep(
                 outer_summary_path=summary,
                 outer_ledger_path=ledger,
                 expected_input_set_sha256=input_set,
@@ -161,13 +208,44 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertNotEqual(failure["expected"], failure["actual"])
 
     def test_invalid_expected_hash_fails_closed(self):
-        result = sweep(
+        result = self._sweep(
             outer_summary_path=Path("missing"),
             outer_ledger_path=Path("missing"),
             expected_input_set_sha256="not-a-sha",
         )
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["summary"]["gateFailures"], 1)
+
+    def test_native_contract_failure_blocks_representation_publication(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            summary, ledger, _chunk, input_set = self._fixture(Path(temporary))
+            with patch(
+                "scripts.game_data.streaming_corpus.validate_streaming_field2_native_contract",
+                return_value={
+                    "status": "validation_failed",
+                    "validationFailures": [
+                        {
+                            "gate": "field3AccessorThunk.body_sha256",
+                            "expected": "expected-body",
+                            "actual": "changed-body",
+                        }
+                    ],
+                },
+            ):
+                result = sweep(
+                    outer_summary_path=summary,
+                    outer_ledger_path=ledger,
+                    expected_input_set_sha256=input_set,
+                )
+        self.assertEqual("failed", result["status"])
+        self.assertEqual("unvalidated", result["layer3"]["field2Rows0To4RepresentationStatus"])
+        self.assertEqual([], result["layer3"]["field2RowFieldRepresentations"])
+        self.assertTrue(
+            any(
+                failure.get("stage") == "native-provenance"
+                for failure in result["failures"]
+            )
+        )
 
 
 if __name__ == "__main__":
