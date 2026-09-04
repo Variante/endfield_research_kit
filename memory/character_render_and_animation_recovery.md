@@ -108,6 +108,11 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
+- Recovered offscreen scene-color/SceneMV passes must pair any render-texture
+  projection winding flip with rasterizer cull inversion, then restore both.
+  RenderDoc proved that omitting this state rejected every shared CharEffect
+  billboard after a valid VS/PS submission; the corrected pass writes both
+  physical HDR color and SceneMV.
 - Endminf overview_01 combines ten physical rock renderers using LitEffect
   `_PARALLAX_MAP` M01/M38 with a companion VFXBaseV2 particle cohort. Complete
   serialized prefab ownership, including fail-closed renderers, is the required
@@ -302,7 +307,10 @@ build and collection procedure.
   swapchain boundary, and final presentation route.
 - Recover Endminf's complete secondary-dynamics numeric solver, owner identity,
   job completion, and writeback/history.
-- Complete entrance/loop VFX timing and lifetime without hand-authored offsets.
+- Close the shared CharEffect particle lifecycle: retail submits 1,935 trail
+  quads at the first phase-joined entrance packet while the lab still has all
+  4,000 burst particles alive. Recover the actual survivor/simulation clock
+  before changing timing, density, geometry, or culling.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
