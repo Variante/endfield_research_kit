@@ -31,6 +31,10 @@ Current durable state:
 - secondary cloth/bone simulation and history remain a confirmed silhouette
   gap; early rigid pose/presentation is also unresolved. Animator state timing
   alone does not prove that pose, and does not justify hand-authored corrections.
+- sampled entrance skin palettes agree closely with independent source-clip
+  poses at recorded Animator phases. That consistency does not authenticate
+  frame-end bytes as draw-consumed data or resolve the earlier visual pose gap;
+  the maintained palette audit preserves both phase candidates and both banks.
 
 Changing actor counts, shader hashes, frame metrics, session ids, and capture
 inventories belong in `reports/assets/character_recovery/`.
