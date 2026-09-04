@@ -99,6 +99,13 @@ only.
 - Direct clip selection, state-graph selection, and restart share the same
   effect/audio composition owner. Resuming a paused clip remains side-effect
   free.
+- Character Info's common `CharEffect` is one scene-level non-looping particle
+  system. Selection activates it and calls `Play`; repeated selection while it
+  is in flight preserves its survivor clock and must not inject `Stop/Clear`.
+- Its recovered owner publishes a fail-closed generation plus source
+  hierarchy, Unity identities, system clocks, and live trail count. Exact
+  retained packet selection may use that evidence diagnostically, but
+  canonical output continues to simulate the source system.
 - A controller or effect definition proves authored composition, not that the
   retail frame executed it.
 
@@ -207,7 +214,7 @@ return QPC per Endminf owner plus a bounded ledger of every matching clock,
 team/generation, and object identity independently of trajectory-window
 readiness. Its native source gate requires complete ledger accounting and rejects
 capacity loss, missing owners, clock, thread, lifecycle, hierarchy, publication,
-and shutdown failures. Animator timeline schema v4 reads the selected
+and shutdown failures. Animator timeline schema v5 reads the selected
 `CharUIModelMono.m_magicaCloths` collection (exact-build field token
 `0x04009205`, offset `0xf0`) after the original Tick and retains bounded cloth
 component pointers plus signed Unity instance IDs. The lab verifier joins each
@@ -308,9 +315,13 @@ build and collection procedure.
 - Recover Endminf's complete secondary-dynamics numeric solver, owner identity,
   job completion, and writeback/history.
 - Close the shared CharEffect particle lifecycle: retail submits 1,935 trail
-  quads at the first phase-joined entrance packet while the lab still has all
-  4,000 burst particles alive. Recover the actual survivor/simulation clock
-  before changing timing, density, geometry, or culling.
+  quads near the source system's 0.20 s state while Endminf's body clip is only
+  at 0.051 s, while canonical Unity starts visibly at 0.05 s/4,000 particles.
+  EndfieldCapture's exact-build Animator schema v5 now records the authenticated
+  `ParticleSystem.Play(bool)` pre/post state and shared QPC/Present clock. Run
+  `StartEndminfCharEffectTimingCapture.bat`, validate it with the lab timing
+  verifier, and recover the selection/model-ready chronology before changing
+  canonical timing; do not encode the gap as an actor-specific pre-roll.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
