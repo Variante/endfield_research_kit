@@ -257,9 +257,11 @@ Current durable boundaries:
   unresolved, and the matching managed `GridData` shape is candidate-only.
   Root fields 3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables,
   and a bounded row-field-0 byte range whose string/byte-vector representation
-  stays ambiguous. Rows with field 5 also close that field as a width-4 vector
-  and field 3 as a nested table whose fields 3/4/5 are equal-count
-  width-4/1/4 vectors; their elements and targets remain opaque. Root fields
+  stays ambiguous. Rows with field 5 close only its empty count prefix,
+  not its element width, and field 3 as a nested table with equal-count
+  width-4/1/4 vectors. The marker-17 wrapper/byte-range closure and its
+  unresolved type boundary are owned by `game_data_recovery.md`; all other
+  nested targets remain opaque. Root fields
   6/7 retain paired-group, descriptor, and blob-length closure. Bytes outside
   the certified subgraphs stay opaque; no union, entity, component, matrix,
   descriptor, field name, or runtime meaning follows.
@@ -351,9 +353,9 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 
 ## Remaining gaps
 
-- Complete inner semantics for the unresolved VFS payload families, starting
-  with Streaming's concrete runtime-root/secondary-path joins, nested
-  parallel-vector element targets, and field-5 key namespace/ownership.
+- Continue Streaming nested element/byte-body framing using the bottom-up
+  queue in `game_data_recovery.md`; concrete runtime paths and field names
+  follow structural closure, not the reverse.
 - Improve per-object clean/partial/error certification and dependency diagnostics.
 - Recover more exact MonoBehaviour and managed-reference schemas.
 - Expand shader-container coverage and complete semantic shader fixtures.

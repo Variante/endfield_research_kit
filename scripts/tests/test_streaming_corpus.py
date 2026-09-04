@@ -11,7 +11,7 @@ from scripts.tests.test_streaming import (
     _field2_streaming_full_layout_root,
     _info_root,
     _packed,
-    _parallel_nested_data_root,
+    _parallel_target_data_root,
 )
 
 
@@ -49,7 +49,7 @@ class StreamingCorpusTests(unittest.TestCase):
 
     def _fixture(self, root: Path) -> tuple[Path, Path, Path, str]:
         input_set = "A" * 64
-        init = _packed(_parallel_nested_data_root())
+        init = _packed(_parallel_target_data_root())
         streaming_clear = bytearray(_field2_streaming_full_layout_root())
         streaming_clear[128:132] = (7).to_bytes(4, "little")
         streaming_clear[132:136] = (9).to_bytes(4, "little")
@@ -211,6 +211,10 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(
             result["layer3"]["parallelField5Field3NestedParallelCount"], 2
         )
+        framing = result["layer3"]["nestedElementFraming"]
+        self.assertEqual(framing["nestedElementFramedCounts"], {"17": 1})
+        self.assertEqual(framing["nestedElementByteCounts"], {"17": 4})
+        self.assertEqual(framing["opaqueElementCount"], 1)
         self.assertEqual(
             result["layer4"]["nativeCarrierStatus"],
             "exact-selected-build-family-level-native-carrier",

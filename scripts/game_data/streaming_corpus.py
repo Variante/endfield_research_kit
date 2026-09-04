@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v7"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v8"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -302,6 +302,12 @@ def sweep(
     parallel_nested_tables = parallel_nested_rows = 0
     parallel_nested_field_values = collections.Counter()
     parallel_nested_shapes: collections.Counter[str] = collections.Counter()
+    nested_element_totals = {
+        key: collections.Counter() for key in (
+            "nestedElementMarkerCounts", "nestedElementFramedCounts", "nestedElementByteCounts"
+        )
+    }
+    nested_element_opaque = 0
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
@@ -738,6 +744,10 @@ def sweep(
                     parallel_nested_rows += int(
                         parallel.get("field5Field3NestedParallelCount", 0)
                     )
+                    nested_element_opaque += int(parallel.get("nestedElementOpaqueCount", 0))
+                    for key, totals in nested_element_totals.items():
+                        for marker, count in parallel.get(key, {}).items():
+                            totals[str(marker)] += int(count)
                     for field_index, value_count in (
                         parallel.get("field5Field3NestedFieldValueCounts") or {}
                     ).items():
@@ -1017,7 +1027,7 @@ def sweep(
             "parallelField5Field5VectorCount": parallel_field5_vectors,
             "parallelField5Field5ValueCount": parallel_field5_values,
             "parallelField5Field5Representation": (
-                "count-prefixed-width-4-vector" if not failed else "unvalidated"
+                "empty-count-prefix-element-width-unresolved" if not failed else "unvalidated"
             ),
             "parallelField5Field3NestedTableCount": parallel_nested_tables,
             "parallelField5Field3NestedTableShapeCounts": dict(
@@ -1031,8 +1041,14 @@ def sweep(
                 sorted(parallel_nested_field_values.items())
             ),
             "parallelField5Field3NestedElementStatus": (
-                "opaque-unresolved" if not failed else "unvalidated"
+                "partial-marker17-anonymous-framing" if not failed else "unvalidated"
             ),
+            "nestedElementFraming": {
+                **{key: dict(sorted(value.items())) for key, value in nested_element_totals.items()},
+                "opaqueElementCount": nested_element_opaque,
+                "marker17Representation": "two-wrappers-to-opaque-counted-bytes",
+                "markerMeaning": "unresolved-not-a-proven-union-registry",
+            },
             "pairedGroupSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -1044,7 +1060,7 @@ def sweep(
             "pairedGroupRangeCountPerFileSum": group_ranges,
             "pairedGroupReusedVtableReferenceCount": group_reused_vtables,
             "rangeAccountingNote": "Per-subgraph sums are not a whole-file union and must not be subtracted from decoded bytes to derive the opaque remainder.",
-            "opaque": "nested width-4 vector element targets, parallel row children not explicitly framed above, and all bytes outside certified subgraphs",
+            "opaque": "nested targets except marker-17 wrapper/byte-range framing, marker-17 byte contents, parallel row children not explicitly framed above, and all bytes outside certified subgraphs",
         },
         "layer4": {
             "streamingField2NativeContract": native_contract,
@@ -1116,14 +1132,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         f"- Field-5 row field-0 references: {layer3.get('field5Field0ReferenceCount', 0):,}; referenced bytes: {layer3.get('field5Field0ReferencedBytes', 0):,}.",
-        f"- Field-5 row field-5 width-4 vectors: {layer3.get('parallelField5Field5VectorCount', 0):,}; values: {layer3.get('parallelField5Field5ValueCount', 0):,}.",
+        f"- Field-5 row field-5 empty count prefixes: {layer3.get('parallelField5Field5VectorCount', 0):,}; values: {layer3.get('parallelField5Field5ValueCount', 0):,}; element width unresolved.",
         f"- Field-5 row field-3 nested tables: {layer3.get('parallelField5Field3NestedTableCount', 0):,}; equal-count width-4/1/4 rows: {layer3.get('parallelField5Field3NestedParallelCount', 0):,}; shapes: `{layer3.get('parallelField5Field3NestedTableShapeCounts')}`.",
+        f"- Nested marker-17 target framing: `{layer3.get('nestedElementFraming')}`.",
         f"- Paired field-6/7 groups: {layer3.get('pairedGroupCount', 0):,}; values: {layer3.get('pairedGroupValueCount', 0):,}; descriptors: {layer3.get('descriptorCount', 0):,}; blob bytes: {layer3.get('blobBytes', 0):,}.",
         f"- Paired-group per-file range sums: {layer3.get('pairedGroupRangeCountPerFileSum', 0):,} ranges; {layer3.get('pairedGroupOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. The selected-build native contract proves the stored representations and direct load shapes of fields 0-5. Its family-level read path also carries base/requested length, records the actual count, and accepts success only for equality. The selected closure then becomes pointer-only: FlatBuffer accessors receive no outer length and expose no parsed-length or final cursor, so the carrier is not joined to one authenticated logical file and does not promote managed names or game semantics. Field-5 scalar32 signedness and key namespace remain unresolved. Parallel-subgraph field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. For rows with field 5, that field is an independent width-4 vector and field 3 reaches an anonymous nested table whose fields 3/4/5 are equal-count width-4/1/4 vectors; their elements and targets remain opaque. Cross-file ownership, runtime selection, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. The selected-build native contract proves the stored representations and direct load shapes of root-field-2 row fields 0-5. Its family-level read path carries base/requested length and exact-read equality, but the selected accessor closure is pointer-only and has no final cursor. It is not joined to one authenticated logical file. Field-5 scalar32 signedness and key namespace remain unresolved. Parallel row field 0 remains string/byte-vector ambiguous. Six-field rows carry an empty count prefix whose element width is unresolved and a nested table with equal-count width-4/1/4 vectors. Nested marker 17 selects an observed two-wrapper byte-range framing, not a proven union registry. Its byte contents and all other marker targets stay opaque. Marker 16 exploration belongs to a different outer-row shape and is not covered by this branch. Cross-file ownership, runtime selection, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:

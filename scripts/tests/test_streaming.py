@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.game_data.streaming import parse_streaming_file
+from scripts.game_data.streaming import _nested_reference_ranges, parse_streaming_file
 
 
 def _root(kind: str, devonly_info: bool = False) -> bytes:
@@ -178,6 +178,27 @@ def _parallel_nested_data_root() -> bytes:
     data[240:252] = (2).to_bytes(4, "little") + bytes(8)
     data[260:268] = (3).to_bytes(4, "little") + b"abc\0"
     data[272:276] = (0).to_bytes(4, "little")
+    return bytes(data)
+
+
+def _parallel_target_data_root() -> bytes:
+    data = bytearray(_parallel_nested_data_root() + bytes(84))
+    def word(offset, value, width=4):
+        data[offset:offset + width] = value.to_bytes(width, "little")
+    word(40, 380 - 40)
+    data[236:238] = bytes((16, 17))
+    word(244, 300 - 244)
+    word(248, 332 - 248)
+    for table, vtable, target in ((300, 288, 308), (332, 326, 348), (348, 342, 356)):
+        word(vtable, 6, 2)
+        word(vtable + 2, 8, 2)
+        word(vtable + 4, 4, 2)
+        word(table, table - vtable)
+        word(table + 4, target - table - 4)
+    word(308, 3)
+    data[312:316] = b"abc\0"
+    word(356, 4)
+    data[360:364] = b"\xff\x00\x01\x02"
     return bytes(data)
 
 
@@ -685,8 +706,71 @@ class StreamingTests(unittest.TestCase):
             {"3": 2, "4": 2, "5": 2},
         )
         self.assertEqual(
-            subgraph["field5Field3NestedElementStatus"], "opaque-unresolved"
+            subgraph["field5Field3NestedElementStatus"], "partial-marker17-anonymous-framing"
         )
+
+    def test_nested_marker_targets_frame_without_promoting_types(self):
+        result = parse_streaming_file("streaming", _packed(_parallel_target_data_root()))
+        graph = result["anonymousParallelSubgraph"]
+        self.assertEqual(graph["nestedElementFramedCounts"], {17: 1})
+        self.assertEqual(graph["nestedElementByteCounts"], {17: 4})
+        self.assertEqual(graph["nestedElementOpaqueCount"], 1)
+        self.assertEqual(graph["wholeFileStatus"], "partial")
+
+    def test_nested_marker_targets_negative_fixtures(self):
+        for offset, value, message in (
+            (248, 0, "forward bounded target"),
+            (248, 0xFFFFFFFF, "forward bounded target"),
+            (356, 0xFFFFFFFF, "count"),
+            (352, 0, "target"),
+            (272, 1, "element width unresolved"),
+        ):
+            with self.subTest(offset=offset):
+                data = bytearray(_parallel_target_data_root())
+                data[offset:offset+4] = value.to_bytes(4, "little")
+                with self.assertRaisesRegex(ValueError, message):
+                    parse_streaming_file("streaming", _packed(bytes(data)))
+        for offset, value, message in ((330, 6, "single field"), (346, 6, "single field")):
+            with self.subTest(offset=offset):
+                data = bytearray(_parallel_target_data_root())
+                data[offset] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    parse_streaming_file("streaming", _packed(bytes(data)))
+
+    def test_nested_marker_truncated_and_trailing_fixtures(self):
+        data = _parallel_target_data_root()
+        for broken in (data[:363], data[:-1], data + b"\0"):
+            with self.subTest(length=len(broken)):
+                with self.assertRaises(ValueError):
+                    parse_streaming_file("streaming", _packed(broken))
+        with self.assertRaisesRegex(ValueError, "count"):
+            _nested_reference_ranges(data[:363], 248, 17, "truncated-byte-body")
+
+    def test_nested_wrapper_forward_vtable_and_ten_byte_shape(self):
+        data = bytearray(_parallel_target_data_root())
+        data[332:336] = (-10).to_bytes(4, "little", signed=True)
+        result = parse_streaming_file("streaming", _packed(bytes(data)))
+        self.assertEqual(result["anonymousParallelSubgraph"]["nestedElementFramedCounts"], {17: 1})
+        data = bytearray(_parallel_target_data_root())
+        data[328:330] = (10).to_bytes(2, "little")
+        result = parse_streaming_file("streaming", _packed(bytes(data)))
+        self.assertEqual(result["anonymousParallelSubgraph"]["nestedElementByteCounts"], {17: 4})
+
+    def test_nested_marker_ranges_reject_nonidentical_overlap(self):
+        data = bytearray(_parallel_target_data_root())
+        data[148:152] = (364 - 148).to_bytes(4, "little")
+        data[364:372] = (3).to_bytes(4, "little") + b"abc\0"
+        data[356:360] = (8).to_bytes(4, "little")
+        with self.assertRaisesRegex(ValueError, "overlap"):
+            parse_streaming_file("streaming", _packed(bytes(data)))
+
+    def test_unknown_nested_marker_stays_opaque_not_candidate_searched(self):
+        data = bytearray(_parallel_target_data_root())
+        data[236] = 255
+        result = parse_streaming_file("streaming", _packed(bytes(data)))
+        graph = result["anonymousParallelSubgraph"]
+        self.assertEqual(graph["nestedElementFramedCounts"], {17: 1})
+        self.assertEqual(graph["nestedElementOpaqueCount"], 1)
 
     def test_parallel_nested_offsets_and_counts_fail_closed(self):
         clear = bytearray(_parallel_nested_data_root())

@@ -85,11 +85,18 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   relations, not coordinate or gameplay names. Root fields 3/4/5 use widths
   4/1/4 with equal counts, bounded field-5 row tables and row-field-0 byte
   ranges; fields 6/7 form the independent paired-group subgraph. For rows with
-  field 5, that field is an independent width-4 vector and field 3 reaches an
+  field 5, that field has an empty count prefix (element width unresolved;
+  non-empty counts fail closed) and field 3 reaches an
   anonymous nested table whose fields 3/4/5 are equal-count width-4/1/4
   vectors. The field-0 representation remains string/byte-vector ambiguous;
-  nested vector elements/targets, cross-file ownership, runtime use, and all
-  game semantics remain unresolved. A separately gated family-level native
+  nested marker-17 elements now bound two-wrapper chains to counted
+  byte ranges. Wrappers have one field at +4 in an 8- or 10-byte object;
+  all ranges are bounded and non-identical overlaps fail. Marker 17 contents
+  and all other marker targets remain opaque. Marker 16 exploration belongs
+  to a different outer-row shape, outside this maintained branch.
+  These are structural-only marker associations, not a proven union registry,
+  serialized field names, cross-file ownership, or runtime/game semantics.
+  A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
   success, and `base + u32(base)` root calculation. Its first formatted leaf
   is exactly `StreamingChunkInfo`, but the runtime root remains unavailable,
@@ -250,8 +257,11 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete Streaming's concrete runtime-root/secondary-path joins, nested
-  parallel-vector element targets, and field-5 key namespace, then Terrain
+- Close Streaming's remaining nested marker targets, prioritizing marker 15's
+  fixed-width candidate, then marker-17 opaque byte bodies, before concrete
+  runtime-root/secondary-path joins or field-5 key namespace.
+  Fixed-size-looking targets still need independent width/cursor
+  evidence; do not derive sizes solely from neighboring addresses. Then Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

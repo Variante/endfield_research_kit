@@ -9,9 +9,11 @@ anonymous. Both data families additionally expose three exact anonymous
 subgraphs: the paired groups under root fields 6/7, the parallel first-level
 vectors/rows under root fields 3/4/5, and the root-field-2 vector, its direct
 tables/vtables, and the anonymous width-4 vectors reached through row field 5.
-For parallel rows that expose field 5, that field is framed as a width-4 vector
-and field 3 reaches a nested table with equal-count width-4/1/4 vectors; those
-elements and their possible targets remain opaque.
+For parallel rows that expose field 5, only its empty count prefix is framed;
+the element width remains unresolved. Field 3 reaches a nested table with
+equal-count width-4/1/4 vectors. Marker 17 elements frame two anonymous
+wrappers and a counted byte range; their byte contents and all other element
+targets remain opaque. The marker association is not a proven union registry.
 For the selected build, hash-gated native accessors and consumers establish row
 fields 0--2 as single 32-bit loads, field 3 as two signed 32-bit loads, field 4
 as six 32-bit floating-point loads, and every field-5 vector element as a
@@ -536,6 +538,45 @@ def _parse_paired_group_subgraph(
     }
 
 
+def _nested_reference_ranges(
+    data: bytes, slot: int, marker: int, label: str
+) -> tuple[list[tuple[int, int, str, str]], int]:
+    """Observed marker-17 framing only; not a proven union/type registry.
+
+    17 has two wrappers and an opaque counted byte range. Other marker
+    values must be left opaque by the caller, not searched for plausible tables.
+    """
+    if marker != 17:
+        raise ValueError(f"Streaming {label}: unsupported marker {marker}")
+    ranges = []
+    for depth in range(2):
+        relative = _u32(data, slot)
+        target = slot + relative
+        if relative == 0 or target + 4 > len(data):
+            raise ValueError(
+                f"Streaming {label} wrapper {depth} at slot {slot}: expected "
+                f"forward bounded target, actual {target}, EOF {len(data)}"
+            )
+        table = _table_layout(data, target)
+        actual = (table["fieldCount"], table["objectSize"], table["fields"])
+        if actual not in ((1, 8, [4]), (1, 10, [4])):
+            raise ValueError(
+                f"Streaming {label} wrapper {depth} at {target}: expected "
+                f"single field at +4, object size 8 or 10, actual {actual}"
+            )
+        ranges.extend([
+            (table["vtableOffset"], table["vtableOffset"] + table["vtableSize"], "vtable", label),
+            (target, target + table["objectSize"], "table", label),
+        ])
+        slot = target + 4
+    try:
+        start, count, end = _bounded_vector(data, table, 0, 1, label)
+    except ValueError as exc:
+        raise ValueError(f"{exc}; reference slot {slot}, actual EOF {len(data)}") from exc
+    ranges.append((start, end, "length-prefixed-byte-range", label))
+    return ranges, count
+
+
 def _parse_parallel_root_subgraph(
     data: bytes, root: dict[str, Any], family: str
 ) -> dict[str, Any]:
@@ -543,10 +584,12 @@ def _parse_parallel_root_subgraph(
 
     The selected corpus proves three equal-length first-level vectors. Field 5
     contains table offsets; each row's field 0 reaches a length-prefixed byte
-    range followed by zero. Rows with field 5 also carry an empty width-4
+    range followed by zero. Rows with field 5 also carry an empty counted
     vector and field 3 reaches a nested table whose fields 3/4/5 are equal-
-    count width-4/width-1/width-4 vectors. The nested width-4 elements and any
-    objects they may reference remain opaque. Field 0's physical
+    count width-4/width-1/width-4 vectors. Nested marker 17 additionally
+    bounds two-wrapper byte ranges; other element targets remain opaque.
+    This marker association is structural, not an independently proven union.
+    Field 0's physical
     representation is compatible with both a FlatBuffer string and a byte
     vector followed by alignment, so this parser deliberately keeps the
     serialized type ambiguous.
@@ -564,6 +607,9 @@ def _parse_parallel_root_subgraph(
     nested_field3_values = 0
     nested_field4_values = 0
     nested_field5_values = 0
+    nested_markers: Counter[int] = Counter()
+    nested_framed: Counter[int] = Counter()
+    nested_bytes: Counter[int] = Counter()
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -691,8 +737,8 @@ def _parse_parallel_root_subgraph(
 
         # Six-field rows expose two additional references. The selected
         # corpus closes the immediate ranges without assigning a union or
-        # element type: row field 5 is a width-4 vector (empty in the current
-        # corpus), while row field 3 reaches a nested table with three equal-
+        # element type: row field 5 has only an empty count prefix in the
+        # corpus, while row field 3 reaches a nested table with three equal-
         # count parallel vectors.
         row_field5 = _field_address(row, 5)
         if row_field5 is not None:
@@ -728,13 +774,19 @@ def _parse_parallel_root_subgraph(
                 data,
                 row,
                 5,
-                4,
+                1,  # Lower bound only; a nonzero count is rejected below.
                 f"{family} field 5 row {index} field 5",
             )
+            if field5_value_count != 0:
+                raise ValueError(
+                    f"Streaming {family} field 5 row {index} field 5 at "
+                    f"{field5_vector}: expected empty count 0 (element width "
+                    f"unresolved), actual {field5_value_count}"
+                )
             own(
                 field5_vector,
                 field5_vector_end,
-                "width-4-vector",
+                "empty-count-prefix",
                 f"{family} field 5 row {index} field 5",
             )
             outer_field5_vectors += 1
@@ -771,6 +823,7 @@ def _parse_parallel_root_subgraph(
             )
             nested_shapes[nested_shape] += 1
             nested_vectors = []
+            nested_starts = {}
             for nested_field, width in ((3, 4), (4, 1), (5, 4)):
                 vector_start, vector_count, vector_end = _bounded_vector(
                     data,
@@ -792,6 +845,7 @@ def _parse_parallel_root_subgraph(
                     ),
                 )
                 nested_vectors.append((nested_field, vector_count))
+                nested_starts[nested_field] = vector_start
             nested_counts = tuple(count for _field, count in nested_vectors)
             if len(set(nested_counts)) != 1:
                 raise ValueError(
@@ -804,6 +858,22 @@ def _parse_parallel_root_subgraph(
             nested_field3_values += nested_counts[0]
             nested_field4_values += nested_counts[1]
             nested_field5_values += nested_counts[2]
+            for element_index in range(nested_counts[0]):
+                marker = data[nested_starts[4] + 4 + element_index]
+                nested_markers[marker] += 1
+                if marker != 17:
+                    continue
+                label = (
+                    f"{family} field 5 row {index} nested element {element_index} "
+                    f"marker {marker}"
+                )
+                child_ranges, byte_count = _nested_reference_ranges(
+                    data, nested_starts[5] + 4 + element_index * 4, marker, label
+                )
+                for child_range in child_ranges:
+                    own(*child_range)
+                nested_framed[marker] += 1
+                nested_bytes[marker] += byte_count
 
     # FlatBuffers may reuse vtables and referenced objects. Exact duplicate
     # ranges are references, not overlaps; every non-identical overlap fails.
@@ -842,7 +912,7 @@ def _parse_parallel_root_subgraph(
         ],
         "field5Field5VectorCount": outer_field5_vectors,
         "field5Field5ValueCount": outer_field5_values,
-        "field5Field5Representation": "count-prefixed-width-4-vector",
+        "field5Field5Representation": "empty-count-prefix-element-width-unresolved",
         "field5Field3NestedTableCount": nested_tables,
         "field5Field3NestedTableShapes": [
             {
@@ -860,7 +930,13 @@ def _parse_parallel_root_subgraph(
             "4": nested_field4_values,
             "5": nested_field5_values,
         },
-        "field5Field3NestedElementStatus": "opaque-unresolved",
+        "field5Field3NestedElementStatus": "partial-marker17-anonymous-framing",
+        "nestedElementMarkerCounts": dict(sorted(nested_markers.items())),
+        "nestedElementFramedCounts": dict(sorted(nested_framed.items())),
+        "nestedElementByteCounts": dict(sorted(nested_bytes.items())),
+        "nestedElementOpaqueCount": sum(nested_markers.values()) - sum(nested_framed.values()),
+        "nestedMarker17Representation": "two-wrappers-to-opaque-counted-bytes",
+        "nestedMarkerMeaning": "unresolved-not-a-proven-union-registry",
         "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
         "rangeCount": len(unique_ranges),
         "reusedReferences": reused_references,
