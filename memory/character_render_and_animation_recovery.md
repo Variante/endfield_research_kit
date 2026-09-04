@@ -147,6 +147,27 @@ jobs consume exactly their serialized baseline slices: the first
 `baseLineData` vertex is the local root even when its hierarchy parent is
 outside that slice.
 
+Sparse captured-trajectory replay must publish the requested target time again
+immediately before rendering; relying on the preceding `LateUpdate` can lag the
+oracle by one frame. Exact-time replay of the retained August 26 trajectory
+improves the matching August 26 visual sequence, but it is still evidence, not
+the maintained solver. Its first visible state is already materially displaced
+from an authored-pose solver seed, so the next recovery boundary is the retail
+actor's pre-visible cloth lifetime/reset/stabilization sequence. Bone-oracle
+metrics must not silently compare trajectories captured in different retail
+sessions.
+
+That lifecycle question now has a distinct observation contract rather than a
+weakened trajectory claim. EndfieldCapture's diagnostic-only
+`registration-timing full` profile retains one name-authenticated AddCloth
+return QPC per Endminf owner plus counts and native identities independently of
+trajectory-window readiness; its domain gate rejects recreated owners, clock,
+thread, lifecycle, hierarchy, publication, and shutdown failures. The lab
+verifier joins those ticks only to the same session's complete Animator
+timeline. The currently installed client does not match the observer manifest,
+so the hooks must be re-pinned before collecting the requested fresh-process
+timing sessions.
+
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
 frequently observed TeamData address are insufficient; evidence must join the
