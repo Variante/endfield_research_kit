@@ -87,7 +87,7 @@ class TerrainTretTests(unittest.TestCase):
         self.assertEqual([4, 1], [item.record_count for item in ranges[-2:]])
         self.assertEqual(len(body), ranges[-1].end_offset)
 
-    def test_keeps_unproven_multi_range_shapes_bounded_opaque(self):
+    def test_tiles_exact_block_grouped_multi_range_shape(self):
         payload_length = 1398128
         words = (
             1024,
@@ -104,8 +104,69 @@ class TerrainTretTests(unittest.TestCase):
             + b"\x5a" * payload_length
         )
         parsed = parse_tret_record(body)
-        self.assertEqual("bounded_opaque_current_shape", parsed.anonymous_tiling_status)
-        self.assertEqual((), parsed.anonymous_record_ranges)
+        ranges = parsed.anonymous_record_ranges
+        self.assertEqual("exact_anonymous_record_tiling", parsed.anonymous_tiling_status)
+        self.assertEqual(11, len(ranges))
+        self.assertEqual(
+            (20, 20 + 1_048_576, 256, 256, 4, 65_536, 16),
+            (
+                ranges[0].start_offset,
+                ranges[0].end_offset,
+                ranges[0].axis0_units,
+                ranges[0].axis1_units,
+                ranges[0].axis_grouping_divisor,
+                ranges[0].record_count,
+                ranges[0].record_stride,
+            ),
+        )
+        self.assertEqual((2, 2), (
+            ranges[-2].source_axis0_units,
+            ranges[-2].source_axis1_units,
+        ))
+        self.assertEqual((1, 1), (
+            ranges[-1].source_axis0_units,
+            ranges[-1].source_axis1_units,
+        ))
+        self.assertEqual([16, 16], [
+            item.end_offset - item.start_offset for item in ranges[-2:]
+        ])
+        self.assertEqual(len(body), ranges[-1].end_offset)
+
+    def test_tiles_second_block_grouped_layout_word(self):
+        payload_length = 1_398_128
+        words = (1024, 1024, 11, 109, payload_length & 0xFFFF, payload_length >> 16)
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + b"\x5a" * payload_length
+        )
+        parsed = parse_tret_record(body)
+        self.assertEqual(11, len(parsed.anonymous_record_ranges))
+        self.assertEqual(
+            payload_length,
+            sum(
+                item.end_offset - item.start_offset
+                for item in parsed.anonymous_record_ranges
+            ),
+        )
+
+    def test_block_grouped_single_range_uses_block_units(self):
+        payload_length = 17_424
+        words = (132, 132, 1, 100, payload_length, 0)
+        body = (
+            b"TRET"
+            + (1).to_bytes(4, "little")
+            + b"".join(value.to_bytes(2, "little") for value in words)
+            + b"\x5a" * payload_length
+        )
+        record_range = parse_tret_record(body).anonymous_record_ranges[0]
+        self.assertEqual((33, 33, 1_089, 16), (
+            record_range.axis0_units,
+            record_range.axis1_units,
+            record_range.record_count,
+            record_range.record_stride,
+        ))
 
     def test_rejects_decoded_payload_without_magic(self):
         clear = b"not-a-terrain-record" + b"\x00"
@@ -205,7 +266,7 @@ class TerrainTretTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported TRET anonymous layout"):
             parse_tret_record(body((34, 34, 2, 6, 0, 0)))
 
-    def test_rejects_changed_bounded_opaque_aggregate_length(self):
+    def test_rejects_truncated_block_grouped_layout_with_valid_outer_length(self):
         payload_length = 1398127
         words = (
             1024,
@@ -221,7 +282,7 @@ class TerrainTretTests(unittest.TestCase):
             + b"".join(value.to_bytes(2, "little") for value in words)
             + b"\x00" * payload_length
         )
-        with self.assertRaisesRegex(ValueError, "bounded opaque body length mismatch"):
+        with self.assertRaisesRegex(ValueError, "anonymous range 10 exceeds decoded body"):
             parse_tret_record(body)
 
 

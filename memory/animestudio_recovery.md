@@ -145,23 +145,37 @@ Current durable boundaries:
   families have fail-closed readers. SpawnerConfig framing treats the integer
   dictionary key and serialized string wave key as independent fields; exact
   wave maps still require one unique bounded parse through physical EOF.
+  Terrain additionally validates its anonymous body-length word against the
+  complete decoded payload. Selected-build raw-word shapes expose exact
+  anonymous record tiling for most bodies; the two remaining observed shapes
+  retain only an aggregate-length gate. A grouped-axis/16-byte-unit formula
+  fits their sole observed geometry but does not independently prove internal
+  ranges. Header words and record values remain unnamed, and unobserved shapes
+  fail closed.
 - The current Table corpus has a direct low-output sweep covering selected
   overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
   EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
-  have current exact framing sweeps. BundleManifest additionally has exact
-  inner-file-count, basename-multiplicity, and row-index witnesses, but no
-  serialized field ownership; stale AssetMap source chunks cannot supply it.
+  have current exact framing sweeps. BundleManifest uses corrected size/count
+  fixed-width sections plus a repeated-size terminal variable envelope. Its
+  variable payload begins with a gap-free sequential anonymous span of UTF-16LE
+  fragments and three counted-u32 regions per record; its 48-byte rows index a
+  second span with the same record multiset under a different order. Terminal
+  bytes stay opaque. It has
+  exact inner-file-count, basename-multiplicity, and row-index witnesses, but
+  no serialized field ownership. Stale AssetMap source chunks cannot supply it.
   Exact method pins exist, but unresolved stream/ref-out carriers still block a
   safe lookup capture ABI. IFix instruction/runtime meanings remain separate
   claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
-  remaining payloads exactly once. Single-file v3 indexes now provide strict
-  index-directed interval framing for part of that payload set: raw range words
-  must cover byte zero through payload EOF without gaps or overlaps, while all
-  other directory words and renderer meanings remain opaque. Multi-filename
-  and legacy layouts remain unresolved; current counts live in the payload
-  audit report.
+  remaining payloads exactly once. Supported single/grouped v3 indexes strictly
+  bind filename-ordered groups to ranges that restart at zero and cover each
+  payload through EOF without gaps or overlaps. Directory starts may use
+  absolute or filename-table-end-relative four-byte alignment, but the combined
+  candidate must remain unique. Other words and renderer meanings stay opaque;
+  legacy indexes use a separate EOF-ending 24-record directory whose grouped
+  ranges also tile every referenced payload. All indexed payload boundaries are
+  now exact; record and renderer semantics remain open.
 - IV runtime capture has a narrow UnityPlayer parser/cursor candidate, but must
   still close exact module/build/entry/caller, buffer-length, and final-cursor
   contracts. A generic file-I/O hook cannot preserve the authenticated virtual-
@@ -182,21 +196,43 @@ Current durable boundaries:
   censuses, but nested MemoryPack unions and whole-file ownership are not
   proven. SkillData now has a strict anonymous EOF terminal-shape reader that
   keeps its prefix opaque and preserves multiple valid starts as ambiguity.
-  BuffData has exact post-id tails for most current rows but remains blocked on
-  explicit stacking/timeline/ignite/shield shapes and an untyped ability-event
-  union. LevelScriptData and LevelData now expose strict partial top-level
-  frames only when independently parsed prefix/suffix regions are unique and
-  EOF-exact; intervening bytes stay opaque. Keep all of these families
-  unclassified until formatter IL or a bounded deserialization trace closes
-  the complete cursor.
+  BuffData additionally has a bounded anonymous member-18 stacking-action
+  reader; its fixed extent and terminal markers can be exact without claiming
+  semantic field order, while changed or unsupported rows remain explicit.
+  LevelScriptData and LevelData expose partial top-level frames only when their
+  independently parsed prefix/suffix regions are unique and
+  EOF-exact; nonempty/null LevelScript action maps may also expose only an
+  anonymous first-list/record-envelope or raw-null prefix while all later
+  union data stays opaque. One high-coverage first-record variant has a bounded
+  sequential body reader, but later records/lists remain unowned. AnimationConfig likewise separates
+  a proven anonymous prefix (and a small exact whole-frame variant) from an
+  opaque remainder. Keep structural framing distinct from semantic schema
+  ownership until formatter IL or a bounded deserialization trace closes the
+  complete named cursor.
   Current v29 metadata identifies formatter/wrapper methods and setters, but
   its missing generic mapping and mismatched native code-registration witness
   do not prove serialized field order. The current residual JsonData census
   keeps every outer-verified unresolved row explicitly unclassified; SkillData
-  is the largest by bytes and still lacks whole-object cursor proof.
-- Deeper Terrain, streaming, manifest-row, mmap-oriented string/hash and bone
-  data, patch-instruction/runtime, and remaining JsonData semantics are
-  incomplete.
+  is the largest by bytes and still lacks whole-object cursor proof. The NPC
+  Montage reader exact-frames all 3,631 current rows, including both non-empty
+  counted collections and their nested member markers, while keeping UTF-8 and
+  fixed record bodies anonymous. StreamingChunkInfo exact-frames the anonymous
+  table/vector graph in all 89 current files, including reused/forward vtables
+  and 4/8/12-byte vector widths; every nonzero byte is owned and the sole
+  four-byte gap is zero alignment. InitChunkData and StreamingChunkData also
+  share one exact anonymous root-field6/7 paired-group subgraph across all
+  current files. Other root fields and remaining bytes stay opaque; no entity,
+  component, matrix, descriptor, or field meaning follows from this structural
+  result.
+- Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
+  and value pools. FacBoneTRS proves its file-provided unit count, observed
+  boundary overlaps, contiguous bone records, and 64-byte ranges through EOF;
+  every value is shape-consistent with a row-vector homogeneous rigid-affine
+  4x4 float representation. The exact type/convention remains unnamed, and
+  unit/bone hashes have no exact match in either StringPathHash dictionary.
+- Deeper Terrain record meaning, Init/Streaming tails and field meaning,
+  manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
+  JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not
   prove renderer ownership, selected variants, final lighting, or appearance.
 
@@ -218,6 +254,11 @@ to the selected metadata on assembly, token, and full name before publication.
 Endfield Cpp2IL compatibility is maintained as source in
 `Variante/Cpp2IL-Endfield` on `endfield/2022.0.7`; the generator consumes an
 immutable release pinned by tag and commit instead of applying a local patch.
+The checkout is tracked as the optional `tools/Cpp2IL-Endfield` submodule;
+`setup.bat` does not initialize it, while the DummyDll generator initializes it
+on demand for script-schema recovery. A pinned commit is insufficient by
+itself: both preparation and validation also reject a foreign origin or tracked
+local changes.
 Never reuse registration addresses from another build.
 
 Cpp2IL must attach a method shell and predeclare every method generic parameter

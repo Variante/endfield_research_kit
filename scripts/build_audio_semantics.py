@@ -53,6 +53,11 @@ if __package__ == "scripts":
         table_contexts,
         voice_requests,
     )
+    from scripts.animestudio_index_io import (
+        ObjectIndexUnavailable,
+        iter_published_objects,
+        published_object_index_path,
+    )
 elif not __package__:
     from common import sha256_file as file_sha256
     from audio_semantics import (
@@ -75,6 +80,11 @@ elif not __package__:
         scene_backgrounds,
         table_contexts,
         voice_requests,
+    )
+    from animestudio_index_io import (
+        ObjectIndexUnavailable,
+        iter_published_objects,
+        published_object_index_path,
     )
 else:  # pragma: no cover - this file has exactly two supported identities.
     raise ImportError("import as scripts.build_audio_semantics or run the script directly")
@@ -7319,20 +7329,50 @@ def collect_mono_behaviour_audio_id_contexts(
     event_role_counts: dict[str, Counter[str]] = defaultdict(Counter)
     occurrence_keys: set[tuple[str, str, int, str, int]] = set()
     raw_object_candidates: set[tuple[str, str, int]] = set()
+    complete_index_sources = 0
+    incomplete_index_sources = 0
+    index_fields_contract: dict[str, bool] = {}
     for source_root in ("StreamingAssets", "Persistent"):
-        path = (
+        merged_path = root / source_root / "object_index" / "objects.jsonl.gz"
+        part_path = (
             root / source_root / "object_index" / "parts"
             / f"{source_root}_animestudio_json_by_type_MonoBehaviour.jsonl"
         )
-        if not path.is_file():
-            continue
-        source_paths.append(normalize_posix(path.relative_to(export_root)))
-        for row in _iter_mono_audio_object_index_rows(path):
+        try:
+            published_object_index_path(export_root, source_root)
+            rows = iter_published_objects(export_root, source_root)
+            index_source_path = merged_path
+            source_paths.append(normalize_posix(merged_path.relative_to(export_root)))
+        except ObjectIndexUnavailable:
+            if not part_path.is_file():
+                continue
+            source_paths.append(normalize_posix(part_path.relative_to(export_root)))
+            rows = _iter_mono_audio_object_index_rows(part_path)
+            index_source_path = part_path
+        for row in rows:
             candidate_objects += 1
-            scalars = [
-                scalar for scalar in row.get("scalars") or []
-                if isinstance(scalar, list) and len(scalar) >= 3
+            fields = [
+                field for field in row.get("fields") or []
+                if isinstance(field, list) and len(field) >= 3
             ]
+            # New indexes carry the complete bounded field projection. Older
+            # indexes only have the identity-oriented scalar projection and
+            # must remain eligible for the legacy raw-JSON fallback.
+            has_fields_contract = (
+                isinstance(row.get("fields"), list)
+                and row.get("fieldsStatus") == "decoded"
+                and not bool(row.get("fieldsTruncated"))
+            )
+            index_fields_contract[source_root] = (
+                index_fields_contract.get(source_root, True) and has_fields_contract
+            )
+            if fields:
+                scalars = fields
+            else:
+                scalars = [
+                    scalar for scalar in row.get("scalars") or []
+                    if isinstance(scalar, list) and len(scalar) >= 3
+                ]
             object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
             try:
                 candidate_path_id = int(object_row.get("pathId") or 0)
@@ -7389,7 +7429,7 @@ def collect_mono_behaviour_audio_id_contexts(
                     "eventHash": event_hash,
                     "eventHex": f"0x{event_hash:08x}",
                     "sourceRoot": source_root,
-                    "objectIndexSource": normalize_posix(path.relative_to(export_root)),
+                    "objectIndexSource": normalize_posix(index_source_path.relative_to(export_root)),
                     "serializedFile": object_row.get("serializedFile"),
                     "sourceAssetFile": object_row.get("source"),
                     "sourceOffset": object_row.get("sourceOffset"),
@@ -7492,7 +7532,7 @@ def collect_mono_behaviour_audio_id_contexts(
                     "eventHash": event_hash,
                     "eventHex": f"0x{event_hash:08x}",
                     "sourceRoot": source_root,
-                    "objectIndexSource": normalize_posix(path.relative_to(export_root)),
+                    "objectIndexSource": normalize_posix(index_source_path.relative_to(export_root)),
                     "serializedFile": object_row.get("serializedFile"),
                     "sourceAssetFile": object_row.get("source"),
                     "sourceOffset": object_row.get("sourceOffset"),
@@ -7538,7 +7578,28 @@ def collect_mono_behaviour_audio_id_contexts(
                     identifiers.event_hash_context_key(event_hash),
                     {key: value for key, value in context.items() if value not in (None, "", [])},
                 )
+    # A complete merged index contains the same scalar evidence without the
+    # expensive raw-directory content scan.  Raw JSON remains an explicit
+    # fallback for old exports or indexes whose scalar set was truncated.
+    for source_root in ("StreamingAssets", "Persistent"):
+        try:
+            summary_path = root / source_root / "object_index" / "summary.json"
+            summary = load_json(summary_path, {})
+            counts = summary.get("counts") if isinstance(summary, dict) else {}
+            if (
+                summary.get("complete") is True
+                and index_fields_contract.get(source_root, False)
+                and not int(counts.get("objectsWithTruncatedScalars") or 0)
+                and not int(counts.get("objectsWithTruncatedFields") or 0)
+            ):
+                complete_index_sources += 1
+            else:
+                incomplete_index_sources += 1
+        except (OSError, TypeError, ValueError):
+            incomplete_index_sources += 1
+
     raw_paths: set[Path] = set()
+    raw_fallback_reason = "not-needed-complete-object-index"
     for source_root, object_name, candidate_path_id in raw_object_candidates:
         if not object_name:
             continue
@@ -7548,7 +7609,11 @@ def collect_mono_behaviour_audio_id_contexts(
         )
         if raw_path.is_file():
             raw_paths.add(raw_path)
-    raw_paths.update(_mono_audio_raw_json_paths(root))
+    if incomplete_index_sources or not complete_index_sources:
+        raw_paths.update(_mono_audio_raw_json_paths(root))
+        raw_fallback_reason = (
+            "published object index missing/incomplete; retained legacy JSON prefilter"
+        )
     for raw_path in sorted(raw_paths):
         raw_candidate_files += 1
         payload = load_json(raw_path, {})
@@ -7661,6 +7726,7 @@ def collect_mono_behaviour_audio_id_contexts(
             },
             "runtimeExecutionObserved": 0,
             "cacheStatus": "refreshed",
+            "rawJsonFallbackReason": raw_fallback_reason,
             "evidenceBoundary": boundary,
         },
         "evidenceBoundary": boundary,

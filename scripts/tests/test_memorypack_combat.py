@@ -781,6 +781,40 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing-target-settings-tail-or-guard-bool"):
             memorypack_buff.skip_buff_stack_effects_effect_actions_body(data, 0, 1)
 
+    def test_current_member18_stack_effect_accepts_bounded_zero_terminal_variant(self) -> None:
+        effect_name = b"P_fixture_zero_terminal"
+        action = bytearray(648 + len(effect_name))
+        action[0] = 18
+        struct.pack_into("<I", action, 1, 1)
+        action[18] = 13
+        struct.pack_into("<I", action, 138, len(effect_name))
+        action[142:142 + len(effect_name)] = effect_name
+        action[-5:] = b"\x00" * 5
+        data = b"\x01" + struct.pack("<I", 1) + bytes(action) + struct.pack("<I", 0)
+
+        decoded, end = memorypack_buff.skip_buff_stack_effects_effect_actions_body(data, 0, 1)
+
+        self.assertEqual(5 + len(action) + 4, end)
+        self.assertEqual({"zeroed-current-tail": 1}, decoded["effectActionTerminalShapeCounts"])
+
+    def test_timeline_boundary_requires_exact_outer_record_framing(self) -> None:
+        force_sync = b"\x04\x00" + struct.pack("<I", MEMORYPACK_NULL_COUNT) + struct.pack("<fi", 0.0, 0)
+        record = b"".join((
+            b"\x04", struct.pack("<i", 27),
+            b"\x03", struct.pack("<I", 0),
+            b"\x00\x00", struct.pack("<i", 26), force_sync,
+        ))
+        tail = b"\x03" + struct.pack("<I", MEMORYPACK_NULL_COUNT) + b"\x00" + struct.pack("<f", -1.0) + b"\x00\x00"
+        data = record + tail
+
+        end, pattern = memorypack_buff.find_buff_timeline_actions_body_end(data, 0, 1)
+        self.assertEqual(len(record), end)
+        self.assertEqual(4, pattern)
+
+        malformed = b"\x04" + b"\x00" * 9 + tail
+        with self.assertRaisesRegex(ValueError, "tail-anchor-candidates=0"):
+            memorypack_buff.find_buff_timeline_actions_body_end(malformed, 0, 1)
+
     def test_buff_compact_tag_id_list_keeps_packed_ids(self) -> None:
         data = b"".join((
             b"\x00",
@@ -828,7 +862,7 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
                 if index < 3
                 else memorypack_buff.BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADERS
             )
-            header = dict(variants)[f"energy-shard-{'long' if index < 3 else 'short'}-v2"]
+            header = dict(variants)[f"energy-shard-{'long' if index < 3 else 'short'}-175a"]
             blocks.append(header + tail_prefix + bytes([tail_code]) + b"\x00\x00\x00")
         data = b"".join(blocks)
 
@@ -836,9 +870,14 @@ class CombatMemoryPackSchemaTests(unittest.TestCase):
 
         self.assertEqual(4, decoded["igniteEventActionNestedBlockCount"])
         self.assertEqual(
-            ["energy-shard-long-v2"] * 3 + ["energy-shard-short-v2"],
+            ["energy-shard-long-175a"] * 3 + ["energy-shard-short-175a"],
             [block["header"] for block in decoded["igniteEventActionNestedBlocks"]],
         )
+
+        corrupted = bytearray(data)
+        corrupted[10] ^= 0x01
+        with self.assertRaisesRegex(ValueError, r"NestedBlocks\[0\]:header-mismatch"):
+            memorypack_buff.validate_buff_ignite_nested_blocks(bytes(corrupted), 0, len(data), 4)
 
 
 if __name__ == "__main__":

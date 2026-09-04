@@ -16,23 +16,20 @@ FIXED_BODY_PREFIX_SIZE = 20
 SUPPORTED_BODY_VERSION = 1
 
 # Selected-build anonymous framing contracts.  The key is the four raw u16
-# words at decoded offsets 8 through 14. Values are byte strides. Numeric words
-# remain deliberately unnamed, and unobserved axis/count combinations fail
-# closed rather than being generalized.
+# words at decoded offsets 8 through 14. Values are ``(axis divisor, byte
+# stride)`` pairs.  A current-build native reader and metadata enum join prove
+# that the last word controls the storage footprint, but this low-level parser
+# deliberately keeps the record contents and their game role unnamed.
+_AnonymousLayout = tuple[int, int]
 _OBSERVED_ANONYMOUS_LAYOUTS = {
-    (34, 34, 1, 6): 2,
-    (65, 65, 1, 6): 2,
-    (132, 132, 1, 8): 4,
-    (132, 132, 1, 100): 1,
-    (132, 132, 1, 101): 1,
-    (1024, 1024, 11, 5): 1,
-}
-# These two current shapes have a stable aggregate length, but candidate
-# 16-byte-aligned splits leave non-zero bytes in would-be gaps and therefore do
-# not certify those bytes as padding. Keep the complete body bounded and opaque.
-_OBSERVED_BOUNDED_OPAQUE_LAYOUTS = {
-    (1024, 1024, 11, 108): 1_398_128,
-    (1024, 1024, 11, 109): 1_398_128,
+    (34, 34, 1, 6): (1, 2),
+    (65, 65, 1, 6): (1, 2),
+    (132, 132, 1, 8): (1, 4),
+    (132, 132, 1, 100): (4, 16),
+    (132, 132, 1, 101): (4, 16),
+    (1024, 1024, 11, 5): (1, 1),
+    (1024, 1024, 11, 108): (4, 16),
+    (1024, 1024, 11, 109): (4, 16),
 }
 
 
@@ -45,6 +42,9 @@ class TretAnonymousRecordRange:
     end_offset: int
     axis0_units: int
     axis1_units: int
+    source_axis0_units: int
+    source_axis1_units: int
+    axis_grouping_divisor: int
     record_count: int
     record_stride: int
 
@@ -78,17 +78,10 @@ def _frame_anonymous_record_ranges(
             f"TRET anonymous axes must be positive: {axis0}, {axis1}"
         )
     layout_key = words[:4]
-    opaque_length = _OBSERVED_BOUNDED_OPAQUE_LAYOUTS.get(layout_key)
-    if opaque_length is not None:
-        actual_length = len(body) - FIXED_BODY_PREFIX_SIZE
-        if actual_length != opaque_length:
-            raise ValueError(
-                "TRET bounded opaque body length mismatch: "
-                f"expected {opaque_length}, actual {actual_length}"
-            )
-        return "bounded_opaque_current_shape", ()
     try:
-        record_stride = _OBSERVED_ANONYMOUS_LAYOUTS[layout_key]
+        axis_grouping_divisor, record_stride = _OBSERVED_ANONYMOUS_LAYOUTS[
+            layout_key
+        ]
     except KeyError as exc:
         raise ValueError(
             "unsupported TRET anonymous layout words: "
@@ -98,8 +91,14 @@ def _frame_anonymous_record_ranges(
     cursor = FIXED_BODY_PREFIX_SIZE
     ranges = []
     for index in range(range_count):
-        current_axis0 = max(1, axis0 >> index)
-        current_axis1 = max(1, axis1 >> index)
+        source_axis0 = max(1, axis0 >> index)
+        source_axis1 = max(1, axis1 >> index)
+        current_axis0 = max(
+            1, (source_axis0 + axis_grouping_divisor - 1) // axis_grouping_divisor
+        )
+        current_axis1 = max(
+            1, (source_axis1 + axis_grouping_divisor - 1) // axis_grouping_divisor
+        )
         record_count = current_axis0 * current_axis1
         data_length = record_count * record_stride
         end = cursor + data_length
@@ -115,6 +114,9 @@ def _frame_anonymous_record_ranges(
                 end_offset=end,
                 axis0_units=current_axis0,
                 axis1_units=current_axis1,
+                source_axis0_units=source_axis0,
+                source_axis1_units=source_axis1,
+                axis_grouping_divisor=axis_grouping_divisor,
                 record_count=record_count,
                 record_stride=record_stride,
             )

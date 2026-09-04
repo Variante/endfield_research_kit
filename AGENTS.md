@@ -104,8 +104,10 @@ prints optional `export_assets.bat --from-game` and plain `export.bat` follow-up
 commands for the remaining semantic views, explains that Updates requires two
 complete exports, then starts or reuses the default WebUI server.
 Pass `--no-serve` when setup should finish without starting `serve.py`.
-The `endfield_reconstruction_lab` and `tools/EndfieldCapture` submodules are
-optional and are not initialized by this quick-start path.
+The `tools/Cpp2IL-Endfield`, `endfield_reconstruction_lab`, and
+`tools/EndfieldCapture` submodules are optional and are not initialized by
+this quick-start path. The DummyDll generator initializes Cpp2IL-Endfield on
+demand only when script-schema recovery needs it.
 
 `export.bat` is the canonical Story/Text Tables and curated semantic-view WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed
@@ -361,10 +363,14 @@ Setup and export internals:
 - `scripts\animestudio\generate_dummydll.py` is the maintained regeneration
   path. Run `--dry-run` first after a game update, then `--replace` only when
   script-derived schema recovery is needed. It discovers build-specific
-  registrations, applies the maintained Cpp2IL patch, validates a staged
-  complete DLL image set, retains the previous set, and writes
+  registrations, clones and verifies the pinned
+  `Variante/Cpp2IL-Endfield` release, validates a staged complete DLL image
+  set, retains the previous set, and writes
   `tools\DummyDll\generation.json`. Never reuse registration addresses from a
-  previous installed build.
+  previous installed build. Maintain Endfield Cpp2IL source changes in
+  `https://github.com/Variante/Cpp2IL-Endfield` on the
+  `endfield/2022.0.7` line, publish an immutable `endfield-2022.0.7-vN` tag,
+  then update the generator's tag and commit pin; do not recreate a local patch.
 - `--animestudio-mono-behaviour-type-tree-priority script-first` is for
   targeted MonoBehaviour schema experiments; the default is `serialized-first`.
   Script-first must fall back cleanly when no usable DummyDlls are available.

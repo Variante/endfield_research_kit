@@ -101,7 +101,7 @@ echo.
 echo [setup 2/6] Initializing the required AnimeStudio submodule...
 git submodule update --init tools/AnimeStudio
 if errorlevel 1 goto :failed
-echo [setup] Optional submodules are not initialized: EndfieldCapture and endfield_reconstruction_lab.
+echo [setup] Optional submodules are not initialized: Cpp2IL-Endfield, EndfieldCapture, and endfield_reconstruction_lab.
 
 echo.
 echo [setup 3/7] Installing the AnimeStudio audio decoder...

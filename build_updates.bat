@@ -188,6 +188,8 @@ echo   below changes that part.
 echo   On top of it, two media groups are compared by default:
 echo     images/models/video   from the asset export roots
 echo     decoded audio         from structured\Audio (.flac .wav .wem)
+echo   AnimeStudio object_index/field_index outputs, their parts, and transient
+echo   compressed/index files are excluded; ordinary JSON, media, and audio stay tracked.
 echo.
 echo Options:
 echo   --text-only    Drop both media groups and compare text only. Fastest,

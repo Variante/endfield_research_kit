@@ -178,6 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("boundary_ledger", type=Path)
     parser.add_argument("--expected-input-set-sha256")
     parser.add_argument("--expected-target-count", type=int)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     result = audit_buff_stacking_member18(
         args.census,
@@ -186,7 +187,12 @@ def main(argv: list[str] | None = None) -> int:
         expected_input_set_sha256=args.expected_input_set_sha256,
         expected_target_count=args.expected_target_count,
     )
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    rendered = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(rendered, encoding="utf-8")
+    else:
+        print(rendered, end="")
     return 0
 
 

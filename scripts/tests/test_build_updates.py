@@ -336,5 +336,69 @@ class StructuredSourceRelocationTests(unittest.TestCase):
         )
 
 
+class AnimestudioIndexUpdateTests(unittest.TestCase):
+    def test_animestudio_indexes_and_transient_index_files_are_ignored(self) -> None:
+        ignored_paths = (
+            "recovered/AnimeStudio-cli/StreamingAssets/object_index/objects.jsonl.gz",
+            "recovered/AnimeStudio-cli/Persistent/field_index/parts/part-001.jsonl",
+            "recovered/AnimeStudio-cli/Persistent/field_index.tmp",
+            "recovered/AnimeStudio-cli/Persistent/objects.jsonl.gz",
+        )
+        for path in ignored_paths:
+            self.assertTrue(build_updates.is_ignored_game_update_path(path), path)
+
+        for path in (
+            "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D/icon.png",
+            "recovered/AnimeStudio-cli/Persistent/convert_by_type/AudioClip/voice.flac",
+            "structured/StreamingAssets/Table/Items.json",
+        ):
+            self.assertFalse(build_updates.is_ignored_game_update_path(path), path)
+
+    def test_full_scan_does_not_walk_animestudio_index_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            export_root = root / "export"
+            kept = export_root / "recovered/AnimeStudio-cli/Persistent/convert_by_type/Texture2D/icon.png"
+            ignored = export_root / "recovered/AnimeStudio-cli/Persistent/object_index/parts/objects.jsonl.gz"
+            kept.parent.mkdir(parents=True)
+            ignored.parent.mkdir(parents=True)
+            kept.write_bytes(b"png")
+            ignored.write_bytes(b"index")
+
+            payload = build_updates.scan_export_tree(
+                export_root=export_root,
+                state_dir=root / "state",
+                report_json=root / "report.json",
+                report_md=root / "report.md",
+                sample_limit=10,
+                top_line_limit=10,
+                write_history=False,
+                include_relative_paths=[],
+            )
+
+            self.assertEqual(payload["scanned_files"], 1)
+            self.assertEqual(payload["changes"]["added"], 1)
+            self.assertEqual(payload["samples"]["added"][0]["path"], kept.relative_to(export_root).as_posix())
+
+    def test_prune_file_inventory_excludes_animestudio_indexes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            old_root = root / "old"
+            current_root = root / "current"
+            kept = old_root / "structured/Table/Items.json"
+            ignored = old_root / "recovered/AnimeStudio-cli/Persistent/object_index/objects.jsonl.gz"
+            kept.parent.mkdir(parents=True)
+            ignored.parent.mkdir(parents=True)
+            kept.write_text("same", encoding="utf-8")
+            ignored.write_text("same", encoding="utf-8")
+            (current_root / "structured/Table").mkdir(parents=True)
+            (current_root / "structured/Table/Items.json").write_text("same", encoding="utf-8")
+
+            self.assertEqual(
+                build_updates.iter_existing_relative_files(old_root),
+                ["structured/Table/Items.json"],
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -84,6 +84,73 @@ class GenerateDummyDllTests(unittest.TestCase):
                 commands,
             )
 
+    def test_prepare_cpp2il_initializes_declared_optional_submodule(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Cpp2IL-Endfield"
+            relative = Path("tools/Cpp2IL-Endfield")
+
+            def initialize(argv, **kwargs):
+                (source / ".git").mkdir(parents=True)
+                return subprocess.CompletedProcess(argv, 0, "")
+
+            with (
+                mock.patch.object(
+                    generator, "registered_submodule_path", return_value=relative
+                ),
+                mock.patch.object(
+                    generator, "cpp2il_source_commit", return_value=generator.CPP2IL_COMMIT
+                ),
+                mock.patch.object(generator, "cpp2il_tracked_changes", return_value=""),
+                mock.patch.object(
+                    generator,
+                    "cpp2il_origin",
+                    return_value=generator.CPP2IL_REPOSITORY,
+                ),
+                mock.patch.object(generator, "run_command", side_effect=initialize) as run,
+            ):
+                self.assertTrue(generator.prepare_cpp2il(source, dry_run=False))
+
+            run.assert_called_once_with(
+                [
+                    "git", "submodule", "update", "--init", "--depth", "1", "--",
+                    relative.as_posix(),
+                ],
+                cwd=generator.ROOT,
+            )
+
+    def test_prepare_cpp2il_dry_run_does_not_initialize_optional_submodule(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Cpp2IL-Endfield"
+            with (
+                mock.patch.object(
+                    generator,
+                    "registered_submodule_path",
+                    return_value=Path("tools/Cpp2IL-Endfield"),
+                ),
+                mock.patch.object(generator, "run_command") as run,
+            ):
+                self.assertFalse(generator.prepare_cpp2il(source, dry_run=True))
+            run.assert_not_called()
+
+    def test_prepare_cpp2il_rejects_foreign_origin_at_pinned_commit(self) -> None:
+        generator = load_generator()
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Cpp2IL-Endfield"
+            (source / ".git").mkdir(parents=True)
+            with (
+                mock.patch.object(
+                    generator, "cpp2il_source_commit", return_value=generator.CPP2IL_COMMIT
+                ),
+                mock.patch.object(generator, "cpp2il_tracked_changes", return_value=""),
+                mock.patch.object(
+                    generator, "cpp2il_origin", return_value="https://example.invalid/fork.git"
+                ),
+            ):
+                with self.assertRaisesRegex(SystemExit, "origin"):
+                    generator.prepare_cpp2il(source, dry_run=False)
+
     def test_resolve_game_paths_accepts_data_root(self) -> None:
         generator = load_generator()
         with tempfile.TemporaryDirectory() as temp:

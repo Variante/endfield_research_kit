@@ -5866,11 +5866,14 @@ def refresh_render_backgrounds(levels: set[str] | None = None) -> int:
     return refreshed
 
 
-def build_previews_and_refresh(levels: list[str]) -> int:
+def build_previews_and_refresh(levels: list[str], jobs: int = 1) -> int:
     """Generate previews from current maps, then publish their manifests."""
     from scripts import build_map_recovery_preview
 
-    preview_args = [argument for level in levels for argument in ("--level", level)]
+    preview_args = ["--jobs", str(jobs)]
+    preview_args.extend(
+        argument for level in levels for argument in ("--level", level)
+    )
     returncode = int(build_map_recovery_preview.main(preview_args) or 0)
     if returncode:
         return returncode
@@ -5886,7 +5889,10 @@ def main() -> int:
         "--jobs",
         type=int,
         default=1,
-        help="processes for the per-level build (default 1). Ignored with --level.",
+        help=(
+            "worker processes for unfiltered data builds and preview rendering "
+            "(default 1); data builds with --level remain serial"
+        ),
     )
     preview_mode = parser.add_mutually_exclusive_group()
     preview_mode.add_argument(
@@ -5903,7 +5909,7 @@ def main() -> int:
     language = args.language.upper()
 
     if args.preview_only:
-        return build_previews_and_refresh(args.level)
+        return build_previews_and_refresh(args.level, args.jobs)
 
     terrain_index = write_height_index(
         ROOT / TERRAIN_HEIGHT_DIR,
@@ -6003,7 +6009,7 @@ def main() -> int:
         f"{sum(row['storyKeyCount'] for row in entries)} pinned story keys"
     )
     if args.with_preview:
-        return build_previews_and_refresh(args.level)
+        return build_previews_and_refresh(args.level, args.jobs)
     return 0
 
 
