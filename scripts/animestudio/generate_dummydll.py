@@ -40,8 +40,8 @@ DEFAULT_ANIMESTUDIO = (
     / "AnimeStudio.CLI.exe"
 )
 CPP2IL_REPOSITORY = "https://github.com/Variante/Cpp2IL-Endfield.git"
-CPP2IL_TAG = "endfield-2022.0.7-v3"
-CPP2IL_COMMIT = "c9885ce465e4d57c1b736055639203b99533f6ba"
+CPP2IL_TAG = "endfield-2022.0.7-v4"
+CPP2IL_COMMIT = "8e53b485b3ae4fac71a533ee47681e831c14658b"
 IL2CPP_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 METADATA_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 REQUIRED_ASSEMBLIES = {
@@ -50,7 +50,6 @@ REQUIRED_ASSEMBLIES = {
     "UnityEngine.CoreModule.dll",
 }
 MIN_PREVIOUS_BYTE_RATIO = 0.5
-MAX_SKIPPED_TYPE_RATIO = 0.9
 
 
 def fail(message: str) -> "NoReturn":
@@ -505,7 +504,6 @@ def current_output_status(
     skipped_required = sorted(
         name for name in REQUIRED_ASSEMBLIES if name.casefold() in skipped_images
     )
-    expected_types = int(gaps.get("expectedTypeCount") or 0)
     skipped_types = int(gaps.get("skippedMalformedTypeCount") or 0)
     detail = (
         f"{len(rows)} assemblies; coverage gaps: "
@@ -514,11 +512,8 @@ def current_output_status(
     )
     if skipped_required:
         return "degraded", detail + "; required images skipped: " + ", ".join(skipped_required)
-    if expected_types and skipped_types >= expected_types * MAX_SKIPPED_TYPE_RATIO:
-        return (
-            "degraded",
-            detail + f"; skipped {skipped_types / expected_types:.1%} of metadata types",
-        )
+    if skipped_types:
+        return "degraded", detail + "; type population is incomplete"
     return "current", detail
 
 
@@ -607,7 +602,7 @@ def generation_manifest(
         "schemaIdentityValidation": schema_identity_validation,
         "limitations": [
             "DummyDll assemblies contain recovered type/schema metadata, not original managed implementations.",
-            "Cpp2IL may skip malformed images, types, field defaults, or generic constraints; inspect cpp2il skip counts before relying on a class.",
+            "Publication rejects any Cpp2IL type-population failure; field-default and generic-constraint omissions remain explicit coverage gaps.",
             "The set is valid only for the recorded GameAssembly.dll and global-metadata.dat hashes.",
         ],
     }
@@ -627,12 +622,10 @@ def publication_regressions(output: Path, manifest: dict[str, Any]) -> list[str]
     if required_skipped:
         regressions.append("required images skipped: " + ", ".join(required_skipped))
     cpp2il = manifest.get("cpp2il", {})
-    expected_types = int(cpp2il.get("expectedTypeCount") or 0)
     skipped_types = int(cpp2il.get("skippedMalformedTypeCount") or 0)
-    if expected_types and skipped_types >= expected_types * MAX_SKIPPED_TYPE_RATIO:
+    if skipped_types:
         regressions.append(
-            "malformed type coverage collapsed: "
-            f"{skipped_types}/{expected_types} ({skipped_types / expected_types:.1%}) skipped"
+            f"type population incomplete: {skipped_types} malformed types"
         )
 
     previous_path = output / "generation.json"
@@ -837,7 +830,7 @@ def main() -> int:
         ),
         "regressions": regressions,
         "minimumPreviousByteRatio": MIN_PREVIOUS_BYTE_RATIO,
-        "maximumSkippedTypeRatio": MAX_SKIPPED_TYPE_RATIO,
+        "maximumSkippedTypeCount": 0,
     }
     if regressions and not args.allow_coverage_regression:
         fail(
