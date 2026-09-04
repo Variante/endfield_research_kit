@@ -150,6 +150,12 @@ only.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
+- Shared CharEffect retains the source BC7 texture's complete authored mip
+  chain and sRGB interpretation. Its shader-owned linear-repeat sampler must
+  sample raw UVs; manually wrapping coordinates before clamp sampling changes
+  seam filtering and derivatives. Serialized curve infinity codes likewise
+  require explicit translation to Unity's public WrapMode enum, verified by
+  independent engine serialization rather than the importer's own mapping.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
