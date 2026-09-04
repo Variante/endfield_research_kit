@@ -121,6 +121,11 @@ only.
   lifetime constraints remain part of the join.
 - Compatibility shaders and lab-created buffers are explicitly approximations
   until the retail producer and consumer are independently closed.
+- The graphics-only Full screen-shadow observer is pinned to the August 25
+  client through a dedicated five-file manifest and passes installed-client
+  preflight without native gameplay/IL2CPP hooks. Deferred presentation remains
+  fail-closed until a complete current-outfit session validates the same-frame
+  t11 producer-to-Default-resolver content handoff.
 - The AnimeStudio-owned shader recovery path may provide readable code and
   metadata. It does not prove runtime variant selection or final appearance.
 
