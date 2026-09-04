@@ -345,6 +345,13 @@ build and collection procedure.
 
 ## Remaining gaps
 
+- Join the early rigid pose and camera to source animation. EndfieldCapture's
+  dedicated pose-timing launcher preallocates a bounded dense palette sequence
+  before readiness and arms on a new Animator/graphics trigger without waiting
+  for Full mode's Streamline publication. Follow its README procedure. Retained
+  palettes remain frame-end samples; metadata clocks and VS resource aliases
+  do not establish same-draw consumption. Retail early-phase coverage is still
+  unverified.
 - Close the character-neutral retail render frame: exact shader variants,
   bindings, lighting/shadow resources, post-processing, a phase-joined final
   swapchain boundary, and final presentation route.
