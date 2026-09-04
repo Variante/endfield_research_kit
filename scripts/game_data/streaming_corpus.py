@@ -15,7 +15,7 @@ from typing import Any
 from scripts.game_data.streaming import parse_streaming_file
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v1"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v2"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -247,11 +247,15 @@ def sweep(
     overlay_states: collections.Counter[str] = collections.Counter()
     field4_values: collections.Counter[str] = collections.Counter()
     field5_shapes: collections.Counter[str] = collections.Counter()
+    field2_layouts: collections.Counter[str] = collections.Counter()
+    field2_family_files: collections.Counter[str] = collections.Counter()
     packed_bytes = decoded_bytes = parsed_count = exact_info = partial_data = 0
     info_rows = parallel_rows = field5_references = field5_bytes = 0
     group_count = group_values = descriptors = blob_bytes = 0
     parallel_owned_bytes = parallel_ranges = parallel_reused = 0
     group_owned_bytes = group_ranges = group_reused_vtables = 0
+    field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
+    field2_init_eof_files = 0
     row_failure_count = unsupported_count = 0
     identity_rows = []
 
@@ -384,9 +388,12 @@ def sweep(
                 else:
                     parallel = parsed.get("anonymousParallelSubgraph") or {}
                     groups = parsed.get("anonymousGroupSubgraph") or {}
+                    field2 = parsed.get("anonymousField2DirectSubgraph") or {}
                     if (
                         parallel.get("status") != "exact_anonymous_subgraph"
                         or groups.get("status") != "exact_anonymous_subgraph"
+                        or field2.get("status")
+                        != "exact_anonymous_direct_subgraph"
                     ):
                         row_failure_count += 1
                         if len(failures) < FAILURE_SAMPLE_LIMIT:
@@ -399,11 +406,30 @@ def sweep(
                                     actual={
                                         "parallel": parallel.get("status"),
                                         "groups": groups.get("status"),
+                                        "field2": field2.get("status"),
                                     },
                                 )
                             )
                         continue
                     partial_data += 1
+                    field2_family_files[family] += 1
+                    field2_rows += int(field2.get("rowCount", 0))
+                    field2_owned_bytes += int(field2.get("ownedBytes", 0))
+                    field2_ranges += int(field2.get("rangeCount", 0))
+                    field2_reused += int(field2.get("reusedReferences", 0))
+                    if family == "init" and field2.get("vectorEndsAtEof") is True:
+                        field2_init_eof_files += 1
+                    for layout in field2.get("rowLayouts") or []:
+                        key = json.dumps(
+                            [
+                                layout.get("fieldCount"),
+                                layout.get("objectSize"),
+                                layout.get("presentFields"),
+                                layout.get("fieldOffsets"),
+                            ],
+                            separators=(",", ":"),
+                        )
+                        field2_layouts[key] += int(layout.get("count", 0))
                     parallel_rows += int(parallel.get("parallelCount", 0))
                     parallel_owned_bytes += int(parallel.get("ownedBytes", 0))
                     parallel_ranges += int(parallel.get("rangeCount", 0))
@@ -516,6 +542,18 @@ def sweep(
             "infoStatus": "exact_anonymous_eof" if not failed else "unvalidated",
             "infoRowCount": info_rows,
             "dataWholeFileStatus": "partial",
+            "field2DirectSubgraphStatus": (
+                "exact_anonymous_direct_subgraph" if not failed else "unvalidated"
+            ),
+            "field2VectorElementWidth": 4,
+            "field2FamilyFileCounts": dict(sorted(field2_family_files.items())),
+            "field2InitEmptyVectorAtEofFiles": field2_init_eof_files,
+            "field2DirectRowCount": field2_rows,
+            "field2DirectRowLayoutCounts": dict(sorted(field2_layouts.items())),
+            "field2OwnedBytesPerFileSum": field2_owned_bytes,
+            "field2RangeCountPerFileSum": field2_ranges,
+            "field2ReusedReferenceCount": field2_reused,
+            "field2RowFieldsStatus": "opaque",
             "parallelSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -544,13 +582,13 @@ def sweep(
             "pairedGroupRangeCountPerFileSum": group_ranges,
             "pairedGroupReusedVtableReferenceCount": group_reused_vtables,
             "rangeAccountingNote": "Per-subgraph sums are not a whole-file union and must not be subtracted from decoded bytes to derive the opaque remainder.",
-            "opaque": "root field 2, field-5 row children other than field 0, and all bytes outside certified subgraphs",
+            "opaque": "field-2 row fields and child targets, field-5 row children other than field 0, and all bytes outside certified subgraphs",
         },
         "evidenceBoundary": {
-            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the two indexed anonymous data subgraphs are checked byte-for-byte.",
+            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte.",
             "structuralOnly": "Field indices, widths, record shapes, counts, ranges, and equal-count relations are serialized structure only.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "Field names, values, child payloads, cross-file ownership, runtime use, and game semantics are not claimed.",
+            "unresolved": "Field-2 row fields/targets, field names, values, child payloads, cross-file ownership, runtime use, and game semantics are not claimed.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -571,6 +609,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Proven structure",
         "",
+        f"- Root field 2 uses width-4 table offsets; direct rows: {layer3.get('field2DirectRowCount', 0):,}; Init empty vectors at EOF: {layer3.get('field2InitEmptyVectorAtEofFiles', 0):,}.",
+        f"- Field-2 direct subgraph per-file range sums: {layer3.get('field2RangeCountPerFileSum', 0):,} ranges; {layer3.get('field2OwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         f"- Field-5 row field-0 references: {layer3.get('field5Field0ReferenceCount', 0):,}; referenced bytes: {layer3.get('field5Field0ReferencedBytes', 0):,}.",
@@ -579,7 +619,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Evidence boundary",
         "",
-        "The fields remain anonymous and structural-only. Field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. Root field 2, all other field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
+        "The fields remain anonymous and structural-only. Field-2 row fields and child targets remain opaque. Field-5 row field 0 remains ambiguous between a FlatBuffer string and a byte vector followed by zero. All other field-5 children, cross-file ownership, runtime use, and game semantics remain unresolved.",
     ]
     failures = report.get("failures") or []
     if failures:

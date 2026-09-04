@@ -64,12 +64,15 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   grid, string, resource/state, and area accessors. The deeper meaning of its
   DataMask and several record fields remains unresolved.
 - StreamingChunkInfo has an exact anonymous EOF graph. The two data families
-  now also have exact selected-build first-level root-field3/4/5 vectors with
-  widths 4/1/4, equal counts, bounded field-5 row tables and row-field-0 byte
-  ranges, plus the independent field6/7 paired-group subgraph. The field-0
-  representation remains string/byte-vector ambiguous; field 2, deeper row
-  children, cross-file ownership, runtime use, and all game semantics remain
-  unresolved.
+  now also have three exact selected-build anonymous subgraphs. Root field 2 is
+  a width-4 table-offset vector: Init is empty through EOF, while Streaming's
+  immediate table/vtable rows close against seven layouts; their fields and child
+  targets stay opaque. Root fields 3/4/5 use widths 4/1/4 with equal counts,
+  bounded field-5 row tables and row-field-0 byte ranges; fields 6/7 form the
+  independent paired-group subgraph. The field-0 representation remains
+  string/byte-vector ambiguous; deeper row children, cross-file ownership,
+  runtime use, and all game semantics remain unresolved. Current native inputs
+  expose no exact field-2 consumer, carrier, ABI, or final cursor.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -217,7 +220,7 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Streaming field-2/deep-row structure, Terrain
+- Complete unresolved Streaming field-2 row children/deep-row structure, Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

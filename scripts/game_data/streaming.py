@@ -5,11 +5,12 @@ assign names or meanings to FlatBuffer fields.  The current build contains
 two length-prefixed inverted-LZ4 families (``InitChunkData`` and
 ``StreamingChunkData``) and a raw ``StreamingChunkInfo`` family.  The latter's
 selected-build table/vector graph is framed exactly while every field remains
-anonymous. Both data families additionally expose two exact anonymous
-subgraphs: the paired groups under root fields 6/7, and the parallel first-level
-vectors/rows under root fields 3/4/5. Root field 2 and the child objects reached
-from field-5 rows remain opaque. A small DevOnly subset is raw despite sharing
-the first two path families, so the decoder accepts raw only after independently
+anonymous. Both data families additionally expose three exact anonymous
+subgraphs: the paired groups under root fields 6/7, the parallel first-level
+vectors/rows under root fields 3/4/5, and the root-field-2 vector plus its
+immediate tables/vtables. Field-2 row fields and the child objects reached from
+field-5 rows remain opaque. A small DevOnly subset is raw despite sharing the
+first two path families, so the decoder accepts raw only after independently
 validating the observed root shape.
 """
 
@@ -36,6 +37,15 @@ _INIT_ID_WRAPPER = (1, 8, (0,))
 _INIT_GROUP_ROWS = {
     (5, 56, tuple(range(5))),
     (5, 60, tuple(range(5))),
+}
+_FIELD2_STREAMING_ROWS = {
+    (6, 40, (3, 4, 5)): (0, 0, 0, 4, 12, 36),
+    (6, 44, (0, 3, 4, 5)): (4, 0, 0, 8, 16, 40),
+    (6, 48, (0, 1, 3, 4, 5)): (4, 8, 0, 12, 20, 44),
+    (6, 44, (1, 3, 4, 5)): (0, 4, 0, 8, 16, 40),
+    (6, 44, (2, 3, 4, 5)): (0, 0, 4, 8, 16, 40),
+    (6, 48, (0, 2, 3, 4, 5)): (4, 0, 8, 12, 20, 44),
+    (6, 52, (0, 1, 2, 3, 4, 5)): (4, 8, 12, 16, 24, 48),
 }
 
 
@@ -702,6 +712,132 @@ def _parse_parallel_root_subgraph(
     }
 
 
+def _parse_field2_direct_subgraph(
+    data: bytes, root: dict[str, Any], family: str
+) -> dict[str, Any]:
+    """Frame root field 2 and only its immediate table/vtable records.
+
+    The row fields and every target they may encode deliberately remain
+    opaque.  A numerically forward-compatible word is not sufficient proof
+    that an anonymous slot is an offset.
+    """
+
+    root_layout = {
+        "tableOffset": root["rootOffset"],
+        "vtableOffset": root["vtableOffset"],
+        "vtableSize": root["vtableSize"],
+        "objectSize": root["objectSize"],
+        "fieldCount": root["fieldCount"],
+        "fields": root["fields"],
+        "presentFields": root["presentFields"],
+    }
+    vector_start, row_count, vector_end = _bounded_vector(
+        data, root_layout, 2, 4, f"{family} field 2 table slots"
+    )
+    ranges: list[tuple[int, int, str, str]] = [
+        (vector_start, vector_end, "table-vector", f"{family} field 2 table slots")
+    ]
+    layouts: Counter[
+        tuple[int, int, tuple[int, ...], tuple[int, ...]]
+    ] = Counter()
+
+    body = vector_start + 4
+    for index in range(row_count):
+        slot = body + index * 4
+        relative = _u32(data, slot)
+        target = slot + relative
+        if relative == 0 or target <= slot or target + 4 > len(data):
+            raise ValueError(
+                f"Streaming {family} field 2 row {index} table target "
+                f"{target} from slot {slot} outside payload {len(data)}"
+            )
+        row = _table_layout(data, target)
+        shape = (
+            int(row["fieldCount"]),
+            int(row["objectSize"]),
+            tuple(int(value) for value in row["presentFields"]),
+        )
+        fields = tuple(int(value) for value in row["fields"])
+        expected_fields = _FIELD2_STREAMING_ROWS.get(shape)
+        if family == "init":
+            raise ValueError(
+                f"Streaming init field 2 expected 0 rows, actual at least {index + 1}"
+            )
+        if expected_fields is None:
+            raise ValueError(
+                f"Streaming {family} field 2 row {index} shape {shape} is unsupported"
+            )
+        if fields != expected_fields:
+            raise ValueError(
+                f"Streaming {family} field 2 row {index} field offsets {fields}, "
+                f"expected {expected_fields} for shape {shape}"
+            )
+        layouts[(shape[0], shape[1], shape[2], fields)] += 1
+        ranges.append(
+            (
+                int(row["vtableOffset"]),
+                int(row["vtableOffset"]) + int(row["vtableSize"]),
+                "vtable",
+                f"{family} field 2 row {index} vtable",
+            )
+        )
+        ranges.append(
+            (
+                int(row["tableOffset"]),
+                int(row["tableOffset"]) + int(row["objectSize"]),
+                "table",
+                f"{family} field 2 row {index} table",
+            )
+        )
+
+    if family == "init":
+        if row_count != 0:
+            raise ValueError(
+                f"Streaming init field 2 expected 0 rows, actual {row_count}"
+            )
+        if vector_end != len(data):
+            raise ValueError(
+                f"Streaming init field 2 empty vector expected EOF {vector_end}, "
+                f"actual {len(data)}"
+            )
+
+    # Exact duplicate vtables/tables are shared references. Any other overlap
+    # is malformed for this selected-build direct subgraph.
+    unique_ranges = sorted(
+        {(start, end, kind) for start, end, kind, _label in ranges}
+    )
+    reused_references = len(ranges) - len(unique_ranges)
+    for previous, current in zip(unique_ranges, unique_ranges[1:]):
+        if current[0] < previous[1]:
+            raise ValueError(
+                f"Streaming {family} field 2 direct structural ranges overlap: "
+                f"{previous[0]}:{previous[1]} ({previous[2]}) and "
+                f"{current[0]}:{current[1]} ({current[2]})"
+            )
+
+    return {
+        "status": "exact_anonymous_direct_subgraph",
+        "rowCount": row_count,
+        "vectorRange": [vector_start, vector_end],
+        "vectorEndsAtEof": vector_end == len(data),
+        "rowLayouts": [
+            {
+                "fieldCount": layout[0],
+                "objectSize": layout[1],
+                "presentFields": list(layout[2]),
+                "fieldOffsets": list(layout[3]),
+                "count": count,
+            }
+            for layout, count in layouts.items()
+        ],
+        "ownedBytes": sum(end - start for start, end, _kind in unique_ranges),
+        "rangeCount": len(unique_ranges),
+        "reusedReferences": reused_references,
+        "rowFieldsStatus": "opaque",
+        "wholeFileStatus": "partial",
+    }
+
+
 def _check_root(kind: str, layout: dict[str, Any]) -> None:
     if kind == "info":
         if (
@@ -810,6 +946,9 @@ def parse_streaming_file(kind: str, packed: bytes, *, allow_raw: bool = False) -
             clear, layout, kind
         )
         result["anonymousGroupSubgraph"] = _parse_paired_group_subgraph(
+            clear, layout, kind
+        )
+        result["anonymousField2DirectSubgraph"] = _parse_field2_direct_subgraph(
             clear, layout, kind
         )
     return result

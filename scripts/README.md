@@ -222,7 +222,10 @@ selected physical chunk once and intentionally returns non-zero for any missing
 or unauthenticated declaration while still publishing its terminal ledger.
 `streaming_corpus` reauthenticates block-15 rows from that ledger and writes
 `reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
-exact `inputSetSha256` from the current outer summary.
+exact `inputSetSha256` from the current outer summary. The gate covers the
+anonymous field-2 vector and immediate table/vtable framing as well as the
+field3/4/5 and field6/7 subgraphs; it intentionally leaves field-2 row fields
+and child targets opaque.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

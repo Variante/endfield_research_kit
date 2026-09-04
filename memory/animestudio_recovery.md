@@ -222,22 +222,22 @@ Current durable boundaries:
   table/vector graph in all 89 current files, including reused/forward vtables
   and 4/8/12-byte vector widths; every nonzero byte is owned and the sole
   four-byte gap is zero alignment. InitChunkData and StreamingChunkData also
-  share two exact anonymous subgraphs across all current files. Root fields
-  3/4/5 are selected-build vectors with observed element widths 4/1/4, equal
-  counts, bounded field-5 row tables, and a bounded row-field-0 byte range.
-  The latter remains ambiguous between a FlatBuffer string and a byte vector
-  followed by zero. Root fields 6/7 retain the paired-group, descriptor, and
-  blob-length closure. Root field 2, all other field-5 children, and bytes
-  outside the two subgraphs stay opaque; no union, entity, component, matrix,
-  descriptor, field name, or runtime meaning follows from this structural
-  result.
+  share three exact anonymous subgraphs across all current files. Root field 2
+  is a width-4 table-offset vector: Init has an empty vector ending at EOF;
+  Streaming closes each immediate table/vtable against seven selected-build
+  layouts while every row field and child target stays opaque. Root fields
+  3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables, and a
+  bounded row-field-0 byte range whose string/byte-vector representation stays
+  ambiguous. Root fields 6/7 retain paired-group, descriptor, and blob-length
+  closure. Bytes outside the three subgraphs stay opaque; no union, entity,
+  component, matrix, descriptor, field name, or runtime meaning follows.
 - Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
   and value pools. FacBoneTRS proves its file-provided unit count, observed
   boundary overlaps, contiguous bone records, and 64-byte ranges through EOF;
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Terrain block/channel meaning, Streaming root field 2, deeper field-5
+- Terrain block/channel meaning, Streaming field-2 row children, deeper field-5
   children, remaining tails and field meaning,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
