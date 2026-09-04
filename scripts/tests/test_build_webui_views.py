@@ -157,6 +157,12 @@ class WebuiViewPlanTests(unittest.TestCase):
         self.assertIn("recover_map_streaming_instances.py", joined_map_task.commands[0].argv[1])
         self.assertIn("--all-published-map-scenes", joined_map_task.commands[0].argv)
         self.assertIn("--preview-only", joined_map_task.commands[1].argv)
+        self.assertEqual(
+            joined_map_task.commands[1].argv[
+                joined_map_task.commands[1].argv.index("--jobs") + 1
+            ],
+            "4",
+        )
 
     def test_map_build_uses_worker_budget_with_and_without_assets(self) -> None:
         normal = commands_for(
@@ -312,6 +318,13 @@ class WebuiViewPlanTests(unittest.TestCase):
             "python .\\scripts\\verify_export_freshness.py %GAME_ROOT_ARG%",
             source,
         )
+
+    def test_export_wrapper_has_opt_in_freshness_bypass(self) -> None:
+        source = (ROOT / "export.bat").read_text(encoding="utf-8")
+        self.assertIn('if /I "%~1"=="--skip-freshness" goto :opt_skip_freshness', source)
+        self.assertIn('set "SKIP_FRESHNESS=1"', source)
+        self.assertIn("Freshness check skipped by --skip-freshness.", source)
+        self.assertIn('if "%SKIP_FRESHNESS%"=="1" (', source)
 
     def test_custom_roots_are_forwarded_to_every_subprocess_environment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

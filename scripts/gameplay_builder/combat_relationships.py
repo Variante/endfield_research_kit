@@ -19,6 +19,15 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
 
+try:
+    from ..animestudio_index_io import (
+        ObjectIndexUnavailable,
+        iter_published_objects,
+        raw_json_path_for_object,
+    )
+except ImportError:  # direct script execution
+    from animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
+
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
@@ -498,6 +507,16 @@ class PayloadBuilder:
     def ability_entity_paths(self) -> list[Path]:
         paths: list[Path] = []
         for source in ("Persistent", "StreamingAssets"):
+            try:
+                indexed = [
+                    raw_json_path_for_object(self.animestudio_root.parent.parent, source, row)
+                    for row in iter_published_objects(self.animestudio_root.parent.parent, source)
+                    if str(row.get("name") or "").lower().startswith("data_abilityentity")
+                ]
+                paths.extend(path for path in indexed if path is not None)
+                continue
+            except ObjectIndexUnavailable:
+                pass
             directory = self.animestudio_root / source / "json_by_type" / "MonoBehaviour"
             if directory.is_dir():
                 paths.extend(directory.glob("data_abilityentity*.json"))
@@ -776,6 +795,16 @@ class PayloadBuilder:
     def add_character_target_settings(self) -> None:
         paths: list[Path] = []
         for source in ("Persistent", "StreamingAssets"):
+            try:
+                indexed = [
+                    raw_json_path_for_object(self.animestudio_root.parent.parent, source, row)
+                    for row in iter_published_objects(self.animestudio_root.parent.parent, source)
+                    if str(row.get("name") or "").lower().startswith("data_chr_")
+                ]
+                paths.extend(path for path in indexed if path is not None)
+                continue
+            except ObjectIndexUnavailable:
+                pass
             directory = self.animestudio_root / source / "json_by_type" / "MonoBehaviour"
             if directory.is_dir():
                 paths.extend(directory.glob("data_chr_*.json"))

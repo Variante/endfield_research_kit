@@ -8,6 +8,7 @@ validates the complete metadata image set, and atomically publishes tools/DummyD
 from __future__ import annotations
 
 import argparse
+import configparser
 import importlib.util
 import json
 import os
@@ -147,10 +148,62 @@ def cpp2il_tracked_changes(source: Path) -> str:
     ).stdout.strip()
 
 
-def prepare_cpp2il(source: Path, *, dry_run: bool) -> bool:
-    """Clone or safely advance a clean checkout to the immutable source pin."""
+def cpp2il_origin(source: Path) -> str:
+    return run_command(
+        ["git", "remote", "get-url", "origin"], cwd=source, show=False
+    ).stdout.strip()
 
-    if not source.exists():
+
+def registered_submodule_path(source: Path) -> Path | None:
+    """Return the repo-relative path when source is a declared submodule."""
+
+    gitmodules = ROOT / ".gitmodules"
+    if not (ROOT / ".git").exists() or not gitmodules.is_file():
+        return None
+    try:
+        relative = source.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return None
+    config = configparser.ConfigParser()
+    config.read(gitmodules, encoding="utf-8")
+    expected = relative.as_posix().casefold()
+    for section in config.sections():
+        if not section.startswith("submodule "):
+            continue
+        configured = config.get(section, "path", fallback="").replace("\\", "/")
+        if configured.casefold() == expected:
+            index = run_command(
+                ["git", "ls-files", "--stage", "--", relative.as_posix()],
+                cwd=ROOT,
+                check=False,
+                show=False,
+            )
+            if index.returncode == 0 and any(
+                row.startswith("160000 ") for row in index.stdout.splitlines()
+            ):
+                return relative
+    return None
+
+
+def prepare_cpp2il(source: Path, *, dry_run: bool) -> bool:
+    """Initialize, clone, or safely advance to the immutable source pin."""
+
+    submodule_path = registered_submodule_path(source)
+    if submodule_path is not None and not (source / ".git").exists():
+        if dry_run:
+            print(
+                "Would initialize optional Cpp2IL-Endfield submodule at "
+                f"{submodule_path.as_posix()}"
+            )
+            return False
+        run_command(
+            [
+                "git", "submodule", "update", "--init", "--depth", "1", "--",
+                submodule_path.as_posix(),
+            ],
+            cwd=ROOT,
+        )
+    elif not source.exists():
         if dry_run:
             print(f"Would clone Cpp2IL {CPP2IL_TAG} into {source}")
             return False
@@ -165,21 +218,19 @@ def prepare_cpp2il(source: Path, *, dry_run: bool) -> bool:
     if not (source / ".git").exists():
         fail(f"Cpp2IL source is not a Git checkout: {source}")
     current = cpp2il_source_commit(source)
-    if current == CPP2IL_COMMIT:
-        return True
     changes = cpp2il_tracked_changes(source)
     if changes:
         fail(
             "Refusing to update a Cpp2IL-Endfield checkout with tracked local "
             f"changes: {source}"
         )
-    origin = run_command(
-        ["git", "remote", "get-url", "origin"], cwd=source, show=False
-    ).stdout.strip()
+    origin = cpp2il_origin(source)
     if canonical_git_remote(origin) != canonical_git_remote(CPP2IL_REPOSITORY):
         fail(
             f"Cpp2IL-Endfield origin is {origin!r}, expected {CPP2IL_REPOSITORY!r}."
         )
+    if current == CPP2IL_COMMIT:
+        return True
     if dry_run:
         print(
             f"Would update clean Cpp2IL-Endfield checkout from {current} to "
@@ -220,6 +271,11 @@ def validate_cpp2il_source(source: Path) -> None:
     changes = cpp2il_tracked_changes(source)
     if changes:
         fail(f"Cpp2IL-Endfield source has tracked local changes: {source}")
+    origin = cpp2il_origin(source)
+    if canonical_git_remote(origin) != canonical_git_remote(CPP2IL_REPOSITORY):
+        fail(
+            f"Cpp2IL-Endfield origin is {origin!r}, expected {CPP2IL_REPOSITORY!r}."
+        )
     markers = {
         source / "LibCpp2IL" / "Il2CppBinary.cs": "CPP2IL_METADATA_REGISTRATION",
         source / "LibCpp2IL" / "Metadata" / "Il2CppTypeDefinition.cs": "endfieldUnknownIndex",
@@ -751,8 +807,11 @@ def main() -> int:
     report_current_output_status(output, gameassembly, metadata)
 
     if args.no_prepare:
-        if not source.exists():
-            fail(f"Cpp2IL source does not exist: {source}")
+        if not (source / ".git").exists():
+            fail(
+                "Cpp2IL source is not an initialized Git checkout: "
+                f"{source}. Remove --no-prepare to initialize it on demand."
+            )
     else:
         source_ready = prepare_cpp2il(source, dry_run=args.dry_run)
     if args.dry_run:

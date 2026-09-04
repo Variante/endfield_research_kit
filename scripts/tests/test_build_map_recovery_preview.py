@@ -1,3 +1,4 @@
+import argparse
 import json
 import struct
 import tempfile
@@ -24,6 +25,8 @@ from scripts.build_map_recovery_preview import (
     grow_surface,
     hillshade,
     plot_bounds,
+    preview_level_groups,
+    preview_worker_shards,
     raster_size,
     rasterise_depth,
     read_png_preview,
@@ -68,6 +71,79 @@ class CellSizeTests(unittest.TestCase):
 
 
 class PreviewInputTests(unittest.TestCase):
+    def test_preview_worker_shards_keep_shared_streaming_scenes_together(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            maps_root = Path(tmp)
+            for level_id in ("level_a", "level_b", "level_c"):
+                (maps_root / f"{level_id}.json").write_text("{}", encoding="utf-8")
+
+            def projection(level_id):
+                if level_id in {"level_a", "level_b"}:
+                    return {"sceneId": "shared"}
+                return None
+
+            with mock.patch.object(builder, "projection_streaming_scene", side_effect=projection):
+                groups = preview_level_groups(maps_root)
+            self.assertIn(("level_a", "level_b"), groups)
+            shards = preview_worker_shards(groups, 2)
+            self.assertTrue(
+                any("level_a" in shard and "level_b" in shard for shard in shards)
+            )
+
+    def test_preview_groups_keep_scene_id_output_owner_with_scene_members(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            maps_root = Path(tmp)
+            for level_id in ("scene_art", "scene_member", "unrelated"):
+                (maps_root / f"{level_id}.json").write_text("{}", encoding="utf-8")
+
+            def projection(level_id):
+                if level_id == "scene_member":
+                    return {"sceneId": "scene_art"}
+                return None
+
+            with mock.patch.object(builder, "projection_streaming_scene", side_effect=projection):
+                groups = preview_level_groups(maps_root)
+            self.assertIn(("scene_art", "scene_member"), groups)
+
+    def test_parallel_preview_workers_pass_stable_level_shards_to_children(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            maps_root = root / "maps"
+            maps_root.mkdir()
+            for level_id in ("level_a", "level_b", "level_c"):
+                (maps_root / f"{level_id}.json").write_text("{}", encoding="utf-8")
+            args = argparse.Namespace(
+                asset_map=root / "missing-assets.json",
+                mesh_root=root / "meshes",
+                texture_root=root / "textures",
+                maps_root=maps_root,
+                output_root=root / "render",
+                hlod_index=root / "hlod-index.json",
+                refresh_index=False,
+                no_render_cache=False,
+                lod=None,
+                scan_mode="auto",
+                surface_point_density=0.25,
+                level=[],
+                jobs=2,
+            )
+            with mock.patch.object(builder, "projection_streaming_scene", return_value=None), \
+                    mock.patch.object(builder, "_run_preview_worker", return_value=0) as worker:
+                self.assertEqual(builder.run_parallel_preview_workers(args), 0)
+
+            commands = [call.args[0] for call in worker.call_args_list]
+            self.assertEqual(len(commands), 2)
+            assigned = sorted(
+                command[index + 1]
+                for command in commands
+                for index, value in enumerate(command)
+                if value == "--level"
+            )
+            self.assertEqual(assigned, ["level_a", "level_b", "level_c"])
+            self.assertTrue(
+                all(command[command.index("--jobs") + 1] == "1" for command in commands)
+            )
+
     def test_renderer_binding_recovers_unloaded_external_ptrs_from_unique_asset_map_ids(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

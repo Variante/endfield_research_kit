@@ -69,7 +69,7 @@ DEFAULT_REPORT_JSON = UPDATES_REPORTS_DIR / "game-data-change-summary.json"
 DEFAULT_REPORT_MD = UPDATES_REPORTS_DIR / "game-data-change-summary.md"
 SCHEMA_VERSION = 1
 ASSET_STATE_SCHEMA_VERSION = 1
-EXPORT_BASELINE_CONFIG_SCHEMA_VERSION = 2
+EXPORT_BASELINE_CONFIG_SCHEMA_VERSION = 3
 STATUS_ORDER = {"added": 0, "modified": 1, "deleted": 2}
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
 ASSET_DEFAULT_FINGERPRINT_MODE = "size"
@@ -86,6 +86,16 @@ IGNORED_GAME_PATH_PREFIXES = (
     # CrashSight writes local crash/telemetry state under the game install.
     # These files churn between runs but are not installed content updates.
     "plugins/x86_64/wesight/crashsight_data/",
+)
+ANIMESTUDIO_INDEX_RELATIVE_DIRS = (
+    "recovered/AnimeStudio-cli/StreamingAssets/object_index",
+    "recovered/AnimeStudio-cli/StreamingAssets/field_index",
+    "recovered/AnimeStudio-cli/Persistent/object_index",
+    "recovered/AnimeStudio-cli/Persistent/field_index",
+)
+ANIMESTUDIO_INDEX_FILE_EXTENSIONS = (
+    ".idx", ".index", ".jsonl", ".jsonl.gz", ".ndjson", ".ndjson.gz",
+    ".partial", ".tmp", ".tmp.gz",
 )
 WEBUI_TEXT_JSON_RELATIVE_PATHS = (
     "structured/StreamingAssets/Table",
@@ -360,7 +370,25 @@ def classify_game_data_path(path: str) -> str:
 
 def is_ignored_game_update_path(path: str) -> bool:
     lower = normalize_posix(path).lower()
-    return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES)
+    return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES) or is_ignored_animestudio_index_path(lower)
+
+
+def is_ignored_animestudio_index_path(path: str) -> bool:
+    """Exclude AnimeStudio index products without excluding WebUI data."""
+    normalized = normalize_posix(path).lower()
+    marker = "recovered/animestudio-cli/"
+    if marker not in normalized:
+        return False
+    relative = normalized.split(marker, 1)[1]
+    segments = [segment for segment in relative.split("/") if segment]
+    if any(segment in {"object_index", "field_index", "parts"} for segment in segments[:-1]):
+        return True
+    filename = segments[-1] if segments else ""
+    return bool(filename) and filename.endswith(ANIMESTUDIO_INDEX_FILE_EXTENSIONS)
+
+
+def animestudio_index_scan_exclusions() -> tuple[str, ...]:
+    return tuple(ANIMESTUDIO_INDEX_RELATIVE_DIRS)
 
 
 def relocated_structured_counterpart(path: str) -> str | None:
@@ -608,10 +636,19 @@ def iter_existing_relative_files(root: Path) -> list[str]:
         dirnames.sort()
         filenames.sort()
         base_dir = Path(dirpath)
+        dirnames[:] = [
+            dirname
+            for dirname in dirnames
+            if not is_ignored_game_update_path(
+                (base_dir / dirname).relative_to(root).as_posix()
+            )
+        ]
         for filename in filenames:
             path = base_dir / filename
             if path.is_file():
-                out.append(path.relative_to(root).as_posix())
+                relative = path.relative_to(root).as_posix()
+                if not is_ignored_game_update_path(relative):
+                    out.append(relative)
     return out
 
 
@@ -1223,6 +1260,7 @@ def scan_export_tree(
             history_dir=state_dir / "history" if write_history else None,
             sample_limit=sample_limit,
             top_line_limit=top_line_limit,
+            ignore_relative_paths=animestudio_index_scan_exclusions(),
             include_relative_paths=tuple(normalized_relative_paths(include_relative_paths)),
         )
     )

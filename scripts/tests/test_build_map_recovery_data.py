@@ -96,15 +96,15 @@ class BuildMapRecoveryDataTests(unittest.TestCase):
             ) as preview,
             mock.patch.object(builder, "refresh_render_backgrounds") as refresh,
         ):
-            self.assertEqual(builder.build_previews_and_refresh(["lv_a"]), 0)
-            preview.assert_called_once_with(["--level", "lv_a"])
+            self.assertEqual(builder.build_previews_and_refresh(["lv_a"], 3), 0)
+            preview.assert_called_once_with(["--jobs", "3", "--level", "lv_a"])
             refresh.assert_called_once_with({"lv_a"})
 
         with (
             mock.patch("scripts.build_map_recovery_preview.main", return_value=7),
             mock.patch.object(builder, "refresh_render_backgrounds") as refresh,
         ):
-            self.assertEqual(builder.build_previews_and_refresh([]), 7)
+            self.assertEqual(builder.build_previews_and_refresh([], 2), 7)
             refresh.assert_not_called()
 
     def test_npc_proxy_ex_story_index_requires_unique_casefold_story_and_exact_transform(self):

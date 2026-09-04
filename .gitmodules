@@ -2,6 +2,10 @@
 	path = tools/AnimeStudio
 	url = https://github.com/Variante/AnimeStudio.git
 	branch = master
+[submodule "tools/Cpp2IL-Endfield"]
+	path = tools/Cpp2IL-Endfield
+	url = https://github.com/Variante/Cpp2IL-Endfield.git
+	branch = endfield/2022.0.7
 [submodule "tools/EndfieldCapture"]
 	path = tools/EndfieldCapture
 	url = https://github.com/Variante/EndfieldCapture.git

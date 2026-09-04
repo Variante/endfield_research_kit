@@ -1434,6 +1434,385 @@ def frame_levelscript_empty_action_map_top_level(
     }
 
 
+def frame_levelscript_action_map_anonymous_prefix(
+    data: bytes,
+) -> dict[str, Any]:
+    """Frame only the independently provable prefix of a current action map.
+
+    This reader intentionally does not assign the three serialized map members
+    names or use generated-setter order.  A raw ``0xff`` tag proves a complete
+    null map boundary.  A non-empty ``02 03 <u32>`` object proves the anonymous
+    first-list count and the fixed envelope of its first polymorphic record.
+    The record payload and every later top-level byte remain one opaque range;
+    finding UID-like bytes later in the file is not accepted as cursor proof.
+    """
+    if not data:
+        raise LevelScriptTopLevelFramingError("truncated LevelScriptData: empty payload")
+    if data[0] != 27:
+        raise LevelScriptTopLevelFramingError(
+            f"LevelScriptData member count mismatch: expected=27 actual={data[0]}"
+        )
+    if len(data) < 2:
+        raise LevelScriptTopLevelFramingError(
+            "truncated ActionSerializedMap: missing raw object tag"
+        )
+
+    if data[1] == 0xFF:
+        opaque_ranges = []
+        if len(data) > 2:
+            opaque_ranges.append({
+                "startOffset": 2,
+                "endOffset": len(data),
+                "length": len(data) - 2,
+                "status": "opaque_unassigned_top_level_members",
+            })
+        return {
+            "status": "exact_anonymous_null_action_map_boundary",
+            "schemaStatus": "partial",
+            "serializedMemberCount": 27,
+            "bytesConsumed": 2,
+            "ranges": {
+                "memberCount": {"startOffset": 0, "endOffset": 1},
+                "actionSerializedMap": {
+                    "startOffset": 1,
+                    "endOffset": 2,
+                    "rawUnionTag": 0xFF,
+                    "unionTagEncoding": "memorypack-null-u8",
+                    "serializedFieldOrderStatus": "not_interpreted",
+                },
+                "opaqueTopLevelMembers": opaque_ranges,
+            },
+            "evidenceBoundary": (
+                "The one-byte null tag closes the map at offset 2. Bytes from "
+                "offset 2 onward are not attributed to named top-level fields."
+            ),
+        }
+
+    if len(data) < 7:
+        raise LevelScriptTopLevelFramingError(
+            "truncated non-empty ActionSerializedMap header: expected 7 bytes"
+        )
+    if data[1:3] != b"\x02\x03":
+        raise LevelScriptTopLevelFramingError(
+            "unsupported ActionSerializedMap raw object marker: "
+            f"actual={data[1:3].hex(' ')}"
+        )
+    first_count = _u32(data, 3)
+    if first_count == 0:
+        raise LevelScriptTopLevelFramingError(
+            "empty ActionSerializedMap requires the complete empty-map reader"
+        )
+    if first_count is None or first_count > len(data) - 7:
+        raise LevelScriptTopLevelFramingError(
+            "impossible anonymous first-list count: "
+            f"count={first_count} remainingBytes={len(data) - 7}"
+        )
+
+    candidates: list[dict[str, Any]] = []
+    for uid_offset in (21, 19):
+        if uid_offset + 8 > len(data):
+            continue
+        raw_uid = data[uid_offset : uid_offset + 8]
+        if not all(
+            ord("0") <= value <= ord("9") or ord("a") <= value <= ord("f")
+            for value in raw_uid
+        ):
+            continue
+        record = _decode_levelscript_uid_record(
+            data,
+            uid_offset,
+            raw_uid.decode("ascii"),
+        )
+        if record is not None and _record_start(record) == 7:
+            candidates.append(record)
+    if len(candidates) != 1:
+        raise LevelScriptTopLevelFramingError(
+            "first polymorphic record envelope is not unique and exact: "
+            f"candidates={len(candidates)}"
+        )
+
+    record = candidates[0]
+    payload_start = int(record["payloadStart"])
+    if payload_start > len(data):
+        raise LevelScriptTopLevelFramingError(
+            "truncated first polymorphic record envelope"
+        )
+    layout = str(record["layout"])
+    if layout == "fa":
+        union_tag_encoding = "memorypack-fa-u16"
+        raw_union_tag = int(record["code"])
+        raw_member_count = int(record["kind"])
+    elif layout == "plain":
+        union_tag_encoding = "memorypack-u8"
+        raw_union_tag = int(record["unionTag"])
+        raw_member_count = int(record["serializedMemberCount"])
+    else:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported first polymorphic record envelope layout: {layout}"
+        )
+
+    opaque_ranges = []
+    if payload_start < len(data):
+        opaque_ranges.append({
+            "startOffset": payload_start,
+            "endOffset": len(data),
+            "length": len(data) - payload_start,
+            "status": "opaque_first_record_payload_and_remaining_members",
+        })
+    return {
+        "status": "exact_anonymous_nonempty_action_map_first_record_prefix",
+        "schemaStatus": "partial",
+        "serializedMemberCount": 27,
+        "bytesConsumed": payload_start,
+        "ranges": {
+            "memberCount": {"startOffset": 0, "endOffset": 1},
+            "actionSerializedMapPrefix": {
+                "startOffset": 1,
+                "endOffset": payload_start,
+                "rawObjectMarkerHex": data[1:3].hex(" "),
+                "anonymousFirstListCount": first_count,
+                "serializedFieldOrderStatus": "not_interpreted",
+            },
+            "firstRecordEnvelope": {
+                "startOffset": 7,
+                "endOffset": payload_start,
+                "layout": layout,
+                "rawUnionTag": raw_union_tag,
+                "unionTagEncoding": union_tag_encoding,
+                "rawSerializedMemberCount": raw_member_count,
+                "uidAnchorAscii": str(record["uid"]),
+            },
+            "opaqueRemainder": opaque_ranges,
+        },
+        "evidenceBoundary": (
+            "Only the first anonymous list count and first fixed polymorphic "
+            "record envelope advance a real cursor. The record payload, later "
+            "list counts, and remaining top-level members are opaque."
+        ),
+    }
+
+
+def _read_anonymous_nullable_utf8(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    start = cursor
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated anonymous UTF-8 length at offset={cursor}"
+        )
+    length = struct.unpack_from("<i", data, cursor)[0]
+    cursor += 4
+    if length == -1:
+        return {"startOffset": start, "endOffset": cursor, "value": None}, cursor
+    if length < 0 or length > len(data) - cursor:
+        raise LevelScriptTopLevelFramingError(
+            "invalid anonymous UTF-8 length: "
+            f"offset={start} length={length} remaining={len(data) - cursor}"
+        )
+    raw = data[cursor : cursor + length]
+    try:
+        value = raw.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise LevelScriptTopLevelFramingError(
+            f"invalid anonymous UTF-8 payload at offset={cursor} length={length}"
+        ) from error
+    cursor += length
+    return {
+        "startOffset": start,
+        "endOffset": cursor,
+        "value": value,
+    }, cursor
+
+
+def _read_anonymous_i32_string_collection(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    start = cursor
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated anonymous collection count at offset={cursor}"
+        )
+    count = struct.unpack_from("<i", data, cursor)[0]
+    cursor += 4
+    if count == -1:
+        return {
+            "startOffset": start,
+            "endOffset": cursor,
+            "rawCount": count,
+            "values": None,
+        }, cursor
+    if count < 0 or count > (len(data) - cursor) // 4:
+        raise LevelScriptTopLevelFramingError(
+            "invalid anonymous collection count: "
+            f"offset={start} count={count} remaining={len(data) - cursor}"
+        )
+    values = []
+    for _ in range(count):
+        value, cursor = _read_anonymous_nullable_utf8(data, cursor)
+        values.append(value["value"])
+    return {
+        "startOffset": start,
+        "endOffset": cursor,
+        "rawCount": count,
+        "values": values,
+    }, cursor
+
+
+def _read_anonymous_param_tail(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    start = cursor
+    if cursor + 8 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated anonymous fixed-width tail at offset={cursor}"
+        )
+    raw_i32 = list(struct.unpack_from("<ii", data, cursor))
+    cursor += 8
+    trailing, cursor = _read_anonymous_nullable_utf8(data, cursor)
+    return {
+        "startOffset": start,
+        "endOffset": cursor,
+        "rawI32": raw_i32,
+        "trailingNullableUtf8": trailing["value"],
+    }, cursor
+
+
+def frame_levelscript_first_record_35_0e_00_anonymous_body(
+    data: bytes,
+) -> dict[str, Any]:
+    """Advance a real cursor through the most frequent first-record body.
+
+    The selected current-corpus variant is identified only by its raw compact
+    envelope bytes ``35 0e 00``.  Its body is decoded as anonymous wire
+    segments; no type name, field name, setter order, later-record scan, or
+    later-list boundary participates in the result.
+    """
+    prefix = frame_levelscript_action_map_anonymous_prefix(data)
+    if prefix.get("status") != (
+        "exact_anonymous_nonempty_action_map_first_record_prefix"
+    ):
+        raise LevelScriptTopLevelFramingError(
+            "selected first-record body requires a non-empty action map"
+        )
+    envelope = (prefix.get("ranges") or {}).get("firstRecordEnvelope") or {}
+    if (
+        envelope.get("layout") != "plain"
+        or envelope.get("rawUnionTag") != 0x35
+        or envelope.get("rawSerializedMemberCount") != 0x0E
+        or len(data) <= 9
+        or data[9] != 0
+    ):
+        actual = data[7:10].hex(" ") if len(data) >= 10 else data[7:].hex(" ")
+        raise LevelScriptTopLevelFramingError(
+            "first polymorphic record variant mismatch: "
+            f"expected=35 0e 00 actual={actual}"
+        )
+
+    body_start = int(prefix["bytesConsumed"])
+    cursor = body_start
+    segment0, cursor = _read_anonymous_i32_string_collection(data, cursor)
+
+    segment1_start = cursor
+    if cursor + 2 > len(data) or data[cursor] != 0x04:
+        raise LevelScriptTopLevelFramingError(
+            f"anonymous segment 1 marker mismatch at offset={cursor}: expected=04"
+        )
+    raw_count = data[cursor + 1]
+    cursor += 2
+    segment1_values = []
+    for _ in range(raw_count):
+        value, cursor = _read_anonymous_nullable_utf8(data, cursor)
+        segment1_values.append(value["value"])
+    segment1_tail, cursor = _read_anonymous_param_tail(data, cursor)
+    segment1 = {
+        "startOffset": segment1_start,
+        "endOffset": cursor,
+        "rawMarker": 0x04,
+        "rawU8Count": raw_count,
+        "values": segment1_values,
+        "tail": segment1_tail,
+    }
+
+    segment2_start = cursor
+    if cursor >= len(data) or data[cursor] != 0x04:
+        raise LevelScriptTopLevelFramingError(
+            f"anonymous segment 2 marker mismatch at offset={cursor}: expected=04"
+        )
+    cursor += 1
+    segment2_value, cursor = _read_anonymous_nullable_utf8(data, cursor)
+    segment2_tail, cursor = _read_anonymous_param_tail(data, cursor)
+    segment2 = {
+        "startOffset": segment2_start,
+        "endOffset": cursor,
+        "rawMarker": 0x04,
+        "value": segment2_value["value"],
+        "tail": segment2_tail,
+    }
+
+    fixed_start = cursor
+    expected_fixed = b"\x00\x01\x00"
+    if cursor + len(expected_fixed) > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated anonymous fixed suffix at offset={cursor}"
+        )
+    actual_fixed = data[cursor : cursor + len(expected_fixed)]
+    if actual_fixed != expected_fixed:
+        raise LevelScriptTopLevelFramingError(
+            "anonymous fixed suffix mismatch: "
+            f"offset={cursor} expected=00 01 00 actual={actual_fixed.hex(' ')}"
+        )
+    cursor += len(expected_fixed)
+
+    opaque_ranges = []
+    if cursor < len(data):
+        opaque_ranges.append({
+            "startOffset": cursor,
+            "endOffset": len(data),
+            "length": len(data) - cursor,
+            "status": "opaque_after_first_record_body",
+        })
+    return {
+        "status": "exact_anonymous_first_record_35_0e_00_body",
+        "schemaStatus": "partial",
+        "serializedMemberCount": 27,
+        "selectedVariant": {
+            "envelopeHex": "35 0e 00",
+            "unionTagEncoding": "memorypack-u8",
+            "rawUnionTag": 0x35,
+            "rawSerializedMemberCount": 0x0E,
+            "rawThirdEnvelopeByte": 0,
+        },
+        "bytesConsumed": cursor,
+        "bodyBytesConsumed": cursor - body_start,
+        "ranges": {
+            "firstRecordEnvelope": envelope,
+            "firstRecordBody": {
+                "startOffset": body_start,
+                "endOffset": cursor,
+                "anonymousSegments": [
+                    segment0,
+                    segment1,
+                    segment2,
+                    {
+                        "startOffset": fixed_start,
+                        "endOffset": cursor,
+                        "rawHex": actual_fixed.hex(" "),
+                    },
+                ],
+            },
+            "opaqueRemainder": opaque_ranges,
+        },
+        "evidenceBoundary": (
+            "The cursor advances deterministically from offset 37 through four "
+            "anonymous body segments. Bytes after the returned end offset remain "
+            "opaque and are not scanned for records or list boundaries."
+        ),
+    }
+
+
 def levelscript_action_map_membership(
     data: bytes,
     records: list[dict[str, Any]],

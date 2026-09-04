@@ -82,6 +82,7 @@ listed keep their previously generated data.
 | `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | The current, freshness-checked export; existing Assets and Audio are unchanged |
 | `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | Refreshes structured data from the installed client first |
 | `.\export.bat --with-assets` | Every page except **Updates** | Reuses the current export and its existing media; also rebuilds Assets and relinks Audio |
+| `.\export.bat --with-assets --skip-freshness` | Every page except **Updates** | Same as above, but bypasses the export freshness guard for this run |
 | `.\export.bat --from-game --with-assets` | Every page except **Updates** | Complete installed-client refresh, including asset extraction and CN audio decoding |
 | `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Reuses current Story/Text and existing exported media |
 | `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
@@ -110,8 +111,9 @@ workflow, but is no longer a WebUI page or part of the WebUI export commands.
 - `endfield_reconstruction_lab/`: character rendering and animation lab (Git submodule).
 
 Only `tools/AnimeStudio` is initialized by `setup.bat`. The
-`endfield_reconstruction_lab` and `tools/EndfieldCapture` submodules are
-optional and are not required for the normal WebUI workflow.
+`tools/Cpp2IL-Endfield`, `endfield_reconstruction_lab`, and
+`tools/EndfieldCapture` submodules are optional and are not required for the
+normal WebUI workflow.
 
 Technical documentation:
 

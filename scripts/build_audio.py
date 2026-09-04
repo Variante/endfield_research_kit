@@ -35,6 +35,7 @@ if __package__:
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
     )
+    from .animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
 else:
     from common import resolve_installed_game_data_root, sha256_file as file_sha256
     from audio_semantics.identifiers import (
@@ -51,6 +52,7 @@ else:
         SELECTION_HIRC_TYPES,
         build_audio_semantic_data,
     )
+    from animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1040,10 +1042,29 @@ def iter_json_strings(value: Any):
 
 
 def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
-    """Index recovered EnemyData MonoBehaviours once for focused lookups."""
+    """Index EnemyData objects, preferring the published object index."""
 
     result: dict[str, list[Path]] = defaultdict(list)
     seen: set[Path] = set()
+    index_ok = False
+    for source in ("Persistent", "StreamingAssets"):
+        try:
+            for row in iter_published_objects(export_root, source):
+                name = str(row.get("name") or "")
+                if not name.lower().startswith("data_eny_"):
+                    continue
+                identity = name.removeprefix("data_")
+                path = raw_json_path_for_object(export_root, source, row)
+                if path is not None and path.resolve() not in seen:
+                    seen.add(path.resolve())
+                    result[identity].append(path)
+            index_ok = True
+        except ObjectIndexUnavailable:
+            continue
+    if index_ok:
+        return {identity: sorted(paths) for identity, paths in sorted(result.items())}
+
+    # Explicit compatibility path for exports predating the merged index.
     for source in ("Persistent", "StreamingAssets"):
         root = export_root / "recovered" / "AnimeStudio-cli" / source / "json_by_type" / "MonoBehaviour"
         if not root.exists():
@@ -11710,6 +11731,21 @@ def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
 
 
 def mono_behaviour_json_by_path_id(export_root: Path) -> dict[int, Path]:
+    out: dict[int, Path] = {}
+    try:
+        for row in iter_published_objects(export_root, "StreamingAssets"):
+            path = raw_json_path_for_object(export_root, "StreamingAssets", row)
+            identity = row.get("object") if isinstance(row.get("object"), dict) else {}
+            if path is not None:
+                try:
+                    out[int(identity.get("pathId"))] = path
+                except (TypeError, ValueError):
+                    continue
+        return out
+    except ObjectIndexUnavailable:
+        pass
+
+    # Explicit compatibility path for old exports without a complete index.
     root = (
         export_root
         / "recovered"
@@ -11718,7 +11754,6 @@ def mono_behaviour_json_by_path_id(export_root: Path) -> dict[int, Path]:
         / "json_by_type"
         / "MonoBehaviour"
     )
-    out: dict[int, Path] = {}
     if not root.exists():
         return out
     for path in root.glob("*.json"):

@@ -8,6 +8,7 @@ rem   export.bat --from-game         re-extract from the installed game first
 rem   export.bat --changed-only      refresh changed VFS files, then run all WebUI flows
 rem   export.bat --with-assets       also rebuild assets and CN audio
 rem   export.bat --assets-only       assets and post-Story views, no Story rebuild
+rem   export.bat --skip-freshness    skip the installed-game freshness guard once
 rem   export.bat --help              all options
 
 set "EXPORT_ARGS="
@@ -22,9 +23,13 @@ set "WITH_ASSETS=0"
 set "ASSET_MODE=default"
 set "STRUCTURED_DUMP_MODE=focused"
 set "FULL_SOURCE_GRAPH=0"
+set "SKIP_FRESHNESS=0"
 set "BUILD_SCOPE=full"
 set "SCOPE_FLAG="
-set "ANIMESTUDIO_OBJECT_INDEX=0"
+rem The merged object index is the default installed-game consumer input.
+rem Asset-only extraction disables it because that scope cannot refresh
+rem Story/MonoBehaviour evidence.
+set "ANIMESTUDIO_OBJECT_INDEX=1"
 set "WEBUI_JOBS=4"
 set "FIRST_PASSTHROUGH="
 set "BENCH_LABEL=export"
@@ -78,6 +83,7 @@ if /I "%~1"=="--webui-jobs" goto :opt_webui_jobs
 if /I "%~1"=="--asset-jobs" goto :opt_asset_jobs
 if /I "%~1"=="--full-source-graph" goto :opt_full_source_graph
 if /I "%~1"=="--animestudio-object-index" goto :opt_object_index
+if /I "%~1"=="--skip-freshness" goto :opt_skip_freshness
 
 rem Anything else, including its value, goes to export_full_from_game.py.
 if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=%~1"
@@ -146,6 +152,7 @@ goto :parse_args
 :opt_assets_only
 call :set_scope assets --assets-only
 if errorlevel 1 exit /b 2
+set "ANIMESTUDIO_OBJECT_INDEX=0"
 set "WITH_ASSETS=1"
 shift
 goto :parse_args
@@ -173,6 +180,11 @@ goto :parse_args
 :opt_object_index
 set "ANIMESTUDIO_OBJECT_INDEX=1"
 set "EXPORT_ARGS=%EXPORT_ARGS% --animestudio-object-index"
+shift
+goto :parse_args
+
+:opt_skip_freshness
+set "SKIP_FRESHNESS=1"
 shift
 goto :parse_args
 
@@ -206,6 +218,10 @@ if "%CHANGED_ONLY%"=="1" if not "%BUILD_SCOPE%"=="full" (
 if "%CHANGED_ONLY%"=="1" if /I "%STRUCTURED_DUMP_MODE%"=="debug" (
   echo --changed-only supports focused or default structured dump mode, not debug.
   exit /b 2
+)
+if "%EXPORT_FROM_GAME%"=="1" if "%STORY_BUILD%"=="1" if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" (
+  echo %EXPORT_ARGS% | findstr /I /C:"--animestudio-object-index" >nul
+  if errorlevel 1 set "EXPORT_ARGS=%EXPORT_ARGS% --animestudio-object-index"
 )
 rem Assemble the post-Story view arguments now so the preflight below can check
 rem the exact combination this run will use, not a stand-in.
@@ -275,8 +291,12 @@ if "%WITH_ASSETS%"=="0" echo [export.bat] Reusing existing export_full; pass --f
 rem Every scope gets this check, including the fast ones: a scoped rebuild must
 rem still report when its inputs no longer match the installed original data.
 call :stage "Checking export_full freshness against the installed game"
-python .\scripts\verify_export_freshness.py %GAME_ROOT_ARG%
-if errorlevel 1 goto :pipeline_failed
+if "%SKIP_FRESHNESS%"=="1" (
+  echo [export.bat] Freshness check skipped by --skip-freshness.
+) else (
+  python .\scripts\verify_export_freshness.py %GAME_ROOT_ARG%
+  if errorlevel 1 goto :pipeline_failed
+)
 
 if "%STORY_BUILD%"=="0" goto :story_reused
 if "%ANIMESTUDIO_OBJECT_INDEX%"=="0" goto :refresh_evidence
@@ -419,6 +439,9 @@ echo   --default-assets   --with-assets. The default scope is --default-assets.
 echo   --debug-assets     --debug-assets also writes AnimeStudio diagnostics.
 echo   --game-root PATH   Installed Endfield_Data folder. Defaults to the one
 echo                      in endfield_paths.bat.
+echo   --skip-freshness   Skip the export_full freshness guard for this run.
+echo                      Use only when intentionally rebuilding from a known
+echo                      compatible export; it does not refresh stale data.
 echo   --help             This text.
 echo.
 echo Build scope. At most one of these may be given:

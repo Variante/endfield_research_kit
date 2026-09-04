@@ -35,9 +35,11 @@ import json
 import math
 import re
 import struct
+import subprocess
 import sys
 import zlib
 from array import array
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 try:  # Optional: only the PNG unfilter loop below is accelerated by it.
@@ -168,6 +170,116 @@ _RENDERER_TEXTURE_BINDINGS: dict[tuple[str, int], dict] | None = None
 _TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
 _MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
 _RENDER_CACHE_STATS = {"hits": 0, "writes": 0}
+
+
+def preview_level_groups(maps_root: Path, levels: set[str] | None = None) -> list[tuple[str, ...]]:
+    """Group independently renderable levels without splitting shared scenes.
+
+    Several gameplay maps can publish one exact Streaming scene. Their bounds
+    and output image are intentionally computed once from the complete member
+    set, so every member of such a scene must stay in one worker shard. A map
+    whose own level id is another group's scene id stays with that group too,
+    because both would otherwise own the same render/cache filename prefix.
+    """
+    selected = levels or set()
+    level_ids = [
+        path.stem
+        for path in sorted(maps_root.glob("*.json"))
+        if not selected or path.stem in selected
+    ]
+    parents = {level_id: level_id for level_id in level_ids}
+
+    def find(level_id: str) -> str:
+        while parents[level_id] != level_id:
+            parents[level_id] = parents[parents[level_id]]
+            level_id = parents[level_id]
+        return level_id
+
+    def union(left: str, right: str) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[max(left_root, right_root)] = min(left_root, right_root)
+
+    scene_owner: dict[str, str] = {}
+    for level_id in level_ids:
+        projection = projection_streaming_scene(level_id)
+        if not projection:
+            continue
+        scene_id = str(projection["sceneId"])
+        owner = scene_owner.setdefault(scene_id, level_id)
+        union(level_id, owner)
+        if scene_id in parents:
+            union(level_id, scene_id)
+
+    groups: dict[str, list[str]] = {}
+    for level_id in level_ids:
+        groups.setdefault(find(level_id), []).append(level_id)
+    return [tuple(sorted(groups[key])) for key in sorted(groups)]
+
+
+def preview_worker_shards(
+    groups: list[tuple[str, ...]], jobs: int,
+) -> list[tuple[str, ...]]:
+    """Distribute stable scene groups round-robin across long-lived workers."""
+    worker_count = max(1, min(jobs, len(groups)))
+    shards: list[list[str]] = [[] for _ in range(worker_count)]
+    for index, group in enumerate(groups):
+        shards[index % worker_count].extend(group)
+    return [tuple(shard) for shard in shards if shard]
+
+
+def _preview_worker_command(args: argparse.Namespace, levels: tuple[str, ...]) -> list[str]:
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--asset-map", str(args.asset_map),
+        "--mesh-root", str(args.mesh_root),
+        "--texture-root", str(args.texture_root),
+        "--maps-root", str(args.maps_root),
+        "--output-root", str(args.output_root),
+        "--hlod-index", str(args.hlod_index),
+        "--jobs", "1",
+        "--scan-mode", str(args.scan_mode),
+        "--surface-point-density", str(args.surface_point_density),
+    ]
+    if args.no_render_cache:
+        command.append("--no-render-cache")
+    if args.lod is not None:
+        command.extend(("--lod", str(args.lod)))
+    for level_id in levels:
+        command.extend(("--level", level_id))
+    return command
+
+
+def _run_preview_worker(command: list[str]) -> int:
+    try:
+        return subprocess.run(command, cwd=ROOT, check=False).returncode
+    except OSError as exc:
+        print(f"map previews: worker launch failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+
+
+def run_parallel_preview_workers(args: argparse.Namespace) -> int | None:
+    """Render independent level shards concurrently, or return None for serial."""
+    groups = preview_level_groups(args.maps_root, set(args.level))
+    shards = preview_worker_shards(groups, args.jobs)
+    if len(shards) <= 1:
+        return None
+
+    # Make the shared HLOD index current once before workers read it. This
+    # avoids concurrent rebuilds of the same cache after an AssetMap refresh.
+    if args.asset_map.is_file():
+        load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
+
+    print(
+        f"map previews: {len(groups)} independent scene groups across "
+        f"{len(shards)} worker processes",
+        flush=True,
+    )
+    commands = [_preview_worker_command(args, shard) for shard in shards]
+    with ThreadPoolExecutor(max_workers=len(commands)) as executor:
+        returncodes = list(executor.map(_run_preview_worker, commands))
+    return next((code for code in returncodes if code), 0)
 
 
 def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
@@ -3348,6 +3460,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hlod-index", type=Path, default=HLOD_INDEX)
     parser.add_argument("--refresh-index", action="store_true", help="rescan the asset map even if the cache matches")
     parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="parallel preview worker processes; shared Streaming scenes remain in one worker",
+    )
+    parser.add_argument(
         "--no-render-cache",
         action="store_true",
         help="rerender point/streaming layers even when their persistent source signature matches",
@@ -3376,10 +3494,21 @@ def main(argv: list[str] | None = None) -> int:
               "(approximately 2 m spacing); presentation only"),
     )
     args = parser.parse_args(argv)
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
     _USE_RENDER_CACHE = not args.no_render_cache
     _RENDER_CACHE_STATS.update(hits=0, writes=0)
     if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
         raise SystemExit("--surface-point-density must be a finite number greater than zero")
+    if (
+        args.jobs > 1
+        and not args.water_only
+        and not args.exact_point_fallback_only
+        and not args.refresh_exact_fallbacks_only
+    ):
+        returncode = run_parallel_preview_workers(args)
+        if returncode is not None:
+            return returncode
     if args.refresh_exact_fallbacks_only:
         refreshed = refresh_exact_point_fallback_manifests(
             args.maps_root, args.output_root, set(args.level), args.surface_point_density,

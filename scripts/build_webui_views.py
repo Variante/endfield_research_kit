@@ -102,7 +102,12 @@ def build_phases(args: argparse.Namespace) -> list[tuple[str, list[TaskSpec]]]:
         "map_recovery",
         (
             command("scripts/recover_map_streaming_instances.py", *streaming_args),
-            module("scripts.build_map_recovery_data", "--preview-only"),
+            module(
+                "scripts.build_map_recovery_data",
+                "--preview-only",
+                "--jobs",
+                map_recovery_jobs,
+            ),
         ),
     )
     character = TaskSpec(

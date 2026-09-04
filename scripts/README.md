@@ -28,8 +28,10 @@ For the recovery path and evidence boundary of an individual WebUI page, use
 command and module-ownership map.
 
 `setup.bat` initializes only the required `tools/AnimeStudio` submodule.
-`endfield_reconstruction_lab` and `tools/EndfieldCapture` are optional and are
-not needed for the normal WebUI build.
+`tools/Cpp2IL-Endfield`, `endfield_reconstruction_lab`, and
+`tools/EndfieldCapture` are optional and are not needed for the normal WebUI
+build. The DummyDll generator initializes Cpp2IL-Endfield on demand when
+script-schema recovery needs it.
 
 ## Export rules
 
@@ -66,6 +68,9 @@ Useful shared flags:
   normal semantic rebuilds. Runs that also rebuild assets keep Map at one
   worker to avoid competing with image/model conversion for disk and memory.
 - `--game-root PATH` overrides the configured client for one run.
+- `--skip-freshness` bypasses the `export_full` versus installed-game guard for
+  one run. Use only when the existing export is known to be compatible; it
+  does not refresh stale source data.
 - The configured `ENDFIELD_EXPORT_ROOT` is passed to installed-game extraction
   as `--output` and to downstream builders as `--export-root`; both halves of
   a run therefore use the same tree.
@@ -96,7 +101,7 @@ a degraded reason instead of using them as direct evidence.
 | Story links | `story_builder/source_links.py` | localized reference data |
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline recovery | `build_mission_pipeline_data.py` | standalone recovery reports/data |
-| Map | `export.bat` runs map data, then `recover_map_streaming_instances.py --all-published-map-scenes`, then preview publication; a sidecar failure stops the phase instead of silently degrading to registry points. The recovery streams installed-game `InitChunkData` through AnimeStudio.CLI and joins the exported AssetMap/Mesh; colored output additionally needs Material JSON and Texture2D from the default asset scope. `build_map_recovery_data.py --with-preview` remains the direct data/preview path, while `--preview-only` reuses current map data and sidecars. Preview rendering checkpoints each completed exact streaming, point, and inferred HLOD render under `reports/assets/map_recovery/render_cache/`; matching map, matrix, mesh, material, texture, renderer-index, bounds, density, and renderer-version inputs reuse the published PNG/sample set across runs. Missing outputs or changed inputs invalidate only that checkpoint, and the CLI reports cache hits/writes; pass `build_map_recovery_preview.py --no-render-cache` for a forced rerender. `--refresh-exact-fallbacks-only` cheaply refreshes registry/quest point fallbacks. | `reports/assets/map_recovery/terrain_height_index.json`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
+| Map | `export.bat` runs map data, then `recover_map_streaming_instances.py --all-published-map-scenes`, then preview publication; a sidecar failure stops the phase instead of silently degrading to registry points. The recovery streams installed-game `InitChunkData` through AnimeStudio.CLI and joins the exported AssetMap/Mesh; colored output additionally needs Material JSON and Texture2D from the default asset scope. `build_map_recovery_data.py --with-preview` remains the direct data/preview path, while `--preview-only` reuses current map data and sidecars. `--jobs N` bounds both the per-level data workers and preview processes; maps sharing one exact Streaming scene remain together so their shared bounds and outputs cannot race. Preview rendering checkpoints each completed exact streaming, point, and inferred HLOD render under `reports/assets/map_recovery/render_cache/`; matching map, matrix, mesh, material, texture, renderer-index, bounds, density, and renderer-version inputs reuse the published PNG/sample set across runs. Missing outputs or changed inputs invalidate only that checkpoint, and the CLI reports cache hits/writes; pass `build_map_recovery_preview.py --no-render-cache` for a forced rerender. `--refresh-exact-fallbacks-only` cheaply refreshes registry/quest point fallbacks. | `reports/assets/map_recovery/terrain_height_index.json`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes and versioned final-catalog snapshots |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
@@ -1330,6 +1335,9 @@ python -m scripts.animestudio.generate_dummydll --dry-run
 python -m scripts.animestudio.generate_dummydll --replace
 ```
 
+The generator consumes a tag-and-commit-pinned release from
+`Variante/Cpp2IL-Endfield`; Cpp2IL compatibility changes are released there
+before updating the local pin. It does not apply an in-repo source patch.
 Missing or stale DummyDlls warn and fall back to serialized schemas. Never
 reuse native registration addresses across game builds.
 
@@ -1382,6 +1390,10 @@ The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
 audits only.
+AnimeStudio `object_index`/`field_index` directories (including their
+`parts`) and exporter index-only JSONL, compressed, and temporary files are
+excluded from every Updates comparison and previous-export prune; ordinary
+WebUI JSON, media, and decoded audio remain in scope.
 
 Every Characters build also saves its final generated catalog under
 `export_full/recovered/WebUI/characters/<LANG>.json`. Every Updates comparison

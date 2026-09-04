@@ -60,6 +60,22 @@ Inspect subcommand help rather than duplicating its full option surface:
 `--file-regex` filters. Audio defaults to direct lossless FLAC; request WAV or
 WEM only for explicit compatibility needs.
 
+The installed-game WebUI export also produces a reusable generic object index
+when its Story JSON jobs run with `--animestudio-object-index`. The canonical
+combined command is:
+
+```bat
+.\export.bat --from-game --with-assets
+```
+
+AnimeStudio emits per-source `object_index/parts/`, and the wrapper publishes a
+complete `object_index/objects.jsonl.gz` plus `summary.json` under each of
+`StreamingAssets` and `Persistent`. Object rows retain exact serialized
+identity, schema, PPtrs, and bounded generic `fields` path/value entries for
+downstream WebUI builders. Consumers must validate the complete summary and
+source/CLI provenance first; incomplete or truncated indexes are not evidence
+of absence and require an explicit JSON fallback.
+
 For VFS-format or payload-semantic recovery, start with the "VFS recovery
 evidence index" in `references/animestudio.md`. It maps every active block
 family to its maintained reader, negative fixtures, corpus reports, and the
@@ -117,9 +133,12 @@ Cpp2IL Endfield compatibility is owned by
 `https://github.com/Variante/Cpp2IL-Endfield`, branch
 `endfield/2022.0.7`. Make source changes there, build them, publish a new
 immutable `endfield-2022.0.7-vN` tag, and update both the tag and commit pin in
-`generate_dummydll.py`. The generator may advance an existing checkout only
-when its tracked files are clean and its origin matches that repository; a
-dirty or foreign checkout must fail closed. Do not restore the retired in-repo
+`generate_dummydll.py`. It is an optional submodule: do not add it to
+`setup.bat`; let the DummyDll generator initialize it on demand when schema
+recovery needs it. Every prepared checkout, including one already at the pinned
+commit, must have no tracked changes and the expected origin; a dirty or foreign
+checkout must fail closed. When publishing a new pin, update the generator's
+tag/commit and the parent gitlink together. Do not restore the retired in-repo
 patch workflow.
 
 ## Diagnose and Change Safely
