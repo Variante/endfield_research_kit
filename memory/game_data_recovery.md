@@ -65,8 +65,15 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   DataMask and several record fields remains unresolved.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
-  samples; adjacent cells establish grid orientation. Absolute height scale,
-  no-data semantics, and other Terrain bodies remain unresolved.
+  samples; adjacent cells establish grid orientation. For the selected build,
+  the hash-gated UnityPlayer reader directly consumes decoded offset 14 as
+  `GraphicsFormat`, checks offset 16 against its allocated texture byte size,
+  and copies from offset 20. Current metadata and the native footprint table
+  establish 108/109 as BC7 sRGB/UNorm, 16 bytes per 4x4 block, so all observed
+  Terrain bodies now have exact anonymous EOF-consuming ranges. Absolute
+  height scale, no-data semantics, compressed-block channel meanings, D/N
+  ownership, texture-array slots, and selected runtime rendering remain
+  unresolved.
 - `ExtendData/Main/CompressData.bin` is an absolute-offset archive of Brotli
   records whose decoded bodies are strict UTF-16LE JSON. Current bodies contain
   NodeCanvas behavior graphs. This proves authored graph structure, not selected
@@ -203,8 +210,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Complete unresolved Terrain, DynamicStreaming, irradiance, manifest, mmap,
-  patch, and JsonData body semantics.
+- Complete unresolved Terrain block/channel semantics, DynamicStreaming,
+  irradiance, manifest, mmap, patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without
   treating native names as byte-layout proof.
 - Close more authored and observed audio consumers through exact Event/media

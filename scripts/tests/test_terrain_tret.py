@@ -17,6 +17,31 @@ def _literal_only_inverted_lz4(data: bytes) -> bytes:
 
 
 class TerrainTretTests(unittest.TestCase):
+    def test_all_selected_build_header_shapes_consume_exact_eof(self):
+        shapes = (
+            ((34, 34, 1, 6), 2_312),
+            ((65, 65, 1, 6), 8_450),
+            ((132, 132, 1, 8), 69_696),
+            ((132, 132, 1, 100), 17_424),
+            ((132, 132, 1, 101), 17_424),
+            ((1024, 1024, 11, 5), 1_398_101),
+            ((1024, 1024, 11, 108), 1_398_128),
+            ((1024, 1024, 11, 109), 1_398_128),
+        )
+        for prefix, payload_length in shapes:
+            with self.subTest(prefix=prefix):
+                words = (*prefix, payload_length & 0xFFFF, payload_length >> 16)
+                body = (
+                    b"TRET"
+                    + (1).to_bytes(4, "little")
+                    + b"".join(value.to_bytes(2, "little") for value in words)
+                    + b"\x00" * payload_length
+                )
+                parsed = parse_tret_record(body)
+                self.assertEqual(
+                    len(body), parsed.anonymous_record_ranges[-1].end_offset
+                )
+
     def test_parses_only_observed_framing(self):
         opaque = b"\x5a" * 2312
         words = (34, 34, 1, 6, len(opaque), 0)
@@ -33,6 +58,7 @@ class TerrainTretTests(unittest.TestCase):
         self.assertEqual(parsed.decoded_length, len(raw))
         self.assertEqual(parsed.body_version_u32le, 1)
         self.assertEqual(parsed.body_u16le_offsets_8_18, words)
+        self.assertEqual(6, parsed.graphics_format_u16le)
         self.assertEqual(parsed.body_payload_length_u32le, len(opaque))
         self.assertEqual(parsed.body_fixed_prefix, body_prefix[:FIXED_BODY_PREFIX_SIZE])
         self.assertEqual(parsed.opaque_payload, opaque)
@@ -201,9 +227,10 @@ class TerrainTretTests(unittest.TestCase):
             + (7).to_bytes(4, "little")
         )
         with self.assertRaisesRegex(
-            ValueError, "payload length mismatch: declared 7, actual 6"
+            ValueError,
+            "Data/Terrain/test.bytes.*decoded offset 16.*declared length 7.*remaining bytes 6",
         ):
-            parse_tret_record(prefix + b"opaque")
+            parse_tret_record(prefix + b"opaque", source="Data/Terrain/test.bytes")
 
     def test_rejects_trailing_opaque_body(self):
         prefix = (
@@ -213,7 +240,7 @@ class TerrainTretTests(unittest.TestCase):
             + (5).to_bytes(4, "little")
         )
         with self.assertRaisesRegex(
-            ValueError, "payload length mismatch: declared 5, actual 6"
+            ValueError, "decoded offset 16.*declared length 5.*remaining bytes 6"
         ):
             parse_tret_record(prefix + b"opaque")
 
@@ -225,7 +252,7 @@ class TerrainTretTests(unittest.TestCase):
             + (0xFFFFFFFF).to_bytes(4, "little")
         )
         with self.assertRaisesRegex(
-            ValueError, "payload length mismatch: declared 4294967295, actual 0"
+            ValueError, "decoded offset 16.*declared length 4294967295.*remaining bytes 0"
         ):
             parse_tret_record(prefix)
 
@@ -238,7 +265,7 @@ class TerrainTretTests(unittest.TestCase):
             + b"".join(value.to_bytes(2, "little") for value in words)
             + opaque
         )
-        with self.assertRaisesRegex(ValueError, "range 0 exceeds decoded body"):
+        with self.assertRaisesRegex(ValueError, "range 0 at decoded offset 20 exceeds"):
             parse_tret_record(body)
 
     def test_rejects_trailing_anonymous_tiling_with_valid_outer_length(self):
@@ -250,7 +277,7 @@ class TerrainTretTests(unittest.TestCase):
             + b"".join(value.to_bytes(2, "little") for value in words)
             + opaque
         )
-        with self.assertRaisesRegex(ValueError, "ranges end at 2332.*ends at 2333"):
+        with self.assertRaisesRegex(ValueError, "expected EOF 2332, actual EOF 2333"):
             parse_tret_record(body)
 
     def test_rejects_malformed_anonymous_layout_words_and_axes(self):
@@ -261,29 +288,33 @@ class TerrainTretTests(unittest.TestCase):
                 + b"".join(value.to_bytes(2, "little") for value in words)
             )
 
-        with self.assertRaisesRegex(ValueError, "axes must be positive"):
+        with self.assertRaisesRegex(ValueError, "axes at decoded offset 8 must be positive"):
             parse_tret_record(body((0, 1, 1, 6, 0, 0)))
         with self.assertRaisesRegex(ValueError, "unsupported TRET anonymous layout"):
             parse_tret_record(body((34, 34, 2, 6, 0, 0)))
 
     def test_rejects_truncated_block_grouped_layout_with_valid_outer_length(self):
         payload_length = 1398127
-        words = (
-            1024,
-            1024,
-            11,
-            108,
-            payload_length & 0xFFFF,
-            payload_length >> 16,
-        )
-        body = (
-            b"TRET"
-            + (1).to_bytes(4, "little")
-            + b"".join(value.to_bytes(2, "little") for value in words)
-            + b"\x00" * payload_length
-        )
-        with self.assertRaisesRegex(ValueError, "anonymous range 10 exceeds decoded body"):
-            parse_tret_record(body)
+        for layout_word in (108, 109):
+            with self.subTest(layout_word=layout_word):
+                words = (
+                    1024,
+                    1024,
+                    11,
+                    layout_word,
+                    payload_length & 0xFFFF,
+                    payload_length >> 16,
+                )
+                body = (
+                    b"TRET"
+                    + (1).to_bytes(4, "little")
+                    + b"".join(value.to_bytes(2, "little") for value in words)
+                    + b"\x00" * payload_length
+                )
+                with self.assertRaisesRegex(
+                    ValueError, "range 10 at decoded offset 1398132 exceeds"
+                ):
+                    parse_tret_record(body)
 
 
 if __name__ == "__main__":

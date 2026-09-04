@@ -1,0 +1,87 @@
+{
+  "schema": "endfield.terrain-tret-native-contract.v1",
+  "status": "validated",
+  "nativeMappingId": "endfield-2026-09-03-terrain-tret-reader",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerRanges": [
+    {
+      "role": "activeTretReader",
+      "rva": 23709752,
+      "fileOffset": 23707192,
+      "size": 558,
+      "bodySha256": "5961ACC9A1CF1AB9D441AB9E612E1A8907D470ABECC514D1236AB82546E9E02C",
+      "entryBytesHex": "488BC44889580848896810488978184C89702041574881EC8000000081395452"
+    },
+    {
+      "role": "activeTretReaderDirectCaller",
+      "rva": 23710472,
+      "fileOffset": 23707912,
+      "size": 76,
+      "bodySha256": "D46E53A12EE3D15C0C058F056790A0DA8975C56E8EB1AB34A1B8BF033B48B3E5"
+    },
+    {
+      "role": "graphicsFormatDescriptorSelector",
+      "rva": 904768,
+      "fileOffset": 902208,
+      "size": 32,
+      "bodySha256": "5F48B5A116E08CBFFB15FEC6F47366A50BD3B0E4F5AE4D219C8803740BE57765",
+      "entryBytesHex": "33C081F9960000000F46C1488D0DBEE4B7014898488D048048C1E0044803C1C3"
+    },
+    {
+      "role": "graphicsFormatTwoDimensionalFootprint",
+      "rva": 904400,
+      "fileOffset": 901840,
+      "size": 199,
+      "bodySha256": "8EB844640CDB3AA23EFC5CDE023C7FD4E9EBCBE23E38A7F1B33347D02386070C",
+      "entryBytesHex": "40534883EC20418BD8448BCA448BD185C90F8EA100000085D20F8E990000008B"
+    }
+  ],
+  "graphicsFormatDescriptorTable": {
+    "rva": 29733648,
+    "entryStride": 80,
+    "entries": [
+      {"value": 108, "prefixHex": "10040401"},
+      {"value": 109, "prefixHex": "10040401"}
+    ]
+  },
+  "graphicsFormats": [
+    {
+      "value": 108,
+      "name": "RGBA_BC7_SRGB",
+      "fieldToken": "0x04000c96",
+      "blockWidth": 4,
+      "blockHeight": 4,
+      "bytesPerBlock": 16
+    },
+    {
+      "value": 109,
+      "name": "RGBA_BC7_UNorm",
+      "fieldToken": "0x04000c97",
+      "blockWidth": 4,
+      "blockHeight": 4,
+      "bytesPerBlock": 16
+    }
+  ],
+  "headerConsumer": {
+    "magicOffset": 0,
+    "versionOffset": 4,
+    "creationAxisOffset": 8,
+    "diagnosticOnlyAxisOffset": 10,
+    "mipChainSwitchOffset": 12,
+    "graphicsFormatOffset": 14,
+    "payloadLengthOffset": 16,
+    "payloadOffset": 20,
+    "copyLength": "allocated texture payload size after equality check with decoded +16"
+  },
+  "evidenceBoundary": {
+    "exact": "The selected native file hashes, IL2CPP enum rows, and UnityPlayer byte ranges are revalidated before use.",
+    "direct": "The active reader consumes decoded +14 as GraphicsFormat, checks decoded +16 against the allocated size, and copies that size from decoded +20. The current format table gives 108 and 109 a 4x4 block with 16 bytes.",
+    "structuralOnly": "The maintained parser uses the direct footprint to expose anonymous contiguous ranges; it does not decode their values.",
+    "inferred": "Decoded +12 is likely the numerical mip count; LAYER_D and LAYER_N likely identify diffuse/sRGB and normal/linear families.",
+    "unresolved": "The reader ABI has no input length or final source cursor. Channel meanings, texture-array slot ownership, and runtime selection remain unproved."
+  }
+}

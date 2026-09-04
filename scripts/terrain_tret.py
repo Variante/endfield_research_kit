@@ -61,6 +61,7 @@ class TretRecord:
     body_fixed_prefix: bytes
     body_version_u32le: int
     body_u16le_offsets_8_18: tuple[int, int, int, int, int, int]
+    graphics_format_u16le: int
     body_payload_length_u32le: int
     anonymous_tiling_status: str
     anonymous_record_ranges: tuple[TretAnonymousRecordRange, ...]
@@ -75,7 +76,8 @@ def _frame_anonymous_record_ranges(
     axis0, axis1, range_count, _raw_layout_word = words[:4]
     if axis0 <= 0 or axis1 <= 0:
         raise ValueError(
-            f"TRET anonymous axes must be positive: {axis0}, {axis1}"
+            "TRET anonymous axes at decoded offset 8 must be positive: "
+            f"actual {axis0}, {axis1}"
         )
     layout_key = words[:4]
     try:
@@ -84,8 +86,8 @@ def _frame_anonymous_record_ranges(
         ]
     except KeyError as exc:
         raise ValueError(
-            "unsupported TRET anonymous layout words: "
-            f"words8_14={words[:4]}"
+            "unsupported TRET anonymous layout words at decoded offset 8: "
+            f"actual words8_14={words[:4]}"
         ) from exc
 
     cursor = FIXED_BODY_PREFIX_SIZE
@@ -104,8 +106,8 @@ def _frame_anonymous_record_ranges(
         end = cursor + data_length
         if end > len(body):
             raise ValueError(
-                f"TRET anonymous range {index} exceeds decoded body: "
-                f"end {end}, size {len(body)}"
+                f"TRET anonymous range {index} at decoded offset {cursor} exceeds "
+                f"decoded body: expected end {end}, actual EOF {len(body)}"
             )
         ranges.append(
             TretAnonymousRecordRange(
@@ -124,7 +126,8 @@ def _frame_anonymous_record_ranges(
         cursor = end
     if cursor != len(body):
         raise ValueError(
-            f"TRET anonymous ranges end at {cursor}, decoded body ends at {len(body)}"
+            "TRET anonymous ranges leave trailing bytes: "
+            f"expected EOF {cursor}, actual EOF {len(body)}"
         )
     return "exact_anonymous_record_tiling", tuple(ranges)
 
@@ -143,7 +146,7 @@ def decode_terrain_envelope(raw: bytes) -> tuple[bytes, str, int | None]:
     return decoded, "inverted_lz4", expected
 
 
-def parse_tret_record(raw: bytes) -> TretRecord:
+def _parse_tret_record(raw: bytes) -> TretRecord:
     """Parse only the validated TRET framing and return all remaining bytes opaque.
 
     The envelope is decoded before inspecting the TRET body.  The parser
@@ -165,14 +168,16 @@ def parse_tret_record(raw: bytes) -> TretRecord:
     body_version = int.from_bytes(body[4:8], "little")
     if body_version != SUPPORTED_BODY_VERSION:
         raise ValueError(
-            f"unsupported TRET body version: {body_version} != {SUPPORTED_BODY_VERSION}"
+            "unsupported TRET body version at decoded offset 4: "
+            f"expected {SUPPORTED_BODY_VERSION}, actual {body_version}"
         )
     body_payload_length = int.from_bytes(body[16:20], "little")
     actual_body_payload_length = len(body) - FIXED_BODY_PREFIX_SIZE
     if body_payload_length != actual_body_payload_length:
         raise ValueError(
-            "TRET body payload length mismatch: "
-            f"declared {body_payload_length}, actual {actual_body_payload_length}"
+            "TRET body payload length mismatch at decoded offset 16: "
+            f"expected declared length {body_payload_length}, "
+            f"actual remaining bytes {actual_body_payload_length}"
         )
 
     words = tuple(u16(offset) for offset in range(8, 20, 2))
@@ -189,8 +194,18 @@ def parse_tret_record(raw: bytes) -> TretRecord:
         body_fixed_prefix=body[:FIXED_BODY_PREFIX_SIZE],
         body_version_u32le=body_version,
         body_u16le_offsets_8_18=words,
+        graphics_format_u16le=words[3],
         body_payload_length_u32le=body_payload_length,
         anonymous_tiling_status=anonymous_tiling_status,
         anonymous_record_ranges=anonymous_record_ranges,
         opaque_payload=body[FIXED_BODY_PREFIX_SIZE:],
     )
+
+
+def parse_tret_record(raw: bytes, *, source: str = "<bytes>") -> TretRecord:
+    """Parse one record and retain its logical-file identity in diagnostics."""
+
+    try:
+        return _parse_tret_record(raw)
+    except ValueError as exc:
+        raise ValueError(f"{source}: {exc}") from exc

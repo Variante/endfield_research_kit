@@ -145,13 +145,15 @@ Current durable boundaries:
   families have fail-closed readers. SpawnerConfig framing treats the integer
   dictionary key and serialized string wave key as independent fields; exact
   wave maps still require one unique bounded parse through physical EOF.
-  Terrain additionally validates its anonymous body-length word against the
-  complete decoded payload. Selected-build raw-word shapes expose exact
-  anonymous record tiling for most bodies; the two remaining observed shapes
-  retain only an aggregate-length gate. A grouped-axis/16-byte-unit formula
-  fits their sole observed geometry but does not independently prove internal
-  ranges. Header words and record values remain unnamed, and unobserved shapes
-  fail closed.
+  Terrain additionally validates its body-length word against the complete
+  decoded payload. A current-build UnityPlayer reader, IL2CPP GraphicsFormat
+  enum, and native format-footprint table now close every selected-build body
+  as exact contiguous anonymous ranges. In particular, raw words 108/109 are
+  BC7 sRGB/UNorm footprints with 16 bytes per 4x4 block; the 1024-to-1 bodies
+  split into eleven ranges and consume EOF. Offset 14 is therefore a direct
+  format selector, while offset 12's numeric mip-count interpretation remains
+  inferred. Block contents, D/N path meaning, texture-array ownership, and
+  final rendering remain unresolved; unobserved header tuples fail closed.
 - The current Table corpus has a direct low-output sweep covering selected
   overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
   EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
@@ -230,7 +232,7 @@ Current durable boundaries:
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
-- Deeper Terrain record meaning, Init/Streaming tails and field meaning,
+- Terrain block/channel meaning, Init/Streaming tails and field meaning,
   manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not

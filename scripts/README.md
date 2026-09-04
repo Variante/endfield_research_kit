@@ -23,6 +23,13 @@ focused development or validation.
 The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
 wrapper with `--help` for its supported options.
 
+The maintained Terrain structure gate is
+`python -m scripts.game_data.terrain_corpus`; it consumes a completed VFS audit
+summary/ledger plus that audit's exact `inputSetSha256`, revalidates the pinned
+current native consumer contract, and writes
+`reports/animestudio/terrain_tret_latest.{json,md}`. It is a focused recovery
+command, not part of normal WebUI export.
+
 For the recovery path and evidence boundary of an individual WebUI page, use
 [`memory/webui/README.md`](../memory/webui/README.md). This file remains the
 command and module-ownership map.

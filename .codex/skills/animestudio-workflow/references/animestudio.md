@@ -163,7 +163,7 @@ The stable code and fixture entry points are:
 | Streaming | `scripts/game_data/streaming.py` | `scripts/tests/test_streaming.py` (all envelopes/roots, exact anonymous Info graphs, and the exact anonymous field6/7 paired-group subgraph in both data families; other Init/Streaming fields remain opaque) |
 | DynamicStreaming | `scripts/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
 | Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing, bounded index filename tables, and single/grouped v3 index-directed payload ranges) |
-| Terrain | `scripts/terrain_tret.py` | `scripts/tests/test_terrain_tret.py` (selected-build anonymous tiling; unsupported shapes fail closed) |
+| Terrain | `scripts/terrain_tret.py`, `scripts/game_data/terrain_native.py`, `scripts/game_data/terrain_corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
 | JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; current SkillData/BuffData and LevelData/LevelScriptData partial framings stay non-exact |
@@ -200,6 +200,23 @@ and interval validity, non-overlap, and exact node reads. It does not prove
 serialized Unity object boundaries, TypeTrees, PPtrs, or gameplay meaning. The
 decoded custom-header `size` word must remain unnamed unless a specific flag
 uses it; current files disprove treating it as the logical container length.
+
+For Terrain work, first rebuild the outer VFS audit and pass its exact
+`inputSetSha256` to the maintained corpus gate:
+
+```bat
+python -m scripts.game_data.terrain_corpus --outer-summary OUTER.json --outer-ledger OUTER.jsonl.gz --expected-input-set-sha256 SHA256 --game-root ENDFIELD_DATA --output-json reports/animestudio/terrain_tret_latest.json --output-md reports/animestudio/terrain_tret_latest.md
+```
+
+The gate revalidates the current `GameAssembly.dll`, `global-metadata.dat`, and
+`UnityPlayer.dll`, the pinned reader/footprint byte ranges, GraphicsFormat enum
+rows, outer ledger hash, every selected logical-file range/hash, and exact TRET
+EOF consumption. The reader proves offset 14 is GraphicsFormat, offset 16 is
+the checked payload length, and offset 20 is the copy source; its ABI has no
+input length or final source cursor, so it cannot replace the outer/body-length
+checks. Selected-build words 108/109 use 4x4, 16-byte BC7 footprints. Keep the
+range contents, D/N ownership, channel meaning, texture-array slot, and runtime
+selection unresolved.
 
 For BundleManifest field recovery, first require all three corrected
 size/count-delimited fixed-width sections and the repeated-size terminal
