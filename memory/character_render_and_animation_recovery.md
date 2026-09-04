@@ -108,6 +108,9 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
+- Endminf's overview crystal/stone draws are `HGRP/Effect/VFXBaseV2` consumers.
+  The similarly named LitEffect `_PARALLAX_MAP` materials belong to another
+  effect set and must not be substituted into the canonical overview path.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
