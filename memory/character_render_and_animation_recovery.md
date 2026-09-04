@@ -122,15 +122,18 @@ only.
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
 - A component-complete current-build Streamline capture retains two consecutive
-  native-resolution DLAA input/output/depth/motion transactions. Its direct
+  native-resolution DLAA input/output/depth/motion transactions and a complete
+  selected-actor Animator timeline. Its direct
   `ScalingInputColor` previews already contain Endminf's horizontal chromatic
   entrance strips, proving that feature belongs to upstream
   CharEffect/VFXRefract rendering rather than DLAA history. The output remains
   close to the current input and slightly attenuates aggregate consecutive
-  change. Because the two-frame trigger is not joined to an Animator phase, it
-  does not classify the earliest broad whole-actor multi-exposure silhouettes.
-  The lab's ordinary TAAU consumer remains compatibility-only pending a
-  phase-joined retail Streamline window or an exact reusable DLAA integration.
+  change. The shared-QPC join places them at `ui_overview_start` 0.051009 s and
+  0.076166 s with no intervening selected-actor Tick. The broad whole-actor
+  echoes present at the matching bounded clean-video anchor are absent from
+  both surfaces, localizing their producer downstream of DLAA to Uber/final or
+  recording presentation. The lab's ordinary TAAU consumer remains
+  compatibility-only pending an exact reusable DLAA integration.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
@@ -277,8 +280,8 @@ build and collection procedure.
 ## Remaining gaps
 
 - Close the character-neutral retail render frame: exact shader variants,
-  bindings, lighting/shadow resources, post-processing, a phase-joined
-  Streamline history window, and final presentation route.
+  bindings, lighting/shadow resources, post-processing, a phase-joined final
+  swapchain boundary, and final presentation route.
 - Recover Endminf's complete secondary-dynamics numeric solver, owner identity,
   job completion, and writeback/history.
 - Complete entrance/loop VFX timing and lifetime without hand-authored offsets.
