@@ -115,9 +115,13 @@ only.
   M28 owners remain separately gated.
 - Recovered LitEffect material handoff uses one character-neutral, fail-closed
   schema for the complete serialized texture, transform, color, and float
-  surface shared by the compatibility and five-MRT shaders. That contract does
-  not admit physical fallback-resource identities or per-frame/per-draw globals;
-  those still require their own exact runtime evidence.
+  surface shared by the compatibility and five-MRT shaders. Overview_01 now
+  also has exact runtime evidence for exposure/aspect, the live VFX clock,
+  authenticated-zero anchor-wave state, and identity particle-mesh object
+  translation across its complete early M01/M38 sequence. The anchor state is
+  promoted through a hashed Resource plus active source-marker join, preserving
+  readiness separately from the zero value. That scope does not authorize the
+  later overview_02 M27 globals or either path's final deferred presentation.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
@@ -134,6 +138,10 @@ only.
   both surfaces, localizing their producer downstream of DLAA to Uber/final or
   recording presentation. The lab's ordinary TAAU consumer remains
   compatibility-only pending an exact reusable DLAA integration.
+- Native-resolution comparison is explicit rather than inferred: the lab
+  renderer accepts a paired 3840x2160 profile and the comparator's `source`
+  mode requires the exact recorded source dimensions, preserving the default
+  annotation-pinned 1920x1080 contract for existing diagnostics.
 - The observation-only Streamline schema-v2 capture is prepared to retain a
   hashed 4K swapchain color immediately before each accepted packet's closing
   `Present`, alongside its DLAA/depth/motion data on the same QPC chronology.
