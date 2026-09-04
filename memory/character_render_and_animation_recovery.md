@@ -28,8 +28,9 @@ Current durable state:
   and major entrance effects are source-backed;
 - selected CharacterNPR/HGRP frame equations and resources are partial;
 - retail visual parity is not reached;
-- the main silhouette gap is secondary cloth/bone simulation and history, not
-  a license to hand-author mesh, pose, or camera corrections.
+- secondary cloth/bone simulation and history remain a confirmed silhouette
+  gap; early rigid pose/presentation is also unresolved. Animator state timing
+  alone does not prove that pose, and does not justify hand-authored corrections.
 
 Changing actor counts, shader hashes, frame metrics, session ids, and capture
 inventories belong in `reports/assets/character_recovery/`.
@@ -119,6 +120,11 @@ only.
   The corrected first saved frame measures 0.016666668 s particle time and
   0.050908305 s body time, agreeing with the retail/QPC join within about
   0.101 ms.
+- A first-effect RenderDoc capture must arm before the normal restart, after
+  the retained effect finishes naturally. Waiting for live particles and then
+  requesting the following frame misses that boundary. The lab's dedicated
+  windowed mode records and checks the single-step Play-to-render join; its
+  receipt and live draw still establish only Unity-side evidence.
 - A controller or effect definition proves authored composition, not that the
   retail frame executed it.
 
