@@ -176,17 +176,21 @@ return QPC per Endminf owner plus a bounded ledger of every matching clock,
 team/generation, and object identity independently of trajectory-window
 readiness. Its native source gate requires complete ledger accounting and rejects
 capacity loss, missing owners, clock, thread, lifecycle, hierarchy, publication,
-and shutdown failures; the lab semantic verifier still rejects repeated names
-without a visible-actor identity join. The lab
-verifier joins those ticks only to the same session's complete Animator
+and shutdown failures. Animator timeline schema v4 reads the selected
+`CharUIModelMono.m_magicaCloths` collection (exact-build field token
+`0x04009205`, offset `0xf0`) after the original Tick and retains bounded cloth
+component pointers plus signed Unity instance IDs. The lab verifier joins each
+named registration to that authoritative actor-owned collection using both
+identities; other loaded Endminf instances remain reported but excluded. It
+then joins the selected ticks only to the same session's complete Animator
 timeline. A dedicated August 25 manifest now authenticates all five visual
 files, and the runtime pins only the current AddCloth/identity dependencies;
 trajectory hooks and windows remain disabled. The installed-client preflight
 passes. One diagnostic session observed four registrations per name among 179
 distinct cloth teams in one complete Animator entry; those first timestamps are
-not attributable to the visible actor. The v2 observer now retains every named
-registration; one new session must establish the identity cohorts before a
-visible-actor join and fresh-process timing can distinguish warm-up from cache state.
+not attributable to the visible actor. That session predates Animator schema v4;
+three fresh-process sessions must validate the ownership join and distinguish
+warm-up from cache state before solver initialization changes.
 
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
