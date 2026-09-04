@@ -108,9 +108,11 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
-- Endminf's overview crystal/stone draws are `HGRP/Effect/VFXBaseV2` consumers.
-  The similarly named LitEffect `_PARALLAX_MAP` materials belong to another
-  effect set and must not be substituted into the canonical overview path.
+- Endminf overview_01 combines ten physical rock renderers using LitEffect
+  `_PARALLAX_MAP` M01/M38 with a companion VFXBaseV2 particle cohort. Complete
+  serialized prefab ownership, including fail-closed renderers, is the required
+  shader-census starting point. The later overview_02 M27 and overview_02/03
+  M28 owners remain separately gated.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
@@ -128,6 +130,12 @@ Endminf's enabled cloth components, roots, colliders, constraints, serialized
 payload arrays, and selected native schedule are partially recovered. The lab
 retains exact bytes and typed outer layouts while leaving unknown inner values
 opaque.
+
+The pure-managed frame coordinator retains one registered collider state across
+frames, prepares only each owner's source indices, preserves old-frame state
+across multiple 90 Hz substeps, and publishes current state at the frame
+boundary. Its two-frame moving-collider verifier fails if registration reasserts
+`Reset` or caller-provided stale previous samples replace retained history.
 
 The missing result is the complete retail numeric solve and actor-owned
 writeback/history across all relevant branches. Global scheduler values or a
