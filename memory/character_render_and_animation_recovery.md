@@ -385,6 +385,12 @@ build and collection procedure.
 
 ## Remaining gaps
 
+- Current-build Animator callbacks confirm the lab's rotation-only formula,
+  but alternate built-in root-motion flags and forced-evaluation caller order
+  remain unresolved. A native forced evaluation method alone does not justify
+  a playback offset or establish the PlayerLoop/particle phase. Use the current
+  Animator lifecycle report under `reports/assets/character_recovery/`; older
+  build addresses cannot authenticate this ordering.
 - Join the early rigid pose and camera to source animation. EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
