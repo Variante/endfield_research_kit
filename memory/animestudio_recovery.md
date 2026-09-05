@@ -380,8 +380,13 @@ Current durable boundaries:
   branch and selects count versus -1. Keep API status, error, byte count and
   accumulated count distinct. This static join does not prove live IAT contents,
   handle provenance or buffered-state invariants; full-fill remains conditional.
-  Root/path conversion, on-disk identity/hash, zero-length alternate behavior
-  and concrete constructor/Read execution remain unresolved.
+  The two file-helper checks copy a 32-byte/four-slot path carrier from distinct
+  builders. Slot +8 comes from their respective getter; null/empty first input
+  shifts the second candidate into +0x10 and leaves +0x18 zero. AppendPathInfo
+  forwards the slots in order after null substitution, then passes a temporary
+  buffer and length onward. Formatting syntax, getter values, final path/root,
+  on-disk identity/hash, zero-length alternate behavior and concrete execution
+  remain unresolved; neither four pointer slots nor getter names prove a path.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

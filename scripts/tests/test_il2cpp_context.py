@@ -23,6 +23,51 @@ from scripts.game_data.il2cpp_context import method_spec_record, usage_method_sp
 from scripts.game_data.il2cpp_context_audit import vfs_block_transform
 from scripts.game_data.il2cpp_context_audit import vfs_block_file_source
 from scripts.game_data.il2cpp_context_audit import native_file_read
+from scripts.game_data.il2cpp_context_audit import vfs_path_carrier
+
+
+class VfsPathCarrierTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in (
+            (0x318BFFA,0x2D7F770),(0x318C12E,0x2D7AE60),
+            (0x2D7F7CB,0x2D7F920),(0x2D7AEC6,0x2D7DBF0),
+            (0x2D7FB68,0x2D7FE70),(0x2D7FD10,0x2D7FE70),
+            (0x2D7DF60,0x2F46C10),(0x2D7E0CC,0x2F46C10),(0x2D7E210,0x2F46C10),
+            (0x318C03E,0x2D7E480),(0x318C15D,0x2D7E480),
+            (0x2D7E601,0x2DF2AA0),(0x2D7E636,0x2D72FA0))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D7F7D3,'0F10000F1048100F11030F114B10'),(0x2D7AECE,'0F10000F1048100F11030F114B10'),
+            (0x2D7FB6D,'4889442438'),(0x2D7FBCF,'4889742440'),(0x2D7FC2F,'4C897C2448'),
+            (0x2D7FD15,'4889442438'),(0x2D7FD70,'4C897C2440'),(0x2D7FDE3,'498BC6410F1106410F114E10'),
+            (0x2D7DF65,'488945C8'),(0x2D7DFBF,'4C8975D0'),(0x2D7E00F,'488975D8'),
+            (0x2D7E215,'488945C8'),(0x2D7E26F,'488975D0'),(0x2D7E2D9,'410F1107410F114F10'),
+            (0x2D7E58A,'488B7E08'),(0x2D7E5A4,'4C8B7610'),(0x2D7E5B7,'4C8B3E488B7618'),
+            (0x2D7E5EE,'48897424204D8BCE4C8BC7498BD7488D4C2438'),
+            (0x2D7E61E,'488D5020'),(0x2D7E62B,'4533C9448B442440488BCB'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_path_carrier(self.pe,None,{},[],source='fixture.dll')
+
+    def test_four_slots_without_root_semantics(self):
+        row=self.decode()
+        self.assertEqual(row['carrierByteLength'],32)
+        self.assertIn('leaves +0x18 zero',row['boundary'])
+        self.assertIn('do not establish formatting syntax',row['boundary'])
+
+    def test_truncated_trailing_and_mutated_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_swapped_getter_fails(self):
+        rva=0x2D7FB68
+        self.parts[rva]=b'\xe8'+struct.pack('<i',0x2F46C10-rva-5)
+        with self.assertRaises(ContextError) as caught:self.decode()
+        self.assertIn('fixture.dll',str(caught.exception))
 
 
 class NativeFileReadTests(unittest.TestCase):

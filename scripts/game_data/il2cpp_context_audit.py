@@ -27,6 +27,11 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D7F770, 0x2D7F914, 'DAE488218AC934D0C9CF68F33BAAB9B1659D3F57DA158D7A0834A6B1F7BE810B'),
+    (0x2D7AE60, 0x2D7AF28, 'CF2651FC76E186FE5D6DF8E34163A75EC3A3F37ED40560B3F2324E60059A41A2'),
+    (0x2D7F920, 0x2D7FE68, 'D6A7ABB1AE1DCCFA30BA942968FC9E89671FB36578BAABDB0E347753D565E6E0'),
+    (0x2D7DBF0, 0x2D7E3BC, 'BD887872DEB0E1D5939A3ECDB53DB9059E0AF27AE072B1A8F72311EE8800C150'),
+    (0x2D7E480, 0x2D7E6C8, 'C5A0B6BAA857B336A99B7BEF8A5B59D62CD8776A651F11C718A40122493385E8'),
     (0x2FCA460, 0x2FCA768, 'A8F70CDC62487F47713F7540310DF6F3D6F388D0B9289C13C4B98ABFF3D82CD7'),
     (0x3AFCB00, 0x3AFCC8E, '1AE31F3A846C775B877BC41FC7D0DFDE947C52AA726F5EF559C4E7B5FF7DD885'),
     (0x318BC00, 0x318BD14, '8AD4D7E061F64FA7627B5A55141CE2094E3D75116A467637D3C36F43A19C28D9'),
@@ -955,6 +960,49 @@ def native_file_read(pe,md,modules,image_owners,*,source):
             'boundary':'The reviewed FileStream array overload checks negative offset/count and offset against array length minus count before its normal buffered path. Buffered and direct reads call the same MonoIO helper. That helper extracts a handle carrier at +0x10, compares the 32-bit offset-plus-count against array length, then passes handle, array+0x20+sign-extended offset, count, address of a zeroed out DWORD and a zero fifth argument to the static ReadFile import slot. A zero API return calls the static GetLastError slot and stores its result through the supplied error pointer. The helper returns the out DWORD when that error word is zero, otherwise -1; it does not derive the count from the API boolean return. The direct FileStream branch records that count, tests its error and -1 paths, updates state position and adds already-buffered bytes for its normal return. This distinguishes API boolean, out-byte count, error and accumulated read count. Only two name thunks and their descriptor are joined, not the entire import directory; live IAT contents, imported function behavior, handle provenance, full buffered-state invariants, alternate async/error/cleanup paths and runtime execution remain unresolved. No authenticated-file receipt, unconditional full-read guarantee or serialized EOF follows.'}
 
 
+def vfs_path_carrier(pe,md,modules,image_owners,*,source):
+    """Four-slot path carrier construction/consumption, not concrete root identity."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247308,'Beyond.VFS.UnityPersistFileHelper','GetPersistAssetFilePath',0x2D7F920),
+         (247322,'Beyond.VFS.UnityStreamingFileHelper','GetStreamAssetFilePath',0x2D7DBF0),
+         (247278,'Beyond.VFS.UnityFileLoaderHelper','get_persistentDataPath',0x2D7FE70),
+         (247272,'Beyond.VFS.UnityFileLoaderHelper','get_streamingAssetsPath',0x2F46C10)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(452858,'Beyond.VFS.ThreadUnsafeStringUtils','AppendPathInfo',0x2D7E480)],
+        source=source,expected_image='Unsafe.VFS.dll')
+    edges=[]
+    for rva,target in ((0x318BFFA,0x2D7F770),(0x318C12E,0x2D7AE60),
+        (0x2D7F7CB,0x2D7F920),(0x2D7AEC6,0x2D7DBF0),
+        (0x2D7FB68,0x2D7FE70),(0x2D7FD10,0x2D7FE70),
+        (0x2D7DF60,0x2F46C10),(0x2D7E0CC,0x2F46C10),(0x2D7E210,0x2F46C10),
+        (0x318C03E,0x2D7E480),(0x318C15D,0x2D7E480),
+        (0x2D7E601,0x2DF2AA0),(0x2D7E636,0x2D72FA0)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2D7F7D3,'0F10000F1048100F11030F114B10'),
+        (0x2D7AECE,'0F10000F1048100F11030F114B10'),
+        (0x2D7FB6D,'4889442438'),(0x2D7FBCF,'4889742440'),(0x2D7FC2F,'4C897C2448'),
+        (0x2D7FD15,'4889442438'),(0x2D7FD70,'4C897C2440'),
+        (0x2D7FDE3,'498BC6410F1106410F114E10'),
+        (0x2D7DF65,'488945C8'),(0x2D7DFBF,'4C8975D0'),(0x2D7E00F,'488975D8'),
+        (0x2D7E215,'488945C8'),(0x2D7E26F,'488975D0'),
+        (0x2D7E2D9,'410F1107410F114F10'),
+        (0x2D7E58A,'488B7E08'),(0x2D7E5A4,'4C8B7610'),(0x2D7E5B7,'4C8B3E488B7618'),
+        (0x2D7E5EE,'48897424204D8BCE4C8BC7498BD7488D4C2438'),
+        (0x2D7E61E,'488D5020'),(0x2D7E62B,'4533C9448B442440488BCB')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'edges':edges,'windows':windows,'carrierByteLength':32,
+            'level':'exact static identities; direct conditional four-slot carrier flow',
+            'boundary':'The file-helper checks call two distinct builders and copy both 16-byte halves of their results into the caller-supplied 32-byte carrier. On the non-replacement builder paths, slot +0 comes from branch-selected static storage and slot +8 from the respective path getter. Nonempty first input normally fills +0x10 with that input and +0x18 with the second candidate; the empty/null first-input branch instead fills +0x10 with the second candidate and leaves +0x18 zero. Streaming can transform the second candidate before these stores; its helper behavior and predicate semantics remain unresolved. AppendPathInfo receives that carrier, skips work when slot +0 is null/empty, substitutes a shared static value for null slots +8/+0x10/+0x18, and forwards +0,+8,+0x10,+0x18 in that order to another helper with a separate stack companion. Its resulting temporary array+0x20 and temporary DWORD length are passed to the append consumer. The copy width and argument order do not establish formatting syntax, separators, string contents, final output length, concrete root, overlay selection or file/hash identity. Static values, getter initialization, formatting/append ABI and helper internals, replacements and runtime execution remain unresolved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1299,6 +1347,7 @@ def audit():
     block_transform=vfs_block_transform(pe,md,modules,image_owners,source=str(gate.gameassembly))
     block_file_source=vfs_block_file_source(pe,md,modules,image_owners,source=str(gate.gameassembly))
     file_read=native_file_read(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    path_carrier=vfs_path_carrier(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1331,6 +1380,7 @@ def audit():
         'selectedVfsBlockTransform':block_transform,
         'selectedVfsBlockFileSource':block_file_source,
         'selectedNativeFileRead':file_read,
+        'selectedVfsPathCarrier':path_carrier,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
