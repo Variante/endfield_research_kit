@@ -89,6 +89,7 @@ def fake_metadata(names: dict[int, tuple[str, str]]):
         methods.append(
             types.SimpleNamespace(
                 declaring_type=index, name_index=index, token=0x06000000 + index,
+                return_type=3,
                 _type_name=type_name, _method_name=method_name,
             )
         )

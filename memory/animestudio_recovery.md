@@ -232,6 +232,8 @@ Current durable boundaries:
   formatter or authenticated VFS allocation. Keep both terminal candidates;
   complete nested cursors and EOF remain unresolved. Native pins and reviewed
   limits belong to `reports/animestudio/skilldata_native_review_latest.json`;
+  PE reads must remain within raw section extents: virtual-only globals have
+  no disk value and need runtime-initialization evidence, not adjacent file bytes.
   DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
   without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC
