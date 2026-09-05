@@ -27,6 +27,9 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x318B640, 0x318BA9C, '4C0DC2B5628149EC93FDAB7D280B3AE0B05E373E6C124F8E1B737E722D5BBAE3'),
+    (0x507D3C4, 0x507D3E8, '8859615A9572203BEB3922A248068B3C790543DFEEA14930BC3C1B815875C3D2'),
+    (0x2C97EF0, 0x2C97FF9, '50637A88FDE993EC5A257E43D3CCB904A397EEB21FB97CA9747CDFF3CEF50EAB'),
     (0x33AF150, 0x33AF45D, '3EF2B07F92BEFA88B2176CC85AED55F46631C40221C8855C39147B80B2E80819'),
     (0x2D76170, 0x2D763EF, '1C22EC661AEB8FF271F3F6DCC867025A0045808F7EA9BD7EC1BD5CFCA4F1490E'),
     (0x449AEB0, 0x449AF12, 'A29D6DE8B297DB1A9EDC50AFF7B73DC946FBA6F02BD7BA15341F07B1BB91EC73'),
@@ -804,6 +807,49 @@ def vfs_block_cursor(pe,md,modules,image_owners,*,source):
             'boundary':'The normal main-info entry passes its input array and supplied start index to CreateFromByte, which constructs 16 bytes: cursor dword, zero dword, original array pointer. Main, chunk and file readers share that same mutable carrier. Chunk processing sign-extends a ReadInt result and requests count*32 bytes before its positive-count loop; each file result is copied as 32 bytes. Allocation-helper behavior and negative-count rejection are not proved by this loop. Before parsing, main compares two helper results using array length minus start minus four and the selected tail position; helper algorithms and authenticated array provenance remain open. After the chunk loop, the normal remaining calculation clamps nonpositive array-length-minus-cursor to zero. Positive remaining with stored version 3 causes one ReadInt call, whose result is discarded before returning the object; other versions can return with positive remaining. No final equality check follows this extra read. This is not an EOF validator, even if the earlier comparison succeeds. Replacement callbacks, helper internals, upstream decryption/file identity, full record grammar and final source receipt remain unresolved.'}
 
 
+def vfs_block_transform(pe,md,modules,image_owners,*,source):
+    """Reviewed normal-path array aliasing, not a complete cipher implementation."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247532,'Beyond.VFS.VFSUtils','DecryptCreateBlockGroupInfo',0x318B640)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(452763,'Beyond.XXEnc.XXE1','TransformBytes',0x507D3C4),
+         (452780,'Beyond.XXEnc.XXE1','WorkBytes',0x2C97EF0)],
+        source=source,expected_image='Common.Beyond.XXEnc.dll')
+    edges=[]
+    for rva,target in ((0x318B91E,0x507D3C4),(0x507D3DE,0x2C97EF0),
+        (0x318B93D,0x33AF150),(0x2C97FE6,0x2C97A90)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x318B66A,'488BF1'),
+        (0x318B8FE,'488B82B8000000448B80E4000000448B4E18452BC848897C2420488BD6488BCB'),
+        (0x318B92A,'488B88B80000004533C08B91E4000000488BCE'),
+        (0x318B942,'488BF8488BC7'),
+        (0x507D3C4,'4883EC4848C74424300000000044894C24284C8BCA4489442420'),
+        (0x2C97EFD,'448B642478498BE9458BE84C8BFA488BF14585E40F8EBD000000'),
+        (0x2C97F42,'448B742470438D0426413B41180F8FA082E401438D04043942180F8CFE81E401'),
+        (0x2C97F62,'418BF8452BF0'),(0x2C97F70,'0FB65E3080E33F7468'),
+        (0x2C97F79,'418D043E3B4518736B4C8B46284D85C07468440FB6CB453B48187358413B7F187352'),
+        (0x2C97F9B,'418D043EFEC34863C84863C7FFC70FB654292043325401204288543820'),
+        (0x2C97FB8,'8BC7412BC5885E30413BC47CAB')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    storage=[]
+    for rva in (0x318B8F7,0x318B923):
+        raw=pe.bytes_at_va(pe.image_base+rva,7)
+        cell=rip_qword_load_target(raw,pe.image_base+rva,source=source)
+        require(cell,pe.image_base+0xD0B9A10,source,rva)
+        storage.append({'rva':rva,'cellVa':cell,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'edges':edges,'windows':windows,'staticStorage':storage,
+            'level':'exact static identities; direct conditional in-place byte transform',
+            'boundary':'On the reviewed non-replacement path, the entry retains its original array in RSI. It passes that array, static-carrier+0xE4 as offset and signed 32-bit array-length-minus-offset as count to TransformBytes. The wrapper forwards identical input/output array pointers and identical input/output offsets to WorkBytes. A positive-count normal loop reads one input byte, XORs it with a byte from state+0x28 array, and writes the same output index; its state byte counter is masked with 63 and zero invokes a separate block helper. Nonpositive count returns without validation. Initial length sums use signed 32-bit arithmetic; per-byte array indices also have unsigned bounds checks. This is not a reusable fail-closed range parser. After the transform returns, the same original array reaches the already pinned main-info reader, with a fresh +0xE4 load from the same static storage cell. No equality check proves the two runtime offset loads stayed identical. Static values, key/span and constructor ABI, state initialization/block generation, exceptional and replacement behavior, cipher parity with the maintained decoder, physical-file identity and actual execution remain unresolved. This establishes neither a complete decryption algorithm nor EOF consumption.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1145,6 +1191,7 @@ def audit():
     descriptor_producer=vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     bytebuf_consumer=vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     block_cursor=vfs_block_cursor(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    block_transform=vfs_block_transform(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1174,6 +1221,7 @@ def audit():
         'selectedVfsDescriptorProducer':descriptor_producer,
         'selectedVfsByteBufConsumer':bytebuf_consumer,
         'selectedVfsBlockCursor':block_cursor,
+        'selectedVfsBlockTransform':block_transform,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -20,6 +20,55 @@ from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stre
 from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer, vfs_bytebuf_consumer, vfs_block_cursor
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+from scripts.game_data.il2cpp_context_audit import vfs_block_transform
+
+
+class VfsBlockTransformTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in (
+            (0x318B91E,0x507D3C4),(0x507D3DE,0x2C97EF0),
+            (0x318B93D,0x33AF150),(0x2C97FE6,0x2C97A90))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x318B66A,'488BF1'),
+            (0x318B8FE,'488B82B8000000448B80E4000000448B4E18452BC848897C2420488BD6488BCB'),
+            (0x318B92A,'488B88B80000004533C08B91E4000000488BCE'),
+            (0x318B942,'488BF8488BC7'),
+            (0x507D3C4,'4883EC4848C74424300000000044894C24284C8BCA4489442420'),
+            (0x2C97EFD,'448B642478498BE9458BE84C8BFA488BF14585E40F8EBD000000'),
+            (0x2C97F42,'448B742470438D0426413B41180F8FA082E401438D04043942180F8CFE81E401'),
+            (0x2C97F62,'418BF8452BF0'),(0x2C97F70,'0FB65E3080E33F7468'),
+            (0x2C97F79,'418D043E3B4518736B4C8B46284D85C07468440FB6CB453B48187358413B7F187352'),
+            (0x2C97F9B,'418D043EFEC34863C84863C7FFC70FB654292043325401204288543820'),
+            (0x2C97FB8,'8BC7412BC5885E30413BC47CAB'),
+            (0x318B8F7,'488B1512E1F209'),(0x318B923,'488B05E6E0F209'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_block_transform(self.pe,None,{},[],source='fixture.dll')
+
+    def test_aliasing_is_not_cipher_or_eof_proof(self):
+        row=self.decode()
+        self.assertEqual(len(row['edges']),4)
+        self.assertEqual(len({x['cellVa'] for x in row['staticStorage']}),1)
+        self.assertIn('identical input/output array pointers',row['boundary'])
+        self.assertIn('Nonpositive count returns without validation',row['boundary'])
+        self.assertIn('neither a complete decryption algorithm nor EOF',row['boundary'])
+
+    def test_all_evidence_rejects_truncated_trailing_or_mutated_bytes(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_different_static_cell_fails_with_source_and_offset(self):
+        good=self.parts[0x318B923]
+        self.parts[0x318B923]=good[:3]+struct.pack('<i',struct.unpack('<i',good[3:])[0]+8)
+        with self.assertRaises(ContextError) as caught:self.decode()
+        diagnostic=str(caught.exception)
+        self.assertIn('fixture.dll',diagnostic)
+        self.assertIn('expected',diagnostic)
 
 
 class VfsBlockCursorTests(unittest.TestCase):

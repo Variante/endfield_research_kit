@@ -361,6 +361,14 @@ Current durable boundaries:
   remainder calculation clamps nonpositive values to zero, and the selected
   legacy branch performs one extra integer read without a subsequent EOF
   equality check. A returned object therefore cannot certify full consumption.
+  Its upstream block-group entry retains the original array through an in-place
+  transform and forwards that same array to the main reader. The normal worker
+  XORs input bytes with a state-buffer byte; its adapter aliases both arrays and
+  offsets. Nonpositive counts return without validation. The transform offset
+  and subsequent parse start are separate loads from the same static storage,
+  not a demonstrated immutable value. Key/span/constructor ABI, state-block
+  generation, complete cipher parity, physical-file identity and replacement
+  paths remain open; array aliasing alone is not a decryption or EOF proof.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.
