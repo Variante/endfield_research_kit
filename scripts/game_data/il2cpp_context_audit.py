@@ -1109,6 +1109,48 @@ def resolver_prefix_query(pe,*,source):
             'boundary':'After a successful delimiter search the resolver subtracts the query data pointer from the result, supplies that difference as requested length and supplies start zero to the subrange helper. The helper unsigned-checks start<=length, clamps requested length to length-start, selects inline or pointer bytes by capacity>15 and forwards source+start with the bounded count to a constructor. Its result is moved as two 16-byte halves into the second query carrier. For a valid successful search of the first left parenthesis this requests exactly the bytes before that delimiter, excluding parentheses and their suffix; it does not simply remove two final bytes. The reviewed search uses scalar and SIMD matching; no arbitrary no-match return guarantee is promoted from undefined BSF-zero destination contents. Allocation/copy/comparison helper semantics, malformed carriers, actual cache/tree contents and successful lookup remain unresolved. This conditional extent does not establish live equivalence between the requested and registered names.'}
 
 
+def unity_module_lookup(pe,*,source):
+    """Selected loader/lookup control flow and import identities, not live bindings."""
+    bodies=[]
+    # Include split hot fragments and their explicit cold branch destinations.
+    # Callees are not included in these extents or implicitly given semantics.
+    for start,end,expected in (
+        (0x2FE290,0x2FE40F,'F3362A1AE0D28E3F6EA2F4C0606C3FCE395EEE92AC7ED140172969691E5C3064'),
+        (0xEFE324,0xEFE37B,'7BCEC022B9ACAB3E5D1EACBF5F25CFEC4E492BB9BD213BF1596A6F12D2637756'),
+        (0x31E670,0x31E6B3,'20303ED34206BCD416A1CA61BCCE44C1022E929A69844EE7C5A5F9D730776624'),
+        (0xF00A86,0xF00AFF,'76809E14C42148522DF78F2C0594B126180942EBA7F4F23C4EF0F41BB38BCB78'),
+        (0x31E6C0,0x31E6DA,'CA1191138A5ECBDBA6B4E705D8C9FCB3C17F96B47989FCEAB060605A3EAA1DC1')):
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        digest=hashlib.sha256(raw).hexdigest().upper()
+        require(digest,expected,source,start)
+        bodies.append({'rva':start,'byteLength':len(raw),'sha256':digest})
+    optional=pe.u32_at_file(0x3C)+24
+    require(pe.u32_at_file(optional+120),0x1C3624C,source,optional+120)
+    require(pe.u32_at_file(optional+124),420,source,optional+124)
+    require(pe.bytes_at_va(pe.image_base+0x1C3624C,20),
+            struct.pack('<IIIII',0x1C36648,0,0,0x1C38088,0x185B258),source,0x1C3624C)
+    require(pe.bytes_at_va(pe.image_base+0x1C38088,13),b'KERNEL32.dll\0',source,0x1C38088)
+    imports=[]
+    for at,index,name_rva,hint,name in (
+        (0x2FE388,207,0x1C37618,0x3F7,b'LoadLibraryW'),
+        (0x31E689,211,0x1C375CE,0x2DD,b'GetProcAddress')):
+        raw=pe.bytes_at_va(pe.image_base+at,6)
+        require(len(raw),6,source,at)
+        require(raw[:2],b'\xff\x15',source,at)
+        slot=at+6+struct.unpack_from('<i',raw,2)[0]
+        require(slot,0x185B258+index*8,source,at)
+        lookup=0x1C36648+index*8
+        require(pe.bytes_at_va(pe.image_base+lookup,8),struct.pack('<Q',name_rva),source,lookup)
+        require(pe.bytes_at_va(pe.image_base+name_rva,len(name)+3),
+                struct.pack('<H',hint)+name+b'\0',source,name_rva)
+        imports.append({'callRva':at,'iatSlotRva':slot,'lookupSlotRva':lookup,
+                        'nameRva':name_rva,'name':name.decode('ascii'),'dll':'KERNEL32.dll'})
+    return {'bodies':bodies,'selectedImports':imports,'moduleHandleCacheRva':0x1CF4C20,
+            'level':'exact selected import identities; direct conditional handle and lookup-result flow',
+            'boundary':'The loader entry forwards its incoming RCX to a module helper, stores the returned RAX in the shared module-handle cache and exits on zero before the export-request body. The helper has a runtime-cache branch that returns a qword supplied by another helper. Its other branch extracts input representation data/length, invokes conversion helpers, iterates two-byte elements up to a helper-supplied end pointer replacing 0x2F with 0x5C, selects inline or pointer storage and passes it as RCX to the selected static LoadLibraryW import slot. The imported return is preserved, optionally stored through a cache helper, and returned after cleanup. The export lookup helper preserves incoming module/name arguments for the selected GetProcAddress import, returns its nonzero result, or returns zero for a null module. On a zero imported result its cold branch calls diagnostic/cleanup helpers and rejoins the return of the saved zero, conditional on those calls returning normally. Only the first import descriptor and two selected name thunks are joined, not complete import-table coverage or live IAT contents. Cache lookup/insertion and string conversion helper semantics, end-pointer validity, actual input module path, loaded image identity, successful binding and execution remain unresolved. No authenticated SkillData source, final cursor or terminal uniqueness follows.'}
+
+
 def unity_conversion_exports(pe,unity,*,source,unity_source):
     """Two selected export chains and conditional output-slot write ABI."""
     requests=[]
@@ -1707,6 +1749,7 @@ def audit():
     unity_pair=unity_registration_pair(unity_pe,source=str(unity_path))
     unity_path_evidence=unity_path_return(unity_pe,source=str(unity_path))
     unity_exports=unity_conversion_exports(pe,unity_pe,source=str(gate.gameassembly),unity_source=str(unity_path))
+    unity_lookup=unity_module_lookup(unity_pe,source=str(unity_path))
     for start,end,expected in (
         (0x32BA20,0x32BA4F,'91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B'),
         (0x32BA50,0x32BA8A,'D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F'),
@@ -1760,6 +1803,7 @@ def audit():
         'selectedUnityRegistrationPair':unity_pair,
         'selectedUnityPathReturn':unity_path_evidence,
         'selectedUnityConversionExports':unity_exports,
+        'selectedUnityModuleLookup':unity_lookup,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -35,7 +35,59 @@ from scripts.game_data.il2cpp_context_audit import unity_path_return
 from scripts.game_data.il2cpp_context_audit import unity_conversion_exports
 from scripts.game_data.il2cpp_context_audit import resolver_prefix_query
 from scripts.game_data.il2cpp_context_audit import resolver_key_comparison
+from scripts.game_data.il2cpp_context_audit import unity_module_lookup
 from unittest.mock import patch
+
+
+class UnityModuleLookupTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2FE290,
+             '40564881EC80000000488BF1488B0D9DFDA5014885C90F847800C0004C8BC6488D542420E857010000488B0D80FDA5018B51084883C2084C6BC2074'
+             'C03014C3B000F857100C00033C048899C24900000006689442430488BCEB80C000000C7442454010000006689442448C644245001E8EB68D7FF807E20017403488B0'
+             'E48898C24A00000004C8D442430488D8C24A0000000488BD0E805BEF2FF488D9424A0000000488D4C2430E853BDF2FF0FB64C2450488B1880F9020F840A00C00080F'
+             '901488D442430480F454424300F1F4000483BC374136683382F74064883C002EBEF66C7005C00EBF3807C2450010F84EEFFBF00488B4C2430FF1542D55501488BD84'
+             '885C07443448B059B0A7A01488D4C24584889BC2498000000488BD6488B3D8CFCA501E837B29200488BD0488BCFE80C010000488D4C2458488918E83F65D7FF488BB'
+             'C2498000000807C245000751B8B5424544C8D056F6D5601488B4C243041B90D020000E815AE2800488BC3488B9C24900000004881C4800000005EC3'),
+            (0xEFE324,'4C8D05E55B2EFFBA20000000488D0D09FDE500E8C4ADD9FF488B0DFDFCE500E964FF3FFF488BD6E8800140FF488B00E9AE0040FF488B542440488D4C2430E809024DFF0FB64C2450E9DDFF3FFF488D4C2430E90D0040FF'),
+            (0x31E670,'40574881EC90000000488BFA4885C9742E48899C24A0000000FF1561D25301488BD84885C00F84EB23BE00488BC3488B9C24A00000004881C4900000005FC333C0EBF3'),
+            (0xF00A86,'FF15DCAE95008BD0488D4C2468E8881CE3FF807820017403488B004C8BC8488D153597BC004C8BC7488D4C2440E8887217FF488BC8488D159846960033C041B9FFFFFFFF8944243041B8E000000089442428C744242001000000E80BD541FF488D4C2440E8213E17FF488D4C2468E8173E17FF90E99CDB41FF'),
+            (0x31E6C0,'4883EC28E8C7FBFDFF48890550659D014885C075054883C428C3'),
+            (0x2FE388,'FF1542D55501'),(0x31E689,'FF1561D25301'))}
+        self.parts.update({0x1C3624C:struct.pack('<IIIII',0x1C36648,0,0,0x1C38088,0x185B258),
+                           0x1C38088:b'KERNEL32.dll\0',
+                           0x1C36CC0:struct.pack('<Q',0x1C37618),
+                           0x1C36CE0:struct.pack('<Q',0x1C375CE),
+                           0x1C37618:b'\xf7\x03LoadLibraryW\0',
+                           0x1C375CE:b'\xdd\x02GetProcAddress\0'})
+        self.header={0x3C:0x100,0x190:0x1C3624C,0x194:420}
+        self.pe=SimpleNamespace(image_base=0x180000000,
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000],
+            u32_at_file=lambda at:self.header[at])
+
+    def test_selected_imports_and_handle_cache(self):
+        row=unity_module_lookup(self.pe,source='fixture.UnityPlayer.dll')
+        self.assertEqual([r['name'] for r in row['selectedImports']],['LoadLibraryW','GetProcAddress'])
+        self.assertEqual(row['moduleHandleCacheRva'],0x1CF4C20)
+        self.assertEqual(len(row['bodies']),5)
+
+    def test_truncated_trailing_and_malformed_body_descriptor_thunk_or_name(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError) as raised:
+                    unity_module_lookup(self.pe,source='fixture.UnityPlayer.dll')
+                self.assertIn('fixture.UnityPlayer.dll',str(raised.exception))
+            self.parts[at]=good
+
+    def test_wrong_directory_offset_or_size(self):
+        for at in (0x190,0x194):
+            good=self.header[at]
+            for bad in (0,good-1,good+1,0xFFFFFFFF):
+                self.header[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_module_lookup(self.pe,source='fixture.UnityPlayer.dll')
+            self.header[at]=good
 
 
 class ResolverKeyComparisonTests(unittest.TestCase):

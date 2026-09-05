@@ -411,8 +411,15 @@ Current durable boundaries:
   this is not complete export coverage or a concrete registration receipt.
   Exact-build UnityPlayer additionally requests that export into a function cache;
   a reviewed forwarder passes its original pair through optional callbacks before
-  tail-calling the cache. Module identity, successful resolution, callback contents
-  remain unknown. A complete native loop now proves one static name/value pair by
+  tail-calling the cache. The loader's shared module-handle cell receives either
+  a helper-supplied cached qword or the preserved return from the static
+  `LoadLibraryW` import after representation conversion and slash replacement.
+  The lookup helper forwards module/name to the static `GetProcAddress` import;
+  its zero-result cold path rejoins the saved zero if diagnostic calls return.
+  Selected import descriptor/name-thunk joins prove these request identities,
+  not live IAT contents, conversion validity, input path or loaded image identity.
+  Successful resolution and callback contents remain unknown.
+  A complete native loop now proves one static name/value pair by
   loading both arrays with the same advancing byte offset; complete pointer vectors
   are bounded, not fully decoded strings/functions. Its registered name omits the
   request's parentheses. On successful delimiter search, the resolver constructs
