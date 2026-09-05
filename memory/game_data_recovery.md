@@ -149,6 +149,11 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   structurally. Native signed-positive loop use does not establish serialized
   validity, a semantic count name or sizeof. Multi-target clusters remain
   unsupported, aliases stay ambiguous, and unseen exclusive gap lengths fail.
+  Selector9 remains unsupported: its prefix writes into returned component
+  storage, but the live mapping index, record index and resulting pool span
+  are not bounded by the reviewed accessors. Constructor allocations alone
+  do not prove current backing ownership. A presumed valid runtime object
+  must not substitute for this missing carrier/extent evidence.
   Paired formatters prove first=Init and second=Streaming with identical
   root/dev/key inputs; both use one serialized ordinal, not runtime allocation
   order. Complete ordered field3/field4 witnesses match between paired files,
@@ -311,10 +316,10 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Next bind marker2's selector9 small-gap subset through its complete native
-  registration, constructor-produced context and prefix write-set evidence.
-  Keep live/unreplaced subobjects as an explicit condition, not a runtime
-  receipt. Multi-target clusters still require independent extent evidence;
+- Streaming's next advance requires independent record-end evidence or a
+  bounded runtime carrier witness. Keep selector9 held until its component
+  mapping indices and write span are authenticated; do not repeat anonymous
+  load-width or target-distance statistics. Multi-target clusters need extents;
   neither zero values nor a loop skip establishes validity or sizeof.
   Marker13's observed gap profiles are anonymous, and serialized absence is
   not a numeric selector.
