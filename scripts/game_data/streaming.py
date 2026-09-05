@@ -339,7 +339,8 @@ def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
 
 
 def _parse_paired_group_subgraph(
-    data: bytes, root: dict[str, Any], family: str
+    data: bytes, root: dict[str, Any], family: str,
+    *, range_sink: list[tuple[int, int, str]] | None = None,
 ) -> dict[str, Any]:
     """Frame one selected-build paired group subgraph without naming fields."""
 
@@ -556,6 +557,8 @@ def _parse_paired_group_subgraph(
             f"{current[3]}={current[0]}:{current[1]}"
         )
     unique_ranges = {(start, end, kind) for start, end, kind, _label in ranges}
+    if range_sink is not None:
+        range_sink.extend(sorted(unique_ranges))
     return {
         "status": "exact_anonymous_subgraph",
         "pairedGroupCount": id_group_count,
@@ -682,7 +685,9 @@ def _selector5_key_ranges(
 
 
 def _parse_parallel_root_subgraph(
-    data: bytes, root: dict[str, Any], family: str
+    data: bytes, root: dict[str, Any], family: str,
+    *, range_sink: list[tuple[int, int, str]] | None = None,
+    include_marker13_directory: bool = False,
 ) -> dict[str, Any]:
     """Frame root fields 3/4/5 without interpreting their values or children.
 
@@ -722,6 +727,7 @@ def _parse_parallel_root_subgraph(
     marker15_probe_widths = (1, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64)
     selector5_rows = []
     marker17_rows = []
+    marker13_rows = []
     selector5_ranges = []
     row_field0_digest = hashlib.sha256()
 
@@ -1012,13 +1018,13 @@ def _parse_parallel_root_subgraph(
                         if width <= len(data) - target:
                             marker15_prefix_fits[width] += 1
                     continue
-                if marker != 17:
+                if marker != 17 and not (marker == 13 and include_marker13_directory):
                     continue
                 label = (
                     f"{family} field 5 row {index} nested element {element_index} "
                     f"marker {marker}"
                 )
-                child_ranges, byte_count = _nested_reference_ranges(
+                child_ranges, byte_count = ([], 0) if marker == 13 else _nested_reference_ranges(
                     data, nested_starts[5] + 4 + element_index * 4, marker, label
                 )
                 for child_range in child_ranges:
@@ -1035,7 +1041,7 @@ def _parse_parallel_root_subgraph(
                 root_marker = data[field4_start + 4 + index]
                 selector = (_u32(data, selector_slot)
                             if root_marker == 2 and selector_slot is not None else None)
-                marker17_rows.append({
+                directory_row = {
                     "outerRowIndex": index, "outerRowOffset": int(row["tableOffset"]),
                     "rootMarker": root_marker,
                     "rowSelectorU32": selector,
@@ -1052,7 +1058,19 @@ def _parse_parallel_root_subgraph(
                         {"start": start, "end": end, "kind": kind}
                         for start, end, kind, _label in child_ranges
                     ],
-                })
+                }
+                if marker == 13:
+                    directory_row.pop("byteCount")
+                    directory_row.pop("wrapperAndByteRanges")
+                    directory_row.update(
+                        rootMarkerOffset=field4_start + 4 + index,
+                        rowSelectorOffset=selector_slot if root_marker == 2 else None,
+                        targetStart=_bounded_anonymous_target(
+                            data, directory_row["targetSlotOffset"], label),
+                    )
+                    marker13_rows.append(directory_row)
+                    continue
+                marker17_rows.append(directory_row)
                 nested_framed[marker] += 1
                 nested_bytes[marker] += byte_count
 
@@ -1075,9 +1093,16 @@ def _parse_parallel_root_subgraph(
                 f"overlap: {previous[0]}:{previous[1]} ({previous[2]}) and "
                 f"{current[0]}:{current[1]} ({current[2]})"
             )
+    if range_sink is not None:
+        range_sink.extend(unique_ranges)
     return {
         "status": "exact_anonymous_subgraph",
         "parallelCount": field3_count,
+        **({"marker13KeyDirectory": {
+            "status": "exact-structural-reference-directory",
+            "rows": marker13_rows, "targetOwnedBytes": 0,
+            "extentStatus": "unresolved", "evidenceLevel": "structural-only",
+        }} if include_marker13_directory else {}),
         "orderedRootWitness": {
             "rowCount": field3_count,
             "field3VectorSha256": hashlib.sha256(data[field3_start:field3_end]).hexdigest().upper(),
@@ -1180,6 +1205,7 @@ def _parse_field2_terminal_subgraph(
     family: str,
     *,
     native_layout_validated: bool,
+    range_sink: list[tuple[int, int, str]] | None = None,
 ) -> dict[str, Any]:
     """Frame the selected-build root-field-2 terminal subgraph to EOF.
 
@@ -1380,6 +1406,8 @@ def _parse_field2_terminal_subgraph(
             f"{unique_ranges[-1][1]}, expected EOF {len(data)}"
         )
 
+    if range_sink is not None:
+        range_sink.extend(unique_ranges)
     return {
         "status": "exact_anonymous_eof_subgraph",
         "rowCount": row_count,
@@ -1538,6 +1566,7 @@ def parse_streaming_file(
     *,
     allow_raw: bool = False,
     native_layout_validated: bool = False,
+    include_certified_ranges: bool = False,
 ) -> dict[str, Any]:
     """Validate one block-15 file's observed envelope and root table.
 
@@ -1551,6 +1580,9 @@ def parse_streaming_file(
     return an exact anonymous inner table/vector framing. Field-2 typed loads
     are published only when the caller has separately revalidated the selected-
     build native contract and passes ``native_layout_validated=True``.
+    ``include_certified_ranges`` exposes only successfully checked structural
+    ranges and marker13 reference identities for downstream gap analysis. It
+    does not own those targets, infer their lengths, or fill unknown gaps.
     """
 
     if kind not in {"init", "streaming", "info"}:
@@ -1604,18 +1636,35 @@ def parse_streaming_file(
     if kind == "info":
         result["anonymousInner"] = _parse_info_inner(clear, layout)
     elif kind in {"init", "streaming"}:
+        ranges = [] if include_certified_ranges else None
         result["anonymousParallelSubgraph"] = _parse_parallel_root_subgraph(
-            clear, layout, kind
+            clear, layout, kind, range_sink=ranges,
+            include_marker13_directory=include_certified_ranges,
         )
         result["anonymousGroupSubgraph"] = _parse_paired_group_subgraph(
-            clear, layout, kind
+            clear, layout, kind, range_sink=ranges
         )
         result["anonymousField2TerminalSubgraph"] = _parse_field2_terminal_subgraph(
             clear,
             layout,
             kind,
             native_layout_validated=native_layout_validated,
+            range_sink=ranges,
         )
+        if ranges is not None:
+            ranges.extend([
+                (0, 4, "root-uoffset"),
+                (layout["rootOffset"], layout["rootOffset"] + layout["objectSize"], "table"),
+                (layout["vtableOffset"], layout["vtableOffset"] + layout["vtableSize"], "vtable"),
+            ])
+            certified = sorted(set(ranges))
+            for previous, current in zip(certified, certified[1:]):
+                if current[0] < previous[1]:
+                    raise ValueError(
+                        f"Streaming {kind} merged certified ranges at {current[0]}: "
+                        f"expected no non-identical overlap, actual {previous} / {current}"
+                    )
+            result["decodedCertifiedRanges"] = certified
     return result
 
 

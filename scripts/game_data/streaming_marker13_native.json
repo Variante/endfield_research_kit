@@ -1,0 +1,154 @@
+{
+  "schema": "endfield.streaming-marker13-native-contract.v1",
+  "status": "validated-conditional-static",
+  "nativeMappingId": "endfield-2026-09-05-streaming-marker13-selector9-slot4-slot5-read16",
+  "dependency": {
+    "path": "scripts/game_data/streaming_marker17_native.json",
+    "schema": "endfield.streaming-marker17-native-contract.v2",
+    "sha256": "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891",
+    "requiredUnityPlayerRoles": [
+      "indexedCallbackAssignment"
+    ],
+    "requiredDefaultRegistration": {
+      "selector": 9,
+      "slot": 3,
+      "reusedEvidence": [
+        "descriptorConstructorSpan",
+        "publicationSpan"
+      ],
+      "qualification": "selector9 descriptor construction/publication and shared indexed assignment only; slot3 reader/key are not reused as marker13 evidence"
+    }
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerRanges": [
+    {
+      "role": "selector9Slot4Reader",
+      "rva": 14940784,
+      "fileOffset": 14938224,
+      "size": 195,
+      "bodySha256": "83D18770C2D4F50D729B3AE2CC3C6E9BEADCA3F439BF8EBE8045B2E799030770",
+      "entryBytesHex": "48895C2408574883EC30F20F10059686C6004C8D4424488B059386C600488BFA"
+    },
+    {
+      "role": "selector9Slot5Reader",
+      "rva": 14941152,
+      "fileOffset": 14938592,
+      "size": 195,
+      "bodySha256": "5AF4E0C89E331B6B1E7DE46B8F0C8F0BF4BB4BB30247287E6DBA2162DC4524E0",
+      "entryBytesHex": "48895C2408574883EC30F20F10052685C6004C8D4424488B052385C600488BFA"
+    },
+    {
+      "role": "slot4LocalFourDwordConsumer",
+      "rva": 2180112,
+      "fileOffset": 2177552,
+      "size": 744,
+      "bodySha256": "579EA39C7C6BBF8A590A1F64A28A78C8FE9C60922939CC0199B591F5F63C74E3",
+      "entryBytesHex": "4C8BDC4D894B2053555657415441554883EC684533ED4D897308498BD9498BE8"
+    },
+    {
+      "role": "slot5LocalFourDwordConsumer",
+      "rva": 2180864,
+      "fileOffset": 2178304,
+      "size": 510,
+      "bodySha256": "FA6F7E69182E7FA0BC81FC164892A9AA0D7584B0364F7F93A66A5D3B9CD930FB",
+      "entryBytesHex": "48895C241048896C241856574154415641574883EC304183780400498BD94D8B"
+    }
+  ],
+  "keyLiteralRange": {
+    "key": [
+      255,
+      0,
+      0
+    ],
+    "rva": 27951384,
+    "fileOffset": 27945240,
+    "bytesHex": "FF0000000000000000000000"
+  },
+  "selectedDefaultSlots": [
+    {
+      "selector": 9,
+      "key": [
+        255,
+        0,
+        0
+      ],
+      "slot": 4,
+      "readerRva": 14940784,
+      "registrationSpan": {
+        "rva": 3687189,
+        "fileOffset": 3684629,
+        "bytesHex": "488D0554B7AB004889B510120000488985181200004C8D8510120000488D8510120000B204488D8DB04C000048898548120000E863E7FFFF"
+      },
+      "readerRangeRole": "selector9Slot4Reader",
+      "downstreamRangeRole": "slot4LocalFourDwordConsumer"
+    },
+    {
+      "selector": 9,
+      "key": [
+        255,
+        0,
+        0
+      ],
+      "slot": 5,
+      "readerRva": 14941152,
+      "registrationSpan": {
+        "rva": 3687257,
+        "fileOffset": 3684697,
+        "bytesHex": "488D0580B8AB004889B550120000488985581200004C8D8550120000488D8550120000B205488D8DB04C000048898588120000E81FE7FFFF"
+      },
+      "readerRangeRole": "selector9Slot5Reader",
+      "downstreamRangeRole": "slot5LocalFourDwordConsumer"
+    }
+  ],
+  "profile": {
+    "family": "streaming",
+    "rootMarker": 2,
+    "rawSelector": 9,
+    "key": [
+      255,
+      0,
+      0
+    ],
+    "packedKey": 4278190080,
+    "marker": 13,
+    "readWidth": 16,
+    "dwordOffsets": [
+      0,
+      4,
+      8,
+      12
+    ],
+    "allocatedSizeStatus": "not-proven-by-native",
+    "markerBinding": "external authenticated same-element corpus join; native reader does not inspect marker13",
+    "extentStatus": "read-window-only; record extent and EOF unresolved",
+    "evidenceLevel": "structural-only"
+  },
+  "consumerReview": {
+    "readerAbi": "entry RCX=opaque runtime target,RDX=context; exact key[255,0,0] resolves context+0x80 field5[index] uoffset target; MOVUPS copies source[0:16] to caller-local storage before the original pointer is discarded",
+    "downstreamAbi": "slot4/5 helpers receive R8=caller-local 16-byte copy, not the serialized pointer; reviewed whole bodies conditionally read four anonymous dwords at offsets 0,4,8,12",
+    "readQualification": "offset +12 is branch-dependent; 16 is the bounded source-read window, not an object extent, allocation size, stride, padding or EOF statement",
+    "missingKeyQualification": "native missing-key paths may use static fallback storage; strict parsers must not invent serialized input"
+  },
+  "evidenceBoundary": {
+    "exact": [
+      "For this UnityPlayer image, the default selector9 descriptor installs the two pinned readers in slots4 and5 through the shared indexed assignment path.",
+      "Both readers load exact key[255,0,0], resolve one context+0x80 field5 target and copy its 16-byte window before calling independently pinned whole downstream consumers.",
+      "Across the two whole downstream consumers, anonymous dword lanes at offsets0,4,8,12 are conditionally read and no source byte beyond offset15 is read."
+    ],
+    "conditional": [
+      "family=streaming,rootMarker=2,rawSelector=9,key=0xFF000000,marker=13 is an authenticated corpus selection profile; marker13 itself is not inspected by the native readers.",
+      "Static default registration does not prove runtime callback receipt, absence of overrides, key lookup success or branch execution."
+    ],
+    "unresolved": [
+      "allocated gap size and record extent",
+      "native source extent, sizeof and final cursor/EOF",
+      "runtime callback execution and concrete context receipt",
+      "field names, object shape and game semantics"
+    ],
+    "prohibitedInference": "readWidth16 is only the highest bounded native read window. It must not be promoted to allocation size, serialized record extent, padding, EOF, type name or semantics."
+  }
+}

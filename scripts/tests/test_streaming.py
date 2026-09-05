@@ -1,5 +1,8 @@
 import hashlib
 import unittest
+from unittest import mock
+
+from scripts.game_data import streaming as streaming_format
 
 from scripts.game_data.streaming import (
     _bounded_anonymous_target, _nested_reference_ranges, _selector5_key_ranges,
@@ -790,6 +793,68 @@ class StreamingTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_certified_range_projection_is_opt_in_and_preserves_default(self):
+        packed = _packed(_parallel_target_data_root())
+        default = parse_streaming_file("streaming", packed)
+        projected = parse_streaming_file("streaming", packed, include_certified_ranges=True)
+        ranges = projected.pop("decodedCertifiedRanges")
+        self.assertEqual(ranges, sorted(set(ranges)))
+        self.assertIn((0, 4, "root-uoffset"), ranges)
+        self.assertIn((24, 64, "table"), ranges)
+        self.assertIn((356, 364, "length-prefixed-byte-range"), ranges)
+        self.assertEqual(projected["anonymousParallelSubgraph"].pop("marker13KeyDirectory")["rows"], [])
+        self.assertEqual(default, projected)
+
+    def test_marker13_directory_records_reference_not_extent(self):
+        data = bytearray(_parallel_target_data_root())
+        data[237] = 13
+        data[228:232] = (0xFF000000).to_bytes(4, "little")
+        data[156:160] = (9).to_bytes(4, "little")
+        graph = parse_streaming_file("streaming", _packed(bytes(data)),
+                                     include_certified_ranges=True)
+        parallel = graph["anonymousParallelSubgraph"]
+        row = parallel["marker13KeyDirectory"]["rows"][0]
+        self.assertEqual((row["rootMarkerOffset"], row["rowSelectorOffset"], row["targetStart"]),
+                         (84, 156, 332))
+        self.assertEqual((row["rowSelectorU32"], row["key"], row["marker"]), (9, 0xFF000000, 13))
+        self.assertEqual(parallel["marker13KeyDirectory"]["targetOwnedBytes"], 0)
+        self.assertNotIn("byteCount", row)
+        self.assertNotIn("wrapperAndByteRanges", row)
+        self.assertFalse(any(start <= 332 < end for start, end, _kind in graph["decodedCertifiedRanges"]))
+
+    def test_certified_range_merge_rejects_cross_subgraph_overlap(self):
+        original = streaming_format._parse_paired_group_subgraph
+
+        def conflicting_range(*args, **kwargs):
+            result = original(*args, **kwargs)
+            kwargs["range_sink"].append((24, 65, "countermodel"))
+            return result
+
+        with mock.patch.object(streaming_format, "_parse_paired_group_subgraph", conflicting_range):
+            with self.assertRaisesRegex(ValueError, "merged certified ranges at 24.*overlap"):
+                parse_streaming_file("streaming", _packed(_parallel_target_data_root()),
+                                     include_certified_ranges=True)
+
+    def test_marker13_directory_bounds_before_reference_publication(self):
+        for value in (0, 0xFFFFFFFF):
+            data = bytearray(_parallel_target_data_root())
+            data[237] = 13
+            data[248:252] = value.to_bytes(4, "little")
+            with self.assertRaisesRegex(ValueError, "marker 13.*target"):
+                parse_streaming_file("streaming", _packed(bytes(data)), include_certified_ranges=True)
+
+    def test_marker13_directory_preserves_absence_and_duplicate_key(self):
+        data = bytearray(_parallel_target_data_root())
+        data[237] = 13
+        data[224:228] = data[228:232]
+        data[136:138] = bytes(2)
+        row = parse_streaming_file("streaming", _packed(bytes(data)), include_certified_ranges=True)[
+            "anonymousParallelSubgraph"]["marker13KeyDirectory"]["rows"][0]
+        self.assertEqual(row["keyOccurrenceCountInTable"], 2)
+        self.assertEqual(row["keyStatus"], "ambiguous")
+        self.assertIsNone(row["rowSelectorU32"])
+        self.assertIsNone(row["rowSelectorOffset"])
 
     def test_marker17_key_directory_reports_duplicate_key_ambiguity(self):
         data = bytearray(_parallel_target_data_root())

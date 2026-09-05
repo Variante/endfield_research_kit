@@ -109,6 +109,18 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   against authenticated bodies, not inferred as native EOF checks. Bytes30--31
   are explicitly unread/opaque, not certified padding. Equal lengths do not
   imply equal tags: the tag6 profile must not be dispatched as tag1.
+  The separate marker13 profile joins explicit raw selector9/root marker2 and
+  unique full key FF000000 to two independently pinned default consumers.
+  Its physical gap starts at a certified structural end and finishes at the
+  next certified start; other anonymous target addresses do not define either
+  boundary. The finite physical-gap profile accepts only 16 or 18 bytes; this
+  end need not equal the native 16-byte read end. Four anonymous
+  scalar32 positions are consumed conditionally; remaining gap bytes stay opaque
+  with unresolved ownership, even when zero. Serialized sizeof, field meanings and
+  native final cursor remain unknown; absent selectors and longer gaps are not
+  silently defaulted or treated as padding. The corpus gate inventories the
+  independently certified ranges, selected read windows and opaque complement,
+  keeping physical-gap lengths separate from read-window byte counts.
   Marker16 belongs to a different outer-row shape. These associations do not
   prove a union registry. Marker15 references require nonzero forward bounded
   targets; hashes bind each source/slot directory, but target contents and
@@ -283,22 +295,16 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Continue marker15 target extents from source-bound slot/count directories.
-  Marker17 body profiles are structurally closed but anonymous. A highest native read offset is
-  not an EOF check: bound unread gaps explicitly and verify full bodies. Use
-  independently reviewed consumer pointer arithmetic to select record order,
-  not length equations or fixed-size appearance alone. Paired
-  Init/Streaming leaf formats, shared serialized ordinal and ordered key/marker
-  witnesses are closed, but concrete runtime root/key provenance, existing-key
-  state, overrides and actual execution remain unobserved. The upstream
-  key's static Info source is bounded, but no concrete runtime Info record is
-  identified. Missing-count-
-  key rows remain unsupported by the selector profile; do not extend its
-  conditional subset to every marker-15 target. The directory is bounded,
-  not its records. Concrete runtime-root receipts and field-5 key namespace
-  follow the remaining structural/consumer closure.
-  Fixed-size-looking targets still need independent width/cursor
-  evidence; do not derive sizes solely from neighboring addresses. Then Terrain
+- Close marker13's remaining contexts only through independent selector/default
+  and physical-gap evidence; serialized absence is not a numeric selector.
+  Marker17 body profiles are structurally closed but anonymous. Marker15 still
+  needs a concrete producer, source extent or independently bounded unread
+  region: repeating a 16-byte native load does not prove record size. Its
+  directory is bounded, not its records; missing count keys remain unsupported.
+  Paired Init/Streaming paths, serialized ordinals and ordered witnesses do not
+  prove concrete runtime root/key receipt, fresh key state, absence of overrides
+  or execution. Native Info provenance is conditional, not a concrete record.
+  Keep field namespaces and runtime semantics behind those gaps. Then Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
   patch, and JsonData body semantics.
 - Recover more exact gameplay action/selector/formula contracts without

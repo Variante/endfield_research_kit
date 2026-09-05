@@ -210,6 +210,7 @@ set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStud
 %ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
 python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -246,6 +247,14 @@ unknown keys remain explicitly opaque/unsupported. It writes
 `reports/animestudio/streaming_marker17_bodies_latest.json` plus `.md`.
 Partial `--max-files` probes require explicit output paths and are not eligible
 as complete-corpus evidence. Record fields and runtime selection remain unknown.
+`streaming_marker13_corpus` rereads the complete block-15 ledger through the
+source-bound Streaming parser, joins marker13 references to independently
+certified structural neighbours, and tests the native-gated selector9 gap
+profile. Its inventory separates certified structure, selected physical gaps
+and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
+Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
+`streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
+`tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
