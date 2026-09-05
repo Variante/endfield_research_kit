@@ -395,7 +395,11 @@ Current durable boundaries:
   The format-item helper and its separate cold fragment establish a local
   32-byte return: selector, optional bounded colon span, index after the closing
   brace and comma-derived numeric value. This cursor is not whole-format EOF;
-  comma character-helper behavior and complete arbitrary-input grammar remain open.
+  The character helper bounds the DWORD index against carrier length and reads
+  two-byte elements. Literal construction independently joins ASCII widening,
+  element-count forwarding and the same length/data offsets in the output carrier.
+  Allocation/copy/capacity helpers, non-ASCII cold paths and complete arbitrary-input
+  grammar remain open; this does not establish Unicode conversion parity.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.

@@ -28,6 +28,10 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2CB7620, 0x2CB7644, 'C332CA386F5074737EB183541FF260B00C2E320643BF053F232BC20BB7A6893F'),
+    (0x24AD0, 0x24B56, 'C04E3409F7569FAE94392CA5CE396169B3B2772EAD624C33E830002C78A16997'),
+    (0x24B60, 0x2500D, '56A439DA1E4192F3408C7313DCE204E51B31BFE461F0BE1F8DEA1FF47EDB7B12'),
+    (0x25870, 0x25A20, 'A3ACD6AD99169AEAD1FA8F74CDF0B9F04742051A1889D30AD7DCC6C156B876E6'),
     (0x2DF4460, 0x2DF4684, 'AC887FDEF479D755A8389CCF34DE243A1C762D32ABD70CE699DC2297985D01D9'),
     (0x4C5DC40, 0x4C5DD38, '594A25EE92B3F5F9C4BAE27D83336887CDA9124D0779F6EB9DF94044B91AFBF6'),
     (0x2D8DE0, 0x2D8EAC, '88A126F8A51C4D39BE8C73B8E5594A436A41066417A841C66EEA5DB04D8CC67A'),
@@ -1048,7 +1052,27 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'methodSpecIndex':index,'methodSpecRawHex':spec.hex().upper(),
             'methodInstantiation':instance.as_dict(),'windows':windows,
             'level':'exact static original MethodSpec; direct conditional 16-bit-unit consumption',
-            'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, format-item parsing, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
+            'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
+
+
+def vfs_string_carrier(pe,*,source):
+    """Conditional literal conversion and character-reader carrier connection."""
+    windows=[]
+    for rva,expected in (
+        (0x2CB7624,'4C6341108BC2493BC07D0D4863C20FB7444114'),
+        (0x24AD6,'448BC2488BD1488D4C2420E87A000000'),
+        (0x24AE7,'488D4C242048837C243807480F474C24208B542430E86F0D0000'),
+        (0x24BB2,'0FB60A80F980730C440FB6C141B901000000'),
+        (0x24CC1,'0FB61E0FB60E80F9800F833C01000048FFC6'),
+        (0x24CED,'488D480148894F10488BCF48837F18077603488B0F66891C416644896C4102'),
+        (0x259DC,'897B10664489647B14'),
+        (0x259FB,'4C8BC7488D4B144D03C0498BD6E813932B00')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'windows':windows,'lengthOffset':16,'elementDataOffset':20,'elementByteLength':2,
+            'level':'direct conditional native carrier flow; ASCII widening branch',
+            'boundary':'The format-item comma helper zero-extends the input DWORD index before comparing it with sign-extended carrier length at +0x10; for nonnegative length this rejects negative indices as well as indices at or above length. The accepted path returns the zero-extended WORD at carrier+0x14+index*2. Literal construction forwards its input pointer and zero-extended DWORD byte count into a temporary 32-byte conversion carrier. On the reviewed ASCII branch each byte below 0x80 becomes one 16-bit element, the temporary element count advances by one, and a following zero WORD is written. The wrapper chooses inline versus pointer storage by capacity>7 and forwards the low DWORD element count. The next helper writes result+0x10 length and a zero WORD at result+0x14+count*2 on its nonempty allocation path, then calls the copy helper with destination result+0x14, original element pointer and count*2. These offsets independently agree with the format-item reader. Allocation/capacity/copy helpers, empty singleton contents, non-ASCII cold/error branches, cache initialization and actual execution remain unresolved; this is not complete Unicode conversion parity or proof of a runtime output path.'}
 
 
 def vfs_format_item(pe,*,source):
@@ -1079,7 +1103,7 @@ def vfs_format_item(pe,*,source):
                 {'offset':24,'length':4,'role':'index after closing brace'},
                 {'offset':28,'length':4,'role':'zero or comma-derived signed numeric value'}],
             'level':'direct conditional native return ABI',
-            'boundary':'The caller supplies RCX result storage, RDX format carrier and R8D opening-brace index; the helper returns the same storage in RAX. Main and separate cold fragments were reviewed together. Reads use carrier+0x14 and two-byte indices, with length at +0x10. The numeric selector is decimal accumulated and must be below 16 before proceeding. Normal return writes all 32 result bytes: selector, zero padding, a zero span or nonempty colon-span pointer with count and zero padding, index one past the closing brace, and a comma-derived numeric value (zero when absent). The nonempty span excludes colon and closing brace and checks start/count against carrier length. The caller copies both 16-byte halves and reads result+0x18; this is a local item cursor, not whole-format EOF. Comma parsing invokes an unreviewed character helper; error helper behavior, arbitrary-input validity, string-construction ABI, nested generic formatting and actual execution remain unresolved. No full grammar emulator or runtime output path is asserted.'}
+            'boundary':'The caller supplies RCX result storage, RDX format carrier and R8D opening-brace index; the helper returns the same storage in RAX. Main and separate cold fragments were reviewed together. Reads use carrier+0x14 and two-byte indices, with length at +0x10. The numeric selector is decimal accumulated and must be below 16 before proceeding. Normal return writes all 32 result bytes: selector, zero padding, a zero span or nonempty colon-span pointer with count and zero padding, index one past the closing brace, and a comma-derived numeric value (zero when absent). The nonempty span excludes colon and closing brace and checks start/count against carrier length. The caller copies both 16-byte halves and reads result+0x18; this is a local item cursor, not whole-format EOF. The character helper is separately joined in selectedVfsStringCarrier; error helper behavior, arbitrary-input validity, string-construction ABI, nested generic formatting and actual execution remain unresolved. No full grammar emulator or runtime output path is asserted.'}
 
 
 def vfs_path_literals(pe,md,*,source,metadata_source):
@@ -1479,6 +1503,7 @@ def audit():
     path_format=vfs_path_format_context(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     path_literals=vfs_path_literals(pe,md,source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     format_item=vfs_format_item(pe,source=str(gate.gameassembly))
+    string_carrier=vfs_string_carrier(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1515,6 +1540,7 @@ def audit():
         'selectedVfsPathFormatContext':path_format,
         'selectedVfsPathLiterals':path_literals,
         'selectedVfsFormatItem':format_item,
+        'selectedVfsStringCarrier':string_carrier,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

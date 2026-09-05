@@ -28,6 +28,41 @@ from scripts.game_data.il2cpp_context_audit import vfs_path_format_context
 from scripts.game_data.il2cpp_context import literal_record
 from scripts.game_data.il2cpp_context_audit import vfs_path_literals
 from scripts.game_data.il2cpp_context_audit import vfs_format_item
+from scripts.game_data.il2cpp_context_audit import vfs_string_carrier
+
+
+class VfsStringCarrierTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2CB7624,'4C6341108BC2493BC07D0D4863C20FB7444114'),
+            (0x24AD6,'448BC2488BD1488D4C2420E87A000000'),
+            (0x24AE7,'488D4C242048837C243807480F474C24208B542430E86F0D0000'),
+            (0x24BB2,'0FB60A80F980730C440FB6C141B901000000'),
+            (0x24CC1,'0FB61E0FB60E80F9800F833C01000048FFC6'),
+            (0x24CED,'488D480148894F10488BCF48837F18077603488B0F66891C416644896C4102'),
+            (0x259DC,'897B10664489647B14'),
+            (0x259FB,'4C8BC7488D4B144D03C0498BD6E813932B00'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_reader_and_constructor_offsets(self):
+        row=vfs_string_carrier(self.pe,source='fixture.dll')
+        self.assertEqual((row['lengthOffset'],row['elementDataOffset'],row['elementByteLength']),(16,20,2))
+
+    def test_truncated_and_trailing_windows(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!'):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    vfs_string_carrier(self.pe,source='fixture.dll')
+            self.parts[at]=good
+
+    def test_changed_bounds_width_and_copy_target_fail(self):
+        for at in (0x2CB7624,0x24CED,0x259DC,0x259FB):
+            good=self.parts[at];self.parts[at]=good[:-1]+bytes([good[-1]^1])
+            with self.subTest(at=at),self.assertRaises(ContextError):
+                vfs_string_carrier(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class VfsFormatItemTests(unittest.TestCase):
