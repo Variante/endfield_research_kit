@@ -27,6 +27,44 @@ from scripts.game_data.il2cpp_context_audit import vfs_path_carrier
 from scripts.game_data.il2cpp_context_audit import vfs_path_format_context
 from scripts.game_data.il2cpp_context import literal_record
 from scripts.game_data.il2cpp_context_audit import vfs_path_literals
+from scripts.game_data.il2cpp_context_audit import vfs_format_item
+
+
+class VfsFormatItemTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2DF2D39,'488D4DC7448BC3488BD7'),(0x2DF2D48,'E8131700000F10008B7018'),
+            (0x2DF4468,'418BD8488BFA488BF1'),(0x2DF447F,'FFC348636A10'),
+            (0x2DF44AF,'0FB75442148D42D06683F809'),(0x2DF4515,'4183FE10'),
+            (0x2DF4594,'44895E04FFC3'),(0x2DF45AC,'448936'),(0x2DF45B4,'44897E1C'),
+            (0x2DF45BD,'895E180F114608'),
+            (0x2DF4639,'488D4F1444895C242C4A8D0C61896C242848894C24200F28442420'),
+            (0x4C5DC40,'4183FE100F8C906819FE'),(0x4C5DD0E,'41F7DF4533DB'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_return_ranges_tile_exact_result(self):
+        row=vfs_format_item(self.pe,source='fixture.dll')
+        cursor=0
+        for part in row['resultRanges']:
+            self.assertEqual(part['offset'],cursor)
+            cursor+=part['length']
+        self.assertEqual(cursor,row['resultByteLength'])
+
+    def test_truncated_and_trailing_instruction_windows(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!'):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    vfs_format_item(self.pe,source='fixture.dll')
+            self.parts[at]=good
+
+    def test_wrong_call_count_or_output_offset_fails(self):
+        for at in (0x2DF2D48,0x2DF4515,0x2DF45BD,0x4C5DC40):
+            good=self.parts[at];self.parts[at]=good[:-1]+bytes([good[-1]^1])
+            with self.subTest(at=at),self.assertRaises(ContextError):
+                vfs_format_item(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class LiteralRecordTests(unittest.TestCase):

@@ -392,7 +392,11 @@ Current durable boundaries:
   bounded literal-table/pool bytes: four brace/slash patterns are static format
   inputs, not executed output paths. The literal sweep validates every row while
   allowing shared pool ranges; it does not claim exclusive metadata coverage.
-  Format-item parsing, nested dispatch, capacity/copy helpers, getter values, final path/root,
+  The format-item helper and its separate cold fragment establish a local
+  32-byte return: selector, optional bounded colon span, index after the closing
+  brace and comma-derived numeric value. This cursor is not whole-format EOF;
+  comma character-helper behavior and complete arbitrary-input grammar remain open.
+  Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input

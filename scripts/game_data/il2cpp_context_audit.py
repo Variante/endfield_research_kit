@@ -28,6 +28,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2DF4460, 0x2DF4684, 'AC887FDEF479D755A8389CCF34DE243A1C762D32ABD70CE699DC2297985D01D9'),
+    (0x4C5DC40, 0x4C5DD38, '594A25EE92B3F5F9C4BAE27D83336887CDA9124D0779F6EB9DF94044B91AFBF6'),
     (0x2D8DE0, 0x2D8EAC, '88A126F8A51C4D39BE8C73B8E5594A436A41066417A841C66EEA5DB04D8CC67A'),
     (0x2DF2AA0, 0x2DF3271, 'AF49BFE87E68E091E58848935F5BEA3CC32DC280704D2235CD48D6DFCA3B753C'),
     (0x2D72FA0, 0x2D731F5, '445859C5F6E56B6F1C0987ABEABED40E5AF217F7FE42353A95DA117D4FB2B2E2'),
@@ -1049,6 +1051,37 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, format-item parsing, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def vfs_format_item(pe,*,source):
+    """Local format-item return ABI; not whole-format or serialized EOF."""
+    windows=[]
+    for rva,expected in (
+        (0x2DF2D39,'488D4DC7448BC3488BD7'),
+        (0x2DF2D48,'E8131700000F10008B7018'),
+        (0x2DF4468,'418BD8488BFA488BF1'),
+        (0x2DF447F,'FFC348636A10'),
+        (0x2DF44AF,'0FB75442148D42D06683F809'),
+        (0x2DF4515,'4183FE10'),
+        (0x2DF4594,'44895E04FFC3'),
+        (0x2DF45AC,'448936'),
+        (0x2DF45B4,'44897E1C'),
+        (0x2DF45BD,'895E180F114608'),
+        (0x2DF4639,'488D4F1444895C242C4A8D0C61896C242848894C24200F28442420'),
+        (0x4C5DC40,'4183FE100F8C906819FE'),
+        (0x4C5DD0E,'41F7DF4533DB')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'windows':windows,'resultByteLength':32,
+            'resultRanges':[
+                {'offset':0,'length':4,'role':'numeric selector'},
+                {'offset':4,'length':4,'role':'zero'},
+                {'offset':8,'length':16,'role':'zero or bounded colon-span pointer/count/padding'},
+                {'offset':24,'length':4,'role':'index after closing brace'},
+                {'offset':28,'length':4,'role':'zero or comma-derived signed numeric value'}],
+            'level':'direct conditional native return ABI',
+            'boundary':'The caller supplies RCX result storage, RDX format carrier and R8D opening-brace index; the helper returns the same storage in RAX. Main and separate cold fragments were reviewed together. Reads use carrier+0x14 and two-byte indices, with length at +0x10. The numeric selector is decimal accumulated and must be below 16 before proceeding. Normal return writes all 32 result bytes: selector, zero padding, a zero span or nonempty colon-span pointer with count and zero padding, index one past the closing brace, and a comma-derived numeric value (zero when absent). The nonempty span excludes colon and closing brace and checks start/count against carrier length. The caller copies both 16-byte halves and reads result+0x18; this is a local item cursor, not whole-format EOF. Comma parsing invokes an unreviewed character helper; error helper behavior, arbitrary-input validity, string-construction ABI, nested generic formatting and actual execution remain unresolved. No full grammar emulator or runtime output path is asserted.'}
+
+
 def vfs_path_literals(pe,md,*,source,metadata_source):
     """Exact literal pool intervals plus selected native tag-5 consumers."""
     require(len(md.buf)>=24,True,metadata_source,0)
@@ -1445,6 +1478,7 @@ def audit():
     path_carrier=vfs_path_carrier(pe,md,modules,image_owners,source=str(gate.gameassembly))
     path_format=vfs_path_format_context(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     path_literals=vfs_path_literals(pe,md,source=str(gate.gameassembly),metadata_source=str(gate.metadata))
+    format_item=vfs_format_item(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1480,6 +1514,7 @@ def audit():
         'selectedVfsPathCarrier':path_carrier,
         'selectedVfsPathFormatContext':path_format,
         'selectedVfsPathLiterals':path_literals,
+        'selectedVfsFormatItem':format_item,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
