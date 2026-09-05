@@ -258,6 +258,10 @@ only.
   See `reports/assets/character_recovery/default_deferred_original_dxbc_replay.json`.
   Canonical deferred presentation remains fail-closed until live t7/t11 input
   production is validated; frozen capture replay is not a replacement.
+  Keep the captured output-merger blend: shader-side equivalent arithmetic
+  changes retained pixels. Sidecar presentation seeds owned scene color, then
+  blends the resolver through hardware; its equality test uses the published
+  surface depth, not the fullscreen triangle depth.
 - The AnimeStudio-owned shader recovery path may provide readable code and
   metadata. It does not prove runtime variant selection or final appearance.
 
