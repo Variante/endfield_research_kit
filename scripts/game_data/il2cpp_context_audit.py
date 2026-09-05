@@ -29,6 +29,11 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x1F0A0,0x1F0F8,'C9F38013332566AD167609C71B8F69552B51A2C45D2CEA1FDD23F35A5E62C727'),
+    (0x2DF840,0x2DF8D0,'2D2C7C970E0E0DD329559040D4D6D0EEABAC001A756EDE943F1F05674FC7029B'),
+    (0x248D0,0x249AC,'444E365BB37D609DD9797249C52EFC2BB7C0C81A41446EC74418B8DF509CA026'),
+    (0x23970,0x23A01,'80D05BC4EB99B2FA602AEFA2B958A59BCBE6DC305730DEAC6B9985D636997060'),
+    (0x22010,0x220F8,'1E01E4A3A3DC36DBAF211D51E1D536B33242F17305D82026070B610A5D901C04'),
     (0xE170,0xE1C2,'FD809E08E51CF3E1B28921E2E2C0652D36DC5D6352941014E8DC9D3C9F883A1C'),
     (0x20760, 0x20A33, 'E117B0BE3EFF364A7242B6EEC5F4C709DEB7FAE4E79DB2E5C9BA32CC7E54E7E1'),
     (0xF8718, 0xF8760, '83D8E4E7B974778AF6C6F832C5EB205EB612D2A469BDB76681A5B50156290EA1'),
@@ -1063,6 +1068,26 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def resolver_prefix_query(pe,*,source):
+    """Conditional prefix extent, not live key equality or lookup success."""
+    windows=[]
+    for at,expected in (
+        (0x1F2D6,'BA28000000488BCBE85D052C00'),
+        (0x1F2EC,'482BC34883F8FF'),
+        (0x1F2F9,'4C8BC84533C0488D542440488D4C2420E892FDFFFF'),
+        (0x1F30E,'488BD0488D4C2420E855460000'),
+        (0x1F0BD,'4C3941100F828F7A2C00488B4110492BC0493BC14C0F42C8'),
+        (0x1F0D5,'488379180F7603488B094A8D14014D8BC1488BCBE8E2570000'),
+        (0x2399C,'0F10070F11030F104F100F114B10'),
+        (0x24973,'4C8BC348894718488BD648895F10498BCEE897A32B00')):
+        raw=pe.bytes_at_va(pe.image_base+at,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,at)
+        windows.append({'rva':at,'rawHex':raw.hex().upper()})
+    return {'windows':windows,'queryStart':0,'delimiterByte':40,
+            'level':'direct conditional prefix-range construction',
+            'boundary':'After a successful delimiter search the resolver subtracts the query data pointer from the result, supplies that difference as requested length and supplies start zero to the subrange helper. The helper unsigned-checks start<=length, clamps requested length to length-start, selects inline or pointer bytes by capacity>15 and forwards source+start with the bounded count to a constructor. Its result is moved as two 16-byte halves into the second query carrier. For a valid successful search of the first left parenthesis this requests exactly the bytes before that delimiter, excluding parentheses and their suffix; it does not simply remove two final bytes. The reviewed search uses scalar and SIMD matching; no arbitrary no-match return guarantee is promoted from undefined BSF-zero destination contents. Allocation/copy/comparison helper semantics, malformed carriers, actual cache/tree contents and successful lookup remain unresolved. This conditional extent does not establish live equivalence between the requested and registered names.'}
+
+
 def unity_conversion_exports(pe,unity,*,source,unity_source):
     """Two selected export chains and conditional output-slot write ABI."""
     requests=[]
@@ -1652,6 +1677,7 @@ def audit():
     format_item=vfs_format_item(pe,source=str(gate.gameassembly))
     string_carrier=vfs_string_carrier(pe,source=str(gate.gameassembly))
     root_resolver=vfs_root_resolver(pe,source=str(gate.gameassembly))
+    prefix_query=resolver_prefix_query(pe,source=str(gate.gameassembly))
     unity_path=gate.gameassembly.with_name('UnityPlayer.dll')
     unity_pe=mapper.PeImage(unity_path)
     require(hashlib.sha256(unity_pe.buf).hexdigest().upper(),UNITY_SHA,unity_path)
@@ -1706,6 +1732,7 @@ def audit():
         'selectedVfsFormatItem':format_item,
         'selectedVfsStringCarrier':string_carrier,
         'selectedVfsRootResolver':root_resolver,
+        'selectedResolverPrefixQuery':prefix_query,
         'selectedUnityRegistrationForwarder':unity_forwarder,
         'selectedUnityRegistrationPair':unity_pair,
         'selectedUnityPathReturn':unity_path_evidence,

@@ -415,7 +415,10 @@ Current durable boundaries:
   remain unknown. A complete native loop now proves one static name/value pair by
   loading both arrays with the same advancing byte offset; complete pointer vectors
   are bounded, not fully decoded strings/functions. Its registered name omits the
-  request's parentheses, leaving the resolver helper join open. This is not evidence
+  request's parentheses. On successful delimiter search, the resolver constructs
+  a bounded prefix before the first left parenthesis, then moves that representation
+  into its second query. Copy/comparison semantics and actual lookup remain open;
+  this is not arbitrary suffix stripping or a no-match guarantee. This is not evidence
   of invocation, final registration ownership or target behavior. Insertion/query helpers, live contents
   and the Unity implementation join remain open; static producer code is not execution.
   The selected target returns a converter output slot after temporary cleanup.

@@ -33,7 +33,33 @@ from scripts.game_data.il2cpp_context_audit import unity_registration_forwarder
 from scripts.game_data.il2cpp_context_audit import unity_registration_pair
 from scripts.game_data.il2cpp_context_audit import unity_path_return
 from scripts.game_data.il2cpp_context_audit import unity_conversion_exports
+from scripts.game_data.il2cpp_context_audit import resolver_prefix_query
 from unittest.mock import patch
+
+
+class ResolverPrefixQueryTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x1F2D6,'BA28000000488BCBE85D052C00'),(0x1F2EC,'482BC34883F8FF'),
+            (0x1F2F9,'4C8BC84533C0488D542440488D4C2420E892FDFFFF'),
+            (0x1F30E,'488BD0488D4C2420E855460000'),
+            (0x1F0BD,'4C3941100F828F7A2C00488B4110492BC0493BC14C0F42C8'),
+            (0x1F0D5,'488379180F7603488B094A8D14014D8BC1488BCBE8E2570000'),
+            (0x2399C,'0F10070F11030F104F100F114B10'),
+            (0x24973,'4C8BC348894718488BD648895F10498BCEE897A32B00'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_start_and_delimiter(self):
+        row=resolver_prefix_query(self.pe,source='fixture.dll')
+        self.assertEqual((row['queryStart'],row['delimiterByte']),(0,40))
+
+    def test_bounds_call_and_move_windows_fail_closed(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    resolver_prefix_query(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class UnityConversionExportsTests(unittest.TestCase):
