@@ -309,7 +309,12 @@ Current durable boundaries:
   reach an error helper only on the new-output path; the existing-output path
   clears its length and skips the nonpositive loop. Preserve that native distinction
   without relaxing the maintained parser's negative-count rejection. Actual
-  provider selection, element dispatch and EOF are still open.
+  provider selection and EOF are still open. The element dispatcher reloads the
+  actual object's class after initialization and takes its target/companion pair.
+  The non-specialized branch calls that target with object, reader, output slot
+  and the loaded companion; a distinct equal-target path delegates through class
+  RGCTX helpers. Incoming RCX is not a caller-selected slot. Neither branch proves
+  the live formatter identity or a fixed element byte width.
   Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.

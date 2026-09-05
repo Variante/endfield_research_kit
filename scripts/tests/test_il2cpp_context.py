@@ -40,7 +40,31 @@ from scripts.game_data.il2cpp_context_audit import unity_loader_input
 from scripts.game_data.il2cpp_context_audit import unity_loader_conversion
 from scripts.game_data.il2cpp_context_audit import nested_reader_context
 from scripts.game_data.il2cpp_context_audit import list_formatter_candidate
+from scripts.game_data.il2cpp_context_audit import list_element_dispatch
 from unittest.mock import patch
+
+
+class ListElementDispatchTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={0x98CD0:bytes.fromhex(
+            '48895C2408488974241048897C241841564883EC20488B0A4D8BF1498BF0488BDAE89ABEF6FF488B3B488D0D90260204488B8790010000488BBF98010000483BC10F852B3D2600803DAFEDE00D000F84A1000000488B4720488B88C0000000488B11488BCEE8666CE40384C00F85F63C2600488B4720488B0D23D4000D488B98C000000083B9E000000000488B5B50747C33D2488BCBE885CBD0024885C0747733D2488BC8E876EDD00284C0756F488B4720488B88C0000000488B4958E89EEDD002488B4F204C8BC0498BD64C8B89C0000000488BCE4D8B4918E881A9A703488B5C2430488B742438488B7C24404883C420415EC3488D0DA4D3000DE88F84FAFFC605F5ECE00D01E947FFFFFFE8DED4F8FFE97AFFFFFFE82856A100CC33C0EBA1'),
+            0x2FCA38:bytes.fromhex('33C0418906E96DC3D9FF4C8BCF4D8BC6488BD6488BCBFFD090E959C3D9FF'),
+            0x98CF9:bytes.fromhex('488D0D90260204')}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_fixed_pair_and_rip_derived_special_target(self):
+        row=list_element_dispatch(self.pe,source='fixture.dll')
+        self.assertEqual(row['targetPairOffsets'],[0x190,0x198])
+        self.assertEqual(row['specializedTargetRva'],0x40BB390)
+        self.assertIn('ordinary indirect CALL',row['boundary'])
+
+    def test_truncated_trailing_changed_body_or_operand(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    list_element_dispatch(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class ListFormatterCandidateTests(unittest.TestCase):

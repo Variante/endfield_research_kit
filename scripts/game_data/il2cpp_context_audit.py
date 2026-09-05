@@ -333,6 +333,28 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def list_element_dispatch(pe,*,source):
+    """Object-selected target/companion ABI, not a selected element reader."""
+    bodies=[]
+    for start,end,expected in (
+        (0x98CD0,0x98DF1,'1BF6036D17FE88296002DAF06C93284CA14CA2C7117C2E89240F7FAF2D1D61FE'),
+        (0x2FCA38,0x2FCA56,'F223AF3B187BBB846AD744B4553E69B70D6BBBB616C49CB208C55A3CB2E3D9B9')):
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        digest=hashlib.sha256(raw).hexdigest().upper()
+        require(digest,expected,source,start)
+        bodies.append({'rva':start,'byteLength':len(raw),'sha256':digest})
+    # Decode the actual RIP operand rather than infer a target from nearby names.
+    at=0x98CF9;raw=pe.bytes_at_va(pe.image_base+at,7)
+    require(raw[:3],bytes.fromhex('488D0D'),source,at)
+    require(len(raw),7,source,at)
+    target=at+7+struct.unpack_from('<i',raw,3)[0]
+    require(target,0x40BB390,source,at)
+    return {'bodies':bodies,'targetPairOffsets':[0x190,0x198],'specializedTargetRva':target,
+            'fallbackCallRva':0x2FCA4E,'level':'direct conditional object-target/companion ABI',
+            'boundary':'Entry RDX is retained as the formatter object, R8 as the reader and R9 as the output pointer; incoming RCX is overwritten by the object class before the initialization helper call. The class is then reloaded and its +0x190 target and +0x198 companion are loaded as a pair. If the target differs from the exact RIP-derived comparison address, the cold branch performs an ordinary indirect CALL with RCX=object, RDX=reader, R8=output and R9=the loaded companion, then rejoins cleanup. It is not a tail jump, nor a companion inferred from declaration order. The equal-target path instead reads the loaded companion class RGCTX slots and calls another helper with the retained reader. A nonzero AL clears the output DWORD; the other path eventually forwards the retained reader/output, a helper-derived value and class slot three to another reader helper. These distinct branches do not certify which target the live object selects. Class initialization, actual target/companion identity and inflation, all delegated read widths/cursor changes and final EOF remain unresolved. No constant element byte width or terminal-candidate elimination follows.'}
+
+
 def list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,*,source):
     """Concrete registered candidate, separate from active provider dispatch."""
     identities=module_methods(pe,md,modules,image_owners,
@@ -1890,6 +1912,7 @@ def audit():
                                          source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     list_candidate=list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,
                                             source=str(gate.gameassembly))
+    list_dispatch=list_element_dispatch(pe,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -1990,6 +2013,7 @@ def audit():
         'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedReaderContext':nested_context,
         'selectedListFormatterCandidate':list_candidate,
+        'selectedListElementDispatch':list_dispatch,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
