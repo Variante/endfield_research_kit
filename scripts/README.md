@@ -211,6 +211,7 @@ set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStud
 python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -257,6 +258,15 @@ physical gaps and opaque remainder; a physical gap is not a serialized sizeof or
 Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
 `streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
 `tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.
+`streaming_marker2_directory` owns the complete nested reference/occupancy
+replay. `streaming_marker2_corpus` gates the separate selector6 finite-gap
+parser against the same source-bound ledger and ordered pairs; it publishes
+`streaming_marker2_latest.json`/`.md` and
+`streaming_marker2_inventory_latest.jsonl.gz` under `reports/animestudio/`.
+Its four-byte native window is separate from the physical gap and opaque
+complement. Unknown representations and multi-target clusters remain explicit;
+partial probes cannot replace complete reports. Both ends of a sweep check
+the live BLC path set as well as fingerprint contents and executing sources.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

@@ -136,10 +136,19 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   callback uses the second root's row-field3 for one scoped context. Full-u32
   key equality, collision probing, insertion/rehash and lookup are native-gated.
   Native duplicates retain the first ordinal; serialized joins instead reject
-  ambiguity. Unique count/element keys yield bounded marker2 four-byte and
-  marker15 sixteen-byte candidate reads, with known-range overlap checks.
+  ambiguity. Unique element keys yield bounded marker15 sixteen-byte candidate
+  reads, with known-range overlap checks.
   Missing count keys remain explicit unsupported rows; readable spans are not
   record extents or execution receipts.
+  The marker2 finite-gap parser selects only the independently gated
+  selector6/full-key09020000 context. It rebuilds the complete nested target
+  directory; unknown markers preserve raw slots and prevent occupancy closure.
+  An exclusive target must start at the preceding certified end and have a
+  4- or 6-byte gap to the next certified range. Only four bytes are projected;
+  the extra two remain opaque, even when zero. All u32 bit patterns are accepted
+  structurally. Native signed-positive loop use does not establish serialized
+  validity, a semantic count name or sizeof. Multi-target clusters remain
+  unsupported, aliases stay ambiguous, and unseen exclusive gap lengths fail.
   Paired formatters prove first=Init and second=Streaming with identical
   root/dev/key inputs; both use one serialized ordinal, not runtime allocation
   order. Complete ordered field3/field4 witnesses match between paired files,
@@ -302,11 +311,13 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Next close marker2's independently bounded small-gap count-read subset using
-  complete full-key/context and occupancy evidence. Separate its native read
-  window from any unread physical remainder; neither zero values nor a loop
-  skip establish serialized validity or sizeof. Marker13's observed gap profiles
-  are anonymous, and serialized absence is not a numeric selector.
+- Next bind marker2's selector9 small-gap subset through its complete native
+  registration, constructor-produced context and prefix write-set evidence.
+  Keep live/unreplaced subobjects as an explicit condition, not a runtime
+  receipt. Multi-target clusters still require independent extent evidence;
+  neither zero values nor a loop skip establishes validity or sizeof.
+  Marker13's observed gap profiles are anonymous, and serialized absence is
+  not a numeric selector.
   Marker17 body profiles are structurally closed but anonymous. Marker15 still
   needs a concrete producer, source extent or independently bounded unread
   region: repeating a 16-byte native load does not prove record size. Its

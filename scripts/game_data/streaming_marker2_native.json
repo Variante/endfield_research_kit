@@ -1,0 +1,155 @@
+{
+  "schema": "endfield.streaming-marker2-native-contract.v1",
+  "status": "validated-conditional-static",
+  "nativeMappingId": "endfield-2026-09-05-streaming-marker2-selector6-slot1-read4",
+  "dependency": {
+    "path": "scripts/game_data/streaming_marker17_native.json",
+    "schema": "endfield.streaming-marker17-native-contract.v2",
+    "sha256": "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891",
+    "requiredUnityPlayerRoles": [],
+    "registration": {
+      "selector": 6,
+      "reusedEvidence": [
+        "descriptorConstructorSpan",
+        "publicationSpan"
+      ]
+    },
+    "boundary": "Only selector6 descriptor construction and publication are reused; slot3 consumer is not marker2 evidence."
+  },
+  "baseContract": {
+    "path": "scripts/game_data/streaming_field2_native.json",
+    "schema": "endfield.streaming-field2-native-contract.v8",
+    "sha256": "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60",
+    "requiredUnityPlayerRoles": [
+      "callbackAssignment",
+      "callbackReset",
+      "defaultConstructorContextBasePrefix",
+      "descriptorConstructor",
+      "inlineCallbackCloneLeaf",
+      "inlineCallbackMove",
+      "inlineCallbackMoveLeaf",
+      "inlineCallbackVtable",
+      "keyIndexLookupWrapper",
+      "keyIndexMapAllocateEmptySlots",
+      "keyIndexMapEndIterator",
+      "keyIndexMapFind",
+      "keyIndexMapInit",
+      "keyIndexMapInitialEmptySlot",
+      "keyIndexMapInsert",
+      "keyIndexMapInsertThunk",
+      "keyIndexMapIteratorEquality",
+      "keyIndexMapRehashPreservingRows",
+      "keyIndexMapResize",
+      "marker2Slot1DispatchEntry",
+      "parallelScopeCallbackBridgeA",
+      "publishTenCallbacks",
+      "record32GrowInsert",
+      "record32Publish",
+      "record32RelocateLeaf",
+      "registrationNativeFunctionVtableAddress",
+      "rootMarkerByteCopy",
+      "rootMarkerRecordAllocator",
+      "slot1RowField3ContextScope",
+      "streamingField2RowConsumer"
+    ],
+    "boundary": "Reuse complete pinned registration, lookup equality and conditional runtime-row/context chain. New276-byte hot dispatcher supersedes only the old220-byte fragment; no other helper ranges copied."
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerRanges": [
+    {
+      "rva": 14924192,
+      "size": 229,
+      "role": "selector6Slot1WholeCountConsumer",
+      "fileOffset": 14921632,
+      "bodySha256": "B8E8574C65E1D1693242F36AC0C45063DC7E5BAAB920C3199C817C251B2802E3",
+      "entryBytesHex": "48895C24084889742410574883EC40F20F1005D1C7C6004C8D4424608B05CEC7"
+    },
+    {
+      "rva": 27951496,
+      "size": 12,
+      "role": "selector6FullCountKeyLiteral",
+      "fileOffset": 27945352,
+      "bodySha256": "9B62AAC9A52C713FE67F7184A21CACE56581B84B731062C99B712FBFF1593B03",
+      "entryBytesHex": "090000000200000000000000"
+    },
+    {
+      "rva": 3684215,
+      "size": 54,
+      "role": "selector6Slot1Assignment",
+      "fileOffset": 3681655,
+      "bodySha256": "794B12AA59C71797731C5EC83FEAFE28D8FA86B1C033A68A1E6FC732729AB090",
+      "entryBytesHex": "488D052282AB004889B59007000048898598070000488D9590070000488D8590"
+    },
+    {
+      "rva": 449920,
+      "size": 276,
+      "role": "slot1DispatcherCompleteHotBodySupersedes220BFragment",
+      "fileOffset": 447360,
+      "bodySha256": "7C53ADC2489B325A6325A457D2FE95024BDC6A37FA192D1794E0C23C574B3257",
+      "entryBytesHex": "4883EC480FB6014C8BD2488D159FE414004C8D04804D03C0488D05394596014A"
+    },
+    {
+      "rva": 15417356,
+      "size": 11,
+      "role": "slot1DispatcherColdIndirectBranch",
+      "fileOffset": 15414796,
+      "bodySha256": "9699531488649402701A0E2BB17112A2AB119E26A25ECF47B015BD0E67BA6D51",
+      "entryBytesHex": "498BD2FFD090E9CA9D1BFF"
+    },
+    {
+      "rva": 1819184,
+      "size": 61,
+      "role": "marker2Slot1SelectedEntryWholeBody",
+      "fileOffset": 1816624,
+      "bodySha256": "B3BD9371F135EBE14CC0CD3D4D89C15C2208853FD0EEA9149916812BFE3EA40D",
+      "entryBytesHex": "4C8BD2488B51204C8B4A10498BC9496301482BC8B808000000663B01731A0FB7"
+    }
+  ],
+  "profile": {
+    "family": "streaming",
+    "rootMarker": 2,
+    "rawSelector": 6,
+    "key": [
+      9,
+      2,
+      0
+    ],
+    "packedKey": 151126016,
+    "marker": 2,
+    "slot": 1,
+    "readWidth": 4,
+    "projection": "anonymous-u32",
+    "allowedWordValues": "all-u32-bit-patterns",
+    "keyMultiplicityPolicy": "unique in complete nested key vector",
+    "markerBinding": "independent authenticated same-element join; native does not inspect marker2",
+    "contextBinding": "conditional default slot1 callback with certified second-root row.field3 at context+0x80; paired-root witness required",
+    "extentStatus": "read-window-only; no serialized sizeof or native EOF proof",
+    "runtimeReceipt": "unresolved",
+    "targetOwnedBytes": 0,
+    "evidenceLevel": "structural-only"
+  },
+  "consumerReview": {
+    "registrationAbi": "383777 LEA E3B9A0; temporarycallback atRBP+790 with functionptr+8/native vtable+0 andself+38.38379A destinationRBP+59C8 = selector6 descriptorRBP+5980 plus48 (slot1);3837A8 calls382B20 assignment. Existing selector6 constructor383730 andpublication383952 reused exactly.",
+    "dispatchAbi": "6DD80 uses dispatch marker[RCX], runtime32Brecord=[RCX+20], rowR9=[record+10]. Presentfield2 dword ->R8D at6DDCC, runtimeargument=[record+18], context=[owner+60] ->1BC0C0. Pinned marker2 slot1 table entry selects1BC230, which repeats the accessor. Full hot276B+cold11B closes the earlier220B unwind fragment without claiming unrelated branch callees understood.",
+    "scopeAbi": "Existing1BC0C0 whole366B selects lowR8B*288, slot1 at+ D8.1BC1AB stores sameR9 row.field3 uoffset tocontext+80;1BC1BD passes samecontextR8 to1BC6D0 at1BC1C7.1BC1FF clears+80 only aftercallback/cleanup. Default nativefunction bridge forwards runtimeargumentRCX/contextRDX. No runtime scheduler receipt.",
+    "consumerAbi": "E3B9A0 preserves incomingRDX=context inRSI atE3B9C2. Literal(9,2,0)stackkey ->DFFC0 atE3B9D7. SuccessR8 outindex andALstatus from maintained complete-key equality/lookup ABI. No prelookup helper could changecontext. E3B9E2 reusesRSI+80 then field5 vector fromvtableentryE. E3BA13 loadsoutindex;E3BA17 scales4 foruoffsetslot, not record width. E3BA25/27 dereferenceforwardrelativepointer;E3BA33 sole4Bcount-target read destroys its originalpointer.",
+    "lookupBoundary": "Reuses maintained DFFC0 complete full-key equality/collision/index contract. It may initialize native key cache but source context+80 table remains selected. Native missingkey goesstaticdefault atE3BA2C; Python must require actual unique serializedkey and never fabricate missingdefault.",
+    "scalarAbi": "E3BA35 TEST EDI/E3BA37 JLE treats word as signedpositive loop bound. Positive path builds(9,1,i), i=0..bound-1 andcallsDDC40. Zero andnegativebothskiploop, returnAL1. This is direct runtime usage only; it doesnot prove serializedsemantic name/range ornegative validity."
+  },
+  "evidenceBoundary": {
+    "exact": "Selected build native4-byte load from full key(9,2,0) through same context+80 nested table and independently returned index.",
+    "conditional": "Default slot1 registration, actual row carrier and current paired-root witness required. Native does not inspect marker2. No runtime receipt.",
+    "unresolved": [
+      "serialized sizeof",
+      "native EOF",
+      "game semantics",
+      "negative-value validity",
+      "target ownership"
+    ],
+    "physicalGapPolicy": "Independent parser/corpus geometry may frame finite gaps; no gap extent or opaque-tail bytes are established by this native contract."
+  }
+}
