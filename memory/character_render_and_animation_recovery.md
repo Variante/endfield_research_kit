@@ -142,6 +142,13 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
+- ContactShadow captured-input replay needs repeat controls: original dispatches
+  can differ at pixels with overlapping recovered output writes. Preserve the
+  original dot-product instructions through distance quantization; scalar
+  multiply-add expansion caused a stable single-writer rounding mismatch.
+  Matching the single-writer subset does not certify overlapping writes, live
+  input ownership, or complete rendering parity. The compact evidence is in
+  `reports/assets/character_recovery/contact_shadow_write_overlap.json`.
 - Recovered scene-color/SceneMV copies must preserve attachment orientation so
   color remains registered to shared depth. `SetViewProjectionMatrices` takes
   the API-independent camera projection, not `GetGPUProjectionMatrix` output;
