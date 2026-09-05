@@ -17,13 +17,18 @@ from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationT
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
+from scripts.game_data.il2cpp_context import object_type_comparison_key
+from scripts.game_data.il2cpp_context import method_pointer_indices
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
-    (0x12CC0, 0x13169, 'BE122CAACEC77957916E5CC541FF0055ABFD9264303F7ACEB8BC48832933DCF3'),
+    (0x2CC6B0, 0x2CC78C, '24344F6D00D7721765E78CF8141E2D1645B867A92FCBC657A54A7447C58303EC'),
+    (0x2CC840, 0x2CC87C, '5E938881C79B911A1B1ACFE6BC3C4D3ABCC63D2552F05F0033FC67D0D49BEEF9'),
+    (0x438F0, 0x43943, '33FF46D3B9C40354CAA46CC41E0F5174C2A87AAF69638F4A90B0E858F2DD56B1'),
+    (0x9890, 0x9C67, '3764C631545FC23232AD4EBB109D0CC0415C1F5951531B840C207A4339749B34'),
     (0x13170, 0x134AF, '982687620B62840A318F9822B52C6F856D9FA5192337B1660007FD0306F52DD1'),
     (0x9C70, 0x9E6C, '0E56CE95E514F299C8F4D717C397811C7F1D16AC4E512C2955B23CCD05EA6F25'),
     (0x6A1E0, 0x6A39A, 'D9128C8BAB9B54797E0A0627E477F13A66063B5AB05932F0F9BB08475FE14E2B'),
@@ -142,6 +147,7 @@ def audit():
         (0x15E4C, '488D0D', candidates[0]),
         (0x15E68, '48890D', pe.image_base+0xDEB09B8),
         (0x12F74, '4C8B15', pe.image_base+0xDEB09B8),
+        (0x2C7555, '4C8B1D', pe.image_base+0xDEB09B8),
         (0x37DEADB, '488D0D', pe.image_base+0xCFF4E48),
         (0x37DE8E9, '488B15', pe.image_base+0xCFF4E48),
     ):
@@ -278,6 +284,46 @@ def audit():
     require(object_raw.hex().upper(),'068E00000000000000001C0000000000',gate.gameassembly,object_pointer)
     object_pair=table.resolve(1088)
     require([a.raw_type_record_hex for a in object_pair.arguments],[object_raw.hex().upper()]*2,gate.gameassembly)
+    # The code window ends before this separately read switch-data entry.
+    switch_entry=pe.image_base+0x2CC87C+(0x1C-0x0F)*4
+    require(pe.u32_at_va(switch_entry),0x2CC840,gate.gameassembly,switch_entry)
+    object_key=object_type_comparison_key(object_raw,source=str(gate.gameassembly),offset=object_pointer)
+    require(summary['failed'],0,'complete generic-instantiation sweep before candidate enumeration')
+    object_candidates=[]
+    for row in rows:
+        arguments=row['arguments']
+        if len(arguments)!=2:
+            continue
+        raw_arguments=[bytes.fromhex(a['raw_type_record_hex']) for a in arguments]
+        if any(raw[10]!=0x1C for raw in raw_arguments):
+            continue
+        keys=[object_type_comparison_key(raw,source=str(gate.gameassembly),offset=a['type_pointer_va'])
+              for raw,a in zip(raw_arguments,arguments)]
+        if keys==[object_key,object_key]:
+            object_candidates.append(row['index'])
+    require(md.methods[102199].declaring_type,13633,gate.metadata)
+    require(md.string(md.methods[102199].name_index),'Deserialize',gate.metadata)
+    specs_base=int(reg['methodSpecs'],16)
+    specs_raw=pe.bytes_at_va(specs_base,reg['methodSpecsCount']*12)
+    shared_specs=[index for index,(definition,ci,mi) in enumerate(struct.iter_unpack('<iii',specs_raw))
+                  if definition==102199 and ci in object_candidates and mi==-1]
+    code=mapper.code_registration_summary(pe,candidates[0])
+    methods_base=int(reg['genericMethodTable'],16)
+    methods_raw=pe.bytes_at_va(methods_base,reg['genericMethodTableCount']*16)
+    shared_rows=[]
+    for index,(spec_index,_,_,_) in enumerate(struct.iter_unpack('<iiii',methods_raw)):
+        if spec_index not in shared_specs:
+            continue
+        triple_raw=methods_raw[index*16+4:index*16+16]
+        method,invoker,adjustor=method_pointer_indices(triple_raw,code['genericMethodPointersCount'],
+                                                       code['invokerPointersCount'],source=str(gate.gameassembly),
+                                                       offset=methods_base+index*16+4)
+        pointer=pe.u64_at_va(int(code['genericMethodPointers'],16)+method*8)
+        invoker_pointer=pe.u64_at_va(int(code['invokerPointers'],16)+invoker*8)
+        require(pointer!=0 and invoker_pointer!=0,True,gate.gameassembly,methods_base+index*16)
+        shared_rows.append({'tableIndex':index,'methodSpecIndex':spec_index,
+                            'indices':[method,invoker,adjustor],'indicesRawHex':triple_raw.hex().upper(),
+                            'methodPointerVa':pointer,'invokerPointerVa':invoker_pointer})
     producer_names=[]
     for rva,prefix,expected in ((0x15F0D,'488D0D',b'mscorlib.dll'),
                                (0x15F3C,'4C8D05',b'Object'),(0x15F43,'488D15',b'System')):
@@ -313,6 +359,13 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedSharedMethodCandidates': {'definition':102199,'methodSpecIndices':shared_specs,
+                                           'rows':shared_rows,'level':'exact static table relation; conditional index consumer',
+                                           'boundary':'All matching MethodSpecs and generic-method table rows are preserved. The separately pinned index reader checks method/invoker indices, loads their pointer slots, and with adjustor -1 reuses the method pointer. Non-sentinel adjustors remain unsupported by this bounded decoder. This does not certify the runtime triple-map population, query success, target invocation, actual reader ABI, source length or final cursor.'},
+        'selectedObjectComparison': {'key':object_key,'matchingRegisteredInstantiations':object_candidates,
+                                     'switchEntryVa':switch_entry,'switchTargetRva':0x2CC840,
+                                     'level':'direct conditional native equality/hash projection',
+                                     'boundary':'For object-tag records the reviewed comparator checks the tag and bit 29 of the word at +8, then returns equal; the reviewed hash branch depends on those same two values. Record addresses and other bytes do not participate in this branch. The complete registered-instance sweep enumerates every matching two-argument candidate without selecting one. Even a singleton does not prove cache execution, returned interned pointer, method lookup success, active formatter or file cursor.'},
         'selectedInstantiationCacheSeed': {'registrationGlobalVa':seed_global,
                                           'seedCallRva':0x12D8B,'insertRva':0x13170,
                                           'lookupRva':0x9C70,'storageReferences':cache_storage,

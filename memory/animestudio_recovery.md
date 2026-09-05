@@ -275,6 +275,12 @@ Current durable boundaries:
   A separately gated initializer seeds the generic-instantiation cache from the
   selected registration's pointer table; insertion and lookup share the same
   storage global. This conditional path is not an observation of cache contents.
+  The gated object-tag comparator and hash use only the tag and one flag bit,
+  not record addresses; enumerate every registered pair matching that projection.
+  A unique static match still does not prove the returned runtime instance.
+  Matching MethodSpecs join bounded method/invoker index triples and pointer
+  slots; the no-adjustor sentinel reuses the ordinary method pointer. Other
+  adjustors need an independently bounded table and remain unsupported here.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

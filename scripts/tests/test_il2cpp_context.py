@@ -12,6 +12,76 @@ from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
+from scripts.game_data.il2cpp_context import object_type_comparison_key
+from scripts.game_data.il2cpp_context import method_pointer_indices
+
+
+class MethodPointerIndicesTests(unittest.TestCase):
+    raw = struct.pack('<iii', 1, 2, -1)
+
+    def decode(self, raw, method_count=2, invoker_count=3):
+        return method_pointer_indices(raw, method_count, invoker_count,
+                                      source='fixture.dll', offset=0x80)
+
+    def test_normal_no_adjustor(self):
+        self.assertEqual(self.decode(self.raw), (1, 2, -1))
+
+    def test_truncated_and_trailing(self):
+        for raw in (b'', self.raw[:-1], self.raw + b'\0'):
+            with self.subTest(length=len(raw)), self.assertRaises(ContextError):
+                self.decode(raw)
+
+    def test_malformed_indices_and_unsupported_adjustors(self):
+        for values, relative in (((-1, 2, -1), 0), ((2, 2, -1), 0),
+                                 ((1, -1, -1), 4), ((1, 3, -1), 4),
+                                 ((1, 2, -2), 8), ((1, 2, 0), 8)):
+            with self.subTest(values=values), self.assertRaises(ContextError) as caught:
+                self.decode(struct.pack('<iii', *values))
+            self.assertEqual(caught.exception.diagnostics['offset'], 0x80 + relative)
+
+    def test_malformed_counts(self):
+        for count in (-1, True, 1_000_001):
+            for key in ('method_count', 'invoker_count'):
+                with self.subTest(key=key, count=count), self.assertRaises(ContextError):
+                    self.decode(self.raw, **{key: count})
+
+
+class ObjectTypeComparisonKeyTests(unittest.TestCase):
+    raw = bytes.fromhex('068E00000000000000001C0000000000')
+
+    def decode(self, raw):
+        return object_type_comparison_key(raw, source='fixture.dll', offset=0x80)
+
+    def test_normal_and_comparison_flag(self):
+        self.assertEqual(self.decode(self.raw), (0x1C, 0))
+        changed = bytearray(self.raw)
+        changed[11] |= 0x20
+        self.assertEqual(self.decode(changed), (0x1C, 1))
+
+    def test_ignored_bytes_do_not_become_identity(self):
+        for bit in range(128):
+            if bit // 8 == 10 or bit == 11 * 8 + 5:
+                continue
+            changed = bytearray(self.raw)
+            changed[bit // 8] ^= 1 << (bit % 8)
+            with self.subTest(bit=bit):
+                self.assertEqual(self.decode(changed), self.decode(self.raw))
+
+    def test_truncated_and_trailing_rejected(self):
+        for changed in (b'', self.raw[:-1], self.raw + b'\0'):
+            with self.subTest(length=len(changed)), self.assertRaises(ContextError) as caught:
+                self.decode(changed)
+            self.assertEqual(caught.exception.diagnostics['offset'], 0x80)
+
+    def test_other_tags_fail_closed(self):
+        for tag in range(256):
+            if tag == 0x1C:
+                continue
+            changed = bytearray(self.raw)
+            changed[10] = tag
+            with self.subTest(tag=tag), self.assertRaises(ContextError) as caught:
+                self.decode(changed)
+            self.assertEqual(caught.exception.diagnostics['offset'], 0x8A)
 
 
 class NamedTopLevelTypeTests(unittest.TestCase):

@@ -290,6 +290,43 @@ def class_sharing_branch(compare: bytes, compare_address: int, load: bytes,
     return rip_qword_load_target(load,load_address,source=source)
 
 
+def method_pointer_indices(raw: bytes, method_count: int, invoker_count: int, *,
+                           source: str, offset: int = 0) -> tuple[int, int, int]:
+    """Bound the selected native reader's no-adjustor 12-byte index triple.
+
+    Non-sentinel adjustors require a separately proven table extent and are
+    unsupported here. This does not select a MethodSpec or a runtime method.
+    """
+    if len(raw) != 12:
+        raise ContextError(source, offset, 'exact 12-byte method index triple', len(raw))
+    for count, label in ((method_count, 'method'), (invoker_count, 'invoker')):
+        if type(count) is not int or not 0 <= count <= 1_000_000:
+            raise ContextError(source, offset, f'bounded {label} pointer count', count)
+    method, invoker, adjustor = struct.unpack('<iii', raw)
+    for index, count, relative, label in ((method, method_count, 0, 'method'),
+                                         (invoker, invoker_count, 4, 'invoker')):
+        if not 0 <= index < count:
+            raise ContextError(source, offset + relative, f'{label} index in [0,{count})', index)
+    if adjustor != -1:
+        raise ContextError(source, offset + 8, 'supported no-adjustor sentinel -1', adjustor)
+    return method, invoker, adjustor
+
+
+def object_type_comparison_key(raw: bytes, *, source: str, offset: int = 0) -> tuple[int, int]:
+    """Projection used by the gated native comparator's object-tag branch only.
+
+    This is not a general type identity or a runtime pointer identity. The
+    caller must gate the comparator, its switch table, and the hash consumer.
+    All bytes outside the tag and bit 29 of the word at +8 are ignored by this
+    branch, not assigned meanings or certified as padding.
+    """
+    if len(raw) != 16:
+        raise ContextError(source, offset, 'exact 16-byte type record', len(raw))
+    if raw[10] != 0x1C:
+        raise ContextError(source, offset + 10, 'object type tag 0x1C', raw[10])
+    return (raw[10], (struct.unpack_from('<I', raw, 8)[0] >> 29) & 1)
+
+
 def named_top_level_type(metadata: bytes, image_name: bytes, namespace: bytes,
                          name: bytes, *, source: str) -> dict:
     """Exact selected-build metadata identity, not a simulated runtime name cache.
