@@ -15,9 +15,93 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
-from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods
+from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class StreamSourceIdentityTests(unittest.TestCase):
+    def setUp(self):
+        self.methods={249853:SimpleNamespace(parameter_start=237944,parameter_count=1),
+            287486:SimpleNamespace(slot=11,return_type=126199),287526:SimpleNamespace(slot=35,return_type=126157)}
+        self.parameters=[None]*237945
+        self.parameters[-1]=SimpleNamespace(type_index=143204)
+        self.records=[(0,-1,-1)]*521493
+        expected=((517109,249865,0x3B188A0),(517125,249853,0x2D36380),
+                  (517721,428652,0x3B677B0),(521492,248587,0x3187EB0))
+        self.pointers={0x100000+143204*8:0x200,0x100000+126199*8:0x300,0x100000+126157*8:0x400}
+        self.raw_types={0x200:bytes.fromhex('07930000000000000000120000000000'),
+            0x300:bytes.fromhex('3C8D00000000000000000A8000000000'),
+            0x400:bytes.fromhex('3B8D0000000000000000088000000000')}
+        self.raw=b''
+        for i,(spec,definition,rva) in enumerate(expected):
+            self.records[spec]=(definition,-1,75)
+            self.raw+=struct.pack('<4i',spec,i,i,-1)
+            self.pointers[0x500+i*8]=0x180000000+rva
+        self.pe=SimpleNamespace(image_base=0x180000000,u64_at_va=self.pointers.__getitem__,
+                                bytes_at_va=lambda va,size:self.raw_types[va])
+        self.reg={'types':'0x100000','typesCount':200000,'genericMethodTable':'0x200000',
+                   'genericMethodTableCount':4,'methodSpecs':'0x300000'}
+        self.code={'genericMethodPointers':'0x500','genericMethodPointersCount':4,'invokerPointersCount':4}
+
+    def decode(self):
+        def identities(pe,md,modules,owners,selections,**kwargs):return [{'methodIndex':x[0]} for x in selections]
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',side_effect=identities), \
+             patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':37639}):
+            return stream_source_identity(self.pe,SimpleNamespace(buf=b'',methods=self.methods,parameters=self.parameters),
+                {},[],self.reg,self.code,self.records,self.raw,source='fixture.dll')
+
+    def test_stream_slots_and_generic_bodies(self):
+        result=self.decode()
+        self.assertEqual([x['virtualSlot'] for x in result['declaredStreamMethods']],[11,35])
+        self.assertEqual(len(result['genericBodyCandidates']),4)
+        self.assertIn('concrete stream subclass',result['boundary'])
+
+    def test_wrong_virtual_slot_or_return_record(self):
+        self.methods[287526].slot=36
+        with self.assertRaises(ContextError):self.decode()
+        self.methods[287526].slot=35
+        self.raw_types[0x400]=self.raw_types[0x300]
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_wrong_parameter_type_and_truncation(self):
+        self.parameters[-1].type_index=143205
+        with self.assertRaises(ContextError):self.decode()
+        self.parameters[-1].type_index=143204
+        self.raw_types[0x200]=self.raw_types[0x200][:-1]
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_wrong_shared_context(self):
+        self.records[517125]=(249853,-1,16656)
+        with self.assertRaises(ContextError):self.decode()
+
+
+class StreamCarrierConsumerTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+            ((0x2D363DC,0x3AF70),(0x2D36425,0x3AF70),(0x2D36470,0x3AF70),
+             (0x2D365F1,0x3AF70),(0x2D36448,0x3150DD0),(0x2D3659E,0x3B188A0),(0x2D36961,0x3B188A0))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x3AF78,'0FB7D9488BFA488B0AE80A9CFCFF488D431448C1E0044803074C8B00488B5008'),
+            (0x2D36573,'FFD0488B0DAC6F2E0A'),(0x2D36924,'FF907003000048895D40448965488B452C'),
+            (0x2D36442,'8BD0488D4D30'),(0x2D365F6,'4C8BE04C63C085C0'),
+            (0x2D36526,'4585F60F884E040000'),(0x2D368E2,'4585E40F889F000000'))})
+        for rva in (0x2D363D4,0x2D3641D,0x2D36468,0x2D365E9):self.parts[rva]=bytes.fromhex('B90B000000488BD6')
+        self.parts[0x2D36994]=bytes.fromhex('C564D302CF64D302D664D302E264D302EC64D302D664D302F664D3029266D302A266D302B266D3021567D3022567D302B266D302E967D302')
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_virtual_slot_address_and_discarded_read_result(self):
+        result=stream_carrier_consumer(self.pe,source='fixture.dll')
+        self.assertEqual(result['dispatcher']['slotBaseOffset']+35*16,0x370)
+        self.assertIn('without testing returned EAX',result['boundary'])
+
+    def test_mutated_truncated_and_trailing_windows(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):
+                    stream_carrier_consumer(self.pe,source='fixture.dll')
+            self.parts[rva]=good
 
 
 class ModuleMethodsTests(unittest.TestCase):

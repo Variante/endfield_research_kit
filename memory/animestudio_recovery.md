@@ -316,6 +316,13 @@ Current durable boundaries:
   carrier to an inlined reader-state builder. Conditional dispatch uses that
   state and an output slot; its returned consumption is discarded by the wrapper.
   This corroborates the non-EOF boundary, not an authenticated file receipt.
+  The manager entry's declared input independently joins `System.IO.Stream`.
+  Native slot addressing connects its length calls and buffer-fill slot to the
+  metadata virtual slots for `get_Length` and `Read`. Both allocation branches
+  perform one `Read` and discard its returned count before parsing the requested
+  carrier extent. Repeated length results also undergo unchecked 32-bit narrowing;
+  no stability, allocation/filled-length equality or full-read guarantee follows.
+  The concrete stream override, position and authenticated bytes remain unknown.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

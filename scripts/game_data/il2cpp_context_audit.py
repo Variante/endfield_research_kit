@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D36380, 0x2D36994, '85D41B9FE1654F6F92A646B7A964873F1F7FE0CD00D141C4F83008F8829E5030'),
+    (0x3AF70, 0x3AFBF, '72BD36DFB1B0E26BACC5934A9DD0C0CE1F0DBC3B7D651C979A4D519F0898C5B3'),
     (0x3B188A0, 0x3B189ED, 'BBF441134BEE6360DE2E40A3EF134DB920D8DE9FED8231EEBF0602101B5E389D'),
     (0x3B677B0, 0x3B67D18, '57AD13123C926CC835193BAE0A9636F201B74EDF5D23F87121E7DA2D332555DB'),
     (0x970BFBC, 0x970BFF0, 'AB34067513E25C40E3C0BE6EAF9A085B4C48438CDB435512C1B2BF2AE24A34F3'),
@@ -337,7 +339,7 @@ def resource_carrier_consumers(pe, *, source):
                      'boundary':'Null MethodInfo+0x38 invokes initialization; non-null skips it. Rebuilds a 16-byte local from input qword+0 and dword+8, with last dword zero. Supplies the local, output slot, zero R8 and context slot 0 to the inner entry. Returned EAX is discarded; the output slot is returned after cleanup. No EOF comparison in this wrapper.'},
             'inner':{'rva':0x3B677B0,'stateStackOffset':0x40,'counterOffset':0x44,
                      'boundary':'Inlines state construction: input carrier at state+0x20, dword length at +0x30, signed length at +0x18, zero +0x38/+0x40/+0x44, and pointer-or-null cursor at +0x50. State+0x48 comes from the thread-local storage/allocation path, not the plain constructor. Conditional non-null helper result reaches dispatch slot 5 with R8=&state and R9=output. Returns state dword+0x44 after cleanup, matching the independently identified consumed accessor offset. This is not a proof of helper success or input allocation validity.'},
-            'boundary':'No token-based method name is assigned to these two native bodies. Their static upstream resource candidates, live contexts, path/hash, carrier allocation length and final authenticated-file cursor are not joined. The switch data is excluded from the code window. Both terminal layouts remain ambiguous.'}
+            'boundary':'MethodSpec-based names and declared stream input are separately joined in selectedStreamSourceIdentity. Live contexts, complete upstream resource selection, path/hash, carrier allocation length and final authenticated-file cursor are not joined. The switch data is excluded from the code window. Both terminal layouts remain ambiguous.'}
 
 
 def skill_resource_context(pe, md, modules, image_owners, table, reg, code,
@@ -389,6 +391,93 @@ def skill_resource_context(pe, md, modules, image_owners, table, reg, code,
                              'boundary':'All 16-byte records and MethodSpec keys bounded; only selected triples decoded. Other triples remain opaque.'},
             'level':'exact static type/MethodSpec/code-table relations',
             'boundary':'Core.SkillData, not the same-named AI nested type. Generic definition module slots are null; code candidates come from the separate generic method table. Same-definition Object MethodSpecs do not establish actual sharing selection, method invocation, resource path/hash, reader ABI, consumed length or EOF. Preserve both terminal candidates.'}
+
+
+def stream_source_identity(pe,md,modules,image_owners,reg,code,spec_records,methods_raw,*,source):
+    """Join selected generic bodies and declared stream slots, not live overrides."""
+    identities=module_methods(pe,md,modules,image_owners,
+        [(249865,'Beyond.MemoryPack.MemoryPackManager','DeSerialize',None),
+         (249853,'Beyond.MemoryPack.MemoryPackManager','_DeSerialize',None),
+         (248587,'Beyond.Resource.ResourceManager','_MemoryPackDeserializeFromJson',None)],
+        source=source,expected_image='Common.Beyond.dll')
+    identities+=module_methods(pe,md,modules,image_owners,
+        [(428652,'MemoryPack.MemoryPackSerializer','Deserialize',None)],source=source)
+    stream=named_top_level_type(md.buf,b'mscorlib.dll',b'System.IO',b'Stream',source=source)
+    require(stream['typeDefinitionIndex'],37639,source)
+    method=md.methods[249853]
+    require((method.parameter_start,method.parameter_count),(237944,1),source)
+    require(method.parameter_start<len(md.parameters),True,source)
+    parameter=md.parameters[method.parameter_start]
+    require(parameter.type_index,143204,source)
+    require(parameter.type_index<reg['typesCount'],True,source)
+    type_pointer=pe.u64_at_va(int(reg['types'],16)+parameter.type_index*8)
+    type_raw=pe.bytes_at_va(type_pointer,16)
+    require(type_raw,bytes.fromhex('07930000000000000000120000000000'),source,type_pointer)
+    require(struct.unpack_from('<Q',type_raw)[0],stream['typeDefinitionIndex'],source,type_pointer)
+    stream_methods=module_methods(pe,md,modules,image_owners,
+        [(287486,'System.IO.Stream','get_Length',None),(287526,'System.IO.Stream','Read',0x2FC6D40)],
+        source=source,expected_image='mscorlib.dll')
+    for row,slot,return_index,raw_hex in zip(stream_methods,(11,35),(126199,126157),
+        ('3C8D00000000000000000A8000000000','3B8D0000000000000000088000000000')):
+        method=md.methods[row['methodIndex']]
+        require((method.slot,method.return_type),(slot,return_index),source)
+        require(return_index<reg['typesCount'],True,source)
+        pointer=pe.u64_at_va(int(reg['types'],16)+return_index*8)
+        raw=pe.bytes_at_va(pointer,16)
+        require(raw,bytes.fromhex(raw_hex),source,pointer)
+        row.update(virtualSlot=slot,returnTypeIndex=return_index,returnTypeRawHex=raw.hex().upper())
+    expected=((517109,249865,0x3B188A0),(517125,249853,0x2D36380),
+              (517721,428652,0x3B677B0),(521492,248587,0x3187EB0))
+    definitions={definition for _,definition,_ in expected}
+    matching={i for i,(definition,_,_) in enumerate(spec_records) if definition in definitions}
+    rows=generic_method_candidates(methods_raw,reg['genericMethodTableCount'],len(spec_records),matching,
+        code['genericMethodPointersCount'],code['invokerPointersCount'],source=source,
+        offset=int(reg['genericMethodTable'],16))
+    for row in rows:
+        row['methodPointerVa']=pe.u64_at_va(int(code['genericMethodPointers'],16)+row['indices'][0]*8)
+    require([(row['methodSpecIndex'],row['methodPointerVa']) for row in rows],
+            [(index,pe.image_base+rva) for index,_,rva in expected],source)
+    for index,definition,_ in expected:
+        require(spec_records[index],(definition,-1,75),source,int(reg['methodSpecs'],16)+index*12)
+    return {'methodIdentities':identities,'genericBodyCandidates':rows,'streamType':stream,
+            'streamParameter':{'methodIndex':249853,'parameterIndex':237944,'typeIndex':parameter.type_index,
+                               'typePointerVa':type_pointer,'typeRawHex':type_raw.hex().upper()},
+            'declaredStreamMethods':stream_methods,
+            'level':'exact static method/type/virtual-slot relation',
+            'boundary':'Declared input is System.IO.Stream. Metadata virtual slots 11 and 35 name get_Length and Read, with signed 64-bit and 32-bit return records. This does not identify the concrete stream subclass or override, its successful initialization, bytes, position, full-read behavior or EOF. Shared Object method contexts do not prove actual SkillData invocation.'}
+
+
+def stream_carrier_consumer(pe,*,source):
+    """Exact reviewed calls and discarded read result; length is not a receipt."""
+    edges=[]
+    for rva,target in ((0x2D363DC,0x3AF70),(0x2D36425,0x3AF70),(0x2D36470,0x3AF70),
+                       (0x2D365F1,0x3AF70),(0x2D36448,0x3150DD0),
+                       (0x2D3659E,0x3B188A0),(0x2D36961,0x3B188A0)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x3AF78,'0FB7D9488BFA488B0AE80A9CFCFF488D431448C1E0044803074C8B00488B5008'),
+        (0x2D36573,'FFD0488B0DAC6F2E0A'),
+        (0x2D36924,'FF907003000048895D40448965488B452C'),
+        (0x2D36442,'8BD0488D4D30'),
+        (0x2D365F6,'4C8BE04C63C085C0'),
+        (0x2D36526,'4585F60F884E040000'),
+        (0x2D368E2,'4585E40F889F000000')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    for rva in (0x2D363D4,0x2D3641D,0x2D36468,0x2D365E9):
+        require(pe.bytes_at_va(pe.image_base+rva,8),bytes.fromhex('B90B000000488BD6'),source,rva)
+    switch=pe.bytes_at_va(pe.image_base+0x2D36994,56)
+    require(switch,bytes.fromhex('C564D302CF64D302D664D302E264D302EC64D302D664D302F664D3029266D302A266D302B266D3021567D3022567D302B266D302E967D302'),source,0x2D36994)
+    return {'edges':edges,'windows':windows,'switchData':{'rva':0x2D36994,'rawHex':switch.hex().upper()},
+            'dispatcher':{'rva':0x3AF70,'slotBaseOffset':0x140,'slotStride':16,'inputSlotBits':16,
+                          'boundary':'The reviewed entry computes class + (uint16(CX)+0x14)*16, loads pointer and companion. Its specialized branches and cold paths are not all closed; this is a slot-address connection, not a live override receipt.'},
+            'level':'direct conditional native carrier construction and discarded read result',
+            'boundary':'Both allocation branches perform one indirect call at class+0x370 with a 16-byte carrier, then call the joined manager carrier entry without testing returned EAX. Slot 35 is declared Stream.Read, not ReadExactly. The large branch obtains length separately for comparison, low-32-bit allocation request and low-32-bit carrier length; equality/stability is not checked. The small branch also narrows a fresh result before stack allocation. Later negative checks apply to the narrowed dword, not the original 64-bit result. No source position, complete-fill loop, short-read check, authenticated payload length or final parser EOF is established; allocation helpers and concrete overrides remain unresolved.'}
 
 
 def audit():
@@ -723,6 +812,8 @@ def audit():
     resource_evidence=skill_resource_context(pe,md,modules,image_owners,table,reg,code,
         spec_records,specs_raw,methods_raw,source=str(gate.gameassembly))
     carrier_evidence=resource_carrier_consumers(pe,source=str(gate.gameassembly))
+    stream_identity=stream_source_identity(pe,md,modules,image_owners,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
+    stream_consumer=stream_carrier_consumer(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -743,6 +834,8 @@ def audit():
         'selectedSerializerReturnConsumers':return_evidence,
         'selectedSkillResourceContext':resource_evidence,
         'selectedResourceCarrierConsumers':carrier_evidence,
+        'selectedStreamSourceIdentity':stream_identity,
+        'selectedStreamCarrierConsumer':stream_consumer,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
