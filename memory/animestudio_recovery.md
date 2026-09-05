@@ -272,6 +272,9 @@ Current durable boundaries:
   arguments of the static object/object candidate. Actual initialization, cache
   population and interned pointer identity remain unobserved: byte equality does
   not select a particular shared Deserialize body.
+  A separately gated initializer seeds the generic-instantiation cache from the
+  selected registration's pointer table; insertion and lookup share the same
+  storage global. This conditional path is not an observation of cache contents.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

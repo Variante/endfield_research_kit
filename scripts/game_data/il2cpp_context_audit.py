@@ -23,6 +23,9 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x12CC0, 0x13169, 'BE122CAACEC77957916E5CC541FF0055ABFD9264303F7ACEB8BC48832933DCF3'),
+    (0x13170, 0x134AF, '982687620B62840A318F9822B52C6F856D9FA5192337B1660007FD0306F52DD1'),
+    (0x9C70, 0x9E6C, '0E56CE95E514F299C8F4D717C397811C7F1D16AC4E512C2955B23CCD05EA6F25'),
     (0x6A1E0, 0x6A39A, 'D9128C8BAB9B54797E0A0627E477F13A66063B5AB05932F0F9BB08475FE14E2B'),
     (0x2B2D70, 0x2B2E09, 'A9E38FAA7FB63E0C143C42798EB01AD09814F1639E04045E5EFDC776698B3080'),
     (0x69D60, 0x69D81, 'B585984BD43C174908671417D61F619A5BC3D0F083DF75AF691CF5EB218D4743'),
@@ -284,6 +287,19 @@ def audit():
         require(pe.bytes_at_va(pointer,len(expected)+1),expected+b'\0',gate.gameassembly,pointer)
         producer_names.append({'instructionRva':rva,'stringVa':pointer,'ascii':expected.decode('ascii')})
     require(pe.bytes_at_va(pe.image_base+0x15F4F,7),bytes.fromhex('4889051A95E80D'),gate.gameassembly,0x15F4F)
+    # Independently connect the registration producer to the cache seeding loop.
+    # These are reviewed instruction boundaries inside the pinned consumers.
+    producer=pe.bytes_at_va(pe.image_base+0x15E5A,7)
+    require(producer[:3],bytes.fromhex('488D05'),gate.gameassembly,0x15E5A)
+    require(pe.image_base+0x15E61+struct.unpack_from('<i',producer,3)[0],registration,gate.gameassembly,0x15E5A)
+    require(pe.bytes_at_va(pe.image_base+0x15E6F,7),bytes.fromhex('4889054AABE90D'),gate.gameassembly,0x15E6F)
+    seed_global=rip_qword_load_target(pe.bytes_at_va(pe.image_base+0x12D70,7),pe.image_base+0x12D70,source=str(gate.gameassembly))
+    require(seed_global,pe.image_base+0xDEB09C0,gate.gameassembly,0x12D70)
+    cache_storage=[]
+    for rva in (0x9D16,0x13248):
+        target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
+        require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
+        cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -297,6 +313,11 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedInstantiationCacheSeed': {'registrationGlobalVa':seed_global,
+                                          'seedCallRva':0x12D8B,'insertRva':0x13170,
+                                          'lookupRva':0x9C70,'storageReferences':cache_storage,
+                                          'level':'direct conditional native producer/consumer connection',
+                                          'boundary':'The initializer stores the selected MetadataRegistration and calls the seed routine. Its normal loop reads count+0x10 and pointer-table+0x18, passes each eight-byte slot to insertion, and insertion dereferences that slot to a record pointer. Insertion and lookup access the identical cache storage global and compare argument counts plus native type comparisons. This establishes a static registration-to-cache seed path, not successful initialization, cold-path completion, actual cache contents, interned pointer selection or active formatter dispatch.'},
         'selectedObjectIdentity': {'metadata':object_identity,'producerNames':producer_names,
                                    'registeredTypePointerVa':object_pointer,'rawTypeHex':object_raw.hex().upper(),
                                    'objectPairInstantiation':object_pair.as_dict(),
