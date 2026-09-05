@@ -280,7 +280,9 @@ establishes whole-schema ownership. Partial `--max-files` outputs must stay in
 generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
 pointer-table/record/vector decoding and reciprocal method-parameter identity;
 the audit checks selected native inputs and consumer pins, scans all registered
-instances, and references the authenticated SkillData corpus. It does not
+instances, validates metadata image ownership and unique module-name joins, and
+rechecks the saved SkillData corpus's live input/tool/parser/chunk pins through
+`memorypack.skill_corpus.verify_current_report_inputs`. It does not
 re-stream VFS bytes or establish runtime formatter/cursor identity.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`

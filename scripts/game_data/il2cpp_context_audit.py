@@ -13,18 +13,24 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules
+from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
-CORPUS_SHA = 'D05C31D59864C08AC9F5BFDF991CA0B720B799C33B75C4CD708F917083E99873'
+CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
     (0x2D8BF0, 0x2D8C12, '58AEECD1D6787DA519A37F3857FB40F3950BED75D3A9A0A6AEC81DEE32569AA4'),
     (0x2D8C12, 0x2D8C79, 'F1D27E8325CBBCF568E89D23C9280969ADAB6DEE2CEDE13E0FD1F1CBCB762470'),
     (0x2D8C79, 0x2D8C83, '087CD1A1ECF2C15B53BC8CA47F008DFACD7DB6E1579D1AD1C3A77D500224D68C'),
     (0x9630, 0x9850, 'F1F3F2471B2DDA9F3BC2E3505293D5658E04D9F25225CA8EF648EC4CC786388F'),
     (0x2C0E50, 0x2C0ED3, '16DD44242597B807F5729A2DD6AE5EF4BA7CB0B825BF9303F259407BB8A53A36'),
+    (0x12BD0, 0x12C74, '90390C80AEFAF2A371E43E9491A557C87A6F168EFE73D8A7A089B7447C61EAAC'),
+    (0x12CC0, 0x13169, 'BE122CAACEC77957916E5CC541FF0055ABFD9264303F7ACEB8BC48832933DCF3'),
+    (0x2D7820, 0x2D7BBF, 'BFB975F36A64975240720253EB1391D00D2DFBD48317ED38291DAB6683EA00F0'),
+    (0x9E70, 0xA500, '1B9824C30A36C141691EC195D8D3052B50A497722679DA9BAA2BC8194F68C19B'),
+    (0x15C90, 0x16F71, 'EDCF30D6AEC6E2E98B7329DCA27C14DB36C754FADC8841648EDC02ADF5726023'),
 )
 
 
@@ -67,6 +73,7 @@ def audit():
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
+    verify_current_report_inputs(corpus)
     mapper_path = ROOT / 'tools/endfield-il2cpp/map_body_targets_to_gameassembly.py'
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
@@ -80,11 +87,34 @@ def audit():
     require(hashlib.sha256(md.buf).hexdigest().upper(), MD_SHA, gate.metadata)
     candidates = mapper.find_code_registration_candidates(pe, {md.string(x.name_index) for x in md.images})
     require(candidates, [0x18A88E640], gate.gameassembly)
+    image_owners = type_image_owners(md.buf, len(md.types), source=str(gate.metadata))
+    require(pe.u32_at_va(candidates[0]+0x68), len(md.images), gate.gameassembly, candidates[0]+0x68)
+    module_pointers = pe.bytes_at_va(pe.u64_at_va(candidates[0]+0x70), len(md.images)*8)
+    module_rows = [(pe.c_string_at_va(pe.u64_at_va(pointer)), pointer)
+                   for (pointer,) in struct.iter_unpack('<Q', module_pointers)]
+    modules = match_image_modules([md.string(item.name_index) for item in md.images],
+                                  module_rows, source=str(gate.gameassembly))
+    image_rows = []
+    for item in md.images:
+        name = md.string(item.name_index)
+        if name not in modules:
+            raise ContextError(str(gate.metadata), item.index, 'matching CodeGenModule name', name)
+        image_rows.append({'imageIndex': item.index, 'name': name, 'typeStart': item.type_start,
+                           'typeCount': item.type_count, 'moduleVa': modules[name]})
     registration = mapper.find_metadata_registration(pe, candidates[0])
     require(registration, 0x18A88E860, gate.gameassembly)
     for begin, end, expected in CONSUMER_WINDOWS:
         require(hashlib.sha256(pe.bytes_at_va(pe.image_base + begin, end-begin)).hexdigest().upper(),
                 expected, gate.gameassembly, begin)
+    for rva, prefix, expected in (
+        (0x15E4C, '488D0D', candidates[0]),
+        (0x15E68, '48890D', pe.image_base+0xDEB09B8),
+        (0x12F74, '4C8B15', pe.image_base+0xDEB09B8),
+    ):
+        instruction = pe.bytes_at_va(pe.image_base+rva, 7)
+        require(instruction[:3].hex().upper(), prefix, gate.gameassembly, rva)
+        require(pe.image_base+rva+7+struct.unpack_from('<i', instruction, 3)[0], expected,
+                gate.gameassembly, rva)
     reg = mapper.metadata_registration_summary(pe, registration)
     table = GenericInstantiationTable(pe.bytes_at_va, int(reg['genericInsts'], 16),
                                      reg['genericInstsCount'], source=str(gate.gameassembly))
@@ -122,6 +152,7 @@ def audit():
             gate.gameassembly, argument.type_pointer_va)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
+    verify_current_report_inputs(corpus)
     for path, expected in source_hashes.items():
         require(sha(path), expected, path)
     return {
@@ -132,6 +163,11 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'staticImageOwnership': {'typeCount': len(image_owners), 'images': image_rows,
+                                 'selectedReadValueImage': image_owners[md.methods[428464].declaring_type],
+                                 'registrationGlobalRva': 0xDEB09B8,
+                                 'matchingRule': 'Native bytewise name matching continues after a match; duplicate names could overwrite a prior result. This gate requires unique module names before accepting a static join.',
+                                 'boundary': 'Exact metadata type partition and unique module-name joins. Native normal-path directory stores and name comparisons are separately pinned; initialization execution, cold paths and live invocation remain unobserved.'},
         'consumerWindows': CONSUMER_WINDOWS, 'summary': summary,
         'selectedMethodSpec': {'index': spec_index, 'va': spec_va, 'rawHex': raw.hex().upper(),
                                'definition': definition, 'methodInstantiation': selected.as_dict(),
@@ -151,7 +187,7 @@ def main():
     try:
         report = audit()
     except (ContextError, OSError, ValueError) as error:
-        print(json.dumps({'status': 'failed', 'diagnostic': getattr(error, 'diagnostics', str(error))}), file=sys.stderr)
+        print(json.dumps({'status': 'failed', 'diagnostic': getattr(error, 'diagnostics', getattr(error, 'diagnostic', str(error)))}), file=sys.stderr)
         return 1
     print(json.dumps(report, ensure_ascii=False))
     return int(report['status'] == 'failed')

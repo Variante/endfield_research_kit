@@ -272,6 +272,58 @@ def _read_outer_and_ledger(
     return outer, header, file_rows, provenance
 
 
+def verify_current_report_inputs(report: Mapping[str, Any]) -> dict[str, Any]:
+    """Recheck live provenance of an already authenticated complete report.
+
+    This does not re-stream bytes or certify an arbitrary report. Consumers
+    must first authenticate the report itself; a report hash alone cannot
+    establish that its tool, parser, catalog and chunk inputs are still live.
+    """
+    if (report.get("format") != "animestudio-skilldata-current-vfs-corpus"
+            or report.get("schemaVersion") != 1 or report.get("status") != "complete"
+            or report.get("publicationEligible") is not True):
+        _fail("report-not-complete", source="SkillData corpus report", actual=report.get("status"))
+    provenance = report.get("provenance")
+    if not isinstance(provenance, Mapping):
+        _fail("report-provenance-missing", source="SkillData corpus report")
+    checked = {}
+    for role in ("outer", "ledger", "corpusGate"):
+        row = provenance.get(role)
+        checked[role] = _snapshot_pinned_files([row] if isinstance(row, Mapping) else [], label=role)
+    for role in ("sourceFingerprints", "buildFingerprints", "streamToolFingerprints",
+                 "selectedChunkFingerprints", "parser"):
+        rows = provenance.get(role)
+        if not isinstance(rows, list) or not all(isinstance(row, Mapping) for row in rows):
+            _fail("report-fingerprint-list-invalid", source=role, expected="list of mappings", actual=type(rows).__name__)
+        checked[role] = _snapshot_pinned_files(rows, label=role)
+    outer = json.loads(Path(provenance["outer"]["path"]).read_bytes())
+    if outer.get("inputSetSha256") != report.get("inputSetSha256"):
+        _fail("report-outer-input-set-mismatch", source=provenance["outer"]["path"],
+              expected=report.get("inputSetSha256"), actual=outer.get("inputSetSha256"))
+    current_paths = _discover_blc_paths(outer)
+    if current_paths != provenance.get("blcPaths"):
+        _fail("blc-path-set-mismatch", source="current SkillData report roots",
+              expected=provenance.get("blcPaths"), actual=current_paths)
+    resolutions = provenance.get("selectedChunkResolution")
+    if not isinstance(resolutions, list) or not resolutions or not all(isinstance(row, Mapping) for row in resolutions):
+        _fail("report-chunk-resolution-missing", source="saved SkillData provenance")
+    selection_rows = []
+    for row in resolutions:
+        role = row.get("selectedRole")
+        root_key = {"primary": "primaryAssets", "fallback": "fallbackAssets"}.get(role)
+        if root_key is None:
+            _fail("report-chunk-role-invalid", source="saved SkillData provenance", actual=role)
+        selection_rows.append({"virtualPath": "saved report chunk", "hashDirectory": row.get("hashDirectory"),
+                               "chunkFile": Path(str(row.get("selectedPath") or "")).name,
+                               "physicalChunkPath": row.get("selectedPath"),
+                               "physicalChunkSource": role, "physicalChunkRoot": outer[root_key]})
+    current_resolution = _chunk_selection_snapshot(selection_rows, outer)
+    if current_resolution != resolutions:
+        _fail("report-chunk-resolution-drift", source="saved SkillData provenance",
+              expected=resolutions, actual=current_resolution)
+    return checked
+
+
 def _skill_rows(file_rows: Iterable[Mapping[str, Any]], *, expected_input: str) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     seen: set[str] = set()

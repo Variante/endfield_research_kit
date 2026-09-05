@@ -131,3 +131,53 @@ def method_parameter_owner(metadata: bytes, index: int, method_containers: list[
             'containerRawHex': metadata[container_offset:container_offset+16].hex().upper(),
             'methodIndex': method, 'ordinal': ordinal,
             'boundary': 'Exact reciprocal identity only; constraints and names remain uninterpreted.'}
+
+
+def type_image_owners(metadata: bytes, type_count: int, *, source: str) -> list[int]:
+    """Exact partition of type indices by gated 40-byte image definitions.
+
+    Native initialization copies each image's type start/count to its directory
+    carrier. Overlaps are ambiguous, even if native lookup would choose one.
+    Other image fields remain uninterpreted here.
+    """
+    if type(type_count) is not int or not 0 <= type_count <= 1_000_000:
+        raise ContextError(source, 0xA8, 'bounded type count', type_count)
+    if len(metadata) < 0xB0:
+        raise ContextError(source, 0xA8, 'complete image section pair', len(metadata))
+    offset, size = struct.unpack_from('<II', metadata, 0xA8)
+    if offset < 0xB0 or offset > len(metadata) or size > len(metadata)-offset or size % 40:
+        raise ContextError(source, 0xA8, 'bounded 40-byte image section', (offset, size))
+    owners = [-1] * type_count
+    for image_index in range(size // 40):
+        row = offset + image_index * 40
+        start, count = struct.unpack_from('<iI', metadata, row+8)
+        if count == 0 and start == -1:
+            continue
+        if start < 0 or start > type_count or count > type_count-start:
+            raise ContextError(source, row+8, f'type interval within [0,{type_count})', (start, count))
+        for index in range(start, start+count):
+            if owners[index] != -1:
+                raise ContextError(source, row+8, 'unambiguous image owner',
+                                   {'typeIndex': index, 'candidateImages': [owners[index], image_index]})
+            owners[index] = image_index
+    if -1 in owners:
+        raise ContextError(source, offset, 'complete type/image partition', {'uncoveredTypeIndex':owners.index(-1)})
+    return owners
+
+
+def match_image_modules(image_names: list[str], modules: list[tuple[str, int]], *, source: str) -> dict[str, int]:
+    """Fail closed on duplicate names; do not reproduce native last-match wins."""
+    if len(set(image_names)) != len(image_names):
+        raise ContextError(source, 0, 'unique metadata image names', image_names)
+    found = {}
+    for index, (name, pointer) in enumerate(modules):
+        if not isinstance(name, str) or not name or type(pointer) is not int or not 0 < pointer < 1 << 64:
+            raise ContextError(source, index*8, 'named non-null module pointer', (name, pointer))
+        if name in found:
+            raise ContextError(source, index*8, 'unambiguous module name',
+                               {'name':name, 'candidatePointers':[found[name],pointer]})
+        found[name] = pointer
+    if set(found) != set(image_names):
+        raise ContextError(source, 0, 'complete image/module name correspondence',
+                           {'missing':sorted(set(image_names)-set(found)), 'unexpected':sorted(set(found)-set(image_names))})
+    return found

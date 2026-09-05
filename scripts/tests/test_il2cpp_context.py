@@ -1,10 +1,14 @@
 import struct
+import io
+import json
+from contextlib import redirect_stderr
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner
-from scripts.game_data.il2cpp_context_audit import native_gate, sweep
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
+from scripts.game_data.memorypack.skill_corpus import CensusGateError
 
 
 class GenericInstantiationTests(unittest.TestCase):
@@ -100,6 +104,13 @@ class GenericInstantiationTests(unittest.TestCase):
                 with self.assertRaises(ContextError):
                     native_gate()
 
+    def test_corpus_drift_diagnostic_stays_structured(self):
+        error = CensusGateError('fingerprint-sha256-mismatch', source='tool.dll', expected='old', actual='new')
+        stderr = io.StringIO()
+        with patch('scripts.game_data.il2cpp_context_audit.audit', side_effect=error), redirect_stderr(stderr):
+            self.assertEqual(main(), 1)
+        self.assertEqual(json.loads(stderr.getvalue())['diagnostic'], error.diagnostic)
+
 
 class ParameterOwnerTests(unittest.TestCase):
     def setUp(self):
@@ -147,6 +158,50 @@ class ParameterOwnerTests(unittest.TestCase):
                 with self.assertRaises(ContextError):
                     self.resolve()
                 self.buf[offset:offset+4] = original
+
+
+class ImageOwnerTests(unittest.TestCase):
+    def test_module_names_match_by_identity_not_order(self):
+        self.assertEqual(match_image_modules(['A','B'], [('B',0x200),('A',0x100)], source='fixture'), {'A':0x100,'B':0x200})
+
+    def test_duplicate_module_name_is_ambiguous(self):
+        with self.assertRaises(ContextError) as caught:
+            match_image_modules(['A','B'], [('A',0x100),('A',0x200)], source='fixture')
+        self.assertEqual(caught.exception.diagnostics['actual']['candidatePointers'], [0x100,0x200])
+
+    def test_missing_extra_and_duplicate_images_rejected(self):
+        for images, modules in ((['A'], [('B',0x100)]), (['A','A'], [('A',0x100)]), (['A'], [('A',0)])):
+            with self.subTest(images=images), self.assertRaises(ContextError):
+                match_image_modules(images, modules, source='fixture')
+
+    def fixture(self, intervals):
+        data = bytearray(0xB0 + len(intervals)*40)
+        struct.pack_into('<II', data, 0xA8, 0xB0, len(intervals)*40)
+        for index, (start, count) in enumerate(intervals):
+            struct.pack_into('<iI', data, 0xB0 + index*40 + 8, start, count)
+        return bytes(data)
+
+    def test_normal(self):
+        self.assertEqual(type_image_owners(self.fixture([(0,2),(-1,0),(2,1)]), 3, source='fixture'), [0,0,2])
+
+    def test_overlap_is_ambiguous(self):
+        with self.assertRaises(ContextError) as caught:
+            type_image_owners(self.fixture([(0,2),(1,2)]), 3, source='fixture')
+        self.assertEqual(caught.exception.diagnostics['actual']['candidateImages'], [0,1])
+
+    def test_hole_and_bad_count(self):
+        for intervals in ([(0,1),(2,1)], [(0,4)], [(-1,1)], [(0,0xFFFFFFFF)]):
+            with self.subTest(intervals=intervals), self.assertRaises(ContextError):
+                type_image_owners(self.fixture(intervals), 3, source='fixture')
+
+    def test_truncated_and_misaligned_section(self):
+        good = self.fixture([(0,3)])
+        for data in (good[:12], good[:-1], good[:0xAC]+struct.pack('<I',39)+good[0xB0:]):
+            with self.assertRaises(ContextError):
+                type_image_owners(data, 3, source='fixture')
+
+    def test_unrelated_tail_not_consumed(self):
+        self.assertEqual(type_image_owners(self.fixture([(0,3)])+b'tail', 3, source='fixture'), [0,0,0])
 
 
 if __name__ == '__main__':

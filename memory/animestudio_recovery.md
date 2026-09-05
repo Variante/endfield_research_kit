@@ -245,8 +245,16 @@ Current durable boundaries:
   selection; preserve both terminal candidates until those separate gates close.
   The native MVAR leaf reads a parameter ordinal and indexes the supplied
   method-inst vector. The gate checks that ordinal against the selected call's
-  registered argument, but does not substitute this static match for a live
-  context, image/module, or source-allocation connection.
+  registered argument. Native normal-path stores now connect method records to
+  their class, the metadata image-range directory, and a module selected by
+  bytewise name comparison from the gated CodeRegistration. The static image
+  partition must be complete and unambiguous; module names must be unique since
+  the native loop continues after a match. This does not certify initialization
+  execution, all cold paths, active formatter selection, or source/cursor/EOF.
+  Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk
+  fingerprints at both ends; authenticating the report hash alone does not
+  establish freshness after a tool rebuild. Reauthenticate affected bytes with
+  the rebuilt tool rather than rewriting old provenance pins.
   DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
   without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC
