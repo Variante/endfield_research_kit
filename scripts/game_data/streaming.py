@@ -593,6 +593,57 @@ def _nested_reference_ranges(
     return ranges, count
 
 
+def _selector5_key_ranges(
+    data: bytes, starts: dict[int, int], count: int, label: str,
+) -> dict[str, Any]:
+    """Join one table's unique keys to bounded candidate read spans.
+
+    This is not native execution or a record-width claim. In particular the
+    runtime dispatch marker and later row pointer originate in different
+    roots. Reject duplicates as ambiguous even though native insertion keeps
+    the first index; our evidence contract requires a unique serialized join.
+    """
+    for field, width in ((3, 4), (4, 1), (5, 4)):
+        start = starts[field]
+        actual = _u32(data, start)
+        if actual != count or count > (len(data) - start - 4) // width:
+            raise ValueError(f"Streaming {label} field {field} at {start}: expected bounded count {count}, actual {actual}, EOF {len(data)}")
+    indices = {}
+    for index in range(count):
+        offset = starts[3] + 4 + index * 4
+        key = _u32(data, offset)
+        if key in indices:
+            raise ValueError(f"Streaming {label} key at {offset}: expected unique key, actual ambiguous {key:#010x} at indices {indices[key]}/{index}")
+        indices[key] = index
+
+    def resolve(key: int, marker: int, width: int) -> dict[str, int]:
+        if key not in indices:
+            raise ValueError(f"Streaming {label} keys at {starts[3]}: expected key {key:#010x}, actual missing")
+        index = indices[key]
+        marker_offset = starts[4] + 4 + index
+        actual = data[marker_offset]
+        if actual != marker:
+            raise ValueError(f"Streaming {label} marker at {marker_offset}: expected {marker} for key {key:#010x}, actual {actual}")
+        slot = starts[5] + 4 + index * 4
+        target = _bounded_anonymous_target(data, slot, label)
+        if width > len(data) - target:
+            raise ValueError(f"Streaming {label} target at {target}: expected {width} readable bytes, actual {len(data)-target}")
+        return dict(key=key, index=index, slot=slot, start=target, end=target+width)
+
+    if 0x05020000 not in indices:
+        return dict(status='unresolved-missing-count-key', countValue=None,
+                    countRange=None, elementRanges=[])
+    scalar = resolve(0x05020000, 2, 4)
+    value = _i32(data, scalar['start'])
+    # The selected unique-key profile supports at most one 16-bit index lane.
+    # Native OR packing outside that lane is not a one-to-one key encoding.
+    if value < 0 or value > min(count, 65536):
+        raise ValueError(f"Streaming {label} count at {scalar['start']}: expected 0..{min(count, 65536)}, actual {value}")
+    elements = [resolve(0x05010000 | index, 15, 16) for index in range(value)]
+    return dict(status='exact-unique-key-candidate-read-ranges',
+                countValue=value, countRange=scalar, elementRanges=elements)
+
+
 def _parse_parallel_root_subgraph(
     data: bytes, root: dict[str, Any], family: str
 ) -> dict[str, Any]:
@@ -632,6 +683,8 @@ def _parse_parallel_root_subgraph(
     marker15_prefix_fits: Counter[int] = Counter()
     # These are probes, not an exhaustive registry or selectable layouts.
     marker15_probe_widths = (1, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64)
+    selector5_rows = []
+    selector5_ranges = []
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -882,6 +935,25 @@ def _parse_parallel_root_subgraph(
             nested_field3_values += nested_counts[0]
             nested_field4_values += nested_counts[1]
             nested_field5_values += nested_counts[2]
+            selector_slot = _field_address(row, 2)
+            if (data[field4_start + 4 + index] == 2 and selector_slot is not None
+                    and slot_spans.get(selector_slot, 0) < 4):
+                raise ValueError(
+                    f"Streaming {family} selector field2 at {selector_slot}: "
+                    f"expected at least 4 slot bytes, actual {slot_spans.get(selector_slot, 0)}"
+                )
+            if (data[field4_start + 4 + index] == 2 and selector_slot is not None
+                    and _u32(data, selector_slot) & 255 == 5):
+                joined = _selector5_key_ranges(
+                    data, nested_starts, nested_counts[0],
+                    f"{family} selector5 row {index}",
+                )
+                joined.update(rowIndex=index, rowOffset=int(row['tableOffset']),
+                              nestedTableOffset=nested_target)
+                selector5_rows.append(joined)
+                if joined['countRange'] is not None:
+                    selector5_ranges.extend((r['start'], r['end'], 'candidate-read-span')
+                                            for r in [joined['countRange'], *joined['elementRanges']])
             for element_index in range(nested_counts[0]):
                 marker = data[nested_starts[4] + 4 + element_index]
                 nested_markers[marker] += 1
@@ -916,6 +988,12 @@ def _parse_parallel_root_subgraph(
     unique_ranges = sorted(
         {(start, end, kind) for start, end, kind, _label in ranges}
     )
+    # Candidate reads may not collide with authenticated structure. They stay
+    # separate from owned bytes: a native load width is not object extent.
+    checked_ranges = sorted(set(unique_ranges + selector5_ranges)) if selector5_ranges else []
+    for previous, current in zip(checked_ranges, checked_ranges[1:]):
+        if current[0] < previous[1]:
+            raise ValueError(f"Streaming {family} selector5 range at {current[0]}: expected no overlap, actual {previous} / {current}")
     reused_references = len(ranges) - len(unique_ranges)
     for previous, current in zip(unique_ranges, unique_ranges[1:]):
         if current[0] < previous[1]:
@@ -927,6 +1005,14 @@ def _parse_parallel_root_subgraph(
     return {
         "status": "exact_anonymous_subgraph",
         "parallelCount": field3_count,
+        "selector5KeyRangeJoin": {
+            "status": "exact-unique-key-candidate-read-ranges",
+            "evidenceLevel": "structural-only",
+            "scope": "same-file root marker 2 and row.field2 low byte 5; not cross-root runtime dispatch",
+            "rows": selector5_rows,
+            "targetOwnedBytes": 0,
+            "recordExtentStatus": "unresolved",
+        },
         "fieldWidths": {"3": 4, "4": 1, "5": 4},
         "field4ByteValueCounts": dict(sorted(byte_values.items())),
         "field4ByteToRowShapes": [

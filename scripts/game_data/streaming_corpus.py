@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v11"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v12"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -312,6 +312,10 @@ def sweep(
     marker15_references = 0
     marker15_prefix_fits: collections.Counter[str] = collections.Counter()
     marker15_files = []
+    selector5_files = []
+    selector5_counts: collections.Counter[int] = collections.Counter()
+    selector5_elements = 0
+    selector5_unresolved = 0
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
@@ -750,6 +754,21 @@ def sweep(
                     )
                     nested_element_opaque += int(parallel.get("nestedElementOpaqueCount", 0))
                     refs15 = parallel.get("nestedMarker15References", {})
+                    joined_rows = parallel.get('selector5KeyRangeJoin', {}).get('rows', [])
+                    if joined_rows:
+                        selector5_counts.update(r['countValue'] for r in joined_rows if r['countValue'] is not None)
+                        selector5_unresolved += sum(r['countValue'] is None for r in joined_rows)
+                        selector5_elements += sum(len(r['elementRanges']) for r in joined_rows)
+                        selector5_files.append({
+                            "virtualPath": virtual_path,
+                            "physicalChunkPath": str(chunk_path),
+                            "physicalChunkSource": row.get("physicalChunkSource"),
+                            "metadataProvenance": row.get("metadataProvenance"),
+                            "overlayState": row.get("overlayState"),
+                            "offset": offset, "length": length,
+                            "packedSha256": hashlib.sha256(raw).hexdigest().upper(),
+                            "rows": joined_rows,
+                        })
                     marker15_references += int(refs15.get("count", 0))
                     for width, count in refs15.get("probeWidthFitCounts", {}).items():
                         marker15_prefix_fits[str(width)] += int(count)
@@ -1093,6 +1112,20 @@ def sweep(
                 "slotTargetDigestEncoding": "concatenated-little-endian-u64-slot-u64-target-in-vector-order",
                 "files": sorted(marker15_files, key=lambda item: item["virtualPath"]),
             },
+            "selector5KeyRangeJoin": {
+                "status": "exact-unique-key-candidate-read-ranges" if not failed else "unvalidated",
+                "evidenceLevel": "structural-only",
+                "scope": "same-file root marker 2 and row.field2 low byte 5; not cross-root runtime dispatch",
+                "rowCount": sum(selector5_counts.values()),
+                "unsupportedRowCount": selector5_unresolved,
+                "unsupportedReason": "missing-count-key; no candidate range or native default interpretation published",
+                "countValueCounts": dict(sorted(selector5_counts.items())),
+                "elementRangeCount": selector5_elements,
+                "candidateReadBytes": sum(selector5_counts.values()) * 4 + selector5_elements * 16,
+                "targetOwnedBytes": 0,
+                "recordExtentStatus": "unresolved",
+                "files": sorted(selector5_files, key=lambda item: item['virtualPath']) if not failed else [],
+            },
             "pairedGroupSubgraphStatus": (
                 "exact_anonymous_subgraph" if not failed else "unvalidated"
             ),
@@ -1113,6 +1146,9 @@ def sweep(
             ),
             "nestedReaderPhaseStaticChain": (
                 native_contract.get("nestedReaderPhaseObservations") if not failed else None
+            ),
+            "nestedKeyIndexStaticChain": (
+                native_contract.get("nestedKeyIndexObservations") if not failed else None
             ),
             "managedShapeCandidateStatus": "candidate-only",
             "nativeCarrierStatus": (
@@ -1151,7 +1187,7 @@ def sweep(
             "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, field 4 is six float32 loads, and field 5 is a count-prefixed vector whose elements are loaded as scalar32 hash-table keys. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
             "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, filename-token relations, nested parallel vectors, and the family-level carrier remain anonymous structure. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, script callback overrides and actual execution, complete key-to-index lookup, nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The default selector-5 later-phase reader is a conditional static route using the second secondary root; it does not join a particular authenticated file or establish a target width.",
+            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, script callback overrides and actual execution, cross-root native dispatch selection, remaining nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The default selector-5 later-phase reader is a conditional static route using the second secondary root; it does not join a particular authenticated file or establish a target width.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -1178,7 +1214,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[]. These representations are selected-build native-gated and remain anonymous.",
         "- Native context evidence is separately gated in layer4.nestedContextStaticChain: the static root.field5 row.field3 pointer is installed at context+0x80 during a callback scope. This does not close callback-to-asset-API selection, nested marker15 selection, or record extent, and adds no parser-owned target bytes.",
         f"- Root marker/row-shape joins use identical vector indices: `{layer3.get('rootMarkerRowShapeJoin', {})}`. These are not nested-marker type names.",
-        "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Key-to-index lookup, nested-marker width, concrete execution, and record extent remain separate gates.",
+        "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Full-key lookup, collision handling and first-index storage are now gated in nestedKeyIndexStaticChain. The first root supplies the dispatch marker and the second supplies the later row; concrete pairing, execution and record extent remain unresolved.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
@@ -1190,6 +1226,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Nested marker-17 target framing: `{layer3.get('nestedElementFraming')}`.",
         f"- Marker-15 bounded references: {layer3.get('nestedMarker15ReferenceBounds', {}).get('referenceCount', 0):,}; files: {layer3.get('nestedMarker15ReferenceBounds', {}).get('filesWithReferences', 0):,}. Width unresolved; target bytes are not owned. Per-file source identities and ordered slot/target digests are in the JSON report.",
         f"- Marker-15 available-file-byte width probes: `{layer3.get('nestedMarker15ReferenceBounds', {}).get('probeWidthFitCounts', {})}`. These are not an exhaustive layout search and do not select an element width or reject overlaps with unknown objects.",
+        f"- Selector5 unique-key candidate ranges: {layer3.get('selector5KeyRangeJoin', {}).get('rowCount', 0):,} rows, {layer3.get('selector5KeyRangeJoin', {}).get('elementRangeCount', 0):,} 16-byte candidate reads; {layer3.get('selector5KeyRangeJoin', {}).get('unsupportedRowCount', 0):,} missing-count-key rows remain explicitly unresolved. These ranges own zero additional bytes and do not establish runtime selection or complete record extent. Per-file identities and exact row/key/index/slot/ranges are in JSON.",
         f"- Paired field-6/7 groups: {layer3.get('pairedGroupCount', 0):,}; values: {layer3.get('pairedGroupValueCount', 0):,}; descriptors: {layer3.get('descriptorCount', 0):,}; blob bytes: {layer3.get('blobBytes', 0):,}.",
         f"- Paired-group per-file range sums: {layer3.get('pairedGroupRangeCountPerFileSum', 0):,} ranges; {layer3.get('pairedGroupOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         "",

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-field2-native-contract.v5",
+  "schema": "endfield.streaming-field2-native-contract.v6",
   "status": "validated",
   "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-carrier-and-scene-object-chain",
   "nativeInputs": {
@@ -661,40 +661,212 @@
       "size": 41,
       "bodySha256": "E4C2E5D3E33A0C3469F1A29C7FAC66A36E7CC4B4B0C83C030221377697161F95",
       "entryBytesHex": "486301488BD1482BD0B808000000663B0273130FB74208488D14016685C07406"
+    },
+    {
+      "role": "keyIndexMapInit",
+      "rva": 12768304,
+      "fileOffset": 12765744,
+      "size": 122,
+      "bodySha256": "F292493E97C7479953B2631C5825DA343C13A6E0C53B24B2DB91028AFD66EF18",
+      "entryBytesHex": "40534883EC20488D058B7BC300488BD948890133C04889410889411444894118",
+      "rangeKind": "function"
+    },
+    {
+      "role": "keyIndexMapResize",
+      "rva": 430000,
+      "fileOffset": 427440,
+      "size": 149,
+      "bodySha256": "71AEE9A2A45DAFFACEECAACF95C7614D0B5693AAC4C8A19562964C9CF40B5C53",
+      "entryBytesHex": "48895C24084889742410574883EC208BC28BDA99488BF983E20303D0C1FA02FF",
+      "rangeKind": "function"
+    },
+    {
+      "role": "keyIndexMapAllocateEmptySlots",
+      "rva": 430160,
+      "fileOffset": 427600,
+      "size": 101,
+      "bodySha256": "8D3FEDC82A78E79436C07E4C4C7267054FCDDBA9F0820135F1830F6D92304D13",
+      "entryBytesHex": "40534883EC30448B4118488D05F9C07F014863DA4533C9C74424283A040000BA",
+      "rangeKind": "function"
+    },
+    {
+      "role": "keyIndexMapRehashPreservingRows",
+      "rva": 402656,
+      "fileOffset": 400096,
+      "size": 111,
+      "bodySha256": "BB8B0825EE364F78C49A83244B81CC55AE3546FFCD8600BDAF73D98E705786F3",
+      "entryBytesHex": "48895C2408458BD04C8BDA4983C2048BD94B8D04514C03D04D3BCA74380F1F00",
+      "rangeKind": "function"
+    },
+    {
+      "role": "keyIndexMapInsert",
+      "rva": 917776,
+      "fileOffset": 915216,
+      "size": 573,
+      "bodySha256": "B842A01458601E1892C0F3E863444966CE48A2B861D24D0820F4307E0AB42C3C",
+      "entryBytesHex": "48895C2418555741574883EC3083791400498BE94D8BF8488BFA488BD9757D44",
+      "rangeKind": "function-with-three-unwind-fragments"
+    },
+    {
+      "role": "keyIndexMapInsertThunk",
+      "rva": 16052416,
+      "fileOffset": 16049856,
+      "size": 23,
+      "bodySha256": "78A350AB7DAA52CE5A98CC071CE633C2441E11F67B03A38E63E44183BA780648",
+      "entryBytesHex": "40534883EC20488BDAE8421019FF488BC34883C4205BC3",
+      "rangeKind": "leaf"
+    },
+    {
+      "role": "keyIndexMapFind",
+      "rva": 918608,
+      "fileOffset": 916048,
+      "size": 251,
+      "bodySha256": "8692A68733D77CA0ECE59407C105FBF5EBB7235E767DDB926C8F2F0B06610A4C",
+      "entryBytesHex": "48895C240848897C2410416900011000004C8BD9488BDA498BF8418B53080516",
+      "rangeKind": "function"
+    },
+    {
+      "role": "keyIndexMapEndIterator",
+      "rva": 423600,
+      "fileOffset": 421040,
+      "size": 25,
+      "bodySha256": "9DD574D08A28FC797F5CF6BF6D8A7F5B3A0E9F580F05268CBE577A0A49F20C2C",
+      "entryBytesHex": "8B41084883C0044C8D0440488BC24C03014C8942084C8902C3",
+      "rangeKind": "leaf"
+    },
+    {
+      "role": "keyIndexMapIteratorEquality",
+      "rva": 447408,
+      "fileOffset": 444848,
+      "size": 10,
+      "bodySha256": "A6F2D1F3D8B586EEB09F31F4CEAC5669CDF9E157C89FB47C4A50826F6424DEBB",
+      "entryBytesHex": "488B014839020F94C0C3",
+      "rangeKind": "leaf"
+    },
+    {
+      "role": "keyIndexMapInitialEmptySlot",
+      "rva": 25579464,
+      "fileOffset": 25573320,
+      "size": 12,
+      "bodySha256": "395AD663AEC84E8ADD5C503E990E18DE28E5642D3F74FE0D9D801529E171DC2E",
+      "entryBytesHex": "FFFFFFFF00000000E0241D81",
+      "rangeKind": "data"
     }
   ],
   "utf8Strings": [
-    {"role": "field2DuplicateDiagnostic", "rva": 26979248, "text": "Grid with layer %u / sceneStateId %d / pos (%d, %d) already exist"},
-    {"role": "streamingNormalPathTemplate", "rva": 26978976, "text": "{0}/{1}.bytes"},
-    {"role": "streamingDevPathTemplate", "rva": 26978880, "text": "{0}/[dev]{1}.bytes"},
-    {"role": "streamingLoadFailureDiagnostic", "rva": 26978944, "text": "[Streaming] Failed to load %s"},
-    {"role": "streamingStaticFirstReadLeaf", "rva": 27951632, "text": "StreamingChunkInfo"}
+    {
+      "role": "field2DuplicateDiagnostic",
+      "rva": 26979248,
+      "text": "Grid with layer %u / sceneStateId %d / pos (%d, %d) already exist"
+    },
+    {
+      "role": "streamingNormalPathTemplate",
+      "rva": 26978976,
+      "text": "{0}/{1}.bytes"
+    },
+    {
+      "role": "streamingDevPathTemplate",
+      "rva": 26978880,
+      "text": "{0}/[dev]{1}.bytes"
+    },
+    {
+      "role": "streamingLoadFailureDiagnostic",
+      "rva": 26978944,
+      "text": "[Streaming] Failed to load %s"
+    },
+    {
+      "role": "streamingStaticFirstReadLeaf",
+      "rva": 27951632,
+      "text": "StreamingChunkInfo"
+    }
   ],
   "rowLayout": [
-    {"fieldIndex": 0, "vtableEntryOffset": 4, "representation": "little-endian-scalar32"},
-    {"fieldIndex": 1, "vtableEntryOffset": 6, "representation": "little-endian-scalar32"},
-    {"fieldIndex": 2, "vtableEntryOffset": 8, "representation": "little-endian-scalar32"},
-    {"fieldIndex": 3, "vtableEntryOffset": 10, "representation": "little-endian-int32[2]"},
-    {"fieldIndex": 4, "vtableEntryOffset": 12, "representation": "little-endian-float32[6]"},
-    {"fieldIndex": 5, "vtableEntryOffset": 14, "representation": "count-prefixed-little-endian-scalar32[]"}
+    {
+      "fieldIndex": 0,
+      "vtableEntryOffset": 4,
+      "representation": "little-endian-scalar32"
+    },
+    {
+      "fieldIndex": 1,
+      "vtableEntryOffset": 6,
+      "representation": "little-endian-scalar32"
+    },
+    {
+      "fieldIndex": 2,
+      "vtableEntryOffset": 8,
+      "representation": "little-endian-scalar32"
+    },
+    {
+      "fieldIndex": 3,
+      "vtableEntryOffset": 10,
+      "representation": "little-endian-int32[2]"
+    },
+    {
+      "fieldIndex": 4,
+      "vtableEntryOffset": 12,
+      "representation": "little-endian-float32[6]"
+    },
+    {
+      "fieldIndex": 5,
+      "vtableEntryOffset": 14,
+      "representation": "count-prefixed-little-endian-scalar32[]"
+    }
   ],
   "consumerObservations": {
     "diagnosticRva": 26979248,
     "diagnosticUtf8": "Grid with layer %u / sceneStateId %d / pos (%d, %d) already exist",
     "diagnosticXrefRva": 439861,
-    "field3Loads": [439749, 439752],
-    "field4Loads": [440023, 440028, 440032, 440037, 440042, 440055],
+    "field3Loads": [
+      439749,
+      439752
+    ],
+    "field4Loads": [
+      440023,
+      440028,
+      440032,
+      440037,
+      440042,
+      440055
+    ],
     "runtimeRecordSourceRva": 440010,
     "runtimeRecordRawRowPointerStoreRva": 439990,
     "runtimeRecordRawRowPointerOffset": 16,
     "runtimeRecordCopyCallRva": 440078,
     "runtimeRecordStrideBytes": 72,
     "runtimeRecordLookupCallRva": 440532,
-    "runtimeRecordRawRowPointerLoads": [440674, 440720, 440911, 441005, 441047],
-    "field5VectorAccessorCalls": [440678, 440724, 440919, 440932, 440975, 441024, 441051, 441101],
-    "field5VectorCountLoads": [440686, 440924, 440980, 441029],
-    "field5ElementLoads": [440732, 440942, 441059],
-    "field5ScalarLookupCalls": [440736, 440946, 441063]
+    "runtimeRecordRawRowPointerLoads": [
+      440674,
+      440720,
+      440911,
+      441005,
+      441047
+    ],
+    "field5VectorAccessorCalls": [
+      440678,
+      440724,
+      440919,
+      440932,
+      440975,
+      441024,
+      441051,
+      441101
+    ],
+    "field5VectorCountLoads": [
+      440686,
+      440924,
+      440980,
+      441029
+    ],
+    "field5ElementLoads": [
+      440732,
+      440942,
+      441059
+    ],
+    "field5ScalarLookupCalls": [
+      440736,
+      440946,
+      441063
+    ]
   },
   "carrierObservations": {
     "internalCallName": "UnityEngine.HyperGryph.Streaming.StreamingSceneV2::Create_Injected",
@@ -852,7 +1024,7 @@
         5,
         1
       ],
-      "elementKeyPacking": "((key0 << 8) | key1) << 16 | key2, modulo uint32; observed numeric candidates 0x05020000 and 0x05010000+i",
+      "elementKeyPacking": "(((key0 << 8) | key1) << 16 | key2) modulo uint32; OR is not addition outside the bounded low-16-bit index lane.",
       "countKeyCallRva": 14923447,
       "countScalarLoadRva": 14923539,
       "elementKeyStores": [
@@ -863,7 +1035,7 @@
       "elementReaderCallRva": 14923592,
       "candidateElementConsumedBytes": 16,
       "candidateElementLoadRva": 908477,
-      "lookupBoundary": "0xdffc0 full wrapper packs the key, builds a map from table-at-context+0x80 field3 vector, calls index-map helpers, and returns a stored map value. Full hash-map initialization/insertion/lookup helper ABI and invariants are not audited; do not claim precise key-index correspondence yet."
+      "lookupBoundary": "Closed by nestedKeyIndexObservations: full u32 equality, collision resolution, first source-vector ordinal retained for duplicate keys. Maintained serialized join rejects duplicates as ambiguous."
     },
     "falseSlot0Reset": {
       "sourceEmptyDescriptorStoreRva": 1820279,
@@ -875,14 +1047,13 @@
       "exact": "Selected native registration bytes put false stub in selector5 slot0 and actual reader0xe3b680 in slot1. Slot1 scope establishes row.field3 at context+0x80 for duration of the callback. The static record source is second-root field5, distinct from the first-root row used by initial slot0.",
       "conditional": "Default registration must be the one installed in the context; script binding can replace callbacks and no concrete runtime registration receipt is provided. Runtime record instance/scheduler ownership is not newly proved.",
       "unresolved": [
-        "full native key-to-index helper closure",
-        "unique numeric key/marker15 corpus join",
         "marker15 target extent and representation",
         "authentic logical-file receipt into one runtime instance",
-        "final cursor and whole-file native consumption"
+        "final cursor and whole-file native consumption",
+        "Runtime dispatch marker originates first-root.field4; saved row pointer originates second-root.field5 at same index. Second-root own field4 marker is not a runtime dispatch receipt. A per-file key/marker/span association can be reader-compatible conditional evidence only until the two-root pairing is authenticated."
       ]
     },
-    "nextTask": "Close native key-index helper semantics and unique per-row key association, then certify only the selector5/key(5,1,index) subset 16-byte consumed spans. Keep record extent and other marker15 targets opaque.",
+    "nextTask": "Authenticate the first-root marker / second-root row same-index relationship before promoting per-file reader-compatible key/range associations. Record extent and remaining marker15 targets stay opaque.",
     "status": "direct-conditional-default-selector5-later-reader",
     "sourceRoot": "second-secondary-root",
     "marker15WidthStatus": "unresolved",
@@ -919,5 +1090,92 @@
     "direct": "The selected row consumer reads fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed 32-bit loads, and field 4 through an inline pointer followed by six float32 loads. It stores the source row pointer at byte 16 of a copied 72-byte runtime record. A later state consumer reloads that pointer, obtains vtable entry 14, reads the vector count, and loads each element at vector+4+index*4 before passing the 32-bit value as a hash-table lookup key. The first scene read formats the static leaf StreamingChunkInfo under an unavailable runtime root. A separate static object chain propagates anonymous scene-root pairs through a state-selected 16-byte handle to two secondary reads, then reaches the second secondary root's vtable-entry-8 row vector and this row consumer.",
     "structuralOnly": "The contract proves stored value representations for anonymous fields 0-5, direct field-5 iteration, a family-level carrier base/requested-length/actual-length contract, and the selected static scene-object chain. It does not prove a managed serialized field order, the key namespace, one concrete Create instance, or the identity of one authenticated logical file at either native read boundary.",
     "unresolved": "The concrete runtime root/path-to-authenticated-logical-file joins and scheduler edge to one Create instance are not closed. The selected closure is proven pointer-only after I/O and therefore has no outer-length offset checks, parsed-length result, or final cursor; differently encoded, inlined, dynamically dispatched, or unconnected verifier code elsewhere remains unexcluded. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved."
+  },
+  "nestedKeyIndexObservations": {
+    "status": "exact-selected-static-u32-key-to-first-vector-index-helper-chain",
+    "abi": {
+      "wrapper": "RCX=context, RDX=pointer to three dwords, R8=out uint32 index. Packs key modulo32 as (((k0<<8)|k1)<<16)|k2. If context+0x78 map is absent, constructs it once from context+0x80 table.field3, inserting each vector element as key and its zero-based ordinal as value. Returns AL=false for missing key without writing output; AL=true with map slot+8 copied to [out].",
+      "init": "0xc2d430 RCX=map allocation, EDX=expected source vector count, R8D=allocator selector. Initializes base to static empty slot, mask/count/free budget to zero; for nonzero expected count obtains power-of-two bucket count sufficient for approximately 3*n/2 entries then initializes empty slots. No external payload length input.",
+      "insertThunk": "0xf4f0c0 RCX=map,RDX=caller result struct,R8=key pointer,R9=index pointer. Calls0xe0110 with same arguments and returns result struct in RAX.",
+      "insert": "0xe0110 RCX=map,RDX=out(iterator pointer,end pointer,inserted byte),R8=key pointer,R9=index pointer. New entries store key at slot+4,index value at slot+8,masked hash at slot+0. Duplicate full key returns iterator with inserted=false and preserves original index.",
+      "find": "0xe0450 RCX=map,RDX=out(iterator pointer,end pointer),R8=key pointer. Compares both masked hash and full u32 key before successful result. Returns output struct pointer in RAX.",
+      "endAndEquality": "0x676b0 RCX=map,RDX=out iterator sets both pointers to base+3*(mask+4), returns output struct.0x6d3b0 RCX=iteratorA,RDX=iteratorB returns AL=(A.pointer==B.pointer).",
+      "rehash": "0x624e0 ECX=new mask,RDX=new base,R8D=old mask,R9=old base. Copies all12 bytes of occupied entries into new probe slots, preserving key and index, not merely hash."
+    },
+    "layout": {
+      "mapBaseOffset": 0,
+      "mapMaskOffset": 8,
+      "mapEntryCountOffset": 12,
+      "mapFreeBudgetOffset": 20,
+      "mapAllocatorOffset": 24,
+      "slotBytes": 12,
+      "slotMaskedHashOffset": 0,
+      "slotFullKeyOffset": 4,
+      "slotValueIndexOffset": 8,
+      "emptyMarker": 4294967295,
+      "deletedMarker": 4294967294,
+      "hashFingerprintMask": 4294967292,
+      "probeOffsetUpdate": "step starts0; each collision step+=4, offset=(offset+step)&mask; slot address=base+offset*3"
+    },
+    "observations": {
+      "wrapperPackedKeyRvas": [
+        917446,
+        917451,
+        917454,
+        917457,
+        917460
+      ],
+      "wrapperVectorElementAndIndexInsertRvas": [
+        917635,
+        917643,
+        917650
+      ],
+      "initialInsertFingerprintAndFullKeyEquality": [
+        918020,
+        918028
+      ],
+      "collisionInsertFingerprintAndFullKeyEquality": [
+        918151,
+        918156
+      ],
+      "duplicateInsertedFalseStores": [
+        918078,
+        918222
+      ],
+      "newKeyAndValueStores": [
+        918253,
+        918258
+      ],
+      "lookupFingerprintAndFullKeyEquality": [
+        918722,
+        918730,
+        918771,
+        918852
+      ],
+      "wrapperMissAndOutValueRvas": [
+        917750,
+        917763,
+        917768
+      ],
+      "rehashWholeRowLoadsAndStores": [
+        402716,
+        402721,
+        402725,
+        402729
+      ]
+    },
+    "evidenceBoundary": {
+      "exact": "Successful selected native map operations match full32-bit key, resolve collisions and retain first ordinal for duplicates. Hash equality alone is explicitly insufficient. Source vector ordinal is the stored index, not insertion-table slot order.",
+      "parserPolicy": "Still reject duplicate source keys as ambiguous rather than silently applying native first-insert-wins. Bound vector counts, key arithmetic, index lookup, scalar-count reads and every consumed target independently; native helpers have no source length guards.",
+      "runtimeCrossRootGap": "Runtime dispatch marker originates first-root.field4; saved row pointer originates second-root.field5 at same index. Second-root own field4 marker is not a runtime dispatch receipt. A per-file key/marker/span association can be reader-compatible conditional evidence only until the two-root pairing is authenticated.",
+      "notProven": [
+        "one runtime instance or current callback override state",
+        "allocation failure behavior or arbitrary corrupted map safety",
+        "authenticated file base/length or final cursor",
+        "all marker15 records use selector5/key(5,1,index)",
+        "16 bytes is whole record size rather than consumed span",
+        "field names/game semantics"
+      ]
+    }
   }
 }

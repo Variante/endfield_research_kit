@@ -12,6 +12,7 @@ from scripts.tests.test_streaming import (
     _info_root,
     _packed,
     _parallel_target_data_root,
+    _selector5_data_root,
 )
 
 
@@ -58,10 +59,12 @@ class StreamingCorpusTests(unittest.TestCase):
         ):
             return sweep(**kwargs)
 
-    def _fixture(self, root: Path) -> tuple[Path, Path, Path, str]:
+    def _fixture(self, root: Path, *, selector5: bool = False) -> tuple[Path, Path, Path, str]:
         input_set = "A" * 64
         init_clear = bytearray(_parallel_target_data_root())
         init_clear[236] = 15
+        if selector5:
+            init_clear = bytearray(_selector5_data_root())
         init = _packed(bytes(init_clear))
         streaming_clear = bytearray(_field2_streaming_full_layout_root())
         streaming_clear[128:132] = (7).to_bytes(4, "little")
@@ -139,6 +142,21 @@ class StreamingCorpusTests(unittest.TestCase):
             encoding="utf-8",
         )
         return summary, ledger, chunk, input_set
+
+    def test_selector5_ranges_keep_source_identity_without_runtime_claim(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            summary, ledger, _chunk, input_set = self._fixture(Path(temporary), selector5=True)
+            result = self._sweep(outer_summary_path=summary, outer_ledger_path=ledger,
+                                 expected_input_set_sha256=input_set)
+        self.assertEqual(result['status'], 'complete')
+        joined = result['layer3']['selector5KeyRangeJoin']
+        self.assertEqual(joined['rowCount'], 1)
+        self.assertEqual(joined['elementRangeCount'], 1)
+        self.assertEqual(joined['candidateReadBytes'], 20)
+        self.assertEqual(joined['targetOwnedBytes'], 0)
+        self.assertEqual(joined['files'][0]['physicalChunkSource'], 'fallback')
+        self.assertEqual(len(joined['files'][0]['packedSha256']), 64)
+        self.assertEqual(joined['files'][0]['rows'][0]['countValue'], 1)
 
     def test_complete_fixture(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -281,6 +299,9 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["layer3"]["nestedMarker15ReferenceBounds"]["status"], "unvalidated")
         self.assertIsNone(result["layer4"]["nestedContextStaticChain"])
         self.assertIsNone(result["layer4"]["nestedReaderPhaseStaticChain"])
+        self.assertIsNone(result["layer4"]["nestedKeyIndexStaticChain"])
+        self.assertEqual(result['layer3']['selector5KeyRangeJoin']['status'], 'unvalidated')
+        self.assertEqual(result['layer3']['selector5KeyRangeJoin']['files'], [])
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["status"], "unvalidated")
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["counts"], {})
         self.assertEqual(

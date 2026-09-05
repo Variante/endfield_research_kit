@@ -107,11 +107,21 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   instead uses the second secondary root's row, retained in a 32-byte runtime
   record, and installs its field-3 target for that callback scope. The default
   later reader constructs count/element keys and calls a 16-byte-reading
-  helper. This conditional static chain is direct evidence, not a concrete
-  file receipt or proof of key-to-index behavior. Complete map-helper ABI,
-  unique key/marker association, script overrides, and record extent remain
-  unresolved. See `streaming_field2_native.json` and the focused report's
-  `layer4.nestedReaderPhaseStaticChain`; marker-15 candidates remain in
+  helper. The selected map-helper ABI now closes full-u32 key equality,
+  collision probing, key/index insertion, index-preserving rehash, and lookup
+  return. Duplicate keys keep the first native ordinal; the maintained
+  serialized join instead rejects them as ambiguous. The parser independently
+  joins unique count/element keys to marker-2 four-byte and marker-15 sixteen-
+  byte candidate read spans, checking bounds and overlap with the parallel
+  subgraph's known ranges. Missing
+  count keys remain explicit unsupported rows, not native default values.
+  These spans own no additional bytes and do not establish record extent.
+  Crucially, the runtime dispatch marker comes from the first root, while the
+  later row comes from the second: the second file's own marker is not a
+  dispatch receipt. Cross-root identity/index pairing, script overrides and
+  actual execution remain unresolved. See `streaming_field2_native.json` and
+  the focused report's `layer3.selector5KeyRangeJoin` and
+  `layer4.nestedKeyIndexStaticChain`; marker-15 candidates remain in
   `reports/animestudio/streaming_marker15_native_latest.json`.
   A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
@@ -274,11 +284,12 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Close the native key-to-index helpers and unique per-row key/marker join
-  for the reviewed later-phase selector before certifying its consumed spans.
-  Its conditional default callback path is closed; initial and later phases
-  use different root carriers. Preserve override/execution and file-instance
-  gaps, and do not extend a subset proof to every marker-15 target. The directory is bounded,
+- Authenticate the first-root marker / second-root row same-index pairing for
+  the reviewed later-phase selector before promoting the reader-compatible
+  key/range subset. Full-key lookup and unique serialized joins are closed;
+  missing-count-key rows remain unsupported by this profile. Initial and later
+  phases use different root carriers. Preserve override/execution and file-
+  instance gaps, and do not extend a subset proof to every marker-15 target. The directory is bounded,
   not its records. Then close marker-17 opaque byte bodies before concrete
   runtime-root/secondary-path joins or field-5 key namespace.
   Fixed-size-looking targets still need independent width/cursor

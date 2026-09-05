@@ -2,7 +2,8 @@ import hashlib
 import unittest
 
 from scripts.game_data.streaming import (
-    _bounded_anonymous_target, _nested_reference_ranges, parse_streaming_file,
+    _bounded_anonymous_target, _nested_reference_ranges, _selector5_key_ranges,
+    parse_streaming_file,
 )
 
 
@@ -202,6 +203,17 @@ def _parallel_target_data_root() -> bytes:
     data[312:316] = b"abc\0"
     word(356, 4)
     data[360:364] = b"\xff\x00\x01\x02"
+    return bytes(data)
+
+
+def _selector5_data_root() -> bytes:
+    data = bytearray(_parallel_target_data_root())
+    for offset, value in ((156, 261), (224, 0x05020000),
+                          (228, 0x05010000), (300, 1)):
+        data[offset:offset+4] = value.to_bytes(4, 'little')
+    data[236:238] = bytes((2, 15))
+    # The old marker17 bytes are now anonymous; only 332:348 is a candidate
+    # load span, not a wrapper interpretation or complete record.
     return bytes(data)
 
 
@@ -808,6 +820,78 @@ class StreamingTests(unittest.TestCase):
         data[300:316] = bytes(range(16))
         changed = parse_streaming_file("streaming", _packed(bytes(data)))["anonymousParallelSubgraph"]
         self.assertEqual(changed["nestedMarker15References"], refs)
+
+    def test_selector5_unique_key_candidate_ranges(self):
+        graph = parse_streaming_file('init', _packed(_selector5_data_root()))['anonymousParallelSubgraph']
+        joined = graph['selector5KeyRangeJoin']
+        self.assertEqual(joined['targetOwnedBytes'], 0)
+        self.assertEqual(joined['recordExtentStatus'], 'unresolved')
+        row = joined['rows'][0]
+        self.assertEqual(row['countValue'], 1)
+        self.assertEqual((row['countRange']['start'], row['countRange']['end']), (300, 304))
+        self.assertEqual((row['elementRanges'][0]['start'], row['elementRanges'][0]['end']), (332, 348))
+
+    def test_selector5_duplicate_missing_marker_count_and_offset_fail_closed(self):
+        for offset, value, width, expected in (
+            (136, 15, 2, 'expected at least 4 slot bytes, actual 1'),
+            (228, 0x05020000, 4, 'ambiguous'),
+            (228, 123, 4, 'expected key.*missing'),
+            (237, 13, 1, 'expected 15.*actual 13'),
+            (300, 3, 4, 'expected 0..2, actual 3'),
+            (300, 0xFFFFFFFF, 4, 'actual -1'),
+            (248, 0, 4, 'expected.*actual'),
+            (248, 380-248, 4, 'expected 16 readable bytes, actual 4'),
+            (244, 260-244, 4, 'expected 0..2, actual 3'),
+            (248, 260-248, 4, 'expected no overlap'),
+        ):
+            data = bytearray(_selector5_data_root())
+            data[offset:offset+width] = value.to_bytes(width, 'little')
+            with self.subTest(offset=offset, value=value):
+                with self.assertRaisesRegex(ValueError, expected):
+                    parse_streaming_file('init', _packed(bytes(data)))
+
+    def test_selector5_truncated_and_trailing_fail_closed(self):
+        for data in (_selector5_data_root()[:347], _selector5_data_root()+b'x'):
+            with self.assertRaises(ValueError):
+                parse_streaming_file('init', _packed(data))
+
+    def test_selector5_missing_count_key_is_explicitly_unresolved(self):
+        data = bytearray(_selector5_data_root())
+        data[224:228] = (123).to_bytes(4, 'little')
+        row = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']['selector5KeyRangeJoin']['rows'][0]
+        self.assertEqual(row['status'], 'unresolved-missing-count-key')
+        self.assertIsNone(row['countRange'])
+        self.assertEqual(row['elementRanges'], [])
+
+    def test_selector5_vector_bounds_and_zero_count_profile(self):
+        data = bytearray(_selector5_data_root())
+        data[300:304] = bytes(4)
+        result = _selector5_key_ranges(bytes(data), {3: 220, 4: 232, 5: 240}, 2, 'fixture')
+        self.assertEqual(result['countValue'], 0)
+        self.assertEqual(result['elementRanges'], [])
+        for starts, count, broken in (
+            ({3: 220, 4: 232, 5: 240}, 3, bytes(data)),
+            ({3: 220, 4: 232, 5: 240}, 2, bytes(data[:248])),
+        ):
+            with self.assertRaisesRegex(ValueError, 'expected bounded count'):
+                _selector5_key_ranges(broken, starts, count, 'fixture')
+
+    def test_selector5_same_file_marker_is_not_runtime_dispatch(self):
+        data = bytearray(_selector5_data_root())
+        data[84] = 3
+        graph = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']
+        self.assertEqual(graph['selector5KeyRangeJoin']['rows'], [])
+        self.assertEqual(graph['nestedMarker15References']['count'], 1)
+
+    def test_selector5_join_uses_key_index_not_declaration_order(self):
+        data = bytearray(_selector5_data_root())
+        data[224:232] = data[228:232] + data[224:228]
+        data[236:238] = data[236:238][::-1]
+        data[244:248] = (332-244).to_bytes(4, 'little')
+        data[248:252] = (300-248).to_bytes(4, 'little')
+        row = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']['selector5KeyRangeJoin']['rows'][0]
+        self.assertEqual(row['countRange']['index'], 1)
+        self.assertEqual(row['elementRanges'][0]['index'], 0)
 
     def test_marker15_zero_and_overflowing_offsets_fail_closed(self):
         for relative in (0, 384 - 244, 0xFFFFFFFF):
