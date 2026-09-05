@@ -220,6 +220,12 @@ only.
   defaults do not validate those live values. Exact t7 uses the completed
   resolve, and t11 uses same-camera/frame contact output with separate content
   gates. Legacy HLSL bindings remain a different contract.
+  The dedicated `StartEndminfContactShadowCapture.bat` observer now retains
+  bounded dispatch-local buffer ranges and pre-dispatch inputs, then checks
+  output snapshots at both consumers. Its WARP/collection tests validate the
+  observation mechanics, not retail stability or pixel parity. Follow the
+  EndfieldCapture README's single-entry procedure; it does not replace the
+  separate ScreenShadow two-entry capture.
   See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
   Deferred presentation remains fail-closed
   until a corrected current-outfit capture validates the draw-local t7 payload.
