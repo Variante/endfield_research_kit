@@ -1109,6 +1109,50 @@ def resolver_prefix_query(pe,*,source):
             'boundary':'After a successful delimiter search the resolver subtracts the query data pointer from the result, supplies that difference as requested length and supplies start zero to the subrange helper. The helper unsigned-checks start<=length, clamps requested length to length-start, selects inline or pointer bytes by capacity>15 and forwards source+start with the bounded count to a constructor. Its result is moved as two 16-byte halves into the second query carrier. For a valid successful search of the first left parenthesis this requests exactly the bytes before that delimiter, excluding parentheses and their suffix; it does not simply remove two final bytes. The reviewed search uses scalar and SIMD matching; no arbitrary no-match return guarantee is promoted from undefined BSF-zero destination contents. Allocation/copy/comparison helper semantics, malformed carriers, actual cache/tree contents and successful lookup remain unresolved. This conditional extent does not establish live equivalence between the requested and registered names.'}
 
 
+def unity_loader_conversion(pe,*,source):
+    """Selected conversion counts and end pointer; no successful API receipt."""
+    bodies=[]
+    for start,end,expected in (
+        (0x22A130,0x22A235,'AEF375DB6CF045093078E4299BCCB8EF554CF3E39C8F1682350D542BCD7A539B'),
+        (0x22A090,0x22A0D5,'3B05F568B8ED9FA3D4F39B42D3765B62FF2DAD7A61D1B0425E1E8D57C411FF7F'),
+        (0xEDA2CA,0xEDA2DD,'CDFAA7C4BF101716557C796C22B29B593F21B1181CD5CA0670E9AE8AFCA6BB17'),
+        (0xEDA2F2,0xEDA305,'F141693EAD546988017B299AD444ECE651B9904562BE0654D0CEF9C165CDC250'),
+        (0x3CE6A0,0x3CE6B8,'90A3B5C1237913A161A55C77A96688A23E1FAD0DA89E369F0C9DC40BF754F202')):
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        digest=hashlib.sha256(raw).hexdigest().upper()
+        require(digest,expected,source,start)
+        bodies.append({'rva':start,'byteLength':len(raw),'sha256':digest})
+    caller=bytes.fromhex('E805BEF2FF488D9424A0000000488D4C2430E853BDF2FF')
+    require(pe.bytes_at_va(pe.image_base+0x2FE326,len(caller)),caller,source,0x2FE326)
+    return {'bodies':bodies,'callerRva':0x2FE326,'callerRawHex':caller.hex().upper(),
+            'codePageArgument':65001,'flagsArgument':0,'elementByteLength':2,
+            'level':'direct conditional count, terminator and end-pointer flow',
+            'boundary':'The converter receives a pointer-to-input-pointer, a 64-bit input count and an output representation. With nonzero count its first selected MultiByteToWideChar import call receives ECX=65001, EDX=0, R8=input data, R9D=low DWORD input count, a null output and zero output count. A nonpositive EAX goes to an unreviewed reset helper. A positive EAX is sign-extended and used for capacity selection, stored length (or inline 12-length WORD encoding), and a zero WORD at data+2*length before a second import call. The second call uses the same input bytes/count and a helper-derived output data/count; its EAX survives the epilogue but the module caller does not inspect it before calling the end-pointer helper. That helper selects inline/pointer data and writes data+2*representationLength into its output slot. Its length leaf returns QWORD +0x10 unless tag BYTE +0x20=1, when it returns 12-zero-extended WORD +0x18; it preserves the R8 data register used by the end-pointer caller. Tag-two cold branches call a capacity helper before rejoining. Capacity allocation, reset and tag mutation remain unresolved, so neither output bounds nor conversion success is asserted. Representation length and the subsequent slash-loop end are not validated against the second API return. This is not Unicode parity, an OS binding receipt, a loaded-image hash or a SkillData final cursor.'}
+
+
+def unity_loader_input(pe,*,source):
+    """Exact selected caller's fixed inline request, not loaded image identity."""
+    windows=[]
+    # These are selected path windows, not whole-function coverage. The helper's
+    # other branches cannot be selected by this caller's explicit tag=1/count=16.
+    for start,end,expected in (
+        (0x5579C0,0x557A20,'C8C0DCA5C01C98FA0E86CCCFB3563C582786D42C411A9BFDA6A16F1A8625DC7A'),
+        (0xF48826,0xF48830,'603B5330B684DA48E711384D93EC77A08D666CD2F2F778E33918B2CCF13A3B26'),
+        (0x74A60,0x74A99,'4AA8D511727CC6C391DE9337AE1A5E47AF18F4F3EF3F9D70D2C8649BAFBE47B9')):
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        digest=hashlib.sha256(raw).hexdigest().upper()
+        require(digest,expected,source,start)
+        windows.append({'rva':start,'byteLength':len(raw),'sha256':digest})
+    literal=b'GameAssembly.dll'
+    require(pe.bytes_at_va(pe.image_base+0x187F180,16),literal,source,0x187F180)
+    return {'windows':windows,'literalRva':0x187F180,'requestedModuleName':literal.decode('ascii'),
+            'requestByteLength':16,'loaderCallRva':0x557A1B,'loaderRva':0x31E6C0,
+            'level':'direct selected caller inline-byte construction and argument flow',
+            'boundary':'The caller initializes a stack representation with tag BYTE +0x20=1, then calls a helper with count 16. On these explicit inputs the reviewed helper path compares count against 24 and returns the original representation address without mutating it or invoking other callees. The caller copies the exact 16-byte GameAssembly.dll literal to that address and writes a separate zero byte at +16. Its tag-one cold branch sets BYTE +0x18=8, rejoins the hot path and passes the same representation address in RCX to the reviewed module loader. The previously verified length helper therefore computes 24-8=16 on this carrier. Other capacity/helper branches and the caller after the loader call are outside this claim. This proves a static basename request, not actual invocation, conversion correctness, the selected module-cache entry, Windows search-path resolution, loaded absolute path or loaded image hash. It cannot certify a current GameAssembly binding or any SkillData source/cursor.'}
+
+
 def unity_module_lookup(pe,*,source):
     """Selected loader/lookup control flow and import identities, not live bindings."""
     bodies=[]
@@ -1134,7 +1178,9 @@ def unity_module_lookup(pe,*,source):
     imports=[]
     for at,index,name_rva,hint,name in (
         (0x2FE388,207,0x1C37618,0x3F7,b'LoadLibraryW'),
-        (0x31E689,211,0x1C375CE,0x2DD,b'GetProcAddress')):
+        (0x31E689,211,0x1C375CE,0x2DD,b'GetProcAddress'),
+        (0x22A16A,216,0x1C3756A,0x423,b'MultiByteToWideChar'),
+        (0x22A1F5,216,0x1C3756A,0x423,b'MultiByteToWideChar')):
         raw=pe.bytes_at_va(pe.image_base+at,6)
         require(len(raw),6,source,at)
         require(raw[:2],b'\xff\x15',source,at)
@@ -1148,7 +1194,7 @@ def unity_module_lookup(pe,*,source):
                         'nameRva':name_rva,'name':name.decode('ascii'),'dll':'KERNEL32.dll'})
     return {'bodies':bodies,'selectedImports':imports,'moduleHandleCacheRva':0x1CF4C20,
             'level':'exact selected import identities; direct conditional handle and lookup-result flow',
-            'boundary':'The loader entry forwards its incoming RCX to a module helper, stores the returned RAX in the shared module-handle cache and exits on zero before the export-request body. The helper has a runtime-cache branch that returns a qword supplied by another helper. Its other branch extracts input representation data/length, invokes conversion helpers, iterates two-byte elements up to a helper-supplied end pointer replacing 0x2F with 0x5C, selects inline or pointer storage and passes it as RCX to the selected static LoadLibraryW import slot. The imported return is preserved, optionally stored through a cache helper, and returned after cleanup. The export lookup helper preserves incoming module/name arguments for the selected GetProcAddress import, returns its nonzero result, or returns zero for a null module. On a zero imported result its cold branch calls diagnostic/cleanup helpers and rejoins the return of the saved zero, conditional on those calls returning normally. Only the first import descriptor and two selected name thunks are joined, not complete import-table coverage or live IAT contents. Cache lookup/insertion and string conversion helper semantics, end-pointer validity, actual input module path, loaded image identity, successful binding and execution remain unresolved. No authenticated SkillData source, final cursor or terminal uniqueness follows.'}
+            'boundary':'The loader entry forwards its incoming RCX to a module helper, stores the returned RAX in the shared module-handle cache and exits on zero before the export-request body. The helper has a runtime-cache branch that returns a qword supplied by another helper. Its other branch extracts input representation data/length, invokes conversion helpers, iterates two-byte elements up to a helper-supplied end pointer replacing 0x2F with 0x5C, selects inline or pointer storage and passes it as RCX to the selected static LoadLibraryW import slot. The imported return is preserved, optionally stored through a cache helper, and returned after cleanup. The export lookup helper preserves incoming module/name arguments for the selected GetProcAddress import, returns its nonzero result, or returns zero for a null module. On a zero imported result its cold branch calls diagnostic/cleanup helpers and rejoins the return of the saved zero, conditional on those calls returning normally. Only the first import descriptor and three selected name thunks are joined, including both conversion calls to MultiByteToWideChar, not complete import-table coverage or live IAT contents. Cache lookup/insertion and string conversion helper semantics, end-pointer validity, actual input module path, loaded image identity, successful binding and execution remain unresolved. No authenticated SkillData source, final cursor or terminal uniqueness follows.'}
 
 
 def unity_conversion_exports(pe,unity,*,source,unity_source):
@@ -1750,6 +1796,8 @@ def audit():
     unity_path_evidence=unity_path_return(unity_pe,source=str(unity_path))
     unity_exports=unity_conversion_exports(pe,unity_pe,source=str(gate.gameassembly),unity_source=str(unity_path))
     unity_lookup=unity_module_lookup(unity_pe,source=str(unity_path))
+    unity_input=unity_loader_input(unity_pe,source=str(unity_path))
+    unity_conversion=unity_loader_conversion(unity_pe,source=str(unity_path))
     for start,end,expected in (
         (0x32BA20,0x32BA4F,'91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B'),
         (0x32BA50,0x32BA8A,'D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F'),
@@ -1804,6 +1852,8 @@ def audit():
         'selectedUnityPathReturn':unity_path_evidence,
         'selectedUnityConversionExports':unity_exports,
         'selectedUnityModuleLookup':unity_lookup,
+        'selectedUnityLoaderInput':unity_input,
+        'selectedUnityLoaderConversion':unity_conversion,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

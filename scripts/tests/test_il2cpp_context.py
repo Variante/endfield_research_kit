@@ -36,7 +36,60 @@ from scripts.game_data.il2cpp_context_audit import unity_conversion_exports
 from scripts.game_data.il2cpp_context_audit import resolver_prefix_query
 from scripts.game_data.il2cpp_context_audit import resolver_key_comparison
 from scripts.game_data.il2cpp_context_audit import unity_module_lookup
+from scripts.game_data.il2cpp_context_audit import unity_loader_input
+from scripts.game_data.il2cpp_context_audit import unity_loader_conversion
 from unittest.mock import patch
+
+
+class UnityLoaderConversionTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x22A130,
+             '48895C241856415641574883EC30498BD8488BF24C8BF14885D20F84D20000004C8B014533FF44897C2428448BCE33D24C897C2420B9E9FD0000FF15A817630185C00F8EAA000000807B200148896C2450BD0C00000048897C24584863F80F85980000008BC5483BF8760B488BD7488BCBE8CA431A00807B2001746848897B10807B20017467488B036644893C78488BCB498B3EE8D7441A00807B2002488BE80F841C01CB00807B20017403488B1B896C2428448BCE4C8BC748895C242033D2B9E9FD0000FF151D176301488B7C2458488B6C2450488B5C24604883C430415F415E5EC3662BEF66896B18EB93488BC3EB97488BCBE896441A00EBD9488B4308E961FFFFFF'),
+            (0x22A090,'48895C2408574883EC2080792002488BFA488BD90F842002CB00807B200174204C8B03488BCBE8E5451A00488B5C2430498D0C40488BC748890F4883C4205FC34C8BC3EBDE'),
+            (0xEDA2CA,'E8D1434FFF488BD0E899424FFF90E9CDFD34FF'),
+            (0xEDA2F2,'E8A9434FFF488BD0E871424FFF90E9D1FE34FF'),
+            (0x3CE6A0,'807920017405488B4110C30FB75118B80C000000482BC2C3'),
+            (0x2FE326,'E805BEF2FF488D9424A0000000488D4C2430E853BDF2FF'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_arguments_and_two_byte_end_pointer(self):
+        row=unity_loader_conversion(self.pe,source='fixture.UnityPlayer.dll')
+        self.assertEqual((row['codePageArgument'],row['flagsArgument']),(65001,0))
+        self.assertEqual(row['elementByteLength'],2)
+        self.assertEqual(len(row['bodies']),5)
+
+    def test_truncated_trailing_or_changed_count_result_and_end_pointer(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_loader_conversion(self.pe,source='fixture.UnityPlayer.dll')
+            self.parts[at]=good
+
+
+class UnityLoaderInputTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x5579C0,'48895C2408574881EC800000008B0561504901488BF9488D4C243089442454BA10000000C644243000C644244818C644245001E868D0B1FF0F1005817732010F1100C6401000807C2450010F84150E9F00E91A0E9F00488D4C2430E8A06CDCFF'),
+            (0xF48826,'C644244808E9E6F160FF'),
+            (0x74A60,'405355564883EC4080792001488BF2488BD9BD180000000F85BE0000008BC5483BF07715807920010F85B6000000488BC34883C4405E5D5BC3'))}
+        self.parts[0x187F180]=b'GameAssembly.dll'
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_inline_literal_and_loader_argument(self):
+        row=unity_loader_input(self.pe,source='fixture.UnityPlayer.dll')
+        self.assertEqual(row['requestedModuleName'],'GameAssembly.dll')
+        self.assertEqual(row['requestByteLength'],16)
+        self.assertEqual(row['loaderRva'],0x31E6C0)
+
+    def test_truncated_trailing_or_changed_literal_tag_count_branch_and_call(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_loader_input(self.pe,source='fixture.UnityPlayer.dll')
+            self.parts[at]=good
 
 
 class UnityModuleLookupTests(unittest.TestCase):
@@ -53,13 +106,16 @@ class UnityModuleLookupTests(unittest.TestCase):
             (0x31E670,'40574881EC90000000488BFA4885C9742E48899C24A0000000FF1561D25301488BD84885C00F84EB23BE00488BC3488B9C24A00000004881C4900000005FC333C0EBF3'),
             (0xF00A86,'FF15DCAE95008BD0488D4C2468E8881CE3FF807820017403488B004C8BC8488D153597BC004C8BC7488D4C2440E8887217FF488BC8488D159846960033C041B9FFFFFFFF8944243041B8E000000089442428C744242001000000E80BD541FF488D4C2440E8213E17FF488D4C2468E8173E17FF90E99CDB41FF'),
             (0x31E6C0,'4883EC28E8C7FBFDFF48890550659D014885C075054883C428C3'),
-            (0x2FE388,'FF1542D55501'),(0x31E689,'FF1561D25301'))}
+            (0x2FE388,'FF1542D55501'),(0x31E689,'FF1561D25301'),
+            (0x22A16A,'FF15A8176301'),(0x22A1F5,'FF151D176301'))}
         self.parts.update({0x1C3624C:struct.pack('<IIIII',0x1C36648,0,0,0x1C38088,0x185B258),
                            0x1C38088:b'KERNEL32.dll\0',
                            0x1C36CC0:struct.pack('<Q',0x1C37618),
                            0x1C36CE0:struct.pack('<Q',0x1C375CE),
                            0x1C37618:b'\xf7\x03LoadLibraryW\0',
-                           0x1C375CE:b'\xdd\x02GetProcAddress\0'})
+                           0x1C375CE:b'\xdd\x02GetProcAddress\0',
+                           0x1C36D08:struct.pack('<Q',0x1C3756A),
+                           0x1C3756A:b'\x23\x04MultiByteToWideChar\0'})
         self.header={0x3C:0x100,0x190:0x1C3624C,0x194:420}
         self.pe=SimpleNamespace(image_base=0x180000000,
             bytes_at_va=lambda va,size:self.parts[va-0x180000000],
@@ -67,7 +123,8 @@ class UnityModuleLookupTests(unittest.TestCase):
 
     def test_selected_imports_and_handle_cache(self):
         row=unity_module_lookup(self.pe,source='fixture.UnityPlayer.dll')
-        self.assertEqual([r['name'] for r in row['selectedImports']],['LoadLibraryW','GetProcAddress'])
+        self.assertEqual([r['name'] for r in row['selectedImports']],
+                         ['LoadLibraryW','GetProcAddress','MultiByteToWideChar','MultiByteToWideChar'])
         self.assertEqual(row['moduleHandleCacheRva'],0x1CF4C20)
         self.assertEqual(len(row['bodies']),5)
 

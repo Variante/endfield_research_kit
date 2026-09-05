@@ -418,6 +418,16 @@ Current durable boundaries:
   its zero-result cold path rejoins the saved zero if diagnostic calls return.
   Selected import descriptor/name-thunk joins prove these request identities,
   not live IAT contents, conversion validity, input path or loaded image identity.
+  A selected caller independently constructs the exact inline `GameAssembly.dll`
+  basename, writes its terminator, sets the length representation and passes that
+  carrier to the loader. This proves requested bytes, not Windows search-path
+  resolution or the loaded image's absolute path/hash.
+  The conversion helper calls the static `MultiByteToWideChar` import first with
+  null output, then with a prepared output/count. Its first result sets the
+  representation length and prewritten terminator; the module caller does not
+  inspect the second result before deriving data plus twice that representation
+  length as the slash-loop end. Capacity/reset helpers and actual conversion
+  success remain open; the end pointer is not a verified converted-byte receipt.
   Successful resolution and callback contents remain unknown.
   A complete native loop now proves one static name/value pair by
   loading both arrays with the same advancing byte offset; complete pointer vectors
