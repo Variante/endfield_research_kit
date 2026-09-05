@@ -11,6 +11,75 @@ from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
+from scripts.game_data.il2cpp_context import named_top_level_type
+
+
+class NamedTopLevelTypeTests(unittest.TestCase):
+    def fixture(self, duplicate=False):
+        count=2 if duplicate else 1
+        raw=bytearray(0x300)
+        struct.pack_into('<II',raw,0x18,0xB0,10)
+        raw[0xB0:0xBA]=b'I\0NS\0Type\0'
+        struct.pack_into('<II',raw,0xA0,0x100,92*count)
+        struct.pack_into('<II',raw,0xA8,0x200,40)
+        struct.pack_into('<iiii',raw,0x200,0,0,0,count)
+        for i in range(count):
+            struct.pack_into('<iiii',raw,0x100+i*92,5,2,3,-1)
+        return raw
+
+    def decode(self, raw):
+        return named_top_level_type(bytes(raw),b'I',b'NS',b'Type',source='fixture.dat')
+
+    def test_normal_exact_reference(self):
+        result=self.decode(self.fixture())
+        self.assertEqual((result['imageIndex'],result['typeDefinitionIndex'],result['byvalTypeIndex']),(0,0,3))
+
+    def test_truncated_and_bad_section_count(self):
+        raw=self.fixture()
+        for changed in (raw[:0xAF],raw[:0x220]):
+            with self.assertRaises(ContextError):
+                self.decode(changed)
+        struct.pack_into('<I',raw,0xA4,93)
+        with self.assertRaises(ContextError):
+            self.decode(raw)
+
+    def test_unterminated_and_out_of_bounds_string(self):
+        for field,value in ((0x100,10),(0x1C,9)):
+            raw=self.fixture()
+            struct.pack_into('<i',raw,field,value)
+            with self.assertRaises(ContextError):
+                  self.decode(raw)
+
+    def test_ambiguity_nested_and_exported_rejected(self):
+        with self.assertRaises(ContextError):
+            self.decode(self.fixture(duplicate=True))
+        for field,value in ((0x10C,0),(0x214,1)):
+            raw=self.fixture()
+            struct.pack_into('<i',raw,field,value)
+            with self.assertRaises(ContextError):
+                self.decode(raw)
+
+    def test_image_section_trailing_and_out_of_bounds_rejected(self):
+        for field, value in ((0xAC, 41), (0xA8, 0x2FF)):
+            with self.subTest(field=field, value=value):
+                raw = self.fixture()
+                struct.pack_into('<I', raw, field, value)
+                with self.assertRaises(ContextError) as caught:
+                    self.decode(raw)
+                self.assertEqual(caught.exception.diagnostics['source'], 'fixture.dat')
+
+    def test_negative_byval_index_rejected(self):
+        raw = self.fixture()
+        struct.pack_into('<i', raw, 0x108, -1)
+        with self.assertRaises(ContextError):
+            self.decode(raw)
+
+    def test_overlapping_sections_rejected(self):
+        raw=self.fixture()
+        struct.pack_into('<I',raw,0x18,0x100)
+        with self.assertRaises(ContextError) as caught:
+            self.decode(raw)
+        self.assertEqual(caught.exception.diagnostics['expected'],'disjoint string/type/image sections')
 
 
 class ClassSharingBranchTests(unittest.TestCase):

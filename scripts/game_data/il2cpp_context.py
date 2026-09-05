@@ -290,6 +290,66 @@ def class_sharing_branch(compare: bytes, compare_address: int, load: bytes,
     return rip_qword_load_target(load,load_address,source=source)
 
 
+def named_top_level_type(metadata: bytes, image_name: bytes, namespace: bytes,
+                         name: bytes, *, source: str) -> dict:
+    """Exact selected-build metadata identity, not a simulated runtime name cache.
+
+    Only 92-byte type definitions and 40-byte image definitions are accepted.
+    Exported/forwarded types are intentionally not silently joined.
+    """
+    if len(metadata) < 0xB0:
+        raise ContextError(source,0,'complete metadata section header',len(metadata))
+    type_base,type_size = struct.unpack_from('<II',metadata,0xA0)
+    string_base,string_size = struct.unpack_from('<II',metadata,0x18)
+    image_base,image_size=struct.unpack_from('<II',metadata,0xA8)
+    for offset,size,label in ((type_base,type_size,'type'),(string_base,string_size,'string')):
+        if offset < 0xB0 or offset > len(metadata) or size > len(metadata)-offset:
+            raise ContextError(source,offset,f'bounded {label} section',(offset,size))
+    if type_size%92:
+        raise ContextError(source,type_base,'exact 92-byte type records',type_size)
+    owners = type_image_owners(metadata,type_size//92,source=source)
+    regions=sorted((offset,offset+size) for offset,size in
+                   ((type_base,type_size),(string_base,string_size),(image_base,image_size)) if size)
+    for previous,current in zip(regions,regions[1:]):
+        if current[0]<previous[1]:
+            raise ContextError(source,current[0],'disjoint string/type/image sections',(previous,current))
+    def string(index):
+        if not 0 <= index < string_size:
+            raise ContextError(source,string_base,'bounded metadata string index',index)
+        end=metadata.find(b'\0',string_base+index,string_base+string_size)
+        if end < 0:
+            raise ContextError(source,string_base+index,'NUL within string section','unterminated')
+        return metadata[string_base+index:end]
+    images=[]
+    for i in range(image_size//40):
+        row=image_base+i*40
+        if string(struct.unpack_from('<i',metadata,row)[0])==image_name:
+            images.append(i)
+    if len(images)!=1:
+        raise ContextError(source,image_base,'unique exact image name',images)
+    image_index=images[0]
+    image_offset=image_base+image_index*40
+    exported_count=struct.unpack_from('<I',metadata,image_offset+20)[0]
+    if exported_count:
+        raise ContextError(source,image_offset+20,'no unjoined exported types',exported_count)
+    matches=[]
+    for i,owner in enumerate(owners):
+        if owner!=image_index:
+            continue
+        row=type_base+i*92
+        ni,nsi,byval,declaring=struct.unpack_from('<iiii',metadata,row)
+        row_name,row_namespace=string(ni),string(nsi)
+        if declaring==-1 and row_name==name and row_namespace==namespace:
+            if byval<0:
+                raise ContextError(source,row+8,'nonnegative byval type index',byval)
+            matches.append({'imageIndex':image_index,'typeDefinitionIndex':i,'typeDefinitionOffset':row,
+                            'byvalTypeIndex':byval,'typeDefinitionRawHex':metadata[row:row+92].hex().upper()})
+    if len(matches)!=1:
+        raise ContextError(source,type_base,'unique exact top-level type identity',
+                           [m['typeDefinitionIndex'] for m in matches])
+    return matches[0]
+
+
 def match_image_modules(image_names: list[str], modules: list[tuple[str, int]], *, source: str) -> dict[str, int]:
     """Fail closed on duplicate names; do not reproduce native last-match wins."""
     if len(set(image_names)) != len(image_names):

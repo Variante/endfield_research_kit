@@ -266,9 +266,12 @@ Current durable boundaries:
   class-inst pointer; reject duplicate pointer identities and token ranges.
   The native method-pointer resolver retries a missed original-context lookup
   with transformed argument vectors. Its direct class-tag branch uses one shared
-  global carrier plus the type-record offset for both adapter arguments. This is
-  a conditional mechanism, not yet the global's initialized identity, the interned
-  vector's identity or selection of a particular shared Deserialize body.
+  global carrier plus the type-record offset for both adapter arguments. The
+  normal producer's image/namespace/name lookup and class copy connect this to
+  the unique `mscorlib.dll / System.Object` byval record; its bytes match both
+  arguments of the static object/object candidate. Actual initialization, cache
+  population and interned pointer identity remain unobserved: byte equality does
+  not select a particular shared Deserialize body.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.
