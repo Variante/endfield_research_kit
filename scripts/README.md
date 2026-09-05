@@ -209,6 +209,7 @@ AnimeStudio offline recovery probes:
 set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 %ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
 python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -238,6 +239,12 @@ calculation. The concrete runtime path is unavailable, FlatBuffer accessors
 receive no outer length, and no final cursor is exposed, so the carrier is not
 joined to one authenticated logical file. Key namespace and signedness, field
 names, and semantics remain unresolved.
+`streaming_marker17_corpus` reuses the source-bound marker17 directory from that
+report, reauthenticates every listed physical range and refines the native-gated
+tag5 bodies with `streaming_marker17`; other bodies remain explicitly opaque.
+It writes `reports/animestudio/streaming_marker17_tag5_latest.json` plus `.md`.
+Partial `--max-files` probes require explicit output paths and are not eligible
+as complete-corpus evidence. Record fields and runtime selection remain unknown.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

@@ -1,0 +1,526 @@
+{
+  "schema": "endfield.streaming-marker17-native-contract.v1",
+  "status": "validated-conditional-static",
+  "nativeMappingId": "endfield-2026-09-04-streaming-marker17-slot3-tag5-framing",
+  "baseContract": {
+    "path": "scripts/game_data/streaming_field2_native.json",
+    "schema": "endfield.streaming-field2-native-contract.v8",
+    "sha256": "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60",
+    "requiredUnityPlayerRoles": [
+      "defaultConstructorContextBasePrefix",
+      "descriptorConstructor",
+      "publishTenCallbacks",
+      "callbackAssignment",
+      "inlineCallbackMove",
+      "inlineCallbackVtable",
+      "keyIndexLookupWrapper"
+    ],
+    "dependencyBoundary": "The exact v8 hash reuses its selected-build descriptor/publication and shared key-index lookup proof. This contract adds only marker-17 slot3/key/count-prefix/tag5 evidence."
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerRanges": [
+    {
+      "role": "indexedCallbackAssignment",
+      "rva": 3680944,
+      "fileOffset": 3678384,
+      "size": 72,
+      "bodySha256": "D9834B665B05C95B2DE93C9803A09373C7ACEA8D4DFF0F9BB11BDF9243EC9861",
+      "entryBytesHex": "48895C24084889742410574883EC700FB6DA498BF8488BF180FB0A0F830FCAB8"
+    },
+    {
+      "role": "marker17KeyToCountedPrefix",
+      "rva": 4232160,
+      "fileOffset": 4229600,
+      "size": 218,
+      "bodySha256": "52680587EF87E986C6444833817982C7418EA288DD3DA9C2E4EA7DF4812CA528",
+      "entryBytesHex": "40534883EC30F20F10024C8D4424488B4208488BD9488D542420F20F11442420"
+    },
+    {
+      "role": "marker17DwordStreamConsumer",
+      "rva": 1880272,
+      "fileOffset": 1877712,
+      "size": 2326,
+      "bodySha256": "F5289FA678EC8C74D91595AD4E54F4E4A459E7591221ADF84C3A269E97EB7E6C",
+      "entryBytesHex": "4C89442418555657488D6C24C14881ECF0000000418BF1488BF983FA0A0F8F9F"
+    },
+    {
+      "role": "selector6Slot3Reader",
+      "rva": 14935968,
+      "fileOffset": 14933408,
+      "size": 745,
+      "bodySha256": "EC1375F38B4329848113A082EF163D94F03FE6A5F1E8AB3BDB36C63FA5C54064",
+      "entryBytesHex": "48894C240855565741544155415641574881ECA0000000488D6C2440F20F1005"
+    },
+    {
+      "role": "selector9Slot3Reader",
+      "rva": 14932400,
+      "fileOffset": 14929840,
+      "size": 1739,
+      "bodySha256": "E0C0C949B52774C6E3839FF4BB32A5AE3FDE5348957D9B9D931D71BFE7202BD6",
+      "entryBytesHex": "488954241048894C24085553565741544155415641574881ECC8000000488D6C"
+    },
+    {
+      "role": "tag5Segment48Helper",
+      "rva": 13227504,
+      "fileOffset": 13224944,
+      "size": 824,
+      "bodySha256": "D0600397CE3EA6C6287D76FED53C74CBA8983BA1579A5A360E0936C045934DFE",
+      "entryBytesHex": "488BC448895808F30F115018F30F114810555657488D68D14881ECB00000000F"
+    },
+    {
+      "role": "tag5Segment28Helper",
+      "rva": 13232736,
+      "fileOffset": 13230176,
+      "size": 535,
+      "bodySha256": "3C0633012EA671E460089056AD031BFC8066A54616CCB355E9EAABD377068693",
+      "entryBytesHex": "488BC44889580848897018F30F114810574881ECA00000000F2970E8488BF148"
+    },
+    {
+      "role": "tag5Exact16InputHelper",
+      "rva": 700624,
+      "fileOffset": 698064,
+      "size": 143,
+      "bodySha256": "A60CC0E1091BC4DD2AA46A43B0B80B466820487F815A7FDB984CCD79CF554B77",
+      "entryBytesHex": "4883EC284C8BC14883C10CE870F4FFFF498D48080FB6D0E864F4FFFF498D4804"
+    },
+    {
+      "role": "tag5OneDwordHelper",
+      "rva": 697680,
+      "fileOffset": 695120,
+      "size": 20,
+      "bodySha256": "3F2DBD5790039C5BD529A95BB224BD2C21BFA7FA5BD6187EFE120BF0C64B9DAE",
+      "entryBytesHex": "8B01250000807F3D0000807F7403B001C332C0C3"
+    },
+    {
+      "role": "tag5Singleton24Helper",
+      "rva": 13228336,
+      "fileOffset": 13225776,
+      "size": 955,
+      "bodySha256": "9AE0CC6F83DDB0B3E9E6007266622288844AD5A60B3EBB2B0B7D766ABCBC5349",
+      "entryBytesHex": "44894C24208954241055535657415441564157488D6C24F14881ECB00000004C"
+    },
+    {
+      "role": "tag5Segment52Helper",
+      "rva": 13226688,
+      "fileOffset": 13224128,
+      "size": 806,
+      "bodySha256": "9907F387D2C776A353E4A79B87920E356C095921D790089FEA8DE534FC7382F4",
+      "entryBytesHex": "48895C240848896C24184889742420574881ECB0000000488BE9498BF9488D4A"
+    },
+    {
+      "role": "tag5Segment56BHelper",
+      "rva": 13229296,
+      "fileOffset": 13226736,
+      "size": 795,
+      "bodySha256": "87AEBD8F6B393DD48FC37704216CE97850FC82A9B427AC572950C6980CF37458",
+      "entryBytesHex": "48895C240848897424105557415441564157488D6C24F94881ECB00000004C8B"
+    },
+    {
+      "role": "tag5Segment56AHelper",
+      "rva": 13231920,
+      "fileOffset": 13229360,
+      "size": 804,
+      "bodySha256": "CC3CF6A7471E160E9DD6D453490D112036BB617DD0E005B07E35C5D79A1A7107",
+      "entryBytesHex": "48895C240848897424105557415441564157488D6C24F94881ECB00000004C8B"
+    }
+  ],
+  "keyLiteralRanges": [
+    {
+      "selector": 6,
+      "key": [
+        9,
+        0,
+        0
+      ],
+      "rva": 27949848,
+      "fileOffset": 27943704,
+      "bytesHex": "090000000000000000000000"
+    },
+    {
+      "selector": 9,
+      "key": [
+        255,
+        3,
+        0
+      ],
+      "rva": 27950680,
+      "fileOffset": 27944536,
+      "bytesHex": "FF0000000300000000000000"
+    }
+  ],
+  "selectedDefaultSlot3": [
+    {
+      "selector": 6,
+      "key": [
+        9,
+        0,
+        0
+      ],
+      "slot": 3,
+      "readerRva": 14935968,
+      "descriptorFrame": "rbp+0x5980",
+      "descriptorConstructorSpan": {
+        "rva": 3684135,
+        "fileOffset": 3681575,
+        "bytesHex": "B206488D8D80590000E81BCEFFFF"
+      },
+      "publicationSpan": {
+        "rva": 3684677,
+        "fileOffset": 3682117,
+        "bytesHex": "488D4B58B2064C8D8580590000E819FEBC00"
+      },
+      "registrationSpan": {
+        "rva": 3684281,
+        "fileOffset": 3681721,
+        "bytesHex": "488D05E0AFAB004889B5D0070000488985D8070000488D95D0070000488D85D0070000488D8D485A000048898508080000E831F3FFFF"
+      },
+      "consumerSpans": [
+        {
+          "rva": 14936420,
+          "fileOffset": 14933860,
+          "bytesHex": "F20F1005AC91C600488D55208B05AA91C600498BCDF20F114520894528E85AAA5CFF448B8DB80000004D8BC4897424208B10488D4804C1EA02E82EC738FF"
+        }
+      ]
+    },
+    {
+      "selector": 9,
+      "key": [
+        255,
+        3,
+        0
+      ],
+      "slot": 3,
+      "readerRva": 14932400,
+      "descriptorFrame": "rbp+0x4CB0",
+      "descriptorConstructorSpan": {
+        "rva": 3686971,
+        "fileOffset": 3684411,
+        "bytesHex": "B209488D8DB04C0000E807C3FFFF"
+      },
+      "publicationSpan": {
+        "rva": 3687529,
+        "fileOffset": 3684969,
+        "bytesHex": "488D4B58B2094C8D85B04C0000E8F5F2BC00"
+      },
+      "registrationSpan": {
+        "rva": 3687121,
+        "fileOffset": 3684561,
+        "bytesHex": "488D05D896AB004889B5D0110000488985D81100004C8D85D0110000488D85D0110000B203488D8DB04C000048898508120000E8A7E7FFFF"
+      },
+      "consumerSpans": [
+        {
+          "rva": 14933572,
+          "fileOffset": 14931012,
+          "bytesHex": "F20F10050CA0C600498BCC8B050BA0C6004489B5E0000000F20F114500894508E877B55CFF4E8D34B50000000048894500"
+        },
+        {
+          "rva": 14933876,
+          "fileOffset": 14931316,
+          "bytesHex": "488B45004D8BC5448B8DE0000000897424208B10488D4804C1EA02E83CD138FF"
+        }
+      ]
+    }
+  ],
+  "countedPrefixCarrier": {
+    "keyWidth": 12,
+    "lookupHelperRva": 4232160,
+    "lookupInputAbi": "RCX=context; RDX=pointer to three u32 key words",
+    "lookupScope": "selected context+0x80 shared key table; full runtime table identity remains conditional",
+    "lookupResult": "RAX=0 on missing key; otherwise RAX points to u32 byteCount followed by payload bytes",
+    "readerPath": "the selected tag5-profile slot3 readers for selector6/key[9,0,0] and selector9/key[255,3,0] use u32[RAX], RAX+4 and logical byteCount>>2 as RCX/EDX to 0x1CB0D0",
+    "nativeGuards": "no local RAX-null, byteCount%4, source-extent or final-cursor check before 0x1CB0D0",
+    "parserRequirements": [
+      "reject missing key/prefix",
+      "reject byteCount not divisible by 4",
+      "bound prefix+4+byteCount before slicing",
+      "require an exact supported inner frame or record a certified opaque interval"
+    ]
+  },
+  "tag5Framing": {
+    "evidenceLevel": "structural-only",
+    "discriminant": {
+      "byteOffset": 28,
+      "storage": "signed i16",
+      "requiredValue": 5
+    },
+    "nativeEntry": {
+      "wordWidth": 4,
+      "wordCount": "counted-prefix byteCount >> 2",
+      "nativeMinimumGuard": "signed wordCount > 10 only",
+      "strictParserMinimumByteCount": 64,
+      "cursorStartByteOffset": 64
+    },
+    "counts": [
+      {
+        "byteOffset": 40,
+        "storage": "u32/i32",
+        "supportedProfile": "0 or 1",
+        "width": 24
+      },
+      {
+        "byteOffset": 44,
+        "storage": "i32",
+        "supportedProfile": "nonnegative",
+        "width": 52
+      },
+      {
+        "byteOffset": 48,
+        "storage": "i32",
+        "supportedProfile": "nonnegative",
+        "width": 48
+      },
+      {
+        "byteOffset": 52,
+        "storage": "i32",
+        "supportedProfile": "nonnegative",
+        "width": 28
+      },
+      {
+        "byteOffset": 56,
+        "storage": "i32",
+        "supportedProfile": "nonnegative",
+        "width": 56
+      },
+      {
+        "byteOffset": 60,
+        "storage": "i32",
+        "supportedProfile": "nonnegative",
+        "width": 56
+      }
+    ],
+    "segmentOrder": [
+      40,
+      44,
+      48,
+      52,
+      56,
+      60
+    ],
+    "strictCursorFormula": "64 + 24*c40 + 52*c44 + 48*c48 + 28*c52 + 56*c56 + 56*c60",
+    "externalArrayGate": {
+      "nativeCondition": "original R9D equals wrapping-u32 c40+c56+c60",
+      "strictParserConditionWhenExpectedExternalCountKnown": "expected external count equals non-overflowing c40+c56+c60",
+      "qualification": "R9D is a reader-specific external carrier and is not recovered from the marker-17 payload alone"
+    },
+    "slotReadQualification": {
+      "24": "item[0:12] direct and item[12:24] forwarded",
+      "28": "item[0:12] forwarded; item[12:28] direct",
+      "48": "item[0:12] and item[12:28] forwarded; item[28:48] direct",
+      "52": "item[0:12] and item[12:28] forwarded; item[28:52] direct",
+      "56": "item[0:12], item[12:28] and item[44:56] forwarded; item[28:44] direct",
+      "qualification": "helper reads are conditional; cursor/stride proves physical slots, not that every byte is read on every runtime branch"
+    },
+    "strictParserRequirements": [
+      "reject payloads shorter than 64 bytes",
+      "reject discriminant other than signed i16 value 5",
+      "reject c40 outside 0..1",
+      "reject negative c44,c48,c52,c56,c60",
+      "reject checked multiply/add overflow",
+      "reject every segment whose computed end exceeds payload",
+      "reject trailing bytes when exact framing is required",
+      "do not treat the native cursor as an EOF proof"
+    ],
+    "nativeFinalCursorBoundary": "native advances through all selected physical slots but neither returns nor compares the final cursor with the source length",
+    "segmentConsumerEvidence": [
+      {
+        "countByteOffset": 40,
+        "countLoadRva": "1CB418",
+        "condition": "u32 == 1 only",
+        "width": 24,
+        "countGuardRva": "1CB4BB",
+        "skipRva": "1CB50C",
+        "cursorRule": "word cursor 16 -> 22 at 1CB4CA",
+        "directItemReads": [
+          [
+            0,
+            12
+          ]
+        ],
+        "forwardedItemReads": [
+          [
+            12,
+            12
+          ]
+        ],
+        "helper": "C9D930; pointer R8=item+12; conditional after 1CCA00"
+      },
+      {
+        "countByteOffset": 44,
+        "countLoadRva": "1CB41F",
+        "condition": "signed i32 > 0",
+        "width": 52,
+        "countGuardRva": "1CB50C",
+        "skipRva": "1CB59A",
+        "cursorRule": "word cursor += 13*n at 1CB515/1CB524; pointer +=52 at 1CB551",
+        "loopBackedgeRva": "1CB598",
+        "loopHeadRva": "1CB530",
+        "directItemReads": [
+          [
+            28,
+            24
+          ]
+        ],
+        "forwardedItemReads": [
+          [
+            0,
+            12
+          ],
+          [
+            12,
+            16
+          ]
+        ],
+        "helper": "C9D2C0; RDX=12-byte stack copy from item+40; R8=item; R9=item+12"
+      },
+      {
+        "countByteOffset": 48,
+        "countLoadRva": "1CB41B",
+        "condition": "signed i32 > 0",
+        "width": 48,
+        "countGuardRva": "1CB59A",
+        "skipRva": "1CB613",
+        "cursorRule": "word cursor +=12*n at 1CB5AA/1CB5AE; pointer +=48 at 1CB5D3",
+        "loopBackedgeRva": "1CB611",
+        "loopHeadRva": "1CB5B2",
+        "directItemReads": [
+          [
+            28,
+            20
+          ]
+        ],
+        "forwardedItemReads": [
+          [
+            0,
+            12
+          ],
+          [
+            12,
+            16
+          ]
+        ],
+        "helper": "C9D5F0; R9=item; fifth argument=item+12; XMM1/XMM2=dwords item+44/+40"
+      },
+      {
+        "countByteOffset": 52,
+        "countLoadRva": "1CB40C",
+        "condition": "signed i32 > 0",
+        "width": 28,
+        "countGuardRva": "1CB616",
+        "skipRva": "1CB680",
+        "cursorRule": "word cursor +=7*n at 1CB620/1CB628; pointer +=28 at 1CB648",
+        "loopBackedgeRva": "1CB67E",
+        "loopHeadRva": "1CB630",
+        "directItemReads": [
+          [
+            12,
+            16
+          ]
+        ],
+        "forwardedItemReads": [
+          [
+            0,
+            12
+          ]
+        ],
+        "helper": "C9EA60; R8=item; XMM1=dword item+24"
+      },
+      {
+        "countByteOffset": 56,
+        "countLoadRva": "1CB426",
+        "condition": "signed i32 > 0",
+        "width": 56,
+        "countGuardRva": "1CB68B",
+        "skipRva": "1CB76E",
+        "cursorRule": "word cursor +=14 at 1CB6E6; pointer +=56 at 1CB6C5",
+        "loopBackedgeRva": "1CB762",
+        "loopHeadRva": "1CB6B0",
+        "directItemReads": [
+          [
+            28,
+            16
+          ]
+        ],
+        "forwardedItemPointers": [
+          0,
+          12,
+          44
+        ],
+        "helper": "C9E730; R8=item -> saved R14, R9=item+12 -> saved RDI, fifth argument=item+44 -> saved R15; AA550/AB0D0 validate exact 12/16/12-byte source windows, successful paths copy only those windows to local values before dynamic calls",
+        "forwardedItemReads": [
+          [
+            0,
+            12
+          ],
+          [
+            12,
+            16
+          ],
+          [
+            44,
+            12
+          ]
+        ]
+      },
+      {
+        "countByteOffset": 60,
+        "countLoadRva": "1CB415",
+        "condition": "signed i32 > 0",
+        "width": 56,
+        "countGuardRva": "1CB776",
+        "skipRva": "1CB8C1",
+        "cursorRule": "word cursor +=14 at 1CB7D3; pointer +=56 at 1CB7B9",
+        "loopBackedgeRva": "1CB84E",
+        "loopHeadRva": "1CB7A0",
+        "directItemReads": [
+          [
+            28,
+            16
+          ]
+        ],
+        "forwardedItemPointers": [
+          0,
+          12,
+          44
+        ],
+        "helper": "C9DCF0; R8=item -> saved R14, R9=item+12 -> saved RDI, fifth argument=item+44 -> saved R15; AA550/AB0D0 validate exact 12/16/12-byte source windows, successful paths copy only those windows to local values before dynamic calls",
+        "forwardedItemReads": [
+          [
+            0,
+            12
+          ],
+          [
+            12,
+            16
+          ],
+          [
+            44,
+            12
+          ]
+        ]
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": [
+      "For this UnityPlayer image, the default constructor directly installs the selected tag5-profile reader RVAs in slot3 for selector6/key[9,0,0] and selector9/key[255,3,0].",
+      "Each of the two pinned readers loads its exact three-u32 key and passes the resulting counted prefix as payload+wordCount to 0x1CB0D0.",
+      "The tag5 branch selects signed i16@28==5 and advances a byte cursor in the exact six-segment order and widths recorded above."
+    ],
+    "conditional": [
+      "The chain describes selected-build default static registration; script overrides and actual runtime registration order are unresolved.",
+      "The 0x4093E0 result shape is conditional on the selected context+0x80 shared table and its indirect wrapper targets.",
+      "The external-array equality can be enforced only when the reader-specific R9D carrier is independently available."
+    ],
+    "unresolved": [
+      "authenticated logical-file/root/row receipt by one concrete runtime context",
+      "native source base and source extent",
+      "native final cursor equality or EOF safety",
+      "anonymous header fields, output object shape, field names and game semantics"
+    ],
+    "prohibitedInference": "A complete strict parser frame is a structural byte boundary only; it does not name the tag, segments, fields or runtime meaning."
+  }
+}
