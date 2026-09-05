@@ -243,6 +243,10 @@ Current durable boundaries:
   concrete-type probe was an indirection bug, not a runtime counterexample.
   This static join does not establish actual generic substitution or formatter
   selection; preserve both terminal candidates until those separate gates close.
+  The native MVAR leaf reads a parameter ordinal and indexes the supplied
+  method-inst vector. The gate checks that ordinal against the selected call's
+  registered argument, but does not substitute this static match for a live
+  context, image/module, or source-allocation connection.
   DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
   without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC

@@ -23,6 +23,8 @@ CONSUMER_WINDOWS = (
     (0x2D8BF0, 0x2D8C12, '58AEECD1D6787DA519A37F3857FB40F3950BED75D3A9A0A6AEC81DEE32569AA4'),
     (0x2D8C12, 0x2D8C79, 'F1D27E8325CBBCF568E89D23C9280969ADAB6DEE2CEDE13E0FD1F1CBCB762470'),
     (0x2D8C79, 0x2D8C83, '087CD1A1ECF2C15B53BC8CA47F008DFACD7DB6E1579D1AD1C3A77D500224D68C'),
+    (0x9630, 0x9850, 'F1F3F2471B2DDA9F3BC2E3505293D5658E04D9F25225CA8EF648EC4CC786388F'),
+    (0x2C0E50, 0x2C0ED3, '16DD44242597B807F5729A2DD6AE5EF4BA7CB0B825BF9303F259407BB8A53A36'),
 )
 
 
@@ -102,6 +104,22 @@ def audit():
     owner = method_parameter_owner(md.buf, struct.unpack_from('<Q', type_raw)[0],
                                    [m.generic_container_index for m in md.methods], source=str(gate.metadata))
     require(owner['methodIndex'], 428464, gate.metadata, owner['containerOffset'])
+    call_index = 619889
+    if not 0 <= call_index < reg['methodSpecsCount']:
+        raise ContextError(str(gate.gameassembly), registration, 'bounded call MethodSpec index', call_index)
+    call_va = int(reg['methodSpecs'], 16) + call_index * 12
+    call_raw = pe.bytes_at_va(call_va, 12)
+    call_definition, call_class, call_method = struct.unpack('<iii', call_raw)
+    require((call_definition, call_class, call_method), (owner['methodIndex'], -1, 14693),
+            gate.gameassembly, call_va)
+    call_inst = table.resolve(call_method)
+    ordinal = owner['ordinal']
+    if not 0 <= ordinal < len(call_inst.arguments):
+        raise ContextError(str(gate.gameassembly), call_inst.record_va,
+                           'ordinal within selected call instantiation', ordinal)
+    argument = call_inst.arguments[ordinal]
+    require(argument.raw_type_record_hex, 'B02D0000000000000000120000000000',
+            gate.gameassembly, argument.type_pointer_va)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     for path, expected in source_hashes.items():
@@ -118,6 +136,12 @@ def audit():
         'selectedMethodSpec': {'index': spec_index, 'va': spec_va, 'rawHex': raw.hex().upper(),
                                'definition': definition, 'methodInstantiation': selected.as_dict(),
                                'openMethodParameterOwner': owner},
+        'selectedCallMethodSpec': {'index': call_index, 'va': call_va, 'rawHex': call_raw.hex().upper(),
+                                   'methodInstantiation': call_inst.as_dict()},
+        'conditionalSubstitution': {
+            'ordinal': ordinal, 'selectedRawArgument': argument.raw_type_record_hex,
+            'level': 'exact static joins; conditional runtime application',
+            'boundary': 'The open parameter belongs to the selected call definition and its ordinal indexes this registered argument. The native leaf applies that ordinal to its supplied live context. This report does not establish that the actual invocation supplies this context.'},
         'boundary': 'Pointer array -> 16-byte record -> argument pointer array -> raw 16-byte type records only. No live generic context, formatter, field order, source cursor or EOF claim.',
         'failures': failures, 'rows': rows,
     }
