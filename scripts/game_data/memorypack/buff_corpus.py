@@ -17,7 +17,7 @@ from collections import Counter
 from pathlib import Path
 
 from . import corpus_gate as vfs
-from .buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail
+from .buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail, decode_buff_pre_id_modifier_prefix
 
 PREFIX='Data/Json/BuffData/'
 PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')
@@ -48,11 +48,24 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
         end=decoded.get('endOffset')
         if accepted and (not isinstance(end,str) or int(end,0)!=len(data)):
             vfs._fail('buff-reader-false-eof',source=source,offset=at,expected=len(data),actual=end)
+        prefix_probe=None
+        if accepted:
+            prefix=decode_buff_pre_id_modifier_prefix(data,at)
+            prefix_end=prefix.get('endOffset')
+            stop=int(prefix_end,0) if isinstance(prefix_end,str) else None
+            if stop is not None and not 1<=stop<=at:
+                vfs._fail('buff-prefix-range-overlap',source=source,offset=stop,expected=f'1 <= end <= {at}',actual=stop)
+            prefix_probe={'readerStatus':prefix['status'],'readerEnd':stop,
+                'readerAcceptedPrefix':prefix['status']=='parsed-through-attribute-modifier',
+                'remainingGapRange':[stop,at] if stop is not None else None,
+                'diagnostic':prefix.get('error') or prefix.get('abilityEventActionDecodeError'),
+                'semanticStatus':'structural-only; legacy labels not promoted'}
         result['candidates'].append({'anchorOffset':at,'suffixStart':at+len(marker),
             'readerStatus':decoded.get('status'),'readerTailStatus':decoded.get('tailParseStatus'),
             'readerAcceptedThroughEof':accepted,'readerEndOffset':end,
             'opaquePrefixRange':[1,at],
             'readerInternalOpaqueRangesCertified':False,
+            'prefixProbe':prefix_probe,
             'diagnostic':decoded.get('tailParseError') or decoded.get('error')})
     count=sum(row['readerAcceptedThroughEof'] for row in result['candidates'])
     return {**result,'candidateCount':count,'anchorCount':len(positions),
@@ -149,6 +162,8 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             vfs._fail('buff-corpus-input-drift',source='BuffData census.'+role,
                 expected=vfs._canonical_sha256(old),actual=vfs._canonical_sha256(new))
     guard();counts=Counter(row['coverageStatus'] for row in rows)
+    prefix_counts=Counter(c['prefixProbe']['readerStatus'] for row in rows for c in row.get('candidates',[])
+        if c.get('prefixProbe') is not None)
     return {'format':'animestudio-buffdata-current-vfs-corpus','schemaVersion':1,
         'inputSetSha256':expected,'status':'failed' if counts['failed'] else 'complete',
         'publicationEligible':not counts['failed'],'wholeSchemaExact':False,
@@ -157,6 +172,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],
             'filesUnique':counts['unique'],'filesAmbiguous':counts['ambiguous'],
             'filesWithMultipleAnchors':sum(row.get('anchorCount',0)>1 for row in rows),
+            'acceptedSuffixPrefixStatusCounts':dict(sorted(prefix_counts.items())),
             'logicalBytes':sum(row['length'] for row in selected)},
         'identitySetSha256':vfs._canonical_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
 

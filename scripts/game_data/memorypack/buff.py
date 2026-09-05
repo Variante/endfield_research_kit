@@ -1005,26 +1005,30 @@ def decode_buff_pre_id_modifier_prefix(
     data: bytes,
     id_marker_offset: int,
 ) -> dict[str, Any]:
-    """Decode the exact BuffData prefix through its modifier fields.
+    """Consume the supported BuffData prefix profile before a supplied anchor.
 
     A non-empty ``abilityEventAction`` contains nested action unions and is
     accepted only when every map, sequence, and union item has a typed
     consume-style decoder. Otherwise this decoder stops at the exact list
-    count instead of searching for a plausible later boundary. The following
-    setter order is deterministic: addingCooldown, packed applyTags ids, and
-    AttributeModifierData.
+    count instead of searching for a plausible later boundary. Legacy field
+    labels describe this reader's profile, not independent serialization-order
+    or semantic evidence. The supplied anchor is a hard read limit, not EOF.
     """
 
-    limit = min(max(0, int(id_marker_offset)), len(data))
     result: dict[str, Any] = {
         "status": "unresolved",
         "source": (
-            "BuffData MemoryPack setter order; event actions require full typed "
-            "consumption before later modifier fields are published"
+            "BuffData supported prefix profile; event actions require bounded "
+            "consumption before later reader fields are published; labels are not order proof"
         ),
         "offset": "0x1",
     }
     try:
+        validate_buff_read_limit(data, 1, id_marker_offset, "prefixAnchor")
+        limit = id_marker_offset
+        # Legacy helpers bound against len(data). Give them only the authenticated
+        # prefix region so no count/string/scalar read can borrow suffix bytes.
+        data = data[:limit]
         if not data or data[0] != BUFF_MEMBER_COUNT:
             raise ValueError("member-count")
         if limit <= 1:

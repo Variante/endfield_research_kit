@@ -664,6 +664,11 @@ pass license and target-framework review for AnimeStudio's .NET targets.
   remains false. Coverage, multiple-anchor counts and per-file diagnostics belong
   in `reports/animestudio/buffdata_current_latest.{json,md}`. Next close the opaque
   prefix/anchor join and nested record bounds before promoting any field names.
+  The legacy prefix reader now rejects invalid anchor limits instead of clamping
+  them and receives only bytes before the anchor, so count/string/scalar helpers
+  cannot borrow suffix bytes. The corpus records its accepted prefix endpoint or
+  unsupported-action stop and the remaining gap for every accepted suffix; this
+  does not certify the legacy field labels or close that gap.
 - Continue Streaming nested element/byte-body framing using the bottom-up
   queue in `game_data_recovery.md`; concrete runtime paths and field names
   follow structural closure, not the reverse.

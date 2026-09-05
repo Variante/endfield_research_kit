@@ -105,6 +105,29 @@ class BuffCandidateTests(unittest.TestCase):
         self.assertEqual(row['coverageStatus'],'unsupported')
         self.assertEqual(row['candidates'],[])
 
+    def test_prefix_limit_rejects_invalid_or_truncated_anchors(self):
+        raw=b'\x1e'+bytes(4)+b'\x03'+bytes(9)+bytes(4)+b'\x02'+bytes(5)
+        reader=gate.decode_buff_pre_id_modifier_prefix
+        good=reader(raw,len(raw))
+        self.assertEqual(good['status'],'parsed-through-attribute-modifier')
+        for limit in (-1,True,'25',len(raw)+1,2,4,6,len(raw)-1):
+            with self.subTest(limit=limit):self.assertEqual(reader(raw,limit)['status'],'parse-error')
+
+    def test_prefix_never_borrows_suffix_for_count_or_record(self):
+        raw=b'\x1e'+bytes(4)+b'\x03'+bytes(9)+bytes(4)+b'\x02'+bytes(5)
+        for at in range(1,len(raw)):
+            before=gate.decode_buff_pre_id_modifier_prefix(raw,at)
+            changed=gate.decode_buff_pre_id_modifier_prefix(raw[:at]+b'\xff'*100,at)
+            with self.subTest(at=at):self.assertEqual(before,changed)
+
+    def test_prefix_gap_and_overlap_guard(self):
+        prefix={'status':'parsed-through-attribute-modifier','endOffset':'0x1'}
+        with mock.patch.object(gate,'decode_buff_pre_id_modifier_prefix',return_value=prefix):
+            row=self.frame(_normal())
+            self.assertEqual(row['candidates'][0]['prefixProbe']['remainingGapRange'],[1,1])
+        with mock.patch.object(gate,'decode_buff_pre_id_modifier_prefix',return_value={**prefix,'endOffset':'0x2'}):
+            with self.assertRaises(gate.vfs.CensusGateError):self.frame(_normal())
+
 
 class BuffJoinTests(unittest.TestCase):
     def setUp(self):

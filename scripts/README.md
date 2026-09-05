@@ -283,6 +283,8 @@ promoting legacy field labels or internal opaque bodies. Run
 `python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output-json reports/animestudio/buffdata_current_latest.json --output-md reports/animestudio/buffdata_current_latest.md`.
 The report partitions selected files into successful candidate framing, failed
 reader execution and unsupported shapes; uniqueness is only within that reader.
+Each accepted BuffData suffix also records a hard-bounded prefix-reader stop and
+remaining gap, with prefix support counted separately from suffix acceptance.
 `python -m scripts.game_data.il2cpp_context_audit` emits an exact-build native
 generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
 pointer-table/record/vector decoding and reciprocal method-parameter identity;
