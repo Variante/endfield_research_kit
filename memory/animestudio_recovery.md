@@ -388,6 +388,10 @@ Current durable boundaries:
   cannot replace this companion. The temporary cursor and subsequent append
   count use two-byte units: append doubles count for copying but advances its
   cursor by the original count, writing a zero terminator only below capacity.
+  The native tag-5 resolver independently connects selected first-slot loads to
+  bounded literal-table/pool bytes: four brace/slash patterns are static format
+  inputs, not executed output paths. The literal sweep validates every row while
+  allowing shared pool ranges; it does not claim exclusive metadata coverage.
   Format-item parsing, nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.

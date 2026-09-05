@@ -325,8 +325,8 @@ def unresolved_usage_index(raw: bytes, count: int, *, tag: int, source: str, off
     The caller supplies the independently gated target table and expected tag.
     Resolved pointers, other tags, truncated cells and implicit tails fail closed.
     """
-    if type(tag) is not int or tag not in (1, 2, 3, 6):
-        raise ContextError(source, offset, 'supported usage tag in (1,2,3,6)', tag)
+    if type(tag) is not int or tag not in (1, 2, 3, 5, 6):
+        raise ContextError(source, offset, 'supported usage tag in (1,2,3,5,6)', tag)
     if len(raw) != 8:
         raise ContextError(source, offset, 'exact eight-byte usage cell', len(raw))
     if type(count) is not int or not 0 <= count <= 1_000_000:
@@ -338,6 +338,23 @@ def unresolved_usage_index(raw: bytes, count: int, *, tag: int, source: str, off
     if index >= count:
         raise ContextError(source, offset, f'usage target index in [0,{count})', index)
     return index
+
+
+def literal_record(raw: bytes, data_size: int, *, source: str, offset: int) -> tuple[int, int]:
+    """One selected-dialect literal row: byte length and pool-relative offset.
+
+    Pool sharing and unreferenced bytes are allowed; neither runtime string
+    construction nor a partition of the metadata file is asserted.
+    """
+    if len(raw) != 8:
+        raise ContextError(source, offset, 'exact eight-byte literal row', len(raw))
+    if type(data_size) is not int or data_size < 0:
+        raise ContextError(source, offset, 'nonnegative literal pool size', data_size)
+    length, start = struct.unpack('<ii', raw)
+    if start < 0 or length < 0 or start > data_size or length > data_size-start:
+        raise ContextError(source, offset, f'literal byte interval inside [0,{data_size})',
+                           {'start': start, 'length': length})
+    return start, length
 
 
 def rip_qword_load_target(raw: bytes, address: int, *, source: str) -> int:

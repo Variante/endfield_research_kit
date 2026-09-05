@@ -25,6 +25,68 @@ from scripts.game_data.il2cpp_context_audit import vfs_block_file_source
 from scripts.game_data.il2cpp_context_audit import native_file_read
 from scripts.game_data.il2cpp_context_audit import vfs_path_carrier
 from scripts.game_data.il2cpp_context_audit import vfs_path_format_context
+from scripts.game_data.il2cpp_context import literal_record
+from scripts.game_data.il2cpp_context_audit import vfs_path_literals
+
+
+class LiteralRecordTests(unittest.TestCase):
+    def test_bounded_and_empty_interval(self):
+        self.assertEqual(literal_record(struct.pack('<ii',3,2),5,source='meta',offset=8),(2,3))
+        self.assertEqual(literal_record(struct.pack('<ii',0,5),5,source='meta',offset=8),(5,0))
+
+    def test_truncated_trailing_negative_and_out_of_bounds(self):
+        for raw in (b'',bytes(7),bytes(9),struct.pack('<ii',-1,0),struct.pack('<ii',1,-1),
+                    struct.pack('<ii',6,0),struct.pack('<ii',1,5)):
+            with self.subTest(raw=raw),self.assertRaises(ContextError):
+                literal_record(raw,5,source='meta',offset=8)
+
+
+class VfsPathLiteralTests(unittest.TestCase):
+    def setUp(self):
+        count=48958;pool_start=24+count*8
+        self.buf=bytearray(pool_start)
+        pool=bytearray()
+        for index,value in ((48841,b'{0}/{1}/{2}'),(48957,b'{0}{1}{2}'),
+                            (48832,b'{0}/{1}'),(48849,b'{0}/{1}{2}')):
+            struct.pack_into('<ii',self.buf,24+index*8,len(value),len(pool));pool.extend(value)
+        struct.pack_into('<iiii',self.buf,8,24,count*8,pool_start,len(pool))
+        self.buf.extend(pool)
+        self.parts={0x4139C:struct.pack('<I',0x41331),
+                    0x41333:b'\xe8'+struct.pack('<i',0x2D8DE0-0x41333-5)}
+        self.parts.update({at:bytes.fromhex(raw) for at,raw in (
+            (0x41280,'8BC1C1E81D8BF1D1EE81E6FFFFFF0FFFC8'),
+            (0x2D8E1D,'48635008486340104903D0'),(0x2D8E2F,'4903C04A634C0204428B14024803C8'))})
+        for n,(rva,index) in enumerate(((0x2D7FAB2,48841),(0x2D7FB13,48957),(0x2D7FC9C,48832),
+                                       (0x2D7DEEA,48841),(0x2D7E068,48849),(0x2D7E188,48832))):
+            cell=0x1000+n*8
+            self.parts[rva]=b'\x48\x8b\x05'+struct.pack('<i',cell-rva-7)
+            self.parts[cell]=struct.pack('<Q',(5<<29)|(index<<1)|1)
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        return vfs_path_literals(self.pe,SimpleNamespace(buf=self.buf),source='fixture.dll',metadata_source='fixture.dat')
+
+    def test_complete_row_sweep_and_four_literal_values(self):
+        row=self.decode()
+        self.assertEqual(row['literalSweep']['success'],48958)
+        self.assertEqual(len({x['ascii'] for x in row['selected']}),4)
+
+    def test_bad_header_pool_and_unselected_record_fail(self):
+        good=self.buf[:]
+        for offset,value in ((12,7),(16,0),(20,999999),(24,-1)):
+            struct.pack_into('<i',self.buf,offset,value)
+            with self.subTest(offset=offset),self.assertRaises(ContextError):self.decode()
+            self.buf=good[:]
+        self.buf.pop()
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_bad_switch_or_usage_is_not_a_literal(self):
+        for at in (0x4139C,0x1000):
+            good=self.parts[at]
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
 
 
 class VfsPathFormatContextTests(unittest.TestCase):
@@ -1315,12 +1377,12 @@ class UnresolvedUsageTests(unittest.TestCase):
         return unresolved_usage_index(raw,count,tag=tag,source='fixture.dll',offset=0x30)
 
     def test_each_supported_tag_exact_index(self):
-        for tag in (1,2,3,6):
+        for tag in (1,2,3,5,6):
             with self.subTest(tag=tag):
                 self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|7),tag=tag),3)
 
     def test_zero_and_maximum_legal_index(self):
-        for tag in (1,2,3,6):
+        for tag in (1,2,3,5,6):
             with self.subTest(tag=tag):
                 self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|1),count=1,tag=tag),0)
                 self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|(999_999<<1)|1),
@@ -1345,7 +1407,7 @@ class UnresolvedUsageTests(unittest.TestCase):
         for count in (-1,True,1_000_001):
             with self.subTest(count=count), self.assertRaises(ContextError):
                 self.decode(struct.pack('<Q',0x40000001),count=count)
-        for tag in (0,4,5,7,True):
+        for tag in (0,4,7,True):
             with self.subTest(tag=tag), self.assertRaises(ContextError):
                 self.decode(struct.pack('<Q',0x40000001),tag=tag)
 

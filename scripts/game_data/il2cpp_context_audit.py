@@ -21,12 +21,14 @@ from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices, generic_method_candidates
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+from scripts.game_data.il2cpp_context import literal_record
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D8DE0, 0x2D8EAC, '88A126F8A51C4D39BE8C73B8E5594A436A41066417A841C66EEA5DB04D8CC67A'),
     (0x2DF2AA0, 0x2DF3271, 'AF49BFE87E68E091E58848935F5BEA3CC32DC280704D2235CD48D6DFCA3B753C'),
     (0x2D72FA0, 0x2D731F5, '445859C5F6E56B6F1C0987ABEABED40E5AF217F7FE42353A95DA117D4FB2B2E2'),
     (0x2D7F770, 0x2D7F914, 'DAE488218AC934D0C9CF68F33BAAB9B1659D3F57DA158D7A0834A6B1F7BE810B'),
@@ -122,7 +124,7 @@ CONSUMER_WINDOWS = (
     (0x37DE060, 0x37DE0BB, '0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB'),
     (0x37DE9C5, 0x37DEB23, 'C6A761532672A5700D9FEEB980F66BAF88B6F1F2CEAC48688680CF4158C1F285'),
     (0x37DE884, 0x37DE9C5, '853722D03CBFE915CFB92DD372A7C85BE072576C8FEB4CB35912E766BBDE9BCA'),
-    (0x41260, 0x4127B, 'DD4C21E4DCAA9ED293D62B4817726DDA64F2BCAFA8C2AFEFFF299EC039CE3F0B'),
+    (0x41260, 0x4138C, '910E29E41F01BE05DE60EF70F0D95CA521E103889A596DA577F10AF50840B2F2'),
     (0x4127B, 0x412D2, 'EC737048F208A7BF568C342D1630E506203A591F88E5497D2D93A9DD31B04D06'),
     (0x412D2, 0x412E0, '65F69D9450DCBB01DF08A592D62CFD560557C9B84E8662F49E421AEC07C15E91'),
     (0x2D8D10, 0x2D8D6A, '1D69558B9C9CBC2E7868E2A5895269966FB40E86B3E36B7B020BCC5C948ED5AC'),
@@ -1047,6 +1049,55 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, format-item parsing, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def vfs_path_literals(pe,md,*,source,metadata_source):
+    """Exact literal pool intervals plus selected native tag-5 consumers."""
+    require(len(md.buf)>=24,True,metadata_source,0)
+    row_start,row_size,pool_start,pool_size=struct.unpack_from('<iiii',md.buf,8)
+    if not (row_start>=24 and row_size>=0 and row_size%8==0 and row_start<=len(md.buf)
+            and row_size<=len(md.buf)-row_start):
+        raise ContextError(metadata_source,8,'bounded eight-byte literal row table after header',
+                           {'start':row_start,'size':row_size,'fileLength':len(md.buf)})
+    if not (pool_start>=row_start+row_size and pool_size>=0 and pool_start<=len(md.buf)
+            and pool_size<=len(md.buf)-pool_start):
+        raise ContextError(metadata_source,16,'bounded literal pool after row table',
+                           {'start':pool_start,'size':pool_size,'rowEnd':row_start+row_size,'fileLength':len(md.buf)})
+    count=row_size//8
+    require(count<=1_000_000,True,metadata_source,8)
+    rows=[literal_record(md.buf[at:at+8],pool_size,source=metadata_source,offset=at)
+          for at in range(row_start,row_start+row_size,8)]
+    require(pe.bytes_at_va(pe.image_base+0x4139C,4),struct.pack('<I',0x41331),source,0x4139C)
+    raw=pe.bytes_at_va(pe.image_base+0x41333,5)
+    require(raw,b'\xe8'+struct.pack('<i',0x2D8DE0-0x41333-5),source,0x41333)
+    windows=[]
+    for rva,expected in ((0x41280,'8BC1C1E81D8BF1D1EE81E6FFFFFF0FFFC8'),
+        (0x2D8E1D,'48635008486340104903D0'),
+        (0x2D8E2F,'4903C04A634C0204428B14024803C8')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    selected=[]
+    for rva,index,expected in ((0x2D7FAB2,48841,b'{0}/{1}/{2}'),
+        (0x2D7FB13,48957,b'{0}{1}{2}'),(0x2D7FC9C,48832,b'{0}/{1}'),
+        (0x2D7DEEA,48841,b'{0}/{1}/{2}'),(0x2D7E068,48849,b'{0}/{1}{2}'),
+        (0x2D7E188,48832,b'{0}/{1}')):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=source)
+        usage=pe.bytes_at_va(cell,8)
+        actual=unresolved_usage_index(usage,count,tag=5,source=source,offset=cell)
+        require(actual,index,source,cell)
+        start,length=rows[actual]
+        value=md.buf[pool_start+start:pool_start+start+length]
+        require(value,expected,metadata_source,pool_start+start)
+        selected.append({'rva':rva,'cellVa':cell,'usageRawHex':usage.hex().upper(),
+                         'literalIndex':actual,'metadataOffset':pool_start+start,
+                         'byteLength':length,'rawHex':value.hex().upper(),'ascii':value.decode('ascii')})
+    return {'selected':selected,'windows':windows,
+            'literalSweep':{'success':count,'failed':0,'unsupported':0,'rowStart':row_start,
+                            'rowByteLength':row_size,'poolStart':pool_start,'poolByteLength':pool_size,
+                            'rowsStartLength':rows},
+            'level':'exact static literal bytes; direct conditional tag-5 pool-address connection',
+            'boundary':'The usage resolver extracts tag and index, and tag 5 selects the literal resolver. Its cache-miss path uses header offsets +8/+16, an eight-byte row stride, row+4 pool-relative offset and row+0 byte length to call the string constructor. All literal rows have bounded pool intervals; aliases and unreferenced pool bytes are allowed, not claimed as an exclusive file partition. Six reviewed path-builder loads join four exact ASCII byte sequences containing braces and slashes. The existing builder windows store these load results into slot zero. These are static format inputs, not demonstrated output paths: cache initialization, string-constructor encoding/ABI, format-item parsing, nested formatter execution, getter values, branch selection and runtime file identity remain unresolved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1393,6 +1444,7 @@ def audit():
     file_read=native_file_read(pe,md,modules,image_owners,source=str(gate.gameassembly))
     path_carrier=vfs_path_carrier(pe,md,modules,image_owners,source=str(gate.gameassembly))
     path_format=vfs_path_format_context(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
+    path_literals=vfs_path_literals(pe,md,source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1427,6 +1479,7 @@ def audit():
         'selectedNativeFileRead':file_read,
         'selectedVfsPathCarrier':path_carrier,
         'selectedVfsPathFormatContext':path_format,
+        'selectedVfsPathLiterals':path_literals,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
