@@ -30,7 +30,38 @@ from scripts.game_data.il2cpp_context_audit import vfs_format_item
 from scripts.game_data.il2cpp_context_audit import vfs_string_carrier
 from scripts.game_data.il2cpp_context_audit import vfs_root_resolver
 from scripts.game_data.il2cpp_context_audit import unity_registration_forwarder
+from scripts.game_data.il2cpp_context_audit import unity_registration_pair
 from unittest.mock import patch
+
+
+class UnityRegistrationPairTests(unittest.TestCase):
+    def setUp(self):
+        base=0x180000000
+        self.parts={0x3BF7C0:bytes.fromhex('48895C24084889742410574883EC2033FF488D352808C4FF8BDF660F1F440000488B943350D29D01488B8C33404E9E01E87BFAFFFFFFC7488D5B0881FF7E0F000072DD488B5C2430488B7424384883C4205FC3'),
+            0x19DD250:struct.pack('<Q',base+0x32BA20)*0xF7E,
+            0x19E4E40:struct.pack('<Q',base+0x19F1D50)*0xF7E,
+            0x19F1D50:b'UnityEngine.Application::get_streamingAssetsPath\0',0x32BA20:b'!'}
+        self.pe=SimpleNamespace(image_base=base,bytes_at_va=self.read)
+
+    def read(self,va,size):
+        if va-self.pe.image_base not in self.parts:
+            raise ContextError('fixture.dll',va,'mapped target',va)
+        raw=self.parts[va-self.pe.image_base]
+        return raw[:1] if size==1 else raw
+
+    def test_whole_slot_sweep_and_selected_pair(self):
+        row=unity_registration_pair(self.pe,source='fixture.dll')
+        self.assertEqual(row['summary']['success'],3966)
+        self.assertEqual(row['selected']['index'],299)
+
+    def test_truncated_trailing_changed_count_or_target(self):
+        for at,good in list(self.parts.items()):
+            if at==0x32BA20:continue
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_registration_pair(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class UnityRegistrationForwarderTests(unittest.TestCase):

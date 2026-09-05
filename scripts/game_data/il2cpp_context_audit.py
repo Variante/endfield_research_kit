@@ -1062,6 +1062,35 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def unity_registration_pair(pe,*,source):
+    """Shared native loop index proves static pairing, not active registration."""
+    body=pe.bytes_at_va(pe.image_base+0x3BF7C0,0x53)
+    require(hashlib.sha256(body).hexdigest().upper(),
+            'DAA468EB7D4B399BCE0FCEB29186340606D92272D61C56D5D08D4FC158888AB7',source,0x3BF7C0)
+    count=0xF7E;values_rva=0x19DD250;names_rva=0x19E4E40
+    values_raw=pe.bytes_at_va(pe.image_base+values_rva,count*8)
+    names_raw=pe.bytes_at_va(pe.image_base+names_rva,count*8)
+    require(len(values_raw),count*8,source,values_rva)
+    require(len(names_raw),count*8,source,names_rva)
+    rows=[]
+    for i,((value,),(name,)) in enumerate(zip(struct.iter_unpack('<Q',values_raw),struct.iter_unpack('<Q',names_raw))):
+        # Addressability only: not complete name strings or function bodies.
+        require(len(pe.bytes_at_va(value,1)),1,source,values_rva+i*8)
+        require(len(pe.bytes_at_va(name,1)),1,source,names_rva+i*8)
+        rows.append({'index':i,'nameVa':name,'valueVa':value})
+    selected=rows[299]
+    require(selected['nameVa'],pe.image_base+0x19F1D50,source,names_rva+299*8)
+    require(selected['valueVa'],pe.image_base+0x32BA20,source,values_rva+299*8)
+    literal=b'UnityEngine.Application::get_streamingAssetsPath\0'
+    require(pe.bytes_at_va(selected['nameVa'],len(literal)),literal,source,0x19F1D50)
+    return {'loopRva':0x3BF7C0,'loopSha256':hashlib.sha256(body).hexdigest().upper(),
+            'namesRva':names_rva,'valuesRva':values_rva,'slotByteLength':8,
+            'summary':{'success':count,'failed':0,'unsupported':0},'rows':rows,
+            'selected':dict(selected,name=literal[:-1].decode('ascii')),
+            'level':'direct static name/value argument pairing',
+            'boundary':'The complete loop starts at index zero, derives image base with RIP-relative LEA, loads RDX and RCX from separate arrays using the same byte offset, calls the reviewed forwarder and advances by eight until 0xF7E entries. Both complete pointer vectors are bounded and every target is checked for one-byte addressability only; this is not complete string/body decoding. Entry 299 independently pairs the selected interface name with RVA 0x32BA20. The registered name lacks the parentheses in the resolver request, so matching still depends on the unclosed query helper path. Loop invocation, callback effects, dynamic export resolution, tree insertion, duplicate registrations and the selected target body/return ABI remain unresolved. No current directory or authenticated-file identity is inferred.'}
+
+
 def unity_registration_forwarder(pe,*,source):
     """Selected dynamic export request and forwarding, not live binding."""
     raw=pe.bytes_at_va(pe.image_base+0x3BF270,0x6A)
@@ -1582,6 +1611,7 @@ def audit():
     unity_pe=mapper.PeImage(unity_path)
     require(hashlib.sha256(unity_pe.buf).hexdigest().upper(),UNITY_SHA,unity_path)
     unity_forwarder=unity_registration_forwarder(unity_pe,source=str(unity_path))
+    unity_pair=unity_registration_pair(unity_pe,source=str(unity_path))
     require(sha(unity_path),UNITY_SHA,unity_path)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
@@ -1623,6 +1653,7 @@ def audit():
         'selectedVfsStringCarrier':string_carrier,
         'selectedVfsRootResolver':root_resolver,
         'selectedUnityRegistrationForwarder':unity_forwarder,
+        'selectedUnityRegistrationPair':unity_pair,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

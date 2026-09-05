@@ -412,8 +412,11 @@ Current durable boundaries:
   Exact-build UnityPlayer additionally requests that export into a function cache;
   a reviewed forwarder passes its original pair through optional callbacks before
   tail-calling the cache. Module identity, successful resolution, callback contents
-  and concrete name/value registration pairs remain unknown; parallel name arrays
-  do not establish function ownership. Export callers, insertion/query helpers, live contents
+  remain unknown. A complete native loop now proves one static name/value pair by
+  loading both arrays with the same advancing byte offset; complete pointer vectors
+  are bounded, not fully decoded strings/functions. Its registered name omits the
+  request's parentheses, leaving the resolver helper join open. This is not evidence
+  of invocation, final registration ownership or target behavior. Insertion/query helpers, live contents
   and the Unity implementation join remain open; static producer code is not execution.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
