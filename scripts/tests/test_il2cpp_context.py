@@ -34,7 +34,32 @@ from scripts.game_data.il2cpp_context_audit import unity_registration_pair
 from scripts.game_data.il2cpp_context_audit import unity_path_return
 from scripts.game_data.il2cpp_context_audit import unity_conversion_exports
 from scripts.game_data.il2cpp_context_audit import resolver_prefix_query
+from scripts.game_data.il2cpp_context_audit import resolver_key_comparison
 from unittest.mock import patch
+
+
+class ResolverKeyComparisonTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2DF760,'482BD14983F808'),(0x2DF790,'8A013A0411750C'),
+            (0x2DF79F,'4833C0C31BC083D8FFC3'),
+            (0x2DF814,'488B0C0A480FC8480FC9483BC11BC083D8FFC3'),
+            (0x1F21F,'4C8BC7483BF74C0F42C6E832052C00'),(0x1F29C,'483BFE7293'),
+            (0x1F264,'4C8BC6483BDE4C0F42C3E8ED042C00'),(0x1F42E,'483BF30F8349FEFFFF'),
+            (0x1F36F,'4C8BC7483BF74C0F42C6E8E2032C00'),
+            (0x1F3D5,'483BFE72AA'),(0x1F43C,'483BF3738B'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_complete_selected_windows(self):
+        self.assertEqual(len(resolver_key_comparison(self.pe,source='fixture.dll')['windows']),11)
+
+    def test_changed_truncated_trailing_compare_or_tie_break(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    resolver_key_comparison(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class ResolverPrefixQueryTests(unittest.TestCase):

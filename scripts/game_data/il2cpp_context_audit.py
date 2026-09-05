@@ -29,6 +29,7 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2DF760,0x2DF827,'BB25B7DF06BAB2DBC8B2D54FB1DF15E7B5CB1E9EDCB553B06A82DDE63998F27D'),
     (0x1F0A0,0x1F0F8,'C9F38013332566AD167609C71B8F69552B51A2C45D2CEA1FDD23F35A5E62C727'),
     (0x2DF840,0x2DF8D0,'2D2C7C970E0E0DD329559040D4D6D0EEABAC001A756EDE943F1F05674FC7029B'),
     (0x248D0,0x249AC,'444E365BB37D609DD9797249C52EFC2BB7C0C81A41446EC74418B8DF509CA026'),
@@ -1068,6 +1069,26 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def resolver_key_comparison(pe,*,source):
+    """Bounded-prefix lexicographic comparison and caller length tie-breaks."""
+    windows=[]
+    for at,expected in (
+        (0x2DF760,'482BD14983F808'),(0x2DF790,'8A013A0411750C'),
+        (0x2DF79F,'4833C0C31BC083D8FFC3'),
+        (0x2DF814,'488B0C0A480FC8480FC9483BC11BC083D8FFC3'),
+        (0x1F21F,'4C8BC7483BF74C0F42C6E832052C00'),
+        (0x1F29C,'483BFE7293'),
+        (0x1F264,'4C8BC6483BDE4C0F42C3E8ED042C00'),
+        (0x1F42E,'483BF30F8349FEFFFF'),
+        (0x1F36F,'4C8BC7483BF74C0F42C6E8E2032C00'),
+        (0x1F3D5,'483BFE72AA'),(0x1F43C,'483BF3738B')):
+        raw=pe.bytes_at_va(pe.image_base+at,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,at)
+        windows.append({'rva':at,'rawHex':raw.hex().upper()})
+    return {'windows':windows,'level':'direct conditional byte-order comparison',
+            'boundary':'The complete comparator consumes the supplied byte count using alignment bytes, bounded qword groups and remaining bytes. Equal prefixes return zero. Byte mismatches return -1/+1 using unsigned comparison flags; qword mismatches byte-swap both operands before the same unsigned ordering, preserving first-byte lexicographic order. The resolver supplies the smaller key/query byte length, then uses length comparisons to order equal prefixes, for both original and transformed queries. Hence a matching prefix alone is not key equality. No character decoding, case folding or locale comparison occurs in this reviewed helper. Its count is not an independent allocation bound; valid pointer extents and string construction/copy, tree invariants, actual keys and execution remain prerequisites. This does not establish a live lookup result, formatter selection or file identity.'}
+
+
 def resolver_prefix_query(pe,*,source):
     """Conditional prefix extent, not live key equality or lookup success."""
     windows=[]
@@ -1678,6 +1699,7 @@ def audit():
     string_carrier=vfs_string_carrier(pe,source=str(gate.gameassembly))
     root_resolver=vfs_root_resolver(pe,source=str(gate.gameassembly))
     prefix_query=resolver_prefix_query(pe,source=str(gate.gameassembly))
+    key_comparison=resolver_key_comparison(pe,source=str(gate.gameassembly))
     unity_path=gate.gameassembly.with_name('UnityPlayer.dll')
     unity_pe=mapper.PeImage(unity_path)
     require(hashlib.sha256(unity_pe.buf).hexdigest().upper(),UNITY_SHA,unity_path)
@@ -1733,6 +1755,7 @@ def audit():
         'selectedVfsStringCarrier':string_carrier,
         'selectedVfsRootResolver':root_resolver,
         'selectedResolverPrefixQuery':prefix_query,
+        'selectedResolverKeyComparison':key_comparison,
         'selectedUnityRegistrationForwarder':unity_forwarder,
         'selectedUnityRegistrationPair':unity_pair,
         'selectedUnityPathReturn':unity_path_evidence,
