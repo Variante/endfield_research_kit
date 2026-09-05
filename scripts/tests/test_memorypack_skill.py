@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import hashlib
-import json
 import struct
-import tempfile
+import subprocess
+import sys
 import unittest
-from pathlib import Path
 
 from scripts.game_data.memorypack.skill import (
-    audit_skill_census,
     frame_skill_common_prefix,
     frame_skill_memorypack,
 )
 from scripts.game_data.memorypack.schemas import SKILL_MEMBER_COUNT
+from scripts.game_data.memorypack.buff import read_skill_gameplay_tag_record
 
 
 def _empty_terminal_shape(*, first: bool = False, last: bool = True) -> bytes:
@@ -28,6 +26,40 @@ def _empty_terminal_shape(*, first: bool = False, last: bool = True) -> bytes:
 
 
 class SkillMemoryPackFramingTests(unittest.TestCase):
+    def test_legacy_census_cli_cannot_rebind_old_bytes(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, "-m", "scripts.game_data.memorypack.skill",
+             "old-census.json", "current-boundary.json",
+             "--expected-input-set-sha256", "A" * 64],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertNotEqual(0, completed.returncode)
+        self.assertIn("Historical census rebinding is not supported", completed.stderr)
+        self.assertEqual("", completed.stdout)
+
+    def test_terminal_rejects_unsupported_record_member_counts(self) -> None:
+        for count in (0, 3, 255):
+            with self.subTest(count=count):
+                record = bytes([count]) + struct.pack("<II", 0x12345678, 0xFFFFFFFF)
+                with self.assertRaisesRegex(
+                    ValueError, f"offset=0 expected=1\\|2 actual={count}"
+                ):
+                    read_skill_gameplay_tag_record(record, 0, "anonymous", 0)
+                terminal = b"\x01" + struct.pack("<I", 1) + record + b"\x00" * 9
+                framed = frame_skill_memorypack(bytes([SKILL_MEMBER_COUNT, 0x7F]) + terminal)
+                self.assertEqual("terminal-shape-unresolved", framed["status"])
+
+    def test_supported_record_member_counts_have_exact_bounds(self) -> None:
+        for count in (1, 2):
+            with self.subTest(count=count):
+                record = bytes([count]) + struct.pack("<I", 0x12345678)
+                if count == 2:
+                    record += struct.pack("<I", 0xFFFFFFFF)
+                parsed, end = read_skill_gameplay_tag_record(record, 0, "anonymous", 0)
+                self.assertEqual(len(record), end)
+                self.assertEqual(len(record), parsed["byteLength"])
+                self.assertEqual("0x0", parsed["offset"])
+
     def test_common_prefix_stops_before_first_record_body_in_first_list(self) -> None:
         data = b"".join((
             bytes([SKILL_MEMBER_COUNT, 2]),
@@ -69,6 +101,17 @@ class SkillMemoryPackFramingTests(unittest.TestCase):
         self.assertEqual("anonymous-envelope-count-prefix-consumed", framed["status"])
         self.assertEqual("0xa", framed["cursorOffset"])
         self.assertNotIn("stopListIndex", framed)
+
+    def test_common_prefix_count_requires_minimum_marker_bytes(self) -> None:
+        for data, offset in (
+            (bytes([SKILL_MEMBER_COUNT, 2]) + struct.pack("<I", 2) + b"\x02", 2),
+            (bytes([SKILL_MEMBER_COUNT, 2]) + struct.pack("<II", 0, 2) + b"\x04", 6),
+        ):
+            with self.subTest(data=data):
+                with self.assertRaisesRegex(
+                    ValueError, f"offset={offset} expected<=remaining-marker-bytes:1 actual=2"
+                ):
+                    frame_skill_common_prefix(data)
 
     def test_common_prefix_rejects_corrupt_counts_markers_and_truncation(self) -> None:
         with self.assertRaisesRegex(ValueError, "nested-member-count expected=2 actual=3"):
@@ -136,6 +179,21 @@ class SkillMemoryPackFramingTests(unittest.TestCase):
             framed["ambiguity"]["resolutionStatus"],
         )
 
+    def test_empty_wrapper_collision_is_not_misreported_unique(self) -> None:
+        data = bytes.fromhex("307f000100000000000000000000000000")
+        framed = frame_skill_memorypack(data, source="empty-wrapper.fixture")
+        self.assertEqual("ambiguous-exact-terminal-shape", framed["status"])
+        self.assertEqual(
+            [("0x2", "one-member-wrapper"), ("0x3", "counted")],
+            [(row["startOffset"], row["encoding"]) for row in framed["candidates"]],
+        )
+        self.assertEqual([0, 0, 0], framed["ambiguity"]["sharedCountedRecordCounts"])
+        for candidate in framed["candidates"]:
+            spans = [member["range"] for member in candidate["members"]]
+            self.assertEqual(int(candidate["startOffset"], 0), spans[0]["start"])
+            self.assertEqual(len(data), spans[-1]["end"])
+            self.assertTrue(all(a["end"] == b["start"] for a, b in zip(spans, spans[1:])))
+
     def test_ambiguous_counted_record_collision_rejects_corrupt_count(self) -> None:
         terminal = bytearray(b"".join(
             (
@@ -172,91 +230,6 @@ class SkillMemoryPackFramingTests(unittest.TestCase):
 
         self.assertEqual("terminal-shape-unresolved", framed["status"])
         self.assertEqual([], framed["candidates"])
-
-    def test_census_audit_rejoins_sources_and_payload_hashes(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = root / "current.blc"
-            source.write_bytes(b"current metadata")
-            payload = root / "skill.bin"
-            payload_bytes = bytes([SKILL_MEMBER_COUNT, 0x7F]) + _empty_terminal_shape()
-            payload.write_bytes(payload_bytes)
-            metadata = root / "global-metadata.dat"
-            metadata.write_bytes(b"current native metadata")
-            boundary = root / "boundary.json"
-            boundary.write_text(
-                json.dumps(
-                    {
-                        "inputSetSha256": "A" * 64,
-                        "sourceFingerprints": [
-                            {
-                                "path": str(source),
-                                "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
-                            }
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-            census = root / "census.json"
-            census.write_text(
-                json.dumps(
-                    {
-                        "inputs": {
-                            "ledger": "fixture-ledger.jsonl.gz",
-                            "metadata": {
-                                "path": str(metadata),
-                                "sha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
-                            },
-                        },
-                        "summary": {"files": 1, "declaredBytes": len(payload_bytes)},
-                        "files": [
-                            {
-                                "virtualPath": "Data/Json/SkillData/fixture.json",
-                                "exportPath": str(payload),
-                                "declaredLength": len(payload_bytes),
-                                "actualLength": len(payload_bytes),
-                                "ledgerSha256": hashlib.sha256(payload_bytes).hexdigest(),
-                            }
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-
-            result = audit_skill_census(
-                census,
-                boundary,
-                expected_input_set_sha256="a" * 64,
-            )
-
-            self.assertEqual(1, result["sourceFingerprintCount"])
-            self.assertEqual(1, result["files"])
-            self.assertEqual({"unique-exact-terminal-shape": 1}, result["statusCounts"])
-            self.assertFalse(result["wholeSchemaExact"])
-
-    def test_census_audit_rejects_stale_source_fingerprint(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = root / "current.blc"
-            source.write_bytes(b"changed")
-            boundary = root / "boundary.json"
-            boundary.write_text(
-                json.dumps(
-                    {
-                        "inputSetSha256": "B" * 64,
-                        "sourceFingerprints": [
-                            {"path": str(source), "sha256": hashlib.sha256(b"old").hexdigest()}
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-            census = root / "census.json"
-            census.write_text(json.dumps({"summary": {"files": 0}, "files": []}), encoding="utf-8")
-
-            with self.assertRaisesRegex(ValueError, r"sourceFingerprints\[0\]:sha256-mismatch"):
-                audit_skill_census(census, boundary)
 
 
 if __name__ == "__main__":

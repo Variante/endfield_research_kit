@@ -212,6 +212,7 @@ python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPU
 python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -267,6 +268,14 @@ Its four-byte native window is separate from the physical gap and opaque
 complement. Unknown representations and multi-target clusters remain explicit;
 partial probes cannot replace complete reports. Both ends of a sweep check
 the live BLC path set as well as fingerprint contents and executing sources.
+`memorypack.skill_corpus` owns the SkillData current-VFS gate; `skill` owns
+anonymous prefix/candidate framing and `skill_terminal` enumerates each terminal
+branch with complete record ranges. The gate joins current decrypted stream
+bytes to every selected outer-ledger identity and checks overlay, raw chunks,
+CLI and parser provenance at both ends. Historical census rebinding is rejected.
+Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
+establishes whole-schema ownership. Partial `--max-files` outputs must stay in
+`tmp/` or `scratch/`.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

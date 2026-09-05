@@ -295,12 +295,17 @@ and perform no final cursor/EOF comparison. Their numeric magic values recur
 inside the same payloads, so signature scanning cannot substitute for those
 missing bounds or establish a record start.
 
-For SkillData/BuffData work, begin with the current envelope censuses under
-`tmp/animestudio/` and the exact-build metadata hash recorded there. Member
-counts and metadata field-name sets are discovery gates only. The maintained
-SkillData framer may certify an anonymous EOF terminal shape while keeping its
-prefix opaque and multiple starts ambiguous; this is not a whole schema. The
-BuffData member-18 stacking-action framer likewise proves only its anonymous
+For SkillData work, run `python -m scripts.game_data.memorypack.skill_corpus`
+against the current outer summary, ledger, and input-set SHA. Historical
+export-backed censuses cannot be rebound by supplying a newer boundary report.
+The gate joins current VFS stream bytes to the complete selected ledger set;
+member counts and metadata field-name sets are discovery gates only. The
+maintained SkillData framer enumerates direct-counted and wrapped terminal
+candidates independently, including empty wrappers. A unique candidate is only
+unique within that supported grammar, not proof of the actual formatter cursor.
+Keep the prefix opaque and multiple starts or branches ambiguous. BuffData
+work likewise requires a provenance-matched census rather than a historical
+count. Its member-18 stacking-action framer proves only its anonymous
 marker/extent/EOF contract and must keep intermediate bytes and field order
 opaque. Do not label a family semantically decoded until nested unions, field
 order, bounds, and EOF consumption are covered by maintained positive and
@@ -311,14 +316,16 @@ EOF remains insufficient for whole-schema status: the complete top-level
 object and any ActionSerializedMap must be consumed first. AnimationConfig may
 similarly expose an anonymous common prefix or exact small frame while leaving
 the remaining payload explicitly opaque.
-Current v29 metadata can identify formatter/wrapper methods and setter
-declarations, but lacks a usable TypeSpec/MethodSpec mapping; if the recorded
-native code registration maps outside the current image, fail closed. Do not
-promote setter declaration order or the union-tag registry to serialized cursor
-order without current method bodies or a bounded trace.
-For residual JsonData prioritization, start from
-`tmp/animestudio/jsondata_unclassified_family_census_20260903.json`; keep its
-outer-verified rows in the denominator, and do not treat SkillData's uniform
+Historical lightweight v29 tooling failed to resolve generic types and used an
+invalid registration witness; this is not proof that the current registration
+lacks MethodSpec data. Revalidate the selected native inputs and unique
+registration before mapping formatter/wrapper methods. A direct method pointer
+still does not establish ref-reader ABI, nested read order, or a final cursor.
+Do not promote setter declaration order or the union-tag registry to serialized
+cursor order without complete current method bodies or a bounded trace.
+For residual JsonData prioritization, the historical
+`tmp/animestudio/jsondata_unclassified_family_census_20260903.json` supplies
+family leads, not a current denominator without a ledger rejoin. Do not treat SkillData's uniform
 `30 02` prefix as more than a 48-member envelope witness.
 Use the payload-understanding report's current blocker/evidence pointers before
 adding another family-specific probe.

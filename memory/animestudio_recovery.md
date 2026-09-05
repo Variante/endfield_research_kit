@@ -194,11 +194,22 @@ Current durable boundaries:
   wholly absent from both overlay roots remains visible as a conditional
   missing terminal state and does not fail; partial presence, bad hashes, and
   malformed payloads remain fail-closed.
-- SkillData and BuffData have current exact-build member-count and file-hash
-  censuses, but nested MemoryPack unions and whole-file ownership are not
-  proven. SkillData now has a strict anonymous EOF terminal-shape reader that
-  keeps its prefix opaque and preserves multiple valid starts as ambiguity.
-  BuffData additionally has a bounded anonymous member-18 stacking-action
+- SkillData historical export-backed censuses cannot establish current VFS
+  coverage by accepting a newer boundary report. Its maintained
+  `memorypack.skill_corpus` gate starts from the authenticated outer ledger and
+  current decrypted VFS stream bytes, checks the complete identity set and
+  source/overlay/tool provenance at both ends, and records logical hashes.
+  The anonymous terminal reader enumerates direct-counted and wrapped branches
+  independently, including empty wrappers; unknown record member counts fail
+  closed. A unique EOF candidate is unique only within the supported grammar,
+  not a proven preceding cursor. Full record ranges, ambiguous candidates and
+  opaque gaps remain distinct from whole-file ownership. Current coverage and
+  full candidate inventories belong to
+  `reports/animestudio/skilldata_current_latest.json` and its Markdown companion;
+  the historical two-ambiguity census is superseded, not a current baseline.
+  BuffData needs a
+  provenance-matched census before reporting current coverage and has a bounded
+  anonymous member-18 stacking-action
   reader; its fixed extent and terminal markers can be exact without claiming
   semantic field order, while changed or unsupported rows remain explicit.
   LevelScriptData and LevelData expose partial top-level frames only when their
@@ -211,11 +222,13 @@ Current durable boundaries:
   opaque remainder. Keep structural framing distinct from semantic schema
   ownership until formatter IL or a bounded deserialization trace closes the
   complete named cursor.
-  Current v29 metadata identifies formatter/wrapper methods and setters, but
-  its missing generic mapping and mismatched native code-registration witness
-  do not prove serialized field order. The current residual JsonData census
-  keeps every outer-verified unresolved row explicitly unclassified; SkillData
-  is the largest by bytes and still lacks whole-object cursor proof. The NPC
+  Current registration can locate real SkillData formatter/wrapper bodies;
+  the old lightweight tool's invalid registration and unresolved generic
+  mapping are not intrinsic metadata limitations. Ref-reader ABI, complete
+  nested read order and the final cursor still require independent proof;
+  DummyDll population and setter declarations do not supply it. Historical
+  residual JsonData censuses supply family leads, not current denominators
+  without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC
   Montage reader exact-frames all 3,631 current rows, including both non-empty
   counted collections and their nested member markers, while keeping UTF-8 and
   fixed record bodies anonymous. StreamingChunkInfo exact-frames the anonymous
@@ -354,6 +367,11 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 
 ## Remaining gaps
 
+- Close SkillData's real formatter/ref-reader cursor from a current authenticated
+  logical file through the anonymous terminal start; method identity and a final
+  one-byte read alone do not prove source extent or exact EOF. Preserve candidate
+  ambiguity until that connection exists, then continue the residual JsonData
+  record queue rather than inferring field order from declarations.
 - Continue Streaming nested element/byte-body framing using the bottom-up
   queue in `game_data_recovery.md`; concrete runtime paths and field names
   follow structural closure, not the reverse.

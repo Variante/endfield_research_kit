@@ -8031,9 +8031,18 @@ def read_skill_clean_string_field(
 
 
 def read_skill_gameplay_tag_record(data: bytes, offset: int, field_name: str, index: int) -> tuple[dict[str, Any], int]:
-    if offset >= len(data):
-        raise ValueError(f"{field_name}[{index}]:truncated-member-count")
+    start = offset
+    if offset < 0 or offset >= len(data):
+        raise ValueError(
+            f"{field_name}[{index}]:truncated-member-count offset={offset} "
+            f"expected=1 actual={max(0, len(data) - offset)}"
+        )
     member_count = data[offset]
+    if member_count not in (1, 2):
+        raise ValueError(
+            f"{field_name}[{index}]:member-count offset={offset} "
+            f"expected=1|2 actual={member_count}"
+        )
     offset += 1
     tag_id, offset = read_buff_u32_field(data, offset, f"{field_name}[{index}].tagId")
     if member_count == 1:
@@ -8049,6 +8058,8 @@ def read_skill_gameplay_tag_record(data: bytes, offset: int, field_name: str, in
         raise ValueError(f"{field_name}[{index}].tagName:not-clean len={len(tag_name)}")
     return {
         "index": index,
+        "offset": format_offset(start),
+        "byteLength": offset - start,
         "memberCount": member_count,
         "encoding": encoding,
         "tagId": tag_id,
