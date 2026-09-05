@@ -339,7 +339,9 @@ transaction, then exact M27 and joined Default resources. Descriptor discovery
 must allocate no GPU staging, and later-entry readiness requires writer
 acknowledgments plus a completed Animator sequence. Keep GPU and retained CPU
 limits distinct, record arming delays, and never join resource contents across
-entries as one frame. This does not replace fresh-process cloth lifecycle proof.
+entries as one frame. Retain authenticated transient entry triggers across disk
+publication; require current actor evidence when arming instead of requiring the
+entrance shader to recur. This does not replace fresh-process cloth lifecycle proof.
 
 ## Reference and comparison policy
 
