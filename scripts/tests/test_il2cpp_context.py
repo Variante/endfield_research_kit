@@ -44,7 +44,42 @@ from scripts.game_data.il2cpp_context_audit import list_element_dispatch
 from scripts.game_data.il2cpp_context_audit import list_element_shared_context, list_element_null_probe
 from scripts.game_data.il2cpp_context_audit import list_element_value_flow
 from scripts.game_data.il2cpp_context_audit import adapter_conversion_context
+from scripts.game_data.il2cpp_context_audit import element_provider_state_flow
 from unittest.mock import patch
+
+
+class ElementProviderStateFlowTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0xF8040,'F68138010000017405488BC1EB05E9ED93F4FFC3'),
+            (0x2DA427F,'488B5D38488B1B'),
+            (0x2DA42B0,'B201488BCBE8462826FD4C8D6020'),
+            (0x2DA439A,'488B4A10488B43704C8B34C8'),
+            (0x2DA43E9,'498BCEE87F030000488BD8488B4538488B4008'),
+            (0x2DA4412,'488BD0488B0BE833F425FD84C00F842AD0D401'),
+            (0x2DA4592,'498B47704C8934F8'),
+            (0x2DA482E,'488B80B8000000488B6818'),
+            (0x2DA4970,'443B7B28754E488B75184C8B7310'),
+            (0x2DA49A7,'33C948897C24204D8BCE4C8BC6488BD0E8745D29FD84C00F8516010000'),
+            (0x2DA4ADA,'833D2BA70F0B00488B43184889442468'),
+            (0x2DA4C7F,'4C8B0D52032A0A4C8BC3488BD7E80F44E000'),
+            (0x2DA4C91,'488B442468'),
+            (0x4AF1447,'4533F6E9652F2BFE'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_state_lookup_and_distinct_return_context(self):
+        row=element_provider_state_flow(self.pe,source='fixture.dll')
+        self.assertEqual(len(row['windows']),14)
+        self.assertIn('not a serialized reader',row['boundary'])
+        self.assertIn('cannot be replaced by the fast-path identity',row['boundary'])
+
+    def test_truncated_trailing_and_changed_state_offset_or_branch(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):
+                    element_provider_state_flow(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class AdapterConversionContextTests(unittest.TestCase):

@@ -29,6 +29,10 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0xF8040,0xF8054,'6FAAAFEA02FCA6BE80BF3AB5DFD579015CCC2E16E4184E44799B89A328054879'),
+    (0x2DA4260,0x2DA4713,'BCF62513ABA710E9AB67DBFDA036EFE7CEC127E1CADFB21E16530E168D2EBE02'),
+    (0x4AF13B8,0x4AF14EB,'61FE687029897D01C5F5D0283742BCAB565002A11914EA01B54FBD87F2192D04'),
+    (0x2DA4770,0x2DA4D6B,'4D521FFBEB8FADA0965B6F8DCD9BAE153964F3D5BAF7E22A199509C24867BD0D'),
     (0x2DF760,0x2DF827,'BB25B7DF06BAB2DBC8B2D54FB1DF15E7B5CB1E9EDCB553B06A82DDE63998F27D'),
     (0x1F0A0,0x1F0F8,'C9F38013332566AD167609C71B8F69552B51A2C45D2CEA1FDD23F35A5E62C727'),
     (0x2DF840,0x2DF8D0,'2D2C7C970E0E0DD329559040D4D6D0EEABAC001A756EDE943F1F05674FC7029B'),
@@ -331,6 +335,31 @@ def reader_cursor_consumers(pe, *, source):
             'nestedRead':{'rva':0x381F8F0,'readerRegister':'R15',
                           'boundary':'Entry RCX is saved in R15 and passed to dispatch as R8; the local output is returned after formatter dispatch. This body is another provider/dispatch layer, not the list count or element consumer. Its cold cache paths, live MethodInfo and selected list formatter are unresolved.'},
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
+
+
+def element_provider_state_flow(pe,*,source):
+    """Selected state-dependent lookup path; enclosing bodies are gated by audit."""
+    windows=[]
+    for at,expected in (
+        (0xF8040,'F68138010000017405488BC1EB05E9ED93F4FFC3'),
+        (0x2DA427F,'488B5D38488B1B'),
+        (0x2DA42B0,'B201488BCBE8462826FD4C8D6020'),
+        (0x2DA439A,'488B4A10488B43704C8B34C8'),
+        (0x2DA43E9,'498BCEE87F030000488BD8488B4538488B4008'),
+        (0x2DA4412,'488BD0488B0BE833F425FD84C00F842AD0D401'),
+        (0x2DA4592,'498B47704C8934F8'),
+        (0x2DA482E,'488B80B8000000488B6818'),
+        (0x2DA4970,'443B7B28754E488B75184C8B7310'),
+        (0x2DA49A7,'33C948897C24204D8BCE4C8BC6488BD0E8745D29FD84C00F8516010000'),
+        (0x2DA4ADA,'833D2BA70F0B00488B43184889442468'),
+        (0x2DA4C7F,'4C8B0D52032A0A4C8BC3488BD7E80F44E000'),
+        (0x2DA4C91,'488B442468'),
+        (0x4AF1447,'4533F6E9652F2BFE')):
+        raw=bytes.fromhex(expected)
+        require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    return {'windows':windows,'level':'direct conditional state/return flow',
+        'boundary':'The short class helper returns its input unchanged when bit zero at +0x138 is set; otherwise it tail-jumps to initialization, whose return cannot be replaced by the fast-path identity. The provider receives a companion, not a serialized reader. Companion method-context slot zero feeds a helper and its result+0x20 becomes a lookup key. A successful first-table lookup uses a 24-byte row index to load a qword carrier from a separate vector; a miss may construct and insert a carrier. A null context element can instead forward a null carrier to the next helper. That helper consults static-carrier+0x18 state, compares a hash and invokes a separate equality target before returning a matched node+0x18 value. Miss branches include conditional helper calls, allocations and publication through another helper; they are not equivalent to selecting the static registered candidate. The common return comes from the writable local slot. The caller checks the returned object against companion method-context slot one before returning it or entering an error path. These branches establish state dependence, not cache contents, helper success, concrete formatter identity, execution, serialized bytes or EOF. Hash/equality algorithms, all initialization and generation helper implementations, and live mutation ordering remain unresolved.'}
 
 
 def adapter_conversion_context(pe,md,reg,table,entries,*,source):
@@ -2035,6 +2064,7 @@ def audit():
     list_shared=list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
     list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))
     list_value_flow=list_element_value_flow(pe,source=str(gate.gameassembly))
+    element_provider=element_provider_state_flow(pe,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2140,6 +2170,7 @@ def audit():
         'selectedListElementNullProbe':list_null_probe,
         'selectedListElementValueFlow':list_value_flow,
         'selectedAdapterConversionContext':adapter_conversion,
+        'selectedElementProviderStateFlow':element_provider,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

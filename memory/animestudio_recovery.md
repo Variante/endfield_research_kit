@@ -336,6 +336,14 @@ Current durable boundaries:
   Target-pair bounds, live provider/conversion implementation, branch selection
   and non-FF source consumption remain unresolved; follow the delegated formatter
   context before interpreting this output or eliminating a terminal candidate.
+  That provider takes a companion, not the reader: its first method-context slot
+  supplies a type-derived lookup key, and its second supplies the returned-object
+  check. A carrier table and a separate formatter cache participate; cache misses
+  reach conditional generation and writeback paths. This is direct state-dependent
+  control flow, not an observed cache entry or proof of the registered candidate's
+  selection. The class helper's identity return is conditional on an initialized
+  flag; its other branch delegates initialization. Do not collapse these branches
+  into unconditional pointer identity or infer serialization from provider names.
   Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.
