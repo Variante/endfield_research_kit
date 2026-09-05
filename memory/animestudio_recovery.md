@@ -383,8 +383,12 @@ Current durable boundaries:
   The two file-helper checks copy a 32-byte/four-slot path carrier from distinct
   builders. Slot +8 comes from their respective getter; null/empty first input
   shifts the second candidate into +0x10 and leaves +0x18 zero. AppendPathInfo
-  forwards the slots in order after null substitution, then passes a temporary
-  buffer and length onward. Formatting syntax, getter values, final path/root,
+  forwards the slots in order after null substitution. Its original AppendFormat
+  MethodSpec has three ordered string arguments; shared-code type candidates
+  cannot replace this companion. The temporary cursor and subsequent append
+  count use two-byte units: append doubles count for copying but advances its
+  cursor by the original count, writing a zero terminator only below capacity.
+  Format-item parsing, nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input

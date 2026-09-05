@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2DF2AA0, 0x2DF3271, 'AF49BFE87E68E091E58848935F5BEA3CC32DC280704D2235CD48D6DFCA3B753C'),
+    (0x2D72FA0, 0x2D731F5, '445859C5F6E56B6F1C0987ABEABED40E5AF217F7FE42353A95DA117D4FB2B2E2'),
     (0x2D7F770, 0x2D7F914, 'DAE488218AC934D0C9CF68F33BAAB9B1659D3F57DA158D7A0834A6B1F7BE810B'),
     (0x2D7AE60, 0x2D7AF28, 'CF2651FC76E186FE5D6DF8E34163A75EC3A3F37ED40560B3F2324E60059A41A2'),
     (0x2D7F920, 0x2D7FE68, 'D6A7ABB1AE1DCCFA30BA942968FC9E89671FB36578BAABDB0E347753D565E6E0'),
@@ -1003,6 +1005,48 @@ def vfs_path_carrier(pe,md,modules,image_owners,*,source):
             'boundary':'The file-helper checks call two distinct builders and copy both 16-byte halves of their results into the caller-supplied 32-byte carrier. On the non-replacement builder paths, slot +0 comes from branch-selected static storage and slot +8 from the respective path getter. Nonempty first input normally fills +0x10 with that input and +0x18 with the second candidate; the empty/null first-input branch instead fills +0x10 with the second candidate and leaves +0x18 zero. Streaming can transform the second candidate before these stores; its helper behavior and predicate semantics remain unresolved. AppendPathInfo receives that carrier, skips work when slot +0 is null/empty, substitutes a shared static value for null slots +8/+0x10/+0x18, and forwards +0,+8,+0x10,+0x18 in that order to another helper with a separate stack companion. Its resulting temporary array+0x20 and temporary DWORD length are passed to the append consumer. The copy width and argument order do not establish formatting syntax, separators, string contents, final output length, concrete root, overlay selection or file/hash identity. Static values, getter initialization, formatting/append ABI and helper internals, replacements and runtime execution remain unresolved.'}
 
 
+def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
+    """Original generic arguments and append units, not complete format grammar."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(443949,'Cysharp.Text.Utf16ValueStringBuilder','AppendFormat',None),
+         (443868,'Beyond.UnSafeString','Append',0x2D72FA0)],source=source,expected_image='ZString.dll')
+    rva=0x2D7E5E2
+    cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=source)
+    require(cell,pe.image_base+0xD06A7F8,source,rva)
+    raw=pe.bytes_at_va(cell,8)
+    index=unresolved_usage_index(raw,reg['methodSpecsCount'],tag=6,source=source,offset=cell)
+    require(index,627375,source,cell)
+    va=int(reg['methodSpecs'],16)+index*12
+    spec=pe.bytes_at_va(va,12)
+    require(method_spec_record(spec,len(md.methods),reg['genericInstsCount'],source=source,offset=va),
+            (443949,-1,8335),source,va)
+    instance=table.resolve(8335)
+    require([a.raw_type_record_hex for a in instance.arguments],
+            ['C78C00000000000000000E0000000000']*3,source)
+    windows=[]
+    for at,hex_bytes in (
+        (0x2D7E5E9,'4889442428'),(0x2DF2AC1,'4C8B757F488BFA4C8BE1'),
+        (0x2DF2B28,'4863C30FB74C47146683F97B'),
+        (0x2DF2D9E,'488B457F488B556F488B4038488B4808'),
+        (0x2DF2E0C,'488B457F488B5567488B4038488B08'),
+        (0x2DF2E94,'488B457F488B5577488B4038488B4810'),
+        (0x2DF2D43,'45017C2408'),
+        (0x2D72FAD,'4C8BFA418BF0418BD0488BD9'),
+        (0x2D73006,'488B43208B088D04364863E84863C14C8D3447'),
+        (0x2D73029,'4C8BC5498BD7498BCEFFD0'),
+        (0x2D73065,'488B43208B0003F0'),(0x2D73097,'488B43208930'),
+        (0x2D730CE,'488B43208B003B43287D38'),
+        (0x2D73103,'488B43208B00489833C966890C47')):
+        chunk=pe.bytes_at_va(pe.image_base+at,len(bytes.fromhex(hex_bytes)))
+        require(chunk,bytes.fromhex(hex_bytes),source,at)
+        windows.append({'rva':at,'rawHex':chunk.hex().upper()})
+    return {'methods':methods,'usageCellVa':cell,'usageRawHex':raw.hex().upper(),
+            'methodSpecIndex':index,'methodSpecRawHex':spec.hex().upper(),
+            'methodInstantiation':instance.as_dict(),'windows':windows,
+            'level':'exact static original MethodSpec; direct conditional 16-bit-unit consumption',
+            'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, format-item parsing, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1348,6 +1392,7 @@ def audit():
     block_file_source=vfs_block_file_source(pe,md,modules,image_owners,source=str(gate.gameassembly))
     file_read=native_file_read(pe,md,modules,image_owners,source=str(gate.gameassembly))
     path_carrier=vfs_path_carrier(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    path_format=vfs_path_format_context(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1381,6 +1426,7 @@ def audit():
         'selectedVfsBlockFileSource':block_file_source,
         'selectedNativeFileRead':file_read,
         'selectedVfsPathCarrier':path_carrier,
+        'selectedVfsPathFormatContext':path_format,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -24,6 +24,57 @@ from scripts.game_data.il2cpp_context_audit import vfs_block_transform
 from scripts.game_data.il2cpp_context_audit import vfs_block_file_source
 from scripts.game_data.il2cpp_context_audit import native_file_read
 from scripts.game_data.il2cpp_context_audit import vfs_path_carrier
+from scripts.game_data.il2cpp_context_audit import vfs_path_format_context
+
+
+class VfsPathFormatContextTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2D7E5E2,'488B050FC22E0A'),(0xD06A7F8,'5F2513C000000000'),
+            (0x2D7E5E9,'4889442428'),(0x2DF2AC1,'4C8B757F488BFA4C8BE1'),
+            (0x2DF2B28,'4863C30FB74C47146683F97B'),
+            (0x2DF2D9E,'488B457F488B556F488B4038488B4808'),
+            (0x2DF2E0C,'488B457F488B5567488B4038488B08'),
+            (0x2DF2E94,'488B457F488B5577488B4038488B4810'),(0x2DF2D43,'45017C2408'),
+            (0x2D72FAD,'4C8BFA418BF0418BD0488BD9'),
+            (0x2D73006,'488B43208B088D04364863E84863C14C8D3447'),
+            (0x2D73029,'4C8BC5498BD7498BCEFFD0'),(0x2D73065,'488B43208B0003F0'),
+            (0x2D73097,'488B43208930'),(0x2D730CE,'488B43208B003B43287D38'),
+            (0x2D73103,'488B43208B00489833C966890C47'))}
+        self.spec_at=0x1000+627375*12
+        self.parts[self.spec_at]=struct.pack('<iii',443949,-1,8335)
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+        self.reg={'methodSpecsCount':627868,'genericInstsCount':73902,'methodSpecs':'0x180001000'}
+        self.instance=SimpleNamespace(arguments=[SimpleNamespace(raw_type_record_hex='C78C00000000000000000E0000000000') for _ in range(3)],as_dict=lambda:{'index':8335})
+        self.table=SimpleNamespace(resolve=lambda index:self.instance)
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_path_format_context(self.pe,SimpleNamespace(methods=range(500000)),{},[],self.reg,self.table,source='fixture.dll')
+
+    def test_original_context_and_element_units(self):
+        row=self.decode()
+        self.assertEqual(row['methodSpecIndex'],627375)
+        self.assertIn('not a byte length',row['boundary'])
+        self.assertIn('only if the updated signed cursor is below capacity',row['boundary'])
+
+    def test_all_selected_bytes_fail_closed(self):
+        for at,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
+
+    def test_wrong_context_or_argument_count(self):
+        self.parts[self.spec_at]=struct.pack('<iii',443949,-1,5586)
+        with self.assertRaises(ContextError):self.decode()
+        self.parts[self.spec_at]=struct.pack('<iii',443949,-1,8335)
+        self.instance.arguments.pop()
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_shared_object_argument_cannot_replace_string(self):
+        self.instance.arguments[1].raw_type_record_hex='068E00000000000000001C0000000000'
+        with self.assertRaises(ContextError):self.decode()
 
 
 class VfsPathCarrierTests(unittest.TestCase):
