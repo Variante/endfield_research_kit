@@ -261,6 +261,11 @@ only.
   See `reports/assets/character_recovery/default_deferred_original_dxbc_replay.json`.
   Canonical deferred presentation remains fail-closed until live t7/t11 input
   production is validated; frozen capture replay is not a replacement.
+  Default also depends on low-bit stencil rejection: captured-input ablations
+  isolate its effect independently of depth. Unity's paired depth must carry
+  source-correct stencil population and an output-merger attachment; a blank
+  attachment cannot close this gap. See `default_deferred_stencil_ablation.json`
+  in the same report directory.
   Keep the captured output-merger blend: shader-side equivalent arithmetic
   changes retained pixels. Sidecar presentation seeds owned scene color, then
   blends the resolver through hardware; its equality test uses the published
