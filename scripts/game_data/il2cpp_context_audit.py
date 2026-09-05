@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D76D10, 0x2D780D7, 'DA75F628478837F4C1B6C6E142B9218243F17775265D233F0276CE8B83043437'),
+    (0x2D78240, 0x2D783B6, 'C72E36C1E1A1643708DBAD591A96C705E39A0BB8DE55BB6C7E678486C52FD015'),
     (0x2D755E0, 0x2D7590C, '56D2ECAC18B1C514E38AC00F3ED5920E04E53A389C168758F1B0DDE0A6A1CCA2'),
     (0x4C48A42, 0x4C48A77, 'FB76990B4CFD1E0485A0D5EC5B413D1E7E5378D3B1E422B18217FBBBE6117581'),
     (0x2D75510, 0x2D755DF, '8AB413FBC0531BFFEC188D2D97F92212E74BA7E8E811F2CBBA49A54831645B00'),
@@ -714,6 +716,51 @@ def vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The source usage cells name TryGetValue/set_Item, not FindEntry/TryInsert simply because the inlined call targets look like those helpers. Their MethodInfo+0x20 supplies the original Dictionary class before class RGCTX slots are loaded. Registered arguments are Int32/UInt128 and the exact reverse order. The setter probes static-carrier+0x10 using the incoming 16 bytes; a nonnegative result is bounds-checked and its indexed dword copied to descriptor+8. On a miss it computes dword+0x20 minus dword+0x28, supplies the same integer and 16-byte value in reverse orders to two helpers with numeric behavior 1, then stores that integer to descriptor+8. The second helper uses static-carrier+8, the same storage selected by the getter. Helper return values are not checked. Complete insertion/comparer/collision semantics, initialization, replacement paths, other mutations and actual reciprocal contents are unproved. UInt128 identity is not BLC MD5 provenance; serialized source/carrier/cursor and EOF remain unresolved.'}
 
 
+def vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,*,source):
+    """Conditional serialized-input cursor path; native permissiveness is not validation."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247366,'Beyond.VFS.FVFBlockFileInfo','ReadFromByteBuf',0x2D76D10)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(449337,'Beyond.Byte.ByteHelper','ReadULong',0x2D78240)],source=source,expected_image='Beyond.Byte.dll')
+    identity=named_top_level_type(md.buf,b'Beyond.Byte.dll',b'Beyond.Byte',b'ByteBufStream',source=source)
+    require(identity['typeDefinitionIndex'],57215,source)
+    method=md.methods[247366]
+    require((method.parameter_start,method.parameter_count),(235374,2),source)
+    require(235376<=len(md.parameters),True,source)
+    require(md.parameters[235375].type_index,93608,source)
+    require(93608<reg['typesCount'],True,source)
+    pointer=pe.u64_at_va(int(reg['types'],16)+93608*8)
+    type_raw=pe.bytes_at_va(pointer,16)
+    require(type_raw,bytes.fromhex('7FDF0000000000000000112000000000'),source,pointer)
+    edges=[]
+    for rva,target in ((0x2D76F35,0x2D78240),(0x2D76FAD,0x2D78240),
+        (0x2D76FC2,0x2D78240),(0x2D770CB,0x2D79390),
+        (0x2D77847,0x3E1DF70),(0x2D778B2,0x3820080)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2D76EB9,'66C1E108660BCA6683C1020FBFC10103'),
+        (0x2D76F2A,'4533C941B0018BD6488BCF'),(0x2D76F3A,'830308'),
+        (0x2D76FB2,'8D5608488945F74533C941B001488BCF'),
+        (0x2D76FC7,'488945FF0F2875F7830310'),
+        (0x2D770B1,'488D55F7488BCF660F7F75F7'),
+        (0x2D770F4,'8B7C0838897D0F'),
+        (0x2D776FE,'0F1045070F104D170F11000F114810'),
+        (0x2D78298,'8D47073B43180F8D02010000'),
+        (0x2D783A6,'33C0EBC3'),(0x2D782B1,'4084F60F84877ED701')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'sourceType':identity,'parameterTypePointerVa':pointer,
+            'parameterTypeRawHex':type_raw.hex().upper(),'edges':edges,'windows':windows,
+            'level':'exact static source-type identity; direct conditional cursor/value path',
+            'boundary':'The selected source parameter joins ByteBufStream. On the reviewed no-replacement path R8 supplies a mutable carrier with cursor dword+0 and array object+8. Two initial bytes are assembled little-endian, incremented by 2 in 16 bits, then sign-extended before adding to the cursor. After an eight-byte helper call and cursor advance, two further helper calls at cursor and cursor+8 form the 16-byte container lookup input; the cursor advances 16. The same paired insertion targets are used on lookup miss, and the resulting integer enters the returned 32-byte descriptor. ReadULong with the supplied nonzero flag assembles eight bytes little-endian after per-byte index checks, but signed int32(offset+7) >= array count returns zero normally; callers still advance their cursor. Overflow and alternate flag/replacement paths are not generalized. This is not a fail-closed source-range validator or proof that returned zeros came from file bytes. Later skips, narrowed values, version/flag branches and cursor save/restore require their own closure. The array origin, authenticated BLC identity, complete carrier allocation, initial/final cursor and logical-file EOF remain unproved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1053,6 +1100,7 @@ def audit():
     file_open=file_stream_open(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     descriptor_path=vfs_descriptor_path(pe,md,modules,image_owners,source=str(gate.gameassembly))
     descriptor_producer=vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
+    bytebuf_consumer=vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1080,6 +1128,7 @@ def audit():
         'selectedFileStreamOpen':file_open,
         'selectedVfsDescriptorPath':descriptor_path,
         'selectedVfsDescriptorProducer':descriptor_producer,
+        'selectedVfsByteBufConsumer':bytebuf_consumer,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

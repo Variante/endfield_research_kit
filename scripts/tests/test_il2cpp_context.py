@@ -17,9 +17,61 @@ from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
-from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer
+from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer, vfs_bytebuf_consumer
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class VfsByteBufConsumerTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in (
+            (0x2D76F35,0x2D78240),(0x2D76FAD,0x2D78240),(0x2D76FC2,0x2D78240),
+            (0x2D770CB,0x2D79390),(0x2D77847,0x3E1DF70),(0x2D778B2,0x3820080))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D76EB9,'66C1E108660BCA6683C1020FBFC10103'),
+            (0x2D76F2A,'4533C941B0018BD6488BCF'),(0x2D76F3A,'830308'),
+            (0x2D76FB2,'8D5608488945F74533C941B001488BCF'),
+            (0x2D76FC7,'488945FF0F2875F7830310'),
+            (0x2D770B1,'488D55F7488BCF660F7F75F7'),(0x2D770F4,'8B7C0838897D0F'),
+            (0x2D776FE,'0F1045070F104D170F11000F114810'),
+            (0x2D78298,'8D47073B43180F8D02010000'),(0x2D783A6,'33C0EBC3'),
+            (0x2D782B1,'4084F60F84877ED701'),(0x100,'7FDF0000000000000000112000000000'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000],
+                                u64_at_va=lambda va:0x180000100)
+        self.parameter=SimpleNamespace(type_index=93608)
+        self.parameters=[None]*235375+[self.parameter]
+        self.count=200000
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]), \
+             patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':57215}):
+            return vfs_bytebuf_consumer(self.pe,SimpleNamespace(buf=b'',parameters=self.parameters,
+                methods={247366:SimpleNamespace(parameter_start=235374,parameter_count=2)}),{},[],
+                {'typesCount':self.count,'types':'0x100000'},source='fixture.dll')
+
+    def test_short_read_zero_and_cursor_advance_remain_distinct(self):
+        row=self.decode()
+        self.assertIn('returns zero normally; callers still advance',row['boundary'])
+        self.assertIn('sign-extended',row['boundary'])
+        self.assertIn('not a fail-closed source-range validator',row['boundary'])
+
+    def test_wrong_parameter_and_truncated_parameter_table(self):
+        self.parameter.type_index=93609
+        with self.assertRaises(ContextError):self.decode()
+        self.parameter.type_index=93608
+        self.parameters.pop()
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_bad_registered_type_count(self):
+        self.count=93608
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_truncated_trailing_and_mutated_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
 
 
 class VfsDescriptorProducerTests(unittest.TestCase):

@@ -348,6 +348,13 @@ Current durable boundaries:
   mutation/initialization, alternate path branches, path encoding/root selection,
   constructor/seek internals, replacements and the descriptor-to-authenticated
   logical-file identity/hash remain unproved. This is not a runtime receipt.
+  `ReadFromByteBuf` now connects a mutable ByteBufStream cursor/array carrier to
+  the 16-byte lookup input and descriptor result on its normal path. Its initial
+  skip adds two in 16 bits before sign extension. The selected little-endian
+  eight-byte helper can return zero for insufficient length while the caller
+  still advances; do not treat successful return as byte provenance or reuse
+  this permissiveness in maintained parsers. The array's authenticated source,
+  later version/flag branches and final cursor still require independent proof.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.
