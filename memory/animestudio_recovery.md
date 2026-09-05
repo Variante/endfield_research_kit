@@ -655,6 +655,15 @@ pass license and target-framework review for AnimeStudio's .NET targets.
   one-byte read alone do not prove source extent or exact EOF. Preserve candidate
   ambiguity until that connection exists, then continue the residual JsonData
   record queue rather than inferring field order from declarations.
+- `memorypack.buff_corpus` supplies the full current BuffData denominator from
+  authenticated outer-ledger identities and decrypted stream bytes, using shared
+  `memorypack.corpus_gate` provenance guards. It retains all filename-string
+  anchors and reader-accepted EOF suffix candidates rather than inheriting the
+  legacy reader's anchor selection. A unique accepted suffix does not establish
+  its top-level ownership or certify internal opaque regions; whole-schema status
+  remains false. Coverage, multiple-anchor counts and per-file diagnostics belong
+  in `reports/animestudio/buffdata_current_latest.{json,md}`. Next close the opaque
+  prefix/anchor join and nested record bounds before promoting any field names.
 - Continue Streaming nested element/byte-body framing using the bottom-up
   queue in `game_data_recovery.md`; concrete runtime paths and field names
   follow structural closure, not the reverse.
