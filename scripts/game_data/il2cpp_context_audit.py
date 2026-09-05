@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x970BFBC, 0x970BFF0, 'AB34067513E25C40E3C0BE6EAF9A085B4C48438CDB435512C1B2BF2AE24A34F3'),
+    (0x9711078, 0x9711A57, 'CEA35CF8D73D0B319BD52DE7BA66202EB93CA5559EF0083F14EF01ED1D2D9963'),
     (0x970AD30, 0x970AE65, 'B1587FA587E6E160B00DEF0116FD0B7C1BEC5D7670AD8CA059E22489904F20EA'),
     (0x3B67E30, 0x3B67EC4, 'E20940F2F7B39A3BB1806DA04749C66E3B2CF514FF8CA0658B5F690C18EB0279'),
     (0x970C4A8, 0x970C672, 'EEFD3592C95C7366380F47A0890632F54ED8EC2B521D81014852BA045BFC610C'),
@@ -148,27 +150,64 @@ def validate_selected_method_spec(row, records, base, method_count, instantiatio
                            {'expected':method_inst,'actual':inst})
 
 
-def reader_construction(pe, md, modules, image_owners, *, source):
-    """Exact method-token identities plus independently reviewed native bodies."""
+def serializer_return_consumers(pe, *, source):
+    """Selected exact post-call windows, not exhaustive caller/EOF analysis."""
+    edges=[]
+    for rva,target in ((0x970BFE1,0x970C4A8),(0x97112AB,0x970C4A8),
+                       (0x971179A,0x970C4A8),(0x97112BF,0x51D80)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'rawHex':raw.hex().upper(),'targetRva':target})
+    windows=[]
+    for rva,expected in ((0x970BFE6,'488B4424504883C448C3'),
+                         (0x97112B0,'4C63C0B920000000448D49E1488BD7'),
+                         (0x971179F,'488B742430488D8C24A0000000')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'edges':edges,'postCallWindows':windows,
+            'level':'direct selected consumer dataflow',
+            'objectReturnWrapper':{'rva':0x970BFBC,
+                                   'boundary':'Copies entry RDX 16-byte input, supplies a zero-initialized output slot to the reader-owning entry, then overwrites RAX with that output slot and returns. The returned consumed count in EAX is discarded without comparison in this entire wrapper.'},
+            'stateMachineCallsites':[
+                {'rva':0x97112AB,'boundary':'Sign-extends returned consumed EAX into R8 and forwards it with ECX=0x20, R9D=1, RDX=the source object to another dispatcher. This is use of consumption, not an EOF comparison; the dispatched operation and source identity remain unresolved.'},
+                {'rva':0x971179A,'boundary':'Loads the local output result into RSI and prepares cleanup, discarding returned consumed EAX. Buffer-fill counts and completion branches elsewhere in this owner do not themselves establish equality with this parser consumption.'}],
+            'boundary':'No claim that these are all callers, that SkillData selects any of them, or that successful object return certifies EOF. Initial authenticated logical-file identity and the actual selected formatter remain missing.'}
+
+
+def memorypack_module_methods(pe, md, modules, image_owners, selections, *, source):
+    """Join each selected definition through its own owner/image/token identity."""
     selected=[]
-    for index,name,expected in ((428422,'get_Consumed',0x4A46420),
-                                (428423,'get_Remaining',0x4A655D0),
-                                (428426,'.ctor',0x970AD30),(428427,'.ctor',0x3B67E30)):
+    pointer_tables={}
+    for index,type_name,name,expected in selections:
         require(0<=index<len(md.methods),True,source,index)
         method=md.methods[index]
         require(0<=method.declaring_type<len(md.types),True,source,index)
         owner=md.types[method.declaring_type]
-        require(md.type_full_name(owner),'MemoryPack.MemoryPackReader',source,index)
+        require(md.type_full_name(owner),type_name,source,index)
         require(md.string(method.name_index),name,source,index)
         image_name=md.string(md.images[image_owners[method.declaring_type]].name_index)
         require(image_name,'MemoryPack.dll',source,index)
         module=modules[image_name]
-        count=pe.u32_at_va(module+8)
-        require(count<=1_000_000,True,source,module+8)
-        base=pe.u64_at_va(module+16)
-        row=method_token_pointer(method.token,pe.bytes_at_va(base,count*8),source=source,offset=base)
+        if module not in pointer_tables:
+            count=pe.u32_at_va(module+8)
+            require(count<=1_000_000,True,source,module+8)
+            base=pe.u64_at_va(module+16)
+            pointer_tables[module]=(base,pe.bytes_at_va(base,count*8))
+        base,pointers=pointer_tables[module]
+        row=method_token_pointer(method.token,pointers,source=source,offset=base)
         require(row['pointerVa'],pe.image_base+expected,source,row['slotVa'])
-        selected.append(dict(row,methodIndex=index,name=name,image=image_name,moduleVa=module))
+        selected.append(dict(row,methodIndex=index,declaringType=type_name,name=name,image=image_name,moduleVa=module))
+    return selected
+
+
+def reader_construction(pe, md, modules, image_owners, *, source):
+    """Exact method-token identities plus independently reviewed native bodies."""
+    selected=memorypack_module_methods(pe,md,modules,image_owners,
+        [(index,'MemoryPack.MemoryPackReader',name,rva) for index,name,rva in
+         ((428422,'get_Consumed',0x4A46420),(428423,'get_Remaining',0x4A655D0),
+          (428426,'.ctor',0x970AD30),(428427,'.ctor',0x3B67E30))],source=source)
     getters=[]
     for rva,hex_bytes in ((0x4A46420,'8B4144C3'),(0x4A655D0,'48635144488B4118482BC2C3')):
         raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
@@ -586,6 +625,13 @@ def audit():
         target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
         require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
+    return_evidence=serializer_return_consumers(pe,source=str(gate.gameassembly))
+    return_evidence['methodIdentities']=memorypack_module_methods(pe,md,modules,image_owners,
+        [(428657,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFBC),
+         (428658,'MemoryPack.MemoryPackSerializer','Deserialize',0x970C4A8),
+         (428655,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFF0),
+         (428667,'MemoryPack.MemoryPackSerializer+<DeserializeAsync>d__11','MoveNext',0x9711078)],
+        source=str(gate.gameassembly))
     construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
@@ -606,6 +652,7 @@ def audit():
                            'sourceVa':specs_base,'byteLength':len(specs_raw),
                            'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
                            'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
+        'selectedSerializerReturnConsumers':return_evidence,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -304,6 +304,9 @@ Current durable boundaries:
   a 16-byte pointer/length carrier and initialize total/remaining state and zero
   consumption. Native getters identify consumed and total-minus-consumed roles;
   reviewed caller paths return consumption but do not themselves compare EOF.
+  The token-joined object-return overload discards this count. Selected async
+  paths either discard it or forward it to another operation, not an EOF test.
+  These general serializer paths do not establish SkillData entry selection.
   Multi-segment conversion, SkillData caller selection and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

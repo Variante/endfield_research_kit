@@ -7,7 +7,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
-from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers, reader_construction
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers, reader_construction, serializer_return_consumers
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
@@ -16,6 +16,35 @@ from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class SerializerReturnConsumerTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+                    ((0x970BFE1,0x970C4A8),(0x97112AB,0x970C4A8),(0x971179A,0x970C4A8),(0x97112BF,0x51D80))}
+        self.parts.update({0x970BFE6:bytes.fromhex('488B4424504883C448C3'),
+                           0x97112B0:bytes.fromhex('4C63C0B920000000448D49E1488BD7'),
+                           0x971179F:bytes.fromhex('488B742430488D8C24A0000000')})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_selected_edges_and_non_eof_boundary(self):
+        result=serializer_return_consumers(self.pe,source='fixture.dll')
+        self.assertEqual(len(result['edges']),4)
+        self.assertEqual(len(result['postCallWindows']),3)
+        self.assertIn('discarded without comparison',result['objectReturnWrapper']['boundary'])
+
+    def test_mutated_truncated_and_trailing_windows(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):
+                    serializer_return_consumers(self.pe,source='fixture.dll')
+            self.parts[rva]=good
+
+    def test_target_change_reports_instruction_offset(self):
+        self.parts[0x970BFE1]=b'\xe8'+struct.pack('<i',0)
+        with self.assertRaises(ContextError) as caught:serializer_return_consumers(self.pe,source='fixture.dll')
+        self.assertEqual(caught.exception.diagnostics['offset'],0x970BFE1)
 
 
 class ReaderConstructionTests(unittest.TestCase):
