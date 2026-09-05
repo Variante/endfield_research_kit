@@ -409,7 +409,11 @@ Current durable boundaries:
   seeds a self-linked sentinel. A selected PE export chain connects
   `il2cpp_add_internal_call` through an argument-preserving tail stub to this writer;
   this is not complete export coverage or a concrete registration receipt.
-  Export callers, insertion/query helpers, live contents
+  Exact-build UnityPlayer additionally requests that export into a function cache;
+  a reviewed forwarder passes its original pair through optional callbacks before
+  tail-calling the cache. Module identity, successful resolution, callback contents
+  and concrete name/value registration pairs remain unknown; parallel name arrays
+  do not establish function ownership. Export callers, insertion/query helpers, live contents
   and the Unity implementation join remain open; static producer code is not execution.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution

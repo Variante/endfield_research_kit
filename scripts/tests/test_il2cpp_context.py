@@ -3,7 +3,6 @@ import io
 import json
 from contextlib import redirect_stderr
 import unittest
-from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
@@ -30,6 +29,37 @@ from scripts.game_data.il2cpp_context_audit import vfs_path_literals
 from scripts.game_data.il2cpp_context_audit import vfs_format_item
 from scripts.game_data.il2cpp_context_audit import vfs_string_carrier
 from scripts.game_data.il2cpp_context_audit import vfs_root_resolver
+from scripts.game_data.il2cpp_context_audit import unity_registration_forwarder
+from unittest.mock import patch
+
+
+class UnityRegistrationForwarderTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={0x3BF270:bytes.fromhex('48895C241048896C2418564883EC2033DB488BF248391D85EC8A01488BE9762E48897C24308BFB488B0562EC8A01488BD6488BCDFF1407FFC3488D7F084863C3483B0559EC8A0172DE488B7C2430488BD6488BCD488B5C2438488B6C24404883C4205E48FF25E65C9301'),
+            0x31E8F9:bytes.fromhex('488B0D20639D01488D15F1536601E864FDFFFF488905AD669D01'),
+            0x3BF2D3:bytes.fromhex('48FF25E65C9301'),0x1983CF8:b'il2cpp_add_internal_call\0'}
+        self.pe=SimpleNamespace(image_base=0x180000000,
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_full_forwarder_and_request(self):
+        row=unity_registration_forwarder(self.pe,source='fixture.UnityPlayer.dll')
+        self.assertEqual(row['requestedExport'],'il2cpp_add_internal_call')
+        self.assertEqual(row['forwarderByteLength'],106)
+
+    def test_bad_request_cache_and_terminator(self):
+        for at in (0x31E8F9,0x3BF2D3,0x1983CF8):
+            good=self.parts[at]
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_registration_forwarder(self.pe,source='fixture.UnityPlayer.dll')
+            self.parts[at]=good
+
+    def test_missing_or_wrong_body_fails_closed(self):
+        for raw in (b'',bytes(0x69),bytes(0x6A),bytes(0x6B)):
+            pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:raw)
+            with self.subTest(size=len(raw)),self.assertRaises(ContextError):
+                unity_registration_forwarder(pe,source='fixture.UnityPlayer.dll')
 
 
 class VfsRootResolverTests(unittest.TestCase):

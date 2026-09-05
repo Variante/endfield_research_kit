@@ -26,6 +26,7 @@ from scripts.game_data.il2cpp_context import literal_record
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
+UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
     (0x20760, 0x20A33, 'E117B0BE3EFF364A7242B6EEC5F4C709DEB7FAE4E79DB2E5C9BA32CC7E54E7E1'),
@@ -1061,6 +1062,26 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def unity_registration_forwarder(pe,*,source):
+    """Selected dynamic export request and forwarding, not live binding."""
+    raw=pe.bytes_at_va(pe.image_base+0x3BF270,0x6A)
+    require(hashlib.sha256(raw).hexdigest().upper(),
+            'B5EAB384DA5D794DB6D62A17D18789C09FB178E6BA346BB0EB3F12D1A739BCB3',source,0x3BF270)
+    windows=[]
+    for rva,value in ((0x31E8F9,'488B0D20639D01488D15F1536601E864FDFFFF488905AD669D01'),
+                      (0x3BF2D3,'48FF25E65C9301')):
+        chunk=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(value)))
+        require(chunk,bytes.fromhex(value),source,rva)
+        windows.append({'rva':rva,'rawHex':chunk.hex().upper()})
+    name=b'il2cpp_add_internal_call\0'
+    require(pe.bytes_at_va(pe.image_base+0x1983CF8,len(name)),name,source,0x1983CF8)
+    return {'windows':windows,'forwarderRva':0x3BF270,'forwarderByteLength':len(raw),
+            'forwarderSha256':hashlib.sha256(raw).hexdigest().upper(),
+            'requestedExport':name[:-1].decode('ascii'),'functionCacheRva':0x1CF4FC0,
+            'level':'exact static request; direct conditional two-argument forwarding',
+            'boundary':'A selected loader window supplies a module-handle carrier and the NUL-terminated export name to a dynamic lookup helper, then stores its result in the function cache. The full reviewed forwarding function preserves the two entry arguments, passes them to each selected callback in a separately stored pointer array when its count is positive, then tail-jumps through that same function cache with the original arguments. The zero-callback branch reaches the same tail jump. This connects requested export name to a conditional cache consumer, not the actual module handle, resolved function identity, successful initialization or runtime execution. Callback identities/state, lookup helper cold paths, registration callers and concrete interface-name/function-value pairs remain unresolved. The nearby interface-name pointer array is only a lead and is not joined by position or matching counts.'}
+
+
 def vfs_root_resolver(pe,*,source):
     """Static requested interface and conditional cache flow, not actual root."""
     windows=[]
@@ -1557,6 +1578,11 @@ def audit():
     format_item=vfs_format_item(pe,source=str(gate.gameassembly))
     string_carrier=vfs_string_carrier(pe,source=str(gate.gameassembly))
     root_resolver=vfs_root_resolver(pe,source=str(gate.gameassembly))
+    unity_path=gate.gameassembly.with_name('UnityPlayer.dll')
+    unity_pe=mapper.PeImage(unity_path)
+    require(hashlib.sha256(unity_pe.buf).hexdigest().upper(),UNITY_SHA,unity_path)
+    unity_forwarder=unity_registration_forwarder(unity_pe,source=str(unity_path))
+    require(sha(unity_path),UNITY_SHA,unity_path)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1568,7 +1594,8 @@ def audit():
         'corpusReference': {'path': str(corpus_path), 'sha256': CORPUS_SHA,
                             'boundary': 'Authenticated corpus reference; this native audit does not restream VFS bytes.'},
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
-                         'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
+                         'metadata': str(gate.metadata), 'metadataSha256': MD_SHA,
+                         'unityplayer':str(unity_path),'unityplayerSha256':UNITY_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
         'methodSpecSweep':{'success':len(spec_records),'failed':0,'unsupported':0,
                            'sourceVa':specs_base,'byteLength':len(specs_raw),
@@ -1595,6 +1622,7 @@ def audit():
         'selectedVfsFormatItem':format_item,
         'selectedVfsStringCarrier':string_carrier,
         'selectedVfsRootResolver':root_resolver,
+        'selectedUnityRegistrationForwarder':unity_forwarder,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
