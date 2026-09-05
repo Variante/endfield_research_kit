@@ -18,7 +18,7 @@ from scripts.game_data.memorypack.skill_corpus import verify_current_report_inpu
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
-from scripts.game_data.il2cpp_context import method_pointer_indices
+from scripts.game_data.il2cpp_context import method_pointer_indices, generic_method_candidates
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 
@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x3B188A0, 0x3B189ED, 'BBF441134BEE6360DE2E40A3EF134DB920D8DE9FED8231EEBF0602101B5E389D'),
+    (0x3B677B0, 0x3B67D18, '57AD13123C926CC835193BAE0A9636F201B74EDF5D23F87121E7DA2D332555DB'),
     (0x970BFBC, 0x970BFF0, 'AB34067513E25C40E3C0BE6EAF9A085B4C48438CDB435512C1B2BF2AE24A34F3'),
     (0x9711078, 0x9711A57, 'CEA35CF8D73D0B319BD52DE7BA66202EB93CA5559EF0083F14EF01ED1D2D9963'),
     (0x970AD30, 0x970AE65, 'B1587FA587E6E160B00DEF0116FD0B7C1BEC5D7670AD8CA059E22489904F20EA'),
@@ -176,7 +178,7 @@ def serializer_return_consumers(pe, *, source):
             'boundary':'No claim that these are all callers, that SkillData selects any of them, or that successful object return certifies EOF. Initial authenticated logical-file identity and the actual selected formatter remain missing.'}
 
 
-def memorypack_module_methods(pe, md, modules, image_owners, selections, *, source):
+def module_methods(pe, md, modules, image_owners, selections, *, source, expected_image='MemoryPack.dll'):
     """Join each selected definition through its own owner/image/token identity."""
     selected=[]
     pointer_tables={}
@@ -188,7 +190,7 @@ def memorypack_module_methods(pe, md, modules, image_owners, selections, *, sour
         require(md.type_full_name(owner),type_name,source,index)
         require(md.string(method.name_index),name,source,index)
         image_name=md.string(md.images[image_owners[method.declaring_type]].name_index)
-        require(image_name,'MemoryPack.dll',source,index)
+        require(image_name,expected_image,source,index)
         module=modules[image_name]
         if module not in pointer_tables:
             count=pe.u32_at_va(module+8)
@@ -197,14 +199,14 @@ def memorypack_module_methods(pe, md, modules, image_owners, selections, *, sour
             pointer_tables[module]=(base,pe.bytes_at_va(base,count*8))
         base,pointers=pointer_tables[module]
         row=method_token_pointer(method.token,pointers,source=source,offset=base)
-        require(row['pointerVa'],pe.image_base+expected,source,row['slotVa'])
+        require(row['pointerVa'],0 if expected is None else pe.image_base+expected,source,row['slotVa'])
         selected.append(dict(row,methodIndex=index,declaringType=type_name,name=name,image=image_name,moduleVa=module))
     return selected
 
 
 def reader_construction(pe, md, modules, image_owners, *, source):
     """Exact method-token identities plus independently reviewed native bodies."""
-    selected=memorypack_module_methods(pe,md,modules,image_owners,
+    selected=module_methods(pe,md,modules,image_owners,
         [(index,'MemoryPack.MemoryPackReader',name,rva) for index,name,rva in
          ((428422,'get_Consumed',0x4A46420),(428423,'get_Remaining',0x4A655D0),
           (428426,'.ctor',0x970AD30),(428427,'.ctor',0x3B67E30))],source=source)
@@ -304,6 +306,89 @@ def wrapper_consumer(pe, md, reg, table, *, source):
             'formatterEntryRva':0x37DF620,'readerEntryRva':0x37DF680,'nestedCallRva':0x37DF6F9,
             'level':'direct conditional consumer; exact static usage/type relation',
             'boundary':'The formatter forwards its reader unchanged to the wrapper reader. The fast path consumes one byte using remaining+0x30, cursor+0x50 and counters+0x40/+0x44. Header 0xFF clears the output; non-null header 1 reaches the nested call with the same reader and the recorded List instantiation. Other headers reach a helper then INT3. Cold ensure/advance transitions are described separately in selectedReaderCursorConsumers; their descriptor helpers are not fully closed. No list element layout, actual provider selection, authenticated source allocation, source extent or final cursor is established.'}
+
+
+def resource_carrier_consumers(pe, *, source):
+    """Reviewed native carrier/state path, separate from actual resource selection."""
+    edges=[]
+    for rva,target in ((0x3B18966,0x3B677B0),(0x3B67C9C,0x2DA4260),
+                       (0x3B67CBB,0x3F300),(0x3B67CD3,0x1F0450)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x3B188B5,'483972387508488BCAE8CD6653FC'),
+        (0x3B1896B,'488B9C249800000048899C24A0000000'),
+        (0x3B67CA6,'B9050000004C8B8C24080100004C8D442440488BD0'),
+        (0x3B67CC0,'8B9C2484000000899C2410010000488D4C2430'),
+        (0x3B67CEB,'8BC34881C4C0000000415F415E415D415C5F5E5BC3')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    switch=pe.bytes_at_va(pe.image_base+0x3B67D18,28)
+    require(switch,struct.pack('<7I',0x3B67A26,0x3B67A35,0x3B67A44,0x3B67AA7,
+                               0x3B67AB6,0x3B67A44,0x3B67B79),source,0x3B67D18)
+    return {'edges':edges,'instructionWindows':windows,
+            'switchData':{'rva':0x3B67D18,'rawHex':switch.hex().upper()},
+            'level':'direct conditional native carrier/state consumption',
+            'outer':{'rva':0x3B188A0,'inputCarrierBytes':16,
+                     'boundary':'Null MethodInfo+0x38 invokes initialization; non-null skips it. Rebuilds a 16-byte local from input qword+0 and dword+8, with last dword zero. Supplies the local, output slot, zero R8 and context slot 0 to the inner entry. Returned EAX is discarded; the output slot is returned after cleanup. No EOF comparison in this wrapper.'},
+            'inner':{'rva':0x3B677B0,'stateStackOffset':0x40,'counterOffset':0x44,
+                     'boundary':'Inlines state construction: input carrier at state+0x20, dword length at +0x30, signed length at +0x18, zero +0x38/+0x40/+0x44, and pointer-or-null cursor at +0x50. State+0x48 comes from the thread-local storage/allocation path, not the plain constructor. Conditional non-null helper result reaches dispatch slot 5 with R8=&state and R9=output. Returns state dword+0x44 after cleanup, matching the independently identified consumed accessor offset. This is not a proof of helper success or input allocation validity.'},
+            'boundary':'No token-based method name is assigned to these two native bodies. Their static upstream resource candidates, live contexts, path/hash, carrier allocation length and final authenticated-file cursor are not joined. The switch data is excluded from the code window. Both terminal layouts remain ambiguous.'}
+
+
+def skill_resource_context(pe, md, modules, image_owners, table, reg, code,
+                          spec_records, specs_raw, methods_raw, *, source):
+    """Exact selected static relations; no live generic sharing or file receipt."""
+    identity=named_top_level_type(md.buf,b'Gameplay.Beyond.dll',b'Beyond.Gameplay.Core',
+                                 b'SkillData',source=source)
+    require(identity['typeDefinitionIndex'],9060,source)
+    inst=table.resolve(16656)
+    require(len(inst.arguments),1,source,inst.record_va)
+    raw=bytes.fromhex(inst.arguments[0].raw_type_record_hex)
+    require(raw,bytes.fromhex('64230000000000000000120000000000'),source,inst.arguments[0].type_pointer_va)
+    require(struct.unpack_from('<Q',raw)[0],identity['typeDefinitionIndex'],source)
+    object_inst=table.resolve(75)
+    require(len(object_inst.arguments),1,source,object_inst.record_va)
+    require(object_inst.arguments[0].raw_type_record_hex,'068E00000000000000001C0000000000',source)
+    identities=module_methods(pe,md,modules,image_owners,
+        [(248580,'Beyond.Resource.ResourceManager','DeserializeFromJson',None),
+         (248574,'Beyond.Resource.ResourceManager','DeserializeFromJsonAsyncByCoroutine',None)],
+        source=source,expected_image='Common.Beyond.dll')
+    for row,token in zip(identities,(0x06001251,0x0600124B)):
+        require(row['token'],token,source,row['slotVa'])
+    selected=[]
+    for index,definition in ((621380,248580),(621385,248574)):
+        require(spec_records[index],(definition,-1,inst.index),source,int(reg['methodSpecs'],16)+index*12)
+        selected.append({'index':index,'definition':definition,'classInstantiationIndex':-1,
+                         'methodInstantiationIndex':inst.index,'rawHex':specs_raw[index*12:(index+1)*12].hex().upper()})
+    matching={i for i,(definition,_,_) in enumerate(spec_records) if definition in (248580,248574)}
+    candidates=generic_method_candidates(methods_raw,reg['genericMethodTableCount'],len(spec_records),
+        matching,code['genericMethodPointersCount'],code['invokerPointersCount'],
+        source=source,offset=int(reg['genericMethodTable'],16))
+    for row in candidates:
+        method,invoker,_=row['indices']
+        row['methodPointerVa']=pe.u64_at_va(int(code['genericMethodPointers'],16)+method*8)
+        row['invokerPointerVa']=pe.u64_at_va(int(code['invokerPointers'],16)+invoker*8)
+        require(row['methodPointerVa']!=0 and row['invokerPointerVa']!=0,True,source,row['va'])
+    # Pins validate the current complete candidate set, without selecting a live one.
+    require([(r['methodSpecIndex'],r['methodPointerVa']) for r in candidates],
+            [(521437,pe.image_base+0x36A7AD0),(521443,pe.image_base+0x45BA810)],source)
+    for index,definition in ((521437,248580),(521443,248574)):
+        require(spec_records[index],(definition,-1,object_inst.index),source,int(reg['methodSpecs'],16)+index*12)
+    return {'typeIdentity':identity,'methodIdentities':identities,'concreteInstantiation':inst.as_dict(),
+            'objectInstantiation':object_inst.as_dict(),'concreteMethodSpecs':selected,
+            'sameDefinitionMethodSpecs':[{'index':i,'indices':list(spec_records[i]),
+                                         'rawHex':specs_raw[i*12:(i+1)*12].hex().upper()} for i in sorted(matching)],
+            'codeCandidates':candidates,
+            'tableFraming':{'records':reg['genericMethodTableCount'],'byteLength':len(methods_raw),
+                             'sha256':hashlib.sha256(methods_raw).hexdigest().upper(),
+                             'boundary':'All 16-byte records and MethodSpec keys bounded; only selected triples decoded. Other triples remain opaque.'},
+            'level':'exact static type/MethodSpec/code-table relations',
+            'boundary':'Core.SkillData, not the same-named AI nested type. Generic definition module slots are null; code candidates come from the separate generic method table. Same-definition Object MethodSpecs do not establish actual sharing selection, method invocation, resource path/hash, reader ABI, consumed length or EOF. Preserve both terminal candidates.'}
 
 
 def audit():
@@ -626,7 +711,7 @@ def audit():
         require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
     return_evidence=serializer_return_consumers(pe,source=str(gate.gameassembly))
-    return_evidence['methodIdentities']=memorypack_module_methods(pe,md,modules,image_owners,
+    return_evidence['methodIdentities']=module_methods(pe,md,modules,image_owners,
         [(428657,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFBC),
          (428658,'MemoryPack.MemoryPackSerializer','Deserialize',0x970C4A8),
          (428655,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFF0),
@@ -635,6 +720,9 @@ def audit():
     construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
+    resource_evidence=skill_resource_context(pe,md,modules,image_owners,table,reg,code,
+        spec_records,specs_raw,methods_raw,source=str(gate.gameassembly))
+    carrier_evidence=resource_carrier_consumers(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -653,6 +741,8 @@ def audit():
                            'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
                            'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
         'selectedSerializerReturnConsumers':return_evidence,
+        'selectedSkillResourceContext':resource_evidence,
+        'selectedResourceCarrierConsumers':carrier_evidence,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -307,7 +307,16 @@ Current durable boundaries:
   The token-joined object-return overload discards this count. Selected async
   paths either discard it or forward it to another operation, not an EOF test.
   These general serializer paths do not establish SkillData entry selection.
-  Multi-segment conversion, SkillData caller selection and authenticated input
+  Exact Core.SkillData type arguments also join ResourceManager MethodSpecs;
+  their generic definition module slots are null. Separately enumerated
+  same-definition Object MethodSpecs supply shared-code candidates, not observed
+  sharing selection or invocation. Never confuse the same-named nested AI type
+  with the Core type, or substitute a shared body's arguments for live context.
+  A downstream native carrier wrapper forwards a reconstructed pointer/length
+  carrier to an inlined reader-state builder. Conditional dispatch uses that
+  state and an output slot; its returned consumption is discarded by the wrapper.
+  This corroborates the non-EOF boundary, not an authenticated file receipt.
+  Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a

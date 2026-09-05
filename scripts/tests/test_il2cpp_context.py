@@ -7,15 +7,178 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
-from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers, reader_construction, serializer_return_consumers
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers, reader_construction, serializer_return_consumers, skill_resource_context
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
+from scripts.game_data.il2cpp_context import generic_method_candidates
+from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class ModuleMethodsTests(unittest.TestCase):
+    def setUp(self):
+        self.pointer=0
+        self.method=SimpleNamespace(declaring_type=0,name_index='DeserializeFromJson',token=0x06000001)
+        self.md=SimpleNamespace(methods=[self.method],types=['Beyond.Resource.ResourceManager'],
+            images=[SimpleNamespace(name_index='Common.Beyond.dll')],string=lambda x:x,type_full_name=lambda x:x)
+        self.pe=SimpleNamespace(image_base=0x180000000,u32_at_va=lambda va:1,u64_at_va=lambda va:0x200,
+                                bytes_at_va=lambda va,size:struct.pack('<Q',self.pointer))
+
+    def decode(self):
+        return module_methods(self.pe,self.md,{'Common.Beyond.dll':0x100},[0],
+            [(0,'Beyond.Resource.ResourceManager','DeserializeFromJson',None)],
+            source='fixture.dll',expected_image='Common.Beyond.dll')
+
+    def test_generic_definition_null_slot_preserved(self):
+        self.assertEqual(self.decode()[0]['pointerVa'],0)
+
+    def test_wrong_slot_or_image_rejected(self):
+        self.pointer=0x180000100
+        with self.assertRaises(ContextError):self.decode()
+        self.pointer=0
+        self.md.images[0].name_index='Wrong.dll'
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_token_not_global_index(self):
+        self.method.token=0x06000002
+        with self.assertRaises(ContextError):self.decode()
+
+
+class ResourceCarrierConsumerTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+                    ((0x3B18966,0x3B677B0),(0x3B67C9C,0x2DA4260),
+                     (0x3B67CBB,0x3F300),(0x3B67CD3,0x1F0450))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x3B188B5,'483972387508488BCAE8CD6653FC'),
+            (0x3B1896B,'488B9C249800000048899C24A0000000'),
+            (0x3B67CA6,'B9050000004C8B8C24080100004C8D442440488BD0'),
+            (0x3B67CC0,'8B9C2484000000899C2410010000488D4C2430'),
+            (0x3B67CEB,'8BC34881C4C0000000415F415E415D415C5F5E5BC3'))})
+        self.parts[0x3B67D18]=struct.pack('<7I',0x3B67A26,0x3B67A35,0x3B67A44,0x3B67AA7,
+                                        0x3B67AB6,0x3B67A44,0x3B67B79)
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_conditional_carrier_not_eof(self):
+        result=resource_carrier_consumers(self.pe,source='fixture.dll')
+        self.assertEqual(len(result['edges']),4)
+        self.assertEqual(result['inner']['counterOffset'],0x44)
+        self.assertIn('EAX is discarded',result['outer']['boundary'])
+
+    def test_negative_instruction_and_switch_windows(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):
+                    resource_carrier_consumers(self.pe,source='fixture.dll')
+            self.parts[rva]=good
+
+    def test_initialization_branch_polarity(self):
+        self.parts[0x3B188B5]=bytes.fromhex('483972387408488BCAE8CD6653FC')
+        with self.assertRaises(ContextError) as caught:resource_carrier_consumers(self.pe,source='fixture.dll')
+        self.assertEqual(caught.exception.diagnostics['offset'],0x3B188B5)
+
+
+class GenericMethodCandidateTests(unittest.TestCase):
+    def decode(self,raw=None,count=2,specs=None):
+        if raw is None:raw=struct.pack('<8i',1,2,3,-1,0,99,99,99)
+        return generic_method_candidates(raw,count,4,{1} if specs is None else specs,
+                                         5,6,source='fixture.dll',offset=0x100)
+
+    def test_normal_and_opaque_nonselected_triple(self):
+        rows=self.decode()
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['indices'],[2,3,-1])
+        self.assertEqual(rows[0]['va'],0x100)
+
+    def test_truncated_and_trailing(self):
+        raw=struct.pack('<8i',1,2,3,-1,0,99,99,99)
+        for bad in (raw[:-1],raw+b'!'):
+            with self.subTest(length=len(bad)),self.assertRaises(ContextError):self.decode(bad)
+
+    def test_bad_counts_and_selection(self):
+        for count in (-1,True,1_000_001,1):
+            with self.subTest(count=count),self.assertRaises(ContextError):self.decode(count=count)
+        for selected in ({-1},{4},{True}):
+            with self.subTest(selected=selected),self.assertRaises(ContextError):self.decode(specs=selected)
+
+    def test_unselected_key_still_bounded(self):
+        with self.assertRaises(ContextError) as caught:
+            self.decode(struct.pack('<8i',1,2,3,-1,4,0,0,-1))
+        self.assertEqual(caught.exception.diagnostics['offset'],0x110)
+
+    def test_bad_selected_triples_report_exact_field(self):
+        for triple,offset in (((-1,3,-1),0x104),((5,3,-1),0x104),
+                              ((2,6,-1),0x108),((2,3,0),0x10C)):
+            with self.subTest(triple=triple),self.assertRaises(ContextError) as caught:
+                self.decode(struct.pack('<4i',1,*triple),count=1)
+            self.assertEqual(caught.exception.diagnostics['offset'],offset)
+
+    def test_multiple_candidates_preserved(self):
+        raw=struct.pack('<8i',1,2,3,-1,1,4,5,-1)
+        self.assertEqual([r['tableIndex'] for r in self.decode(raw)],[0,1])
+        self.assertEqual(self.decode(raw,specs={3}),[])
+
+    def test_overflowing_address(self):
+        with self.assertRaises(ContextError):
+            generic_method_candidates(bytes(16),1,1,set(),1,1,source='fixture',offset=(1<<64)-8)
+
+
+class SkillResourceContextTests(unittest.TestCase):
+    def setUp(self):
+        self.specs=[(0,-1,-1)]*621386
+        for i,row in ((621380,(248580,-1,16656)),(621385,(248574,-1,16656)),
+                      (521437,(248580,-1,75)),(521443,(248574,-1,75))):self.specs[i]=row
+        self.raw_specs=b''.join(struct.pack('<3i',*row) for row in self.specs)
+        def instance(index,raw):
+            obj=SimpleNamespace(index=index,record_va=0x900,arguments=[SimpleNamespace(
+                raw_type_record_hex=raw,type_pointer_va=0xA00)])
+            obj.as_dict=lambda:{'index':index}
+            return obj
+        self.instances={16656:instance(16656,'64230000000000000000120000000000'),
+                        75:instance(75,'068E00000000000000001C0000000000')}
+        self.raw=struct.pack('<8i',521437,0,0,-1,521443,1,1,-1)
+        self.pointers={0x300:0x1836A7AD0,0x308:0x1845BA810,0x400:0x180000100,0x408:0x180000200}
+        self.pe=SimpleNamespace(image_base=0x180000000,u64_at_va=self.pointers.__getitem__)
+        self.reg={'methodSpecs':'0x1000','genericMethodTable':'0x2000','genericMethodTableCount':2}
+        self.code={'genericMethodPointersCount':2,'invokerPointersCount':2,
+                   'genericMethodPointers':'0x300','invokerPointers':'0x400'}
+
+    def run_probe(self):
+        with patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':9060}), \
+             patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[
+                 {'token':0x06001251,'slotVa':0},{'token':0x0600124B,'slotVa':8}]):
+            return skill_resource_context(self.pe,SimpleNamespace(buf=b''),{},[],
+                SimpleNamespace(resolve=self.instances.__getitem__),self.reg,self.code,
+                self.specs,self.raw_specs,self.raw,source='fixture.dll')
+
+    def test_static_candidates_not_selected_dispatch(self):
+        result=self.run_probe()
+        self.assertEqual(len(result['codeCandidates']),2)
+        self.assertIn('Preserve both terminal candidates',result['boundary'])
+
+    def test_wrong_same_named_type(self):
+        self.instances[16656].arguments[0].raw_type_record_hex='8C1F0000000000000000120000000000'
+        with self.assertRaises(ContextError):self.run_probe()
+
+    def test_wrong_concrete_method_context(self):
+        self.specs[621380]=(248580,-1,75)
+        with self.assertRaises(ContextError):self.run_probe()
+
+    def test_null_or_wrong_code_pointer(self):
+        for pointer in (0,0x180000100):
+            self.pointers[0x300]=pointer
+            with self.subTest(pointer=pointer),self.assertRaises(ContextError):self.run_probe()
+
+    def test_unexpected_extra_candidate_not_silently_selected(self):
+        self.raw+=self.raw[:16]
+        self.reg['genericMethodTableCount']=3
+        with self.assertRaises(ContextError):self.run_probe()
 
 
 class SerializerReturnConsumerTests(unittest.TestCase):

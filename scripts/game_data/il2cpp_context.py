@@ -418,6 +418,40 @@ def method_pointer_indices(raw: bytes, method_count: int, invoker_count: int, *,
     return method, invoker, adjustor
 
 
+def generic_method_candidates(raw: bytes, record_count: int, spec_count: int,
+                              selected_specs: set[int], method_count: int,
+                              invoker_count: int, *, source: str, offset: int = 0) -> list[dict]:
+    """Frame the entire referenced table; decode selected no-adjustor triples.
+
+    Every MethodSpec key is bounded before filtering. Non-selected index triples
+    remain opaque. Preserve duplicates and multiple candidates; neither an empty
+    result nor a singleton determines runtime lookup or generic sharing.
+    """
+    for count,label in ((record_count,'record'),(spec_count,'MethodSpec')):
+        if type(count) is not int or not 0 <= count <= 1_000_000:
+            raise ContextError(source,offset,f'bounded {label} count',count)
+    if len(raw) != record_count*16:
+        raise ContextError(source,offset,f'exact {record_count*16}-byte generic method table',len(raw))
+    if type(offset) is not int or not 0 <= offset < 1<<64 or len(raw) > (1<<64)-offset:
+        raise ContextError(source,0,'bounded 64-bit generic method table extent',offset)
+    for index in selected_specs:
+        if type(index) is not int or not 0 <= index < spec_count:
+            raise ContextError(source,offset,'bounded selected MethodSpec index',index)
+    rows=[]
+    for index,(spec,) in enumerate(struct.iter_unpack('<i12x',raw)):
+        position=offset+index*16
+        if not 0 <= spec < spec_count:
+            raise ContextError(source,position,f'MethodSpec key in [0,{spec_count})',spec)
+        if spec not in selected_specs:
+            continue
+        record=raw[index*16:(index+1)*16]
+        indices=method_pointer_indices(record[4:],method_count,invoker_count,
+                                       source=source,offset=position+4)
+        rows.append({'tableIndex':index,'va':position,'methodSpecIndex':spec,
+                     'rawHex':record.hex().upper(),'indices':list(indices)})
+    return rows
+
+
 def object_type_comparison_key(raw: bytes, *, source: str, offset: int = 0) -> tuple[int, int]:
     """Projection used by the gated native comparator's object-tag branch only.
 
