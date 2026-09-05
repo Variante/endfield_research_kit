@@ -264,7 +264,12 @@ Current durable boundaries:
   the static initialization mechanism, not an observed live cell or cache entry.
   The open formatter-check carrier independently joins the same MVAR through its
   class-inst pointer; reject duplicate pointer identities and token ranges.
-  Preserve the carrier window's uninterpreted tail: its bytes do not certify a
+  The native method-pointer resolver retries a missed original-context lookup
+  with transformed argument vectors. Its direct class-tag branch uses one shared
+  global carrier plus the type-record offset for both adapter arguments. This is
+  a conditional mechanism, not yet the global's initialized identity, the interned
+  vector's identity or selection of a particular shared Deserialize body.
+  Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.
   Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk

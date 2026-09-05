@@ -269,6 +269,27 @@ def rip_qword_load_target(raw: bytes, address: int, *, source: str) -> int:
     return target
 
 
+def class_sharing_branch(compare: bytes, compare_address: int, load: bytes,
+                         load_address: int, advance: bytes, *, source: str) -> int:
+    """Verify the gated class-tag branch, returning an anonymous global address.
+
+    This connects instructions only, not the global's initialized value/type.
+    Surrounding reachability and argument-vector ABI belong to the native gate.
+    """
+    if type(compare_address) is not int or not 0 <= compare_address <= (1 << 64)-11:
+        raise ContextError(source, 0, 'bounded ten-byte compare/branch address', compare_address)
+    if len(compare) != 10 or compare[:6] != bytes.fromhex('80790A120F84'):
+        raise ContextError(source, compare_address, 'exact class-tag comparison and near JE', compare.hex().upper())
+    destination = compare_address+10+struct.unpack_from('<i',compare,6)[0]
+    if destination != load_address:
+        raise ContextError(source, compare_address+6, 'branch to canonical-carrier load',
+                           {'expectedTarget':load_address,'actualTarget':destination})
+    if load[:3] != bytes.fromhex('488B1D') or advance != bytes.fromhex('4883C320'):
+        raise ContextError(source, load_address, 'RBX RIP load followed by add RBX,0x20',
+                           {'load':load.hex().upper(),'advance':advance.hex().upper()})
+    return rip_qword_load_target(load,load_address,source=source)
+
+
 def match_image_modules(image_names: list[str], modules: list[tuple[str, int]], *, source: str) -> dict[str, int]:
     """Fail closed on duplicate names; do not reproduce native last-match wins."""
     if len(set(image_names)) != len(image_names):

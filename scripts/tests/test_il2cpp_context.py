@@ -10,6 +10,34 @@ from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationT
 from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
+from scripts.game_data.il2cpp_context import class_sharing_branch
+
+
+class ClassSharingBranchTests(unittest.TestCase):
+    compare=bytes.fromhex('80790A120F84')+struct.pack('<i',0xF6)
+    load=bytes.fromhex('488B1D')+struct.pack('<i',0xF9)
+    advance=bytes.fromhex('4883C320')
+
+    def decode(self, compare=None, load=None, advance=None):
+        return class_sharing_branch(self.compare if compare is None else compare,0x100,
+                                    self.load if load is None else load,0x200,
+                                    self.advance if advance is None else advance,source='fixture.dll')
+
+    def test_normal_anonymous_global(self):
+        self.assertEqual(self.decode(),0x300)
+
+    def test_truncated_and_trailing(self):
+        for key,raw in (('compare',self.compare),('load',self.load),('advance',self.advance)):
+            for changed in (raw[:-1],raw+b'\0'):
+                with self.subTest(key=key,changed=changed),self.assertRaises(ContextError):
+                    self.decode(**{key:changed})
+
+    def test_malformed_offset_and_other_type_tag(self):
+        for raw in (self.compare[:6]+struct.pack('<i',0xF5),self.compare[:3]+b'\x11'+self.compare[4:]):
+            with self.subTest(raw=raw),self.assertRaises(ContextError):
+                self.decode(compare=raw)
+        with self.assertRaises(ContextError):
+            self.decode(advance=bytes.fromhex('4883C310'))
 
 
 class RipQwordLoadTests(unittest.TestCase):
