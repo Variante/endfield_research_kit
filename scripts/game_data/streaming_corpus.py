@@ -21,7 +21,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v14"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -445,6 +445,9 @@ def sweep(
     marker15_references = 0
     marker15_prefix_fits: collections.Counter[str] = collections.Counter()
     marker15_files = []
+    marker17_files = []
+    marker17_groups = collections.defaultdict(collections.Counter)
+    marker17_references = marker17_bytes = marker17_ambiguous = 0
     selector5_files = []
     selector5_counts: collections.Counter[int] = collections.Counter()
     selector5_elements = 0
@@ -903,6 +906,16 @@ def sweep(
                     )
                     nested_element_opaque += int(parallel.get("nestedElementOpaqueCount", 0))
                     refs15 = parallel.get("nestedMarker15References", {})
+                    directory_rows = parallel.get('marker17KeyDirectory', {}).get('rows', [])
+                    if directory_rows:
+                        marker17_files.append(dict(identity, family=family, rows=directory_rows))
+                    for entry in directory_rows:
+                        marker17_references += 1
+                        marker17_bytes += entry['byteCount']
+                        marker17_ambiguous += entry['keyStatus'] == 'ambiguous'
+                        context = (family, entry['rootMarker'], entry['rowSelectorU32'],
+                                   entry['rowSelectorLowByte'], entry['keyHex'], entry['keyStatus'])
+                        marker17_groups[context][entry['byteCount']] += 1
                     joined_rows = parallel.get('selector5KeyRangeJoin', {}).get('rows', [])
                     if joined_rows:
                         selector5_counts.update(r['countValue'] for r in joined_rows if r['countValue'] is not None)
@@ -1062,6 +1075,13 @@ def sweep(
             }
         )
 
+    for label, expected, actual in (
+        ('marker17 directory reference count', nested_element_totals['nestedElementFramedCounts']['17'], marker17_references),
+        ('marker17 directory counted bytes', nested_element_totals['nestedElementByteCounts']['17'], marker17_bytes),
+    ):
+        if expected != actual:
+            failures.append(dict(stage='marker17-directory', message=label,
+                                 expected=expected, actual=actual))
     failed = bool(
         failures
         or row_failure_count
@@ -1262,6 +1282,23 @@ def sweep(
                 "marker17Representation": "two-wrappers-to-opaque-counted-bytes",
                 "markerMeaning": "unresolved-not-a-proven-union-registry",
             },
+            "marker17KeyDirectory": {
+                "status": "exact-structural-directory" if not failed else "unvalidated",
+                "evidenceLevel": "structural-only",
+                "referenceCount": marker17_references,
+                "countedBytes": marker17_bytes,
+                "ambiguousReferenceCount": marker17_ambiguous,
+                "filesWithReferences": len(marker17_files),
+                "targetOwnedBytes": 0,
+                "bodyStatus": "opaque", "runtimeSelectionStatus": "unresolved",
+                "offsetBasis": "decoded logical-file bytes; final range includes u32 count prefix",
+                "groups": [
+                    dict(zip(('family', 'rootMarker', 'rowSelectorU32', 'rowSelectorLowByte', 'keyHex', 'keyStatus'), context),
+                         referenceCount=sum(lengths.values()), byteCountDistribution=dict(sorted(lengths.items())))
+                    for context, lengths in sorted(marker17_groups.items(), key=lambda item: repr(item[0]))
+                ] if not failed else [],
+                "files": sorted(marker17_files, key=lambda item: item['virtualPath']) if not failed else [],
+            },
             "nestedMarker15ReferenceBounds": {
                 "status": "bounded-anonymous-forward-uoffset-targets" if not failed else "unvalidated",
                 "evidenceLevel": "structural-only",
@@ -1397,6 +1434,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Field-5 row field-5 empty count prefixes: {layer3.get('parallelField5Field5VectorCount', 0):,}; values: {layer3.get('parallelField5Field5ValueCount', 0):,}; element width unresolved.",
         f"- Field-5 row field-3 nested tables: {layer3.get('parallelField5Field3NestedTableCount', 0):,}; equal-count width-4/1/4 rows: {layer3.get('parallelField5Field3NestedParallelCount', 0):,}; shapes: `{layer3.get('parallelField5Field3NestedTableShapeCounts')}`.",
         f"- Nested marker-17 target framing: `{layer3.get('nestedElementFraming')}`.",
+        f"- Marker17 table-local key directory: {layer3.get('marker17KeyDirectory', {}).get('referenceCount', 0):,} references; {layer3.get('marker17KeyDirectory', {}).get('ambiguousReferenceCount', 0):,} ambiguous-key references. Full decoded offsets, wrapper/count ranges, source identities and context/length distributions are in JSON. Bodies remain opaque; no runtime selection or semantic type is claimed.",
         f"- Marker-15 bounded references: {layer3.get('nestedMarker15ReferenceBounds', {}).get('referenceCount', 0):,}; files: {layer3.get('nestedMarker15ReferenceBounds', {}).get('filesWithReferences', 0):,}. Width unresolved; target bytes are not owned. Per-file source identities and ordered slot/target digests are in the JSON report.",
         f"- Marker-15 available-file-byte width probes: `{layer3.get('nestedMarker15ReferenceBounds', {}).get('probeWidthFitCounts', {})}`. These are not an exhaustive layout search and do not select an element width or reject overlaps with unknown objects.",
         f"- Selector5 unique-key candidate ranges: {layer3.get('selector5KeyRangeJoin', {}).get('rowCount', 0):,} rows, {layer3.get('selector5KeyRangeJoin', {}).get('elementRangeCount', 0):,} 16-byte candidate reads; {layer3.get('selector5KeyRangeJoin', {}).get('unsupportedRowCount', 0):,} missing-count-key rows remain explicitly unresolved. These ranges own zero additional bytes and do not establish runtime selection or complete record extent. Per-file identities and exact row/key/index/slot/ranges are in JSON.",

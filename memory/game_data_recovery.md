@@ -89,7 +89,13 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   Parallel directories use equal-count width4/1/4 vectors. Their row-field0
   remains string/byte-vector ambiguous. Applicable row-field5 vectors are
   empty (nonempty fails closed); row-field3 reaches another parallel directory.
-  Nested marker17 bounds two wrappers and a counted opaque byte range.
+  Nested marker17 bounds two wrappers and a counted opaque byte range. Its
+  maintained table-local directory retains each key, marker, raw selector,
+  serialized ordinal and decoded wrapper/count range with logical-file
+  provenance. Duplicate keys remain ambiguous across all markers in the table;
+  absent selectors are not defaulted to zero. Directory counts reconcile with
+  framing counts; failed gates suppress directory publication. This adds no
+  owned bytes and does not name the opaque bodies or prove runtime selection.
   Marker16 belongs to a different outer-row shape. These associations do not
   prove a union registry. Marker15 references require nonzero forward bounded
   targets; hashes bind each source/slot directory, but target contents and
@@ -264,7 +270,9 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Continue marker-17 byte exposure and opaque-body consumer evidence. Paired
+- Continue marker-17 body layouts from the source-bound key directory; use
+  independently reviewed consumer pointer arithmetic to select record order,
+  not length equations or fixed-size appearance alone. Paired
   Init/Streaming leaf formats, shared serialized ordinal and ordered key/marker
   witnesses are closed, but concrete runtime root/key provenance, existing-key
   state, overrides and actual execution remain unobserved. The upstream

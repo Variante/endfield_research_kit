@@ -721,6 +721,7 @@ def _parse_parallel_root_subgraph(
     # These are probes, not an exhaustive registry or selectable layouts.
     marker15_probe_widths = (1, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64)
     selector5_rows = []
+    marker17_rows = []
     selector5_ranges = []
     row_field0_digest = hashlib.sha256()
 
@@ -995,6 +996,7 @@ def _parse_parallel_root_subgraph(
                 if joined['countRange'] is not None:
                     selector5_ranges.extend((r['start'], r['end'], 'candidate-read-span')
                                             for r in [joined['countRange'], *joined['elementRanges']])
+            key_counts = None
             for element_index in range(nested_counts[0]):
                 marker = data[nested_starts[4] + 4 + element_index]
                 nested_markers[marker] += 1
@@ -1021,6 +1023,36 @@ def _parse_parallel_root_subgraph(
                 )
                 for child_range in child_ranges:
                     own(*child_range)
+                # Record identity in the same bounded directory traversal. A
+                # duplicate key is ambiguous even if its other marker differs.
+                if key_counts is None:
+                    key_counts = Counter(
+                        _u32(data, nested_starts[3] + 4 + ordinal * 4)
+                        for ordinal in range(nested_counts[0])
+                    )
+                key_offset = nested_starts[3] + 4 + element_index * 4
+                key = _u32(data, key_offset)
+                root_marker = data[field4_start + 4 + index]
+                selector = (_u32(data, selector_slot)
+                            if root_marker == 2 and selector_slot is not None else None)
+                marker17_rows.append({
+                    "outerRowIndex": index, "outerRowOffset": int(row["tableOffset"]),
+                    "rootMarker": root_marker,
+                    "rowSelectorU32": selector,
+                    "rowSelectorLowByte": selector & 255 if selector is not None else None,
+                    "nestedTableOffset": nested_target,
+                    "nestedElementCount": nested_counts[0], "elementIndex": element_index,
+                    "key": key, "keyHex": f"{key:08X}", "keyOffset": key_offset,
+                    "keyOccurrenceCountInTable": key_counts[key],
+                    "keyStatus": "unique" if key_counts[key] == 1 else "ambiguous",
+                    "marker": marker, "markerOffset": nested_starts[4] + 4 + element_index,
+                    "targetSlotOffset": nested_starts[5] + 4 + element_index * 4,
+                    "byteCount": byte_count,
+                    "wrapperAndByteRanges": [
+                        {"start": start, "end": end, "kind": kind}
+                        for start, end, kind, _label in child_ranges
+                    ],
+                })
                 nested_framed[marker] += 1
                 nested_bytes[marker] += byte_count
 
@@ -1055,6 +1087,13 @@ def _parse_parallel_root_subgraph(
                 _u32(data, field3_start + 4 + index * 4) for index in range(field3_count)
             }),
             "encoding": "vectors include u32 count; row-field0 digest concatenates u32 length and exact bytes in row order",
+        },
+        "marker17KeyDirectory": {
+            "status": "exact-structural-directory",
+            "evidenceLevel": "structural-only", "rows": marker17_rows,
+            "targetOwnedBytes": 0,
+            "scope": "table-local keys; offsets in decoded logical-file bytes; byte range includes u32 count prefix",
+            "bodyStatus": "opaque", "runtimeSelectionStatus": "unresolved",
         },
         "selector5KeyRangeJoin": {
             "status": "exact-unique-key-candidate-read-ranges",

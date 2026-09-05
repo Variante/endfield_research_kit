@@ -745,6 +745,112 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(graph["nestedElementOpaqueCount"], 1)
         self.assertEqual(graph["wholeFileStatus"], "partial")
 
+    def test_marker17_key_directory_records_exact_anonymous_identity(self):
+        graph = parse_streaming_file(
+            "streaming", _packed(_parallel_target_data_root())
+        )["anonymousParallelSubgraph"]
+        directory = graph["marker17KeyDirectory"]
+        self.assertEqual(directory["status"], "exact-structural-directory")
+        self.assertEqual(directory["evidenceLevel"], "structural-only")
+        self.assertEqual(directory["targetOwnedBytes"], 0)
+        self.assertEqual(directory["bodyStatus"], "opaque")
+        self.assertEqual(directory["runtimeSelectionStatus"], "unresolved")
+        self.assertEqual(
+            directory["rows"],
+            [
+                {
+                    "outerRowIndex": 0,
+                    "outerRowOffset": 144,
+                    "rootMarker": 2,
+                    "rowSelectorU32": 6,
+                    "rowSelectorLowByte": 6,
+                    "nestedTableOffset": 200,
+                    "nestedElementCount": 2,
+                    "elementIndex": 1,
+                    "key": 13,
+                    "keyHex": "0000000D",
+                    "keyOffset": 228,
+                    "keyOccurrenceCountInTable": 1,
+                    "keyStatus": "unique",
+                    "marker": 17,
+                    "markerOffset": 237,
+                    "targetSlotOffset": 248,
+                    "byteCount": 4,
+                    "wrapperAndByteRanges": [
+                        {"start": 326, "end": 332, "kind": "vtable"},
+                        {"start": 332, "end": 340, "kind": "table"},
+                        {"start": 342, "end": 348, "kind": "vtable"},
+                        {"start": 348, "end": 356, "kind": "table"},
+                        {
+                            "start": 356,
+                            "end": 364,
+                            "kind": "length-prefixed-byte-range",
+                        },
+                    ],
+                }
+            ],
+        )
+
+    def test_marker17_key_directory_reports_duplicate_key_ambiguity(self):
+        data = bytearray(_parallel_target_data_root())
+        data[224:228] = (13).to_bytes(4, "little")
+        row = parse_streaming_file(
+            "streaming", _packed(bytes(data))
+        )["anonymousParallelSubgraph"]["marker17KeyDirectory"]["rows"][0]
+        self.assertEqual(row["key"], 13)
+        self.assertEqual(row["keyOccurrenceCountInTable"], 2)
+        self.assertEqual(row["keyStatus"], "ambiguous")
+
+    def test_marker17_key_directory_keeps_same_key_contexts_separate(self):
+        contexts = []
+        for root_marker, selector in ((2, 6), (2, 7), (3, 6)):
+            data = bytearray(_parallel_target_data_root())
+            data[84] = root_marker
+            data[156:160] = selector.to_bytes(4, "little")
+            row = parse_streaming_file(
+                "streaming", _packed(bytes(data))
+            )["anonymousParallelSubgraph"]["marker17KeyDirectory"]["rows"][0]
+            self.assertEqual(row["key"], 13)
+            contexts.append(
+                (
+                    row["rootMarker"],
+                    row["rowSelectorU32"],
+                    row["rowSelectorLowByte"],
+                )
+            )
+        self.assertEqual(
+            contexts,
+            [
+                (2, 6, 6),
+                (2, 7, 7),
+                (3, None, None),
+            ],
+        )
+
+    def test_marker17_key_directory_marker_mismatch_stays_opaque(self):
+        data = bytearray(_parallel_target_data_root())
+        data[237] = 16
+        graph = parse_streaming_file(
+            "streaming", _packed(bytes(data))
+        )["anonymousParallelSubgraph"]
+        directory = graph["marker17KeyDirectory"]
+        self.assertEqual(directory["rows"], [])
+        self.assertEqual(directory["targetOwnedBytes"], 0)
+        self.assertEqual(graph["nestedElementFramedCounts"], {})
+        self.assertEqual(graph["nestedElementOpaqueCount"], 2)
+
+    def test_marker17_key_directory_absent_selector_is_not_zero(self):
+        selectors = []
+        for absent in (False, True):
+            data = bytearray(_parallel_target_data_root())
+            data[156:160] = bytes(4)
+            if absent:
+                data[136:138] = bytes(2)  # row vtable field2 absent
+            row = parse_streaming_file('streaming', _packed(bytes(data)))[
+                'anonymousParallelSubgraph']['marker17KeyDirectory']['rows'][0]
+            selectors.append((row['rowSelectorU32'], row['rowSelectorLowByte']))
+        self.assertEqual(selectors, [(0, 0), (None, None)])
+
     def test_nested_marker_targets_negative_fixtures(self):
         for offset, value, message in (
             (248, 0, "forward bounded target"),

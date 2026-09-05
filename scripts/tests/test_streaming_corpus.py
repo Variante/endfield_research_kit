@@ -86,6 +86,35 @@ class StreamingCatalogTests(unittest.TestCase):
 
 
 class StreamingCorpusTests(unittest.TestCase):
+    def test_marker17_directory_reconciliation_fails_closed(self):
+        from scripts.game_data.streaming import parse_streaming_file
+
+        for mutation in ('omit-reference', 'change-length'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                summary, ledger, _chunk, input_set = self._fixture(Path(temporary))
+
+                def altered(*args, **kwargs):
+                    result = parse_streaming_file(*args, **kwargs)
+                    rows = result.get('anonymousParallelSubgraph', {}).get('marker17KeyDirectory', {}).get('rows', [])
+                    if rows:
+                        if mutation == 'omit-reference':
+                            rows.clear()
+                        else:
+                            rows[0]['byteCount'] += 1
+                    return result
+
+                with patch('scripts.game_data.streaming_corpus.parse_streaming_file', side_effect=altered):
+                    result = self._sweep(outer_summary_path=summary, outer_ledger_path=ledger,
+                                         expected_input_set_sha256=input_set)
+                self.assertEqual(result['status'], 'failed')
+                failures = [row for row in result['failures'] if row.get('stage') == 'marker17-directory']
+                self.assertTrue(failures)
+                self.assertTrue(all(row['expected'] != row['actual'] for row in failures))
+                directory = result['layer3']['marker17KeyDirectory']
+                self.assertEqual(directory['status'], 'unvalidated')
+                self.assertEqual(directory['files'], [])
+                self.assertEqual(directory['groups'], [])
+
     def test_root_pair_witness_requires_order_and_unique_paths(self):
         witness = dict(rowCount=2, field3VectorSha256='A'*64,
                        field4VectorSha256='B'*64, rowField0ValuesSha256='C'*64)
@@ -348,6 +377,17 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(framing["nestedElementFramedCounts"], {"17": 1})
         self.assertEqual(framing["nestedElementByteCounts"], {"17": 4})
         self.assertEqual(framing["opaqueElementCount"], 1)
+        directory = result['layer3']['marker17KeyDirectory']
+        self.assertEqual(directory['status'], 'exact-structural-directory')
+        self.assertEqual(directory['referenceCount'], 1)
+        self.assertEqual(directory['countedBytes'], 4)
+        self.assertEqual(directory['ambiguousReferenceCount'], 0)
+        self.assertEqual(directory['targetOwnedBytes'], 0)
+        self.assertEqual(directory['runtimeSelectionStatus'], 'unresolved')
+        self.assertEqual(directory['groups'][0]['byteCountDistribution'], {4: 1})
+        self.assertEqual(directory['groups'][0]['family'], 'init')
+        self.assertEqual(directory['files'][0]['length'], len(_packed(_parallel_target_data_root())))
+        self.assertEqual(directory['files'][0]['rows'][0]['keyStatus'], 'unique')
         refs15 = result["layer3"]["nestedMarker15ReferenceBounds"]
         self.assertEqual(refs15["referenceCount"], 1)
         self.assertEqual(refs15["filesWithReferences"], 1)
@@ -408,6 +448,9 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertIsNone(result['layer4']['infoKeyProducerStaticChain'])
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['status'], 'unvalidated')
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['files'], [])
+        self.assertEqual(result['layer3']['marker17KeyDirectory']['status'], 'unvalidated')
+        self.assertEqual(result['layer3']['marker17KeyDirectory']['files'], [])
+        self.assertEqual(result['layer3']['marker17KeyDirectory']['groups'], [])
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["status"], "unvalidated")
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["counts"], {})
         self.assertEqual(
