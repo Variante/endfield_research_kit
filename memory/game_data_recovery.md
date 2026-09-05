@@ -116,12 +116,20 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   subgraph's known ranges. Missing
   count keys remain explicit unsupported rows, not native default values.
   These spans own no additional bytes and do not establish record extent.
-  Crucially, the runtime dispatch marker comes from the first root, while the
-  later row comes from the second: the second file's own marker is not a
-  dispatch receipt. Cross-root identity/index pairing, script overrides and
-  actual execution remain unresolved. See `streaming_field2_native.json` and
+  Paired native formatters now prove first=Init and second=Streaming, using
+  one root/dev source and the same four-dword key. A separate native loop
+  preserves one serialized ordinal across the roots; its runtime allocation
+  index is distinct. Current paired files independently match complete ordered
+  field3/field4 vectors, not just their counts. Row-field0 contents differ and
+  are not a shared identity. For new runtime keys the dispatch marker comes
+  from Init; existing keys instead use an already stored runtime marker.
+  Thus paired bytes do not prove a fresh global key map, a concrete runtime
+  root receipt, callback override state, or actual execution. See
+  `streaming_field2_native.json` and
   the focused report's `layer3.selector5KeyRangeJoin` and
-  `layer4.nestedKeyIndexStaticChain`; marker-15 candidates remain in
+  `layer4.nestedKeyIndexStaticChain`; paired witnesses and conditional ABI are
+  in `layer3.pairedRootIdentities` and `layer4.nestedPairedRootStaticChain`.
+  Marker-15 candidates remain in
   `reports/animestudio/streaming_marker15_native_latest.json`.
   A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
@@ -284,14 +292,15 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Authenticate the first-root marker / second-root row same-index pairing for
-  the reviewed later-phase selector before promoting the reader-compatible
-  key/range subset. Full-key lookup and unique serialized joins are closed;
-  missing-count-key rows remain unsupported by this profile. Initial and later
-  phases use different root carriers. Preserve override/execution and file-
-  instance gaps, and do not extend a subset proof to every marker-15 target. The directory is bounded,
-  not its records. Then close marker-17 opaque byte bodies before concrete
-  runtime-root/secondary-path joins or field-5 key namespace.
+- Continue marker-17 byte exposure and opaque-body consumer evidence. Paired
+  Init/Streaming leaf formats, shared serialized ordinal and ordered key/marker
+  witnesses are closed, but concrete runtime root/key provenance, existing-key
+  state, overrides and actual execution remain unobserved. The upstream
+  spatial-selection key is not yet joined to one Info record. Missing-count-
+  key rows remain unsupported by the selector profile; do not extend its
+  conditional subset to every marker-15 target. The directory is bounded,
+  not its records. Concrete runtime-root receipts and field-5 key namespace
+  follow the remaining structural/consumer closure.
   Fixed-size-looking targets still need independent width/cursor
   evidence; do not derive sizes solely from neighboring addresses. Then Terrain
   block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.game_data.streaming_corpus import sweep
+from scripts.game_data.streaming_corpus import _join_root_witnesses, sweep
 from scripts.tests.test_streaming import (
     _field2_streaming_full_layout_root,
     _info_root,
@@ -17,6 +17,32 @@ from scripts.tests.test_streaming import (
 
 
 class StreamingCorpusTests(unittest.TestCase):
+    def test_root_pair_witness_requires_order_and_unique_paths(self):
+        witness = dict(rowCount=2, field3VectorSha256='A'*64,
+                       field4VectorSha256='B'*64, rowField0ValuesSha256='C'*64)
+        left = dict(virtualPath='scene/InitChunkData_1_2_3_4.bytes', witness=witness)
+        right = dict(virtualPath='scene/StreamingChunkData_1_2_3_4.bytes', witness=dict(witness))
+        result = _join_root_witnesses([right, left])
+        self.assertEqual(result['matchedPairCount'], 1)
+        self.assertEqual(result['matchedRowCount'], 2)
+        for field in ('rowCount', 'field3VectorSha256', 'field4VectorSha256'):
+            changed = dict(right, witness=dict(witness, **{field: 3 if field == 'rowCount' else 'D'*64}))
+            failed = _join_root_witnesses([left, changed])
+            self.assertEqual(failed['matchedPairCount'], 0)
+            self.assertEqual(failed['mismatchedPairCount'], 1)
+            self.assertEqual(failed['pairs'][0]['differences'][0]['field'], field)
+        other_values = dict(right, witness=dict(witness, rowField0ValuesSha256='D'*64))
+        distinct = _join_root_witnesses([left, other_values])
+        self.assertEqual(distinct['matchedPairCount'], 1)
+        self.assertEqual(distinct['rowField0DifferentPairCount'], 1)
+        with self.assertRaisesRegex(ValueError, 'unique logical identity.*duplicate'):
+            _join_root_witnesses([left, left, right])
+        missing = _join_root_witnesses([left])
+        self.assertEqual(missing['unpairedFileCount'], 1)
+        self.assertEqual(missing['matchedPairCount'], 0)
+        other_directory = dict(right, virtualPath=right['virtualPath'].replace('scene/', 'other/'))
+        self.assertEqual(_join_root_witnesses([left, other_directory])['candidatePairCount'], 0)
+
     @staticmethod
     def _sweep(**kwargs):
         native = {
@@ -300,6 +326,8 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertIsNone(result["layer4"]["nestedContextStaticChain"])
         self.assertIsNone(result["layer4"]["nestedReaderPhaseStaticChain"])
         self.assertIsNone(result["layer4"]["nestedKeyIndexStaticChain"])
+        self.assertIsNone(result["layer4"]["nestedPairedRootStaticChain"])
+        self.assertEqual(result['layer3']['pairedRootIdentities'], {'status': 'unvalidated', 'pairs': []})
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['status'], 'unvalidated')
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['files'], [])
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["status"], "unvalidated")

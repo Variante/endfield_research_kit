@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v12"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v13"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -33,6 +33,63 @@ _NUMERIC_STREAMING_NAME = re.compile(
 _GLOBAL_STREAMING_NAME = re.compile(
     r"^StreamingChunkData_Global_(-?\d+)_(-?\d+)\.bytes$"
 )
+
+
+def _join_root_witnesses(files: list[dict[str, Any]]) -> dict[str, Any]:
+    """Compare exact ordered witnesses; filenames select candidates only.
+
+    A missing or differing pair never publishes a matched relation. Native
+    path/ordinal evidence is a separate gate, not assumed by this helper.
+    """
+    by_path = {}
+    for record in files:
+        path = record['virtualPath']
+        if path in by_path:
+            raise ValueError(f"Streaming pair {path}: expected unique logical identity, actual duplicate")
+        by_path[path] = record
+    paired = set()
+    inventory = []
+    differences = []
+    matched_rows = 0
+    row_field0_equal_pairs = 0
+    fields = ('rowCount', 'field3VectorSha256', 'field4VectorSha256')
+    for path, left in sorted(by_path.items()):
+        parent, separator, leaf = path.rpartition('/')
+        if not leaf.startswith('InitChunkData_'):
+            continue
+        mate = parent + separator + 'StreamingChunkData_' + leaf[len('InitChunkData_'):]
+        right = by_path.get(mate)
+        if right is None:
+            continue
+        paired.update((path, mate))
+        checks = []
+        for field in fields:
+            expected = left['witness'][field]
+            actual = right['witness'][field]
+            if expected != actual:
+                checks.append(dict(field=field, expected=expected, actual=actual))
+        status = 'exact-ordered-witness-match' if not checks else 'unresolved-witness-mismatch'
+        field0_equal = left['witness']['rowField0ValuesSha256'] == right['witness']['rowField0ValuesSha256']
+        row_field0_equal_pairs += field0_equal
+        inventory.append(dict(init=left, streaming=right, status=status, differences=checks,
+                              rowField0ValuesEqual=field0_equal))
+        if checks:
+            differences.append(dict(initPath=path, streamingPath=mate, checks=checks))
+        else:
+            matched_rows += left['witness']['rowCount']
+    unpaired = sorted(set(by_path) - paired)
+    return dict(
+        status='exact-ordered-witness-matches' if not differences and not unpaired else 'unresolved-pair-relations',
+        candidatePairCount=len(inventory), matchedPairCount=len(inventory)-len(differences),
+        matchedRowCount=matched_rows, mismatchedPairCount=len(differences),
+        rowField0EqualPairCount=row_field0_equal_pairs,
+        rowField0DifferentPairCount=len(inventory)-row_field0_equal_pairs,
+        rowField0Boundary='Measured separately, never assumed an identity key: native shared-ordinal path does not compare this field.',
+        unpairedFileCount=len(unpaired), unpairedFiles=unpaired,
+        evidenceLevel='structural-only',
+        boundary='Same-directory suffix pairs compare complete ordered field3/field4 vectors, not matching marginal counts. Row-field0 content equality is separately tested and is not required or inferred. No runtime receipt, globally fresh key map, or default-callback selection is asserted.',
+        pairs=inventory,
+    )
 
 
 def _sha256_file(path: Path) -> str:
@@ -316,6 +373,7 @@ def sweep(
     selector5_counts: collections.Counter[int] = collections.Counter()
     selector5_elements = 0
     selector5_unresolved = 0
+    root_witness_files = []
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
@@ -540,6 +598,16 @@ def sweep(
                             )
                         continue
                     partial_data += 1
+                    root_witness_files.append({
+                        "virtualPath": virtual_path,
+                        "physicalChunkPath": str(chunk_path),
+                        "physicalChunkSource": row.get("physicalChunkSource"),
+                        "metadataProvenance": row.get("metadataProvenance"),
+                        "overlayState": row.get("overlayState"),
+                        "offset": offset, "length": length,
+                        "packedSha256": hashlib.sha256(raw).hexdigest().upper(),
+                        "witness": {key: value for key, value in parallel['orderedRootWitness'].items() if key != 'encoding'},
+                    })
                     field2_family_files[family] += 1
                     field2_rows += int(field2.get("rowCount", 0))
                     field2_owned_bytes += int(field2.get("ownedBytes", 0))
@@ -1067,6 +1135,10 @@ def sweep(
                 "counts": dict(sorted(root_marker_shapes.items())) if not failed else {},
                 "meaning": "root marker byte and bounded row shape at identical vector index; no nested marker meaning",
             },
+            "pairedRootIdentities": (
+                _join_root_witnesses(root_witness_files) if not failed else
+                {"status": "unvalidated", "pairs": []}
+            ),
             "field5Field0ReferenceCount": field5_references,
             "field5Field0ReferencedBytes": field5_bytes,
             "field5Field0Representation": "ambiguous",
@@ -1150,6 +1222,9 @@ def sweep(
             "nestedKeyIndexStaticChain": (
                 native_contract.get("nestedKeyIndexObservations") if not failed else None
             ),
+            "nestedPairedRootStaticChain": (
+                native_contract.get("nestedPairedRootObservations") if not failed else None
+            ),
             "managedShapeCandidateStatus": "candidate-only",
             "nativeCarrierStatus": (
                 carrier_contract.get("baseLengthStatus")
@@ -1214,6 +1289,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[]. These representations are selected-build native-gated and remain anonymous.",
         "- Native context evidence is separately gated in layer4.nestedContextStaticChain: the static root.field5 row.field3 pointer is installed at context+0x80 during a callback scope. This does not close callback-to-asset-API selection, nested marker15 selection, or record extent, and adds no parser-owned target bytes.",
         f"- Root marker/row-shape joins use identical vector indices: `{layer3.get('rootMarkerRowShapeJoin', {})}`. These are not nested-marker type names.",
+        f"- Init/Streaming ordered field3/field4 witnesses: {layer3.get('pairedRootIdentities', {}).get('matchedPairCount', 0):,} matched pairs / {layer3.get('pairedRootIdentities', {}).get('matchedRowCount', 0):,} rows; {layer3.get('pairedRootIdentities', {}).get('mismatchedPairCount', 0):,} differing pairs and {layer3.get('pairedRootIdentities', {}).get('unpairedFileCount', 0):,} unpaired files. Row-field0 digests differ in {layer3.get('pairedRootIdentities', {}).get('rowField0DifferentPairCount', 0):,} pairs and are not an assumed identity. Per-side identities and ordered digests are in JSON; no match is inferred from equal counts alone.",
+        "- layer4.nestedPairedRootStaticChain independently pins shared root/key/dev inputs to Init and Streaming path formatters and the shared serialized ordinal. New runtime keys use Init's marker; existing keys use their already stored runtime marker. Current bytes do not establish live key-map state, concrete root receipt, or callback override state.",
         "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Full-key lookup, collision handling and first-index storage are now gated in nestedKeyIndexStaticChain. The first root supplies the dispatch marker and the second supplies the later row; concrete pairing, execution and record extent remain unresolved.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-field2-native-contract.v6",
+  "schema": "endfield.streaming-field2-native-contract.v7",
   "status": "validated",
   "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-carrier-and-scene-object-chain",
   "nativeInputs": {
@@ -751,6 +751,70 @@
       "bodySha256": "395AD663AEC84E8ADD5C503E990E18DE28E5642D3F74FE0D9D801529E171DC2E",
       "entryBytesHex": "FFFFFFFF00000000E0241D81",
       "rangeKind": "data"
+    },
+    {
+      "role": "secondaryPathsevenArgumentHelper",
+      "rva": 5035712,
+      "size": 146,
+      "fileOffset": 5033152,
+      "bodySha256": "F762CE5CEF472560A27B8D9F4DF6711DA09CF7CBDB83898E933712BCDBA7DAA2",
+      "entryBytesHex": "4C8BDC534883EC70498B01488BD9498943C8488B8424A00000004D8943C04C8B"
+    },
+    {
+      "role": "secondaryPathfiveArgumentHelper",
+      "rva": 5035872,
+      "size": 115,
+      "fileOffset": 5033312,
+      "bodySha256": "EC104E02D261CC77892291BB4B34A3DABE16522D1CF59CED4A754F71E67367E9",
+      "entryBytesHex": "4C8BDC534883EC60498B01488BD9498943D8488B8424900000004D8943D04C8B"
+    },
+    {
+      "role": "existingRuntimeKeyAppendDispatch",
+      "rva": 4913968,
+      "size": 636,
+      "fileOffset": 4911408,
+      "bodySha256": "367A07F8A247AC5BF93F934AAC8B118DF524D2CADDFDAC903303CCCFD98A8248",
+      "entryBytesHex": "48895C24084889742410574881EC900000000FB6014C8D0D74865F01418BF048"
+    },
+    {
+      "role": "runtimeKeyMapFindFullEquality",
+      "rva": 917152,
+      "size": 253,
+      "fileOffset": 914592,
+      "bodySha256": "D9D74C463182FE8FFBA409552007CA347B63A3937D58E6700F0AB1E390CA4334",
+      "entryBytesHex": "48895C240848897C2410416900011000004C8BD9488BDA498BF8418B53080516"
+    },
+    {
+      "role": "runtimeIteratorNotEqual",
+      "rva": 409456,
+      "size": 10,
+      "fileOffset": 406896,
+      "bodySha256": "FF6DCC5D65DEC93D2C9644A37751FBC7DF3E7EF9C7290E86BE5C8F04598489F2",
+      "entryBytesHex": "488B014839020F95C0C3"
+    },
+    {
+      "role": "runtimeKeyIndexInsertThunk",
+      "rva": 16048672,
+      "size": 23,
+      "fileOffset": 16046112,
+      "bodySha256": "001A17631DDECC3B8317EFE8FC6663409FC0A4609F18A79C6BB954ED1E18B3E9",
+      "entryBytesHex": "40534883EC20488BDAE802A511FF488BC34883C4205BC3"
+    },
+    {
+      "role": "runtimeKeyIndexInsertThreeUnwindFragments",
+      "rva": 427824,
+      "size": 573,
+      "fileOffset": 425264,
+      "bodySha256": "9E71CF9899C288918E003900FB11804D530D8509041C9BBAFAE722323D129A93",
+      "entryBytesHex": "48895C2418555741574883EC3083791400498BE94D8BF8488BFA488BD9757D44"
+    },
+    {
+      "role": "runtimeExistingMarkerDispatchFirstFourEntries",
+      "rva": 27951552,
+      "size": 32,
+      "fileOffset": 27945408,
+      "bodySha256": "71077599CA0053DE46A48DAF7661E0FDF4EA70B8D3436B9610A6D7F4057C7BFD",
+      "entryBytesHex": "000000000000000060364D800100000080B61B8001000000007C4A8001000000"
     }
   ],
   "utf8Strings": [
@@ -778,6 +842,31 @@
       "role": "streamingStaticFirstReadLeaf",
       "rva": 27951632,
       "text": "StreamingChunkInfo"
+    },
+    {
+      "role": "secondaryPathfirstLeaf",
+      "rva": 25653092,
+      "text": "Init"
+    },
+    {
+      "role": "secondaryPathsecondLeaf",
+      "rva": 25653032,
+      "text": "Streaming"
+    },
+    {
+      "role": "secondaryPathnormalTemplate",
+      "rva": 25652984,
+      "text": "{0}/{1}{2}ChunkData_{3}_{4}_{5}_{6}.bytes"
+    },
+    {
+      "role": "secondaryPathglobalTemplate",
+      "rva": 25653048,
+      "text": "{0}/{1}{2}ChunkData_Global_{3}_{4}.bytes"
+    },
+    {
+      "role": "secondaryPathdevPrefix",
+      "rva": 28323076,
+      "text": "[dev]"
     }
   ],
   "rowLayout": [
@@ -1050,10 +1139,10 @@
         "marker15 target extent and representation",
         "authentic logical-file receipt into one runtime instance",
         "final cursor and whole-file native consumption",
-        "Runtime dispatch marker originates first-root.field4; saved row pointer originates second-root.field5 at same index. Second-root own field4 marker is not a runtime dispatch receipt. A per-file key/marker/span association can be reader-compatible conditional evidence only until the two-root pairing is authenticated."
+        "Existing runtime keys dispatch using a previously stored marker, not necessarily the current Init marker; paired current bytes do not prove live key-map state or actual execution."
       ]
     },
-    "nextTask": "Authenticate the first-root marker / second-root row same-index relationship before promoting per-file reader-compatible key/range associations. Record extent and remaining marker15 targets stay opaque.",
+    "nextTask": "Use separately gated paired paths/shared ordinal and complete corpus ordered witnesses as conditional reader compatibility only; concrete runtime root, existing-key marker state and callback overrides remain unresolved.",
     "status": "direct-conditional-default-selector5-later-reader",
     "sourceRoot": "second-secondary-root",
     "marker15WidthStatus": "unresolved",
@@ -1177,5 +1266,70 @@
         "field names/game semantics"
       ]
     }
+  },
+  "nestedPairedRootObservations": {
+    "status": "direct-selected-build-paired-paths-and-conditional-shared-ordinal",
+    "pathAbi": {
+      "ownerEntry": "0x6AEF0: RCX=owner wrapper; RDX=pointer to 16-byte key; [RCX] supplies state used for runtimeRoot/isDev; key is copied unchanged for both calls",
+      "sharedInputs": {
+        "runtimeRoot": "address RSI+0x30 after RSI=[owner RCX]",
+        "isDev": "byte RSI+0x58",
+        "key": "four little-endian dwords copied from [RDX] through RBX to the same stack slot before each formatter"
+      },
+      "normalPath": "{runtimeRoot}/{devPrefix}{leaf}ChunkData_{key[2]}_{key[3]}_{key[0]}_{key[1]}.bytes",
+      "globalCondition": "key[2] == 0x80000000 and key[3] == 0x80000000",
+      "globalPath": "{runtimeRoot}/{devPrefix}{leaf}ChunkData_Global_{key[0]}_{key[1]}.bytes",
+      "first": {
+        "leaf": "Init",
+        "formattedDescriptorCarrier": "+0x18",
+        "resolvedRootCarrier": "+0x28"
+      },
+      "second": {
+        "leaf": "Streaming",
+        "formattedDescriptorCarrier": "+0x20",
+        "resolvedRootCarrier": "+0x30"
+      }
+    },
+    "pathEvidenceBoundary": {
+      "exact": "On the gated selected UnityPlayer, the two calls use one identical 16-byte key and one runtimeRoot/isDev source. Literal injection and ordered carrier stores prove first=InitChunkData and second=StreamingChunkData.",
+      "direct": "The normal filename uses key dwords [2],[3],[0],[1]; the Global branch is selected only when dwords [2] and [3] equal 0x80000000 and uses dwords [0],[1].",
+      "structuralOnly": "The four dwords and both parsed roots remain anonymous runtime structures.",
+      "unresolved": [
+        "the spatial-selection vector feeding the 16-byte key is not statically joined here to one StreamingChunkInfo root.field3 row",
+        "no concrete runtimeRoot receipt binds either formatted path to one authenticated logical file",
+        "actual execution, final cursor, whole-file consumption, field names and game semantics"
+      ]
+    },
+    "indexLoop": {
+      "carrier": "RDI carrier; [carrier+0x28]=FIRST root, [carrier+0x30]=SECOND root; [carrier+0x38]=saved progress ordinal.",
+      "index": "0x6b438 loads i into R14D; 0x6b441 compares unsigned i against SECOND field3 vector count. 0x6b464 increments saved progress; 0x6b55b increments R14D; 0x6b563 compares SECOND field3 count again.",
+      "key": "0x6b47b loads SECOND.field3[i] dword into R15D; 0x6b48e looks it up in manager+0xe0 runtime key map. dfea0 compares fingerprint AND full32-bit key at dff8f/dff96, not hash alone.",
+      "newKey": "0x6b4d8 selects FIRST root; 0x6b4dc field4 accessor; 0x6b4eb byte[vector+4+i] becomes new runtime marker. 0x6b4fd allocates runtime index j. 0x6b511 converts j to main-record address at manager+0x98 vector base+j*56. 0x6b51e copies unchanged i into R9D; 0x6b524 passes SECOND.field3[i] key as EDX; 0x6b52a calls 6a8d0 with RCX=mainRecord,R8=carrier,R9D=i,fifthArg=manager.",
+      "noSerializedRemapping": "6a8d0 directly indexes FIRST.field5[i] for slot0 scope and SECOND.field5[i] for stored 32-byte child record; runtime allocation index j is distinct from i and does not replace i in the serialized lookup.",
+      "mapInsert": "0x6b532 selects manager+0xe0 map, key copied from runtimeRecord+4, value is allocated index j; 0x6b552 calls f4e220->68730. Insert full-key comparisons at 6882c/688ac; new key at 6890d and j at 68912; duplicate leaves old value intact.",
+      "existingKey": "0x6b4c0 loads map value j at iterator+8; 0x6b4c3 obtains runtimeRecord; 0x6b4cb passes unchanged i as R8D to 4afb30. That helper dispatches using EXISTING runtimeRecord byte0, not current FIRST.field4[i]. Marker2 table entry points1bb680 and recognized inline branch4afc8e resolves SECOND.field5[i] and appends32B child at existing runtimeRecord+0x20 vector. No FIRST.field3 remapping here.",
+      "completion": "0x6b573 fetches SECOND.field5 vector count; 0x6b57a tests saved progress == count. Inequality returns to state/yield branch, not a bounds-validation error."
+    },
+    "runtimeRecordAbi": {
+      "mainRecord": "56 bytes; byte0 marker, dword+4 source key; vector descriptor at+0x20 has begin/end/capacity at+0x20/+0x28/+0x30.",
+      "childRecord": "32-byte copy consists of carrier+4 first16 bytes, SECOND.field5[i] pointer at child+0x10, branch-specific auxiliary qword at+0x18. This is runtime-owned storage, NOT a 32-byte serialized record claim.",
+      "initializer": "e46690 RCX=record,R9=pointer to marker byte; copies byte[R9] to record.byte0; initializes vector descriptor zero. Caller6ae20 returns allocated or recycled main-record ordinal EAX."
+    },
+    "indexEvidenceBoundary": {
+      "exact": "Conditional static ABI uses a shared serialized ordinal for FIRST marker and both roots row pointers on NEW-key branch. Existing-key branch preserves serialized ordinal but routes under already-existing runtime marker.",
+      "notNativeValidated": [
+        "FIRST.field3 equality/order versus SECOND.field3",
+        "all FIRST/SECOND vector counts equal or safe to index",
+        "concrete logical-file pair identity from authenticated VFS bytes",
+        "fresh key map / no prior same-key record / runtime scheduling",
+        "same-file SECOND marker proves FIRST or existing runtime marker",
+        "default callback has not been overridden",
+        "serialized field names, full marker15 record extent or game semantics"
+      ],
+      "witnessAdvice": "Corpus pair witness may compare complete ordered field3/field4 bytes and row identities explicitly, but must label file pairing a candidate until independent path/carrier selection proof. Unique keys inside one pair do not rule out previously loaded same key from another pair.",
+      "remainingMapBoundary": "Insert resize helper68970 and allocation/error behavior not re-audited in this subtask; no arbitrary map-corruption safety claim."
+    },
+    "runtimeSelectionStatus": "unresolved-concrete-root-key-map-state-and-callback-overrides",
+    "targetOwnedBytes": 0
   }
 }

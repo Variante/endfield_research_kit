@@ -831,6 +831,32 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual((row['countRange']['start'], row['countRange']['end']), (300, 304))
         self.assertEqual((row['elementRanges'][0]['start'], row['elementRanges'][0]['end']), (332, 348))
 
+    def test_ordered_root_witness_keeps_row_length_boundaries(self):
+        digests = []
+        for first, second in ((b'a', b'bc'), (b'ab', b'c')):
+            data = bytearray(_parallel_data_root())
+            data[124:128] = (144-124).to_bytes(4, 'little')
+            data[140:144] = (160-140).to_bytes(4, 'little')
+            for start, value in ((144, first), (160, second)):
+                data[start:start+8] = len(value).to_bytes(4, 'little') + value + bytes(4-len(value))
+            witness = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']['orderedRootWitness']
+            expected = b''.join(len(value).to_bytes(4, 'little')+value for value in (first, second))
+            self.assertEqual(witness['rowField0ValuesSha256'], hashlib.sha256(expected).hexdigest().upper())
+            self.assertEqual(witness['rowCount'], 2)
+            digests.append(witness['rowField0ValuesSha256'])
+        self.assertNotEqual(*digests)
+
+    def test_ordered_root_witness_rejects_equal_marginals_as_identity(self):
+        data = bytearray(_parallel_data_root())
+        before = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']['orderedRootWitness']
+        data[72:80] = data[76:80] + data[72:76]
+        data[84:86] = data[84:86][::-1]
+        after = parse_streaming_file('init', _packed(bytes(data)))['anonymousParallelSubgraph']['orderedRootWitness']
+        self.assertEqual(before['rowCount'], after['rowCount'])
+        self.assertEqual(before['rowField0ValuesSha256'], after['rowField0ValuesSha256'])
+        self.assertNotEqual(before['field3VectorSha256'], after['field3VectorSha256'])
+        self.assertNotEqual(before['field4VectorSha256'], after['field4VectorSha256'])
+
     def test_selector5_duplicate_missing_marker_count_and_offset_fail_closed(self):
         for offset, value, width, expected in (
             (136, 15, 2, 'expected at least 4 slot bytes, actual 1'),

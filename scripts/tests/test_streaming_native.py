@@ -92,6 +92,10 @@ class StreamingNativeTests(unittest.TestCase):
                 "status": "exact-selected-static-u32-key-to-first-vector-index-helper-chain",
                 "runtimeCrossRootGap": "unresolved",
             },
+            "nestedPairedRootObservations": {
+                "status": "direct-selected-build-paired-paths-and-conditional-shared-ordinal",
+                "runtimeSelectionStatus": "unresolved",
+            },
         }
         contract_path = root / "contract.json"
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
@@ -123,6 +127,7 @@ class StreamingNativeTests(unittest.TestCase):
         self.assertEqual("validated", report["status"])
         self.assertEqual([], report["validationFailures"])
         self.assertEqual(report['nestedKeyIndexObservations']['runtimeCrossRootGap'], 'unresolved')
+        self.assertEqual(report['nestedPairedRootObservations']['runtimeSelectionStatus'], 'unresolved')
 
     def test_changed_accessor_body_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -145,6 +150,7 @@ class StreamingNativeTests(unittest.TestCase):
                 )
         self.assertEqual("validation_failed", report["status"])
         self.assertIsNone(report['nestedKeyIndexObservations'])
+        self.assertIsNone(report['nestedPairedRootObservations'])
         self.assertTrue(
             any(
                 failure["gate"] == "fixtureAccessor.body_sha256"

@@ -685,6 +685,7 @@ def _parse_parallel_root_subgraph(
     marker15_probe_widths = (1, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64)
     selector5_rows = []
     selector5_ranges = []
+    row_field0_digest = hashlib.sha256()
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -811,6 +812,9 @@ def _parse_parallel_root_subgraph(
             f"{family} field 5 row {index} field 0",
         )
         referenced_bytes += value_length
+        # Include each length before its bytes so concatenation cannot erase
+        # row boundaries. These are ordered anonymous values, not name ids.
+        row_field0_digest.update(data[value_target:value_end])
 
         # Six-field rows expose two additional references. The selected
         # corpus closes the immediate ranges without assigning a union or
@@ -1005,6 +1009,16 @@ def _parse_parallel_root_subgraph(
     return {
         "status": "exact_anonymous_subgraph",
         "parallelCount": field3_count,
+        "orderedRootWitness": {
+            "rowCount": field3_count,
+            "field3VectorSha256": hashlib.sha256(data[field3_start:field3_end]).hexdigest().upper(),
+            "field4VectorSha256": hashlib.sha256(data[field4_start:field4_end]).hexdigest().upper(),
+            "rowField0ValuesSha256": row_field0_digest.hexdigest().upper(),
+            "field3DuplicateCount": field3_count - len({
+                _u32(data, field3_start + 4 + index * 4) for index in range(field3_count)
+            }),
+            "encoding": "vectors include u32 count; row-field0 digest concatenates u32 length and exact bytes in row order",
+        },
         "selector5KeyRangeJoin": {
             "status": "exact-unique-key-candidate-read-ranges",
             "evidenceLevel": "structural-only",
