@@ -295,9 +295,14 @@ Current durable boundaries:
   adapter type. Keep these static links separate from serialized read order.
   The generated wrapper reader conditionally forwards the same reader after a
   one-byte fast-path header to an independently joined `ReadPackable<List<...>>`
-  usage/MethodSpec/type carrier. Null and unsupported-header branches are distinct;
-  cold ensure/advance helpers remain opaque. This does not prove element layout,
-  selected formatter, source allocation/extent, or terminal candidate uniqueness.
+  usage/MethodSpec/type carrier. This nested body is another provider/dispatch
+  layer, not the list element reader. Cold advance normally returns true, resets
+  the segment counter and accumulates the request; ensure can replace the cursor
+  with an existing or copied segment. Pointer deltas cannot certify source offsets.
+  The 24-byte descriptor has a conditional same-endpoint position-difference
+  length path; multi-segment conversion and initial descriptor/source identity
+  remain unresolved. None of these links proves element layout, active formatter,
+  source extent, final cursor, or terminal candidate uniqueness.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

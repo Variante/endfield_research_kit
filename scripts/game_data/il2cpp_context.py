@@ -105,6 +105,18 @@ class GenericInstantiationTable:
         return self.resolve(candidates[0])
 
 
+def relative_branch_target(raw: bytes, address: int, *, source: str) -> int:
+    """Decode only a reviewed five-byte direct CALL/JMP, not arbitrary code."""
+    if type(address) is not int or not 0 <= address <= (1 << 64)-5:
+        raise ContextError(source, 0, 'bounded unsigned instruction address', address)
+    if len(raw) != 5 or raw[0] not in (0xE8, 0xE9):
+        raise ContextError(source, address, 'exact five-byte E8/E9 instruction', raw.hex().upper())
+    target = address+5+struct.unpack_from('<i', raw, 1)[0]
+    if not 0 <= target < 1 << 64:
+        raise ContextError(source, address, 'unsigned 64-bit branch target without wrap', target)
+    return target
+
+
 def usage_method_spec(raw_usage: bytes, records: bytes, method_count: int,
                       instantiation_count: int, *, source: str, usage_offset: int,
                       records_offset: int) -> dict:

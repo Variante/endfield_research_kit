@@ -20,13 +20,21 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x970915C, 0x9709454, 'AB0D5C7A12E463100AF920A8CB6A52001B52B15A51AB7EC11C1D006D04EC7363'),
+    (0x5AD2140, 0x5AD227B, 'DF6D3A33414236CA22AD342A51DA9DF5B759B250EFB98B40BBD8816E6992C5E5'),
+    (0x838223C, 0x8382292, '44086E7E4E68ABB7828C536B227D14046E427D6EA13E39C4396A66E0854F090D'),
+    (0x837EC68, 0x837ED6A, '1FCA33902F53C293A266896CEDA59F4DE806A98E5B8FDF0A2F6FB10CA4ACD65D'),
+    (0x8381FF0, 0x8382066, '7CD14312228390425009C7437524BCCAF7E52B39A40AB030D62AA197819998CF'),
+    (0x83761A0, 0x837633C, '0178C8AB8E92ACFCBC58B294EC2800840F2EF46C86927FBFB5AB969AC9724DF9'),
+    (0x8375FBC, 0x83761A0, 'EFA324973C53A29ED5926C04777AA94EF9E39DBB0CE12218B26E18E9BB97C41C'),
+    (0x381F8F0, 0x381FDF6, '5917DCD09ACBA635492A0F3A751C3940EDEA02D5E0F38B977F3DADEFDC672279'),
     (0x37DF620, 0x37DF67D, '6901FC137F0D874FDFBDED47658B6B8BFA718E0BF2AE7EFD480EF8152DEEE72A'),
     (0x37DF680, 0x37DF77C, 'FBF5D3CF070494A3BE4FF265779AEEDE8B5CA95A2DE61EDFE215DB72640A1AA1'),
     (0x4E3B21E, 0x4E3B2B9, '4C1C33561E4C1011B637FF320D49C0DDF625396AEE89C8BB88414F9C97A048B5'),
@@ -136,6 +144,41 @@ def validate_selected_method_spec(row, records, base, method_count, instantiatio
                            {'expected':method_inst,'actual':inst})
 
 
+def reader_cursor_consumers(pe, *, source):
+    """Bound reviewed edges; caller authenticates complete selected native build."""
+    edges=[]
+    for rva,opcode,target in (
+        (0x4E3B229,0xE8,0x970915C),(0x4E3B23C,0xE8,0x5AD2140),
+        (0x5AD21C3,0xE8,0x838223C),(0x838228D,0xE9,0x83761A0),
+        (0x5AD21F5,0xE8,0x837EC68),(0x5AD221C,0xE8,0x8381FF0),
+        (0x8382045,0xE8,0x8375FBC),(0x5AD2236,0xE8,0x3F779C0),
+        (0x9709289,0xE8,0x837EC68),(0x97092D8,0xE8,0x8381FF0),
+        (0x9709421,0xE8,0x3F779C0),(0x381FAD4,0xE8,0x2DA4770),
+        (0x381FB1D,0xE8,0x3F300)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        actual=relative_branch_target(raw,pe.image_base+rva,source=source)
+        require(raw[0],opcode,source,rva)
+        require(actual,pe.image_base+target,source,rva)
+        edges.append({'instructionRva':rva,'instructionHex':raw.hex().upper(),'targetRva':target})
+    # This leaf has no pdata row: certify only its two explicit return paths,
+    # not a guessed function extent or the following aligned function.
+    leaf=pe.bytes_at_va(pe.image_base+0x3F779C0,13)
+    require(leaf,bytes.fromhex('837908007404488B01C333C0C3'),source,0x3F779C0)
+    return {'edges':edges,'pointerLeaf':{'rva':0x3F779C0,'rawHex':leaf.hex().upper(),
+                                       'rangeKind':'bounded instruction window; no pdata extent'},
+            'level':'direct conditional native reader state transitions',
+            'advance':{'rva':0x5AD2140,'normalReturn':True,'localCounterResetOffset':0x40,
+                       'accumulatedCounterOffset':0x44,'cursorReplacementOffset':0x50,
+                       'boundary':'The only normal return sets AL=1, resets +0x40, adds the signed-extended request via a 32-bit addition at +0x44, and replaces +0x30/+0x50 from helper outputs. Caller false-return fallback is not a second normal path in this pinned body. Helpers may throw; counter overflow and runtime descriptor validity are not certified.'},
+            'ensure':{'rva':0x970915C,'sourceDescriptorPrefixBytes':24,
+                      'boundary':'Uses +0x18 minus signed-extended +0x44 as a requested-length guard, resets +0x40 after a delegated 24-byte descriptor transformation, and selects an existing or copied segment before replacing +0x30/+0x50. The cursor can change allocations; a pointer delta is not an absolute source offset. The descriptor transform/copy/type-context helpers are not fully closed.'},
+            'descriptorLength':{'rva':0x83761A0,'prefixBytes':24,
+                                'boundary':'For equal endpoint objects at +0/+8, masks bit 31 from the +0x10/+0x14 words and returns end minus start. Unequal endpoints use type-context conversions and object +0x28 values; their ABI remains conditional, not a certified source length.'},
+            'nestedRead':{'rva':0x381F8F0,'readerRegister':'R15',
+                          'boundary':'Entry RCX is saved in R15 and passed to dispatch as R8; the local output is returned after formatter dispatch. This body is another provider/dispatch layer, not the list count or element consumer. Its cold cache paths, live MethodInfo and selected list formatter are unresolved.'},
+            'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
+
+
 def wrapper_consumer(pe, md, reg, table, *, source):
     """Reviewed conditional wrapper path, not a source/EOF or dispatch receipt."""
     instruction=pe.bytes_at_va(pe.image_base+0x37DF6EC,7)
@@ -171,7 +214,7 @@ def wrapper_consumer(pe, md, reg, table, *, source):
             'listCarrier':carrier,'elementInstantiation':element_inst.as_dict(),
             'formatterEntryRva':0x37DF620,'readerEntryRva':0x37DF680,'nestedCallRva':0x37DF6F9,
             'level':'direct conditional consumer; exact static usage/type relation',
-            'boundary':'The formatter forwards its reader unchanged to the wrapper reader. The fast path consumes one byte using remaining+0x30, cursor+0x50 and counters+0x40/+0x44. Header 0xFF clears the output; non-null header 1 reaches the nested call with the same reader and the recorded List instantiation. Other headers reach a helper then INT3. Cold ensure/advance delegates remain opaque; their return branches rejoin the reviewed header path. No list element layout, actual provider selection, authenticated source allocation, source extent or final cursor is established.'}
+            'boundary':'The formatter forwards its reader unchanged to the wrapper reader. The fast path consumes one byte using remaining+0x30, cursor+0x50 and counters+0x40/+0x44. Header 0xFF clears the output; non-null header 1 reaches the nested call with the same reader and the recorded List instantiation. Other headers reach a helper then INT3. Cold ensure/advance transitions are described separately in selectedReaderCursorConsumers; their descriptor helpers are not fully closed. No list element layout, actual provider selection, authenticated source allocation, source extent or final cursor is established.'}
 
 
 def audit():
@@ -493,6 +536,7 @@ def audit():
         target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
         require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
+    cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
@@ -511,6 +555,7 @@ def audit():
                            'sourceVa':specs_base,'byteLength':len(specs_raw),
                            'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
                            'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
+        'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},

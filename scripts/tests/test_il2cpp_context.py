@@ -7,7 +7,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
-from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
@@ -15,7 +15,59 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target
+
+
+class ReaderCursorConsumerTests(unittest.TestCase):
+    def setUp(self):
+        pairs=((0x4E3B229,0x970915C),(0x4E3B23C,0x5AD2140),(0x5AD21C3,0x838223C),
+               (0x838228D,0x83761A0),(0x5AD21F5,0x837EC68),(0x5AD221C,0x8381FF0),
+               (0x8382045,0x8375FBC),(0x5AD2236,0x3F779C0),(0x9709289,0x837EC68),
+               (0x97092D8,0x8381FF0),(0x9709421,0x3F779C0),(0x381FAD4,0x2DA4770),
+               (0x381FB1D,0x3F300))
+        self.parts={rva:bytes([0xE9 if rva==0x838228D else 0xE8])+struct.pack('<i',target-rva-5)
+                    for rva,target in pairs}
+        self.parts[0x3F779C0]=bytes.fromhex('837908007404488B01C333C0C3')
+        self.pe=SimpleNamespace(image_base=0x180000000,
+                                bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_expected_edges_and_evidence_boundary(self):
+        row=reader_cursor_consumers(self.pe,source='fixture.dll')
+        self.assertEqual(len(row['edges']),13)
+        self.assertTrue(row['advance']['normalReturn'])
+        self.assertIn('Keep both terminal candidates',row['boundary'])
+
+    def test_mutated_target_and_opcode(self):
+        for raw in (b'\xe8\0\0\0\0', b'\xe9'+self.parts[0x4E3B229][1:]):
+            self.parts[0x4E3B229]=raw
+            with self.assertRaises(ContextError): reader_cursor_consumers(self.pe,source='fixture.dll')
+
+    def test_truncated_trailing_and_leaf_mutation(self):
+        for rva in (0x4E3B229,0x3F779C0):
+            good=self.parts[rva]
+            for raw in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=raw
+                with self.assertRaises(ContextError): reader_cursor_consumers(self.pe,source='fixture.dll')
+            self.parts[rva]=good
+
+
+class RelativeBranchTests(unittest.TestCase):
+    def test_forward_call_backward_jump(self):
+        for opcode, displacement in ((0xE8,127),(0xE9,-127)):
+            self.assertEqual(relative_branch_target(bytes([opcode])+struct.pack('<i',displacement),
+                                                    0x100,source='fixture.dll'),0x105+displacement)
+
+    def test_truncated_trailing_and_indirect(self):
+        for raw in (b'', b'\xe8\0\0\0', b'\xe8\0\0\0\0!', b'\xff\0\0\0\0'):
+            with self.assertRaises(ContextError): relative_branch_target(raw,0x100,source='fixture.dll')
+
+    def test_address_and_target_bounds(self):
+        for address in (-1,True,1<<64,(1<<64)-4):
+            with self.assertRaises(ContextError): relative_branch_target(b'\xe8\0\0\0\0',address,source='fixture.dll')
+        for address,displacement in ((0,-6),((1<<64)-5,1)):
+            with self.assertRaises(ContextError) as caught:
+                relative_branch_target(b'\xe9'+struct.pack('<i',displacement),address,source='fixture.dll')
+            self.assertEqual(caught.exception.diagnostics['offset'],address)
 
 
 class UsageMethodSpecTests(unittest.TestCase):
