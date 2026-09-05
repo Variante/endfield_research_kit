@@ -1,4 +1,4 @@
-"""Selected-build marker17/tag5 evidence, extending the shared Streaming gate."""
+"""Selected-build marker17 body evidence, extending the shared Streaming gate."""
 from __future__ import annotations
 
 import json
@@ -7,12 +7,20 @@ from pathlib import Path
 from typing import Any
 
 from scripts.game_data import streaming_native as base
-from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS
+from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES
 
-SCHEMA = 'endfield.streaming-marker17-native-contract.v1'
+SCHEMA = 'endfield.streaming-marker17-native-contract.v2'
 DEFAULT_CONTRACT = Path(__file__).with_name('streaming_marker17_native.json')
-CONTRACT_SHA256 = 'F60B44F7591F15BEF8FAA09F6ABF9FB618ADD17831D8A036018AD77F25B905E9'
-SELECTED_KEYS = {6: (9, 0, 0), 9: (255, 3, 0)}
+CONTRACT_SHA256 = '34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891'
+SELECTED_KEYS = {2: (4, 0, 0), 5: (5, 0, 0), 6: (9, 0, 0), 7: (8, 0, 0), 9: (255, 3, 0)}
+
+
+def fixed_body_profiles() -> list[dict[str, Any]]:
+    """Strict fixed-length policies, not a claim that native code checks EOF."""
+    return [dict(selector=selector, key=list(SELECTED_KEYS[selector]), tag=tag,
+                 bodyLength=length, conditionalReadCoverage=[[0, 30], [32, length]],
+                 opaqueUnreadRanges=[[30, 32]])
+            for (selector, _key), (tag, length) in FIXED_BODY_PROFILES.items()]
 
 
 def validate_marker17_native_contract(
@@ -110,12 +118,15 @@ def validate_marker17_native_contract(
         require('tag5_segment_order', offsets, framing['segmentOrder'])
         require('tag5_discriminant', dict(byteOffset=28, storage='signed i16', requiredValue=5), framing['discriminant'])
         require('tag5_cursor_start', 64, framing['nativeEntry']['cursorStartByteOffset'])
+        require('fixed_body_profiles', fixed_body_profiles(), contract['fixedBodyProfiles'])
         if not failures:
             result.update(status='validated', nativeMappingId=contract['nativeMappingId'],
                           profile=dict(tag=5, tagByteOffset=28, headerSize=64,
                                        selectedSlot3Keys=[dict(selector=s, key=list(k)) for s,k in SELECTED_KEYS.items()],
                                        countByteOffsets=offsets, recordWidths=list(TAG5_RECORD_WIDTHS),
-                                       fields='opaque', evidenceLevel='structural-only'),
+                                       fields='opaque', evidenceLevel='structural-only',
+                                       fixedBodyProfiles=contract['fixedBodyProfiles'],
+                                       profileScope='tag5 framing plus explicitly selected fixed-body profiles'),
                           conditionalConsumer=contract['countedPrefixCarrier'],
                           evidenceBoundary=contract['evidenceBoundary'])
     except (OSError, UnicodeError, ValueError, KeyError, TypeError) as exc:

@@ -41,10 +41,10 @@ class Fixture:
         self.write_all()
 
     @staticmethod
-    def make_clear(*, key: int = 0x09000000, tag: int = 5) -> bytes:
-        body = bytearray(64)
+    def make_clear(*, key: int = 0x09000000, tag: int = 5, body_length: int = 64) -> bytes:
+        body = bytearray(body_length)
         struct.pack_into("<h", body, 28, tag)
-        clear = bytearray(110)
+        clear = bytearray(46 + body_length)
         struct.pack_into("<I", clear, 0, 16)
         clear[4] = 17
         struct.pack_into("<I", clear, 6, key)
@@ -76,12 +76,18 @@ class Fixture:
         }
 
     def make_file(self, suffix: str, chunk: str, *, key: int) -> dict:
+        row = self.directory_row(key=key)
+        row['byteCount'] = len(self.clear) - 46
+        row['wrapperAndByteRanges'][-1]['end'] = len(self.clear)
+        for selector, fixed_key in list(gate.FIXED_BODY_PROFILES) + list(gate.TAG5_BODY_KEYS.items()):
+            if fixed_key == key:
+                row['rowSelectorU32'] = row['rowSelectorLowByte'] = selector
         return {
             "virtualPath": f"Data/Streaming/PC/{suffix}/Streaming/StreamingChunkData_0_0_0_0.bytes",
             "physicalChunkPath": chunk, "physicalChunkSource": "fallback",
             "metadataProvenance": "primary", "overlayState": "identical",
             "offset": 0, "length": len(self.clear), "packedSha256": gate.sha256_bytes(self.clear),
-            "family": "streaming", "rows": [self.directory_row(key=key)],
+            "family": "streaming", "rows": [row],
         }
 
     def ledger_rows(self) -> list[dict]:
@@ -97,7 +103,9 @@ class Fixture:
                 "status": "verified", "boundaryStatus": "boundary_verified",
                 "inputSetSha256": INPUT_SET, "encrypted": False,
                 "actualBytesRead": item["length"],
-                "recomputedFileDataMd5": hashlib.md5(self.clear, usedforsecurity=False).hexdigest().upper(),
+                "recomputedFileDataMd5": hashlib.md5(
+                    Path(item['physicalChunkPath']).read_bytes() if Path(item['physicalChunkPath']).is_file() else self.clear,
+                    usedforsecurity=False).hexdigest().upper(),
             })
         return rows
 
@@ -164,8 +172,16 @@ class Fixture:
             "profile": {
                 "tag": 5, "tagByteOffset": 28, "headerSize": 64,
                 "selectedSlot3Keys": [
+                    {"selector": 2, "key": [4, 0, 0]},
+                    {"selector": 5, "key": [5, 0, 0]},
                     {"selector": 6, "key": [9, 0, 0]},
+                    {"selector": 7, "key": [8, 0, 0]},
                     {"selector": 9, "key": [255, 3, 0]},
+                ],
+                "fixedBodyProfiles": [
+                    dict(selector=s, key=[k >> 24, (k >> 16) & 255, k & 65535], tag=t,
+                         bodyLength=n, conditionalReadCoverage=[[0, 30], [32, n]], opaqueUnreadRanges=[[30, 32]])
+                    for (s, k), (t, n) in gate.FIXED_BODY_PROFILES.items()
                 ],
                 "countByteOffsets": [40, 44, 48, 52, 56, 60],
                 "recordWidths": list(gate.TAG5_RECORD_WIDTHS),
@@ -202,21 +218,99 @@ class GateTests(unittest.TestCase):
         result = self.fx.run()
         self.assertEqual((result["status"], result["publicationEligible"]), ("complete", True))
         self.assertEqual(result["summary"]["referencesValidated"], 1)
-        row = result["layer3"]["marker17Tag5Directory"]["files"][0]["rows"][0]
+        row = result["layer3"]["marker17BodyDirectory"]["files"][0]["rows"][0]
         self.assertEqual((row["family"], row["rootMarker"], row["selector"]), ("streaming", 2, 6))
         self.assertEqual(row["parsed"]["opaqueHeaderRanges"], [{"start": 46, "end": 74}, {"start": 76, "end": 86}])
         self.assertEqual([(a["start"], a["end"]) for a in row["parsed"]["arrays"]], [(110, 110)] * 6)
+
+    def fixed_fixture(self, identity, *, tag=None, length=None):
+        selected_tag, selected_length = gate.FIXED_BODY_PROFILES[identity]
+        self.fx.clear = self.fx.make_clear(key=identity[1], tag=selected_tag if tag is None else tag,
+                                          body_length=selected_length if length is None else length)
+        self.fx.chunk.write_bytes(self.fx.clear)
+        self.fx.files = [self.fx.make_file('fixed', self.fx.chunk.as_posix(), key=identity[1])]
+        self.fx.write_all()
+
+    def test_every_fixed_profile_complete_and_unread_gap_preserved(self):
+        for identity, (tag, length) in gate.FIXED_BODY_PROFILES.items():
+            self.fixed_fixture(identity)
+            result = self.fx.run()
+            self.assertEqual((result['status'], result['summary']['unsupported']), ('complete', 0))
+            row = result['layer3']['marker17BodyDirectory']['files'][0]['rows'][0]
+            self.assertEqual((row['parsed']['tag'], row['byteCount']), (tag, length))
+            self.assertEqual(row['parsed']['opaqueUnreadRanges'][0]['start'], 76)
+            self.assertIn('not EOF', row['parsed']['nativeFinalCursorStatus'])
+
+    def test_each_fixed_truncated_trailing_and_wrong_tag_fail(self):
+        for identity, (tag, length) in gate.FIXED_BODY_PROFILES.items():
+            for actual_tag, actual_length in ((tag, length - 1), (tag, length + 1), (5, length)):
+                with self.subTest(identity=identity, tag=actual_tag, length=actual_length):
+                    self.fixed_fixture(identity, tag=actual_tag, length=actual_length)
+                    result = self.fx.run()
+                    self.assertTrue(result['failed'])
+                    self.assertEqual(result['layer3']['marker17BodyDirectory']['files'], [])
+
+    def test_five_profile_fixture_reconciles_all_bodies(self):
+        files = []
+        profiles = dict(gate.FIXED_BODY_PROFILES)
+        profiles.update({identity: (5, 64) for identity in gate.TAG5_BODY_KEYS.items()})
+        for (selector, key), (tag, length) in profiles.items():
+            self.fx.clear = self.fx.make_clear(key=key, tag=tag, body_length=length)
+            chunk = self.fx.root / f'chunk-{selector}.chk'
+            chunk.write_bytes(self.fx.clear)
+            files.append(self.fx.make_file(str(selector), chunk.as_posix(), key=key))
+        self.fx.files = files
+        self.fx.write_all()
+        result = self.fx.run()
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(result['summary']['supportedReferences'], 5)
+        self.assertEqual(result['summary']['supportedBytes'], 324)
+        self.assertEqual(result['summary']['unsupported'], 0)
+        self.assertTrue(all(p['referenceCount'] == 1 for p in result['selection']['profiles']))
+
+    def test_fixed_profile_missing_duplicate_wrong_range_and_union_fail_before_decode(self):
+        for mutation in ('missing', 'duplicate', 'wrong_gap', 'wrong_tag', 'wrong_union'):
+            native = self.fx.native()
+            profiles = native['profile']['fixedBodyProfiles']
+            if mutation == 'missing':
+                profiles.pop()
+            elif mutation == 'duplicate':
+                profiles.append(copy.deepcopy(profiles[0]))
+            elif mutation == 'wrong_gap':
+                profiles[0]['opaqueUnreadRanges'] = []
+            elif mutation == 'wrong_tag':
+                profiles[2]['tag'] = 1
+            else:
+                native['profile']['selectedSlot3Keys'].pop()
+            with mock.patch.object(gate, 'validate_marker17_native_contract', return_value=native), \
+                 mock.patch.object(gate.fmt, '_decode_compressed') as decoder:
+                result = gate.sweep(repo_root=ROOT, report_path=self.fx.report,
+                                    outer_summary_path=self.fx.outer, ledger_path=self.fx.ledger,
+                                    expected_input_set_sha256=INPUT_SET, game_root=self.fx.root / 'Endfield_Data')
+            decoder.assert_not_called()
+            self.assertTrue(result['failed'])
+            self.assertEqual(result['layer3']['marker17BodyDirectory']['files'], [])
+            json.dumps(result)  # Every negative diagnostic must remain serializable.
+
+    def test_fixed_known_key_wrong_selector_or_occurrence_count_is_not_unsupported(self):
+        for field, value in (('rowSelectorU32', 7), ('keyOccurrenceCountInTable', 2)):
+            self.fixed_fixture((2, 0x04000000))
+            self.fx.files[0]['rows'][0][field] = value
+            self.fx.write_report()
+            result = self.fx.run()
+            self.assertTrue(result['failed'])
+            self.assertEqual(result['summary']['unsupported'], 0)
 
     def test_max_files_is_always_partial_and_not_publishable(self):
         result = self.fx.run(max_files=1)
         self.assertEqual((result["status"], result["publicationEligible"]), ("partial", False))
 
     def test_profile_excluded_reference_is_still_physically_revalidated(self):
-        self.fx = Fixture(Path(self.temporary.name), key=0x05000000)
+        self.fx = Fixture(Path(self.temporary.name), key=0xDEAD0000)
         result = self.fx.run()
         self.assertEqual(result["status"], "complete")
-        self.assertEqual(result["summary"]["profileExcludedReferences"], 1)
-        self.assertEqual(result["summary"]["targetReferences"], 0)
+        self.assertEqual(result["summary"]["unsupportedOpaqueReferences"], 1)
+        self.assertEqual(result["summary"]["supportedReferences"], 0)
 
     def test_invalid_native_profile_clears_directory_before_body_scan(self):
         native = self.fx.native()
@@ -229,7 +323,7 @@ class GateTests(unittest.TestCase):
                                 game_root=self.fx.root / "Endfield_Data")
         decoder.assert_not_called()
         self.assertEqual(result["status"], "failed")
-        self.assertEqual(result["layer3"]["marker17Tag5Directory"]["files"], [])
+        self.assertEqual(result["layer3"]["marker17BodyDirectory"]["files"], [])
 
     def test_stale_v15_source_hash_fails_closed(self):
         report = json.loads(self.fx.report.read_text())
@@ -251,7 +345,7 @@ class GateTests(unittest.TestCase):
         self.fx.write_report()
         result = self.fx.run()
         self.assertEqual(result["status"], "failed")
-        self.assertEqual(result["layer3"]["marker17Tag5Directory"]["files"], [])
+        self.assertEqual(result["layer3"]["marker17BodyDirectory"]["files"], [])
 
     def test_negative_length_is_rejected_before_decode(self):
         self.fx.files[0]["length"] = -1
@@ -295,7 +389,7 @@ class GateTests(unittest.TestCase):
         self.fx.refresh_clear(bytes(changed))
         result = self.fx.run()
         self.assertEqual(result["status"], "failed")
-        self.assertEqual(result["summary"]["profileExcludedReferences"], 0)
+        self.assertEqual(result["summary"]["unsupportedOpaqueReferences"], 0)
 
     def test_truncated_array_count_fails(self):
         changed = bytearray(self.fx.clear)
@@ -348,7 +442,7 @@ class GateTests(unittest.TestCase):
             value = original(paths, failures, stage)
             if calls == 2:
                 value = dict(value)
-                value["tag5CorpusGateSha256"] = "0" * 64
+                value["marker17CorpusGateSha256"] = "0" * 64
             return value
 
         with mock.patch.object(gate, "validate_marker17_native_contract", return_value=self.fx.native()), \
@@ -359,7 +453,7 @@ class GateTests(unittest.TestCase):
                                 expected_input_set_sha256=INPUT_SET,
                                 game_root=self.fx.root / "Endfield_Data")
         self.assertEqual(result["status"], "failed")
-        self.assertEqual(result["layer3"]["marker17Tag5Directory"]["files"], [])
+        self.assertEqual(result["layer3"]["marker17BodyDirectory"]["files"], [])
 
 
 if __name__ == "__main__":

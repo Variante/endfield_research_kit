@@ -241,8 +241,9 @@ joined to one authenticated logical file. Key namespace and signedness, field
 names, and semantics remain unresolved.
 `streaming_marker17_corpus` reuses the source-bound marker17 directory from that
 report, reauthenticates every listed physical range and refines the native-gated
-tag5 bodies with `streaming_marker17`; other bodies remain explicitly opaque.
-It writes `reports/animestudio/streaming_marker17_tag5_latest.json` plus `.md`.
+tag5 counted arrays and fixed tag1/4/6 profiles with `streaming_marker17`;
+unknown keys remain explicitly opaque/unsupported. It writes
+`reports/animestudio/streaming_marker17_bodies_latest.json` plus `.md`.
 Partial `--max-files` probes require explicit output paths and are not eligible
 as complete-corpus evidence. Record fields and runtime selection remain unknown.
 Object indexes may be JSONL or

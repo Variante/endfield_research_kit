@@ -96,14 +96,19 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   absent selectors are not defaulted to zero. Directory counts reconcile with
   framing counts; failed gates suppress directory publication. This adds no
   owned bytes and does not name the opaque bodies or prove runtime selection.
-  The separate marker17 tag5 parser refines selected default slot3 bodies into
-  a 64-byte anonymous header, one optional record and five counted arrays.
+  The separate marker17 body parser refines selected default slot3 tag5 bodies
+  into a 64-byte anonymous header, one optional record and five counted arrays.
   Native-gated pointer arithmetic fixes their order and widths; counts are
   bounded before multiplication and the parser enforces exact body EOF.
   Header gaps and record fields remain opaque. Native construction, callback
   installation and publication are pinned separately from concrete execution;
   the native reader itself checks neither source extent nor final cursor.
   Its external-array equality remains conditional on an unavailable carrier.
+  The remaining selected profiles independently bind tags1/4/6 to their keys.
+  Their strict fixed lengths match reviewed maximum read ends and are tested
+  against authenticated bodies, not inferred as native EOF checks. Bytes30--31
+  are explicitly unread/opaque, not certified padding. Equal lengths do not
+  imply equal tags: the tag6 profile must not be dispatched as tag1.
   Marker16 belongs to a different outer-row shape. These associations do not
   prove a union registry. Marker15 references require nonzero forward bounded
   targets; hashes bind each source/slot directory, but target contents and
@@ -278,8 +283,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Continue the remaining marker-17 fixed-body profiles from the source-bound
-  key directory, then marker15 target extents. A highest native read offset is
+- Continue marker15 target extents from source-bound slot/count directories.
+  Marker17 body profiles are structurally closed but anonymous. A highest native read offset is
   not an EOF check: bound unread gaps explicitly and verify full bodies. Use
   independently reviewed consumer pointer arithmetic to select record order,
   not length equations or fixed-size appearance alone. Paired

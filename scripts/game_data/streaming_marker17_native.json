@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.streaming-marker17-native-contract.v1",
+  "schema": "endfield.streaming-marker17-native-contract.v2",
   "status": "validated-conditional-static",
-  "nativeMappingId": "endfield-2026-09-04-streaming-marker17-slot3-tag5-framing",
+  "nativeMappingId": "endfield-2026-09-04-streaming-marker17-slot3-body-profiles",
   "baseContract": {
     "path": "scripts/game_data/streaming_field2_native.json",
     "schema": "endfield.streaming-field2-native-contract.v8",
@@ -126,9 +126,87 @@
       "size": 804,
       "bodySha256": "CC3CF6A7471E160E9DD6D453490D112036BB617DD0E005B07E35C5D79A1A7107",
       "entryBytesHex": "48895C240848897424105557415441564157488D6C24F94881ECB00000004C8B"
+    },
+    {
+      "role": "selector2Slot3Reader",
+      "rva": 14925568,
+      "fileOffset": 14923008,
+      "size": 281,
+      "bodySha256": "DA6EF34A00780D743ECEE72C8B6E01A6644AB31F0FBB7BF8CDC9B4AF56B970D4",
+      "entryBytesHex": "48895C2408488974241048897C241841564881EC80000000F20F1005E8C0C600"
+    },
+    {
+      "role": "selector5Slot3Reader",
+      "rva": 14934448,
+      "fileOffset": 14931888,
+      "size": 745,
+      "bodySha256": "1B08342902DE7F692B43B5C8504C34D9A53859505D3A46CF32768987A3D6B214",
+      "entryBytesHex": "48894C240855565741544155415641574881ECA0000000488D6C2440F20F1005"
+    },
+    {
+      "role": "selector7Slot3Reader",
+      "rva": 14937920,
+      "fileOffset": 14935360,
+      "size": 340,
+      "bodySha256": "51E05A59EEF74CF13DDEC234FFD7CF848D3E4695D75E6FCB5612B484A7DECF24",
+      "entryBytesHex": "4C8BDC49895B084989731049897B2041564881EC80000000F20F1005D88BC600"
+    },
+    {
+      "role": "fixedBodyCommonSourceReadHot",
+      "rva": 2834896,
+      "fileOffset": 2832336,
+      "size": 387,
+      "bodySha256": "4786036BF1527D2070519D58ED0489081742D4EE00A0CAE045E3CA1FA1BCF9DD",
+      "entryBytesHex": "488BC45556574881ECA000000048895808488BF9488B0D7D3CA601418BE84C89"
+    },
+    {
+      "role": "fixedBodyCommonSourceReadColdFifthByte",
+      "rva": 15693816,
+      "fileOffset": 15691256,
+      "size": 40,
+      "bodySha256": "3B4402C2FC97A1609AEE0D1AA75826A21862AF6F353E19D0E2DB4F66E53C6A7D",
+      "entryBytesHex": "488D542450F30F11642460F30F116C2464F30F117424680F11442450FF90A800"
+    },
+    {
+      "role": "fixedBodyCommonSourceReadColdR8",
+      "rva": 15693856,
+      "fileOffset": 15691296,
+      "size": 32,
+      "bodySha256": "82EA6868D9B5A3F2FB1F8B0FDB4672196DB9A2A4032B934629EEE10032B4FC61",
+      "entryBytesHex": "41B84C030000C744242001000000488D0D8B42BD00E8B28F1D0090E9D6CA3BFF"
+    },
+    {
+      "role": "tag6Body52SourceReadHelper",
+      "rva": 13230096,
+      "fileOffset": 13227536,
+      "size": 1818,
+      "bodySha256": "933277CCB06AD03201F89708643301277E5A23EA4A1BF2B1E58CA0D5C9572CFD",
+      "entryBytesHex": "4C894C24204C894424188954241048894C2408555356574154415641574881EC"
     }
   ],
   "keyLiteralRanges": [
+    {
+      "selector": 2,
+      "key": [
+        4,
+        0,
+        0
+      ],
+      "rva": 27951112,
+      "fileOffset": 27944968,
+      "bytesHex": "040000000000000000000000"
+    },
+    {
+      "selector": 5,
+      "key": [
+        5,
+        0,
+        0
+      ],
+      "rva": 27950984,
+      "fileOffset": 27944840,
+      "bytesHex": "050000000000000000000000"
+    },
     {
       "selector": 6,
       "key": [
@@ -139,6 +217,17 @@
       "rva": 27949848,
       "fileOffset": 27943704,
       "bytesHex": "090000000000000000000000"
+    },
+    {
+      "selector": 7,
+      "key": [
+        8,
+        0,
+        0
+      ],
+      "rva": 27949864,
+      "fileOffset": 27943720,
+      "bytesHex": "080000000000000000000000"
     },
     {
       "selector": 9,
@@ -153,6 +242,72 @@
     }
   ],
   "selectedDefaultSlot3": [
+    {
+      "selector": 2,
+      "key": [
+        4,
+        0,
+        0
+      ],
+      "slot": 3,
+      "readerRva": 14925568,
+      "descriptorFrame": "rbp+0x63C0",
+      "descriptorConstructorSpan": {
+        "rva": 3681915,
+        "fileOffset": 3679355,
+        "bytesHex": "B202C783B8C2000055550542488D8DC0630000E8BDD6FFFF"
+      },
+      "registrationSpan": {
+        "rva": 3682092,
+        "fileOffset": 3679532,
+        "bytesHex": "488D05CD8FAB00488975D0488945D8488D55D0488D45D0488D8D8864000048894508E8CDFBFFFF"
+      },
+      "publicationSpan": {
+        "rva": 3682437,
+        "fileOffset": 3679877,
+        "bytesHex": "488D4B58B2024C8D85C0630000E8D906BD00"
+      },
+      "consumerSpans": [
+        {
+          "rva": 14925592,
+          "fileOffset": 14923032,
+          "bytesHex": "F20F1005E8C0C6004C8BF28B05E7C0C600488D542440488BD9F20F11442440498BCE89442448E89DD45CFF33FF4533C94533C0897C24208B10488D4804C1EA02E873F138FF"
+        }
+      ]
+    },
+    {
+      "selector": 5,
+      "key": [
+        5,
+        0,
+        0
+      ],
+      "slot": 3,
+      "readerRva": 14934448,
+      "descriptorFrame": "rbp+0x5C10",
+      "descriptorConstructorSpan": {
+        "rva": 3683575,
+        "fileOffset": 3681015,
+        "bytesHex": "B205488D8D105C0000E84BD0FFFF"
+      },
+      "registrationSpan": {
+        "rva": 3683721,
+        "fileOffset": 3681161,
+        "bytesHex": "488D0520ACAB004889B5D0050000488985D8050000488D95D0050000488D85D0050000488D8DD85C000048898508060000E861F5FFFF"
+      },
+      "publicationSpan": {
+        "rva": 3684117,
+        "fileOffset": 3681557,
+        "bytesHex": "488D4B58B2054C8D85105C0000E84900BD00"
+      },
+      "consumerSpans": [
+        {
+          "rva": 14934900,
+          "fileOffset": 14932340,
+          "bytesHex": "F20F10050C9CC600488D55208B050A9CC600498BCDF20F114520894528E84AB05CFF448B8DB80000004D8BC4897424208B10488D4804C1EA02E81ECD38FF"
+        }
+      ]
+    },
     {
       "selector": 6,
       "key": [
@@ -183,6 +338,39 @@
           "rva": 14936420,
           "fileOffset": 14933860,
           "bytesHex": "F20F1005AC91C600488D55208B05AA91C600498BCDF20F114520894528E85AAA5CFF448B8DB80000004D8BC4897424208B10488D4804C1EA02E82EC738FF"
+        }
+      ]
+    },
+    {
+      "selector": 7,
+      "key": [
+        8,
+        0,
+        0
+      ],
+      "slot": 3,
+      "readerRva": 14937920,
+      "descriptorFrame": "rbp+0x56F0",
+      "descriptorConstructorSpan": {
+        "rva": 3684695,
+        "fileOffset": 3682135,
+        "bytesHex": "B207488D8DF0560000E8EBCBFFFF"
+      },
+      "registrationSpan": {
+        "rva": 3684841,
+        "fileOffset": 3682281,
+        "bytesHex": "488D0550B5AB004889B5D0090000488985D8090000488D95D0090000488D85D0090000488D8DB8570000488985080A0000E801F1FFFF"
+      },
+      "publicationSpan": {
+        "rva": 3685237,
+        "fileOffset": 3682677,
+        "bytesHex": "488D4B58B2074C8D85F0560000E8E9FBBC00"
+      },
+      "consumerSpans": [
+        {
+          "rva": 14938004,
+          "fileOffset": 14935444,
+          "bytesHex": "F20F10058C8BC600488D5424408B05898BC600498BCEF20F1144244089442448E827A45CFF4533C94533C08B10488D48048B8424A0000000C1EA0289442420E8F8C038FF"
         }
       ]
     },
@@ -231,7 +419,7 @@
     "lookupInputAbi": "RCX=context; RDX=pointer to three u32 key words",
     "lookupScope": "selected context+0x80 shared key table; full runtime table identity remains conditional",
     "lookupResult": "RAX=0 on missing key; otherwise RAX points to u32 byteCount followed by payload bytes",
-    "readerPath": "the selected tag5-profile slot3 readers for selector6/key[9,0,0] and selector9/key[255,3,0] use u32[RAX], RAX+4 and logical byteCount>>2 as RCX/EDX to 0x1CB0D0",
+    "readerPath": "Each of the five selected slot3 readers supplies its recorded three-u32 key and uses u32[RAX], RAX+4 and logical byteCount>>2 as RCX/EDX to 0x1CB0D0; external reader-specific arguments remain conditional.",
     "nativeGuards": "no local RAX-null, byteCount%4, source-extent or final-cursor check before 0x1CB0D0",
     "parserRequirements": [
       "reject missing key/prefix",
@@ -508,19 +696,134 @@
     "exact": [
       "For this UnityPlayer image, the default constructor directly installs the selected tag5-profile reader RVAs in slot3 for selector6/key[9,0,0] and selector9/key[255,3,0].",
       "Each of the two pinned readers loads its exact three-u32 key and passes the resulting counted prefix as payload+wordCount to 0x1CB0D0.",
-      "The tag5 branch selects signed i16@28==5 and advances a byte cursor in the exact six-segment order and widths recorded above."
+      "The tag5 branch selects signed i16@28==5 and advances a byte cursor in the exact six-segment order and widths recorded above.",
+      "For this UnityPlayer image, the default constructor directly installs the selected fixed-body readers in slot3 for selector2/key[4,0,0], selector5/key[5,0,0] and selector7/key[8,0,0].",
+      "The selected tag1/tag4/tag6 native branches have maximum reviewed source-read ends 64/68/64 with the conditional coverage and opaque two-byte gaps recorded in fixedBodyProfiles."
     ],
     "conditional": [
       "The chain describes selected-build default static registration; script overrides and actual runtime registration order are unresolved.",
       "The 0x4093E0 result shape is conditional on the selected context+0x80 shared table and its indirect wrapper targets.",
-      "The external-array equality can be enforced only when the reader-specific R9D carrier is independently available."
+      "The external-array equality can be enforced only when the reader-specific R9D carrier is independently available.",
+      "Fixed bodyLength values are strict authenticated-corpus profiles equal to the reviewed maximum read end; native code does not establish EOF, source extent or actual callback execution."
     ],
     "unresolved": [
       "authenticated logical-file/root/row receipt by one concrete runtime context",
       "native source base and source extent",
       "native final cursor equality or EOF safety",
-      "anonymous header fields, output object shape, field names and game semantics"
+      "anonymous header fields, output object shape, field names and game semantics",
+      "fixed-profile runtime branch receipt and all anonymous field meanings"
     ],
-    "prohibitedInference": "A complete strict parser frame is a structural byte boundary only; it does not name the tag, segments, fields or runtime meaning."
+    "prohibitedInference": "Strict tag5 framing and fixed tag1/tag4/tag6 body profiles are structural byte boundaries only. Maximum reviewed read end is not native EOF; none names a tag, field, runtime object or game meaning."
+  },
+  "fixedBodyProfiles": [
+    {
+      "selector": 2,
+      "key": [
+        4,
+        0,
+        0
+      ],
+      "tag": 1,
+      "bodyLength": 64,
+      "conditionalReadCoverage": [
+        [
+          0,
+          30
+        ],
+        [
+          32,
+          64
+        ]
+      ],
+      "opaqueUnreadRanges": [
+        [
+          30,
+          32
+        ]
+      ]
+    },
+    {
+      "selector": 5,
+      "key": [
+        5,
+        0,
+        0
+      ],
+      "tag": 4,
+      "bodyLength": 68,
+      "conditionalReadCoverage": [
+        [
+          0,
+          30
+        ],
+        [
+          32,
+          68
+        ]
+      ],
+      "opaqueUnreadRanges": [
+        [
+          30,
+          32
+        ]
+      ]
+    },
+    {
+      "selector": 7,
+      "key": [
+        8,
+        0,
+        0
+      ],
+      "tag": 6,
+      "bodyLength": 64,
+      "conditionalReadCoverage": [
+        [
+          0,
+          30
+        ],
+        [
+          32,
+          64
+        ]
+      ],
+      "opaqueUnreadRanges": [
+        [
+          30,
+          32
+        ]
+      ]
+    }
+  ],
+  "fixedBodyReview": {
+    "evidenceLevel": "structural-only",
+    "profilePolicy": "bodyLength is the maximum reviewed source-read end for the selected key/tag profile; it is a strict parser/corpus policy, not a native EOF or source-extent check",
+    "countedPrefixCarrier": "each selected slot3 reader supplies its exact three-u32 key to 0x4093E0, then passes RAX+4 and floor(u32[RAX]/4) to 0x1CB0D0 without a local null, divisibility, source-extent or final-cursor guard",
+    "commonSourceReadAbi": "0x1CB0D0 reads tag i16@28 and u32@32/@36; its selected paths call 0x2B41D0 with RCX=body,RDX=body+12,R8D=u32@32,R9D=u32@36 and caller-selected fifth byte. The pinned 0x2B41D0 hot/cold paths copy body[0:28] to locals; no original body pointer is carried into reviewed dynamic calls",
+    "tag1SourceRead": "tag1 conditionally reads/forwards body[40:64]; body+60 bit0 controls its helper path. No count/length equality is checked",
+    "tag4SourceRead": "tag4 conditionally reads/forwards body[40:68]; it additionally requires external R9D==1 and runtime-pointer guards. The external count is not body length",
+    "tag6SourceRead": "tag6 directly reads u32@40/@44/@48 and conditionally passes body+52 to the full pinned 0xC9E010 helper, whose reviewed source window is exactly 12 bytes. External/runtime guards remain unresolved",
+    "readQualification": "coverage is the union of reviewed conditional reads. It does not assert every byte is read on every branch or attach field meaning",
+    "tag6HelperAbi": "RCX=runtime object fromcommonhelper;EDX=external resolveddword;R8=body+52;R9=static12-byte value;arg5=local16-byte constant;arg6=(u32@48 arithmetic>>2)&255;arg7=u32@40;arg8=u32@44",
+    "tag6SourceLifetime": {
+      "entry": "C9E015 savesR8 atentryRSP+18 (laterRBP+120);C9E03D R12=R8;RBP=entryRSP-108h",
+      "sourceValidation": "C9E039/045/051 passsource+8/+4/+0 toAA550;leaf reads4each andclobbersEAXonly",
+      "diagnosticReads": [
+        "C9E06C source+8",
+        "C9E079 source+4",
+        "C9E086 source+0"
+      ],
+      "otherInputs": "R9 static12-byte value is independentlyvalidated;arg5 local16-byte constant isvalidatedbyAB0D0. Neitherisbody.",
+      "loopSource": "C9E25E calls518080 onruntimehandle;returnRAX savedRBP+18@263;loadedRBX@3D8. C9E450/475/481/4AA variablewordloads use thisruntime-derived array,notR8 body.",
+      "loopTemporaryR12": "Whenloopruns,C9E41C setsR12=stride;C9E534 restoresR12 fromsavedoriginalR8 atRBP+120. Whenloopskipped at3D2->542,R12 remainsoriginalsource.",
+      "successReads": [
+        "C9E5AA source+4",
+        "C9E5DE source+0",
+        "C9E5F1 source+8",
+        "C9E670 source+8 orlocalfallback afterconditionalCMOVA"
+      ],
+      "sourceEscape": "source values copiedtolocal struct beforeC9EFE0;nodirectsourcepointerpassedtoruntimearrayloops/dynamiccallsinthereviewedbody",
+      "end": "C9E725 jumpsC9E21E epilogue,RET C9E22F. Full1818B rangeincludesbothfailureandsuccesspaths;singleunwindrange."
+    }
   }
 }

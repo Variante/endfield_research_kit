@@ -39,6 +39,9 @@ class Marker17NativeContractTests(unittest.TestCase):
             'publication6': (0x1090, b'P6'),
             'constructor9': (0x10A0, b'D9'),
             'publication9': (0x10B0, b'P9'),
+            'key2': (0x10C0, struct.pack('<3I', 4, 0, 0)),
+            'key5': (0x10D0, struct.pack('<3I', 5, 0, 0)),
+            'key7': (0x10E0, struct.pack('<3I', 8, 0, 0)),
         }
         image[0x210:0x214] = body
         for _role, (rva, value) in exact.items():
@@ -119,6 +122,15 @@ class Marker17NativeContractTests(unittest.TestCase):
             'countedPrefixCarrier': {'status': 'conditional'},
             'evidenceBoundary': {'runtimeReceipt': 'unresolved'},
         }
+        contract['fixedBodyProfiles'] = marker17_native.fixed_body_profiles()
+        for selector, key in ((2, [4, 0, 0]), (5, [5, 0, 0]), (7, [8, 0, 0])):
+            contract['keyLiteralRanges'].append({'selector': selector, 'key': key, **span(f'key{selector}')})
+            contract['selectedDefaultSlot3'].append({
+                'selector': selector, 'key': key, 'slot': 3,
+                'descriptorConstructorSpan': span('constructor6'),
+                'registrationSpan': span('registration6'),
+                'publicationSpan': span('publication6'), 'consumerSpans': [span('consumer6')],
+            })
         contract_path = root / 'marker17.json'
         contract_path.write_text(json.dumps(contract), encoding='utf-8')
         selected = {
@@ -159,6 +171,16 @@ class Marker17NativeContractTests(unittest.TestCase):
         self.assertEqual('opaque', result['profile']['fields'])
         self.assertEqual([], result['validationFailures'])
         base_gate.assert_called_once_with(game_root=args[0])
+
+    def test_fixed_profile_tag_length_and_unread_gap_must_match_parser(self):
+        for field, value in (('tag', 1), ('bodyLength', 68), ('opaqueUnreadRanges', [])):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                game_root, base_path, contract_path, selected = self._fixture(Path(directory))
+                document = json.loads(contract_path.read_text())
+                document['fixedBodyProfiles'][2][field] = value
+                contract_path.write_text(json.dumps(document), encoding='utf-8')
+                result, _ = self._validate(game_root, base_path, contract_path, selected)
+                self.assert_failed_closed(result, 'fixed_body_profiles')
 
     def test_wrong_contract_hash_returns_before_base_gate(self):
         with tempfile.TemporaryDirectory() as directory:

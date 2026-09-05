@@ -1,4 +1,4 @@
-"""Fail-closed corpus gate for native-selected marker17 anonymous tag-5 bodies.
+"""Fail-closed corpus gate for native-selected marker17 anonymous bodies.
 
 This gate consumes the authenticated v15 marker17 directory.  It does
 not rerun the larger Streaming parser, but it rereads and authenticates every
@@ -19,10 +19,10 @@ DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 from scripts.game_data import streaming as fmt
 from scripts.game_data import streaming_corpus as corpus
-from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, parse_marker17_tag5
+from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES, TAG5_BODY_KEYS, parse_marker17_body
 from scripts.game_data.streaming_marker17_native import validate_marker17_native_contract
 
-SCHEMA = "endfield.streaming-marker17-tag5-corpus.v1"
+SCHEMA = "endfield.streaming-marker17-bodies-corpus.v2"
 V15_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 
 
@@ -64,10 +64,10 @@ def _source_paths(repo_root: Path) -> dict[str, Path]:
         "v15CorpusGateSha256": repo_root / "scripts/game_data/streaming_corpus.py",
         "v15NativeValidatorSha256": repo_root / "scripts/game_data/streaming_native.py",
         "v15NativeContractSha256": repo_root / "scripts/game_data/streaming_field2_native.json",
-        "tag5ParserSha256": repo_root / "scripts/game_data/streaming_marker17.py",
-        "tag5NativeValidatorSha256": repo_root / "scripts/game_data/streaming_marker17_native.py",
-        "tag5NativeContractSha256": repo_root / "scripts/game_data/streaming_marker17_native.json",
-        "tag5CorpusGateSha256": Path(__file__).resolve(),
+        "marker17ParserSha256": repo_root / "scripts/game_data/streaming_marker17.py",
+        "marker17NativeValidatorSha256": repo_root / "scripts/game_data/streaming_marker17_native.py",
+        "marker17NativeContractSha256": repo_root / "scripts/game_data/streaming_marker17_native.json",
+        "marker17CorpusGateSha256": Path(__file__).resolve(),
     }
 
 
@@ -186,14 +186,33 @@ def _validate_native_profile(native: dict[str, Any], failures: list[dict[str, An
             if type(selector) is not int or not 0 <= selector <= 0xFFFFFFFF:
                 raise ValueError(f"selector is not uint32: {selector!r}")
             packed = _pack_native_key(row["key"])
-            if selector in selected:
-                raise ValueError(f"duplicate selector {selector}")
+            if selector in selected or packed in selected.values():
+                raise ValueError(f"duplicate selector or key: {selector}/{packed:08X}")
             selected[selector] = packed
         except (KeyError, TypeError, ValueError) as exc:
             failures.append(_failure(f"{source}.selectedSlot3Keys[{index}]", "native-profile",
                                      "unique selector and three uint32 words", str(exc)))
-    if not selected:
-        failures.append(_failure(source, "native-profile", "nonempty selectedSlot3Keys", selected))
+    expected_selected = dict(TAG5_BODY_KEYS)
+    expected_selected.update({selector: key for selector, key in FIXED_BODY_PROFILES})
+    _require(failures, source, "native-profile", "selectedIdentityUnion",
+             sorted(selected.items()), sorted(expected_selected.items()))
+    actual_fixed = []
+    for index, row in enumerate(profile.get("fixedBodyProfiles") or []):
+        try:
+            selector, tag, length = row['selector'], row['tag'], row['bodyLength']
+            key = _pack_native_key(row['key'])
+            if any(type(v) is not int for v in (selector, tag, length)) or length < 32:
+                raise ValueError('expected integer selector/tag and length >= 32')
+            _require(failures, source, 'native-profile', 'conditionalReadCoverage',
+                     row.get('conditionalReadCoverage'), [[0, 30], [32, length]])
+            _require(failures, source, 'native-profile', 'opaqueUnreadRanges',
+                     row.get('opaqueUnreadRanges'), [[30, 32]])
+            actual_fixed.append((selector, key, tag, length))
+        except (KeyError, TypeError, ValueError) as exc:
+            failures.append(_failure(f'{source}.fixedBodyProfiles[{index}]', 'native-profile',
+                                     'bounded fixed profile joined to parser', str(exc)))
+    _require(failures, source, 'native-profile', 'fixedBodyProfiles', sorted(actual_fixed),
+             sorted((s, k, t, n) for (s, k), (t, n) in FIXED_BODY_PROFILES.items()))
     return selected
 
 
@@ -212,18 +231,18 @@ def _classify(file_row: dict[str, Any], row: dict[str, Any], selected: dict[int,
         return "invalid"
     selectors = [selector for selector, packed in selected.items() if packed == key]
     if not selectors:
-        return "excluded"
+        return "unsupported"
     expected_contexts = [
-        ("streaming", 2, selector, selector & 0xFF, "unique", 17)
+        ("streaming", 2, selector, selector & 0xFF, "unique", 17, 1)
         for selector in selectors
     ]
     actual = (file_row.get("family"), row.get("rootMarker"), row.get("rowSelectorU32"),
-              row.get("rowSelectorLowByte"), row.get("keyStatus"), row.get("marker"))
+              row.get("rowSelectorLowByte"), row.get("keyStatus"), row.get("marker"), row.get("keyOccurrenceCountInTable"))
     if actual not in expected_contexts:
         failures.append(_failure(source, "directory-profile", expected_contexts, actual,
                                  offset=row.get("keyOffset"), field="selectedKeyContext"))
         return "invalid"
-    return "target"
+    return "supported"
 
 
 def _validate_v15(report: dict[str, Any], expected_input: str, source_hashes: dict[str, str],
@@ -365,8 +384,8 @@ def _validate_row(clear: bytes, file_row: dict[str, Any], row: dict[str, Any], k
     marker = row.get("marker")
     if type(slot) is not int or slot < 0:
         raise ValueError(f"{source} decoded offset {slot}: expected nonnegative targetSlotOffset, actual {slot}")
-    if type(marker) is not int or not 0 <= marker <= 255:
-        raise ValueError(f"{source} decoded offset {row.get('markerOffset')}: expected uint8 marker, actual {marker}")
+    if type(marker) is not int or marker != 17:
+        raise ValueError(f"{source} decoded offset {row.get('markerOffset')}: expected directory marker 17, actual {marker}")
     key_offset = row.get("keyOffset")
     if type(key_offset) is not int or key_offset < 0 or key_offset > len(clear) - 4:
         raise ValueError(f"{source} decoded offset {key_offset}: expected bounded uint32 key range within EOF {len(clear)}, actual {key_offset}")
@@ -385,12 +404,13 @@ def _validate_row(clear: bytes, file_row: dict[str, Any], row: dict[str, Any], k
         raise ValueError(f"{source} decoded offset {slot}: expected wrapperAndByteRanges {row.get('wrapperAndByteRanges')!r}, actual {expected_ranges!r}")
     if count != row.get("byteCount"):
         raise ValueError(f"{source} decoded offset {expected_ranges[-1]['start']}: expected byteCount {row.get('byteCount')}, actual {count}")
-    if kind != "target":
+    if kind != "supported":
         return None, count
     prefix = expected_ranges[-1]["start"]
     body_start, body_end = prefix + 4, expected_ranges[-1]["end"]
     body = clear[body_start:body_end]
-    parsed = parse_marker17_tag5(body, source=source, base_offset=body_start, native_layout_validated=True)
+    parsed = parse_marker17_body(body, source=source, base_offset=body_start, native_layout_validated=True,
+                                 selector=row['rowSelectorU32'], key=row['key'])
     return {
         "family": file_row.get("family"), "rootMarker": row.get("rootMarker"),
         "selector": row.get("rowSelectorU32"), "rowSelectorLowByte": row.get("rowSelectorLowByte"),
@@ -409,6 +429,13 @@ def _finalize(*, expected_input: str, failures: list[dict[str, Any]], partial: b
     success = not failures
     status = "partial" if success and partial else "complete" if success else "failed"
     published = files if success else []
+    profile_counts = collections.Counter()
+    profile_bytes = collections.Counter()
+    for file_row in published:
+        for row in file_row['rows']:
+            identity = (row['selector'], row['key'])
+            profile_counts[identity] += 1
+            profile_bytes[identity] += row['byteCount']
     return {
         "schema": SCHEMA, "status": status, "failed": not success,
         "publicationEligible": success and not partial, "inputSetSha256": expected_input,
@@ -416,21 +443,26 @@ def _finalize(*, expected_input: str, failures: list[dict[str, Any]], partial: b
         "selection": {
             "mode": "partial" if partial else "full", "selectedFileCount": selected_count,
             "profiles": [{"family": "streaming", "rootMarker": 2, "selector": selector,
-                          "key": key, "keyHex": f"{key:08X}", "keyStatus": "unique"}
+                          "key": key, "keyHex": f"{key:08X}", "keyStatus": "unique",
+                          "tag": FIXED_BODY_PROFILES.get((selector, key), (5, None))[0],
+                          "fixedBodyLength": FIXED_BODY_PROFILES.get((selector, key), (5, None))[1],
+                          "layoutKind": "fixed-profile" if (selector, key) in FIXED_BODY_PROFILES else "tag5-counted-arrays",
+                          "referenceCount": profile_counts[(selector, key)],
+                          "countedBytes": profile_bytes[(selector, key)], "evidenceLevel": "structural-only"}
                          for selector, key in sorted(target_keys.items())],
-            "profileExcludedDisposition": "opaque; physically revalidated; not a tag5 format failure",
+            "profileExcludedDisposition": "opaque; physically revalidated; not a supported-profile format failure",
         },
         "corpusDirectory": dict(sorted(directory_counts.items())),
         "summary": {
             "filesSelected": selected_count, "filesSucceeded": counters["filesSucceeded"],
             "filesFailed": counters["filesFailed"], "referencesValidated": counters["references"],
-            "bytesValidated": counters["bytes"], "targetReferences": counters["target"],
-            "targetBytes": counters["targetBytes"], "profileExcludedReferences": counters["excluded"],
-            "profileExcludedOpaqueBytes": counters["excludedBytes"],
-            "failed": len(failures), "unsupported": counters["excluded"],
+            "bytesValidated": counters["bytes"], "supportedReferences": counters["supported"],
+            "supportedBytes": counters["supportedBytes"], "unsupportedOpaqueReferences": counters["unsupported"],
+            "unsupportedOpaqueBytes": counters["unsupportedBytes"],
+            "failed": len(failures), "unsupported": counters["unsupported"],
         },
-        "layer3": {"marker17Tag5Directory": {
-            "status": "exact-anonymous-tag5-eof" if success else "unvalidated",
+        "layer3": {"marker17BodyDirectory": {
+            "status": "exact-anonymous-supported-bodies" if success else "unvalidated",
             "evidenceLevel": "structural-only", "files": published,
             "referenceCount": sum(len(file_row["rows"]) for file_row in published),
             "countedBytes": sum(row["byteCount"] for file_row in published for row in file_row["rows"]),
@@ -439,8 +471,8 @@ def _finalize(*, expected_input: str, failures: list[dict[str, Any]], partial: b
         }},
         "nativeValidation": native, "failures": failures,
         "evidenceBoundary": {
-            "exact": "Authenticated logical ranges, the v15 two-wrapper byte ranges, tag5 header/count domains, anonymous strides, and parser EOF are checked.",
-            "structuralOnly": "Record bytes and tag5 header gaps remain opaque.",
+            "exact": "Authenticated logical ranges, the v15 two-wrapper byte ranges, selected header/tag/count domains, anonymous strides, and parser EOF are checked.",
+            "structuralOnly": "Record bytes and anonymous gaps remain opaque.",
             "unresolved": "Native final cursor, concrete runtime receipt, field names, object population and game semantics remain unresolved.",
         },
     }
@@ -472,7 +504,7 @@ def sweep(*, repo_root: Path, report_path: Path, outer_summary_path: Path, ledge
         native: dict[str, Any] = {"status": "validation_failed", "validationFailures": []}
     else:
         native = validate_marker17_native_contract(game_root=Path(game_root))
-    target_keys = _validate_native_profile(native, failures, source_start.get("tag5NativeContractSha256", ""))
+    target_keys = _validate_native_profile(native, failures, source_start.get("marker17NativeContractSha256", ""))
     directory_files, directory_counts = _validate_v15(report, expected_input, source_start, target_keys, failures)
     _validate_outer(outer, header, expected_input, ledger_sha_start, report, failures)
     joined = _join_ledger(directory_files, ledger_rows, failures)
@@ -545,7 +577,7 @@ def sweep(*, repo_root: Path, report_path: Path, outer_summary_path: Path, ledge
                         counters["filesSucceeded"] += 1
                     except (OSError, ValueError, struct.error) as exc:
                         counters["filesFailed"] += 1
-                        failures.append(_failure(virtual_path, "file-validation", "authenticated directory and selected tag5 body",
+                        failures.append(_failure(virtual_path, "file-validation", "authenticated directory and selected marker17 body",
                                                  f"{type(exc).__name__}: {exc}", offset=file_row.get("offset")))
 
     expected_selected = collections.Counter(files=len(selected))
@@ -563,10 +595,10 @@ def sweep(*, repo_root: Path, report_path: Path, outer_summary_path: Path, ledge
         ("files", counters["filesSucceeded"] + counters["filesFailed"], expected_selected["files"]),
         ("references", counters["references"], expected_selected["references"]),
         ("bytes", counters["bytes"], expected_selected["bytes"]),
-        ("target", counters["target"], expected_selected["target"]),
-        ("excluded", counters["excluded"], expected_selected["excluded"]),
-        ("targetBytes", counters["targetBytes"], expected_selected["targetBytes"]),
-        ("excludedBytes", counters["excludedBytes"], expected_selected["excludedBytes"]),
+        ("supported", counters["supported"], expected_selected["supported"]),
+        ("unsupported", counters["unsupported"], expected_selected["unsupported"]),
+        ("supportedBytes", counters["supportedBytes"], expected_selected["supportedBytes"]),
+        ("unsupportedBytes", counters["unsupportedBytes"], expected_selected["unsupportedBytes"]),
     ):
         _require(failures, "terminal-reconciliation", "terminal-reconciliation", field, actual, expected)
 
@@ -596,12 +628,12 @@ def sweep(*, repo_root: Path, report_path: Path, outer_summary_path: Path, ledge
 def render_markdown(report: dict[str, Any]) -> str:
     summary = report["summary"]
     return "\n".join([
-        "# Streaming marker17 tag5 corpus gate", "",
+        "# Streaming marker17 body corpus gate", "",
         f"- Status: `{report['status']}`; publication eligible: `{str(report['publicationEligible']).lower()}`.",
         f"- Input set: `{report['inputSetSha256']}`.",
         f"- Files: {summary['filesSucceeded']:,} succeeded / {summary['filesFailed']:,} failed / {summary['filesSelected']:,} selected.",
         f"- Directory: {summary['referencesValidated']:,} references / {summary['bytesValidated']:,} bytes physically revalidated.",
-        f"- Target tag5: {summary['targetReferences']:,} references / {summary['targetBytes']:,} bytes; excluded opaque: {summary['profileExcludedReferences']:,}.",
+        f"- Supported bodies: {summary['supportedReferences']:,} references / {summary['supportedBytes']:,} bytes; unsupported opaque: {summary['unsupportedOpaqueReferences']:,}.",
         f"- Failures: {summary['failed']:,}; unsupported: {summary['unsupported']:,}.", "",
         "Bodies are structurally framed only. Native final-cursor behavior, runtime receipt, field meaning, object population, and game semantics remain unresolved.", "",
     ])
@@ -630,8 +662,8 @@ def main() -> int:
         expected_input_set_sha256=args.expected_input_set_sha256,
         game_root=args.game_root, max_files=args.max_files,
     )
-    output_json = args.output_json or root / "reports/animestudio/streaming_marker17_tag5_latest.json"
-    output_md = args.output_md or root / "reports/animestudio/streaming_marker17_tag5_latest.md"
+    output_json = args.output_json or root / "reports/animestudio/streaming_marker17_bodies_latest.json"
+    output_md = args.output_md or root / "reports/animestudio/streaming_marker17_bodies_latest.md"
     corpus._atomic_write_text(output_json, json.dumps(result, indent=2, ensure_ascii=False) + "\n")
     corpus._atomic_write_text(output_md, render_markdown(result))
     print(json.dumps({"status": result["status"], "publicationEligible": result["publicationEligible"], **result["summary"]}, indent=2))

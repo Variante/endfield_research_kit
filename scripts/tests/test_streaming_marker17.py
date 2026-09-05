@@ -2,6 +2,7 @@ import struct
 import unittest
 from scripts.game_data.streaming_marker17 import (
     parse_marker17_tag5 as parse, TAG5_RECORD_WIDTHS as WIDTHS,
+    parse_marker17_body, FIXED_BODY_PROFILES, TAG5_BODY_KEYS,
 )
 
 def fixture(counts=(1, 2, 3, 4, 5, 6)):
@@ -71,6 +72,67 @@ class Tag5Tests(unittest.TestCase):
         self.assertTrue(all(a[1] == b[0] for a,b in zip(spans, spans[1:])))
         with self.assertRaisesRegex(ValueError, 'nonnegative decoded body base.*actual -1'):
             self.call(data, base_offset=-1)
+
+class FixedBodyTests(unittest.TestCase):
+    def body(self, identity):
+        tag, length = FIXED_BODY_PROFILES[identity]
+        data = bytearray(b'\xA5' * length)
+        struct.pack_into('<h', data, 28, tag)
+        return bytes(data)
+
+    def call(self, data, identity=(2, 0x04000000), **kw):
+        return parse_marker17_body(data, source='fixed.bytes', selector=identity[0],
+                                   key=identity[1], native_layout_validated=True, **kw)
+
+    def test_all_fixed_partitions_and_nonzero_unread_gap(self):
+        for identity, (tag, size) in FIXED_BODY_PROFILES.items():
+            result = self.call(self.body(identity), identity, base_offset=123)
+            self.assertEqual((result['tag'], result['bodyEnd']), (tag, 123 + size))
+            spans = result['partition']
+            self.assertTrue(all(a['end'] == b['start'] for a,b in zip(spans, spans[1:])))
+            self.assertEqual(sum(s['end'] - s['start'] for s in spans), size)
+            self.assertEqual(result['opaqueUnreadRanges'][0]['start'], 153)
+            self.assertEqual(result['recordFieldMeaning'], 'unresolved')
+            self.assertIn('not EOF', result['nativeFinalCursorStatus'])
+
+    def test_each_fixed_truncated_trailing_and_wrong_tag(self):
+        for identity in FIXED_BODY_PROFILES:
+            data = self.body(identity)
+            wrong_tag = bytearray(data)
+            struct.pack_into('<h', wrong_tag, 28, 5)
+            for bad in (data[:0], data[:29], data[:-1], data + b'\0', data + b'\0' * 4, wrong_tag):
+                with self.subTest(identity=identity, size=len(bad)), self.assertRaisesRegex(ValueError, 'fixed.bytes.*offset.*expected.*actual'):
+                    self.call(bad, identity)
+
+    def test_equal_length_does_not_imply_equal_tag(self):
+        with self.assertRaisesRegex(ValueError, 'offset 128.*tag 6.*actual 1'):
+            self.call(self.body((2, 0x04000000)), (7, 0x08000000), base_offset=100)
+
+    def test_wrong_key_selector_full_width_and_type(self):
+        for identity in ((5, 0x04000000), (2, 0x05000000), (258, 0x04000000),
+                         (2, -1), (2, 0x100000000), (True, 0x04000000), (2, None)):
+            with self.subTest(identity=identity), self.assertRaisesRegex(ValueError, 'expected.*actual'):
+                self.call(self.body((2, 0x04000000)), identity)
+
+    def test_default_and_non_boolean_native_gate(self):
+        for identity in list(FIXED_BODY_PROFILES) + list(TAG5_BODY_KEYS.items()):
+            for value in (False, None, 1, 'validated'):
+                with self.assertRaisesRegex(ValueError, 'unvalidated'):
+                    parse_marker17_body(b'', source='fixed.bytes', selector=identity[0], key=identity[1],
+                                        native_layout_validated=value)
+
+    def test_base_offset_domain(self):
+        for value in (-1, None, True, 0.5):
+            with self.assertRaisesRegex(ValueError, 'nonnegative integer body base'):
+                self.call(self.body((2, 0x04000000)), base_offset=value)
+
+    def test_tag5_dispatch_is_byte_for_byte_result_equivalent(self):
+        data = fixture()
+        expected = parse(data, source='fixed.bytes', base_offset=123, native_layout_validated=True)
+        for identity in TAG5_BODY_KEYS.items():
+            self.assertEqual(self.call(data, identity, base_offset=123), expected)
+            with self.assertRaisesRegex(ValueError, 'trailing'):
+                self.call(data + b'\0', identity)
 
 if __name__ == '__main__':
     unittest.main()
