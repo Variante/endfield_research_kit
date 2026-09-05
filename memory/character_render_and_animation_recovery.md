@@ -342,6 +342,12 @@ limits distinct, record arming delays, and never join resource contents across
 entries as one frame. Retain authenticated transient entry triggers across disk
 publication; require current actor evidence when arming instead of requiring the
 entrance shader to recur. This does not replace fresh-process cloth lifecycle proof.
+Retain exact SphereOutside draw metadata before owner-window collection starts
+and through joined-packet compaction; require its actual same-Present call order.
+Once every bounded packet is published, rejected admission must terminate instead
+of waiting for another entry. A constant scene-shadow R channel is admissible only
+when the archived original shader and same-draw bound constants prove its explicit
+white-output branch; texture appearance alone cannot establish this exception.
 
 ## Reference and comparison policy
 
