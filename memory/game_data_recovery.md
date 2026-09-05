@@ -121,6 +121,13 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   silently defaulted or treated as padding. The corpus gate inventories the
   independently certified ranges, selected read windows and opaque complement,
   keeping physical-gap lengths separate from read-window byte counts.
+  For absent selectors, the parser rechecks the actual row/vtable field2 and
+  preserves null. A separate pinned slot5 accessor-default-zero witness is
+  conditional on a new key and default registration, not a serialized value.
+  The pair validator binds both file identities, complete ordered field3/4
+  vectors and the same bounded ordinal, then rechecks the marker byte and row
+  uoffset. Only a complete source-reconciled corpus terminal permits publication;
+  existing-key history, overrides and runtime receipt remain unresolved.
   Marker16 belongs to a different outer-row shape. These associations do not
   prove a union registry. Marker15 references require nonzero forward bounded
   targets; hashes bind each source/slot directory, but target contents and
@@ -295,8 +302,11 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Close marker13's remaining contexts only through independent selector/default
-  and physical-gap evidence; serialized absence is not a numeric selector.
+- Next close marker2's independently bounded small-gap count-read subset using
+  complete full-key/context and occupancy evidence. Separate its native read
+  window from any unread physical remainder; neither zero values nor a loop
+  skip establish serialized validity or sizeof. Marker13's observed gap profiles
+  are anonymous, and serialized absence is not a numeric selector.
   Marker17 body profiles are structurally closed but anonymous. Marker15 still
   needs a concrete producer, source extent or independently bounded unread
   region: repeating a 16-byte native load does not prove record size. Its

@@ -12,6 +12,10 @@ import hashlib
 import struct
 from typing import Any, Iterable
 
+from scripts.game_data import streaming as fmt
+from scripts.game_data.streaming_pairs import bind_pair_row
+from scripts.game_data.streaming_marker13_native import EXPECTED_ABSENT_WITNESS
+
 
 PROFILE = {
     "family": "streaming",
@@ -24,10 +28,12 @@ PROFILE = {
 }
 
 
-def parse_marker13_selector9_gaps(
+def parse_marker13_gaps(
     data: bytes, *, source: str, family: str, rows: Iterable[dict[str, Any]],
     certified_ranges: Iterable[dict[str, Any] | tuple[int, int, str]],
     native_layout_validated: bool = False,
+    pair_context: dict[str, Any] | None = None,
+    absent_selector_native_witness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Parse reference projections against independently certified neighbours.
 
@@ -37,10 +43,12 @@ def parse_marker13_selector9_gaps(
     parser or opaque. A gap end is not a serialized sizeof or whole-file EOF.
     """
     try:
-        return _parse_marker13_selector9_gaps(
+        return _parse_marker13_gaps(
             data, source=source, family=family, rows=rows,
             certified_ranges=certified_ranges,
             native_layout_validated=native_layout_validated,
+            pair_context=pair_context,
+            absent_selector_native_witness=absent_selector_native_witness,
         )
     except ValueError as exc:
         raise ValueError(f"{source}: {exc}") from exc
@@ -159,12 +167,12 @@ def _validate_row_values(data: bytes, row: dict[str, Any], row_index: int) -> di
     }
 
 
-def _context_status(family: str, actual: dict[str, Any]) -> tuple[str, str | None]:
+def _context_status(family: str, actual: dict[str, Any], *, allow_absent: bool) -> tuple[str, str | None]:
     if family != PROFILE["family"]:
         return "unsupported-context", f"family {family!r} is not selected family 'streaming'"
     if actual["rootMarker"] != PROFILE["rootMarker"]:
         return "unsupported-context", f"root marker {actual['rootMarker']} is not selected marker 2"
-    if actual["rowSelectorU32"] != PROFILE["rowSelectorU32"]:
+    if actual["rowSelectorU32"] != PROFILE["rowSelectorU32"] and not (allow_absent and actual["rowSelectorU32"] is None):
         return "unsupported-context", (
             f"raw row selector {actual['rowSelectorU32']!r} is not selected raw selector 9"
         )
@@ -173,7 +181,7 @@ def _context_status(family: str, actual: dict[str, Any]) -> tuple[str, str | Non
     return "selected", None
 
 
-def _parse_marker13_selector9_gaps(
+def _parse_marker13_gaps(
     data: bytes,
     *,
     source: str,
@@ -181,6 +189,8 @@ def _parse_marker13_selector9_gaps(
     rows: Iterable[dict[str, Any]],
     certified_ranges: Iterable[dict[str, Any] | tuple[int, int, str]],
     native_layout_validated: bool,
+    pair_context: dict[str, Any] | None,
+    absent_selector_native_witness: dict[str, Any] | None,
 ) -> dict[str, Any]:
     """Project 16 readable bytes within a certified 16- or 18-byte gap.
 
@@ -199,6 +209,17 @@ def _parse_marker13_selector9_gaps(
         raise ValueError(
             f"marker13 family: expected selected family 'streaming', actual {family!r}"
         )
+    allow_absent = absent_selector_native_witness is not None
+    if allow_absent:
+        if absent_selector_native_witness != EXPECTED_ABSENT_WITNESS:
+            raise ValueError("marker13 absent selector: expected exact validated native witness, actual mismatch")
+        if not isinstance(pair_context, dict):
+            raise ValueError("marker13 absent selector: expected structured source-pair context, actual absent")
+        if pair_context.get("source") != source:
+            raise ValueError(f"marker13 pair source: expected {source!r}, actual {pair_context.get('source')!r}")
+        actual_sha = hashlib.sha256(data).hexdigest().upper()
+        if pair_context.get("decodedSha256") != actual_sha:
+            raise ValueError(f"marker13 pair decoded SHA256: expected {pair_context.get('decodedSha256')!r}, actual {actual_sha}")
     certified = _normalize_ranges(data, certified_ranges)
     certified_starts = [item[0] for item in certified]
     certified_ends = [item[1] for item in certified]
@@ -209,7 +230,7 @@ def _parse_marker13_selector9_gaps(
         if not isinstance(row, dict):
             raise ValueError(f"marker13 row {row_index}: expected mapping, actual {type(row).__name__}")
         actual = _validate_row_values(data, row, row_index)
-        status, reason = _context_status(family, actual)
+        status, reason = _context_status(family, actual, allow_absent=allow_absent)
         evidence = {
             "source": source,
             "family": family,
@@ -257,6 +278,22 @@ def _parse_marker13_selector9_gaps(
             })
             ambiguous_count += 1
             continue
+
+        if actual["rowSelectorU32"] is None:
+            pair_row = bind_pair_row(data, row, pair_context)
+            table_offset = _need_offset(data, row.get("outerRowOffset"), 4, "marker13 absent-selector row")
+            layout = fmt._table_layout(data, table_offset)
+            selector_slot = fmt._field_address(layout, 2)
+            if selector_slot is not None:
+                raise ValueError(f"marker13 row {row_index} at {table_offset}: expected absent field2, actual present slot {selector_slot}")
+            evidence["absentSelectorEvidence"] = {
+                "rawSelector": None, "serializedSelectorState": "absent",
+                "nativeAccessorDefault": 0, "phaseSlot": 5, "pairRow": pair_row,
+                "vtableOffset": layout["vtableOffset"], "vtableSize": layout["vtableSize"],
+                "field2StoredOffset": None if layout["fieldCount"] <= 2 else 0,
+                "runtimeCondition": pair_context["runtimeCondition"],
+                "targetOwnedBytes": 0, "runtimeReceipt": "unresolved",
+            }
 
         target = actual["targetStart"]
         if target > len(data) - PROFILE["readWidth"]:
@@ -347,6 +384,7 @@ def _parse_marker13_selector9_gaps(
         "status": status,
         "evidenceLevel": "structural-only",
         "profile": dict(PROFILE),
+        "absentSelectorProfile": dict(absent_selector_native_witness) if allow_absent else None,
         "source": source,
         "rows": output_rows,
         "counts": {

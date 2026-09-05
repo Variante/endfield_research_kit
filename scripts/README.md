@@ -249,9 +249,11 @@ Partial `--max-files` probes require explicit output paths and are not eligible
 as complete-corpus evidence. Record fields and runtime selection remain unknown.
 `streaming_marker13_corpus` rereads the complete block-15 ledger through the
 source-bound Streaming parser, joins marker13 references to independently
-certified structural neighbours, and tests the native-gated selector9 gap
-profile. Its inventory separates certified structure, selected physical gaps
-and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
+certified structural neighbours, and tests native-gated explicit-selector9 and
+byte-proven absent-selector profiles. `streaming_pairs` binds paired file
+identities, complete ordered vectors and exact serialized ordinals; absence is
+never rewritten to a stored zero. Its inventory separates structure, read windows,
+physical gaps and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
 Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
 `streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
 `tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.

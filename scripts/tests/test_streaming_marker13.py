@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import struct
+import hashlib
 import unittest
 
 from scripts.game_data.streaming_marker13 import (
-    parse_marker13_selector9_gaps,
+    parse_marker13_gaps,
 )
+from scripts.game_data.streaming_marker13_native import EXPECTED_ABSENT_WITNESS
+from scripts.tests.test_streaming_pairs import make_root
 
 
 def fixture(*, selector=9, selector_present=True, marker=13, key=0xFF000000):
@@ -41,7 +44,7 @@ def fixture(*, selector=9, selector_present=True, marker=13, key=0xFF000000):
 
 
 def parse(data, row, ranges, **kwargs):
-    return parse_marker13_selector9_gaps(
+    return parse_marker13_gaps(
         data,
         source="fixture.bytes",
         family=kwargs.pop("family", "streaming"),
@@ -222,6 +225,79 @@ class Marker13Gap16Tests(unittest.TestCase):
         parsed = result["rows"][0]
         self.assertEqual(parsed["physicalGapRange"]["end"], 56)
         self.assertEqual(parsed["partitionedBytes"], 16)
+
+
+class Marker13AbsentSelectorTests(unittest.TestCase):
+    def fixture(self, *, gap=16, stored_selector=False):
+        data = bytearray(make_root()) + bytearray(64)
+        struct.pack_into("<I", data, 208, 0xFF000000)
+        data[212] = 13
+        struct.pack_into("<I", data, 216, 24)
+        struct.pack_into("<4I", data, 240, 1, 2, 3, 4)
+        if gap == 18:
+            data[256:258] = b"\xA5\x5A"
+        if stored_selector:
+            struct.pack_into("<H", data, 152, 4)
+            struct.pack_into("<I", data, 164, 0)
+        row = {
+            "outerRowIndex": 0, "outerRowOffset": 160, "rootMarker": 2,
+            "rootMarkerOffset": 100, "rowSelectorU32": None, "rowSelectorLowByte": None,
+            "rowSelectorOffset": None, "key": 0xFF000000, "keyOffset": 208,
+            "marker": 13, "markerOffset": 212, "targetSlotOffset": 216,
+            "targetStart": 240, "keyOccurrenceCountInTable": 1,
+        }
+        context = {
+            "schema": "endfield.streaming-ordered-pair-context.v1", "source": "fixture.bytes",
+            "side": "streaming", "decodedSha256": hashlib.sha256(data).hexdigest().upper(),
+            "orderedWitness": {"rowCount": 2}, "markerVectorStart": 96,
+            "rowVectorStart": 112, "rootReportSha256": "E" * 64,
+            "runtimeCondition": "conditional new-key only; existing-key history unresolved",
+        }
+        return bytes(data), row, [(224, 240, "width-4-vector"), (240 + gap, 280, "vtable")], context
+
+    def parse(self, data, row, ranges, context, **kwargs):
+        return parse_marker13_gaps(
+            data, source="fixture.bytes", family="streaming", rows=[row],
+            certified_ranges=ranges, native_layout_validated=True,
+            pair_context=context,
+            absent_selector_native_witness=kwargs.get("witness", dict(EXPECTED_ABSENT_WITNESS)),
+        )
+
+    def test_actual_absence_and_pair_keep_native_zero_separate(self):
+        for gap in (16, 18):
+            with self.subTest(gap=gap):
+                result = self.parse(*self.fixture(gap=gap))
+                row = result["rows"][0]
+                self.assertIsNone(row["rowSelectorU32"])
+                self.assertEqual(row["absentSelectorEvidence"]["nativeAccessorDefault"], 0)
+                self.assertEqual(row["absentSelectorEvidence"]["field2StoredOffset"], 0)
+                self.assertEqual(row["partitionedBytes"], 16)
+                self.assertEqual(row["physicalGapRange"]["length"], gap)
+                self.assertEqual(result["targetOwnedBytes"], 0)
+
+    def test_forged_absence_over_actual_stored_zero_fails(self):
+        with self.assertRaisesRegex(ValueError, "expected absent field2, actual present slot 164"):
+            self.parse(*self.fixture(stored_selector=True))
+
+    def test_absence_without_native_witness_stays_unsupported(self):
+        result = self.parse(*self.fixture(), witness=None)
+        self.assertEqual(result["counts"]["unsupportedContext"], 1)
+
+    def test_absence_without_structured_pair_fails(self):
+        data, row, ranges, context = self.fixture()
+        with self.assertRaisesRegex(ValueError, "structured source-pair"):
+            self.parse(data, row, ranges, None)
+
+    def test_absence_wrong_ordinal_or_decoded_source_fails(self):
+        data, row, ranges, context = self.fixture()
+        with self.assertRaisesRegex(ValueError, "ordinal"):
+            self.parse(data, {**row, "outerRowIndex": 2}, ranges, context)
+        with self.assertRaisesRegex(ValueError, "decoded SHA256"):
+            self.parse(data + b"X", row, ranges, context)
+
+    def test_absence_does_not_expand_finite_gap_lengths(self):
+        with self.assertRaisesRegex(ValueError, "gap 20"):
+            self.parse(*self.fixture(gap=20))
 
 
 if __name__ == "__main__":

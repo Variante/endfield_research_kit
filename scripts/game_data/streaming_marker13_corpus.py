@@ -17,11 +17,14 @@ from typing import Any, Callable, Mapping
 from scripts.game_data import streaming as fmt
 from scripts.game_data import streaming_corpus as root_corpus
 from scripts.game_data.streaming_marker13 import PROFILE as GAP_PROFILE
-from scripts.game_data.streaming_marker13 import parse_marker13_selector9_gaps
-from scripts.game_data.streaming_marker13_native import validate_marker13_native_contract
+from scripts.game_data.streaming_marker13 import parse_marker13_gaps
+from scripts.game_data.streaming_marker13_native import (
+    EXPECTED_ABSENT_WITNESS, validate_marker13_native_contract,
+)
+from scripts.game_data.streaming_pairs import index_ordered_pairs, bind_current_pair
 
 
-SCHEMA = "endfield.streaming-marker13-corpus.v1"
+SCHEMA = "endfield.streaming-marker13-corpus.v2"
 ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 
 
@@ -56,6 +59,7 @@ def require(failures: list[dict[str, Any]], source: str, stage: str,
 def source_paths(repo_root: Path) -> dict[str, Path]:
     return {
         "rootParserSha256": repo_root / "scripts/game_data/streaming.py",
+        "orderedPairValidatorSha256": repo_root / "scripts/game_data/streaming_pairs.py",
         "invertedLz4DecoderSha256": repo_root / "scripts/game_data/inverted_lz4.py",
         "commonNativeGateSha256": repo_root / "scripts/common.py",
         "rootCorpusGateSha256": repo_root / "scripts/game_data/streaming_corpus.py",
@@ -521,6 +525,16 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
     if game_root is None:
         native_inputs_start = {}
     native_ok = validate_native(native, source_start.get("marker13NativeContractSha256", ""), failures)
+    require(failures, "native", "absent-selector-gate", "absentSelectorContextWitness",
+            native.get("absentSelectorContextWitness"), EXPECTED_ABSENT_WITNESS)
+    pair_index = {}
+    if not failures:
+        try:
+            pair_index = index_ordered_pairs(report)
+            require(failures, "root-report", "pair-index", "dataFileCount", len(pair_index),
+                    sum(root_corpus._family(row["virtualPath"]) != "info" for row in ledger_rows))
+        except (KeyError, TypeError, ValueError) as exc:
+            failures.append(failure("root-report", "pair-index", "complete source-bound ordered pairs", str(exc)))
 
     paths_seen = collections.Counter(str(row.get("virtualPath", "")) for row in ledger_rows)
     for path, count in paths_seen.items():
@@ -596,6 +610,13 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
                         if len(clear) != parsed.get("decodedBytes"):
                             raise ValueError(f"decoded length: expected parser {parsed.get('decodedBytes')}, actual {len(clear)}")
                         decoded_sha = sha256_bytes(clear)
+                        pair_context = None
+                        if family in {"init", "streaming"}:
+                            pair_context = bind_current_pair(
+                                pair_index=pair_index, identity={**row, "packedSha256": packed_sha},
+                                decoded=clear, parsed=parsed,
+                                root_report_sha256=input_start["rootReportSha256"],
+                            )
                         parallel = parsed.get("anonymousParallelSubgraph") or {}
                         directory = parallel.get("marker13KeyDirectory") or {}
                         if family in {"init", "streaming"}:
@@ -620,10 +641,11 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
                                 )
                             certified_ranges = [(0, len(clear), "info-exact-anonymous-graph")]
                         if family == "streaming":
-                            gap = parse_marker13_selector9_gaps(
+                            gap = parse_marker13_gaps(
                                 clear, source=virtual_path, family=family, rows=directory_rows,
                                 certified_ranges=certified_ranges,
-                                native_layout_validated=native_ok)
+                                native_layout_validated=native_ok, pair_context=pair_context,
+                                absent_selector_native_witness=native["absentSelectorContextWitness"])
                         else:
                             gap = unsupported_rows(directory_rows, family)
                         counts = gap["counts"]
@@ -663,6 +685,8 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
                             if projection["status"] == "exact-anonymous-physical-gap":
                                 gap_length = projection["physicalGapRange"]["length"]
                                 counters[f"physicalGapLength:{gap_length}"] += 1
+                                context_name = "absent" if projection["rowSelectorU32"] is None else "explicit9"
+                                counters[f"selectedContext:{context_name}"] += 1
                                 residual = projection["residualOpaqueRange"]
                                 counters["residualOpaqueReferenceBytes"] += residual["length"] if residual else 0
                         identity_rows.append("\0".join((virtual_path, str(row.get("physicalChunkSource")),
@@ -681,6 +705,7 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
                                 "partial-with-explicit-opaque-complement"
                             ),
                             "rangeCoverage": coverage, "marker13": gap,
+                            "orderedPairContext": pair_context,
                         })
                     except (OSError, ValueError, TypeError, KeyError, struct.error) as exc:
                         counters["filesFailed"] += 1
@@ -751,6 +776,7 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
         },
         "selection": {"mode": "partial" if partial else "full",
                       "profile": dict(GAP_PROFILE),
+                      "absentSelectorProfile": native.get("absentSelectorContextWitness"),
                       "unknownContextDisposition": "unsupported-opaque; physically authenticated and parsed; owns no gap bytes"},
         "summary": {
             "filesTotal": len(ledger_rows), "filesSelected": len(selected),
@@ -767,6 +793,8 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
                 for length in GAP_PROFILE["physicalGapLengths"]
             },
             "residualOpaqueReferenceBytes": counters["residualOpaqueReferenceBytes"],
+            "selectedContextCounts": {name: counters[f"selectedContext:{name}"]
+                                      for name in ("explicit9", "absent")},
             "failed": len(failures), "unsupported": counters["unsupported"],
         },
         "layer3": {
@@ -778,6 +806,7 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
         "evidenceBoundary": {
             "exact": "Selected physical gaps are bracketed by certified ranges and restricted to 16 or 18 bytes; only the first 16 bytes project four anonymous u32 lanes.",
             "structuralOnly": "Native proves only a conditional 16-byte read window. Any two-byte residual stays in the opaque complement, without padding or record-ownership claims.",
+            "absence": "Actual row/vtable field2 absence and source-bound ordered Init/Streaming pairing are rechecked. Raw selector remains null; native accessor default0 is a separate conditional slot5 witness. Existing-key history, overrides and execution remain unresolved.",
             "unresolved": "Serialized record extent, sizeof, native EOF/final cursor, runtime receipt, field names and game semantics.",
         },
         "failures": failures, "failureCount": len(failures),

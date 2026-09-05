@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.streaming-marker13-native-contract.v1",
+  "schema": "endfield.streaming-marker13-native-contract.v2",
   "status": "validated-conditional-static",
-  "nativeMappingId": "endfield-2026-09-05-streaming-marker13-selector9-slot4-slot5-read16",
+  "nativeMappingId": "endfield-2026-09-05-streaming-marker13-selector9-slot4-slot5-read16-absent-selector-conditional-slot5",
   "dependency": {
     "path": "scripts/game_data/streaming_marker17_native.json",
     "schema": "endfield.streaming-marker17-native-contract.v2",
@@ -150,5 +150,178 @@
       "field names, object shape and game semantics"
     ],
     "prohibitedInference": "readWidth16 is only the highest bounded native read window. It must not be promoted to allocation size, serialized record extent, padding, EOF, type name or semantics."
+  },
+  "additionalUnityPlayerRanges": [
+    {
+      "rva": 449296,
+      "size": 276,
+      "fileOffset": 446736,
+      "role": "slot5DispatchWholeHotBodyThroughFinalBackedge",
+      "bodySha256": "83D42A2D70FD726315DB64905D4EEEEA80A364696B492CC32450B0E895552581",
+      "entryBytesHex": "4883EC480FB6014C8BD2488D15AFE114004C8D04804D03C0488D05C94796014A"
+    },
+    {
+      "rva": 15417332,
+      "size": 11,
+      "fileOffset": 15414772,
+      "role": "slot5DispatchColdIndirectBranchAndReturnEdge",
+      "bodySha256": "6794D3DB994CFAA4CECC5ADFF15EF44983910E379420B0D067A3B6D4A4F02C01",
+      "entryBytesHex": "498BD2FFD090E9729B1BFF"
+    },
+    {
+      "rva": 1817808,
+      "size": 61,
+      "fileOffset": 1815248,
+      "role": "slot5SelectedMarker2EntryWholeBody",
+      "bodySha256": "B3BD9371F135EBE14CC0CD3D4D89C15C2208853FD0EEA9149916812BFE3EA40D",
+      "entryBytesHex": "4C8BD2488B51204C8B4A10498BC9496301482BC8B808000000663B01731A0FB7"
+    },
+    {
+      "rva": 1817440,
+      "size": 366,
+      "fileOffset": 1814880,
+      "role": "slot5ScopeWholeBody",
+      "bodySha256": "B6779DCE3D5AC2C0CA5EA8F59A3650BDB64697B176C2F5F730016E9FF6EC183C",
+      "entryBytesHex": "48895C24084889742410574881EC80000000410FB6C0488BF94869F088020000"
+    },
+    {
+      "rva": 27075480,
+      "size": 8,
+      "fileOffset": 27069336,
+      "role": "slot5Marker2DispatchPointer",
+      "bodySha256": "09F6853664385B644A351683232E07A737CC0E11A0E3CE12566AAFFA9112F4EE",
+      "entryBytesHex": "D0BC1B8001000000"
+    },
+    {
+      "rva": 3687547,
+      "size": 14,
+      "fileOffset": 3684987,
+      "role": "selector0DescriptorConstructorArgumentsAndCall",
+      "bodySha256": "BFF15E152CA395AA004354E416B2EDEEE70177FB85621260214DECCDDDE8DFAA",
+      "entryBytesHex": "33D2488D8D204A0000E8C7C0FFFF"
+    },
+    {
+      "rva": 3687833,
+      "size": 56,
+      "fileOffset": 3685273,
+      "role": "selector0Slot5Registration",
+      "bodySha256": "24F5DA1F7EEB38902E1095E797311C7490C337CD24D7C960F06FF48240EEA5B7",
+      "entryBytesHex": "488D0540B6AB004889B550140000488985581400004C8D8550140000488D8550"
+    },
+    {
+      "rva": 3688105,
+      "size": 18,
+      "fileOffset": 3685545,
+      "role": "selector0PublicationArgumentsAndCall",
+      "bodySha256": "935C897953B0BDC4AD7423D382238DA1B6BF510AA9AF4AA77782F98DFDD747D3",
+      "entryBytesHex": "488D4B5833D24C8D85204A0000E8B5F0BC00"
+    }
+  ],
+  "absencePathReusedRanges": [
+    {
+      "contract": "base",
+      "role": "parallelScopeCallbackBridgeA",
+      "rva": 1820368,
+      "size": 92
+    },
+    {
+      "contract": "base",
+      "role": "descriptorConstructor",
+      "rva": 3671376,
+      "size": 110
+    },
+    {
+      "contract": "base",
+      "role": "callbackAssignment",
+      "rva": 3681056,
+      "size": 401
+    },
+    {
+      "contract": "base",
+      "role": "inlineCallbackMove",
+      "rva": 3681472,
+      "size": 108
+    },
+    {
+      "contract": "base",
+      "role": "callbackReset",
+      "rva": 3681616,
+      "size": 73
+    },
+    {
+      "contract": "base",
+      "role": "publishTenCallbacks",
+      "rva": 16070512,
+      "size": 95
+    },
+    {
+      "contract": "marker17",
+      "role": "indexedCallbackAssignment",
+      "rva": 3680944,
+      "size": 72
+    },
+    {
+      "contract": "self",
+      "role": "selector9Slot5Reader",
+      "rva": 14941152,
+      "size": 195
+    },
+    {
+      "contract": "self",
+      "role": "slot5LocalFourDwordConsumer",
+      "rva": 2180864,
+      "size": 510
+    },
+    {
+      "contract": "self",
+      "role": "keyLiteralRange",
+      "rva": 27951384,
+      "size": 12
+    }
+  ],
+  "absentSelectorContextWitness": {
+    "family": "streaming",
+    "rootMarker": 2,
+    "rawSelector": null,
+    "serializedSelectorState": "absent",
+    "nativeAccessorDefault": 0,
+    "phaseSlot": 5,
+    "packedKey": 4278190080,
+    "marker": 13,
+    "readWidth": 16,
+    "readerRangeRole": "selector9Slot5Reader",
+    "classification": "conditional-native-accessor-default-not-serialized-value",
+    "runtimeReceipt": "unresolved",
+    "targetOwnedBytes": 0,
+    "extentStatus": "read-window-only; record extent and EOF unresolved",
+    "runtimeSelectionCondition": "conditional new-key Init marker2 and default slot5; existing-key history unresolved"
+  },
+  "absentSelectorEvidence": {
+    "phase": "Slot5, not the similar slot1 or slot6 wrappers. No scheduler invocation or callback execution is asserted.",
+    "entryAbi": "6DB10 RCX=runtime dispatch wrapper, RDX=owner. [RCX] supplies marker; marker2 table entry at19D2398 is1BBCD0. Selected branch loads record=[RCX+20], row R9=[record+10], runtimeargument RDX=[record+18], context RCX=[owner+60].",
+    "absence": {
+      "checks": [
+        "6DB51 vtable length <= field2 entry offset8",
+        "6DB5A field2 vtable offset==0"
+      ],
+      "defaultAssignment": "6DB76 XOR R8D,R8D ->6DB60 ->6DB6C tailcall1BBB60",
+      "presentAssignment": "6DB5C MOV R8D,[R9+field2offset]; scope consumes low R8B only",
+      "directEntryEquivalent": "1BBCD0..1BBD0C duplicates the same accessor and tailcalls same scope; absence at1BBD08.",
+      "serializedPolicy": "Keep rawselector absent. Emit a separate conditional native accessor-default witness if wanted; do not synthesize explicit serialized selector0 or generalize this to every phase."
+    },
+    "scopeAbi": "1BBB60 preserves context RDI; low selector byte*288 selects descriptor. Requires descriptor tag !=0E and slot5 function object+38 nonnull. Resolves same R9 row.field3 via vtable entryA -> uoffset, writes context+80 at1BBC4B. Calls1BC6D0 at1BBC67 with RCX=descriptor+1D8, RDX=runtimeargument, R8=context. Clears context+80 at1BBC9F only after callback returns and cleanup.",
+    "bridgeAbi": "1BC6D0 checks callback+38, dispatches special native-function vtable target4156F0. 1BC702 loads function pointer [callbackObject+8], 1BC706 setsRDX=context,1BC709 setsRCX=runtimeargument,1BC70C calls function. Unknown functor branch remains indirect; default-registration condition required.",
+    "registration": "38447B..384488 initializes selector0 descriptorRBP+4A20 through380550. 384599 LEA E3FBE0,3845BC DL=5,3845BE same descriptor,3845CC calls382AB0. 3846A9 owner+58,3846AD EDX=0,3846AF same descriptor ->3846B6 F53770. Default no-override condition only.",
+    "carrierBoundary": "This proof starts from runtime record pointer+10. Existing maintained cross-root ABI identifies that pointer as second-root row, with dispatch marker from first root; actual current runtime record instance, scheduler phase, default registry use and callback receipt remain unobserved. Do not join merely by the second file marker or equal counts.",
+    "notProved": [
+      "serialized absent is a stored zero",
+      "field/game meaning",
+      "record extent16 or EOF",
+      "all phases use same default",
+      "actual callback execution",
+      "all current files matched without a fresh full corpus join"
+    ],
+    "requiredCorpusJoin": "Recheck actual row/vtable field2 absence; bind Init and Streaming source identities, complete ordered field3/field4 witnesses and the same bounded serialized ordinal. No bare validation flag establishes this relation.",
+    "reusedReaderRoleQualification": "selector9Slot5Reader is the existing pinned role identifier; selector0 reuse is established by its separate exact registration span, not by the role name."
   }
 }

@@ -106,6 +106,7 @@ class Fixture:
     def native(self) -> dict:
         return {
             "status": "validated", "validationFailures": [],
+            "absentSelectorContextWitness": dict(gate.EXPECTED_ABSENT_WITNESS),
             "contractSha256": gate.sha256_file(ROOT / "scripts/game_data/streaming_marker13_native.json"),
             "profile": {
                 "family": "streaming", "rootMarker": 2, "rawSelector": 9,
@@ -199,7 +200,15 @@ class Fixture:
     def run(self, **kwargs) -> dict:
         inventory_path = kwargs.pop("inventory_path", None)
         with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.native()), \
-             mock.patch.object(gate.fmt, "parse_streaming_file", side_effect=self.parsed):
+             mock.patch.object(gate.fmt, "parse_streaming_file", side_effect=self.parsed), \
+             mock.patch.object(gate, "index_ordered_pairs", return_value={
+                 row["virtualPath"]: None for row in self.files
+                 if gate.root_corpus._family(row["virtualPath"]) != "info"
+             }), \
+             mock.patch.object(gate, "bind_current_pair", side_effect=lambda **args: {
+                 "source": args["identity"]["virtualPath"],
+                 "decodedSha256": gate.sha256_bytes(args["decoded"]),
+             }):
             return gate.sweep(
                 repo_root=ROOT, root_report_path=self.report,
                 outer_summary_path=self.outer, ledger_path=self.ledger,
@@ -322,7 +331,8 @@ class CorpusGateTests(unittest.TestCase):
         self.fx.write_outer()
         self.fx.write_report()
         with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.fx.native()), \
-             mock.patch.object(gate.fmt, "parse_streaming_file") as parser:
+             mock.patch.object(gate.fmt, "parse_streaming_file") as parser, \
+             mock.patch.object(gate, "index_ordered_pairs", return_value={self.fx.files[0]["virtualPath"]: None}):
             result = gate.sweep(
                 repo_root=ROOT, root_report_path=self.fx.report,
                 outer_summary_path=self.fx.outer, ledger_path=self.fx.ledger,
@@ -454,7 +464,12 @@ class CorpusGateTests(unittest.TestCase):
                 document = json.loads(self.fx.report.read_text())
                 document["layer3"]["nestedElementFraming"]["nestedElementMarkerCounts"]["13"] = 0
                 write_json(self.fx.report, document)
-                with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.fx.native()):
+                with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.fx.native()), \
+                     mock.patch.object(gate, "index_ordered_pairs", return_value={self.fx.files[0]["virtualPath"]: None}), \
+                     mock.patch.object(gate, "bind_current_pair", side_effect=lambda **args: {
+                         "source": args["identity"]["virtualPath"],
+                         "decodedSha256": gate.sha256_bytes(args["decoded"]),
+                     }):
                     result = gate.sweep(
                         repo_root=ROOT, root_report_path=self.fx.report,
                         outer_summary_path=self.fx.outer, ledger_path=self.fx.ledger,
@@ -477,12 +492,54 @@ class CorpusGateTests(unittest.TestCase):
         self.assertEqual(result["_inventoryRows"], [])
         self.assertEqual(result["failures"][0]["field"], "marker13ReferenceCount")
 
+    def test_actual_two_file_pair_composition_and_forged_first_root(self):
+        self.fx.clear = _packed(_data_root())
+        streaming = self.fx.make_file("pair", 0)
+        init = {**streaming, "virtualPath": streaming["virtualPath"].replace("/StreamingChunkData_", "/InitChunkData_")}
+        self.fx.files = [init, streaming]
+        self.fx.write_all()
+        document = json.loads(self.fx.report.read_text())
+        records = []
+        for row in self.fx.files:
+            parsed = gate.fmt.parse_streaming_file(gate.root_corpus._family(row["virtualPath"]), self.fx.clear,
+                                                   native_layout_validated=True, include_certified_ranges=True)
+            records.append({**row, "packedSha256": gate.sha256_bytes(self.fx.clear),
+                            "witness": parsed["anonymousParallelSubgraph"]["orderedRootWitness"]})
+        document["layer3"]["pairedRootIdentities"] = gate.root_corpus._join_root_witnesses(records)
+        document["layer3"]["nestedElementFraming"]["nestedElementMarkerCounts"]["13"] = 0
+        for mutation in (None, "firstMarkerDigest", "firstPackedSha"):
+            with self.subTest(mutation=mutation):
+                changed = json.loads(json.dumps(document))
+                first = changed["layer3"]["pairedRootIdentities"]["pairs"][0]["init"]
+                if mutation == "firstMarkerDigest":
+                    first["witness"]["field4VectorSha256"] = "F" * 64
+                elif mutation == "firstPackedSha":
+                    first["packedSha256"] = "F" * 64
+                write_json(self.fx.report, changed)
+                with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.fx.native()):
+                    result = gate.sweep(
+                        repo_root=ROOT, root_report_path=self.fx.report, outer_summary_path=self.fx.outer,
+                        ledger_path=self.fx.ledger, expected_input_set_sha256=INPUT_SET,
+                        game_root=self.fx.game_root,
+                    )
+                self.assertEqual(result["failed"], mutation is not None, result["failures"])
+                if mutation is None:
+                    self.assertTrue(result["publicationEligible"])
+                    self.assertEqual(result["summary"]["filesSucceeded"], 2)
+                else:
+                    self.assertEqual(result["_inventoryRows"], [])
+
     def test_actual_info_eof_graph_is_not_mislabeled_opaque(self):
         self.fx.clear = _root("info")
         self.fx.files[0]["virtualPath"] = "Data/Streaming/PC/test/Streaming/StreamingChunkInfo.bytes"
         self.fx.write_all()
         document = json.loads(self.fx.report.read_text())
         document["layer3"]["nestedElementFraming"]["nestedElementMarkerCounts"]["13"] = 0
+        document["layer3"]["pairedRootIdentities"] = {
+            "status": "exact-ordered-witness-matches", "pairs": [],
+            "candidatePairCount": 0, "matchedPairCount": 0, "mismatchedPairCount": 0,
+            "unpairedFileCount": 0, "unpairedFiles": [],
+        }
         write_json(self.fx.report, document)
         with mock.patch.object(gate, "validate_marker13_native_contract", return_value=self.fx.native()):
             result = gate.sweep(

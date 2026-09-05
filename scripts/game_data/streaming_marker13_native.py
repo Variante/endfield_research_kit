@@ -11,9 +11,9 @@ from scripts.game_data import streaming_marker17_native as dependency
 from scripts.game_data import streaming_native as base
 
 
-SCHEMA = "endfield.streaming-marker13-native-contract.v1"
+SCHEMA = "endfield.streaming-marker13-native-contract.v2"
 DEFAULT_CONTRACT = Path(__file__).with_name("streaming_marker13_native.json")
-CONTRACT_SHA256 = "E7A3871AD1901484B5FB8230AAC7F2B8E22222CA739B375E4AFFB2578DA35CC1"
+CONTRACT_SHA256 = "D605946A4DCB8DFF37F36570C206ACBE6CEFD9C2DD5EAE9A63E940DAA3842D74"
 DEPENDENCY_SHA256 = "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891"
 EXPECTED_INPUTS = {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -39,6 +39,38 @@ EXPECTED_PROFILE = {
     "extentStatus": "read-window-only; record extent and EOF unresolved",
     "evidenceLevel": "structural-only",
 }
+EXPECTED_ABSENCE_RANGES = {
+    "slot5DispatchWholeHotBodyThroughFinalBackedge": (449296, 276),
+    "slot5DispatchColdIndirectBranchAndReturnEdge": (15417332, 11),
+    "slot5SelectedMarker2EntryWholeBody": (1817808, 61),
+    "slot5ScopeWholeBody": (1817440, 366),
+    "slot5Marker2DispatchPointer": (27075480, 8),
+    "selector0DescriptorConstructorArgumentsAndCall": (3687547, 14),
+    "selector0Slot5Registration": (3687833, 56),
+    "selector0PublicationArgumentsAndCall": (3688105, 18),
+}
+EXPECTED_ABSENCE_REUSE = {
+    ("base", "parallelScopeCallbackBridgeA"): (1820368, 92),
+    ("base", "descriptorConstructor"): (3671376, 110),
+    ("base", "callbackAssignment"): (3681056, 401),
+    ("base", "inlineCallbackMove"): (3681472, 108),
+    ("base", "callbackReset"): (3681616, 73),
+    ("base", "publishTenCallbacks"): (16070512, 95),
+    ("marker17", "indexedCallbackAssignment"): (3680944, 72),
+    ("self", "selector9Slot5Reader"): (14941152, 195),
+    ("self", "slot5LocalFourDwordConsumer"): (2180864, 510),
+    ("self", "keyLiteralRange"): (27951384, 12),
+}
+EXPECTED_ABSENT_WITNESS = {
+    "family": "streaming", "rootMarker": 2, "rawSelector": None,
+    "serializedSelectorState": "absent", "nativeAccessorDefault": 0,
+    "phaseSlot": 5, "packedKey": 0xFF000000, "marker": 13, "readWidth": 16,
+    "readerRangeRole": "selector9Slot5Reader",
+    "classification": "conditional-native-accessor-default-not-serialized-value",
+    "runtimeReceipt": "unresolved", "targetOwnedBytes": 0,
+    "extentStatus": "read-window-only; record extent and EOF unresolved",
+    "runtimeSelectionCondition": "conditional new-key Init marker2 and default slot5; existing-key history unresolved",
+}
 
 
 def sha256(data: bytes) -> str:
@@ -52,7 +84,8 @@ def validate_marker13_native_contract(
     failures: list[dict[str, Any]] = []
     result: dict[str, Any] = {
         "status": "validation_failed", "profile": None,
-        "consumerReview": None, "validationFailures": failures,
+        "consumerReview": None, "absentSelectorContextWitness": None,
+        "validationFailures": failures,
     }
 
     def require(gate: str, expected: Any, actual: Any) -> None:
@@ -155,11 +188,55 @@ def validate_marker13_native_contract(
                                  "expected": "bounded exact PE bytes", "actual": str(exc)})
 
         require("profile", EXPECTED_PROFILE, contract["profile"])
+        additions = contract["additionalUnityPlayerRanges"]
+        require("absence_range_roles", sorted(EXPECTED_ABSENCE_RANGES),
+                sorted(row["role"] for row in additions))
+        require("absence_range_unique_rva_size", len(additions),
+                len({(row["rva"], row["size"]) for row in additions}))
+        for row in additions:
+            role = row["role"]
+            require(f"absence:{role}.identity", EXPECTED_ABSENCE_RANGES.get(role),
+                    (row["rva"], row["size"]))
+            try:
+                offset, body = base._bounded_pe_range(image, row["rva"], row["size"])
+                require(f"absence:{role}.file_offset", row["fileOffset"], offset)
+                require(f"absence:{role}.body_sha256", row["bodySha256"], sha256(body))
+                entry = bytes.fromhex(row["entryBytesHex"])
+                require(f"absence:{role}.entry_bytes", entry.hex().upper(), body[:len(entry)].hex().upper())
+            except (TypeError, ValueError) as exc:
+                failures.append({"gate": f"absence:{role}.bounded_range",
+                                 "expected": f"bounded PE range RVA {row['rva']} size {row['size']}",
+                                 "actual": str(exc)})
+
+        base_raw = base.DEFAULT_CONTRACT.read_bytes()
+        require("absence_base_contract_hash", base.CONTRACT_SHA256, sha256(base_raw))
+        base_document = json.loads(base_raw)
+        catalogs = {
+            "base": {row["role"]: (row["rva"], row["size"])
+                     for row in base_document["unityPlayerRanges"]},
+            "marker17": {row["role"]: (row["rva"], row["size"])
+                         for row in dep_document["unityPlayerRanges"]},
+            "self": {row["role"]: (row["rva"], row["size"]) for row in rows},
+        }
+        catalogs["self"]["keyLiteralRange"] = (literal["rva"], len(bytes.fromhex(literal["bytesHex"])))
+        reuse = contract["absencePathReusedRanges"]
+        require("absence_reuse_roles", sorted(EXPECTED_ABSENCE_REUSE),
+                sorted((row["contract"], row["role"]) for row in reuse))
+        for row in reuse:
+            key = (row["contract"], row["role"])
+            identity = (row["rva"], row["size"])
+            require(f"absence_reuse:{key}.identity", EXPECTED_ABSENCE_REUSE.get(key), identity)
+            require(f"absence_reuse:{key}.catalog", identity,
+                    catalogs.get(key[0], {}).get(key[1]))
+        require("absent_selector_witness", EXPECTED_ABSENT_WITNESS,
+                contract["absentSelectorContextWitness"])
         if not failures:
             result.update(
                 status="validated", nativeMappingId=contract["nativeMappingId"],
                 profile=contract["profile"], consumerReview=contract["consumerReview"],
                 evidenceBoundary=contract["evidenceBoundary"],
+                absentSelectorContextWitness=contract["absentSelectorContextWitness"],
+                absentSelectorEvidence=contract["absentSelectorEvidence"],
             )
     except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         failures.append({"gate": "marker13_contract_inputs",
