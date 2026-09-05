@@ -254,6 +254,11 @@ Current durable boundaries:
   The selected call's on-disk usage cell also joins through the wrapper's guarded
   lazy initializer and tag-specific MethodSpec/triple resolver. This establishes
   the static initialization mechanism, not an observed live cell or cache entry.
+  The open formatter-check carrier independently joins the same MVAR through its
+  class-inst pointer; reject duplicate pointer identities and token ranges.
+  Preserve the carrier window's uninterpreted tail: its bytes do not certify a
+  runtime allocation extent or select the returned formatter. Provider fallback
+  includes a lazy callback path whose population remains a separate evidence gap.
   Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk
   fingerprints at both ends; authenticating the report hash alone does not
   establish freshness after a tool rebuild. Reauthenticate affected bytes with

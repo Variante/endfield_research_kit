@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
 from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 
@@ -44,6 +44,18 @@ class GenericInstantiationTests(unittest.TestCase):
         self.assertEqual(struct.unpack('<IIQ', self.read(0x110, 16))[0], 1)
         self.assertEqual(self.table().resolve(1).arguments, ())
         self.assertNotIn((0x110, 16), self.reads[1:])
+
+    def test_pointer_join_unique_and_ambiguous(self):
+        self.assertEqual(self.table().resolve_pointer(0x220).index, 1)
+        self.blocks[0x100] = struct.pack('<QQ', 0x200, 0x200)
+        with self.assertRaises(ContextError) as caught:
+            self.table().resolve_pointer(0x200)
+        self.assertEqual(caught.exception.diagnostics['actual']['candidateIndices'], [0, 1])
+
+    def test_pointer_join_missing_or_null(self):
+        for pointer in (0, -1, True, 0x999):
+            with self.subTest(pointer=pointer), self.assertRaises(ContextError):
+                self.table().resolve_pointer(pointer)
 
     def test_every_truncated_range_fails(self):
         for address in (0x100, 0x200, 0x300, 0x400):
@@ -158,6 +170,53 @@ class ParameterOwnerTests(unittest.TestCase):
                 with self.assertRaises(ContextError):
                     self.resolve()
                 self.buf[offset:offset+4] = original
+
+
+class GenericCarrierTests(unittest.TestCase):
+    def test_token_range_normal_and_negative(self):
+        raw = struct.pack('<III', 0x6000075, 1, 2)
+        def parse(data, total=3):
+            return select_rgctx_range(data,total,0x6000075,source='fixture',offset=0x80)
+        self.assertEqual(parse(raw), (1,2))
+        for bad in (b'',raw[:-1],raw+b'!',raw+raw,struct.pack('<III',1,0,1),struct.pack('<III',1,3,1)):
+            with self.subTest(raw=bad), self.assertRaises(ContextError):
+                parse(bad)
+        with self.assertRaises(ContextError):
+            parse(raw,2)
+
+    def setUp(self):
+        self.parts = [struct.pack('<QHBBI',0x200,0,0x15,0,0),
+                      struct.pack('<QQ',0x300,0x400)+bytes(range(16)),
+                      struct.pack('<QHBBI',2,0,0x12,0,0)]
+
+    def parse(self, count=3):
+        return generic_type_carrier(*self.parts, type_pointer=0x100, type_count=count, source='fixture')
+
+    def test_normal_and_opaque_tail(self):
+        row = self.parse()
+        self.assertEqual(row['baseDefinitionIndex'], 2)
+        self.assertEqual(row['classInstantiationPointerVa'], 0x400)
+        self.assertEqual(row['opaqueCarrierTailHex'], bytes(range(16)).hex().upper())
+
+    def test_truncated_and_trailing_ranges(self):
+        for index in range(3):
+            good = self.parts[index]
+            for bad in (good[:-1], good+b'!'):
+                self.parts[index] = bad
+                with self.assertRaises(ContextError):
+                    self.parse()
+            self.parts[index] = good
+
+    def test_invalid_count_definition_tags_and_null_pointers(self):
+        for count in (2, -1, 1_000_001, True):
+            with self.assertRaises(ContextError):
+                self.parse(count)
+        for part, offset, size in ((0,0,8),(1,0,8),(1,8,8),(0,10,1),(2,10,1)):
+            good = self.parts[part]
+            self.parts[part] = good[:offset]+bytes(size)+good[offset+size:]
+            with self.assertRaises(ContextError):
+                self.parse()
+            self.parts[part] = good
 
 
 class UsageCellTests(unittest.TestCase):

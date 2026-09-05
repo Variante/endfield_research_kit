@@ -93,6 +93,62 @@ class GenericInstantiationTable:
         return GenericInstantiation(index, slot, pointer, vector,
                                     record[4:8].hex().upper(), tuple(args))
 
+    def resolve_pointer(self, pointer: int) -> GenericInstantiation:
+        """Join a carrier's raw pointer without silently choosing an alias."""
+        if type(pointer) is not int or not 0 < pointer < 1 << 64:
+            raise ContextError(self.source, self.table_va, 'non-null instantiation pointer', pointer)
+        candidates = [i for i, (value,) in enumerate(struct.iter_unpack('<Q', self.pointer_bytes))
+                      if value == pointer]
+        if len(candidates) != 1:
+            raise ContextError(self.source, pointer, 'one registered instantiation identity',
+                               {'candidateIndices': candidates})
+        return self.resolve(candidates[0])
+
+
+def generic_type_carrier(type_raw: bytes, carrier_raw: bytes, base_raw: bytes,
+                         *, type_pointer: int, type_count: int, source: str) -> dict:
+    """Decode authenticated tag-15 carrier windows, preserving unknown bytes.
+
+    The caller must read carrier_raw at type_raw.data and base_raw at its first
+    pointer with a raw-backed reader. Instantiation dereferencing is separate.
+    The 32-byte window is not a certified allocation extent. Only its two
+    leading pointers are interpreted; the remaining 16 bytes stay opaque.
+    No runtime replacement, class initialization or field meaning is implied.
+    """
+    for label, raw, size in (('type', type_raw, 16), ('carrier', carrier_raw, 32), ('base', base_raw, 16)):
+        if len(raw) != size:
+            raise ContextError(source, type_pointer, f'exact {size}-byte {label} range', len(raw))
+    if type(type_count) is not int or not 0 <= type_count <= 1_000_000:
+        raise ContextError(source, type_pointer, 'bounded type-definition count', type_count)
+    carrier_pointer = struct.unpack_from('<Q', type_raw)[0]
+    base_pointer, inst_pointer = struct.unpack_from('<QQ', carrier_raw)
+    if type_raw[10] != 0x15 or base_raw[10] != 0x12 or not all((carrier_pointer, base_pointer, inst_pointer)):
+        raise ContextError(source, type_pointer, 'tag-15 carrier with non-null base/class-inst pointers and tag-12 base',
+                           (type_raw[10], base_raw[10], carrier_pointer, base_pointer, inst_pointer))
+    definition = struct.unpack_from('<Q', base_raw)[0]
+    if definition >= type_count:
+        raise ContextError(source, base_pointer, f'on-disk definition index in [0,{type_count})', definition)
+    return {'typePointerVa': type_pointer, 'typeRawHex': type_raw.hex().upper(),
+            'carrierPointerVa': carrier_pointer, 'carrierRawHex': carrier_raw.hex().upper(),
+            'basePointerVa': base_pointer, 'baseRawHex': base_raw.hex().upper(),
+            'baseDefinitionIndex': definition, 'classInstantiationPointerVa': inst_pointer,
+            'opaqueCarrierTailHex': carrier_raw[16:].hex().upper()}
+
+
+def select_rgctx_range(raw: bytes, entry_count: int, token: int, *, source: str, offset: int) -> tuple[int, int]:
+    """Select one bounded token range, without claiming an RGCTX partition."""
+    if len(raw) % 12 or type(entry_count) is not int or not 0 <= entry_count <= 1_000_000:
+        raise ContextError(source, offset, '12-byte ranges and bounded entry count', (len(raw), entry_count))
+    matches = []
+    for index, (actual_token, start, count) in enumerate(struct.iter_unpack('<III', raw)):
+        if start > entry_count or count > entry_count-start:
+            raise ContextError(source, offset+index*12+4, f'entry range within [0,{entry_count})', (start,count))
+        if actual_token == token:
+            matches.append((start,count))
+    if len(matches) != 1:
+        raise ContextError(source, offset, 'one unambiguous token range', {'token':token,'candidates':matches})
+    return matches[0]
+
 
 def method_parameter_owner(metadata: bytes, index: int, method_containers: list[int],
                            *, source: str) -> dict:

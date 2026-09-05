@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,11 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0xA790, 0xAE47, 'F9E448ECD6162E73ED4282F551F1F19A763854F6D99031A45EA61612AF292A09'),
+    (0x9230, 0x962A, 'B11CC37279D6BD65872B4E6CC22339543A84B005FE4B65F424081417C0C57214'),
+    (0x3850, 0x3995, '4C5BF32B3BDC82C200BC2D88CFD0698694249C52C68BE5B71E87CC596F713C23'),
+    (0x281B0, 0x28367, '4A5FE0579AFAF220617B572015648A598472D8F86A163A8EBE9E4F06282C02CB'),
+    (0x64EA0, 0x64FB9, '5432E86CB6E16C4659B2FAC1EDAD6F805331B1638BFF96C6103192AF46543F9E'),
     (0x37DE060, 0x37DE0BB, '0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB'),
     (0x37DE9C5, 0x37DEB23, 'C6A761532672A5700D9FEEB980F66BAF88B6F1F2CEAC48688680CF4158C1F285'),
     (0x37DE884, 0x37DE9C5, '853722D03CBFE915CFB92DD372A7C85BE072576C8FEB4CB35912E766BBDE9BCA'),
@@ -167,6 +172,30 @@ def audit():
     argument = call_inst.arguments[ordinal]
     require(argument.raw_type_record_hex, 'B02D0000000000000000120000000000',
             gate.gameassembly, argument.type_pointer_va)
+    module = modules['MemoryPack.dll']
+    require(pe.u32_at_va(module+0x40), 120, gate.gameassembly, module+0x40)
+    require(pe.u32_at_va(module+0x50), 691, gate.gameassembly, module+0x50)
+    ranges_va = pe.u64_at_va(module+0x48)
+    start, count = select_rgctx_range(pe.bytes_at_va(ranges_va,120*12),691,0x06000075,
+                                      source=str(gate.gameassembly),offset=ranges_va)
+    require((start,count),(40,3),gate.gameassembly,ranges_va)
+    entry_va = pe.u64_at_va(module+0x58)+(start+1)*16
+    entry_raw = pe.bytes_at_va(entry_va,16)
+    require(struct.unpack_from('<I',entry_raw)[0],2,gate.gameassembly,entry_va)
+    type_index = pe.u32_at_va(struct.unpack_from('<Q',entry_raw,8)[0])
+    require(type_index,211958,gate.gameassembly,entry_va)
+    require(type_index<reg['typesCount'],True,gate.gameassembly,entry_va)
+    type_pointer = pe.u64_at_va(int(reg['types'],16)+type_index*8)
+    formatter_type_raw = pe.bytes_at_va(type_pointer,16)
+    carrier_raw = pe.bytes_at_va(struct.unpack_from('<Q',formatter_type_raw)[0],32)
+    base_raw = pe.bytes_at_va(struct.unpack_from('<Q',carrier_raw)[0],16)
+    formatter_carrier = generic_type_carrier(formatter_type_raw,carrier_raw,base_raw,
+                                             type_pointer=type_pointer,type_count=len(md.types),source=str(gate.gameassembly))
+    formatter_inst = table.resolve_pointer(formatter_carrier['classInstantiationPointerVa'])
+    require(formatter_inst.index, selected.index, gate.gameassembly,formatter_inst.record_va)
+    require(formatter_carrier['baseDefinitionIndex'],54005,gate.metadata)
+    require(md.type_full_name(md.types[54005]),'MemoryPack.MemoryPackFormatter`1',gate.metadata)
+    require(pe.u32_at_va(pe.image_base+0x9850+(0x15-0xF)*4),0x979D,gate.gameassembly,0x9850)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -180,6 +209,11 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedFormatterTypeCarrier': {**formatter_carrier,'rgctxEntryVa':entry_va,
+                                         'rgctxEntryRawHex':entry_raw.hex().upper(),
+                                         'classInstantiationIndex':formatter_inst.index,
+                                         'baseName':md.type_full_name(md.types[54005]),
+                                         'boundary':'Exact static pointer/range/MVAR identity; the 32-byte carrier window is not a certified allocation extent and its last 16 bytes remain opaque. Native generic inflation iterates the class-inst arguments using the supplied context. This is the open formatter check type, not the active formatter object or proof that runtime inflation/caches executed.'},
         'selectedUsageCell': {'va': usage_va, 'rawHex': usage_raw.hex().upper(),
                               'methodSpecIndex': call_index, 'resolverSwitchEntryRva': 0x4138C+5*4,
                               'boundary': 'Direct static initialization mechanism: the guarded wrapper passes this cell address to the lazy resolver; tag 6 routes through MethodSpec/triple lookup and a non-null result is exchanged into the cell. The callsite reads the same cell. Initialization execution, cache history, active formatter and source cursor remain unobserved.'},
