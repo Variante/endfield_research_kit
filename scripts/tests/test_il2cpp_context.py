@@ -7,7 +7,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
-from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec, reader_cursor_consumers, reader_construction
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
@@ -15,7 +15,75 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class ReaderConstructionTests(unittest.TestCase):
+    def setUp(self):
+        methods=[None]*428428
+        pointers=bytearray(80*8)
+        for index,name,token,rva in ((428422,'get_Consumed',0x0600004B,0x4A46420),
+                                      (428423,'get_Remaining',0x0600004C,0x4A655D0),
+                                      (428426,'.ctor',0x0600004F,0x970AD30),
+                                      (428427,'.ctor',0x06000050,0x3B67E30)):
+            methods[index]=SimpleNamespace(declaring_type=0,name_index=name,token=token)
+            struct.pack_into('<Q',pointers,((token&0xFFFFFF)-1)*8,0x180000000+rva)
+        self.parts={0x200:bytes(pointers),0x180000000+0x4A46420:bytes.fromhex('8B4144C3'),
+                    0x180000000+0x4A655D0:bytes.fromhex('48635144488B4118482BC2C3')}
+        for rva,target in ((0x970AE04,0x8381FF0),(0x970AE34,0x838223C),(0x970AE4C,0x3F779C0),
+                           (0x970C5BB,0x3B67E30),(0x970C605,0x3F300),(0x970C0FD,0x970AD30)):
+            self.parts[0x180000000+rva]=b'\xe8'+struct.pack('<i',target-rva-5)
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va],
+                                u32_at_va=lambda va:80,u64_at_va=lambda va:0x200)
+        self.md=SimpleNamespace(methods=methods,types=[object()],images=[SimpleNamespace(name_index='MemoryPack.dll')],
+                                string=lambda value:value,type_full_name=lambda value:'MemoryPack.MemoryPackReader')
+
+    def decode(self):
+        return reader_construction(self.pe,self.md,{'MemoryPack.dll':0x100},[0],source='fixture.dll')
+
+    def test_identity_and_conditional_boundary(self):
+        row=self.decode()
+        self.assertEqual([r['slot'] for r in row['methods']],[74,75,78,79])
+        self.assertEqual(row['accessors']['consumedOffset'],0x44)
+        self.assertIn('Do not prune',row['boundary'])
+
+    def test_wrong_image_or_method_identity(self):
+        self.md.images[0].name_index='Unrelated.dll'
+        with self.assertRaises(ContextError):self.decode()
+        self.md.images[0].name_index='MemoryPack.dll'
+        self.md.methods[428422].token=0x0600004C
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_bad_pointer_or_leaf(self):
+        good=self.parts[0x200]
+        self.parts[0x200]=bytes(len(good))
+        with self.assertRaises(ContextError):self.decode()
+        self.parts[0x200]=good
+        key=0x180000000+0x4A46420
+        for raw in (b'',bytes.fromhex('8B4140C3'),bytes.fromhex('8B4144C390')):
+            self.parts[key]=raw
+            with self.assertRaises(ContextError):self.decode()
+
+
+class MethodTokenPointerTests(unittest.TestCase):
+    def decode(self,token=0x06000002,pointers=None,offset=0x100):
+        return method_token_pointer(token,struct.pack('<QQ',0x300,0x200) if pointers is None else pointers,
+                                     source='fixture.dll',offset=offset)
+
+    def test_rid_not_address_or_global_order(self):
+        row=self.decode()
+        self.assertEqual((row['slot'],row['slotVa'],row['pointerVa']),(1,0x108,0x200))
+        self.assertEqual(self.decode(0x06000001,bytes(8))['pointerVa'],0)
+
+    def test_truncated_trailing_out_of_range(self):
+        for pointers in (b'',bytes(7),bytes(8),bytes(15),bytes(17)):
+            with self.assertRaises(ContextError):self.decode(pointers=pointers)
+
+    def test_bad_tokens_and_extent(self):
+        for token in (True,-1,0x06000000,0x02000001,0x06000003,0x106000001):
+            with self.assertRaises(ContextError):self.decode(token=token)
+        for offset in (-1,True,(1<<64)-8):
+            with self.assertRaises(ContextError):self.decode(offset=offset)
 
 
 class ReaderCursorConsumerTests(unittest.TestCase):

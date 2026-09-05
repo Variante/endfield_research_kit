@@ -300,9 +300,13 @@ Current durable boundaries:
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.
   The 24-byte descriptor has a conditional same-endpoint position-difference
-  length path; multi-segment conversion and initial descriptor/source identity
-  remain unresolved. None of these links proves element layout, active formatter,
-  source extent, final cursor, or terminal candidate uniqueness.
+  length path. Independently token-joined constructors accept that descriptor or
+  a 16-byte pointer/length carrier and initialize total/remaining state and zero
+  consumption. Native getters identify consumed and total-minus-consumed roles;
+  reviewed caller paths return consumption but do not themselves compare EOF.
+  Multi-segment conversion, SkillData caller selection and authenticated input
+  identity remain unresolved. No observed final cursor or terminal uniqueness
+  follows from this conditional ABI.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

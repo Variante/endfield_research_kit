@@ -105,6 +105,26 @@ class GenericInstantiationTable:
         return self.resolve(candidates[0])
 
 
+def method_token_pointer(token: int, pointers: bytes, *, source: str, offset: int) -> dict:
+    """Select a module slot by MethodDef RID, never by global declaration order.
+
+    The caller must establish the declaring type's exact image/module identity.
+    Null slots are preserved; this is not a runtime MethodInfo or invocation.
+    """
+    if len(pointers)%8 or len(pointers)//8>1_000_000:
+        raise ContextError(source,offset,'bounded exact qword method-pointer array',len(pointers))
+    if type(offset) is not int or not 0 <= offset < 1<<64 or len(pointers)>(1<<64)-offset:
+        raise ContextError(source,0,'bounded 64-bit pointer-array extent',offset)
+    if type(token) is not int or not 0x06000001 <= token <= 0x06FFFFFF:
+        raise ContextError(source,offset,'nonzero MethodDef RID token',token)
+    slot=(token&0xFFFFFF)-1
+    if slot>=len(pointers)//8:
+        raise ContextError(source,offset,'MethodDef RID within module pointer count',slot)
+    raw=pointers[slot*8:(slot+1)*8]
+    return {'token':token,'slot':slot,'slotVa':offset+slot*8,
+            'pointerVa':struct.unpack('<Q',raw)[0],'rawHex':raw.hex().upper()}
+
+
 def relative_branch_target(raw: bytes, address: int, *, source: str) -> int:
     """Decode only a reviewed five-byte direct CALL/JMP, not arbitrary code."""
     if type(address) is not int or not 0 <= address <= (1 << 64)-5:

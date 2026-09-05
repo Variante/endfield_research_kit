@@ -20,13 +20,17 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x970AD30, 0x970AE65, 'B1587FA587E6E160B00DEF0116FD0B7C1BEC5D7670AD8CA059E22489904F20EA'),
+    (0x3B67E30, 0x3B67EC4, 'E20940F2F7B39A3BB1806DA04749C66E3B2CF514FF8CA0658B5F690C18EB0279'),
+    (0x970C4A8, 0x970C672, 'EEFD3592C95C7366380F47A0890632F54ED8EC2B521D81014852BA045BFC610C'),
+    (0x970BFF0, 0x970C1F5, 'AE39953E1E6D1C4C8531CE5206EA5DCE70CD82DBB8093111E669103CC2B80A7F'),
     (0x970915C, 0x9709454, 'AB0D5C7A12E463100AF920A8CB6A52001B52B15A51AB7EC11C1D006D04EC7363'),
     (0x5AD2140, 0x5AD227B, 'DF6D3A33414236CA22AD342A51DA9DF5B759B250EFB98B40BBD8816E6992C5E5'),
     (0x838223C, 0x8382292, '44086E7E4E68ABB7828C536B227D14046E427D6EA13E39C4396A66E0854F090D'),
@@ -142,6 +146,52 @@ def validate_selected_method_spec(row, records, base, method_count, instantiatio
     if not isinstance(inst,dict) or inst.get('index')!=method_inst:
         raise ContextError(source,offset+8,'reported method instantiation matches raw MethodSpec',
                            {'expected':method_inst,'actual':inst})
+
+
+def reader_construction(pe, md, modules, image_owners, *, source):
+    """Exact method-token identities plus independently reviewed native bodies."""
+    selected=[]
+    for index,name,expected in ((428422,'get_Consumed',0x4A46420),
+                                (428423,'get_Remaining',0x4A655D0),
+                                (428426,'.ctor',0x970AD30),(428427,'.ctor',0x3B67E30)):
+        require(0<=index<len(md.methods),True,source,index)
+        method=md.methods[index]
+        require(0<=method.declaring_type<len(md.types),True,source,index)
+        owner=md.types[method.declaring_type]
+        require(md.type_full_name(owner),'MemoryPack.MemoryPackReader',source,index)
+        require(md.string(method.name_index),name,source,index)
+        image_name=md.string(md.images[image_owners[method.declaring_type]].name_index)
+        require(image_name,'MemoryPack.dll',source,index)
+        module=modules[image_name]
+        count=pe.u32_at_va(module+8)
+        require(count<=1_000_000,True,source,module+8)
+        base=pe.u64_at_va(module+16)
+        row=method_token_pointer(method.token,pe.bytes_at_va(base,count*8),source=source,offset=base)
+        require(row['pointerVa'],pe.image_base+expected,source,row['slotVa'])
+        selected.append(dict(row,methodIndex=index,name=name,image=image_name,moduleVa=module))
+    getters=[]
+    for rva,hex_bytes in ((0x4A46420,'8B4144C3'),(0x4A655D0,'48635144488B4118482BC2C3')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        getters.append({'rva':rva,'rawHex':raw.hex().upper(),'rangeKind':'bounded explicit-return leaf; no pdata extent'})
+    edges=[]
+    for rva,target in ((0x970AE04,0x8381FF0),(0x970AE34,0x838223C),(0x970AE4C,0x3F779C0),
+                       (0x970C5BB,0x3B67E30),(0x970C605,0x3F300),(0x970C0FD,0x970AD30)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'rawHex':raw.hex().upper(),'targetRva':target})
+    return {'methods':selected,'getterLeaves':getters,'edges':edges,
+            'level':'exact module/token identity; direct conditional native construction',
+            'spanConstructor':{'rva':0x3B67E30,'inputWindowBytes':16,'stateWindowBytes':0x58,
+                               'boundary':'RDX points to a 16-byte carrier copied to reader+0x20. Its signed dword+8 is stored at reader+0x30 and sign-extended into +0x18; +0x38 and both +0x40/+0x44 counters are cleared. Nonzero carrier length selects its pointer for +0x50; zero selects null. The first 24 state bytes come from static storage. Input validity and allocation bounds are not checked by this constructor.'},
+            'sequenceConstructor':{'rva':0x970AD30,'inputWindowBytes':24,
+                                   'boundary':'RDX points to a 24-byte endpoint descriptor. Equal endpoints use the static descriptor in reader+0; otherwise the input descriptor is copied. First-segment and length helpers still receive the original input, supplying +0x20/+0x30, total +0x18 and cursor +0x50. Both counters are cleared. Static descriptor contents and multi-segment ABI remain unresolved.'},
+            'accessors':{'consumedOffset':0x44,'totalLengthOffset':0x18,
+                         'boundary':'get_Consumed returns the dword at +0x44; get_Remaining returns qword+0x18 minus sign-extended dword+0x44. This independently names these state roles, not serialized field meanings.'},
+            'caller':{'rva':0x970C4A8,'readerStackOffset':0x50,'returnedCounterStackOffset':0x94,
+                      'boundary':'Copies the entry RDX 16-byte input, initializes a 0x58-byte stack reader, invokes the span constructor, dispatches with that reader, and returns its +0x44 counter after cleanup. The sequence caller similarly copies a constructed 0x58-byte state and returns +0x44. Neither reviewed owner compares that counter against original length. Caller selection for SkillData, initial file identity, and outer EOF enforcement remain unknown.'},
+            'boundary':'A conditional source-length/consumed ABI exists, but no authenticated VFS allocation or observed SkillData invocation joins it. Do not prune terminal candidates.'}
 
 
 def reader_cursor_consumers(pe, *, source):
@@ -536,6 +586,7 @@ def audit():
         target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
         require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
+    construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
     native_gate()
@@ -555,6 +606,7 @@ def audit():
                            'sourceVa':specs_base,'byteLength':len(specs_raw),
                            'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
                            'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
+        'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
