@@ -179,6 +179,12 @@ only.
   Offline hardware replay of the retained original first draw reproduces its
   complete RT0 exactly. This proves packet sufficiency for that color output,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
+  Public Unity particle instance records require their own stream-layout
+  contract. The recovered refraction path selects its Custom1 record variant
+  from the renderer's mesh/GPU/active-stream settings and isolates that choice
+  from shared billboard materials. A native matrix-bank declaration does not
+  establish Unity's procedural buffer stride; validate the bound descriptor,
+  shader loads, and actual post-VS positions together.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
