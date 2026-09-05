@@ -222,11 +222,17 @@ Current durable boundaries:
   opaque remainder. Keep structural framing distinct from semantic schema
   ownership until formatter IL or a bounded deserialization trace closes the
   complete named cursor.
-  Current registration can locate real SkillData formatter/wrapper bodies;
-  the old lightweight tool's invalid registration and unresolved generic
-  mapping are not intrinsic metadata limitations. Ref-reader ABI, complete
-  nested read order and the final cursor still require independent proof;
-  DummyDll population and setter declarations do not supply it. Historical
+  Current registration locates real SkillData formatter/wrapper bodies and
+  their relative five-operation terminal read sequence, not a file offset.
+  The Core type used by `ReadValue<T>` differs from the generated wrapper's
+  `Register<T>` type; a generated wrapped reader alone does not prove the
+  adapter or active formatter. Provider mutation and lookup return paths are
+  visible, but neither fixes initialization/replacement history. The separate
+  generic serializer's pointer/length-word carrier is not yet joined to this
+  formatter or authenticated VFS allocation. Keep both terminal candidates;
+  complete nested cursors and EOF remain unresolved. Native pins and reviewed
+  limits belong to `reports/animestudio/skilldata_native_review_latest.json`;
+  DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
   without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC
   Montage reader exact-frames all 3,631 current rows, including both non-empty
