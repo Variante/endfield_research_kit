@@ -234,6 +234,15 @@ Current durable boundaries:
   limits belong to `reports/animestudio/skilldata_native_review_latest.json`;
   PE reads must remain within raw section extents: virtual-only globals have
   no disk value and need runtime-initialization evidence, not adjacent file bytes.
+  Generic-instantiation registration is a pointer array, not inline records;
+  preserve the record's padding separately from its u32 argument count. The
+  maintained `scripts.game_data.il2cpp_context_audit` validates current native
+  inputs, every registered instance, and reciprocal open-parameter ownership.
+  Its inventory is `reports/animestudio/il2cpp_context_current_latest.json`.
+  The selected `GetFormatter<T>` parameter belongs to `ReadValue<T>`; a prior
+  concrete-type probe was an indirection bug, not a runtime counterexample.
+  This static join does not establish actual generic substitution or formatter
+  selection; preserve both terminal candidates until those separate gates close.
   DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
   without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC

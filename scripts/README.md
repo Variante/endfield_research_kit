@@ -276,6 +276,12 @@ CLI and parser provenance at both ends. Historical census rebinding is rejected.
 Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
 establishes whole-schema ownership. Partial `--max-files` outputs must stay in
 `tmp/` or `scratch/`.
+`python -m scripts.game_data.il2cpp_context_audit` emits an exact-build native
+generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
+pointer-table/record/vector decoding and reciprocal method-parameter identity;
+the audit checks selected native inputs and consumer pins, scans all registered
+instances, and references the authenticated SkillData corpus. It does not
+re-stream VFS bytes or establish runtime formatter/cursor identity.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
