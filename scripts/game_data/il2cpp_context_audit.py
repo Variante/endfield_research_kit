@@ -27,6 +27,13 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x508E0, 0x50926, '2071A23E23E45FBCA162759BF197902A6D6B9C5587F6F71FADE172F2CBA92618'),
+    (0x2D7A4C0, 0x2D7A633, '65CD048E5A09DE0A04F21C01679BC1B31D085665530236F5CAF2FA0F7520387B'),
+    (0x2D076C0, 0x2D07B84, '84F4B8575E52FD2AAE54A6A05BCFABC141B8497D9C6AD37F17B7DA794E70420D'),
+    (0x2D06B70, 0x2D06D61, '996028190AEED096CCF29CDDAB8526D6E6D2D875B485632E36E7BF59228577CB'),
+    (0x4A490D0, 0x4A49131, '1169F77B12C05437AE9F62438BCC597F5C6E07B242C64FADD4176E2818A69850'),
+    (0x3DBBDC0, 0x3DBBE37, '1657ED5BBC390F4DFE0289B223AD316D6704BFC5AF7773F8CCB34E3F6645D48D'),
+    (0x4C36012, 0x4C36118, 'A30083FD47A8AAD5C85B522ED3005C611E3D33C55D1FC9769754B01CF82276DA'),
     (0x2D36380, 0x2D36994, '85D41B9FE1654F6F92A646B7A964873F1F7FE0CD00D141C4F83008F8829E5030'),
     (0x3AF70, 0x3AFBF, '72BD36DFB1B0E26BACC5934A9DD0C0CE1F0DBC3B7D651C979A4D519F0898C5B3'),
     (0x3B188A0, 0x3B189ED, 'BBF441134BEE6360DE2E40A3EF134DB920D8DE9FED8231EEBF0602101B5E389D'),
@@ -480,6 +487,73 @@ def stream_carrier_consumer(pe,*,source):
             'boundary':'Both allocation branches perform one indirect call at class+0x370 with a 16-byte carrier, then call the joined manager carrier entry without testing returned EAX. Slot 35 is declared Stream.Read, not ReadExactly. The large branch obtains length separately for comparison, low-32-bit allocation request and low-32-bit carrier length; equality/stability is not checked. The small branch also narrows a fresh result before stack allocation. Later negative checks apply to the narrowed dword, not the original 64-bit result. No source position, complete-fill loop, short-read check, authenticated payload length or final parser EOF is established; allocation helpers and concrete overrides remain unresolved.'}
 
 
+def vfs_stream_identity(pe,md,modules,image_owners,reg,*,source):
+    """Normal allocation candidate plus independent token/parent/slot identities."""
+    identity=named_top_level_type(md.buf,b'Common.Beyond.dll',b'Beyond.VFS',b'VFSFileReadStream',source=source)
+    require((identity['typeDefinitionIndex'],identity['byvalTypeIndex']),(31896,147393),source)
+    require(md.types[31896].parent_index,143204,source)
+    require(143204<reg['typesCount'],True,source)
+    parent_pointer=pe.u64_at_va(int(reg['types'],16)+143204*8)
+    parent_raw=pe.bytes_at_va(parent_pointer,16)
+    require(parent_raw,bytes.fromhex('07930000000000000000120000000000'),source,parent_pointer)
+    cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+0x2D7A588,7),pe.image_base+0x2D7A588,source=source)
+    raw=pe.bytes_at_va(cell,8)
+    index=unresolved_usage_index(raw,reg['typesCount'],tag=1,source=source,offset=cell)
+    require(index,identity['byvalTypeIndex'],source,cell)
+    pointer=pe.u64_at_va(int(reg['types'],16)+index*8)
+    type_raw=pe.bytes_at_va(pointer,16)
+    require(type_raw,bytes.fromhex('987C0000000000000000120000000000'),source,pointer)
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247416,'Beyond.VFS.VirtualFileSystem','GetAssetStream',0x2D7A4C0),
+         (247418,'Beyond.VFS.VirtualFileSystem','GetAssetStream',0x3187CF0),
+         (247484,'Beyond.VFS.VFSFileReadStream','.ctor',0x2D076C0),
+         (247486,'Beyond.VFS.VFSFileReadStream','Read',0x2D06B70),
+         (247495,'Beyond.VFS.VFSFileReadStream','get_Length',0x4A490D0),
+         (247496,'Beyond.VFS.VFSFileReadStream','get_Position',0x3DBBDC0)],
+        source=source,expected_image='Common.Beyond.dll')
+    for index,slot in ((247486,35),(247495,11),(247496,12)):
+        require(md.methods[index].slot,slot,source,index)
+    return {'typeIdentity':identity,'parentTypePointerVa':parent_pointer,'parentTypeRawHex':parent_raw.hex().upper(),
+            'allocationCellVa':cell,'allocationCellRawHex':raw.hex().upper(),
+            'allocationTypePointerVa':pointer,'allocationTypeRawHex':type_raw.hex().upper(),'methods':methods,
+            'level':'exact static type/parent/token/slot relation; conditional allocation connection',
+            'boundary':'The allocation callsite loads a type usage for VFSFileReadStream and passes the returned object plus the same 32-byte descriptor and inner stream to its token-joined constructor. Metadata parent points to the separately joined Stream record. This identifies the normal construction path, not successful execution, resolved live type usage, replacement callbacks, selected source file or authenticated bytes.'}
+
+
+def vfs_stream_consumer(pe,*,source):
+    """Descriptor-to-state and nested stream relations on reviewed normal paths."""
+    edges=[]
+    for rva,target in ((0x2D7A580,0x2D7A640),(0x2D7A5A0,0x26060),(0x2D7A5DF,0x2D076C0),
+                       (0x2D06BCA,0x3AF70),(0x3DBBE03,0x3AF70),(0x2D06C24,0x508E0),
+                       (0x4C36099,0x3A8ADF0),(0x2D06CDE,0x2C97740)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2D0770C,'410F1006488D4F4848895F48410F104E100F1147280F114F38'),
+        (0x4A49105,'8B433C4883C4205BC3'),
+        (0x3DBBE08,'8B4B38482BC14883C4205BC3'),
+        (0x2D06BC2,'B90C000000488BD3'),
+        (0x3DBBDF5,'488B53484885D27433B90C000000'),
+        (0x2D06C15,'B9230000004C8D4424300F29442430'),
+        (0x2D06C29,'8BF83B46080F87DCF4F201'),
+        (0x50906,'498B80700300004D8B80780300000F29442420FFD0'),
+        (0x2D06CE3,'8BC7488B7C2468488B5C24704883C4505EC3')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'edges':edges,'windows':windows,'level':'direct conditional native descriptor/state/return connection',
+            'descriptorBytes':32,'descriptorStateOffset':0x28,'innerStreamOffset':0x48,
+            'length':{'stateOffset':0x3C,'descriptorOffset':0x14,
+                      'boundary':'The normal getter zero-extends this dword into RAX. It is copied from the constructor descriptor, not queried from physical-file EOF.'},
+            'position':{'baseStateOffset':0x38,'descriptorOffset':0x10,
+                        'boundary':'The normal getter calls slot 12 on the inner stream and subtracts the zero-extended descriptor dword. No initial inner position or seek execution is established.'},
+            'read':{'boundary':'Normal Read subtracts logical Position from the zero-extended length word and uses the low 32 bits of a positive difference, otherwise zero; its signed request comparison does not certify arbitrary 64-bit ranges. An oversized request goes through a carrier-slicing helper whose full ABI remains open. The specialized inner dispatcher ignores entry ECX, copies the 16-byte input and calls fixed class+0x370 (slot 35) once, returning its EAX. Read unsigned-checks that count does not exceed the resulting request, optionally passes exactly the returned prefix to another stateful helper, and returns that count without a full-fill loop. The concrete inner override and optional transform remain unresolved.'},
+            'boundary':'All statements are conditional on the reviewed no-replacement paths. Callback overrides, inner stream construction/seek, allocation extents, descriptor-to-current-VFS identity/hash and source/EOF receipt remain unresolved. Logical position arithmetic is not physical-file ownership or proof of byte equality.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -814,6 +888,8 @@ def audit():
     carrier_evidence=resource_carrier_consumers(pe,source=str(gate.gameassembly))
     stream_identity=stream_source_identity(pe,md,modules,image_owners,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
     stream_consumer=stream_carrier_consumer(pe,source=str(gate.gameassembly))
+    vfs_identity=vfs_stream_identity(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
+    vfs_consumer=vfs_stream_consumer(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -836,6 +912,8 @@ def audit():
         'selectedResourceCarrierConsumers':carrier_evidence,
         'selectedStreamSourceIdentity':stream_identity,
         'selectedStreamCarrierConsumer':stream_consumer,
+        'selectedVfsStreamIdentity':vfs_identity,
+        'selectedVfsStreamConsumer':vfs_consumer,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

@@ -322,7 +322,13 @@ Current durable boundaries:
   perform one `Read` and discard its returned count before parsing the requested
   carrier extent. Repeated length results also undergo unchecked 32-bit narrowing;
   no stability, allocation/filled-length equality or full-read guarantee follows.
-  The concrete stream override, position and authenticated bytes remain unknown.
+  The normal VFS allocation usage, constructor token and Stream parent now join
+  `VFSFileReadStream`. Its constructor copies a 32-byte descriptor and retains
+  the inner stream. Normal getters expose a descriptor length word and inner
+  position minus a descriptor base word. Read returns the inner stream's actual
+  count after a request-limit branch and optional prefix transformation, without
+  a full-fill loop. Replacement callbacks, initial seek and descriptor-to-current
+  logical-file identity/hash remain unproved; this is not a runtime receipt.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

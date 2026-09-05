@@ -16,8 +16,75 @@ from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
+from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class VfsStreamIdentityTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={0x180000300:struct.pack('<Q',(1<<29)|(147393<<1)|1),
+                    0x200:bytes.fromhex('07930000000000000000120000000000'),
+                    0x400:bytes.fromhex('987C0000000000000000120000000000'),
+                    0x182D7A588:bytes.fromhex('488B0D')+struct.pack('<i',0x300-0x2D7A58F)}
+        self.pointers={0x100000+143204*8:0x200,0x100000+147393*8:0x400}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va],u64_at_va=self.pointers.__getitem__)
+        self.parent=SimpleNamespace(parent_index=143204)
+        self.methods={i:SimpleNamespace(slot=s) for i,s in ((247486,35),(247495,11),(247496,12))}
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]), \
+             patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':31896,'byvalTypeIndex':147393}):
+            return vfs_stream_identity(self.pe,SimpleNamespace(buf=b'',types={31896:self.parent},methods=self.methods),
+                {},[],{'typesCount':200000,'types':'0x100000'},source='fixture.dll')
+
+    def test_normal_allocation_is_not_runtime_receipt(self):
+        result=self.decode()
+        self.assertEqual(result['allocationCellVa'],0x180000300)
+        self.assertIn('not successful execution',result['boundary'])
+
+    def test_wrong_parent_and_override_slot(self):
+        self.parent.parent_index=1
+        with self.assertRaises(ContextError):self.decode()
+        self.parent.parent_index=143204
+        self.methods[247486].slot=34
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_bad_allocation_usage_or_type_record(self):
+        for key in (0x180000300,0x400):
+            original=self.parts[key]
+            for bad in (b'',original[:-1],original+b'!',bytes(len(original))):
+                self.parts[key]=bad
+                with self.subTest(key=key,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[key]=original
+
+
+class VfsStreamConsumerTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+            ((0x2D7A580,0x2D7A640),(0x2D7A5A0,0x26060),(0x2D7A5DF,0x2D076C0),
+             (0x2D06BCA,0x3AF70),(0x3DBBE03,0x3AF70),(0x2D06C24,0x508E0),
+             (0x4C36099,0x3A8ADF0),(0x2D06CDE,0x2C97740))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D0770C,'410F1006488D4F4848895F48410F104E100F1147280F114F38'),
+            (0x4A49105,'8B433C4883C4205BC3'),(0x3DBBE08,'8B4B38482BC14883C4205BC3'),
+            (0x2D06BC2,'B90C000000488BD3'),(0x3DBBDF5,'488B53484885D27433B90C000000'),
+            (0x2D06C15,'B9230000004C8D4424300F29442430'),
+            (0x50906,'498B80700300004D8B80780300000F29442420FFD0'),
+            (0x2D06C29,'8BF83B46080F87DCF4F201'),(0x2D06CE3,'8BC7488B7C2468488B5C24704883C4505EC3'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_descriptor_offsets_and_non_full_read(self):
+        result=vfs_stream_consumer(self.pe,source='fixture.dll')
+        self.assertEqual(result['descriptorStateOffset']+result['length']['descriptorOffset'],result['length']['stateOffset'])
+        self.assertIn('without a full-fill loop',result['read']['boundary'])
+
+    def test_mutated_truncated_and_trailing_windows(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):vfs_stream_consumer(self.pe,source='fixture.dll')
+            self.parts[rva]=good
 
 
 class StreamSourceIdentityTests(unittest.TestCase):
