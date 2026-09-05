@@ -403,7 +403,9 @@ Current durable boundaries:
   The normal streaming-path getter requests the exact Unity streaming-assets
   interface name through a cached indirect-call resolver and stores its return.
   This proves the static request, not the resolved implementation or directory;
-  live cache state and the resolver-to-Unity implementation join remain open.
+  The resolver reads a runtime tree, can retry with a helper-transformed query,
+  and returns a candidate value or zero on the final sentinel. Tree registration,
+  query-helper semantics, live contents and the Unity implementation join remain open.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.

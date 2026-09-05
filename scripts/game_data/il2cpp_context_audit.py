@@ -28,6 +28,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x1F1B0, 0x1F463, '1E349215CBE3DEA915C8B755F51D6FC71E2497296E8CA1F59E2248444003B8D0'),
+    (0x2E6B64, 0x2E6B71, '7B5C59F3F5F7F5FE5E724565F80D81719EE1C470D4056BEA56BEE902565C6C37'),
     (0x2F46C10, 0x2F46D6A, '1DC5C757B06C54E0DDDE9F58667379DA87DF70B02495782B65EE5C99311D37E3'),
     (0x393CC10, 0x393CC45, 'F1AF611FC7780ADA8187C51843D77884F63A24E5B7F94E91FC9966C13351711E'),
     (0x2CB7620, 0x2CB7644, 'C332CA386F5074737EB183541FF260B00C2E320643BF053F232BC20BB7A6893F'),
@@ -1067,7 +1069,14 @@ def vfs_root_resolver(pe,*,source):
         (0x393CC14,'488B052D12570A4885C07407'),
         (0x393CC20,'4883C42848FFE0'),
         (0x393CC27,'488D0D1A7BEF06E87D256EFC'),
-        (0x393CC3C,'4889050512570AEBDB')):
+        (0x393CC3C,'4889050512570AEBDB'),
+        (0x1F1DC,'4C8B2D7515E90D498B5D084D8BFD'),
+        (0x1F293,'498B4740E957010000'),
+        (0x1F2D6,'BA28000000488BCBE85D052C00'),
+        (0x1F32A,'4C8B2D2714E90D498B5D084D8BFD'),
+        (0x1F3CC,'4D3BFD751133DBEB11'),
+        (0x1F3E2,'498B5F40'),(0x1F3F0,'488BC3'),
+        (0x2E6B64,'48C7C0FFFFFFFFE97F87D3FF')):
         raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
         require(raw,bytes.fromhex(expected),source,rva)
         windows.append({'rva':rva,'rawHex':raw.hex().upper()})
@@ -1075,8 +1084,9 @@ def vfs_root_resolver(pe,*,source):
     require(pe.bytes_at_va(pe.image_base+0xA834748,len(name)),name,source,0xA834748)
     return {'windows':windows,'requestedInterface':name[:-1].decode('ascii'),
             'nameRva':0xA834748,'functionCacheRva':0xDEADE48,
+            'lookupCarrierGlobalRva':0xDEB0758,'candidateValueOffset':64,
             'level':'exact static resolver name; direct conditional cache flow',
-            'boundary':'The normal non-replacement streaming-path getter initialization branch calls the wrapper, preserves RAX in RBX and stores it in static carrier+8; the normal return reads that slot. The wrapper loads a cached function pointer and tail-jumps to it when nonnull. On cache miss it passes the exact NUL-terminated interface name to the resolver, checks the result, stores that result in the same function-pointer cell and tail-jumps. The requested name is not a verified resolved function identity, ABI or actual directory. Resolver internals, replacement/cold failure paths, class initialization, comparison predicate semantics, live cache contents and the final path/file/hash connection remain unresolved.'}
+            'boundary':'The normal non-replacement streaming-path getter initialization branch calls the wrapper, preserves RAX in RBX and stores it in static carrier+8; the normal return reads that slot. The wrapper loads a cached function pointer and tail-jumps to it when nonnull. On cache miss it passes the exact NUL-terminated interface name to the resolver, checks the result, stores that result in the same function-pointer cell and tail-jumps. The requested name is not a verified resolved function identity, ABI or actual directory. The resolver loads a runtime tree carrier from a static global, follows child pointers using comparison helper results and returns candidate node+0x40 after its first lookup. If that lookup chooses the sentinel, it constructs a second query through helpers (including a search passed byte 0x28) and traverses the same carrier again; a final sentinel yields zero, otherwise node+0x40 supplies the result. String construction/comparison/search/subrange helper semantics, the tree registration producer and live contents, replacement/cold failure paths, class initialization, comparison predicate semantics, live cache contents and the final path/file/hash connection remain unresolved.'}
 
 
 def vfs_string_carrier(pe,*,source):
