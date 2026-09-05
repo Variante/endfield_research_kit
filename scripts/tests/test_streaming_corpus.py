@@ -45,6 +45,12 @@ class StreamingCorpusTests(unittest.TestCase):
                 "marker15SelectionStatus": "unresolved",
                 "recordExtentStatus": "unresolved",
             },
+            "nestedReaderPhaseObservations": {
+                "status": "direct-conditional-default-selector5-later-reader",
+                "sourceRoot": "second-secondary-root",
+                "marker15WidthStatus": "unresolved",
+                "targetOwnedBytes": 0,
+            },
         }
         with patch(
             "scripts.game_data.streaming_corpus.validate_streaming_field2_native_contract",
@@ -231,6 +237,13 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(context["status"], "direct-static-root-field5-row-field3-to-context")
         self.assertEqual(context["marker15SelectionStatus"], "unresolved")
         self.assertEqual(context["recordExtentStatus"], "unresolved")
+        phase = result["layer4"]["nestedReaderPhaseStaticChain"]
+        self.assertEqual(phase["sourceRoot"], "second-secondary-root")
+        self.assertEqual(phase["marker15WidthStatus"], "unresolved")
+        self.assertEqual(phase["targetOwnedBytes"], 0)
+        join = result["layer3"]["rootMarkerRowShapeJoin"]
+        self.assertEqual(join["status"], "exact-same-vector-index")
+        self.assertEqual(join["counts"], {"[2,6,40,[0,1,2,3,4,5]]": 1})
         self.assertEqual(refs15["files"][0]["referenceCount"], 1)
         self.assertEqual(refs15["files"][0]["offset"], 0)
         self.assertEqual(len(refs15["files"][0]["packedSha256"]), 64)
@@ -267,6 +280,9 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(result["layer3"]["field2Rows0To5Status"], "unvalidated")
         self.assertEqual(result["layer3"]["nestedMarker15ReferenceBounds"]["status"], "unvalidated")
         self.assertIsNone(result["layer4"]["nestedContextStaticChain"])
+        self.assertIsNone(result["layer4"]["nestedReaderPhaseStaticChain"])
+        self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["status"], "unvalidated")
+        self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["counts"], {})
         self.assertEqual(
             {item["status"] for item in result["layer3"]["field2RowSlotSpans"]},
             {"unvalidated"},

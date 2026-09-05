@@ -100,15 +100,18 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   readable decoded positions; per-file source hashes and ordered slot/target
   digests bind this directory. Its target contents remain opaque and own zero
   additional bytes. File-byte availability and non-overlapping probe widths
-  do not resolve record width. The selected-build native contract now proves
-  a conditional static chain from the first secondary root's field-5 row,
-  through its field-3 target, into a callback-scoped context pointer; that
-  pointer is cleared on return. This is direct carrier evidence, not a
-  concrete file receipt. Callback selection to the independent 16-byte read
-  APIs and nested marker-15 selection remain unresolved, so those reads still
-  prove no target width. The maintained chain and its explicit ABI boundary
-  are in `streaming_field2_native.json` and the focused corpus report's
-  `layer4.nestedContextStaticChain`; unjoined read candidates remain in
+  do not resolve record width. Native root-marker dispatch and the parser's
+  same-index marker/row-shape join are distinct from nested marker meanings.
+  For the reviewed default selector, the first secondary root's initial
+  callback is a false-returning stub, not an asset reader. A later callback
+  instead uses the second secondary root's row, retained in a 32-byte runtime
+  record, and installs its field-3 target for that callback scope. The default
+  later reader constructs count/element keys and calls a 16-byte-reading
+  helper. This conditional static chain is direct evidence, not a concrete
+  file receipt or proof of key-to-index behavior. Complete map-helper ABI,
+  unique key/marker association, script overrides, and record extent remain
+  unresolved. See `streaming_field2_native.json` and the focused report's
+  `layer4.nestedReaderPhaseStaticChain`; marker-15 candidates remain in
   `reports/animestudio/streaming_marker15_native_latest.json`.
   A separately gated family-level native
   reader closes payload base, requested length, returned count, exact-read
@@ -271,10 +274,11 @@ and before/after evidence belongs in `tmp/<topic>/`.
 
 ## Remaining gaps
 
-- Resolve the scoped callback-to-reader and marker-15 selection joins before
-  promoting any consumed span or fixed record width. The conditional static
-  root-row-to-context write chain is closed; its concrete file instance and
-  numeric dispatch selection are not. The uoffset directory is bounded,
+- Close the native key-to-index helpers and unique per-row key/marker join
+  for the reviewed later-phase selector before certifying its consumed spans.
+  Its conditional default callback path is closed; initial and later phases
+  use different root carriers. Preserve override/execution and file-instance
+  gaps, and do not extend a subset proof to every marker-15 target. The directory is bounded,
   not its records. Then close marker-17 opaque byte bodies before concrete
   runtime-root/secondary-path joins or field-5 key namespace.
   Fixed-size-looking targets still need independent width/cursor

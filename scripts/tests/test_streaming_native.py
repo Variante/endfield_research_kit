@@ -82,6 +82,12 @@ class StreamingNativeTests(unittest.TestCase):
                 "marker15SelectionStatus": "unresolved",
                 "recordExtentStatus": "unresolved",
             },
+            "nestedReaderPhaseObservations": {
+                "status": "direct-conditional-default-selector5-later-reader",
+                "sourceRoot": "second-secondary-root",
+                "marker15WidthStatus": "unresolved",
+                "targetOwnedBytes": 0,
+            },
         }
         contract_path = root / "contract.json"
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
@@ -226,11 +232,16 @@ class StreamingNativeTests(unittest.TestCase):
                 self.assertEqual("validated", report["status"])
                 self.assertEqual("unresolved", report["nestedContextObservations"]["marker15SelectionStatus"])
                 self.assertEqual("unresolved", report["nestedContextObservations"]["recordExtentStatus"])
+                phase = report["nestedReaderPhaseObservations"]
+                self.assertEqual(phase["sourceRoot"], "second-secondary-root")
+                self.assertEqual(phase["marker15WidthStatus"], "unresolved")
+                self.assertEqual(phase["targetOwnedBytes"], 0)
                 unity = native.gameassembly.parent / "UnityPlayer.dll"
                 unity.write_bytes(unity.read_bytes()[:0x212])
                 report = streaming_native.validate_streaming_field2_native_contract(contract_path=contract_path, game_root=game_root)
         self.assertEqual("validation_failed", report["status"])
         self.assertIsNone(report["nestedContextObservations"])
+        self.assertIsNone(report["nestedReaderPhaseObservations"])
 
 
 if __name__ == "__main__":

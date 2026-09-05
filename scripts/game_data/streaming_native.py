@@ -11,10 +11,10 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
 
-SCHEMA = "endfield.streaming-field2-native-contract.v4"
+SCHEMA = "endfield.streaming-field2-native-contract.v5"
 DEFAULT_CONTRACT = Path(__file__).with_name("streaming_field2_native.json")
 # Updated only after the reviewed JSON contract is finalized.
-CONTRACT_SHA256 = "1AAFE8DD77A626726DC79E3EE8A29853503B649935CC28247F9799380CFC827A"
+CONTRACT_SHA256 = "32FB74533A8A38E8A11776791401263EE333B53DBC6913BF33CD3C6AF8D73AD8"
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -199,6 +199,9 @@ def validate_streaming_field2_native_contract(
         "carrierObservations": contract.get("carrierObservations"),
         "nestedContextObservations": (
             contract.get("nestedContextObservations") if not failures else None
+        ),
+        "nestedReaderPhaseObservations": (
+            contract.get("nestedReaderPhaseObservations") if not failures else None
         ),
         "evidenceBoundary": contract.get("evidenceBoundary"),
         "validationFailures": failures,

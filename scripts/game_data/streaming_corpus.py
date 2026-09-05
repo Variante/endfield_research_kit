@@ -20,7 +20,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v10"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v11"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -292,6 +292,7 @@ def sweep(
     overlay_states: collections.Counter[str] = collections.Counter()
     field4_values: collections.Counter[str] = collections.Counter()
     field5_shapes: collections.Counter[str] = collections.Counter()
+    root_marker_shapes: collections.Counter[str] = collections.Counter()
     field2_layouts: collections.Counter[str] = collections.Counter()
     field2_family_files: collections.Counter[str] = collections.Counter()
     packed_bytes = decoded_bytes = parsed_count = exact_info = partial_data = 0
@@ -794,6 +795,11 @@ def sweep(
                             separators=(",", ":"),
                         )
                         field5_shapes[key] += int(shape.get("count", 0))
+                    for shape in parallel.get("field4ByteToRowShapes") or []:
+                        key = json.dumps([shape["marker"], shape["fieldCount"],
+                                          shape["objectSize"], shape["presentFields"]],
+                                         separators=(",", ":"))
+                        root_marker_shapes[key] += int(shape["count"])
                     group_count += int(groups.get("pairedGroupCount", 0))
                     group_values += int(groups.get("valueCount", 0))
                     descriptors += int(groups.get("descriptorCount", 0))
@@ -1037,6 +1043,11 @@ def sweep(
             "parallelReusedReferenceCount": parallel_reused,
             "field4ByteValueCounts": dict(sorted(field4_values.items())),
             "field5RowShapeCounts": dict(sorted(field5_shapes.items())),
+            "rootMarkerRowShapeJoin": {
+                "status": "exact-same-vector-index" if not failed else "unvalidated",
+                "counts": dict(sorted(root_marker_shapes.items())) if not failed else {},
+                "meaning": "root marker byte and bounded row shape at identical vector index; no nested marker meaning",
+            },
             "field5Field0ReferenceCount": field5_references,
             "field5Field0ReferencedBytes": field5_bytes,
             "field5Field0Representation": "ambiguous",
@@ -1100,6 +1111,9 @@ def sweep(
             "nestedContextStaticChain": (
                 native_contract.get("nestedContextObservations") if not failed else None
             ),
+            "nestedReaderPhaseStaticChain": (
+                native_contract.get("nestedReaderPhaseObservations") if not failed else None
+            ),
             "managedShapeCandidateStatus": "candidate-only",
             "nativeCarrierStatus": (
                 carrier_contract.get("baseLengthStatus")
@@ -1137,7 +1151,7 @@ def sweep(
             "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, field 4 is six float32 loads, and field 5 is a count-prefixed vector whose elements are loaded as scalar32 hash-table keys. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
             "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, filename-token relations, nested parallel vectors, and the family-level carrier remain anonymous structure. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
-            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, callback selection to the asset-reading API, nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The static root.field5 row.field3-to-context write chain does not join a particular authenticated file or establish a target width.",
+            "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, script callback overrides and actual execution, complete key-to-index lookup, nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The default selector-5 later-phase reader is a conditional static route using the second secondary root; it does not join a particular authenticated file or establish a target width.",
         },
         "failures": failures[:FAILURE_SAMPLE_LIMIT],
     }
@@ -1163,6 +1177,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Field-5 scalar32 statistics: `{layer3.get('field2Field5Scalar32Stats')}`.",
         "- Field-2 row objects partition into a 4-byte vtable-displacement prefix plus exact fields: scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[]. These representations are selected-build native-gated and remain anonymous.",
         "- Native context evidence is separately gated in layer4.nestedContextStaticChain: the static root.field5 row.field3 pointer is installed at context+0x80 during a callback scope. This does not close callback-to-asset-API selection, nested marker15 selection, or record extent, and adds no parser-owned target bytes.",
+        f"- Root marker/row-shape joins use identical vector indices: `{layer3.get('rootMarkerRowShapeJoin', {})}`. These are not nested-marker type names.",
+        "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Key-to-index lookup, nested-marker width, concrete execution, and record extent remain separate gates.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",

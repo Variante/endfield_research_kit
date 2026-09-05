@@ -614,6 +614,7 @@ def _parse_parallel_root_subgraph(
     ranges: list[tuple[int, int, str, str]] = []
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
     byte_values: Counter[int] = Counter()
+    marker_shapes: Counter[tuple[int, int, int, tuple[int, ...]]] = Counter()
     referenced_bytes = 0
     outer_field5_vectors = 0
     outer_field5_values = 0
@@ -708,6 +709,8 @@ def _parse_parallel_root_subgraph(
         )
         shapes[shape] += 1
 
+        # Join by the exact vector index, never by equal marginal counts.
+        marker_shapes[(data[field4_start + 4 + index], *shape)] += 1
         field0 = _field_address(row, 0)
         if field0 is None:
             raise ValueError(
@@ -926,6 +929,11 @@ def _parse_parallel_root_subgraph(
         "parallelCount": field3_count,
         "fieldWidths": {"3": 4, "4": 1, "5": 4},
         "field4ByteValueCounts": dict(sorted(byte_values.items())),
+        "field4ByteToRowShapes": [
+            {"marker": key[0], "fieldCount": key[1], "objectSize": key[2],
+             "presentFields": list(key[3]), "count": count}
+            for key, count in sorted(marker_shapes.items())
+        ],
         "field5RowCount": field5_count,
         "field5RowShapes": [
             {

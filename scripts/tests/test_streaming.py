@@ -691,6 +691,19 @@ class StreamingTests(unittest.TestCase):
                 self.assertEqual(subgraph["reusedReferences"], 2)
                 self.assertEqual(subgraph["wholeFileStatus"], "partial")
 
+    def test_root_marker_shape_join_uses_index_not_marginal_counts(self):
+        data = bytearray(_parallel_data_root())
+        data[128:134] = bytes.fromhex("06000c000400")
+        data[136:140] = (8).to_bytes(4, "little", signed=True)
+        first = parse_streaming_file("init", _packed(bytes(data)))["anonymousParallelSubgraph"]
+        data[84:86] = bytes((2, 1))
+        swapped = parse_streaming_file("init", _packed(bytes(data)))["anonymousParallelSubgraph"]
+        self.assertEqual(first["field4ByteValueCounts"], swapped["field4ByteValueCounts"])
+        self.assertEqual(first["field5RowShapes"], swapped["field5RowShapes"])
+        self.assertNotEqual(first["field4ByteToRowShapes"], swapped["field4ByteToRowShapes"])
+        self.assertEqual([(r["marker"], r["objectSize"]) for r in first["field4ByteToRowShapes"]], [(1, 8), (2, 12)])
+        self.assertEqual([(r["marker"], r["objectSize"]) for r in swapped["field4ByteToRowShapes"]], [(1, 12), (2, 8)])
+
     def test_parallel_nested_vectors_are_exact_but_elements_remain_opaque(self):
         result = parse_streaming_file(
             "streaming", _packed(_parallel_nested_data_root())
