@@ -352,6 +352,11 @@ Shader admission pins must match original bytes from the selected installed
 shader variant and a retained retail observation. Exercise bytecode hashing in
 capture regressions; fixtures that synthesize the expected identity can conceal
 a stale pin even when every local test passes.
+The combined packet contract now has a fully collected retail example. Use its
+authenticated source inputs for deferred recovery; capture completeness does
+not establish final rendering or cloth parity. Collection must validate the
+individual producer/consumer owners within a joined packet, and its streamed
+artifact hashing bound must accommodate the observer's permitted payload size.
 
 ## Reference and comparison policy
 
