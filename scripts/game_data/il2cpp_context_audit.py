@@ -20,13 +20,16 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x37DF620, 0x37DF67D, '6901FC137F0D874FDFBDED47658B6B8BFA718E0BF2AE7EFD480EF8152DEEE72A'),
+    (0x37DF680, 0x37DF77C, 'FBF5D3CF070494A3BE4FF265779AEEDE8B5CA95A2DE61EDFE215DB72640A1AA1'),
+    (0x4E3B21E, 0x4E3B2B9, '4C1C33561E4C1011B637FF320D49C0DDF625396AEE89C8BB88414F9C97A048B5'),
     (0x8D20, 0x8F52, '48868BF56BEC2C84D6EEF44AE342E3CB5ABC1D54A62494733BE2703CA6A206B3'),
     (0x84B0, 0x8C74, 'A29F9BB8993244FF7D7571D39282EFA4A8B88736E71FAA18492B7AA4D90A706A'),
     (0xB010, 0xB995, '10231D49EEBCEAD16CF4142DF20F38407783C9D3DA55196125D305F23785D238'),
@@ -131,6 +134,44 @@ def validate_selected_method_spec(row, records, base, method_count, instantiatio
     if not isinstance(inst,dict) or inst.get('index')!=method_inst:
         raise ContextError(source,offset+8,'reported method instantiation matches raw MethodSpec',
                            {'expected':method_inst,'actual':inst})
+
+
+def wrapper_consumer(pe, md, reg, table, *, source):
+    """Reviewed conditional wrapper path, not a source/EOF or dispatch receipt."""
+    instruction=pe.bytes_at_va(pe.image_base+0x37DF6EC,7)
+    require(instruction[:3],bytes.fromhex('488B15'),source,0x37DF6EC)
+    cell=rip_qword_load_target(instruction,pe.image_base+0x37DF6EC,source=source)
+    initializer=pe.bytes_at_va(pe.image_base+0x37DF752,7)
+    require(initializer[:3],bytes.fromhex('488D0D'),source,0x37DF752)
+    require(pe.image_base+0x37DF759+struct.unpack_from('<i',initializer,3)[0],cell,source,0x37DF752)
+    records_base=int(reg['methodSpecs'],16)
+    spec=usage_method_spec(pe.bytes_at_va(cell,8),pe.bytes_at_va(records_base,reg['methodSpecsCount']*12),
+                          len(md.methods),reg['genericInstsCount'],source=source,
+                          usage_offset=cell,records_offset=records_base)
+    require((spec['index'],spec['definition'],spec['classInstantiationIndex'],spec['methodInstantiationIndex']),
+            (610730,428462,-1,8486),source,spec['va'])
+    inst=table.resolve(spec['methodInstantiationIndex'])
+    require(len(inst.arguments),1,source,inst.record_va)
+    arg=inst.arguments[0]
+    raw=bytes.fromhex(arg.raw_type_record_hex)
+    carrier_raw=pe.bytes_at_va(struct.unpack_from('<Q',raw)[0],32)
+    base_raw=pe.bytes_at_va(struct.unpack_from('<Q',carrier_raw)[0],16)
+    carrier=generic_type_carrier(raw,carrier_raw,base_raw,type_pointer=arg.type_pointer_va,
+                                 type_count=len(md.types),source=source)
+    require(carrier['baseDefinitionIndex'],37521,source)
+    require(md.type_full_name(md.types[37521]),'System.Collections.Generic.List`1',source)
+    element_inst=table.resolve_pointer(carrier['classInstantiationPointerVa'])
+    require(element_inst.index,816,source,element_inst.record_va)
+    require(len(element_inst.arguments),1,source,element_inst.record_va)
+    require(element_inst.arguments[0].raw_type_record_hex,'A22D0000000000000000118000000000',source)
+    call=pe.bytes_at_va(pe.image_base+0x37DF6F9,5)
+    require(call[0],0xE8,source,0x37DF6F9)
+    require(pe.image_base+0x37DF6FE+struct.unpack_from('<i',call,1)[0],pe.image_base+0x381F8F0,source,0x37DF6F9)
+    return {'methodSpec':spec,'methodInstantiation':inst.as_dict(),
+            'listCarrier':carrier,'elementInstantiation':element_inst.as_dict(),
+            'formatterEntryRva':0x37DF620,'readerEntryRva':0x37DF680,'nestedCallRva':0x37DF6F9,
+            'level':'direct conditional consumer; exact static usage/type relation',
+            'boundary':'The formatter forwards its reader unchanged to the wrapper reader. The fast path consumes one byte using remaining+0x30, cursor+0x50 and counters+0x40/+0x44. Header 0xFF clears the output; non-null header 1 reaches the nested call with the same reader and the recorded List instantiation. Other headers reach a helper then INT3. Cold ensure/advance delegates remain opaque; their return branches rejoin the reviewed header path. No list element layout, actual provider selection, authenticated source allocation, source extent or final cursor is established.'}
 
 
 def audit():
@@ -452,6 +493,7 @@ def audit():
         target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
         require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
+    wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -469,6 +511,7 @@ def audit():
                            'sourceVa':specs_base,'byteLength':len(specs_raw),
                            'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
                            'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
+        'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

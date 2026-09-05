@@ -15,7 +15,40 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record
+from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec
+
+
+class UsageMethodSpecTests(unittest.TestCase):
+    records=struct.pack('<iiiiii',0,-1,0,1,-1,1)
+    usage=struct.pack('<Q', (6 << 29) | (1 << 1) | 1)
+
+    def decode(self, usage=None, records=None, base=0x100):
+        return usage_method_spec(self.usage if usage is None else usage,
+                                 self.records if records is None else records,2,2,
+                                 source='fixture.dll',usage_offset=0x80,records_offset=base)
+
+    def test_exact_second_record(self):
+        row=self.decode()
+        self.assertEqual((row['index'],row['va'],row['definition'],row['methodInstantiationIndex']),
+                         (1,0x10C,1,1))
+        self.assertEqual(row['rawHex'],self.records[12:].hex().upper())
+
+    def test_truncated_and_trailing(self):
+        for records in (self.records[:-1],self.records+b'!',self.records[:12]):
+            with self.assertRaises(ContextError): self.decode(records=records)
+        for usage in (self.usage[:-1],self.usage+b'!'):
+            with self.assertRaises(ContextError): self.decode(usage=usage)
+
+    def test_bad_tag_or_index(self):
+        for word in (0, (5<<29)|3, (6<<29)|5):
+            with self.assertRaises(ContextError): self.decode(usage=struct.pack('<Q',word))
+
+    def test_bad_record_count_or_offset(self):
+        with self.assertRaises(ContextError) as caught:
+            self.decode(records=self.records[:12]+struct.pack('<iii',1,-1,2))
+        self.assertEqual(caught.exception.diagnostics['offset'],0x114)
+        for base in (-1,True,(1<<64)-12):
+            with self.assertRaises(ContextError): self.decode(base=base)
 
 
 class MethodSpecRecordTests(unittest.TestCase):

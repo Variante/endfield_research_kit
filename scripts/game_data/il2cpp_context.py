@@ -105,6 +105,28 @@ class GenericInstantiationTable:
         return self.resolve(candidates[0])
 
 
+def usage_method_spec(raw_usage: bytes, records: bytes, method_count: int,
+                      instantiation_count: int, *, source: str, usage_offset: int,
+                      records_offset: int) -> dict:
+    """Join one unresolved usage cell to an exact bounded static record array.
+
+    A tagged on-disk cell is not a live MethodInfo or an executed call.
+    """
+    if len(records) % 12:
+        raise ContextError(source, records_offset, 'exact 12-byte MethodSpec array', len(records))
+    if type(records_offset) is not int or not 0 <= records_offset < 1 << 64 or len(records) > (1 << 64)-records_offset:
+        raise ContextError(source, 0, 'bounded 64-bit MethodSpec array range', records_offset)
+    index = method_spec_usage_index(raw_usage, len(records)//12, source=source, offset=usage_offset)
+    offset = records_offset+index*12
+    raw = records[index*12:(index+1)*12]
+    definition, class_inst, method_inst = method_spec_record(
+        raw, method_count, instantiation_count, source=source, offset=offset)
+    return {'index':index, 'va':offset, 'rawHex':raw.hex().upper(),
+            'definition':definition, 'classInstantiationIndex':class_inst,
+            'methodInstantiationIndex':method_inst,
+            'usageVa':usage_offset, 'usageRawHex':raw_usage.hex().upper()}
+
+
 def generic_type_carrier(type_raw: bytes, carrier_raw: bytes, base_raw: bytes,
                          *, type_pointer: int, type_count: int, source: str) -> dict:
     """Decode authenticated tag-15 carrier windows, preserving unknown bytes.

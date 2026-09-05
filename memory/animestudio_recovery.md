@@ -293,6 +293,11 @@ Current durable boundaries:
   Nested class slots independently link MethodSpecs for the non-null adapter,
   formatter lookup and instance creation to reciprocal parameters of that same
   adapter type. Keep these static links separate from serialized read order.
+  The generated wrapper reader conditionally forwards the same reader after a
+  one-byte fast-path header to an independently joined `ReadPackable<List<...>>`
+  usage/MethodSpec/type carrier. Null and unsupported-header branches are distinct;
+  cold ensure/advance helpers remain opaque. This does not prove element layout,
+  selected formatter, source allocation/extent, or terminal candidate uniqueness.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.
