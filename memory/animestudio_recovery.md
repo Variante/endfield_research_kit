@@ -406,7 +406,10 @@ Current durable boundaries:
   The resolver reads a runtime tree, can retry with a helper-transformed query,
   and returns a candidate value or zero on the final sentinel. A writer independently
   stores its second argument into the same candidate value slot; a separate initializer
-  seeds a self-linked sentinel. Writer callers, insertion/query helpers, live contents
+  seeds a self-linked sentinel. A selected PE export chain connects
+  `il2cpp_add_internal_call` through an argument-preserving tail stub to this writer;
+  this is not complete export coverage or a concrete registration receipt.
+  Export callers, insertion/query helpers, live contents
   and the Unity implementation join remain open; static producer code is not execution.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution

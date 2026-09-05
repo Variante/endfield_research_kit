@@ -48,7 +48,11 @@ class VfsRootResolverTests(unittest.TestCase):
             (0x208DD,'0F1045D80F1140200F104DE80F114830'),
             (0x20924,'E837FCFFFF4C8BE8488B453849894540'),
             (0xF872C,'4889052580DB0D4889052680DB0D'),
-            (0xF873F,'488900488940084889401066C7401801014889050180DB0D'))}
+            (0xF873F,'488900488940084889401066C7401801014889050180DB0D'),
+            (0xCF8B1F0,'00000000FFFFFFFF0000000044C2F80C010000009E0100009E01000018B2F80C90B8F80C08BFF80C'),
+            (0xCF8B914,'EFC4F80C'),(0xCF8BF4A,'2100'),
+            (0xCF8B29C,'30050200'),(0x20530,'E92B020000'))}
+        self.parts[0xCF8C4EF]=b'il2cpp_add_internal_call\0'
         self.parts[0xA834748]=b'UnityEngine.Application::get_streamingAssetsPath()\0'
         self.pe=SimpleNamespace(image_base=0x180000000,
             bytes_at_va=lambda va,size:self.parts[va-0x180000000])
@@ -66,6 +70,11 @@ class VfsRootResolverTests(unittest.TestCase):
         row=vfs_root_resolver(self.pe,source='fixture.dll')
         self.assertEqual(row['registrationWriterRva'],0x20760)
         self.assertEqual(row['sentinelInitializerRva'],0xF8718)
+
+    def test_selected_export_to_tail_stub(self):
+        row=vfs_root_resolver(self.pe,source='fixture.dll')
+        self.assertEqual(row['selectedWriterExport'],
+            {'name':'il2cpp_add_internal_call','ordinal':34,'stubRva':0x20530})
 
     def test_bad_target_name_terminator_and_window_lengths(self):
         for at,good in list(self.parts.items()):
