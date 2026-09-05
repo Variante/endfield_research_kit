@@ -367,8 +367,17 @@ Current durable boundaries:
   offsets. Nonpositive counts return without validation. The transform offset
   and subsequent parse start are separate loads from the same static storage,
   not a demonstrated immutable value. Key/span/constructor ABI, state-block
-  generation, complete cipher parity, physical-file identity and replacement
-  paths remain open; array aliasing alone is not a decryption or EOF proof.
+  generation, complete cipher parity and replacement paths remain open; array
+  aliasing alone is not a decryption or EOF proof. Both block-construction
+  branches now retain the array returned by their normal file-helper path
+  through that entry. Those helpers converge on `File.ReadAllBytes`, whose
+  positive-length loop accumulates actual read counts and reduces remaining
+  bytes; zero returns leave the normal loop for error helpers. Its array/offset/
+  count overload uses slot 34, distinct from the previously reviewed slot 35.
+  Negative or oversized returned counts are not locally rejected, so the
+  concrete Read contract is still required before claiming a full-fill proof.
+  Root/path conversion, on-disk identity/hash, zero-length alternate behavior
+  and concrete constructor/Read execution remain unresolved.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

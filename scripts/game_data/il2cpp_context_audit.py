@@ -27,6 +27,11 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x318BC00, 0x318BD14, '8AD4D7E061F64FA7627B5A55141CE2094E3D75116A467637D3C36F43A19C28D9'),
+    (0x318BD20, 0x318BE14, '034D24CE15719BC3DE0F4759195E066B7F6BE1F90820C4E72FBA87C905BAEECE'),
+    (0x318BFA0, 0x318C0B6, 'B8AFE09CFE1B3D58237F4DAA075BE3EA90281DCA9B6C80EE8AF9DEFD7E5DBDEF'),
+    (0x318C0C0, 0x318C214, '96DA74FCCB3AEA554D97FD30502F8233D88BC5D0BDEC1844FD92C55A42CD4C19'),
+    (0x318C220, 0x318C489, 'AA82FB39E35A4D9F1ACCEDFBE1B902C534879F8ABA6685204C78C5CA068FCFDD'),
     (0x318B640, 0x318BA9C, '4C0DC2B5628149EC93FDAB7D280B3AE0B05E373E6C124F8E1B737E722D5BBAE3'),
     (0x507D3C4, 0x507D3E8, '8859615A9572203BEB3922A248068B3C790543DFEEA14930BC3C1B815875C3D2'),
     (0x2C97EF0, 0x2C97FF9, '50637A88FDE993EC5A257E43D3CCB904A397EEB21FB97CA9747CDFF3CEF50EAB'),
@@ -850,6 +855,49 @@ def vfs_block_transform(pe,md,modules,image_owners,*,source):
             'boundary':'On the reviewed non-replacement path, the entry retains its original array in RSI. It passes that array, static-carrier+0xE4 as offset and signed 32-bit array-length-minus-offset as count to TransformBytes. The wrapper forwards identical input/output array pointers and identical input/output offsets to WorkBytes. A positive-count normal loop reads one input byte, XORs it with a byte from state+0x28 array, and writes the same output index; its state byte counter is masked with 63 and zero invokes a separate block helper. Nonpositive count returns without validation. Initial length sums use signed 32-bit arithmetic; per-byte array indices also have unsigned bounds checks. This is not a reusable fail-closed range parser. After the transform returns, the same original array reaches the already pinned main-info reader, with a fresh +0xE4 load from the same static storage cell. No equality check proves the two runtime offset loads stayed identical. Static values, key/span and constructor ABI, state initialization/block generation, exceptional and replacement behavior, cipher parity with the maintained decoder, physical-file identity and actual execution remain unresolved. This establishes neither a complete decryption algorithm nor EOF consumption.'}
 
 
+def vfs_block_file_source(pe,md,modules,image_owners,*,source):
+    """File-read return carrier and loop; actual paths and Read override stay open."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247400,'Beyond.VFS.VirtualFileSystem','CreateBlockFromPersistAssetFile',0x318BC00),
+         (247401,'Beyond.VFS.VirtualFileSystem','CreateFromStreamAssetFile',0x318BD20),
+         (247301,'Beyond.VFS.UnityPersistFileHelper','ReadPersistAssetFileAllBytes',0x318BFA0),
+         (247314,'Beyond.VFS.UnityStreamingFileHelper','ReadStreamAssetFileAllBytes',0x318C0C0)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(287401,'System.IO.File','ReadAllBytes',0x318C220),
+         (287719,'System.IO.FileStream','Read',0x2FCA460)],source=source,expected_image='mscorlib.dll')
+    require(md.methods[287719].slot,34,source,287719)
+    require(md.methods[287719].parameter_count,3,source,287719)
+    edges=[]
+    for rva,target in ((0x318BC48,0x318BE20),(0x318BD63,0x318BE20),
+        (0x318BC60,0x318BFA0),(0x318BD8F,0x318C0C0),
+        (0x318BC8A,0x318B640),(0x318BDA9,0x318B640),
+        (0x318C060,0x2D71FA0),(0x318C17E,0x2D71FA0),
+        (0x318C06A,0x318C220),(0x318C188,0x318C220),
+        (0x318C2BE,0x2DF9D00),(0x318C2F3,0x3AF70)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x318BC81,'4533C0488BD3488BC8'),(0x318BDA0,'4533C0488BD3488BC8'),
+        (0x318C065,'33D2488BC8'),(0x318C06F,'488BF8'),(0x318C07D,'488BC7'),
+        (0x318C183,'33D2488BC8'),(0x318C18D,'488BF8'),(0x318C19B,'488BC7'),
+        (0x318C26A,'4533F6'),(0x318C2EE,'B90B000000'),
+        (0x318C2F8,'488BF8483DFFFFFF7F0F8FB20000004885C00F8483000000'),
+        (0x318C310,'8BD0'),(0x318C31E,'4C8BF885FF7E4D'),
+        (0x318C341,'4C8B9060030000488B80680300004889442420448BCF458BC6498BD7488BCE41FFD2'),
+        (0x318C363,'85C00F84AF0000004403F02BF8EBAF'),
+        (0x318C372,'4C89BC24A0000000'),(0x318C3FB,'498BC7')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'edges':edges,'windows':windows,'readSlot':34,
+            'level':'exact static identities; direct conditional read-loop and return-array chain',
+            'boundary':'Both reviewed block constructors pass the returned array of their respective file helper directly to DecryptCreateBlockGroupInfo, after nonnull/nonempty checks. On the normal successful helper paths, a path-carrier conversion result is passed to System.IO.File.ReadAllBytes, whose returned array is preserved across cleanup and returned unchanged. The actual root strings, relative path construction, path-carrier conversion, selection/fallback and authenticated on-disk file/hash remain unresolved. ReadAllBytes calls a FileStream constructor and dispatches Length via numeric slot 11. Its positive signed length branch rejects values above INT32_MAX, requests an array of the narrowed length, and loops while signed remaining is positive. Each call uses class+0x360 and companion+0x368 (slot 34, not the previously reviewed slot 35), passes array/accumulated offset/remaining, then adds EAX to offset and subtracts EAX from remaining. Zero EAX branches to error helpers rather than the normal loop return. There is no local negative/oversized returned-count rejection or final equality check; full-fill reasoning requires the Read override contract. The registered FileStream Read definition independently declares slot 34 and three parameters, but concrete live dispatch, constructor/override internals, zero-length alternate helper, allocation/error/cleanup behavior and actual file execution are not proved. A length-based read loop is not a source-hash receipt or a serialized-reader EOF check.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1192,6 +1240,7 @@ def audit():
     bytebuf_consumer=vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     block_cursor=vfs_block_cursor(pe,md,modules,image_owners,source=str(gate.gameassembly))
     block_transform=vfs_block_transform(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    block_file_source=vfs_block_file_source(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1222,6 +1271,7 @@ def audit():
         'selectedVfsByteBufConsumer':bytebuf_consumer,
         'selectedVfsBlockCursor':block_cursor,
         'selectedVfsBlockTransform':block_transform,
+        'selectedVfsBlockFileSource':block_file_source,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

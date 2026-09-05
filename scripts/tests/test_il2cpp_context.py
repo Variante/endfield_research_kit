@@ -21,6 +21,53 @@ from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descrip
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 from scripts.game_data.il2cpp_context_audit import vfs_block_transform
+from scripts.game_data.il2cpp_context_audit import vfs_block_file_source
+
+
+class VfsBlockFileSourceTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in (
+            (0x318BC48,0x318BE20),(0x318BD63,0x318BE20),
+            (0x318BC60,0x318BFA0),(0x318BD8F,0x318C0C0),
+            (0x318BC8A,0x318B640),(0x318BDA9,0x318B640),
+            (0x318C060,0x2D71FA0),(0x318C17E,0x2D71FA0),
+            (0x318C06A,0x318C220),(0x318C188,0x318C220),
+            (0x318C2BE,0x2DF9D00),(0x318C2F3,0x3AF70))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x318BC81,'4533C0488BD3488BC8'),(0x318BDA0,'4533C0488BD3488BC8'),
+            (0x318C065,'33D2488BC8'),(0x318C06F,'488BF8'),(0x318C07D,'488BC7'),
+            (0x318C183,'33D2488BC8'),(0x318C18D,'488BF8'),(0x318C19B,'488BC7'),
+            (0x318C26A,'4533F6'),(0x318C2EE,'B90B000000'),
+            (0x318C2F8,'488BF8483DFFFFFF7F0F8FB20000004885C00F8483000000'),
+            (0x318C310,'8BD0'),(0x318C31E,'4C8BF885FF7E4D'),
+            (0x318C341,'4C8B9060030000488B80680300004889442420448BCF458BC6498BD7488BCE41FFD2'),
+            (0x318C363,'85C00F84AF0000004403F02BF8EBAF'),
+            (0x318C372,'4C89BC24A0000000'),(0x318C3FB,'498BC7'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+        self.method=SimpleNamespace(slot=34,parameter_count=3)
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_block_file_source(self.pe,SimpleNamespace(methods={287719:self.method}),{},[],source='fixture.dll')
+
+    def test_read_loop_does_not_certify_eof(self):
+        row=self.decode()
+        self.assertEqual(row['readSlot'],34)
+        self.assertIn('adds EAX to offset and subtracts EAX',row['boundary'])
+        self.assertIn('full-fill reasoning requires the Read override contract',row['boundary'])
+
+    def test_truncated_trailing_mutated_instruction_fails(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_wrong_slot_or_parameter_count_fails(self):
+        for field,bad,good in (('slot',35,34),('parameter_count',2,3)):
+            setattr(self.method,field,bad)
+            with self.subTest(field=field),self.assertRaises(ContextError):self.decode()
+            setattr(self.method,field,good)
 
 
 class VfsBlockTransformTests(unittest.TestCase):
