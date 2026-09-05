@@ -27,6 +27,10 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D7A640, 0x2D7ACA8, '5CFC59429A62052363B2F6B44F9B1AF16484C431FE9803067328438C3C8845CC'),
+    (0x2D7ACD0, 0x2D7AE5B, 'F28DFB721F739050378D152E8B86757C6A9F03C837D96912387C693056056D22'),
+    (0x5BBB52C, 0x5BBB6A8, '63A3C18739E138374BF02B556FA7C526777DC2CA7DB2BD10E6AE67C2207C0B06'),
+    (0x51D80, 0x51DDC, 'B2CF8E434864F9AE7C9883709C4E0267E7BA2AEFF4C32BBF71DB249F6A47FC54'),
     (0x508E0, 0x50926, '2071A23E23E45FBCA162759BF197902A6D6B9C5587F6F71FADE172F2CBA92618'),
     (0x2D7A4C0, 0x2D7A633, '65CD048E5A09DE0A04F21C01679BC1B31D085665530236F5CAF2FA0F7520387B'),
     (0x2D076C0, 0x2D07B84, '84F4B8575E52FD2AAE54A6A05BCFABC141B8497D9C6AD37F17B7DA794E70420D'),
@@ -554,6 +558,59 @@ def vfs_stream_consumer(pe,*,source):
             'boundary':'All statements are conditional on the reviewed no-replacement paths. Callback overrides, inner stream construction/seek, allocation extents, descriptor-to-current-VFS identity/hash and source/EOF receipt remain unresolved. Logical position arithmetic is not physical-file ownership or proof of byte equality.'}
 
 
+def file_stream_open(pe,md,modules,image_owners,reg,*,source):
+    """Selected normal file-stream creation/seek paths; no path or EOF receipt."""
+    identity=named_top_level_type(md.buf,b'mscorlib.dll',b'System.IO',b'FileStream',source=source)
+    require((identity['typeDefinitionIndex'],identity['byvalTypeIndex']),(37648,119269),source)
+    require(md.types[37648].parent_index,143204,source)
+    allocations=[]
+    for rva in (0x2D7AD7F,0x5BBB5C0):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=source)
+        raw=pe.bytes_at_va(cell,8)
+        index=unresolved_usage_index(raw,reg['typesCount'],tag=1,source=source,offset=cell)
+        require(index,identity['byvalTypeIndex'],source,cell)
+        pointer=pe.u64_at_va(int(reg['types'],16)+index*8)
+        type_raw=pe.bytes_at_va(pointer,16)
+        require(type_raw,bytes.fromhex('10930000000000000000120000000000'),source,pointer)
+        allocations.append({'rva':rva,'cellVa':cell,'cellRawHex':raw.hex().upper(),
+                             'typePointerVa':pointer,'typeRawHex':type_raw.hex().upper()})
+    require(allocations[0]['cellVa'],allocations[1]['cellVa'],source)
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247286,'Beyond.VFS.UnityFileLoaderHelper','ReadFileByStream',0x2D7A640),
+         (247302,'Beyond.VFS.UnityPersistFileHelper','ReadPersistAssetFileByStream',0x5BBB52C),
+         (247315,'Beyond.VFS.UnityStreamingFileHelper','ReadStreamAssetFileByStream',0x2D7ACD0)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(287703,'System.IO.FileStream','.ctor',0x30A4310),
+         (287706,'System.IO.FileStream','.ctor',0x2DF9D00),
+         (287727,'System.IO.FileStream','Seek',0x2FC8A30)],source=source,expected_image='mscorlib.dll')
+    require(md.methods[287727].slot,32,source,287727)
+    edges=[]
+    for rva,target in ((0x2D7A716,0x2D7ACD0),(0x2D7A975,0x5BBB52C),
+                       (0x2D7ADD5,0x2DF9D00),(0x5BBB607,0x30A4310),(0x5BBB61E,0x51D80)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2D7A549,'8B6B10'),(0x2D7A68C,'4080FF010F84C60200004080FF027423'),
+        (0x2D7ACEB,'4963F8'),(0x5BBB547,'4963F8'),
+        (0x2D7ADDA,'85FF7425'),(0x5BBB60C,'85FF7E14'),
+        (0x2D7ADE9,'498B8140030000488BD74D8B89480300004533C0488BCBFFD0'),
+        (0x5BBB610,'4C8BC7B9200000004533C9488BD3'),
+        (0x51DA9,'4C8D4B14448BC749C1E104488BD64D030E498BCE498B014D8B4908')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    switch=pe.bytes_at_va(pe.image_base+0x2D7ACA8,28)
+    require(switch,bytes.fromhex('D0A9D702DFA9D702EEA9D70251AAD70260AAD702EEA9D70219ABD702'),source,0x2D7ACA8)
+    return {'typeIdentity':identity,'allocations':allocations,'methodIdentities':methods,'edges':edges,
+            'windows':windows,'switchData':{'rva':0x2D7ACA8,'rawHex':switch.hex().upper()},
+            'level':'exact static allocation/method identity; direct conditional initial seek',
+            'boundary':'Normal mode 1 and mode 2 select distinct token-joined helpers and FileStream constructors. The descriptor dword+0x10 reaches their offset argument and is sign-extended from int32. Mode 1 seeks only for positive offsets; mode 2 seeks for any nonzero offset. Both use declared FileStream.Seek slot 32 with numeric origin 0 and discard its return; the general dispatcher uses the low 16-bit slot number and preserves the supplied offset/origin. Normal return gives the constructed stream, not proof of a successful physical path/hash match or actual initial position. Root selection, path construction, FileStream constructor/Seek internals, replacement callbacks and authenticated logical-file bytes remain unresolved. Switch data is not code.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -890,6 +947,7 @@ def audit():
     stream_consumer=stream_carrier_consumer(pe,source=str(gate.gameassembly))
     vfs_identity=vfs_stream_identity(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     vfs_consumer=vfs_stream_consumer(pe,source=str(gate.gameassembly))
+    file_open=file_stream_open(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -914,6 +972,7 @@ def audit():
         'selectedStreamCarrierConsumer':stream_consumer,
         'selectedVfsStreamIdentity':vfs_identity,
         'selectedVfsStreamConsumer':vfs_consumer,
+        'selectedFileStreamOpen':file_open,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

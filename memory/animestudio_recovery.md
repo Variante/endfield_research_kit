@@ -327,8 +327,13 @@ Current durable boundaries:
   the inner stream. Normal getters expose a descriptor length word and inner
   position minus a descriptor base word. Read returns the inner stream's actual
   count after a request-limit branch and optional prefix transformation, without
-  a full-fill loop. Replacement callbacks, initial seek and descriptor-to-current
-  logical-file identity/hash remain unproved; this is not a runtime receipt.
+  a full-fill loop. Normal inner-stream allocation joins `FileStream`; the two
+  selected helpers sign-extend the descriptor offset and seek with numeric origin
+  zero, but one requires a positive offset and the other any nonzero offset.
+  They discard the seek result. Preserve these distinct predicates and keep path
+  construction, constructor/seek internals, replacement callbacks and the
+  descriptor-to-current logical-file identity/hash unproved; this is not a
+  runtime receipt.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

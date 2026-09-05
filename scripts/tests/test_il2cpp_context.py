@@ -17,8 +17,52 @@ from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
+from scripts.game_data.il2cpp_context_audit import file_stream_open
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class FileStreamOpenTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+            ((0x2D7A716,0x2D7ACD0),(0x2D7A975,0x5BBB52C),
+             (0x2D7ADD5,0x2DF9D00),(0x5BBB607,0x30A4310),(0x5BBB61E,0x51D80))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D7A549,'8B6B10'),(0x2D7A68C,'4080FF010F84C60200004080FF027423'),
+            (0x2D7ACEB,'4963F8'),(0x5BBB547,'4963F8'),(0x2D7ADDA,'85FF7425'),(0x5BBB60C,'85FF7E14'),
+            (0x2D7ADE9,'498B8140030000488BD74D8B89480300004533C0488BCBFFD0'),
+            (0x5BBB610,'4C8BC7B9200000004533C9488BD3'),
+            (0x51DA9,'4C8D4B14448BC749C1E104488BD64D030E498BCE498B014D8B4908'))})
+        for rva in (0x2D7AD7F,0x5BBB5C0):self.parts[rva]=bytes.fromhex('488B0D')+struct.pack('<i',0x300-rva-7)
+        self.parts[0x300]=struct.pack('<Q',(1<<29)|(119269<<1)|1)
+        self.parts[0x400]=bytes.fromhex('10930000000000000000120000000000')
+        self.parts[0x2D7ACA8]=bytes.fromhex('D0A9D702DFA9D702EEA9D70251AAD70260AAD702EEA9D70219ABD702')
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000],
+                                u64_at_va=lambda va:0x180000400)
+        self.seek=SimpleNamespace(slot=32)
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]), \
+             patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':37648,'byvalTypeIndex':119269}):
+            return file_stream_open(self.pe,SimpleNamespace(buf=b'',types={37648:SimpleNamespace(parent_index=143204)},
+                methods={287727:self.seek}),{},[],{'typesCount':200000,'types':'0x100000'},source='fixture.dll')
+
+    def test_distinct_signed_offset_predicates(self):
+        result=self.decode()
+        self.assertEqual(len(result['allocations']),2)
+        self.assertIn('positive offsets',result['boundary'])
+        self.assertIn('any nonzero offset',result['boundary'])
+
+    def test_wrong_seek_slot(self):
+        self.seek.slot=33
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_corrupt_truncated_and_trailing_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
 
 
 class VfsStreamIdentityTests(unittest.TestCase):
