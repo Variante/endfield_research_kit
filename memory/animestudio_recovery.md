@@ -330,10 +330,17 @@ Current durable boundaries:
   a full-fill loop. Normal inner-stream allocation joins `FileStream`; the two
   selected helpers sign-extend the descriptor offset and seek with numeric origin
   zero, but one requires a positive offset and the other any nonzero offset.
-  They discard the seek result. Preserve these distinct predicates and keep path
-  construction, constructor/seek internals, replacement callbacks and the
-  descriptor-to-current logical-file identity/hash unproved; this is not a
-  runtime receipt.
+  They discard the seek result. The normal mode getter shifts a packed dword;
+  its caller retains only eight bits, not the entire getter result. The relative
+  path's normal chunk-name branch uses a descriptor integer as a container
+  lookup key and copies a checked, indexed 16-byte result, not an inline hash
+  from the descriptor's leading bytes. Negative keys/results divert through a
+  helper; if it returns, the getter emits 16 zero bytes, not a proven exception.
+  Do not conflate this native descriptor
+  with the serialized BLC file record. Preserve the distinct seek predicates;
+  container population, alternate path branches, path encoding/root selection,
+  constructor/seek internals, replacements and the descriptor-to-authenticated
+  logical-file identity/hash remain unproved. This is not a runtime receipt.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

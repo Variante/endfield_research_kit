@@ -17,9 +17,56 @@ from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
-from scripts.game_data.il2cpp_context_audit import file_stream_open
+from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class VfsDescriptorPathTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in
+            ((0x2D7A52D,0x2D7A040),(0x2D7A53A,0x2D75510),
+             (0x2D7A13E,0x2D751D0),(0x2D752DE,0x3820560),(0x4C48A6A,0x6DBEEC0))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D7557F,'8B4318C1E80A'),(0x2D7A546,'0FB6F0'),(0x2D7A56C,'440FB6C6'),
+            (0x2D7A0DE,'F64718020F871810ED01'),(0x2D7A134,'4533C0488D4D20488BD7'),
+            (0x2D75260,'837F08000F8CD837ED01'),(0x2D75285,'448B7708488B88B8000000488B5908'),
+            (0x2D752CA,'418BD6488BCB'),(0x2D752E8,'85C00F885237ED01'),
+            (0x2D752F0,'488B4B184885C90F849E0000003B41180F838F000000'),
+            (0x2D75306,'489848C1E0050F10440830'),(0x2D7531E,'0F1106'),
+            (0x4C48A6F,'0F57C0E99AC812FE'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_descriptor_path(self.pe,None,{},[],source='fixture.dll')
+
+    def test_mode_projection_and_indirect_record(self):
+        row=self.decode()
+        self.assertEqual(row['mode']['effectiveBitRangeInclusive'],[10,17])
+        self.assertEqual(row['lookup']['descriptorKeyOffset'],8)
+        self.assertEqual(row['lookup']['resultBytes'],16)
+        self.assertIn('does not read an inline',row['boundary'])
+
+    def test_negative_lookup_can_return_zero_not_proven_throw(self):
+        row=self.decode()
+        self.assertIn('if that call returns normally',row['boundary'])
+        self.assertIn('not a proven throwing rejection',row['boundary'])
+
+    def test_truncated_trailing_and_malformed_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_bound_check_polarity_and_stride_cannot_change(self):
+        for rva,index in ((0x2D75260,5),(0x2D752F0,17),(0x2D75306,5)):
+            original=self.parts[rva]
+            changed=bytearray(original);changed[index]^=1;self.parts[rva]=bytes(changed)
+            with self.assertRaises(ContextError) as caught:self.decode()
+            self.assertIn('fixture.dll',str(caught.exception))
+            self.parts[rva]=original
 
 
 class FileStreamOpenTests(unittest.TestCase):

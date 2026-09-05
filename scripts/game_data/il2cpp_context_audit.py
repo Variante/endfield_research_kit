@@ -27,6 +27,10 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x4C48A42, 0x4C48A77, 'FB76990B4CFD1E0485A0D5EC5B413D1E7E5378D3B1E422B18217FBBBE6117581'),
+    (0x2D75510, 0x2D755DF, '8AB413FBC0531BFFEC188D2D97F92212E74BA7E8E811F2CBBA49A54831645B00'),
+    (0x2D751D0, 0x2D753A1, '1E0BB4C935C862C3FDB667BA3DE791A5B3F7D310BD14D8EE775541D1D8FD1CEB'),
+    (0x2D7A040, 0x2D7A43B, 'D960CF4CBD48D4E3D111DA83A56D3564157F0164A64CA93D1465962C6A30A535'),
     (0x2D7A640, 0x2D7ACA8, '5CFC59429A62052363B2F6B44F9B1AF16484C431FE9803067328438C3C8845CC'),
     (0x2D7ACD0, 0x2D7AE5B, 'F28DFB721F739050378D152E8B86757C6A9F03C837D96912387C693056056D22'),
     (0x5BBB52C, 0x5BBB6A8, '63A3C18739E138374BF02B556FA7C526777DC2CA7DB2BD10E6AE67C2207C0B06'),
@@ -611,6 +615,45 @@ def file_stream_open(pe,md,modules,image_owners,reg,*,source):
             'boundary':'Normal mode 1 and mode 2 select distinct token-joined helpers and FileStream constructors. The descriptor dword+0x10 reaches their offset argument and is sign-extended from int32. Mode 1 seeks only for positive offsets; mode 2 seeks for any nonzero offset. Both use declared FileStream.Seek slot 32 with numeric origin 0 and discard its return; the general dispatcher uses the low 16-bit slot number and preserves the supplied offset/origin. Normal return gives the constructed stream, not proof of a successful physical path/hash match or actual initial position. Root selection, path construction, FileStream constructor/Seek internals, replacement callbacks and authenticated logical-file bytes remain unresolved. Switch data is not code.'}
 
 
+def vfs_descriptor_path(pe,md,modules,image_owners,*,source):
+    """Normal descriptor lookup and mode projection, not a serialized BLC join."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247352,'Beyond.VFS.FVFBlockFileInfo','get_fileChunkMD5Name',0x2D751D0),
+         (247359,'Beyond.VFS.FVFBlockFileInfo','get_loaderPosType',0x2D75510),
+         (247371,'Beyond.VFS.FVFBlockFileInfo','GetRelativeChunkFilePath',0x2D7A040)],
+        source=source,expected_image='Common.Beyond.dll')
+    edges=[]
+    for rva,target in ((0x2D7A52D,0x2D7A040),(0x2D7A53A,0x2D75510),
+                       (0x2D7A13E,0x2D751D0),(0x2D752DE,0x3820560),
+                       (0x4C48A6A,0x6DBEEC0)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2D7557F,'8B4318C1E80A'),(0x2D7A546,'0FB6F0'),(0x2D7A56C,'440FB6C6'),
+        (0x2D7A0DE,'F64718020F871810ED01'),
+        (0x2D7A134,'4533C0488D4D20488BD7'),
+        (0x2D75260,'837F08000F8CD837ED01'),
+        (0x2D75285,'448B7708488B88B8000000488B5908'),
+        (0x2D752CA,'418BD6488BCB'),
+        (0x2D752E8,'85C00F885237ED01'),
+        (0x2D752F0,'488B4B184885C90F849E0000003B41180F838F000000'),
+        (0x2D75306,'489848C1E0050F10440830'),(0x2D7531E,'0F1106'),
+        (0x4C48A6F,'0F57C0E99AC812FE')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methodIdentities':methods,'edges':edges,'windows':windows,
+            'mode':{'descriptorOffset':0x18,'loadBytes':4,'rightShift':10,'callerMask':255,
+                    'effectiveBitRangeInclusive':[10,17]},
+            'lookup':{'descriptorKeyOffset':8,'containerArrayOffset':0x18,
+                      'arrayCountOffset':0x18,'indexedStride':32,'indexedReadBias':0x30,'resultBytes':16},
+            'level':'direct conditional native lookup and bit projection; exact static method identity',
+            'boundary':'On the no-replacement path, the mode getter logically shifts descriptor dword+0x18 by 10; its caller passes only AL, hence bits 10..17. With descriptor byte+0x18 bit 1 clear, the relative-path routine calls the token-joined chunk-name getter with a separate 16-byte output buffer. A nonnegative descriptor dword+8 is passed to a lookup on static-carrier+8. A nonnegative result is checked against the count at array carrier+0x18, then 16 bytes are copied from array+0x30+result*32. A negative key or lookup result diverts to a helper call; if that call returns normally, the branch zeroes XMM0 and rejoins the same 16-byte output copy. It is not a proven throwing rejection or an authenticated missing-chunk receipt. The normal lookup does not read an inline descriptor-leading hash. Method names do not prove these bytes equal the authenticated BLC chunk MD5. Complete lookup implementation, container population/producer, negative-path helper effects, alternate bit-1 path, path encoding/root selection and replacement callbacks remain unresolved; no current logical-file or EOF receipt follows.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -948,6 +991,7 @@ def audit():
     vfs_identity=vfs_stream_identity(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     vfs_consumer=vfs_stream_consumer(pe,source=str(gate.gameassembly))
     file_open=file_stream_open(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
+    descriptor_path=vfs_descriptor_path(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -973,6 +1017,7 @@ def audit():
         'selectedVfsStreamIdentity':vfs_identity,
         'selectedVfsStreamConsumer':vfs_consumer,
         'selectedFileStreamOpen':file_open,
+        'selectedVfsDescriptorPath':descriptor_path,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
