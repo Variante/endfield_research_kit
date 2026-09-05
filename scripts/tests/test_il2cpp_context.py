@@ -22,6 +22,60 @@ from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_e
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 from scripts.game_data.il2cpp_context_audit import vfs_block_transform
 from scripts.game_data.il2cpp_context_audit import vfs_block_file_source
+from scripts.game_data.il2cpp_context_audit import native_file_read
+
+
+class NativeFileReadTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',0x3AFCB00-rva-5) for rva in (0x2FCA582,0x2FCA69D)}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2FCA4BD,'85ED0F8826AACF0185DB0F88BAA9CF01418B46183BE80F8F55A9CF012BC33BE80F8FF2A8CF01'),
+            (0x2FCA508,'412BFF3BDF7F028BFB'),(0x2FCA576,'448BC8498BCF4533C0498BD5'),
+            (0x2FCA68C,'448BCB4889442420448BC5498BD6498BCF'),
+            (0x2FCA6BC,'83F8FF0F848CA6CF014863C348014668E90DFFFFFF'),(0x2FCA5DE,'03DF8BC3'),
+            (0x3AFCB1D,'418BD94963F04C8BF24533E4'),(0x3AFCB7A,'4C8B7810'),
+            (0x3AFCB93,'488BBC24B00000004489278D041E413B46180F87AE000000'),
+            (0x3AFCBAB,'488D56204903D644896424344C896424204C8D4C2434448BC3498BCF'),
+            (0x3AFCBCD,'85C07508'),(0x3AFCBD7,'89078B5C2434'),
+            (0x3AFCBF5,'B8FFFFFFFF833F000F45D8895C2438'),(0x3AFCC3C,'8BC3'))})
+        self.header={0x3C:0x100,0x100+24+120:0xCF8EBC0,0x100+24+124:220}
+        self.parts[0xCF8EBC0]=struct.pack('<IIIII',0xCF8ECE8,0,0,0xCF8FE50,0xA82F048)
+        self.parts[0xCF8FE50]=b'KERNEL32.dll\0'
+        for rva,index,name_rva,hint,name in ((0x3AFCBC7,78,0xCF8FC30,0x4A9,b'ReadFile'),
+                                            (0x3AFCBD1,4,0xCF8F668,0x28D,b'GetLastError')):
+            self.parts[rva]=b'\xff\x15'+struct.pack('<i',0xA82F048+index*8-rva-6)
+            self.parts[0xCF8ECE8+index*8]=struct.pack('<Q',name_rva)
+            self.parts[name_rva]=struct.pack('<H',hint)+name+b'\0'
+        self.pe=SimpleNamespace(image_base=0x180000000,u32_at_file=lambda at:self.header[at],
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return native_file_read(self.pe,None,{},[],source='fixture.dll')
+
+    def test_static_import_names_and_distinct_count_carrier(self):
+        row=self.decode()
+        self.assertEqual([x['name'] for x in row['selectedImports']],['ReadFile','GetLastError'])
+        self.assertIn('does not derive the count from the API boolean',row['boundary'])
+        self.assertIn('live IAT contents',row['boundary'])
+
+    def test_all_selected_bytes_fail_closed(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_malformed_directory_rva_or_length(self):
+        for at in (0x100+24+120,0x100+24+124):
+            good=self.header[at];self.header[at]=good+1
+            with self.subTest(at=at),self.assertRaises(ContextError):self.decode()
+            self.header[at]=good
+
+    def test_ordinal_thunk_rejected(self):
+        self.parts[0xCF8EF58]=struct.pack('<Q',(1<<63)|0x4A9)
+        with self.assertRaises(ContextError) as caught:self.decode()
+        self.assertIn('fixture.dll',str(caught.exception))
 
 
 class VfsBlockFileSourceTests(unittest.TestCase):

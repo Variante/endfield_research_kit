@@ -374,8 +374,12 @@ Current durable boundaries:
   positive-length loop accumulates actual read counts and reduces remaining
   bytes; zero returns leave the normal loop for error helpers. Its array/offset/
   count overload uses slot 34, distinct from the previously reviewed slot 35.
-  Negative or oversized returned counts are not locally rejected, so the
-  concrete Read contract is still required before claiming a full-fill proof.
+  Its normal FileStream overload reaches MonoIO, then a PE import-name join to
+  `ReadFile`; the supplied out DWORD, not the API boolean, supplies the read
+  count. The error word is populated through `GetLastError` on the failure
+  branch and selects count versus -1. Keep API status, error, byte count and
+  accumulated count distinct. This static join does not prove live IAT contents,
+  handle provenance or buffered-state invariants; full-fill remains conditional.
   Root/path conversion, on-disk identity/hash, zero-length alternate behavior
   and concrete constructor/Read execution remain unresolved.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input

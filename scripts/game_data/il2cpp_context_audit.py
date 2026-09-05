@@ -27,6 +27,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2FCA460, 0x2FCA768, 'A8F70CDC62487F47713F7540310DF6F3D6F388D0B9289C13C4B98ABFF3D82CD7'),
+    (0x3AFCB00, 0x3AFCC8E, '1AE31F3A846C775B877BC41FC7D0DFDE947C52AA726F5EF559C4E7B5FF7DD885'),
     (0x318BC00, 0x318BD14, '8AD4D7E061F64FA7627B5A55141CE2094E3D75116A467637D3C36F43A19C28D9'),
     (0x318BD20, 0x318BE14, '034D24CE15719BC3DE0F4759195E066B7F6BE1F90820C4E72FBA87C905BAEECE'),
     (0x318BFA0, 0x318C0B6, 'B8AFE09CFE1B3D58237F4DAA075BE3EA90281DCA9B6C80EE8AF9DEFD7E5DBDEF'),
@@ -898,6 +900,61 @@ def vfs_block_file_source(pe,md,modules,image_owners,*,source):
             'boundary':'Both reviewed block constructors pass the returned array of their respective file helper directly to DecryptCreateBlockGroupInfo, after nonnull/nonempty checks. On the normal successful helper paths, a path-carrier conversion result is passed to System.IO.File.ReadAllBytes, whose returned array is preserved across cleanup and returned unchanged. The actual root strings, relative path construction, path-carrier conversion, selection/fallback and authenticated on-disk file/hash remain unresolved. ReadAllBytes calls a FileStream constructor and dispatches Length via numeric slot 11. Its positive signed length branch rejects values above INT32_MAX, requests an array of the narrowed length, and loops while signed remaining is positive. Each call uses class+0x360 and companion+0x368 (slot 34, not the previously reviewed slot 35), passes array/accumulated offset/remaining, then adds EAX to offset and subtracts EAX from remaining. Zero EAX branches to error helpers rather than the normal loop return. There is no local negative/oversized returned-count rejection or final equality check; full-fill reasoning requires the Read override contract. The registered FileStream Read definition independently declares slot 34 and three parameters, but concrete live dispatch, constructor/override internals, zero-length alternate helper, allocation/error/cleanup behavior and actual file execution are not proved. A length-based read loop is not a source-hash receipt or a serialized-reader EOF check.'}
 
 
+def native_file_read(pe,md,modules,image_owners,*,source):
+    """Static import/argument/count connection; no live OS or handle receipt."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(287719,'System.IO.FileStream','Read',0x2FCA460),
+         (287775,'System.IO.MonoIO','Read',0x3AFCB00)],source=source,expected_image='mscorlib.dll')
+    edges=[]
+    for rva in (0x2FCA582,0x2FCA69D):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+0x3AFCB00,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':0x3AFCB00,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x2FCA4BD,'85ED0F8826AACF0185DB0F88BAA9CF01418B46183BE80F8F55A9CF012BC33BE80F8FF2A8CF01'),
+        (0x2FCA508,'412BFF3BDF7F028BFB'),
+        (0x2FCA576,'448BC8498BCF4533C0498BD5'),
+        (0x2FCA68C,'448BCB4889442420448BC5498BD6498BCF'),
+        (0x2FCA6BC,'83F8FF0F848CA6CF014863C348014668E90DFFFFFF'),
+        (0x2FCA5DE,'03DF8BC3'),
+        (0x3AFCB1D,'418BD94963F04C8BF24533E4'),
+        (0x3AFCB7A,'4C8B7810'),
+        (0x3AFCB93,'488BBC24B00000004489278D041E413B46180F87AE000000'),
+        (0x3AFCBAB,'488D56204903D644896424344C896424204C8D4C2434448BC3498BCF'),
+        (0x3AFCBCD,'85C07508'),(0x3AFCBD7,'89078B5C2434'),
+        (0x3AFCBF5,'B8FFFFFFFF833F000F45D8895C2438'),(0x3AFCC3C,'8BC3')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    # This selected-build witness authenticates the header directory reference,
+    # first descriptor and two exact name thunks. Other imports stay opaque.
+    optional=pe.u32_at_file(0x3C)+24
+    require(pe.u32_at_file(optional+120),0xCF8EBC0,source,optional+120)
+    require(pe.u32_at_file(optional+124),220,source,optional+124)
+    require(pe.bytes_at_va(pe.image_base+0xCF8EBC0,20),
+            struct.pack('<IIIII',0xCF8ECE8,0,0,0xCF8FE50,0xA82F048),source,0xCF8EBC0)
+    require(pe.bytes_at_va(pe.image_base+0xCF8FE50,13),b'KERNEL32.dll\0',source,0xCF8FE50)
+    imports=[]
+    for rva,index,name_rva,hint,name in (
+        (0x3AFCBC7,78,0xCF8FC30,0x4A9,b'ReadFile'),
+        (0x3AFCBD1,4,0xCF8F668,0x28D,b'GetLastError')):
+        raw=pe.bytes_at_va(pe.image_base+rva,6)
+        require(len(raw),6,source,rva)
+        require(raw[:2],b'\xff\x15',source,rva)
+        slot=rva+6+struct.unpack_from('<i',raw,2)[0]
+        require(slot,0xA82F048+index*8,source,rva)
+        lookup=0xCF8ECE8+index*8
+        require(pe.bytes_at_va(pe.image_base+lookup,8),struct.pack('<Q',name_rva),source,lookup)
+        require(pe.bytes_at_va(pe.image_base+name_rva,len(name)+3),struct.pack('<H',hint)+name+b'\0',source,name_rva)
+        imports.append({'callRva':rva,'iatSlotRva':slot,'lookupSlotRva':lookup,
+                        'nameRva':name_rva,'name':name.decode('ascii'),'dll':'KERNEL32.dll'})
+    return {'methods':methods,'edges':edges,'windows':windows,'selectedImports':imports,
+            'level':'exact static import/identity joins; direct conditional buffer and returned-count flow',
+            'boundary':'The reviewed FileStream array overload checks negative offset/count and offset against array length minus count before its normal buffered path. Buffered and direct reads call the same MonoIO helper. That helper extracts a handle carrier at +0x10, compares the 32-bit offset-plus-count against array length, then passes handle, array+0x20+sign-extended offset, count, address of a zeroed out DWORD and a zero fifth argument to the static ReadFile import slot. A zero API return calls the static GetLastError slot and stores its result through the supplied error pointer. The helper returns the out DWORD when that error word is zero, otherwise -1; it does not derive the count from the API boolean return. The direct FileStream branch records that count, tests its error and -1 paths, updates state position and adds already-buffered bytes for its normal return. This distinguishes API boolean, out-byte count, error and accumulated read count. Only two name thunks and their descriptor are joined, not the entire import directory; live IAT contents, imported function behavior, handle provenance, full buffered-state invariants, alternate async/error/cleanup paths and runtime execution remain unresolved. No authenticated-file receipt, unconditional full-read guarantee or serialized EOF follows.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1241,6 +1298,7 @@ def audit():
     block_cursor=vfs_block_cursor(pe,md,modules,image_owners,source=str(gate.gameassembly))
     block_transform=vfs_block_transform(pe,md,modules,image_owners,source=str(gate.gameassembly))
     block_file_source=vfs_block_file_source(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    file_read=native_file_read(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1272,6 +1330,7 @@ def audit():
         'selectedVfsBlockCursor':block_cursor,
         'selectedVfsBlockTransform':block_transform,
         'selectedVfsBlockFileSource':block_file_source,
+        'selectedNativeFileRead':file_read,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
