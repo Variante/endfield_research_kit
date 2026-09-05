@@ -246,6 +246,9 @@ only.
   environment-shadow extension observes selected phases, ordered applied
   volumes/factors and camera/shadow-manager state within the same two entries.
   It uses guarded reads and original-call forwarding without Unity API calls.
+  FrameSetup may have no observed calls during these entries. Pinned deferred
+  and contact-parameter getter callers supply independent observation routes;
+  route labels, hook-entry counters and patch checks preserve that distinction.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
