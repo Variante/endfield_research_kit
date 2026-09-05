@@ -28,6 +28,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2F46C10, 0x2F46D6A, '1DC5C757B06C54E0DDDE9F58667379DA87DF70B02495782B65EE5C99311D37E3'),
+    (0x393CC10, 0x393CC45, 'F1AF611FC7780ADA8187C51843D77884F63A24E5B7F94E91FC9966C13351711E'),
     (0x2CB7620, 0x2CB7644, 'C332CA386F5074737EB183541FF260B00C2E320643BF053F232BC20BB7A6893F'),
     (0x24AD0, 0x24B56, 'C04E3409F7569FAE94392CA5CE396169B3B2772EAD624C33E830002C78A16997'),
     (0x24B60, 0x2500D, '56A439DA1E4192F3408C7313DCE204E51B31BFE461F0BE1F8DEA1FF47EDB7B12'),
@@ -1055,6 +1057,28 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def vfs_root_resolver(pe,*,source):
+    """Static requested interface and conditional cache flow, not actual root."""
+    windows=[]
+    for rva,expected in (
+        (0x2F46CD9,'E8325F9F00'),(0x2F46CE5,'488BD8'),
+        (0x2F46CFD,'488B89B800000048895908'),
+        (0x2F46CA7,'488B80B8000000488B4008'),
+        (0x393CC14,'488B052D12570A4885C07407'),
+        (0x393CC20,'4883C42848FFE0'),
+        (0x393CC27,'488D0D1A7BEF06E87D256EFC'),
+        (0x393CC3C,'4889050512570AEBDB')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    name=b'UnityEngine.Application::get_streamingAssetsPath()\0'
+    require(pe.bytes_at_va(pe.image_base+0xA834748,len(name)),name,source,0xA834748)
+    return {'windows':windows,'requestedInterface':name[:-1].decode('ascii'),
+            'nameRva':0xA834748,'functionCacheRva':0xDEADE48,
+            'level':'exact static resolver name; direct conditional cache flow',
+            'boundary':'The normal non-replacement streaming-path getter initialization branch calls the wrapper, preserves RAX in RBX and stores it in static carrier+8; the normal return reads that slot. The wrapper loads a cached function pointer and tail-jumps to it when nonnull. On cache miss it passes the exact NUL-terminated interface name to the resolver, checks the result, stores that result in the same function-pointer cell and tail-jumps. The requested name is not a verified resolved function identity, ABI or actual directory. Resolver internals, replacement/cold failure paths, class initialization, comparison predicate semantics, live cache contents and the final path/file/hash connection remain unresolved.'}
+
+
 def vfs_string_carrier(pe,*,source):
     """Conditional literal conversion and character-reader carrier connection."""
     windows=[]
@@ -1504,6 +1528,7 @@ def audit():
     path_literals=vfs_path_literals(pe,md,source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     format_item=vfs_format_item(pe,source=str(gate.gameassembly))
     string_carrier=vfs_string_carrier(pe,source=str(gate.gameassembly))
+    root_resolver=vfs_root_resolver(pe,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1541,6 +1566,7 @@ def audit():
         'selectedVfsPathLiterals':path_literals,
         'selectedVfsFormatItem':format_item,
         'selectedVfsStringCarrier':string_carrier,
+        'selectedVfsRootResolver':root_resolver,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

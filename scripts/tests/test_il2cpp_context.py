@@ -29,6 +29,31 @@ from scripts.game_data.il2cpp_context import literal_record
 from scripts.game_data.il2cpp_context_audit import vfs_path_literals
 from scripts.game_data.il2cpp_context_audit import vfs_format_item
 from scripts.game_data.il2cpp_context_audit import vfs_string_carrier
+from scripts.game_data.il2cpp_context_audit import vfs_root_resolver
+
+
+class VfsRootResolverTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x2F46CD9,'E8325F9F00'),(0x2F46CE5,'488BD8'),
+            (0x2F46CFD,'488B89B800000048895908'),(0x2F46CA7,'488B80B8000000488B4008'),
+            (0x393CC14,'488B052D12570A4885C07407'),(0x393CC20,'4883C42848FFE0'),
+            (0x393CC27,'488D0D1A7BEF06E87D256EFC'),(0x393CC3C,'4889050512570AEBDB'))}
+        self.parts[0xA834748]=b'UnityEngine.Application::get_streamingAssetsPath()\0'
+        self.pe=SimpleNamespace(image_base=0x180000000,
+            bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_static_requested_interface(self):
+        row=vfs_root_resolver(self.pe,source='fixture.dll')
+        self.assertEqual(row['requestedInterface'],'UnityEngine.Application::get_streamingAssetsPath()')
+
+    def test_bad_target_name_terminator_and_window_lengths(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',good[:-1]+bytes([good[-1]^1])):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    vfs_root_resolver(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class VfsStringCarrierTests(unittest.TestCase):

@@ -400,6 +400,10 @@ Current durable boundaries:
   element-count forwarding and the same length/data offsets in the output carrier.
   Allocation/copy/capacity helpers, non-ASCII cold paths and complete arbitrary-input
   grammar remain open; this does not establish Unicode conversion parity.
+  The normal streaming-path getter requests the exact Unity streaming-assets
+  interface name through a cached indirect-call resolver and stores its return.
+  This proves the static request, not the resolved implementation or directory;
+  live cache state and the resolver-to-Unity implementation join remain open.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.
