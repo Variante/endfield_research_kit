@@ -42,7 +42,47 @@ from scripts.game_data.il2cpp_context_audit import nested_reader_context
 from scripts.game_data.il2cpp_context_audit import list_formatter_candidate
 from scripts.game_data.il2cpp_context_audit import list_element_dispatch
 from scripts.game_data.il2cpp_context_audit import list_element_shared_context, list_element_null_probe
+from scripts.game_data.il2cpp_context_audit import list_element_value_flow
 from unittest.mock import patch
+
+
+class ListElementValueFlowTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x3B13730,'48895C240848897424104C89442418574883EC20803D8143390A00498BF9488BF2488BD90F8489000000488B0D8FBE5D0983B9E0000000000F848D000000488B4F20E8C9485EFC488B88C0000000488B4920E8D90A29FF4885C07479B9050000004C8D4C24404C8BC3488BD0E85FBB52FC488B5C24404885DB7460488B4F20E88C485EFC488B88C0000000488B4940E87C485EFC33C94C8BC3488BD0E82F3058FC488B5C24308906488B7424384883C4205FC3488D0D06BE5D09E871DA52FCC605D642390A01E95FFFFFFFE8C02A51FCE969FFFFFFE80AACF9FCCC33C0EBC2'),
+            (0x96800,'48895C240848896C24104889742418574883EC20498B38498BF00FB7E9488BDA488BCFE868E3F6FF440FB7873001000033C066413BC0731C488B97B00000000FB7C84803C948391CCA741A66FFC066413BC072EB440FB7C5488BD3488BCEE81DA3F7FFEB200FB7D0488B87B00000004803D28B44D00803C548984883C01448C1E0044803C74C8B00488BCE488B5008488B5C2430488B6C2438488B7424404883C4205F49FFE0'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=self.read)
+
+    def read(self,va,size):
+        at=va-self.pe.image_base
+        # Full-body requests expose truncated/trailing fixtures unchanged.
+        if at in self.parts:return self.parts[at]
+        for start,raw in self.parts.items():
+            if start<=at<start+len(raw):return raw[at-start:at-start+size]
+        raise ContextError(f'fixture.dll: offset {at:#x}: expected mapped range, actual missing')
+
+    def test_initialized_object_slot_conversion_not_serialized_width(self):
+        row=list_element_value_flow(self.pe,source='fixture.dll')
+        self.assertEqual(row['outputByteLength'],4)
+        self.assertEqual(len(row['bodies']),2)
+        self.assertIn('initialized writable object slot',row['boundary'])
+        self.assertIn('not proof of a serialized DWORD',row['boundary'])
+
+    def test_truncated_trailing_and_corrupt_bodies(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):
+                    list_element_value_flow(self.pe,source='fixture.dll')
+            self.parts[at]=good
+
+    def test_changed_record_offset_or_tail_call_fails_closed(self):
+        at=0x96800;good=self.parts[at]
+        for offset in (0x74,0x7D,0xA4):
+            bad=bytearray(good);bad[offset]^=1;self.parts[at]=bytes(bad)
+            with self.subTest(offset=offset),self.assertRaisesRegex(ContextError,'fixture.dll'):
+                list_element_value_flow(self.pe,source='fixture.dll')
+        self.parts[at]=good
 
 
 class ListElementSharedContextTests(unittest.TestCase):

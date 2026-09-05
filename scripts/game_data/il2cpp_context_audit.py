@@ -333,6 +333,37 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def list_element_value_flow(pe,*,source):
+    """Ref-object dispatch followed by object conversion; not a DWORD byte read."""
+    windows=[]
+    for at,expected in (
+        (0x3B1373A,'4C89442418'),(0x3B1374B,'498BF9488BF2488BD9'),
+        (0x3B1376E,'488B4F20E8C9485EFC488B88C0000000488B4920E8D90A29FF'),
+        (0x3B1378C,'B9050000004C8D4C24404C8BC3488BD0E85FBB52FC'),
+        (0x3B137A1,'488B5C24404885DB7460'),
+        (0x3B137AB,'488B4F20E88C485EFC488B88C0000000488B4940E87C485EFC'),
+        (0x3B137C4,'33C94C8BC3488BD0E82F3058FC'),(0x3B137D6,'8906'),(0x3B1380B,'33C0EBC2'),
+        (0x96814,'498B38498BF00FB7E9488BDA'),
+        (0x96828,'440FB7873001000033C066413BC0731C'),
+        (0x96838,'488B97B00000000FB7C84803C948391CCA741A'),
+        (0x96865,'0FB7D0488B87B00000004803D28B44D00803C548984883C01448C1E0044803C7'),
+        (0x96885,'4C8B00488BCE488B5008'),(0x968A3,'49FFE0')):
+        raw=bytes.fromhex(expected)
+        require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    bodies=[]
+    for start,end,expected in (
+        (0x3B13730,0x3B1380F,'8F484C44B26A8E791ED7FA7470F1ACEA2C46391E6869DE64D9B206FC6ECB05C7'),
+        (0x96800,0x968A6,'C9595BDA4FE4DBC11FC0B54731878C8F1305752C0DE7BA35104FE8DC134F8743')):
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        digest=hashlib.sha256(raw).hexdigest().upper();require(digest,expected,source,start)
+        bodies.append({'rva':start,'byteLength':len(raw),'sha256':digest})
+    return {'windows':windows,'bodies':bodies,'outputByteLength':4,
+            'level':'direct conditional ref-object/output and interface-dispatch flow',
+            'boundary':'The non-FF helper retains reader RCX, output RDX and companion R9, and saves incoming R8 in the stack qword later passed by address to formatter dispatch. Companion-derived class slots supply the provider query and conversion interface carrier. Dispatch receives the original reader plus that initialized writable object slot. A null resulting object yields EAX=0; otherwise the conversion helper receives slot number zero, a separately derived interface carrier and the resulting object. Its hit path compares exact pointers in 16-byte class interface records, adds the requested ushort slot to a record DWORD offset, sign-extends the 32-bit sum and addresses a target/companion pair at class+(sum+0x14)*16. Its miss path delegates pair resolution to another helper. The common path tail-jumps with RCX=object and RDX=the loaded companion; it does not pass the original reader to this conversion target. The outer helper writes returned EAX to its four-byte output. That width is therefore a converted result width, not proof of a serialized DWORD load or four-byte cursor advance. Pair bounds, interface/class initialization, provider and conversion identities, actual target selection, delegated byte consumption and EOF remain unresolved.'}
+
+
 def list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,*,source):
     """Selected code-context candidate; never overwrite a live companion context."""
     inst=table.resolve(5059)
@@ -1953,6 +1984,7 @@ def audit():
     list_dispatch=list_element_dispatch(pe,source=str(gate.gameassembly))
     list_shared=list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
     list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))
+    list_value_flow=list_element_value_flow(pe,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2056,6 +2088,7 @@ def audit():
         'selectedListElementDispatch':list_dispatch,
         'selectedListElementSharedContext':list_shared,
         'selectedListElementNullProbe':list_null_probe,
+        'selectedListElementValueFlow':list_value_flow,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

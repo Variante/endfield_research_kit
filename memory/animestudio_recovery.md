@@ -321,7 +321,15 @@ Current durable boundaries:
   only on a match consumes one byte before returning true and clearing the output.
   The byte consumer's own boolean is different and is not forwarded. A nonmatch
   does not directly advance this helper's cursor; ensure may still replace its
-  segment. Non-FF element consumption and the actual branch remain unresolved.
+  segment. The non-FF helper passes the same reader and an initialized writable
+  object-reference slot to formatter dispatch. A null result produces zero;
+  otherwise a separate interface lookup selects a target/companion pair and
+  tail-jumps with the result object, without forwarding the reader. Returned EAX
+  becomes the four-byte output. This is a converted result width, not serialized
+  consumption. Interface record offsets and slot arithmetic are directly pinned,
+  but target-pair bounds, provider/conversion identity, actual branch selection
+  and non-FF source consumption remain unresolved; follow the delegated formatter
+  context before interpreting this output or eliminating a terminal candidate.
   Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.
