@@ -28,6 +28,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x20760, 0x20A33, 'E117B0BE3EFF364A7242B6EEC5F4C709DEB7FAE4E79DB2E5C9BA32CC7E54E7E1'),
+    (0xF8718, 0xF8760, '83D8E4E7B974778AF6C6F832C5EB205EB612D2A469BDB76681A5B50156290EA1'),
     (0x1F1B0, 0x1F463, '1E349215CBE3DEA915C8B755F51D6FC71E2497296E8CA1F59E2248444003B8D0'),
     (0x2E6B64, 0x2E6B71, '7B5C59F3F5F7F5FE5E724565F80D81719EE1C470D4056BEA56BEE902565C6C37'),
     (0x2F46C10, 0x2F46D6A, '1DC5C757B06C54E0DDDE9F58667379DA87DF70B02495782B65EE5C99311D37E3'),
@@ -1076,7 +1078,15 @@ def vfs_root_resolver(pe,*,source):
         (0x1F32A,'4C8B2D2714E90D498B5D084D8BFD'),
         (0x1F3CC,'4D3BFD751133DBEB11'),
         (0x1F3E2,'498B5F40'),(0x1F3F0,'488BC3'),
-        (0x2E6B64,'48C7C0FFFFFFFFE97F87D3FF')):
+        (0x2E6B64,'48C7C0FFFFFFFFE97F87D3FF'),
+        (0x2076F,'4889542410'),(0x2077D,'488BEC'),
+        (0x207E6,'4C8B256BFFE80D'),
+        (0x208BB,'488D1D96FEE80D'),
+        (0x208CA,'B948000000E848301700'),
+        (0x208DD,'0F1045D80F1140200F104DE80F114830'),
+        (0x20924,'E837FCFFFF4C8BE8488B453849894540'),
+        (0xF872C,'4889052580DB0D4889052680DB0D'),
+        (0xF873F,'488900488940084889401066C7401801014889050180DB0D')):
         raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
         require(raw,bytes.fromhex(expected),source,rva)
         windows.append({'rva':rva,'rawHex':raw.hex().upper()})
@@ -1085,8 +1095,9 @@ def vfs_root_resolver(pe,*,source):
     return {'windows':windows,'requestedInterface':name[:-1].decode('ascii'),
             'nameRva':0xA834748,'functionCacheRva':0xDEADE48,
             'lookupCarrierGlobalRva':0xDEB0758,'candidateValueOffset':64,
+            'registrationWriterRva':0x20760,'sentinelInitializerRva':0xF8718,
             'level':'exact static resolver name; direct conditional cache flow',
-            'boundary':'The normal non-replacement streaming-path getter initialization branch calls the wrapper, preserves RAX in RBX and stores it in static carrier+8; the normal return reads that slot. The wrapper loads a cached function pointer and tail-jumps to it when nonnull. On cache miss it passes the exact NUL-terminated interface name to the resolver, checks the result, stores that result in the same function-pointer cell and tail-jumps. The requested name is not a verified resolved function identity, ABI or actual directory. The resolver loads a runtime tree carrier from a static global, follows child pointers using comparison helper results and returns candidate node+0x40 after its first lookup. If that lookup chooses the sentinel, it constructs a second query through helpers (including a search passed byte 0x28) and traverses the same carrier again; a final sentinel yields zero, otherwise node+0x40 supplies the result. String construction/comparison/search/subrange helper semantics, the tree registration producer and live contents, replacement/cold failure paths, class initialization, comparison predicate semantics, live cache contents and the final path/file/hash connection remain unresolved.'}
+            'boundary':'The normal non-replacement streaming-path getter initialization branch calls the wrapper, preserves RAX in RBX and stores it in static carrier+8; the normal return reads that slot. The wrapper loads a cached function pointer and tail-jumps to it when nonnull. On cache miss it passes the exact NUL-terminated interface name to the resolver, checks the result, stores that result in the same function-pointer cell and tail-jumps. The requested name is not a verified resolved function identity, ABI or actual directory. The resolver loads a runtime tree carrier from a static global, follows child pointers using comparison helper results and returns candidate node+0x40 after its first lookup. If that lookup chooses the sentinel, it constructs a second query through helpers (including a search passed byte 0x28) and traverses the same carrier again; a final sentinel yields zero, otherwise node+0x40 supplies the result. The independently reviewed writer scans the first argument to a NUL byte, prepares a 32-byte key carrier and searches the same global tree. Its insertion path requests 0x48 bytes, copies the key carrier into node+0x20 and calls an insertion helper; both existing-candidate and returned-node paths store the original second argument into node+0x40. A separate initializer zeroes two global slots, requests 0x48 bytes, writes self pointers at node+0/+8/+0x10 and marker WORD 0x0101 at +0x18, then stores that pointer in the lookup global. Neither function being present proves initialization, insertion success or actual selected name/value pairs. Writer callers, insertion/allocator internals, string construction/comparison/search/subrange helper semantics and live contents, replacement/cold failure paths, class initialization, comparison predicate semantics, live cache contents and the final path/file/hash connection remain unresolved.'}
 
 
 def vfs_string_carrier(pe,*,source):

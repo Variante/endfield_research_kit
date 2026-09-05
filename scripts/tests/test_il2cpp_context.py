@@ -42,7 +42,13 @@ class VfsRootResolverTests(unittest.TestCase):
             (0x1F1DC,'4C8B2D7515E90D498B5D084D8BFD'),(0x1F293,'498B4740E957010000'),
             (0x1F2D6,'BA28000000488BCBE85D052C00'),(0x1F32A,'4C8B2D2714E90D498B5D084D8BFD'),
             (0x1F3CC,'4D3BFD751133DBEB11'),(0x1F3E2,'498B5F40'),(0x1F3F0,'488BC3'),
-            (0x2E6B64,'48C7C0FFFFFFFFE97F87D3FF'))}
+            (0x2E6B64,'48C7C0FFFFFFFFE97F87D3FF'),
+            (0x2076F,'4889542410'),(0x2077D,'488BEC'),(0x207E6,'4C8B256BFFE80D'),
+            (0x208BB,'488D1D96FEE80D'),(0x208CA,'B948000000E848301700'),
+            (0x208DD,'0F1045D80F1140200F104DE80F114830'),
+            (0x20924,'E837FCFFFF4C8BE8488B453849894540'),
+            (0xF872C,'4889052580DB0D4889052680DB0D'),
+            (0xF873F,'488900488940084889401066C7401801014889050180DB0D'))}
         self.parts[0xA834748]=b'UnityEngine.Application::get_streamingAssetsPath()\0'
         self.pe=SimpleNamespace(image_base=0x180000000,
             bytes_at_va=lambda va,size:self.parts[va-0x180000000])
@@ -55,6 +61,11 @@ class VfsRootResolverTests(unittest.TestCase):
         row=vfs_root_resolver(self.pe,source='fixture.dll')
         self.assertEqual(row['candidateValueOffset'],64)
         self.assertNotEqual(row['lookupCarrierGlobalRva'],row['functionCacheRva'])
+
+    def test_separate_writer_and_initializer(self):
+        row=vfs_root_resolver(self.pe,source='fixture.dll')
+        self.assertEqual(row['registrationWriterRva'],0x20760)
+        self.assertEqual(row['sentinelInitializerRva'],0xF8718)
 
     def test_bad_target_name_terminator_and_window_lengths(self):
         for at,good in list(self.parts.items()):
