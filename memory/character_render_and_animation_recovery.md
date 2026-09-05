@@ -142,6 +142,13 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
+- Scene-shadow attenuation/blend are environment-phase inputs copied each
+  frame by the ordinary native shadow-manager route. The inspected volume path
+  preserves authored values; a disable flag alone does not establish blend 1.
+  Recover camera override/shared-phase selection and interpolation ownership
+  before publishing live values. Constructor defaults and captured constants
+  do not establish that selection. See
+  `reports/assets/character_recovery/shadow_simulation_native_ownership.json`.
 - ContactShadow captured-input replay needs repeat controls: original dispatches
   can differ at pixels with overlapping recovered output writes. Preserve the
   original dot-product instructions through distance quantization; scalar
