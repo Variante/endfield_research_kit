@@ -251,6 +251,24 @@ def unresolved_usage_index(raw: bytes, count: int, *, tag: int, source: str, off
     return index
 
 
+def rip_qword_load_target(raw: bytes, address: int, *, source: str) -> int:
+    """Decode one exact x64 MOV r64,[RIP+disp32], not arbitrary machine code.
+
+    The caller must independently prove this is an instruction boundary.
+    No target read or live pointer is inferred by this address calculation.
+    """
+    if type(address) is not int or not 0 <= address <= (1 << 64)-8:
+        raise ContextError(source, 0, 'bounded seven-byte instruction address', address)
+    if len(raw) != 7:
+        raise ContextError(source, address, 'exact seven-byte RIP qword load', len(raw))
+    if raw[0] not in (0x48,0x4C) or raw[1] != 0x8B or raw[2] & 0xC7 != 5:
+        raise ContextError(source, address, 'MOV r64,[RIP+disp32]', raw.hex().upper())
+    target = address+7+struct.unpack_from('<i',raw,3)[0]
+    if not 0 <= target <= (1 << 64)-8:
+        raise ContextError(source, address, 'bounded eight-byte target address', target)
+    return target
+
+
 def match_image_modules(image_names: list[str], modules: list[tuple[str, int]], *, source: str) -> dict[str, int]:
     """Fail closed on duplicate names; do not reproduce native last-match wins."""
     if len(set(image_names)) != len(image_names):

@@ -232,8 +232,10 @@ Current durable boundaries:
   and constructor MethodSpec share the same registered class instantiation.
   This proves static adapter identity and a conditional registration callsite,
   not completed allocation ABI, executed registration or active Deserialize
-  dispatch. Provider mutation and lookup return paths are visible, but neither
-  fixes initialization/replacement history. The separate
+  dispatch. Registration and lookup independently share one RIP-relative cell
+  and the same class/static-storage dereferences. The lookup's matched node
+  supplies its returned value, but misses can invoke callbacks, retry or construct
+  alternatives; this does not fix live contents or replacement history. The separate
   generic serializer's pointer/length-word carrier is not yet joined to this
   formatter or authenticated VFS allocation. Keep both terminal candidates;
   complete nested cursors and EOF remain unresolved. Native pins and reviewed

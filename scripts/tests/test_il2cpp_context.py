@@ -9,7 +9,35 @@ from types import SimpleNamespace
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
 from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
-from scripts.game_data.il2cpp_context import unresolved_usage_index
+from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
+
+
+class RipQwordLoadTests(unittest.TestCase):
+    def decode(self, raw, address=0x100):
+        return rip_qword_load_target(raw,address,source='fixture.dll')
+
+    def test_registers_and_signed_displacement(self):
+        for rex in (0x48,0x4C):
+            for register in range(8):
+                for displacement in (-0x100,0,0x1234):
+                    raw=bytes((rex,0x8B,5|(register<<3)))+struct.pack('<i',displacement)
+                    self.assertEqual(self.decode(raw),0x107+displacement)
+
+    def test_truncated_trailing_and_wrong_instruction(self):
+        for raw in (b'',bytes(6),bytes(8),bytes.fromhex('488D0500000000'),
+                    bytes.fromhex('488B4500000000'),bytes.fromhex('498B0500000000')):
+            with self.subTest(raw=raw),self.assertRaises(ContextError):
+                self.decode(raw)
+
+    def test_address_and_target_boundaries(self):
+        raw=bytes.fromhex('488B0500000000')
+        for address in (-1,True,(1<<64)-7):
+            with self.subTest(address=address),self.assertRaises(ContextError):
+                self.decode(raw,address)
+        for address,displacement in ((0,-8),((1<<64)-8,1)):
+            with self.subTest(address=address),self.assertRaises(ContextError) as caught:
+                self.decode(raw[:3]+struct.pack('<i',displacement),address)
+            self.assertEqual(caught.exception.diagnostics['expected'],'bounded eight-byte target address')
 
 
 class UnresolvedUsageTests(unittest.TestCase):

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2DA4770, 0x2DA4842, 'E485B80DE7EB384A0656711FE57395E813FA3DA7981EED3171080ACCC0D40507'),
+    (0x2DA4842, 0x2DA4CB6, 'B62863C4ECF8EED5095302277B77F5AF56FB6EEFD6BF69E53A249B99132231F7'),
     (0x2A5B3B0, 0x2B25E5F, 'FF4949FACDD976369EA9D9008FC74EAD1A384AA4F0A699585810DC65AEFB0B7B'),
     (0x38003F0, 0x380047D, 'A31994FE88EFC8CBC3666CEBCB71FDD8CA317233F38D1EF5727110E6879631B5'),
     (0xA790, 0xAE47, 'F9E448ECD6162E73ED4282F551F1F19A763854F6D99031A45EA61612AF292A09'),
@@ -207,7 +209,7 @@ def audit():
             (0xB2830, '488B15', 6, 559804)):
         instruction = pe.bytes_at_va(pe.image_base+rva, 7)
         require(instruction[:3], bytes.fromhex(opcode), gate.gameassembly, rva)
-        cell = pe.image_base+rva+7+struct.unpack_from('<i', instruction, 3)[0]
+        cell = rip_qword_load_target(instruction,pe.image_base+rva,source=str(gate.gameassembly))
         cell_raw = pe.bytes_at_va(cell, 8)
         index = unresolved_usage_index(cell_raw, reg['methodSpecsCount'] if tag == 6 else reg['typesCount'],
                                        tag=tag, source=str(gate.gameassembly), offset=cell)
@@ -238,6 +240,13 @@ def audit():
     require(md.string(md.methods[102200].name_index),'.ctor',gate.metadata)
     require(pe.bytes_at_va(pe.image_base+0x867C0,5),bytes.fromhex('E99BAAFBFF'),gate.gameassembly,0x867C0)
     require(pe.bytes_at_va(pe.image_base+0xB2837,5),bytes.fromhex('E9741DFD03'),gate.gameassembly,0xB2837)
+    storage_references = []
+    for rva in (0x3800409,0x2DA4806,0x2DA49F5,0x2DA4C42):
+        instruction = pe.bytes_at_va(pe.image_base+rva,7)
+        target = rip_qword_load_target(instruction,pe.image_base+rva,source=str(gate.gameassembly))
+        require(target,pe.image_base+0xD0EF5F0,gate.gameassembly,rva)
+        storage_references.append({'instructionRva':rva,'instructionHex':instruction.hex().upper(),'targetVa':target})
+    storage_raw = pe.bytes_at_va(storage_references[0]['targetVa'],8)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -251,6 +260,9 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedProviderStorage': {'references':storage_references,'cellRawHex':storage_raw.hex().upper(),
+                                    'level':'direct conditional consumer connection',
+                                    'boundary':'Registration and GetFormatter read the identical RIP cell, then class+0xB8 and static-carrier+0x18. Direct lookup traverses that storage and returns a matched node+0x18 through the local result slot. A miss can invoke lazy callbacks, retry lookup, or construct and register other values. Static storage identity does not establish live contents, comparer results, initialization/replacement history or selected adapter dispatch.'},
         'selectedImmediateAdapter': {'cells':adapter_cells, 'typeCarrier':adapter,
                                     'argumentTypeNames':['Beyond.Gameplay.Core.GameplayTagList','Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack'],
                                     'classInstantiation':adapter_inst.as_dict(),
