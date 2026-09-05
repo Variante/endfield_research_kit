@@ -355,6 +355,12 @@ Current durable boundaries:
   still advances; do not treat successful return as byte provenance or reuse
   this permissiveness in maintained parsers. The array's authenticated source,
   later version/flag branches and final cursor still require independent proof.
+  Main-info construction now preserves the original array and supplied starting
+  index in that carrier, shared by nested chunk/file loops. The main reader's
+  pre-parse tail comparison is distinct from consumption: its normal final
+  remainder calculation clamps nonpositive values to zero, and the selected
+  legacy branch performs one extra integer read without a subsequent EOF
+  equality check. A returned object therefore cannot certify full consumption.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
   identity remain unresolved. No observed final cursor or terminal uniqueness
   follows from this conditional ABI.

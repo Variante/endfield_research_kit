@@ -17,9 +17,50 @@ from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
-from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer, vfs_bytebuf_consumer
+from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer, vfs_bytebuf_consumer, vfs_block_cursor
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class VfsBlockCursorTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:b'\xe8'+struct.pack('<i',target-rva-5) for rva,target in (
+            (0x33AF224,0x449AEB0),(0x33AF346,0x2D76170),(0x2D76351,0x2D76D10),
+            (0x4D86E74,0x2D76630),(0x33AF1C4,0x2D767D0),(0x33AF1E8,0x2FE7660))}
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x449AEE1,'C744243400000000897C24304889742438'),
+            (0x449AEF7,'0F10442430488B742468488BC30F1103'),
+            (0x33AF21A,'488D4DB0458BC6488BD6'),(0x33AF33C,'4C8D45A08BD6488D4DC0'),
+            (0x2D7634C,'4C8BC68BD5'),
+            (0x2D76356,'0F10000F1048100F11030F114B104883C3204883EF0175C2'),
+            (0x2D76249,'4C63F0'),(0x2D76286,'498BDE48C1E305'),(0x2D76326,'4585F67E43'),
+            (0x33AF1A6,'8B5E18412BDE83EB0485DB0F8EEE7C9D01'),
+            (0x33AF1ED,'3BF80F858A7C9D01'),
+            (0x33AF3B0,'8B40182B45A085C0410F4EC685C07E0A837F48030F84A47A9D01'),
+            (0x4D86E79,'90E94B8562FE'),(0x33AF3CA,'488BC7'))})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return vfs_block_cursor(self.pe,None,{},[],source='fixture.dll')
+
+    def test_same_carrier_is_not_eof(self):
+        row=self.decode()
+        self.assertIn('same mutable carrier',row['boundary'])
+        self.assertIn('No final equality check follows',row['boundary'])
+        self.assertIn('before its positive-count loop',row['boundary'])
+
+    def test_truncated_trailing_and_mutated_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
+
+    def test_wrong_version_condition_fails_with_diagnostic(self):
+        raw=bytearray(self.parts[0x33AF3B0]);raw[19]=4;self.parts[0x33AF3B0]=bytes(raw)
+        with self.assertRaises(ContextError) as caught:self.decode()
+        self.assertIn('fixture.dll',str(caught.exception))
 
 
 class VfsByteBufConsumerTests(unittest.TestCase):

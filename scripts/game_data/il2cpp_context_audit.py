@@ -27,6 +27,10 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x33AF150, 0x33AF45D, '3EF2B07F92BEFA88B2176CC85AED55F46631C40221C8855C39147B80B2E80819'),
+    (0x2D76170, 0x2D763EF, '1C22EC661AEB8FF271F3F6DCC867025A0045808F7EA9BD7EC1BD5CFCA4F1490E'),
+    (0x449AEB0, 0x449AF12, 'A29D6DE8B297DB1A9EDC50AFF7B73DC946FBA6F02BD7BA15341F07B1BB91EC73'),
+    (0x4D86E0C, 0x4D86ED8, '247C2A7B2E2B9926079FAEDAE02FC2056595D51924EDA7424CA7796814452BBE'),
     (0x2D76D10, 0x2D780D7, 'DA75F628478837F4C1B6C6E142B9218243F17775265D233F0276CE8B83043437'),
     (0x2D78240, 0x2D783B6, 'C72E36C1E1A1643708DBAD591A96C705E39A0BB8DE55BB6C7E678486C52FD015'),
     (0x2D755E0, 0x2D7590C, '56D2ECAC18B1C514E38AC00F3ED5920E04E53A389C168758F1B0DDE0A6A1CCA2'),
@@ -761,6 +765,45 @@ def vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,*,source):
             'boundary':'The selected source parameter joins ByteBufStream. On the reviewed no-replacement path R8 supplies a mutable carrier with cursor dword+0 and array object+8. Two initial bytes are assembled little-endian, incremented by 2 in 16 bits, then sign-extended before adding to the cursor. After an eight-byte helper call and cursor advance, two further helper calls at cursor and cursor+8 form the 16-byte container lookup input; the cursor advances 16. The same paired insertion targets are used on lookup miss, and the resulting integer enters the returned 32-byte descriptor. ReadULong with the supplied nonzero flag assembles eight bytes little-endian after per-byte index checks, but signed int32(offset+7) >= array count returns zero normally; callers still advance their cursor. Overflow and alternate flag/replacement paths are not generalized. This is not a fail-closed source-range validator or proof that returned zeros came from file bytes. Later skips, narrowed values, version/flag branches and cursor save/restore require their own closure. The array origin, authenticated BLC identity, complete carrier allocation, initial/final cursor and logical-file EOF remain unproved.'}
 
 
+def vfs_block_cursor(pe,md,modules,image_owners,*,source):
+    """Array -> shared cursor -> nested records; distinguish checksum and EOF."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247331,'Beyond.VFS.VFBlockMainInfo','ReadFromByteBuf',0x33AF150),
+         (247335,'Beyond.VFS.FVFBlockChunkInfo','ReadFromByteBuf',0x2D76170)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(449333,'Beyond.Byte.ByteBufStream','CreateFromByte',0x449AEB0),
+         (449317,'Beyond.Byte.ByteBufStream','ReadInt',0x2D76630)],source=source,expected_image='Beyond.Byte.dll')
+    edges=[]
+    for rva,target in ((0x33AF224,0x449AEB0),(0x33AF346,0x2D76170),
+        (0x2D76351,0x2D76D10),(0x4D86E74,0x2D76630),
+        (0x33AF1C4,0x2D767D0),(0x33AF1E8,0x2FE7660)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in (
+        (0x449AEE1,'C744243400000000897C24304889742438'),
+        (0x449AEF7,'0F10442430488B742468488BC30F1103'),
+        (0x33AF21A,'488D4DB0458BC6488BD6'),
+        (0x33AF33C,'4C8D45A08BD6488D4DC0'),
+        (0x2D7634C,'4C8BC68BD5'),
+        (0x2D76356,'0F10000F1048100F11030F114B104883C3204883EF0175C2'),
+        (0x2D76249,'4C63F0'),(0x2D76286,'498BDE48C1E305'),
+        (0x2D76326,'4585F67E43'),
+        (0x33AF1A6,'8B5E18412BDE83EB0485DB0F8EEE7C9D01'),
+        (0x33AF1ED,'3BF80F858A7C9D01'),
+        (0x33AF3B0,'8B40182B45A085C0410F4EC685C07E0A837F48030F84A47A9D01'),
+        (0x4D86E79,'90E94B8562FE'),(0x33AF3CA,'488BC7')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'edges':edges,'windows':windows,
+            'level':'exact static identities; direct conditional shared-cursor and return paths',
+            'boundary':'The normal main-info entry passes its input array and supplied start index to CreateFromByte, which constructs 16 bytes: cursor dword, zero dword, original array pointer. Main, chunk and file readers share that same mutable carrier. Chunk processing sign-extends a ReadInt result and requests count*32 bytes before its positive-count loop; each file result is copied as 32 bytes. Allocation-helper behavior and negative-count rejection are not proved by this loop. Before parsing, main compares two helper results using array length minus start minus four and the selected tail position; helper algorithms and authenticated array provenance remain open. After the chunk loop, the normal remaining calculation clamps nonpositive array-length-minus-cursor to zero. Positive remaining with stored version 3 causes one ReadInt call, whose result is discarded before returning the object; other versions can return with positive remaining. No final equality check follows this extra read. This is not an EOF validator, even if the earlier comparison succeeds. Replacement callbacks, helper internals, upstream decryption/file identity, full record grammar and final source receipt remain unresolved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -1101,6 +1144,7 @@ def audit():
     descriptor_path=vfs_descriptor_path(pe,md,modules,image_owners,source=str(gate.gameassembly))
     descriptor_producer=vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     bytebuf_consumer=vfs_bytebuf_consumer(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
+    block_cursor=vfs_block_cursor(pe,md,modules,image_owners,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1129,6 +1173,7 @@ def audit():
         'selectedVfsDescriptorPath':descriptor_path,
         'selectedVfsDescriptorProducer':descriptor_producer,
         'selectedVfsByteBufConsumer':bytebuf_consumer,
+        'selectedVfsBlockCursor':block_cursor,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
