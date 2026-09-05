@@ -1062,6 +1062,29 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def unity_path_return(pe,*,source):
+    """Selected return-slot and string representation, not runtime path value."""
+    windows=[]
+    for rva,expected in (
+        (0x32BA24,'488D4C2420E822000000488BD0488D4C2460E88502FAFF'),
+        (0x32BA3B,'488D4C2420E8CB8ED4FF488B442460'),
+        (0x32BA63,'4C8D0596245401488BCB488D542420E819000000'),
+        (0x2CBCC6,'488BD94C8BCA488BCAE81C8FDAFF'),
+        (0x2CBCD4,'80792001751F448BC0488D4C2430498BD1E816000000'),
+        (0x2CBCEA,'488B08488BC348890B'),(0x2CBCF9,'4D8B09EBDC'),
+        (0x74BF0,'807920017405488B4110C3480FBE5118B818000000482BC2C3'),
+        (0x2CBD06,'488B05AB93A2014C8BCA488BD9418BD0498BC9FFD0'),
+        (0x2CBD1B,'4C8BC0488D54243033C9FF152D8EA201488B442430488903')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    literal=b'StreamingAssets\0'
+    require(pe.bytes_at_va(pe.image_base+0x186DF00,len(literal)),literal,source,0x186DF00)
+    return {'windows':windows,'literal':'StreamingAssets','representationTagOffset':32,
+            'level':'direct conditional return-slot flow',
+            'boundary':'The selected registered target builds a temporary representation, passes it to a converter with a separate output slot, cleans up the temporary and returns that output qword. A nested builder supplies the exact StreamingAssets literal to another helper, not proof of concatenation semantics or root value. The converter length helper returns QWORD +0x10 unless BYTE +0x20 equals one; on that branch it returns 24 minus sign-extended BYTE +0x18. The same tag chooses inline representation versus the pointer at +0. Only the low DWORD length reaches the next helper. That helper calls a dynamic function with data pointer and length, then forwards its result to a second dynamic function with a separate output slot and returns the slot qword. These calls are not yet verified managed-string constructors. Dynamic targets, allocation/cleanup and joining helpers, underlying path initialization, tag validity and actual execution remain unresolved; no authenticated file or runtime directory is asserted.'}
+
+
 def unity_registration_pair(pe,*,source):
     """Shared native loop index proves static pairing, not active registration."""
     body=pe.bytes_at_va(pe.image_base+0x3BF7C0,0x53)
@@ -1612,6 +1635,14 @@ def audit():
     require(hashlib.sha256(unity_pe.buf).hexdigest().upper(),UNITY_SHA,unity_path)
     unity_forwarder=unity_registration_forwarder(unity_pe,source=str(unity_path))
     unity_pair=unity_registration_pair(unity_pe,source=str(unity_path))
+    unity_path_evidence=unity_path_return(unity_pe,source=str(unity_path))
+    for start,end,expected in (
+        (0x32BA20,0x32BA4F,'91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B'),
+        (0x32BA50,0x32BA8A,'D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F'),
+        (0x2CBCC0,0x2CBCFE,'A4BF4C13EC67E4C0D35956DB7EE2B19AF80604A19E48664821050D8F2AB7D015'),
+        (0x2CBD00,0x2CBD3C,'EB78D7B88E5827D4DC6B440287BCE1AAC6C22D9550AA80B32E0163E96D2B02A0'),
+        (0x74BF0,0x74C09,'FAFE139CBBA402A8EA97D77D582388541E95BED7B63400896A7A053BB1D70C47')):
+        require(hashlib.sha256(unity_pe.bytes_at_va(unity_pe.image_base+start,end-start)).hexdigest().upper(),expected,unity_path,start)
     require(sha(unity_path),UNITY_SHA,unity_path)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
@@ -1654,6 +1685,7 @@ def audit():
         'selectedVfsRootResolver':root_resolver,
         'selectedUnityRegistrationForwarder':unity_forwarder,
         'selectedUnityRegistrationPair':unity_pair,
+        'selectedUnityPathReturn':unity_path_evidence,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

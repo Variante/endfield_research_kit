@@ -418,6 +418,11 @@ Current durable boundaries:
   request's parentheses, leaving the resolver helper join open. This is not evidence
   of invocation, final registration ownership or target behavior. Insertion/query helpers, live contents
   and the Unity implementation join remain open; static producer code is not execution.
+  The selected target returns a converter output slot after temporary cleanup.
+  The converter's tagged inline/pointer representation and length extraction are
+  directly connected, but its two dynamic downstream calls remain untyped.
+  A static `StreamingAssets` literal is an input to a joining helper, not proof
+  of a concrete directory or validated managed-string construction.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,
   on-disk identity/hash, zero-length alternate behavior and concrete execution
   remain unresolved; neither four pointer slots nor getter names prove a path.

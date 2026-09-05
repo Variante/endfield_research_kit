@@ -31,7 +31,37 @@ from scripts.game_data.il2cpp_context_audit import vfs_string_carrier
 from scripts.game_data.il2cpp_context_audit import vfs_root_resolver
 from scripts.game_data.il2cpp_context_audit import unity_registration_forwarder
 from scripts.game_data.il2cpp_context_audit import unity_registration_pair
+from scripts.game_data.il2cpp_context_audit import unity_path_return
 from unittest.mock import patch
+
+
+class UnityPathReturnTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={rva:bytes.fromhex(value) for rva,value in (
+            (0x32BA24,'488D4C2420E822000000488BD0488D4C2460E88502FAFF'),
+            (0x32BA3B,'488D4C2420E8CB8ED4FF488B442460'),
+            (0x32BA63,'4C8D0596245401488BCB488D542420E819000000'),
+            (0x2CBCC6,'488BD94C8BCA488BCAE81C8FDAFF'),
+            (0x2CBCD4,'80792001751F448BC0488D4C2430498BD1E816000000'),
+            (0x2CBCEA,'488B08488BC348890B'),(0x2CBCF9,'4D8B09EBDC'),
+            (0x74BF0,'807920017405488B4110C3480FBE5118B818000000482BC2C3'),
+            (0x2CBD06,'488B05AB93A2014C8BCA488BD9418BD0498BC9FFD0'),
+            (0x2CBD1B,'4C8BC0488D54243033C9FF152D8EA201488B442430488903'))}
+        self.parts[0x186DF00]=b'StreamingAssets\0'
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_return_and_representation(self):
+        row=unity_path_return(self.pe,source='fixture.dll')
+        self.assertEqual(row['representationTagOffset'],32)
+        self.assertEqual(row['literal'],'StreamingAssets')
+
+    def test_changed_truncated_or_trailing_windows(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):
+                    unity_path_return(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class UnityRegistrationPairTests(unittest.TestCase):
