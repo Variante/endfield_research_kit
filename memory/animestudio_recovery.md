@@ -295,8 +295,13 @@ Current durable boundaries:
   adapter type. Keep these static links separate from serialized read order.
   The generated wrapper reader conditionally forwards the same reader after a
   one-byte fast-path header to an independently joined `ReadPackable<List<...>>`
-  usage/MethodSpec/type carrier. This nested body is another provider/dispatch
-  layer, not the list element reader. Cold advance normally returns true, resets
+  usage/MethodSpec/type carrier. Its nested body follows relative slot zero through
+  `ReadPackable` to `ReadValue`, then `GetFormatter`, then the latter's MVAR type.
+  Each method edge independently joins one ordinal-zero parameter owned by its
+  preceding method; these are distinct records, not interchangeable MVAR identities.
+  The original concrete argument propagates only conditionally on context inflation.
+  This remains a provider/dispatch layer, not the list element reader or a selected
+  runtime formatter. Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.
   The 24-byte descriptor has a conditional same-endpoint position-difference

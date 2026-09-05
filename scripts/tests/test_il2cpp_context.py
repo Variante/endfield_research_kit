@@ -38,7 +38,94 @@ from scripts.game_data.il2cpp_context_audit import resolver_key_comparison
 from scripts.game_data.il2cpp_context_audit import unity_module_lookup
 from scripts.game_data.il2cpp_context_audit import unity_loader_input
 from scripts.game_data.il2cpp_context_audit import unity_loader_conversion
+from scripts.game_data.il2cpp_context_audit import nested_reader_context
 from unittest.mock import patch
+
+
+class NestedReaderContextTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000;module=self.base+0x100
+        self.modules={'MemoryPack.dll':module}
+        self.words={module+8:678,module+0x40:120,module+0x50:691}
+        self.qwords={module+16:self.base+0x2000,module+0x48:self.base+0x4000,module+0x58:self.base+0x5000}
+        self.parts={self.base+0x2000:bytes(678*8)}
+        ranges=bytearray(120*12)
+        for i,(token,start,count) in enumerate(((0x06000073,36,1),(0x06000075,40,3),(0x0600002F,13,2))):
+            struct.pack_into('<III',ranges,i*12,token,start,count)
+        self.parts[self.base+0x4000]=bytes(ranges)
+        self.reg={'methodSpecsCount':520000,'methodSpecs':hex(self.base+0x100000),
+                  'genericInstsCount':60000,'typesCount':3000,'types':hex(self.base+0x200000)}
+        for start,kind,index in ((36,3,517554),(40,3,516756),(13,1,2190)):
+            payload=self.base+0x8000+start*4
+            self.parts[self.base+0x5000+start*16]=struct.pack('<IIQ',kind,0,payload)
+            self.parts[payload]=struct.pack('<I',index)
+        self.parts[self.base+0x100000+517554*12]=struct.pack('<iii',428464,-1,54984)
+        self.parts[self.base+0x100000+516756*12]=struct.pack('<iii',428394,-1,41928)
+        self.parts[self.base+0x200000+2190*8]=struct.pack('<Q',self.base+0x9000)
+        self.parts[self.base+0x9000]=struct.pack('<QII',2,0x1E0000,0)
+        for at,raw in ((0x381F904,'488BDA4C8BF9'),(0x381F915,'488B4338488B18'),
+                       (0x381F944,'488B4338488B30'),(0x381F956,'488B5E38488B1B'),
+                       (0x381FB0D,'B9050000004C8D4C24204D8BC7488BD3E8DEF781FC')):
+            self.parts[self.base+at]=bytes.fromhex(raw)
+        self.args={54984:struct.pack('<QII',0,0x1E0000,0),41928:struct.pack('<QII',1,0x1E0000,0)}
+        def resolve(index):
+            return SimpleNamespace(record_va=0xA000,arguments=[SimpleNamespace(type_pointer_va=0xB000,
+                raw_type_record_hex=self.args[index].hex().upper())],as_dict=lambda:{'index':index})
+        self.table=SimpleNamespace(resolve=resolve)
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,size:self.parts[va],
+                                u32_at_va=lambda va:self.words[va],u64_at_va=lambda va:self.qwords[va])
+        self.buf=bytearray(0x300)
+        struct.pack_into('<II',self.buf,8+12*8,0x200,48)
+        struct.pack_into('<II',self.buf,8+14*8,0x240,48)
+        methods=[SimpleNamespace(generic_container_index=-1)]*428465
+        names={0:'MemoryPack.dll',1:'ReadPackable',2:'ReadValue',3:'GetFormatter'}
+        for i,(definition,token) in enumerate(((428462,0x06000073),(428464,0x06000075),(428394,0x0600002F))):
+            struct.pack_into('<iihhHH',self.buf,0x200+i*16,i,0,0,0,0,0)
+            struct.pack_into('<iiii',self.buf,0x240+i*16,definition,1,1,i)
+            methods[definition]=SimpleNamespace(generic_container_index=i,token=token,declaring_type=int(i==2),name_index=i+1)
+        self.md=SimpleNamespace(buf=self.buf,methods=methods,
+            types=['MemoryPack.MemoryPackReader','MemoryPack.MemoryPackFormatterProvider'],
+            type_full_name=lambda name:name,string=lambda index:names[index],images=[SimpleNamespace(name_index=0)])
+
+    def decode(self):
+        return nested_reader_context(self.pe,self.md,self.modules,[0,0],self.reg,self.table,
+                                     source='fixture.dll',metadata_source='fixture.dat')
+
+    def test_distinct_reciprocal_parameters_and_module_slots(self):
+        row=self.decode()
+        self.assertEqual([r['moduleEntryIndex'] for r in row['rows']],[36,40,13])
+        self.assertEqual([r['parameterOwner']['methodIndex'] for r in row['rows']],[428462,428464,428394])
+        self.assertEqual([r['parameterOwner']['ordinal'] for r in row['rows']],[0,0,0])
+        self.assertTrue(all(r['pointerVa']==0 for r in row['methods']))
+
+    def test_same_ordinal_but_wrong_parameter_owner_is_rejected(self):
+        self.args[54984]=self.args[41928]
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_truncated_trailing_and_malformed_records_and_instructions(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                if at==self.base+0x2000 and bad==good:continue
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
+
+    def test_ambiguous_range_count_and_nonnull_generic_definition(self):
+        at=self.base+0x4000;good=self.parts[at]
+        for raw in (good[:36]+good[:12]+good[48:],good[:4]+struct.pack('<II',690,2)+good[12:]):
+            self.parts[at]=raw
+            with self.assertRaises(ContextError):self.decode()
+        self.parts[at]=good
+        pointers=bytearray(self.parts[self.base+0x2000]);struct.pack_into('<Q',pointers,(0x73-1)*8,self.base+0x1234)
+        self.parts[self.base+0x2000]=bytes(pointers)
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_out_of_bounds_spec_and_broken_reciprocal_container(self):
+        self.reg['methodSpecsCount']=517554
+        with self.assertRaises(ContextError):self.decode()
+        self.reg['methodSpecsCount']=520000
+        struct.pack_into('<i',self.buf,0x240,428464)
+        with self.assertRaises(ContextError):self.decode()
 
 
 class UnityLoaderConversionTests(unittest.TestCase):

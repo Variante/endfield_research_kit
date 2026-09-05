@@ -333,6 +333,73 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def nested_reader_context(pe, md, modules, image_owners, reg, table, *, source, metadata_source):
+    """Slot-zero context chain: reciprocal parameters, never live substitution."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(428462,'MemoryPack.MemoryPackReader','ReadPackable',None),
+         (428464,'MemoryPack.MemoryPackReader','ReadValue',None),
+         (428394,'MemoryPack.MemoryPackFormatterProvider','GetFormatter',None)],source=source,
+        expected_image='MemoryPack.dll')
+    module=modules['MemoryPack.dll']
+    require(pe.u32_at_va(module+0x40),120,source,module+0x40)
+    require(pe.u32_at_va(module+0x50),691,source,module+0x50)
+    range_va=pe.u64_at_va(module+0x48);entry_va=pe.u64_at_va(module+0x58)
+    ranges=pe.bytes_at_va(range_va,120*12)
+    require(len(ranges),120*12,source,range_va)
+    containers=[m.generic_container_index for m in md.methods]
+    rows=[]
+    for definition,token,start,count,kind,index,next_definition,inst_index in (
+        (428462,0x06000073,36,1,3,517554,428464,54984),
+        (428464,0x06000075,40,3,3,516756,428394,41928),
+        (428394,0x0600002F,13,2,1,2190,None,None)):
+        require(md.methods[definition].token,token,metadata_source,definition)
+        require(select_rgctx_range(ranges,691,token,source=source,offset=range_va),(start,count),source,range_va)
+        at=entry_va+start*16;raw=pe.bytes_at_va(at,16)
+        require(len(raw),16,source,at)
+        require(struct.unpack_from('<I',raw)[0],kind,source,at)
+        payload=struct.unpack_from('<Q',raw,8)[0]
+        encoded=pe.bytes_at_va(payload,4)
+        require(encoded,struct.pack('<I',index),source,payload)
+        row={'methodDefinition':definition,'token':token,'relativeSlot':0,'moduleEntryIndex':start,
+             'entryVa':at,'entryRawHex':raw.hex().upper(),'index':index,'kind':kind}
+        if kind==3:
+            require(index<reg['methodSpecsCount'],True,source,payload)
+            spec_at=int(reg['methodSpecs'],16)+index*12
+            spec=pe.bytes_at_va(spec_at,12)
+            parsed=method_spec_record(spec,len(md.methods),reg['genericInstsCount'],source=source,offset=spec_at)
+            require(parsed,(next_definition,-1,inst_index),source,spec_at)
+            inst=table.resolve(inst_index)
+            require(len(inst.arguments),1,source,inst.record_va)
+            argument=inst.arguments[0];type_at=argument.type_pointer_va
+            type_raw=bytes.fromhex(argument.raw_type_record_hex)
+            row.update({'methodSpecVa':spec_at,'methodSpecRawHex':spec.hex().upper(),
+                        'nextMethodDefinition':next_definition,'methodInstantiation':inst.as_dict()})
+        else:
+            require(index<reg['typesCount'],True,source,payload)
+            slot=int(reg['types'],16)+index*8
+            pointer=pe.bytes_at_va(slot,8)
+            require(len(pointer),8,source,slot)
+            type_at=struct.unpack('<Q',pointer)[0]
+            require(type_at!=0,True,source,slot)
+            type_raw=pe.bytes_at_va(type_at,16)
+        require(len(type_raw),16,source,type_at)
+        require(type_raw[10],0x1E,source,type_at)
+        owner=method_parameter_owner(md.buf,struct.unpack_from('<Q',type_raw)[0],containers,source=metadata_source)
+        require((owner['methodIndex'],owner['ordinal']),(definition,0),metadata_source,owner['containerOffset'])
+        row.update({'typePointerVa':type_at,'typeRawHex':type_raw.hex().upper(),'parameterOwner':owner})
+        rows.append(row)
+    windows=[]
+    for at,expected in ((0x381F904,'488BDA4C8BF9'),(0x381F915,'488B4338488B18'),
+                        (0x381F944,'488B4338488B30'),(0x381F956,'488B5E38488B1B'),
+                        (0x381FB0D,'B9050000004C8D4C24204D8BC7488BD3E8DEF781FC')):
+        raw=bytes.fromhex(expected)
+        require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    return {'methods':methods,'rows':rows,'windows':windows,
+            'level':'exact static token/MethodSpec/MVAR joins; direct conditional nested context reads',
+            'boundary':'The selected nested body retains its incoming reader and follows MethodInfo+0x38 slot zero three times before deriving a provider key. The corresponding independently image/token-joined ranges identify ReadPackable to ReadValue, ReadValue to GetFormatter, then the GetFormatter MVAR type. Each method edge has one open method argument whose reciprocal owner is the preceding method and whose ordinal is zero; the final type is a distinct ordinal-zero parameter owned by GetFormatter itself. These are three different parameter records, not interchangeable raw identities. Conditional on ordinary context inflation from the previously authenticated ReadPackable<List<...>> call, this chain carries that same concrete argument through the intermediate contexts. All three generic definition ordinary-pointer slots are null; static ranges do not select a shared body. The body passes the retained reader and separate output slot to dispatch, but actual initialized MethodInfos, substitution, provider key/cache contents, list formatter, source length and final cursor remain unobserved. No list framing, element meaning or terminal uniqueness follows.'}
+
+
 def wrapper_consumer(pe, md, reg, table, *, source):
     """Reviewed conditional wrapper path, not a source/EOF or dispatch receipt."""
     instruction=pe.bytes_at_va(pe.image_base+0x37DF6EC,7)
@@ -1765,6 +1832,8 @@ def audit():
     construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
+    nested_context=nested_reader_context(pe,md,modules,image_owners,reg,table,
+                                         source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     resource_evidence=skill_resource_context(pe,md,modules,image_owners,table,reg,code,
         spec_records,specs_raw,methods_raw,source=str(gate.gameassembly))
     carrier_evidence=resource_carrier_consumers(pe,source=str(gate.gameassembly))
@@ -1857,6 +1926,7 @@ def audit():
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
+        'selectedNestedReaderContext':nested_context,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
