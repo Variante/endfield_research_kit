@@ -348,6 +348,10 @@ Once every bounded packet is published, rejected admission must terminate instea
 of waiting for another entry. A constant scene-shadow R channel is admissible only
 when the archived original shader and same-draw bound constants prove its explicit
 white-output branch; texture appearance alone cannot establish this exception.
+Shader admission pins must match original bytes from the selected installed
+shader variant and a retained retail observation. Exercise bytecode hashing in
+capture regressions; fixtures that synthesize the expected identity can conceal
+a stale pin even when every local test passes.
 
 ## Reference and comparison policy
 
