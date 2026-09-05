@@ -90,6 +90,11 @@ constant; rejoin identities/hashes or rerun the relevant sweep.
 
 ## Scope and Concurrency
 
+For delegated recovery work, default to `gpt-5.6-luna`, as requested by the
+user after an independent raw-byte blind test. Give each agent a bounded task
+and separate scratch ownership. The main agent still reviews evidence, parser
+bounds, negative tests, and current-corpus gates before promoting results.
+
 Use `--focused-assets`, `--default-assets`, or `--debug-assets` from narrowest
 to broadest. Keep `--asset-jobs N` conservative relative to available RAM.
 Adjust worker count before changing shard count or exporter architecture.
