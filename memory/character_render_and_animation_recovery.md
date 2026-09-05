@@ -210,8 +210,14 @@ only.
   client through a dedicated five-file manifest and passes installed-client
   preflight without native gameplay/IL2CPP hooks. Current dense evidence proves
   that two instanced fullscreen producers write one RG8 resource consumed by
-  Default Deferred at PS t7; Default t11 is a distinct upstream resource also
-  sampled by the scene producer at t5. Deferred presentation remains fail-closed
+  Default Deferred at PS t7. An exact source/runtime compute-bytecode join
+  identifies distinct Default t11 as ContactShadowCS/RayTracingV2's
+  `_ContactShadow` UAV output, also sampled by the scene producer at t5.
+  The legacy cross-backend screen-mask name is disproven. Dispatch-local
+  constant-buffer slices and output bytes remain missing; resource identity
+  alone does not validate the lab's recovered compute arithmetic or parameters.
+  See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
+  Deferred presentation remains fail-closed
   until a corrected current-outfit capture validates the draw-local t7 payload.
 - The AnimeStudio-owned shader recovery path may provide readable code and
   metadata. It does not prove runtime variant selection or final appearance.
