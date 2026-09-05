@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,8 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2A5B3B0, 0x2B25E5F, 'FF4949FACDD976369EA9D9008FC74EAD1A384AA4F0A699585810DC65AEFB0B7B'),
+    (0x38003F0, 0x380047D, 'A31994FE88EFC8CBC3666CEBCB71FDD8CA317233F38D1EF5727110E6879631B5'),
     (0xA790, 0xAE47, 'F9E448ECD6162E73ED4282F551F1F19A763854F6D99031A45EA61612AF292A09'),
     (0x9230, 0x962A, 'B11CC37279D6BD65872B4E6CC22339543A84B005FE4B65F424081417C0C57214'),
     (0x3850, 0x3995, '4C5BF32B3BDC82C200BC2D88CFD0698694249C52C68BE5B71E87CC596F713C23'),
@@ -196,6 +198,46 @@ def audit():
     require(formatter_carrier['baseDefinitionIndex'],54005,gate.metadata)
     require(md.type_full_name(md.types[54005]),'MemoryPack.MemoryPackFormatter`1',gate.metadata)
     require(pe.u32_at_va(pe.image_base+0x9850+(0x15-0xF)*4),0x979D,gate.gameassembly,0x9850)
+    # Static immediate-registration site: identity joins only, not live state.
+    adapter_cells = []
+    for rva, opcode, tag, expected_index in (
+            (0x2B00F2B, '488B0D', 1, 205127),
+            (0x2B00F4C, '488B15', 6, 559804),
+            (0x2B00F60, '488B05', 2, 120613),
+            (0xB2830, '488B15', 6, 559804)):
+        instruction = pe.bytes_at_va(pe.image_base+rva, 7)
+        require(instruction[:3], bytes.fromhex(opcode), gate.gameassembly, rva)
+        cell = pe.image_base+rva+7+struct.unpack_from('<i', instruction, 3)[0]
+        cell_raw = pe.bytes_at_va(cell, 8)
+        index = unresolved_usage_index(cell_raw, reg['methodSpecsCount'] if tag == 6 else reg['typesCount'],
+                                       tag=tag, source=str(gate.gameassembly), offset=cell)
+        require(index, expected_index, gate.gameassembly, cell)
+        adapter_cells.append({'instructionRva':rva, 'instructionHex':instruction.hex().upper(),
+                              'cellVa':cell, 'rawHex':cell_raw.hex().upper(), 'tag':tag, 'index':index})
+    require(adapter_cells[1]['cellVa'], adapter_cells[3]['cellVa'], gate.gameassembly)
+    adapter_pointer = pe.u64_at_va(int(reg['types'],16)+205127*8)
+    adapter_raw = pe.bytes_at_va(adapter_pointer,16)
+    adapter_carrier_raw = pe.bytes_at_va(struct.unpack_from('<Q',adapter_raw)[0],32)
+    adapter_base_raw = pe.bytes_at_va(struct.unpack_from('<Q',adapter_carrier_raw)[0],16)
+    adapter = generic_type_carrier(adapter_raw,adapter_carrier_raw,adapter_base_raw,
+                                   type_pointer=adapter_pointer,type_count=len(md.types),source=str(gate.gameassembly))
+    require(adapter['baseDefinitionIndex'],13633,gate.metadata)
+    require(md.type_full_name(md.types[13633]),'Beyond.MemoryPack.GenericMemoryPackFormatter`2',gate.metadata)
+    adapter_inst = table.resolve_pointer(adapter['classInstantiationPointerVa'])
+    require(adapter_inst.index,38555,gate.gameassembly)
+    require(len(adapter_inst.arguments),2,gate.gameassembly)
+    require([a.raw_type_record_hex for a in adapter_inst.arguments],
+            ['B02D0000000000000000120000000000','2D360000000000000000120000000000'],gate.gameassembly)
+    require(md.type_full_name(md.types[13869]),'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack',gate.metadata)
+    key_pointer = pe.u64_at_va(int(reg['types'],16)+120613*8)
+    require(key_pointer,adapter_inst.arguments[0].type_pointer_va,gate.gameassembly)
+    ctor_va = int(reg['methodSpecs'],16)+559804*12
+    ctor_raw = pe.bytes_at_va(ctor_va,12)
+    require(struct.unpack('<iii',ctor_raw),(102200,38555,-1),gate.gameassembly,ctor_va)
+    require(md.methods[102200].declaring_type,13633,gate.metadata)
+    require(md.string(md.methods[102200].name_index),'.ctor',gate.metadata)
+    require(pe.bytes_at_va(pe.image_base+0x867C0,5),bytes.fromhex('E99BAAFBFF'),gate.gameassembly,0x867C0)
+    require(pe.bytes_at_va(pe.image_base+0xB2837,5),bytes.fromhex('E9741DFD03'),gate.gameassembly,0xB2837)
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -209,6 +251,12 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedImmediateAdapter': {'cells':adapter_cells, 'typeCarrier':adapter,
+                                    'argumentTypeNames':['Beyond.Gameplay.Core.GameplayTagList','Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack'],
+                                    'classInstantiation':adapter_inst.as_dict(),
+                                    'constructorMethodSpecVa':ctor_va,'constructorRawHex':ctor_raw.hex().upper(),
+                                    'level':'exact static identity; direct conditional registration callsite',
+                                    'boundary':'The type carrier and constructor share the ordered Core/ForMemoryPack instance, and the Core key uses the identical registered type pointer. The reviewed callsite passes the constructed-object stack slot and type-derived key to a registration function which forwards them to static-carrier+0x18 storage. This does not establish execution, allocation/constructor ABI completion, live cache selection, adapter Deserialize dispatch, source length or final cursor.'},
         'selectedFormatterTypeCarrier': {**formatter_carrier,'rgctxEntryVa':entry_va,
                                          'rgctxEntryRawHex':entry_raw.hex().upper(),
                                          'classInstantiationIndex':formatter_inst.index,

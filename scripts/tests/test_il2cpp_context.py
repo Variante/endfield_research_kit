@@ -9,6 +9,47 @@ from types import SimpleNamespace
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
 from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
+from scripts.game_data.il2cpp_context import unresolved_usage_index
+
+
+class UnresolvedUsageTests(unittest.TestCase):
+    def decode(self, raw, count=4, tag=2):
+        return unresolved_usage_index(raw,count,tag=tag,source='fixture.dll',offset=0x30)
+
+    def test_each_supported_tag_exact_index(self):
+        for tag in (1,2,3,6):
+            with self.subTest(tag=tag):
+                self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|7),tag=tag),3)
+
+    def test_zero_and_maximum_legal_index(self):
+        for tag in (1,2,3,6):
+            with self.subTest(tag=tag):
+                self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|1),count=1,tag=tag),0)
+                self.assertEqual(self.decode(struct.pack('<Q',(tag<<29)|(999_999<<1)|1),
+                                             count=1_000_000,tag=tag),999_999)
+        with self.assertRaises(ContextError) as caught:
+            self.decode(struct.pack('<Q',0x40000001),count=0)
+        self.assertEqual(caught.exception.diagnostics,{
+            'source':'fixture.dll','offset':0x30,'expected':'usage target index in [0,0)','actual':0})
+
+    def test_truncated_and_trailing(self):
+        for size in (0,7,9):
+            with self.subTest(size=size), self.assertRaises(ContextError):
+                self.decode(bytes(size))
+
+    def test_wrong_tag_live_pointer_and_index_bound(self):
+        for word in (0x60000001,0x40000000,0x180000001,0x40000009):
+            with self.subTest(word=word), self.assertRaises(ContextError) as caught:
+                self.decode(struct.pack('<Q',word))
+            self.assertEqual(caught.exception.diagnostics['offset'],0x30)
+
+    def test_count_and_tag_fail_closed(self):
+        for count in (-1,True,1_000_001):
+            with self.subTest(count=count), self.assertRaises(ContextError):
+                self.decode(struct.pack('<Q',0x40000001),count=count)
+        for tag in (0,4,5,7,True):
+            with self.subTest(tag=tag), self.assertRaises(ContextError):
+                self.decode(struct.pack('<Q',0x40000001),tag=tag)
 
 
 class GenericInstantiationTests(unittest.TestCase):

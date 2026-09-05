@@ -226,8 +226,14 @@ Current durable boundaries:
   their relative five-operation terminal read sequence, not a file offset.
   The Core type used by `ReadValue<T>` differs from the generated wrapper's
   `Register<T>` type; a generated wrapped reader alone does not prove the
-  adapter or active formatter. Provider mutation and lookup return paths are
-  visible, but neither fixes initialization/replacement history. The separate
+  adapter or active formatter. A separately gated immediate-registration site
+  now joins the Core key to `GenericMemoryPackFormatter` with ordered arguments
+  Core and `Beyond_Gameplay_Core_GameplayTagListForMemoryPack`: its type carrier
+  and constructor MethodSpec share the same registered class instantiation.
+  This proves static adapter identity and a conditional registration callsite,
+  not completed allocation ABI, executed registration or active Deserialize
+  dispatch. Provider mutation and lookup return paths are visible, but neither
+  fixes initialization/replacement history. The separate
   generic serializer's pointer/length-word carrier is not yet joined to this
   formatter or authenticated VFS allocation. Keep both terminal candidates;
   complete nested cursors and EOF remain unresolved. Native pins and reviewed

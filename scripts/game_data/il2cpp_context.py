@@ -227,16 +227,27 @@ def method_spec_usage_index(raw: bytes, count: int, *, source: str, offset: int)
     An aligned live pointer, another tag, or extra bytes are not alternative
     layouts. This does not assert that runtime initialization has executed.
     """
+    return unresolved_usage_index(raw, count, tag=6, source=source, offset=offset)
+
+
+def unresolved_usage_index(raw: bytes, count: int, *, tag: int, source: str, offset: int) -> int:
+    """Exact on-disk encoding only; tag identity does not prove live resolution.
+
+    The caller supplies the independently gated target table and expected tag.
+    Resolved pointers, other tags, truncated cells and implicit tails fail closed.
+    """
+    if type(tag) is not int or tag not in (1, 2, 3, 6):
+        raise ContextError(source, offset, 'supported usage tag in (1,2,3,6)', tag)
     if len(raw) != 8:
         raise ContextError(source, offset, 'exact eight-byte usage cell', len(raw))
     if type(count) is not int or not 0 <= count <= 1_000_000:
-        raise ContextError(source, offset, 'bounded MethodSpec count', count)
+        raise ContextError(source, offset, 'bounded usage target count', count)
     word = struct.unpack('<Q', raw)[0]
-    if word > 0xFFFFFFFF or not word & 1 or word >> 29 != 6:
-        raise ContextError(source, offset, 'unresolved 32-bit tag-6 usage encoding', hex(word))
+    if word > 0xFFFFFFFF or not word & 1 or word >> 29 != tag:
+        raise ContextError(source, offset, f'unresolved 32-bit tag-{tag} usage encoding', hex(word))
     index = (word >> 1) & 0x0FFFFFFF
     if index >= count:
-        raise ContextError(source, offset, f'MethodSpec index in [0,{count})', index)
+        raise ContextError(source, offset, f'usage target index in [0,{count})', index)
     return index
 
 
