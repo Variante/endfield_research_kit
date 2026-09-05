@@ -333,6 +333,60 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,*,source):
+    """Concrete registered candidate, separate from active provider dispatch."""
+    identities=module_methods(pe,md,modules,image_owners,
+        [(428795,'MemoryPack.Formatters.ListFormatter`1','Deserialize',None)],source=source)
+    require(identities[0]['token'],0x060001C0,source)
+    index=209879
+    require(index<reg['typesCount'],True,source)
+    pointer=pe.u64_at_va(int(reg['types'],16)+index*8)
+    require(pointer!=0,True,source,int(reg['types'],16)+index*8)
+    raw=pe.bytes_at_va(pointer,16);require(len(raw),16,source,pointer)
+    require(raw[10],0x15,source,pointer)
+    carrier_pointer=struct.unpack_from('<Q',raw)[0]
+    require(carrier_pointer!=0,True,source,pointer)
+    carrier_raw=pe.bytes_at_va(carrier_pointer,32);require(len(carrier_raw),32,source,carrier_pointer)
+    base_pointer=struct.unpack_from('<Q',carrier_raw)[0]
+    require(base_pointer!=0,True,source,carrier_pointer)
+    base_raw=pe.bytes_at_va(base_pointer,16)
+    carrier=generic_type_carrier(raw,carrier_raw,base_raw,type_pointer=pointer,type_count=len(md.types),source=source)
+    require(carrier['baseDefinitionIndex'],54057,source,base_pointer)
+    require(md.methods[428795].declaring_type,54057,source)
+    inst=table.resolve_pointer(carrier['classInstantiationPointerVa'])
+    require(inst.index,816,source,inst.record_va)
+    require(len(inst.arguments),1,source,inst.record_va)
+    require(inst.arguments[0].raw_type_record_hex,'A22D0000000000000000118000000000',source,inst.record_va)
+    # spec_records is the already bounded complete MethodSpec inventory from audit().
+    require(len(spec_records),reg['methodSpecsCount'],source)
+    selected={i for i,row in enumerate(spec_records) if row==(428795,816,-1)}
+    require(sorted(selected),[215461],source)
+    candidates=generic_method_candidates(methods_raw,reg['genericMethodTableCount'],len(spec_records),selected,
+        code['genericMethodPointersCount'],code['invokerPointersCount'],source=source,
+        offset=int(reg['genericMethodTable'],16))
+    for row in candidates:
+        slot=int(code['genericMethodPointers'],16)+row['indices'][0]*8
+        row['methodPointerSlotVa']=slot;row['methodPointerVa']=pe.u64_at_va(slot)
+    require([(r['methodSpecIndex'],r['methodPointerVa']) for r in candidates],
+            [(215461,pe.image_base+0x3BA40F0)],source)
+    windows=[]
+    for at,expected in ((0x3BA410E,'488B47508B30'),
+        (0x3BA4120,'48834750048347400483474404895F30'),
+        (0x3BA4130,'48634744488B4F18482BC84863C6483BC8'),
+        (0x3BA4147,'83FEFF0F842F010000'),(0x3BA415F,'49833E00488B4520488B88C00000000F8518653201'),
+        (0x3BA41C1,'85F60F881F653201'),(0x3BA4282,'49C70600000000'),
+        (0x4ECA6AB,'FF431CC7431800000000E9799BCDFE'),
+        (0x3BA4261,'85F67F4D'),(0x3BA42C3,'4C8D4C24584C8BC7498BD7E8FD494FFC'),
+        (0x3BA4312,'41FFC4443BE60F8D47FFFFFFEB92')):
+        chunk=bytes.fromhex(expected)
+        require(pe.bytes_at_va(pe.image_base+at,len(chunk)),chunk,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    return {'methodIdentities':identities,'registeredTypeIndex':index,'typeCarrier':carrier,
+            'classInstantiation':inst.as_dict(),'methodSpecIndices':sorted(selected),'codeCandidates':candidates,
+            'windows':windows,'level':'exact static candidate identity; direct conditional header and loop flow',
+            'boundary':'The registered ListFormatter type and Deserialize MethodSpec share the same one-argument instantiation as the previously joined List carrier. The complete selected MethodSpec/code-table join yields one static code candidate, not proof of provider selection. This body receives the reader in RDX, output-slot pointer in R8 and companion in R9. Its fast header path reads a signed DWORD, advances cursor and both counters by four, and compares total-minus-consumed with the sign-extended count without multiplying by an element width. Header -1 clears the output. With a null output, other negative counts reach a helper followed by INT3; with an existing output, the reviewed reuse branch instead increments object+0x1C, clears object+0x18 and reaches a loop guarded by count>0. Thus this body does not universally reject all counts below -1. Each positive iteration passes the same reader and a zeroed four-byte output slot to element dispatch, then forwards the output word to another helper and increments its loop index. A four-byte output slot does not prove four serialized bytes per element. Cold header paths call the separately reviewed ensure/advance helpers. Element formatter identity, helper effects, successful allocation/reuse, actual MethodInfo/provider selection, authenticated source span and final cursor/EOF remain unresolved. Keep both terminal grammars.'}
+
+
 def nested_reader_context(pe, md, modules, image_owners, reg, table, *, source, metadata_source):
     """Slot-zero context chain: reciprocal parameters, never live substitution."""
     methods=module_methods(pe,md,modules,image_owners,
@@ -1834,6 +1888,14 @@ def audit():
     wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
     nested_context=nested_reader_context(pe,md,modules,image_owners,reg,table,
                                          source=str(gate.gameassembly),metadata_source=str(gate.metadata))
+    list_candidate=list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,
+                                            source=str(gate.gameassembly))
+    list_candidate['bodyWindows']=[]
+    for start,end,digest in (
+        (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
+        (0x4ECA65C,0x4ECA705,'5B65758E858AF46037B7133644A3A9264E3FD4AA1D87B479B80A240EB0A31A90')):
+        require(hashlib.sha256(pe.bytes_at_va(pe.image_base+start,end-start)).hexdigest().upper(),digest,gate.gameassembly,start)
+        list_candidate['bodyWindows'].append({'rva':start,'byteLength':end-start,'sha256':digest})
     resource_evidence=skill_resource_context(pe,md,modules,image_owners,table,reg,code,
         spec_records,specs_raw,methods_raw,source=str(gate.gameassembly))
     carrier_evidence=resource_carrier_consumers(pe,source=str(gate.gameassembly))
@@ -1927,6 +1989,7 @@ def audit():
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedReaderContext':nested_context,
+        'selectedListFormatterCandidate':list_candidate,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

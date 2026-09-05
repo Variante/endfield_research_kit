@@ -301,7 +301,16 @@ Current durable boundaries:
   preceding method; these are distinct records, not interchangeable MVAR identities.
   The original concrete argument propagates only conditionally on context inflation.
   This remains a provider/dispatch layer, not the list element reader or a selected
-  runtime formatter. Cold advance normally returns true, resets
+  runtime formatter. A separately joined `ListFormatter` registration shares the
+  list element instantiation and supplies a static Deserialize code candidate.
+  Its fast path consumes a four-byte count; the remaining-length comparison is
+  unscaled, and each positive iteration delegates element decoding. The four-byte
+  element output slot is not a serialized-width proof. Counts below minus one
+  reach an error helper only on the new-output path; the existing-output path
+  clears its length and skips the nonpositive loop. Preserve that native distinction
+  without relaxing the maintained parser's negative-count rejection. Actual
+  provider selection, element dispatch and EOF are still open.
+  Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.
   The 24-byte descriptor has a conditional same-endpoint position-difference

@@ -39,7 +39,72 @@ from scripts.game_data.il2cpp_context_audit import unity_module_lookup
 from scripts.game_data.il2cpp_context_audit import unity_loader_input
 from scripts.game_data.il2cpp_context_audit import unity_loader_conversion
 from scripts.game_data.il2cpp_context_audit import nested_reader_context
+from scripts.game_data.il2cpp_context_audit import list_formatter_candidate
 from unittest.mock import patch
+
+
+class ListFormatterCandidateTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={0x100:struct.pack('<QII',self.base+0x200,0x150000,0),
+            0x200:struct.pack('<QQQQ',self.base+0x300,self.base+0x400,0,0),
+            0x300:struct.pack('<QII',54057,0x120000,0)}
+        for at,raw in ((0x3BA410E,'488B47508B30'),(0x3BA4120,'48834750048347400483474404895F30'),
+            (0x3BA4130,'48634744488B4F18482BC84863C6483BC8'),(0x3BA4147,'83FEFF0F842F010000'),
+            (0x3BA415F,'49833E00488B4520488B88C00000000F8518653201'),(0x3BA41C1,'85F60F881F653201'),
+            (0x3BA4282,'49C70600000000'),(0x4ECA6AB,'FF431CC7431800000000E9799BCDFE'),
+            (0x3BA4261,'85F67F4D'),(0x3BA42C3,'4C8D4C24584C8BC7498BD7E8FD494FFC'),
+            (0x3BA4312,'41FFC4443BE60F8D47FFFFFFEB92')):self.parts[at]=bytes.fromhex(raw)
+        self.pointers={self.base+0x10000+209879*8:self.base+0x100,self.base+0x20000:self.base+0x3BA40F0}
+        def read(va,size):
+            if va-self.base not in self.parts:raise ContextError('fixture.dll',va,'mapped raw range',size)
+            return self.parts[va-self.base]
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=read,
+                                u64_at_va=lambda va:self.pointers[va])
+        self.reg={'typesCount':209880,'types':hex(self.base+0x10000),'methodSpecsCount':215462,
+                  'genericMethodTableCount':1,'genericMethodTable':hex(self.base+0x30000)}
+        self.code={'genericMethodPointersCount':1,'invokerPointersCount':1,'genericMethodPointers':hex(self.base+0x20000)}
+        self.specs=[(0,-1,-1)]*215462;self.specs[215461]=(428795,816,-1)
+        self.raw=struct.pack('<iiii',215461,0,0,-1)
+        self.inst=SimpleNamespace(index=816,record_va=self.base+0x400,
+            arguments=[SimpleNamespace(raw_type_record_hex='A22D0000000000000000118000000000')],as_dict=lambda:{'index':816})
+        def resolve(pointer):
+            if pointer!=self.base+0x400:raise ContextError('fixture',pointer,'registered pointer',pointer)
+            return self.inst
+        self.table=SimpleNamespace(resolve_pointer=resolve)
+        self.md=SimpleNamespace(types=range(58110),methods={428795:SimpleNamespace(declaring_type=54057)})
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[{'token':0x060001C0}]):
+            return list_formatter_candidate(self.pe,self.md,{},[],self.reg,self.code,self.table,self.specs,self.raw,source='fixture.dll')
+
+    def test_candidate_and_nonuniform_negative_count_boundary(self):
+        row=self.decode()
+        self.assertEqual(row['methodSpecIndices'],[215461])
+        self.assertEqual(row['codeCandidates'][0]['methodPointerVa'],self.base+0x3BA40F0)
+        self.assertIn('does not universally reject',row['boundary'])
+        self.assertIn('does not prove four serialized bytes',row['boundary'])
+
+    def test_truncated_trailing_or_corrupt_carriers_and_windows(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
+
+    def test_bad_table_counts_indices_trailing_and_duplicate_candidates(self):
+        good=self.raw
+        for bad in (good[:-1],good+b'!',struct.pack('<iiii',215462,0,0,-1),struct.pack('<iiii',215461,1,0,-1)):
+            self.raw=bad
+            with self.assertRaises(ContextError):self.decode()
+        self.raw=good+good;self.reg['genericMethodTableCount']=2
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_wrong_context_or_additional_matching_spec(self):
+        self.inst.index=817
+        with self.assertRaises(ContextError):self.decode()
+        self.inst.index=816;self.specs[0]=self.specs[215461]
+        with self.assertRaises(ContextError):self.decode()
 
 
 class NestedReaderContextTests(unittest.TestCase):
