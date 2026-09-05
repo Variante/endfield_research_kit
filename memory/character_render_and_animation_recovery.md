@@ -235,18 +235,21 @@ only.
   identifies distinct Default t11 as ContactShadowCS/RayTracingV2's
   `_ContactShadow` UAV output, also sampled by the scene producer at t5.
   The legacy cross-backend screen-mask name is disproven. Dispatch-local
-  constant-buffer slices and output bytes remain missing. Bounded isolated GPU
+  constant-buffer slices and output bytes are authenticated in the combined
+  two-entry evidence package. Bounded isolated GPU
   comparisons support the recovered arithmetic, but current native publishers
   read interpolated environment settings and a camera frame counter; constructor
   defaults do not validate those live values. Exact t7 uses the completed
   resolve, and t11 uses same-camera/frame contact output with separate content
   gates. Legacy HLSL bindings remain a different contract.
-  The dedicated `StartEndminfContactShadowCapture.bat` observer now retains
-  bounded dispatch-local buffer ranges and pre-dispatch inputs, then checks
-  output snapshots at both consumers. Its WARP/collection tests validate the
-  observation mechanics, not retail stability or pixel parity. Follow the
-  EndfieldCapture README's single-entry procedure; it does not replace the
-  separate ScreenShadow two-entry capture.
+  The combined capture needs no repeat for those graphics inputs. The optional
+  environment-shadow extension observes selected phases, ordered applied
+  volumes/factors and camera/shadow-manager state within the same two entries.
+  It uses guarded reads and original-call forwarding without Unity API calls.
+  Per-window completeness and exact camera bytes must validate before using
+  a runtime phase to explain a captured draw; raw instance IDs are not source
+  asset names. Follow the EndfieldCapture README's opt-in procedure and retain
+  any unresolved source identity explicitly.
   See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
   Deferred presentation remains fail-closed
   until a corrected current-outfit capture validates the draw-local t7 payload.
