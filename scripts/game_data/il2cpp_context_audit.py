@@ -27,6 +27,7 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x2D755E0, 0x2D7590C, '56D2ECAC18B1C514E38AC00F3ED5920E04E53A389C168758F1B0DDE0A6A1CCA2'),
     (0x4C48A42, 0x4C48A77, 'FB76990B4CFD1E0485A0D5EC5B413D1E7E5378D3B1E422B18217FBBBE6117581'),
     (0x2D75510, 0x2D755DF, '8AB413FBC0531BFFEC188D2D97F92212E74BA7E8E811F2CBBA49A54831645B00'),
     (0x2D751D0, 0x2D753A1, '1E0BB4C935C862C3FDB667BA3DE791A5B3F7D310BD14D8EE775541D1D8FD1CEB'),
@@ -654,6 +655,65 @@ def vfs_descriptor_path(pe,md,modules,image_owners,*,source):
             'boundary':'On the no-replacement path, the mode getter logically shifts descriptor dword+0x18 by 10; its caller passes only AL, hence bits 10..17. With descriptor byte+0x18 bit 1 clear, the relative-path routine calls the token-joined chunk-name getter with a separate 16-byte output buffer. A nonnegative descriptor dword+8 is passed to a lookup on static-carrier+8. A nonnegative result is checked against the count at array carrier+0x18, then 16 bytes are copied from array+0x30+result*32. A negative key or lookup result diverts to a helper call; if that call returns normally, the branch zeroes XMM0 and rejoins the same 16-byte output copy. It is not a proven throwing rejection or an authenticated missing-chunk receipt. The normal lookup does not read an inline descriptor-leading hash. Method names do not prove these bytes equal the authenticated BLC chunk MD5. Complete lookup implementation, container population/producer, negative-path helper effects, alternate bit-1 path, path encoding/root selection and replacement callbacks remain unresolved; no current logical-file or EOF receipt follows.'}
 
 
+def vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,*,source):
+    """Paired storage and original MethodInfo class contexts, not live contents."""
+    methods=module_methods(pe,md,modules,image_owners,
+        [(247351,'Beyond.VFS.FVFBlockFileInfo','_SetFileChunkMD5Name',0x2D755E0)],
+        source=source,expected_image='Common.Beyond.dll')
+    methods+=module_methods(pe,md,modules,image_owners,
+        [(286427,'System.Collections.Generic.Dictionary`2','TryGetValue',None),
+         (286407,'System.Collections.Generic.Dictionary`2','set_Item',None)],
+        source=source,expected_image='mscorlib.dll')
+    value=named_top_level_type(md.buf,b'Beyond.Byte.dll',b'Beyond.Byte',b'UInt128',source=source)
+    require(value['typeDefinitionIndex'],0xDF7E,source)
+    int_raw='3B8D0000000000000000088000000000'
+    value_raw='7EDF0000000000000000118000000000'
+    instances=[]
+    for index,expected in ((3297,[int_raw,value_raw]),(4291,[value_raw,int_raw])):
+        instance=table.resolve(index)
+        require([a.raw_type_record_hex for a in instance.arguments],expected,source)
+        instances.append(instance.as_dict())
+    usage=[]
+    for rva,index,definition,ci in ((0x2D752A2,55461,286427,3297),
+        (0x2D756A4,70920,286427,4291),(0x2D75759,70927,286407,4291),
+        (0x2D757D4,55468,286407,3297)):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=source)
+        raw=pe.bytes_at_va(cell,8)
+        actual=unresolved_usage_index(raw,reg['methodSpecsCount'],tag=6,source=source,offset=cell)
+        require(actual,index,source,cell)
+        va=int(reg['methodSpecs'],16)+actual*12
+        spec=pe.bytes_at_va(va,12)
+        require(method_spec_record(spec,len(md.methods),reg['genericInstsCount'],source=source,offset=va),
+                (definition,ci,-1),source,va)
+        usage.append({'rva':rva,'cellVa':cell,'rawHex':raw.hex().upper(),
+                      'methodSpecIndex':actual,'methodSpecRawHex':spec.hex().upper()})
+    storage=[]
+    for rva in (0x2D7527E,0x2D75689,0x2D757B9):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=source)
+        require(cell,pe.image_base+0xD072F48,source,rva)
+        storage.append({'rva':rva,'cellVa':cell})
+    edges=[]
+    for rva,target in ((0x2D756EB,0x2D79390),(0x2D757B4,0x3E1DF70),(0x2D75825,0x3820080)):
+        raw=pe.bytes_at_va(pe.image_base+rva,5)
+        require(relative_branch_target(raw,pe.image_base+rva,source=source),pe.image_base+target,source,rva)
+        require(raw[0],0xE8,source,rva)
+        edges.append({'rva':rva,'targetRva':target,'rawHex':raw.hex().upper()})
+    windows=[]
+    for rva,hex_bytes in ((0x2D756F0,'85C0783D'),
+        (0x2D75701,'3B41180F83FC010000489848C1E0058B5C0838895E08'),
+        (0x2D75763,'8B5A202B5A28'),(0x2D7578A,'41B1010F104500448BC3498BCE'),
+        (0x2D75801,'0F10450041B101498BCE'),(0x2D7581E,'8BD34889442420'),
+        (0x2D7582A,'E9E5FEFFFF'),(0x2D756AB,'488B4720488B88C0000000488B81B0000000'),
+        (0x2D75769,'488B4720488B88C0000000488B81C0000000')):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(hex_bytes)))
+        require(raw,bytes.fromhex(hex_bytes),source,rva)
+        windows.append({'rva':rva,'rawHex':raw.hex().upper()})
+    return {'methods':methods,'valueType':value,'instances':instances,'methodUsages':usage,
+            'storageReferences':storage,'edges':edges,'windows':windows,
+            'level':'exact static ordered instances and MethodSpec usages; direct conditional producer flow',
+            'boundary':'The source usage cells name TryGetValue/set_Item, not FindEntry/TryInsert simply because the inlined call targets look like those helpers. Their MethodInfo+0x20 supplies the original Dictionary class before class RGCTX slots are loaded. Registered arguments are Int32/UInt128 and the exact reverse order. The setter probes static-carrier+0x10 using the incoming 16 bytes; a nonnegative result is bounds-checked and its indexed dword copied to descriptor+8. On a miss it computes dword+0x20 minus dword+0x28, supplies the same integer and 16-byte value in reverse orders to two helpers with numeric behavior 1, then stores that integer to descriptor+8. The second helper uses static-carrier+8, the same storage selected by the getter. Helper return values are not checked. Complete insertion/comparer/collision semantics, initialization, replacement paths, other mutations and actual reciprocal contents are unproved. UInt128 identity is not BLC MD5 provenance; serialized source/carrier/cursor and EOF remain unresolved.'}
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -992,6 +1052,7 @@ def audit():
     vfs_consumer=vfs_stream_consumer(pe,source=str(gate.gameassembly))
     file_open=file_stream_open(pe,md,modules,image_owners,reg,source=str(gate.gameassembly))
     descriptor_path=vfs_descriptor_path(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    descriptor_producer=vfs_descriptor_producer(pe,md,modules,image_owners,reg,table,source=str(gate.gameassembly))
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
@@ -1018,6 +1079,7 @@ def audit():
         'selectedVfsStreamConsumer':vfs_consumer,
         'selectedFileStreamOpen':file_open,
         'selectedVfsDescriptorPath':descriptor_path,
+        'selectedVfsDescriptorProducer':descriptor_producer,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

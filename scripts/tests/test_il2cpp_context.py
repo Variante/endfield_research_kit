@@ -17,9 +17,65 @@ from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import generic_method_candidates
 from scripts.game_data.il2cpp_context_audit import resource_carrier_consumers, module_methods, stream_carrier_consumer, stream_source_identity
 from scripts.game_data.il2cpp_context_audit import vfs_stream_identity, vfs_stream_consumer
-from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path
+from scripts.game_data.il2cpp_context_audit import file_stream_open, vfs_descriptor_path, vfs_descriptor_producer
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+
+
+class VfsDescriptorProducerTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={}
+        for ordinal,(rva,index,definition,ci) in enumerate(((0x2D752A2,55461,286427,3297),
+            (0x2D756A4,70920,286427,4291),(0x2D75759,70927,286407,4291),(0x2D757D4,55468,286407,3297))):
+            cell=0x100+ordinal*8
+            self.parts[rva]=bytes.fromhex('488B2D')+struct.pack('<i',cell-rva-7)
+            self.parts[cell]=struct.pack('<Q',(6<<29)|(index<<1)|1)
+            self.parts[0x100000+index*12]=struct.pack('<iii',definition,ci,-1)
+        for rva in (0x2D7527E,0x2D75689,0x2D757B9):
+            self.parts[rva]=bytes.fromhex('488B05')+struct.pack('<i',0xD072F48-rva-7)
+        for rva,target in ((0x2D756EB,0x2D79390),(0x2D757B4,0x3E1DF70),(0x2D75825,0x3820080)):
+            self.parts[rva]=b'\xe8'+struct.pack('<i',target-rva-5)
+        self.parts.update({rva:bytes.fromhex(raw) for rva,raw in (
+            (0x2D756F0,'85C0783D'),(0x2D75701,'3B41180F83FC010000489848C1E0058B5C0838895E08'),
+            (0x2D75763,'8B5A202B5A28'),(0x2D7578A,'41B1010F104500448BC3498BCE'),
+            (0x2D75801,'0F10450041B101498BCE'),(0x2D7581E,'8BD34889442420'),
+            (0x2D7582A,'E9E5FEFFFF'),(0x2D756AB,'488B4720488B88C0000000488B81B0000000'),
+            (0x2D75769,'488B4720488B88C0000000488B81C0000000'))})
+        a='3B8D0000000000000000088000000000';b='7EDF0000000000000000118000000000'
+        self.args={3297:[a,b],4291:[b,a]}
+        self.reg={'methodSpecsCount':80000,'methodSpecs':hex(self.base+0x100000),'genericInstsCount':5000}
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,size:self.parts[va-self.base])
+
+    def decode(self):
+        def resolve(index):
+            return SimpleNamespace(arguments=[SimpleNamespace(raw_type_record_hex=x) for x in self.args[index]],
+                                   as_dict=lambda:{'index':index})
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]), \
+             patch('scripts.game_data.il2cpp_context_audit.named_top_level_type',return_value={'typeDefinitionIndex':0xDF7E}):
+            return vfs_descriptor_producer(self.pe,SimpleNamespace(buf=b'',methods=range(300000)),{},[],
+                self.reg,SimpleNamespace(resolve=resolve),source='fixture.dll')
+
+    def test_original_method_context_and_reversed_arguments(self):
+        row=self.decode()
+        self.assertEqual([x['methodSpecIndex'] for x in row['methodUsages']],[55461,70920,70927,55468])
+        self.assertIn('not FindEntry/TryInsert',row['boundary'])
+        self.assertIn('return values are not checked',row['boundary'])
+
+    def test_argument_order_must_not_be_inferred_from_same_set(self):
+        self.args[4291].reverse()
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_bad_usage_count_and_method_spec_extent(self):
+        self.reg['methodSpecsCount']=55461
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_corrupt_truncated_and_trailing_evidence(self):
+        for rva,good in list(self.parts.items()):
+            for bad in (b'',good[:-1],good+b'!',bytes(len(good))):
+                self.parts[rva]=bad
+                with self.subTest(rva=rva,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[rva]=good
 
 
 class VfsDescriptorPathTests(unittest.TestCase):

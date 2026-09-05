@@ -336,9 +336,16 @@ Current durable boundaries:
   lookup key and copies a checked, indexed 16-byte result, not an inline hash
   from the descriptor's leading bytes. Negative keys/results divert through a
   helper; if it returns, the getter emits 16 zero bytes, not a proven exception.
-  Do not conflate this native descriptor
-  with the serialized BLC file record. Preserve the distinct seek predicates;
-  container population, alternate path branches, path encoding/root selection,
+  Do not conflate this native descriptor with the serialized BLC file record.
+  The normal setter uses paired static containers: a lookup-hit integer or a
+  count-difference candidate reaches the descriptor; the miss path supplies the
+  integer and 16-byte input in opposite orders to two insertion helpers without
+  checking their returns. Original usage cells join Dictionary `TryGetValue` and
+  `set_Item` contexts with reversed Int32/UInt128 arguments, not the helper
+  identities suggested by inlined call targets. This is a conditional producer
+  path, not proof of successful insertion, reciprocal live contents or BLC MD5
+  provenance. Preserve the distinct seek predicates; complete container
+  mutation/initialization, alternate path branches, path encoding/root selection,
   constructor/seek internals, replacements and the descriptor-to-authenticated
   logical-file identity/hash remain unproved. This is not a runtime receipt.
   Multi-segment conversion, the complete ResourceManager-to-reader path and authenticated input
