@@ -251,8 +251,13 @@ only.
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
   any unresolved source identity explicitly.
   See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
-  Deferred presentation remains fail-closed
-  until a corrected current-outfit capture validates the draw-local t7 payload.
+  Offline execution of the original Default shader with authenticated draw-local
+  inputs and the captured blend reproduces the retained pass output byte-for-byte.
+  The earlier M27 color is numerically sufficient as its starting target; this
+  does not establish temporal identity with the immediate pre-Default color.
+  See `reports/assets/character_recovery/default_deferred_original_dxbc_replay.json`.
+  Canonical deferred presentation remains fail-closed until live t7/t11 input
+  production is validated; frozen capture replay is not a replacement.
 - The AnimeStudio-owned shader recovery path may provide readable code and
   metadata. It does not prove runtime variant selection or final appearance.
 
