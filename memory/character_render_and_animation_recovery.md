@@ -214,8 +214,12 @@ only.
   identifies distinct Default t11 as ContactShadowCS/RayTracingV2's
   `_ContactShadow` UAV output, also sampled by the scene producer at t5.
   The legacy cross-backend screen-mask name is disproven. Dispatch-local
-  constant-buffer slices and output bytes remain missing; resource identity
-  alone does not validate the lab's recovered compute arithmetic or parameters.
+  constant-buffer slices and output bytes remain missing. Bounded isolated GPU
+  comparisons support the recovered arithmetic, but current native publishers
+  read interpolated environment settings and a camera frame counter; constructor
+  defaults do not validate those live values. Exact t7 uses the completed
+  resolve, and t11 uses same-camera/frame contact output with separate content
+  gates. Legacy HLSL bindings remain a different contract.
   See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
   Deferred presentation remains fail-closed
   until a corrected current-outfit capture validates the draw-local t7 payload.
