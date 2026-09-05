@@ -142,11 +142,12 @@ only.
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
   and Streamline resources retain separate producers and frame-lifetime gates.
-- Recovered offscreen scene-color/SceneMV passes must pair any render-texture
-  projection winding flip with rasterizer cull inversion, then restore both.
-  RenderDoc proved that omitting this state rejected every shared CharEffect
-  billboard after a valid VS/PS submission; the corrected pass writes both
-  physical HDR color and SceneMV.
+- Recovered scene-color/SceneMV copies must preserve attachment orientation so
+  color remains registered to shared depth. `SetViewProjectionMatrices` takes
+  the API-independent camera projection, not `GetGPUProjectionMatrix` output;
+  the latter caused a second Y/depth conversion and a compensating cull flip.
+  Actual post-fix VP and byte-identical scene-copy checks validate the D3D11
+  correction. GPU matrices still belong in explicitly GPU-space shader globals.
 - Endminf overview_01 combines ten physical rock renderers using LitEffect
   `_PARALLAX_MAP` M01/M38 with a companion VFXBaseV2 particle cohort. Complete
   serialized prefab ownership, including fail-closed renderers, is the required
@@ -175,6 +176,9 @@ only.
   Recover names from the original compressed program's referenced parameter
   record when exported metadata omits fields. Exact RB, RGB/blend, and dissolve
   variants establish this contract; see the CharEffect RB parameter audit.
+  Offline hardware replay of the retained original first draw reproduces its
+  complete RT0 exactly. This proves packet sufficiency for that color output,
+  not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
