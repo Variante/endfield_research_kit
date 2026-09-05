@@ -420,7 +420,10 @@ Current durable boundaries:
   and the Unity implementation join remain open; static producer code is not execution.
   The selected target returns a converter output slot after temporary cleanup.
   The converter's tagged inline/pointer representation and length extraction are
-  directly connected, but its two dynamic downstream calls remain untyped.
+  directly connected. Loader requests and selected exports connect its dynamic
+  calls to string construction and an output-slot write barrier; the latter
+  stores the former's result. This is conditional on actual module/cache binding,
+  not proof of runtime construction, active GC state or directory value.
   A static `StreamingAssets` literal is an input to a joining helper, not proof
   of a concrete directory or validated managed-string construction.
   Nested dispatch, capacity/copy helpers, getter values, final path/root,

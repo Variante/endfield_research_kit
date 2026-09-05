@@ -29,6 +29,7 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0xE170,0xE1C2,'FD809E08E51CF3E1B28921E2E2C0652D36DC5D6352941014E8DC9D3C9F883A1C'),
     (0x20760, 0x20A33, 'E117B0BE3EFF364A7242B6EEC5F4C709DEB7FAE4E79DB2E5C9BA32CC7E54E7E1'),
     (0xF8718, 0xF8760, '83D8E4E7B974778AF6C6F832C5EB205EB612D2A469BDB76681A5B50156290EA1'),
     (0x1F1B0, 0x1F463, '1E349215CBE3DEA915C8B755F51D6FC71E2497296E8CA1F59E2248444003B8D0'),
@@ -1062,6 +1063,27 @@ def vfs_path_format_context(pe,md,modules,image_owners,reg,table,*,source):
             'boundary':'The AppendPathInfo call supplies an original AppendFormat MethodSpec with three ordered string-tag arguments, stored as its stack companion. Do not replace that context with arguments inferred from the shared code body. The reviewed body reads the companion at its sixth ABI position; numeric selector branches use the first/second/third value alongside companion+0x38 slots 0/8/16. Actual RGCTX inflation and nested formatter execution are not established. Input scanning reads 16-bit elements at string+0x14+index*2; literal copying advances the temporary cursor by element count. The downstream UnSafeString.Append receives pointer and count, calls a capacity helper, computes signed-extended 32-bit count*2 for an indirect copy target, and advances its stored cursor by the original count. A zero 16-bit terminator is written only if the updated signed cursor is below capacity. Hence the forwarded count is a two-byte-unit count on this path, not a byte length or an unconditional terminator guarantee. Capacity/copy resolver internals, replacement paths, complete format grammar, actual generic dispatch, output validity/length, concrete path and source identity remain unresolved.'}
 
 
+def unity_conversion_exports(pe,unity,*,source,unity_source):
+    """Two selected export chains and conditional output-slot write ABI."""
+    requests=[]
+    for at,rawhex,name_at,name,export_name_at,name_slot,ordinal_slot,function_slot,index,target in (
+        (0x3205CD,'488B0D4C469D01488D150D6D6601E890E0FFFF488905D14A9D01',0x19872E8,
+         'il2cpp_string_new_len',0xCF8DAF9,0xCF8BC5C,0xCF8C0EE,0xCF8B5E4,243,0x24AD0),
+        (0x31FA06,'488B0D13529D01488D1544636601E857ECFFFF48890538519D01',0x1985D58,
+         'il2cpp_gc_wbarrier_set_field',0xCF8D0D4,0xCF8BAD8,0xCF8C02C,0xCF8B460,146,0xE170)):
+        raw=bytes.fromhex(rawhex);literal=name.encode('ascii')+b'\0'
+        require(unity.bytes_at_va(unity.image_base+at,len(raw)),raw,unity_source,at)
+        require(unity.bytes_at_va(unity.image_base+name_at,len(literal)),literal,unity_source,name_at)
+        for slot,expected in ((name_slot,struct.pack('<I',export_name_at)),
+                              (ordinal_slot,struct.pack('<H',index)),(function_slot,struct.pack('<I',target))):
+            require(pe.bytes_at_va(pe.image_base+slot,len(expected)),expected,source,slot)
+        require(pe.bytes_at_va(pe.image_base+export_name_at,len(literal)),literal,source,export_name_at)
+        requests.append({'name':name,'loaderRva':at,'rawHex':rawhex,'exportTargetRva':target,'ordinal':index+1})
+    require(pe.bytes_at_va(pe.image_base+0xE177,6),bytes.fromhex('4C8BCA4C8902'),source,0xE177)
+    return {'requests':requests,'level':'exact selected export identities; direct conditional output-slot store',
+            'boundary':'Unity requests string_new_len into the first conversion cache and gc_wbarrier_set_field into the second. Selected GameAssembly export name/ordinal/function slots join the former to the previously reviewed byte-to-string constructor, and the latter to a leaf that writes R8 into [RDX] before optional atomic bitmap marking. The caller passes the first result in R8 and its separate output slot in RDX, then reads that slot. Conditional on these dynamic bindings and successful calls, the returned qword is the first constructor result, not a second newly constructed object. The barrier marking branch and constructor internal allocation helpers are not a live GC receipt. Loader module identity, actual cache bindings, lifecycle, input validity, query normalization and concrete directory remain unresolved. Only selected export chains are joined, not full export coverage.'}
+
+
 def unity_path_return(pe,*,source):
     """Selected return-slot and string representation, not runtime path value."""
     windows=[]
@@ -1636,6 +1658,7 @@ def audit():
     unity_forwarder=unity_registration_forwarder(unity_pe,source=str(unity_path))
     unity_pair=unity_registration_pair(unity_pe,source=str(unity_path))
     unity_path_evidence=unity_path_return(unity_pe,source=str(unity_path))
+    unity_exports=unity_conversion_exports(pe,unity_pe,source=str(gate.gameassembly),unity_source=str(unity_path))
     for start,end,expected in (
         (0x32BA20,0x32BA4F,'91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B'),
         (0x32BA50,0x32BA8A,'D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F'),
@@ -1686,6 +1709,7 @@ def audit():
         'selectedUnityRegistrationForwarder':unity_forwarder,
         'selectedUnityRegistrationPair':unity_pair,
         'selectedUnityPathReturn':unity_path_evidence,
+        'selectedUnityConversionExports':unity_exports,
         'selectedReaderConstruction':construction_evidence,
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,

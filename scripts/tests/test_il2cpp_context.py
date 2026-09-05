@@ -32,7 +32,36 @@ from scripts.game_data.il2cpp_context_audit import vfs_root_resolver
 from scripts.game_data.il2cpp_context_audit import unity_registration_forwarder
 from scripts.game_data.il2cpp_context_audit import unity_registration_pair
 from scripts.game_data.il2cpp_context_audit import unity_path_return
+from scripts.game_data.il2cpp_context_audit import unity_conversion_exports
 from unittest.mock import patch
+
+
+class UnityConversionExportsTests(unittest.TestCase):
+    def setUp(self):
+        self.ga={0xE177:bytes.fromhex('4C8BCA4C8902')};self.unity={}
+        for at,hexraw,name_at,name,en,ns,os,fs,index,target in (
+            (0x3205CD,'488B0D4C469D01488D150D6D6601E890E0FFFF488905D14A9D01',0x19872E8,
+             'il2cpp_string_new_len',0xCF8DAF9,0xCF8BC5C,0xCF8C0EE,0xCF8B5E4,243,0x24AD0),
+            (0x31FA06,'488B0D13529D01488D1544636601E857ECFFFF48890538519D01',0x1985D58,
+             'il2cpp_gc_wbarrier_set_field',0xCF8D0D4,0xCF8BAD8,0xCF8C02C,0xCF8B460,146,0xE170)):
+            literal=name.encode()+b'\0';self.unity[at]=bytes.fromhex(hexraw);self.unity[name_at]=literal
+            self.ga.update({en:literal,ns:struct.pack('<I',en),os:struct.pack('<H',index),fs:struct.pack('<I',target)})
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.ga[va-0x180000000])
+        self.up=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.unity[va-0x180000000])
+
+    def decode(self):
+        return unity_conversion_exports(self.pe,self.up,source='ga.dll',unity_source='unity.dll')
+
+    def test_selected_export_targets(self):
+        self.assertEqual([r['exportTargetRva'] for r in self.decode()['requests']],[0x24AD0,0xE170])
+
+    def test_truncated_trailing_and_wrong_names_slots_and_abi(self):
+        for parts in (self.ga,self.unity):
+            for at,good in list(parts.items()):
+                for bad in (good[:-1],good+b'!',bytes(len(good))):
+                    parts[at]=bad
+                    with self.subTest(at=at),self.assertRaises(ContextError):self.decode()
+                parts[at]=good
 
 
 class UnityPathReturnTests(unittest.TestCase):
