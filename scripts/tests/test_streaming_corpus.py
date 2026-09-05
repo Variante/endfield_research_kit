@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.game_data.streaming_corpus import _join_root_witnesses, sweep
+from scripts.game_data.streaming_corpus import _join_info_catalog, _join_root_witnesses, sweep
 from scripts.tests.test_streaming import (
     _field2_streaming_full_layout_root,
     _info_root,
@@ -14,6 +14,75 @@ from scripts.tests.test_streaming import (
     _parallel_target_data_root,
     _selector5_data_root,
 )
+
+
+def _catalog_info(directory='scene', values=((1, 2, 3, 4),), status='standard-four-word-projection'):
+    return dict(virtualPath=directory+'/StreamingChunkInfo.bytes', packedSha256='A'*64,
+                catalog=dict(status=status, rows=[dict(values=list(v), offsets=[20,24,100+8*i,104+8*i]) for i,v in enumerate(values)]))
+
+
+def _catalog_target(directory='scene', suffix='1_2_3_4'):
+    return dict(virtualPath=directory+'/StreamingChunkData_'+suffix+'.bytes', packedSha256='B'*64)
+
+
+class StreamingCatalogTests(unittest.TestCase):
+    def test_unique_preserves_identities(self):
+        left,right=_catalog_info(),_catalog_target()
+        r=_join_info_catalog([left],[right])
+        self.assertEqual(r['status'],'matched')
+        self.assertEqual(r['selectedPermutation'],[0,1,2,3])
+        self.assertEqual(r['infoFiles'],[left]); self.assertEqual(r['dataFiles'],[right])
+        self.assertEqual(r['candidateCount'],24)
+
+    def test_standard_devonly_directory_supported(self):
+        directory='x/DevOnly/y'
+        r=_join_info_catalog([_catalog_info(directory)],[_catalog_target(directory)])
+        self.assertEqual(r['status'],'matched'); self.assertEqual(r['unsupportedInfoCount'],0)
+        self.assertEqual(r['expectedFileCount'],1)
+
+    def test_legacy_nondev_excludes_only_exact_directory(self):
+        legacy=_catalog_info('normal',status='unsupported-legacy')
+        r=_join_info_catalog([legacy],[_catalog_target('normal'),_catalog_target('normal/sub')])
+        self.assertEqual(r['unsupportedInfo'],[legacy]); self.assertEqual(r['unsupportedData'],[_catalog_target('normal')])
+        self.assertEqual(r['status'],'unresolved'); self.assertEqual(r['expectedFileCount'],1)
+        self.assertEqual(r['candidates'][0]['missing']['samples'][0]['virtualPath'],_catalog_target('normal/sub')['virtualPath'])
+
+    def test_missing_info_remains_missing(self):
+        r=_join_info_catalog([],[_catalog_target()])
+        self.assertEqual(r['status'],'unresolved'); self.assertEqual(r['unsupportedDataCount'],0)
+        self.assertTrue(all(c['missing']['count']==1 for c in r['candidates']))
+
+    def test_ambiguity_and_empty(self):
+        r=_join_info_catalog([_catalog_info(values=((1,1,2,3),))],[_catalog_target(suffix='1_1_2_3')])
+        self.assertEqual(r['status'],'ambiguous'); self.assertEqual(len(r['matchingPermutations']),2)
+        self.assertIsNone(r['selectedPermutation'])
+        empty=_join_info_catalog([],[])
+        self.assertEqual(empty['status'],'empty'); self.assertIsNone(empty['selectedPermutation'])
+
+    def test_global_and_multiplicity(self):
+        r=_join_info_catalog([_catalog_info(values=((1,2,3,4),(-(1<<31),-(1<<31),5,6)))],
+                             [_catalog_target(),_catalog_target(suffix='Global_5_6')])
+        self.assertEqual(r['status'],'matched')
+        duplicate=_join_info_catalog([_catalog_info(values=((1,2,3,4),(1,2,3,4)))],[_catalog_target()])
+        self.assertEqual(duplicate['status'],'unresolved'); self.assertEqual(duplicate['candidates'][0]['extra']['count'],1)
+
+    def test_difference_hash_and_sample_limit_deterministic(self):
+        files=[_catalog_target('scene',str(i)) for i in range(30)]
+        a=_join_info_catalog([],files); b=_join_info_catalog([],list(reversed(files)))
+        self.assertEqual(a,b)
+        missing=a['candidates'][0]['missing']
+        self.assertEqual(missing['count'],30); self.assertEqual(len(missing['samples']),25)
+        expected=sorted((x['virtualPath'],1) for x in files)
+        digest=hashlib.sha256(json.dumps(expected,separators=(',',':')).encode('utf-8')).hexdigest().upper()
+        self.assertEqual(missing['sha256'],digest)
+
+    def test_duplicate_identity_invalid_i32_and_offset(self):
+        with self.assertRaises(ValueError): _join_info_catalog([_catalog_info(),_catalog_info()],[])
+        with self.assertRaises(ValueError): _join_info_catalog([],[_catalog_target(),_catalog_target()])
+        for values in ((1,2,3,1<<31),(True,2,3,4)):
+            with self.assertRaises(ValueError): _join_info_catalog([_catalog_info(values=(values,))],[])
+        invalid=_catalog_info(); invalid['catalog']['rows'][0]['offsets'][0]=-1
+        with self.assertRaises(ValueError): _join_info_catalog([invalid],[])
 
 
 class StreamingCorpusTests(unittest.TestCase):
@@ -185,13 +254,20 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertEqual(joined['files'][0]['rows'][0]['countValue'], 1)
 
     def test_complete_fixture(self):
+        progress = []
         with tempfile.TemporaryDirectory() as temporary:
             summary, ledger, _chunk, input_set = self._fixture(Path(temporary))
             result = self._sweep(
                 outer_summary_path=summary,
                 outer_ledger_path=ledger,
                 expected_input_set_sha256=input_set,
+                progress=progress.append,
             )
+        self.assertEqual(progress, [dict(parsed=3, total=3, failed=0, unsupported=0)])
+        self.assertEqual(result['layer3']['infoCatalogRelation']['status'], 'unresolved')
+        self.assertIsNone(result['layer3']['infoCatalogRelation']['selectedPermutation'])
+        self.assertEqual(result['layer3']['infoCatalogRelation']['supportedInfoCount'], 1)
+        self.assertEqual(result['layer3']['infoCatalogRelation']['infoFiles'][0]['catalog']['rows'][0]['offsets'], [56,60,72,76])
         self.assertEqual(result["status"], "complete")
         self.assertFalse(result["failed"])
         self.assertEqual(result["summary"]["parsed"], 3)
@@ -328,6 +404,8 @@ class StreamingCorpusTests(unittest.TestCase):
         self.assertIsNone(result["layer4"]["nestedKeyIndexStaticChain"])
         self.assertIsNone(result["layer4"]["nestedPairedRootStaticChain"])
         self.assertEqual(result['layer3']['pairedRootIdentities'], {'status': 'unvalidated', 'pairs': []})
+        self.assertEqual(result['layer3']['infoCatalogRelation'], {'status': 'unvalidated', 'selectedPermutation': None})
+        self.assertIsNone(result['layer4']['infoKeyProducerStaticChain'])
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['status'], 'unvalidated')
         self.assertEqual(result['layer3']['selector5KeyRangeJoin']['files'], [])
         self.assertEqual(result["layer3"]["rootMarkerRowShapeJoin"]["status"], "unvalidated")

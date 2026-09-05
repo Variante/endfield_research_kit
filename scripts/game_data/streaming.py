@@ -1,6 +1,6 @@
 """Strict framing checks for the Endfield block-15 Streaming family.
 
-This module intentionally stops at the serialized envelope.  It does not
+This module separates byte framing from field semantics. It does not
 assign names or meanings to FlatBuffer fields.  The current build contains
 two length-prefixed inverted-LZ4 families (``InitChunkData`` and
 ``StreamingChunkData``) and a raw ``StreamingChunkInfo`` family.  The latter's
@@ -179,12 +179,28 @@ def _bounded_vector(
     return target, count, end
 
 
+def _info_slot_partition(layout, widths, label):
+    """Partition object slots by physical boundaries, not declaration order."""
+    fields = layout['fields']
+    if len(fields) != len(widths) or len(set(fields)) != len(fields) or min(fields, default=0) != 4:
+        raise ValueError(f'Streaming {label} at {layout["tableOffset"]}: expected unique fields partitioning object from +4, actual {fields}')
+    spans = []
+    for index, start in enumerate(fields):
+        end = min([value for value in fields if value > start] + [layout['objectSize']])
+        if end-start != widths[index]:
+            raise ValueError(f'Streaming {label} field {index} at {layout["tableOffset"]+start}: expected slot width {widths[index]}, actual {end-start}')
+        spans.append(dict(fieldIndex=index, start=layout['tableOffset']+start, end=layout['tableOffset']+end))
+    return spans
+
+
 def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
     """Exactly frame the selected-build anonymous StreamingChunkInfo graph."""
 
     ranges: list[tuple[int, int]] = [(0, 4)]
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
     row_count = 0
+    catalog_rows = []
+    slot_rows = []
 
     def own_table(layout: dict[str, Any]) -> None:
         ranges.append(
@@ -220,6 +236,7 @@ def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
         "presentFields": root["presentFields"],
     }
     own_table(root_layout)
+    root_slots = _info_slot_partition(root_layout, (4,) * root["fieldCount"], "info root")
     root_shape = (
         root["fieldCount"],
         root["objectSize"],
@@ -257,8 +274,21 @@ def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
             )
         shapes[shape] += 1
         own_table(row)
+        slots = _info_slot_partition(row, (8,) + (4,) * (row["fieldCount"]-1), f"info row {index}")
+        vectors = []
         for field_index, width in nested_vectors:
-            own_vector(row, field_index, width, f"info row {index} field {field_index}")
+            vector_body, vector_count = own_vector(row, field_index, width, f"info row {index} field {field_index}")
+            vectors.append(dict(fieldIndex=field_index, start=vector_body-4,
+                                end=vector_body+vector_count*width, count=vector_count, elementWidth=width))
+            if expected_row == _INFO_STANDARD_ROW:
+                field0 = slots[0]['start']
+                for element in range(vector_count):
+                    address = vector_body + element*8
+                    offsets = [field0, field0+4, address, address+4]
+                    catalog_rows.append(dict(rowIndex=index, elementIndex=element,
+                                             rowOffset=target, offsets=offsets,
+                                             values=[_i32(data, offset) for offset in offsets]))
+        slot_rows.append(dict(rowIndex=index, rowOffset=target, slots=slots, vectors=vectors))
         row_count += 1
 
     unique_ranges = sorted(set(ranges))
@@ -286,6 +316,13 @@ def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": "exact_anonymous",
         "rowCount": row_count,
+        "catalogProjection": {
+            "status": "standard-four-word-projection" if expected_row == _INFO_STANDARD_ROW else "unsupported-legacy-three-field-root",
+            "rows": catalog_rows,
+            "slotPartitions": {"root": root_slots, "rows": slot_rows},
+            "evidenceLevel": "structural-only",
+            "boundary": "Four anonymous int32 words from one bounded row-field0 pair and one bounded width8 vector element. No names, spatial meaning, runtime selection or legacy Cartesian product is inferred.",
+        },
         "rowShapes": [
             {
                 "fieldCount": shape[0],

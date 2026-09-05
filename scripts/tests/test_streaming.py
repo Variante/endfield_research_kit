@@ -1105,11 +1105,44 @@ class StreamingTests(unittest.TestCase):
         self.assertEqual(result["anonymousInner"]["status"], "exact_anonymous")
         self.assertEqual(result["anonymousInner"]["rowCount"], 1)
         self.assertEqual(result["anonymousInner"]["structuralEnd"], 96)
+        projection = result['anonymousInner']['catalogProjection']
+        self.assertEqual(projection['status'], 'standard-four-word-projection')
+        self.assertEqual(projection['rows'][0]['offsets'], [56, 60, 72, 76])
+        self.assertEqual(projection['rows'][0]['values'], [0, -2147483648, 50462976, 117835012])
+        self.assertEqual(projection['slotPartitions']['rows'][0]['vectors'],
+                         [dict(fieldIndex=1, start=68, end=80, count=1, elementWidth=8)])
 
     def test_raw_devonly_info_root(self):
         result = parse_streaming_file("info", _root("info", devonly_info=True))
         self.assertEqual(result["root"]["fieldCount"], 3)
         self.assertEqual(result["anonymousInner"]["zeroAlignmentBytes"], 4)
+        projection = result['anonymousInner']['catalogProjection']
+        self.assertEqual(projection['status'], 'unsupported-legacy-three-field-root')
+        self.assertEqual(projection['rows'], [])
+        self.assertEqual(len(projection['slotPartitions']['rows'][0]['slots']), 3)
+
+    def test_info_slot_partition_uses_physical_not_declared_order(self):
+        data = bytearray(_info_root())
+        data[48:50] = (8).to_bytes(2, 'little')
+        data[50:52] = (4).to_bytes(2, 'little')
+        data[56:60] = (12).to_bytes(4, 'little')
+        data[60:64] = (11).to_bytes(4, 'little')
+        data[64:68] = (22).to_bytes(4, 'little')
+        projection = parse_streaming_file('info', bytes(data))['anonymousInner']['catalogProjection']
+        self.assertEqual(projection['rows'][0]['offsets'], [60, 64, 72, 76])
+        self.assertEqual(projection['rows'][0]['values'][:2], [11, 22])
+
+    def test_info_bad_slot_width_alias_and_element_count_fail_closed(self):
+        for offset, value, width, expected in (
+            (48, 8, 2, 'expected unique fields partitioning object'),
+            (50, 8, 2, 'field 0 at 56: expected slot width 8, actual 4'),
+            (48, 12, 2, 'expected unique fields partitioning object'),
+            (68, 0xFFFFFFFF, 4, 'count 4294967295 .* exceeds payload'),
+        ):
+            data = bytearray(_info_root())
+            data[offset:offset+width] = value.to_bytes(width, 'little')
+            with self.subTest(offset=offset), self.assertRaisesRegex(ValueError, expected):
+                parse_streaming_file('info', bytes(data))
 
     def test_info_truncated_nested_vector_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "count 1 .* exceeds payload"):

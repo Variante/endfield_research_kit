@@ -6,12 +6,13 @@ import argparse
 import collections
 import gzip
 import hashlib
+import itertools
 import json
 import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from scripts.game_data.streaming import parse_streaming_file
 from scripts.game_data.streaming_native import (
@@ -20,7 +21,7 @@ from scripts.game_data.streaming_native import (
 )
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v13"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v14"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -33,6 +34,80 @@ _NUMERIC_STREAMING_NAME = re.compile(
 _GLOBAL_STREAMING_NAME = re.compile(
     r"^StreamingChunkData_Global_(-?\d+)_(-?\d+)\.bytes$"
 )
+
+
+def _join_info_catalog(infos, data_files):
+    """Search all four-word permutations; publish a relation only if unique.
+
+    All inputs are parser projections of already authenticated logical files.
+    Unsupported Info shapes exclude only their exact directory, not a substring
+    of the path. Missing Info directories remain unmatched evidence.
+    """
+    infos = sorted(infos, key=lambda row: row['virtualPath'])
+    data_files = sorted(data_files, key=lambda row: row['virtualPath'])
+    for label, items in (('Info', infos), ('data', data_files)):
+        paths = [row['virtualPath'] for row in items]
+        if len(paths) != len(set(paths)):
+            raise ValueError(f'Streaming catalog {label}: expected unique logical identities, actual duplicate')
+    unsupported_dirs = set()
+    unsupported_info = []
+    sources = []
+    for info in infos:
+        path = info['virtualPath']
+        directory, separator, leaf = path.rpartition('/')
+        if not separator or leaf != 'StreamingChunkInfo.bytes':
+            raise ValueError(f'Streaming catalog {path}: expected StreamingChunkInfo.bytes leaf, actual {leaf}')
+        projection = info['catalog']
+        if projection['status'] != 'standard-four-word-projection':
+            unsupported_dirs.add(directory)
+            unsupported_info.append(info)
+            continue
+        for row in projection['rows']:
+            values, offsets = row['values'], row['offsets']
+            if len(values) != 4 or any(type(v) is not int or not -(1 << 31) <= v < (1 << 31) for v in values):
+                raise ValueError(f'Streaming catalog {path}: expected four int32 values, actual {values}')
+            if len(offsets) != 4 or any(type(v) is not int or v < 0 for v in offsets):
+                raise ValueError(f'Streaming catalog {path}: expected four bounded byte offsets, actual {offsets}')
+            sources.append(dict(infoPath=path, directory=directory, **row))
+    unsupported_data = []
+    expected = collections.Counter()
+    for data in data_files:
+        path = data['virtualPath']
+        directory, separator, leaf = path.rpartition('/')
+        if not separator or not leaf.startswith('StreamingChunkData_') or not leaf.endswith('.bytes'):
+            raise ValueError(f'Streaming catalog {path}: expected StreamingChunkData_*.bytes, actual {leaf}')
+        if directory in unsupported_dirs:
+            unsupported_data.append(data)
+        else:
+            expected[path] += 1
+
+    def difference_summary(counter):
+        pairs = sorted(counter.items())
+        return dict(count=sum(counter.values()),
+                    sha256=hashlib.sha256(json.dumps(pairs, separators=(',', ':')).encode('utf-8')).hexdigest().upper(),
+                    samples=[dict(virtualPath=path, count=count) for path, count in pairs[:25]])
+
+    candidates = []
+    for permutation in itertools.permutations(range(4)):
+        actual = collections.Counter()
+        for source in sources:
+            a, b, c, d = (source['values'][i] for i in permutation)
+            suffix = f'Global_{c}_{d}' if a == b == -(1 << 31) else f'{a}_{b}_{c}_{d}'
+            actual[source['directory'] + '/StreamingChunkData_' + suffix + '.bytes'] += 1
+        candidates.append(dict(permutation=list(permutation), matchedCount=sum((expected & actual).values()),
+                               missing=difference_summary(expected-actual), extra=difference_summary(actual-expected)))
+    matches = [row['permutation'] for row in candidates if not row['missing']['count'] and not row['extra']['count']]
+    status = ('empty' if not sources and not expected else 'matched' if len(matches) == 1 else
+              'ambiguous' if matches else 'unresolved')
+    return dict(status=status, matchingPermutations=matches,
+                selectedPermutation=matches[0] if status == 'matched' else None,
+                candidateCount=len(candidates), candidates=candidates,
+                projectedRowCount=len(sources), expectedFileCount=sum(expected.values()),
+                supportedInfoCount=len(infos)-len(unsupported_info), unsupportedInfoCount=len(unsupported_info),
+                unsupportedDataCount=len(unsupported_data), unsupportedInfo=unsupported_info,
+                unsupportedData=unsupported_data, infoFiles=infos, dataFiles=data_files,
+                evidenceLevel='structural-only',
+                boundary='Unique within all 24 permutations of four anonymous words, using same-directory complete filename multisets. Counts alone, field meanings, concrete native receipt and runtime selection are not evidence. Full source projections and target identities reproduce every candidate; mismatch samples are bounded to 25 with complete multiset hashes.')
 
 
 def _join_root_witnesses(files: list[dict[str, Any]]) -> dict[str, Any]:
@@ -240,6 +315,7 @@ def sweep(
     outer_ledger_path: Path,
     expected_input_set_sha256: str,
     game_root: Path | None = None,
+    progress: Callable[[dict[str, int]], None] | None = None,
 ) -> dict[str, Any]:
     """Authenticate and parse every current block-15 row from one VFS audit."""
 
@@ -374,6 +450,7 @@ def sweep(
     selector5_elements = 0
     selector5_unresolved = 0
     root_witness_files = []
+    info_catalog_files = []
     group_owned_bytes = group_ranges = group_reused_vtables = 0
     field2_rows = field2_owned_bytes = field2_ranges = field2_reused = 0
     field2_direct_owned_bytes = field2_direct_ranges = field2_direct_reused = 0
@@ -516,6 +593,15 @@ def sweep(
                         )
                     continue
 
+                identity = {
+                    "virtualPath": virtual_path,
+                    "physicalChunkPath": str(chunk_path),
+                    "physicalChunkSource": row.get("physicalChunkSource"),
+                    "metadataProvenance": row.get("metadataProvenance"),
+                    "overlayState": row.get("overlayState"),
+                    "offset": offset, "length": length,
+                    "packedSha256": hashlib.sha256(raw).hexdigest().upper(),
+                }
                 if family == "info":
                     inner = parsed.get("anonymousInner") or {}
                     if inner.get("status") != "exact_anonymous":
@@ -533,6 +619,7 @@ def sweep(
                         continue
                     exact_info += 1
                     info_rows += int(inner.get("rowCount", 0))
+                    info_catalog_files.append(dict(identity, catalog=inner['catalogProjection']))
                 else:
                     parallel = parsed.get("anonymousParallelSubgraph") or {}
                     groups = parsed.get("anonymousGroupSubgraph") or {}
@@ -599,13 +686,7 @@ def sweep(
                         continue
                     partial_data += 1
                     root_witness_files.append({
-                        "virtualPath": virtual_path,
-                        "physicalChunkPath": str(chunk_path),
-                        "physicalChunkSource": row.get("physicalChunkSource"),
-                        "metadataProvenance": row.get("metadataProvenance"),
-                        "overlayState": row.get("overlayState"),
-                        "offset": offset, "length": length,
-                        "packedSha256": hashlib.sha256(raw).hexdigest().upper(),
+                        **identity,
                         "witness": {key: value for key, value in parallel['orderedRootWitness'].items() if key != 'encoding'},
                     })
                     field2_family_files[family] += 1
@@ -898,6 +979,9 @@ def sweep(
                     )
 
                 parsed_count += 1
+                if progress is not None and (parsed_count % 5000 == 0 or parsed_count == len(rows)):
+                    progress(dict(parsed=parsed_count, total=len(rows), failed=row_failure_count,
+                                  unsupported=unsupported_count))
                 packed_bytes += len(raw)
                 decoded_bytes += int(parsed.get("decodedBytes", 0))
                 families[family] += 1
@@ -914,7 +998,7 @@ def sweep(
                             str(offset),
                             str(length),
                             actual_md5,
-                            hashlib.sha256(raw).hexdigest().upper(),
+                            identity['packedSha256'],
                         )
                     )
                 )
@@ -1021,6 +1105,13 @@ def sweep(
         "layer3": {
             "infoStatus": "exact_anonymous_eof" if not failed else "unvalidated",
             "infoRowCount": info_rows,
+            "infoCatalogRelation": (
+                _join_info_catalog(info_catalog_files, [
+                    {key: value for key, value in record.items() if key != 'witness'}
+                    for record in root_witness_files
+                    if record['virtualPath'].rsplit('/', 1)[-1].startswith('StreamingChunkData_')
+                ]) if not failed else {"status": "unvalidated", "selectedPermutation": None}
+            ),
             "dataWholeFileStatus": "partial",
             "field2TerminalSubgraphStatus": (
                 "exact_anonymous_eof_subgraph" if not failed else "unvalidated"
@@ -1225,6 +1316,9 @@ def sweep(
             "nestedPairedRootStaticChain": (
                 native_contract.get("nestedPairedRootObservations") if not failed else None
             ),
+            "infoKeyProducerStaticChain": (
+                native_contract.get("infoKeyProducerObservations") if not failed else None
+            ),
             "managedShapeCandidateStatus": "candidate-only",
             "nativeCarrierStatus": (
                 carrier_contract.get("baseLengthStatus")
@@ -1291,7 +1385,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Root marker/row-shape joins use identical vector indices: `{layer3.get('rootMarkerRowShapeJoin', {})}`. These are not nested-marker type names.",
         f"- Init/Streaming ordered field3/field4 witnesses: {layer3.get('pairedRootIdentities', {}).get('matchedPairCount', 0):,} matched pairs / {layer3.get('pairedRootIdentities', {}).get('matchedRowCount', 0):,} rows; {layer3.get('pairedRootIdentities', {}).get('mismatchedPairCount', 0):,} differing pairs and {layer3.get('pairedRootIdentities', {}).get('unpairedFileCount', 0):,} unpaired files. Row-field0 digests differ in {layer3.get('pairedRootIdentities', {}).get('rowField0DifferentPairCount', 0):,} pairs and are not an assumed identity. Per-side identities and ordered digests are in JSON; no match is inferred from equal counts alone.",
         "- layer4.nestedPairedRootStaticChain independently pins shared root/key/dev inputs to Init and Streaming path formatters and the shared serialized ordinal. New runtime keys use Init's marker; existing keys use their already stored runtime marker. Current bytes do not establish live key-map state, concrete root receipt, or callback override state.",
-        "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Full-key lookup, collision handling and first-index storage are now gated in nestedKeyIndexStaticChain. The first root supplies the dispatch marker and the second supplies the later row; concrete pairing, execution and record extent remain unresolved.",
+        "- The separate layer4.nestedReaderPhaseStaticChain keeps the initial callback's default false stub distinct from the later selector-5 reader. The later phase uses the second secondary root, not the first. Full-key lookup, collision handling and first-index storage are gated in nestedKeyIndexStaticChain. New keys take the first root's dispatch marker; existing keys reuse their runtime marker. Static paired paths/ordinal are proven; concrete runtime receipt, execution and record extent remain unresolved.",
+        f"- Info catalog: {layer3.get('infoCatalogRelation', {}).get('status')}; {layer3.get('infoCatalogRelation', {}).get('supportedInfoCount', 0):,} supported Info files project {layer3.get('infoCatalogRelation', {}).get('projectedRowCount', 0):,} four-word records onto {layer3.get('infoCatalogRelation', {}).get('expectedFileCount', 0):,} same-directory Streaming filenames. All 24 permutations are tested; selected permutation {layer3.get('infoCatalogRelation', {}).get('selectedPermutation')}. Legacy profile exclusions: {layer3.get('infoCatalogRelation', {}).get('unsupportedInfoCount', 0)} Info / {layer3.get('infoCatalogRelation', {}).get('unsupportedDataCount', 0)} Streaming data. These are profile exclusions, not a loss of their existing EOF/envelope framing.",
+        "- Info slot partitions and complete source projections/target identities are retained in layer3.infoCatalogRelation. Separate layer4.infoKeyProducerStaticChain gates Info pair ingestion, normal-container full equality/collision ABI, reviewed direct insertion guards and [inner,outer] key assembly restored to [outer,inner] filename order. No global active-set invariant, concrete runtime Info/root receipt or field meaning is claimed.",
         f"- Numeric path relation: {((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3FloorDiv128BothLanesMatch', 0):,}/{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('rowCount', 0):,} rows match floor(field3 lanes / 128) to filename tokens 0/1; residuals `{((layer3.get('field2PathRelations') or {}).get('numericPattern') or {}).get('field3ResidualValues')}`.",
         f"- Field-4 float32 rows: `{layer3.get('field2Field4Float32ClassCounts')}`.",
         f"- Field-2 terminal subgraph per-file range sums: {layer3.get('field2TerminalRangeCountPerFileSum', 0):,} ranges; {layer3.get('field2TerminalOwnedBytesPerFileSum', 0):,} owned bytes, continuous from field-2 vector start through EOF.",
@@ -1353,6 +1449,7 @@ def main() -> int:
         outer_ledger_path=args.outer_ledger,
         expected_input_set_sha256=args.input_set_sha256,
         game_root=args.game_root,
+        progress=lambda counts: print(f"Streaming corpus progress: {counts}", flush=True),
     )
     _atomic_write_text(args.output_json, json.dumps(report, indent=2) + "\n")
     _atomic_write_text(args.output_md, render_markdown(report))

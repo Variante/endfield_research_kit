@@ -63,88 +63,60 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
 - DynamicStreaming is a generated FlatBuffers family with validated version,
   grid, string, resource/state, and area accessors. The deeper meaning of its
   DataMask and several record fields remains unresolved.
-- StreamingChunkInfo has an exact anonymous EOF graph. The two data families
-  now also have three exact selected-build anonymous subgraphs. Root field 2 is
-  a width-4 table-offset vector: Init is empty through EOF, while Streaming's
-  immediate table/vtable rows close against seven layouts. Each row's field 5
-  points directly after the table to an exact count-prefixed vector of
-  anonymous little-endian scalar32 values; the combined field-2 subgraph is
-  continuous to
-  decoded EOF. The table objects partition into a four-byte vtable displacement
-  plus present slot-to-next-boundary spans of 4/4/4/8/24/4 bytes for fields
-  0--5. A selected-build native contract revalidates all three client hashes,
-  the bounded row consumer, and accessor bodies before publishing fields 0--2
-  as scalar32, field 3 as int32[2], and field 4 as float32[6]. The row producer
-  also retains its source pointer at offset 16 in a copied 72-byte runtime
-  record. A later consumer reloads that pointer, iterates field 5 using its
-  dword count and `vector+4+index*4` dword elements, and passes each scalar32
-  value into a hash-table lookup. Those field 0--5 spans contain no padding.
-  Current numeric filenames exactly relate to present
-  fields 1/2 and the floor-divided field-3 lanes, while Global filenames keep
-  a separate exact fields-1/2 relation. These are anonymous structural
-  relations, not coordinate or gameplay names. Root fields 3/4/5 use widths
-  4/1/4 with equal counts, bounded field-5 row tables and row-field-0 byte
-  ranges; fields 6/7 form the independent paired-group subgraph. For rows with
-  field 5, that field has an empty count prefix (element width unresolved;
-  non-empty counts fail closed) and field 3 reaches an
-  anonymous nested table whose fields 3/4/5 are equal-count width-4/1/4
-  vectors. The field-0 representation remains string/byte-vector ambiguous;
-  nested marker-17 elements now bound two-wrapper chains to counted
-  byte ranges. Wrappers have one field at +4 in an 8- or 10-byte object;
-  all ranges are bounded and non-identical overlaps fail. Marker 17 contents
-  and all other marker targets remain opaque. Marker 16 exploration belongs
-  to a different outer-row shape, outside this maintained branch.
-  These are structural-only marker associations, not a proven union registry,
-  serialized field names, cross-file ownership, or runtime/game semantics.
-  Marker-15 slots now fail closed unless their nonzero relative offsets reach
-  readable decoded positions; per-file source hashes and ordered slot/target
-  digests bind this directory. Its target contents remain opaque and own zero
-  additional bytes. File-byte availability and non-overlapping probe widths
-  do not resolve record width. Native root-marker dispatch and the parser's
-  same-index marker/row-shape join are distinct from nested marker meanings.
-  For the reviewed default selector, the first secondary root's initial
-  callback is a false-returning stub, not an asset reader. A later callback
-  instead uses the second secondary root's row, retained in a 32-byte runtime
-  record, and installs its field-3 target for that callback scope. The default
-  later reader constructs count/element keys and calls a 16-byte-reading
-  helper. The selected map-helper ABI now closes full-u32 key equality,
-  collision probing, key/index insertion, index-preserving rehash, and lookup
-  return. Duplicate keys keep the first native ordinal; the maintained
-  serialized join instead rejects them as ambiguous. The parser independently
-  joins unique count/element keys to marker-2 four-byte and marker-15 sixteen-
-  byte candidate read spans, checking bounds and overlap with the parallel
-  subgraph's known ranges. Missing
-  count keys remain explicit unsupported rows, not native default values.
-  These spans own no additional bytes and do not establish record extent.
-  Paired native formatters now prove first=Init and second=Streaming, using
-  one root/dev source and the same four-dword key. A separate native loop
-  preserves one serialized ordinal across the roots; its runtime allocation
-  index is distinct. Current paired files independently match complete ordered
-  field3/field4 vectors, not just their counts. Row-field0 contents differ and
-  are not a shared identity. For new runtime keys the dispatch marker comes
-  from Init; existing keys instead use an already stored runtime marker.
-  Thus paired bytes do not prove a fresh global key map, a concrete runtime
-  root receipt, callback override state, or actual execution. See
-  `streaming_field2_native.json` and
-  the focused report's `layer3.selector5KeyRangeJoin` and
-  `layer4.nestedKeyIndexStaticChain`; paired witnesses and conditional ABI are
-  in `layer3.pairedRootIdentities` and `layer4.nestedPairedRootStaticChain`.
-  Marker-15 candidates remain in
-  `reports/animestudio/streaming_marker15_native_latest.json`.
-  A separately gated family-level native
-  reader closes payload base, requested length, returned count, exact-read
-  success, and `base + u32(base)` root calculation. Its first formatted leaf
-  is exactly `StreamingChunkInfo`, but the runtime root remains unavailable,
-  so the authenticated current files are a bounded candidate set rather than
-  one joined identity. The selected post-I/O closure is pointer-only: outer
-  length does not reach the FlatBuffer accessors and no parsed length or final
-  cursor is represented. A second hash-gated static chain propagates anonymous
-  scene-root pairs through a state-selected 16-byte handle, two secondary
-  reads, and the second root's field-2 row vector; its scheduler-to-concrete-
-  Create edge and concrete secondary paths remain unresolved. A managed
-  `GridData` shape and the consumer diagnostic provide name candidates only;
-  field-5 signedness/key namespace is not established, so no serialized field
-  name is promoted.
+- StreamingChunkInfo has an exact anonymous EOF graph and slot partitions
+  derived from actual vtable positions. Standard rows provide one inline
+  eight-byte pair and a counted vector of eight-byte pairs. Their anonymous
+  four-word projections uniquely match the same-directory secondary-file
+  catalog among all permutations; duplicate multiplicity, missing paths and
+  ambiguity are not discarded. Legacy three-field roots retain exact framing
+  but are unsupported by this catalog projection. A separate native gate
+  connects Info pairs through shared owner state, complete normal-container
+  pair equality (including collision paths and custom register liveness),
+  reviewed direct insertion guards, and unchanged key assembly to paired path
+  formatters. This proves conditional static value provenance, not all possible
+  active-set mutations, a concrete runtime Info instance or spatial meaning.
+  See `layer3.infoCatalogRelation` and `layer4.infoKeyProducerStaticChain` in
+  the Streaming corpus report; inventories and candidate comparisons live there.
+- Init/Streaming have three exact anonymous subgraphs, not whole-file
+  understanding: root-field2 through decoded EOF, parallel root-fields3/4/5,
+  and paired root-fields6/7. Init field2 is empty; Streaming field2 rows have
+  exact table/vtable layouts followed immediately by counted scalar32 vectors.
+  Slot spans for present fields0--5 are 4/4/4/8/24/4 bytes without padding.
+  Three-image native gates establish scalar32, int32[2], float32[6] and
+  scalar32-key-vector representations; field names and key namespace/signedness
+  remain unresolved. Numeric/Global filename relations are structural, not
+  coordinate or gameplay names. Managed GridData names are candidates only.
+  Parallel directories use equal-count width4/1/4 vectors. Their row-field0
+  remains string/byte-vector ambiguous. Applicable row-field5 vectors are
+  empty (nonempty fails closed); row-field3 reaches another parallel directory.
+  Nested marker17 bounds two wrappers and a counted opaque byte range.
+  Marker16 belongs to a different outer-row shape. These associations do not
+  prove a union registry. Marker15 references require nonzero forward bounded
+  targets; hashes bind each source/slot directory, but target contents and
+  record extent remain opaque, with zero additional owned target bytes.
+  The reviewed default selector's initial callback is a false stub. Its later
+  callback uses the second root's row-field3 for one scoped context. Full-u32
+  key equality, collision probing, insertion/rehash and lookup are native-gated.
+  Native duplicates retain the first ordinal; serialized joins instead reject
+  ambiguity. Unique count/element keys yield bounded marker2 four-byte and
+  marker15 sixteen-byte candidate reads, with known-range overlap checks.
+  Missing count keys remain explicit unsupported rows; readable spans are not
+  record extents or execution receipts.
+  Paired formatters prove first=Init and second=Streaming with identical
+  root/dev/key inputs; both use one serialized ordinal, not runtime allocation
+  order. Complete ordered field3/field4 witnesses match between paired files,
+  while row-field0 differs and is not shared identity. New runtime keys use
+  Init's marker; existing keys reuse an already stored marker. Live key-map
+  state, overrides, scheduling and execution are not established by these bytes.
+  The family-level native reader closes requested/returned length, exact-read
+  success, first leaf StreamingChunkInfo and base-relative root resolution.
+  Its post-I/O closure is pointer-only: no parsed length/final cursor reaches
+  the accessors. Static owner/handle/secondary-root chains do not supply a
+  concrete runtime-root or scheduler-to-Create receipt.
+  Details and per-file witnesses belong to `streaming_root_subgraphs_latest`
+  under `reports/animestudio/`; the native contract is
+  `scripts/game_data/streaming_field2_native.json`. Candidate marker15 native
+  reads remain in `reports/animestudio/streaming_marker15_native_latest.json`.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height
   samples; adjacent cells establish grid orientation. For the selected build,
@@ -296,7 +268,8 @@ and before/after evidence belongs in `tmp/<topic>/`.
   Init/Streaming leaf formats, shared serialized ordinal and ordered key/marker
   witnesses are closed, but concrete runtime root/key provenance, existing-key
   state, overrides and actual execution remain unobserved. The upstream
-  spatial-selection key is not yet joined to one Info record. Missing-count-
+  key's static Info source is bounded, but no concrete runtime Info record is
+  identified. Missing-count-
   key rows remain unsupported by the selector profile; do not extend its
   conditional subset to every marker-15 target. The directory is bounded,
   not its records. Concrete runtime-root receipts and field-5 key namespace
