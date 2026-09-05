@@ -170,6 +170,11 @@ only.
   seam filtering and derivatives. Serialized curve infinity codes likewise
   require explicit translation to Unity's public WrapMode enum, verified by
   independent engine serialization rather than the importer's own mapping.
+  VFXRefract's separate RB displacement uses `_Intensity * vertexAlpha` and
+  `_UseMainTexAsMask`; its normal-derived magnitude includes refraction strength.
+  Recover names from the original compressed program's referenced parameter
+  record when exported metadata omits fields. Exact RB, RGB/blend, and dissolve
+  variants establish this contract; see the CharEffect RB parameter audit.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
@@ -359,21 +364,13 @@ build and collection procedure.
   swapchain boundary, and final presentation route.
 - Recover Endminf's complete secondary-dynamics numeric solver, owner identity,
   job completion, and writeback/history.
-- Close the shared CharEffect live render packet. Production lifecycle timing
-  is source-joined; the old 1,935-quad packet is a later automatic tail sample.
-  The exact-build observer now captures the first two VS/PS draw occurrences
-  directly from authenticated `Play`, including IA/VB/IB, constants,
-  `_VertexSkinMatrices`, SRVs/samplers, MRT/depth, and PSO. Collect one new
-  session and compare it with a live Unity D3D11 draw before changing the
-  reusable shader or renderer. Capture readiness must follow actual application
-  device/context attachment, not private WARP hook bootstrap; otherwise the
-  dedicated worker attempts deferred preallocation with no attached device.
-  The observer now publishes readiness only after attachment and hook success,
-  with a real D3D11 bootstrap/first-Present regression covering this boundary.
-  Its timing-only mode also excludes the regular Present-driven scheduler and
-  rejects unrelated lanes: startup and post-Play waiting must remain idle until
-  the authenticated shader draw. WARP regressions cover both waiting intervals;
-  a fresh retail collection is still required.
+- Continue shared CharEffect draw comparison using the retained first-two-draw
+  packets. Topology, UVs, population, and the complete authored texture now agree;
+  the RB parameter mismatch is corrected. The strict particle-phase join remains
+  open, and broad temporal echoes are a separate downstream question. Preserve
+  exact-owner draw-local resource selection, readiness after application-device
+  attachment, and idle waiting before authenticated Play/draw; WARP bootstrap
+  readiness and regular Present scheduling are not valid substitutes.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
