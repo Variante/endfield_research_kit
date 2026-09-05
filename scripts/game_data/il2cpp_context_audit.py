@@ -333,6 +333,55 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def adapter_conversion_context(pe,md,reg,table,entries,*,source):
+    """Static interface carrier and slot identity; not a live conversion target."""
+    require(len(entries),13,source)
+    entry=entries[8]
+    require((entry['relativeIndex'],entry['kindRaw']),(8,2),source,entry['entryVa'])
+    index=pe.u32_at_va(entry['dataPointerVa'])
+    require(index,45287,source,entry['dataPointerVa'])
+    require(index<reg['typesCount'],True,source,entry['dataPointerVa'])
+    pointer=pe.u64_at_va(int(reg['types'],16)+index*8)
+    require(pointer!=0,True,source)
+    raw=pe.bytes_at_va(pointer,16);require(len(raw),16,source,pointer)
+    require(raw[10],0x15,source,pointer+10)
+    cp=struct.unpack_from('<Q',raw)[0];require(cp!=0,True,source,pointer)
+    cr=pe.bytes_at_va(cp,32);require(len(cr),32,source,cp)
+    bp=struct.unpack_from('<Q',cr)[0];require(bp!=0,True,source,cp)
+    carrier=generic_type_carrier(raw,cr,pe.bytes_at_va(bp,16),type_pointer=pointer,
+        type_count=len(md.types),source=source)
+    require(carrier['baseDefinitionIndex'],32173,source,bp)
+    interface=md.types[32173]
+    require(md.type_full_name(interface),'Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1',source)
+    inst=table.resolve_pointer(carrier['classInstantiationPointerVa'])
+    require(inst.index,12827,source,inst.record_va)
+    require(len(inst.arguments),1,source,inst.record_va)
+    arg=bytes.fromhex(inst.arguments[0].raw_type_record_hex)
+    require(arg,bytes.fromhex('F2020000000000000000130000000000'),source,inst.record_va)
+    owner=type_parameter_owner(md.buf,struct.unpack_from('<Q',arg)[0],
+        [t.generic_container_index for t in md.types],source=source)
+    require((owner['typeIndex'],owner['ordinal']),(13633,0),source,owner['containerOffset'])
+    method_entry=entries[9]
+    require((method_entry['relativeIndex'],method_entry['kindRaw']),(9,3),source,method_entry['entryVa'])
+    spec=pe.u32_at_va(method_entry['dataPointerVa'])
+    require(spec,173212,source,method_entry['dataPointerVa'])
+    require(spec<reg['methodSpecsCount'],True,source,method_entry['dataPointerVa'])
+    spec_va=int(reg['methodSpecs'],16)+spec*12
+    spec_raw=pe.bytes_at_va(spec_va,12)
+    definition,ci,mi=method_spec_record(spec_raw,len(md.methods),reg['genericInstsCount'],source=source,offset=spec_va)
+    require((definition,ci,mi),(249850,inst.index,-1),source,spec_va)
+    require((interface.method_start,interface.method_count),(definition,1),source)
+    method=md.methods[definition]
+    require((method.declaring_type,method.slot,method.parameter_count,method.token),
+        (32173,0,0,0x06001747),source)
+    require(md.string(method.name_index),'GetValue',source)
+    return {'carrier':carrier,'interfaceEntry':entry,'methodEntry':method_entry,
+        'instantiation':inst.as_dict(),'argumentOwner':owner,'methodSpecIndex':spec,
+        'methodSpecRawHex':spec_raw.hex().upper(),'methodDefinition':definition,'methodSlot':method.slot,
+        'level':'exact static carrier/VAR/MethodSpec and metadata slot identity',
+        'boundary':'Adapter relative class slot eight describes IMemoryPackDeSerializeWrapper with the reciprocal adapter ordinal-zero VAR. Slot nine describes GetValue with the identical class-instantiation index; its independently decoded metadata slot is zero and it has no explicit parameters. This distinguishes the conversion interface argument T0 from the existing slot-four formatter query for T1; it does not by itself decode the method return type or implementation. The native helper requests interface slot zero, but does not read RGCTX slot nine directly. The static relationship does not prove inflated interface pointers, a live implementation, method body semantics, serialized order, source consumption or EOF. Do not substitute the shared-code Object candidate for the original companion context.'}
+
+
 def list_element_value_flow(pe,*,source):
     """Ref-object dispatch followed by object conversion; not a DWORD byte read."""
     windows=[]
@@ -1819,6 +1868,7 @@ def audit():
     require((adapter_start,adapter_count),(4,13),gate.gameassembly,adapter_ranges)
     adapter_entries=rgctx_range_entries(adapter_entry_bytes,adapter_start,adapter_count,
                                         source=str(gate.gameassembly),offset=adapter_entry_base)
+    adapter_conversion=adapter_conversion_context(pe,md,reg,table,adapter_entries,source=str(gate.gameassembly))
     type_slot=adapter_entries[10]
     require(pe.bytes_at_va(pe.image_base+0x2DA8E66,15),bytes.fromhex('488B4320488B98C0000000488B5B50'),
             gate.gameassembly,0x2DA8E66)
@@ -2089,6 +2139,7 @@ def audit():
         'selectedListElementSharedContext':list_shared,
         'selectedListElementNullProbe':list_null_probe,
         'selectedListElementValueFlow':list_value_flow,
+        'selectedAdapterConversionContext':adapter_conversion,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

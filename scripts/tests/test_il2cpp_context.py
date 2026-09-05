@@ -43,7 +43,64 @@ from scripts.game_data.il2cpp_context_audit import list_formatter_candidate
 from scripts.game_data.il2cpp_context_audit import list_element_dispatch
 from scripts.game_data.il2cpp_context_audit import list_element_shared_context, list_element_null_probe
 from scripts.game_data.il2cpp_context_audit import list_element_value_flow
+from scripts.game_data.il2cpp_context_audit import adapter_conversion_context
 from unittest.mock import patch
+
+
+class AdapterConversionContextTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={0x100:struct.pack('<QII',0x200,0x150000,0),
+            0x200:struct.pack('<QQQQ',0x300,0x400,0,0),
+            0x300:struct.pack('<QII',32173,0x120000,0),
+            0x100000+173212*12:struct.pack('<iii',249850,12827,-1)}
+        self.words={0x500:45287,0x504:173212}
+        self.pe=SimpleNamespace(bytes_at_va=lambda va,size:self.parts[va],
+            u32_at_va=lambda va:self.words[va],u64_at_va=lambda va:0x100)
+        self.reg={'types':'0x200000','typesCount':50000,'methodSpecs':'0x100000',
+            'methodSpecsCount':200000,'genericInstsCount':20000}
+        self.entries=[{} for _ in range(13)]
+        for rel,kind,ptr in ((8,2,0x500),(9,3,0x504)):
+            self.entries[rel]={'relativeIndex':rel,'kindRaw':kind,'dataPointerVa':ptr,'entryVa':0x600+rel*16}
+        self.inst=SimpleNamespace(index=12827,record_va=0x400,
+            arguments=[SimpleNamespace(raw_type_record_hex='F2020000000000000000130000000000')],
+            as_dict=lambda:{'index':12827})
+        self.table=SimpleNamespace(resolve_pointer=lambda va:self.inst)
+        buf=bytearray(0x3400)
+        struct.pack_into('<II',buf,8+12*8,0x200,755*16)
+        struct.pack_into('<II',buf,8+14*8,0x3200,16)
+        struct.pack_into('<iihhHH',buf,0x200+754*16,0,0,0,0,0,0)
+        struct.pack_into('<iiii',buf,0x3200,13633,1,0,754)
+        types=[SimpleNamespace(generic_container_index=-1)]*32174
+        types[13633]=SimpleNamespace(generic_container_index=0)
+        types[32173]=SimpleNamespace(generic_container_index=-1,method_start=249850,method_count=1)
+        self.method=SimpleNamespace(declaring_type=32173,slot=0,parameter_count=0,token=0x06001747,name_index=0)
+        self.md=SimpleNamespace(buf=buf,types=types,methods=[None]*249850+[self.method],
+            type_full_name=lambda t:'Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1',string=lambda i:'GetValue')
+
+    def decode(self):
+        return adapter_conversion_context(self.pe,self.md,self.reg,self.table,self.entries,source='fixture.dll')
+
+    def test_reciprocal_ordinal_zero_interface_and_explicit_slot(self):
+        row=self.decode()
+        self.assertEqual((row['argumentOwner']['typeIndex'],row['argumentOwner']['ordinal']),(13633,0))
+        self.assertEqual(row['methodSlot'],0)
+
+    def test_truncated_trailing_and_malformed_carrier_or_spec(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
+
+    def test_wrong_context_owner_slot_and_bounds(self):
+        self.method.slot=1
+        with self.assertRaises(ContextError):self.decode()
+        self.method.slot=0
+        struct.pack_into('<i',self.md.buf,0x3200,13632)
+        with self.assertRaises(ContextError):self.decode()
+        struct.pack_into('<i',self.md.buf,0x3200,13633)
+        self.reg['typesCount']=45287
+        with self.assertRaises(ContextError):self.decode()
 
 
 class ListElementValueFlowTests(unittest.TestCase):
@@ -59,7 +116,7 @@ class ListElementValueFlowTests(unittest.TestCase):
         if at in self.parts:return self.parts[at]
         for start,raw in self.parts.items():
             if start<=at<start+len(raw):return raw[at-start:at-start+size]
-        raise ContextError(f'fixture.dll: offset {at:#x}: expected mapped range, actual missing')
+        raise ContextError('fixture.dll',at,'mapped range','missing')
 
     def test_initialized_object_slot_conversion_not_serialized_width(self):
         row=list_element_value_flow(self.pe,source='fixture.dll')

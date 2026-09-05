@@ -327,7 +327,13 @@ Current durable boundaries:
   tail-jumps with the result object, without forwarding the reader. Returned EAX
   becomes the four-byte output. This is a converted result width, not serialized
   consumption. Interface record offsets and slot arithmetic are directly pinned,
-  but target-pair bounds, provider/conversion identity, actual branch selection
+  and the conversion carrier independently joins
+  `IMemoryPackDeSerializeWrapper<T0>`: its argument reciprocally belongs to adapter
+  ordinal zero, distinct from the formatter query's ordinal-one argument. The
+  adjacent MethodSpec uses that same instantiation and names `GetValue`; its
+  metadata slot is explicitly zero, matching the native request without assuming
+  declaration order. The native branch does not directly read that MethodSpec slot.
+  Target-pair bounds, live provider/conversion implementation, branch selection
   and non-FF source consumption remain unresolved; follow the delegated formatter
   context before interpreting this output or eliminating a terminal candidate.
   Cold advance normally returns true, resets
