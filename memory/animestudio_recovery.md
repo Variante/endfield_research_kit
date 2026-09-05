@@ -286,6 +286,13 @@ Current durable boundaries:
   parameter (VAR), not an unrelated concrete type. The class initializer's
   conditional path converts 16-byte definitions to eight-byte runtime slots
   using the class generic context; static definitions are not observed slots.
+  The reviewed MethodInfo construction path stores the original instantiated
+  class separately from resolved shared-code pointers. Do not substitute the
+  shared body candidate's object/object arguments for the companion's class
+  context; actual cache contents and invocation still need independent evidence.
+  Nested class slots independently link MethodSpecs for the non-null adapter,
+  formatter lookup and instance creation to reciprocal parameters of that same
+  adapter type. Keep these static links separate from serialized read order.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

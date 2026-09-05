@@ -20,12 +20,15 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
+from scripts.game_data.il2cpp_context import method_spec_record
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x8D20, 0x8F52, '48868BF56BEC2C84D6EEF44AE342E3CB5ABC1D54A62494733BE2703CA6A206B3'),
+    (0x84B0, 0x8C74, 'A29F9BB8993244FF7D7571D39282EFA4A8B88736E71FAA18492B7AA4D90A706A'),
     (0xB010, 0xB995, '10231D49EEBCEAD16CF4142DF20F38407783C9D3DA55196125D305F23785D238'),
     (0x10000, 0x10019, 'AB93A915D9FB7495ADE419CB253425EEF1EED86E69495C824F19B157AD12C7F1'),
     (0xF4E0, 0xFF04, '0A71E5B9F7995F00CAF05B63F8FC5D3081CCD7614346A27057A329171072D89E'),
@@ -110,6 +113,26 @@ def sweep(table):
     return {'success': len(rows), 'failed': len(failures), 'unsupported': 0}, rows, failures
 
 
+def validate_selected_method_spec(row, records, base, method_count, instantiation_count, *, source):
+    """Verify emitted identity against raw records, independently of loop locals."""
+    if not isinstance(row,dict) or len(records)%12:
+        raise ContextError(source,base,'MethodSpec evidence object and exact record array',type(row).__name__)
+    index=row.get('index')
+    if type(index) is not int or not 0<=index<len(records)//12:
+        raise ContextError(source,base,'bounded reported MethodSpec index',index)
+    offset=base+index*12
+    raw=records[index*12:(index+1)*12]
+    definition,_,method_inst=method_spec_record(raw,method_count,instantiation_count,source=source,offset=offset)
+    for key,expected in (('va',offset),('rawHex',raw.hex().upper()),('definition',definition)):
+        if row.get(key)!=expected:
+            raise ContextError(source,offset,f'reported {key} matches raw MethodSpec',
+                               {'expected':expected,'actual':row.get(key)})
+    inst=row.get('methodInstantiation')
+    if not isinstance(inst,dict) or inst.get('index')!=method_inst:
+        raise ContextError(source,offset+8,'reported method instantiation matches raw MethodSpec',
+                           {'expected':method_inst,'actual':inst})
+
+
 def audit():
     gate = native_gate()
     corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -191,6 +214,9 @@ def audit():
     owner = method_parameter_owner(md.buf, struct.unpack_from('<Q', type_raw)[0],
                                    [m.generic_container_index for m in md.methods], source=str(gate.metadata))
     require(owner['methodIndex'], 428464, gate.metadata, owner['containerOffset'])
+    selected_method_spec={'index':spec_index,'va':spec_va,'rawHex':raw.hex().upper(),
+                          'definition':definition,'methodInstantiation':selected.as_dict(),
+                          'openMethodParameterOwner':owner}
     usage_va = pe.image_base+0xCFF4E48
     usage_raw = pe.bytes_at_va(usage_va, 8)
     call_index = method_spec_usage_index(usage_raw, reg['methodSpecsCount'],
@@ -293,6 +319,38 @@ def audit():
     require((slot_owner['typeIndex'],slot_owner['ordinal']),(13633,1),gate.metadata,slot_owner['containerOffset'])
     require(pe.u32_at_va(pe.image_base+0x9850+(0x13-0x0F)*4),0x9669,gate.gameassembly,0x9850)
     slot_argument=adapter_inst.arguments[slot_owner['ordinal']]
+    nested_slots=[]
+    for relative,expected_definition in ((3,102198),(4,428394),(11,277939)):
+        entry=adapter_entries[relative]
+        require(entry['kindRaw'],3,gate.gameassembly,entry['entryVa'])
+        index=pe.u32_at_va(entry['dataPointerVa'])
+        require(index<reg['methodSpecsCount'],True,gate.gameassembly,entry['dataPointerVa'])
+        spec_va=int(reg['methodSpecs'],16)+index*12
+        spec_raw=pe.bytes_at_va(spec_va,12)
+        definition,ci,mi=method_spec_record(spec_raw,len(md.methods),reg['genericInstsCount'],
+                                           source=str(gate.gameassembly),offset=spec_va)
+        require(definition,expected_definition,gate.metadata)
+        contexts=[]
+        for kind,inst_index in (('class',ci),('method',mi)):
+            inst=table.resolve(inst_index)
+            arguments=[]
+            for arg in inst.arguments:
+                raw=bytes.fromhex(arg.raw_type_record_hex)
+                require(raw[10],0x13,gate.gameassembly,arg.type_pointer_va+10)
+                owner=type_parameter_owner(md.buf,struct.unpack_from('<Q',raw)[0],
+                                            [t.generic_container_index for t in md.types],source=str(gate.metadata))
+                require(owner['typeIndex'],13633,gate.metadata,owner['containerOffset'])
+                require(owner['ordinal']<len(adapter_inst.arguments),True,gate.metadata,owner['parameterOffset'])
+                concrete=adapter_inst.arguments[owner['ordinal']]
+                arguments.append({'rawHex':arg.raw_type_record_hex,'owner':owner,
+                                  'conditionalArgumentRawHex':concrete.raw_type_record_hex})
+            contexts.append({'kind':kind,'instantiationIndex':inst_index,'arguments':arguments})
+        nested_slots.append({'relativeIndex':relative,'moduleEntryIndex':entry['moduleEntryIndex'],
+                             'methodSpecIndex':index,'methodSpecRawHex':spec_raw.hex().upper(),
+                             'definition':definition,'methodName':md.string(md.methods[definition].name_index),'contexts':contexts})
+    require(pe.bytes_at_va(pe.image_base+0x8619,4),bytes.fromhex('48895F20'),gate.gameassembly,0x8619)
+    require(pe.bytes_at_va(pe.image_base+0x873E,17),bytes.fromhex('4D8D442408498BD5488D4DD8E8D1470300'),
+            gate.gameassembly,0x873E)
     require([a.raw_type_record_hex for a in adapter_inst.arguments],
             ['B02D0000000000000000120000000000','2D360000000000000000120000000000'],gate.gameassembly)
     require(md.type_full_name(md.types[13869]),'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack',gate.metadata)
@@ -348,7 +406,12 @@ def audit():
     require(md.string(md.methods[102199].name_index),'Deserialize',gate.metadata)
     specs_base=int(reg['methodSpecs'],16)
     specs_raw=pe.bytes_at_va(specs_base,reg['methodSpecsCount']*12)
-    shared_specs=[index for index,(definition,ci,mi) in enumerate(struct.iter_unpack('<iii',specs_raw))
+    spec_records=[method_spec_record(specs_raw[index*12:(index+1)*12],len(md.methods),reg['genericInstsCount'],
+                                     source=str(gate.gameassembly),offset=specs_base+index*12)
+                  for index in range(reg['methodSpecsCount'])]
+    validate_selected_method_spec(selected_method_spec,specs_raw,specs_base,len(md.methods),
+                                   reg['genericInstsCount'],source=str(gate.gameassembly))
+    shared_specs=[index for index,(definition,ci,mi) in enumerate(spec_records)
                   if definition==102199 and ci in object_candidates and mi==-1]
     code=mapper.code_registration_summary(pe,candidates[0])
     methods_base=int(reg['genericMethodTable'],16)
@@ -402,6 +465,17 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'methodSpecSweep':{'success':len(spec_records),'failed':0,'unsupported':0,
+                           'sourceVa':specs_base,'byteLength':len(specs_raw),
+                           'sha256':hashlib.sha256(specs_raw).hexdigest().upper(),
+                           'boundary':'All referenced 12-byte MethodSpecs have bounded definition and class/method instantiation indices. This is not runtime inflation or whole-PE EOF.'},
+        'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
+                                      'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
+        'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
+                                                 'classStoreRva':0x8619,'methodPointerResolverCallRva':0x874A,
+                                                 'classFieldOffset':0x20,'pointerFieldOffsets':[0,8,16],
+                                                 'level':'direct conditional native construction path',
+                                                 'boundary':'On the reviewed cache-miss construction path, the original definition class and class-instantiation feed the generic-class carrier lookup/construction, then the class pointer is stored at MethodInfo+0x20. The pointer resolver receives the original definition and context pair separately, writes a stack result, and its code/adjustor/invoker pointers are copied to MethodInfo+0/+8/+0x10. Normalizing arguments for a shared code lookup therefore does not itself replace the already stored original class pointer. This is not a live MethodInfo receipt, proof of cache contents, actual target invocation, source extent or EOF.'},
         'rgctxDefinitionSweep': {'images':rgctx_inventory,
                                   'summary':{'success':sum(x['success'] for x in rgctx_inventory),'failed':0,'unsupported':0},
                                   'boundary':'Exact referenced 16-byte definitions for every matched module; numeric kinds, padding and payload pointers are preserved, not resolved runtime slots or a partition of the PE.'},
@@ -458,9 +532,7 @@ def audit():
                                  'matchingRule': 'Native bytewise name matching continues after a match; duplicate names could overwrite a prior result. This gate requires unique module names before accepting a static join.',
                                  'boundary': 'Exact metadata type partition and unique module-name joins. Native normal-path directory stores and name comparisons are separately pinned; initialization execution, cold paths and live invocation remain unobserved.'},
         'consumerWindows': CONSUMER_WINDOWS, 'summary': summary,
-        'selectedMethodSpec': {'index': spec_index, 'va': spec_va, 'rawHex': raw.hex().upper(),
-                               'definition': definition, 'methodInstantiation': selected.as_dict(),
-                               'openMethodParameterOwner': owner},
+        'selectedMethodSpec': selected_method_spec,
         'selectedCallMethodSpec': {'index': call_index, 'va': call_va, 'rawHex': call_raw.hex().upper(),
                                    'methodInstantiation': call_inst.as_dict()},
         'conditionalSubstitution': {

@@ -325,6 +325,23 @@ def class_sharing_branch(compare: bytes, compare_address: int, load: bytes,
     return rip_qword_load_target(load,load_address,source=source)
 
 
+def method_spec_record(raw: bytes, method_count: int, instantiation_count: int, *,
+                       source: str, offset: int = 0) -> tuple[int, int, int]:
+    """Exact MethodSpec indices; -1 denotes absent class/method context only."""
+    if len(raw) != 12:
+        raise ContextError(source, offset, 'exact 12-byte MethodSpec', len(raw))
+    for count, label in ((method_count, 'method definition'), (instantiation_count, 'instantiation')):
+        if type(count) is not int or not 0 <= count <= 1_000_000:
+            raise ContextError(source, offset, f'bounded {label} count', count)
+    definition, class_inst, method_inst = struct.unpack('<iii', raw)
+    if not 0 <= definition < method_count:
+        raise ContextError(source, offset, f'method definition in [0,{method_count})', definition)
+    for index, relative in ((class_inst, 4), (method_inst, 8)):
+        if not -1 <= index < instantiation_count:
+            raise ContextError(source, offset+relative, f'instantiation -1 or [0,{instantiation_count})', index)
+    return definition, class_inst, method_inst
+
+
 def method_pointer_indices(raw: bytes, method_count: int, invoker_count: int, *,
                            source: str, offset: int = 0) -> tuple[int, int, int]:
     """Bound the selected native reader's no-adjustor 12-byte index triple.

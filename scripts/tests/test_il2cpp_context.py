@@ -7,7 +7,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range
-from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
+from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep, validate_selected_method_spec
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
@@ -15,6 +15,62 @@ from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
 from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
+from scripts.game_data.il2cpp_context import method_spec_record
+
+
+class MethodSpecRecordTests(unittest.TestCase):
+    def decode(self, values=(1, -1, 0), **kwargs):
+        return method_spec_record(struct.pack('<iii', *values), source='fixture.dll', offset=0x40,
+                                  **{'method_count':2, 'instantiation_count':1, **kwargs})
+
+    def test_normal_and_absent_contexts(self):
+        self.assertEqual(self.decode(), (1, -1, 0))
+        self.assertEqual(self.decode((0, -1, -1), instantiation_count=0), (0, -1, -1))
+
+    def test_truncated_and_trailing(self):
+        for length in (0, 11, 13):
+            with self.assertRaises(ContextError):
+                method_spec_record(bytes(length), 2, 1, source='fixture.dll')
+
+    def test_malformed_indices(self):
+        for values, relative in (((-1, -1, 0), 0), ((2, -1, 0), 0),
+                                 ((1, -2, 0), 4), ((1, 1, 0), 4),
+                                 ((1, -1, -2), 8), ((1, -1, 1), 8)):
+            with self.subTest(values=values), self.assertRaises(ContextError) as caught:
+                self.decode(values)
+            self.assertEqual(caught.exception.diagnostics['offset'], 0x40+relative)
+
+    def test_malformed_counts(self):
+        for key in ('method_count', 'instantiation_count'):
+            for count in (-1, True, 1_000_001):
+                with self.subTest(key=key, count=count), self.assertRaises(ContextError):
+                    self.decode(**{key:count})
+
+
+class MethodSpecEvidenceTests(unittest.TestCase):
+    records=struct.pack('<iiiiii',1,-1,0,2,-1,1)
+
+    def row(self):
+        return {'index':0,'va':0x100,'rawHex':self.records[:12].hex().upper(),
+                'definition':1,'methodInstantiation':{'index':0}}
+
+    def validate(self,row,records=None):
+        validate_selected_method_spec(row,self.records if records is None else records,0x100,3,2,source='fixture.dll')
+
+    def test_normal(self):
+        self.validate(self.row())
+
+    def test_later_loop_identity_overwrites_rejected(self):
+        for key,value in (('index',1),('va',0x10C),('rawHex',self.records[12:].hex().upper()),
+                          ('definition',2),('methodInstantiation',{'index':1})):
+            row=self.row()
+            row[key]=value
+            with self.subTest(key=key),self.assertRaises(ContextError): self.validate(row)
+
+    def test_malformed_evidence_and_record_tail(self):
+        for row in (None,{},dict(self.row(),index=True),dict(self.row(),methodInstantiation=None)):
+            with self.subTest(row=row),self.assertRaises(ContextError): self.validate(row)
+        with self.assertRaises(ContextError): self.validate(self.row(),self.records+b'!')
 
 
 class RgctxRangeEntriesTests(unittest.TestCase):
