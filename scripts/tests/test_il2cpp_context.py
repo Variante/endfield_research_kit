@@ -14,6 +14,71 @@ from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
+from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
+
+
+class RgctxRangeEntriesTests(unittest.TestCase):
+    raw = b''.join(struct.pack('<IIQ', i, 0xAABBCCDD, 0x100+i*8) for i in range(4))
+
+    def decode(self, raw=None, start=2, count=2, offset=0x80):
+        return rgctx_range_entries(self.raw if raw is None else raw, start, count,
+                                   source='fixture.dll', offset=offset)
+
+    def test_relative_and_module_indices_are_distinct(self):
+        rows = self.decode()
+        self.assertEqual([(r['relativeIndex'], r['moduleEntryIndex'], r['entryVa']) for r in rows],
+                         [(0, 2, 0xA0), (1, 3, 0xB0)])
+        self.assertEqual(rows[0]['opaquePaddingHex'], 'DDCCBBAA')
+        self.assertEqual(rows[0]['dataPointerVa'], 0x110)
+
+    def test_truncated_trailing_and_malformed_range(self):
+        for raw in (self.raw[:-1], self.raw+b'!'):
+            with self.assertRaises(ContextError): self.decode(raw)
+        for start, count in ((-1, 1), (4, 1), (5, 0), (2, 3), (0, -1), (True, 1), (0, True)):
+            with self.subTest(start=start, count=count), self.assertRaises(ContextError):
+                self.decode(start=start, count=count)
+
+    def test_empty_range_and_unknown_kind_preserved(self):
+        self.assertEqual(self.decode(start=4, count=0), [])
+        raw = struct.pack('<IIQ', 0xFFFFFFFF, 7, 0)
+        self.assertEqual(self.decode(raw, start=0, count=1)[0]['kindRaw'], 0xFFFFFFFF)
+
+    def test_address_bounds(self):
+        for offset in (-1, True, (1 << 64)-63):
+            with self.assertRaises(ContextError): self.decode(offset=offset)
+
+
+class TypeParameterOwnerTests(unittest.TestCase):
+    def fixture(self):
+        raw = bytearray(0x300)
+        struct.pack_into('<II', raw, 8+12*8, 0x200, 32)
+        struct.pack_into('<II', raw, 8+14*8, 0x240, 16)
+        for ordinal in range(2):
+            struct.pack_into('<iihhHH', raw, 0x200+ordinal*16, 0, 0, -1, 0, ordinal, 0)
+        struct.pack_into('<iiii', raw, 0x240, 0, 2, 0, 0)
+        return raw
+
+    def decode(self, raw, owners=None):
+        return type_parameter_owner(raw, 1, [0] if owners is None else owners, source='fixture.dat')
+
+    def test_normal_second_type_parameter(self):
+        row = self.decode(self.fixture())
+        self.assertEqual((row['typeIndex'], row['ordinal']), (0, 1))
+        self.assertNotIn('methodIndex', row)
+
+    def test_truncation_and_section_tail(self):
+        raw = self.fixture()
+        for changed in (raw[:0x7F], raw[:0x24F]):
+            with self.assertRaises(ContextError): self.decode(changed)
+        struct.pack_into('<I', raw, 8+12*8+4, 33)
+        with self.assertRaises(ContextError): self.decode(raw)
+
+    def test_wrong_kind_ordinal_count_and_reverse_owner(self):
+        for offset, value in ((0x248, 1), (0x21C, 0), (0x244, 1), (0x240, 1), (0x210, 1)):
+            raw = self.fixture()
+            struct.pack_into('<i', raw, offset, value)
+            with self.subTest(offset=offset), self.assertRaises(ContextError): self.decode(raw)
+        with self.assertRaises(ContextError): self.decode(self.fixture(), owners=[1])
 
 
 class MethodPointerIndicesTests(unittest.TestCase):

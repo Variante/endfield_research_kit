@@ -281,6 +281,11 @@ Current durable boundaries:
   Matching MethodSpecs join bounded method/invoker index triples and pointer
   slots; the no-adjustor sentinel reuses the ordinary method pointer. Other
   adjustors need an independently bounded table and remain unsupported here.
+  Keep RGCTX range-relative slots distinct from module entry indices. The adapter
+  class-token range connects its selected slot to a reciprocal second type
+  parameter (VAR), not an unrelated concrete type. The class initializer's
+  conditional path converts 16-byte definitions to eight-byte runtime slots
+  using the class generic context; static definitions are not observed slots.
   Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
   runtime allocation extent or select the returned formatter. Provider fallback
   includes a lazy callback path whose population remains a separate evidence gap.

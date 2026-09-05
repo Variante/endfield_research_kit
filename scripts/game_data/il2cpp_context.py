@@ -153,6 +153,17 @@ def select_rgctx_range(raw: bytes, entry_count: int, token: int, *, source: str,
 def method_parameter_owner(metadata: bytes, index: int, method_containers: list[int],
                            *, source: str) -> dict:
     """Validate both directions of an MVAR owner join under the gated metadata ABI."""
+    return _parameter_owner(metadata, index, method_containers, 'method', source=source)
+
+
+def type_parameter_owner(metadata: bytes, index: int, type_containers: list[int],
+                         *, source: str) -> dict:
+    """Validate both directions of a VAR owner join; names do not determine ordinal."""
+    return _parameter_owner(metadata, index, type_containers, 'type', source=source)
+
+
+def _parameter_owner(metadata: bytes, index: int, owner_containers: list[int],
+                     owner_kind: str, *, source: str) -> dict:
     def section(slot):
         header = 8 + slot * 8
         if header + 8 > len(metadata):
@@ -174,19 +185,43 @@ def method_parameter_owner(metadata: bytes, index: int, method_containers: list[
     if not 0 <= owner < container_count:
         raise ContextError(source, parameter_offset, 'bounded container index', owner)
     container_offset = container_base + owner * 16
-    method, argc, is_method, start = struct.unpack_from('<iiii', metadata, container_offset)
-    if (is_method != 1 or argc < 0 or start < 0 or start + argc > parameter_count
+    owner_index, argc, is_method, start = struct.unpack_from('<iiii', metadata, container_offset)
+    if (is_method != int(owner_kind == 'method') or argc < 0 or start < 0 or start + argc > parameter_count
             or not start <= index < start + argc or ordinal != index - start):
-        raise ContextError(source, container_offset, 'method container with reciprocal parameter range and ordinal',
-                           (method, argc, is_method, start, index, ordinal))
-    if not 0 <= method < len(method_containers) or method_containers[method] != owner:
-        raise ContextError(source, container_offset, 'reciprocal method/container identity', (method, owner))
+        raise ContextError(source, container_offset, f'{owner_kind} container with reciprocal parameter range and ordinal',
+                           (owner_index, argc, is_method, start, index, ordinal))
+    if not 0 <= owner_index < len(owner_containers) or owner_containers[owner_index] != owner:
+        raise ContextError(source, container_offset, f'reciprocal {owner_kind}/container identity', (owner_index, owner))
     return {'parameterIndex': index, 'parameterOffset': parameter_offset,
             'parameterRawHex': metadata[parameter_offset:parameter_offset+16].hex().upper(),
             'containerIndex': owner, 'containerOffset': container_offset,
             'containerRawHex': metadata[container_offset:container_offset+16].hex().upper(),
-            'methodIndex': method, 'ordinal': ordinal,
+            f'{owner_kind}Index': owner_index, 'ordinal': ordinal,
             'boundary': 'Exact reciprocal identity only; constraints and names remain uninterpreted.'}
+
+
+def rgctx_range_entries(raw: bytes, start: int, count: int, *, source: str, offset: int = 0) -> list[dict]:
+    """Exact 16-byte definitions, retaining module indices versus relative slots.
+
+    Payload pointers are not dereferenced and unknown kinds/padding are retained.
+    This does not equate a static definition with its runtime eight-byte slot.
+    """
+    total = len(raw) // 16
+    if type(offset) is not int or not 0 <= offset < 1 << 64 or len(raw) > (1 << 64)-offset:
+        raise ContextError(source, 0, 'bounded RGCTX definition address range', (offset, len(raw)))
+    if len(raw) % 16 or total > 1_000_000:
+        raise ContextError(source, offset, 'bounded exact 16-byte RGCTX definitions', len(raw))
+    if type(start) is not int or type(count) is not int or not 0 <= start <= total or not 0 <= count <= total-start:
+        raise ContextError(source, offset, f'entry range within [0,{total})', (start, count))
+    result = []
+    for relative in range(count):
+        index = start + relative
+        entry = raw[index*16:(index+1)*16]
+        result.append({'relativeIndex': relative, 'moduleEntryIndex': index,
+                       'entryVa': offset+index*16, 'kindRaw': struct.unpack_from('<I',entry)[0],
+                       'opaquePaddingHex':entry[4:8].hex().upper(),
+                       'dataPointerVa':struct.unpack_from('<Q',entry,8)[0], 'rawHex':entry.hex().upper()})
+    return result
 
 
 def type_image_owners(metadata: bytes, type_count: int, *, source: str) -> list[int]:

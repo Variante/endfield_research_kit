@@ -19,12 +19,17 @@ from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
 from scripts.game_data.il2cpp_context import method_pointer_indices
+from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
 
 ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0xB010, 0xB995, '10231D49EEBCEAD16CF4142DF20F38407783C9D3DA55196125D305F23785D238'),
+    (0x10000, 0x10019, 'AB93A915D9FB7495ADE419CB253425EEF1EED86E69495C824F19B157AD12C7F1'),
+    (0xF4E0, 0xFF04, '0A71E5B9F7995F00CAF05B63F8FC5D3081CCD7614346A27057A329171072D89E'),
+    (0x2DA8DA0, 0x2DA9898, 'C8A0697BE4093DAAA327F0D8202C33F900B6FB3857C270DFD6AD5F0E5386FFAF'),
     (0x2CC6B0, 0x2CC78C, '24344F6D00D7721765E78CF8141E2D1645B867A92FCBC657A54A7447C58303EC'),
     (0x2CC840, 0x2CC87C, '5E938881C79B911A1B1ACFE6BC3C4D3ABCC63D2552F05F0033FC67D0D49BEEF9'),
     (0x438F0, 0x43943, '33FF46D3B9C40354CAA46CC41E0F5174C2A87AAF69638F4A90B0E858F2DD56B1'),
@@ -132,12 +137,24 @@ def audit():
     modules = match_image_modules([md.string(item.name_index) for item in md.images],
                                   module_rows, source=str(gate.gameassembly))
     image_rows = []
+    module_rgctx_bytes = {}
+    rgctx_inventory = []
     for item in md.images:
         name = md.string(item.name_index)
         if name not in modules:
             raise ContextError(str(gate.metadata), item.index, 'matching CodeGenModule name', name)
         image_rows.append({'imageIndex': item.index, 'name': name, 'typeStart': item.type_start,
                            'typeCount': item.type_count, 'moduleVa': modules[name]})
+        entry_count=pe.u32_at_va(modules[name]+0x50)
+        entry_base=pe.u64_at_va(modules[name]+0x58)
+        require(entry_count<=1_000_000,True,gate.gameassembly,modules[name]+0x50)
+        entry_bytes=pe.bytes_at_va(entry_base,entry_count*16) if entry_count else b''
+        decoded_entries=rgctx_range_entries(entry_bytes,0,entry_count,source=str(gate.gameassembly),offset=entry_base)
+        require(len(decoded_entries),entry_count,gate.gameassembly,entry_base)
+        module_rgctx_bytes[name]=(entry_base,entry_bytes)
+        rgctx_inventory.append({'imageIndex':item.index,'name':name,'entryBaseVa':entry_base,
+                                'success':entry_count,'failed':0,'unsupported':0,
+                                'sha256':hashlib.sha256(entry_bytes).hexdigest().upper()})
     registration = mapper.find_metadata_registration(pe, candidates[0])
     require(registration, 0x18A88E860, gate.gameassembly)
     for begin, end, expected in CONSUMER_WINDOWS:
@@ -250,6 +267,32 @@ def audit():
     adapter_inst = table.resolve_pointer(adapter['classInstantiationPointerVa'])
     require(adapter_inst.index,38555,gate.gameassembly)
     require(len(adapter_inst.arguments),2,gate.gameassembly)
+    adapter_module=modules['MemoryPack.Beyond.dll']
+    require(image_owners[13633],1,gate.metadata)
+    require(md.types[13633].token,0x0200000B,gate.metadata)
+    require(pe.u32_at_va(adapter_module+0x40),5,gate.gameassembly,adapter_module+0x40)
+    adapter_ranges=pe.u64_at_va(adapter_module+0x48)
+    adapter_entry_base,adapter_entry_bytes=module_rgctx_bytes['MemoryPack.Beyond.dll']
+    adapter_start,adapter_count=select_rgctx_range(pe.bytes_at_va(adapter_ranges,5*12),len(adapter_entry_bytes)//16,
+                                                   md.types[13633].token,source=str(gate.gameassembly),offset=adapter_ranges)
+    require((adapter_start,adapter_count),(4,13),gate.gameassembly,adapter_ranges)
+    adapter_entries=rgctx_range_entries(adapter_entry_bytes,adapter_start,adapter_count,
+                                        source=str(gate.gameassembly),offset=adapter_entry_base)
+    type_slot=adapter_entries[10]
+    require(pe.bytes_at_va(pe.image_base+0x2DA8E66,15),bytes.fromhex('488B4320488B98C0000000488B5B50'),
+            gate.gameassembly,0x2DA8E66)
+    require(type_slot['kindRaw'],1,gate.gameassembly,type_slot['entryVa'])
+    slot_type_index=pe.u32_at_va(type_slot['dataPointerVa'])
+    require(slot_type_index,10486,gate.gameassembly,type_slot['dataPointerVa'])
+    require(slot_type_index<reg['typesCount'],True,gate.gameassembly,type_slot['dataPointerVa'])
+    slot_type_pointer=pe.u64_at_va(int(reg['types'],16)+slot_type_index*8)
+    slot_type_raw=pe.bytes_at_va(slot_type_pointer,16)
+    require(slot_type_raw[10],0x13,gate.gameassembly,slot_type_pointer+10)
+    slot_owner=type_parameter_owner(md.buf,struct.unpack_from('<Q',slot_type_raw)[0],
+                                    [t.generic_container_index for t in md.types],source=str(gate.metadata))
+    require((slot_owner['typeIndex'],slot_owner['ordinal']),(13633,1),gate.metadata,slot_owner['containerOffset'])
+    require(pe.u32_at_va(pe.image_base+0x9850+(0x13-0x0F)*4),0x9669,gate.gameassembly,0x9850)
+    slot_argument=adapter_inst.arguments[slot_owner['ordinal']]
     require([a.raw_type_record_hex for a in adapter_inst.arguments],
             ['B02D0000000000000000120000000000','2D360000000000000000120000000000'],gate.gameassembly)
     require(md.type_full_name(md.types[13869]),'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack',gate.metadata)
@@ -359,6 +402,18 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'rgctxDefinitionSweep': {'images':rgctx_inventory,
+                                  'summary':{'success':sum(x['success'] for x in rgctx_inventory),'failed':0,'unsupported':0},
+                                  'boundary':'Exact referenced 16-byte definitions for every matched module; numeric kinds, padding and payload pointers are preserved, not resolved runtime slots or a partition of the PE.'},
+        'selectedAdapterClassSlot': {'typeDefinition':13633,'token':md.types[13633].token,
+                                     'rangeStart':adapter_start,'rangeCount':adapter_count,'entries':adapter_entries,
+                                     'selectedRelativeIndex':10,'selectedModuleEntryIndex':type_slot['moduleEntryIndex'],
+                                     'consumerRva':0x2DA8E66,'runtimeSlotByteOffset':0x50,
+                                     'typeIndex':slot_type_index,'typePointerVa':slot_type_pointer,
+                                     'typeRawHex':slot_type_raw.hex().upper(),'parameterOwner':slot_owner,
+                                     'conditionalContextArgument':{'pointerVa':slot_argument.type_pointer_va,'rawHex':slot_argument.raw_type_record_hex},
+                                     'level':'exact static slot/VAR identity; direct conditional class-context connection',
+                                     'boundary':'The class initializer reads class+0x118 token and image+0x38 module, uses 12-byte token ranges and 16-byte definitions, emits eight-byte slots at class+0xC0, and supplies generic-carrier+8 context to substitution. Relative slot 10 is module entry 14, kind 1, a reciprocal ordinal-1 VAR of the adapter type. The VAR branch uses the class instantiation, whose second argument at the immediate registration is the wrapper type. This does not certify initialized class contents, actual method companion, formatter cache selection, source length or EOF.'},
         'selectedSharedMethodCandidates': {'definition':102199,'methodSpecIndices':shared_specs,
                                            'rows':shared_rows,'level':'exact static table relation; conditional index consumer',
                                            'boundary':'All matching MethodSpecs and generic-method table rows are preserved. The separately pinned index reader checks method/invoker indices, loads their pointer slots, and with adjustor -1 reuses the method pointer. Non-sentinel adjustors remain unsupported by this bounded decoder. This does not certify the runtime triple-map population, query success, target invocation, actual reader ABI, source length or final cursor.'},
