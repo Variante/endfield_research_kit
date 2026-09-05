@@ -332,6 +332,15 @@ Failed or partially collected retail sessions remain under scratch as
 diagnostics. Their observations may justify a tool fix, but never become parity
 evidence retroactively.
 
+When several visual gaps need retail observation, prefer the explicit combined
+Endminf workflow in the observer README: one attachment, two authenticated UI
+entries, early palettes and native timeline, a separately published ContactShadow
+transaction, then exact M27 and joined Default resources. Descriptor discovery
+must allocate no GPU staging, and later-entry readiness requires writer
+acknowledgments plus a completed Animator sequence. Keep GPU and retained CPU
+limits distinct, record arming delays, and never join resource contents across
+entries as one frame. This does not replace fresh-process cloth lifecycle proof.
+
 ## Reference and comparison policy
 
 - Keep one named clean retail sequence as the primary visual reference and
