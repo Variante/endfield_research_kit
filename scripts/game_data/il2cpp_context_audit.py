@@ -333,6 +333,44 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,*,source):
+    """Selected code-context candidate; never overwrite a live companion context."""
+    inst=table.resolve(5059)
+    require([a.raw_type_record_hex for a in inst.arguments],
+            ['A22D0000000000000000118000000000','068E00000000000000001C0000000000'],source,inst.record_va)
+    require(len(spec_records),reg['methodSpecsCount'],source)
+    selected={i for i,row in enumerate(spec_records) if row==(102199,5059,-1)}
+    require(sorted(selected),[165248],source)
+    rows=generic_method_candidates(methods_raw,reg['genericMethodTableCount'],len(spec_records),selected,
+        code['genericMethodPointersCount'],code['invokerPointersCount'],source=source,
+        offset=int(reg['genericMethodTable'],16))
+    for row in rows:
+        slot=int(code['genericMethodPointers'],16)+row['indices'][0]*8
+        row['methodPointerSlotVa']=slot;row['methodPointerVa']=pe.u64_at_va(slot)
+    require([(r['methodSpecIndex'],r['methodPointerVa']) for r in rows],[(165248,pe.image_base+0x40BB390)],source)
+    return {'classInstantiation':inst.as_dict(),'methodDefinition':102199,'methodSpecIndices':sorted(selected),
+            'codeCandidates':rows,'level':'exact selected static MethodSpec/code-context relation',
+            'boundary':'The selected MethodSpec of the previously module/token-joined GenericMemoryPackFormatter Deserialize definition has ordered GameplayTag-record and Object-record arguments and no method instantiation. Its bounded generic-method table entry joins the dispatcher comparison target. This is a shared-code candidate context, not the actual object class or loaded companion context. The companion class supplies the specialized branch RGCTX slots independently; substituting the shared Object argument into that context is invalid without separate evidence. Actual provider selection, companion inflation, element payload and EOF remain unresolved.'}
+
+
+def list_element_null_probe(pe,*,source):
+    """Conditional FF peek and one-byte consumption, not a terminal grammar."""
+    windows=[]
+    for at,rawhex in (
+        (0x3EDF9A0,'40534883EC20488BD9C644243000E87D8EDCFE84C00F8537F8CC004883C4205BC3'),
+        (0x4BAF1F2,'488D542430488BCBE861960FFEB001E9B50733FF'),
+        (0x2CA8830,'40534883EC2083793001488BD90F8CBD8BE301488B43508038FF0F94C04883C4205BC3'),
+        (0x2CA8860,'48895C24084889742410574883EC2083793001488BF2488BD90F8C958BE301488B43500FB608880E8B7B3083EF010F88938BE30148FF4350FF4340FF4344897B30803EFF488B5C2430488B7424380F95C04883C4205FC3'),
+        (0x4AE1400,'4533C0BA01000000E84F7DC20490E930741CFE'),
+        (0x4AE1414,'4533C0BA01000000E83B7DC20490E958741CFEBA01000000488BCBE80C0DFF0084C00F8565741CFEE953741CFE')):
+        raw=bytes.fromhex(rawhex)
+        require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'byteLength':len(raw),'rawHex':rawhex,'sha256':hashlib.sha256(raw).hexdigest().upper()})
+    return {'windows':windows,'markerByte':255,'fastConsumedBytesOnMatch':1,
+            'level':'direct conditional marker-peek and consumed-counter flow',
+            'boundary':'The selected helper calls a peek routine that ensures one readable byte if needed, compares cursor[0] with 0xFF and returns the comparison without directly advancing cursor or counters. A false result returns immediately. A true result calls a byte consumer with the same reader and a local byte output, then returns true regardless of that consumer AL result. The consumer copies one byte out; its fast path advances cursor, local and consumed counters by one and decrements remaining by one. It returns byte!=0xFF, so the wrapper does not simply forward that boolean. Cold paths use the already reviewed ensure/advance routines; ensure may replace the segment, so absence of fast pointer increment does not imply unchanged allocation. The dispatcher true branch clears its DWORD output. This conditional FF handling does not identify a serialized union, prove the non-FF element width, guarantee source validity, or establish source/terminal/EOF consumption. The shared target identity does not prove this branch executes.'}
+
+
 def list_element_dispatch(pe,*,source):
     """Object-selected target/companion ABI, not a selected element reader."""
     bodies=[]
@@ -1913,6 +1951,8 @@ def audit():
     list_candidate=list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,
                                             source=str(gate.gameassembly))
     list_dispatch=list_element_dispatch(pe,source=str(gate.gameassembly))
+    list_shared=list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
+    list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2014,6 +2054,8 @@ def audit():
         'selectedNestedReaderContext':nested_context,
         'selectedListFormatterCandidate':list_candidate,
         'selectedListElementDispatch':list_dispatch,
+        'selectedListElementSharedContext':list_shared,
+        'selectedListElementNullProbe':list_null_probe,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

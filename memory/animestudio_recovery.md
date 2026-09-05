@@ -315,6 +315,13 @@ Current durable boundaries:
   and the loaded companion; a distinct equal-target path delegates through class
   RGCTX helpers. Incoming RCX is not a caller-selected slot. Neither branch proves
   the live formatter identity or a fixed element byte width.
+  The comparison target separately joins a shared adapter code candidate with
+  GameplayTag/Object arguments; do not replace the loaded companion's context
+  with that candidate's Object argument. Its selected helper peeks for `FF` and
+  only on a match consumes one byte before returning true and clearing the output.
+  The byte consumer's own boolean is different and is not forwarded. A nonmatch
+  does not directly advance this helper's cursor; ensure may still replace its
+  segment. Non-FF element consumption and the actual branch remain unresolved.
   Cold advance normally returns true, resets
   the segment counter and accumulates the request; ensure can replace the cursor
   with an existing or copied segment. Pointer deltas cannot certify source offsets.

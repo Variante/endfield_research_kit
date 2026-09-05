@@ -41,7 +41,61 @@ from scripts.game_data.il2cpp_context_audit import unity_loader_conversion
 from scripts.game_data.il2cpp_context_audit import nested_reader_context
 from scripts.game_data.il2cpp_context_audit import list_formatter_candidate
 from scripts.game_data.il2cpp_context_audit import list_element_dispatch
+from scripts.game_data.il2cpp_context_audit import list_element_shared_context, list_element_null_probe
 from unittest.mock import patch
+
+
+class ListElementSharedContextTests(unittest.TestCase):
+    def setUp(self):
+        self.args=['A22D0000000000000000118000000000','068E00000000000000001C0000000000']
+        self.specs=[(0,-1,-1)]*165249;self.specs[165248]=(102199,5059,-1)
+        self.raw=struct.pack('<iiii',165248,0,0,-1)
+        self.reg={'methodSpecsCount':len(self.specs),'genericMethodTableCount':1,'genericMethodTable':'0x1000'}
+        self.code={'genericMethodPointersCount':1,'invokerPointersCount':1,'genericMethodPointers':'0x2000'}
+        self.pe=SimpleNamespace(image_base=0x180000000,u64_at_va=lambda va:0x1840BB390)
+
+    def decode(self):
+        table=SimpleNamespace(resolve=lambda index:SimpleNamespace(record_va=0x3000,
+            arguments=[SimpleNamespace(raw_type_record_hex=a) for a in self.args],as_dict=lambda:{'index':5059}))
+        return list_element_shared_context(self.pe,table,self.reg,self.code,self.specs,self.raw,source='fixture.dll')
+
+    def test_selected_shared_candidate_not_companion(self):
+        row=self.decode()
+        self.assertEqual(row['methodSpecIndices'],[165248])
+        self.assertIn('shared-code candidate context',row['boundary'])
+
+    def test_wrong_order_context_truncated_trailing_and_ambiguous(self):
+        self.args.reverse()
+        with self.assertRaises(ContextError):self.decode()
+        self.args.reverse();good=self.raw
+        for bad in (good[:-1],good+b'!',struct.pack('<iiii',165248,1,0,-1)):
+            self.raw=bad
+            with self.assertRaises(ContextError):self.decode()
+        self.raw=good;self.specs[0]=self.specs[165248]
+        with self.assertRaises(ContextError):self.decode()
+
+
+class ListElementNullProbeTests(unittest.TestCase):
+    def setUp(self):
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x3EDF9A0,'40534883EC20488BD9C644243000E87D8EDCFE84C00F8537F8CC004883C4205BC3'),
+            (0x4BAF1F2,'488D542430488BCBE861960FFEB001E9B50733FF'),
+            (0x2CA8830,'40534883EC2083793001488BD90F8CBD8BE301488B43508038FF0F94C04883C4205BC3'),
+            (0x2CA8860,'48895C24084889742410574883EC2083793001488BF2488BD90F8C958BE301488B43500FB608880E8B7B3083EF010F88938BE30148FF4350FF4340FF4344897B30803EFF488B5C2430488B7424380F95C04883C4205FC3'),
+            (0x4AE1400,'4533C0BA01000000E84F7DC20490E930741CFE'),
+            (0x4AE1414,'4533C0BA01000000E83B7DC20490E958741CFEBA01000000488BCBE80C0DFF0084C00F8565741CFEE953741CFE'))}
+        self.pe=SimpleNamespace(image_base=0x180000000,bytes_at_va=lambda va,size:self.parts[va-0x180000000])
+
+    def test_peek_marker_and_conditional_consumption(self):
+        row=list_element_null_probe(self.pe,source='fixture.dll')
+        self.assertEqual((row['markerByte'],row['fastConsumedBytesOnMatch']),(255,1))
+
+    def test_truncated_trailing_corrupt_peek_branch_advance_or_boolean(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at),self.assertRaises(ContextError):list_element_null_probe(self.pe,source='fixture.dll')
+            self.parts[at]=good
 
 
 class ListElementDispatchTests(unittest.TestCase):
