@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,13 @@ GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 CORPUS_SHA = '3B2B96545D1A17FFA4F7770B2BA7AF6045E4BDE701465AD42E2AFB0FA6D05943'
 CONSUMER_WINDOWS = (
+    (0x37DE060, 0x37DE0BB, '0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB'),
+    (0x37DE9C5, 0x37DEB23, 'C6A761532672A5700D9FEEB980F66BAF88B6F1F2CEAC48688680CF4158C1F285'),
+    (0x37DE884, 0x37DE9C5, '853722D03CBFE915CFB92DD372A7C85BE072576C8FEB4CB35912E766BBDE9BCA'),
+    (0x41260, 0x4127B, 'DD4C21E4DCAA9ED293D62B4817726DDA64F2BCAFA8C2AFEFFF299EC039CE3F0B'),
+    (0x4127B, 0x412D2, 'EC737048F208A7BF568C342D1630E506203A591F88E5497D2D93A9DD31B04D06'),
+    (0x412D2, 0x412E0, '65F69D9450DCBB01DF08A592D62CFD560557C9B84E8662F49E421AEC07C15E91'),
+    (0x2D8D10, 0x2D8D6A, '1D69558B9C9CBC2E7868E2A5895269966FB40E86B3E36B7B020BCC5C948ED5AC'),
     (0x2D8BF0, 0x2D8C12, '58AEECD1D6787DA519A37F3857FB40F3950BED75D3A9A0A6AEC81DEE32569AA4'),
     (0x2D8C12, 0x2D8C79, 'F1D27E8325CBBCF568E89D23C9280969ADAB6DEE2CEDE13E0FD1F1CBCB762470'),
     (0x2D8C79, 0x2D8C83, '087CD1A1ECF2C15B53BC8CA47F008DFACD7DB6E1579D1AD1C3A77D500224D68C'),
@@ -110,6 +117,8 @@ def audit():
         (0x15E4C, '488D0D', candidates[0]),
         (0x15E68, '48890D', pe.image_base+0xDEB09B8),
         (0x12F74, '4C8B15', pe.image_base+0xDEB09B8),
+        (0x37DEADB, '488D0D', pe.image_base+0xCFF4E48),
+        (0x37DE8E9, '488B15', pe.image_base+0xCFF4E48),
     ):
         instruction = pe.bytes_at_va(pe.image_base+rva, 7)
         require(instruction[:3].hex().upper(), prefix, gate.gameassembly, rva)
@@ -134,7 +143,15 @@ def audit():
     owner = method_parameter_owner(md.buf, struct.unpack_from('<Q', type_raw)[0],
                                    [m.generic_container_index for m in md.methods], source=str(gate.metadata))
     require(owner['methodIndex'], 428464, gate.metadata, owner['containerOffset'])
-    call_index = 619889
+    usage_va = pe.image_base+0xCFF4E48
+    usage_raw = pe.bytes_at_va(usage_va, 8)
+    call_index = method_spec_usage_index(usage_raw, reg['methodSpecsCount'],
+                                         source=str(gate.gameassembly), offset=usage_va)
+    require(call_index, 619889, gate.gameassembly, usage_va)
+    # Tag 6 selects table index 5. The pinned branch forwards the original
+    # encoding to 2D8D10, whose tag-6 path uses MethodSpec -> triple -> 8D20.
+    require(pe.u32_at_va(pe.image_base+0x4138C+5*4), 0x412AC,
+            gate.gameassembly, 0x4138C+5*4)
     if not 0 <= call_index < reg['methodSpecsCount']:
         raise ContextError(str(gate.gameassembly), registration, 'bounded call MethodSpec index', call_index)
     call_va = int(reg['methodSpecs'], 16) + call_index * 12
@@ -163,6 +180,9 @@ def audit():
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA},
         'sourceHashes': source_hashes, 'registration': reg,
+        'selectedUsageCell': {'va': usage_va, 'rawHex': usage_raw.hex().upper(),
+                              'methodSpecIndex': call_index, 'resolverSwitchEntryRva': 0x4138C+5*4,
+                              'boundary': 'Direct static initialization mechanism: the guarded wrapper passes this cell address to the lazy resolver; tag 6 routes through MethodSpec/triple lookup and a non-null result is exchanged into the cell. The callsite reads the same cell. Initialization execution, cache history, active formatter and source cursor remain unobserved.'},
         'staticImageOwnership': {'typeCount': len(image_owners), 'images': image_rows,
                                  'selectedReadValueImage': image_owners[md.methods[428464].declaring_type],
                                  'registrationGlobalRva': 0xDEB09B8,

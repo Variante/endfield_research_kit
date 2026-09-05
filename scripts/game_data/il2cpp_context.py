@@ -165,6 +165,25 @@ def type_image_owners(metadata: bytes, type_count: int, *, source: str) -> list[
     return owners
 
 
+def method_spec_usage_index(raw: bytes, count: int, *, source: str, offset: int) -> int:
+    """Decode only an unresolved tag-6 usage cell under the authenticated ABI.
+
+    An aligned live pointer, another tag, or extra bytes are not alternative
+    layouts. This does not assert that runtime initialization has executed.
+    """
+    if len(raw) != 8:
+        raise ContextError(source, offset, 'exact eight-byte usage cell', len(raw))
+    if type(count) is not int or not 0 <= count <= 1_000_000:
+        raise ContextError(source, offset, 'bounded MethodSpec count', count)
+    word = struct.unpack('<Q', raw)[0]
+    if word > 0xFFFFFFFF or not word & 1 or word >> 29 != 6:
+        raise ContextError(source, offset, 'unresolved 32-bit tag-6 usage encoding', hex(word))
+    index = (word >> 1) & 0x0FFFFFFF
+    if index >= count:
+        raise ContextError(source, offset, f'MethodSpec index in [0,{count})', index)
+    return index
+
+
 def match_image_modules(image_names: list[str], modules: list[tuple[str, int]], *, source: str) -> dict[str, int]:
     """Fail closed on duplicate names; do not reproduce native last-match wins."""
     if len(set(image_names)) != len(image_names):

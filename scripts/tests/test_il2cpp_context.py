@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules
+from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index
 from scripts.game_data.il2cpp_context_audit import main, native_gate, sweep
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 
@@ -158,6 +158,29 @@ class ParameterOwnerTests(unittest.TestCase):
                 with self.assertRaises(ContextError):
                     self.resolve()
                 self.buf[offset:offset+4] = original
+
+
+class UsageCellTests(unittest.TestCase):
+    def decode(self, raw, count=7):
+        return method_spec_usage_index(raw, count, source='fixture', offset=0x20)
+
+    def test_normal(self):
+        self.assertEqual(self.decode(struct.pack('<Q', 0xC000000D)), 6)
+
+    def test_truncated_and_trailing(self):
+        for length in (0, 7, 9):
+            with self.subTest(length=length), self.assertRaises(ContextError):
+                self.decode(bytes(length))
+
+    def test_wrong_tag_live_pointer_and_upper_bits(self):
+        for word in (0x6000000D, 0xC000000C, 0x180000000, 0x1C000000D):
+            with self.subTest(word=word), self.assertRaises(ContextError):
+                self.decode(struct.pack('<Q', word))
+
+    def test_bad_count_and_out_of_range(self):
+        for count in (0, 6, -1, 1_000_001, True):
+            with self.subTest(count=count), self.assertRaises(ContextError):
+                self.decode(struct.pack('<Q', 0xC000000D), count)
 
 
 class ImageOwnerTests(unittest.TestCase):

@@ -251,6 +251,9 @@ Current durable boundaries:
   partition must be complete and unambiguous; module names must be unique since
   the native loop continues after a match. This does not certify initialization
   execution, all cold paths, active formatter selection, or source/cursor/EOF.
+  The selected call's on-disk usage cell also joins through the wrapper's guarded
+  lazy initializer and tag-specific MethodSpec/triple resolver. This establishes
+  the static initialization mechanism, not an observed live cell or cache entry.
   Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk
   fingerprints at both ends; authenticating the report hash alone does not
   establish freshness after a tool rebuild. Reauthenticate affected bytes with
