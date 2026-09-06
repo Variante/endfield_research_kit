@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120316,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FinishOwnerAction_DataForMemoryPack+Beyond_Gameplay_Core_FinishOwnerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65947632
+    ],
+    [
+      120315,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FinishOwnerAction_DataForMemoryPack",
+      "Deserialize",
+      65947728
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65947632,
+      "endRva": 65947725,
+      "sha256": "AD875015EF7630EAC9DD6EE16ACFD92147816125B29F1E2A2F803E63E3242E8F",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 65947728,
+      "endRva": 65948093,
+      "sha256": "DF97796A1EC8C177FEDAB6B1FC7575977E49C08A063092612417B10C25785F0B",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 65948093,
+      "endRva": 65948165,
+      "sha256": "AE4FB64E3805F4DCF94007CAD0430C7C797F85DFCE59FA3CAD86A49A09DE5839",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83097871,
+      "endRva": 83097892,
+      "sha256": "B35CEAE265986FBB129B150229A84B7AF5FE433EBA7C1360957FA94DB57C50DC",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65948006,
+      "instructionHex": "488B159BCD1709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and TargetSettings MethodSpec/type join under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, nonzero-normalized byte, three scalar32 values, one finite target profile, then a final nonzero-normalized byte. TargetSettings uses the separately pinned EC consumer and maintained finite nested extensions. Output setters and lazy wrapper construction do not read source members. Equal member count does not select the distinct target/query member-six layout. Scalar bits and byte values remain anonymous. Managed action names do not establish owner identity, action completion, execution or gameplay effects. Unknown nested profiles, live provider selection, full allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

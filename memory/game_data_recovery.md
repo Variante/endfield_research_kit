@@ -325,6 +325,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   not the member-18 HitBoxFinder ShapeData. Its three vector-context helpers
   each advance twelve raw bytes, separately from variable byte payloads;
   neither similar names nor destination layout selects the shape grammar.
+  The distinct member-six reader in `scripts/game_data/buff_b6_native.json`
+  instead follows the common scalar prefix with a target and one byte. Its
+  output-side construction adds no source member; the managed action name
+  establishes neither an owner relationship nor a runtime completion effect.
   Related member-eight children have a byte payload, counted nested records,
   scalar32 and the same query profile after their common scalar prefix.
   `scripts/game_data/buff_56_native.json` pins the member-one value-type list;

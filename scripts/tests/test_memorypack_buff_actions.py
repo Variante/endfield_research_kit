@@ -222,6 +222,50 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tagb6_target_then_final_byte_and_unknown_boundary(self):
+        child=b'\xb6\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+target()+b'\x80'
+        end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='b6.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=182),row['completedRecords'])
+        self.assertEqual(row['ranges'][-1],dict(start=end-1,end=end,kind='anonymous-nonzero-byte'))
+        self.assertEqual(row['diagnostic'],dict(source='b6.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tagb6_null_extended_truncations_trailing_and_limits(self):
+        for child in (b'\xb6\x06'+bytes(13)+target()+b'\xff',
+                      b'\xfa\xb6\x00\x06'+bytes(13)+b'\xff\xfe',
+                      b'\xb6\xff',b'\xb6\x06'+bytes(13)+b'\xff\x80'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='b6-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='b6-limit',limit=n))
+
+    def test_tagb6_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(b'\xb6\x06'+bytes(13)+target()+b'\x80'))
+        good=event_prefix(raw,source='b6-bounds')
+        self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='b6-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+                self.assertEqual(row['diagnostic']['source'],'b6-bounds')
+        child=b'\xb6\x06'+bytes(13)+target(selector=b'\x03\x11'+bytes(8))+b'\x80'
+        row=event_prefix(prefix(sequence(child)),source='b6-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==182 for r in row['completedRecords']))
+
     def test_tag7c_target_query_and_distinct_collider_ranges(self):
         child=tag7c();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='7c.bin')
