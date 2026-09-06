@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124470,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckPhysicalInflictionType_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckPhysicalInflictionType_DataForMemoryPackFormatter",
+      "Deserialize",
+      70575136
+    ],
+    [
+      124469,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckPhysicalInflictionType_DataForMemoryPack",
+      "Deserialize",
+      70575232
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70575136,
+      "endRva": 70575229,
+      "sha256": "65A31E859045E52EB6B85DFD7196A65AE6DFA844B1D1AA2520C32CE02485571F",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70575232,
+      "endRva": 70575596,
+      "sha256": "4D9EFF747530449FD516CB25C7D1EF41AA7A5287329052258984F0F492EF8860",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 70575596,
+      "endRva": 70575668,
+      "sha256": "11B4A38BA087C3F4495C959B58D9A152F629ECB981948AF1495E4BEAB99735F6",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83567851,
+      "endRva": 83567872,
+      "sha256": "18FC8C3BFE735C9E4F547A11AFF1B82774C5693CF3DB38A538705E94C69BBDE9",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70575404,
+      "instructionHex": "488B15F5B8D308",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70575510,
+      "instructionHex": "488B15BBB3CE08",
+      "cellVa": 6660790616,
+      "usageRawHex": "79E712C000000000",
+      "methodSpecIndex": 619452,
+      "methodSpec": [
+        428448,
+        -1,
+        42454
+      ],
+      "argumentRawHex": "D4340000000000000000118000000000",
+      "typeDefinition": 13524,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType+CheckPhysicalInflictionEnum",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, nonzero-normalized byte, four scalar32 values, and a signed-length byte payload. The final call uses the independently pinned 2CA8700 byte-payload consumer, not a scalar64 helper; null and empty lengths remain distinct and unsupported negative variants fail closed. Both exact MethodSpec contexts are scalar enum helper arguments, not nested records or evidence of gameplay meaning. Output setters and lazy construction add no source members. Field names, byte decoding, live formatter selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

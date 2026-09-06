@@ -382,6 +382,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
   Preserve the raw bits: a mask-like managed name does not prove flag meanings.
+  The separate member-six reader in `scripts/game_data/buff_6d_native.json`
+  ends with a signed-length byte payload after a byte and four scalar32 values.
+  Its final helper consumes variable bytes, not the preceding reader's scalar64;
+  equal member counts and null samples cannot establish a fixed record width.
+  Scalar enum contexts add no nested records, and output setters add no source
+  reads. Keep null and empty payloads distinct and their contents anonymous.
   Another member-ten child reads the common byte/three-scalar prefix, finder,
   scalar32, target, scalar32, byte and scalar payload. Its three static type
   contexts reuse the existing finder/target/scalar readers; equal outer member

@@ -93,6 +93,9 @@ def tag56():
             struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
 
 
+def tag6d(value=b'value',flag=254):
+    return b'\x6d\x06'+bytes([flag])+struct.pack('<IIII',0xffffffff,0x80000000,1,0x7fc00000)+payload(value)
+
 def tag5b(flag=254,bits=0xffffffffffffffff):
     return b'\x5b\x06'+bytes([flag])+struct.pack('<IIIIQ',0xffffffff,0x80000000,1,0x7fc00000,bits)
 
@@ -1167,6 +1170,43 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag6d_variable_payload_and_following_unknown(self):
+        for value in (None,b'',b'x',bytes(range(256))):
+            for flag in (0,1,128,255):
+                child=tag6d(value,flag);end=19+len(child)
+                self.assertEqual(len(child),23+len(value or b''))
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='6d.bin')
+                self.assertEqual(row['diagnostic'],dict(source='6d.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=109),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+                self.assertFalse(any(r['kind']=='anonymous-scalar64' for r in row['ranges']))
+
+    def test_tag6d_all_cuts_limits_null_extended_and_trailing(self):
+        for child in (tag6d(),tag6d(None),tag6d(b''),b'\x6d\xff',b'\xfa\x6d\x00'+tag6d()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='6d-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='6d-limit',limit=n))
+
+    def test_tag6d_bad_header_and_payload_lengths(self):
+        for header in (0,5,7,254):
+            bad=bytearray(tag6d());bad[1]=header
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='6d-header')
+            self.assertEqual(caught.exception.diagnostic,dict(source='6d-header',offset=6,expected=6,actual=header,category='member-count'))
+        for value in (-2147483648,-2,2147483647):
+            bad=bytearray(tag6d());struct.pack_into('<i',bad,19,value)
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='6d-length')
+            d=caught.exception.diagnostic
+            self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('6d-length',24,value,'count-bounds'))
 
     def test_tag5b_exact_scalar64_boundary_and_bits(self):
         for flag in (0,1,128,254,255):
