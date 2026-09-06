@@ -159,6 +159,13 @@ only.
   with nontrivial data. The character helper and actual Unity
   pass have a native-oracle GPU fixture under `tools/character_csm_differential/`
   in the lab; live producer/publication authority remains separate.
+- Both screen-shadow variants modulate the composed scene shadow with the
+  recovered two-scale cloud sample before simulation blending and light
+  strength. CSM distance fade does not remove that cloud contribution. The
+  shared helper and actual Unity passes have original-bytecode GPU oracles;
+  selected environment texture/parameters/time remain an independent live
+  input gate. See lab `tools/cloud_shadow_differential/README.md` and the cloud
+  equation validation report under `reports/assets/character_recovery/`.
 - The shared character PreG surface records source-enabled `DepthOnlyOutline`
   after body prepasses and before scene HGBuffer. Keep it distinct from the
   later ZWrite-off color outline. Material pass flags and shader keywords select
