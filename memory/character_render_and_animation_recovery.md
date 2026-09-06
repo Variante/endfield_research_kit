@@ -360,6 +360,10 @@ only.
   share a backend mapping. The native D3D11 binder's range conversion is now
   recovered, but a causal upload generation must still connect the allocation
   to the draw. See `cpp_shadow_publication_native.json` for the exact contract.
+  The copy routine produces distinct packed-constant and secondary allocations.
+  Its authenticated hot/cold boundary and tested reader keep those identities
+  separate and ignore undefined descriptor padding. Runtime hook integration
+  is pending; see `cpp_packed_copy_reader_validation.json`.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
