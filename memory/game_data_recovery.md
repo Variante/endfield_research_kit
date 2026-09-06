@@ -636,6 +636,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   containing TargetSettings and a required final DWORD. Unknown nested targets
   preserve the unread scalar; a completed target alone does not complete the
   parent. Target ownership and weapon-mask meaning remain unresolved.
+  `scripts/game_data/buff_174_native.json` pins a member-eleven action
+  with three independent BlackboardDouble profiles, a byte payload, DWORD,
+  target and required final byte. Preserve partial-parent boundaries and each
+  null state; entity property meaning and target ownership remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
