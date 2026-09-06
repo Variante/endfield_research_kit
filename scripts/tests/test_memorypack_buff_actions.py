@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tag51(first=b'\xff',second=b'\xff'):
+    return b'\x51\x06\xfe'+b'\xff'*12+first+second
+
+
 def tag03(items=(),scalar=b'\xff',last=255):
     return b'\x03\x09\xfe'+b'\xff'*12+b'\x80'+scalar+b'\xfe'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last])
 
@@ -1582,6 +1586,56 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag51_two_independent_paired_profiles(self):
+        for first in (b'\xff',pair(None,b''),pair(b'first',b'\xff',255)):
+            for second in (b'\xff',pair(b'',None),pair(b'last',b'\x51\x06',128)):
+                child=tag51(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='51.bin')
+                self.assertEqual(row['diagnostic'],dict(source='51.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=81),row['completedRecords'])
+                profiles=[v for v in row['completedRecords'] if v['kind']=='anonymous-paired-payload']
+                self.assertEqual([(v['start'],v['end']) for v in profiles],[(34,34+len(first)),(34+len(first),end)])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag51_every_cut_hard_limits_null_extended_and_trailing(self):
+        base=tag51(pair(None,b'wire'),pair(b'last',None))
+        for child in (base,tag51(),b'\x51\xff',b'\xfa\x51\x00'+base[1:]):
+            r=Reader(child,'51-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'51-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==81 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag51_bad_independent_lengths_headers_and_second_profile(self):
+        first=pair(b'a',b'b');child=tag51(first,pair(b'c',b'd'))
+        r=Reader(child,'51-bounds');r.action(0)
+        counts=[v['start'] for v in r.ranges if v['kind']=='count-i32']
+        headers=[v['start'] for v in r.ranges if v['kind']=='member-header']
+        self.assertEqual(len(counts),4);self.assertEqual(len(headers),3)
+        for at in counts:
+            for value in (-2,0x7fffffff):
+                bad=bytearray(child);struct.pack_into('<i',bad,at,value);r=Reader(bad,'51-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('51-bounds',at,value))
+        for at in headers:
+            bad=bytearray(child);bad[at]=0;r=Reader(bad,'51-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],at)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        r=Reader(child,'51-second',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertIn(dict(start=15,end=15+len(first),kind='anonymous-paired-payload'),r.records)
+        self.assertFalse(any(v.get('tag')==81 for v in r.records))
 
     def test_tag03_independent_list_elements_and_required_byte(self):
         for items in (None,(),(b'\xff',),(b'\x01'+payload(None),b'\x01'+payload(b''),b'\x01'+payload(b'\xff\x03'))):
@@ -3635,9 +3689,9 @@ class BuffActionsTests(unittest.TestCase):
 
     def test_b4_exact_nested_boundaries_and_later_unknown(self):
         child=tag_b4();self.assertEqual(len(child),63)
-        row=event_prefix(prefix(sequence(child,b'\x51')),source='b4.bin')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='b4.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],81)
+        self.assertEqual(row['diagnostic']['actual'],89)
         self.assertEqual(row['consumedEnd'],19+63)
         records=row['completedRecords']
         self.assertIn(dict(start=19,end=82,kind='union',tag=180),records)
@@ -3839,9 +3893,9 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(row['status'],'unsupported')
             self.assertEqual(row['diagnostic']['category'],'nested-profile')
             self.assertFalse(any(r.get('tag')==236 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag_ec(),b'\x51')),source='ec-next.bin')
+        row=event_prefix(prefix(sequence(tag_ec(),b'\x59')),source='ec-next.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],81)
+        self.assertEqual(row['diagnostic']['actual'],89)
         self.assertTrue(any(r.get('tag')==236 for r in row['completedRecords']))
 
     def test_tag50_ordered_pair_and_completed_record(self):
@@ -3897,9 +3951,9 @@ class BuffActionsTests(unittest.TestCase):
             raw=sequence(child)
             self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
         child=tag50()
-        row=event_prefix(prefix(sequence(child,b'\x51')),source='50-next.bin')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='50-next.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],81)
+        self.assertEqual(row['diagnostic']['actual'],89)
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==80 for r in row['completedRecords']))
 

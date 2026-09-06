@@ -620,6 +620,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   containing BlackboardDouble and a counted GlobalBuffId list followed by
   a required byte. List elements retain their own header and payload bounds;
   value-type identity does not establish raw wire width or buff lifetime.
+  `scripts/game_data/buff_51_native.json` pins a member-six action
+  ending with two independent BlackboardString profiles. Preserve both object
+  null states and each payload length; a failed second profile leaves the parent
+  incomplete. String decoding and comparison behavior remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
