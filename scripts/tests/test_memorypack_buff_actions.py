@@ -56,6 +56,12 @@ def scalar_payload(value=b'value',flag=255,bits=b'\x00\x00\xc0\x7f'):
     return b'\x03'+payload(value)+bytes([flag])+bits
 
 
+def tag7b(t=None,value=None):
+    return (b'\x7b\x07\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (target() if t is None else t)+struct.pack('<I',0x80000001)+
+            (scalar_payload(b'key',128,b'\xff\xff\xff\xff') if value is None else value))
+
+
 def tag_ec(*,nested=None,value=None,key=b'key'):
     return (b'\xec\x0a\xfe'+bytes(16)+(target() if nested is None else nested)+
             b'\x80'+payload(key)+bytes(4)+(scalar_payload() if value is None else value))
@@ -235,6 +241,49 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag7b_target_scalar_and_payload_keep_source_order(self):
+        child=tag7b();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='7b.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=123),row['completedRecords'])
+        target_end=19+15+len(target())
+        self.assertIn(dict(start=19+15,end=target_end,kind='anonymous-target-profile'),row['completedRecords'])
+        self.assertIn(dict(start=target_end,end=target_end+4,kind='anonymous-scalar32'),row['ranges'])
+        self.assertEqual(row['ranges'][-1],dict(start=end-4,end=end,kind='anonymous-scalar32'))
+        self.assertEqual(row['diagnostic'],dict(source='7b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag7b_null_extended_truncations_trailing_and_limits(self):
+        for child in (tag7b(),b'\xfa\x7b\x00'+tag7b()[1:],b'\x7b\xff',
+                      tag7b(b'\xff',b'\xff'),tag7b(value=scalar_payload(None)),tag7b(value=scalar_payload(b''))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='7b-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='7b-limit',limit=n))
+
+    def test_tag7b_bad_headers_lengths_and_nested_gap(self):
+        raw=prefix(sequence(tag7b()));good=event_prefix(raw,source='7b-bounds')
+        self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='7b-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+                self.assertEqual(row['diagnostic']['source'],'7b-bounds')
+        row=event_prefix(prefix(sequence(tag7b(t=target(selector=b'\x03\x06'+bytes(8))))),source='7b-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==123 for r in row['completedRecords']))
+
     def test_tag16e_source_segments_targets_and_zero_member_finder(self):
         child=tag16e();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='16e.bin')
