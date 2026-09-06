@@ -152,8 +152,11 @@ only.
   `reports/assets/character_recovery/shadow_simulation_native_ownership.json`.
 - Screen-shadow scene and character passes require separate CSM algorithms:
   the character pass uses weighted cascade selection and four tent-filtered
-  comparisons, while the scene pass uses Poisson gathers. Sampler names from
-  decompilation do not prove bound state. The character helper and actual Unity
+  comparisons, while the scene pass uses Poisson gathers. Both gathers bind
+  linear/clamp; depth binds point/clamp, while scene contact displacement binds
+  linear/clamp. Sampler names from decompilation do not prove bound state.
+  A 1x1 fallback atlas can hide incorrect addressing, so exercise atlas edges
+  with nontrivial data. The character helper and actual Unity
   pass have a native-oracle GPU fixture under `tools/character_csm_differential/`
   in the lab; live producer/publication authority remains separate.
 - ContactShadow captured-input replay needs repeat controls: original dispatches
