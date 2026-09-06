@@ -46,7 +46,52 @@ from scripts.game_data.il2cpp_context_audit import list_element_value_flow
 from scripts.game_data.il2cpp_context_audit import adapter_conversion_context
 from scripts.game_data.il2cpp_context_audit import element_provider_state_flow
 from scripts.game_data.il2cpp_context_audit import buff_union_routes
+from scripts.game_data.il2cpp_context_audit import buff_ifelse_forwarding
 from unittest.mock import patch
+
+
+class BuffIfElseForwardingTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={self.base+at:bytes.fromhex(raw) for at,raw in (
+            (0x30E2DC,'488B15D530DD0CE908165103'),
+            (0xA1EA7C,'4C8B053D296C0CE974AC7C08'),
+            (0x4E67AA1,'4C8B0518992708488BD3E8CC6FBBFB90E9345FAAFE'),
+            (0x91E96FC,'48895C24084889742410574883EC204983783800498BD8488BFA488BF17508488BCBE86D58E6F64C8B4338488BD7488BCE4D8B00488B5C2430488B7424384883C4205FE93C6812F7'),
+            (0x30FF80,'E90BFFA303'),
+            (0x3D4FE90,'48895C24084889742410574883EC204983783800498BD8488BFA488BF17444488B0D3AF7390983B9E0000000007451488B4338488B08E8954305FF4885C07413B9050000004C8BCF4C8BC6488BD0E81DF42EFC488B5C2430488B7424384883C4205FC3488D0DF6F63909E861132FFC48837B380075A9488BCBE882F02FFCEB9FE8AB632DFCEBA8'))}
+        for at,index,definition in ((0x30E2DC,614208,428462),(0xA1EA7C,618298,428461)):
+            cell=self.base+at+7+struct.unpack_from('<i',self.parts[self.base+at],3)[0]
+            self.parts[cell]=struct.pack('<Q',(6<<29)|(index<<1)|1)
+            self.parts[0x1000+index*12]=struct.pack('<iii',definition,-1,24608)
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,n:self.parts[va][:7] if n==7 else self.parts[va])
+        self.md=SimpleNamespace(methods=[None]*428463)
+        self.reg={'methodSpecs':'0x1000','methodSpecsCount':627868,'genericInstsCount':73902}
+        self.argument=SimpleNamespace(raw_type_record_hex='233F0000000000000000120000000000')
+        self.instance=SimpleNamespace(arguments=[self.argument],as_dict=lambda:{'index':24608})
+        self.table=SimpleNamespace(resolve=lambda index:self.instance if index==24608 else None)
+
+    def decode(self):
+        return buff_ifelse_forwarding(self.pe,self.md,self.reg,self.table,source='fixture.dll')
+
+    def test_distinct_contexts_shared_argument_and_no_eof_claim(self):
+        row=self.decode()
+        self.assertEqual([r['methodDefinition'] for r in row['contexts']],[428462,428461])
+        self.assertIn('remain unresolved',row['boundary'])
+
+    def test_truncated_trailing_and_corrupted_evidence(self):
+        for va,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[va]=bad
+                with self.subTest(va=va,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[va]=good
+
+    def test_bounds_and_wrong_type_argument(self):
+        self.reg['methodSpecsCount']=614208
+        with self.assertRaises(ContextError):self.decode()
+        self.reg['methodSpecsCount']=627868
+        self.argument.raw_type_record_hex='00'*16
+        with self.assertRaises(ContextError):self.decode()
 
 
 class BuffUnionRouteTests(unittest.TestCase):

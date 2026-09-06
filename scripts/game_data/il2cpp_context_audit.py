@@ -339,6 +339,36 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def buff_ifelse_forwarding(pe,md,reg,table,*,source):
+    """Exact thunk contexts and conditional reuse flow, not nested field grammar."""
+    windows=[]
+    for at,expected in (
+        (0x30E2DC,'488B15D530DD0CE908165103'),
+        (0xA1EA7C,'4C8B053D296C0CE974AC7C08'),
+        (0x4E67AA1,'4C8B0518992708488BD3E8CC6FBBFB90E9345FAAFE'),
+        (0x91E96FC,'48895C24084889742410574883EC204983783800498BD8488BFA488BF17508488BCBE86D58E6F64C8B4338488BD7488BCE4D8B00488B5C2430488B7424384883C4205FE93C6812F7'),
+        (0x30FF80,'E90BFFA303'),
+        (0x3D4FE90,'48895C24084889742410574883EC204983783800498BD8488BFA488BF17444488B0D3AF7390983B9E0000000007451488B4338488B08E8954305FF4885C07413B9050000004C8BCF4C8BC6488BD0E81DF42EFC488B5C2430488B7424384883C4205FC3488D0DF6F63909E861132FFC48837B380075A9488BCBE882F02FFCEB9FE8AB632DFCEBA8')):
+        raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    rows=[]
+    for at,index,definition,target in ((0x30E2DC,614208,428462,0x381F8F0),
+                                     (0xA1EA7C,618298,428461,0x91E96FC)):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+at,7),pe.image_base+at,source=source)
+        usage=pe.bytes_at_va(cell,8)
+        require(method_spec_usage_index(usage,reg['methodSpecsCount'],source=source,offset=cell),index,source,cell)
+        va=int(reg['methodSpecs'],16)+index*12;raw=pe.bytes_at_va(va,12)
+        require(method_spec_record(raw,len(md.methods),reg['genericInstsCount'],source=source,offset=va),
+                (definition,-1,24608),source,va)
+        rows.append({'thunkRva':at,'tailTargetRva':target,'usageCellVa':cell,'usageRawHex':usage.hex().upper(),
+                     'methodSpecIndex':index,'methodSpecRawHex':raw.hex().upper(),'methodDefinition':definition})
+    instance=table.resolve(24608)
+    require([a.raw_type_record_hex for a in instance.arguments],['233F0000000000000000120000000000'],source)
+    return {'windows':windows,'contexts':rows,'methodInstantiation':instance.as_dict(),
+        'level':'direct conditional register flow; exact static MethodSpec/type argument identity',
+        'boundary':'Both C9 branch thunks replace the callsite companion before tail transfer. Their different MethodSpecs have the same single IfElse wrapper argument, independently identified in selectedBuffUnionRoutes. Creation preserves RCX reader and replaces RDX; its target body is not promoted here. Reuse preserves RCX reader and RDX output-slot address, replaces R8, ensures companion+0x38 and forwards its first slot through a tail thunk. The next body takes that companion first slot to the separately reviewed provider, then, only for a non-null result, passes selector 5, provider object, unchanged reader and output slot to 0x3F300. These bodies do not directly read serialized fields. Live provider/formatter and concrete nested consumer ABI remain unresolved; no record length, field order, authenticated source cursor or EOF follows.'}
+
+
 def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
     """Selected current tag routes, not a replacement serialization schema."""
     name='Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack+Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPackFormatter'
@@ -2117,6 +2147,7 @@ def audit():
     list_value_flow=list_element_value_flow(pe,source=str(gate.gameassembly))
     element_provider=element_provider_state_flow(pe,source=str(gate.gameassembly))
     buff_routes=buff_union_routes(pe,md,reg,modules,image_owners,source=str(gate.gameassembly))
+    buff_forwarding=buff_ifelse_forwarding(pe,md,reg,table,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2224,6 +2255,7 @@ def audit():
         'selectedAdapterConversionContext':adapter_conversion,
         'selectedElementProviderStateFlow':element_provider,
         'selectedBuffUnionRoutes':buff_routes,
+        'selectedBuffIfElseForwarding':buff_forwarding,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
