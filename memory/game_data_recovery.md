@@ -476,6 +476,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   The paired profile shares a member-three header with the scalar profile but
   reads a second variable payload instead of a four-byte value. Preserve all
   three payload lengths independently; event-name meaning remains unresolved.
+  `scripts/game_data/buff_145_native.json` pins a member-six action ending
+  with scalar payload then paired payload after the common prefix. Their exact
+  type contexts select distinct finite profiles despite equal member-three
+  headers; the first ends in four raw bytes, the second in a variable payload.
+  No source read follows the second profile. Signal meaning remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -25,6 +25,12 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag145(first=None,second=None):
+    return (b'\xfa\x45\x01\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (b'\x03'+payload(b'first')+b'\xff'+bytes.fromhex('FFFFFFFF') if first is None else first)+
+            (pair(b'second',b'last',128) if second is None else second))
+
+
 def tagc4(first=b'first',second=b'second',finder=None,nested=None):
     if finder is None:
         finder=b'\x03'+struct.pack('<i',2)+payload(b'finder')+payload(None)+bytes(4)+b'\x02'+struct.pack('<IiII',0xffffffff,2,1,0xffffffff)
@@ -1357,6 +1363,44 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag145_scalar_then_paired_payload_exact_order(self):
+        for first in (b'\xff',b'\x03'+payload(None)+b'\x00'+bytes(4),b'\x03'+payload(b'key')+b'\xfe'+bytes.fromhex('FFFFFFFF')):
+            for second in (b'\xff',pair(None,None),pair(b'',b''),pair(b'key',bytes(range(256)),255)):
+                child=tag145(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='145.bin')
+                self.assertEqual(row['diagnostic'],dict(source='145.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=325),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag145_null_cuts_limits_and_trailing(self):
+        for child in (tag145(),tag145(b'\xff',b'\xff'),b'\xfa\x45\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='145-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='145-limit',limit=n))
+
+    def test_tag145_bad_headers_counts_and_distinct_outer_tag(self):
+        raw=prefix(sequence(tag145()));good=event_prefix(raw,source='145-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='145-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('145-bounds',at,value))
+        row=event_prefix(prefix(sequence(b'\x45'+tag145()[3:])),source='145-other')
+        self.assertEqual(row['diagnostic'],dict(source='145-other',offset=19,expected='supported current union tag',actual=69,category='union-tag'))
 
     def test_tagc4_two_payloads_separated_by_finder_then_target(self):
         for first in (None,b'',b'first'):
