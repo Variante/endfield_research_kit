@@ -237,6 +237,10 @@ only.
   inputs; v3 cannot establish them from resource identity alone. Initial
   destination/depth dependence remains a separate replay gate. Follow the
   capture README and lab progress log for validation and collection.
+  Original Uber bytecode omits RDEF resource metadata; bound-input requirements
+  come from executable declarations, not a zero reflection resource count.
+  Isolated replay must also prove full target coverage before a cleared target
+  can replace unavailable initial destination contents.
   Native-resolution lab stage captures already show the authored radial echoes
   appearing in final Uber from comparatively clean after-temporal input. Keep
   body-pose/camera alignment separate from the now-authenticated retail consumer
