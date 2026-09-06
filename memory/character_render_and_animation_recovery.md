@@ -232,6 +232,11 @@ only.
   its late pulse. This identifies curve-value phases, not body-pose phases or
   EffectInstance clock ownership. See the generated
   `post_dlaa_uber_producer_review.json` and parameter audit.
+  Exact replay additionally requires the consumer's fresh t0 contents, t1/t2,
+  ranged VS b0 and PS b0/b1, and actual pipeline state. Capture v4 retains those
+  inputs; v3 cannot establish them from resource identity alone. Initial
+  destination/depth dependence remains a separate replay gate. Follow the
+  capture README and lab progress log for validation and collection.
   Native-resolution lab stage captures already show the authored radial echoes
   appearing in final Uber from comparatively clean after-temporal input. Keep
   body-pose/camera alignment separate from the now-authenticated retail consumer
