@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123055,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SimpleCalcBBAction_DataForMemoryPack+Beyond_Gameplay_Core_SimpleCalcBBAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63627264
+    ],
+    [
+      123054,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SimpleCalcBBAction_DataForMemoryPack",
+      "Deserialize",
+      63627360
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63627264,
+      "endRva": 63627357,
+      "sha256": "91D32A01805B0CD79835E8E11812950754FEBDD0CD5F2EA78D79CEB98B610631",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 63627360,
+      "endRva": 63627806,
+      "sha256": "AD5AC724B65D9F7BF9F54BA5FE1EAB79FC0D3E23CF70862AFEC71EDC38A3F959",
+      "boundary": "member8 normal source read order through RET"
+    },
+    {
+      "startRva": 63627806,
+      "endRva": 63627890,
+      "sha256": "60B196EC2991AD2350C4206FD6020A7F1E19534328E8B0D6351E5B0692339FD1",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82772847,
+      "endRva": 82772868,
+      "sha256": "1ABBDB89706C2FC1085F7C3D2140643130DCFE400785FD3E1B1FFEC33CAEC1D6",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63627672,
+      "instructionHex": "488B15E98E3509",
+      "cellVa": 6660583560,
+      "usageRawHex": "A7E812C000000000",
+      "methodSpecIndex": 619603,
+      "methodSpec": [
+        428448,
+        -1,
+        42566
+      ],
+      "argumentRawHex": "6A250000000000000000118000000000",
+      "typeDefinition": 9578,
+      "typeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63627712,
+      "instructionHex": "488B1559643409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63627753,
+      "instructionHex": "488B1530643409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and three MethodSpec-type callsites (one scalar enum context and two identical nested contexts) under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-eight header, nonzero-normalized byte, three scalar32 values, signed-length byte payload, scalar32 and two successive scalar payloads. The nested contexts both join BlackboardDouble and reuse the independently pinned EC member-three byte-payload/byte/four-raw-byte reader. Its managed Double name does not establish an eight-byte wire scalar or numeric meaning. The interposed scalar enum adds no nested member. Output setters and lazy construction add no source members; there is no trailing source byte after the second payload. Null and empty byte spans remain distinct. Field names, byte decoding, operation semantics, live provider selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -109,6 +109,11 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag163(value=b'name',left=None,right=None):
+    return (b'\xfa\x63\x01\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(value)+
+            struct.pack('<I',0x7fc00000)+(scalar_payload(b'left') if left is None else left)+
+            (scalar_payload(b'right-longer') if right is None else right))
+
 def tag136(finder=None,nested=None,value=b'value'):
     if finder is None:
         finder=b'\x03'+struct.pack('<i',2)+payload(b'finder')+payload(None)+bytes(4)+b'\x02'+struct.pack('<IiII',0xffffffff,2,1,0xffffffff)
@@ -1176,6 +1181,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag163_variable_prefix_and_two_distinct_scalar_payloads(self):
+        child=tag163();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='163.bin')
+        self.assertEqual(row['diagnostic'],dict(source='163.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=355),row['completedRecords'])
+        records=[r for r in row['completedRecords'] if r['kind']=='anonymous-scalar-payload']
+        self.assertEqual(len(records),2)
+        self.assertEqual(records[0]['end'],records[1]['start'])
+        self.assertEqual(records[1]['end'],end)
+        self.assertEqual(records[0]['start'],36+len(payload(b'name'))+4)
+        self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag163_null_empty_cuts_limits_and_trailing(self):
+        for child in (tag163(),tag163(None),tag163(b''),tag163(left=b'\xff',right=b'\xff'),
+                      tag163(left=scalar_payload(None),right=scalar_payload(b'')),b'\xfa\x63\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='163-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='163-limit',limit=n))
+
+    def test_tag163_bad_headers_and_lengths(self):
+        raw=prefix(sequence(tag163()));good=event_prefix(raw,source='163-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='163-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('163-bounds',at,value))
 
     def test_tag136_finder_scalar_target_payload_and_final_byte(self):
         child=tag136();end=19+len(child)

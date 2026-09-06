@@ -270,6 +270,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   memory layout must not substitute for consumer order. Its selected native
   contract is `scripts/game_data/buff_50_native.json`; the two identical static
   type arguments do not certify live formatter selection or comparison meaning.
+  `scripts/game_data/buff_163_native.json` pins a member-eight reader that
+  places a byte payload and scalar32 between the common prefix and two scalar
+  payloads. Each nested instance has its own header and variable byte span;
+  the second ends the record without a final byte. The scalar enum context
+  does not establish an operation's meaning or add a nested source member.
   The separate member-seven reader in `scripts/game_data/buff_7b_native.json`
   instead places a target, scalar32 and scalar payload after the common prefix.
   Its interposed scalar remains in source order; the final payload consumes
