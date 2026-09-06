@@ -1113,8 +1113,15 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             mod, reg, rm = decode_modrm(modrm)
             reg_code = reg | (rex_r << 3)
             rm_code = rm | (rex_b << 3)
+            if op2 in (0x10, 0x11, 0x28, 0x29):
+                mandatory = [p for p in prefixes if p in (0x66, 0xF2, 0xF3)]
+                forms = ({None: "movups", 0x66: "movupd", 0xF2: "movsd", 0xF3: "movss"}
+                         if op2 in (0x10, 0x11) else {None: "movaps", 0x66: "movapd"})
+                selected = mandatory[0] if mandatory else None
+                if len(mandatory) > 1 or selected not in forms:
+                    return result(f"db 0x{data[offset]:02x}", None, offset + 1)
+                mnemonic = forms[selected]
             if op2 in (0x10, 0x28):
-                mnemonic = "movsd" if 0xF2 in prefixes else "movaps"
                 dst = xmm_name(reg_code)
                 if mod == 3:
                     src = xmm_name(rm_code)
@@ -1130,7 +1137,6 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                     )
                 return result(f"{mnemonic} {dst}, {src}", (dst, src), pos)
             if op2 in (0x11, 0x29):
-                mnemonic = "movsd" if 0xF2 in prefixes else "movaps"
                 src = xmm_name(reg_code)
                 if mod == 3:
                     dst = xmm_name(rm_code)

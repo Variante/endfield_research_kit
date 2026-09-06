@@ -22,6 +22,32 @@ def load_helper():
 
 
 class Il2CppDecoderTests(unittest.TestCase):
+    def test_sse_move_prefix_and_alignment_forms(self) -> None:
+        helper = load_helper()
+        for prefix, load, store, name in (
+            ("", "10", "11", "movups"), ("66", "10", "11", "movupd"),
+            ("f2", "10", "11", "movsd"), ("f3", "10", "11", "movss"),
+            ("", "28", "29", "movaps"), ("66", "28", "29", "movapd"),
+        ):
+            for opcode, suffix, expected in (
+                (load, "402c", f"{name} xmm0, [rax+0x2c]"),
+                (store, "01", f"{name} [rcx], xmm0"),
+                (load, "c1", f"{name} xmm0, xmm1"),
+            ):
+                with self.subTest(prefix=prefix, opcode=opcode, suffix=suffix):
+                    data = bytes.fromhex(prefix + "0f" + opcode + suffix)
+                    instruction, end = helper.decode_one_x64(data, 0, 0x180000000)
+                    self.assertEqual(instruction['text'], expected)
+                    self.assertEqual(end, len(data))
+
+    def test_unsupported_sse_move_prefix_is_not_a_packed_move(self) -> None:
+        helper = load_helper()
+        for encoded in ('f30f28c1', 'f20f29c1', '66f30f10c1'):
+            with self.subTest(encoded=encoded):
+                instruction, end = helper.decode_one_x64(bytes.fromhex(encoded), 0, 0)
+                self.assertTrue(instruction['text'].startswith('db '))
+                self.assertEqual(end, 1)
+
     def test_truncated_terminal_instruction_is_retained_as_unknown_bytes(self) -> None:
         helper = load_helper()
         # REX.W + MOV r64,r/m64 + ModRM requesting a missing SIB byte.
