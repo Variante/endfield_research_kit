@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'FA23D943446257C644C05B06A70B18A5A83E35451CA14CFC03649920580F14DC'
+CORPUS_SHA = 'D9EF974E13955BD223D058E9A88C444D7D9A6114266F9EB1B365B061B5A7A8DD'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -414,6 +414,60 @@ def buff_tag76_read_order(pe,md,reg,table,modules,image_owners,*,source):
         'boundary':'Tag 76 routes to the current wrapper in selectedBuffUnionRoutes. Its member-five path reads one nonzero-normalized byte and three DWORDs before ReadPackable with List<BlackboardString>. The independently joined element reader takes member three, length-prefixed bytes, one normalized byte, then length-prefixed bytes. The length helper reads a signed DWORD: -1 returns null, zero takes an empty path, and positive length is forwarded unchanged to the byte consumer, which advances source/counters by that length after its decoder call. Payload bytes remain anonymous: encoding/cache contents, complete decoder parity, negative values below -1, live list formatter, concrete source carrier and final cursor/EOF are not proven. The maintained finite list profile is structural-only; neither managed names nor output-slot widths establish serialized order or gameplay meaning.'}
 
 
+def buff_ec_read_order(pe,md,reg,table,modules,image_owners,*,source,contract_path=None):
+    """Selected EC nested profile under audit()'s explicit native hash gate."""
+    path=Path(contract_path) if contract_path is not None else Path(__file__).with_name('buff_ec_native.json')
+    contract=json.loads(path.read_bytes())
+    require(contract['schemaVersion'],1,path)
+    methods=module_methods(pe,md,modules,image_owners,contract['methods'],
+        source=source,expected_image='MemoryPack.Beyond.dll')
+    for row in contract['codeWindows']:
+        start,end=row['startRva'],row['endRva']
+        require(0<=start<end,True,path,start)
+        raw=pe.bytes_at_va(pe.image_base+start,end-start)
+        require(len(raw),end-start,source,start)
+        require(hashlib.sha256(raw).hexdigest().upper(),row['sha256'],source,start)
+    for row in contract['nestedContexts']:
+        at=pe.image_base+row['instructionRva']
+        ins=pe.bytes_at_va(at,7)
+        require(ins,bytes.fromhex(row['instructionHex']),source,at)
+        cell=rip_qword_load_target(ins,at,source=source)
+        require(cell,row['cellVa'],source,at)
+        usage=pe.bytes_at_va(cell,8)
+        require(usage,bytes.fromhex(row['usageRawHex']),source,cell)
+        index=method_spec_usage_index(usage,reg['methodSpecsCount'],source=source,offset=cell)
+        require(index,row['methodSpecIndex'],source,cell)
+        va=int(reg['methodSpecs'],16)+index*12
+        spec=method_spec_record(pe.bytes_at_va(va,12),len(md.methods),reg['genericInstsCount'],source=source,offset=va)
+        require(spec,tuple(row['methodSpec']),source,va)
+        instance=table.resolve(spec[2])
+        require([a.raw_type_record_hex for a in instance.arguments],[row['argumentRawHex']],source,va)
+        argument=bytes.fromhex(row['argumentRawHex'])
+        if row.get('generic') is not None:
+            require(argument[10],0x15,source,va)
+            cp=struct.unpack_from('<Q',argument)[0]
+            cr=pe.bytes_at_va(cp,32)
+            require(cr,bytes.fromhex(row['generic']['carrierRawHex']),source,cp)
+            bp=struct.unpack_from('<Q',cr)[0];br=pe.bytes_at_va(bp,16)
+            require(br,bytes.fromhex(row['generic']['baseRawHex']),source,bp)
+            carrier=generic_type_carrier(argument,cr,br,type_pointer=instance.arguments[0].type_pointer_va,
+                type_count=len(md.types),source=source)
+            require(carrier['baseDefinitionIndex'],row['typeDefinition'],source,bp)
+            nested=table.resolve_pointer(carrier['classInstantiationPointerVa'])
+            require(nested.index,row['generic']['elementInstantiationIndex'],source,cp)
+            require([a.raw_type_record_hex for a in nested.arguments],row['generic']['elementArguments'],source,cp)
+        else:
+            require(argument[10],0x12,source,va)
+            require(struct.unpack_from('<Q',argument)[0],row['typeDefinition'],source,va)
+        require(0<=row['typeDefinition']<len(md.types),True,source,va)
+        require(md.type_full_name(md.types[row['typeDefinition']]),row['typeName'],source,va)
+    return {'contractPath':str(path),'contractSha256':sha(path),'methods':methods,
+        'codeWindows':contract['codeWindows'],'nestedContexts':contract['nestedContexts'],
+        'anonymousReadOrder':contract['anonymousReadOrder'],
+        'level':'direct selected consumer order; exact static nested type joins; structural-only parser profile',
+        'boundary':contract['boundary']}
+
+
 def buff_sequence_read_order(pe,md,modules,image_owners,*,source):
     """Selected member-three sequence: count, indirect elements, two bytes."""
     name='Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack'
@@ -527,7 +581,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390E160,'488B1529B57209488B0BE8B1566FFC488BCF4885C00F852F905501488B1576357D09E8690111FD488903488BD0E950F8FFFF'),
         (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
         (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
-        (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF')):
+        (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'),
+        (0x390DCB0,'488B15B1936F09488B0BE8615B6FFC488BCF4885C00F8595A35501488B15E6307D09E8451011FD488903488BD0E900FDFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
     table_va=pe.image_base+0x3915318;raw=pe.bytes_at_va(table_va,416*4)
@@ -538,7 +593,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
         (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
         (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None),
-        (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None)):
+        (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None),
+        (0xEC,0x390DCB0,106853,16241,'ModifyDynamicBlackboard_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -1967,7 +2023,8 @@ def audit():
     mapper_path = ROOT / 'tools/endfield-il2cpp/map_body_targets_to_gameassembly.py'
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
-               mapper_path, catalog_path, ROOT / 'scripts/common.py']
+               mapper_path, catalog_path, ROOT / 'scripts/common.py',
+               Path(__file__).with_name('buff_ec_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2302,6 +2359,7 @@ def audit():
     buff_order=buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
     buff_tag76=buff_tag76_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
+    buff_ec=buff_ec_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2417,6 +2475,7 @@ def audit():
         'selectedBuffIfElseReadOrder':buff_order,
         'selectedBuffSequenceReadOrder':buff_sequence,
         'selectedBuffTag76ReadOrder':buff_tag76,
+        'selectedBuffEcReadOrder':buff_ec,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

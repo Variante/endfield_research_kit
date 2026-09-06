@@ -65,12 +65,20 @@ class Reader:
     def _action(self,depth):
         tag=self.peek()
         if tag==255:self.take(1,'null-union');return
-        if tag not in (201,118):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(1,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header(8 if tag==201 else 5)
+        self.header({201:8,118:5,236:10}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==236:
+            self.take(4,'anonymous-scalar32')
+            self.target_profile()
+            self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload()
+            self.take(4,'anonymous-scalar32')
+            self.scalar_payload()
+            return
         if tag==118:
             start=self.pos
             # Null element is one byte. Bound count before iterating, even
@@ -99,6 +107,71 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte')
             self.byte_payload()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload'))
+
+    def null_profile(self,kind):
+        actual=self.peek()
+        if actual!=255:
+            raise Unsupported(self.source,self.pos,'null-only '+kind+' profile',actual,'nested-profile')
+        self.take(1,'null-'+kind)
+
+    def scalar_payload(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-scalar-payload')
+        else:
+            self.header(3)
+            self.byte_payload()
+            self.take(1,'anonymous-nonzero-byte')
+            # The selected reader advances four bytes, regardless of the
+            # managed type name. Preserve bits, including non-finite values.
+            self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar-payload'))
+
+    def direction_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-direction-profile')
+        else:
+            self.header(8)
+            self.take(1,'anonymous-nonzero-byte')
+            self.take(1,'anonymous-nonzero-byte')
+            self.take(4,'anonymous-scalar32')
+            self.take(1,'anonymous-nonzero-byte')
+            for _ in range(2):
+                self.null_profile('nested-target')
+                self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-direction-profile'))
+
+    def selector_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-selector-profile')
+        else:
+            self.header(3)
+            self.null_profile('nested-finder')
+            for _ in range(2):
+                at=self.pos
+                n=self.count(1,nullable=True)
+                if n!=0:
+                    raise Unsupported(self.source,at,'empty-only nested collection',n,'nested-profile')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-profile'))
+
+    def target_profile(self):
+        # Selected finite profile. Non-null recursive targets and nonempty
+        # selector collections remain unsupported, never signature-scanned.
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-target-profile')
+        else:
+            self.header(13)
+            self.direction_profile()
+            self.byte_payload()
+            self.take(1,'anonymous-nonzero-byte')
+            self.take(4,'anonymous-scalar32')
+            self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload()
+            self.selector_profile()
+            for _ in range(3):self.take(4,'anonymous-scalar32')
+            self.byte_payload()
+            self.byte_payload()
+            self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-target-profile'))
 
 
 def sequence_frame(data,*,source='<sequence>'):

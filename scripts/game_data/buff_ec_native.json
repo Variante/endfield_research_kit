@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121186,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack",
+      "Deserialize",
+      63628000
+    ],
+    [
+      121187,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack+Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPackFormatter",
+      "Deserialize",
+      63627904
+    ],
+    [
+      107680,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack",
+      "Deserialize",
+      53293360
+    ],
+    [
+      107681,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack+Beyond_Gameplay_Core_TargetSettingsForMemoryPackFormatter",
+      "Deserialize",
+      53287776
+    ],
+    [
+      124921,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack",
+      "Deserialize",
+      53279424
+    ],
+    [
+      124922,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack+Beyond_Gameplay_Core_DirectionSettingsForMemoryPackFormatter",
+      "Deserialize",
+      53279328
+    ],
+    [
+      124934,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack",
+      "Deserialize",
+      58692960
+    ],
+    [
+      124935,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack+Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPackFormatter",
+      "Deserialize",
+      58692048
+    ],
+    [
+      104456,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack",
+      "Deserialize",
+      53289456
+    ],
+    [
+      104457,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack+Beyond_Blackboard_BlackboardDoubleForMemoryPackFormatter",
+      "Deserialize",
+      53288512
+    ],
+    [
+      163271,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
+      "Deserialize",
+      59819504
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63627904,
+      "endRva": 63627997,
+      "sha256": "DBD20529043DA37C0232DE55D24D78C2920CA224C1B427F85DA677B8DD1D9186",
+      "boundary": "formatter forwarding"
+    },
+    {
+      "startRva": 63628000,
+      "endRva": 63628731,
+      "sha256": "F9EB9BCF9634164FCB1DA542A373D00A70D57BD504EE7C2A6C50574B5E6CAB1A",
+      "boundary": "member10 reader"
+    },
+    {
+      "startRva": 53287776,
+      "endRva": 53287869,
+      "sha256": "850549E309D732C154CB0F40C321A5EEEA9F7BA65BD7038827F34F9E48325252",
+      "boundary": "member13 formatter forwarding"
+    },
+    {
+      "startRva": 53293360,
+      "endRva": 53295188,
+      "sha256": "C0AA0DB837E00EB2298D8600ABC3F23904479CE37630CA60A71C4D7EF06AB42B",
+      "boundary": "member13 normal and null paths; includes chained unwind regions"
+    },
+    {
+      "startRva": 53279328,
+      "endRva": 53279421,
+      "sha256": "428C3E1EB17350899D91303A0900DBF02E2359DDFA6D07F572661D884D436492",
+      "boundary": "member8 formatter forwarding"
+    },
+    {
+      "startRva": 53279424,
+      "endRva": 53280676,
+      "sha256": "0029D1B2192C25893775BDF87EE45D19EE147A2442EF38756B62CEEB8394AE7C",
+      "boundary": "member8 normal and null paths; includes chained unwind regions"
+    },
+    {
+      "startRva": 58692048,
+      "endRva": 58692947,
+      "sha256": "82BF1369521E47CE7574A62F696D7D19337C2836187F5EBCE831A6F338F40D6B",
+      "boundary": "member3 formatter with inlined reader"
+    },
+    {
+      "startRva": 58692960,
+      "endRva": 58693823,
+      "sha256": "120CC0DC531C387CD52859001D1129B34A781DC0583F4ACC58CD15470FEC9674",
+      "boundary": "member3 nested reader"
+    },
+    {
+      "startRva": 53288512,
+      "endRva": 53289443,
+      "sha256": "F1954695170F9BB0B3081EC3497193A3953437902DAEE6D8AA640A7241A02152",
+      "boundary": "scalar-payload formatter with inlined reader"
+    },
+    {
+      "startRva": 53289456,
+      "endRva": 53290276,
+      "sha256": "174683D4F43FBC148CF3F8DE22FB03CFC13B98A33880F63B450ACBFB29C5A154",
+      "boundary": "scalar-payload normal and null paths; includes chained unwind regions"
+    },
+    {
+      "startRva": 59819504,
+      "endRva": 59821652,
+      "sha256": "0ACBFF4AEC2A4CEBAAC2927817FF8D07D7196974911186539E5F64DC984C9850",
+      "boundary": "finder union reader code, before its separate switch table"
+    },
+    {
+      "startRva": 82204242,
+      "endRva": 82204254,
+      "sha256": "7612728629BCABB7042655F9B9F594214BE2857AC641FD364B50F1589BC88779",
+      "boundary": "finder high non-FA byte branch clears output; FF is one accepted case"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63628369,
+      "instructionHex": "488B15B0323B09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null
+    },
+    {
+      "instructionRva": 63628541,
+      "instructionHex": "488B151C613409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null
+    },
+    {
+      "instructionRva": 53293628,
+      "instructionHex": "488B35A569DB09",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null
+    },
+    {
+      "instructionRva": 53294393,
+      "instructionHex": "488B159865DC09",
+      "cellVa": 6661184216,
+      "usageRawHex": "07EC12C000000000",
+      "methodSpecIndex": 620035,
+      "methodSpec": [
+        428464,
+        -1,
+        17124
+      ],
+      "argumentRawHex": "00280000000000000000120000000000",
+      "typeDefinition": 10240,
+      "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+      "generic": null
+    },
+    {
+      "instructionRva": 53280084,
+      "instructionHex": "488B35AD19D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null
+    },
+    {
+      "instructionRva": 53280415,
+      "instructionHex": "488B156218D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null
+    },
+    {
+      "instructionRva": 58693212,
+      "instructionHex": "488B350D718409",
+      "cellVa": 6660818800,
+      "usageRawHex": "13EC12C000000000",
+      "methodSpecIndex": 620041,
+      "methodSpec": [
+        428464,
+        -1,
+        17164
+      ],
+      "argumentRawHex": "B1270000000000000000120000000000",
+      "typeDefinition": 10161,
+      "typeName": "Beyond.Gameplay.Core.Selector+Finder+Data",
+      "generic": null
+    },
+    {
+      "instructionRva": 58693449,
+      "instructionHex": "488B1548D68209",
+      "cellVa": 6660713880,
+      "usageRawHex": "D5A412C000000000",
+      "methodSpecIndex": 610922,
+      "methodSpec": [
+        428462,
+        -1,
+        62702
+      ],
+      "argumentRawHex": "5802258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000903CF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17184,
+        "elementArguments": [
+          "F8270000000000000000120000000000"
+        ]
+      }
+    },
+    {
+      "instructionRva": 58693577,
+      "instructionHex": "488B15B8D58209",
+      "cellVa": 6660713864,
+      "usageRawHex": "D7A412C000000000",
+      "methodSpecIndex": 610923,
+      "methodSpec": [
+        428462,
+        -1,
+        62703
+      ],
+      "argumentRawHex": "B802258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000903BF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17200,
+        "elementArguments": [
+          "01280000000000000000120000000000"
+        ]
+      }
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "member13",
+      "byte",
+      "byte-payload",
+      "scalar32",
+      "scalar-payload"
+    ],
+    "member13": [
+      "member8",
+      "byte-payload",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "member3",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload",
+      "scalar32"
+    ],
+    "member8": [
+      "byte",
+      "byte",
+      "scalar32",
+      "byte",
+      "member13",
+      "scalar32",
+      "member13",
+      "scalar32"
+    ],
+    "member3": [
+      "delegated-finder",
+      "delegated-list",
+      "delegated-list"
+    ],
+    "scalar-payload": [
+      "byte-payload",
+      "byte",
+      "scalar32"
+    ]
+  },
+  "boundary": "Selected normal consumer paths and exact static type joins only. Chained unwind regions are retained as reviewed code windows, not independent complete functions. Delegated formatter selection, source carrier/segment replacement, decoder parity, field meaning and runtime EOF are unresolved. Parser admits only a null finder and empty selector collections, and null recursive targets."
+}

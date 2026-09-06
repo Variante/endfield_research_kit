@@ -29,6 +29,25 @@ def tag76(*items):
     return b'\x76\x05'+bytes(13)+struct.pack('<i',len(items))+b''.join(items)
 
 
+def direction():
+    return b'\x08\x01\x00'+bytes(4)+b'\x00\xff'+bytes(4)+b'\xff'+bytes(4)
+
+
+def target(*,selector=b'\x03\xff'+bytes(8),direction_value=None):
+    return (b'\x0d'+(direction() if direction_value is None else direction_value)+
+            payload(b'center')+b'\x80'+bytes(4)+b'\xfe'+payload(None)+selector+
+            bytes(12)+payload(b'\xff\xfe')+payload(b'group')+bytes(4))
+
+
+def scalar_payload(value=b'value',flag=255,bits=b'\x00\x00\xc0\x7f'):
+    return b'\x03'+payload(value)+bytes([flag])+bits
+
+
+def tag_ec(*,nested=None,value=None,key=b'key'):
+    return (b'\xec\x0a\xfe'+bytes(16)+(target() if nested is None else nested)+
+            b'\x80'+payload(key)+bytes(4)+(scalar_payload() if value is None else value))
+
+
 class BuffActionsTests(unittest.TestCase):
     def test_normal_nested_ranges_and_explicit_opaque_tail(self):
         raw=sequence(action(sequence(b'\xff'),sequence(),b'\xff'))
@@ -119,10 +138,78 @@ class BuffActionsTests(unittest.TestCase):
         for child in (b'\x76\xff',tag76(),tag76(b'\xff'),tag76(pair(None,None)),
                       b'\x76\x05'+bytes(13)+struct.pack('<i',-1)):
             self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
-        row=event_prefix(prefix(sequence(tag76(pair()),b'\xec')),source='next.bin')
+        row=event_prefix(prefix(sequence(tag76(pair()),b'\xed')),source='next.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],236)
+        self.assertEqual(row['diagnostic']['actual'],237)
         self.assertTrue(any(r.get('tag')==118 for r in row['completedRecords']))
+
+    def test_ec_nested_ranges_and_opaque_remainder(self):
+        child=tag_ec()
+        raw=prefix(sequence(action(sequence(child),sequence(),b'\xff')))
+        row=event_prefix(raw+b'opaque',source='ec.bin',limit=len(raw))
+        self.assertEqual(row['status'],'supported-prefix')
+        self.assertEqual(row['opaqueRemainderRange'],[len(raw),len(raw)+6])
+        records=row['completedRecords']
+        union=next(r for r in records if r.get('tag')==236)
+        self.assertEqual(union['end']-union['start'],len(child))
+        for kind in ('direction-profile','target-profile','selector-profile','scalar-payload'):
+            record=next(r for r in records if r['kind']=='anonymous-'+kind)
+            self.assertTrue(union['start']<record['start']<record['end']<=union['end'])
+        self.assertFalse(row['wholeSchemaExact'])
+        sequence_frame(sequence(child))  # Includes non-UTF8 bytes and NaN bits.
+
+    def test_ec_every_truncation_trailing_and_hard_limit(self):
+        raw=sequence(tag_ec())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError) as caught:
+                sequence_frame(raw[:n],source='ec-cut.bin')
+            self.assertEqual(caught.exception.diagnostic['source'],'ec-cut.bin')
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x',source='ec-tail.bin')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            bounded=event_prefix(full,source='ec-bound.bin',limit=n)
+            self.assertEqual(bounded['status'],'failed')
+            self.assertLessEqual(bounded['consumedEnd'],n)
+            self.assertEqual(bounded,
+                event_prefix(full[:n]+b'\xff'*(len(full)-n),source='ec-bound.bin',limit=n))
+
+    def test_ec_malformed_lengths_and_member_headers(self):
+        raw=prefix(sequence(tag_ec()))
+        valid=event_prefix(raw,source='ec-bad.bin')
+        lengths=[r['start'] for r in valid['ranges'] if r['kind']=='count-i32']
+        for at in lengths:
+            for n in (-2,2147483647):
+                bad=bytearray(raw);struct.pack_into('<i',bad,at,n)
+                row=event_prefix(bad,source='ec-bad.bin')
+                with self.subTest(at=at,n=n):
+                    self.assertEqual(row['status'],'failed')
+                    self.assertEqual(row['diagnostic']['offset'],at)
+                    self.assertEqual(row['diagnostic']['actual'],n)
+                    self.assertEqual(row['diagnostic']['category'],'count-bounds')
+        for r in valid['ranges']:
+            if r['kind']!='member-header':continue
+            bad=bytearray(raw);bad[r['start']]=42
+            row=event_prefix(bad,source='ec-header.bin')
+            self.assertEqual(row['status'],'failed')
+            self.assertEqual(row['diagnostic']['offset'],r['start'])
+
+    def test_ec_null_variants_and_unproven_profiles(self):
+        for child in (b'\xec\xff',tag_ec(nested=b'\xff',value=b'\xff',key=None),
+                      tag_ec(nested=target(selector=b'\xff',direction_value=b'\xff'))):
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        for nested in (target(selector=b'\x03\x00'+bytes(8)),
+                       target(selector=b'\x03\xff'+struct.pack('<ii',1,0)),
+                       target(selector=b'\x03\xff'+struct.pack('<ii',-1,0)),
+                       target(direction_value=direction().replace(b'\xff',b'\x0d',1))):
+            row=event_prefix(prefix(sequence(tag_ec(nested=nested))),source='ec-unsupported.bin')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==236 for r in row['completedRecords']))
+        row=event_prefix(prefix(sequence(tag_ec(),b'\x50')),source='ec-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],80)
+        self.assertTrue(any(r.get('tag')==236 for r in row['completedRecords']))
 
     def test_suffix_cannot_supply_missing_nested_bytes(self):
         raw=prefix(sequence(action()))

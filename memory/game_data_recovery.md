@@ -242,6 +242,17 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   formatter selection, decoder parity, field names or gameplay conditions.
   Null and empty byte spans remain distinct; negative lengths below -1 fail
   closed, and no standard MemoryPack UTF-16/negative-length variant is guessed.
+  The selected member-ten action now closes forward through anonymous member-13,
+  member-8 and member-3 nested profiles, then a byte, length-prefixed bytes,
+  scalar32 and a member-three scalar payload. Independent native read order
+  supports these boundaries; raw zero DWORDs in the action prefix are not a
+  nested object or collection count. The finite profile admits only null
+  recursive targets, a null finder and empty selector collections; other
+  shapes remain unsupported without scanning for a later marker. The final
+  payload reader consumes four scalar bytes despite its managed Double name.
+  Keep those bits anonymous, including non-finite values. Byte decoding, live
+  provider selection and whole-BuffData EOF remain unresolved; selected native
+  pins and read order are owned by `scripts/game_data/buff_ec_native.json`.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated
