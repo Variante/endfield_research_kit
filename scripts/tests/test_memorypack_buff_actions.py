@@ -39,6 +39,12 @@ def target(*,selector=b'\x03\xff'+bytes(8),direction_value=None):
             bytes(12)+payload(b'\xff\xfe')+payload(b'group')+bytes(4))
 
 
+def tag80(first=None,second=None):
+    return (b'\x80\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (target() if first is None else first)+
+            (target(direction_value=b'\xff') if second is None else second))
+
+
 def scalar_payload(value=b'value',flag=255,bits=b'\x00\x00\xc0\x7f'):
     return b'\x03'+payload(value)+bytes([flag])+bits
 
@@ -222,6 +228,51 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag80_two_independent_target_ranges_and_unknown_boundary(self):
+        child=tag80();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='80.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=128),row['completedRecords'])
+        targets=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
+        first=19+15;second=first+len(target())
+        self.assertEqual([(r['start'],r['end']) for r in targets],[(first,second),(second,end)])
+        self.assertEqual(end-second,len(target(direction_value=b'\xff')))
+        self.assertEqual(row['diagnostic'],dict(source='80.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag80_null_extended_truncations_trailing_and_hard_limits(self):
+        for child in (tag80(),b'\xfa\x80\x00'+tag80()[1:],b'\x80\xff',
+                      tag80(b'\xff',b'\xff'),tag80(first=b'\xff'),tag80(second=b'\xff')):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='80-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='80-limit',limit=n))
+
+    def test_tag80_bad_headers_counts_and_either_nested_gap(self):
+        raw=prefix(sequence(tag80()));good=event_prefix(raw,source='80-bounds')
+        self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='80-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+                self.assertEqual(row['diagnostic']['source'],'80-bounds')
+        gap=target(selector=b'\x03\x11'+bytes(8))
+        for child in (tag80(first=gap),tag80(second=gap)):
+            row=event_prefix(prefix(sequence(child)),source='80-gap')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==128 for r in row['completedRecords']))
+
     def test_tagb6_target_then_final_byte_and_unknown_boundary(self):
         child=b'\xb6\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+target()+b'\x80'
         end=19+len(child)

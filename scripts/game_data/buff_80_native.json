@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124744,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetsEqual_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckTargetsEqual_DataForMemoryPackFormatter",
+      "Deserialize",
+      68135280
+    ],
+    [
+      124743,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetsEqual_DataForMemoryPack",
+      "Deserialize",
+      68135376
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68135280,
+      "endRva": 68135373,
+      "sha256": "297E32136461DEA2F3B56D1917C00C2EAB9F93DEEF63BAE4EF200E59EFD71EC5",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 68135376,
+      "endRva": 68135748,
+      "sha256": "D835FEA1526694FFE224E216CC32EE665243665F8CE9C5F01A5DE4175F4E8AD1",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 68135748,
+      "endRva": 68135820,
+      "sha256": "3F8E3428791A09A61395C7BD4C06FB45C99138818A1E66B40CEAC92B17128DAF",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83346055,
+      "endRva": 83346076,
+      "sha256": "BBF304E593069535590CA9E45F03635E2ACC0347C4D44E104227E183207D3783",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68135548,
+      "instructionHex": "488B15A5F3F808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68135654,
+      "instructionHex": "488B151B6CF608",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68135695,
+      "instructionHex": "488B15F26BF608",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and two separate TargetSettings MethodSpec/type callsite joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, nonzero-normalized byte, three scalar32 values, then two finite target profiles in source order. Each target is a separately bounded serialized instance despite the shared type context. TargetSettings uses the separately pinned EC consumer and maintained finite nested extensions. The final target setter is followed by the epilogue with no additional source byte. Output setters and lazy wrapper construction do not supply source members. The scalar helper type argument does not add a nested member. Equal member count does not select the distinct target/query or target/byte member-six layouts. Scalar bits remain anonymous; the managed comparison name does not prove target equality, runtime result or condition use. Unknown nested profiles, live provider selection, full allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

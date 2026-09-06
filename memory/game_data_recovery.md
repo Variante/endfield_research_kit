@@ -329,6 +329,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   instead follows the common scalar prefix with a target and one byte. Its
   output-side construction adds no source member; the managed action name
   establishes neither an owner relationship nor a runtime completion effect.
+  `scripts/game_data/buff_80_native.json` pins another member-six layout with
+  two successive targets after that prefix and no final byte. Their shared
+  type context does not merge the two serialized instances or prove comparison
+  semantics; each instance retains its own bounded nested grammar.
   Related member-eight children have a byte payload, counted nested records,
   scalar32 and the same query profile after their common scalar prefix.
   `scripts/game_data/buff_56_native.json` pins the member-one value-type list;
