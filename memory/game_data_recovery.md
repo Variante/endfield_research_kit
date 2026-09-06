@@ -246,10 +246,16 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   member-8 and member-3 nested profiles, then a byte, length-prefixed bytes,
   scalar32 and a member-three scalar payload. Independent native read order
   supports these boundaries; raw zero DWORDs in the action prefix are not a
-  nested object or collection count. The finite profile admits only null
-  recursive targets and empty selector collections; the finder admits null
-  or the independently joined zero-member union profile. Other
-  shapes remain unsupported without scanning for a later marker. The final
+  nested object or collection count. The member-eighteen action expands the
+  finite selector profiles through concrete finder, validator and postprocessor
+  readers pinned in `scripts/game_data/buff_b2_native.json`. Counted shape,
+  validator, postprocessor and selection elements retain their own headers.
+  A vector contains three variable-width scalar payloads, not twelve raw bytes.
+  List count/null/loop framing remains conditional on the shared reference-list
+  consumer; a provider bridge alone proves neither width nor runtime selection.
+  Direction targets remain null-only; a postprocessor may expand one target,
+  with a second non-null instance stopped before its header. Unknown nested
+  tags stop in place without scanning for a later marker. The final
   payload reader consumes four scalar bytes despite its managed Double name.
   Keep those bits anonymous, including non-finite values. Byte decoding, live
   provider selection and whole-BuffData EOF remain unresolved; selected native

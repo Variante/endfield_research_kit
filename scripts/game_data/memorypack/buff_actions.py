@@ -15,6 +15,7 @@ class Unsupported(FrameError):
 class Reader:
     def __init__(self,data,source,limit=None):
         self.data=data;self.source=source;self.pos=0;self.ranges=[];self.records=[]
+        self.postprocessor_depth=0
         self.limit=len(data) if limit is None else limit
         if type(self.limit) is not int or not 0<=self.limit<=len(data):
             raise FrameError(source,0,'limit within file',self.limit)
@@ -70,12 +71,21 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==178:
+            self.direction_profile()
+            self.take(4,'anonymous-scalar32');self.byte_payload()
+            self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.byte_payload()
+            self.selector_profile()
+            for _ in range(2):self.take(4,'anonymous-scalar32')
+            self.byte_payload();self.take(4,'anonymous-scalar32');self.byte_payload()
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            return
         if tag==120:
             self.take(4,'anonymous-scalar32')
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
@@ -278,31 +288,116 @@ class Reader:
         else:
             self.header(3)
             self.selector_finder_profile()
-            for _ in range(2):
-                at=self.pos
-                n=self.count(1,nullable=True)
-                if n!=0:
-                    raise Unsupported(self.source,at,'empty-only nested collection',n,'nested-profile')
+            for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.selector_postprocessor_profile()
+            for _ in range(max(0,self.count(1,nullable=True))):self.selector_validator_profile()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-profile'))
 
     def selector_finder_profile(self):
-        start=self.pos;lead=self.peek()
-        if lead==255:self.take(1,'null-nested-finder')
+        start=self.pos
+        tag=self.nested_union_tag((2,7,8,12,13,19),'finder')
+        if tag is None:pass
+        elif self.peek()==255:self.take(1,'null-nested-finder-wrapper')
         else:
-            width=3 if lead==250 else 1
-            if width>self.limit-self.pos:
-                raise FrameError(self.source,self.pos,{'bytes':width},{'remaining':self.limit-self.pos},'truncated')
-            tag=struct.unpack_from('<H',self.data,self.pos+1)[0] if lead==250 else lead
-            if tag!=2:
-                raise Unsupported(self.source,self.pos,'supported nested-finder union tag',tag,'nested-profile')
-            self.take(width,'nested-finder-union-tag')
-            if self.peek()==255:self.take(1,'null-nested-finder-wrapper')
-            else:self.header(0)
+            self.header({2:0,7:8,8:0,12:1,13:1,19:4}[tag])
+            if tag==7:
+                for _ in range(3):self.take(1,'anonymous-nonzero-byte')
+                for _ in range(2):self.take(4,'anonymous-scalar32')
+                self.take(1,'anonymous-nonzero-byte')
+                for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.shape_profile()
+                self.take(4,'anonymous-scalar32')
+            elif tag==12:self.query_profile()
+            elif tag==13:self.take(4,'anonymous-scalar32')
+            elif tag==19:
+                self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
+                self.selection_profile();self.take(1,'anonymous-nonzero-byte')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-finder-profile'))
 
+    def nested_union_tag(self,supported,kind):
+        lead=self.peek()
+        if lead==255:self.take(1,'null-nested-'+kind);return None
+        width=3 if lead==250 else 1
+        if width>self.limit-self.pos:
+            raise FrameError(self.source,self.pos,{'bytes':width},{'remaining':self.limit-self.pos},'truncated')
+        tag=struct.unpack_from('<H',self.data,self.pos+1)[0] if lead==250 else lead
+        if tag not in supported:
+            raise Unsupported(self.source,self.pos,'supported nested-'+kind+' union tag',tag,'nested-profile')
+        self.take(width,'nested-'+kind+'-union-tag');return tag
+
+    def selector_validator_profile(self):
+        start=self.pos;tag=self.nested_union_tag((4,5,9,10,11),'validator')
+        if tag is None:pass
+        elif self.peek()==255:self.take(1,'null-nested-validator-wrapper')
+        else:
+            self.header(3 if tag==4 else 1 if tag==11 else 0)
+            if tag==4:
+                self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32');self.scalar_payload()
+            elif tag==11:self.query_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-validator-profile'))
+
+    def selector_postprocessor_profile(self):
+        start=self.pos;tag=self.nested_union_tag((4,7),'postprocessor')
+        if tag is None:pass
+        elif self.peek()==255:self.take(1,'null-nested-postprocessor-wrapper')
+        elif tag==7:
+            self.header(6);self.filter_profile()
+            for _ in range(2):
+                self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
+            self.take(4,'anonymous-scalar32')
+        else:
+            # Admit one finite target expansion; a further recursive instance
+            # remains a reported gap before its member header is consumed.
+            if self.postprocessor_depth:
+                raise Unsupported(self.source,self.pos,'postprocessor target depth <= 1',2,'depth-limit')
+            self.header(2);self.postprocessor_depth+=1
+            try:self.target_profile()
+            finally:self.postprocessor_depth-=1
+            self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-postprocessor-profile'))
+
+    def filter_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-filter-profile')
+        else:
+            self.header(2);self.finder_profile();self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-filter-profile'))
+
+    def vector_payload(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-vector-payload')
+        else:
+            self.header(3)
+            # Three nested scalar payloads, not twelve raw coordinate bytes.
+            for _ in range(3):self.scalar_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-vector-payload'))
+
+    def shape_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-shape-profile')
+        else:
+            self.header(18)
+            self.scalar_payload();self.take(4,'anonymous-scalar32');self.vector_payload()
+            for _ in range(2):self.take(4,'anonymous-scalar32')
+            self.take(1,'anonymous-nonzero-byte');self.vector_payload();self.scalar_payload()
+            self.take(4,'anonymous-scalar32')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.scalar_payload()
+            for _ in range(2):self.take(4,'anonymous-scalar32')
+            self.scalar_payload();self.take(4,'anonymous-scalar32');self.vector_payload()
+            self.take(1,'anonymous-nonzero-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-shape-profile'))
+
+    def selection_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-selection-profile')
+        else:
+            self.header(4);self.finder_profile()
+            for _ in range(max(0,self.count(1,reserve=5,nullable=True))):self.single_payload()
+            self.take(4,'anonymous-scalar32');self.query_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-selection-profile'))
+
     def target_profile(self):
-        # Selected finite profile. Non-null recursive targets and nonempty
-        # selector collections remain unsupported, never signature-scanned.
+        # Selected finite profile. Direction targets remain null-only and
+        # postprocessor target expansion is explicitly bounded above.
         start=self.pos
         if self.peek()==255:self.take(1,'null-target-profile')
         else:

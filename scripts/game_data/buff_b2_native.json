@@ -1,0 +1,1431 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120218,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FindTargetAction_FindTargetActionDataForMemoryPack+Beyond_Gameplay_Core_FindTargetAction_FindTargetActionDataForMemoryPackFormatter",
+      "Deserialize",
+      58152528
+    ],
+    [
+      120217,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FindTargetAction_FindTargetActionDataForMemoryPack",
+      "Deserialize",
+      58152624
+    ],
+    [
+      167111,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      61215216
+    ],
+    [
+      167110,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack",
+      "Deserialize",
+      61215312
+    ],
+    [
+      167122,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      68532944
+    ],
+    [
+      167121,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+      "Deserialize",
+      68533040
+    ],
+    [
+      167170,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerPartsFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_OwnerPartsFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      70972960
+    ],
+    [
+      167169,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerPartsFinder_DataForMemoryPack",
+      "Deserialize",
+      70973056
+    ],
+    [
+      167182,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      67645056
+    ],
+    [
+      167181,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack",
+      "Deserialize",
+      67645152
+    ],
+    [
+      167272,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SmartTargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_SmartTargetFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      52456368
+    ],
+    [
+      167271,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SmartTargetFinder_DataForMemoryPack",
+      "Deserialize",
+      52456464
+    ],
+    [
+      166904,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      72441728
+    ],
+    [
+      166903,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack",
+      "Deserialize",
+      72441824
+    ],
+    [
+      166915,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      69209872
+    ],
+    [
+      166914,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack",
+      "Deserialize",
+      69209968
+    ],
+    [
+      166972,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      71332880
+    ],
+    [
+      166971,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack",
+      "Deserialize",
+      71332976
+    ],
+    [
+      166984,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      67021200
+    ],
+    [
+      166983,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack",
+      "Deserialize",
+      67021296
+    ],
+    [
+      166961,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      66118176
+    ],
+    [
+      166960,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack",
+      "Deserialize",
+      66118272
+    ],
+    [
+      166757,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeTarget_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ExcludeTarget_DataForMemoryPackFormatter",
+      "Deserialize",
+      67177232
+    ],
+    [
+      166756,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeTarget_DataForMemoryPack",
+      "Deserialize",
+      67177328
+    ],
+    [
+      166805,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PriorityFilter_DataForMemoryPack+Beyond_Gameplay_Core_Selector_PriorityFilter_DataForMemoryPackFormatter",
+      "Deserialize",
+      67176672
+    ],
+    [
+      166804,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PriorityFilter_DataForMemoryPack",
+      "Deserialize",
+      67176768
+    ],
+    [
+      113410,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector3ForMemoryPack+Beyond_Blackboard_BlackboardVector3ForMemoryPackFormatter",
+      "Deserialize",
+      53274912
+    ],
+    [
+      113409,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector3ForMemoryPack",
+      "Deserialize",
+      53275696
+    ],
+    [
+      163251,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SmartTargetSelectSettingForMemoryPack+Beyond_Gameplay_Core_SmartTargetSelectSettingForMemoryPackFormatter",
+      "Deserialize",
+      70980336
+    ],
+    [
+      163250,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SmartTargetSelectSettingForMemoryPack",
+      "Deserialize",
+      70980432
+    ],
+    [
+      167779,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_ShapeDataForMemoryPack+Beyond_Gameplay_Core_Selector_HitBoxFinder_ShapeDataForMemoryPackFormatter",
+      "Deserialize",
+      66979584
+    ],
+    [
+      167778,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_ShapeDataForMemoryPack",
+      "Deserialize",
+      53282800
+    ],
+    [
+      168303,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffFilterSettingsForMemoryPack+Beyond_Gameplay_Core_BuffFilterSettingsForMemoryPackFormatter",
+      "Deserialize",
+      70134400
+    ],
+    [
+      168302,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffFilterSettingsForMemoryPack",
+      "Deserialize",
+      70134496
+    ],
+    [
+      163202,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack+Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPackFormatter",
+      "Deserialize",
+      69874928
+    ],
+    [
+      163212,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPackFormatter",
+      "Deserialize",
+      66918096
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58152528,
+      "endRva": 58152621,
+      "sha256": "B325462C0D2BC57E2FF6C2033464B95F91BCEF735C2C4568D06F28FE29424101",
+      "boundary": "method 120218 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 58152624,
+      "endRva": 58153676,
+      "sha256": "62D90F264FB771885825060E0AAD4081F46AF51FC22E8627B157F695B18F26DB",
+      "boundary": "method 120217 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 61215216,
+      "endRva": 61215309,
+      "sha256": "C9FF2A70AF1EF8ECCB2A373514BCF3D87266A4A8ADE90F42FCCFFDDD9D0AE70A",
+      "boundary": "method 167111 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 61215312,
+      "endRva": 61215896,
+      "sha256": "F5801A3852A7368A23790032D16F5929D4D080FBE740CF0E191B210840D2F237",
+      "boundary": "method 167110 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 68532944,
+      "endRva": 68533037,
+      "sha256": "7A0EE20E9C6D3E43A3E74C8C65F8E371F17081D00E8FFE572F559837C59DE5AD",
+      "boundary": "method 167122 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 68533040,
+      "endRva": 68533175,
+      "sha256": "E0E5EAC2D3DF868AC6140399B4A8E1C36DDE22F92CEE0F331A125091031EA3F0",
+      "boundary": "method 167121 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 70972960,
+      "endRva": 70973053,
+      "sha256": "4634D097AF784768449677F713880B189AB03CD35580D275A22FA4652D31EB7C",
+      "boundary": "method 167170 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70973056,
+      "endRva": 70973271,
+      "sha256": "74FDCAA7EC451B3DB0F9A209846FC69BE7C9F7D0ACD7B9CADEB025C076741D2F",
+      "boundary": "method 167169 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 67645056,
+      "endRva": 67645149,
+      "sha256": "5EA980E5A0CCD50B090294FD7EA7B128FEA0D1FF38EC67B815D9ED7DEF2EBB8C",
+      "boundary": "method 167182 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67645152,
+      "endRva": 67645342,
+      "sha256": "2B061C4EFD995B68C26A79A597F7ABEE616CE932F5EF2C70E5731F05958B96FE",
+      "boundary": "method 167181 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 52456368,
+      "endRva": 52456461,
+      "sha256": "88C5E19DA6B3FCA97FD9872054F7C75C4D320D63D3386985A6114BAF1B629AC3",
+      "boundary": "method 167272 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 52456464,
+      "endRva": 52456812,
+      "sha256": "05787AAC40BC312394F4CEBA72E748516DC891704657AE0240868DAD1945A562",
+      "boundary": "method 167271 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 72441728,
+      "endRva": 72441821,
+      "sha256": "9A07F0EF6F604AF955C4B9B0F26C648D16792C47DA902FF0007E7A855F36FDA2",
+      "boundary": "method 166904 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 72441824,
+      "endRva": 72442089,
+      "sha256": "0B7D78994194A4CE577F4A69A533EACA850C11D8B99249E8EB9915300C3EB555",
+      "boundary": "method 166903 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 69209872,
+      "endRva": 69209965,
+      "sha256": "6316D0E5856FCD4A6D7106379D0AC1589A9EA0FDE178A7F06E28DA4F58E8E5B9",
+      "boundary": "method 166915 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 69209968,
+      "endRva": 69210103,
+      "sha256": "0C659DC0D57223494D3F68A2E1163A4BB17FF328CA5D374E31CBC138EDD05D8B",
+      "boundary": "method 166914 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 71332880,
+      "endRva": 71332973,
+      "sha256": "05B11A051A283C03C931B2A517230FB601545593659298036D8C6AB71BED00C3",
+      "boundary": "method 166972 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 71332976,
+      "endRva": 71333111,
+      "sha256": "DE00C0DF537D19291C456EB99B9F3DB5BD47E64CEC957EDBB4BB6F90A0DBC41E",
+      "boundary": "method 166971 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 67021200,
+      "endRva": 67021293,
+      "sha256": "B549297200A21A832742D11C017D14028AD613D5B7D610E9AD4ACF1F03E39D1C",
+      "boundary": "method 166984 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67021296,
+      "endRva": 67021511,
+      "sha256": "499A92E8A760BB6C1B2F1FFAA60A6A95DC235A86B3B90F42E7D122FDA60657F1",
+      "boundary": "method 166983 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 66118176,
+      "endRva": 66118269,
+      "sha256": "FA6C20FB519CE64BB5B3FE55F31F0A617AE10C3BC3585C13E8008B20E4F5B9ED",
+      "boundary": "method 166961 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 66118272,
+      "endRva": 66118448,
+      "sha256": "C862B727988E6F3B7D3DAC58155D22AE2243B1A2C58EDFEFA5EB13C765BDA133",
+      "boundary": "method 166960 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 67177232,
+      "endRva": 67177325,
+      "sha256": "0C992E2E094DA8410D1A8C2255648F29AAD445A090B533C5A782083C1A273026",
+      "boundary": "method 166757 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67177328,
+      "endRva": 67177559,
+      "sha256": "3977D800D740FDA9A4C45325A44CC0001AC8819366DC5EA2E1B1BBE06B8320AD",
+      "boundary": "method 166756 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 67176672,
+      "endRva": 67176765,
+      "sha256": "6EAFEFF9E4077C9ABEF445827F5A3DC08899E40A250EFEC3A12ED0F242E95EE6",
+      "boundary": "method 166805 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67176768,
+      "endRva": 67177140,
+      "sha256": "F9AD8B0EBC6CCA6F6D92337533EE1C63F3477389E8611794EC77F13561262ABC",
+      "boundary": "method 166804 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 53274912,
+      "endRva": 53275615,
+      "sha256": "E773473B65B8772E7FA5EFABE1FD77BF15D5E95DCBF573DCD3F6CDE4F7453E23",
+      "boundary": "vector formatter inlined three nested scalar profiles, FF clear and normal RET"
+    },
+    {
+      "startRva": 53275696,
+      "endRva": 53276351,
+      "sha256": "F652BA65310E06D1C72F9703AD920B5A780A7E19BE2F4D54F64B1867F1D7E794",
+      "boundary": "method 113409 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 70980336,
+      "endRva": 70980429,
+      "sha256": "C4E4A97284EBF9987799636AF712D93EA9C03CBEDB9DCE661012EC7EABAE4288",
+      "boundary": "method 163251 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70980432,
+      "endRva": 70980693,
+      "sha256": "B17D39FE9BAE19059F602E8B96BFB5E600C1481A355E18ECD1791AEA6C23A6D3",
+      "boundary": "method 163250 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 66979584,
+      "endRva": 66979677,
+      "sha256": "77E79CB7C5BF92A59464BF8A744A809DF0FBCEB9182FA1027FD98D9503DD185A",
+      "boundary": "method 167779 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 53282800,
+      "endRva": 53283748,
+      "sha256": "2FE11468041E48144A1EAEB1D7571FD4B4E9B23F1759B2E1214C54C0585AE6D6",
+      "boundary": "method 167778 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 70134400,
+      "endRva": 70134493,
+      "sha256": "63901D955D2670D0426B3FF6423C128F989B59BC73F4F253C4023927566211C7",
+      "boundary": "method 168303 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70134496,
+      "endRva": 70134674,
+      "sha256": "3B7D56AAF060CB91CDED7FBD203847B20E36A94EA177CC09CE65773F222CBDBD",
+      "boundary": "method 168302 selected normal path through RET (vector reader also contains its FF branch)"
+    },
+    {
+      "startRva": 58153676,
+      "endRva": 58153693,
+      "sha256": "B3F6AE51738AF1C7E690E87C1DF7857A148F061CFC5C978C1E96E93C5ECBC96A",
+      "boundary": "action FF output clear and rejoin"
+    },
+    {
+      "startRva": 61215896,
+      "endRva": 61215913,
+      "sha256": "72F639BA05939093402298E7C3A04F823623EEB35642561E402568E913F310B6",
+      "boundary": "finder7 FF output clear and rejoin"
+    },
+    {
+      "startRva": 66118448,
+      "endRva": 66118465,
+      "sha256": "5DB71DF238F3590A5DBD2F6EA1B5EE527A1DCBEA04404F638E9624E0FE317D20",
+      "boundary": "validator9 FF output clear and rejoin"
+    },
+    {
+      "startRva": 53283748,
+      "endRva": 53283765,
+      "sha256": "11689696396FA190856736D4F4D435D9A5E831A24CF914830B8D2D2F8E5A16C9",
+      "boundary": "shape FF output clear and rejoin"
+    },
+    {
+      "startRva": 83378937,
+      "endRva": 83378958,
+      "sha256": "0F623FAD5886C29596E220051F479323CD9686789AA247C7F332A19793CE2409",
+      "boundary": "finder8 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83608691,
+      "endRva": 83608712,
+      "sha256": "8E628E4BA3B9A75C6568211480C8ECBED93BA7C4865CBF235D9F4D9312D921AC",
+      "boundary": "finder12 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83296153,
+      "endRva": 83296174,
+      "sha256": "A228E92DF529C438DABB179EB7BA3069548AAC8A8BC54F16466337F9C76B0F64",
+      "boundary": "finder13 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 80973171,
+      "endRva": 80973192,
+      "sha256": "DE0347AE18B6D2D10E7D882546CD6B462408D07E163FEB5D8D3C491D9AADF9FE",
+      "boundary": "finder19 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83447617,
+      "endRva": 83447638,
+      "sha256": "1EE1CBEC7F7A6C2D87774CF351F16AC290B3BE085C6677D8E0465333241EBFAB",
+      "boundary": "validator5 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83610547,
+      "endRva": 83610568,
+      "sha256": "C1C17A384F724A5EA05D47172454388262AEB1E5EF34416A46026EDA4C279C42",
+      "boundary": "selection FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83662387,
+      "endRva": 83662408,
+      "sha256": "2FD8466A669C8E7FA4FD7B7AA426E5AECB8B1766C1DF55CAB9311595E7D2A3C2",
+      "boundary": "validator10 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83230319,
+      "endRva": 83230340,
+      "sha256": "F08EFE47192CD675F22D1B32C234C7B4D081135EBDB3F61024A9E98C5DD7134A",
+      "boundary": "validator11 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83257211,
+      "endRva": 83257232,
+      "sha256": "F46915F3D55EF6E8C19108205A6A1FE3587AD691D39BBE96DA0C80BF75A75AF6",
+      "boundary": "postprocessor4 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83257121,
+      "endRva": 83257142,
+      "sha256": "D22799D8E11C252B5979E161B03755295189B5A3CC1380C10989783FA05AB41E",
+      "boundary": "postprocessor7 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83530907,
+      "endRva": 83530928,
+      "sha256": "86AEA0C603E558E3CCAB35D0BB8DFDCA82E57FB2B2D66F8AF7C4B88CB32EBE70",
+      "boundary": "filter FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 83786545,
+      "endRva": 83786566,
+      "sha256": "7317442DACEB8E0033A328ED193C06CB6294F639F238B645E57D1535D8E167AB",
+      "boundary": "validator4 FF output clear, release and rejoin"
+    },
+    {
+      "startRva": 66918096,
+      "endRva": 66918851,
+      "sha256": "E3FD66910810C8F2E3FA28959F24137F1DCDD326B6B70EB0844F199470C8E8B3",
+      "boundary": "validator bounded dispatch region including tag9 explicit branch, selected table routes and forwarding; excludes initialization"
+    },
+    {
+      "startRva": 69874928,
+      "endRva": 69875606,
+      "sha256": "956B748CD6F12C775B4C710FD2815ECEDB03894C2B22CCFCFEE968B4FE448CCA",
+      "boundary": "postprocessor bounded dispatch region including selected table routes and forwarding; excludes initialization"
+    },
+    {
+      "startRva": 83216067,
+      "endRva": 83216075,
+      "sha256": "57005D743DB0F9D6F077C534D2E849E921AE01E1E7D7A21237A8E9C045EE3319",
+      "boundary": "validator null union output clear and dispatch rejoin"
+    },
+    {
+      "startRva": 83502821,
+      "endRva": 83502829,
+      "sha256": "8E6FD85E4F12FA4CF397FC66A2AAFB5AE9C963CF17F450D423B682DFE1D106B8",
+      "boundary": "postprocessor null union output clear and dispatch rejoin"
+    },
+    {
+      "startRva": 59819654,
+      "endRva": 59819661,
+      "sha256": "DF3B0B01EDDFB404AB1F8493C14BAE6BE383BDC5A457EAE46ADE0229863D61D2",
+      "boundary": "finder union 7 type-usage load"
+    },
+    {
+      "startRva": 59820103,
+      "endRva": 59820110,
+      "sha256": "425B18482E926C942ACF3FAB5F4FFEFFFE8FE1BE92A0D8D204A5086444D40CF3",
+      "boundary": "finder union 8 type-usage load"
+    },
+    {
+      "startRva": 59820327,
+      "endRva": 59820334,
+      "sha256": "5C5FC1722B9AF3ABB67E7E3BFC02B0429E62E64ECD3C9C3E5773D3A7E00C97CB",
+      "boundary": "finder union 12 type-usage load"
+    },
+    {
+      "startRva": 59820000,
+      "endRva": 59820007,
+      "sha256": "DC695783D2F3E4850ABF84C6A4810AA08449D6E8B71F7AD037B452E92B14DB7C",
+      "boundary": "finder union 13 type-usage load"
+    },
+    {
+      "startRva": 59820233,
+      "endRva": 59820240,
+      "sha256": "5575082D1B25D89B6985B2D51ED48C8748D0F3CC3733ABC048C96E785D705E21",
+      "boundary": "finder union 19 type-usage load"
+    },
+    {
+      "startRva": 66918644,
+      "endRva": 66918651,
+      "sha256": "0A78B14391ED73C00E8BC7667FFBBFFAA1ABD471605848B77CC543B3C44C87C0",
+      "boundary": "validator union 4 type-usage load"
+    },
+    {
+      "startRva": 66918347,
+      "endRva": 66918354,
+      "sha256": "555256DAF55625637AF0CFB712FA7ACBBD20DA366D2F6DAF46AB49D63AF94019",
+      "boundary": "validator union 5 type-usage load"
+    },
+    {
+      "startRva": 66918477,
+      "endRva": 66918484,
+      "sha256": "1B876238FF831C233B8AE49A18E312307A7D204A156B621956277A7F448591A8",
+      "boundary": "validator union 10 type-usage load"
+    },
+    {
+      "startRva": 66918279,
+      "endRva": 66918286,
+      "sha256": "C79E6379FEE83AD1FF0EF89BE5A85FFF09D701540E03BBB015AADC45680CD045",
+      "boundary": "validator union 11 type-usage load"
+    },
+    {
+      "startRva": 66918182,
+      "endRva": 66918189,
+      "sha256": "3E833574889A6A909F65EB708B78424910E3862A2E63BFA57D980303BE071173",
+      "boundary": "validator union 9 type-usage load"
+    },
+    {
+      "startRva": 69875035,
+      "endRva": 69875042,
+      "sha256": "70A7ADFB47D25DF13EA20C00740B52BD8A6801D5E4DE86A9D7C38FCD520DF48F",
+      "boundary": "postprocessor union 4 type-usage load"
+    },
+    {
+      "startRva": 69875104,
+      "endRva": 69875111,
+      "sha256": "AB4916F669E0114FBBAE2E998C81C70175DAF833D97594F96FD3675697A9D84C",
+      "boundary": "postprocessor union 7 type-usage load"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59821680,
+      "endRva": 59821684,
+      "sha256": "2E64E2702D91ED2B3718F499E5FC48C8C979BC4B08F71BED5021E0955A2E16F3",
+      "boundary": "finder union 7 dispatch-table entry"
+    },
+    {
+      "startRva": 217990320,
+      "endRva": 217990328,
+      "sha256": "C4FC2A7CD4C0C466DC178317922A2DCF3DE155295AC1AD2047EE58C961CCDA8C",
+      "boundary": "finder union 7 cellVa"
+    },
+    {
+      "startRva": 206847176,
+      "endRva": 206847184,
+      "sha256": "2F6CA78FE0DE912B8EAA7985EFFD4C30BE3D4BE35C89A58F143D359CDC2549A3",
+      "boundary": "finder union 7 typeSlotVa"
+    },
+    {
+      "startRva": 220266632,
+      "endRva": 220266648,
+      "sha256": "45AD4FD99EB096A1724C7CEB18A5766AD7E5CD37960224C345C7A1021F104569",
+      "boundary": "finder union 7 typeVa"
+    },
+    {
+      "startRva": 59821684,
+      "endRva": 59821688,
+      "sha256": "0F91FE85E4AC53C52C8800B255A77589719FF764FB7010F850ACBA4CA9FB9627",
+      "boundary": "finder union 8 dispatch-table entry"
+    },
+    {
+      "startRva": 217990336,
+      "endRva": 217990344,
+      "sha256": "3605DE6E492C371495FC4D88DE7F8D5DEB7F44F4600C6EFF4FAA98D393F6FBF5",
+      "boundary": "finder union 8 cellVa"
+    },
+    {
+      "startRva": 206847200,
+      "endRva": 206847208,
+      "sha256": "D2FDADF84A61DD6D02C57F399B68C8082FE50736F14DA2AC87C65A7D5EA66D65",
+      "boundary": "finder union 8 typeSlotVa"
+    },
+    {
+      "startRva": 220265912,
+      "endRva": 220265928,
+      "sha256": "933647B785BDD0538973902675CE98D1DB720BA42AE049F1C90EC9B9472290FB",
+      "boundary": "finder union 8 typeVa"
+    },
+    {
+      "startRva": 59821700,
+      "endRva": 59821704,
+      "sha256": "DBB2797BE24654F98DDB328F65C0DAA7421A8287514DF3C8A3B5FDBFB4B06C49",
+      "boundary": "finder union 12 dispatch-table entry"
+    },
+    {
+      "startRva": 217990280,
+      "endRva": 217990288,
+      "sha256": "D4B9ADDA94FBB6D7D35CF22AB045CE399957F53E46D6203BFB580E1EF2451E17",
+      "boundary": "finder union 12 cellVa"
+    },
+    {
+      "startRva": 206847272,
+      "endRva": 206847280,
+      "sha256": "B07BA930718ED3FAA0970ED6F393E60E7576423E3A44EE94D5F86F987FFFB970",
+      "boundary": "finder union 12 typeSlotVa"
+    },
+    {
+      "startRva": 220255144,
+      "endRva": 220255160,
+      "sha256": "E8A8C0ACF23D7154F09FDEBCDFB4A21546405AD474C2305E9412DA21B9487AAE",
+      "boundary": "finder union 12 typeVa"
+    },
+    {
+      "startRva": 59821704,
+      "endRva": 59821708,
+      "sha256": "DB52D3626335D6FA560C875074E47F61D39FE60C37BD5394C460EDEEC1C5548A",
+      "boundary": "finder union 13 dispatch-table entry"
+    },
+    {
+      "startRva": 217990288,
+      "endRva": 217990296,
+      "sha256": "0A3E6044E3A79C1399A566C3C542962EC98FBF22C6026EC6EBEB7EDB27B1D44A",
+      "boundary": "finder union 13 cellVa"
+    },
+    {
+      "startRva": 206847280,
+      "endRva": 206847288,
+      "sha256": "287D230188CA7100EFF2F502BF444CE48DFC4C3785A9EF28537D976440FD15A5",
+      "boundary": "finder union 13 typeSlotVa"
+    },
+    {
+      "startRva": 220255448,
+      "endRva": 220255464,
+      "sha256": "A466D50941CE93AAB533C3371037F1B9B3DBD62926FB4F34F3C0DA1FF1A22BCF",
+      "boundary": "finder union 13 typeVa"
+    },
+    {
+      "startRva": 59821728,
+      "endRva": 59821732,
+      "sha256": "A29C62891C15B0E90123059F8B54E9F1762BE402FA884F49C431E837067857D9",
+      "boundary": "finder union 19 dispatch-table entry"
+    },
+    {
+      "startRva": 217990584,
+      "endRva": 217990592,
+      "sha256": "A37730DF92226F839FC1578EE68D75DA071FB609D39A4E4E79189053DBF5D08C",
+      "boundary": "finder union 19 cellVa"
+    },
+    {
+      "startRva": 206847368,
+      "endRva": 206847376,
+      "sha256": "3D691AA426A577A8FAC9F2C32C732262ADB506EC8CA7ED7689DC16659E949D23",
+      "boundary": "finder union 19 typeSlotVa"
+    },
+    {
+      "startRva": 220253928,
+      "endRva": 220253944,
+      "sha256": "E4C1385EDF8F500928CAAC20535F4910A05242BB69692B334FC78D8583051223",
+      "boundary": "finder union 19 typeVa"
+    },
+    {
+      "startRva": 66919404,
+      "endRva": 66919408,
+      "sha256": "EB6327F512636674092BE2E06DF5998F78F460C480EB5DB1F529E1CB2A343104",
+      "boundary": "validator union 4 dispatch-table entry"
+    },
+    {
+      "startRva": 217991568,
+      "endRva": 217991576,
+      "sha256": "D46BF22124A07571295DA083298E2FE2D18FBDCFF7A5803599B0D7B87BD6A343",
+      "boundary": "validator union 4 cellVa"
+    },
+    {
+      "startRva": 206847112,
+      "endRva": 206847120,
+      "sha256": "FD2E0EBECD43CC52EBB37F00519C1A5962F49045507B115DC0928E1B5CC9E6FB",
+      "boundary": "validator union 4 typeSlotVa"
+    },
+    {
+      "startRva": 220267096,
+      "endRva": 220267112,
+      "sha256": "EC785759A136E0C4DFFAE6CBB43F5D2A1DAF62591613CAB0AB758D3A51134F95",
+      "boundary": "validator union 4 typeVa"
+    },
+    {
+      "startRva": 66919408,
+      "endRva": 66919412,
+      "sha256": "09F64860837D1D833643E462D825C5D829F71FD2BBECEE320283C51122FC9765",
+      "boundary": "validator union 5 dispatch-table entry"
+    },
+    {
+      "startRva": 217991576,
+      "endRva": 217991584,
+      "sha256": "20EF090E4AE0251923BE2032EBA3E7F53BBC80F0F9691D0B8DFC07E37672535E",
+      "boundary": "validator union 5 cellVa"
+    },
+    {
+      "startRva": 206847120,
+      "endRva": 206847128,
+      "sha256": "1BD1F1FF3527AF593EE5DEBD7444F759A11CD2F6288978426B492D1B84E1D473",
+      "boundary": "validator union 5 typeSlotVa"
+    },
+    {
+      "startRva": 220266936,
+      "endRva": 220266952,
+      "sha256": "E904A0EDB935BE011FABDE0712DAEF62C03095395FEBE9F6EFD9418F31B99E8F",
+      "boundary": "validator union 5 typeVa"
+    },
+    {
+      "startRva": 66919428,
+      "endRva": 66919432,
+      "sha256": "6D9616C4510262A7898D94A669B4527F1978E11D75FD2EEAF5F1AC18A3EDC504",
+      "boundary": "validator union 10 dispatch-table entry"
+    },
+    {
+      "startRva": 217991552,
+      "endRva": 217991560,
+      "sha256": "6EFDD99CD1EF3B3764D8908BD5DFFCCC16555D64A51FBF828D791FCFE06280C5",
+      "boundary": "validator union 10 cellVa"
+    },
+    {
+      "startRva": 206847360,
+      "endRva": 206847368,
+      "sha256": "7CA90AC13003EC2E9E30EB46DA82569FE0009FB3B024AE047C6C12929AD9275E",
+      "boundary": "validator union 10 typeSlotVa"
+    },
+    {
+      "startRva": 220254168,
+      "endRva": 220254184,
+      "sha256": "DC994C0150ECB8978EBEF6AEBC25570DFF16F031DAAB7FD221C18467232DBC95",
+      "boundary": "validator union 10 typeVa"
+    },
+    {
+      "startRva": 66919432,
+      "endRva": 66919436,
+      "sha256": "599BA35F7AA1380E73C6CF2CB4A19D8F2AD887DD0745D311F613932E1592A70D",
+      "boundary": "validator union 11 dispatch-table entry"
+    },
+    {
+      "startRva": 217991480,
+      "endRva": 217991488,
+      "sha256": "66EDE3CA7A69D3A214B6D5A7498A3138CB7043CC76EEC79FA4337958D1B99565",
+      "boundary": "validator union 11 cellVa"
+    },
+    {
+      "startRva": 206847392,
+      "endRva": 206847400,
+      "sha256": "7358AA6F3CCE4C1140EB0B24A6B8B0A8126B796C18A9D5690B01DC6BAEAD532A",
+      "boundary": "validator union 11 typeSlotVa"
+    },
+    {
+      "startRva": 220253560,
+      "endRva": 220253576,
+      "sha256": "B38018AA095ACCC71BEED6A2112E68144A007613C24933EB6312DA8FC77D01D0",
+      "boundary": "validator union 11 typeVa"
+    },
+    {
+      "startRva": 217991536,
+      "endRva": 217991544,
+      "sha256": "B527BB04C47EB93A3C903404F1903266E94D0EEC61F905C4BD21BDAC267F528A",
+      "boundary": "validator union 9 cellVa"
+    },
+    {
+      "startRva": 206847240,
+      "endRva": 206847248,
+      "sha256": "9D95E3461BC4B1BC2376382F7884F9B0D17806F4774E7F04BEA1C9E62706D473",
+      "boundary": "validator union 9 typeSlotVa"
+    },
+    {
+      "startRva": 220255592,
+      "endRva": 220255608,
+      "sha256": "E86F3F35054DBBD48ED25447B4B03E2A6077B90872566D56FCA0103446D2BF51",
+      "boundary": "validator union 9 typeVa"
+    },
+    {
+      "startRva": 69876020,
+      "endRva": 69876024,
+      "sha256": "82695EFA30786146ED36E14F7AB6EB0E4D2DA102E50AED745AFF94540EB4F63B",
+      "boundary": "postprocessor union 4 dispatch-table entry"
+    },
+    {
+      "startRva": 217990920,
+      "endRva": 217990928,
+      "sha256": "27ECF651178BEA707CEE55D50AC1746E823AA7EB024C23F49ED4557EBC8A0B2F",
+      "boundary": "postprocessor union 4 cellVa"
+    },
+    {
+      "startRva": 206847128,
+      "endRva": 206847136,
+      "sha256": "5050B239FAE91CCC9F8EEAA05C26098195133FEDD144F75CB8495D7EFEBDB735",
+      "boundary": "postprocessor union 4 typeSlotVa"
+    },
+    {
+      "startRva": 220267192,
+      "endRva": 220267208,
+      "sha256": "6CAAB21C566506EEC93E9F02652F6DD2E52EDB2DCD9A71E9CCF2D6BF0C4A8088",
+      "boundary": "postprocessor union 4 typeVa"
+    },
+    {
+      "startRva": 69876032,
+      "endRva": 69876036,
+      "sha256": "7D6E882DB05E20B1AD74F3EB5DCBF20E4C50E343857AA8CCB67EA194B449F3FA",
+      "boundary": "postprocessor union 7 dispatch-table entry"
+    },
+    {
+      "startRva": 217990880,
+      "endRva": 217990888,
+      "sha256": "F6DB9B1A6F359ADEEFFCBA6DF50BF43B8D470B5BE3FC60A78216FB79E40A3F04",
+      "boundary": "postprocessor union 7 cellVa"
+    },
+    {
+      "startRva": 206847304,
+      "endRva": 206847312,
+      "sha256": "9D07E9E869174E24B6DB5C85117464CC45C0A7E7CA467315137E6F85F0C4B399",
+      "boundary": "postprocessor union 7 typeSlotVa"
+    },
+    {
+      "startRva": 220255000,
+      "endRva": 220255016,
+      "sha256": "326EDCDBA25F4881BE4D78C04E6895291B4E12B92C6FA2BD86E5E25854F51D0B",
+      "boundary": "postprocessor union 7 typeVa"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58152978,
+      "instructionHex": "488B15CF439109",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58153260,
+      "instructionHex": "488B15A5419209",
+      "cellVa": 6661184216,
+      "usageRawHex": "07EC12C000000000",
+      "methodSpecIndex": 620035,
+      "methodSpec": [
+        428464,
+        -1,
+        17124
+      ],
+      "argumentRawHex": "00280000000000000000120000000000",
+      "typeDefinition": 10240,
+      "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61215765,
+      "instructionHex": "488B15FC175809",
+      "cellVa": 6660434968,
+      "usageRawHex": "D3A412C000000000",
+      "methodSpecIndex": 610921,
+      "methodSpec": [
+        428462,
+        -1,
+        62701
+      ],
+      "argumentRawHex": "7802258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000703AF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17170,
+        "elementArguments": [
+          "C9270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 70973194,
+      "instructionHex": "4C8B054757C408",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 52456636,
+      "instructionHex": "488B155DD9DE09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 52456677,
+      "instructionHex": "4C8B05CC46E309",
+      "cellVa": 6660797368,
+      "usageRawHex": "6DCC0FC000000000",
+      "methodSpecIndex": 517686,
+      "methodSpec": [
+        428464,
+        -1,
+        16660
+      ],
+      "argumentRawHex": "1F280000000000000000118000000000",
+      "typeDefinition": 10271,
+      "typeName": "Beyond.Gameplay.Core.SmartTargetSelectSetting",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 53282911,
+      "instructionHex": "488B15BA3DD209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283010,
+      "instructionHex": "488B155705DC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283185,
+      "instructionHex": "488B15A804DC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283235,
+      "instructionHex": "488B15763CD209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283406,
+      "instructionHex": "488B15CB3BD209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283545,
+      "instructionHex": "488B15403BD209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53283641,
+      "instructionHex": "488B15E002DC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70980517,
+      "instructionHex": "488B15EC3AC408",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70980557,
+      "instructionHex": "488B156C3BC408",
+      "cellVa": 6660509504,
+      "usageRawHex": "F1A212C000000000",
+      "methodSpecIndex": 610680,
+      "methodSpec": [
+        428462,
+        -1,
+        62502
+      ],
+      "argumentRawHex": "A8FF258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000F0A8E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 13983,
+        "elementArguments": [
+          "4D270000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 70980632,
+      "instructionHex": "4C8B05393AC408",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 53275924,
+      "instructionHex": "488B150559D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53276057,
+      "instructionHex": "488B158058D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53276185,
+      "instructionHex": "488B150058D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67021434,
+      "instructionHex": "4C8B05D7A30009",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67177466,
+      "instructionHex": "488B15070B0509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67176906,
+      "instructionHex": "488B150728FF08",
+      "cellVa": 6660567512,
+      "usageRawHex": "A3EA12C000000000",
+      "methodSpecIndex": 619857,
+      "methodSpec": [
+        428464,
+        -1,
+        13979
+      ],
+      "argumentRawHex": "54270000000000000000120000000000",
+      "typeDefinition": 10068,
+      "typeName": "Beyond.Gameplay.Core.BuffFilterSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70134581,
+      "instructionHex": "488B155C23D108",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 72442036,
+      "instructionHex": "488B1565E5AD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "actionMember18": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "direction-profile",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "selector-profile",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte-payload",
+      "byte",
+      "byte"
+    ],
+    "finder7Member8": [
+      "byte",
+      "byte",
+      "byte",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "counted-shape-profiles",
+      "scalar32"
+    ],
+    "finder8Member0": [],
+    "finder12Member1": [
+      "query-profile"
+    ],
+    "finder13Member1": [
+      "scalar32"
+    ],
+    "finder19Member4": [
+      "byte",
+      "scalar-payload",
+      "selection-profile",
+      "byte"
+    ],
+    "validator4Member3": [
+      "byte",
+      "scalar32",
+      "scalar-payload"
+    ],
+    "validator5Member0": [],
+    "validator9Member0": [],
+    "validator10Member0": [],
+    "validator11Member1": [
+      "query-profile"
+    ],
+    "postprocessor4Member2": [
+      "target-profile",
+      "scalar32"
+    ],
+    "postprocessor7Member6": [
+      "filter-profile",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "byte",
+      "scalar32"
+    ],
+    "shapeMember18": [
+      "scalar-payload",
+      "scalar32",
+      "vector-payload",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "vector-payload",
+      "scalar-payload",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar-payload",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar32",
+      "vector-payload",
+      "byte"
+    ],
+    "vectorMember3": [
+      "scalar-payload",
+      "scalar-payload",
+      "scalar-payload"
+    ],
+    "selectionMember4": [
+      "finder-profile",
+      "counted-single-payloads",
+      "scalar32",
+      "query-profile"
+    ],
+    "filterMember2": [
+      "finder-profile",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact static registration, module/token and nested MethodSpec/type joins under the selected GA+metadata gate; direct selected normal/null source order; structural-only finite parser profiles. Scalar, direction, target and SelectorData source consumers reuse buff_ec_native.json; BuffFindSettings/query and conditional shared reference-list count/null/element-loop framing reuse buff_b4_native.json; BuffId single payload reuses buff_56_native.json. New lists are bounded before iteration and admit signed -1 null. Their element profiles are witnessed by concrete source readers; the shared list provider bridge alone is not a byte-width witness or proof of live formatter selection. Vector3 is THREE variable-width scalar payloads, not twelve raw coordinate bytes. Finder2 reuses buff_92_native.json. Selector finder tags 2/7/8/12/13/19, postprocessor tags 4/7, validator tags 4/5/9/10/11 form an explicit finite set; unknown tags remain opaque at their original tag offset. Postprocessor4 admits one target expansion and rejects a second non-null instance before its header; DirectionSettings targets remain null-only. FA+u16 and physical FF keep their separate union/wrapper meanings. Arbitrary scalar bits and byte values remain anonymous. Runtime formatter selection, allocation/refill/error parity, enum/field/gameplay meanings and whole-BuffData EOF remain unresolved."
+}

@@ -213,11 +213,11 @@ class BuffActionsTests(unittest.TestCase):
                 with self.assertRaises(FrameError):sequence_frame(raw[:n])
 
     def test_tag3c_retains_nested_unsupported_boundary(self):
-        child=tag3c(nested=target(selector=b'\x03\xff'+struct.pack('<ii',1,0)+b'\xff'))
+        child=tag3c(nested=target(selector=b'\x03\xff'+struct.pack('<i',1)+b'\x00'+bytes(4)))
         row=event_prefix(prefix(sequence(child)),source='3c-gap.bin')
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
-        self.assertEqual(row['diagnostic']['actual'],1)
+        self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
 
     def test_tag5b_exact_scalar64_boundary_and_bits(self):
@@ -649,7 +649,6 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
         for nested in (target(selector=b'\x03\x00'+bytes(8)),
                        target(selector=b'\x03\xff'+struct.pack('<ii',1,0)),
-                       target(selector=b'\x03\xff'+struct.pack('<ii',-1,0)),
                        target(direction_value=direction().replace(b'\xff',b'\x0d',1))):
             row=event_prefix(prefix(sequence(tag_ec(nested=nested))),source='ec-unsupported.bin')
             self.assertEqual(row['status'],'unsupported')
