@@ -266,6 +266,11 @@ only.
   base feature getter gates intensity. Unknown settings fail closed. This does
   not validate runtime blend/IFix state or refresh the legacy light/exposure
   snapshot's identity. Current authored exposure metadata is retained separately.
+  The reusable shadow visibility interpolator now preserves inactive configs,
+  copies active endpoints and applies the native scalar/boolean rules. Ordered
+  retained-volume replay matches the selected visibility subset; an inactive
+  higher-priority shadow config preserves the preceding active phase. This
+  does not identify that phase's source asset or close native upload ownership.
   See `contact_shadow_authored_feature_source.json` in the same report directory.
   The combined capture needs no repeat for those graphics inputs. The optional
   environment-shadow extension observes selected phases, ordered applied
