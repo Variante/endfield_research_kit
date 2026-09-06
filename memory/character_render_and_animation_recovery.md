@@ -166,6 +166,12 @@ only.
   selected environment texture/parameters/time remain an independent live
   input gate. See lab `tools/cloud_shadow_differential/README.md` and the cloud
   equation validation report under `reports/assets/character_recovery/`.
+  Current ordinary native constant publication checks the two cloud flags;
+  managed texture publication also checks the cloud feature's CPU-command state
+  and Unity texture validity. Keep these conditions separate and do not infer
+  the final GPU binding without the live phase and later-publisher joins. The
+  current source audit is `cloud_shadow_native_publishers.json` in that report
+  directory; IFix execution and live environment selection remain unproven.
 - The shared character PreG surface records source-enabled `DepthOnlyOutline`
   after body prepasses and before scene HGBuffer. Keep it distinct from the
   later ZWrite-off color outline. Material pass flags and shader keywords select
