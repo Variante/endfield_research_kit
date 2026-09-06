@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123224,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpellInfliction_DataForMemoryPack+Beyond_Gameplay_Core_SpellInfliction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67015216
+    ],
+    [
+      123223,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpellInfliction_DataForMemoryPack",
+      "Deserialize",
+      67015312
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67015216,
+      "endRva": 67015309,
+      "sha256": "7414C79CD02FC61B9C99BC7B9AB633481DB28BA7146536DA8AFD1C7DB9E2D221",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 67015312,
+      "endRva": 67015758,
+      "sha256": "3D1C899358B12EC3D07A9A26B5010E3D98CB41BDA9A65B4BAE4B967EDCCC49C3",
+      "boundary": "member8 source reads through normal RET"
+    },
+    {
+      "startRva": 67015758,
+      "endRva": 67015842,
+      "sha256": "06C939A2B7517FB52CB89C45D02A6138E8AAEB83C359403F1F3C6F29B762CD27",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83229290,
+      "endRva": 83229303,
+      "sha256": "379C21FAD074A57D034A33BE0FB4633C5FA95776044C046252487C6C41326A06",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83229359,
+      "endRva": 83229380,
+      "sha256": "5C1E90D167B921C75DFDAE3FC1B40C8BE512FA2B55784E8A51018F73A2ECFABE",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67015484,
+      "instructionHex": "488B15E50A0A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67015590,
+      "instructionHex": "488B15736C0B09",
+      "cellVa": 6661210144,
+      "usageRawHex": "B5E512C000000000",
+      "methodSpecIndex": 619226,
+      "methodSpec": [
+        428448,
+        -1,
+        26601
+      ],
+      "argumentRawHex": "97840000000000000000118000000000",
+      "typeDefinition": 33943,
+      "typeName": "Beyond.GEnums.EnergyShardType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67015664,
+      "instructionHex": "488B1511830709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67015705,
+      "instructionHex": "488B15E8820709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "target",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member8 action consumes common byte/three DWORD then DWORD, byte and two independent target profiles. The exact EnergyShardType context selects a DWORD source helper, not a nested object. Both target contexts independently join the existing finite TargetSettings reader; preserve separate null states, counts and nested boundaries. An unsupported first target leaves the second unconsumed; an unsupported second target preserves the completed first profile but not the parent. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Spell/infliction behavior, target relationships, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

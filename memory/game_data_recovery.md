@@ -572,6 +572,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a nullable counted scalar32 list. Its exact element context joins the
   independently pinned DamageType DWORD reader; preserve null/empty states
   and raw element bits, without object headers or inferred damage behavior.
+  `scripts/game_data/buff_16d_native.json` pins an extended member-eight
+  action ending with scalar32, byte and two independent target profiles after
+  the common prefix. Preserve each target boundary and leave the parent
+  incomplete at unsupported children; spell and target relationships remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

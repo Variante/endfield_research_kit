@@ -59,6 +59,10 @@ def tag74(items=()):
             b''.join(struct.pack('<I',v) for v in items or ()))
 
 
+def tag16d(first=b'\xff',second=b'\xff',bits=0xffffffff):
+    return b'\xfa\x6d\x01\x08\xfe'+b'\xff'*12+struct.pack('<I',bits)+b'\x80'+first+second
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1497,6 +1501,52 @@ class BuffActionsTests(unittest.TestCase):
             self.assertIn(dict(start=34,end=end,kind='anonymous-scalar32-list'),row['completedRecords'])
             spans=[r for r in row['ranges'] if r['kind']=='anonymous-scalar32' and r['start']>=38]
             self.assertEqual([(r['start'],r['end']) for r in spans],[(38+4*i,42+4*i) for i in range(len(items or ()))])
+
+    def test_tag16d_independent_targets_and_raw_scalar(self):
+        for first in (b'\xff',target()):
+            for second in (b'\xff',target()):
+                for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+                    child=tag16d(first,second,bits);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='16d.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='16d.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=365),row['completedRecords'])
+                    self.assertIn(dict(start=41,end=41+len(first),kind='anonymous-target-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=41+len(first),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag16d_null_cuts_limits_and_trailing(self):
+        for child in (tag16d(),tag16d(target(),target()),b'\xfa\x6d\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='16d-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='16d-limit',limit=n))
+
+    def test_tag16d_malformed_counts_headers_and_independent_gaps(self):
+        raw=prefix(sequence(tag16d(target(),target())))
+        good=event_prefix(raw,source='16d-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='16d-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('16d-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==365 for r in row['completedRecords']))
+        unknown=target(selector=b'\x03\x10')
+        for first,second in ((unknown,target()),(target(),unknown)):
+            row=event_prefix(prefix(sequence(tag16d(first,second))),source='16d-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+            self.assertFalse(any(r.get('tag')==365 for r in row['completedRecords']))
+            profiles=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
+            self.assertEqual(profiles,[] if first==unknown else [dict(start=41,end=41+len(first),kind='anonymous-target-profile')])
 
     def test_tag74_null_extended_cuts_limits_and_trailing(self):
         for child in (tag74(),tag74(None),tag74((0,0xffffffff,0x80000000)),b'\x74\xff',b'\xfa\x74\x00'+tag74((1,))[1:]):
