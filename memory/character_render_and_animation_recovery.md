@@ -261,6 +261,12 @@ only.
   owns that counter in pipeline camera state and passes it to contact; producer
   recreation, disabled passes, and setup failures cannot reset or pause it.
   This does not establish the retail camera's initial phase or an IFix override.
+  Contact settings now import the selected authored phase with independent
+  provenance, native percent conversions and ignore-edge lane; the installed
+  base feature getter gates intensity. Unknown settings fail closed. This does
+  not validate runtime blend/IFix state or refresh the legacy light/exposure
+  snapshot's identity. Current authored exposure metadata is retained separately.
+  See `contact_shadow_authored_feature_source.json` in the same report directory.
   The combined capture needs no repeat for those graphics inputs. The optional
   environment-shadow extension observes selected phases, ordered applied
   volumes/factors and camera/shadow-manager state within the same two entries.
