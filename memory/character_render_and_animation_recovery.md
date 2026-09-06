@@ -150,6 +150,12 @@ only.
   authored override. Trigger selection, active volumes and weights remain
   necessary; constructor defaults and captured constants do not establish them. See
   `reports/assets/character_recovery/shadow_simulation_native_ownership.json`.
+- Screen-shadow scene and character passes require separate CSM algorithms:
+  the character pass uses weighted cascade selection and four tent-filtered
+  comparisons, while the scene pass uses Poisson gathers. Sampler names from
+  decompilation do not prove bound state. The character helper and actual Unity
+  pass have a native-oracle GPU fixture under `tools/character_csm_differential/`
+  in the lab; live producer/publication authority remains separate.
 - ContactShadow captured-input replay needs repeat controls: original dispatches
   can differ at pixels with overlapping recovered output writes. Preserve the
   original dot-product instructions through distance quantization; scalar
