@@ -270,6 +270,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   memory layout must not substitute for consumer order. Its selected native
   contract is `scripts/game_data/buff_50_native.json`; the two identical static
   type arguments do not certify live formatter selection or comparison meaning.
+  `scripts/game_data/buff_65_native.json` pins a distinct member-eight order:
+  byte, four scalar32 values, target, byte and scalar payload. Its interleaved
+  output setters consume no source bytes; distinguish their receiver from the
+  reader before counting serialized members. The two exact nested contexts
+  reuse existing finite profiles without promoting the managed condition name.
   Extended unions consume FA followed by a little-endian unsigned tag; record
   reports retain that decoded tag rather than the escape byte. Unknown tags
   stop at the original start. The selected extended member-eight child reads
