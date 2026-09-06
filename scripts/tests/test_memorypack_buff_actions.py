@@ -45,6 +45,13 @@ def tag80(first=None,second=None):
             (target(direction_value=b'\xff') if second is None else second))
 
 
+def tag16e(value=b'wire',first=None,second=None):
+    return (b'\xfa\x6e\x01\x0d\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            b'\x80\xfe'+struct.pack('<II',0x80000001,0xffffffff)+payload(value)+bytes(4)+
+            (target(selector=b'\x03\x05\x00'+bytes(8)) if first is None else first)+
+            (target(direction_value=b'\xff') if second is None else second)+b'\x80')
+
+
 def scalar_payload(value=b'value',flag=255,bits=b'\x00\x00\xc0\x7f'):
     return b'\x03'+payload(value)+bytes([flag])+bits
 
@@ -228,6 +235,56 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag16e_source_segments_targets_and_zero_member_finder(self):
+        child=tag16e();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='16e.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=366),row['completedRecords'])
+        targets=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
+        first=19+17+2+8+len(payload(b'wire'))+4
+        second=first+len(target(selector=b'\x03\x05\x00'+bytes(8)))
+        self.assertEqual([(r['start'],r['end']) for r in targets],[(first,second),(second,end-1)])
+        finder=next(r for r in row['completedRecords'] if r['kind']=='anonymous-selector-finder-profile')
+        self.assertEqual(finder['end']-finder['start'],2)
+        self.assertEqual(row['ranges'][-1],dict(start=end-1,end=end,kind='anonymous-nonzero-byte'))
+        self.assertEqual(row['diagnostic'],dict(source='16e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag16e_null_payloads_truncations_trailing_and_limits(self):
+        for child in (tag16e(),tag16e(None),tag16e(b''),b'\xfa\x6e\x01\xff',
+                      tag16e(first=b'\xff',second=b'\xff'),
+                      tag16e(first=target(selector=b'\x03\x05\xff'+bytes(8))),
+                      tag16e(first=target(selector=b'\x03\xfa\x05\x00\x00'+bytes(8)))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='16e-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='16e-limit',limit=n))
+
+    def test_tag16e_bad_headers_counts_and_bounded_nested_gaps(self):
+        raw=prefix(sequence(tag16e()));good=event_prefix(raw,source='16e-bounds')
+        self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='16e-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+                self.assertEqual(row['diagnostic']['source'],'16e-bounds')
+        gap=target(selector=b'\x03\x06'+bytes(8))
+        for child in (tag16e(first=gap),tag16e(second=gap)):
+            row=event_prefix(prefix(sequence(child)),source='16e-gap')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==366 for r in row['completedRecords']))
+
     def test_tag80_two_independent_target_ranges_and_unknown_boundary(self):
         child=tag80();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='80.bin')

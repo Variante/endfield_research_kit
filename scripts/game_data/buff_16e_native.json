@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123244,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpellInflictionOnChar_DataForMemoryPack+Beyond_Gameplay_Core_SpellInflictionOnChar_DataForMemoryPackFormatter",
+      "Deserialize",
+      66158624
+    ],
+    [
+      123243,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpellInflictionOnChar_DataForMemoryPack",
+      "Deserialize",
+      66158720
+    ],
+    [
+      167086,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      71423872
+    ],
+    [
+      167085,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+      "Deserialize",
+      71423968
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66158624,
+      "endRva": 66158717,
+      "sha256": "A64714C9217A35B6F3C497407EAA115FD11A428DA2711AF692C9CF8CE805820F",
+      "boundary": "action formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 66158720,
+      "endRva": 66159341,
+      "sha256": "FF2B0F615A6A4A3EDA3A741674399FBA8CDA8DFA74E0F67AADBC2C2CA0B427B0",
+      "boundary": "member13 normal source order through RET"
+    },
+    {
+      "startRva": 66159341,
+      "endRva": 66159437,
+      "sha256": "1644237EECD3FD84D737E883C3A74DC0213890F1F749C337C4DFCBFD70BF8989",
+      "boundary": "action lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83123575,
+      "endRva": 83123596,
+      "sha256": "7282F6D1D80C3BB52E922496180ECED6F37F3F00630383513C78212766177CF3",
+      "boundary": "action FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 71423872,
+      "endRva": 71423965,
+      "sha256": "4AA5D021C194BA7A3DCD351D415A89B3B06D7BD3C5EB63F055873AB909A37767",
+      "boundary": "finder5 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 71423968,
+      "endRva": 71424103,
+      "sha256": "5BE166B317E409779718EB95C2A272FA6FE927F5108817BEABA2B911984E6EA8",
+      "boundary": "finder5 member0 normal through RET; no source fields"
+    },
+    {
+      "startRva": 71424103,
+      "endRva": 71424151,
+      "sha256": "DF75BB51AAAACE9470D2C10A5880267F08E31191F08A454E65384DB373E2F25B",
+      "boundary": "finder5 lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83671643,
+      "endRva": 83671664,
+      "sha256": "AC91534674AE8921CC87CE8CDF732D5BAB55D756E1CB69232367A95980D93D70",
+      "boundary": "finder5 FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 59820280,
+      "endRva": 59820287,
+      "sha256": "5F2DC977CBFA7D624944D641BC8D38FE3619BBFE7AD78A8E5EA897EE550DAB72",
+      "boundary": "finder5 selected route type-usage load"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59821672,
+      "endRva": 59821676,
+      "sha256": "11399C60279ECE9F9985DBE09EAF6B0F663D396720C4366D3248A3ABC63D78C0",
+      "boundary": "finder5 selected dispatch-table entry"
+    },
+    {
+      "startRva": 217990408,
+      "endRva": 217990416,
+      "sha256": "DF3C340A65E45EC77D9A2E9691A62C16D890051730C381905CA4DC40B1462E3B",
+      "boundary": "finder5 cellVa"
+    },
+    {
+      "startRva": 206847160,
+      "endRva": 206847168,
+      "sha256": "977FC380AFEE6A689348E8FC71938A56B6499A2120D40995556D7AD6520B6D7A",
+      "boundary": "finder5 typeSlotVa"
+    },
+    {
+      "startRva": 220266312,
+      "endRva": 220266328,
+      "sha256": "361A49BC00EE13426E982C4D2FB8D3102CF45A35544794FD80CA4DB1BB699E30",
+      "boundary": "finder5 typeVa"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66159213,
+      "instructionHex": "488B1594941409",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66159254,
+      "instructionHex": "488B156B941409",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member13": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "target-profile",
+      "target-profile",
+      "byte"
+    ],
+    "finder5Member0": []
+  },
+  "boundary": "Exact static registration/module/token and two TargetSettings MethodSpec/type callsite joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing. The member-thirteen action preserves every scalar, byte, variable byte-payload and target operation in native source order. Scalar helper enum type arguments do not add nested members. The two targets are separate serialized instances despite sharing one type context. TargetSettings and byte-payload length/advance use the separately pinned EC consumer and maintained finite extensions. One initial target requires finder5: its dispatch entry, type-usage chain and member-zero reader are pinned independently. Only its object header is consumed; allocation and constructor initialization add no source fields. Unknown nested profiles stop in place. No string decoding, inflicted-effect meaning, live provider selection, allocation/refill/error parity or whole-BuffData EOF is claimed."
+}

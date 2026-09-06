@@ -333,6 +333,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   two successive targets after that prefix and no final byte. Their shared
   type context does not merge the two serialized instances or prove comparison
   semantics; each instance retains its own bounded nested grammar.
+  The member-thirteen order in `scripts/game_data/buff_16e_native.json`
+  interleaves extra bytes, scalar32 values and a variable byte payload before
+  two targets, then reads a final byte. Its necessary finder5 extension has
+  a zero-member reader: construction adds no serialized fields. Scalar-helper
+  enum contexts likewise do not add nested members or establish effect meaning.
   Related member-eight children have a byte payload, counted nested records,
   scalar32 and the same query profile after their common scalar prefix.
   `scripts/game_data/buff_56_native.json` pins the member-one value-type list;
