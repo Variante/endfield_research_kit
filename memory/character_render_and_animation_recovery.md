@@ -229,6 +229,10 @@ only.
   or subsequent writes. A spatial radial sampler can produce repeated scaled
   silhouettes without a history texture; source capability alone does not
   establish which pass owns the observed echoes.
+  Native-resolution lab stage captures already show the authored radial echoes
+  appearing in final Uber from comparatively clean after-temporal input. Keep
+  retail consumer/parameter/phase attribution separate from local capability;
+  an additional echo or history pass is not justified by this remaining gap.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
