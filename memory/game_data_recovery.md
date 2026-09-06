@@ -277,6 +277,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   an explicit limitation: List<string> has a static type join but no separate
   formatter MethodSpec; the shared List<Object> count/loop and String element
   reader support a finite structural profile, not actual provider selection.
+  A separate member-eight child has a byte payload, counted member-one
+  payloads, scalar32 and the same query profile after its common scalar prefix.
+  Its exact List<BuffId> static candidate is pinned in
+  `scripts/game_data/buff_56_native.json`. Each element consumes its own header
+  before the byte length; neither the value-type name nor an eight-byte output
+  slot proves a fixed serialized width. Active formatter selection stays open.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated

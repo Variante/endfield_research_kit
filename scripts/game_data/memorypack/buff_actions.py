@@ -70,12 +70,18 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287,180):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180,86):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==86:
+            self.byte_payload()
+            for _ in range(max(0,self.count(1,reserve=5,nullable=True))):self.single_payload()
+            self.take(4,'anonymous-scalar32')
+            self.query_profile()
+            return
         if tag==180:
             self.target_profile()
             self.finder_profile()
@@ -131,6 +137,16 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte')
             self.byte_payload()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload'))
+
+    def single_payload(self):
+        # A member-one wrapper is a separate serialized byte from its payload
+        # length. Neither a value-type name nor an output slot gives its width.
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-single-payload')
+        else:
+            self.header(1)
+            self.byte_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-single-payload'))
 
     def null_profile(self,kind):
         actual=self.peek()

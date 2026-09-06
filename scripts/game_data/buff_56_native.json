@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123989,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContext_DataForMemoryPack",
+      "Deserialize",
+      64470240
+    ],
+    [
+      123990,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContext_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckBuffIdInContext_DataForMemoryPackFormatter",
+      "Deserialize",
+      64470144
+    ],
+    [
+      104381,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIdForMemoryPack",
+      "Deserialize",
+      67207792
+    ],
+    [
+      104382,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIdForMemoryPack+Beyond_Gameplay_Core_BuffIdForMemoryPackFormatter",
+      "Deserialize",
+      67207696
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.dll",
+      "methods": [
+        [
+          428795,
+          "MemoryPack.Formatters.ListFormatter`1",
+          "Deserialize",
+          null
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64470144,
+      "endRva": 64470237,
+      "sha256": "06D8FAC09D7D5B4104B639EA5EF6332EB0FA148674A96F66FC2B03C45DF5C140",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 64470240,
+      "endRva": 64470718,
+      "sha256": "5CFB847464E8BE7C8765284DD83410F0FC35EBEF5A696CADE3834AB1638FBAE2",
+      "boundary": "member8 normal path through RET"
+    },
+    {
+      "startRva": 82884065,
+      "endRva": 82884086,
+      "sha256": "73BEA68AA2EE5451DD232B4F7C5C281F25304C3EDFC0BF479A94D72B251D5A16",
+      "boundary": "FF null clear and rejoin normal epilogue"
+    },
+    {
+      "startRva": 67207696,
+      "endRva": 67207789,
+      "sha256": "C17B26E75376BF744112BCE3537BC0C78DDFCC2B8031188845E337C1219CA878",
+      "boundary": "member1 formatter forwarding"
+    },
+    {
+      "startRva": 67207792,
+      "endRva": 67207961,
+      "sha256": "74A252066B10EB490C1DCB2213A656DCBDA4AEC3E2B82CD970F77301E49271FE",
+      "boundary": "member1 normal/null reading through tail write barrier, not an in-body RET"
+    },
+    {
+      "startRva": 64210464,
+      "endRva": 64210603,
+      "sha256": "88F608E0AA57E391C4E0F1E3E05FC64AA1A99B32BDE365B949D25A8E2E1EB031",
+      "boundary": "query return-carrier bridge and same reader into provider-selected value dispatch"
+    },
+    {
+      "startRva": 65140560,
+      "endRva": 65140991,
+      "sha256": "5ED5AE8FB655084A428E99486BE31E8D253A48EBD0957F5F70D2BD0E0EF085F7",
+      "boundary": "registered List<BuffId> candidate signed count, null and positive element loop, both RET paths"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 187235964,
+      "endRva": 187235976,
+      "sha256": "6C73765F7A7A0EECB39662F7CD3288D0F13075DD719A7AC7E04EDFD85FBBE1E4",
+      "boundary": "List<BuffId> MethodSpec 215441: definition 428795, class instantiation 13983"
+    },
+    {
+      "startRva": 199479344,
+      "endRva": 199479360,
+      "sha256": "8AF7E9B9E09801E18B65AC7A0A2FB56BB28098EC6D5021B17BE3311D2BAE6BA3",
+      "boundary": "generic method table row 203725: spec 215441, method pointer index 203408"
+    },
+    {
+      "startRva": 193812352,
+      "endRva": 193812360,
+      "sha256": "D56E16B2CF8463410D31AFDCF8E39F34B4AF690A7A9B059BB1BD2F57F02319C5",
+      "boundary": "generic method pointer 203408 to selected list candidate"
+    },
+    {
+      "startRva": 183635096,
+      "endRva": 183635104,
+      "sha256": "680B7ADB80872F391897B6AB535B6C91149B4B1FA277F8DA80F2631F20075FA3",
+      "boundary": "class instantiation 13983 pointer slot"
+    },
+    {
+      "startRva": 182954224,
+      "endRva": 182954240,
+      "sha256": "B350A355903673D24A288091C0D1A8882AF4AA99BA0E31067430DB556EB5E23C",
+      "boundary": "class instantiation descriptor"
+    },
+    {
+      "startRva": 225755624,
+      "endRva": 225755632,
+      "sha256": "DD35F3F4503E28EF5360DCDCCD756E7216165A931467F742FEC5BAA4FD64B0E5",
+      "boundary": "single argument pointer"
+    },
+    {
+      "startRva": 222418856,
+      "endRva": 222418872,
+      "sha256": "44A754947577588210FA033031E0E7955B1DF627C5E3A74729ACD5041EA0F3A2",
+      "boundary": "BuffId value-type argument, same as outer list element"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64470552,
+      "instructionHex": "488B1521912709",
+      "cellVa": 6660509504,
+      "usageRawHex": "F1A212C000000000",
+      "methodSpecIndex": 610680,
+      "methodSpec": [
+        428462,
+        -1,
+        62502
+      ],
+      "argumentRawHex": "A8FF258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000F0A8E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 13983,
+        "elementArguments": [
+          "4D270000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 64470633,
+      "instructionHex": "4C8B05E88F2709",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "counted-member1-payloads",
+      "scalar32",
+      "query-profile"
+    ],
+    "member1": [
+      "byte-payload"
+    ]
+  },
+  "boundary": "Selected normal/null structural order. Each member-one element has its own serialized header before the signed byte length; a value-type name or eight-byte output slot is not its wire width. The outer List<BuffId> context and registered ListFormatter candidate share exact value-type instantiation 13983. Its positive count loop delegates elements through a provider, so actual formatter execution remains unresolved. Query context is identical to selectedBuffB4ReadOrder; signed byte-length advancement reuses selectedBuffTag76ReadOrder. Header FF paths are preserved. String decoding, field/gameplay meaning, live provider selection, allocation/refill/error parity and whole-BuffData EOF are not established."
+}
