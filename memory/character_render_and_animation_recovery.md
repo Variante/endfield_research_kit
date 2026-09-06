@@ -364,8 +364,9 @@ only.
   Its authenticated hot/cold boundary and tested reader keep those identities
   separate and ignore undefined descriptor padding. The bounded runtime hook
   now records that CPU copy with explicit window, loss and integrity gates;
-  camera-request and allocation-to-D3D joins remain absent. See
-  `cpp_packed_copy_observer_validation.json`.
+  the enclosing native render-bridge scope now links that copy to its render
+  and before-culling requests. Camera ownership and allocation-to-D3D joins
+  remain absent. See `cpp_render_bridge_observer_validation.json`.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
