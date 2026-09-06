@@ -78,6 +78,15 @@ def tag5b(flag=254,bits=0xffffffffffffffff):
     return b'\x5b\x06'+bytes([flag])+struct.pack('<IIIIQ',0xffffffff,0x80000000,1,0x7fc00000,bits)
 
 
+def tag3c(finder=None,nested=None,value=None):
+    if finder is None:
+        finder=(b'\x03'+struct.pack('<i',2)+payload(b'\xff\x00')+payload(None)+
+                struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
+    return (b'\x3c\x0a\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+finder+
+            struct.pack('<I',0x7fc00000)+(target() if nested is None else nested)+
+            struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
+
+
 def tag57():
     return (b'\x57\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(b'\xff\x00')+
             struct.pack('<i',3)+pair(b'a',b'\xff\x00',254)+b'\xff'+pair(None,b'',128)+
@@ -93,13 +102,70 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag3c_nested_boundaries_and_later_unknown(self):
+        child=tag3c();self.assertEqual(len(child),150)
+        row=event_prefix(prefix(sequence(child,b'\x3d')),source='3c.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',169))
+        self.assertEqual(row['diagnostic'],dict(source='3c.bin',offset=169,expected='supported current union tag',actual=61,category='union-tag'))
+        for kind,a,b in (('union',19,169),('anonymous-finder-profile',34,70),
+                         ('anonymous-query-profile',53,70),('anonymous-target-profile',74,154),
+                         ('anonymous-scalar-payload',159,169)):
+            expected=dict(start=a,end=b,kind=kind)
+            if kind=='union':expected['tag']=60
+            self.assertIn(expected,row['completedRecords'])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag3c_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag3c())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            first=event_prefix(full,source='3c-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertLessEqual(first['consumedEnd'],n)
+            self.assertEqual(first,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='3c-limit.bin',limit=n))
+
+    def test_tag3c_bad_nested_counts_and_headers(self):
+        # Finder list, both payload lengths, query array, final scalar payload.
+        for at in (16,20,26,39,141):
+            for value in (-2,2147483647):
+                bad=bytearray(tag3c());struct.pack_into('<i',bad,at,value)
+                with self.subTest(at=at,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='3c-count.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('3c-count.bin',at+5,value,'count-bounds'))
+        for at,expected in ((1,10),(15,3),(34,2),(55,13),(140,3)):
+            bad=bytearray(tag3c());bad[at]=0
+            with self.subTest(at=at),self.assertRaises(FrameError) as caught:
+                sequence_frame(sequence(bad),source='3c-header.bin')
+            self.assertEqual(caught.exception.diagnostic,dict(source='3c-header.bin',offset=at+5,expected=expected,actual=0,category='member-count'))
+
+    def test_tag3c_null_and_extended_tag(self):
+        for child in (b'\x3c\xff',b'\xfa\x3c\x00\xff',b'\xfa\x3c\x00'+tag3c()[1:],
+                      tag3c(b'\xff',b'\xff',b'\xff')):
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+
+    def test_tag3c_retains_nested_unsupported_boundary(self):
+        child=tag3c(nested=target(selector=b'\x03\xff'+struct.pack('<ii',1,0)+b'\xff'))
+        row=event_prefix(prefix(sequence(child)),source='3c-gap.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertEqual(row['diagnostic']['actual'],1)
+        self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
     def test_tag5b_exact_scalar64_boundary_and_bits(self):
         for flag in (0,1,128,254,255):
             for bits in (0,1,0x8000000000000000,0xffffffffffffffff,0x0102030405060708):
                 child=tag5b(flag,bits);self.assertEqual(len(child),27)
-                row=event_prefix(prefix(sequence(child,b'\x3c')),source='5b.bin')
+                row=event_prefix(prefix(sequence(child,b'\x3d')),source='5b.bin')
                 self.assertEqual(row['status'],'unsupported')
-                self.assertEqual(row['diagnostic']['actual'],60)
+                self.assertEqual(row['diagnostic']['actual'],61)
                 self.assertEqual(row['consumedEnd'],46)
                 self.assertIn(dict(start=19,end=46,kind='union',tag=91),row['completedRecords'])
                 self.assertIn(dict(start=38,end=46,kind='anonymous-scalar64'),row['ranges'])

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124049,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckBuffStackNumAdvanced_DataForMemoryPack",
+      "Deserialize",
+      58578048
+    ],
+    [
+      124050,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckBuffStackNumAdvanced_DataForMemoryPack+Beyond_Gameplay_Core_CheckBuffStackNumAdvanced_DataForMemoryPackFormatter",
+      "Deserialize",
+      58576112
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58576112,
+      "endRva": 58576205,
+      "sha256": "86D25B3EDAD52C2BB8C856B10D03C2E43749361A2EC996BC8F97B0E498C37D44",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 58578048,
+      "endRva": 58578655,
+      "sha256": "0123B35B1296C526D3CC6DDA5D4691D4CDE92626A91672532430C0840E3BEDF7",
+      "boundary": "member10 normal read order through RET"
+    },
+    {
+      "startRva": 58578655,
+      "endRva": 58578672,
+      "sha256": "A371A4827E0E6657328DAE343175EFD433CD76B4C9A8538DB93BAFF23FC30229",
+      "boundary": "action FF clear and rejoin normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58578366,
+      "instructionHex": "488B15D3788109",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58578458,
+      "instructionHex": "488B15E7408809",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58578596,
+      "instructionHex": "488B15756F8109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "finder-profile",
+      "scalar32",
+      "target-profile",
+      "scalar32",
+      "byte",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Selected normal/null structural order. Three exact static contexts join BuffFindSettings, TargetSettings and BlackboardDouble. Their finite source profiles reuse the selected readers pinned by buff_b4_native.json and buff_ec_native.json: member-three finder with counted byte payloads and a query, member-thirteen target, and member-three scalar payload with a final four-byte source span. Managed Double naming is not a wire-width witness. Intermediate DWORD and byte reads are distinct source-helper calls; setters do not establish source order or field meanings. FA+u16 tags and FF null wrappers remain supported. Non-null recursive target profiles and nonempty selector collections remain explicit unsupported gaps. Live formatter selection, allocation/refill/error parity, runtime/gameplay meaning and whole-BuffData EOF remain unresolved."
+}

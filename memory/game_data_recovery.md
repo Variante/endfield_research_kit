@@ -291,6 +291,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
   Preserve the raw bits: a mask-like managed name does not prove flag meanings.
+  Another member-ten child reads the common byte/three-scalar prefix, finder,
+  scalar32, target, scalar32, byte and scalar payload. Its three static type
+  contexts reuse the existing finder/target/scalar readers; equal outer member
+  counts do not select a layout. `scripts/game_data/buff_3c_native.json` pins
+  that distinct order through normal return and the separate null path.
+  Intermediate setters do not establish wire order or gameplay conditions.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
