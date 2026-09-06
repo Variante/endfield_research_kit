@@ -36,6 +36,10 @@ def tag14d(first=b'\xff',second=b'\xff',last=b'\xff'):
     return b'\xfa\x4d\x01\x09\xfe'+b'\xff'*12+first+b'\x80'+b'\xfe'*4+second+last
 
 
+def tag42(first=b'\xff',second=b'\xff',bits=0x7fc00000):
+    return b'\x42\x0a\xfe'+b'\xff'*12+b'\x80'+struct.pack('<I',bits)+b'\xfe\xff'+first+second
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1441,6 +1445,51 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag42_independent_targets_and_scalar_bits(self):
+        for first in (b'\xff',target(),target(direction_value=b'\xff')):
+            for second in (b'\xff',target()):
+                for bits in (0,0x80000000,0x7fc00000,0xffffffff):
+                    child=tag42(first,second,bits);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='42.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='42.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=66),row['completedRecords'])
+                    self.assertIn(dict(start=41,end=41+len(first),kind='anonymous-target-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=41+len(first),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag42_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag42(),tag42(target(),target()),b'\x42\xff',b'\xfa\x42\x00'+tag42()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='42-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='42-limit',limit=n))
+
+    def test_tag42_malformed_counts_headers_and_target_gaps(self):
+        raw=prefix(sequence(tag42(target(),target())))
+        good=event_prefix(raw,source='42-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='42-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('42-bounds',at,value))
+        bad_target=target(selector=b'\x03\x10')
+        for first,second in ((bad_target,target()),(target(),bad_target)):
+            row=event_prefix(prefix(sequence(tag42(first,second))),source='42-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+            self.assertFalse(any(r.get('tag')==66 for r in row['completedRecords']))
+            completed=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
+            self.assertEqual(completed,[] if first==bad_target else [dict(start=41,end=41+len(first),kind='anonymous-target-profile')])
 
     def test_tag5d_final_scalar_boundary_and_raw_bits(self):
         for bits in (0,1,0x80000000,0xffffffff,0x7fc00000):

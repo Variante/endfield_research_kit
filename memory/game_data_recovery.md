@@ -552,6 +552,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   scalar32 follows the common prefix. Its exact DamageType context selects a
   DWORD source read, not a nested object. Keep all raw scalar bits; enum names
   do not validate runtime values or establish damage behavior.
+  `scripts/game_data/buff_42_native.json` pins a member-ten action with byte,
+  scalar32, two bytes and two independent target profiles after its common
+  prefix. Both target contexts join the existing finite reader; completion of
+  the first cannot complete the parent or consume an unsupported second target.
+  Preserve raw scalar bits; distance/comparison behavior remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

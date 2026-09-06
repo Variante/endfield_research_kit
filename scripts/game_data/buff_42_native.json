@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124198,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDistanceCondition_DataForMemoryPack+Beyond_Gameplay_Core_CheckDistanceCondition_DataForMemoryPackFormatter",
+      "Deserialize",
+      64575808
+    ],
+    [
+      124197,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDistanceCondition_DataForMemoryPack",
+      "Deserialize",
+      64575904
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64575808,
+      "endRva": 64575901,
+      "sha256": "7CBF0E4D137B31B9F6AF0A4F651A818F661A7D51DAC00CA9D139548570625B12",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 64575904,
+      "endRva": 64576423,
+      "sha256": "F0922C6CCA99C803377075DF5813C05767A4B93839F5ACAB5B8DE26DE85D427B",
+      "boundary": "member10 source reads through normal RET"
+    },
+    {
+      "startRva": 64576423,
+      "endRva": 64576495,
+      "sha256": "F16F290CEBF9CF7DB2CB34D017342A4E488B1555C0C74008A139FAF92EF80E34",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82908702,
+      "endRva": 82908715,
+      "sha256": "0D60A0A75F19BB2620E7F24F494BD64470D97A4DB0AC0EF71FFAF4AE73108857",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82908771,
+      "endRva": 82908792,
+      "sha256": "8DE1D1C80AE181E79618486438D316AA648A53C435726344C64CB8F4DE0297D2",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64576081,
+      "instructionHex": "488B15D0432F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64576329,
+      "instructionHex": "488B15B8BB2C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64576370,
+      "instructionHex": "488B158FBB2C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte",
+      "target",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only finite framing. The member10 reader consumes common byte/three DWORD then byte, four-byte scalar, two bytes and two independent TargetSettings. Both exact target contexts join the existing finite reader; preserve independent null states, nested counts and end positions. The four-byte scalar uses the authenticated 2CA8BB0 helper; preserve raw bits including nonfinite patterns. An unknown first target leaves the second unconsumed; an unknown second target preserves the completed first but keeps the parent incomplete. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Distance/comparison behavior, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
