@@ -249,9 +249,12 @@ only.
   FrameSetup may have no observed calls during these entries. Pinned deferred
   and contact-parameter getter callers supply independent observation routes;
   route labels, hook-entry counters and patch checks preserve that distinction.
-  Retail liveness now identifies entry/tail getters in the CPP render-request
-  path. Retain both states and prefer the tail for the strict draw-camera join;
-  static pass-constructor getter sites alone may never execute in these entries.
+  Retail entry/tail getters in the CPP render-request path yield complete
+  selected-phase and volume observations. The legacy manager can remain zero
+  while phase values and draw constants are one; do not assume its FrameSetup
+  publication contract governs CPP rendering. Different camera frames can share
+  one Present and identical matrices, so a unique draw/request join is still
+  required. Trace the CPP publisher before requesting another observation run.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
