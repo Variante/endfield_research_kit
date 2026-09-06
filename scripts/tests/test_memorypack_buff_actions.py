@@ -109,6 +109,9 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag69(nested=None):
+    return b'\x69\x06\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,1,0x7fc00000)+(target() if nested is None else nested)
+
 def tag163(value=b'name',left=None,right=None):
     return (b'\xfa\x63\x01\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(value)+
             struct.pack('<I',0x7fc00000)+(scalar_payload(b'left') if left is None else left)+
@@ -1026,9 +1029,9 @@ class BuffActionsTests(unittest.TestCase):
 
     def test_tag68_target_boundary_and_later_unknown(self):
         child=tag68();self.assertEqual(len(child),95)
-        row=event_prefix(prefix(sequence(child,b'\x69')),source='68.bin')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='68.bin')
         self.assertEqual((row['status'],row['consumedEnd']),('unsupported',114))
-        self.assertEqual(row['diagnostic'],dict(source='68.bin',offset=114,expected='supported current union tag',actual=105,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='68.bin',offset=114,expected='supported current union tag',actual=89,category='union-tag'))
         self.assertIn(dict(start=19,end=114,kind='union',tag=104),row['completedRecords'])
         self.assertIn(dict(start=34,end=114,kind='anonymous-target-profile'),row['completedRecords'])
         self.assertEqual(row['opaqueRemainderRange'],[114,117])
@@ -1181,6 +1184,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag69_fourth_scalar_precedes_target_and_no_final_byte(self):
+        child=tag69();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='69.bin')
+        self.assertEqual(row['diagnostic'],dict(source='69.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=105),row['completedRecords'])
+        self.assertIn(dict(start=34,end=38,kind='anonymous-scalar32'),row['ranges'])
+        self.assertIn(dict(start=38,end=end,kind='anonymous-target-profile'),row['completedRecords'])
+        self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag69_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag69(),tag69(b'\xff'),b'\x69\xff',b'\xfa\x69\x00'+tag69()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='69-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='69-limit',limit=n))
+
+    def test_tag69_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tag69()));good=event_prefix(raw,source='69-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='69-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('69-bounds',at,value))
+        row=event_prefix(prefix(sequence(tag69(target(selector=b'\x03\x06'+bytes(8))))),source='69-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==105 for r in row['completedRecords']))
 
     def test_tag163_variable_prefix_and_two_distinct_scalar_payloads(self):
         child=tag163();end=19+len(child)

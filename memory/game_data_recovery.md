@@ -264,6 +264,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   same variable-width target profile. `scripts/game_data/buff_68_native.json`
   pins its own normal/null paths and exact target context; its equal member
   count does not select the earlier member-five counted-payload layout.
+  The member-six reader in `scripts/game_data/buff_69_native.json` adds a
+  fourth scalar32 before the target. Its later destination-object offset does
+  not move that scalar after the target on the wire. The ObjectType enum
+  context adds no nested record, and the target ends the action with no final
+  source byte; the managed condition name remains separate from this framing.
   The selected member-seven child reuses that scalar-payload profile twice,
   after one byte and four scalar32 reads. The fourth scalar is serialized
   before both nested records despite its later destination-object offset;
