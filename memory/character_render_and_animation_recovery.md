@@ -210,18 +210,20 @@ only.
   change. The shared-QPC join places them at `ui_overview_start` 0.051009 s and
   0.076166 s with no intervening selected-actor Tick. The broad whole-actor
   echoes present at the matching bounded clean-video anchor are absent from
-  both surfaces, localizing their producer downstream of DLAA to Uber/final or
-  recording presentation. The lab's ordinary TAAU consumer remains
+  both surfaces. Validated paired final-swapchain evidence now places broad
+  echoes inside the game's post-DLAA rendering before Present; the exact pass
+  remains unresolved. The lab's ordinary TAAU consumer remains
   compatibility-only pending an exact reusable DLAA integration.
 - Native-resolution comparison is explicit rather than inferred: the lab
   renderer accepts a paired 3840x2160 profile and the comparator's `source`
   mode requires the exact recorded source dimensions, preserving the default
   annotation-pinned 1920x1080 contract for existing diagnostics.
-- The observation-only Streamline schema-v2 capture is prepared to retain a
+- The observation-only Streamline schema-v2 capture retains a
   hashed 4K swapchain color immediately before each accepted packet's closing
   `Present`, alongside its DLAA/depth/motion data on the same QPC chronology.
-  This is a collection capability, not evidence, until a fresh exact-build
-  session publishes and validates the new files.
+  The validated pair is independent of Full owner-packet completeness. Keep
+  that evidence scope separate from exact draw/pose phase and clean-video
+  registration; see the generated paired-presentation review.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
@@ -319,7 +321,7 @@ The clean reference's central anchor also fails a conditional entry-phase
 consistency check: its first visible rigid actor maps before the authored
 controller entry. Overlapping silhouettes mean that image is not authenticated
 as one current physical pose. Preserve the runtime clock and annotation until
-the final-swapchain/recording boundary resolves presentation history; do not
+the post-DLAA game producer and its history are recovered; do not
 choose a replacement anchor by visual fit. The bounded arithmetic and source
 hashes live in `reports/assets/character_recovery/reference_entry_phase_consistency.json`.
 Animator schema v6 brackets state API reads and the following Present-clock
