@@ -253,8 +253,10 @@ only.
   selected-phase and volume observations. The legacy manager can remain zero
   while phase values and draw constants are one; do not assume its FrameSetup
   publication contract governs CPP rendering. Different camera frames can share
-  one Present and identical matrices, so a unique draw/request join is still
-  required. Trace the CPP publisher before requesting another observation run.
+  one Present and identical matrices; the native-backed draw-local CB1 camera
+  frame counter disambiguates them. BeforeCullingCPP converts the selected
+  phase to a separate CPP shadow config, preserving attenuation/blend. Trace
+  that request's engine publication before requesting another observation run.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
