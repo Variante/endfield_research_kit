@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122403,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNumAdvanced_DataForMemoryPack+Beyond_Gameplay_Core_SaveBuffStackNumAdvanced_DataForMemoryPackFormatter",
+      "Deserialize",
+      67231920
+    ],
+    [
+      122402,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNumAdvanced_DataForMemoryPack",
+      "Deserialize",
+      67232016
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67231920,
+      "endRva": 67232013,
+      "sha256": "6F65D033E37678FF86CE14DED7FC01B29AD2F82BD7AC976B75CE31B10BA63C0A",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67232016,
+      "endRva": 67232496,
+      "sha256": "450DFCF0777D8773B686999B93B51975B8F86094E6258DFC8A5BC7D1256F96A2",
+      "boundary": "member9 normal source read order through RET"
+    },
+    {
+      "startRva": 67232496,
+      "endRva": 67232592,
+      "sha256": "D6929566CBECA9986B4620E640324629EEF27EE867C3D3BC39373A7A9A2EC82D",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83263883,
+      "endRva": 83263904,
+      "sha256": "B059296134A308A40CEEADB5AA78B96E312E4EC26C216EF996C1E9F44E741F04",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67232294,
+      "instructionHex": "488B156B6CFD08",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67232335,
+      "instructionHex": "488B15D26DFF08",
+      "cellVa": 6660640808,
+      "usageRawHex": "FDE412C000000000",
+      "methodSpecIndex": 619134,
+      "methodSpec": [
+        428448,
+        -1,
+        42225
+      ],
+      "argumentRawHex": "20260000000000000000118000000000",
+      "typeDefinition": 9760,
+      "typeName": "Beyond.Gameplay.Core.BuffStackNumType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67232375,
+      "instructionHex": "488B158A340409",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "finder-profile",
+      "scalar32",
+      "target-profile",
+      "byte-payload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and three distinct MethodSpec-type callsite joins (two nested profiles and one scalar helper) under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-nine header, nonzero-normalized byte, three scalar32 values, finite BuffFindSettings profile, scalar32, finite TargetSettings profile, signed-length byte payload and final byte. Finder and target reuse separately pinned B4/EC consumers and maintained finite extensions. The scalar enum context adds no nested member. The interposed scalar stays between the two nested records; output setters and lazy construction add no source members. Null and empty payloads remain distinct. Unknown nested profiles stop at their original boundary. Field names, byte decoding, live provider selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

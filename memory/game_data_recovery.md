@@ -394,6 +394,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   counts do not select a layout. `scripts/game_data/buff_3c_native.json` pins
   that distinct order through normal return and the separate null path.
   Intermediate setters do not establish wire order or gameplay conditions.
+  `scripts/game_data/buff_136_native.json` pins a member-nine order with the
+  same finder/scalar32/target segment followed by a byte payload and final byte.
+  Its interposed scalar enum context adds no nested member. Preserve the final
+  byte after the variable payload; a shared finder/target pair does not choose
+  the surrounding action grammar or prove the managed action's runtime effect.
   Member-nine actions have distinct orders: `scripts/game_data/buff_78_native.json`
   adds scalar32, two bytes, target and counted scalar32 values to the common
   prefix; `scripts/game_data/buff_81_native.json` instead adds a length-prefixed

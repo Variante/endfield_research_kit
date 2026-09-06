@@ -109,6 +109,12 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag136(finder=None,nested=None,value=b'value'):
+    if finder is None:
+        finder=b'\x03'+struct.pack('<i',2)+payload(b'finder')+payload(None)+bytes(4)+b'\x02'+struct.pack('<IiII',0xffffffff,2,1,0xffffffff)
+    return (b'\xfa\x36\x01\x09\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+finder+
+            struct.pack('<I',0x7fc00000)+(target() if nested is None else nested)+payload(value)+b'\x80')
+
 def tag78(*,items=(0,0xffffffff,0x80000000),nested=None):
     tail=struct.pack('<i',-1 if items is None else len(items))
     if items:tail+=struct.pack('<'+'I'*len(items),*items)
@@ -1170,6 +1176,49 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag136_finder_scalar_target_payload_and_final_byte(self):
+        child=tag136();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='136.bin')
+        self.assertEqual(row['diagnostic'],dict(source='136.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=310),row['completedRecords'])
+        finder=next(r for r in row['completedRecords'] if r['kind']=='anonymous-finder-profile')
+        target_row=next(r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile')
+        self.assertEqual(finder['start'],36)
+        self.assertEqual(target_row['start'],finder['end']+4)
+        self.assertIn(dict(start=end-1,end=end,kind='anonymous-nonzero-byte'),row['ranges'])
+        self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag136_null_variants_cuts_limits_and_trailing(self):
+        for child in (tag136(),tag136(value=None),tag136(value=b''),tag136(b'\xff',b'\xff'),b'\xfa\x36\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='136-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='136-limit',limit=n))
+
+    def test_tag136_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tag136()));good=event_prefix(raw,source='136-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='136-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('136-bounds',at,value))
+        row=event_prefix(prefix(sequence(tag136(nested=target(selector=b'\x03\x06'+bytes(8))))),source='136-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==310 for r in row['completedRecords']))
 
     def test_tag6d_variable_payload_and_following_unknown(self):
         for value in (None,b'',b'x',bytes(range(256))):
