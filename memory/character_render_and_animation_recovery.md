@@ -211,8 +211,8 @@ only.
   0.076166 s with no intervening selected-actor Tick. The broad whole-actor
   echoes present at the matching bounded clean-video anchor are absent from
   both surfaces. Validated paired final-swapchain evidence now places broad
-  echoes inside the game's post-DLAA rendering before Present; the exact pass
-  remains unresolved. The lab's ordinary TAAU consumer remains
+  echoes inside the game's post-DLAA radial Uber draw before UI composition.
+  The lab's ordinary TAAU consumer remains
   compatibility-only pending an exact reusable DLAA integration.
 - Native-resolution comparison is explicit rather than inferred: the lab
   renderer accepts a paired 3840x2160 profile and the comparator's `source`
@@ -224,15 +224,18 @@ only.
   The validated pair is independent of Full owner-packet completeness. Keep
   that evidence scope separate from exact draw/pose phase and clean-video
   registration; see the generated paired-presentation review.
-  The next boundary is the first unique fullscreen consumer of that exact
-  DLAA output: retain its immediate target and draw-bound parameters before UI
-  or subsequent writes. A spatial radial sampler can produce repeated scaled
-  silhouettes without a history texture; source capability alone does not
-  establish which pass owns the observed echoes.
+  Schema-v3 evidence now authenticates the first unique fullscreen consumer of
+  that exact DLAA output, its immediate target, and draw-bound parameters before
+  UI or subsequent writes. Both retained frames show the echoes in that target;
+  the archived shader matches the recovered six-RGB-tap radial Uber exactly.
+  Joint radial/chromatic values distinguish the authored entrance pulse from
+  its late pulse. This identifies curve-value phases, not body-pose phases or
+  EffectInstance clock ownership. See the generated
+  `post_dlaa_uber_producer_review.json` and parameter audit.
   Native-resolution lab stage captures already show the authored radial echoes
   appearing in final Uber from comparatively clean after-temporal input. Keep
-  retail consumer/parameter/phase attribution separate from local capability;
-  an additional echo or history pass is not justified by this remaining gap.
+  body-pose/camera alignment separate from the now-authenticated retail consumer
+  and parameters; preserve the existing runtime clock while closing those joins.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
@@ -330,7 +333,7 @@ The clean reference's central anchor also fails a conditional entry-phase
 consistency check: its first visible rigid actor maps before the authored
 controller entry. Overlapping silhouettes mean that image is not authenticated
 as one current physical pose. Preserve the runtime clock and annotation until
-the post-DLAA game producer and its history are recovered; do not
+the captured radial curve phase is joined to body-pose and camera consumption; do not
 choose a replacement anchor by visual fit. The bounded arithmetic and source
 hashes live in `reports/assets/character_recovery/reference_entry_phase_consistency.json`.
 Animator schema v6 brackets state API reads and the following Present-clock
