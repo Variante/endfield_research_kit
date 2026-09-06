@@ -275,6 +275,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   output setters consume no source bytes; distinguish their receiver from the
   reader before counting serialized members. The two exact nested contexts
   reuse existing finite profiles without promoting the managed condition name.
+  The independently pinned `scripts/game_data/buff_6e_native.json` has that
+  same source order and nested contexts. Both tags may share the finite parser
+  branch while retaining distinct record tags and native identities; this
+  structural equivalence does not establish equal gameplay conditions.
   The extended member-eleven action in `scripts/game_data/buff_157_native.json`
   adds a byte/payload/scalar32 segment before the target in that scalar-prefix
   family, then reads a byte and scalar payload. Equal nested type arguments

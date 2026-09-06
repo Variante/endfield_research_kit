@@ -189,6 +189,45 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag6e_keeps_identity_with_shared_structural_profile(self):
+        child=b'\x6e'+tag65()[1:];end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='6e.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=110),row['completedRecords'])
+        self.assertFalse(any(r.get('tag')==101 for r in row['completedRecords']))
+        self.assertEqual(row['diagnostic'],dict(source='6e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag6e_null_extended_truncation_and_hard_limits(self):
+        for child in (b'\x6e'+tag65()[1:],b'\xfa\x6e\x00'+tag65()[1:],b'\x6e\xff',
+                      b'\x6e'+tag65(b'\xff',b'\xff')[1:],b'\x6e'+tag65(value=scalar_payload(b'long-key'))[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='6e-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='6e-limit',limit=n))
+
+    def test_tag6e_bad_headers_lengths_and_nested_gap(self):
+        raw=prefix(sequence(b'\x6e'+tag65()[1:]));good=event_prefix(raw,source='6e-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='6e-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        child=b'\x6e'+tag65(t=target(selector=b'\x03\xfe'+bytes(8)))[1:]
+        row=event_prefix(prefix(sequence(child)),source='6e-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==110 for r in row['completedRecords']))
+
     def test_tag157_extended_record_and_variable_boundaries(self):
         child=tag157();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='157.bin')
