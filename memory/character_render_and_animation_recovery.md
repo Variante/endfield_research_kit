@@ -298,8 +298,11 @@ only.
   rereads and the native branch. Matching owned producer-vector bytes still
   does not identify the actual pooled upload resource and binding range;
   that missing runtime lineage keeps publication closed. The intervening graph
-  handle is a logical resource record, not a D3D buffer identity; a causal
-  mapping/upload generation must connect its allocation to the draw binding.
+  handle is a logical resource record, not a D3D buffer identity. The pool's
+  staging branch copies heap bytes through map/copy/unmap; map references can
+  share a backend mapping. The native D3D11 binder's range conversion is now
+  recovered, but a causal upload generation must still connect the allocation
+  to the draw. See `cpp_shadow_publication_native.json` for the exact contract.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
