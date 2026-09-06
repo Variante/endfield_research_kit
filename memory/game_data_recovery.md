@@ -632,6 +632,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   containing one signed-length byte payload and a required final DWORD.
   Preserve null/empty payloads and raw scalar bits; the selected body has no
   nested provider. Damage ownership and value meaning remain unresolved.
+  `scripts/game_data/buff_84_native.json` pins a member-six action
+  containing TargetSettings and a required final DWORD. Unknown nested targets
+  preserve the unread scalar; a completed target alone does not complete the
+  parent. Target ownership and weapon-mask meaning remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

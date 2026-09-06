@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124807,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckWeaponTypeCondition_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckWeaponTypeCondition_DataForMemoryPackFormatter",
+      "Deserialize",
+      70868992
+    ],
+    [
+      124806,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckWeaponTypeCondition_DataForMemoryPack",
+      "Deserialize",
+      70869088
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70868992,
+      "endRva": 70869085,
+      "sha256": "122A53BA5DBA3493D143FC08A0199C598A372B96048474DA511B81BD2094F920",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70869088,
+      "endRva": 70869459,
+      "sha256": "877F732B5A3B65C923FBB0A8314678FD59FFAF93342B1D25840C8B05F4B782E5",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 70869459,
+      "endRva": 70869543,
+      "sha256": "B518AF406E99DA5436A26506F1B5A6686EDD236418F7D839477EF5C778517F5B",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83597284,
+      "endRva": 83597297,
+      "sha256": "1577E31FCDE9A90DFEA6DBD15BB9B7089ED97F31A4D025F5F6043E87B9C0AFEC",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83597353,
+      "endRva": 83597374,
+      "sha256": "5DB5D67E50B7BD6C58D44684A042658DD79A32CC716E7BDE53F2D0C06505C283",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70869260,
+      "instructionHex": "488B15153DCF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70869366,
+      "instructionHex": "488B158BB5CC08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70869407,
+      "instructionHex": "488B1592A9CA08",
+      "cellVa": 6660819768,
+      "usageRawHex": "85E712C000000000",
+      "methodSpecIndex": 619458,
+      "methodSpec": [
+        428448,
+        -1,
+        42460
+      ],
+      "argumentRawHex": "09350000000000000000118000000000",
+      "typeDefinition": 13577,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckWeaponTypeCondition+WeaponTypeMask",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes common byte/three DWORD, TargetSettings and a required final DWORD under the exact WeaponTypeMask context. Reuse the independently pinned finite target profile; preserve null targets and arbitrary scalar bits. Unknown nested targets leave the final scalar unread and parent incomplete. A completed target does not complete the parent when the scalar is truncated. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Target ownership, mask meaning, condition evaluation, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
