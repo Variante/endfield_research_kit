@@ -296,8 +296,13 @@ only.
   `_ContactShadow` UAV output, also sampled by the scene producer at t5.
   The legacy cross-backend screen-mask name is disproven. Dispatch-local
   constant-buffer slices and output bytes are authenticated in the combined
-  two-entry evidence package. Bounded isolated GPU
-  comparisons support the recovered arithmetic, but current native publishers
+  two-entry evidence package. Replay still needs the dispatch-local compute
+  sampler: Contact capture v2 now retains the bound s0 descriptor, while
+  legacy receipts explicitly leave
+  sampler evidence incomplete. New runtime data is required to replace the
+  earlier assumed replay sampler.
+  Bounded isolated GPU comparisons support the recovered arithmetic, but
+  current native publishers
   read interpolated environment settings and a camera frame counter; constructor
   defaults do not validate those live values. Exact t7 uses the completed
   resolve, and t11 uses same-camera/frame contact output with separate content
