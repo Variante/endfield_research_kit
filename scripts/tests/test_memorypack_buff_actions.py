@@ -74,6 +74,12 @@ def tag56():
             struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
 
 
+def tag57():
+    return (b'\x57\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(b'\xff\x00')+
+            struct.pack('<i',3)+pair(b'a',b'\xff\x00',254)+b'\xff'+pair(None,b'',128)+
+            struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
+
+
 def tag92():
     assignment=b'\x06'+bytes.fromhex('FFFFFFFF')+payload(b'\xff\x00')+bytes.fromhex('0000C07F')+payload(None)+payload(b'')+b'\xfe'
     item=b'\x05\x80'+struct.pack('<i',2)+assignment+b'\xff'+payload(b'\xff\x00')+payload(None)+b'\xfe'
@@ -83,6 +89,60 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag57_paired_record_boundaries_and_later_unknown(self):
+        child=tag57();self.assertEqual(len(child),70)
+        row=event_prefix(prefix(sequence(child,b'\x5b')),source='57.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],91)
+        self.assertEqual(row['consumedEnd'],89)
+        self.assertIn(dict(start=19,end=89,kind='union',tag=87),row['completedRecords'])
+        spans=[(r['start']-19,r['end']-19) for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']
+        self.assertEqual(spans,[(25,38),(38,39),(39,49)])
+        self.assertIn(dict(start=72,end=89,kind='anonymous-query-profile'),row['completedRecords'])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag57_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag57())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            first=event_prefix(full,source='57-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertLessEqual(first['consumedEnd'],n)
+            self.assertEqual(first,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='57-limit.bin',limit=n))
+
+    def test_tag57_bad_counts_and_headers(self):
+        for at in (15,21,26,32,40,45,58):
+            for value in (-2,2147483647):
+                bad=bytearray(tag57());struct.pack_into('<i',bad,at,value)
+                with self.subTest(at=at,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='57-count.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                                 ('57-count.bin',at+5,value,'count-bounds'))
+        for at in (1,25,39,53):
+            bad=bytearray(tag57());bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad))
+            self.assertEqual(caught.exception.diagnostic['offset'],at+5)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        # The related tag56 has member-one elements; accepting its header here
+        # would silently select the wrong current native element profile.
+        bad=bytearray(tag57());bad[25]=1
+        with self.assertRaises(FrameError):sequence_frame(sequence(bad))
+
+    def test_tag57_nulls_empty_lists_and_extended_tag(self):
+        children=[b'\x57\xff',b'\xfa\x57\x00'+tag57()[1:]]
+        for count in (-1,0):
+            for key in (None,b''):
+                for query in (b'\xff',b'\x02'+bytes(4)+struct.pack('<i',count)):
+                    children.append(b'\x57\x08'+bytes(13)+payload(key)+struct.pack('<i',count)+bytes(4)+query)
+        for child in children:
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+
     def test_selector_finder_tag2_zero_members_and_null(self):
         for value in (b'\xff',b'\x02\x00',b'\x02\xff',b'\xfa\x02\x00\x00',b'\xfa\x02\x00\xff'):
             raw=sequence(tag_ec(nested=target(selector=b'\x03'+value+bytes(8))))
@@ -107,9 +167,9 @@ class BuffActionsTests(unittest.TestCase):
 
     def test_tag92_nested_boundaries_and_later_unknown(self):
         child=tag92();self.assertEqual(len(child),119)
-        row=event_prefix(prefix(sequence(child,b'\x57')),source='92.bin')
+        row=event_prefix(prefix(sequence(child,b'\x58')),source='92.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],87)
+        self.assertEqual(row['diagnostic']['actual'],88)
         self.assertEqual(row['consumedEnd'],138)
         for a,b,kind in ((0,119,'union'),(17,28,'anonymous-scalar-bytes-profile'),
                          (32,74,'anonymous-input-profile'),(74,75,'anonymous-input-profile'),
@@ -161,9 +221,9 @@ class BuffActionsTests(unittest.TestCase):
 
     def test_tag56_member_one_records_and_later_unknown(self):
         child=tag56();self.assertEqual(len(child),58)
-        row=event_prefix(prefix(sequence(child,b'\x57')),source='56.bin')
+        row=event_prefix(prefix(sequence(child,b'\x58')),source='56.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],87)
+        self.assertEqual(row['diagnostic']['actual'],88)
         self.assertEqual(row['consumedEnd'],19+58)
         self.assertIn(dict(start=19,end=77,kind='union',tag=86),row['completedRecords'])
         spans=[(r['start']-19,r['end']-19) for r in row['completedRecords'] if r['kind']=='anonymous-single-payload']

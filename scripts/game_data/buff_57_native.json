@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124004,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContextAdvanced_DataForMemoryPack",
+      "Deserialize",
+      64470928
+    ],
+    [
+      124005,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContextAdvanced_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckBuffIdInContextAdvanced_DataForMemoryPackFormatter",
+      "Deserialize",
+      64470832
+    ],
+    [
+      163261,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_BlackboardBuffIdForMemoryPack",
+      "Deserialize",
+      64600544
+    ],
+    [
+      163262,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_BlackboardBuffIdForMemoryPack+Beyond_Gameplay_Core_Conditions_BlackboardBuffIdForMemoryPackFormatter",
+      "Deserialize",
+      64600448
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64470832,
+      "endRva": 64470925,
+      "sha256": "ABE91F3355C25563B7CBCF13CB8556A2F7FD780B2178CF25C56FB457419C95F2",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 64470928,
+      "endRva": 64471406,
+      "sha256": "84F57892A31ABBBDB8F42D4604BB63EA9B8CF661F67D3C553D5E46D6BE607D88",
+      "boundary": "member8 normal read order through RET"
+    },
+    {
+      "startRva": 82884155,
+      "endRva": 82884176,
+      "sha256": "6023D8D6F4B57A1840DFC4136F0DF7AA941EDA7926D4851572B3E941A70DDF19",
+      "boundary": "action FF clear and rejoin normal epilogue"
+    },
+    {
+      "startRva": 64600448,
+      "endRva": 64600541,
+      "sha256": "597606E9AB85E58D46451D9AC6A2EAAD9CDBF81558D9B5F6218BFA5AB4E2B115",
+      "boundary": "paired-payload formatter forwarding"
+    },
+    {
+      "startRva": 64600544,
+      "endRva": 64600754,
+      "sha256": "EC70F960791441955FC70CF1D6F415E81A3BFB72FFB6E2409BD0211DB7EAE8EA",
+      "boundary": "member3 byte-payload, byte, byte-payload through RET"
+    },
+    {
+      "startRva": 82910620,
+      "endRva": 82910671,
+      "sha256": "7E3D3CA909FE343D34F76F5A95D9E6D3BC4B8E63721083148369A25180C68A52",
+      "boundary": "paired-payload allocation continuation rejoining header check"
+    },
+    {
+      "startRva": 82910727,
+      "endRva": 82910748,
+      "sha256": "5A0911311A56C71A4BCFFF077D85A35C088E5FF9116AC634D79FDA11737E1DD2",
+      "boundary": "paired-payload FF clear and rejoin normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64471240,
+      "instructionHex": "488B15B9E72B09",
+      "cellVa": 6660794504,
+      "usageRawHex": "E7A212C000000000",
+      "methodSpecIndex": 610675,
+      "methodSpec": [
+        428462,
+        -1,
+        62499
+      ],
+      "argumentRawHex": "2803268D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D0100000070AEE78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 13939,
+        "elementArguments": [
+          "A2340000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 64471321,
+      "instructionHex": "4C8B05388D2709",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "counted-paired-payloads",
+      "scalar32",
+      "query-profile"
+    ],
+    "member3": [
+      "byte-payload",
+      "byte",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Selected normal/null structural order. The list context resolves reference-type BlackboardBuffId; its concrete member-three reader consumes two signed-length byte payloads separated by a nonzero-normalized byte. This differs from the member-one value-type list in selectedBuff56ReadOrder, despite the same outer member count. Outer reference-list count/element framing reuses the conditional shared reference-list consumer in selectedBuffB4ReadOrder; actual provider-selected execution is not established. The final query context and return-carrier bridge are identical to selectedBuff56ReadOrder, and byte-length advancement reuses selectedBuffTag76ReadOrder. FF remains null; arbitrary byte/scalar bit patterns are structurally preserved. String decoding, field/gameplay meaning, live formatter selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

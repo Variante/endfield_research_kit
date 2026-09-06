@@ -278,12 +278,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   an explicit limitation: List<string> has a static type join but no separate
   formatter MethodSpec; the shared List<Object> count/loop and String element
   reader support a finite structural profile, not actual provider selection.
-  A separate member-eight child has a byte payload, counted member-one
-  payloads, scalar32 and the same query profile after its common scalar prefix.
-  Its exact List<BuffId> static candidate is pinned in
-  `scripts/game_data/buff_56_native.json`. Each element consumes its own header
-  before the byte length; neither the value-type name nor an eight-byte output
-  slot proves a fixed serialized width. Active formatter selection stays open.
+  Related member-eight children have a byte payload, counted nested records,
+  scalar32 and the same query profile after their common scalar prefix.
+  `scripts/game_data/buff_56_native.json` pins the member-one value-type list;
+  `scripts/game_data/buff_57_native.json` joins a reference-type list whose
+  member-three elements contain two byte payloads separated by a byte.
+  Equal outer member counts do not imply equal element layouts. Each element
+  consumes its own header; a managed name or output-slot width cannot replace
+  the concrete nested reader. The reference-list loop remains conditional on
+  the shared consumer, and active formatter selection stays open for both.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
