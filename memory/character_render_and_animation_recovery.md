@@ -172,11 +172,11 @@ only.
   the final GPU binding without the live phase and later-publisher joins. The
   current source audit is `cloud_shadow_native_publishers.json` in that report
   directory; IFix execution and live environment selection remain unproven.
-  The bounded environment observer now retains selected cloud configuration
-  and exact managed texture-publisher getter routes. These are candidate phase
-  observations only; feature state, texture validity, actual globals and final
-  draw consumption still require separate joins. Its module README owns the
-  receipt contract and capture boundary.
+  The bounded environment observer retains selected cloud configuration,
+  exact managed texture-publisher getter routes, the feature getter's actual
+  return and the constant method's before/after bytes. Keep these CPU-side
+  observations separate from texture validity, later overwrites and final draw
+  consumption. Its module README owns the receipt contract and capture boundary.
 - The shared character PreG surface records source-enabled `DepthOnlyOutline`
   after body prepasses and before scene HGBuffer. Keep it distinct from the
   later ZWrite-off color outline. Material pass flags and shader keywords select
