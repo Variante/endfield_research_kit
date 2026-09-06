@@ -495,6 +495,12 @@ artifact hashing bound must accommodate the observer's permitted payload size.
   actor's serialized camera entry state; capture-specific input endpoints or
   trajectories remain external reference evidence and never become actor or
   runtime constants.
+- The optional environment observer also samples gyroscope Tick state before
+  and after the original call within its two capture windows. Missing nested
+  objects and failed reads remain distinct. Candidate driver/tween identities
+  do not establish actor ownership or actual tween-advance timing; join those
+  separately before changing the lab camera scheduler. See the capture README
+  for collection and validation; this scope omits Streamline surfaces.
 - Report spatial, temporal, silhouette, effect, and color errors separately.
   One aggregate score can hide a regression in a critical layer.
 - Captured resources and replayed lab outputs keep their color space, format,
