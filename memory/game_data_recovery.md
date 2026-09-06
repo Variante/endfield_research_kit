@@ -584,6 +584,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with two independent byte payloads after the common prefix. Preserve both
   signed lengths and null/empty states without adding an object header or flag;
   payload encoding and heal-value ownership remain unresolved.
+  `scripts/game_data/buff_171_native.json` pins a member-thirteen action
+  with three independent scalar payloads, a separate byte payload and target
+  followed by a required byte. Exact BlackboardDouble contexts reuse the
+  four-byte scalar reader; attribute ownership and arithmetic remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

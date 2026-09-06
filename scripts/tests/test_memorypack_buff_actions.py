@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tag171(first=b'\xff',second=b'\xff',value=b'',third=b'\xff',nested=b'\xff',last=255):
+    return b'\xfa\x71\x01\x0d\xfe'+b'\xff'*16+first+second+payload(value)+third+b'\x80'*8+nested+bytes([last])
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1541,6 +1545,56 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag171_independent_scalar_profiles_and_final_byte(self):
+        for first in (b'\xff',scalar_payload(b'a')):
+            for second in (b'\xff',scalar_payload(None)):
+                for third in (b'\xff',scalar_payload(b'c')):
+                    for value in (None,b'',b'raw'):
+                        child=tag171(first,second,value,third,target(),128);end=19+len(child)
+                        row=event_prefix(prefix(sequence(child,b'\x59')),source='171.bin')
+                        self.assertEqual(row['diagnostic'],dict(source='171.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                        self.assertIn(dict(start=19,end=end,kind='union',tag=369),row['completedRecords'])
+                        for at,size in ((40,len(first)),(40+len(first),len(second)),(40+len(first)+len(second)+len(payload(value)),len(third))):
+                            self.assertIn(dict(start=at,end=at+size,kind='anonymous-scalar-payload'),row['completedRecords'])
+                        self.assertIn(dict(start=end-1,end=end,kind='anonymous-nonzero-byte'),row['ranges'])
+
+    def test_tag171_null_cuts_limits_and_trailing(self):
+        for child in (tag171(),tag171(scalar_payload(),scalar_payload(None),b'raw',scalar_payload(b'c'),target()),b'\xfa\x71\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='171-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='171-limit',limit=n))
+
+    def test_tag171_malformed_counts_headers_and_unconsumed_tail(self):
+        raw=prefix(sequence(tag171(scalar_payload(),scalar_payload(None),b'raw',scalar_payload(b'c'),target())))
+        good=event_prefix(raw,source='171-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='171-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('171-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==369 for r in row['completedRecords']))
+        child=tag171(nested=target(selector=b'\x03\x10'))
+        row=event_prefix(prefix(sequence(child)),source='171-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertLess(row['consumedEnd'],19+len(child)-1)
+        self.assertFalse(any(r.get('tag')==369 for r in row['completedRecords']))
+        child=tag171(nested=target());full=prefix(sequence(child));end=19+len(child)
+        row=event_prefix(full,source='171-final-byte',limit=end-1)
+        self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],end-1)
+        self.assertTrue(any(r['kind']=='anonymous-target-profile' for r in row['completedRecords']))
+        self.assertFalse(any(r.get('tag')==369 for r in row['completedRecords']))
 
     def test_tag89_null_extended_cuts_limits_and_trailing(self):
         for child in (tag89(),tag89(None,None),tag89(b'first',b'last'),b'\x89\xff',b'\xfa\x89\x00'+tag89()[1:]):

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123293,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreAttributeValue_DataForMemoryPack+Beyond_Gameplay_Core_StoreAttributeValue_DataForMemoryPackFormatter",
+      "Deserialize",
+      64371568
+    ],
+    [
+      123292,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreAttributeValue_DataForMemoryPack",
+      "Deserialize",
+      64371664
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64371568,
+      "endRva": 64371661,
+      "sha256": "8A54E3157CAEFACB0DB50717E55B6DE2983198DC584B6DFA2FB9A4B89AE7F9F2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 64371664,
+      "endRva": 64372310,
+      "sha256": "99BB91EF3AD7CFA31E064369DB8E3AF1C3A7A58A846D433105D357AA0EC5661E",
+      "boundary": "member13 source reads through normal RET"
+    },
+    {
+      "startRva": 64372310,
+      "endRva": 64372430,
+      "sha256": "46B6D7D25589178346CDA2D8D5A39212807B7DFC55F307724BF48D4A42359D0E",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82876086,
+      "endRva": 82876099,
+      "sha256": "A8A9A84AADF77E903E6B3FF4FB6EBF7A4A08A6CE4386386B38924AAEBE371CEC",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82876155,
+      "endRva": 82876176,
+      "sha256": "92397B2955C5E3E725E7BD62BD35407AAA5445AE3CD634D09EFA913AC0E3086B",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64371836,
+      "instructionHex": "488B15A5613209",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64371942,
+      "instructionHex": "488B15333C2C09",
+      "cellVa": 6660716832,
+      "usageRawHex": "E9E412C000000000",
+      "methodSpecIndex": 619124,
+      "methodSpec": [
+        428448,
+        -1,
+        26177
+      ],
+      "argumentRawHex": "9A840000000000000000118000000000",
+      "typeDefinition": 33946,
+      "typeName": "Beyond.GEnums.AttributeType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64371982,
+      "instructionHex": "488B150B092909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64372023,
+      "instructionHex": "488B15E2082909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64372098,
+      "instructionHex": "488B1597082909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64372139,
+      "instructionHex": "488B155E3B2C09",
+      "cellVa": 6660716816,
+      "usageRawHex": "41E612C000000000",
+      "methodSpecIndex": 619296,
+      "methodSpec": [
+        428448,
+        -1,
+        42338
+      ],
+      "argumentRawHex": "9B840000000000000000118000000000",
+      "typeDefinition": 33947,
+      "typeName": "Beyond.GEnums.ModifyAttributeType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64372179,
+      "instructionHex": "488B155E3B2C09",
+      "cellVa": 6660716856,
+      "usageRawHex": "69E812C000000000",
+      "methodSpecIndex": 619572,
+      "methodSpec": [
+        428448,
+        -1,
+        42538
+      ],
+      "argumentRawHex": "A1260000000000000000118000000000",
+      "typeDefinition": 9889,
+      "typeName": "Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64372219,
+      "instructionHex": "488B1506D92F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member13": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload",
+      "byte-payload",
+      "scalar-payload",
+      "scalar32",
+      "scalar32",
+      "target",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member13 action consumes common byte/three DWORD then DWORD, two scalar payloads, independent byte payload, third scalar payload, two DWORD, target and final byte. Three exact BlackboardDouble contexts join the payload/byte/four-byte scalar reader pinned by buff_35_native.json; its name does not imply eight-byte wire width. Preserve independent profile null states and signed payload counts. AttributeType, ModifyAttributeType and StoreAttributeType contexts select DWORD source reads. The final TargetSettings context joins the existing finite target reader; unsupported children keep the parent incomplete and final byte unconsumed. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Adjacent methods, constructors and output setters add no source bytes. Attribute ownership, arithmetic or storage meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
