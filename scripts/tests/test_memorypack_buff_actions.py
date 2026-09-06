@@ -143,6 +143,13 @@ def tag65(t=None,value=None):
             (target() if t is None else t)+b'\x80'+(scalar_payload(b'key') if value is None else value))
 
 
+def tag96(value=None,key=None,t=None):
+    return (b'\x96\x09\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+b'\x80'+
+            (scalar_payload(b'scalar') if value is None else value)+
+            (pair(b'left',b'right',254) if key is None else key)+
+            (target() if t is None else t)+b'\xff')
+
+
 def tagfe(values=None,targets=None):
     values=(scalar_payload(b'\xffkey'),scalar_payload(None)) if values is None else values
     targets=(target(),target()) if targets is None else targets
@@ -197,6 +204,46 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag96_distinct_member_three_profiles_and_following_boundary(self):
+        child=tag96();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='96.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=150),row['completedRecords'])
+        nested=[r for r in row['completedRecords'] if r['kind'] in ('anonymous-scalar-payload','anonymous-paired-payload','anonymous-target-profile')]
+        self.assertEqual([r['kind'] for r in nested],['anonymous-scalar-payload','anonymous-paired-payload','anonymous-target-profile'])
+        self.assertEqual([(r['start'],r['end']) for r in nested[:2]],[(35,51),(51,70)])
+        self.assertEqual(row['diagnostic'],dict(source='96.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag96_null_extended_truncation_and_hard_limits(self):
+        for child in (tag96(),b'\xfa\x96\x00'+tag96()[1:],b'\x96\xff',tag96(b'\xff',b'\xff',b'\xff'),
+                      tag96(scalar_payload(None),pair(None,b'')),tag96(key=pair(b'long-variable-key',b'\xff\xfe'))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='96-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='96-limit',limit=n))
+
+    def test_tag96_bad_headers_payload_lengths_and_nested_gap(self):
+        raw=prefix(sequence(tag96()));good=event_prefix(raw,source='96-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='96-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        row=event_prefix(prefix(sequence(tag96(t=target(selector=b'\x03\xfe'+bytes(8))))),source='96-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==150 for r in row['completedRecords']))
+
     def test_tagfe_extended_identity_nested_order_and_opaque_tail(self):
         child=tagfe();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='fe.bin')

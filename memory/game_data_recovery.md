@@ -297,7 +297,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   live in `scripts/game_data/buff_11f_native.json`; names and runtime use remain
   unresolved independently of this structural closure. Paired and scalar
   payloads can have identical extents; select their profiles from independent
-  nested-consumer evidence, not byte length alone.
+  nested-consumer evidence, not byte length alone. The member-nine reader in
+  `scripts/game_data/buff_96_native.json` places scalar and paired payloads
+  consecutively before a target: their shared member-three header cannot choose
+  a grammar, while the distinct exact type contexts support that source order.
   The extended member-38 action in `scripts/game_data/buff_169_native.json`
   combines two targets, direction, assignment and byte-payload lists with raw
   spans and scalar payloads. Its Vector3-context helper consumes twelve raw
