@@ -319,6 +319,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   an explicit limitation: List<string> has a static type join but no separate
   formatter MethodSpec; the shared List<Object> count/loop and String element
   reader support a finite structural profile, not actual provider selection.
+  `scripts/game_data/buff_7c_native.json` places this variable query after a
+  target; its sixteen-byte output store does not establish wire extent. The
+  target's finder18 extension selects a distinct member-16 ColliderShapeData,
+  not the member-18 HitBoxFinder ShapeData. Its three vector-context helpers
+  each advance twelve raw bytes, separately from variable byte payloads;
+  neither similar names nor destination layout selects the shape grammar.
   Related member-eight children have a byte payload, counted nested records,
   scalar32 and the same query profile after their common scalar prefix.
   `scripts/game_data/buff_56_native.json` pins the member-one value-type list;

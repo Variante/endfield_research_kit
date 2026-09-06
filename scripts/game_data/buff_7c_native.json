@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124691,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTagMatch_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckTagMatch_DataForMemoryPackFormatter",
+      "Deserialize",
+      66157008
+    ],
+    [
+      124690,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTagMatch_DataForMemoryPack",
+      "Deserialize",
+      66157104
+    ],
+    [
+      167257,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack+Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPackFormatter",
+      "Deserialize",
+      61213712
+    ],
+    [
+      167256,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack",
+      "Deserialize",
+      61217168
+    ],
+    [
+      113006,
+      "Beyond.MemoryPack.Beyond_Gameplay_ColliderShapeDataForMemoryPack+Beyond_Gameplay_ColliderShapeDataForMemoryPackFormatter",
+      "Deserialize",
+      64165840
+    ],
+    [
+      113005,
+      "Beyond.MemoryPack.Beyond_Gameplay_ColliderShapeDataForMemoryPack",
+      "Deserialize",
+      64165936
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66157008,
+      "endRva": 66157101,
+      "sha256": "4B7E1FFD19679D8C61E45AA06F65AAD126BFD3D5F5C467BC6A9DD73A8F07CB63",
+      "boundary": "action formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 66157104,
+      "endRva": 66157504,
+      "sha256": "78DDEC6FEBB759034244DFCBFEC5BCD6E82B21218179AC2C9F5AD5E509C9299F",
+      "boundary": "member6 normal through RET"
+    },
+    {
+      "startRva": 66157504,
+      "endRva": 66157588,
+      "sha256": "C75B65EED3435F295BF7DDE1B11D64540B8A721AAFE3E7DD2F6EAA4F13683B80",
+      "boundary": "action lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83123281,
+      "endRva": 83123302,
+      "sha256": "325691BEBE3D170B5F5418E465CF27E9747B0D69F32EBFFF166405B9391BD80C",
+      "boundary": "action FF output clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 61213712,
+      "endRva": 61213805,
+      "sha256": "9AA6DC3C5057C073BDE73EE4DA27CB4B0DA375885C1E65E6086B78BB102FA1C0",
+      "boundary": "finder18 formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 61217168,
+      "endRva": 61217711,
+      "sha256": "DE7A7136363A25A09014167BF275D7899418E5C0AC9F73249F532B4D3C394E6A",
+      "boundary": "finder18 member11 normal through RET"
+    },
+    {
+      "startRva": 61217711,
+      "endRva": 61217795,
+      "sha256": "FEFD317CF1D32A62002A97B0D27217B7F67DF93B654C3B945BCB4F31DA92B51A",
+      "boundary": "finder18 lazy initialization rejoin"
+    },
+    {
+      "startRva": 82428753,
+      "endRva": 82428774,
+      "sha256": "5C61AD07EE154CC78CB3F7EA83DDD1A1D806DF18819EC7F9D4C787C1C1F12C87",
+      "boundary": "finder18 FF clear and complete rejoin"
+    },
+    {
+      "startRva": 64165840,
+      "endRva": 64165933,
+      "sha256": "C88E022BC3F907AB70D4F1BA488E3A88C754C64733DC76FC1F95121C8F3CE394",
+      "boundary": "ColliderShapeData formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 64165936,
+      "endRva": 64166814,
+      "sha256": "D8232513302018A5D8AF3F3AC50B8D6794DF45C452E761B9B8704432D1F7ADB4",
+      "boundary": "ColliderShapeData member16 normal through RET"
+    },
+    {
+      "startRva": 64166814,
+      "endRva": 64166831,
+      "sha256": "DF98CDBB084FCAFD901AE6FA4C79F1F58CAB211817CC4E942079FE2C626A08F0",
+      "boundary": "ColliderShapeData inline FF clear and rejoin"
+    },
+    {
+      "startRva": 64166831,
+      "endRva": 64166903,
+      "sha256": "93C73C5CE7189A6E733FE13CDE9B116288E095B203F8BD8903ABC358ADFF33E4",
+      "boundary": "ColliderShapeData lazy initialization rejoin"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "scalar helper reads and advances four source bytes through RET"
+    },
+    {
+      "startRva": 60610928,
+      "endRva": 60611024,
+      "sha256": "1ED1A00F806038CBF5D9D3A9A582505A31CBA91355AB3A7E0D77D270F333CC52",
+      "boundary": "Vector3-context helper reads and advances twelve raw source bytes through RET"
+    },
+    {
+      "startRva": 59820150,
+      "endRva": 59820157,
+      "sha256": "02933FB4FCFC04226CF1581C0D88EB678C43BCEA1F91DB53D9FF187ACF3C48EC",
+      "boundary": "finder18 exact selected route type-usage load"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59821724,
+      "endRva": 59821728,
+      "sha256": "5BF252FEAA14E74ADE28D563A11022F3AA516FB78E0937A079B9005A43158A62",
+      "boundary": "finder18 selected dispatch-table entry"
+    },
+    {
+      "startRva": 217990560,
+      "endRva": 217990568,
+      "sha256": "2161BB51EBDCDD8675ED78F8F7612A83C122D5AF78453CC588FD92B9EF1DCC26",
+      "boundary": "finder18 cellVa"
+    },
+    {
+      "startRva": 206847344,
+      "endRva": 206847352,
+      "sha256": "B67A02AEE004A21C29408F1C24AB48E3A63A7D045B7FB8BAF528F5DF37BBEE16",
+      "boundary": "finder18 typeSlotVa"
+    },
+    {
+      "startRva": 220254136,
+      "endRva": 220254152,
+      "sha256": "EC3CC51FA959DD0FC0C0D0736EC23FAE0B641D4CD34A4718692107C553CD4222",
+      "boundary": "finder18 typeVa"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66157382,
+      "instructionHex": "488B15BB9B1409",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66157423,
+      "instructionHex": "4C8B05E2D20D09",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61217658,
+      "instructionHex": "488B15A78B6709",
+      "cellVa": 6661449512,
+      "usageRawHex": "C7EA12C000000000",
+      "methodSpecIndex": 619875,
+      "methodSpec": [
+        428464,
+        -1,
+        14346
+      ],
+      "argumentRawHex": "1A050000000000000000120000000000",
+      "typeDefinition": 1306,
+      "typeName": "Beyond.Gameplay.ColliderShapeData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64166047,
+      "instructionHex": "4C8B054A4C2C09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64166248,
+      "instructionHex": "4C8B05814B2C09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64166623,
+      "instructionHex": "4C8B050A4A2C09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "query-profile"
+    ],
+    "finder18Member11": [
+      "byte",
+      "byte",
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte",
+      "byte",
+      "scalar32",
+      "collider-shape-profile"
+    ],
+    "colliderShapeMember16": [
+      "raw12",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "raw12",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte-payload",
+      "raw12",
+      "scalar32",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and six MethodSpec/type joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing. TargetSettings uses buff_ec_native.json and finite selector extensions in buff_b2_native.json. GameplayTagQuery uses the member-two scalar32/count-times-four consumer in buff_b4_native.json; the output value occupies sixteen bytes but that store is not its variable wire extent. Finder18 additionally joins the selected dispatch entry and type-usage chain under the existing EC finder dispatcher. Its member-eleven reader selects ColliderShapeData, whose member-sixteen layout is distinct from HitBoxFinder ShapeData in buff_b2_native.json. Three exact UnityEngine.Vector3 contexts call the pinned twelve-byte source helper, not the variable blackboard vector profile. Four-byte float-helper results and other scalar bits remain anonymous. String helpers reuse the bounded byte-payload length/advance proof; byte decoding remains unresolved. Output setters and wrapper allocation do not supply source members. Unknown nested tags, deeper target recursion, live provider selection, allocation/refill/error parity, field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}

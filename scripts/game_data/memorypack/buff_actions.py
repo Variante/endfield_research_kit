@@ -72,13 +72,16 @@ class Reader:
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
         # FD/FE are authenticated only in their extended encodings.
-        if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
         if tag==253:return
+        if tag==124:
+            self.target_profile();self.query_profile()
+            return
         if tag==150:
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.paired_payload()
             self.target_profile();self.take(1,'anonymous-nonzero-byte')
@@ -302,6 +305,20 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-input-profile'))
 
+    def collider_shape_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-collider-shape-profile')
+        else:
+            self.header(16)
+            for _ in range(2):
+                self.take(12,'anonymous-raw12')
+                for _ in range(3):self.byte_payload()
+            for _ in range(2):
+                self.take(4,'anonymous-scalar32');self.byte_payload()
+            self.take(12,'anonymous-raw12');self.take(4,'anonymous-scalar32')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-collider-shape-profile'))
+
     def query_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-query-profile')
@@ -362,11 +379,11 @@ class Reader:
 
     def selector_finder_profile(self):
         start=self.pos
-        tag=self.nested_union_tag((2,7,8,12,13,19),'finder')
+        tag=self.nested_union_tag((2,7,8,12,13,18,19),'finder')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-finder-wrapper')
         else:
-            self.header({2:0,7:8,8:0,12:1,13:1,19:4}[tag])
+            self.header({2:0,7:8,8:0,12:1,13:1,18:11,19:4}[tag])
             if tag==7:
                 for _ in range(3):self.take(1,'anonymous-nonzero-byte')
                 for _ in range(2):self.take(4,'anonymous-scalar32')
@@ -375,6 +392,12 @@ class Reader:
                 self.take(4,'anonymous-scalar32')
             elif tag==12:self.query_profile()
             elif tag==13:self.take(4,'anonymous-scalar32')
+            elif tag==18:
+                for _ in range(3):self.take(1,'anonymous-nonzero-byte')
+                for _ in range(3):self.take(4,'anonymous-scalar32')
+                self.byte_payload()
+                for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+                self.take(4,'anonymous-scalar32');self.collider_shape_profile()
             elif tag==19:
                 self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
                 self.selection_profile();self.take(1,'anonymous-nonzero-byte')

@@ -143,6 +143,24 @@ def tag65(t=None,value=None):
             (target() if t is None else t)+b'\x80'+(scalar_payload(b'key') if value is None else value))
 
 
+def collider16():
+    return (b'\x10'+bytes(range(12))+payload(b'one')+payload(None)+payload(b'')+
+            bytes(range(12,24))+payload(b'\xff\xfe')+payload(b'longer')+payload(None)+
+            struct.pack('<I',0x7fc00000)+payload(b'key')+struct.pack('<I',0xff800000)+payload(b'')+
+            bytes(range(24,36))+struct.pack('<I',0xdeadbeef)+b'\xff\x80')
+
+
+def finder18(shape=None):
+    return (b'\x12\x0b\xfe\x80\xff'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            payload(b'\xffkey')+b'\xff\x80'+struct.pack('<I',0xff800000)+(collider16() if shape is None else shape))
+
+
+def tag7c(t=None,query=None):
+    return (b'\x7c\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (target(selector=b'\x03'+finder18()+bytes(8)) if t is None else t)+
+            (b'\x02'+struct.pack('<IiIII',0x80000000,3,0,0xffffffff,0x7fc00000) if query is None else query))
+
+
 def tag96(value=None,key=None,t=None):
     return (b'\x96\x09\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+b'\x80'+
             (scalar_payload(b'scalar') if value is None else value)+
@@ -204,6 +222,55 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag7c_target_query_and_distinct_collider_ranges(self):
+        child=tag7c();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='7c.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=124),row['completedRecords'])
+        collider=next(r for r in row['completedRecords'] if r['kind']=='anonymous-collider-shape-profile')
+        self.assertEqual(collider['end']-collider['start'],len(collider16()))
+        vectors=[r for r in row['ranges'] if r['kind']=='anonymous-raw12' and collider['start']<r['start']<collider['end']]
+        self.assertEqual(len(vectors),3);self.assertTrue(all(r['end']-r['start']==12 for r in vectors))
+        query=next(r for r in row['completedRecords'] if r['kind']=='anonymous-query-profile')
+        self.assertEqual((query['start'],query['end']),(end-21,end))
+        self.assertEqual(row['diagnostic'],dict(source='7c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag7c_nulls_extended_all_truncations_and_limits(self):
+        for child in (tag7c(),b'\xfa\x7c\x00'+tag7c()[1:],b'\x7c\xff',tag7c(b'\xff',b'\xff'),
+                      tag7c(query=b'\x02'+bytes(4)+struct.pack('<i',-1)),tag7c(query=b'\x02'+bytes(8)),
+                      tag7c(t=target(selector=b'\x03'+finder18(b'\xff')+bytes(8))),
+                      tag7c(t=target(selector=b'\x03\x12\xff'+bytes(8)))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='7c-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='7c-limit',limit=n))
+
+    def test_tag7c_bad_headers_lengths_counts_and_unknown_finder(self):
+        raw=prefix(sequence(tag7c()));good=event_prefix(raw,source='7c-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='7c-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        for bad_header in (18,3):
+            shape=bytes([bad_header])+collider16()[1:]
+            row=event_prefix(prefix(sequence(tag7c(t=target(selector=b'\x03'+finder18(shape)+bytes(8))))),source='wrong-shape')
+            self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['expected'],16)
+        row=event_prefix(prefix(sequence(tag7c(t=target(selector=b'\x03\x11'+bytes(8))))),source='7c-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==124 for r in row['completedRecords']))
+
     def test_tagfd_exact_fixed_record_and_next_unknown_boundary(self):
         child=b'\xfa\xfd\x00\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='fd.bin')
