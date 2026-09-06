@@ -256,6 +256,11 @@ only.
   defaults do not validate those live values. Exact t7 uses the completed
   resolve, and t11 uses same-camera/frame contact output with separate content
   gates. Legacy HLSL bindings remain a different contract.
+  The base native camera lifecycle resets its counter to zero and increments
+  on camera Update, independently of contact dispatch readiness. The lab now
+  owns that counter in pipeline camera state and passes it to contact; producer
+  recreation, disabled passes, and setup failures cannot reset or pause it.
+  This does not establish the retail camera's initial phase or an IFix override.
   The combined capture needs no repeat for those graphics inputs. The optional
   environment-shadow extension observes selected phases, ordered applied
   volumes/factors and camera/shadow-manager state within the same two entries.
@@ -301,8 +306,13 @@ only.
   DSV is its t1 depth resource; t0 is the binning buffer. Native draw failure
   cannot certify content merely because the metadata shell produced finite pixels.
   Foreground HG geometry replaces classification only after passing shared
-  depth. This does not establish every retail stencil writer. Generic depth
-  overrides must honor source `DepthOnly` membership: Endminf's authored crystal
+  depth. This does not establish every retail stencil writer. The shared surface
+  now includes the floor's separate source-owned distance-field HGBuffer pass:
+  it writes class 5 and fixed unlit GBuffer lanes before its later ForwardOnly
+  color. Its motion uses current/previous nonjittered camera and rigid-object
+  transforms. Dense retained draw metadata and material parameters identify
+  this writer; later Default per-pixel attribution remains a separate gate.
+  Generic depth overrides must honor source `DepthOnly` membership: Endminf's authored crystal
   materials disable that pass, and the importer preserves this selection.
   Opaque render queue alone does not authorize an earlier replacement draw.
   Keep the captured output-merger blend: shader-side equivalent arithmetic
