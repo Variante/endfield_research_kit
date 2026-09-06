@@ -109,6 +109,17 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tagc5(tags=None,effect=None,calc=None,nested=None,value=b'wire'):
+    return (b'\xc5\x10\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+b'\x80'+payload(value)+
+            (effect85() if effect is None else effect)+(b'\x00\x01'+scalar_payload(None) if calc is None else calc)+
+            struct.pack('<I',0xffffffff)+(taglist() if tags is None else tags)+struct.pack('<I',0x80000000)+
+            b'\xfe\x80\xff'+(target() if nested is None else nested)+b'\x80')
+
+
+def taglist(items=(b'\x01'+struct.pack('<I',0xffffffff),)):
+    return b'\x01'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
 def tag9b(first=b'first',second=b'second',nested=None):
     return (b'\x9b\x09\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+payload(first)+
             bytes(range(16))+payload(second)+struct.pack('<I',0xffffffff)+(target() if nested is None else nested))
@@ -1195,6 +1206,57 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tagc5_tag_list_instances_and_final_byte(self):
+        for tags in (b'\xff',taglist(None),taglist(()),taglist(),taglist((b'\xff',b'\x01'+struct.pack('<I',0x80000000)))):
+            child=tagc5(tags);end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='c5.bin')
+            self.assertEqual(row['diagnostic'],dict(source='c5.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=197),row['completedRecords'])
+            lists=[r for r in row['completedRecords'] if r['kind']=='anonymous-tag-list-profile']
+            self.assertEqual(len(lists),1);self.assertEqual(lists[0]['end']-lists[0]['start'],len(tags))
+            self.assertIn(dict(start=end-1,end=end,kind='anonymous-nonzero-byte'),row['ranges'])
+            self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tagc5_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagc5(),tagc5(taglist(None),b'\xff',b'\xff',b'\xff',None),tagc5(taglist(()),value=b''),tagc5(nested=b'\xff'),b'\xc5\xff',b'\xfa\xc5\x00'+tagc5()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='c5-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='c5-limit',limit=n))
+
+    def test_tagc5_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tagc5()));good=event_prefix(raw,source='c5-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='c5-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('c5-bounds',at,value))
+        row=event_prefix(prefix(sequence(tagc5(nested=target(selector=b'\x03\x06'+bytes(8))))),source='c5-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==197 for r in row['completedRecords']))
+
+    def test_tagc5_unknown_calculation_and_tag_element_header(self):
+        row=event_prefix(prefix(sequence(tagc5(calc=b'\x04'))),source='c5-calc')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',4))
+        self.assertFalse(any(r.get('tag')==197 for r in row['completedRecords']))
+        child=tagc5(taglist((b'\x02'+bytes(4),)))
+        row=event_prefix(prefix(sequence(child)),source='c5-element')
+        self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
+        self.assertEqual(row['diagnostic']['source'],'c5-element')
 
     def test_tag9b_variable_payload_before_target_and_no_final_byte(self):
         for first in (None,b'',b'x',bytes(range(256))):

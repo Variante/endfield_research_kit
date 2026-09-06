@@ -431,6 +431,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   and target after the common prefix. The explicit sixteen-byte advance proves
   the raw extent independently of output stores; log and color meanings remain
   unresolved. Its scalar enum context adds no nested serialized member.
+  `scripts/game_data/buff_c5_native.json` pins a member-sixteen action with
+  separate effect configuration, calculation union, tag list and target reads,
+  including the extra byte after its common prefix and the final byte. The tag
+  list wrapper has one member; its separately pinned element has one scalar32
+  member. Keep list count/loop framing conditional on the registered formatter
+  candidate, preserve null/empty states, and retain unknown calculation unions.
+  This bounded forward profile neither selects a live provider nor resolves
+  Skill's independent terminal candidates or establishes healing/tag meanings.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

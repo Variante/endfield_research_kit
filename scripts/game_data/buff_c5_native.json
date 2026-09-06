@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120551,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HealAction_DataForMemoryPack+Beyond_Gameplay_Core_HealAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66081248
+    ],
+    [
+      120550,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HealAction_DataForMemoryPack",
+      "Deserialize",
+      66081344
+    ],
+    [
+      104358,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack+Beyond_Gameplay_Core_GameplayTagListForMemoryPackFormatter",
+      "Deserialize",
+      58586656
+    ],
+    [
+      104357,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack",
+      "Deserialize",
+      58586752
+    ],
+    [
+      104468,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagForMemoryPack+Beyond_Gameplay_Core_GameplayTagForMemoryPackFormatter",
+      "Deserialize",
+      68090832
+    ],
+    [
+      104467,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagForMemoryPack",
+      "Deserialize",
+      68090928
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66081248,
+      "endRva": 66081341,
+      "sha256": "E87A5F80406EE1ED607FED8459044121E0067B3820CC70A5D3B3DACE2FEC18CD",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 66081344,
+      "endRva": 66082086,
+      "sha256": "F6A3ECCA8EF5EFC54FEA3365E6D80FA5BF4C395F947C6AF29C2E27D24C40F66A",
+      "boundary": "member16 normal source read order through RET"
+    },
+    {
+      "startRva": 66082086,
+      "endRva": 66082218,
+      "sha256": "0C5056CA1076E9D98B95EEA7120B36312ACAFAA537BFA76127A73E1568402624",
+      "boundary": "action lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83113809,
+      "endRva": 83113830,
+      "sha256": "A8792277670D648F4710186B6FBA65DD1C20456DCA11901762E1DB774574E46C",
+      "boundary": "action FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 58586656,
+      "endRva": 58586749,
+      "sha256": "6901FC137F0D874FDFBDED47658B6B8BFA718E0BF2AE7EFD480EF8152DEEE72A",
+      "boundary": "tag-list wrapper formatter forwarding"
+    },
+    {
+      "startRva": 58586752,
+      "endRva": 58586938,
+      "sha256": "06DFE8CA07C39AED45DB91A79AE8EF47D838CEDE091C146A4D07A772DDBA085F",
+      "boundary": "tag-list member1 and FF paths through tail write barrier"
+    },
+    {
+      "startRva": 58586938,
+      "endRva": 58586998,
+      "sha256": "D01D9C7A6EC8C945211ED7B0CEF815FE883E9A89CB34474431C6E478EFDC9CAF",
+      "boundary": "tag-list lazy initialization and rejoin"
+    },
+    {
+      "startRva": 68090832,
+      "endRva": 68090925,
+      "sha256": "219722A10140EA295369B5F20C69B5CF1AC367240CF62871D73E7EF7A3623220",
+      "boundary": "tag element wrapper formatter forwarding"
+    },
+    {
+      "startRva": 68090928,
+      "endRva": 68091030,
+      "sha256": "20E91A6A12C8F0744F68C6B10AF26032F7030FA75C62AD17CDCFDF986A18EF89",
+      "boundary": "tag element member1 scalar32 through RET"
+    },
+    {
+      "startRva": 68091030,
+      "endRva": 68091075,
+      "sha256": "E55F8B8BB7B7A7753CE258C6F02BAC5B6632C21991C5D8E772D7E3E8D6A15C7A",
+      "boundary": "tag element lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83339671,
+      "endRva": 83339692,
+      "sha256": "4EC312E1E27326CDF3C784EEEB1AAF29813BB7F7113F16975AC6E9397BD977A1",
+      "boundary": "tag element FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66081690,
+      "instructionHex": "488B1527E71C09",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66081731,
+      "instructionHex": "488B1566BA1509",
+      "cellVa": 6660951600,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66081772,
+      "instructionHex": "488B15ADD61809",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66081812,
+      "instructionHex": "488B152DFA0E09",
+      "cellVa": 6660509256,
+      "usageRawHex": "E3EA12C000000000",
+      "methodSpecIndex": 619889,
+      "methodSpec": [
+        428464,
+        -1,
+        14693
+      ],
+      "argumentRawHex": "B02D0000000000000000120000000000",
+      "typeDefinition": 11696,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagList",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66081853,
+      "instructionHex": "488B15D4A61909",
+      "cellVa": 6661208856,
+      "usageRawHex": "F5E512C000000000",
+      "methodSpecIndex": 619258,
+      "methodSpec": [
+        428448,
+        -1,
+        42307
+      ],
+      "argumentRawHex": "66050000000000000000118000000000",
+      "typeDefinition": 1382,
+      "typeName": "Beyond.Gameplay.HealType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66081995,
+      "instructionHex": "488B1536C21509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58586860,
+      "instructionHex": "488B157D498109",
+      "cellVa": 6660505712,
+      "usageRawHex": "55A312C000000000",
+      "methodSpecIndex": 610730,
+      "methodSpec": [
+        428462,
+        -1,
+        8486
+      ],
+      "argumentRawHex": "28B6258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03CFE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 816,
+        "elementArguments": [
+          "A22D0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member16": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "bytePayload",
+      "effectConfiguration",
+      "calculation",
+      "scalar32",
+      "tagList",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "target",
+      "byte"
+    ],
+    "tagList": [
+      "member1",
+      "signedCount",
+      "member1Scalar32Element*count"
+    ],
+    "tagElement": [
+      "member1",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected source order supports structural-only finite framing through the final byte. Four nested instances retain their distinct EffectActionCfg, CalculationBase, GameplayTagList and TargetSettings contexts; scalar enum contexts add no nested members. Effect/configuration and calculation profiles reuse the separately pinned finite consumers. GameplayTagList uses a member-one wrapper and signed-length list, with separately pinned member-one scalar32 element reader. Count/null/loop evidence remains conditional on the existing selectedListFormatterCandidate and element dispatch contracts; static identity does not prove the live provider or adapter selection. Null wrapper, null list, empty list and null element remain distinct. The selected normal element reads four scalar bytes; its four-byte output slot alone would not prove wire width. Names, healing behavior, tag meanings, byte decoding, complete allocation/refill/error parity, and whole-BuffData EOF remain unresolved; Skill terminal candidates remain ambiguous."
+}
