@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124362,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckMainCharacterCondition_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckMainCharacterCondition_DataForMemoryPackFormatter",
+      "Deserialize",
+      65434928
+    ],
+    [
+      124361,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckMainCharacterCondition_DataForMemoryPack",
+      "Deserialize",
+      65435024
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65434928,
+      "endRva": 65435021,
+      "sha256": "1BEB0C0CDE0000A6C1A30C07E9C81218D2FD9A6E2F5355DACBE4B71306B1C646",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 65435024,
+      "endRva": 65435397,
+      "sha256": "04084B54978CD033BBA6F708A5DAF860C99CE5FE5A8C6088D5B612EB0ADD9253",
+      "boundary": "member5 normal source read order through RET"
+    },
+    {
+      "startRva": 65435397,
+      "endRva": 65435414,
+      "sha256": "CD6A753E8A120F7C532547F0674E87B64D2BCB30135E8E3E94310D7D4DF9C084",
+      "boundary": "FF output clear and rejoin normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65435342,
+      "instructionHex": "488B1533A01F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and TargetSettings MethodSpec/type joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source read order supports a structural-only finite profile. The three scalar32 widths come from the source-reading helper pinned in the common audit, not managed type size or destination offsets. TargetSettings reuses buff_ec_native.json with the finite selector extensions in buff_b2_native.json; it is variable-width, not a fixed-size member. Direction targets remain null-only and postprocessor target expansion is limited to one. Preserve arbitrary scalar bits and nonzero byte values anonymously. Unknown nested tags, deeper recursive targets, live formatter selection, allocation/refill/error parity, field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}

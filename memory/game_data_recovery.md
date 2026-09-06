@@ -260,6 +260,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Keep those bits anonymous, including non-finite values. Byte decoding, live
   provider selection and whole-BuffData EOF remain unresolved; selected native
   pins and read order are owned by `scripts/game_data/buff_ec_native.json`.
+  A distinct member-five action reads a byte, three scalar32 values and the
+  same variable-width target profile. `scripts/game_data/buff_68_native.json`
+  pins its own normal/null paths and exact target context; its equal member
+  count does not select the earlier member-five counted-payload layout.
   The selected member-seven child reuses that scalar-payload profile twice,
   after one byte and four scalar32 reads. The fourth scalar is serialized
   before both nested records despite its later destination-object offset;
