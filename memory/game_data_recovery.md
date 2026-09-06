@@ -562,6 +562,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   prefix. The exact BlackboardString context joins the paired reader, not the
   equal-header scalar reader. Preserve its two signed payload counts and both
   target boundaries independently; skill identity and casting remain unresolved.
+  `scripts/game_data/buff_95_native.json` pins member-eight framing with a
+  scalar payload, counted member-three inputs and final target. Each input has
+  its own counted AssignPair list and member-one GlobalBuffId byte payload;
+  preserve both list contexts and counts independently. A value-type marker
+  does not establish enum width; the ID output carrier is not its wire size.
+  Global buff ownership, lifetime and ID meaning remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119751,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPack+Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69564832
+    ],
+    [
+      119750,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPack",
+      "Deserialize",
+      69564928
+    ],
+    [
+      162863,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffInputForMemoryPack+Beyond_Gameplay_Core_GlobalBuffInputForMemoryPackFormatter",
+      "Deserialize",
+      52459968
+    ],
+    [
+      162862,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffInputForMemoryPack",
+      "Deserialize",
+      52460400
+    ],
+    [
+      162969,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffIdForMemoryPack+Beyond_Gameplay_Core_GlobalBuffIdForMemoryPackFormatter",
+      "Deserialize",
+      71990080
+    ],
+    [
+      162968,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffIdForMemoryPack",
+      "Deserialize",
+      71990176
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69564832,
+      "endRva": 69564925,
+      "sha256": "B0768B1B76D3B349F63358A6D637DEC51173DFC38CB926D61BD47753B2B83E05",
+      "boundary": "action formatter and initialization"
+    },
+    {
+      "startRva": 69564928,
+      "endRva": 69565375,
+      "sha256": "D34C4F4CB0BE880AFC8D830DD0875B133BC9B60C9F4ECFAA59B9EAFAD0BFEF83",
+      "boundary": "member8 source reads through RET"
+    },
+    {
+      "startRva": 69565375,
+      "endRva": 69565471,
+      "sha256": "949E8EB23D829DD766232C74F0D6EB33B89592F46343068931CF11DC7219E3FA",
+      "boundary": "action lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83477388,
+      "endRva": 83477401,
+      "sha256": "050610E04D91A1E4F259839285CD1841F5634B9863C7314929E50448E7E746F9",
+      "boundary": "action existing-output preparation"
+    },
+    {
+      "startRva": 83477457,
+      "endRva": 83477478,
+      "sha256": "942103C566181A60A21431EE5E194DBB7B57938B3DF9242BB6E87C64AEB2CD04",
+      "boundary": "action FF clear and rejoin"
+    },
+    {
+      "startRva": 52459968,
+      "endRva": 52460061,
+      "sha256": "008B48F1815BC9276B547C5A87C09653188954B1448400407142C97280515724",
+      "boundary": "element formatter and initialization"
+    },
+    {
+      "startRva": 52460400,
+      "endRva": 52460613,
+      "sha256": "9DC886F41061052BA2DFFD69D767A754FDB199B276736572DC60287DDAA97825",
+      "boundary": "member3 element source reads through RET"
+    },
+    {
+      "startRva": 52460613,
+      "endRva": 52460685,
+      "sha256": "F1A839DA4AF75F2078CFE242A87159393A5FAA40503EAF9B6DB6556932A25830",
+      "boundary": "element lazy initialization and rejoin"
+    },
+    {
+      "startRva": 80973344,
+      "endRva": 80973395,
+      "sha256": "020D6589DB5301B6C8E9BEEA24A1B5FBF2AA8301CE49E43522ADA66145F69129",
+      "boundary": "element construction and header rejoin"
+    },
+    {
+      "startRva": 80973451,
+      "endRva": 80973472,
+      "sha256": "071901143D1B8931EEE0C7401FE811C437B623C6D8DEBF20E79FE3D5562EA115",
+      "boundary": "element FF clear and rejoin"
+    },
+    {
+      "startRva": 71990080,
+      "endRva": 71990173,
+      "sha256": "8F7A57E58C0556D2AF860BB54BA1620B5A6FE10F91F4246A2FB0AA4D23F29403",
+      "boundary": "id formatter and initialization"
+    },
+    {
+      "startRva": 71990176,
+      "endRva": 71990286,
+      "sha256": "955592122C495D91CE83904A051DD3BFE0DD4170D9FC700965D1892BE8BCDD46",
+      "boundary": "member1 id source read through write-barrier tail jump"
+    },
+    {
+      "startRva": 71990286,
+      "endRva": 71990334,
+      "sha256": "546527BFD9A8AD569C71C30536C777E216D82BF4020B8AE9B1097BA547A06180",
+      "boundary": "id lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83730026,
+      "endRva": 83730070,
+      "sha256": "D92E0A8AD094B8101A979FBCA7E1B2C00B5C342414B5A241EDD61DCD3BB7FE56",
+      "boundary": "id construction and header rejoin"
+    },
+    {
+      "startRva": 83730128,
+      "endRva": 83730143,
+      "sha256": "4FC9FDF522339B1EEC43363F61F5CEB25F399813994CF36AFD3528DDBC1B7BC2",
+      "boundary": "id FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 71074544,
+      "endRva": 71074677,
+      "sha256": "EF7D7AF78E3491F72FFDE2283D2F5CB73EFD1F7C92D5CA2237C437E2579312CE",
+      "boundary": "conditional value provider normal and initialization paths"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69565100,
+      "instructionHex": "488B157523E308",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69565240,
+      "instructionHex": "488B15E1CAD908",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69565281,
+      "instructionHex": "488B153813E408",
+      "cellVa": 6661181088,
+      "usageRawHex": "59A312C000000000",
+      "methodSpecIndex": 610732,
+      "methodSpec": [
+        428462,
+        -1,
+        62543
+      ],
+      "argumentRawHex": "08B5258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000004034E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14918,
+        "elementArguments": [
+          "AC280000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 69565322,
+      "instructionHex": "488B15779BE008",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 52460519,
+      "instructionHex": "488B15E29DE509",
+      "cellVa": 6660954576,
+      "usageRawHex": "79A412C000000000",
+      "methodSpecIndex": 610876,
+      "methodSpec": [
+        428462,
+        -1,
+        62662
+      ],
+      "argumentRawHex": "9836258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000B044F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17003,
+        "elementArguments": [
+          "AA000000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 52460560,
+      "instructionHex": "488B15A128DD09",
+      "cellVa": 6660400312,
+      "usageRawHex": "39CC0FC000000000",
+      "methodSpecIndex": 517660,
+      "methodSpec": [
+        428464,
+        -1,
+        14917
+      ],
+      "argumentRawHex": "AD280000000000000000118000000000",
+      "typeDefinition": 10413,
+      "typeName": "Beyond.Gameplay.Core.GlobalBuffId",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "global-input-list",
+      "target"
+    ],
+    "globalInputMember3": [
+      "byte",
+      "assignment-list",
+      "single-payload"
+    ],
+    "globalIdMember1": [
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration/module/token joins and six contexts establish direct selected read order and structural-only finite framing. Outer member8 reads common byte/three DWORD, byte, BlackboardDouble, List<GlobalBuffInput> and final TargetSettings. Outer list instantiation14918 has element10412; the member3 element reads byte, List<AssignPair> instantiation17003 element170, then GlobalBuffId. IL2CPP value-type kind does not imply enum or raw DWORD width. AssignPair reuses its independently pinned member6 reader in buff_92_native.json; GlobalBuffId has its own member1 byte-payload reader. Preserve all independent null states, signed counts, nested object headers and final target boundary. GlobalBuffId provider has an eight-byte output carrier, not an eight-byte wire value; actual shared formatter dispatch remains conditional. BlackboardDouble reuses the four-byte scalar reader pinned by buff_35_native.json. Normal, lazy, formatter, construction and FF paths retain complete instructions. Buff ownership/lifetime, id meaning, byte decoding, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

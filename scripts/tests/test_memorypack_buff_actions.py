@@ -44,6 +44,16 @@ def tag27(first=b'\xff',middle=b'\xff',last=b'\xff'):
     return b'\x27\x0a\xfe'+b'\xff'*12+first+b'\x80\xfe'+middle+b'\xff'+last
 
 
+def input95(items=(),identifier=b'\xff'):
+    return (b'\x03\xfe'+struct.pack('<i',-1 if items is None else len(items))+
+            b''.join(items or ())+identifier)
+
+
+def tag95(items=(),scalar=b'\xff',last=b'\xff'):
+    return (b'\x95\x08\xfe'+b'\xff'*12+b'\x80'+scalar+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+last)
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1461,6 +1471,50 @@ class BuffActionsTests(unittest.TestCase):
                     self.assertIn(dict(start=34,end=34+len(first),kind='anonymous-target-profile'),row['completedRecords'])
                     self.assertIn(dict(start=36+len(first),end=end-1-len(last),kind='anonymous-paired-payload'),row['completedRecords'])
                     self.assertIn(dict(start=end-len(last),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag95_independent_lists_and_id_payload(self):
+        assignment=b'\x06'+bytes(4)+payload(b'a')+bytes(4)+payload(None)+payload(b'b')+b'\xfe'
+        for outer in (None,(),(b'\xff',),tuple(input95(items,identifier) for items in (None,(),(b'\xff',assignment,assignment)) for identifier in (b'\xff',b'\x01'+payload(None),b'\x01'+payload(b'ID')))):
+            for scalar in (b'\xff',scalar_payload()):
+                child=tag95(outer,scalar,target());end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='95.bin')
+                self.assertEqual(row['diagnostic'],dict(source='95.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=149),row['completedRecords'])
+                profiles=[r for r in row['completedRecords'] if r['kind']=='anonymous-global-input-profile']
+                self.assertEqual(len(profiles),len(outer or ()))
+
+    def test_tag95_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag95(),tag95((input95((b'\xff',),b'\x01'+payload(b'ID')),),scalar_payload(),target()),b'\x95\xff',b'\xfa\x95\x00'+tag95()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='95-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='95-limit',limit=n))
+
+    def test_tag95_malformed_counts_headers_and_target_gap(self):
+        assignment=b'\x06'+bytes(4)+payload(b'a')+bytes(4)+payload(None)+payload(b'b')+b'\xfe'
+        items=(input95((assignment,),b'\x01'+payload(b'ID')),)
+        raw=prefix(sequence(tag95(items,scalar_payload(),target())))
+        good=event_prefix(raw,source='95-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='95-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('95-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==149 for r in row['completedRecords']))
+        row=event_prefix(prefix(sequence(tag95(items,last=target(selector=b'\x03\x10')))),source='95-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-global-input-list']),1)
+        self.assertFalse(any(r.get('tag')==149 for r in row['completedRecords']))
 
     def test_tag27_null_extended_cuts_limits_and_trailing(self):
         for child in (tag27(),tag27(target(),pair(b'first',b'last'),target()),b'\x27\xff',b'\xfa\x27\x00'+tag27()[1:]):
