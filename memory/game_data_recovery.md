@@ -507,6 +507,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   The member-seven profile has two separate curve members. Its provider's
   32-byte return buffer does not establish wire width. Preserve raw scalar
   bits and conditional provider selection; camera behavior remains unresolved.
+  `scripts/game_data/buff_16b_native.json` pins a member-six reader ending
+  in scalar payload then target. The exact BlackboardInt context has its own
+  authenticated reader proving payload/byte/DWORD source order; equal headers
+  and managed names alone do not justify profile reuse. An unknown target
+  keeps the enclosing action incomplete. Spawning behavior remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

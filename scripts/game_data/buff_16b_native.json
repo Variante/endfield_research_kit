@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123209,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpawnInteractiveGoldCoin_DataForMemoryPack+Beyond_Gameplay_Core_SpawnInteractiveGoldCoin_DataForMemoryPackFormatter",
+      "Deserialize",
+      71151648
+    ],
+    [
+      123208,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpawnInteractiveGoldCoin_DataForMemoryPack",
+      "Deserialize",
+      71151744
+    ],
+    [
+      104586,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardIntForMemoryPack+Beyond_Blackboard_BlackboardIntForMemoryPackFormatter",
+      "Deserialize",
+      62974144
+    ],
+    [
+      104585,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardIntForMemoryPack",
+      "Deserialize",
+      62974240
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71151648,
+      "endRva": 71151741,
+      "sha256": "A4F714B3CED34C2062A569226E62A76834408C6B141D274DC9D597A9CA29BEA5",
+      "boundary": "outer formatter forwarding and initialization"
+    },
+    {
+      "startRva": 71151744,
+      "endRva": 71152116,
+      "sha256": "F78AFCDEB6A5F7EFA0DDD009FBE0956B520241FE4F7ACD92E55F59BB4709A7F3",
+      "boundary": "member6 normal through RET"
+    },
+    {
+      "startRva": 71152116,
+      "endRva": 71152200,
+      "sha256": "0F658A84AF51DBB06A4B97BACCD95B06C4BA31FFE75DC6617A9C6EA46E28FA8D",
+      "boundary": "outer lazy initialization and full rejoin"
+    },
+    {
+      "startRva": 83635899,
+      "endRva": 83635920,
+      "sha256": "DE1F7BD9A3D2F24F42D95F14886888898DA90F6E3A896D2B248F86CAFD5F6C1C",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 62974144,
+      "endRva": 62974237,
+      "sha256": "62E1EECE0B5AA11E730564AD7E87906723A16336BC8B156768B7A1FD530C0E0D",
+      "boundary": "scalar payload formatter forwarding and initialization"
+    },
+    {
+      "startRva": 62974240,
+      "endRva": 62974514,
+      "sha256": "23A878FA8FC17BFF1ECAA5B93279E724580E0ED2D2E8AAE7E4FC80B7AE94AE03",
+      "boundary": "scalar payload header3 normal through RET"
+    },
+    {
+      "startRva": 62974514,
+      "endRva": 62974531,
+      "sha256": "71E3A0D07D217C256B5FBCC35378932CB32578B29AB70CC2F79D813509AC4DD1",
+      "boundary": "scalar payload FF clear and rejoin"
+    },
+    {
+      "startRva": 62974531,
+      "endRva": 62974579,
+      "sha256": "B4CC0B43749D5E23E17D9526B6EC226DC404465A598C7A859261A2796013316E",
+      "boundary": "scalar payload lazy initialization and full rejoin"
+    },
+    {
+      "startRva": 62974579,
+      "endRva": 62974603,
+      "sha256": "7ACC84A7E680986402A7413B56851220D2179889FE9FAE7AB18BC48D43F47056",
+      "boundary": "scalar payload existing-output lazy initialization and full rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71151916,
+      "instructionHex": "488B15F5ECCA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71152022,
+      "instructionHex": "488B158B94C108",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71152063,
+      "instructionHex": "488B154265C808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "target"
+    ],
+    "scalar-payload": [
+      "member3",
+      "byte-payload",
+      "byte",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact static registration and module/token joins under selected native hashes. Direct selected source order gives structural-only framing: member6 common byte/three scalar32 prefix, then scalar payload, then independently bounded target. The exact BlackboardInt context is separately joined to its concrete wrapper reader: header3, signed-length byte payload, byte and four-byte source helper. Reusing the finite scalar-payload shape follows source consumption, not the managed type name or equal member count. Priority is the first DWORD context and adds no nested member. Normal RET, FF clear and both nested lazy rejoins retain complete instructions. Output setters and constructors add no source bytes. Unknown nested targets leave the action incomplete at their first unsupported byte. Live provider selection, integer field meaning, spawning behavior, refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -25,6 +25,10 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag16b(first=b'\xff',second=b'\xff'):
+    return b'\xfa\x6b\x01\x06\xfe'+b'\xff'*12+first+second
+
+
 def curve24(items=()):
     return (b'\x03'+struct.pack('<II',0xffffffff,0x80000000)+
             struct.pack('<i',-1 if items is None else len(items))+
@@ -1403,6 +1407,51 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag16b_scalar_payload_then_independent_target(self):
+        for first in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\x00\xffwire',bits=b'\xff'*4)):
+            for second in (b'\xff',target(),target(direction_value=b'\xff')):
+                child=tag16b(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='16b.bin')
+                self.assertEqual(row['diagnostic'],dict(source='16b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=363),row['completedRecords'])
+                self.assertIn(dict(start=36,end=36+len(first),kind='anonymous-scalar-payload'),row['completedRecords'])
+                self.assertIn(dict(start=36+len(first),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag16b_null_truncations_limits_and_trailing(self):
+        for child in (tag16b(),tag16b(scalar_payload(b'raw'),target()),b'\xfa\x6b\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='16b-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='16b-limit',limit=n))
+
+    def test_tag16b_malformed_counts_headers_and_unknown_target(self):
+        raw=prefix(sequence(tag16b(scalar_payload(b'payload'),target())))
+        good=event_prefix(raw,source='16b-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='16b-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('16b-bounds',at,value))
+        child=tag16b(scalar_payload(b'x'),target(selector=b'\x03\x10'))
+        row=event_prefix(prefix(sequence(child)),source='16b-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',16))
+        self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+        self.assertFalse(any(r.get('tag')==363 for r in row['completedRecords']))
+        row=event_prefix(prefix(sequence(b'\x6b'+tag16b()[3:])),source='16b-short')
+        self.assertEqual((row['diagnostic']['offset'],row['diagnostic']['actual'],row['diagnostic']['category']),(19,107,'union-tag'))
 
     def test_tag24_nested_curve_counts_and_independent_envelope_members(self):
         curves=(b'\xff',curve24(None),curve24(),curve24((bytes(range(28)),)),curve24((b'\xff'*28,b'\x80'*28)))
