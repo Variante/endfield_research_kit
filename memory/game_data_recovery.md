@@ -548,6 +548,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   immediately after the common byte and three scalar32 members. The Priority
   context belongs to a scalar read; neither constructors nor output setters
   introduce nested source data. Skill-cast identity meaning remains unresolved.
+  `scripts/game_data/buff_5d_native.json` pins a member-five action whose final
+  scalar32 follows the common prefix. Its exact DamageType context selects a
+  DWORD source read, not a nested object. Keep all raw scalar bits; enum names
+  do not validate runtime values or establish damage behavior.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

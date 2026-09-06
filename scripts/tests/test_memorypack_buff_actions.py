@@ -1442,6 +1442,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag5d_final_scalar_boundary_and_raw_bits(self):
+        for bits in (0,1,0x80000000,0xffffffff,0x7fc00000):
+            child=b'\x5d\x05\xfe'+bytes(12)+struct.pack('<I',bits)
+            for encoded in (child,b'\xfa\x5d\x00'+child[1:],b'\x5d\xff'):
+                end=19+len(encoded)
+                row=event_prefix(prefix(sequence(encoded,b'\x59')),source='5d.bin')
+                self.assertEqual(row['diagnostic'],dict(source='5d.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertEqual(row['completedRecords'],[dict(start=19,end=end,kind='union',tag=93)])
+            reader=Reader(child,'5d-final',len(child)-1)
+            with self.assertRaises(FrameError) as caught:reader.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='5d-final',offset=15,expected={'bytes':4},actual={'remaining':3},category='truncated'))
+            self.assertEqual(reader.records,[])
+
+    def test_tag5d_null_extended_cuts_limits_and_trailing(self):
+        for child in (b'\x5d\x05'+b'\xff'*17,b'\xfa\x5d\x00\x05'+bytes(17),b'\x5d\xff',b'\xfa\x5d\x00\xff'):
+            raw=sequence(child,child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='5d-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='5d-limit',limit=n))
+
+    def test_tag5d_malformed_headers_and_enclosing_counts(self):
+        raw=prefix(sequence(b'\x5d\x05'+bytes(17)))
+        good=event_prefix(raw,source='5d-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='5d-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('5d-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==93 for r in row['completedRecords']))
+
     def test_tag73_fixed_end_and_independent_adjacent_records(self):
         for flag in (0,1,128,254,255):
             child=b'\x73\x04'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
