@@ -466,6 +466,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   member is the same finite scalar payload. Its raw value occupies four bytes
   despite the managed type name; neither that name nor the action identity
   proves probability meaning. There is no source member after the nested read.
+  `scripts/game_data/buff_5a_native.json` pins a member-six action adding the
+  paired-payload profile and a separate final byte payload to the common prefix.
+  The paired profile shares a member-three header with the scalar profile but
+  reads a second variable payload instead of a four-byte value. Preserve all
+  three payload lengths independently; event-name meaning remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

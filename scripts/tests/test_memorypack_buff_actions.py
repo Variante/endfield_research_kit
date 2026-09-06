@@ -25,6 +25,11 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag5a(nested=None,value=b'tail'):
+    return (b'\x5a\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (pair(b'first',b'second',128) if nested is None else nested)+payload(value))
+
+
 def tag48(values=(0,0xffffffff),bits=0x80000000):
     return (b'\x48\x06\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,bits)+
             struct.pack('<i',-1 if values is None else len(values))+
@@ -1346,6 +1351,47 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag5a_paired_payload_then_independent_final_payload(self):
+        for first in (None,b'',b'key'):
+            for second in (None,b'',b'\xff\x00'):
+                for value in (None,b'',bytes(range(256))):
+                    nested=pair(first,second,128);child=tag5a(nested,value);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='5a.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='5a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=90),row['completedRecords'])
+                    at=34+len(nested)
+                    self.assertIn(dict(start=at,end=at+4,kind='count-i32'),row['ranges'])
+                    self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag5a_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag5a(),tag5a(pair(None,None),None),tag5a(pair(b'',b''),b''),tag5a(b'\xff'),b'\x5a\xff',b'\xfa\x5a\x00'+tag5a()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='5a-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='5a-limit',limit=n))
+
+    def test_tag5a_bad_headers_and_counts(self):
+        raw=prefix(sequence(tag5a()));good=event_prefix(raw,source='5a-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='5a-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('5a-bounds',at,value))
+        row=event_prefix(prefix(sequence(b'\xc4'+tag5a()[1:])),source='5a-other')
+        self.assertEqual(row['diagnostic'],dict(source='5a-other',offset=19,expected='supported current union tag',actual=196,category='union-tag'))
+
     def test_tag48_final_list_extent_and_raw_bits(self):
         for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
             child=tag48(values);end=19+len(child)
@@ -1382,8 +1428,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='48-bounds')
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('48-bounds',at,value))
-        row=event_prefix(prefix(sequence(b'\x5a'+tag48()[1:])),source='48-other')
-        self.assertEqual(row['diagnostic'],dict(source='48-other',offset=19,expected='supported current union tag',actual=90,category='union-tag'))
+        row=event_prefix(prefix(sequence(b'\xc4'+tag48()[1:])),source='48-other')
+        self.assertEqual(row['diagnostic'],dict(source='48-other',offset=19,expected='supported current union tag',actual=196,category='union-tag'))
 
     def test_tag88_scalar_payload_is_final_member(self):
         for value in (None,b'',b'x',bytes(range(256))):
