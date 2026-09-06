@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tag03(items=(),scalar=b'\xff',last=255):
+    return b'\x03\x09\xfe'+b'\xff'*12+b'\x80'+scalar+b'\xfe'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last])
+
+
 def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xffffffff):
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
@@ -1578,6 +1582,56 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag03_independent_list_elements_and_required_byte(self):
+        for items in (None,(),(b'\xff',),(b'\x01'+payload(None),b'\x01'+payload(b''),b'\x01'+payload(b'\xff\x03'))):
+            for scalar in (b'\xff',scalar_payload(b'wire')):
+                child=tag03(items,scalar);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='03.bin')
+                self.assertEqual(row['diagnostic'],dict(source='03.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=3),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag03_every_cut_hard_limit_null_extended_and_trailing(self):
+        base=tag03((b'\x01'+payload(b'wire'),b'\xff'),scalar_payload(None))
+        for child in (base,tag03(None),b'\x03\xff',b'\xfa\x03\x00'+base[1:]):
+            r=Reader(child,'03-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'03-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==3 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag03_bad_counts_headers_and_missing_final_byte(self):
+        child=tag03((b'\x01'+payload(b'a'),b'\x01'+payload(b'b')),scalar_payload(b'wire'))
+        r=Reader(child,'03-bounds');r.action(0)
+        counts=[v['start'] for v in r.ranges if v['kind']=='count-i32']
+        self.assertEqual(len(counts),4)
+        headers=[v['start'] for v in r.ranges if v['kind']=='member-header']
+        self.assertEqual(len(headers),4)
+        for at in counts:
+            for value in (-2,0x7fffffff):
+                bad=bytearray(child);struct.pack_into('<i',bad,at,value);r=Reader(bad,'03-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('03-bounds',at,value))
+        for at in headers:
+            bad=bytearray(child);bad[at]=0;r=Reader(bad,'03-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],at)
+        for last in (0,128,254,255):
+            data=tag03(last=last);r=Reader(data,'03-tail');r.action(0);self.assertEqual(r.pos,len(data))
+            r=Reader(data[:-1],'03-tail')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+            self.assertFalse(any(v.get('tag')==3 for v in r.records))
 
     def test_tag142_independent_payloads_target_and_final_scalar(self):
         for nested in (b'\xff',target()):

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120303,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActions_FinishGlobalBuffAction_DataForMemoryPack+Beyond_Gameplay_Core_AbilityActions_FinishGlobalBuffAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69305680
+    ],
+    [
+      120302,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActions_FinishGlobalBuffAction_DataForMemoryPack",
+      "Deserialize",
+      69305776
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69305680,
+      "endRva": 69305773,
+      "sha256": "FD0B2C1364A7E451B57EFFAEA5B20317F1EECB161F9963266575B93F2B873A16",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 69305776,
+      "endRva": 69306250,
+      "sha256": "E750FC608642713E7EC37D4BEDA3CD1E4756E42CE3F0CF64F89804540674292C",
+      "boundary": "member9 source reads through normal RET"
+    },
+    {
+      "startRva": 69306250,
+      "endRva": 69306334,
+      "sha256": "97F16574428A55AB431B8132BDE72FFE66064058F7CBB1845EF8528DBE7B3EB8",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83457760,
+      "endRva": 83457773,
+      "sha256": "CCF9C97759051F57CB509ECE2FD17B7D4F57842435B765C8C70FE364A1D0369B",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83457829,
+      "endRva": 83457850,
+      "sha256": "3DC7E4ECD2152170AA0686F210FE9DBEB6386E56F7402D004722A1D662C346E2",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69305948,
+      "instructionHex": "488B15C517E708",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69306088,
+      "instructionHex": "488B1531BFDD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69306163,
+      "instructionHex": "488B15C67FE808",
+      "cellVa": 6661211904,
+      "usageRawHex": "57A312C000000000",
+      "methodSpecIndex": 610731,
+      "methodSpec": [
+        428462,
+        -1,
+        26579
+      ],
+      "argumentRawHex": "88B4258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000F033E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14917,
+        "elementArguments": [
+          "AD280000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "single-payload-list",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member9 action consumes common byte/three DWORD, byte, BlackboardDouble, byte, List<GlobalBuffId> and a required final byte. BlackboardDouble reuses the four-byte scalar reader pinned by buff_35_native.json; the list context resolves element10413 through instantiation14917, whose header1 byte-payload reader is pinned by buff_95_native.json. Value-type identity and eight-byte output carrier do not imply raw wire width. Preserve independent null/empty list and element payload states and the final byte. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Buff lifetime, identifier meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
