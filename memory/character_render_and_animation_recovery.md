@@ -281,6 +281,11 @@ only.
   in the same report directory.
   The diagnostic now records CharacterPrePass and HGBuffer on one five-MRT/
   D32S8 surface, using the same character draw collector as canonical PreG.
+  Contact, low-resolution directional, VisibilitySH, and screen-shadow producers
+  consume that post-HG surface and its R32 depth copy. An active HG owner failure
+  cannot fall back to the independent character diagnostic. Default's paired
+  DSV is its t1 depth resource; t0 is the binning buffer. Native draw failure
+  cannot certify content merely because the metadata shell produced finite pixels.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. Generic depth
   overrides must honor source `DepthOnly` membership: Endminf's authored crystal
