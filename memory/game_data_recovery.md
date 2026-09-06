@@ -430,6 +430,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Its interposed scalar enum context adds no nested member. Preserve the final
   byte after the variable payload; a shared finder/target pair does not choose
   the surrounding action grammar or prove the managed action's runtime effect.
+  `scripts/game_data/buff_c4_native.json` pins a member-eight order with two
+  byte payloads separated by finder and ending in target. Both nested contexts
+  match the finite readers above; preserve the intervening variable payload
+  rather than treating finder/target as adjacent. Blackboard ownership remains
+  unresolved even when the complete forward record is bounded.
   Member-nine actions have distinct orders: `scripts/game_data/buff_78_native.json`
   adds scalar32, two bytes, target and counted scalar32 values to the common
   prefix; `scripts/game_data/buff_81_native.json` instead adds a length-prefixed

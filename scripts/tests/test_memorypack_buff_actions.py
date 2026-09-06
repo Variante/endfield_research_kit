@@ -25,6 +25,13 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tagc4(first=b'first',second=b'second',finder=None,nested=None):
+    if finder is None:
+        finder=b'\x03'+struct.pack('<i',2)+payload(b'finder')+payload(None)+bytes(4)+b'\x02'+struct.pack('<IiII',0xffffffff,2,1,0xffffffff)
+    return (b'\xc4\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            payload(first)+finder+payload(second)+(target() if nested is None else nested))
+
+
 def tag5a(nested=None,value=b'tail'):
     return (b'\x5a\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
             (pair(b'first',b'second',128) if nested is None else nested)+payload(value))
@@ -1351,6 +1358,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tagc4_two_payloads_separated_by_finder_then_target(self):
+        for first in (None,b'',b'first'):
+            for second in (None,b'',bytes(range(256))):
+                child=tagc4(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='c4.bin')
+                self.assertEqual(row['diagnostic'],dict(source='c4.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=196),row['completedRecords'])
+                self.assertIn(dict(start=end-len(target()),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tagc4_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagc4(),tagc4(None,None),tagc4(b'',b''),tagc4(finder=b'\xff'),tagc4(nested=b'\xff'),b'\xc4\xff',b'\xfa\xc4\x00'+tagc4()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='c4-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='c4-limit',limit=n))
+
+    def test_tagc4_bad_headers_counts_and_unknown_target(self):
+        raw=prefix(sequence(tagc4()));good=event_prefix(raw,source='c4-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='c4-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('c4-bounds',at,value))
+        row=event_prefix(prefix(sequence(tagc4(nested=target(selector=b'\x03\x06'+bytes(8))))),source='c4-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category']),('unsupported','nested-profile'))
+        self.assertFalse(any(r.get('tag')==196 for r in row['completedRecords']))
+
     def test_tag5a_paired_payload_then_independent_final_payload(self):
         for first in (None,b'',b'key'):
             for second in (None,b'',b'\xff\x00'):
@@ -1390,7 +1437,7 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('5a-bounds',at,value))
         row=event_prefix(prefix(sequence(b'\xc4'+tag5a()[1:])),source='5a-other')
-        self.assertEqual(row['diagnostic'],dict(source='5a-other',offset=19,expected='supported current union tag',actual=196,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='5a-other',offset=20,expected=8,actual=6,category='member-count'))
 
     def test_tag48_final_list_extent_and_raw_bits(self):
         for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
@@ -1429,7 +1476,7 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('48-bounds',at,value))
         row=event_prefix(prefix(sequence(b'\xc4'+tag48()[1:])),source='48-other')
-        self.assertEqual(row['diagnostic'],dict(source='48-other',offset=19,expected='supported current union tag',actual=196,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='48-other',offset=20,expected=8,actual=6,category='member-count'))
 
     def test_tag88_scalar_payload_is_final_member(self):
         for value in (None,b'',b'x',bytes(range(256))):
