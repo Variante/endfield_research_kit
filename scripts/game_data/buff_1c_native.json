@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118735,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffCharacterAction_DataForMemoryPack+Beyond_Gameplay_Core_BlowOffCharacterAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      61441728
+    ],
+    [
+      118734,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffCharacterAction_DataForMemoryPack",
+      "Deserialize",
+      61441824
+    ],
+    [
+      112707,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffCharacterAction_BlackboardCharBlowOffPriorityValueForMemoryPack+Beyond_Gameplay_Core_BlowOffCharacterAction_BlackboardCharBlowOffPriorityValueForMemoryPackFormatter",
+      "Deserialize",
+      62973248
+    ],
+    [
+      112706,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffCharacterAction_BlackboardCharBlowOffPriorityValueForMemoryPack",
+      "Deserialize",
+      62973344
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61441728,
+      "endRva": 61441821,
+      "sha256": "A5C8A6382CD521B7BDFAD60A95882CEFE6CE02504C88AF62A48037A95CE23F83",
+      "boundary": "outer formatter forwarding and initialization"
+    },
+    {
+      "startRva": 61441824,
+      "endRva": 61442589,
+      "sha256": "882EE48C89E7AB70ED5242B5BB8B14AA9670A39106BA60FD743D1AE15764CDBD",
+      "boundary": "member15 inline header and source reads through RET"
+    },
+    {
+      "startRva": 61442589,
+      "endRva": 61442606,
+      "sha256": "B902FE4C1896799A822BD9349193ADE6314EB423C67146278292ACE314EB1AF8",
+      "boundary": "outer FF clear and complete rejoin"
+    },
+    {
+      "startRva": 61442606,
+      "endRva": 61442714,
+      "sha256": "4616EFCFE0283380AA07C2AB6BFDE67F61F6B36207659A2ABBE2F67186ED8CFC",
+      "boundary": "outer lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82451964,
+      "endRva": 82451977,
+      "sha256": "531D020C93E528B5E3687F99F9B38244E8E114F9FAA093CF831F4F9E00873E7A",
+      "boundary": "outer existing-output preparation"
+    },
+    {
+      "startRva": 62973248,
+      "endRva": 62973341,
+      "sha256": "58F811A814077A3FCFC9C2D23A48445EB217A09226E6B741AF953253E091E39F",
+      "boundary": "nested formatter forwarding and initialization"
+    },
+    {
+      "startRva": 62973344,
+      "endRva": 62973623,
+      "sha256": "EBC59F0E7C267927953A52A9610ED68528F6BE978BEE88FDBE0E0EA987929258",
+      "boundary": "nested member4 source reads and existing-output preparation"
+    },
+    {
+      "startRva": 62973623,
+      "endRva": 62973640,
+      "sha256": "FB9E4FE0921ED8BCA7A239071EDEDCD07659F118F5F16869FB68C2F83229659B",
+      "boundary": "nested FF clear and complete rejoin"
+    },
+    {
+      "startRva": 62973640,
+      "endRva": 62973688,
+      "sha256": "7373C9C12EA9D34A796022B55DC2EA9B71DE9F6E8D9E5ECB884D36FCCBF4A60D",
+      "boundary": "nested lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82689410,
+      "endRva": 82689461,
+      "sha256": "6B2A3125C21359C9B6C5B7EEB65A183B376AB8BE52573354E8668405E58AA62E",
+      "boundary": "nested allocation and header rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61442027,
+      "instructionHex": "488B1536165F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61442142,
+      "instructionHex": "488B15A38E5C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442180,
+      "instructionHex": "488B15159C5F09",
+      "cellVa": 6661153952,
+      "usageRawHex": "D3EB12C000000000",
+      "methodSpecIndex": 620009,
+      "methodSpec": [
+        428464,
+        -1,
+        17010
+      ],
+      "argumentRawHex": "22240000000000000000120000000000",
+      "typeDefinition": 9250,
+      "typeName": "Beyond.Gameplay.Core.BlowOffCharacterAction+BlackboardCharBlowOffPriorityValue",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442221,
+      "instructionHex": "488B156CBD5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442262,
+      "instructionHex": "488B150B135F09",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442303,
+      "instructionHex": "488B151ABD5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442411,
+      "instructionHex": "488B15AEBC5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442452,
+      "instructionHex": "488B156D8D5C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61442527,
+      "instructionHex": "488B153ABC5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member15": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "scalar-flag-payload",
+      "scalar-payload",
+      "direction",
+      "scalar-payload",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "target",
+      "byte",
+      "scalar-payload"
+    ],
+    "member4": [
+      "byte-payload",
+      "byte",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member15 action has two targets, four independently nullable BlackboardDouble profiles, DirectionSettings and a distinct BlackboardCharBlowOffPriorityValue profile in the recorded order. The latter concrete member4 reader consumes byte payload, byte, DWORD and final byte; it is not the member3 scalar reader. Its complete final byte is required before the next parent field. Existing finite target/direction and four-byte BlackboardDouble readers retain their evidence boundaries. Preserve nested null states, signed payload lengths and arbitrary scalar bits. Inline headers explicitly advance one source byte. Normal, FF, lazy, formatter, allocation and existing-output windows retain complete instructions; output setters add no source bytes. Blow-off behavior, priority meaning, target ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

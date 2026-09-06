@@ -604,6 +604,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   action ending directly with a target profile. Preserve nested null/count
   boundaries and leave unknown children explicit; poise recovery behavior
   and target ownership remain unresolved.
+  `scripts/game_data/buff_1c_native.json` pins a member-fifteen action
+  with a distinct member-four payload/byte/scalar32/byte child. Its final byte
+  is required before subsequent target, direction and scalar profiles can
+  complete; blow-off behavior and priority meaning remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

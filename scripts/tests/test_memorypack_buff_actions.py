@@ -71,6 +71,15 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def scalar_flag(value=b'wire',last=255):
+    return b'\x04'+payload(value)+b'\x80'+b'\xff'*4+bytes([last])
+
+
+def tag1c(first=b'\xff',child=b'\xff',scalars=None,direction=b'\xff',second=b'\xff'):
+    a,b,c,d=scalars or (b'\xff',)*4
+    return b'\x1c\x0f\xfe'+b'\xff'*12+first+child+a+direction+b+b'\x80'*4+b'\xfe'+c+second+b'\xff'+d
+
+
 def tag126(nested=b'\xff'):
     return b'\xfa\x26\x01\x05\xfe'+b'\xff'*12+nested
 
@@ -1561,6 +1570,63 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag1c_independent_nested_profiles_and_final_scalar(self):
+        for child in (b'\xff',scalar_flag(None),scalar_flag(b''),scalar_flag()):
+            for mask in range(16):
+                scalars=tuple(scalar_payload(bytes([i])) if mask&(1<<i) else b'\xff' for i in range(4))
+                action=tag1c(target(),child,scalars,second=target());end=19+len(action)
+                row=event_prefix(prefix(sequence(action,b'\x59')),source='1c.bin')
+                self.assertEqual(row['diagnostic'],dict(source='1c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=28),row['completedRecords'])
+                at=34+len(target())
+                self.assertIn(dict(start=at,end=at+len(child),kind='anonymous-scalar-flag-payload'),row['completedRecords'])
+                self.assertIn(dict(start=end-len(scalars[-1]),end=end,kind='anonymous-scalar-payload'),row['completedRecords'])
+
+    def test_tag1c_null_extended_cuts_and_trailing(self):
+        direction=b'\x08\xfe\xff'+b'\x80'*4+b'\xfe'+(b'\xff'+b'\x80'*4)*2
+        for child in (tag1c(),tag1c(target(),scalar_flag(),(scalar_payload(),)*4,direction,target()),b'\x1c\xff',b'\xfa\x1c\x00'+tag1c()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='1c-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='1c-limit',limit=n))
+
+    def test_tag1c_malformed_profiles_and_unknown_targets(self):
+        raw=prefix(sequence(tag1c(target(),scalar_flag(),(scalar_payload(),)*4,second=target())))
+        good=event_prefix(raw,source='1c-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='1c-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('1c-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==28 for r in row['completedRecords']))
+        unknown=target(selector=b'\x03\x10')
+        for first,second in ((unknown,target()),(target(),unknown)):
+            row=event_prefix(prefix(sequence(tag1c(first,second=second))),source='1c-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertFalse(any(r.get('tag')==28 for r in row['completedRecords']))
+
+    def test_scalar_flag_payload_requires_own_final_byte(self):
+        child=scalar_flag();raw=prefix(sequence(tag1c(child=child)));at=35
+        row=event_prefix(raw,source='1c-child-tail',limit=at+len(child)-1)
+        self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at+len(child)-1)
+        self.assertFalse(any(r.get('tag')==28 or r['kind']=='anonymous-scalar-flag-payload' for r in row['completedRecords']))
+        for value in (None,b'',b'wire'):
+            data=scalar_flag(value)
+            for n in range(len(data)):
+                r=Reader(data,'child',n)
+                with self.assertRaises(FrameError):r.scalar_flag_payload()
+                self.assertFalse(any(rec['kind']=='anonymous-scalar-flag-payload' for rec in r.records))
 
     def test_tag126_final_target_boundary(self):
         for nested in (b'\xff',target()):
