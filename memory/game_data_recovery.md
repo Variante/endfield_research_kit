@@ -576,6 +576,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   action ending with scalar32, byte and two independent target profiles after
   the common prefix. Preserve each target boundary and leave the parent
   incomplete at unsupported children; spell and target relationships remain unresolved.
+  `scripts/game_data/buff_160_native.json` pins an extended member-ten
+  action with two bytes, scalar32, byte, scalar32 and final target after the
+  common prefix. Its two enum contexts select DWORD reads; the final target
+  has a separate provider context. Actor visibility and part ownership remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

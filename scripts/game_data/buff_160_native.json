@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123014,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowHideActorAction_ShowHideActorDataForMemoryPack+Beyond_Gameplay_Core_ShowHideActorAction_ShowHideActorDataForMemoryPackFormatter",
+      "Deserialize",
+      66301968
+    ],
+    [
+      123013,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowHideActorAction_ShowHideActorDataForMemoryPack",
+      "Deserialize",
+      66302064
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66301968,
+      "endRva": 66302061,
+      "sha256": "84689858CB0059A00712C328D5EA134D391923FC23672192458633AE3EB25134",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 66302064,
+      "endRva": 66302577,
+      "sha256": "1B69C1D4F68DA6A7E8429348764B1D1264FC2C14FB9AEC72BB21841903EEB948",
+      "boundary": "member10 source reads through normal RET"
+    },
+    {
+      "startRva": 66302577,
+      "endRva": 66302673,
+      "sha256": "35E290E2D56CA4AA597BCEA34747B6DF9AA8A41C82631F0B82AFDFC4C220768E",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83139764,
+      "endRva": 83139777,
+      "sha256": "487421F74449BD095F69F8182954C1EE9CC96019C8C2FB5655AFEFFE19CBD776",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83139833,
+      "endRva": 83139854,
+      "sha256": "C0671CB3F4E4749C62B9EF732C15C200DBC008E24871D2A5360AC13EE742BEA8",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66302236,
+      "instructionHex": "488B1505ED1409",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66302410,
+      "instructionHex": "488B1567D50E09",
+      "cellVa": 6660720440,
+      "usageRawHex": "35E612C000000000",
+      "methodSpecIndex": 619290,
+      "methodSpec": [
+        428448,
+        -1,
+        42333
+      ],
+      "argumentRawHex": "D0050000000000000000118000000000",
+      "typeDefinition": 1488,
+      "typeName": "Beyond.Gameplay.ModelPartEnum",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66302484,
+      "instructionHex": "488B1515D50E09",
+      "cellVa": 6660720432,
+      "usageRawHex": "59E812C000000000",
+      "methodSpecIndex": 619564,
+      "methodSpec": [
+        428448,
+        -1,
+        42533
+      ],
+      "argumentRawHex": "7B260000000000000000118000000000",
+      "typeDefinition": 9851,
+      "typeName": "Beyond.Gameplay.Core.ShowHideActorAction+ShowHideType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66302524,
+      "instructionHex": "488B15C5641209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member10 action consumes common byte/three DWORD then two bytes, DWORD, byte, DWORD and final target. ModelPartEnum and ShowHideType contexts belong to separate DWORD source reads; the following TargetSettings context belongs to the nested provider. Neither value-type kind nor destination slots establish wire width. Preserve every scalar bit pattern and target null/count/child boundary. An unsupported target keeps the parent incomplete. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Actor visibility, model-part ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

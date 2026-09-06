@@ -63,6 +63,10 @@ def tag16d(first=b'\xff',second=b'\xff',bits=0xffffffff):
     return b'\xfa\x6d\x01\x08\xfe'+b'\xff'*12+struct.pack('<I',bits)+b'\x80'+first+second
 
 
+def tag160(nested=b'\xff',first=0xffffffff,second=0x80000000):
+    return b'\xfa\x60\x01\x0a\xfe'+b'\xff'*12+b'\xfe\x80'+struct.pack('<I',first)+b'\xff'+struct.pack('<I',second)+nested
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1512,6 +1516,48 @@ class BuffActionsTests(unittest.TestCase):
                     self.assertIn(dict(start=19,end=end,kind='union',tag=365),row['completedRecords'])
                     self.assertIn(dict(start=41,end=41+len(first),kind='anonymous-target-profile'),row['completedRecords'])
                     self.assertIn(dict(start=41+len(first),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag160_separate_scalars_and_final_target(self):
+        for nested in (b'\xff',target()):
+            for first in (0,0xffffffff,0x80000000,0x7fc00000):
+                for second in (0,0xffffffff):
+                    child=tag160(nested,first,second);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='160.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='160.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=352),row['completedRecords'])
+                    self.assertIn(dict(start=47,end=end,kind='anonymous-target-profile'),row['completedRecords'])
+                    for at in (38,43):self.assertIn(dict(start=at,end=at+4,kind='anonymous-scalar32'),row['ranges'])
+
+    def test_tag160_null_cuts_limits_and_trailing(self):
+        for child in (tag160(),tag160(target()),b'\xfa\x60\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='160-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='160-limit',limit=n))
+
+    def test_tag160_malformed_counts_headers_and_target_gap(self):
+        raw=prefix(sequence(tag160(target())))
+        good=event_prefix(raw,source='160-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='160-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('160-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==352 for r in row['completedRecords']))
+        row=event_prefix(prefix(sequence(tag160(target(selector=b'\x03\x10')))),source='160-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+        self.assertFalse(any(r.get('tag')==352 for r in row['completedRecords']))
 
     def test_tag16d_null_cuts_limits_and_trailing(self):
         for child in (tag16d(),tag16d(target(),target()),b'\xfa\x6d\x01\xff'):
