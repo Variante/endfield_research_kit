@@ -25,6 +25,10 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag7e(first=b'\xff',second=b'\xff'):
+    return b'\x7e\x06\xfe'+b'\xff'*12+first+second
+
+
 def tag16b(first=b'\xff',second=b'\xff'):
     return b'\xfa\x6b\x01\x06\xfe'+b'\xff'*12+first+second
 
@@ -1407,6 +1411,52 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag7e_two_independent_targets(self):
+        for first in (b'\xff',target(),target(direction_value=b'\xff')):
+            for second in (b'\xff',target(),target(selector=b'\x03\x05\x00'+bytes(8))):
+                child=tag7e(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='7e.bin')
+                self.assertEqual(row['diagnostic'],dict(source='7e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=126),row['completedRecords'])
+                self.assertEqual([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile'],
+                    [dict(start=34,end=34+len(first),kind='anonymous-target-profile'),dict(start=34+len(first),end=end,kind='anonymous-target-profile')])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag7e_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag7e(),tag7e(target(),target()),b'\x7e\xff',b'\xfa\x7e\x00'+tag7e()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='7e-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='7e-limit',limit=n))
+
+    def test_tag7e_malformed_counts_headers_and_each_target_gap(self):
+        raw=prefix(sequence(tag7e(target(),target())))
+        good=event_prefix(raw,source='7e-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='7e-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('7e-bounds',at,value))
+        for first_gap in (True,False):
+            bad=target(selector=b'\x03\x10');good_target=target()
+            child=tag7e(bad,good_target) if first_gap else tag7e(good_target,bad)
+            row=event_prefix(prefix(sequence(child)),source='7e-gap')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',16))
+            self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+            self.assertFalse(any(r.get('tag')==126 for r in row['completedRecords']))
+            self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']),0 if first_gap else 1)
 
     def test_tag16b_scalar_payload_then_independent_target(self):
         for first in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\x00\xffwire',bits=b'\xff'*4)):

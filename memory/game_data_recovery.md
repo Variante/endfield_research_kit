@@ -512,6 +512,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   authenticated reader proving payload/byte/DWORD source order; equal headers
   and managed names alone do not justify profile reuse. An unknown target
   keeps the enclosing action incomplete. Spawning behavior remains unresolved.
+  `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
+  in two target profiles. Both exact contexts select the same finite profile,
+  but their null states, nested counts and source boundaries stay independent.
+  No source field follows the second target. Containment meaning is unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
