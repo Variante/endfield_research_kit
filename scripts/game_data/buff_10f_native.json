@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121747,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PauseBuffTime_DataForMemoryPack+Beyond_Gameplay_Core_PauseBuffTime_DataForMemoryPackFormatter",
+      "Deserialize",
+      69567120
+    ],
+    [
+      121746,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PauseBuffTime_DataForMemoryPack",
+      "Deserialize",
+      69567216
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69567120,
+      "endRva": 69567213,
+      "sha256": "A63AA785865BC1FB1E8FA74454203D53EC7624635AA7A38304584D33A7D0EF8E",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 69567216,
+      "endRva": 69567536,
+      "sha256": "F3EE42E3DFCEE86FF3BC9AD9C3141C182D6B2996DF8DF051C5415341D399058F",
+      "boundary": "member5 normal source read order through RET"
+    },
+    {
+      "startRva": 69567536,
+      "endRva": 69567596,
+      "sha256": "AEF11A5F65F62866BC5845327DBC201170AD3BF9B12B5FEDE5488B06233D41BF",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83477609,
+      "endRva": 83477630,
+      "sha256": "B114684C5F38AACD4C22BD78DC2B500AD0D348E5A0F9A0A5CF7126A019685618",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-five header, nonzero-normalized byte, three scalar32 values and one final nonzero-normalized byte. The final source helper is the independently pinned single-byte reader, not a target, payload or output-store extent. There are no nested provider calls. FA plus the unsigned little-endian tag and non-null body total eighteen source bytes; FF null wrappers remain separate. Arbitrary scalar bits and nonzero byte values are preserved without assigning field, pause-state or execution meaning. Output setters and lazy construction add no source members. Live formatter selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

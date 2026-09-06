@@ -109,6 +109,9 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag10f(first=254,last=128):
+    return b'\xfa\x0f\x01\x05'+bytes([first])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
+
 def tag44(value=b'variable-name',nested=None):
     return b'\x44\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(value)+(target() if nested is None else nested)
 
@@ -1187,6 +1190,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag10f_fixed_members_keep_both_byte_values(self):
+        for first in (0,1,128,255):
+            for last in (0,1,128,255):
+                child=tag10f(first,last);self.assertEqual(len(child),18)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='10f.bin')
+                self.assertEqual(row['diagnostic'],dict(source='10f.bin',offset=37,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=37,kind='union',tag=271),row['completedRecords'])
+                self.assertIn(dict(start=36,end=37,kind='anonymous-nonzero-byte'),row['ranges'])
+                self.assertEqual((child[4],child[-1]),(first,last))
+                self.assertEqual(row['opaqueRemainderRange'][0],37)
+
+    def test_tag10f_null_cuts_limits_and_trailing(self):
+        for child in (tag10f(),b'\xfa\x0f\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='10f-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='10f-limit',limit=n))
+
+    def test_tag10f_bad_headers_and_enclosing_counts(self):
+        for header in (0,4,6,254):
+            bad=bytearray(tag10f());bad[3]=header
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='10f-header')
+            self.assertEqual(caught.exception.diagnostic,dict(source='10f-header',offset=8,expected=5,actual=header,category='member-count'))
+        for value in (-2,2147483647):
+            bad=bytearray(sequence(tag10f()));struct.pack_into('<i',bad,1,value)
+            with self.assertRaises(FrameError) as caught:sequence_frame(bad,source='10f-count')
+            d=caught.exception.diagnostic
+            self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('10f-count',1,value,'count-bounds'))
+        row=event_prefix(prefix(sequence(b'\x0f'+tag10f()[3:])),source='10f-short')
+        self.assertEqual(row['diagnostic']['actual'],15)
+        self.assertEqual(row['consumedEnd'],19)
 
     def test_tag44_variable_payload_before_target_and_no_final_byte(self):
         for value in (None,b'',b'x',bytes(range(256))):

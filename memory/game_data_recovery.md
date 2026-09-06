@@ -264,6 +264,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   same variable-width target profile. `scripts/game_data/buff_68_native.json`
   pins its own normal/null paths and exact target context; its equal member
   count does not select the earlier member-five counted-payload layout.
+  `scripts/game_data/buff_10f_native.json` pins a fixed member-five reader:
+  byte, three scalar32 values, then a final byte, with no nested provider.
+  Its byte helpers establish nonzero normalization, not gameplay meaning;
+  equal member counts cannot substitute a target or payload for that final byte.
   The member-six reader in `scripts/game_data/buff_69_native.json` adds a
   fourth scalar32 before the target. Its later destination-object offset does
   not move that scalar after the target on the wire. The ObjectType enum
