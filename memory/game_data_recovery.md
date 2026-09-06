@@ -658,6 +658,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_bb_native.json` pins two independent targets after
   the common fields, without an intervening byte or extra tail. A failed second
   target preserves the first completed target; combat forcing remains unresolved.
+  `scripts/game_data/buff_0b_native.json` distinguishes a direct GameplayTag
+  list from the GameplayTagList wrapper. Its counted FF/member-one elements
+  follow a string profile and target; reserve the required final byte before
+  accepting the count. Tag meaning and runtime selection remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118425,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagAction_DataForMemoryPack+Beyond_Gameplay_Core_AddTagAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63361408
+    ],
+    [
+      118424,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagAction_DataForMemoryPack",
+      "Deserialize",
+      63361824
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63361408,
+      "endRva": 63361501,
+      "sha256": "D0AD4516E508C663AE29DD07B44F46317D77497C350D769C3DAEEF53912A4F8B",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 63361824,
+      "endRva": 63362271,
+      "sha256": "ED360A54D246D2A3FFF40A86E1519C948B747DF874FE90751A760CC17440C7A7",
+      "boundary": "member8 source reads through normal RET"
+    },
+    {
+      "startRva": 63362271,
+      "endRva": 63362367,
+      "sha256": "A03701E468C01161A27A2F8F0E2630354B82DAAEB6CC468353AA832DCFDC4702",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82742158,
+      "endRva": 82742171,
+      "sha256": "019CCDC43BBFC46A98A5D1C82A83AA523C31BBB7F3A443AEA926422970BD1641",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82742227,
+      "endRva": 82742248,
+      "sha256": "B6495F14FE6C6473D60EC7451616B4DD964FF5CE89655EBB9F91407966ACFD6C",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63361996,
+      "instructionHex": "488B1555CA4109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63362102,
+      "instructionHex": "488B153BC54109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63362143,
+      "instructionHex": "488B15A2423F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63362184,
+      "instructionHex": "488B15E16B3809",
+      "cellVa": 6660505712,
+      "usageRawHex": "55A312C000000000",
+      "methodSpecIndex": 610730,
+      "methodSpec": [
+        428462,
+        -1,
+        8486
+      ],
+      "argumentRawHex": "28B6258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03CFE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 816,
+        "elementArguments": [
+          "A22D0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "paired-payload",
+      "target",
+      "tag-elements",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member8 action consumes common byte/three DWORDs, BlackboardString, target, a direct List<GameplayTag> and final byte. String reuses the paired payload/byte/payload reader pinned by buff_27_native.json. List MethodSpec610730 joins element instantiation816 and GameplayTag; the direct list has no extra GameplayTagList wrapper header. Signed nullable count/loop remains conditional on selectedListFormatterCandidate; elements reuse the separately pinned FF or member1 DWORD reader in buff_c5_native.json. Count bounds reserve the required final byte. Null list, empty list and null elements remain distinct. Normal, lazy, formatter, existing-output and FF paths retain complete instructions; adjacent methods and output setters add no source bytes. Tag meaning, target ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
