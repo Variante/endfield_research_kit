@@ -247,7 +247,8 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   scalar32 and a member-three scalar payload. Independent native read order
   supports these boundaries; raw zero DWORDs in the action prefix are not a
   nested object or collection count. The finite profile admits only null
-  recursive targets, a null finder and empty selector collections; other
+  recursive targets and empty selector collections; the finder admits null
+  or the independently joined zero-member union profile. Other
   shapes remain unsupported without scanning for a later marker. The final
   payload reader consumes four scalar bytes despite its managed Double name.
   Keep those bits anonymous, including non-finite values. Byte decoding, live
@@ -283,6 +284,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_56_native.json`. Each element consumes its own header
   before the byte length; neither the value-type name nor an eight-byte output
   slot proves a fixed serialized width. Active formatter selection stays open.
+  The member-nineteen child adds counted input profiles containing counted
+  assignment profiles, a scalar/byte-payload pair, and the existing scalar,
+  byte-payload-list and target profiles. Preserve the native read order rather
+  than destination offsets: helper calls also consume scalar and byte members.
+  `scripts/game_data/buff_92_native.json` pins these readers, nested contexts,
+  the assignment-list candidate and the selector finder's zero-member route.
+  Shared reference-list and provider dispatch remain conditional; a concrete
+  static reader is structural evidence, not proof of live formatter execution.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated

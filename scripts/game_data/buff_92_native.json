@@ -1,0 +1,443 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119710,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack",
+      "Deserialize",
+      58148448
+    ],
+    [
+      119711,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack+Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      58147504
+    ],
+    [
+      162698,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconDurationSourceSettingForMemoryPack",
+      "Deserialize",
+      64607376
+    ],
+    [
+      162699,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconDurationSourceSettingForMemoryPack+Beyond_Gameplay_Core_BuffIconDurationSourceSettingForMemoryPackFormatter",
+      "Deserialize",
+      64607280
+    ],
+    [
+      107600,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffActionInputForMemoryPack",
+      "Deserialize",
+      52467056
+    ],
+    [
+      107601,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffActionInputForMemoryPack+Beyond_Gameplay_Core_CreateBuffActionInputForMemoryPackFormatter",
+      "Deserialize",
+      52466960
+    ],
+    [
+      107616,
+      "Beyond.MemoryPack.Beyond_Blackboard_AssignPairForMemoryPack",
+      "Deserialize",
+      64466944
+    ],
+    [
+      107617,
+      "Beyond.MemoryPack.Beyond_Blackboard_AssignPairForMemoryPack+Beyond_Blackboard_AssignPairForMemoryPackFormatter",
+      "Deserialize",
+      64466848
+    ],
+    [
+      167046,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack",
+      "Deserialize",
+      66390096
+    ],
+    [
+      167047,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      66390000
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.dll",
+      "methods": [
+        [
+          428795,
+          "MemoryPack.Formatters.ListFormatter`1",
+          "Deserialize",
+          null
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58147504,
+      "endRva": 58147597,
+      "sha256": "07667450B6564379A5D7481B4B482A2E35A92FC181AC9ACE7BE7D3B6EE47AF4C",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 58148448,
+      "endRva": 58149638,
+      "sha256": "533490A2A185AEE76FEB96108FB2504E3D0F25BF70F1B56CE68B8D2DD51E3BFB",
+      "boundary": "member19 normal path through RET"
+    },
+    {
+      "startRva": 58149638,
+      "endRva": 58149655,
+      "sha256": "3EE627C4F39348F5AA666F47AF3C1D7EEDCABA10467C93B9C38F1B8ACA47D64B",
+      "boundary": "action FF clear and rejoin"
+    },
+    {
+      "startRva": 64607280,
+      "endRva": 64607373,
+      "sha256": "814E5827B0558692FD5BC95D9F8DC9057866A8C3E48EEB1EAE40EDD1434E5612",
+      "boundary": "duration formatter forwarding"
+    },
+    {
+      "startRva": 64607376,
+      "endRva": 64607630,
+      "sha256": "4CC4D24711ECB58BB47F94062F38C7643C9610C2F1170CB2515512F85AAEEC47",
+      "boundary": "member2 normal path through RET"
+    },
+    {
+      "startRva": 64607630,
+      "endRva": 64607647,
+      "sha256": "7883A0383B981AEF6319A491FD00A0DB64CA607165BF03BB9293A521B90B6D11",
+      "boundary": "duration FF clear and rejoin"
+    },
+    {
+      "startRva": 52466960,
+      "endRva": 52467053,
+      "sha256": "961A92D20EEBFE0556E777693F0C6E4EEB568339A6026338761A7222B6AB8586",
+      "boundary": "input formatter forwarding"
+    },
+    {
+      "startRva": 52467056,
+      "endRva": 52467451,
+      "sha256": "75FC79FADAAEADABF2D4E13A4EF4DEC1770D84930887D084E22D8F42907CE749",
+      "boundary": "member5 normal path through RET"
+    },
+    {
+      "startRva": 52467451,
+      "endRva": 52467468,
+      "sha256": "305FB6FD3FFB16596F740CD72057B356F6C2E1D20B771581EA47180C7E7B0D7E",
+      "boundary": "input FF clear and rejoin"
+    },
+    {
+      "startRva": 64466848,
+      "endRva": 64466941,
+      "sha256": "A35DFD7FAC1E80BDC17FC195012ED53381168DA42472D57E61396BB41192F5DB",
+      "boundary": "assignment formatter forwarding"
+    },
+    {
+      "startRva": 64466944,
+      "endRva": 64467248,
+      "sha256": "085D33AA8F6F60B594A4331CE537E2EC01D30C45F614A6B90C4BE3D9876FCDF8",
+      "boundary": "member6 normal path through RET"
+    },
+    {
+      "startRva": 64467248,
+      "endRva": 64467265,
+      "sha256": "BEB6975CA2B24C002191953FD0DB0CC4438304A9F51302B2A48D4E2F4D9958E9",
+      "boundary": "assignment FF clear and rejoin"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "four-byte MOVSS source read and cursor advance through RET"
+    },
+    {
+      "startRva": 63386752,
+      "endRva": 63387266,
+      "sha256": "A8E428C1DCADB0A062329803B12BA5DE1C42796D2522B60A4FDE7BFC15F4D893",
+      "boundary": "registered List<AssignPair> candidate signed count, element provider loop, normal and null RET"
+    },
+    {
+      "startRva": 59819556,
+      "endRva": 59819816,
+      "sha256": "41FC729461A15D021EA642CA6064A7F523CBE1FF52C3585C6B731D6B9BCAB9AF",
+      "boundary": "selector finder one-byte and FA+u16 dispatch, common provider call and RET"
+    },
+    {
+      "startRva": 59819863,
+      "endRva": 59819910,
+      "sha256": "842B744444041F9FCF7F29250818C6F16296C941384117B00E1A9B752DAA0F4D",
+      "boundary": "selector finder tag2 registered type route"
+    },
+    {
+      "startRva": 66390000,
+      "endRva": 66390093,
+      "sha256": "C3AC6D00D3DA3C9B3735F43EC1CCD370C9A9D622EF755EF2424AD9DA2ED18D94",
+      "boundary": "finder zero-member formatter forwarding"
+    },
+    {
+      "startRva": 66390096,
+      "endRva": 66390289,
+      "sha256": "54491F07E9F4FAE6E42EFACEB2DA3F8715E00D6F7B24D654ED60ADE8148A6ECB",
+      "boundary": "finder try-header, zero-member check and RET"
+    },
+    {
+      "startRva": 59820197,
+      "endRva": 59820209,
+      "sha256": "662C4C635532D8A90264A939F5C80D6D100844C66F696B2801AE0B56A3BEE215",
+      "boundary": "finder allocation route type usage"
+    },
+    {
+      "startRva": 59819964,
+      "endRva": 59819988,
+      "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+      "boundary": "finder provider result or null write barrier and rejoin RET"
+    },
+    {
+      "startRva": 82204242,
+      "endRva": 82204254,
+      "sha256": "7612728629BCABB7042655F9B9F594214BE2857AC641FD364B50F1589BC88779",
+      "boundary": "finder high-byte null clear; maintained profile admits only FF"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 187237284,
+      "endRva": 187237296,
+      "sha256": "7D18E975FAE9F1691EC9BA738BA577523DE7665CFC698CFEF86C276A4D94E0AE",
+      "boundary": "List<AssignPair> MethodSpec 215551: definition 428795, class instantiation 17003"
+    },
+    {
+      "startRva": 199481104,
+      "endRva": 199481120,
+      "sha256": "03EC93E13C76CB1C1C560E5A2F5E3A30523E8B3567AE9C3577361CE705BBC5F7",
+      "boundary": "generic method table row 203835: spec 215551, method pointer index 203518"
+    },
+    {
+      "startRva": 193813232,
+      "endRva": 193813240,
+      "sha256": "5557CB37CF88C9BF4C5F214F269183F666093987967D362B9B8FA27A2875EEAE",
+      "boundary": "generic method pointer 203518 to selected list candidate"
+    },
+    {
+      "startRva": 183659256,
+      "endRva": 183659264,
+      "sha256": "93B00465A022E2D00624027A2FB14A0D617FCFAAD5F49011CF8FBD2A8F6E6AFB",
+      "boundary": "class instantiation 17003 pointer slot"
+    },
+    {
+      "startRva": 183518384,
+      "endRva": 183518400,
+      "sha256": "DC642469C10D1D6BF10196927184AD478F99BFB83BFC9CF64EE340AC7211F9A3",
+      "boundary": "class instantiation descriptor"
+    },
+    {
+      "startRva": 226152480,
+      "endRva": 226152488,
+      "sha256": "2BE3D162AEF51491B416137B6CC70FD4BBAE8810C5F7C414EAA7BA354D483E6C",
+      "boundary": "single argument pointer"
+    },
+    {
+      "startRva": 222336744,
+      "endRva": 222336760,
+      "sha256": "267604027019836E6622F2129B8CFD0F52F99A535100C8187FBD84BB6BCB75CE",
+      "boundary": "AssignPair value-type argument, same as input list element"
+    },
+    {
+      "startRva": 59821660,
+      "endRva": 59821664,
+      "sha256": "AA08284ACA8939B0B2337064BBFB67AB21BD346D1A63F6907717781C0A720738",
+      "boundary": "finder switch tag2 target"
+    },
+    {
+      "startRva": 217990448,
+      "endRva": 217990456,
+      "sha256": "0074FCB77933AC6DD60D76C8951B0C9DCC1709103D7C9C6324453BCC01E09930",
+      "boundary": "finder route type usage 107028"
+    },
+    {
+      "startRva": 206847056,
+      "endRva": 206847064,
+      "sha256": "370B903BA8897A61109EC99AB666961CE8B5BBAABB80BBC96883FB1ACEF0AA99",
+      "boundary": "finder registered type slot"
+    },
+    {
+      "startRva": 220269064,
+      "endRva": 220269080,
+      "sha256": "04FD61B27955F486C7A6187A84A7C2783FDEBC69109EB2A9E7E95D7C6D516D28",
+      "boundary": "finder class record: definition 23029, module/token-joined reader"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58148894,
+      "instructionHex": "488B15ABE29109",
+      "cellVa": 6661155536,
+      "usageRawHex": "A9EA12C000000000",
+      "methodSpecIndex": 619860,
+      "methodSpec": [
+        428464,
+        -1,
+        13982
+      ],
+      "argumentRawHex": "52270000000000000000120000000000",
+      "typeDefinition": 10066,
+      "typeName": "Beyond.Gameplay.Core.BuffIconDurationSourceSetting",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58148953,
+      "instructionHex": "488B1550499209",
+      "cellVa": 6661181872,
+      "usageRawHex": "19A312C000000000",
+      "methodSpecIndex": 610700,
+      "methodSpec": [
+        428462,
+        -1,
+        62518
+      ],
+      "argumentRawHex": "E8CE258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D070E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14378,
+        "elementArguments": [
+          "4C270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58149150,
+      "instructionHex": "488B15FBFC8709",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58149261,
+      "instructionHex": "488B15E4F68709",
+      "cellVa": 6660505720,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C039FE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 891,
+        "elementArguments": [
+          "C78C00000000000000000E0000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58149553,
+      "instructionHex": "488B1550CC8E09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 52467248,
+      "instructionHex": "488B159983E509",
+      "cellVa": 6660954576,
+      "usageRawHex": "79A412C000000000",
+      "methodSpecIndex": 610876,
+      "methodSpec": [
+        428462,
+        -1,
+        62662
+      ],
+      "argumentRawHex": "9836258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000B044F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17003,
+        "elementArguments": [
+          "AA000000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member19": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar-bytes-profile",
+      "counted-input-profiles",
+      "scalar32",
+      "byte-payload",
+      "scalar-payload",
+      "byte",
+      "counted-byte-payloads",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "target-profile"
+    ],
+    "member2": [
+      "scalar32",
+      "byte-payload"
+    ],
+    "member5": [
+      "byte",
+      "counted-assignment-profiles",
+      "byte-payload",
+      "byte-payload",
+      "byte"
+    ],
+    "member6": [
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte-payload",
+      "byte-payload",
+      "byte"
+    ],
+    "finderUnion2": []
+  },
+  "boundary": "Selected normal/null structural order. Outer reference-list framing uses the conditional shared reference-list profile in selectedBuffB4ReadOrder; its actual formatter remains unresolved. The nested List<AssignPair> context and registered candidate share value-type instantiation 17003, but the positive loop delegates elements through a provider. Concrete member2/member5/member6 readers establish the admitted finite shape, not live formatter execution. Scalar/target profiles reuse selectedBuffECReadOrder, byte-length advancement reuses selectedBuffTag76ReadOrder, and byte-payload lists reuse selectedBuffB4ReadOrder. Selector finder tag2 resolves the zero-member wrapper; FA+u16 retains the same tag and FF clears it. Nonempty selector collections and recursive targets remain unsupported. String decoding, gameplay meaning, runtime provider selection, allocation/refill/error parity and whole-BuffData EOF are not established."
+}

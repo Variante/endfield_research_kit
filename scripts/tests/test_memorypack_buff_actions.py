@@ -74,7 +74,91 @@ def tag56():
             struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
 
 
+def tag92():
+    assignment=b'\x06'+bytes.fromhex('FFFFFFFF')+payload(b'\xff\x00')+bytes.fromhex('0000C07F')+payload(None)+payload(b'')+b'\xfe'
+    item=b'\x05\x80'+struct.pack('<i',2)+assignment+b'\xff'+payload(b'\xff\x00')+payload(None)+b'\xfe'
+    return (b'\x92\x13\xfe'+bytes(12)+b'\x80\xfe'+b'\x02'+bytes(4)+payload(b'\xff\x00')+
+            struct.pack('<i',2)+item+b'\xff'+bytes(4)+payload(b'k')+scalar_payload(None)+b'\x80'+
+            struct.pack('<i',3)+payload(b'\xff\x00')+payload(None)+payload(b'')+b'\x00\x01\x80\xfe\xff'+b'\xff')
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_selector_finder_tag2_zero_members_and_null(self):
+        for value in (b'\xff',b'\x02\x00',b'\x02\xff',b'\xfa\x02\x00\x00',b'\xfa\x02\x00\xff'):
+            raw=sequence(tag_ec(nested=target(selector=b'\x03'+value+bytes(8))))
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.subTest(value=value,n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+            with self.assertRaises(FrameError):sequence_frame(raw+b'x')
+        for value in (b'\x01',b'\xfa\xff\x00'):
+            reader=Reader(value,'finder.bin')
+            with self.assertRaises(Unsupported) as caught:reader.selector_finder_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],0)
+            self.assertEqual(reader.pos,0)
+        for value in (b'\x02\x01',b'\xfa\x02\x00\x03'):
+            reader=Reader(value,'finder.bin')
+            with self.assertRaises(FrameError) as caught:reader.selector_finder_profile()
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        raw=prefix(sequence(tag_ec(nested=target(selector=b'\x03\x02\x00'+bytes(8)))))
+        for n in range(len(raw)):
+            first=event_prefix(raw,source='finder-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertEqual(first,event_prefix(raw[:n]+b'\xff'*(len(raw)-n),source='finder-limit.bin',limit=n))
+
+    def test_tag92_nested_boundaries_and_later_unknown(self):
+        child=tag92();self.assertEqual(len(child),119)
+        row=event_prefix(prefix(sequence(child,b'\x57')),source='92.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],87)
+        self.assertEqual(row['consumedEnd'],138)
+        for a,b,kind in ((0,119,'union'),(17,28,'anonymous-scalar-bytes-profile'),
+                         (32,74,'anonymous-input-profile'),(74,75,'anonymous-input-profile'),
+                         (38,62,'anonymous-assignment-profile'),(62,63,'anonymous-assignment-profile')):
+            expected=dict(start=19+a,end=19+b,kind=kind)
+            if kind=='union':expected['tag']=146
+            self.assertIn(expected,row['completedRecords'])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag92_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag92())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            first=event_prefix(full,source='92-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertLessEqual(first['consumedEnd'],n)
+            self.assertEqual(first,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='92-limit.bin',limit=n))
+
+    def test_tag92_bad_counts_and_headers(self):
+        for at in (22,28,34,43,53,57,63,69,79,85,95,99,105,109):
+            for value in (-2,2147483647):
+                bad=bytearray(tag92());struct.pack_into('<i',bad,at,value)
+                with self.subTest(at=at,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='92-count.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                                 ('92-count.bin',at+5,value,'count-bounds'))
+        for at in (1,17,32,38):
+            bad=bytearray(tag92());bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad))
+            self.assertEqual(caught.exception.diagnostic['offset'],at+5)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_tag92_null_and_empty_profiles(self):
+        children=[b'\x92\xff']
+        for count in (-1,0):
+            children.append(b'\x92\x13'+bytes(15)+b'\xff'+struct.pack('<i',count)+bytes(4)+payload(None)+
+                            b'\xff\x80'+struct.pack('<i',count)+bytes(5)+b'\xff')
+            item=b'\x05\xfe'+struct.pack('<i',count)+payload(None)+payload(b'')+b'\x80'
+            children.append(b'\x92\x13'+bytes(15)+b'\xff'+struct.pack('<i',1)+item+bytes(4)+payload(None)+
+                            b'\xff\x80'+struct.pack('<i',count)+bytes(5)+b'\xff')
+        for child in children:
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+
     def test_tag56_member_one_records_and_later_unknown(self):
         child=tag56();self.assertEqual(len(child),58)
         row=event_prefix(prefix(sequence(child,b'\x57')),source='56.bin')

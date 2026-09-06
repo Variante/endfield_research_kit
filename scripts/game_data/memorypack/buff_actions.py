@@ -70,12 +70,24 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287,180,86):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180,86,146):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==146:
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.scalar_bytes_profile()
+            for _ in range(max(0,self.count(1,reserve=20,nullable=True))):self.input_profile()
+            self.take(4,'anonymous-scalar32')
+            self.byte_payload()
+            self.scalar_payload()
+            self.take(1,'anonymous-nonzero-byte')
+            for _ in range(max(0,self.count(4,reserve=6,nullable=True))):self.byte_payload()
+            for _ in range(5):self.take(1,'anonymous-nonzero-byte')
+            self.target_profile()
+            return
         if tag==86:
             self.byte_payload()
             for _ in range(max(0,self.count(1,reserve=5,nullable=True))):self.single_payload()
@@ -154,6 +166,40 @@ class Reader:
             raise Unsupported(self.source,self.pos,'null-only '+kind+' profile',actual,'nested-profile')
         self.take(1,'null-'+kind)
 
+    def scalar_bytes_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-scalar-bytes-profile')
+        else:
+            self.header(2)
+            self.take(4,'anonymous-scalar32')
+            self.byte_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar-bytes-profile'))
+
+    def assignment_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-assignment-profile')
+        else:
+            self.header(6)
+            self.take(4,'anonymous-scalar32')
+            self.byte_payload()
+            self.take(4,'anonymous-scalar32')
+            self.byte_payload()
+            self.byte_payload()
+            self.take(1,'anonymous-nonzero-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-assignment-profile'))
+
+    def input_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-input-profile')
+        else:
+            self.header(5)
+            self.take(1,'anonymous-nonzero-byte')
+            for _ in range(max(0,self.count(1,reserve=9,nullable=True))):self.assignment_profile()
+            self.byte_payload()
+            self.byte_payload()
+            self.take(1,'anonymous-nonzero-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-input-profile'))
+
     def query_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-query-profile')
@@ -207,13 +253,28 @@ class Reader:
         if self.peek()==255:self.take(1,'null-selector-profile')
         else:
             self.header(3)
-            self.null_profile('nested-finder')
+            self.selector_finder_profile()
             for _ in range(2):
                 at=self.pos
                 n=self.count(1,nullable=True)
                 if n!=0:
                     raise Unsupported(self.source,at,'empty-only nested collection',n,'nested-profile')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-profile'))
+
+    def selector_finder_profile(self):
+        start=self.pos;lead=self.peek()
+        if lead==255:self.take(1,'null-nested-finder')
+        else:
+            width=3 if lead==250 else 1
+            if width>self.limit-self.pos:
+                raise FrameError(self.source,self.pos,{'bytes':width},{'remaining':self.limit-self.pos},'truncated')
+            tag=struct.unpack_from('<H',self.data,self.pos+1)[0] if lead==250 else lead
+            if tag!=2:
+                raise Unsupported(self.source,self.pos,'supported nested-finder union tag',tag,'nested-profile')
+            self.take(width,'nested-finder-union-tag')
+            if self.peek()==255:self.take(1,'null-nested-finder-wrapper')
+            else:self.header(0)
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-finder-profile'))
 
     def target_profile(self):
         # Selected finite profile. Non-null recursive targets and nonempty
