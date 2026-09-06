@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124033,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffStackNum_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckBuffStackNum_DataForMemoryPackFormatter",
+      "Deserialize",
+      58573616
+    ],
+    [
+      124032,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffStackNum_DataForMemoryPack",
+      "Deserialize",
+      58574192
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58573616,
+      "endRva": 58573709,
+      "sha256": "10AFD84AC1D2173CDDCB73304E2F359765FC107D1C379540E0F7A770584D8D2A",
+      "boundary": "formatter forwarding and initialization rejoin; intervening constructor/setters before reader are separate methods"
+    },
+    {
+      "startRva": 58574192,
+      "endRva": 58574649,
+      "sha256": "73E3049CEA306C40F7BDCD4BA3E991FFCF0B43753FFC69F177723C148F37C86B",
+      "boundary": "member8 normal source read order through RET"
+    },
+    {
+      "startRva": 82029935,
+      "endRva": 82029956,
+      "sha256": "8C7200702F4A6E464EB240E51304610E2878F57889EFC3E31DDC435F461F3AEC",
+      "boundary": "FF output clear and rejoin normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58574470,
+      "instructionHex": "488B15233F8B09",
+      "cellVa": 6661146032,
+      "usageRawHex": "15CC0FC000000000",
+      "methodSpecIndex": 517642,
+      "methodSpec": [
+        428464,
+        -1,
+        13983
+      ],
+      "argumentRawHex": "4D270000000000000000118000000000",
+      "typeDefinition": 10061,
+      "typeName": "Beyond.Gameplay.Core.BuffId",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58574511,
+      "instructionHex": "488B1552508809",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58574592,
+      "instructionHex": "488B15197F8109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "single-payload",
+      "target-profile",
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and three MethodSpec/type joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source read order supports a structural-only finite profile. The first nested argument is one BuffId VALUE type (0x11, definition 10061), not a generic List carrier or a scalar-size claim. Its source grammar reuses the FF/member-one byte-payload reader pinned in buff_56_native.json; no collection count precedes this value. TargetSettings and BlackboardDouble reuse buff_ec_native.json with the finite selector extensions in buff_b2_native.json. The final scalar payload contains its own header, byte payload, byte and four raw source bytes despite the managed Double name. Common source helpers establish byte/scalar32 widths independently of destination offsets. Equal member-eight headers do not select a list-bearing action layout. Unknown nested shapes, deeper target recursion, string decoding, live formatter selection, allocation/refill/error parity, field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}

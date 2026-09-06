@@ -297,6 +297,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   consumes its own header; a managed name or output-slot width cannot replace
   the concrete nested reader. The reference-list loop remains conditional on
   the shared consumer, and active formatter selection stays open for both.
+  `scripts/game_data/buff_58_native.json` selects a different member-eight
+  order: common scalar prefix, one member-one value, target, scalar32 and
+  scalar payload. Its BuffId context is a value type, not a list: no collection
+  count precedes that nested header. Reuse the pinned element reader directly;
+  a shared element type does not establish a shared collection shape. The final
+  scalar payload still consumes four raw scalar bytes despite its managed name.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
