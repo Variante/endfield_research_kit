@@ -104,6 +104,33 @@ def tag81(first=b'key',last=b'\xff\x00',nested=None,flag=254):
             payload(first)+(target() if nested is None else nested)+payload(last)+b'\x80\xff')
 
 
+def effect85():
+    return (b'\x55'+
+            bytes(4) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(4) + bytes(4) + bytes(4) +
+            bytes(4) + bytes(8) + bytes(4) + scalar_payload(None) + payload(b"fx") + bytes(4) + bytes(1) + bytes(4) +
+            bytes(1) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(4) + bytes(1) + bytes(1) +
+            bytes(4) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + scalar_payload(None) +
+            bytes(4) + bytes(1) + bytes(4) + payload(b"fx") + bytes(4) + bytes(1) + bytes(4) + bytes(4) +
+            bytes(4) + bytes(4) + bytes(1) + bytes(12) + b"\x03"+scalar_payload(None)*3 + bytes(4) + bytes(4) + bytes(1) +
+            bytes(1) + bytes(4) + bytes(4) + bytes(4) + bytes(1) + bytes(4) + bytes(4) + bytes(12) +
+            b"\x03"+scalar_payload(None)*3 + bytes(1) + bytes(12) + b"\x03"+scalar_payload(None)*3 + bytes(1) + bytes(4) + bytes(1) + bytes(1) +
+            bytes(1) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) +
+            bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(4) + bytes(1) + bytes(1) + bytes(4) +
+            bytes(4) + bytes(4) + bytes(4) + payload(b"fx") + bytes(1))
+
+
+def damage33(calc=b'\x03\x04'+scalar_payload(None)+bytes(4)+scalar_payload(None)+bytes(4),effect=None):
+    return (b'\x21\xfe\x80'+calc+scalar_payload(None)+b'\xff'+bytes(4)+bytes(4)+bytes(8)+bytes(8)+
+            bytes(4)+payload(b'unit')+bytes(4)+(effect85() if effect is None else effect)+b'\xfe'*5+
+            b'\x01'+payload(b'sound')+bytes(4)+b'\x80'*6+calc+b'\xff'+bytes.fromhex('0000807f')+b'\xfe'*3)
+
+
+def tag9a(units=None,env=None):
+    return (b'\x9a\x0b\xff'+bytes(12)+b'\xfe'+bytes(4)+
+            (struct.pack('<i',1)+damage33() if units is None else units)+target()+
+            (b'\x04'+bytes(8)+b'\xfe\xff'+b'\x00\x01'+scalar_payload(None) if env is None else env)+b'\x80'+target())
+
+
 def tag02(items=(b'\x01'+payload(b'id'),),targets=None,value=None,flag=254):
     targets=(target(),)*3 if targets is None else targets
     return (b'\x02\x0c'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
@@ -132,6 +159,63 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag9a_nested_boundaries_and_unknown_tail(self):
+        child=tag9a();row=event_prefix(prefix(sequence(child,b'\x59')),source='9a.bin')
+        end=19+len(child)
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertEqual(row['diagnostic'],dict(source='9a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=154),row['completedRecords'])
+        self.assertEqual(sum(r['kind']=='anonymous-damage-unit-profile' for r in row['completedRecords']),1)
+        self.assertEqual(sum(r['kind']=='anonymous-effect-configuration-profile' for r in row['completedRecords']),1)
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag9a_truncation_limits_null_and_extended_records(self):
+        for child in (tag9a(),tag9a(struct.pack('<i',-1),b'\xff'),tag9a(bytes(4),b'\xff'),
+                      tag9a(struct.pack('<i',2)+b'\xff'+damage33(b'\xff',b'\xff')),b'\x9a\xff',
+                      b'\xfa\x9a\x00'+tag9a()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='9a-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='9a-limit',limit=n))
+
+    def test_tag9a_bad_headers_and_count_bounds(self):
+        raw=prefix(sequence(tag9a()));good=event_prefix(raw,source='9a-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='9a-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+
+    def test_tag9a_calculation_variants_and_unclosed_lists(self):
+        for calc in (b'\xff',b'\x00\x01'+scalar_payload(None),b'\x02\x03\xfe'+scalar_payload(b'k')*2,
+                     b'\x03\x04'+scalar_payload(None)+bytes(4)+scalar_payload(None)+bytes(4),b'\xfa\x00\x00\xff'):
+            child=tag9a(struct.pack('<i',1)+damage33(calc));raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+        row=event_prefix(prefix(sequence(tag9a(struct.pack('<i',1)+damage33(b'\x04')))),source='9a-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],4)
+        raw=prefix(sequence(tag9a()));good=event_prefix(raw,source='9a-list')
+        # The three unit lists and terrain-effect array have no positive element
+        # profile; an otherwise bounded positive count must stay unsupported.
+        payload_starts={r['start'] for r in good['completedRecords'] if r['kind']=='anonymous-byte-payload'}
+        targets=[r for r in good['completedRecords'] if r['kind']=='anonymous-target-profile']
+        for span in good['ranges']:
+            if span['kind']!='count-i32' or span['start'] in payload_starts or raw[span['start']:span['end']]!=bytes(4):continue
+            if any(r['start']<=span['start']<r['end'] for r in targets):continue
+            bad=bytearray(raw);struct.pack_into('<i',bad,span['start'],1)
+            row=event_prefix(bad,source='9a-list')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual(row['diagnostic']['offset'],span['start'])
+
     def test_tag02_list_and_three_targets_have_distinct_boundaries(self):
         child=tag02();self.assertEqual(len(child),279)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='02.bin')

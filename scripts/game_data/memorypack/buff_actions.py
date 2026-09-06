@@ -71,12 +71,18 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==154:
+            self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
+            for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.damage_unit_profile()
+            self.target_profile();self.hit_environment_profile()
+            self.take(1,'anonymous-nonzero-byte');self.target_profile()
+            return
         if tag==2:
             for _ in range(max(0,self.count(1,reserve=7,nullable=True))):self.single_payload()
             self.target_profile();self.target_profile()
@@ -411,6 +417,84 @@ class Reader:
             for _ in range(max(0,self.count(1,reserve=5,nullable=True))):self.single_payload()
             self.take(4,'anonymous-scalar32');self.query_profile()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selection-profile'))
+
+    def calculation_profile(self):
+        start=self.pos;tag=self.nested_union_tag((0,2,3),'calculation')
+        if tag is not None:
+            if self.peek()==255:self.take(1,'null-calculation-wrapper')
+            else:
+                self.header({0:1,2:3,3:4}[tag])
+                if tag==2:self.take(1,'anonymous-nonzero-byte')
+                self.scalar_payload()
+                if tag==3:self.take(4,'anonymous-scalar32')
+                if tag in (2,3):self.scalar_payload()
+                if tag==3:self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-calculation-profile'))
+
+    def empty_damage_collection(self,kind):
+        # Only the selected count/null/empty path is closed; positive element
+        # counts remain unsupported rather than guessing their wire widths.
+        start=self.pos;n=self.count(1,nullable=True)
+        if n>0:raise Unsupported(self.source,start,'null or empty '+kind,n,'nested-profile')
+
+    def hit_sound_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-hit-sound-profile')
+        else:self.header(1);self.byte_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-hit-sound-profile'))
+
+    def hit_environment_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-hit-environment-profile')
+        else:
+            self.header(4);self.take(8,'anonymous-scalar64')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.calculation_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-hit-environment-profile'))
+
+    def damage_unit_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-damage-unit-profile')
+        else:
+            self.header(33)
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.calculation_profile();self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
+            self.empty_damage_collection('damage unit list')
+            self.take(4,'anonymous-scalar32');self.take(8,'anonymous-scalar64')
+            for _ in range(2):self.empty_damage_collection('damage unit list')
+            self.take(4,'anonymous-scalar32');self.byte_payload();self.take(4,'anonymous-scalar32')
+            self.effect_configuration_profile()
+            for _ in range(5):self.take(1,'anonymous-nonzero-byte')
+            self.hit_sound_profile();self.take(4,'anonymous-scalar32')
+            for _ in range(6):self.take(1,'anonymous-nonzero-byte')
+            self.calculation_profile();self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
+            for _ in range(3):self.take(1,'anonymous-nonzero-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-unit-profile'))
+
+    def effect_configuration_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-effect-configuration-profile')
+        else:
+            self.header(85)
+            # One entry per native source member; inline 8/12-byte reads are
+            # raw spans, while vector payloads contain three nested records.
+            layout=(
+            4,4,4,1,1,4,4,4,4,8,4,'scalar',
+            'payload','empty-array',1,4,1,4,4,1,1,4,1,1,
+            4,1,1,1,1,1,1,'scalar',4,1,4,'payload',
+            4,1,4,4,4,4,1,12,'vector',4,4,1,
+            1,4,4,4,1,4,4,12,'vector',1,12,'vector',
+            1,4,1,1,1,4,4,1,1,1,1,1,
+            1,1,1,1,4,1,1,4,4,4,4,'payload',
+            1,
+            )
+            for op in layout:
+                if isinstance(op,int):self.take(op,'anonymous-byte' if op==1 else 'anonymous-raw'+str(op))
+                elif op=='payload':self.byte_payload()
+                elif op=='scalar':self.scalar_payload()
+                elif op=='vector':self.vector_payload()
+                else:self.empty_damage_collection('effect array')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-effect-configuration-profile'))
 
     def target_profile(self):
         # Selected finite profile. Direction targets remain null-only and

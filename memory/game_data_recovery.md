@@ -309,6 +309,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   element instantiation match the existing value-list proof; a single-value
   reader cannot replace the collection count. Repeated target type arguments
   represent separate serialized instances, each with its own bounded profile.
+  `scripts/game_data/buff_9a_native.json` closes a member-eleven action through
+  counted member-33 units, member-85 effect configurations and selected
+  calculation unions. Inline scalar/vector advances and helper reads must both
+  appear in source order; an output-store inventory misses serialized members.
+  The nested vector contains three variable-width scalar payloads, distinct
+  from an inline twelve-byte span. Three unit lists and the effect array remain
+  null/empty-only; positive counts stop explicitly until element readers close.
+  A normal exit may tail-jump to the write barrier: pin the entire instruction
+  and the separate null rejoin, not an assumed RET or partial JMP byte.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

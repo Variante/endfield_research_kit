@@ -1,0 +1,1363 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119846,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageActionDataForMemoryPack+Beyond_Gameplay_Core_DamageAction_DamageActionDataForMemoryPackFormatter",
+      "Deserialize",
+      58164016
+    ],
+    [
+      119845,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageActionDataForMemoryPack",
+      "Deserialize",
+      58161136
+    ],
+    [
+      162906,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPack+Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPackFormatter",
+      "Deserialize",
+      58584816
+    ],
+    [
+      162905,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPack",
+      "Deserialize",
+      58584912
+    ],
+    [
+      162920,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_HitEnvDataForMemoryPack+Beyond_Gameplay_Core_DamageAction_HitEnvDataForMemoryPackFormatter",
+      "Deserialize",
+      58584352
+    ],
+    [
+      162919,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_HitEnvDataForMemoryPack",
+      "Deserialize",
+      58584448
+    ],
+    [
+      166680,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnit_HitSoundDataForMemoryPack+Beyond_Gameplay_Core_DamageAction_DamageUnit_HitSoundDataForMemoryPackFormatter",
+      "Deserialize",
+      65436096
+    ],
+    [
+      166679,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnit_HitSoundDataForMemoryPack",
+      "Deserialize",
+      65436192
+    ],
+    [
+      107875,
+      "Beyond.MemoryPack.Beyond_Gameplay_EffectActionCfgForMemoryPack+Beyond_Gameplay_EffectActionCfgForMemoryPackFormatter",
+      "Deserialize",
+      65193072
+    ],
+    [
+      107874,
+      "Beyond.MemoryPack.Beyond_Gameplay_EffectActionCfgForMemoryPack",
+      "Deserialize",
+      53269120
+    ],
+    [
+      107884,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CalculationBaseForMemoryPack+Beyond_Gameplay_Core_CalculationBaseForMemoryPackFormatter",
+      "Deserialize",
+      59818640
+    ],
+    [
+      113410,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector3ForMemoryPack+Beyond_Blackboard_BlackboardVector3ForMemoryPackFormatter",
+      "Deserialize",
+      53274912
+    ],
+    [
+      113409,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector3ForMemoryPack",
+      "Deserialize",
+      53275696
+    ],
+    [
+      125167,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPack+Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPackFormatter",
+      "Deserialize",
+      68652352
+    ],
+    [
+      125166,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPack",
+      "Deserialize",
+      68652448
+    ],
+    [
+      125194,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPack+Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPackFormatter",
+      "Deserialize",
+      58162880
+    ],
+    [
+      125193,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPack",
+      "Deserialize",
+      58162976
+    ],
+    [
+      125209,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPack+Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPackFormatter",
+      "Deserialize",
+      64372448
+    ],
+    [
+      125208,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPack",
+      "Deserialize",
+      64372544
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58164016,
+      "endRva": 58164109,
+      "sha256": "183E0036A4D1EC3F55DFF4A284BC51A68A865209D958E51C4AEB089243E7AF2F",
+      "boundary": "outer formatter"
+    },
+    {
+      "startRva": 58161136,
+      "endRva": 58161862,
+      "sha256": "0234219DB09A681DF42489EAB8B2E847EB28C623816E4D0133ADDE85FA685BC5",
+      "boundary": "member11 normal through complete write-barrier tail JMP"
+    },
+    {
+      "startRva": 58161862,
+      "endRva": 58161874,
+      "sha256": "E00235F20A62E8DFF1527C4C23163D647DC8E5C3502CD8DE0A96F4C2B150C5E2",
+      "boundary": "member11 FF clear/rejoin"
+    },
+    {
+      "startRva": 58584816,
+      "endRva": 58584909,
+      "sha256": "1332CF65A2BC0B56188DC95E2B6A8D5A0773D2B1BC8444BEA6B725E3F2AD5EB0",
+      "boundary": "member33 formatter"
+    },
+    {
+      "startRva": 58584912,
+      "endRva": 58586445,
+      "sha256": "9AF53A924B209419ACD110615C4DD047A25FCC39BD89CB94B94A7D0BA37D827B",
+      "boundary": "member33 normal through RET"
+    },
+    {
+      "startRva": 58586445,
+      "endRva": 58586462,
+      "sha256": "303CA0C8019E2D2A64EBEB58B64278E242C3F14EC7325582FA358BEEBDB2DD3D",
+      "boundary": "member33 FF clear/rejoin"
+    },
+    {
+      "startRva": 58584352,
+      "endRva": 58584445,
+      "sha256": "A85CCC11A6B8E651C586EB22B394B13D77AEA9F24106AED62359294B609DC61F",
+      "boundary": "member4 formatter"
+    },
+    {
+      "startRva": 58584448,
+      "endRva": 58584733,
+      "sha256": "D483449C71584C907745A9D5274387F79877DDF379421C302CED2D43EC1B2E1D",
+      "boundary": "member4 normal through tail JMP"
+    },
+    {
+      "startRva": 58584733,
+      "endRva": 58584745,
+      "sha256": "E00235F20A62E8DFF1527C4C23163D647DC8E5C3502CD8DE0A96F4C2B150C5E2",
+      "boundary": "member4 FF clear/rejoin"
+    },
+    {
+      "startRva": 65436096,
+      "endRva": 65436189,
+      "sha256": "8B6E313C09F224812615496CC87BAE6B601F18A525CC8E8E234F1D77B0158B44",
+      "boundary": "member1 formatter"
+    },
+    {
+      "startRva": 65436192,
+      "endRva": 65436359,
+      "sha256": "DEEC626FEC6244944FD3AA656565BB078B24C150EC9735D0A61615D9A70845B1",
+      "boundary": "member1 normal through tail JMP"
+    },
+    {
+      "startRva": 65436359,
+      "endRva": 65436371,
+      "sha256": "0951D93096C1F5A581C5C9391A30C72615D5CCD9C347646D6916D683149F66D8",
+      "boundary": "member1 FF clear/rejoin"
+    },
+    {
+      "startRva": 65193072,
+      "endRva": 65193165,
+      "sha256": "9673CD5B1947FE1D7BCF8E91BF69D36895882E5EBCAFC4B3E35464803B8CA318",
+      "boundary": "effect formatter"
+    },
+    {
+      "startRva": 53269120,
+      "endRva": 53273486,
+      "sha256": "0BDC5B00D7A97B880192758AB267719C111434E9DA27CCC5EF582E023AAC5C51",
+      "boundary": "member85 normal including inline source advances through RET"
+    },
+    {
+      "startRva": 53273486,
+      "endRva": 53273503,
+      "sha256": "F636A0B02670D08341A31BF3119DBEE34041D49CA9C69416056191C1E277AAC1",
+      "boundary": "member85 FF clear/rejoin"
+    },
+    {
+      "startRva": 53274912,
+      "endRva": 53275615,
+      "sha256": "E773473B65B8772E7FA5EFABE1FD77BF15D5E95DCBF573DCD3F6CDE4F7453E23",
+      "boundary": "vector formatter inlined reads through RET"
+    },
+    {
+      "startRva": 53275696,
+      "endRva": 53276351,
+      "sha256": "F652BA65310E06D1C72F9703AD920B5A780A7E19BE2F4D54F64B1867F1D7E794",
+      "boundary": "vector reader normal/null through RET"
+    },
+    {
+      "startRva": 59818640,
+      "endRva": 59819226,
+      "sha256": "23FA30AB4788A224AAF63A09D6308DA3CE90D31A7F64B850D1C3619F0461032D",
+      "boundary": "calculation union selected tag dispatch/context branches"
+    },
+    {
+      "startRva": 82204137,
+      "endRva": 82204145,
+      "sha256": "72C9E269C2787C897527437C53E13EEE3E587E7BE7FFE68C775E0C5803E1C573",
+      "boundary": "calculation null clear/rejoin"
+    },
+    {
+      "startRva": 68652352,
+      "endRva": 68652445,
+      "sha256": "1014DA3C7A7F0A72BE3349CC115244B06B171D67C40866C02415771D55146512",
+      "boundary": "calculation0 formatter"
+    },
+    {
+      "startRva": 68652448,
+      "endRva": 68652639,
+      "sha256": "47202D4DC9AE053CA316D1FBB4F344A23CCDAFAE431B7D65465509A1944E74D4",
+      "boundary": "calculation0 normal RET"
+    },
+    {
+      "startRva": 83386011,
+      "endRva": 83386032,
+      "sha256": "DD42A96E8BA189D5C88B3DB3840C83A557CDA8258754806AD609A11D0A0A7040",
+      "boundary": "calculation0 FF"
+    },
+    {
+      "startRva": 58162880,
+      "endRva": 58162973,
+      "sha256": "BB9659DC45910DC1247E9B79808E7A2E241E614F8FAA6CB496B58BFD99FFCA3B",
+      "boundary": "calculation2 formatter"
+    },
+    {
+      "startRva": 58162976,
+      "endRva": 58163322,
+      "sha256": "A1911660875AACB27EDA11158FC28CC055225044BB17C7ED9D13200A2793A833",
+      "boundary": "calculation2 normal tail JMP"
+    },
+    {
+      "startRva": 58163322,
+      "endRva": 58163334,
+      "sha256": "E00235F20A62E8DFF1527C4C23163D647DC8E5C3502CD8DE0A96F4C2B150C5E2",
+      "boundary": "calculation2 FF"
+    },
+    {
+      "startRva": 64372448,
+      "endRva": 64372541,
+      "sha256": "7EFF9494A83599BD3893BF936982546BAC7A619F887118FD0AAB82DFB81A74DF",
+      "boundary": "calculation3 formatter"
+    },
+    {
+      "startRva": 64372544,
+      "endRva": 64372856,
+      "sha256": "EFC69CA0C1B02BF6BF6C41086CF8CD628690F7E397C680FFBB285465251BE0E6",
+      "boundary": "calculation3 normal RET"
+    },
+    {
+      "startRva": 82876245,
+      "endRva": 82876266,
+      "sha256": "2CE7170C93D864084101C0849591389F41893FEF4BC3AB189A58178001E3C08B",
+      "boundary": "calculation3 FF"
+    },
+    {
+      "startRva": 53265792,
+      "endRva": 53265874,
+      "sha256": "D82CB6F0C10A8A6BBE8DD93D7E31F3304D124097C9C97E97EC93FCF276ED7436",
+      "boundary": "raw scalar64 source read and advance"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "raw scalar32 source read and advance"
+    },
+    {
+      "startRva": 61860848,
+      "endRva": 61861553,
+      "sha256": "8CCB90896E48720E2777A3CA504E5AA95E3BE3279DB9C338CA0F8BD511A09929",
+      "boundary": "array count/null/empty return paths; positive elements unresolved"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58161551,
+      "instructionHex": "488B15C2849109",
+      "cellVa": 6661144152,
+      "usageRawHex": "89A412C000000000",
+      "methodSpecIndex": 610884,
+      "methodSpec": [
+        428462,
+        -1,
+        62668
+      ],
+      "argumentRawHex": "482C258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000009046F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17024,
+        "elementArguments": [
+          "B2240000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58161610,
+      "instructionHex": "488B15379D8E09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58161672,
+      "instructionHex": "488B1559849109",
+      "cellVa": 6661144168,
+      "usageRawHex": "DDEB12C000000000",
+      "methodSpecIndex": 620014,
+      "methodSpec": [
+        428464,
+        -1,
+        17025
+      ],
+      "argumentRawHex": "B3240000000000000000120000000000",
+      "typeDefinition": 9395,
+      "typeName": "Beyond.Gameplay.Core.DamageAction+HitEnvData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58161783,
+      "instructionHex": "488B158A9C8E09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58584671,
+      "instructionHex": "488B15CA1F8809",
+      "cellVa": 6660951600,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58585098,
+      "instructionHex": "488B151F1E8809",
+      "cellVa": 6660951600,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58585148,
+      "instructionHex": "488B15DD558109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58585243,
+      "instructionHex": "488B15E6638009",
+      "cellVa": 6660445320,
+      "usageRawHex": "85A412C000000000",
+      "methodSpecIndex": 610882,
+      "methodSpec": [
+        428462,
+        -1,
+        62667
+      ],
+      "argumentRawHex": "7834258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000F043F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17015,
+        "elementArguments": [
+          "65230000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58585382,
+      "instructionHex": "488B1553248809",
+      "cellVa": 6660953472,
+      "usageRawHex": "1FA312C000000000",
+      "methodSpecIndex": 610703,
+      "methodSpec": [
+        428462,
+        -1,
+        62521
+      ],
+      "argumentRawHex": "38CB258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000005075E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14393,
+        "elementArguments": [
+          "6B270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58585432,
+      "instructionHex": "488B15114F8109",
+      "cellVa": 6660505712,
+      "usageRawHex": "55A312C000000000",
+      "methodSpecIndex": 610730,
+      "methodSpec": [
+        428462,
+        -1,
+        8486
+      ],
+      "argumentRawHex": "28B6258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03CFE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 816,
+        "elementArguments": [
+          "A22D0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 58585620,
+      "instructionHex": "488B15AD488F09",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58585862,
+      "instructionHex": "488B1563618009",
+      "cellVa": 6660445296,
+      "usageRawHex": "0FEC12C000000000",
+      "methodSpecIndex": 620039,
+      "methodSpec": [
+        428464,
+        -1,
+        17146
+      ],
+      "argumentRawHex": "B1240000000000000000120000000000",
+      "typeDefinition": 9393,
+      "typeName": "Beyond.Gameplay.Core.DamageAction+DamageUnit+HitSoundData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58586192,
+      "instructionHex": "488B15D9198809",
+      "cellVa": 6660951600,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 59818879,
+      "instructionHex": "488B15FA117609",
+      "cellVa": 6661002624,
+      "usageRawHex": "D3BD12C000000000",
+      "methodSpecIndex": 614121,
+      "methodSpec": [
+        428462,
+        -1,
+        24497
+      ],
+      "argumentRawHex": "83410000000000000000120000000000",
+      "typeDefinition": 16771,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 59818978,
+      "instructionHex": "488B157F117609",
+      "cellVa": 6661002600,
+      "usageRawHex": "D7BF12C000000000",
+      "methodSpecIndex": 614379,
+      "methodSpec": [
+        428462,
+        -1,
+        24809
+      ],
+      "argumentRawHex": "85410000000000000000120000000000",
+      "typeDefinition": 16773,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 59819073,
+      "instructionHex": "488B1550117609",
+      "cellVa": 6661002648,
+      "usageRawHex": "17BC12C000000000",
+      "methodSpecIndex": 613899,
+      "methodSpec": [
+        428462,
+        -1,
+        24238
+      ],
+      "argumentRawHex": "7F410000000000000000120000000000",
+      "typeDefinition": 16767,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68652586,
+      "instructionHex": "488B15EFB7E708",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58163189,
+      "instructionHex": "488B1524C68709",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58163248,
+      "instructionHex": "488B15E9C58709",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64372682,
+      "instructionHex": "488B154F062909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64372763,
+      "instructionHex": "488B15FE052909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53269855,
+      "instructionHex": "488B15BA70D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53269951,
+      "instructionHex": "488B157AFED909",
+      "cellVa": 6661002304,
+      "usageRawHex": "51A212C000000000",
+      "methodSpecIndex": 610600,
+      "methodSpec": [
+        428469,
+        -1,
+        16801
+      ],
+      "argumentRawHex": "150E0000000000000000120000000000",
+      "typeDefinition": 3605,
+      "typeName": "Beyond.Gameplay.TerrainEffectData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53270695,
+      "instructionHex": "488B15726DD209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53271436,
+      "instructionHex": "488B158D32DC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53272158,
+      "instructionHex": "488B15BB2FDC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53272340,
+      "instructionHex": "488B15052FDC09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53275924,
+      "instructionHex": "488B150559D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53276057,
+      "instructionHex": "488B158058D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53276185,
+      "instructionHex": "488B150058D209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59819480,
+      "endRva": 59819504,
+      "sha256": "D04A8EBBB21A67D8E9185620584042027463446747C7D4C24EED805E5B028E99",
+      "boundary": "calculation tag table; tag2 also has an explicit direct branch"
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "counted-member33",
+      "target",
+      "member4",
+      "byte",
+      "target"
+    ],
+    "member33": [
+      "byte",
+      "byte",
+      "calculation",
+      "scalar-payload",
+      "byte",
+      "empty-list",
+      "scalar32",
+      "scalar64",
+      "empty-list",
+      "empty-list",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "member85",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "member1",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "calculation",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte"
+    ],
+    "member4": [
+      "scalar64",
+      "byte",
+      "byte",
+      "calculation"
+    ],
+    "member1": [
+      "byte-payload"
+    ],
+    "calculation0": [
+      "scalar-payload"
+    ],
+    "calculation2": [
+      "byte",
+      "scalar-payload",
+      "scalar-payload"
+    ],
+    "calculation3": [
+      "scalar-payload",
+      "scalar32",
+      "scalar-payload",
+      "scalar32"
+    ],
+    "member85": [
+      4,
+      4,
+      4,
+      1,
+      1,
+      4,
+      4,
+      4,
+      4,
+      8,
+      4,
+      "scalar",
+      "payload",
+      "empty-array",
+      1,
+      4,
+      1,
+      4,
+      4,
+      1,
+      1,
+      4,
+      1,
+      1,
+      4,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      "scalar",
+      4,
+      1,
+      4,
+      "payload",
+      4,
+      1,
+      4,
+      4,
+      4,
+      4,
+      1,
+      12,
+      "vector",
+      4,
+      4,
+      1,
+      1,
+      4,
+      4,
+      4,
+      1,
+      4,
+      4,
+      12,
+      "vector",
+      1,
+      12,
+      "vector",
+      1,
+      4,
+      1,
+      1,
+      1,
+      4,
+      4,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      4,
+      1,
+      1,
+      4,
+      4,
+      4,
+      4,
+      "payload",
+      1
+    ],
+    "member85SourceOperations": [
+      {
+        "at": 53269252,
+        "call": 46828464
+      },
+      {
+        "at": 53269319,
+        "inline": 4
+      },
+      {
+        "at": 53269370,
+        "call": 46828464
+      },
+      {
+        "at": 53269411,
+        "call": 46827712
+      },
+      {
+        "at": 53269450,
+        "call": 46827712
+      },
+      {
+        "at": 53269489,
+        "call": 46828464
+      },
+      {
+        "at": 53269530,
+        "call": 46828464
+      },
+      {
+        "at": 53269571,
+        "call": 46828464
+      },
+      {
+        "at": 53269638,
+        "inline": 4
+      },
+      {
+        "at": 53269721,
+        "inline": 8
+      },
+      {
+        "at": 53269807,
+        "inline": 4
+      },
+      {
+        "at": 53269865,
+        "call": 47864976
+      },
+      {
+        "at": 53269911,
+        "call": 46827264
+      },
+      {
+        "at": 53269964,
+        "call": 61860848
+      },
+      {
+        "at": 53270010,
+        "call": 46827712
+      },
+      {
+        "at": 53270049,
+        "call": 46828464
+      },
+      {
+        "at": 53270090,
+        "call": 46827712
+      },
+      {
+        "at": 53270129,
+        "call": 46828464
+      },
+      {
+        "at": 53270196,
+        "inline": 4
+      },
+      {
+        "at": 53270244,
+        "call": 46827712
+      },
+      {
+        "at": 53270283,
+        "call": 46827712
+      },
+      {
+        "at": 53270319,
+        "call": 46828464
+      },
+      {
+        "at": 53270360,
+        "call": 46827712
+      },
+      {
+        "at": 53270399,
+        "call": 46827712
+      },
+      {
+        "at": 53270435,
+        "call": 46828464
+      },
+      {
+        "at": 53270473,
+        "call": 46827712
+      },
+      {
+        "at": 53270512,
+        "call": 46827712
+      },
+      {
+        "at": 53270548,
+        "call": 46827712
+      },
+      {
+        "at": 53270587,
+        "call": 46827712
+      },
+      {
+        "at": 53270623,
+        "call": 46827712
+      },
+      {
+        "at": 53270659,
+        "call": 46827712
+      },
+      {
+        "at": 53270705,
+        "call": 47864976
+      },
+      {
+        "at": 53270751,
+        "call": 46828464
+      },
+      {
+        "at": 53270792,
+        "call": 46827712
+      },
+      {
+        "at": 53270831,
+        "call": 46827184
+      },
+      {
+        "at": 53270870,
+        "call": 46827264
+      },
+      {
+        "at": 53270922,
+        "call": 46828464
+      },
+      {
+        "at": 53270963,
+        "call": 46827712
+      },
+      {
+        "at": 53271028,
+        "inline": 4
+      },
+      {
+        "at": 53271105,
+        "inline": 4
+      },
+      {
+        "at": 53271182,
+        "inline": 4
+      },
+      {
+        "at": 53271259,
+        "inline": 4
+      },
+      {
+        "at": 53271310,
+        "call": 46827712
+      },
+      {
+        "at": 53271380,
+        "inline": 12
+      },
+      {
+        "at": 53271446,
+        "call": 47864976
+      },
+      {
+        "at": 53271524,
+        "inline": 4
+      },
+      {
+        "at": 53271575,
+        "call": 46828464
+      },
+      {
+        "at": 53271616,
+        "call": 46827712
+      },
+      {
+        "at": 53271652,
+        "call": 46827712
+      },
+      {
+        "at": 53271717,
+        "inline": 4
+      },
+      {
+        "at": 53271794,
+        "inline": 4
+      },
+      {
+        "at": 53271871,
+        "inline": 4
+      },
+      {
+        "at": 53271922,
+        "call": 46827712
+      },
+      {
+        "at": 53271961,
+        "call": 46827184
+      },
+      {
+        "at": 53272026,
+        "inline": 4
+      },
+      {
+        "at": 53272108,
+        "inline": 12
+      },
+      {
+        "at": 53272168,
+        "call": 47864976
+      },
+      {
+        "at": 53272214,
+        "call": 46827712
+      },
+      {
+        "at": 53272284,
+        "inline": 12
+      },
+      {
+        "at": 53272350,
+        "call": 47864976
+      },
+      {
+        "at": 53272402,
+        "call": 46827712
+      },
+      {
+        "at": 53272441,
+        "call": 46827184
+      },
+      {
+        "at": 53272480,
+        "call": 46827712
+      },
+      {
+        "at": 53272516,
+        "call": 46827712
+      },
+      {
+        "at": 53272555,
+        "call": 46827712
+      },
+      {
+        "at": 53272594,
+        "call": 46827184
+      },
+      {
+        "at": 53272633,
+        "call": 46827184
+      },
+      {
+        "at": 53272672,
+        "call": 46827712
+      },
+      {
+        "at": 53272711,
+        "call": 46827712
+      },
+      {
+        "at": 53272750,
+        "call": 46827712
+      },
+      {
+        "at": 53272786,
+        "call": 46827712
+      },
+      {
+        "at": 53272822,
+        "call": 46827712
+      },
+      {
+        "at": 53272861,
+        "call": 46827712
+      },
+      {
+        "at": 53272897,
+        "call": 46827712
+      },
+      {
+        "at": 53272936,
+        "call": 46827712
+      },
+      {
+        "at": 53272975,
+        "call": 46827712
+      },
+      {
+        "at": 53273014,
+        "call": 46828464
+      },
+      {
+        "at": 53273055,
+        "call": 46827712
+      },
+      {
+        "at": 53273094,
+        "call": 46827712
+      },
+      {
+        "at": 53273159,
+        "inline": 4
+      },
+      {
+        "at": 53273210,
+        "call": 46827184
+      },
+      {
+        "at": 53273275,
+        "inline": 4
+      },
+      {
+        "at": 53273326,
+        "call": 46827184
+      },
+      {
+        "at": 53273365,
+        "call": 46827264
+      },
+      {
+        "at": 53273417,
+        "call": 46827712
+      }
+    ],
+    "vector3": [
+      "scalar-payload",
+      "scalar-payload",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected-build static identity and MethodSpec/type joins; direct selected source order supports structural-only finite framing. The outer tag9A is distinct from its member11 header. DamageUnit has 33 members (0x21), not 21; EffectActionCfg has 85 (0x55). Inline source loads/advances establish raw widths, never output slots. Calculation tags 0/2/3 use independently joined wrappers; others stop before their tag. Raw scalar32 bits remain anonymous. Three unit lists and the TerrainEffectData array support only signed count -1/0; positive element layouts remain unresolved. Shared reference-list count/loop is conditional on the pinned generic consumer; active provider selection is not proven. Vector3 contains three variable-width scalar payloads, not twelve raw bytes. Known scalar/payload/list primitives and target profiles reuse buff_ec_native.json, buff_b2_native.json and earlier audited helper windows. String decoding, field/gameplay meaning, runtime execution, refill/error parity and whole-BuffData EOF remain unresolved; physical remainder is explicit opaque."
+}
