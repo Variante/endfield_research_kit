@@ -648,6 +648,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   independently nullable targets, curve, direction and scalar profiles. Its
   BlackboardImpactValue reader reuses the member-four payload/byte/DWORD/byte
   grammar; the dedicated enum helper consumes one byte. Hurt behavior remains unresolved.
+  `scripts/game_data/buff_62_native.json` pins a member-four action that ends
+  immediately after its common byte and three DWORDs. Do not append a nested
+  payload from the type name; damage skill-cast identity meaning remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

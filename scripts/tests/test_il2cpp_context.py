@@ -342,6 +342,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x3910D84,'488B1565627109488B0BE88D2A6FFC488BCF4885C00F857B835501488B15A2F77C09E8B9EB10FD488903488BD0E92CCCFFFF'),
             (0x390F740,'488B1561AD7209488B0BE8D1406FFC488BCF4885C00F852A745501488B15EE237D09E885E610FD488903488BD0E970E2FFFF'),
             (0x390E002,'488B15B7A07809488B0BE80F586FFC488BCF4885C00F852C975501488B159C317D09E85F0711FD488903488BD0E9AEF9FFFF'),
+            (0x390FEDE,'488B15E39F7209488B0BE833396FFC488BCF4885C00F8555705501488B1538167D09E80BE210FD488903488BD0E9D2DAFFFF'),
             (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF'))}
         targets=[0]*416
         types=[None]*16728;self.ptrs={}
@@ -430,7 +431,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x84,0x390F614,106521,16713,'Conditions_CheckWeaponTypeCondition_Data',None),
             (0x174,0x3910D84,107160,16505,'StoreEntityProperty_Data',None),
             (0x41,0x390F740,106442,16617,'CheckDamageTransferredSource_Data',None),
-            (0xA9,0x390E002,106594,16095,'EnemyHurtAnimAction_Data',None)):
+            (0xA9,0x390E002,106594,16095,'EnemyHurtAnimAction_Data',None),
+            (0x62,0x390FEDE,106487,16635,'Conditions_CheckHasDamageSkillCastId_Data',None)):
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
             self.parts[index*16]=struct.pack('<QII',definition,0x120000,0)
@@ -451,7 +453,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
 
