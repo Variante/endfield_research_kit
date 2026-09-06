@@ -289,7 +289,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_fe_native.json` pins the member-twenty reader reached
   by the authenticated FA FE 00 records, while physical FE remains unsupported.
   Its value-class helper reads one DWORD; distinguish this source operation
-  from the interleaved scalar-payload and target providers. Unknown tags
+  from the interleaved scalar-payload and target providers. The member-four
+  reader in `scripts/game_data/buff_fd_native.json` ends immediately after the
+  common byte/three-DWORD prefix, with no nested provider; its managed
+  control-flow name does not prove branch suppression or execution order.
+  Physical FD likewise stays unsupported independently of decoded tag FD. Unknown tags
   stop at the original start. The selected extended member-eight child reads
   one byte, three scalar32 values, paired payload, scalar payload, one byte and
   paired payload. Its normal reader crosses chained unwind regions: the first

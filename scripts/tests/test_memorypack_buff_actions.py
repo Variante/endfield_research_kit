@@ -204,6 +204,48 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tagfd_exact_fixed_record_and_next_unknown_boundary(self):
+        child=b'\xfa\xfd\x00\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='fd.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',36))
+        self.assertEqual(row['completedRecords'],[dict(start=19,end=36,kind='union',tag=253)])
+        self.assertEqual(row['ranges'][-5:],[dict(start=22,end=23,kind='member-header'),
+            dict(start=23,end=24,kind='anonymous-nonzero-byte'),
+            dict(start=24,end=28,kind='anonymous-scalar32'),dict(start=28,end=32,kind='anonymous-scalar32'),
+            dict(start=32,end=36,kind='anonymous-scalar32')])
+        self.assertEqual(row['diagnostic'],dict(source='fd.bin',offset=36,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[36,39]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tagfd_null_all_truncations_trailing_and_hard_limits(self):
+        for child in (b'\xfa\xfd\x00\xff',b'\xfa\xfd\x00\x04\x80'+bytes(range(12))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='fd-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='fd-limit',limit=n))
+
+    def test_tagfd_bad_header_count_and_physical_reserved_encoding(self):
+        raw=prefix(sequence(b'\xfa\xfd\x00\x04'+bytes(13)))
+        for at in (0,5,14,22):
+            bad=bytearray(raw);bad[at]=42
+            row=event_prefix(bad,source='fd-header')
+            self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        for value in (-2,2147483647):
+            bad=bytearray(raw);struct.pack_into('<i',bad,15,value)
+            row=event_prefix(bad,source='fd-count')
+            self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],15)
+        for suffix in (b'',b'\xff',b'\x04'+bytes(13),raw):
+            reader=Reader(b'\xfd'+suffix,'physical-fd')
+            with self.assertRaises(Unsupported) as caught:reader.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='physical-fd',offset=0,expected='supported current union tag',actual=253,category='union-tag'))
+            self.assertEqual((reader.pos,reader.ranges,reader.records),(0,[],[]))
+
     def test_tag96_distinct_member_three_profiles_and_following_boundary(self):
         child=tag96();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='96.bin')

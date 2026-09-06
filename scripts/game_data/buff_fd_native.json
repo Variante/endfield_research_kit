@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121508,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_NotNextCheckAction_DataForMemoryPack+Beyond_Gameplay_Core_NotNextCheckAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68267680
+    ],
+    [
+      121507,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_NotNextCheckAction_DataForMemoryPack",
+      "Deserialize",
+      68267776
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68267680,
+      "endRva": 68267773,
+      "sha256": "BF3F68A1E4A47B44C3C2145E4CE131B339D4D73B35F25F6AEFA53D53CE7FB32E",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 68267776,
+      "endRva": 68268062,
+      "sha256": "2B474FF47B86EA8E1592D491D6503F1E70FB2DB512F807B80DCAE27C893C6930",
+      "boundary": "member4 normal source read order through RET"
+    },
+    {
+      "startRva": 68268062,
+      "endRva": 68268122,
+      "sha256": "BD5BE10C6BEB27719CC6C0ED8579D6AC704D4E35FEBCB77C7D1E061D941109B8",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83359881,
+      "endRva": 83359902,
+      "sha256": "BE6C69331FDD80391C712E6E501EA7CF0D98915E552997599F70603CF325330B",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "member4": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact static registration/module/token under the selected GameAssembly+metadata hash gate. Direct selected normal/null source read order supports structural-only finite framing. The reader consumes a nonzero-normalized byte and three four-byte scalar helper reads, with no nested provider or fifth source member. Output setters and the wrapper constructor do not supply serialized members. The selected normal record is 17 bytes including FA FD 00 and its member-four header; null wrappers consume only their header after the extended tag. The authenticated corpus uses FA FD 00; physical single-byte FD remains unsupported. Scalar bits remain anonymous; a managed control-flow name does not prove execution, ordering, branch suppression or other gameplay meaning. Live formatter selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}
