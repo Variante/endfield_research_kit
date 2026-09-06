@@ -255,8 +255,13 @@ only.
   publication contract governs CPP rendering. Different camera frames can share
   one Present and identical matrices; the native-backed draw-local CB1 camera
   frame counter disambiguates them. BeforeCullingCPP converts the selected
-  phase to a separate CPP shadow config, preserving attenuation/blend. Trace
-  that request's engine publication before requesting another observation run.
+  phase to a separate CPP shadow config. The engine can zero the pair for manual
+  CSM override, then packs it into pooled upload data. The observer retains the
+  earlier phase and compact request/config/working/packed state, guarded by live
+  code pins. Publication requires the unique camera-frame join, coherent pointer
+  rereads and the native branch. Matching owned producer-vector bytes still
+  does not identify the actual pooled upload resource and binding range;
+  that missing runtime lineage keeps publication closed.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
@@ -274,6 +279,13 @@ only.
   source-correct stencil population and an output-merger attachment; a blank
   attachment cannot close this gap. See `default_deferred_stencil_ablation.json`
   in the same report directory.
+  The diagnostic now records CharacterPrePass and HGBuffer on one five-MRT/
+  D32S8 surface, using the same character draw collector as canonical PreG.
+  Foreground HG geometry replaces classification only after passing shared
+  depth. This does not establish every retail stencil writer. Generic depth
+  overrides must honor source `DepthOnly` membership: Endminf's authored crystal
+  materials disable that pass, and the importer preserves this selection.
+  Opaque render queue alone does not authorize an earlier replacement draw.
   Keep the captured output-merger blend: shader-side equivalent arithmetic
   changes retained pixels. Sidecar presentation seeds owned scene color, then
   blends the resolver through hardware; its equality test uses the published
