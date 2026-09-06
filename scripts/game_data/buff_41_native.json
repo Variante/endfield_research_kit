@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124157,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDamageTransferredSource_DataForMemoryPack+Beyond_Gameplay_Core_CheckDamageTransferredSource_DataForMemoryPackFormatter",
+      "Deserialize",
+      70904480
+    ],
+    [
+      124156,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDamageTransferredSource_DataForMemoryPack",
+      "Deserialize",
+      70904576
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70904480,
+      "endRva": 70904573,
+      "sha256": "7A31127EA6565100C6F957580C83F37F3C32821B2C46ED56CEA6939A90D53440",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70904576,
+      "endRva": 70904965,
+      "sha256": "B427CF5B58E14E02A28AABCF30AAF252AC5DED9D25A32297ED5C944256AD3553",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 70904965,
+      "endRva": 70905037,
+      "sha256": "016B430965443EBE07AA5263C38CD770CCE779A810F40B72F3A7C33D3B0CAFC1",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83601106,
+      "endRva": 83601119,
+      "sha256": "72DDF9AFBA107C1F3231F38622AC14111FB3C401B2C41B3FA5CE88192431EC25",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83601175,
+      "endRva": 83601196,
+      "sha256": "443F5DD977E98D46FEFB7B1D8C97D821AF032162BB90191CCBBCE2F1E18556D2",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70904748,
+      "instructionHex": "488B1575B2CE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70904888,
+      "instructionHex": "4C8B051962C508",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "query-profile"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes common byte/three DWORD, a signed-length byte payload and GameplayTagQuery with no extra tail. The exact R8 MethodSpec517659 context and helper3D3C620 reuse the query profile pinned by buff_56_native.json and selectedBuffB4ReadOrder: FF or header2, DWORD, nullable signed count and count DWORDs. The helper has an explicit output pointer in RCX and reader in RDX; its sixteen-byte output carrier is not a fixed wire width. Preserve independent payload/query null states and bounded array counts. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Damage transfer meaning, tag interpretation, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

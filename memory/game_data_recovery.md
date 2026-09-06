@@ -640,6 +640,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with three independent BlackboardDouble profiles, a byte payload, DWORD,
   target and required final byte. Preserve partial-parent boundaries and each
   null state; entity property meaning and target ownership remain unresolved.
+  `scripts/game_data/buff_41_native.json` pins a member-six action
+  ending with a byte payload and GameplayTagQuery. Its explicit output-pointer
+  ABI and sixteen-byte result do not establish wire width; preserve bounded
+  query counts. Damage transfer meaning and tag interpretation remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

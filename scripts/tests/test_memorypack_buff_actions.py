@@ -83,6 +83,14 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def query41(items=()):
+    return b'\x02'+b'\xff'*4+struct.pack('<i',-1 if items is None else len(items))+b''.join(struct.pack('<I',v) for v in items or ())
+
+
+def tag41(value=b'wire',query=b'\xff'):
+    return b'\x41\x06\xfe'+b'\xff'*12+payload(value)+query
+
+
 def tag174(first=b'\xff',second=b'\xff',value=b'wire',third=b'\xff',nested=b'\xff',last=255):
     return b'\xfa\x74\x01\x0b\xfe'+b'\xff'*12+first+second+payload(value)+third+b'\x80'*4+nested+bytes([last])
 
@@ -1749,6 +1757,50 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag41_payload_and_independent_query_boundaries(self):
+        for value in (None,b'',b'\xff\x41\x06'):
+            for query in (b'\xff',query41(None),query41(),query41((0,0xffffffff,0x80000000))):
+                child=tag41(value,query);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='41.bin')
+                self.assertEqual(row['diagnostic'],dict(source='41.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=65),row['completedRecords'])
+                self.assertIn(dict(start=end-len(query),end=end,kind='anonymous-query-profile'),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag41_every_cut_hard_limit_null_extended_and_trailing(self):
+        base=tag41(None,query41((1,0xffffffff)))
+        for child in (base,tag41(),b'\x41\xff',b'\xfa\x41\x00'+base[1:]):
+            r=Reader(child,'41-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'41-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==65 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag41_bad_lengths_headers_and_incomplete_query(self):
+        child=tag41(b'a',query41((1,2)));r=Reader(child,'41-bounds');r.action(0)
+        spans=[v for v in r.ranges if v['kind'] in ('member-header','count-i32')]
+        self.assertEqual(len(spans),4)
+        for span in spans:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'41-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('41-bounds',at,value))
+        r=Reader(child,'41-query',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertIn(dict(start=15,end=20,kind='anonymous-byte-payload',isNull=False),r.records)
+        self.assertFalse(any(v.get('tag')==65 for v in r.records))
 
     def test_tag174_independent_profiles_and_final_byte(self):
         for first in (b'\xff',scalar_payload(None)):
