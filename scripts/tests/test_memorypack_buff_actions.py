@@ -25,6 +25,11 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tagbd(children=None,nested=None):
+    return (b'\xbd\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (sequence() if children is None else children)+(target() if nested is None else nested))
+
+
 def tagde(assignments=(),points=(),nested=None):
     def items(values):
         return struct.pack('<i',-1 if values is None else len(values))+(b'' if values is None else b''.join(values))
@@ -1374,6 +1379,55 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tagbd_sequence_then_independent_target(self):
+        for children in (b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xfe\xff',sequence(),sequence(b'\xff',tag145()),sequence(tagbd(b'\xff',b'\xff'))):
+            for nested in (b'\xff',target()):
+                child=tagbd(children,nested);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='bd.bin')
+                self.assertEqual(row['diagnostic'],dict(source='bd.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=189),row['completedRecords'])
+                self.assertIn(dict(start=34,end=end-len(nested),kind='sequence'),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tagbd_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagbd(),tagbd(sequence(tag145())),tagbd(b'\xff',b'\xff'),b'\xbd\xff',b'\xfa\xbd\x00'+tagbd()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='bd-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='bd-limit',limit=n))
+
+    def test_tagbd_malformed_counts_and_unknown_child_stop(self):
+        raw=prefix(sequence(tagbd(sequence(tag145()))));good=event_prefix(raw,source='bd-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='bd-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('bd-bounds',at,value))
+        row=event_prefix(prefix(sequence(tagbd(sequence(b'\x27')))),source='bd-child')
+        self.assertEqual(row['diagnostic'],dict(source='bd-child',offset=39,expected='supported current union tag',actual=39,category='union-tag'))
+        self.assertFalse(any(r.get('tag')==189 for r in row['completedRecords']))
+        self.assertEqual(row['opaqueRemainderRange'][0],39)
+
+    def test_tagbd_recursive_sequence_limit(self):
+        child=b'\xff'
+        for _ in range(64):child=tagbd(sequence(child),b'\xff')
+        self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        raw=sequence(tagbd(sequence(child),b'\xff'))
+        with self.assertRaises(Unsupported) as caught:sequence_frame(raw)
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('depth-limit',65))
 
     def test_tagde_lists_raw_spans_and_final_scalars(self):
         assignment=b'\x06'+bytes(4)+payload(b'key')+bytes(4)+payload(None)+payload(b'val')+b'\xff'

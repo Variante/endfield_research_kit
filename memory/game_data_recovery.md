@@ -488,6 +488,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   keep null elements and unsupported targets explicit. Getter/output offsets
   add no source fields, and the final two scalar32 reads remain separate.
   These boundaries do not establish projectile behavior or spatial meaning.
+  `scripts/game_data/buff_bd_native.json` pins a member-six reader ending
+  with a nested sequence followed by target. The exact sequence context reuses
+  the bounded count/child/two-byte grammar, including its recursive depth gate.
+  An unknown child stops inside the sequence and leaves the enclosing action
+  incomplete; sequence termination alone does not consume the final target.
+  The managed iteration name does not establish runtime execution semantics.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

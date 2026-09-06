@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120431,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForEachAction_DataForMemoryPack+Beyond_Gameplay_Core_ForEachAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66907216
+    ],
+    [
+      120430,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForEachAction_DataForMemoryPack",
+      "Deserialize",
+      66907312
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66907216,
+      "endRva": 66907309,
+      "sha256": "59EF58154CE5A7356D77BE3B4F2478CE46D75754BF373EB7FAE7C58A79D8445F",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 66907312,
+      "endRva": 66907684,
+      "sha256": "A63C7A42321C9282A810ED24EC17DC3AAE214A7204619172CAF9793DE1A80BFB",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 66907684,
+      "endRva": 66907768,
+      "sha256": "17F04C805481D569432FE007703F1FC6C39162A7DE05CECE154A0D1ADF2A22F8",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83214041,
+      "endRva": 83214062,
+      "sha256": "C2218D470B667E93D56FAFF8978BDC83EC812A72C3EDDB867B7595D660EC9260",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66907484,
+      "instructionHex": "488B15C5B00B09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66907590,
+      "instructionHex": "488B159B600209",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66907631,
+      "instructionHex": "488B1512290909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "target"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, byte, three scalar32 values, finite SequenceActionData then finite TargetSettings. The sequence context exactly matches the independently pinned member-three count/indirect-child/two-byte reader and existing finite union grammar; shared provider selection remains conditional. Preserve unknown child unions at their original offset and bounded recursive depth. Sequence termination does not terminate this action: its target is a separately bounded final member. Null sequence and null target are independent states. The priority enum adds no nested member. Output setters and lazy construction add no source members. Field names, iteration/runtime behavior, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}
