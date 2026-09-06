@@ -275,6 +275,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   output setters consume no source bytes; distinguish their receiver from the
   reader before counting serialized members. The two exact nested contexts
   reuse existing finite profiles without promoting the managed condition name.
+  The extended member-eleven action in `scripts/game_data/buff_157_native.json`
+  adds a byte/payload/scalar32 segment before the target in that scalar-prefix
+  family, then reads a byte and scalar payload. Equal nested type arguments
+  permit profile reuse, not omission or reordering of intervening source reads.
   Extended unions consume FA followed by a little-endian unsigned tag; record
   reports retain that decoded tag rather than the escape byte. Unknown tags
   stop at the original start. The selected extended member-eight child reads

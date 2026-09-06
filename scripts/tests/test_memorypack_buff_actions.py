@@ -143,6 +143,12 @@ def tag65(t=None,value=None):
             (target() if t is None else t)+b'\x80'+(scalar_payload(b'key') if value is None else value))
 
 
+def tag157(t=None,value=None,key=b'\xffkey'):
+    return (b'\xfa\x57\x01\x0b\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,0xdeadbeef)+
+            b'\x80'+payload(key)+struct.pack('<I',0xffffffff)+(target() if t is None else t)+
+            b'\xff'+(scalar_payload(None) if value is None else value))
+
+
 def tag169(assignments=(),strings=(b'key',None,b''),targets=None,d=None,value=None):
     targets=(target(),)*2 if targets is None else targets
     return (b'\xfa\x69\x01\x26\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
@@ -183,6 +189,45 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag157_extended_record_and_variable_boundaries(self):
+        child=tag157();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='157.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=343),row['completedRecords'])
+        self.assertIn(dict(start=53,end=133,kind='anonymous-target-profile'),row['completedRecords'])
+        self.assertEqual(row['diagnostic'],dict(source='157.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag157_nulls_payload_lengths_and_every_limit(self):
+        for child in (tag157(),tag157(b'\xff',b'\xff',None),tag157(key=b''),tag157(value=scalar_payload(b'long-value')),b'\xfa\x57\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='157-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='157-limit',limit=n))
+
+    def test_tag157_bad_headers_lengths_and_nested_boundary(self):
+        raw=prefix(sequence(tag157()));good=event_prefix(raw,source='157-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='157-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        row=event_prefix(prefix(sequence(tag157(t=target(selector=b'\x03\xfe'+bytes(8))))),source='157-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==343 for r in row['completedRecords']))
+        # A member-eleven header alone does not select the damage action body.
+        with self.assertRaises(FrameError):sequence_frame(sequence(b'\xfa\x57\x01'+tag9a()[1:]))
+
     def test_tag169_extended_record_and_fixed_source_ranges(self):
         child=tag169();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='169.bin')
