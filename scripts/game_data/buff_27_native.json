@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119170,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastSkill_DataForMemoryPack+Beyond_Gameplay_Core_CastSkill_DataForMemoryPackFormatter",
+      "Deserialize",
+      63360320
+    ],
+    [
+      119169,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastSkill_DataForMemoryPack",
+      "Deserialize",
+      63360800
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63360320,
+      "endRva": 63360413,
+      "sha256": "4DF2005B53A6EA654D415832C29C575D302E2EC008E2F179FD0FCD037DAA48DA",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 63360800,
+      "endRva": 63361315,
+      "sha256": "30565D502C23CFBFD6EBE1DA65E48B06D42944830A392701F75F418B09563208",
+      "boundary": "member10 source reads through normal RET"
+    },
+    {
+      "startRva": 63361315,
+      "endRva": 63361399,
+      "sha256": "6BB3D4C6F97173C317127D891C3C87E74B5EE9DC8BC6E5FF9893798BD76F47CE",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82742068,
+      "endRva": 82742081,
+      "sha256": "2D407BD28FBA127D1B7E720E7EB39A4E3404D2A62C4F3AE454F38F9C3BBB51C2",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82742137,
+      "endRva": 82742158,
+      "sha256": "3034914617BF20B12C598131C1363EC6F6660F7273A915CC7E5B98406E89AE65",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63360972,
+      "instructionHex": "488B1555CE4109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63361078,
+      "instructionHex": "488B15CB463F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63361187,
+      "instructionHex": "488B15CEC84109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63361262,
+      "instructionHex": "488B1513463F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "byte",
+      "byte",
+      "paired-payload",
+      "byte",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only finite framing. The member10 reader consumes common byte/three DWORD then target, two bytes, paired payload, byte and final target. Both TargetSettings contexts join the existing finite reader. The exact BlackboardString context joins the independently pinned member-three paired reader used by Buff 76/11F: byte payload, byte, byte payload. Preserve independent object null states, signed payload counts and target end positions. Unknown first targets leave following members unconsumed; an unknown final target preserves completed earlier profiles but keeps the parent incomplete. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Skill identity/casting behavior, byte decoding, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

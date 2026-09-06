@@ -557,6 +557,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   prefix. Both target contexts join the existing finite reader; completion of
   the first cannot complete the parent or consume an unsupported second target.
   Preserve raw scalar bits; distance/comparison behavior remains unresolved.
+  `scripts/game_data/buff_27_native.json` pins a member-ten action containing
+  target, two bytes, paired payload, byte and final target after the common
+  prefix. The exact BlackboardString context joins the paired reader, not the
+  equal-header scalar reader. Preserve its two signed payload counts and both
+  target boundaries independently; skill identity and casting remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

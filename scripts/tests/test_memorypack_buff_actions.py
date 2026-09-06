@@ -40,6 +40,10 @@ def tag42(first=b'\xff',second=b'\xff',bits=0x7fc00000):
     return b'\x42\x0a\xfe'+b'\xff'*12+b'\x80'+struct.pack('<I',bits)+b'\xfe\xff'+first+second
 
 
+def tag27(first=b'\xff',middle=b'\xff',last=b'\xff'):
+    return b'\x27\x0a\xfe'+b'\xff'*12+first+b'\x80\xfe'+middle+b'\xff'+last
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1446,6 +1450,52 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag27_independent_targets_and_paired_payloads(self):
+        for first in (b'\xff',target()):
+            for middle in (b'\xff',pair(None,b''),pair(b'\xff\x00',None),pair(b'first',b'last',255)):
+                for last in (b'\xff',target()):
+                    child=tag27(first,middle,last);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='27.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='27.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=39),row['completedRecords'])
+                    self.assertIn(dict(start=34,end=34+len(first),kind='anonymous-target-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=36+len(first),end=end-1-len(last),kind='anonymous-paired-payload'),row['completedRecords'])
+                    self.assertIn(dict(start=end-len(last),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag27_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag27(),tag27(target(),pair(b'first',b'last'),target()),b'\x27\xff',b'\xfa\x27\x00'+tag27()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='27-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='27-limit',limit=n))
+
+    def test_tag27_malformed_counts_headers_and_target_gaps(self):
+        raw=prefix(sequence(tag27(target(),pair(b'first',b'last'),target())))
+        good=event_prefix(raw,source='27-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='27-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('27-bounds',at,value))
+        bad_target=target(selector=b'\x03\x10');middle=pair(b'first',None)
+        for first,last in ((bad_target,target()),(target(),bad_target)):
+            row=event_prefix(prefix(sequence(tag27(first,middle,last))),source='27-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+            self.assertFalse(any(r.get('tag')==39 for r in row['completedRecords']))
+            paired=[r for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']
+            self.assertEqual(paired,[] if first==bad_target else [dict(start=36+len(first),end=36+len(first)+len(middle),kind='anonymous-paired-payload')])
+
     def test_tag42_independent_targets_and_scalar_bits(self):
         for first in (b'\xff',target(),target(direction_value=b'\xff')):
             for second in (b'\xff',target()):
@@ -2028,8 +2078,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='bd-bounds')
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('bd-bounds',at,value))
-        row=event_prefix(prefix(sequence(tagbd(sequence(b'\x27')))),source='bd-child')
-        self.assertEqual(row['diagnostic'],dict(source='bd-child',offset=39,expected='supported current union tag',actual=39,category='union-tag'))
+        row=event_prefix(prefix(sequence(tagbd(sequence(b'\x59')))),source='bd-child')
+        self.assertEqual(row['diagnostic'],dict(source='bd-child',offset=39,expected='supported current union tag',actual=89,category='union-tag'))
         self.assertFalse(any(r.get('tag')==189 for r in row['completedRecords']))
         self.assertEqual(row['opaqueRemainderRange'][0],39)
 
