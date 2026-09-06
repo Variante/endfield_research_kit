@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124624,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillType_DataForMemoryPack",
+      "Deserialize",
+      67082944
+    ],
+    [
+      124625,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillType_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillType_DataForMemoryPackFormatter",
+      "Deserialize",
+      67082848
+    ],
+    [
+      119258,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillType_DataForMemoryPack",
+      "Deserialize",
+      63372128
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67082848,
+      "endRva": 67082941,
+      "sha256": "4BDFCDB6F105B7BAEE019BB06243F133E8E0FA4AF8EE25AB79DB07382776B307",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 67082944,
+      "endRva": 67083424,
+      "sha256": "445DED58E5AF31E3FA0A64BC2620747794755FE474D407D129C0BE5D6EA66607",
+      "boundary": "member9 normal read order through RET"
+    },
+    {
+      "startRva": 83248267,
+      "endRva": 83248288,
+      "sha256": "FAF25FFA628D6C30CCBBEBCA4B463D319495E2ACD4E73F160FA896BECABE4DAB",
+      "boundary": "action FF output clear and rejoin normal epilogue"
+    },
+    {
+      "startRva": 63372128,
+      "endRva": 63372619,
+      "sha256": "D0F7348D7268D7AC2CCE7E4F3815AC76FE82A8B7BEE2FBD2FF54306FFE61BED0",
+      "boundary": "independent SkillType source consumer normal path through RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67083330,
+      "instructionHex": "488B15BF7A0609",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67083371,
+      "instructionHex": "488B1576FF0309",
+      "cellVa": 6660791272,
+      "usageRawHex": "23A412C000000000",
+      "methodSpecIndex": 610833,
+      "methodSpec": [
+        428462,
+        -1,
+        62631
+      ],
+      "argumentRawHex": "3883258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000A083EF8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 20087,
+        "elementArguments": [
+          "6E050000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63372530,
+      "instructionHex": "488B1597054209",
+      "cellVa": 6661145232,
+      "usageRawHex": "C3E612C000000000",
+      "methodSpecIndex": 619361,
+      "methodSpec": [
+        428448,
+        -1,
+        20087
+      ],
+      "argumentRawHex": "6E050000000000000000118000000000",
+      "typeDefinition": 1390,
+      "typeName": "Beyond.Gameplay.SkillType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "target-profile",
+      "counted-scalar32"
+    ]
+  },
+  "boundary": "Selected normal/null structural order only. TargetSettings reuses the finite EC profile. The final ReadValue context exactly joins List<SkillType>, but no ListFormatter<SkillType>.Deserialize MethodSpec exists in the current inventory. The signed count/null/element-loop framing reuses the conditional shared List<Object> consumer pinned by buff_b4_native.json, not the provider bridge itself. Independently, the module/token-joined ChangeSkillType reader calls ReadUnmanaged<SkillType> with the same element type argument; its selected helper reads one source DWORD and advances cursor/counters by four, as pinned by the common scalar helper audit. This supplies a source-width witness rather than inferring width from a managed enum or destination slot. Combined with the authenticated corpus it supports a finite anonymous count-times-four profile, not proof that the live list provider selects that reader. Counts are bounded before multiplication or iteration; negative values below -1 fail closed. Arbitrary scalar bits and nonzero byte values stay anonymous. Live formatter selection, allocation/refill/error parity, enum/field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}
