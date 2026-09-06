@@ -568,6 +568,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   preserve both list contexts and counts independently. A value-type marker
   does not establish enum width; the ID output carrier is not its wire size.
   Global buff ownership, lifetime and ID meaning remain unresolved.
+  `scripts/game_data/buff_74_native.json` pins a member-five action ending
+  with a nullable counted scalar32 list. Its exact element context joins the
+  independently pinned DamageType DWORD reader; preserve null/empty states
+  and raw element bits, without object headers or inferred damage behavior.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

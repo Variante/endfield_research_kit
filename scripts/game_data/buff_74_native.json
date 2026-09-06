@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124559,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPackFormatter",
+      "Deserialize",
+      72026320
+    ],
+    [
+      124558,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack",
+      "Deserialize",
+      72026416
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72026320,
+      "endRva": 72026413,
+      "sha256": "36014FA52CCB3F458676545E9E63ED6AD7495862F98F54780D84542FB1DB4830",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 72026416,
+      "endRva": 72026747,
+      "sha256": "AC809641F8951871EA2D646AF3DD843B3B353699628CED942EC15B60F64C3CD6",
+      "boundary": "member5 source reads through normal RET"
+    },
+    {
+      "startRva": 72026747,
+      "endRva": 72026819,
+      "sha256": "402E4B84C3F5EE4CCEDBCFDEAE2CDF9A30E0D616E07636C13AB6B9ABC95C55E7",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83733262,
+      "endRva": 83733275,
+      "sha256": "B1234D021A3099384D231FBAE2A1EC6329A77DDEC3ED827BCAE55A298FE1518D",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83733331,
+      "endRva": 83733352,
+      "sha256": "166FFD6C7FF11826E565DA264BC9BAC897D34B59AFA00B9C294A9AB98674E0A3",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72026588,
+      "instructionHex": "488B154594BD08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72026694,
+      "instructionHex": "488B15138EB808",
+      "cellVa": 6660790368,
+      "usageRawHex": "21A312C000000000",
+      "methodSpecIndex": 610704,
+      "methodSpec": [
+        428462,
+        -1,
+        62522
+      ],
+      "argumentRawHex": "58CB258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D0100000090A2EF8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 19594,
+        "elementArguments": [
+          "96840000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "counted-scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member5 reader consumes common byte/three DWORD then a nullable signed-count scalar32 list. Its exact list element instantiation19594 and raw type record match the separately pinned DamageType DWORD source context in buff_5d_native.json; enum naming or output width is not the width proof. Reuse the conditional shared list count/loop grammar, reject counts below minus one or beyond the hard limit before consuming elements, and preserve arbitrary four-byte bits without element headers. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Damage behavior, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
