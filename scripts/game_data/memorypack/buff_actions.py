@@ -72,12 +72,19 @@ class Reader:
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
         # FD/FE are authenticated only in their extended encodings.
-        if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6,182:6,128:6,366:13,123:7,109:6,310:9,355:8,105:6,68:6,271:5,155:9,197:16,281:22,10:7,122:6,136:5,72:6,90:6,196:8,325:6,222:37,189:6,106:8}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6,182:6,128:6,366:13,123:7,109:6,310:9,355:8,105:6,68:6,271:5,155:9,197:16,281:22,10:7,122:6,136:5,72:6,90:6,196:8,325:6,222:37,189:6,106:8,36:12}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==36:
+            self.byte_payload();self.take(1,'anonymous-nonzero-byte')
+            self.impulse_profile();self.take(4,'anonymous-scalar32')
+            self.take(12,'anonymous-raw12')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.target_profile()
+            return
         if tag==106:
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):
@@ -471,6 +478,40 @@ class Reader:
             # managed type name. Preserve bits, including non-finite values.
             self.take(4,'anonymous-scalar32')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar-payload'))
+
+    def curve_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-curve-profile')
+        else:
+            self.header(3)
+            for _ in range(2):self.take(4,'anonymous-scalar32')
+            for _ in range(max(0,self.count(28,nullable=True))):
+                # Native source cursor advances 28; no per-element header.
+                self.take(28,'anonymous-raw28')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-curve-profile'))
+
+    def envelope_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-envelope-profile')
+        else:
+            self.header(7)
+            for _ in range(2):
+                self.curve_profile();self.take(4,'anonymous-scalar32')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-envelope-profile'))
+
+    def impulse_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-impulse-profile')
+        else:
+            self.header(18);self.take(4,'anonymous-scalar32')
+            self.take(1,'anonymous-nonzero-byte');self.curve_profile()
+            # Mixed DWORD and MOVSS source helpers each consume four bytes.
+            for _ in range(11):self.take(4,'anonymous-scalar32')
+            self.take(1,'anonymous-nonzero-byte');self.byte_payload()
+            self.take(4,'anonymous-scalar32');self.envelope_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-impulse-profile'))
 
     def direction_profile(self):
         start=self.pos

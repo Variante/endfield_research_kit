@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119124,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CameraImpulseAction_CameraImpulseActionDataForMemoryPack+Beyond_Gameplay_Core_CameraImpulseAction_CameraImpulseActionDataForMemoryPackFormatter",
+      "Deserialize",
+      54727456
+    ],
+    [
+      119123,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CameraImpulseAction_CameraImpulseActionDataForMemoryPack",
+      "Deserialize",
+      54725744
+    ],
+    [
+      162791,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CameraImpulseAction_ImpulseDefinitionDataForMemoryPack+Beyond_Gameplay_Core_CameraImpulseAction_ImpulseDefinitionDataForMemoryPackFormatter",
+      "Deserialize",
+      54734048
+    ],
+    [
+      162790,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CameraImpulseAction_ImpulseDefinitionDataForMemoryPack",
+      "Deserialize",
+      54734144
+    ],
+    [
+      166669,
+      "Beyond.MemoryPack.Cinemachine_CinemachineImpulseManager_EnvelopeDefinitionForMemoryPack+Cinemachine_CinemachineImpulseManager_EnvelopeDefinitionForMemoryPackFormatter",
+      "Deserialize",
+      54735200
+    ],
+    [
+      166668,
+      "Beyond.MemoryPack.Cinemachine_CinemachineImpulseManager_EnvelopeDefinitionForMemoryPack",
+      "Deserialize",
+      54735296
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.dll",
+      "methods": [
+        [
+          428704,
+          "MemoryPack.AnimationCurveFormatter",
+          "Deserialize",
+          54723024
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 54727456,
+      "endRva": 54727549,
+      "sha256": "70957E62385C0DA223910913A097B4BB2A0C1BAB65A5806BEBAC627DD71E9B61",
+      "boundary": "outer formatter forwarding and initialization"
+    },
+    {
+      "startRva": 54725744,
+      "endRva": 54726543,
+      "sha256": "4C25DE55B42F6AA92DD4680973546D3EC22537CFF440B45C34BD428401B46DCD",
+      "boundary": "outer member12 normal through tail jump"
+    },
+    {
+      "startRva": 54726543,
+      "endRva": 54726570,
+      "sha256": "894AD173619E8E4197242F9D2F0F6D5FE3710D77E2A16B4661218F5474682F4A",
+      "boundary": "outer FF clear and tail jump"
+    },
+    {
+      "startRva": 54726570,
+      "endRva": 54726678,
+      "sha256": "C876C3A199A8D17BB12B01645AA0AC8CC15850805108D49D6D51852701280AD7",
+      "boundary": "outer lazy initialization and full rejoin"
+    },
+    {
+      "startRva": 54734048,
+      "endRva": 54734141,
+      "sha256": "88D9CF35D235E50FCF2513FAE9FF721BC4F9FA50E02AE991998FC13F68173A7C",
+      "boundary": "member18 formatter forwarding and initialization"
+    },
+    {
+      "startRva": 54734144,
+      "endRva": 54735035,
+      "sha256": "95C55527043040060EF9193F9D144CF36164A1C7DCE74CEF1670336AE1F5CC93",
+      "boundary": "member18 normal through tail jump"
+    },
+    {
+      "startRva": 54735035,
+      "endRva": 54735047,
+      "sha256": "E00235F20A62E8DFF1527C4C23163D647DC8E5C3502CD8DE0A96F4C2B150C5E2",
+      "boundary": "member18 FF clear and rejoin"
+    },
+    {
+      "startRva": 54735047,
+      "endRva": 54735179,
+      "sha256": "2AB086CCE305DB6B50056706288FEC71F1114547E13A111895CB9C4F6F1C858C",
+      "boundary": "member18 lazy initialization and rejoin"
+    },
+    {
+      "startRva": 54735200,
+      "endRva": 54735293,
+      "sha256": "6793264CECC8563D7962D2FEAFE07EA4815F4EB6BDE0A43495941FE3A354D19E",
+      "boundary": "member7 formatter forwarding and initialization"
+    },
+    {
+      "startRva": 54735296,
+      "endRva": 54735620,
+      "sha256": "E979F0E506B89103442278A9A885E7980F0D970C008BEB758994F04227A72FA9",
+      "boundary": "member7 normal through RET"
+    },
+    {
+      "startRva": 54735620,
+      "endRva": 54735637,
+      "sha256": "0ED7542B5ED9E96B1497E6AD90005AC1F287D0F65D875BE6C342973C3E333443",
+      "boundary": "member7 FF clear and rejoin"
+    },
+    {
+      "startRva": 54735637,
+      "endRva": 54735697,
+      "sha256": "7ED55B7A552C8740CAC4A0589C1D78C1EECD7A278D7B34086E047803D00DFEDD",
+      "boundary": "member7 lazy initialization and rejoin"
+    },
+    {
+      "startRva": 54723024,
+      "endRva": 54723569,
+      "sha256": "42FA9015D301634A044CC566C1682B7BDD51DB301A2C0ADD8FA9CFF3A813DA91",
+      "boundary": "curve header raw8 signed count and normal RET"
+    },
+    {
+      "startRva": 54723569,
+      "endRva": 54723772,
+      "sha256": "F1376F2262A0E7FEE49B3702ACC33DF52C342C1D104D3904309A87DE6D4C6F34",
+      "boundary": "curve bounded raw28 element loop and rejoin"
+    },
+    {
+      "startRva": 54723772,
+      "endRva": 54723790,
+      "sha256": "6C13280BED2F787E899A722D8185D342C09A7131BAF7BD089EFBBE6B738CACE9",
+      "boundary": "curve FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 65996816,
+      "endRva": 65996959,
+      "sha256": "58210ACF396B94E8BFC25209A8CEBB77CA95AD3A610D7E88E0D666CE1A14C43C",
+      "boundary": "hidden return-buffer provider bridge, no direct wire width"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "four-byte MOVSS source helper normal through RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 54725944,
+      "instructionHex": "488B15E990C509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54726160,
+      "instructionHex": "488B15D1FBC509",
+      "cellVa": 6661147112,
+      "usageRawHex": "D5EB12C000000000",
+      "methodSpecIndex": 620010,
+      "methodSpec": [
+        428464,
+        -1,
+        17014
+      ],
+      "argumentRawHex": "46240000000000000000120000000000",
+      "typeDefinition": 9286,
+      "typeName": "Beyond.Gameplay.Core.CameraImpulseAction+ImpulseDefinitionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54726219,
+      "instructionHex": "488B152E2EBC09",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54726467,
+      "instructionHex": "488B15BE07C309",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54734332,
+      "instructionHex": "488B1545A6CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54734382,
+      "instructionHex": "488B15E373BA09",
+      "cellVa": 6660399640,
+      "usageRawHex": "8FE812C000000000",
+      "methodSpecIndex": 619591,
+      "methodSpec": [
+        428448,
+        -1,
+        42554
+      ],
+      "argumentRawHex": "F6CB0000000000000000118000000000",
+      "typeDefinition": 52214,
+      "typeName": "Cinemachine.CinemachineImpulseManager+ImpulseEvent+DirectionMode",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54734469,
+      "instructionHex": "488B154474BA09",
+      "cellVa": 6660399824,
+      "usageRawHex": "91E812C000000000",
+      "methodSpecIndex": 619592,
+      "methodSpec": [
+        428448,
+        -1,
+        42555
+      ],
+      "argumentRawHex": "F7CB0000000000000000118000000000",
+      "typeDefinition": 52215,
+      "typeName": "Cinemachine.CinemachineImpulseManager+ImpulseEvent+DissipationMode",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54734700,
+      "instructionHex": "488B156573BA09",
+      "cellVa": 6660399832,
+      "usageRawHex": "89E712C000000000",
+      "methodSpecIndex": 619460,
+      "methodSpec": [
+        428448,
+        -1,
+        42461
+      ],
+      "argumentRawHex": "ECCB0000000000000000118000000000",
+      "typeDefinition": 52204,
+      "typeName": "Cinemachine.CinemachineImpulseDefinition+ImpulseShapes",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54734740,
+      "instructionHex": "488B154573BA09",
+      "cellVa": 6660399840,
+      "usageRawHex": "8BE712C000000000",
+      "methodSpecIndex": 619461,
+      "methodSpec": [
+        428448,
+        -1,
+        42462
+      ],
+      "argumentRawHex": "EDCB0000000000000000118000000000",
+      "typeDefinition": 52205,
+      "typeName": "Cinemachine.CinemachineImpulseDefinition+ImpulseTypes",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54734900,
+      "instructionHex": "488B15AD72BA09",
+      "cellVa": 6660399848,
+      "usageRawHex": "8DE712C000000000",
+      "methodSpecIndex": 619462,
+      "methodSpec": [
+        428448,
+        -1,
+        42463
+      ],
+      "argumentRawHex": "EECB0000000000000000118000000000",
+      "typeDefinition": 52206,
+      "typeName": "Cinemachine.CinemachineImpulseDefinition+RepeatMode",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54734946,
+      "instructionHex": "4C8B055772BA09",
+      "cellVa": 6660399808,
+      "usageRawHex": "89CC0FC000000000",
+      "methodSpecIndex": 517700,
+      "methodSpec": [
+        428464,
+        -1,
+        17020
+      ],
+      "argumentRawHex": "F5CB0000000000000000118000000000",
+      "typeDefinition": 52213,
+      "typeName": "Cinemachine.CinemachineImpulseManager+EnvelopeDefinition",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54735407,
+      "instructionHex": "488B1512A2CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54735474,
+      "instructionHex": "488B15CFA1CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member12": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte",
+      "member18",
+      "scalar32",
+      "raw12",
+      "byte",
+      "byte",
+      "target"
+    ],
+    "member18": [
+      "scalar32",
+      "byte",
+      "curve",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "scalar32",
+      "member7"
+    ],
+    "member7": [
+      "curve",
+      "scalar32",
+      "curve",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32"
+    ],
+    "curve": [
+      "member3",
+      "raw8",
+      "nullable-count-i32",
+      "count-times-raw28"
+    ]
+  },
+  "boundary": "Exact static identities and module/token joins under selected native hashes. Direct selected source order gives structural-only finite framing. Outer inline header12 ends with an independently bounded target after a real raw12 cursor advance. Nested header18 and header7 preserve every source member and independent curve/payload length. Curve header3 reads raw8, signed nullable count and raw28 elements without element headers. Count bounds precede multiplication or iteration. MOVSS source helper consumes four bytes; preserve arbitrary bits without float meaning. The hidden 32-byte return buffer belongs to a provider bridge and does not establish source width: header7 is a conditional concrete wrapper profile, not raw32. Both header7 nested contexts independently join the same AnimationCurve type. Null wrappers and null/empty curve arrays stay distinct. Output setters, constructors and output offsets add no source bytes. Live provider/adapter selection, full allocation/refill/error parity, curve field meanings, camera behavior and whole-BuffData EOF remain unresolved."
+}

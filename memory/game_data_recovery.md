@@ -500,6 +500,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   DWORD source helper; enum names and output slots are not the width proof.
   Keep count/null/loop framing conditional, preserve each list independently,
   and admit no element headers or inferred ATB meanings.
+  `scripts/game_data/buff_24_native.json` pins a member-twelve reader with
+  a real raw12 source advance and nested member-eighteen/member-seven profiles.
+  Their curve reader consumes raw8, a nullable signed count and raw28 elements;
+  validate counts before iteration and retain independent null/empty curves.
+  The member-seven profile has two separate curve members. Its provider's
+  32-byte return buffer does not establish wire width. Preserve raw scalar
+  bits and conditional provider selection; camera behavior remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -25,6 +25,24 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def curve24(items=()):
+    return (b'\x03'+struct.pack('<II',0xffffffff,0x80000000)+
+            struct.pack('<i',-1 if items is None else len(items))+
+            (b'' if items is None else b''.join(items)))
+
+
+def envelope24(first=b'\xff',second=b'\xff'):
+    return b'\x07'+first+b'\xff'*4+second+b'\x80'*4+b'\xfe\xff'+b'\x01'*4
+
+
+def impulse24(curve=b'\xff',envelope=b'\xff',value=b''):
+    return b'\x12'+b'\xff'*4+b'\xfe'+curve+b'\x80'*44+b'\xff'+payload(value)+b'\x01'*4+envelope
+
+
+def tag24(impulse=b'\xff',nested=b'\xff',value=b''):
+    return b'\x24\x0c\xfe'+b'\xff'*12+payload(value)+b'\x80'+impulse+b'\xfe'*4+bytes(range(12))+b'\xfe\xff'+nested
+
+
 def tag6a(first=(),second=()):
     def values(items):
         return struct.pack('<i',-1 if items is None else len(items))+(b'' if items is None else b''.join(struct.pack('<I',x) for x in items))
@@ -1385,6 +1403,55 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag24_nested_curve_counts_and_independent_envelope_members(self):
+        curves=(b'\xff',curve24(None),curve24(),curve24((bytes(range(28)),)),curve24((b'\xff'*28,b'\x80'*28)))
+        for first in curves:
+            for second in curves:
+                child=tag24(impulse24(first,envelope24(second,first),b'raw\x00\xff'),target(),b'outer')
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='24.bin')
+                self.assertEqual(row['diagnostic'],dict(source='24.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=36),row['completedRecords'])
+                actual=[r for r in row['completedRecords'] if r['kind']=='anonymous-curve-profile']
+                self.assertEqual([r['end']-r['start'] for r in actual],[len(first),len(second),len(first)])
+                raw28=[r for r in row['ranges'] if r['kind']=='anonymous-raw28']
+                self.assertTrue(all(r['end']-r['start']==28 for r in raw28))
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag24_null_extended_truncation_hard_limits_and_trailing(self):
+        children=(tag24(),tag24(impulse24()),tag24(impulse24(curve24((bytes(range(28)),)),envelope24(curve24(None),curve24()))),b'\x24\xff',b'\xfa\x24\x00'+tag24()[1:])
+        for child in children:
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='24-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='24-limit',limit=n))
+
+    def test_tag24_malformed_all_headers_counts_and_lengths(self):
+        c=curve24((bytes(range(28)),));raw=prefix(sequence(tag24(impulse24(c,envelope24(c,c),b'payload'),target(),b'outer')))
+        good=event_prefix(raw,source='24-bounds')
+        self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='24-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('24-bounds',at,value))
+        child=tag24(impulse24(c,envelope24(c,c)),b'\x01')
+        row=event_prefix(prefix(sequence(child)),source='24-target')
+        self.assertEqual(row['status'],'failed')
+        self.assertEqual(row['diagnostic']['category'],'member-count')
+        self.assertFalse(any(r.get('tag')==36 for r in row['completedRecords']))
+        self.assertEqual(row['diagnostic']['offset'],19+len(child)-1)
 
     def test_tag6a_two_independent_scalar32_lists(self):
         for first in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
