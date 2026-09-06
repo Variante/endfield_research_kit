@@ -446,6 +446,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   candidate, preserve null/empty states, and retain unknown calculation unions.
   This bounded forward profile neither selects a live provider nor resolves
   Skill's independent terminal candidates or establishes healing/tag meanings.
+  `scripts/game_data/buff_0a_native.json` pins a member-seven action adding a
+  byte payload, scalar payload and target to the common prefix. The two static
+  nested contexts match the existing finite readers; their order comes from
+  source calls, not output fields. Preserve null/empty payloads and the scalar
+  payload's four-byte raw value. Timer meaning and live provider choice remain
+  unresolved; exact forward ranges do not establish whole-BuffData EOF.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

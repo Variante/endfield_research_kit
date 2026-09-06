@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '9B0C38480146400C3D696EC81082D05C591796C89C1C47E762CCAB3555E244D4'
+CORPUS_SHA = '2D01EA572D0A3CC98435334A0321CC5EAC221FFB2285C52B8BB855FC5DAFC362'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -628,7 +628,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390EE44,'488B159D676F09488B0BE8CD496FFC488BCF4885C00F857E965501488B155A217D09E8F90111FD488903488BD0E96CEBFFFF'),
         (0x390E228,'488B1529A97809488B0BE8E9556FFC488BCF4885C00F8528935501488B15462E7D09E8010411FD488903488BD0E988F7FFFF'),
         (0x390E642,'488B15BF147909488B0BE8CF516FFC488BCF4885C00F85F0935501488B15AC2C7D09E89B0311FD488903488BD0E96EF3FFFF'),
-        (0x390D9FA,'488B1587756F09488B0BE8175E6FFC488BCF4885C00F85F6AB5501488B15BC2D7D09E8DF08A0FC488903488BD0EBB9')):
+        (0x390D9FA,'488B1587756F09488B0BE8175E6FFC488BCF4885C00F85F6AB5501488B15BC2D7D09E8DF08A0FC488903488BD0EBB9'),
+        (0x390F25E,'488B152BA67709488B0BE8B3456FFC488BCF4885C00F85D7715501488B15A82B7D09E83FE610FD488903488BD0E952E7FFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
     table_va=pe.image_base+0x3915318;raw=pe.bytes_at_va(table_va,416*4)
@@ -677,7 +678,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x10F,0x390EE44,106926,16309,'PauseBuffTime_Data',None),
         (0x9B,0x390E228,106559,16065,'DebugPrintAction_Data',None),
         (0xC5,0x390E642,106660,16155,'HealAction_Data',None),
-        (0x119,0x390D9FA,106941,16329,'PlaySoundAction_PlaySoundActionData',None)):
+        (0x119,0x390D9FA,106941,16329,'PlaySoundAction_PlaySoundActionData',None),
+        (0x0A,0x390F25E,106284,15903,'AddGlobalCDTimer_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2144,7 +2146,8 @@ def audit():
                Path(__file__).with_name('buff_10f_native.json'),
                Path(__file__).with_name('buff_9b_native.json'),
                Path(__file__).with_name('buff_c5_native.json'),
-               Path(__file__).with_name('buff_119_native.json')]
+               Path(__file__).with_name('buff_119_native.json'),
+               Path(__file__).with_name('buff_0a_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2521,6 +2524,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_16e_native.json'))
     buff_119=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_119_native.json'))
+    buff_0a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_0a_native.json'))
     buff_c5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_c5_native.json'))
     buff_9b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -2708,6 +2713,7 @@ def audit():
         'selectedBuff9BReadOrder':buff_9b,
         'selectedBuffC5ReadOrder':buff_c5,
         'selectedBuff119ReadOrder':buff_119,
+        'selectedBuff0AReadOrder':buff_0a,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
