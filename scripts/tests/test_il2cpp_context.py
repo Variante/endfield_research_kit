@@ -47,7 +47,60 @@ from scripts.game_data.il2cpp_context_audit import adapter_conversion_context
 from scripts.game_data.il2cpp_context_audit import element_provider_state_flow
 from scripts.game_data.il2cpp_context_audit import buff_union_routes
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_forwarding
+from scripts.game_data.il2cpp_context_audit import buff_ifelse_read_order
 from unittest.mock import patch
+
+
+class BuffIfElseReadOrderTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={self.base+at:bytes.fromhex(raw) for at,raw in (
+            (0x3773699,'4533C0488BD3488BCF488B5C24304883C4205FE9AF090000'),
+            (0x3774093,'837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000'),
+            (0x37740FA,'4080FD080F85D1996B01'),
+            (0x2CA88CF,'83793001488BD90F8CBCA5F701488B43500FB6308B7B3083EF010F88BCA5F70148FF4350FF4340FF4344897B30'),
+            (0x2CA8901,'4084F6488B7424380F95C04883C4205FC3'),
+            (0x2CA86BF,'83793004488BD90F8C9EA7F701488B43508B308B7B3083EF040F889FA7F70148834350048343400483434404897B30'))}
+        for at,target in ((0x377410A,0x2CA88C0),(0x3774135,0x2CA86B0),(0x3774159,0x2CA86B0),
+            (0x377417D,0x2CA86B0),(0x37741A1,0x2CA88C0),(0x37741CA,0x2DA5C90),
+            (0x37741F3,0x2DA5C90),(0x377421C,0x2DA5C90)):
+            self.parts[self.base+at]=b'\xe8'+struct.pack('<i',target-at-5)
+        for at in (0x37741BD,0x37741E6,0x377420F):
+            self.parts[self.base+at]=b'\x48\x8b\x15'+struct.pack('<i',0xCFF4E68-at-7)
+        self.parts[self.base+0xCFF4E68]=struct.pack('<Q',(6<<29)|(619962<<1)|1)
+        self.parts[0x1000+619962*12]=struct.pack('<iii',428464,-1,16408)
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,n:self.parts[va])
+        self.md=SimpleNamespace(methods=[None]*428465,types=[None]*9203,type_full_name=lambda t:'Beyond.Gameplay.Core.SequenceActionData')
+        self.reg={'methodSpecs':'0x1000','methodSpecsCount':627868,'genericInstsCount':73902}
+        self.arg=SimpleNamespace(raw_type_record_hex='F2230000000000000000120000000000')
+        self.instance=SimpleNamespace(arguments=[self.arg],as_dict=lambda:{'index':16408})
+        self.table=SimpleNamespace(resolve=lambda i:self.instance if i==16408 else None)
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return buff_ifelse_read_order(self.pe,self.md,self.reg,self.table,{},[],source='fixture.dll')
+
+    def test_order_and_nested_widths_stay_unknown(self):
+        row=self.decode()
+        self.assertEqual([r['fastSerializedWidth'] for r in row['orderedCalls']],[1,4,4,4,1,None,None,None])
+        self.assertEqual(len({r['cellVa'] for r in row['nestedOperands']}),1)
+
+    def test_truncated_trailing_and_corrupted_evidence(self):
+        for va,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[va]=bad
+                with self.subTest(va=va,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[va]=good
+
+    def test_wrong_nested_type_and_table_bounds(self):
+        self.md.types=[]
+        with self.assertRaises(ContextError):self.decode()
+        self.md.types=[None]*9203
+        self.arg.raw_type_record_hex='00'*16
+        with self.assertRaises(ContextError):self.decode()
+        self.arg.raw_type_record_hex='F2230000000000000000120000000000'
+        self.reg['methodSpecsCount']=619962
+        with self.assertRaises(ContextError):self.decode()
 
 
 class BuffIfElseForwardingTests(unittest.TestCase):

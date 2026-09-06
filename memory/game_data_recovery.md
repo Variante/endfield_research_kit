@@ -217,7 +217,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Selected IfElse paths overwrite the callsite companion in native thunks;
   their common wrapper type argument does not determine the live formatter.
   Reuse reaches state-dependent provider dispatch with the same reader/output,
-  not a direct field reader. Nested layout and final cursor remain unresolved.
+  not a direct field reader. The independently token/module-joined IfElse reader
+  proves a member-eight fast path with a 14-byte anonymous scalar prefix followed
+  by three calls carrying the same SequenceActionData type argument. This proves
+  selected-consumer order, not live provider selection, nested extents or EOF;
+  byte-to-boolean normalization must not be mistaken for a strict 0/1 encoding.
 - Gameplay tag names come from exact predefined/config registries or validated
   runtime capture under the same native gate. CRC/context-derived names retain
   their derivation label; raw unmapped ids remain visible.

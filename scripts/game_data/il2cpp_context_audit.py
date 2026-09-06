@@ -29,6 +29,10 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = 'E2817E52AB1B14C7ADBA1C42D1FC18B2FC55CF4E84EA0ECCD52599ED65BFEF92'
 CONSUMER_WINDOWS = (
+    (0x3773670,0x37736CD,'D1E00A92152340C6A1F095DC4FF14393C99973AED0304478AD12506492E37A0C'),
+    (0x3774060,0x37742A8,'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
+    (0x2CA88C0,0x2CA8912,'636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E'),
+    (0x2CA86B0,0x2CA8700,'2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65'),
     (0x3915318,0x3915998,'39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189'),
     (0x390D880,0x390D949,'886BE1DB0B85A14E60725049F3358D0108A316A77762E9825E15BDEF42CF4C52'),
     (0xF8040,0xF8054,'6FAAAFEA02FCA6BE80BF3AB5DFD579015CCC2E16E4184E44799B89A328054879'),
@@ -337,6 +341,50 @@ def reader_cursor_consumers(pe, *, source):
             'nestedRead':{'rva':0x381F8F0,'readerRegister':'R15',
                           'boundary':'Entry RCX is saved in R15 and passed to dispatch as R8; the local output is returned after formatter dispatch. This body is another provider/dispatch layer, not the list count or element consumer. Its cold cache paths, live MethodInfo and selected list formatter are unresolved.'},
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
+
+
+def buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,*,source):
+    """Selected reader's member-eight fast path; no live dispatch or EOF claim."""
+    name='Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack'
+    methods=module_methods(pe,md,modules,image_owners,
+        [(120613,name,'Deserialize',0x3774060),
+         (120614,name+'+Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPackFormatter','Deserialize',0x3773670)],
+        source=source,expected_image='MemoryPack.Beyond.dll')
+    windows=[]
+    for at,expected in (
+        (0x3773699,'4533C0488BD3488BCF488B5C24304883C4205FE9AF090000'),
+        (0x3774093,'837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000'),
+        (0x37740FA,'4080FD080F85D1996B01'),
+        (0x2CA88CF,'83793001488BD90F8CBCA5F701488B43500FB6308B7B3083EF010F88BCA5F70148FF4350FF4340FF4344897B30'),
+        (0x2CA8901,'4084F6488B7424380F95C04883C4205FC3'),
+        (0x2CA86BF,'83793004488BD90F8C9EA7F701488B43508B308B7B3083EF040F889FA7F70148834350048343400483434404897B30')):
+        raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    calls=[]
+    for at,target,width in ((0x377410A,0x2CA88C0,1),(0x3774135,0x2CA86B0,4),
+        (0x3774159,0x2CA86B0,4),(0x377417D,0x2CA86B0,4),(0x37741A1,0x2CA88C0,1),
+        (0x37741CA,0x2DA5C90,None),(0x37741F3,0x2DA5C90,None),(0x377421C,0x2DA5C90,None)):
+        raw=pe.bytes_at_va(pe.image_base+at,5);require(raw[:1],b'\xe8',source,at)
+        require(relative_branch_target(raw,pe.image_base+at,source=source),pe.image_base+target,source,at)
+        calls.append({'rva':at,'targetRva':target,'fastSerializedWidth':width})
+    operands=[]
+    for at in (0x37741BD,0x37741E6,0x377420F):
+        cell=rip_qword_load_target(pe.bytes_at_va(pe.image_base+at,7),pe.image_base+at,source=source)
+        require(cell,pe.image_base+0xCFF4E68,source,at)
+        raw=pe.bytes_at_va(cell,8)
+        require(method_spec_usage_index(raw,reg['methodSpecsCount'],source=source,offset=cell),619962,source,cell)
+        operands.append({'rva':at,'cellVa':cell,'usageRawHex':raw.hex().upper()})
+    va=int(reg['methodSpecs'],16)+619962*12;raw=pe.bytes_at_va(va,12)
+    require(method_spec_record(raw,len(md.methods),reg['genericInstsCount'],source=source,offset=va),
+            (428464,-1,16408),source,va)
+    instance=table.resolve(16408)
+    require([a.raw_type_record_hex for a in instance.arguments],['F2230000000000000000120000000000'],source)
+    require(9202<len(md.types),True,source)
+    require(md.type_full_name(md.types[9202]),'Beyond.Gameplay.Core.SequenceActionData',source)
+    return {'methods':methods,'windows':windows,'orderedCalls':calls,'nestedOperands':operands,
+        'nestedMethodSpecIndex':619962,'nestedMethodSpecRawHex':raw.hex().upper(),'nestedInstantiation':instance.as_dict(),
+        'level':'direct selected-consumer order and fast widths; exact nested static type argument',
+        'boundary':'The token/module-joined formatter forwards RDX reader and R8 output to the static reader. After a one-byte member header, its header-eight branch passes the same reader to byte/nonzero normalization, three raw DWORD reads, a second byte/nonzero normalization, then three nested helper calls. The fast scalar prefix is 14 bytes after the header; no signedness or gameplay names are assigned. All three nested callsites use one MethodSpec with SequenceActionData as its type argument, not a proven live formatter. Header FF, reused-object preprocessing, allocation/init, other header values and segment-replacement paths are outside this fast-path claim. No nested serialized widths, complete record extent, concrete source cursor or EOF are established.'}
 
 
 def buff_ifelse_forwarding(pe,md,reg,table,*,source):
@@ -2148,6 +2196,7 @@ def audit():
     element_provider=element_provider_state_flow(pe,source=str(gate.gameassembly))
     buff_routes=buff_union_routes(pe,md,reg,modules,image_owners,source=str(gate.gameassembly))
     buff_forwarding=buff_ifelse_forwarding(pe,md,reg,table,source=str(gate.gameassembly))
+    buff_order=buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2256,6 +2305,7 @@ def audit():
         'selectedElementProviderStateFlow':element_provider,
         'selectedBuffUnionRoutes':buff_routes,
         'selectedBuffIfElseForwarding':buff_forwarding,
+        'selectedBuffIfElseReadOrder':buff_order,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
