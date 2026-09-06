@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124116,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageDecorateMask_DataForMemoryPack",
+      "Deserialize",
+      66391056
+    ],
+    [
+      124117,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageDecorateMask_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckDamageDecorateMask_DataForMemoryPackFormatter",
+      "Deserialize",
+      66390960
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66390960,
+      "endRva": 66391053,
+      "sha256": "40314CC9AEF509EC16A26B1E8B16402B83530B99B5C03EB3F10AA49C2EF9B768",
+      "boundary": "action formatter forwarding"
+    },
+    {
+      "startRva": 66391056,
+      "endRva": 66391420,
+      "sha256": "D3CF710F904EF96D57BDA25A8C593E405EE8EDDE115982CEB35257876998233C",
+      "boundary": "member6 normal read order through RET"
+    },
+    {
+      "startRva": 83163173,
+      "endRva": 83163194,
+      "sha256": "DA46CF63552B67DC4281D0AFE3646A7BC544A31B3C58596CE0D6629A62D8DBEC",
+      "boundary": "action FF clear and rejoin normal epilogue"
+    },
+    {
+      "startRva": 53265792,
+      "endRva": 53265874,
+      "sha256": "D82CB6F0C10A8A6BBE8DD93D7E31F3304D124097C9C97E97EC93FCF276ED7436",
+      "boundary": "bounded QWORD source load, cursor/counters advance by eight and RET"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar64"
+    ]
+  },
+  "boundary": "Selected normal/null structural order. The final helper reads one QWORD from the same reader source and advances its cursor and counters by eight bytes; this proves a serialized scalar64 span rather than an eight-byte output-slot guess. The four DWORD reads are separate helper calls; destination setters do not determine their source order. Ordinary tag/header plus members total 27 bytes; FA+u16 encoding adds two bytes and FF wrappers remain null. Arbitrary scalar bit patterns and nonzero byte values are preserved without assigning enum, mask, field or gameplay meaning. Existing selected byte/DWORD helpers supply the common fixed-width prefix. Live formatter selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

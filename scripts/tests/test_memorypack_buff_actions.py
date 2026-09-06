@@ -74,6 +74,10 @@ def tag56():
             struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
 
 
+def tag5b(flag=254,bits=0xffffffffffffffff):
+    return b'\x5b\x06'+bytes([flag])+struct.pack('<IIIIQ',0xffffffff,0x80000000,1,0x7fc00000,bits)
+
+
 def tag57():
     return (b'\x57\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(b'\xff\x00')+
             struct.pack('<i',3)+pair(b'a',b'\xff\x00',254)+b'\xff'+pair(None,b'',128)+
@@ -89,11 +93,57 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag5b_exact_scalar64_boundary_and_bits(self):
+        for flag in (0,1,128,254,255):
+            for bits in (0,1,0x8000000000000000,0xffffffffffffffff,0x0102030405060708):
+                child=tag5b(flag,bits);self.assertEqual(len(child),27)
+                row=event_prefix(prefix(sequence(child,b'\x3c')),source='5b.bin')
+                self.assertEqual(row['status'],'unsupported')
+                self.assertEqual(row['diagnostic']['actual'],60)
+                self.assertEqual(row['consumedEnd'],46)
+                self.assertIn(dict(start=19,end=46,kind='union',tag=91),row['completedRecords'])
+                self.assertIn(dict(start=38,end=46,kind='anonymous-scalar64'),row['ranges'])
+                self.assertEqual(child[19:27],struct.pack('<Q',bits))
+                self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag5b_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag5b())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            first=event_prefix(full,source='5b-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertLessEqual(first['consumedEnd'],n)
+            self.assertEqual(first,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='5b-limit.bin',limit=n))
+
+    def test_tag5b_bad_header_and_enclosing_counts(self):
+        bad=bytearray(tag5b());bad[1]=5
+        with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='5b-header.bin')
+        self.assertEqual(caught.exception.diagnostic,dict(source='5b-header.bin',offset=6,expected=6,actual=5,category='member-count'))
+        for value in (-2,2147483647):
+            raw=bytearray(sequence(tag5b()));struct.pack_into('<i',raw,1,value)
+            with self.assertRaises(FrameError) as caught:sequence_frame(raw,source='5b-count.bin')
+            d=caught.exception.diagnostic
+            self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('5b-count.bin',1,value,'count-bounds'))
+        raw=bytearray(sequence(tag5b()));struct.pack_into('<i',raw,1,0)
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw)
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag5b_null_and_extended_tag(self):
+        for child in (b'\x5b\xff',b'\xfa\x5b\x00\xff',b'\xfa\x5b\x00'+tag5b()[1:]):
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+
     def test_tag57_paired_record_boundaries_and_later_unknown(self):
         child=tag57();self.assertEqual(len(child),70)
-        row=event_prefix(prefix(sequence(child,b'\x5b')),source='57.bin')
+        row=event_prefix(prefix(sequence(child,b'\x5c')),source='57.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],91)
+        self.assertEqual(row['diagnostic']['actual'],92)
         self.assertEqual(row['consumedEnd'],89)
         self.assertIn(dict(start=19,end=89,kind='union',tag=87),row['completedRecords'])
         spans=[(r['start']-19,r['end']-19) for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']

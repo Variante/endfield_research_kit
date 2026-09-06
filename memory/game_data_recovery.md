@@ -287,6 +287,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   consumes its own header; a managed name or output-slot width cannot replace
   the concrete nested reader. The reference-list loop remains conditional on
   the shared consumer, and active formatter selection stays open for both.
+  A member-six child contains only a byte, four scalar32 values and scalar64.
+  Its final helper reads and advances eight source bytes; that cursor evidence,
+  pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
+  Preserve the raw bits: a mask-like managed name does not prove flag meanings.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
