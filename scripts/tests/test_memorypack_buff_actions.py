@@ -83,6 +83,10 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def tag2b(nested=b'\xff'):
+    return b'\x2b\x05\xfe'+b'\xff'*12+nested
+
+
 def tag0b(items=(),first=b'\xff',second=b'\xff',last=255):
     return (b'\x0b\x08\xfe'+b'\xff'*12+first+second+
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last]))
@@ -1777,6 +1781,47 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag2b_scalar_profile_exact_end_before_unknown_union(self):
+        for value in (None,b'',b'wire',b'\xff\x00'):
+            for nested in (b'\xff',b'\x03'+payload(value)+b'\xff'+b'\x80'*4):
+                child=tag2b(nested);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='2b.bin')
+                self.assertEqual(row['diagnostic'],dict(source='2b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=43),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag2b_every_cut_hard_limit_null_extended_and_trailing(self):
+        full=tag2b(b'\x03'+payload(b'wire')+b'\xff'+b'\x80'*4)
+        for child in (full,tag2b(),b'\x2b\xff',b'\xfa\x2b\x00'+full[1:]):
+            r=Reader(child,'2b-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'2b-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==43 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag2b_invalid_headers_lengths_and_incomplete_scalar(self):
+        child=tag2b(b'\x03'+payload(b'wire')+b'\xff'+b'\x80'*4)
+        for at in (1,15):
+            for value in (0,254):
+                bad=bytearray(child);bad[at]=value;r=Reader(bad,'2b-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('2b-header',at,value))
+        for value in (-2,0x7fffffff):
+            bad=bytearray(child);struct.pack_into('<i',bad,16,value);r=Reader(bad,'2b-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('2b-length',16,value))
+        r=Reader(child,'2b-incomplete',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertFalse(any(v.get('tag')==43 for v in r.records))
+        self.assertLessEqual(r.pos,len(child)-1)
 
     def test_tag0b_direct_list_null_empty_elements_and_final_byte(self):
         for items in (None,(),(b'\xff',),(b'\x01'+b'\xff'*4,b'\xff',b'\x01'+b'\x80'*4)):

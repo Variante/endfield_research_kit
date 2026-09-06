@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119224,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSeasonTowerEnergyAction_DataForMemoryPack+Beyond_Gameplay_Core_ChangeSeasonTowerEnergyAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      73004976
+    ],
+    [
+      119223,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSeasonTowerEnergyAction_DataForMemoryPack",
+      "Deserialize",
+      73005072
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73004976,
+      "endRva": 73005065,
+      "sha256": "2015DC6259345920C0BBDCB699DCFB1FA80E1446915BC471DCEF1A0531831C9E",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 73005072,
+      "endRva": 73005454,
+      "sha256": "EBA1938B619A6776B0DCECE8A6B095A914F6696C3314160377E21F5875B78340",
+      "boundary": "member5 source reads with inline initialization through normal RET"
+    },
+    {
+      "startRva": 83861794,
+      "endRva": 83861807,
+      "sha256": "59F542D5970263D71D16921E585F1D9093FDC699566930D496FEB824AA7B5C28",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83861863,
+      "endRva": 83861884,
+      "sha256": "C0FEF0E0E72ED6A7AEE1FF07FFE3C8FD9991739C6C55D0F5FD00FBBC1622A434",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73005307,
+      "instructionHex": "488B1526A5AE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73005401,
+      "instructionHex": "488B15C04CA508",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member5 action consumes common byte/three DWORDs followed by one BlackboardDouble profile, with no extra tail. MethodSpec620004 joins typedef173; its FF or member3 signed-length payload/byte/four-byte value profile reuses the independently pinned reader and formatter in buff_35_native.json. The managed Double name does not imply eight wire bytes. Formatter forwarding, inline initialization, normal RET, existing-output and FF paths retain complete instructions. Adjacent methods and output setters add no source bytes. Energy meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

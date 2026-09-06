@@ -662,6 +662,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   list from the GameplayTagList wrapper. Its counted FF/member-one elements
   follow a string profile and target; reserve the required final byte before
   accepting the count. Tag meaning and runtime selection remain unresolved.
+  `scripts/game_data/buff_2b_native.json` pins a member-five action ending
+  immediately after one BlackboardDouble profile. Reuse the independently
+  authenticated payload/byte/four-byte reader; its managed name does not
+  establish an eight-byte value or energy semantics.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
