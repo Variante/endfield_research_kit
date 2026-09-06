@@ -25,6 +25,17 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tagde(assignments=(),points=(),nested=None):
+    def items(values):
+        return struct.pack('<i',-1 if values is None else len(values))+(b'' if values is None else b''.join(values))
+    t=target() if nested is None else nested
+    return (b'\xde\x25\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            b'\x00\x80\xff'+items(assignments)+b'\x00\xfe\x80\xff'+bytes(4)+t+
+            bytes(range(12))+bytes(4)+bytes(range(12,24))+bytes(range(24,36))+bytes(4)+bytes(range(36,48))+bytes(4)+
+            b'\xfe\xff'+items(points)+payload(b'first')+payload(None)+t+
+            payload(b'')+payload(b'middle')+payload(b'last')+b'\xff'+bytes(4)+t+t+b'\xfe'+struct.pack('<II',0xffffffff,0x80000000))
+
+
 def tag145(first=None,second=None):
     return (b'\xfa\x45\x01\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
             (b'\x03'+payload(b'first')+b'\xff'+bytes.fromhex('FFFFFFFF') if first is None else first)+
@@ -1363,6 +1374,60 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tagde_lists_raw_spans_and_final_scalars(self):
+        assignment=b'\x06'+bytes(4)+payload(b'key')+bytes(4)+payload(None)+payload(b'val')+b'\xff'
+        point=b'\x02'+target()+payload(bytes(range(256)))
+        for assignments in (None,(),(b'\xff',assignment)):
+            for points in (None,(),(b'\xff',point)):
+                child=tagde(assignments,points);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='de.bin')
+                self.assertEqual(row['diagnostic'],dict(source='de.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=222),row['completedRecords'])
+                spans=[r for r in row['ranges'] if r['kind']=='anonymous-raw12']
+                self.assertEqual(len(spans),4)
+                self.assertTrue(all(r['end']-r['start']==12 for r in spans))
+                self.assertEqual(row['ranges'][-1],dict(start=end-4,end=end,kind='anonymous-scalar32'))
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tagde_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagde(),tagde(None,None,b'\xff'),tagde(points=(b'\x02\xff'+payload(None),)),b'\xde\xff',b'\xfa\xde\x00'+tagde()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='de-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='de-limit',limit=n))
+
+    def test_tagde_malformed_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tagde(points=(b'\x02'+target()+payload(b'key'),))))
+        good=event_prefix(raw,source='de-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='de-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('de-bounds',at,value))
+        row=event_prefix(prefix(sequence(tagde(points=(b'\x02'+target(selector=b'\x03\x06'+bytes(8))+payload(None),)))),source='de-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category']),('unsupported','nested-profile'))
+        self.assertFalse(any(r.get('tag')==222 for r in row['completedRecords']))
+
+    def test_target_bytes_profile_keeps_payload_after_target(self):
+        for raw in (b'\xff',b'\x02\xff'+payload(None),b'\x02'+target()+payload(bytes(range(256)))):
+            r=Reader(raw,'target-bytes',len(raw));r.target_bytes_profile()
+            self.assertEqual(r.pos,len(raw))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(raw),kind='anonymous-target-bytes-profile'))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):Reader(raw,'target-bytes',n).target_bytes_profile()
 
     def test_tag145_scalar_then_paired_payload_exact_order(self):
         for first in (b'\xff',b'\x03'+payload(None)+b'\x00'+bytes(4),b'\x03'+payload(b'key')+b'\xfe'+bytes.fromhex('FFFFFFFF')):

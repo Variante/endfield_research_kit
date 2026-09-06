@@ -481,6 +481,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   type contexts select distinct finite profiles despite equal member-three
   headers; the first ends in four raw bytes, the second in a variable payload.
   No source read follows the second profile. Signal meaning remains unresolved.
+  `scripts/game_data/buff_de_native.json` pins a member-37 reader with four
+  independent inline raw12 advances and separate assignment/target-byte lists.
+  The latter element has two members: target then byte payload. Its exact
+  reference-type instantiation supports a conditional shared list profile;
+  keep null elements and unsupported targets explicit. Getter/output offsets
+  add no source fields, and the final two scalar32 reads remain separate.
+  These boundaries do not establish projectile behavior or spatial meaning.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
