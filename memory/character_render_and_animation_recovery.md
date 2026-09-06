@@ -310,6 +310,16 @@ Unity image comparisons use physical `actualSeconds` relative to the first
 saved frame, gated by its annotated body phase; sparse runs must include time
 zero. Requested times and image ordinals can disagree with rendered phase.
 This relative join preserves the video anchor's existing uncertainty.
+The clean reference's central anchor also fails a conditional entry-phase
+consistency check: its first visible rigid actor maps before the authored
+controller entry. Overlapping silhouettes mean that image is not authenticated
+as one current physical pose. Preserve the runtime clock and annotation until
+the final-swapchain/recording boundary resolves presentation history; do not
+choose a replacement anchor by visual fit. The bounded arithmetic and source
+hashes live in `reports/assets/character_recovery/reference_entry_phase_consistency.json`.
+Animator schema v6 brackets state API reads and the following Present-clock
+observation. Consumers validate those bounds; v5 remains interval-unobserved.
+Neither interval proves engine pose-evaluation order or palette upload ownership.
 On synchronized retail checkpoints,
 the current solver is worse than animation-only in both translation and
 rotation, and adding the recovered rotation-only post-proxy CalcLine stage does
