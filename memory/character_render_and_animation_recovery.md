@@ -224,6 +224,11 @@ only.
   The validated pair is independent of Full owner-packet completeness. Keep
   that evidence scope separate from exact draw/pose phase and clean-video
   registration; see the generated paired-presentation review.
+  The next boundary is the first unique fullscreen consumer of that exact
+  DLAA output: retain its immediate target and draw-bound parameters before UI
+  or subsequent writes. A spatial radial sampler can produce repeated scaled
+  silhouettes without a history texture; source capability alone does not
+  establish which pass owns the observed echoes.
 - A resource that exists or hashes identically is not necessarily bound to the
   selected draw. Same-camera, same-size, same-frame, submission-order, and
   lifetime constraints remain part of the join.
