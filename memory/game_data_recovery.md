@@ -269,6 +269,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   unresolved independently of this structural closure. Paired and scalar
   payloads can have identical extents; select their profiles from independent
   nested-consumer evidence, not byte length alone.
+  The selected member-thirteen child closes three target profiles, a finder
+  profile and a scalar payload in native read order. The finder contains a
+  counted byte-payload list, scalar32 and a member-two query whose selected
+  array helper consumes count times four bytes. Keep all values anonymous.
+  `scripts/game_data/buff_b4_native.json` owns the native contract, including
+  an explicit limitation: List<string> has a static type join but no separate
+  formatter MethodSpec; the shared List<Object> count/loop and String element
+  reader support a finite structural profile, not actual provider selection.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated

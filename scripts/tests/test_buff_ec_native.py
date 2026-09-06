@@ -72,6 +72,38 @@ class BuffEcNativeTests(unittest.TestCase):
         with self.assertRaises(ContextError) as caught:self.decode()
         self.assertEqual(caught.exception.diagnostics['source'],'selected.dll')
 
+    def test_explicit_value_type_kind_and_drift(self):
+        row=self.contract['nestedContexts'][0]
+        arg=struct.pack('<QII',3,0x80110000,0)
+        row.update(argumentRawHex=arg.hex().upper(),typeKind=0x11)
+        self.argument.raw_type_record_hex=arg.hex().upper()
+        self.decode()
+        row['typeKind']=0x12
+        with self.assertRaises(ContextError):self.decode()
+        row['typeKind']=0x0e
+        with self.assertRaises(ContextError):self.decode()
+        del row['typeKind']
+        with self.assertRaises(ContextError):self.decode()
+
+    def test_external_method_group_keeps_explicit_image(self):
+        group={'image':'MemoryPack.dll','methods':[[7,'Fixture.Formatter','Deserialize',0x10]]}
+        self.contract['methodGroups']=[group]
+        self.path.write_text(json.dumps(self.contract),encoding='utf8')
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]) as methods:
+            buff_action_read_order(self.pe,self.md,self.reg,self.table,{},[],source='selected.dll',contract_path=self.path)
+            self.assertEqual(methods.call_count,2)
+            self.assertEqual(methods.call_args.args[4],group['methods'])
+            self.assertEqual(methods.call_args.kwargs,{'source':'selected.dll','expected_image':'MemoryPack.dll'})
+
+    def test_registered_data_window_drift(self):
+        raw=struct.pack('<Q',self.base+0x10);self.parts[self.base+0x300]=raw
+        self.contract['dataWindows']=[{'startRva':0x300,'endRva':0x308,
+                                      'sha256':hashlib.sha256(raw).hexdigest().upper()}]
+        self.decode()
+        for bad in (raw[:-1],raw+b'x',bytes(8)):
+            self.parts[self.base+0x300]=bad
+            with self.assertRaises(ContextError):self.decode()
+
     def test_generic_carrier_and_nested_argument_drift(self):
         row=self.contract['nestedContexts'][0]
         arg=struct.pack('<QII',0x4000,0x150000,0)

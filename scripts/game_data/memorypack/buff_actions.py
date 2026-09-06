@@ -70,12 +70,21 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==180:
+            self.target_profile()
+            self.finder_profile()
+            self.target_profile()
+            self.take(1,'anonymous-nonzero-byte')
+            self.scalar_payload()
+            self.target_profile()
+            for _ in range(3):self.take(1,'anonymous-nonzero-byte')
+            return
         if tag==287:
             self.paired_payload()
             self.scalar_payload()
@@ -128,6 +137,28 @@ class Reader:
         if actual!=255:
             raise Unsupported(self.source,self.pos,'null-only '+kind+' profile',actual,'nested-profile')
         self.take(1,'null-'+kind)
+
+    def query_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-query-profile')
+        else:
+            self.header(2)
+            self.take(4,'anonymous-scalar32')
+            # Selected consumer copies and advances count*4 bytes. Bound the
+            # multiplication by remaining input; do not emulate native overflow.
+            for _ in range(max(0,self.count(4,nullable=True))):
+                self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-query-profile'))
+
+    def finder_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-finder-profile')
+        else:
+            self.header(3)
+            for _ in range(max(0,self.count(4,reserve=5,nullable=True))):self.byte_payload()
+            self.take(4,'anonymous-scalar32')
+            self.query_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-finder-profile'))
 
     def scalar_payload(self):
         start=self.pos

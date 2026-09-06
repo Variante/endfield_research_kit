@@ -61,7 +61,64 @@ def tag11f(first=None,value=None,last=None):
             (pair(b'',None) if last is None else last))
 
 
+def tag_b4(*,finder=None):
+    if finder is None:
+        finder=(b'\x03'+struct.pack('<i',3)+payload(b'\xff\xfe')+payload(b'')+payload(None)+
+                struct.pack('<I',0x80000000)+b'\x02'+struct.pack('<IiII',0xffffffff,2,0,0xffffffff))
+    return b'\xb4\x0d\xfe'+bytes(12)+b'\xff'+finder+b'\xff\x80\xff\xff\xfe\x02\xff'
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_b4_exact_nested_boundaries_and_later_unknown(self):
+        child=tag_b4();self.assertEqual(len(child),63)
+        row=event_prefix(prefix(sequence(child,b'\x51')),source='b4.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],81)
+        self.assertEqual(row['consumedEnd'],19+63)
+        records=row['completedRecords']
+        self.assertIn(dict(start=19,end=82,kind='union',tag=180),records)
+        self.assertIn(dict(start=19+16,end=19+56,kind='anonymous-finder-profile'),records)
+        self.assertIn(dict(start=19+39,end=19+56,kind='anonymous-query-profile'),records)
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_b4_truncations_trailing_and_anchor_limit(self):
+        raw=sequence(tag_b4())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            first=event_prefix(full,source='b4-limit.bin',limit=n)
+            self.assertEqual(first['status'],'failed')
+            self.assertLessEqual(first['consumedEnd'],n)
+            self.assertEqual(first,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='b4-limit.bin',limit=n))
+
+    def test_b4_bad_counts_and_headers(self):
+        good=tag_b4()
+        for at in (17,21,27,31,44):
+            for value in (-2,2147483647):
+                bad=bytearray(good);struct.pack_into('<i',bad,at,value)
+                with self.subTest(at=at,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='b4-count.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                                 ('b4-count.bin',at+5,value,'count-bounds'))
+        for at in (1,16,39):
+            bad=bytearray(good);bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad))
+            self.assertEqual(caught.exception.diagnostic['offset'],at+5)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_b4_null_and_empty_nested_collections(self):
+        children=[b'\xb4\xff',tag_b4(finder=b'\xff')]
+        for count in (-1,0):
+            for query in (b'\xff',b'\x02'+bytes(4)+struct.pack('<i',count)):
+                children.append(tag_b4(finder=b'\x03'+struct.pack('<i',count)+bytes(4)+query))
+        for child in children:
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+
     def test_normal_nested_ranges_and_explicit_opaque_tail(self):
         raw=sequence(action(sequence(b'\xff'),sequence(),b'\xff'))
         spans=sequence_frame(raw,source='normal.bin')

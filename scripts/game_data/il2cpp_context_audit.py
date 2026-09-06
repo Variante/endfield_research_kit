@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'B98DC1CE22E0E78354B25881357AF3AD44C7F290A3B0798992E9C87C17D9156B'
+CORPUS_SHA = '62FBB54FCA9D831C1BBBA3266FF2B437ADB19A1629DF30E44F18B54E721EA62B'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -421,7 +421,10 @@ def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contrac
     require(contract['schemaVersion'],1,path)
     methods=module_methods(pe,md,modules,image_owners,contract['methods'],
         source=source,expected_image='MemoryPack.Beyond.dll')
-    for row in contract['codeWindows']:
+    for group in contract.get('methodGroups',[]):
+        methods.extend(module_methods(pe,md,modules,image_owners,group['methods'],
+            source=source,expected_image=group['image']))
+    for row in contract['codeWindows']+contract.get('dataWindows',[]):
         start,end=row['startRva'],row['endRva']
         require(0<=start<end,True,path,start)
         raw=pe.bytes_at_va(pe.image_base+start,end-start)
@@ -457,12 +460,14 @@ def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contrac
             require(nested.index,row['generic']['elementInstantiationIndex'],source,cp)
             require([a.raw_type_record_hex for a in nested.arguments],row['generic']['elementArguments'],source,cp)
         else:
-            require(argument[10],0x12,source,va)
+            kind=row.get('typeKind',0x12)
+            require(kind in (0x11,0x12),True,path,va)
+            require(argument[10],kind,source,va)
             require(struct.unpack_from('<Q',argument)[0],row['typeDefinition'],source,va)
         require(0<=row['typeDefinition']<len(md.types),True,source,va)
         require(md.type_full_name(md.types[row['typeDefinition']]),row['typeName'],source,va)
     return {'contractPath':str(path),'contractSha256':sha(path),'methods':methods,
-        'codeWindows':contract['codeWindows'],'nestedContexts':contract['nestedContexts'],
+        'codeWindows':contract['codeWindows'],'dataWindows':contract.get('dataWindows',[]),'nestedContexts':contract['nestedContexts'],
         'anonymousReadOrder':contract['anonymousReadOrder'],
         'level':'direct selected consumer order; exact static nested type joins; structural-only parser profile',
         'boundary':contract['boundary']}
@@ -588,7 +593,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'),
         (0x390DCB0,'488B15B1936F09488B0BE8615B6FFC488BCF4885C00F8595A35501488B15E6307D09E8451011FD488903488BD0E900FDFFFF'),
         (0x390DC1A,'488B1527307309488B0BE8F75B6FFC488BCF4885C00F8571915501488B1514387D09E8130311FD488903488BD0E996FDFFFF'),
-        (0x390DED6,'488B1563997009488B0BE83B596FFC488BCF4885C00F85F4A75501488B1588297D09E8CF1211FD488903488BD0E9DAFAFFFF')):
+        (0x390DED6,'488B1563997009488B0BE83B596FFC488BCF4885C00F85F4A75501488B1588297D09E8CF1211FD488903488BD0E9DAFAFFFF'),
+        (0x390DC4C,'488B15C5287909488B0BE8C55B6FFC488BCF4885C00F85539C5501488B15AA357D09E8050C11FD488903488BD0E964FDFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
     table_va=pe.image_base+0x3915318;raw=pe.bytes_at_va(table_va,416*4)
@@ -602,7 +608,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None),
         (0xEC,0x390DCB0,106853,16241,'ModifyDynamicBlackboard_Data',None),
         (0x50,0x390DC1A,106467,16717,'CompareFloat_Data',None),
-        (0x11F,0x390DED6,106969,16341,'RaiseTrainLevelEvent_Data',None)):
+        (0x11F,0x390DED6,106969,16341,'RaiseTrainLevelEvent_Data',None),
+        (0xB4,0x390DC4C,106625,16117,'FinishBuffAdvanced_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2034,7 +2041,8 @@ def audit():
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
                Path(__file__).with_name('buff_ec_native.json'),
                Path(__file__).with_name('buff_50_native.json'),
-               Path(__file__).with_name('buff_11f_native.json')]
+               Path(__file__).with_name('buff_11f_native.json'),
+               Path(__file__).with_name('buff_b4_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2375,6 +2383,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_50_native.json'))
     buff_11f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_11f_native.json'))
+    buff_b4=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_b4_native.json'))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2493,6 +2503,7 @@ def audit():
         'selectedBuffEcReadOrder':buff_ec,
         'selectedBuff50ReadOrder':buff_50,
         'selectedBuff11fReadOrder':buff_11f,
+        'selectedBuffB4ReadOrder':buff_b4,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
