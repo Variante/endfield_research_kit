@@ -25,6 +25,17 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def finder14d(items=(b'wire',None),query_items=(0,0xffffffff)):
+    return (b'\x03'+struct.pack('<i',-1 if items is None else len(items))+
+            b''.join(payload(v) for v in items or ())+b'\xff'*4+
+            b'\x02'+b'\x80'*4+struct.pack('<i',-1 if query_items is None else len(query_items))+
+            b''.join(struct.pack('<I',v) for v in query_items or ()))
+
+
+def tag14d(first=b'\xff',second=b'\xff',last=b'\xff'):
+    return b'\xfa\x4d\x01\x09\xfe'+b'\xff'*12+first+b'\x80'+b'\xfe'*4+second+last
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1430,6 +1441,50 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag14d_three_independent_nested_boundaries(self):
+        for first in (b'\xff',finder14d(),finder14d(None,None),finder14d((),())):
+            for second in (b'\xff',target()):
+                for last in (b'\xff',scalar_payload(None),scalar_payload(b'wire',bits=b'\xff'*4)):
+                    child=tag14d(first,second,last);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='14d.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='14d.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=333),row['completedRecords'])
+                    self.assertIn(dict(start=36,end=36+len(first),kind='anonymous-finder-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=41+len(first),end=end-len(last),kind='anonymous-target-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=end-len(last),end=end,kind='anonymous-scalar-payload'),row['completedRecords'])
+
+    def test_tag14d_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag14d(),tag14d(finder14d(),target(),scalar_payload(b'wire')),b'\xfa\x4d\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='14d-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='14d-limit',limit=n))
+
+    def test_tag14d_malformed_nested_counts_headers_and_target_gap(self):
+        raw=prefix(sequence(tag14d(finder14d(),target(),scalar_payload(b'wire'))))
+        good=event_prefix(raw,source='14d-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='14d-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('14d-bounds',at,value))
+        child=tag14d(finder14d(),target(selector=b'\x03\x10'),scalar_payload())
+        row=event_prefix(prefix(sequence(child)),source='14d-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+        self.assertIn(dict(start=36,end=36+len(finder14d()),kind='anonymous-finder-profile'),row['completedRecords'])
+        self.assertFalse(any(r.get('tag')==333 or r['kind']=='anonymous-scalar-payload' for r in row['completedRecords']))
 
     def test_tag3f_independent_nested_and_final_payloads(self):
         for nested in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\x00\xff',bits=b'\xff'*4)):

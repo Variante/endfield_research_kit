@@ -539,6 +539,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   context joins the concrete reader already pinned for `16b`; preserve the two
   payload counts and null states independently. Nested completion cannot end
   the parent before the final payload. Buff-consumption meaning is unresolved.
+  `scripts/game_data/buff_14d_native.json` pins an extended member-nine action:
+  finder, byte, scalar32, target and final scalar payload follow the common
+  prefix. Each nested context joins its own finite reader; preserve their null
+  states and counts independently. An unsupported target keeps the final payload
+  unconsumed. Duration and operation meanings remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
