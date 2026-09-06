@@ -207,6 +207,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
 - Action/condition unions publish only the typed prefix or body that consumes
   exactly. Unknown selectors, enums, tags, blackboard operations, and nested
   payloads stay unresolved.
+- Current-build native Buff action routes contradict the legacy reader's tag/name
+  map. Exact byte consumption alone does not validate those names for current
+  data. Selected token/module, switch-table and registered-type joins are recorded
+  in `reports/animestudio/il2cpp_context_current_latest.*`; they establish wrapper
+  identity, not nested field order or record extent. Do not alias unfamiliar tags
+  to old parsers or assume a uniform renumbering; current consumer evidence is
+  required before promoting legacy labels.
 - Gameplay tag names come from exact predefined/config registries or validated
   runtime capture under the same native gate. CRC/context-derived names retain
   their derivation label; raw unmapped ids remain visible.

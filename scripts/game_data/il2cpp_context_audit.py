@@ -29,6 +29,8 @@ MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
 CORPUS_SHA = 'E2817E52AB1B14C7ADBA1C42D1FC18B2FC55CF4E84EA0ECCD52599ED65BFEF92'
 CONSUMER_WINDOWS = (
+    (0x3915318,0x3915998,'39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189'),
+    (0x390D880,0x390D949,'886BE1DB0B85A14E60725049F3358D0108A316A77762E9825E15BDEF42CF4C52'),
     (0xF8040,0xF8054,'6FAAAFEA02FCA6BE80BF3AB5DFD579015CCC2E16E4184E44799B89A328054879'),
     (0x2DA4260,0x2DA4713,'BCF62513ABA710E9AB67DBFDA036EFE7CEC127E1CADFB21E16530E168D2EBE02'),
     (0x4AF13B8,0x4AF14EB,'61FE687029897D01C5F5D0283742BCAB565002A11914EA01B54FBD87F2192D04'),
@@ -335,6 +337,55 @@ def reader_cursor_consumers(pe, *, source):
             'nestedRead':{'rva':0x381F8F0,'readerRegister':'R15',
                           'boundary':'Entry RCX is saved in R15 and passed to dispatch as R8; the local output is returned after formatter dispatch. This body is another provider/dispatch layer, not the list count or element consumer. Its cold cache paths, live MethodInfo and selected list formatter are unresolved.'},
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
+
+
+def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
+    """Selected current tag routes, not a replacement serialization schema."""
+    name='Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack+Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPackFormatter'
+    methods=module_methods(pe,md,modules,image_owners,[(107657,name,'Deserialize',0x390D950),
+        (107659,name,'.cctor',0x417AC00)],source=source,expected_image='MemoryPack.Beyond.dll')
+    windows=[]
+    for at,expected in (
+        (0x390D974,'488D5424384533C06689742438488BCFE8F7FEFFFF84C00F8422BD55010FB774243881FE9F0100000F87E0BC5501488D1557266FFC8B8CB2185391034803CAFFE1'),
+        (0x390D8D2,'4080FEFA731C66418936B001'),
+        (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
+        (0x417E4D1,'488B0D3018F20833D2E81174C2FE488BCF488BD8E8364FE8FB4C8B0D5789E70841B8C0000000488BD3488BCFE86AF018FC'),
+        (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
+        (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
+        (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF')):
+        raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    table_va=pe.image_base+0x3915318;raw=pe.bytes_at_va(table_va,416*4)
+    require(len(raw),416*4,source,table_va)
+    targets=[r[0] for r in struct.iter_unpack('<I',raw)]
+    rows=[]
+    for tag,target,index,definition,suffix,init in (
+        (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
+        (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
+        (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None)):
+        require(targets[tag],target,source,table_va+tag*4)
+        operands=[]
+        for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
+            ins=pe.bytes_at_va(pe.image_base+at,7)
+            cell=pe.image_base+at+7+struct.unpack_from('<i',ins,3)[0]
+            usage=pe.bytes_at_va(cell,8)
+            found=unresolved_usage_index(usage,reg['typesCount'],tag=usage_tag,source=source,offset=cell)
+            require(found,index,source,cell)
+            pointer=pe.u64_at_va(int(reg['types'],16)+index*8)
+            record=pe.bytes_at_va(pointer,16);require(len(record),16,source,pointer)
+            require(record[10],0x12,source,pointer+10)
+            require(struct.unpack_from('<Q',record)[0],definition,source,pointer)
+            require(definition<len(md.types),True,source,pointer)
+            expected_name='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
+            require(md.type_full_name(md.types[definition]),expected_name,source,pointer)
+            operands.append({'instructionRva':at,'cellVa':cell,'usageRawHex':usage.hex().upper(),
+                'usageTag':usage_tag,'registeredTypeIndex':index,'typePointerVa':pointer,'typeRawHex':record.hex().upper()})
+        if len(operands)==2:require(operands[0]['typePointerVa'],operands[1]['typePointerVa'],source)
+        rows.append({'tag':tag,'switchTargetRva':target,'typeDefinition':definition,'wrapperName':expected_name,'operands':operands})
+    return {'methods':methods,'windows':windows,'switchTableRva':0x3915318,'switchEntryCount':416,
+        'switchTableSha256':hashlib.sha256(raw).hexdigest().upper(),'rows':rows,
+        'level':'direct current native tag-to-wrapper routing; exact metadata identity',
+        'boundary':'The token/module-joined reader calls the bounded tag helper then uses its ushort output in an unsigned <=0x19F switch. The helper fast path consumes one byte and directly returns tags below 0xFA; wider and segment-replacement paths are not promoted here. Selected table entries reach exact type-usage operands. For C9 and C0, separate cctor callsites pass those literal tags alongside a helper result derived from the same registered type pointer (usage kind two versus branch kind one). Current C9 describes the IfElse wrapper; C0 describes GainCost, contradicting the legacy Buff reader C0 name. Tag 40 describes CheckDamageTag. This is not a blanket tag renumbering rule or proof of nested fields, actual object allocation, formatter execution, record extent or EOF. Do not alias C9 to the legacy C0 parser or promote existing labels for current bytes without the concrete nested consumer ABI.'}
 
 
 def element_provider_state_flow(pe,*,source):
@@ -2065,6 +2116,7 @@ def audit():
     list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))
     list_value_flow=list_element_value_flow(pe,source=str(gate.gameassembly))
     element_provider=element_provider_state_flow(pe,source=str(gate.gameassembly))
+    buff_routes=buff_union_routes(pe,md,reg,modules,image_owners,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2171,6 +2223,7 @@ def audit():
         'selectedListElementValueFlow':list_value_flow,
         'selectedAdapterConversionContext':adapter_conversion,
         'selectedElementProviderStateFlow':element_provider,
+        'selectedBuffUnionRoutes':buff_routes,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

@@ -45,7 +45,63 @@ from scripts.game_data.il2cpp_context_audit import list_element_shared_context, 
 from scripts.game_data.il2cpp_context_audit import list_element_value_flow
 from scripts.game_data.il2cpp_context_audit import adapter_conversion_context
 from scripts.game_data.il2cpp_context_audit import element_provider_state_flow
+from scripts.game_data.il2cpp_context_audit import buff_union_routes
 from unittest.mock import patch
+
+
+class BuffUnionRouteTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={at:bytes.fromhex(raw) for at,raw in (
+            (0x390D974,'488D5424384533C06689742438488BCFE8F7FEFFFF84C00F8422BD55010FB774243881FE9F0100000F87E0BC5501488D1557266FFC8B8CB2185391034803CAFFE1'),
+            (0x390D8D2,'4080FEFA731C66418936B001'),
+            (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
+            (0x417E4D1,'488B0D3018F20833D2E81174C2FE488BCF488BD8E8364FE8FB4C8B0D5789E70841B8C0000000488BD3488BCFE86AF018FC'),
+            (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
+            (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
+            (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'))}
+        targets=[0]*416
+        types=[None]*16616;self.ptrs={}
+        for tag,target,index,definition,suffix,init in (
+            (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
+            (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
+            (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None)):
+            targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
+            pointer=self.base+index*16
+            self.parts[index*16]=struct.pack('<QII',definition,0x120000,0)
+            self.ptrs[0x1000+index*8]=pointer
+            for at,kind in ((target,1),)+(((init,2),) if init else ()):
+                cell=at+7+struct.unpack_from('<i',self.parts[at],3)[0]
+                self.parts[cell]=struct.pack('<Q',(kind<<29)|(index<<1)|1)
+        self.parts[0x3915318]=struct.pack('<416I',*targets)
+        def read(va,size):
+            raw=self.parts[va-self.base]
+            return raw[:7] if size==7 else raw
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=read,u64_at_va=lambda va:self.ptrs[va])
+        self.md=SimpleNamespace(types=types,type_full_name=lambda t:t)
+        self.reg={'types':'0x1000','typesCount':200000}
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
+
+    def test_current_tag_routes_do_not_alias_old_names(self):
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64])
+        self.assertIn('IfElse',row['rows'][0]['wrapperName'])
+        self.assertIn('GainCost',row['rows'][1]['wrapperName'])
+
+    def test_truncated_trailing_corrupt_table_and_operands(self):
+        for at,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[at]=bad
+                with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[at]=good
+
+    def test_wrong_type_identity_and_registered_bounds(self):
+        self.md.types[16163]=self.md.types[16145]
+        with self.assertRaises(ContextError):self.decode()
+        self.reg['typesCount']=106441
+        with self.assertRaises(ContextError):self.decode()
 
 
 class ElementProviderStateFlowTests(unittest.TestCase):
