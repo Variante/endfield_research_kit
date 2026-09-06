@@ -83,6 +83,10 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def tag13b(value=b'wire',bits=0xffffffff):
+    return b'\xfa\x3b\x01\x06\xfe'+b'\xff'*12+payload(value)+struct.pack('<I',bits)
+
+
 def tag5e(value=0xffffffff):
     return b'\x5e\x05\xfe'+b'\xff'*12+struct.pack('<I',value)
 
@@ -1737,6 +1741,51 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag13b_payload_and_required_scalar_boundary(self):
+        for value in (None,b'',b'\xff\xfa\x3b\x01'):
+            for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+                child=tag13b(value,bits);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='13b.bin')
+                self.assertEqual(row['diagnostic'],dict(source='13b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=315),row['completedRecords'])
+                self.assertIn(dict(start=end-4,end=end,kind='anonymous-scalar32'),row['ranges'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag13b_every_cut_hard_limit_null_and_trailing(self):
+        for child in (tag13b(),tag13b(None),b'\xfa\x3b\x01\xff'):
+            r=Reader(child,'13b-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'13b-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==315 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag13b_bad_length_header_and_incomplete_final_scalar(self):
+        child=tag13b()
+        for value in (-2,0x7fffffff):
+            bad=bytearray(child);struct.pack_into('<i',bad,17,value);r=Reader(bad,'13b-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+            self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('13b-length',17,value))
+        for value in (0,5,7,254):
+            bad=bytearray(child);bad[3]=value;r=Reader(bad,'13b-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+        for n in range(len(child)-4,len(child)):
+            r=Reader(child,'13b-tail',n)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-4)
+            self.assertIn(dict(start=17,end=len(child)-4,kind='anonymous-byte-payload',isNull=False),r.records)
+            self.assertFalse(any(v.get('tag')==315 for v in r.records))
 
     def test_tag5e_final_scalar_raw_bits_and_unknown_successor(self):
         for value in (0,0xffffffff,0x80000000,0x7fc00000):

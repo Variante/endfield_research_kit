@@ -628,6 +628,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   ending with a required DWORD under the exact DamageTypeMask context.
   Preserve arbitrary raw bits and reject incomplete scalars; mask meaning
   and condition evaluation remain unresolved.
+  `scripts/game_data/buff_13b_native.json` pins a member-six action
+  containing one signed-length byte payload and a required final DWORD.
+  Preserve null/empty payloads and raw scalar bits; the selected body has no
+  nested provider. Damage ownership and value meaning remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
