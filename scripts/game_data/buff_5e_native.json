@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124181,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageTypeMask_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckDamageTypeMask_DataForMemoryPackFormatter",
+      "Deserialize",
+      70023280
+    ],
+    [
+      124180,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageTypeMask_DataForMemoryPack",
+      "Deserialize",
+      70023376
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70023280,
+      "endRva": 70023373,
+      "sha256": "DE089B50FAD018BD6B3E871128299818C194C705E5CA54C9CA9AFC350164C7A2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70023376,
+      "endRva": 70023706,
+      "sha256": "B02C0B29707813DE38B6ABE3C5188D040160233BB8DCB0E825B10EEE5FD9A026",
+      "boundary": "member5 source reads through normal RET"
+    },
+    {
+      "startRva": 70023706,
+      "endRva": 70023778,
+      "sha256": "8BAFC23147D6DC8262F20538DC416C7F785C3C97DAE480613D51999D5E145EB8",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83516818,
+      "endRva": 83516831,
+      "sha256": "D05D930B52C6EBAFE95A3A225627B88386782977F393EFDE72A8F0DBBD1CE51A",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83516887,
+      "endRva": 83516908,
+      "sha256": "728F122F4EFA80734B2373F7E1A8A592590056316FB6D7EE46E7104C2491A171",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70023548,
+      "instructionHex": "488B15A524DC08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70023654,
+      "instructionHex": "488B15432BD708",
+      "cellVa": 6660793648,
+      "usageRawHex": "4BE512C000000000",
+      "methodSpecIndex": 619173,
+      "methodSpec": [
+        428448,
+        -1,
+        42252
+      ],
+      "argumentRawHex": "B3340000000000000000118000000000",
+      "typeDefinition": 13491,
+      "typeName": "Beyond.Gameplay.Core.Conditions.DamageTypeMask",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member5 action consumes common byte/three DWORD then a final DWORD. Its exact DamageTypeMask context selects the scalar source helper; a type name is not a width witness. Preserve arbitrary raw bits, with no nested header or tail. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Damage mask meaning, condition evaluation, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

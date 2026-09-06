@@ -83,6 +83,10 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def tag5e(value=0xffffffff):
+    return b'\x5e\x05\xfe'+b'\xff'*12+struct.pack('<I',value)
+
+
 def tag06(value=0xffffffff):
     return b'\x06\x05\xfe'+b'\xff'*12+struct.pack('<I',value)
 
@@ -1733,6 +1737,44 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag5e_final_scalar_raw_bits_and_unknown_successor(self):
+        for value in (0,0xffffffff,0x80000000,0x7fc00000):
+            child=tag5e(value);end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='5e.bin')
+            self.assertEqual(row['diagnostic'],dict(source='5e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=94),row['completedRecords'])
+            self.assertIn(dict(start=end-4,end=end,kind='anonymous-scalar32'),row['ranges'])
+
+    def test_tag5e_null_extended_cuts_and_trailing(self):
+        for child in (tag5e(),b'\x5e\xff',b'\xfa\x5e\x00'+tag5e()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='5e-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='5e-limit',limit=n))
+
+    def test_tag5e_malformed_headers_counts_and_required_scalar(self):
+        raw=prefix(sequence(tag5e()));good=event_prefix(raw,source='5e-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='5e-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('5e-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==94 for r in row['completedRecords']))
+        for limit in range(34,38):
+            row=event_prefix(raw,source='5e-tail',limit=limit)
+            self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],34)
+            self.assertFalse(any(r.get('tag')==94 for r in row['completedRecords']))
 
     def test_tag06_final_scalar_raw_bits_and_unknown_successor(self):
         for value in (0,0xffffffff,0x80000000,0x7fc00000):
