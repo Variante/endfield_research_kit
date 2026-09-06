@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124243,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEntityNum_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckEntityNum_DataForMemoryPackFormatter",
+      "Deserialize",
+      58574768
+    ],
+    [
+      124242,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEntityNum_DataForMemoryPack",
+      "Deserialize",
+      58575504
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58574768,
+      "endRva": 58574861,
+      "sha256": "D1146E18197E2285386707AE3506B54AFE1710ADC7F57574FABC484E9E92F6C9",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 58575504,
+      "endRva": 58576021,
+      "sha256": "3673FD4E0A9B3995845B77F910FD01C18CCB5C8239E143C10923AA89B3DD8C29",
+      "boundary": "member10 source reads through normal RET"
+    },
+    {
+      "startRva": 58576021,
+      "endRva": 58576105,
+      "sha256": "115D078638945A299A186D80C184DBB580798668BD620D8AC749C429478D2BF2",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82030018,
+      "endRva": 82030031,
+      "sha256": "4F564259A415F1E2338E5061EA4B6736E5D9671CAA3FDAF6E0F046715B929FFF",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82030087,
+      "endRva": 82030108,
+      "sha256": "30B5BDACB1D598681131510C6A10C788C340DC2E346E8DFBD166C23DFC2502F6",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58575681,
+      "instructionHex": "488B15E0D28A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58575796,
+      "instructionHex": "488B154D4B8809",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58575834,
+      "instructionHex": "488B1547D28B09",
+      "cellVa": 6661185064,
+      "usageRawHex": "37E512C000000000",
+      "methodSpecIndex": 619163,
+      "methodSpec": [
+        428448,
+        -1,
+        42245
+      ],
+      "argumentRawHex": "3B7B0000000000000000118000000000",
+      "typeDefinition": 31547,
+      "typeName": "Beyond.CompareType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only finite framing. After the common prefix the member10 reader consumes a target, DWORD, two independent bytes, DWORD and signed-length byte payload. The exact TargetSettings context joins the separately authenticated finite target profile. Priority and CompareType contexts belong to DWORD source reads, not nested objects. Bound payload lengths before slicing; an unsupported target child leaves the action incomplete before all later fields. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Output setters add no source bytes. Entity-count semantics, comparison rules, live formatter choice, refill/error parity and whole-BuffData EOF remain unresolved."
+}

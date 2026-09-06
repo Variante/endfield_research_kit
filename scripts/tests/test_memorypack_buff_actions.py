@@ -25,6 +25,10 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag61(nested=b'\xff',value=b'wire'):
+    return b'\x61\x0a\xfe'+b'\xff'*12+nested+b'\x80'*4+b'\xff\xfe'+b'\x01'*4+payload(value)
+
+
 def tagea(items=(),value=b'wire'):
     return (b'\xea\x07\xfe'+b'\xff'*12+b'\x80'+payload(value)+
             struct.pack('<i',-1 if items is None else len(items))+
@@ -1422,6 +1426,47 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag61_target_and_final_payload_boundaries(self):
+        for nested in (b'\xff',target(),target(direction_value=b'\xff')):
+            for value in (None,b'',b'\x00\xffwire'):
+                child=tag61(nested,value);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='61.bin')
+                self.assertEqual(row['diagnostic'],dict(source='61.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=97),row['completedRecords'])
+                self.assertIn(dict(start=34,end=34+len(nested),kind='anonymous-target-profile'),row['completedRecords'])
+                self.assertIn(dict(start=44+len(nested),end=end,kind='anonymous-byte-payload',isNull=value is None),row['completedRecords'])
+
+    def test_tag61_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag61(),tag61(target()),b'\x61\xff',b'\xfa\x61\x00'+tag61()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='61-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='61-limit',limit=n))
+
+    def test_tag61_malformed_counts_headers_and_target_gap(self):
+        raw=prefix(sequence(tag61(target())))
+        good=event_prefix(raw,source='61-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='61-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('61-bounds',at,value))
+        child=tag61(target(selector=b'\x03\x0a'))
+        row=event_prefix(prefix(sequence(child)),source='61-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',10))
+        self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+        self.assertFalse(any(r.get('tag')==97 or r['kind']=='anonymous-target-profile' for r in row['completedRecords']))
 
     def test_tagea_independent_payload_and_target_list(self):
         for value in (None,b'',b'\x00\xffwire'):

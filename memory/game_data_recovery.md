@@ -529,6 +529,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   remains conditional. Preserve nullable counts and null elements, and leave
   the list and action incomplete at an unsupported child. The managed merge
   name does not establish runtime behavior or cross-target relationships.
+  `scripts/game_data/buff_61_native.json` pins a member-ten reader containing
+  target, scalar32, two bytes, scalar32 and final byte payload after its common
+  prefix. The comparison enum context is a DWORD source read, not a nested
+  object. Unknown target children leave every following field unconsumed and
+  the parent incomplete; entity-count and comparison semantics remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
