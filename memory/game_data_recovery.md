@@ -608,6 +608,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a distinct member-four payload/byte/scalar32/byte child. Its final byte
   is required before subsequent target, direction and scalar profiles can
   complete; blow-off behavior and priority meaning remain unresolved.
+  `scripts/game_data/buff_06_native.json` pins a member-five action
+  ending with a DWORD under an exact enum context. Preserve raw bits and
+  reject missing scalar bytes; event meaning and achievement behavior
+  remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

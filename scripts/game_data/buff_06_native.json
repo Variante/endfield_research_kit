@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118368,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AchieveSpecialGameEventAction_DataForMemoryPack+Beyond_Gameplay_Core_AchieveSpecialGameEventAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70090080
+    ],
+    [
+      118367,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AchieveSpecialGameEventAction_DataForMemoryPack",
+      "Deserialize",
+      70090176
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70090080,
+      "endRva": 70090173,
+      "sha256": "012577C608C9573B26F8D58DCA76D196DC3818E32F23F3F748D4CD64EE2982CD",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70090176,
+      "endRva": 70090506,
+      "sha256": "9363358C7019466FCB2B5CB1827A14D3DCB3B1226E5AA4D372CC59D6C1158370",
+      "boundary": "member5 source reads through normal RET"
+    },
+    {
+      "startRva": 70090506,
+      "endRva": 70090578,
+      "sha256": "3911CE921D20D9C4468D4D3295E55B32B825BCC06C5BCBE4BE982689B6D4CA97",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83522526,
+      "endRva": 83522539,
+      "sha256": "3F8650C3A36F292D11762D2AF1247ED3F3864076734E1B6397AC417E3A9D30F2",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83522595,
+      "endRva": 83522616,
+      "sha256": "EC640017F9F25A123A3E1EFC99EEAB6025876FDC0837ECFB2517B2126CC2E59D",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70090348,
+      "instructionHex": "488B15B51FDB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70090454,
+      "instructionHex": "488B15631FDB08",
+      "cellVa": 6661119552,
+      "usageRawHex": "D3E612C000000000",
+      "methodSpecIndex": 619369,
+      "methodSpec": [
+        428448,
+        -1,
+        42391
+      ],
+      "argumentRawHex": "FC840000000000000000118000000000",
+      "typeDefinition": 34044,
+      "typeName": "Beyond.GEnums.SpecialGameEventType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member5 action consumes common byte/three DWORD then a final DWORD. Its exact SpecialGameEventType context selects the scalar source helper; a type name is not a width witness. Preserve arbitrary raw bits, with no nested header or tail. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Event meaning, achievement behavior, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
