@@ -270,7 +270,13 @@ only.
   copies active endpoints and applies the native scalar/boolean rules. Ordered
   retained-volume replay matches the selected visibility subset; an inactive
   higher-priority shadow config preserves the preceding active phase. This
-  does not identify that phase's source asset or close native upload ownership.
+  does not identify that phase's runtime source asset or close native upload
+  ownership. The authored CharInfo prefab contains both the legacy shadow phase
+  and an active migrated phase with the observed simulation values. Exact
+  serialized references and ancestor flags establish that authored population;
+  equal-priority native sorting does not guarantee hierarchy precedence. Source
+  values alone cannot identify a live instance. See
+  `reports/assets/character_recovery/charinfo_authored_shadow_volumes.json`.
   See `contact_shadow_authored_feature_source.json` in the same report directory.
   The combined capture needs no repeat for those graphics inputs. The optional
   environment-shadow extension observes selected phases, ordered applied
